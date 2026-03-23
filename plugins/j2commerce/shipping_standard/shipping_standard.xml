@@ -2,7 +2,7 @@
 <extension type="plugin" group="j2commerce" method="upgrade">
     <name>PLG_J2COMMERCE_SHIPPING_STANDARD</name>
     <version>6.0.7</version>
-    <creationDate>February 2026</creationDate>
+    <creationDate>2026-02</creationDate>
     <author>J2Commerce</author>
     <copyright>Copyright (C) 2024-2026 J2Commerce, LLC. All rights reserved.</copyright>
     <license>GNU General Public License version 2 or later</license>
