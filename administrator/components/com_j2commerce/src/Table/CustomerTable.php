@@ -70,7 +70,7 @@ class CustomerTable extends Table
 
         // Validate email format
         if (!filter_var($this->email, FILTER_VALIDATE_EMAIL)) {
-            $this->setError('COM_J2COMMERCE_ERR_INVALID_EMAIL');
+            $this->setError(Text::_('COM_J2COMMERCE_ERR_INVALID_EMAIL'));
 
             return false;
         }
