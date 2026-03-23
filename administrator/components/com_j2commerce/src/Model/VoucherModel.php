@@ -432,7 +432,7 @@ class VoucherModel extends AdminModel
             J2CommerceHelper::plugin()->event('BeforeSendVoucher', [$voucherTable, &$mailer]);
 
             if ($mailer->Send() !== true) {
-                $this->setError(Text::sprintf('COM_J2COMMERCE_VOUCHERS_SENDING_FAILED_TO_RECIPIENT', $voucherTable->email_to));
+                $this->setError(Text::sprintf('COM_J2COMMERCE_VOUCHERS_SENDING_FAILED_TO_RECEIPIENT', $voucherTable->email_to));
                 $failed++;
             }
 
