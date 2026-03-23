@@ -80,11 +80,11 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
                                 <td class="text-center">
                                     <?php echo HTMLHelper::_('jgrid.published', $item->enabled, $i, 'currencies.', true, 'cb'); ?>
                                 </td>
-                                <td>
+                                <th scope="row">
                                     <a href="<?php echo Route::_('index.php?option=com_j2commerce&task=currency.edit&id=' . $item->j2commerce_currency_id); ?>">
                                         <?php echo $this->escape($item->currency_title); ?>
                                     </a>
-                                </td>
+                                </th>
                                 <td class="d-none d-md-table-cell">
                                     <?php echo $this->escape($item->currency_code); ?>
                                 </td>
