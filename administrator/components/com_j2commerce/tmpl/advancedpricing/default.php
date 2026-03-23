@@ -79,7 +79,7 @@ $wa->useScript('multiselect');
                                     <td class="text-center">
                                         <?php echo HTMLHelper::_('grid.id', $i, $item->j2commerce_productprice_id); ?>
                                     </td>
-                                    <tdh scope="row">
+                                    <th scope="row">
                                         <?php echo $this->escape($item->product_name ?? ''); ?>
                                     </th>
                                     <td class="text-center">
