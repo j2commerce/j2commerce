@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <extension type="plugin" group="schemaorg" method="upgrade">
 	<name>plg_schemaorg_ecommerce</name>
-	<author>J2Commerce</author>
+	<author>J2Commerce, LLC</author>
 	<creationDate>2026-01</creationDate>
 	<copyright>(C) 2024–2026 J2Commerce, LLC All rights reserved.</copyright>
 	<license>GNU General Public License version 2 or later; see LICENSE.txt</license>

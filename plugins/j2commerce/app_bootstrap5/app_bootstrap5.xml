@@ -3,7 +3,7 @@
     <name>PLG_J2COMMERCE_APP_BOOTSTRAP5</name>
     <version>6.0.7</version>
     <creationDate>October 2025</creationDate>
-    <author>J2Commerce</author>
+    <author>J2Commerce, LLC</author>
     <copyright>Copyright (C) 2025 J2Commerce, LLC. All rights reserved.</copyright>
     <license>GNU General Public License version 2 or later</license>
     <authorEmail>support@j2commerce.com</authorEmail>
@@ -54,5 +54,5 @@
         <language tag="sv-SE">sv-SE/plg_j2commerce_app_bootstrap5.sys.ini</language>
     </languages>
 
-    
+
 </extension>

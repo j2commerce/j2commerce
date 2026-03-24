@@ -242,7 +242,7 @@ class J2CommerceSchemaHelper
                 $product->variants = $this->getAllVariants($productId);
             }
         } else {
-            // For simple products, use teh master variant only
+            // For simple products, use the master variant only
             $product->variants = $product->variant ? [$product->variant] : [];
         }
 

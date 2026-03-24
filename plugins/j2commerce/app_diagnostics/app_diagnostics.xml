@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <extension type="plugin" method="upgrade" group="j2commerce">
 	<name>PLG_J2COMMERCE_APP_DIAGNOSTICS</name>
-	<author>J2Commerce</author>
-	<creationDate>2026-01</creationDate>
+	<author>J2Commerce, LLC</author>
+  <creationDate>2026-01</creationDate>
 	<copyright>(C) 2024–2026 J2Commerce, LLC. All rights reserved.</copyright>
 	<license>GNU General Public License version 2 or later; see LICENSE.txt</license>
 	<authorEmail>support@j2commerce.com</authorEmail>
