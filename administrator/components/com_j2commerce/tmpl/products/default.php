@@ -134,7 +134,7 @@ $canChangeState = $user->authorise('core.edit.state', 'com_content');
                                 <td class="text-center d-none d-md-table-cell">
                                     <?php echo (int) $item->j2commerce_product_id; ?>
                                 </td>
-                                <td>
+                                <th scope="row">
                                     <div class="d-flex align-items-start">
                                         <?php if ($hasImage) : ?>
                                             <div class="me-3 flex-shrink-0">
@@ -159,7 +159,7 @@ $canChangeState = $user->authorise('core.edit.state', 'com_content');
                                             </div>
                                         </div>
                                     </div>
-                                </td>
+                                </th>
                                 <td class="d-none d-md-table-cell">
                                     <?php echo $this->escape($item->sku ?: '-'); ?>
                                 </td>
