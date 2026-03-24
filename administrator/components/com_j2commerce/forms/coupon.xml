@@ -70,8 +70,9 @@
             label="COM_J2COMMERCE_COUPON_VALID_FROM"
             description="COM_J2COMMERCE_COUPON_VALID_FROM_DESCRIPTION"
             format="%Y-%m-%d %H:%M:%S"
-            filter="server_utc"
-            required="true"
+            filter="user_utc"
+            showtime="true"
+            translateformat="true"
         />
 
         <field
@@ -80,8 +81,9 @@
             label="COM_J2COMMERCE_COUPON_VALID_TO"
             description="COM_J2COMMERCE_COUPON_VALID_TO_DESCRIPTION"
             format="%Y-%m-%d %H:%M:%S"
-            filter="server_utc"
-            required="true"
+            filter="user_utc"
+            showtime="true"
+            translateformat="true"
         />
 
     </fieldset>
