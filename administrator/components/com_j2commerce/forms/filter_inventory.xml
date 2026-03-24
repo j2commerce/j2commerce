@@ -60,6 +60,8 @@
             <option value="p.j2commerce_product_id DESC">COM_J2COMMERCE_INVENTORY_PRODUCT_ID_DESC</option>
             <option value="a.title ASC">COM_J2COMMERCE_INVENTORY_PRODUCT_NAME_ASC</option>
             <option value="a.title DESC">COM_J2COMMERCE_INVENTORY_PRODUCT_NAME_DESC</option>
+            <option value="v.sku ASC">COM_J2COMMERCE_INVENTORY_SKU_ASC</option>
+            <option value="v.sku DESC">COM_J2COMMERCE_INVENTORY_SKU_DESC</option>
             <option value="pq.quantity ASC">COM_J2COMMERCE_INVENTORY_QUANTITY_ASC</option>
             <option value="pq.quantity DESC">COM_J2COMMERCE_INVENTORY_QUANTITY_DESC</option>
             <option value="v.manage_stock ASC">COM_J2COMMERCE_INVENTORY_MANAGE_STOCK_ASC</option>
