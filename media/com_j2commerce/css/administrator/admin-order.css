@@ -117,13 +117,34 @@
     box-shadow: 0 0 0 2px var(--template-bg-dark-10, #dee2e6);
 }
 
-.j2c-history-row .flex-column .col {border-color:#aeaeae!important;}
+.j2c-history-row .flex-column .col {
+    border-color:#aeaeae!important;
+}
 
-.j2c-timeline-dot.bg-success { background-color: #198754 !important; box-shadow: 0 0 0 2px #198754; }
-.j2c-timeline-dot.bg-info { background-color: #0dcaf0 !important; box-shadow: 0 0 0 2px #0dcaf0; }
-.j2c-timeline-dot.bg-danger { background-color: #dc3545 !important; box-shadow: 0 0 0 2px #dc3545; }
-.j2c-timeline-dot.bg-warning { background-color: #ffc107 !important; box-shadow: 0 0 0 2px #ffc107; }
-.j2c-timeline-dot.bg-secondary { background-color: #6c757d !important; box-shadow: 0 0 0 2px #6c757d; }
+.j2c-timeline-dot.bg-success {
+    background-color: #198754 !important;
+    box-shadow: 0 0 0 2px #198754;
+}
+
+.j2c-timeline-dot.bg-info {
+    background-color: #0dcaf0 !important;
+    box-shadow: 0 0 0 2px #0dcaf0;
+}
+
+.j2c-timeline-dot.bg-danger {
+    background-color: #dc3545 !important;
+    box-shadow: 0 0 0 2px #dc3545;
+}
+
+.j2c-timeline-dot.bg-warning {
+    background-color: #ffc107 !important;
+    box-shadow: 0 0 0 2px #ffc107;
+}
+
+.j2c-timeline-dot.bg-secondary {
+    background-color: #6c757d !important;
+    box-shadow: 0 0 0 2px #6c757d;
+}
 
 .j2c-timeline-icon {
     width: 1.75rem;
@@ -266,8 +287,13 @@
     animation: j2c-fadeIn 0.3s ease-out;
 }
 
-.j2c-toast.success { background-color: var(--bs-success, #198754); }
-.j2c-toast.error { background-color: var(--bs-danger, #dc3545); }
+.j2c-toast.success {
+    background-color: var(--bs-success, #198754);
+}
+
+.j2c-toast.error {
+    background-color: var(--bs-danger, #dc3545);
+}
 
 @keyframes j2c-fadeIn {
     from { opacity: 0; transform: translateY(1rem); }
@@ -379,4 +405,6 @@
     border-top: 1px solid var(--template-bg-dark-10, #dee2e6);
     margin-top: 1.5rem;
 }
-.j2c-detail-card-shipping-buttons a[target="_blank"]:before, .j2c-sidebar a[target="_blank"]:before {display:none;}
+.j2c-detail-card-shipping-buttons a[target="_blank"]:before, .j2c-sidebar a[target="_blank"]:before {
+    display:none;
+}
