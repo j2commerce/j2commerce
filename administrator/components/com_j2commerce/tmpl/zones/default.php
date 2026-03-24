@@ -83,11 +83,11 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
                                 <td class="text-center">
                                     <?php echo HTMLHelper::_('jgrid.published', $item->enabled, $i, 'zones.', true, 'cb'); ?>
                                 </td>
-                                <td>
+                                <th scope="row">
                                     <a href="<?php echo Route::_('index.php?option=com_j2commerce&task=zone.edit&id=' . $item->j2commerce_zone_id); ?>">
                                         <?php echo $zoneName; ?>
                                     </a>
-                                </td>
+                                </th>
                                 <td class="d-none d-md-table-cell">
                                     <?php echo $zoneCode; ?>
                                 </td>
