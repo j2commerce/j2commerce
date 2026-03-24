@@ -113,7 +113,7 @@ $defaultWeightClassId = empty($this->item->variant->weight_class_id)
 
             <div class="control-group align-items-center">
                 <div class="control-label">
-                    <label id="j2commerce-product-length_class_id-select-group-lbl" for="j2commerce-product-length_class_id-select-group"><?php echo Text::_('COM_J2COMMERCE_LENGTH_CLASS');?></label>
+                    <label id="j2commerce-product-length_class_id-select-group-lbl" for="j2commerce-product-length_class_id-select-group"><?php echo Text::_('COM_J2COMMERCE_DIMENSIONS_UNIT');?></label>
                 </div>
                 <div class="controls">
                     <?php echo LayoutHelper::render('joomla.form.field.list-fancy-select', ['name'  => $this->form_prefix.'[length_class_id]','id'    => 'j2commerce-product-length_class_id-select-group','value' => $defaultLengthClassId,'options' => $lengthsList]);?>
