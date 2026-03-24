@@ -104,7 +104,7 @@ class HtmlView extends BaseHtmlView
 
         $user       = Factory::getApplication()->getIdentity();
         $isNew      = (empty($this->item->j2commerce_voucher_id) || $this->item->j2commerce_voucher_id == 0);
-        $checkedOut = !(is_null($this->item->checked_out) || $this->item->checked_out == $user->get('id'));
+        //$checkedOut = !(is_null($this->item->checked_out) || $this->item->checked_out == $user->get('id'));
         $canDo      = ContentHelper::getActions('com_j2commerce', 'voucher', $this->item->j2commerce_voucher_id ?? 0);
 
         $layout = Factory::getApplication()->getInput()->get('layout', 'history');
@@ -143,14 +143,14 @@ class HtmlView extends BaseHtmlView
                 $itemEditable = $canDo->get('core.edit') || ($canDo->get('core.edit.own') && $this->item->created_by == $user->id);
 
                 // Can't save the record if it's checked out and editable
-                if (!$checkedOut && $itemEditable) {
+                if (/*!$checkedOut && */$itemEditable) {
                     $toolbar->apply('voucher.apply');
                 }
 
                 $saveGroup = $toolbar->dropdownButton('save-group');
                 $childBar = $saveGroup->getChildToolbar();
 
-                if (!$checkedOut && $itemEditable) {
+                if (/*!$checkedOut && */$itemEditable) {
                     $childBar->save('voucher.save');
 
                     if ($canDo->get('core.create')) {
