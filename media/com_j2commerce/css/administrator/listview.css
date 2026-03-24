@@ -36,14 +36,14 @@
 }
 @media only screen and (max-width: 1962px) {
     .j2store-order-filters .controls .input-append .controls .field-user-wrapper .input-group .button-select{
-        margin-left: -48px;
+        margin-inline-start: -48px;
     }
 }
 .com_j2store .searchable_field a.btn {
     border: 1px solid;
 }
 .com_j2store .searchable_field {
-    margin-right:10px ;
+    margin-inline-end:10px ;
 }
 
 /* advanced filter in products  view*/
