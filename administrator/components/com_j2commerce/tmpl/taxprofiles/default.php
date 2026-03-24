@@ -71,11 +71,11 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
                                 <td class="text-center">
                                     <?php echo HTMLHelper::_('jgrid.published', $item->enabled, $i, 'taxprofiles.', true, 'cb'); ?>
                                 </td>
-                                <td>
+                                <th scope="row">
                                     <a href="<?php echo Route::_('index.php?option=com_j2commerce&task=taxprofile.edit&id=' . $item->j2commerce_taxprofile_id); ?>">
                                         <?php echo $this->escape($item->taxprofile_name); ?>
                                     </a>
-                                </td>
+                                </th>
                                 <td class="d-none d-md-table-cell">
                                     <?php echo (int) $item->j2commerce_taxprofile_id; ?>
                                 </td>
