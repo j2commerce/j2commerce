@@ -261,7 +261,7 @@ $wa->addInlineStyle($style, [], []);
                                 </td>
                                 <td>
                                     <button type="button" class="btn btn-link btn-sm j2commerce-delete-optionvalue-btn text-danger" data-pov-id="<?php echo $poptionvalue->j2commerce_product_optionvalue_id; ?>" title="<?php echo Text::_('JACTION_DELETE'); ?>">
-                                        <span class="fa-solid fa-trash"></span>
+                                        <span class="fa-solid fa-trash" aria-hidden="true"></span>
                                     </button>
                                 </td>
                             </tr>

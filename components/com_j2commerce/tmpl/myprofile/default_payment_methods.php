@@ -71,7 +71,7 @@ $csrfToken = Session::getFormToken();
                                             </div>
                                         </div>
                                         <div class="d-flex align-items-center">
-                                        <span class="dropdown dropstart">
+                                        <span class="dropdown dropstart"><!--todo brian is this an empty link and should it be a button-->
                                            <a class="text-reset dropdown-toggle" href="#" role="button" id="paymentDropdown<?php echo htmlspecialchars($method->id, ENT_QUOTES, 'UTF-8'); ?>" data-bs-toggle="dropdown" data-bs-offset="-20,20" aria-expanded="false">
                                               <span class="fa-solid fa-ellipsis-vertical"></span>
                                            </a>

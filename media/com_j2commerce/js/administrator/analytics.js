@@ -424,8 +424,8 @@
         if (change.dir === 'flat') {
             return '<span class="text-body-secondary">\u2014</span>';
         }
-        const icon = change.dir === 'up' ? 'fa-arrow-up' : 'fa-arrow-down';
-        return '<span><span class="fa-solid ' + icon + '"></span> ' + change.pct + '%</span>';
+        const icon = change.dir === 'up' ? 'fa-arrow-up' : 'fa-arrow-down';// todo brian move span
+        return '<span><span class="fa-solid ' + icon + '" aria-hidden="true"></span> ' + change.pct + '%</span>';
     }
 
     function updateKPIs(data) {

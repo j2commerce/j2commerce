@@ -73,7 +73,7 @@ $cartText   = !empty($product->addtocart_text) ? $product->addtocart_text : Text
 
     <?php if ($showCart): ?>
         <a href="<?php echo $productLink; ?>" class="uk-button uk-button-default uk-margin-auto-top">
-            <span class="fa-solid fa-wand-magic-sparkles uk-margin-small-right"></span>
+            <span class="fa-solid fa-wand-magic-sparkles uk-margin-small-right" aria-hidden="true"></span>
             <?php echo $cartText; ?>
         </a>
     <?php endif; ?>

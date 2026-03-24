@@ -42,29 +42,29 @@ $token = Session::getFormToken();
         <!-- Device Buttons -->
         <div class="btn-group" role="group">
             <button type="button" class="btn btn-outline-secondary active" data-device="desktop" title="<?php echo Text::_('COM_J2COMMERCE_BUILDER_DEVICE_DESKTOP'); ?>">
-                <span class="fa-solid fa-desktop"></span>
+                <span class="fa-solid fa-desktop" aria-hidden="true"></span>
             </button>
             <button type="button" class="btn btn-outline-secondary" data-device="tablet" title="<?php echo Text::_('COM_J2COMMERCE_BUILDER_DEVICE_TABLET'); ?>">
-                <span class="fa-solid fa-tablet-screen-button"></span>
+                <span class="fa-solid fa-tablet-screen-button" aria-hidden="true"></span>
             </button>
             <button type="button" class="btn btn-outline-secondary" data-device="mobile" title="<?php echo Text::_('COM_J2COMMERCE_BUILDER_DEVICE_MOBILE'); ?>">
-                <span class="fa-solid fa-mobile-screen-button"></span>
+                <span class="fa-solid fa-mobile-screen-button" aria-hidden="true"></span>
             </button>
         </div>
 
         <!-- Undo/Redo -->
         <div class="btn-group btn-group-sm" role="group">
             <button type="button" class="btn btn-outline-secondary" id="builder-undo" disabled title="<?php echo Text::_('COM_J2COMMERCE_BUILDER_UNDO'); ?>">
-                <span class="fa-solid fa-rotate-left"></span>
+                <span class="fa-solid fa-rotate-left" aria-hidden="true"></span>
             </button>
             <button type="button" class="btn btn-outline-secondary" id="builder-redo" disabled title="<?php echo Text::_('COM_J2COMMERCE_BUILDER_REDO'); ?>">
-                <span class="fa-solid fa-rotate-right"></span>
+                <span class="fa-solid fa-rotate-right" aria-hidden="true"></span>
             </button>
         </div>
 
         <!-- Save Button -->
         <button type="button" class="btn btn-primary btn-sm" id="builder-save" disabled>
-            <span class="fa-solid fa-floppy-disk me-1"></span>
+            <span class="fa-solid fa-floppy-disk me-1" aria-hidden="true"></span>
             <?php echo Text::_('COM_J2COMMERCE_BUILDER_SAVE'); ?>
         </button>
     </div>
@@ -75,7 +75,7 @@ $token = Session::getFormToken();
         <div class="col-lg-3">
             <div class="card-builder card mb-3 box-shadow-none">
                 <div class="card-header p-3">
-                    <h3 class="mb-0 fs-4"><span class="fa-solid fa-cubes me-2 text-warning"></span><?php echo Text::_('COM_J2COMMERCE_BUILDER_BLOCKS'); ?></h3>
+                    <h3 class="mb-0 fs-4"><span class="fa-solid fa-cubes me-2 text-warning" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_BUILDER_BLOCKS'); ?></h3>
                 </div>
                 <div class="card-body bg-white" id="builder-blocks-panel">
                     <div class="small text-center py-3">
@@ -85,7 +85,7 @@ $token = Session::getFormToken();
             </div>
             <div class="card-builder card mb-3 box-shadow-none">
                 <div class="card-header p-3">
-                    <h3 class="mb-0 fs-4"><span class="fa-solid fa-sliders me-2 text-warning"></span><?php echo Text::_('COM_J2COMMERCE_BUILDER_PROPERTIES'); ?></h3>
+                    <h3 class="mb-0 fs-4"><span class="fa-solid fa-sliders me-2 text-warning" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_BUILDER_PROPERTIES'); ?></h3>
                 </div>
                 <div class="card-body bg-white" id="builder-properties-panel">
                     <!-- Properties panel populated by JS -->
@@ -100,7 +100,7 @@ $token = Session::getFormToken();
                     <div id="builder-canvas" class="j2commerce-builder-canvas" style="min-height: 500px;">
                         <div class="d-flex align-items-center justify-content-center h-100 align-self-stretch" id="builder-placeholder">
                             <div class="text-center">
-                                <span class="fa-solid fa-wand-magic-sparkles text-warning fa-3x mb-3"></span>
+                                <span class="fa-solid fa-wand-magic-sparkles text-warning fa-3x mb-3" aria-hidden="true"></span>
                                 <p><?php echo Text::_('COM_J2COMMERCE_BUILDER_SELECT_FILE'); ?></p>
                             </div>
                         </div>

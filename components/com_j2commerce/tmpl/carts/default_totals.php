@@ -40,9 +40,9 @@ use Joomla\CMS\Router\Route;
     <div class="d-grid gap-2 mt-3">
         <span class="cart-checkout-button">
             <a class="btn btn-lg btn-primary d-flex align-items-center justify-content-center py-3" href="<?php echo Route::_($this->checkout_url); ?>">
-                <span class="fa-solid fa-lock me-2 small lh-1 mt-1"></span>
+                <span class="fa-solid fa-lock me-2 small lh-1 mt-1" aria-hidden="true"></span>
                 <span class="cart-button-title lh-1"><?php echo Text::_('COM_J2COMMERCE_PROCEED_TO_CHECKOUT'); ?></span>
-                <span class="fa-solid fa-chevron-right ms-2 lh-1 small align-self-center mt-1"></span>
+                <span class="fa-solid fa-chevron-right ms-2 lh-1 small align-self-center mt-1" aria-hidden="true"></span>
             </a>
         </span>
         <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterDisplayCheckoutButton', [$this->order]); ?>
