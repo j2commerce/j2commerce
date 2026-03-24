@@ -2,8 +2,8 @@
 <extension type="plugin" group="j2commerce" method="upgrade">
     <name>PLG_J2COMMERCE_PAYMENT_MONEYORDER</name>
     <version>6.0.7</version>
-    <creationDate>January 2025</creationDate>
     <author>J2Commerce, LLC</author>
+    <creationDate>2026-01</creationDate>
     <copyright>Copyright (C) 2024–2026 J2Commerce, LLC. All rights reserved.</copyright>
     <license>GNU General Public License version 2 or later</license>
     <authorEmail>support@j2commerce.com</authorEmail>

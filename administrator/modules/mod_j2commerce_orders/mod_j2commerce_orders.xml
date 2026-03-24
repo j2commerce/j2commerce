@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <extension type="module" method="upgrade" position="j2commerce-module-position-4" client="administrator">
     <name>MOD_J2COMMERCE_ORDERS</name>
-    <creationDate>January 2026</creationDate>
+    <creationDate>2026-01</creationDate>
     <author>J2Commerce, LLC</author>
     <copyright>(C) 2024-2026 J2Commerce, LLC. All rights reserved.</copyright>
     <license>GNU General Public License v2 or later</license>
