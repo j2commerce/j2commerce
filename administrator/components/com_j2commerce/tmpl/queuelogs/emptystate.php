@@ -15,11 +15,11 @@ use Joomla\CMS\Layout\LayoutHelper;
 
 /** @var \J2Commerce\Component\J2commerce\Administrator\View\Queuelogs\HtmlView $this */
 
-?>
+echo $this->navbar;
 
-<?php echo $this->navbar; ?>
-
-<?php echo LayoutHelper::render('joomla.content.emptystate', [
+echo LayoutHelper::render('joomla.content.emptystate', [
     'textPrefix' => 'COM_J2COMMERCE_QUEUE_LOGS',
     'icon'       => 'icon fa-solid fa-clock-rotate-left fa-8x',
-]); ?>
+]);
+
+echo $this->footer ?? '';

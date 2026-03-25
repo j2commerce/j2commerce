@@ -7,9 +7,13 @@
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
+declare(strict_types=1);
+
 defined('_JEXEC') or die();
 
 use Joomla\CMS\Layout\LayoutHelper;
+
+/** @var \J2Commerce\Component\J2commerce\Administrator\View\Inventory\HtmlView $this */
 
 $displayData = [
     'textPrefix' => 'COM_J2COMMERCE_INVENTORY',
@@ -17,4 +21,8 @@ $displayData = [
     'icon'       => 'icon-fa-solid fa-barcode',
 ];
 
+echo $this->navbar;
+
 echo LayoutHelper::render('joomla.content.emptystate', $displayData);
+
+echo $this->footer ?? '';

@@ -7,10 +7,14 @@
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
+declare(strict_types=1);
+
 defined('_JEXEC') or die();
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Layout\LayoutHelper;
+
+/** @var \J2Commerce\Component\J2commerce\Administrator\View\Invoicetemplates\HtmlView $this */
 
 $displayData = [
     'textPrefix' => 'COM_J2COMMERCE_INVOICETEMPLATES',
@@ -23,5 +27,9 @@ if ($user->authorise('core.create', 'com_j2commerce')) {
     $displayData['createURL'] = 'index.php?option=com_j2commerce&task=invoicetemplate.add';
 }
 
+echo $this->navbar;
+
 echo LayoutHelper::render('joomla.content.emptystate', $displayData);
+
+echo $this->footer ?? '';
 
