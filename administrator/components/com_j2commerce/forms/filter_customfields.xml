@@ -41,12 +41,16 @@
             onchange="this.form.submit();"
         >
             <option value="">JGLOBAL_SORT_BY</option>
-            <option value="a.field_namekey ASC">COM_J2COMMERCE_HEADING_FIELD_NAMEKEY_ASC</option>
-            <option value="a.field_namekey DESC">COM_J2COMMERCE_HEADING_FIELD_NAMEKEY_DESC</option>
-            <option value="a.field_name ASC">COM_J2COMMERCE_HEADING_FIELD_NAME_ASC</option>
-            <option value="a.field_name DESC">COM_J2COMMERCE_HEADING_FIELD_NAME_DESC</option>
             <option value="a.ordering ASC">JGRID_HEADING_ORDERING_ASC</option>
             <option value="a.ordering DESC">JGRID_HEADING_ORDERING_DESC</option>
+            <option value="a.enabled ASC">JSTATUS_ASC</option>
+            <option value="a.enabled DESC">JSTATUS_DESC</option>
+            <option value="a.field_name ASC">COM_J2COMMERCE_HEADING_FIELD_NAME_ASC</option>
+            <option value="a.field_name DESC">COM_J2COMMERCE_HEADING_FIELD_NAME_DESC</option>
+            <option value="a.field_type ASC">COM_J2COMMERCE_HEADING_FIELD_TYPE_ASC</option>
+            <option value="a.field_type DESC">COM_J2COMMERCE_HEADING_FIELD_TYPE_DESC</option>
+            <option value="a.field_namekey ASC">COM_J2COMMERCE_HEADING_FIELD_NAMEKEY_ASC</option>
+            <option value="a.field_namekey DESC">COM_J2COMMERCE_HEADING_FIELD_NAMEKEY_DESC</option>
             <option value="a.j2commerce_customfield_id ASC">JGRID_HEADING_ID_ASC</option>
             <option value="a.j2commerce_customfield_id DESC">JGRID_HEADING_ID_DESC</option>
         </field>
