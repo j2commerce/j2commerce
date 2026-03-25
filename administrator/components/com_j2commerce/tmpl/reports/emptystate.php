@@ -7,11 +7,15 @@
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
+declare(strict_types=1);
+
 defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Language\Text;
+
+/** @var \J2Commerce\Component\J2commerce\Administrator\View\Reports\HtmlView $this */
 
 J2CommerceHelper::strapper()->addCSS();
 
@@ -34,4 +38,4 @@ echo LayoutHelper::render('joomla.content.emptystate', $displayData);
 
 echo $this->reportCards;
 
-<?php echo $this->footer ?? ''; ?>
+echo $this->footer ?? '';

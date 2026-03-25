@@ -16,11 +16,11 @@ use Joomla\CMS\Layout\LayoutHelper;
 
 /** @var \J2Commerce\Component\J2commerce\Administrator\View\Queues\HtmlView $this */
 
-?>
+echo $this->navbar;
 
-<?php echo $this->navbar; ?>
-
-<?php echo LayoutHelper::render('joomla.content.emptystate', [
+echo LayoutHelper::render('joomla.content.emptystate', [
     'textPrefix' => 'COM_J2COMMERCE_QUEUE',
     'icon'       => 'icon fa-solid fa-list-check fa-8x',
-]); ?>
+]);
+
+echo $this->footer ?? '';
