@@ -66,8 +66,7 @@ class VoucherModel extends AdminModel
     protected array $history = [];
 
     /**
-     * Override populateState to read 'id' from URL (standard Joomla convention),
-     * not 'j2commerce_voucher_id' (the table's column name).
+     * Override populateState to use Joomla's standard 'id' URL parameter.
      *
      * @return  void
      *
@@ -76,8 +75,8 @@ class VoucherModel extends AdminModel
     protected function populateState(): void
     {
         $app = Factory::getApplication();
-
         $pk = $app->getInput()->getInt('id', 0);
+
         $this->setState($this->getName() . '.id', $pk);
 
         $params = ComponentHelper::getParams('com_j2commerce');
@@ -205,6 +204,21 @@ class VoucherModel extends AdminModel
      */
     public function save($data): bool
     {
+        $app = Factory::getApplication();
+
+        // Resolve existing-record identity from id only.
+        $data['id'] = (int) ($data['id'] ?? $app->getInput()->getInt('id', 0));
+
+        // Map Joomla id to table PK for persistence.
+        if (empty($data['j2commerce_voucher_id']) && $data['id'] > 0) {
+            $data['j2commerce_voucher_id'] = $data['id'];
+        }
+
+        // Keep id aligned if only table PK is present in form payload.
+        if (empty($data['id']) && !empty($data['j2commerce_voucher_id'])) {
+            $data['id'] = (int) $data['j2commerce_voucher_id'];
+        }
+
         // Handle published/enabled alias
         if (isset($data['published'])) {
             $data['enabled'] = $data['published'];
@@ -230,12 +244,15 @@ class VoucherModel extends AdminModel
         PluginHelper::importPlugin('content');
 
         // Alter the voucher code for save as copy
-        $app = Factory::getApplication();
         if ($app->getInput()->get('task') == 'save2copy') {
             $origTable = clone $this->getTable();
-            $origTable->load($app->getInput()->getInt('j2commerce_voucher_id'));
+            $originalId = (int) ($data['id'] ?? 0);
 
-            if ($data['voucher_code'] == $origTable->voucher_code) {
+            if ($originalId > 0) {
+                $origTable->load($originalId);
+            }
+
+            if (!empty($origTable->voucher_code) && $data['voucher_code'] == $origTable->voucher_code) {
                 $data['voucher_code'] = $this->generateNewVoucherCode($data['voucher_code']);
             }
 
@@ -243,10 +260,14 @@ class VoucherModel extends AdminModel
         }
 
         if (parent::save($data)) {
-            // Set the ID for redirect after save
-            $table = $this->getTable();
-            if ($table && isset($table->j2commerce_voucher_id)) {
-                $this->setState($this->getName() . '.j2commerce_voucher_id', $table->j2commerce_voucher_id);
+            $savedId = (int) ($data['id'] ?? 0);
+
+            if ($savedId === 0) {
+                $savedId = (int) $this->getState($this->getName() . '.id');
+            }
+
+            if ($savedId > 0) {
+                $this->setState($this->getName() . '.id', $savedId);
             }
 
             return true;
@@ -518,6 +539,7 @@ class VoucherModel extends AdminModel
         $params = $this->getState('params');
         $db     = $this->getDatabase();
         $query  = $db->getQuery(true);
+        $discountType = 'voucher';
 
         $query->select($db->quoteName([
             'o.j2commerce_order_id',
@@ -546,7 +568,7 @@ class VoucherModel extends AdminModel
             ->group($db->quoteName('od.discount_entity_id'))
             ->order($db->quoteName('o.created_on') . ' DESC')
             ->bind(':voucherId', $voucherId, ParameterType::INTEGER)
-            ->bind(':discountType', $discountType = 'voucher');
+            ->bind(':discountType', $discountType);
 
         try {
             $db->setQuery($query);

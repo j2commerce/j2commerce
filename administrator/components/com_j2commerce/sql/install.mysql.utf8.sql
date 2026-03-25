@@ -1162,6 +1162,8 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_vouchers` (
   `voucher_type` varchar(255) NOT NULL,
   `subject` varchar(255) NOT NULL,
   `email_body` longtext NOT NULL,
+  `valid_from` datetime DEFAULT NULL,
+  `valid_to` datetime DEFAULT NULL,
   `from_order_id` varchar(255) NOT NULL DEFAULT '0',
   `voucher_value` decimal(15,8) NOT NULL,
   `ordering` int NOT NULL DEFAULT 0,
