@@ -170,12 +170,12 @@ class HtmlView extends BaseHtmlView
                     $childBar->checkin('options.checkin')->listCheck(true);
                 }
 
-                if ($this->state->get('filter.published') != -2) {
+                if ($this->state->get('filter.enabled') != -2) {
                     $childBar->trash('options.trash')->listCheck(true);
                 }
             }
 
-            if ($this->state->get('filter.published') === -2 && $canDo->get('core.delete')) {
+            if ($this->state->get('filter.enabled') === -2 && $canDo->get('core.delete')) {
                 $toolbar->delete('options.delete')
                     ->text('JTOOLBAR_EMPTY_TRASH')
                     ->message('JGLOBAL_CONFIRM_DELETE')

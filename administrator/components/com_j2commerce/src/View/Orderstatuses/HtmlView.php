@@ -162,7 +162,7 @@ class HtmlView extends BaseHtmlView
                 $childBar->publish('orderstatuses.publish')->listCheck(true);
                 $childBar->unpublish('orderstatuses.unpublish')->listCheck(true);
 
-                if ($this->state->get('filter.published') != -2) {
+                if ($this->state->get('filter.enabled') != -2) {
                     $childBar->trash('orderstatuses.trash')->listCheck(true);
                 }
             }

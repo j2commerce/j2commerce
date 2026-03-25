@@ -157,7 +157,7 @@ class HtmlView extends BaseHtmlView
                 $childBar->publish('taxprofiles.publish')->listCheck(true);
                 $childBar->unpublish('taxprofiles.unpublish')->listCheck(true);
 
-                if ($this->state->get('filter.published') != -2) {
+                if ($this->state->get('filter.enabled') != -2) {
                     $childBar->trash('taxprofiles.trash')->listCheck(true);
                 }
             }
