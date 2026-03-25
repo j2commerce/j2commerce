@@ -81,6 +81,44 @@ class CartsController extends BaseController
     }
 
     /**
+     * Start output buffering for AJAX methods.
+     *
+     * Captures any stray PHP output (warnings, notices, deprecations) that would
+     * otherwise corrupt the JSON response. Must be paired with sendJsonResponse().
+     *
+     * @return  void
+     *
+     * @since   6.0.0
+     */
+    private function startAjaxBuffer(): void
+    {
+        ob_start();
+    }
+
+    /**
+     * Send a JSON response and close the application.
+     *
+     * Cleans the AJAX output buffer started by startAjaxBuffer(), logs any stray
+     * output (PHP warnings, etc.) that would have corrupted the JSON, sets the
+     * proper Content-Type header, and sends the JSON response.
+     *
+     * @param   array|object  $data  The data to encode as JSON
+     *
+     * @return  never
+     *
+     * @since   6.0.0
+     */
+    private function sendJsonResponse(array|object $data): void
+    {
+        // Discard any stray output (PHP warnings, notices) that would corrupt JSON
+        ob_end_clean();
+
+        $this->app->setHeader('Content-Type', 'application/json; charset=utf-8');
+        echo json_encode($data);
+        $this->app->close();
+    }
+
+    /**
      * Re-fetch shipping rates from plugins and validate the current selection.
      *
      * Called before rendering cart totals so that quantity/item changes that push
@@ -204,6 +242,11 @@ class CartsController extends BaseController
         // Check if AJAX submission early to ensure JSON response on errors
         $ajax = $this->input->getInt('ajax', 0);
 
+        // Buffer output to prevent PHP warnings from corrupting JSON response
+        if ($ajax) {
+            $this->startAjaxBuffer();
+        }
+
         try {
             $model  = $this->getCartModel();
             $result = $model->addCartItem();
@@ -231,9 +274,6 @@ class CartsController extends BaseController
             $cartUrl = $model->getCartUrl();
 
             if ($ajax) {
-                // Set JSON content type header before any output
-                $this->app->setHeader('Content-Type', 'application/json; charset=utf-8');
-
                 if (isset($json['success'])) {
                     if ($config->get('addtocart_action', 3) == 3) {
                         $json['redirect'] = $cartUrl;
@@ -245,8 +285,7 @@ class CartsController extends BaseController
                     'id'   => $this->input->getInt('product_id')
                 ]);
 
-                echo json_encode($json);
-                $this->app->close();
+                $this->sendJsonResponse($json);
             } else {
                 $return = $this->input->getBase64('return');
 
@@ -268,12 +307,10 @@ class CartsController extends BaseController
         } catch (\Exception $e) {
             // Handle any uncaught exceptions
             if ($ajax) {
-                $this->app->setHeader('Content-Type', 'application/json; charset=utf-8');
-                echo json_encode([
+                $this->sendJsonResponse([
                     'success' => 0,
                     'error'   => ['general' => $e->getMessage()]
                 ]);
-                $this->app->close();
             } else {
                 // For non-AJAX, redirect with error message
                 $this->setRedirect(
@@ -294,12 +331,11 @@ class CartsController extends BaseController
      */
     public function forceshipping(): void
     {
-        header('Content-Type: application/json; charset=utf-8');
+        $this->startAjaxBuffer();
 
         $json = J2CommerceHelper::plugin()->eventWithArray('ValidateShipping');
 
-        echo json_encode($json);
-        $this->app->close();
+        $this->sendJsonResponse($json);
     }
 
     /**
@@ -366,18 +402,14 @@ class CartsController extends BaseController
     {
         UtilitiesHelper::clearCache();
         UtilitiesHelper::sendNoCacheHeaders();
-
-        header('Content-Type: application/json; charset=utf-8');
+        $this->startAjaxBuffer();
 
         $json = [];
 
         if (!$this->validateAjaxToken()) {
             $json['success'] = false;
             $json['message'] = Text::_('JINVALID_TOKEN');
-            echo json_encode($json);
-            $this->app->close();
-
-            return;
+            $this->sendJsonResponse($json);
         }
 
         try {
@@ -414,8 +446,7 @@ class CartsController extends BaseController
             $json['message'] = $e->getMessage();
         }
 
-        echo json_encode($json);
-        $this->app->close();
+        $this->sendJsonResponse($json);
     }
 
     /**
@@ -453,18 +484,14 @@ class CartsController extends BaseController
     {
         UtilitiesHelper::clearCache();
         UtilitiesHelper::sendNoCacheHeaders();
-
-        header('Content-Type: application/json; charset=utf-8');
+        $this->startAjaxBuffer();
 
         $json = [];
 
         if (!$this->validateAjaxToken()) {
             $json['success'] = false;
             $json['message'] = Text::_('JINVALID_TOKEN');
-            echo json_encode($json);
-            $this->app->close();
-
-            return;
+            $this->sendJsonResponse($json);
         }
 
         $model = $this->getCartModel();
@@ -473,10 +500,7 @@ class CartsController extends BaseController
         if (!$cartitemId) {
             $json['success'] = false;
             $json['message'] = Text::_('COM_J2COMMERCE_INVALID_CART_ITEM');
-            echo json_encode($json);
-            $this->app->close();
-
-            return;
+            $this->sendJsonResponse($json);
         }
 
         try {
@@ -490,10 +514,7 @@ class CartsController extends BaseController
             if (!$cartitem->j2commerce_cartitem_id || (int) $cartitem->cart_id !== $currentCartId) {
                 $json['success'] = false;
                 $json['message'] = Text::_('COM_J2COMMERCE_CART_ITEM_NOT_FOUND');
-                echo json_encode($json);
-                $this->app->close();
-
-                return;
+                $this->sendJsonResponse($json);
             }
 
             if ($cartitem->j2commerce_cartitem_id) {
@@ -521,8 +542,7 @@ class CartsController extends BaseController
             $json['message'] = $e->getMessage();
         }
 
-        echo json_encode($json);
-        $this->app->close();
+        $this->sendJsonResponse($json);
     }
 
     /**
@@ -536,18 +556,14 @@ class CartsController extends BaseController
     {
         UtilitiesHelper::clearCache();
         UtilitiesHelper::sendNoCacheHeaders();
-
-        header('Content-Type: application/json; charset=utf-8');
+        $this->startAjaxBuffer();
 
         $json = [];
 
         if (!$this->validateAjaxToken()) {
             $json['success'] = false;
             $json['message'] = Text::_('JINVALID_TOKEN');
-            echo json_encode($json);
-            $this->app->close();
-
-            return;
+            $this->sendJsonResponse($json);
         }
 
         $cartitemId = $this->input->getInt('cartitem_id', 0);
@@ -556,10 +572,7 @@ class CartsController extends BaseController
         if (!$cartitemId) {
             $json['success'] = false;
             $json['message'] = Text::_('COM_J2COMMERCE_INVALID_CART_ITEM');
-            echo json_encode($json);
-            $this->app->close();
-
-            return;
+            $this->sendJsonResponse($json);
         }
 
         if ($newQty < 1) {
@@ -573,10 +586,7 @@ class CartsController extends BaseController
             if (!$cartitem->load($cartitemId)) {
                 $json['success'] = false;
                 $json['message'] = Text::_('COM_J2COMMERCE_CART_ITEM_NOT_FOUND');
-                echo json_encode($json);
-                $this->app->close();
-
-                return;
+                $this->sendJsonResponse($json);
             }
 
             $originalQty = (int) $cartitem->product_qty;
@@ -623,10 +633,7 @@ class CartsController extends BaseController
                     $json['success'] = false;
                     $json['message'] = Text::sprintf('COM_J2COMMERCE_NOT_ENOUGH_STOCK', $stockQty);
                     $json['original_qty'] = $originalQty;
-                    echo json_encode($json);
-                    $this->app->close();
-
-                    return;
+                    $this->sendJsonResponse($json);
                 }
             }
 
@@ -686,8 +693,7 @@ class CartsController extends BaseController
             $json['original_qty'] = $originalQty ?? 1;
         }
 
-        echo json_encode($json);
-        $this->app->close();
+        $this->sendJsonResponse($json);
     }
 
     /**
@@ -703,18 +709,14 @@ class CartsController extends BaseController
     {
         UtilitiesHelper::clearCache();
         UtilitiesHelper::sendNoCacheHeaders();
-
-        header('Content-Type: application/json; charset=utf-8');
+        $this->startAjaxBuffer();
 
         $json = [];
 
         if (!$this->validateAjaxToken()) {
             $json['success'] = false;
             $json['message'] = Text::_('JINVALID_TOKEN');
-            echo json_encode($json);
-            $this->app->close();
-
-            return;
+            $this->sendJsonResponse($json);
         }
 
         // Refresh shipping methods so stale selections are corrected before
@@ -759,8 +761,7 @@ class CartsController extends BaseController
             $json['message'] = $e->getMessage();
         }
 
-        echo json_encode($json);
-        $this->app->close();
+        $this->sendJsonResponse($json);
     }
 
     /**
@@ -773,7 +774,7 @@ class CartsController extends BaseController
     public function ajaxmini(): void
     {
         UtilitiesHelper::sendNoCacheHeaders();
-        header('Content-Type: application/json; charset=utf-8');
+        $this->startAjaxBuffer();
 
         $db       = Factory::getContainer()->get('DatabaseDriver');
         $document = $this->app->getDocument();
@@ -813,8 +814,7 @@ class CartsController extends BaseController
             }
         }
 
-        echo json_encode($json);
-        $this->app->close();
+        $this->sendJsonResponse($json);
     }
 
     /**
@@ -978,21 +978,16 @@ class CartsController extends BaseController
     {
         UtilitiesHelper::sendNoCacheHeaders();
         UtilitiesHelper::clearCache();
-
-        header('Content-Type: application/json; charset=utf-8');
+        $this->startAjaxBuffer();
 
         if (!$this->validateAjaxToken()) {
-            echo json_encode(['success' => false, 'message' => Text::_('JINVALID_TOKEN')]);
-            $this->app->close();
-            return;
+            $this->sendJsonResponse(['success' => false, 'message' => Text::_('JINVALID_TOKEN')]);
         }
 
         $coupon = $this->input->getString('coupon', '');
 
         if (empty($coupon)) {
-            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ENTER_COUPON_CODE')]);
-            $this->app->close();
-            return;
+            $this->sendJsonResponse(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ENTER_COUPON_CODE')]);
         }
 
         try {
@@ -1020,24 +1015,20 @@ class CartsController extends BaseController
             }
 
             if (!$couponModel->isValid($orderContext)) {
-                echo json_encode([
+                $this->sendJsonResponse([
                     'success' => false,
                     'message' => $couponModel->getError() ?: Text::_('COM_J2COMMERCE_COUPON_NOT_VALID'),
                 ]);
-                $this->app->close();
-                return;
             }
 
-            echo json_encode([
+            $this->sendJsonResponse([
                 'success' => true,
                 'message' => Text::_('COM_J2COMMERCE_COUPON_APPLIED_SUCCESSFULLY'),
                 'coupon'  => $coupon,
             ]);
         } catch (\Exception $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJsonResponse(['success' => false, 'message' => $e->getMessage()]);
         }
-
-        $this->app->close();
     }
 
     /**
@@ -1051,35 +1042,34 @@ class CartsController extends BaseController
     {
         UtilitiesHelper::sendNoCacheHeaders();
         UtilitiesHelper::clearCache();
-
-        header('Content-Type: application/json; charset=utf-8');
+        $this->startAjaxBuffer();
 
         if (!$this->validateAjaxToken()) {
-            echo json_encode(['success' => false, 'message' => Text::_('JINVALID_TOKEN')]);
-            $this->app->close();
-            return;
+            $this->sendJsonResponse(['success' => false, 'message' => Text::_('JINVALID_TOKEN')]);
         }
+
+        $json = [];
 
         try {
             $couponModel = $this->factory->createModel('Coupon', 'Administrator');
 
             if ($couponModel->hasCoupon()) {
                 $couponModel->removeCoupon();
-                echo json_encode([
+                $json = [
                     'success' => true,
                     'message' => Text::_('COM_J2COMMERCE_COUPON_REMOVED_SUCCESSFULLY'),
-                ]);
+                ];
             } else {
-                echo json_encode([
+                $json = [
                     'success' => false,
                     'message' => Text::_('COM_J2COMMERCE_PROBLEM_REMOVING_COUPON'),
-                ]);
+                ];
             }
         } catch (\Exception $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            $json = ['success' => false, 'message' => $e->getMessage()];
         }
 
-        $this->app->close();
+        $this->sendJsonResponse($json);
     }
 
     /**
@@ -1093,21 +1083,16 @@ class CartsController extends BaseController
     {
         UtilitiesHelper::sendNoCacheHeaders();
         UtilitiesHelper::clearCache();
-
-        header('Content-Type: application/json; charset=utf-8');
+        $this->startAjaxBuffer();
 
         if (!$this->validateAjaxToken()) {
-            echo json_encode(['success' => false, 'message' => Text::_('JINVALID_TOKEN')]);
-            $this->app->close();
-            return;
+            $this->sendJsonResponse(['success' => false, 'message' => Text::_('JINVALID_TOKEN')]);
         }
 
         $voucher = $this->input->getString('voucher', '');
 
         if (empty($voucher)) {
-            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ENTER_VOUCHER_CODE')]);
-            $this->app->close();
-            return;
+            $this->sendJsonResponse(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ENTER_VOUCHER_CODE')]);
         }
 
         try {
@@ -1118,24 +1103,20 @@ class CartsController extends BaseController
             $voucherModel->voucher = $voucherModel->getVoucherByCode($voucher);
 
             if (!$voucherModel->isValid()) {
-                echo json_encode([
+                $this->sendJsonResponse([
                     'success' => false,
                     'message' => $voucherModel->getError() ?: Text::_('COM_J2COMMERCE_VOUCHER_NOT_VALID'),
                 ]);
-                $this->app->close();
-                return;
             }
 
-            echo json_encode([
+            $this->sendJsonResponse([
                 'success' => true,
                 'message' => Text::_('COM_J2COMMERCE_VOUCHER_APPLIED_SUCCESSFULLY'),
                 'voucher' => $voucher,
             ]);
         } catch (\Exception $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJsonResponse(['success' => false, 'message' => $e->getMessage()]);
         }
-
-        $this->app->close();
     }
 
     /**
@@ -1149,14 +1130,13 @@ class CartsController extends BaseController
     {
         UtilitiesHelper::sendNoCacheHeaders();
         UtilitiesHelper::clearCache();
-
-        header('Content-Type: application/json; charset=utf-8');
+        $this->startAjaxBuffer();
 
         if (!$this->validateAjaxToken()) {
-            echo json_encode(['success' => false, 'message' => Text::_('JINVALID_TOKEN')]);
-            $this->app->close();
-            return;
+            $this->sendJsonResponse(['success' => false, 'message' => Text::_('JINVALID_TOKEN')]);
         }
+
+        $json = [];
 
         try {
             J2CommerceHelper::plugin()->event('BeforeRemoveVoucher');
@@ -1165,21 +1145,21 @@ class CartsController extends BaseController
 
             if ($voucherModel->hasVoucher()) {
                 $voucherModel->removeVoucher();
-                echo json_encode([
+                $json = [
                     'success' => true,
                     'message' => Text::_('COM_J2COMMERCE_VOUCHER_REMOVED_SUCCESSFULLY'),
-                ]);
+                ];
             } else {
-                echo json_encode([
+                $json = [
                     'success' => false,
                     'message' => Text::_('COM_J2COMMERCE_PROBLEM_REMOVING_VOUCHER'),
-                ]);
+                ];
             }
         } catch (\Exception $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            $json = ['success' => false, 'message' => $e->getMessage()];
         }
 
-        $this->app->close();
+        $this->sendJsonResponse($json);
     }
 
     /**
@@ -1193,8 +1173,7 @@ class CartsController extends BaseController
     {
         UtilitiesHelper::sendNoCacheHeaders();
         UtilitiesHelper::clearCache();
-
-        header('Content-Type: application/json; charset=utf-8');
+        $this->startAjaxBuffer();
 
         $model   = $this->getCartModel();
         $session = $this->app->getSession();
@@ -1257,8 +1236,7 @@ class CartsController extends BaseController
         // Plugin after event
         J2CommerceHelper::plugin()->event('AfterShippingEstimate', [&$json]);
 
-        echo json_encode($json);
-        $this->app->close();
+        $this->sendJsonResponse($json);
     }
 
     /**
@@ -1275,18 +1253,14 @@ class CartsController extends BaseController
     {
         UtilitiesHelper::sendNoCacheHeaders();
         UtilitiesHelper::clearCache();
-
-        header('Content-Type: application/json; charset=utf-8');
+        $this->startAjaxBuffer();
 
         $json = [];
 
         if (!$this->validateAjaxToken()) {
             $json['success'] = false;
             $json['message'] = Text::_('JINVALID_TOKEN');
-            echo json_encode($json);
-            $this->app->close();
-
-            return;
+            $this->sendJsonResponse($json);
         }
 
         $model   = $this->getCartModel();
@@ -1385,8 +1359,7 @@ class CartsController extends BaseController
         // Plugin after event
         J2CommerceHelper::plugin()->event('AfterShippingEstimate', [&$json]);
 
-        echo json_encode($json);
-        $this->app->close();
+        $this->sendJsonResponse($json);
     }
 
     /**
@@ -1400,8 +1373,7 @@ class CartsController extends BaseController
     {
         UtilitiesHelper::sendNoCacheHeaders();
         UtilitiesHelper::clearCache();
-
-        header('Content-Type: application/json; charset=utf-8');
+        $this->startAjaxBuffer();
 
         $json    = [];
         $model   = $this->getCartModel();
@@ -1425,8 +1397,7 @@ class CartsController extends BaseController
         // Plugin event
         J2CommerceHelper::plugin()->event('AfterShippingUpdate', [&$json]);
 
-        echo json_encode($json);
-        $this->app->close();
+        $this->sendJsonResponse($json);
     }
 
     /**
@@ -1438,7 +1409,7 @@ class CartsController extends BaseController
      */
     public function getCountry(): void
     {
-        header('Content-Type: application/json; charset=utf-8');
+        $this->startAjaxBuffer();
 
         $session   = $this->app->getSession();
         $set       = $session->get('j2commerce_country_zone', [], 'j2commerce');
@@ -1491,8 +1462,7 @@ class CartsController extends BaseController
             $session->set('j2commerce_country_zone', $set, 'j2commerce');
         }
 
-        echo json_encode($set[$countryId]);
-        $this->app->close();
+        $this->sendJsonResponse($set[$countryId] ?? []);
     }
 
     /**
@@ -1504,6 +1474,8 @@ class CartsController extends BaseController
      */
     public function upload(): void
     {
+        $this->startAjaxBuffer();
+
         $files = $this->input->files->get('file');
         $json  = [];
 
@@ -1512,8 +1484,7 @@ class CartsController extends BaseController
             $json  = $model->validate_files($files);
         }
 
-        echo json_encode($json);
-        $this->app->close();
+        $this->sendJsonResponse($json);
     }
 
     /**
@@ -1525,13 +1496,14 @@ class CartsController extends BaseController
      */
     public function addtowishlist(): void
     {
+        $this->startAjaxBuffer();
+
         $model = $this->getCartModel();
         $model->setCartType('wishlist');
 
         $result = $model->addCartItem();
         $json   = J2CommerceHelper::plugin()->eventWithArray('AfterAddingToWishlist', [$result]);
 
-        echo json_encode($json);
-        $this->app->close();
+        $this->sendJsonResponse($json);
     }
 }
