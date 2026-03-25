@@ -170,7 +170,7 @@ class HtmlView extends BaseHtmlView
                 $childBar->publish('geozones.publish')->listCheck(true);
                 $childBar->unpublish('geozones.unpublish')->listCheck(true);
 
-                if ($this->state->get('filter.published') != -2) {
+                if ($this->state->get('filter.enabled') != -2) {
                     $childBar->trash('geozones.trash')->listCheck(true);
                 }
             }

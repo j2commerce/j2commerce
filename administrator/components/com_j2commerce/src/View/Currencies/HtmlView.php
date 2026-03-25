@@ -173,7 +173,7 @@ class HtmlView extends BaseHtmlView
                 $childBar->publish('currencies.publish')->listCheck(true);
                 $childBar->unpublish('currencies.unpublish')->listCheck(true);
 
-                if ($this->state->get('filter.published') != -2) {
+                if ($this->state->get('filter.enabled') != -2) {
                     $childBar->trash('currencies.trash')->listCheck(true);
                 }
             }

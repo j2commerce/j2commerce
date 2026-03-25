@@ -173,7 +173,7 @@ class HtmlView extends BaseHtmlView
                 $childBar->publish('countries.publish')->listCheck(true);
                 $childBar->unpublish('countries.unpublish')->listCheck(true);
 
-                if ($this->state->get('filter.published') != -2) {
+                if ($this->state->get('filter.enabled') != -2) {
                     $childBar->trash('countries.trash')->listCheck(true);
                 }
             }
