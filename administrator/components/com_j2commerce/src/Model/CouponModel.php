@@ -166,14 +166,6 @@ class CouponModel extends AdminModel
             // Note: $data is a stdClass from getItem(), so use property assignment, not set()
             if ($this->getState($this->getName() . '.id') == 0) {
                 $data->enabled = $app->getInput()->getInt('enabled', 1);
-
-                // Set default dates
-                $now = Factory::getDate()->toSql();
-                $data->valid_from = $now;
-
-                // Set valid_to to one year from now
-                $future = Factory::getDate('+1 year')->toSql();
-                $data->valid_to = $future;
             }
         }
 
@@ -207,11 +199,11 @@ class CouponModel extends AdminModel
             }
 
             // Ensure date fields are properly formatted
-            if (isset($item->valid_from) && $item->valid_from === '0000-00-00 00:00:00') {
+            if (isset($item->valid_from) && ($item->valid_from === '0000-00-00 00:00:00' || $item->valid_from === null)) {
                 $item->valid_from = '';
             }
 
-            if (isset($item->valid_to) && $item->valid_to === '0000-00-00 00:00:00') {
+            if (isset($item->valid_to) && ($item->valid_to === '0000-00-00 00:00:00' || $item->valid_to === null)) {
                 $item->valid_to = '';
             }
         }
@@ -319,13 +311,33 @@ class CouponModel extends AdminModel
             $table->value = 0;
         }
 
+        // Determine user timezone offset – mirrors CalendarField's USER_UTC filter logic.
+        // The calendar widget displays stored UTC dates in the user's timezone and submits
+        // values in user-local time, so we must convert back to UTC before storing.
+        $app    = Factory::getApplication();
+        $offset = $app->getIdentity()->getParam('timezone', $app->get('offset'));
+
         // Ensure dates are properly set
         if (empty($table->valid_from) || $table->valid_from === '0000-00-00 00:00:00') {
-            $table->valid_from = Factory::getDate()->toSql();
+            $table->valid_from = null;
+        } else {
+            try {
+                // Treat the submitted value as user-local time and store as UTC
+                $table->valid_from  = Factory::getDate($table->valid_from, $offset)->toSql();
+            } catch (Exception $e) {
+                $table->valid_from  = null;
+            }
         }
 
         if (empty($table->valid_to) || $table->valid_to === '0000-00-00 00:00:00') {
-            $table->valid_to = Factory::getDate('+1 year')->toSql();
+            $table->valid_to = null;
+        } else {
+            try {
+                // Treat the submitted value as user-local time and store as UTC
+                $table->valid_to  = Factory::getDate($table->valid_to, $offset)->toSql();
+            } catch (Exception $e) {
+                $table->valid_to  = null;
+            }
         }
     }
 
@@ -376,6 +388,11 @@ class CouponModel extends AdminModel
 
         if (isset($data['valid_to']) && empty($data['valid_to'])) {
             $data['valid_to'] = null;
+        }
+
+        if( isset($data['valid_from']) && ($data['valid_from'] !== null) && isset($data['valid_to']) && ($data['valid_to'] !== null) && ($data['valid_from'] >= $data['valid_to'] )) {
+            $this->setError(Text::_("COM_J2COMMERCE_COUPON_VALID_FROM_DATE_GREATER_THAN_VALID_TO_DATE"));
+            return false;
         }
 
         // Set default value_type if not provided
@@ -910,13 +927,16 @@ class CouponModel extends AdminModel
     {
         $db = $this->getDatabase();
         $nullDate = $db->getNullDate();
-        $tz = Factory::getApplication()->get('offset');
-        $now = Factory::getDate('now', $tz)->toSql(true);
-        $validFrom = Factory::getDate($this->coupon->valid_from, $tz)->toSql(true);
-        $validTo = Factory::getDate($this->coupon->valid_to, $tz)->toSql(true);
 
-        $isValidFrom = ($this->coupon->valid_from === $nullDate || $validFrom <= $now);
-        $isValidTo = ($this->coupon->valid_to === $nullDate || $validTo >= $now);
+        // Dates are stored in UTC (converted on save via USER_UTC logic).
+        // Compare everything in UTC so the check is timezone-independent.
+        $now = Factory::getDate('now')->toSql();
+
+        $validFrom = $this->coupon->valid_from;
+        $validTo = $this->coupon->valid_to;
+
+        $isValidFrom = (empty($valid_from) || $validFrom === $nullDate || Factory::getDate($valid_from)->toSql() <= $now);
+        $isValidTo = (empty($valid_to) || $validTo === $nullDate || Factory::getDate($valid_to)->toSql() >= $now);
 
         if (!$isValidFrom || !$isValidTo) {
             throw new Exception(Text::_('COM_J2COMMERCE_COUPON_HAS_EXPIRED'));
