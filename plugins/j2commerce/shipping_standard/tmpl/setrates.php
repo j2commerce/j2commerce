@@ -165,12 +165,13 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const url = `${baseUrl}&task=shippingplugin.ajax&plugin=shipping_standard&action=loadRates&method_id=${methodId}&${csrfToken}=1&format=json`;
             const response = await fetch(url);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const result = await response.json();
 
             if (result.success) {
                 renderRates(result.data);
             } else {
-                showError(result.message || 'Error loading rates');
+                showError(result.message || Joomla.Text._('COM_J2COMMERCE_SHIPPING_ERROR_LOADING_RATES'));
             }
         } catch (err) {
             showError(err.message);
@@ -198,6 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'POST',
                 body: formData,
             });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const result = await response.json();
 
             if (result.success) {
@@ -208,10 +210,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.getElementById('new_weight_start').value = '0';
                     document.getElementById('new_weight_end').value = '0';
                 }
-                Joomla.renderMessages({ message: [result.data?.message || 'Rate created'] });
+                Joomla.renderMessages({ message: [result.data?.message || Joomla.Text._('COM_J2COMMERCE_SHIPPING_RATE_SAVED')] });
                 loadRates();
             } else {
-                Joomla.renderMessages({ error: [result.message || 'Error creating rate'] });
+                Joomla.renderMessages({ error: [result.message || Joomla.Text._('COM_J2COMMERCE_SHIPPING_ERROR_CREATING_RATE')] });
             }
         } catch (err) {
             Joomla.renderMessages({ error: [err.message] });
@@ -245,13 +247,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'POST',
                 body: formData,
             });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const result = await response.json();
 
             if (result.success) {
-                Joomla.renderMessages({ message: [result.data?.message || 'Rates saved'] });
+                Joomla.renderMessages({ message: [result.data?.message || Joomla.Text._('COM_J2COMMERCE_SHIPPING_RATES_SAVED_N')] });
                 loadRates();
             } else {
-                Joomla.renderMessages({ error: [result.message || 'Error saving rates'] });
+                Joomla.renderMessages({ error: [result.message || Joomla.Text._('COM_J2COMMERCE_SHIPPING_ERROR_SAVING_RATES')] });
             }
         } catch (err) {
             Joomla.renderMessages({ error: [err.message] });
@@ -261,11 +264,11 @@ document.addEventListener('DOMContentLoaded', () => {
     async function deleteCheckedRates() {
         const checked = document.querySelectorAll('#rates-body input[type="checkbox"]:checked');
         if (checked.length === 0) {
-            Joomla.renderMessages({ warning: ['Please select rates to delete'] });
+            Joomla.renderMessages({ warning: [Joomla.Text._('COM_J2COMMERCE_SHIPPING_RATE_SELECT_TO_DELETE')] });
             return;
         }
 
-        if (!confirm(Joomla.Text._('COM_J2COMMERCE_CONFIRM_DELETE') || 'Are you sure you want to delete the selected rates?')) {
+        if (!confirm(Joomla.Text._('COM_J2COMMERCE_CONFIRM_DELETE'))) {
             return;
         }
 
@@ -284,13 +287,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'POST',
                 body: formData,
             });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const result = await response.json();
 
             if (result.success) {
-                Joomla.renderMessages({ message: [result.data?.message || 'Rates deleted'] });
+                Joomla.renderMessages({ message: [result.data?.message || Joomla.Text._('COM_J2COMMERCE_SHIPPING_RATES_DELETED_N')] });
                 loadRates();
             } else {
-                Joomla.renderMessages({ error: [result.message || 'Error deleting rates'] });
+                Joomla.renderMessages({ error: [result.message || Joomla.Text._('COM_J2COMMERCE_SHIPPING_ERROR_DELETING_RATES')] });
             }
         } catch (err) {
             Joomla.renderMessages({ error: [err.message] });
@@ -304,7 +308,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!rates || rates.length === 0) {
             const cols = showRange ? 6 : 4;
-            tbody.innerHTML = `<tr><td colspan="${cols}" class="text-center text-muted">${Joomla.Text._('JGLOBAL_NO_MATCHING_RESULTS') || 'No rates configured'}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="${cols}" class="text-center text-muted">${Joomla.Text._('JGLOBAL_NO_MATCHING_RESULTS')}</td></tr>`;
             actions.style.display = 'none';
             pag.textContent = '';
             return;
@@ -345,7 +349,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         tbody.innerHTML = html;
-        pag.textContent = `1 - ${rates.length} / ${rates.length} items`;
+        pag.textContent = Joomla.Text._('COM_J2COMMERCE_SHIPPING_RATES_PAGINATION').replace('%d', rates.length);
     }
 
     function showError(message) {

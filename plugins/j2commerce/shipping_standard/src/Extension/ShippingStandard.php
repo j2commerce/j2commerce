@@ -1172,6 +1172,19 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
 
         $methodType = (int) $table->shipping_method_type;
 
+        // Register language strings for JavaScript
+        Text::script('COM_J2COMMERCE_CONFIRM_DELETE');
+        Text::script('JGLOBAL_NO_MATCHING_RESULTS');
+        Text::script('COM_J2COMMERCE_SHIPPING_RATE_SELECT_TO_DELETE');
+        Text::script('COM_J2COMMERCE_SHIPPING_RATE_SAVED');
+        Text::script('COM_J2COMMERCE_SHIPPING_RATES_SAVED_N');
+        Text::script('COM_J2COMMERCE_SHIPPING_RATES_DELETED_N');
+        Text::script('COM_J2COMMERCE_SHIPPING_RATES_PAGINATION');
+        Text::script('COM_J2COMMERCE_SHIPPING_ERROR_LOADING_RATES');
+        Text::script('COM_J2COMMERCE_SHIPPING_ERROR_CREATING_RATE');
+        Text::script('COM_J2COMMERCE_SHIPPING_ERROR_SAVING_RATES');
+        Text::script('COM_J2COMMERCE_SHIPPING_ERROR_DELETING_RATES');
+
         $html = $this->renderTemplate('setrates', [
             'item'       => $table,
             'geozones'   => $geozones,
@@ -1206,7 +1219,7 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
             return '';
         }
 
-        extract($data);
+        extract($data, EXTR_SKIP);
         ob_start();
         include $templatePath;
 
