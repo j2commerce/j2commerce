@@ -198,7 +198,7 @@ class ConfigHelper
      */
     public static function getDefaultWeightClassId(): int
     {
-        return (int) self::get('config_weight_class_id', 4);
+        return (int) self::get('config_weight_class_id', 2);
     }
 
     /**
@@ -210,7 +210,7 @@ class ConfigHelper
      */
     public static function getDefaultLengthClassId(): int
     {
-        return (int) self::get('config_length_class_id', 2);
+        return (int) self::get('config_length_class_id', 1);
     }
 
     /**
