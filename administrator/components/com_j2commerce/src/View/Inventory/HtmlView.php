@@ -175,17 +175,17 @@ class HtmlView extends BaseHtmlView
                 ->listCheck(true);
         }
 
-        if ($canDo->get('core.admin') || $canDo->get('core.options')) {
-            $toolbar->preferences('com_j2commerce');
-        }
-
-        $toolbar->help('COM_J2COMMERCE_HELP_INVENTORY');
-
         // Advanced Pricing link
         $toolbar->linkButton('advancedpricing')
             ->text('COM_J2COMMERCE_TOOLBAR_ADVANCED_PRICING')
             ->url('index.php?option=com_j2commerce&view=advancedpricing')
             ->icon('fas fa-tags');
+
+        if ($canDo->get('core.admin') || $canDo->get('core.options')) {
+            $toolbar->preferences('com_j2commerce');
+        }
+
+        $toolbar->help('COM_J2COMMERCE_HELP_INVENTORY');
     }
 
     /**
