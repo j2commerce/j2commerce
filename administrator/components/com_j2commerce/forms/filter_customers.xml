@@ -25,7 +25,7 @@
             name="fullordering"
             type="list"
             label="JGLOBAL_SORT_BY"
-            default="a.first_name ASC"
+            default="customer_name ASC"
             onchange="this.form.submit();"
         >
             <option value="">JGLOBAL_SORT_BY</option>
