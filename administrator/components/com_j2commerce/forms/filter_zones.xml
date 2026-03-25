@@ -42,6 +42,8 @@
             onchange="this.form.submit();"
         >
             <option value="">JGLOBAL_SORT_BY</option>
+            <option value="a.enabled ASC">JSTATUS_ASC</option>
+            <option value="a.enabled DESC">JSTATUS_DESC</option>
             <option value="a.zone_name ASC">COM_J2COMMERCE_HEADING_ZONE_NAME_ASC</option>
             <option value="a.zone_name DESC">COM_J2COMMERCE_HEADING_ZONE_NAME_DESC</option>
             <option value="a.zone_code ASC">COM_J2COMMERCE_HEADING_ZONE_CODE_ASC</option>
