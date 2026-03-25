@@ -56,7 +56,7 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_EMAIL', 'a.email', $listDirn, $listOrder); ?>
                                 </th>
                                 <th scope="col" class="d-none d-md-table-cell">
-                                    <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_ADDRESS', 'a.address_1', $listDirn, $listOrder); ?>
+                                    <?php echo Text::_('COM_J2COMMERCE_HEADING_ADDRESS'); ?>
                                 </th>
                                 <th scope="col" class="d-none d-md-table-cell">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_CITY', 'a.city', $listDirn, $listOrder); ?>
@@ -74,7 +74,7 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
                                     <?php echo Text::_('COM_J2COMMERCE_HEADING_ORDER_COUNT'); ?>
                                 </th>
                                 <th scope="col" class="w-5 text-center d-none d-md-table-cell">
-                                    <?php echo Text::_('COM_J2COMMERCE_HEADING_ID'); ?>
+                                    <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_ID', 'a.j2commerce_address_id', $listDirn, $listOrder); ?>
                                 </th>
                             </tr>
                         </thead>
