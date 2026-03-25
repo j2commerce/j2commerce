@@ -74,6 +74,14 @@ class HtmlView extends BaseHtmlView
     public $activeFilters;
 
     /**
+     * Is this view an Empty State?
+     *
+     * @var   boolean
+     * @since 6.0.6
+     */
+    private $isEmptyState = false;
+
+    /**
      * Display the view
      *
      * @param   string  $tpl  The name of the template file to parse
@@ -174,18 +182,18 @@ class HtmlView extends BaseHtmlView
                 ->listCheck(true);
         }
 
-        // Advanced Pricing link
-        $toolbar->linkButton('advancedpricing')
-            ->text('COM_J2COMMERCE_TOOLBAR_ADVANCED_PRICING')
-            ->url('index.php?option=com_j2commerce&view=advancedpricing')
-            ->icon('fa-solid fa-tags');
+        if (!$this->isEmptyState) {
+            // Advanced Pricing link
+            $toolbar->linkButton('advancedpricing')
+                ->text('COM_J2COMMERCE_TOOLBAR_ADVANCED_PRICING')
+                ->url('index.php?option=com_j2commerce&view=advancedpricing')
+                ->icon('fa-solid fa-tags');
+        }
 
         if ($canDo->get('core.admin') || $canDo->get('core.options')) {
             $toolbar->preferences('com_j2commerce');
         }
 
         $toolbar->help('Products');
-
-
     }
 }
