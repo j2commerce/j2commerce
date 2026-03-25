@@ -74,11 +74,11 @@ $weightsList = array_map(
 );
 
 $defaultLengthClassId = empty($this->item->variant->length_class_id)
-    ? J2CommerceHelper::config()->get('config_length_class_id', 2)
+    ? J2CommerceHelper::config()->get('config_length_class_id', 1)
     : $this->item->variant->length_class_id;
 
 $defaultWeightClassId = empty($this->item->variant->weight_class_id)
-    ? J2CommerceHelper::config()->get('config_weight_class_id', 4)
+    ? J2CommerceHelper::config()->get('config_weight_class_id', 2)
     : $this->item->variant->weight_class_id;
 ?>
 <div class="j2commerce-product-shipping">

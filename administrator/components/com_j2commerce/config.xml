@@ -124,14 +124,14 @@
             name="config_weight_class_id"
             type="weight"
             label="COM_J2COMMERCE_CONFIG_DEFAULT_WEIGHT"
-            default="4"
+            default="2"
         />
 
         <field
             name="config_length_class_id"
             type="length"
             label="COM_J2COMMERCE_CONFIG_DEFAULT_LENGTH"
-            default="2"
+            default="1"
         />
 
         <field
