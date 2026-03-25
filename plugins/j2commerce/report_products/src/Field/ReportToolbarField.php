@@ -69,7 +69,7 @@ class ReportToolbarField extends FormField
         $viewBtn = new LinkButton('report-view');
         $viewBtn->text('PLG_J2COMMERCE_REPORT_PRODUCTS_VIEW_REPORT')
             ->url('index.php?option=com_j2commerce&view=reportplugin&plugin=report_products&pluginview=report')
-            ->icon('icon-chart-line');
+            ->icon('fa-solid fa-chart-bar');
         $toolbar->prependButton($viewBtn);
 
         $backBtn = new LinkButton('report-back');
