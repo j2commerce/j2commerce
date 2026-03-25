@@ -30,10 +30,16 @@
             onchange="this.form.submit();"
         >
             <option value="">JGLOBAL_SORT_BY</option>
+            <option value="a.enabled ASC">JSTATUS_ASC</option>
+            <option value="a.enabled DESC">JSTATUS_DESC</option>
             <option value="a.country_name ASC">COM_J2COMMERCE_HEADING_COUNTRY_NAME_ASC</option>
             <option value="a.country_name DESC">COM_J2COMMERCE_HEADING_COUNTRY_NAME_DESC</option>
             <option value="a.country_isocode_2 ASC">COM_J2COMMERCE_HEADING_ISOCODE_2_ASC</option>
             <option value="a.country_isocode_2 DESC">COM_J2COMMERCE_HEADING_ISOCODE_2_DESC</option>
+            <option value="a.country_isocode_3 ASC">COM_J2COMMERCE_HEADING_ISOCODE_3_ASC</option>
+            <option value="a.country_isocode_3 DESC">COM_J2COMMERCE_HEADING_ISOCODE_3_DESC</option>
+            <option value="a.country_isocode_num ASC">COM_J2COMMERCE_HEADING_ISOCODE_NUM_ASC</option>
+            <option value="a.country_isocode_num DESC">COM_J2COMMERCE_HEADING_ISOCODE_NUM_DESC</option>
             <option value="a.j2commerce_country_id ASC">JGRID_HEADING_ID_ASC</option>
             <option value="a.j2commerce_country_id DESC">JGRID_HEADING_ID_DESC</option>
         </field>
