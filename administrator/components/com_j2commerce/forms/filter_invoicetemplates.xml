@@ -98,16 +98,22 @@
             class="form-select"
         >
             <option value="">JGLOBAL_SORT_BY</option>
+            <option value="a.ordering ASC">JGRID_HEADING_ORDERING_ASC</option>
+            <option value="a.ordering DESC">JGRID_HEADING_ORDERING_DESC</option>
+            <option value="a.enabled ASC">JSTATUS_ASC</option>
+            <option value="a.enabled DESC">JSTATUS_DESC</option>
             <option value="a.title ASC">COM_J2COMMERCE_INVOICETEMPLATE_TITLE_ASC</option>
             <option value="a.title DESC">COM_J2COMMERCE_INVOICETEMPLATE_TITLE_DESC_SORT</option>
             <option value="a.invoice_type ASC">COM_J2COMMERCE_INVOICETEMPLATE_TYPE_ASC</option>
             <option value="a.invoice_type DESC">COM_J2COMMERCE_INVOICETEMPLATE_TYPE_DESC_SORT</option>
             <option value="a.language ASC">COM_J2COMMERCE_INVOICETEMPLATE_LANGUAGE_ASC</option>
             <option value="a.language DESC">COM_J2COMMERCE_INVOICETEMPLATE_LANGUAGE_DESC_SORT</option>
-            <option value="a.enabled ASC">COM_J2COMMERCE_INVOICETEMPLATE_STATUS_ASC</option>
-            <option value="a.enabled DESC">COM_J2COMMERCE_INVOICETEMPLATE_STATUS_DESC</option>
-            <option value="a.ordering ASC">COM_J2COMMERCE_INVOICETEMPLATE_ORDERING_ASC</option>
-            <option value="a.ordering DESC">COM_J2COMMERCE_INVOICETEMPLATE_ORDERING_DESC</option>
+            <option value="a.orderstatus_id ASC">COM_J2COMMERCE_INVOICETEMPLATE_ORDER_STATUS_ASC</option>
+            <option value="a.orderstatus_id DESC">COM_J2COMMERCE_INVOICETEMPLATE_ORDER_STATUS_DESC</option>
+            <option value="a.group_id ASC">COM_J2COMMERCE_INVOICETEMPLATE_GROUP_ASC</option>
+            <option value="a.group_id DESC">COM_J2COMMERCE_INVOICETEMPLATE_GROUP_DESC</option>
+            <option value="a.paymentmethod ASC">COM_J2COMMERCE_INVOICETEMPLATE_PAYMENT_METHOD_ASC</option>
+            <option value="a.paymentmethod DESC">COM_J2COMMERCE_INVOICETEMPLATE_PAYMENT_METHOD_DESC</option>
             <option value="a.j2commerce_invoicetemplate_id ASC">JGRID_HEADING_ID_ASC</option>
             <option value="a.j2commerce_invoicetemplate_id DESC">JGRID_HEADING_ID_DESC</option>
         </field>
