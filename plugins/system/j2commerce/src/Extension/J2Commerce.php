@@ -128,10 +128,10 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             return;
         }
 
-        // Load language files for j2commerce plugins that have deployed
-        // their .sys.ini to the admin language directory (needed for menu
-        // item type discovery and other admin contexts where plugin language
-        // isn't auto-loaded by Joomla's core language loader).
+        // Load language files for j2commerce plugins that have registered
+        // for early admin language loading (needed for menu item type
+        // discovery and other admin contexts where plugin language isn't
+        // auto-loaded by Joomla's core language loader).
         $this->loadPluginLanguageFiles();
 
         // Check if we need to run the inventory control cron
@@ -142,10 +142,15 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
     }
 
     /**
-     * Loads all deployed j2commerce plugin .sys.ini language files from the
-     * administrator language directory. This enables translated strings for
-     * plugin-registered menu item types, admin views, and other contexts
-     * where Joomla only loads the component's language by default.
+     * Loads language files for j2commerce plugins that have opted in to
+     * early admin language loading. Plugins register by adding their
+     * extension name to the JSON registry at
+     * administrator/components/com_j2commerce/language_registry.json
+     * via their installer scripts.
+     *
+     * This enables translated strings for plugin-registered menu item
+     * types, admin views, and other contexts where Joomla only loads the
+     * component's language by default.
      *
      * @return  void
      *
@@ -159,18 +164,22 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             return;
         }
 
-        $lang    = $app->getLanguage();
-        $langTag = $lang->getTag();
-        $langDir = JPATH_ADMINISTRATOR . '/language/' . $langTag;
-        $files   = glob($langDir . '/plg_j2commerce_*.sys.ini');
+        $registryFile = JPATH_ADMINISTRATOR . '/components/com_j2commerce/language_registry.json';
 
-        if (!$files) {
+        if (!is_file($registryFile)) {
             return;
         }
 
-        foreach ($files as $file) {
-            $extension = pathinfo(basename($file), PATHINFO_FILENAME);
-            $lang->load($extension, JPATH_ADMINISTRATOR);
+        $extensions = json_decode((string) file_get_contents($registryFile), true);
+
+        if (empty($extensions) || !is_array($extensions)) {
+            return;
+        }
+
+        $lang = $app->getLanguage();
+
+        foreach ($extensions as $extension) {
+            $lang->load($extension . '.sys', JPATH_ADMINISTRATOR);
         }
     }
 

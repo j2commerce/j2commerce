@@ -104,6 +104,12 @@
             this.modalEl.addEventListener('hidden.bs.modal', () => {
                 this.browserSelections.clear();
                 this.uploadedInSession = [];
+                // Reset Uppy so it reinitializes fresh on next modal open
+                if (this.uppy) {
+                    this.uppy.clear();
+                    this.uppy.destroy();
+                    this.uppy = null;
+                }
             });
 
             const doneBtn = this.modalEl.querySelector('.uppymedia-done-btn');
@@ -182,6 +188,15 @@
                 if (inner) {
                     inner.innerHTML = `<span class="uppymedia-uppy-btn"><i class="fa-solid fa-images" aria-hidden="true"></i> ${this.escapeHtml(this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_ADD_PRODUCT_IMAGES'))}</span>`
                         + `<p class="uppymedia-uppy-hint">${this.escapeHtml(this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_DRAG_DROP_NOTE'))}</p>`;
+                }
+                // Wire browse button to Uppy's hidden file input
+                const browseSpan = addFilesEl.querySelector('.uppymedia-uppy-btn');
+                if (browseSpan) {
+                    browseSpan.style.cursor = 'pointer';
+                    browseSpan.addEventListener('click', () => {
+                        const fileInput = dashboardTarget.querySelector('.uppy-Dashboard-input');
+                        if (fileInput) fileInput.click();
+                    });
                 }
             }
 
