@@ -16,10 +16,13 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Session\Session;
 
-$this->item        = $displayData['product'];
-$this->form_prefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
+$item        = $displayData['product'];
+$formPrefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
 
-$this->product_option_list = J2CommerceHelper::product()->getProductOptionList($this->item->product_type);
+// Defaults for Joomla core layout fields to prevent PHP 8.4 undefined variable warnings
+$textFieldDefaults = ['value' => '', 'onchange' => '', 'disabled' => false, 'readonly' => false, 'dataAttribute' => '', 'hint' => '', 'required' => false, 'autofocus' => false, 'spellcheck' => false, 'addonBefore' => '', 'addonAfter' => '', 'dirname' => '', 'charcounter' => false, 'options' => []];
+
+$productOptionList = J2CommerceHelper::product()->getProductOptionList($item->product_type);
 
 $key        = 0;
 $csrfToken  = Session::getFormToken();
@@ -28,7 +31,7 @@ $csrfToken  = Session::getFormToken();
 <div class="j2commerce-product-variants">
     <fieldset id="j2commerce-variable-options" class="options-form">
         <legend><?php echo Text::_('COM_J2COMMERCE_OPTIONS'); ?></legend>
-        <?php if (empty($this->product_option_list)) : ?>
+        <?php if (empty($productOptionList)) : ?>
             <p class="alert alert-warning">
                 <span class="me-3"><?php echo Text::_('COM_J2COMMERCE_OPTIONS_NO_OPTION_MESSAGE'); ?></span>
             </p>
@@ -46,18 +49,18 @@ $csrfToken  = Session::getFormToken();
                         </tr>
                     </thead>
                     <tbody>
-                        <?php if (isset($this->item->product_options) && !empty($this->item->product_options)) : ?>
-                            <?php foreach ($this->item->product_options as $poption) : ?>
+                        <?php if (isset($item->product_options) && !empty($item->product_options)) : ?>
+                            <?php foreach ($item->product_options as $poption) : ?>
                                 <tr id="pao_variable_option_<?php echo $poption->j2commerce_productoption_id; ?>">
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <strong><?php echo $this->escape($poption->option_name); ?></strong>
-                                            <input type="hidden" name="<?php echo $this->form_prefix . '[item_options][' . $poption->j2commerce_productoption_id . '][j2commerce_productoption_id]'; ?>" value="<?php echo $poption->j2commerce_productoption_id; ?>">
-                                            <input type="hidden" name="<?php echo $this->form_prefix . '[item_options][' . $poption->j2commerce_productoption_id . '][option_id]'; ?>" value="<?php echo $poption->option_id; ?>">
+                                            <input type="hidden" name="<?php echo $formPrefix . '[item_options][' . $poption->j2commerce_productoption_id . '][j2commerce_productoption_id]'; ?>" value="<?php echo $poption->j2commerce_productoption_id; ?>">
+                                            <input type="hidden" name="<?php echo $formPrefix . '[item_options][' . $poption->j2commerce_productoption_id . '][option_id]'; ?>" value="<?php echo $poption->option_id; ?>">
                                             <small class="ms-1">(<?php echo $this->escape($poption->option_unique_name); ?>)</small>
                                             <?php if (isset($poption->type) && in_array($poption->type, ['select', 'radio', 'checkbox', 'color'], true)) : ?>
                                                 <button type="button" class="small ms-2 ms-lg-3 btn btn-soft-dark btn-sm j2commerce-variable-option-values-link"
-                                                        data-product-id="<?php echo $this->item->j2commerce_product_id; ?>"
+                                                        data-product-id="<?php echo $item->j2commerce_product_id; ?>"
                                                         data-option-id="<?php echo $poption->j2commerce_productoption_id; ?>"
                                                         data-option-name="<?php echo $this->escape($poption->option_name); ?>">
                                                     <span class="icon-cog me-1"></span> <?php echo Text::_('COM_J2COMMERCE_OPTION_SET_VALUES'); ?>
@@ -71,11 +74,11 @@ $csrfToken  = Session::getFormToken();
                                     </td>
                                     <td>
                                         <?php echo LayoutHelper::render('joomla.form.field.text', [
-                                            'name'  => $this->form_prefix . '[item_options][' . $poption->j2commerce_productoption_id . '][ordering]',
+                                            'name'  => $formPrefix . '[item_options][' . $poption->j2commerce_productoption_id . '][ordering]',
                                             'id'    => 'variable_ordering_' . $poption->j2commerce_productoption_id,
-                                            'value' => $poption->ordering,
+                                            'value' => $poption->ordering ?? '',
                                             'class' => 'form-control',
-                                        ]); ?>
+                                        ] + $textFieldDefaults); ?>
                                     </td>
                                     <td class="text-end">
                                         <span class="optionRemove btn btn-soft-danger btn-sm"
@@ -91,7 +94,7 @@ $csrfToken  = Session::getFormToken();
                         <?php endif; ?>
                         <tr class="j2commerce_variable_a_options">
                             <td colspan="3">
-                                <?php if (empty($this->item->j2commerce_product_id)) : ?>
+                                <?php if (empty($item->j2commerce_product_id)) : ?>
                                     <div class="alert alert-warning mt-3 mb-0">
                                         <?php echo Text::_('COM_J2COMMERCE_SAVE_PRODUCT_FIRST_TO_ADD_OPTIONS'); ?>
                                     </div>
@@ -103,7 +106,7 @@ $csrfToken  = Session::getFormToken();
                                         <div class="controls">
                                             <div class="input-group">
                                                 <select name="variable_option_select_id" id="j2commerce_variable_option_select" class="form-select">
-                                                    <?php foreach ($this->product_option_list as $option_list) : ?>
+                                                    <?php foreach ($productOptionList as $option_list) : ?>
                                                         <option value="<?php echo $option_list->j2commerce_option_id; ?>"><?php echo $this->escape($option_list->option_name) . ' (' . $this->escape($option_list->option_unique_name) . ')'; ?></option>
                                                     <?php endforeach; ?>
                                                 </select>
@@ -119,7 +122,7 @@ $csrfToken  = Session::getFormToken();
             </div>
         <?php endif; ?>
 
-        <input type="hidden" name="<?php echo $this->form_prefix; ?>[deleted_options]" id="j2commerce-variable-deleted-options" value="">
+        <input type="hidden" name="<?php echo $formPrefix; ?>[deleted_options]" id="j2commerce-variable-deleted-options" value="">
 
     </fieldset>
     <div class="alert alert-info d-flex align-items-center my-3" role="alert">
@@ -152,8 +155,8 @@ $csrfToken  = Session::getFormToken();
 document.addEventListener('DOMContentLoaded', () => {
     'use strict';
 
-    const formPrefix = '<?php echo $this->form_prefix; ?>';
-    const productId = <?php echo (int) ($this->item->j2commerce_product_id ?? 0); ?>;
+    const formPrefix = '<?php echo $formPrefix; ?>';
+    const productId = <?php echo (int) ($item->j2commerce_product_id ?? 0); ?>;
     const csrfToken = '<?php echo $csrfToken; ?>';
     const variantTypes = ['select', 'radio', 'checkbox', 'color'];
 

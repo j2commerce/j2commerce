@@ -19,11 +19,14 @@ use Joomla\CMS\Layout\FileLayout;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Uri\Uri;
 
-$this->item = $displayData['product'];
-$this->form_prefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
+$item = $displayData['product'];
+$formPrefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
 
-$product_params = json_decode($this->item->params);
-$productId = $this->item->j2commerce_product_id ?? 0;
+// Defaults for Joomla core layout fields to prevent PHP 8.4 undefined variable warnings
+$textFieldDefaults = ['value' => '', 'onchange' => '', 'disabled' => false, 'readonly' => false, 'dataAttribute' => '', 'hint' => '', 'required' => false, 'autofocus' => false, 'spellcheck' => false, 'addonBefore' => '', 'addonAfter' => '', 'dirname' => '', 'charcounter' => false, 'options' => []];
+
+$product_params = json_decode($item->params);
+$productId = $item->j2commerce_product_id ?? 0;
 
 // Load MultiImageUploader assets
 MultiImageUploaderField::loadAssetsStatic();
@@ -96,7 +99,7 @@ $layoutPath = JPATH_ADMINISTRATOR . '/components/com_j2commerce/layouts';
                             'directory'         => 'images/downloads',
                             'multiple'          => true,
                             'endpoint'          => 'index.php?option=com_j2commerce&task=multiimageuploader.upload&format=json',
-                            'formPrefix'        => $this->form_prefix,
+                            'formPrefix'        => $formPrefix,
                             'fileMode'          => true, // Flag for file mode vs image mode
                         ],
                         'required' => false,
@@ -113,12 +116,12 @@ $layoutPath = JPATH_ADMINISTRATOR . '/components/com_j2commerce/layouts';
                 </div>
                 <div class="controls">
                     <?php echo LayoutHelper::render('joomla.form.field.text', [
-                        'name'  => $this->form_prefix . '[params][download_limit]',
+                        'name'  => $formPrefix . '[params][download_limit]',
                         'id'    => 'j2commerce-product-download_limit',
                         'value' => $product_params->download_limit ?? '',
                         'class' => 'form-control',
                         'type'  => 'number',
-                    ]); ?>
+                    ] + $textFieldDefaults); ?>
                     <small class="form-text text-muted"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_FILE_DOWNLOAD_LIMIT_DESC'); ?></small>
                 </div>
             </div>
@@ -131,18 +134,18 @@ $layoutPath = JPATH_ADMINISTRATOR . '/components/com_j2commerce/layouts';
                     <div class="input-group">
                         <span class="input-group-text"><?php echo Text::_('COM_J2COMMERCE_DAYS'); ?></span>
                         <?php echo LayoutHelper::render('joomla.form.field.text', [
-                            'name'  => $this->form_prefix . '[params][download_expiry]',
+                            'name'  => $formPrefix . '[params][download_expiry]',
                             'id'    => 'j2commerce-product-download_expiry',
                             'value' => $product_params->download_expiry ?? '',
                             'class' => 'form-control',
                             'type'  => 'number',
-                        ]); ?>
+                        ] + $textFieldDefaults); ?>
                     </div>
                     <small class="form-text text-muted"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_FILE_DOWNLOAD_EXPIRY_DESC'); ?></small>
                 </div>
             </div>
 
-            <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductFilesEdit', [$this, $this->item, $this->form_prefix])->getArgument('html', ''); ?>
+            <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductFilesEdit', [$this, $item, $formPrefix])->getArgument('html', ''); ?>
         </div>
     </fieldset>
 
@@ -173,7 +176,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         const files = JSON.parse(hiddenInput.value || '[]');
 
                         // Remove existing file inputs
-                        const existingInputs = form.querySelectorAll('input[name^="<?php echo $this->form_prefix; ?>[files]"]');
+                        const existingInputs = form.querySelectorAll('input[name^="<?php echo $formPrefix; ?>[files]"]');
                         existingInputs.forEach(function(input) {
                             input.remove();
                         });
@@ -184,7 +187,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             if (file.id) {
                                 const idInput = document.createElement('input');
                                 idInput.type = 'hidden';
-                                idInput.name = '<?php echo $this->form_prefix; ?>[files][' + index + '][id]';
+                                idInput.name = '<?php echo $formPrefix; ?>[files][' + index + '][id]';
                                 idInput.value = file.id;
                                 form.appendChild(idInput);
                             }
@@ -192,21 +195,21 @@ document.addEventListener('DOMContentLoaded', function() {
                             // Display name
                             const nameInput = document.createElement('input');
                             nameInput.type = 'hidden';
-                            nameInput.name = '<?php echo $this->form_prefix; ?>[files][' + index + '][display_name]';
+                            nameInput.name = '<?php echo $formPrefix; ?>[files][' + index + '][display_name]';
                             nameInput.value = file.name || '';
                             form.appendChild(nameInput);
 
                             // File path
                             const pathInput = document.createElement('input');
                             pathInput.type = 'hidden';
-                            pathInput.name = '<?php echo $this->form_prefix; ?>[files][' + index + '][path]';
+                            pathInput.name = '<?php echo $formPrefix; ?>[files][' + index + '][path]';
                             pathInput.value = file.path || '';
                             form.appendChild(pathInput);
 
                             // Download total
                             const totalInput = document.createElement('input');
                             totalInput.type = 'hidden';
-                            totalInput.name = '<?php echo $this->form_prefix; ?>[files][' + index + '][download_total]';
+                            totalInput.name = '<?php echo $formPrefix; ?>[files][' + index + '][download_total]';
                             totalInput.value = file.download_total || 0;
                             form.appendChild(totalInput);
                         });

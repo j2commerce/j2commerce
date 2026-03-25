@@ -33,11 +33,11 @@ $style = '.com_j2commerce .fa-stack.small{width:1.25rem;height:1.25rem;line-heig
     . '.com_j2commerce .fa-stack.small .fa-stack-1x{font-size:0.5rem;top:50%;left:50%;transform:translate(-50%,-50%);}';
 $wa->addInlineStyle($style, [], []);
 
-$this->item        = $displayData['product'];
-$this->form_prefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
+$item        = $displayData['product'];
+$formPrefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
 
-$hasOptions  = isset($this->item->product_options) && !empty($this->item->product_options);
-$hasVariants = isset($this->item->variants) && count($this->item->variants);
+$hasOptions  = isset($item->product_options) && !empty($item->product_options);
+$hasVariants = isset($item->variants) && count($item->variants);
 $csrfToken   = Session::getFormToken();
 ?>
 <div class="j2commerce-product-variants">
@@ -58,13 +58,13 @@ $csrfToken   = Session::getFormToken();
                     </button>
                     <button type="button" id="j2commerce-regenerate-variants"
                             class="btn btn-sm btn-soft-info me-2"
-                            data-product-id="<?php echo (int) $this->item->j2commerce_product_id; ?>">
+                            data-product-id="<?php echo (int) $item->j2commerce_product_id; ?>">
                         <span class="fas fa-solid fa-recycle me-2"></span>
                         <?php echo Text::_('COM_J2COMMERCE_REGENERATE_VARIANTS'); ?>
                     </button>
                     <button type="button" id="j2commerce-delete-all-variants"
                             class="btn btn-sm btn-soft-danger"
-                            data-product-id="<?php echo (int) $this->item->j2commerce_product_id; ?>">
+                            data-product-id="<?php echo (int) $item->j2commerce_product_id; ?>">
                         <span class="fas fa-solid fa-trash me-2"></span>
                         <?php echo Text::_('COM_J2COMMERCE_DELETE_ALL_VARIANTS'); ?>
                     </button>
@@ -82,7 +82,7 @@ $csrfToken   = Session::getFormToken();
             <?php else : ?>
                 <button type="button" id="j2commerce-generate-variants"
                         class="btn btn-soft-success mb-3"
-                        data-product-id="<?php echo (int) $this->item->j2commerce_product_id; ?>">
+                        data-product-id="<?php echo (int) $item->j2commerce_product_id; ?>">
                     <span class="fas fa-solid fa-magic me-2"></span>
                     <?php echo Text::_('COM_J2COMMERCE_GENERATE_VARIANTS'); ?>
                 </button>
@@ -93,18 +93,18 @@ $csrfToken   = Session::getFormToken();
         <div class="j2commerce-advancedvariants-settings">
             <div class="accordion" id="accordion">
                 <?php
-                $this->variant_list       = $this->item->variants;
-                $this->variant_pagination = $this->item->variant_pagination;
-                $this->weights            = $this->item->weights;
-                $this->lengths            = $this->item->lengths;
+                $variant_list       = $item->variants;
+                $variant_pagination = $item->variant_pagination;
+                $weights            = $item->weights;
+                $lengths            = $item->lengths;
                 $layout = new FileLayout('form_ajax_avoptions', JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product');
                 echo $layout->render([
-                    'product'            => $this->item,
-                    'variant_list'       => $this->variant_list,
-                    'variant_pagination' => $this->variant_pagination,
-                    'weights'            => $this->weights,
-                    'lengths'            => $this->lengths,
-                    'form_prefix'        => $this->form_prefix,
+                    'product'            => $item,
+                    'variant_list'       => $variant_list,
+                    'variant_pagination' => $variant_pagination,
+                    'weights'            => $weights,
+                    'lengths'            => $lengths,
+                    'form_prefix'        => $formPrefix,
                 ]);
                 ?>
             </div>
@@ -311,10 +311,10 @@ $csrfToken   = Session::getFormToken();
 
     var J2CommerceVariableVariants = {
         config: {
-            totalVariants: <?php echo $this->item->variant_pagination->total ?? 0; ?>,
+            totalVariants: <?php echo $item->variant_pagination->total ?? 0; ?>,
             limit: <?php echo (int) $limit; ?>,
-            productId: <?php echo (int) $this->item->j2commerce_product_id; ?>,
-            formPrefix: '<?php echo $this->form_prefix; ?>',
+            productId: <?php echo (int) $item->j2commerce_product_id; ?>,
+            formPrefix: '<?php echo $formPrefix; ?>',
             csrfToken: '<?php echo $csrfToken; ?>'
         },
 

@@ -23,10 +23,13 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\FileLayout;
 use Joomla\CMS\Layout\LayoutHelper;
 
-$this->item = $displayData['product'];
-$this->form_prefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
+$item = $displayData['product'];
+$formPrefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
 
-$this->product_filters = (new ProductfiltersModel)->getFiltersByProduct($this->item->j2commerce_product_id);
+// Defaults for Joomla core layout fields to prevent PHP 8.4 undefined variable warnings
+$textFieldDefaults = ['value' => '', 'onchange' => '', 'disabled' => false, 'readonly' => false, 'dataAttribute' => '', 'hint' => '', 'required' => false, 'autofocus' => false, 'spellcheck' => false, 'addonBefore' => '', 'addonAfter' => '', 'dirname' => '', 'charcounter' => false, 'options' => []];
+
+$productFilters = (new ProductfiltersModel)->getFiltersByProduct($item->j2commerce_product_id);
 
 
 
@@ -35,7 +38,7 @@ $this->product_filters = (new ProductfiltersModel)->getFiltersByProduct($this->i
     <strong><?php echo Text::_('COM_J2COMMERCE_NOTE'); ?></strong> <?php echo Text::_('COM_J2COMMERCE_FEATURE_AVAILABLE_IN_J2COMMERCE_PRODUCT_LAYOUTS'); ?>
 </div>
 
-<input type="hidden" name="<?php echo $this->form_prefix.'[productfilter_ids]';?>" value="" />
+<input type="hidden" name="<?php echo $formPrefix.'[productfilter_ids]';?>" value="" />
 
 <div class="table-responsive">
     <table id="product_filters_table" class="table itemList j2commerce">
@@ -46,8 +49,8 @@ $this->product_filters = (new ProductfiltersModel)->getFiltersByProduct($this->i
             </tr>
         </thead>
         <tbody>
-        <?php if(isset($this->product_filters) && count($this->product_filters)): ?>
-            <?php foreach($this->product_filters as $group_id=>$filters):?>
+        <?php if(isset($productFilters) && count($productFilters)): ?>
+            <?php foreach($productFilters as $group_id=>$filters):?>
                 <tr>
                     <td colspan="2"><h4 class="mb-0"><?php echo Text::_($this->escape($filters['group_name'])); ?></h4></td>
                 </tr>
@@ -58,10 +61,10 @@ $this->product_filters = (new ProductfiltersModel)->getFiltersByProduct($this->i
                             <?php echo $this->escape($filter->filter_name) ;?>
                         </td>
                         <td class="text-center">
-                                <span class="filterRemove" onclick="removeFilter(<?php echo $filter->filter_id; ?>, <?php echo $this->item->j2commerce_product_id; ?>);">
+                                <span class="filterRemove" onclick="removeFilter(<?php echo $filter->filter_id; ?>, <?php echo $item->j2commerce_product_id; ?>);">
                                     <span class="icon icon-trash text-danger"></span>
                                 </span>
-                            <input type="hidden" value="<?php echo $filter->filter_id;?>" name="<?php echo $this->form_prefix.'[productfilter_ids]' ;?>[]" />
+                            <input type="hidden" value="<?php echo $filter->filter_id;?>" name="<?php echo $formPrefix.'[productfilter_ids]' ;?>[]" />
                         </td>
                     </tr>
                 <?php endforeach;?>
@@ -70,7 +73,7 @@ $this->product_filters = (new ProductfiltersModel)->getFiltersByProduct($this->i
         <tr class="j2commerce_a_filter">
             <td colspan="2">
                 <small><strong><?php echo Text::_('COM_J2COMMERCE_SEARCH_AND_PRODUCT_FILTERS');?></strong></small>
-                <?php echo LayoutHelper::render('joomla.form.field.text', ['name'  => 'productfilter','id'    => 'J2CommerceproductFilter','value' => '','class' => 'form-control ms-2',]);?>
+                <?php echo LayoutHelper::render('joomla.form.field.text', ['name'  => 'productfilter','id'    => 'J2CommerceproductFilter','value' => '','class' => 'form-control ms-2',] + $textFieldDefaults);?>
             </td>
         </tr>
         </tbody>

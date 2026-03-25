@@ -24,9 +24,15 @@ use Joomla\CMS\Layout\LayoutHelper;
 
 
 
-$this->item = $displayData['product'];
-$this->form_prefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
-$product_params = json_decode($this->item->params);
+$item = $displayData['product'];
+$formPrefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
+$product_params = json_decode($item->params);
+
+// Defaults for Joomla core layout fields to prevent PHP 8.4 undefined variable warnings
+$switcherDefaults = ['onchange' => '', 'label' => '', 'disabled' => false, 'readonly' => false, 'dataAttribute' => '', 'class' => ''];
+$textFieldDefaults = ['value' => '', 'onchange' => '', 'disabled' => false, 'readonly' => false, 'dataAttribute' => '', 'hint' => '', 'required' => false, 'autofocus' => false, 'spellcheck' => false, 'addonBefore' => '', 'addonAfter' => '', 'dirname' => '', 'charcounter' => false, 'options' => []];
+$fancySelectDefaults = ['multiple' => false, 'autofocus' => false, 'onchange' => '', 'dataAttribute' => '', 'readonly' => false, 'disabled' => false, 'hint' => '', 'required' => false];
+$checkboxDefaults = ['disabled' => false, 'required' => false, 'autofocus' => false, 'onclick' => '', 'onchange' => '', 'dataAttribute' => ''];
 
 ?>
 <div class="j2commerce-product-inventory">
@@ -38,7 +44,7 @@ $product_params = json_decode($this->item->params);
                     <label id="j2commerce-product-manage_stock-radio-group-lbl" for="j2commerce-product-manage_stock-radio-group"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_MANAGE_STOCK');?></label>
                 </div>
                 <div class="controls">
-                    <?php echo LayoutHelper::render('joomla.form.field.radio.switcher', ['name'  => $this->form_prefix.'[manage_stock]','id'    => 'j2commerce-product-manage_stock-radio-group','value' => $this->item->variant->manage_stock,'options' => [(object) ['value' => 0, 'text' => Text::_('JNO')],(object) ['value' => 1, 'text' => Text::_('JYES')]]]);?>
+                    <?php echo LayoutHelper::render('joomla.form.field.radio.switcher', ['name'  => $formPrefix.'[manage_stock]','id'    => 'j2commerce-product-manage_stock-radio-group','value' => $item->variant->manage_stock,'options' => [(object) ['value' => 0, 'text' => Text::_('JNO')],(object) ['value' => 1, 'text' => Text::_('JYES')]]] + $switcherDefaults);?>
                 </div>
             </div>
 
@@ -47,8 +53,8 @@ $product_params = json_decode($this->item->params);
                     <label id="j2commerce-product-quantity_text-group-lbl" for="j2commerce-product-quantity_text-group"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_QUANTITY');?></label>
                 </div>
                 <div class="controls">
-                    <input type="hidden" name="<?php echo $this->form_prefix;?>[quantity][j2commerce_productquantity_id]" class="input" value="<?php echo $this->item->variant->j2commerce_productquantity_id;?>">
-                    <?php echo LayoutHelper::render('joomla.form.field.text', ['name'  => $this->form_prefix.'[quantity][quantity]','id'    => 'j2commerce-product-quantity_text-group','value' => $this->item->variant->quantity,'class' => 'form-control',]);?>
+                    <input type="hidden" name="<?php echo $formPrefix;?>[quantity][j2commerce_productquantity_id]" class="input" value="<?php echo $item->variant->j2commerce_productquantity_id;?>">
+                    <?php echo LayoutHelper::render('joomla.form.field.text', ['name'  => $formPrefix.'[quantity][quantity]','id'    => 'j2commerce-product-quantity_text-group','value' => $item->variant->quantity ?? '','class' => 'form-control',] + $textFieldDefaults);?>
                 </div>
             </div>
 
@@ -57,7 +63,7 @@ $product_params = json_decode($this->item->params);
                     <label id="j2commerce-product-allow_backorder-select-group-lbl" for="j2commerce-product-allow_backorder-select-group"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_ALLOW_BACKORDERS');?></label>
                 </div>
                 <div class="controls">
-                    <?php echo LayoutHelper::render('joomla.form.field.list-fancy-select', ['name'  => $this->form_prefix.'[allow_backorder]','id'    => 'j2commerce-product-allow_backorder-select-group','value' => $this->item->variant->allow_backorder,'options' => [(object) ['value' => 0, 'text' => Text::_('COM_J2COMMERCE_NO_ALLOW')],(object) ['value' => 1, 'text' => Text::_('COM_J2COMMERCE_ALLOW')],(object) ['value' => 2, 'text' => Text::_('COM_J2COMMERCE_ALLOW_BUT_NOTIFY')]]]);?>
+                    <?php echo LayoutHelper::render('joomla.form.field.list-fancy-select', ['name'  => $formPrefix.'[allow_backorder]','id'    => 'j2commerce-product-allow_backorder-select-group','value' => $item->variant->allow_backorder,'options' => [(object) ['value' => 0, 'text' => Text::_('COM_J2COMMERCE_NO_ALLOW')],(object) ['value' => 1, 'text' => Text::_('COM_J2COMMERCE_ALLOW')],(object) ['value' => 2, 'text' => Text::_('COM_J2COMMERCE_ALLOW_BUT_NOTIFY')]]] + $fancySelectDefaults);?>
                 </div>
             </div>
 
@@ -66,7 +72,7 @@ $product_params = json_decode($this->item->params);
                     <label id="j2commerce-product-stock-status-select-group-lbl" for="j2commerce-product-stock-status-select-group"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_STOCK_STATUS');?></label>
                 </div>
                 <div class="controls">
-                    <?php echo LayoutHelper::render('joomla.form.field.list-fancy-select', ['name'  => $this->form_prefix.'[availability]','id'    => 'j2commerce-product-stock-status-select-group','value' => $this->item->variant->availability,'options' => [(object) ['value' => 0, 'text' => Text::_('COM_J2COMMERCE_STOCK_OUT_OF_STOCK')],(object) ['value' => 1, 'text' => Text::_('COM_J2COMMERCE_STOCK_IN_STOCK')]]]);?>
+                    <?php echo LayoutHelper::render('joomla.form.field.list-fancy-select', ['name'  => $formPrefix.'[availability]','id'    => 'j2commerce-product-stock-status-select-group','value' => $item->variant->availability,'options' => [(object) ['value' => 0, 'text' => Text::_('COM_J2COMMERCE_STOCK_OUT_OF_STOCK')],(object) ['value' => 1, 'text' => Text::_('COM_J2COMMERCE_STOCK_IN_STOCK')]]] + $fancySelectDefaults);?>
                 </div>
             </div>
 
@@ -77,12 +83,12 @@ $product_params = json_decode($this->item->params);
                 <div class="controls">
                     <div class="row row-cols-lg-auto g-3 align-items-center">
                         <div class="col-4">
-                            <?php $attribs = (isset($this->item->variant->use_store_config_notify_qty) && $this->item->variant->use_store_config_notify_qty) ? array('id'=>'notify_qty' ,'disabled'=>'disabled','field_type'=>'integer') :array('id'=>'notify_qty','field_type'=>'integer');?>
-                            <?php echo LayoutHelper::render('joomla.form.field.text', ['name'  => $this->form_prefix.'[notify_qty]','id'    => 'j2commerce-product-notify_qty_text-group','value' => $this->item->variant->notify_qty,'class' => 'form-control',]);?>
+                            <?php $attribs = (isset($item->variant->use_store_config_notify_qty) && $item->variant->use_store_config_notify_qty) ? array('id'=>'notify_qty' ,'disabled'=>'disabled','field_type'=>'integer') :array('id'=>'notify_qty','field_type'=>'integer');?>
+                            <?php echo LayoutHelper::render('joomla.form.field.text', ['name'  => $formPrefix.'[notify_qty]','id'    => 'j2commerce-product-notify_qty_text-group','value' => $item->variant->notify_qty ?? '','class' => 'form-control',] + $textFieldDefaults);?>
                         </div>
                         <div class="col-12">
                             <div class="qty_restriction">
-                                <?php echo LayoutHelper::render('joomla.form.field.checkbox', ['name'  => $this->form_prefix.'[use_store_config_notify_qty]','id'    => 'use_store_config_notify_qty','value' => $this->item->variant->use_store_config_notify_qty,'class' => 'storeconfig','checked' => (isset($this->item->variant->use_store_config_notify_qty) && $this->item->variant->use_store_config_notify_qty) ? 'checked' : '']);?>
+                                <?php echo LayoutHelper::render('joomla.form.field.checkbox', ['name'  => $formPrefix.'[use_store_config_notify_qty]','id'    => 'use_store_config_notify_qty','value' => $item->variant->use_store_config_notify_qty,'class' => 'storeconfig','checked' => (isset($item->variant->use_store_config_notify_qty) && $item->variant->use_store_config_notify_qty) ? 'checked' : ''] + $checkboxDefaults);?>
                                 <label for="use_store_config_notify_qty" class="lh-1 position-relative" style="top:-2px;"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_USE_STORE_CONFIGURATION'); ?></label>
                             </div>
                         </div>
@@ -95,7 +101,7 @@ $product_params = json_decode($this->item->params);
                     <label id="j2commerce-product-quantity_restriction-radio-group-lbl" for="j2commerce-product-quantity_restriction-radio-group"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_QUANTITY_RESTRICTION');?></label>
                 </div>
                 <div class="controls">
-                    <?php echo LayoutHelper::render('joomla.form.field.radio.switcher', ['name'  => $this->form_prefix.'[quantity_restriction]','id'    => 'j2commerce-product-quantity_restriction-radio-group','value' => $this->item->variant->quantity_restriction,'options' => [(object) ['value' => 0, 'text' => Text::_('JNO')],(object) ['value' => 1, 'text' => Text::_('JYES')]]]);?>
+                    <?php echo LayoutHelper::render('joomla.form.field.radio.switcher', ['name'  => $formPrefix.'[quantity_restriction]','id'    => 'j2commerce-product-quantity_restriction-radio-group','value' => $item->variant->quantity_restriction,'options' => [(object) ['value' => 0, 'text' => Text::_('JNO')],(object) ['value' => 1, 'text' => Text::_('JYES')]]] + $switcherDefaults);?>
                 </div>
             </div>
 
@@ -106,11 +112,11 @@ $product_params = json_decode($this->item->params);
                 <div class="controls">
                     <div class="row row-cols-lg-auto g-3 align-items-center">
                         <div class="col-4">
-                            <?php echo LayoutHelper::render('joomla.form.field.text', ['name'  => $this->form_prefix.'[max_sale_qty]','id'    => 'j2commerce-product-max_sale_qty_text-group','value' => $this->item->variant->max_sale_qty,'class' => 'form-control',]);?>
+                            <?php echo LayoutHelper::render('joomla.form.field.text', ['name'  => $formPrefix.'[max_sale_qty]','id'    => 'j2commerce-product-max_sale_qty_text-group','value' => $item->variant->max_sale_qty ?? '','class' => 'form-control',] + $textFieldDefaults);?>
                         </div>
                         <div class="col-12">
                             <div class="qty_restriction">
-                                <?php echo LayoutHelper::render('joomla.form.field.checkbox', ['name'  => $this->form_prefix.'[use_store_config_max_sale_qty]','id'    => 'use_store_config_max_sale_qty','value' => $this->item->variant->use_store_config_max_sale_qty,'class' => 'storeconfig','checked' => (isset($this->item->variant->use_store_config_max_sale_qty) && $this->item->variant->use_store_config_max_sale_qty) ? 'checked' : '']);?>
+                                <?php echo LayoutHelper::render('joomla.form.field.checkbox', ['name'  => $formPrefix.'[use_store_config_max_sale_qty]','id'    => 'use_store_config_max_sale_qty','value' => $item->variant->use_store_config_max_sale_qty,'class' => 'storeconfig','checked' => (isset($item->variant->use_store_config_max_sale_qty) && $item->variant->use_store_config_max_sale_qty) ? 'checked' : ''] + $checkboxDefaults);?>
                                 <label for="use_store_config_max_sale_qty" class="lh-1 position-relative" style="top:-2px;"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_USE_STORE_CONFIGURATION'); ?></label>
                             </div>
                         </div>
@@ -125,18 +131,18 @@ $product_params = json_decode($this->item->params);
                 <div class="controls">
                     <div class="row row-cols-lg-auto g-3 align-items-center">
                         <div class="col-4">
-                            <?php echo LayoutHelper::render('joomla.form.field.text', ['name'  => $this->form_prefix.'[min_sale_qty]','id'    => 'j2commerce-product-min_sale_qty_text-group','value' => $this->item->variant->min_sale_qty,'class' => 'form-control',]);?>
+                            <?php echo LayoutHelper::render('joomla.form.field.text', ['name'  => $formPrefix.'[min_sale_qty]','id'    => 'j2commerce-product-min_sale_qty_text-group','value' => $item->variant->min_sale_qty ?? '','class' => 'form-control',] + $textFieldDefaults);?>
                         </div>
                         <div class="col-12">
                             <div class="qty_restriction">
-                                <?php echo LayoutHelper::render('joomla.form.field.checkbox', ['name'  => $this->form_prefix.'[use_store_config_min_sale_qty]','id'    => 'use_store_config_min_sale_qty','value' => $this->item->variant->use_store_config_min_sale_qty,'class' => 'storeconfig','checked' => (isset($this->item->variant->use_store_config_min_sale_qty) && $this->item->variant->use_store_config_min_sale_qty) ? 'checked' : '']);?>
+                                <?php echo LayoutHelper::render('joomla.form.field.checkbox', ['name'  => $formPrefix.'[use_store_config_min_sale_qty]','id'    => 'use_store_config_min_sale_qty','value' => $item->variant->use_store_config_min_sale_qty,'class' => 'storeconfig','checked' => (isset($item->variant->use_store_config_min_sale_qty) && $item->variant->use_store_config_min_sale_qty) ? 'checked' : ''] + $checkboxDefaults);?>
                                 <label for="use_store_config_min_sale_qty" class="lh-1 position-relative" style="top:-2px;"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_USE_STORE_CONFIGURATION'); ?></label>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductInventoryEdit', array($this, $this->item, $this->form_prefix))->getArgument('html', ''); ?>
+            <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductInventoryEdit', array($this, $item, $formPrefix))->getArgument('html', ''); ?>
         </div>
     </fieldset>
 

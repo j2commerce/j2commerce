@@ -24,9 +24,9 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\FileLayout;
 use Joomla\CMS\Layout\LayoutHelper;
 
-// Extract display data - MUST set $this->item BEFORE using it
-$this->item = $displayData['product'];
-$this->form_prefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
+// Extract display data - MUST set $item BEFORE using it
+$item = $displayData['product'];
+$formPrefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
 
 $manufacturersField = new ManufacturersField();
 $manufacturersField->setDatabase(Factory::getContainer()->get('DatabaseDriver'));
@@ -49,7 +49,12 @@ $taxprofilesField->setup($element, '');
 $taxprofileTypes = $taxprofilesField->getOptions();
 array_unshift($taxprofileTypes, (object) ['value' => '', 'text' => Text::_('COM_J2COMMERCE_SELECT_TAX_PROFILE')]);
 
-$product_params = json_decode($this->item->params);
+$product_params = json_decode($item->params);
+
+// Defaults for Joomla core layout fields to prevent PHP 8.4 undefined variable warnings
+$switcherDefaults = ['onchange' => '', 'label' => '', 'disabled' => false, 'readonly' => false, 'dataAttribute' => '', 'class' => ''];
+$textFieldDefaults = ['value' => '', 'onchange' => '', 'disabled' => false, 'readonly' => false, 'dataAttribute' => '', 'hint' => '', 'required' => false, 'autofocus' => false, 'spellcheck' => false, 'addonBefore' => '', 'addonAfter' => '', 'dirname' => '', 'charcounter' => false, 'options' => []];
+$fancySelectDefaults = ['multiple' => false, 'autofocus' => false, 'onchange' => '', 'dataAttribute' => '', 'readonly' => false, 'disabled' => false, 'hint' => '', 'required' => false];
 ?>
 
 <div class="j2commerce-product-general">
@@ -61,7 +66,7 @@ $product_params = json_decode($this->item->params);
                     <label id="j2commerce-product-visibility-radio-group-lbl" for="j2commerce-product-visibility-radio-group"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_VISIBLE_STOREFRONT');?></label>
                 </div>
                 <div class="controls">
-                    <?php echo LayoutHelper::render('joomla.form.field.radio.switcher', ['name'  => $this->form_prefix.'[visibility]','id'    => 'j2commerce-product-visibility-radio-group','value' => $this->item->visibility,'options' => [(object) ['value' => 0, 'text' => Text::_('JNO')],(object) ['value' => 1, 'text' => Text::_('JYES')]]]);?>
+                    <?php echo LayoutHelper::render('joomla.form.field.radio.switcher', ['name'  => $formPrefix.'[visibility]','id'    => 'j2commerce-product-visibility-radio-group','value' => $item->visibility,'options' => [(object) ['value' => 0, 'text' => Text::_('JNO')],(object) ['value' => 1, 'text' => Text::_('JYES')]]] + $switcherDefaults);?>
                 </div>
             </div>
 
@@ -70,7 +75,7 @@ $product_params = json_decode($this->item->params);
                     <label id="j2commerce-product-manufacturer-select-group-lbl" for="j2commerce-product-manufacturer-select-group"><?php echo Text::_('COM_J2COMMERCE_COUPON_MANUFACTURER');?></label>
                 </div>
                 <div class="controls">
-                    <?php echo LayoutHelper::render('joomla.form.field.list-fancy-select', ['name'  => $this->form_prefix.'[manufacturer_id]','id'    => 'j2commerce-product-manufacturer-select-group','value' => $this->item->manufacturer_id,'options' => $manufacturerTypes]);?>
+                    <?php echo LayoutHelper::render('joomla.form.field.list-fancy-select', ['name'  => $formPrefix.'[manufacturer_id]','id'    => 'j2commerce-product-manufacturer-select-group','value' => $item->manufacturer_id,'options' => $manufacturerTypes] + $fancySelectDefaults);?>
                 </div>
             </div>
             <div class="control-group align-items-center">
@@ -78,7 +83,7 @@ $product_params = json_decode($this->item->params);
                     <label id="j2commerce-product-vendor-select-group-lbl" for="j2commerce-product-vendor-select-group"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_VENDOR');?></label>
                 </div>
                 <div class="controls">
-                    <?php echo LayoutHelper::render('joomla.form.field.list-fancy-select', ['name'  => $this->form_prefix.'[vendor_id]','id'    => 'j2commerce-product-vendor-select-group','value' => $this->item->vendor_id,'options' => $vendorTypes]);?>
+                    <?php echo LayoutHelper::render('joomla.form.field.list-fancy-select', ['name'  => $formPrefix.'[vendor_id]','id'    => 'j2commerce-product-vendor-select-group','value' => $item->vendor_id,'options' => $vendorTypes] + $fancySelectDefaults);?>
                 </div>
             </div>
             <div class="control-group align-items-center">
@@ -86,7 +91,7 @@ $product_params = json_decode($this->item->params);
                     <label id="j2commerce-product-taxprofile_id-select-group-lbl" for="j2commerce-product-taxprofile_id-select-group"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_TAX_PROFILE');?></label>
                 </div>
                 <div class="controls">
-                    <?php echo LayoutHelper::render('joomla.form.field.list-fancy-select', ['name'  => $this->form_prefix.'[taxprofile_id]','id'    => 'j2commerce-product-taxprofile_id-select-group','value' => $this->item->taxprofile_id,'options' => $taxprofileTypes]);?>
+                    <?php echo LayoutHelper::render('joomla.form.field.list-fancy-select', ['name'  => $formPrefix.'[taxprofile_id]','id'    => 'j2commerce-product-taxprofile_id-select-group','value' => $item->taxprofile_id,'options' => $taxprofileTypes] + $fancySelectDefaults);?>
                 </div>
             </div>
             <div class="control-group align-items-center">
@@ -94,7 +99,7 @@ $product_params = json_decode($this->item->params);
                     <label id="j2commerce-product-addtocart_text-group-lbl" for="j2commerce-product-addtocart_text-group"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_CART_TEXT');?></label>
                 </div>
                 <div class="controls">
-                    <?php echo LayoutHelper::render('joomla.form.field.text', ['name'  => $this->form_prefix.'[addtocart_text]','id'    => 'j2commerce-product-addtocart_text-group','value' => Text::_($this->item->addtocart_text),'class' => 'form-control',]);?>
+                    <?php echo LayoutHelper::render('joomla.form.field.text', ['name'  => $formPrefix.'[addtocart_text]','id'    => 'j2commerce-product-addtocart_text-group','value' => Text::_($item->addtocart_text ?? ''),'class' => 'form-control',] + $textFieldDefaults);?>
                 </div>
             </div>
             <div class="control-group align-items-center">
@@ -102,10 +107,10 @@ $product_params = json_decode($this->item->params);
                     <label id="j2commerce-product-product_css_class-group-lbl" for="j2commerce-product-product_css_class-group"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_CUSTOM_CSS_CLASS');?></label>
                 </div>
                 <div class="controls">
-                    <?php echo LayoutHelper::render('joomla.form.field.text', ['name'  => $this->form_prefix.'[product_css_class]','id'    => 'j2commerce-product-product_css_class_text-group','value' => $product_params->product_css_class ?? '','class' => 'form-control',]);?>
+                    <?php echo LayoutHelper::render('joomla.form.field.text', ['name'  => $formPrefix.'[product_css_class]','id'    => 'j2commerce-product-product_css_class_text-group','value' => $product_params->product_css_class ?? '','class' => 'form-control',] + $textFieldDefaults);?>
                 </div>
             </div>
-            <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductGeneralEdit', array($this, $this->item, $this->form_prefix))->getArgument('html', ''); ?>
+            <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductGeneralEdit', array($this, $item, $formPrefix))->getArgument('html', ''); ?>
         </div>
     </fieldset>
 </div>

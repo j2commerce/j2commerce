@@ -19,8 +19,8 @@ use Joomla\CMS\Layout\FileLayout;
 use Joomla\CMS\Uri\Uri;
 
 
-$this->item = $displayData['product'];
-$this->form_prefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
+$item = $displayData['product'];
+$formPrefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
 
 $base_path = JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product';
 ?>
@@ -76,19 +76,19 @@ $base_path = JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product';
     };
 
     // Main image (first in the gallery)
-    if (!empty($this->item->main_image)) {
-        $info = $extractPath($this->item->main_image);
+    if (!empty($item->main_image)) {
+        $info = $extractPath($item->main_image);
 
         // Extract thumb info
         $thumbInfo = ['path' => '', 'width' => 0, 'height' => 0];
-        if (!empty($this->item->thumb_image)) {
-            $thumbInfo = $extractPath($this->item->thumb_image);
+        if (!empty($item->thumb_image)) {
+            $thumbInfo = $extractPath($item->thumb_image);
         }
 
         // Extract tiny info
         $tinyInfo = ['path' => '', 'width' => 0, 'height' => 0];
-        if (!empty($this->item->tiny_image)) {
-            $tinyInfo = $extractPath($this->item->tiny_image);
+        if (!empty($item->tiny_image)) {
+            $tinyInfo = $extractPath($item->tiny_image);
         }
 
         $galleryData[] = [
@@ -96,7 +96,7 @@ $base_path = JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product';
             'path'         => $info['path'],
             'url'          => $siteRoot . $info['path'],
             'thumb_url'    => !empty($thumbInfo['path']) ? $siteRoot . $thumbInfo['path'] : $siteRoot . $info['path'],
-            'alt_text'     => $this->item->main_image_alt ?? '',
+            'alt_text'     => $item->main_image_alt ?? '',
             'width'        => $info['width'],
             'height'       => $info['height'],
             'thumb_path'   => $thumbInfo['path'],
@@ -126,12 +126,12 @@ $base_path = JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product';
         return (array) $value;
     };
 
-    $addImages    = $decodeJsonField($this->item->additional_images ?? null);
-    $addAlts      = $decodeJsonField($this->item->additional_images_alt ?? null);
-    $addThumbs    = $decodeJsonField($this->item->additional_thumb_images ?? null);
-    $addThumbAlts = $decodeJsonField($this->item->additional_thumb_images_alt ?? null);
-    $addTinys     = $decodeJsonField($this->item->additional_tiny_images ?? null);
-    $addTinyAlts  = $decodeJsonField($this->item->additional_tiny_images_alt ?? null);
+    $addImages    = $decodeJsonField($item->additional_images ?? null);
+    $addAlts      = $decodeJsonField($item->additional_images_alt ?? null);
+    $addThumbs    = $decodeJsonField($item->additional_thumb_images ?? null);
+    $addThumbAlts = $decodeJsonField($item->additional_thumb_images_alt ?? null);
+    $addTinys     = $decodeJsonField($item->additional_tiny_images ?? null);
+    $addTinyAlts  = $decodeJsonField($item->additional_tiny_images_alt ?? null);
 
     // Additional images (remaining gallery items)
     if (!empty($addImages)) {
@@ -190,7 +190,7 @@ $base_path = JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product';
                         'directory'         => 'images',
                         'multiple'          => true,
                         'endpoint'          => 'index.php?option=com_j2commerce&task=multiimageuploader.upload&format=json',
-                        'formPrefix'        => $this->form_prefix,
+                        'formPrefix'        => $formPrefix,
                     ],
                     'required' => false,
                     'disabled' => false,
@@ -201,7 +201,7 @@ $base_path = JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product';
         </div>
     </div>
 
-    <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductImagesForm', array($this, $this->item, $this->form_prefix))->getArgument('html', ''); ?>
+    <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductImagesForm', array($this, $item, $formPrefix))->getArgument('html', ''); ?>
 
     <div class="alert alert-info mt-3">
         <h4 class="alert-heading"><?php echo Text::_('COM_J2COMMERCE_QUICK_HELP'); ?></h4>

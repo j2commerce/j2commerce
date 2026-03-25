@@ -24,8 +24,11 @@ $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
 $style = '.autocomplete-list{background: var(--form-control-bg);max-height: 200px;overflow-y: auto;width: 100%;}.autocomplete-list.autocomplete-active{border: var(--form-control-border);}.autocomplete-item{padding: 8px;cursor: pointer;font-size: .8rem;}.autocomplete-item:hover {background-color: #f0f0f0;}';
 $wa->addInlineStyle($style, [], []);
 
-$this->item = $displayData['product'];
-$this->form_prefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
+$item = $displayData['product'];
+$formPrefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
+
+// Defaults for Joomla core layout fields to prevent PHP 8.4 undefined variable warnings
+$textFieldDefaults = ['value' => '', 'onchange' => '', 'disabled' => false, 'readonly' => false, 'dataAttribute' => '', 'hint' => '', 'required' => false, 'autofocus' => false, 'spellcheck' => false, 'addonBefore' => '', 'addonAfter' => '', 'dirname' => '', 'charcounter' => false, 'options' => []];
 ?>
 <div class="j2commerce-product-relations">
     <div class="alert alert-info alert-block">
@@ -43,8 +46,8 @@ $this->form_prefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]'
                 </thead>
                 <tbody id="addedProductUpsell">
                 <?php
-                if(isset($this->item->up_sells) && !empty($this->item->up_sells)):
-                    $upsells = J2CommerceHelper::product()->getRelatedProducts($this->item->up_sells);
+                if(isset($item->up_sells) && !empty($item->up_sells)):
+                    $upsells = J2CommerceHelper::product()->getRelatedProducts($item->up_sells);
                     ?>
                     <?php foreach($upsells as $key=>$related_product):?>
                         <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterGetProduct', array($related_product))->getArgument('html', ''); ?>
@@ -58,7 +61,7 @@ $this->form_prefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]'
                                             <?php echo isset($related_product->sku) && !empty($related_product->sku) ? $this->escape($related_product->product_name)." (".$this->escape($related_product->sku).")" : $related_product->product_name;?>
                                         </a>
                                     <?php endif; ?>
-                                    <input type="hidden" value="<?php echo $related_product->j2commerce_product_id;?>"  name="<?php echo $this->form_prefix.'[up_sells]' ;?>[<?php echo $related_product->j2commerce_product_id;?>]" />
+                                    <input type="hidden" value="<?php echo $related_product->j2commerce_product_id;?>"  name="<?php echo $formPrefix.'[up_sells]' ;?>[<?php echo $related_product->j2commerce_product_id;?>]" />
                                 </td>
                                 <td class="text-center">
                                     <a href="javascript:void(0);" onclick="removeThisRelatedRow('upSell',<?php echo $related_product->j2commerce_product_id;?>)">
@@ -74,7 +77,7 @@ $this->form_prefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]'
                 <tr>
                     <td colspan="2">
                         <small><strong><?php echo Text::_('COM_J2COMMERCE_SEARCH_AND_RELATED_PRODUCTS');?></strong></small>
-                        <?php echo LayoutHelper::render('joomla.form.field.text', ['name'  => 'J2CommerceupsellSelector','id'    => 'J2CommerceupsellSelector','value' => '','class' => 'form-control ms-2',]);?>
+                        <?php echo LayoutHelper::render('joomla.form.field.text', ['name'  => 'J2CommerceupsellSelector','id'    => 'J2CommerceupsellSelector','value' => '','class' => 'form-control ms-2',] + $textFieldDefaults);?>
                     </td>
                 </tr>
                 </tbody>
@@ -92,8 +95,8 @@ $this->form_prefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]'
                 </tr>
                 </thead>
                 <tbody id="addedProductCrosssell">
-                <?php if(isset($this->item->cross_sells) && !empty($this->item->cross_sells)):
-                    $crosssells = J2CommerceHelper::product()->getRelatedProducts($this->item->cross_sells);
+                <?php if(isset($item->cross_sells) && !empty($item->cross_sells)):
+                    $crosssells = J2CommerceHelper::product()->getRelatedProducts($item->cross_sells);
 
                     ?>
                     <?php foreach($crosssells as $key=>$related_product): ?>
@@ -108,7 +111,7 @@ $this->form_prefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]'
                                         <?php echo isset($related_product->sku) && !empty($related_product->sku) ? $this->escape($related_product->product_name).' ('.$this->escape($related_product->sku).')' : $this->escape($related_product->product_name);?>
                                     </a>
                                 <?php endif;?>
-                                <input type="hidden" value="<?php echo $related_product->j2commerce_product_id;?>" name="<?php echo $this->form_prefix.'[cross_sells]' ;?>[<?php echo $related_product->j2commerce_product_id;?>]" />
+                                <input type="hidden" value="<?php echo $related_product->j2commerce_product_id;?>" name="<?php echo $formPrefix.'[cross_sells]' ;?>[<?php echo $related_product->j2commerce_product_id;?>]" />
                             </td>
                             <td class="text-center">
                                 <a href="javascript:void(0);" onclick="removeThisRelatedRow('crossSell',<?php echo $related_product->j2commerce_product_id;?>)">
@@ -124,7 +127,7 @@ $this->form_prefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]'
                 <tr>
                     <td colspan="2">
                         <small><strong><?php echo Text::_('COM_J2COMMERCE_SEARCH_AND_RELATED_PRODUCTS');?></strong></small>
-                        <?php echo LayoutHelper::render('joomla.form.field.text', ['name'  => 'J2CommercecrossSellSelector','id'    => 'J2CommercecrossSellSelector','value' => '','class' => 'form-control ms-2',]);?>
+                        <?php echo LayoutHelper::render('joomla.form.field.text', ['name'  => 'J2CommercecrossSellSelector','id'    => 'J2CommercecrossSellSelector','value' => '','class' => 'form-control ms-2',] + $textFieldDefaults);?>
                     </td>
                 </tr>
                 </tbody>
@@ -135,8 +138,8 @@ $this->form_prefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]'
 
 <script type="text/javascript">
 document.addEventListener('DOMContentLoaded', function() {
-    var productId = <?php echo (int) $this->item->j2commerce_product_id; ?>;
-    var formPrefix = '<?php echo $this->form_prefix; ?>';
+    var productId = <?php echo (int) $item->j2commerce_product_id; ?>;
+    var formPrefix = '<?php echo $formPrefix; ?>';
 
     /**
      * Setup autocomplete for related products (upsells/cross-sells)

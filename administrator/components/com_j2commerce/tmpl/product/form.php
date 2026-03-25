@@ -39,7 +39,7 @@ $option = $app->input->getString('option');
 $language = $app->getLanguage();
 $language->load('com_j2commerce', JPATH_ADMINISTRATOR);
 
-$this->item = $displayData['product'];
+$item = $displayData['product'];
 $html = $displayData['html'] ?? '';
 
 $row_class = 'row';
@@ -48,7 +48,11 @@ $product_type_class = 'badge bg-primary';
 $alert_html = '<joomla-alert type="danger" close-text="Close" dismiss="true" role="alert" style="animation-name: joomla-alert-fade-in;"><div class="alert-heading"><span class="error"></span><span class="visually-hidden">Error</span></div><div class="alert-wrapper"><div class="alert-message" >'.htmlspecialchars(Text::_('COM_J2COMMERCE_INVALID_INPUT_FIELD')).'</div></div></joomla-alert>' ;
 
 // Use form_prefix from displayData if available (from plugin), otherwise use standalone component prefix
-$this->form_prefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
+$formPrefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
+
+// Defaults for Joomla core layout fields to prevent PHP 8.4 undefined variable warnings
+$switcherDefaults = ['onchange' => '', 'label' => '', 'disabled' => false, 'readonly' => false, 'dataAttribute' => '', 'class' => ''];
+
 $productTypeField = new ProductTypeField();
 $productTypeField->setDatabase(Factory::getContainer()->get('DatabaseDriver'));
 $element = new SimpleXMLElement('<field />');
@@ -76,9 +80,9 @@ $wa->useScript('core')->useScript('form.validate');
 $wa->registerAndUseStyle('com_j2commerce.editview', 'media/com_j2commerce/css/administrator/editview.css');
 
 Factory::getApplication()->getDocument()->addScriptOptions('com_j2commerce.productForm', [
-    'productId' => (int) $this->item->j2commerce_product_id,
-    'productType' => $this->item->product_type ?? '',
-    'enabled' => (bool) $this->item->enabled,
+    'productId' => (int) ($item->j2commerce_product_id ?? 0),
+    'productType' => $item->product_type ?? '',
+    'enabled' => (bool) ($item->enabled ?? 0),
     'csrfToken' => Session::getFormToken(),
 ]);
 
@@ -117,31 +121,34 @@ $wa->addInlineScript($submitButtonJs);
 ?>
 <div class="j2commerce">
     <div class="j2commerce-product-edit-form">
-        <?php if (!empty($this->item->j2commerce_product_id)): ?>
+        <?php if (!empty($item->j2commerce_product_id)): ?>
         <div class="j2commerce-existing-product-display">
             <div class="product-card-v3 mb-5">
                 <div class="card-header-v3">
                     <div class="header-content">
                         <div class="header-left">
-                            <?php if ($this->item->enabled): ?>
+                            <?php if ($item->enabled): ?>
                             <div class="d-flex align-items-center me-2 mb-4">
                                 <label id="j2commerce-product-enabled-radio-group-lbl" for="j2commerce-product-enabled-radio-group" class="me-3"><?php echo Text::_('COM_J2COMMERCE_TREAT_AS_PRODUCT');?></label>
                                 <?php echo LayoutHelper::render('joomla.form.field.radio.switcher', [
-                                    'name'  => $this->form_prefix.'[enabled]',
+                                    'name'  => $formPrefix.'[enabled]',
                                     'id'    => 'j2commerce-product-enabled-radio-group-header',
-                                    'value' => $this->item->enabled,
+                                    'value' => $item->enabled ?? 0,
                                     'options' => [
                                         (object) ['value' => 0, 'text' => Text::_('JNO')],
                                         (object) ['value' => 1, 'text' => Text::_('JYES')]
                                     ],
-                                    'onclick' => 'this.form.submit();',
+                                    'onchange' => 'this.form.submit();',
+                                    'label' => Text::_('COM_J2COMMERCE_TREAT_AS_PRODUCT'),
+                                    'disabled' => false,
+                                    'readonly' => false,
                                     'class' => 'form-check-input',
                                     'dataAttribute' => 'data-bs-toggle="tooltip" title="Toggle Status"'
-                                ]);?>
+                                ] + $switcherDefaults);?>
                             </div>
                             <?php endif; ?>
                             <div class="product-name-v3 d-flex align-items-center">
-                                <span><?php echo htmlspecialchars($this->item->product_name, ENT_QUOTES, 'UTF-8');?></span>
+                                <span><?php echo htmlspecialchars($item->product_name, ENT_QUOTES, 'UTF-8');?></span>
                                 <button type="button" class="btn btn-soft-primary btn-sm ms-3 fw-medium"
                                         data-bs-toggle="collapse"
                                         data-bs-target="#productDetailsCollapse"
@@ -177,7 +184,7 @@ $wa->addInlineScript($submitButtonJs);
                         <div class="image-section">
                             <?php if ($imageCount > 0): ?>
                                 <div class="image-frame">
-                                    <?php echo ImageHelper::getInstance()->getProductImage($this->item->main_image,height: 160,width: 160,class: 'object-fit-cover img-fluid',alt: htmlspecialchars($this->item->product_name, ENT_QUOTES, 'UTF-8'));?>
+                                    <?php echo ImageHelper::getInstance()->getProductImage($item->main_image,height: 160,width: 160,class: 'object-fit-cover img-fluid',alt: htmlspecialchars($item->product_name, ENT_QUOTES, 'UTF-8'));?>
                                 </div>
                             <?php endif; ?>
                         </div>
@@ -186,8 +193,8 @@ $wa->addInlineScript($submitButtonJs);
                                 <div class="data-item">
                                     <span class="data-key"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_TYPE'); ?></span>
                                     <span class="data-val d-flex align-items-center justify-content-between">
-                                        <span><?php echo htmlspecialchars(ProductTypeField::getProductTypes()[$this->item->product_type] ?? $this->item->product_type, ENT_QUOTES, 'UTF-8'); ?></span>
-                                        <?php if ($this->item->j2commerce_product_id && $this->item->enabled && $this->item->product_type): ?>
+                                        <span><?php echo htmlspecialchars(ProductTypeField::getProductTypes()[$item->product_type] ?? $item->product_type, ENT_QUOTES, 'UTF-8'); ?></span>
+                                        <?php if ($item->j2commerce_product_id && $item->enabled && $item->product_type): ?>
                                             <button type="button" class="btn btn-soft-primary btn-sm ms-2 fw-medium" data-bs-toggle="modal" data-bs-target="#changeProductTypeModal"><?php echo Text::_('COM_J2COMMERCE_CHANGE_PRODUCT_TYPE'); ?></button>
                                         <?php endif; ?>
                                     </span>
@@ -243,12 +250,12 @@ $wa->addInlineScript($submitButtonJs);
                                 </button>
                             </div>
                             <div class="mb-3 shortcode-item">
-                                <code>{j2commerce}<?php echo $this->item->j2commerce_product_id; ?>|cart{/j2commerce}</code>
+                                <code>{j2commerce}<?php echo $item->j2commerce_product_id; ?>|cart{/j2commerce}</code>
                                 <div class="form-text"><?php echo Text::_('COM_J2COMMERCE_PLUGIN_SHORTCODE_HELP_TEXT');?></div>
                             </div>
                             <div class="collapse" id="collapseShortcodes">
                                 <div class="shortcode-item mb-3">
-                                    <code>{j2commerce}<?php echo $this->item->j2commerce_product_id; ?>|upsells|crosssells{/j2commerce}</code>
+                                    <code>{j2commerce}<?php echo $item->j2commerce_product_id; ?>|upsells|crosssells{/j2commerce}</code>
                                     <div class="form-text"><?php echo Text::_('COM_J2COMMERCE_PLUGIN_SHORTCODE_HELP_TEXT_ADDITIONAL');?></div>
                                 </div>
                                 <div class="shortcode-item">
@@ -267,7 +274,7 @@ $wa->addInlineScript($submitButtonJs);
         </div>
         <?php endif; ?>
 
-        <?php if(!$this->item->enabled): ?>
+        <?php if(!($item->enabled ?? 0)): ?>
         <div class="row">
             <div class="col-12 mb-3">
                 <fieldset id="fieldset-j2commerce-product-type" class="options-form">
@@ -279,7 +286,7 @@ $wa->addInlineScript($submitButtonJs);
                             </div>
                             <div class="controls">
                                 <?php echo LayoutHelper::render('joomla.form.field.radio.switcher', [
-                                    'name'  => $this->form_prefix.'[enabled]',
+                                    'name'  => $formPrefix.'[enabled]',
                                     'id'    => 'j2commerce-product-enabled-radio-group',
                                     'value' => 0,
                                     'options' => [
@@ -287,8 +294,12 @@ $wa->addInlineScript($submitButtonJs);
                                         (object) ['value' => 1, 'text' => Text::_('JYES')]
                                     ],
                                     'class' => 'form-check-input',
+                                    'onchange' => '',
+                                    'label' => Text::_('COM_J2COMMERCE_TREAT_AS_PRODUCT'),
+                                    'disabled' => false,
+                                    'readonly' => false,
                                     'dataAttribute' => 'data-bs-toggle="tooltip" title="Toggle Status"'
-                                ]);?>
+                                ] + $switcherDefaults);?>
                             </div>
                         </div>
                         <div id="j2commerce-product-type-wrapper" class="d-none">
@@ -297,15 +308,15 @@ $wa->addInlineScript($submitButtonJs);
                                 <label for="product_type"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_TYPE');?></label>
                             </div>
                             <div class="controls">
-                                <?php if(!empty($this->item->product_type)): ?>
-                                    <span class="<?php echo $product_type_class;?>"><?php echo htmlspecialchars(ProductTypeField::getProductTypes()[$this->item->product_type] ?? $this->item->product_type, ENT_QUOTES, 'UTF-8'); ?></span>
-                                    <input type="hidden" name="<?php echo $this->form_prefix.'[product_type]'?>" value="<?php echo $this->item->product_type; ?>" />
+                                <?php if(!empty($item->product_type)): ?>
+                                    <span class="<?php echo $product_type_class;?>"><?php echo htmlspecialchars(ProductTypeField::getProductTypes()[$item->product_type] ?? $item->product_type, ENT_QUOTES, 'UTF-8'); ?></span>
+                                    <input type="hidden" name="<?php echo $formPrefix.'[product_type]'?>" value="<?php echo $item->product_type; ?>" />
                                 <?php else: ?>
-                                    <select name="<?php echo $this->form_prefix;?>[product_type]" id="product_type" class="form-select">
+                                    <select name="<?php echo $formPrefix;?>[product_type]" id="product_type" class="form-select">
                                         <option value=""><?php echo Text::_('COM_J2COMMERCE_SELECT_PRODUCT_TYPE'); ?></option>
                                         <?php foreach ($productTypes as $option) : ?>
                                             <option value="<?php echo $option->value; ?>"
-                                                <?php echo ($this->item->product_type == $option->value) ? 'selected' : ''; ?>>
+                                                <?php echo (($item->product_type ?? '') == $option->value) ? 'selected' : ''; ?>>
                                                 <?php echo Text::_($option->text); ?>
                                             </option>
                                         <?php endforeach; ?>
@@ -323,23 +334,23 @@ $wa->addInlineScript($submitButtonJs);
         </div>
         <?php endif; ?>
 
-        <?php if($this->item->j2commerce_product_id && $this->item->enabled && $this->item->product_type): ?>
+        <?php if(($item->j2commerce_product_id ?? 0) && ($item->enabled ?? 0) && ($item->product_type ?? '')): ?>
         <div class="row">
             <div class="col-12">
                 <div id="fieldset-j2commerce-product-settings">
                     <!--<legend><?php /*echo Text::_('COM_J2COMMERCE_PRODUCT_SETTINGS'); */?></legend>-->
-                    <input type="hidden" name="<?php echo $this->form_prefix.'[j2commerce_product_id]'?>" value="<?php echo $this->item->j2commerce_product_id; ?>" />
+                    <input type="hidden" name="<?php echo $formPrefix.'[j2commerce_product_id]'?>" value="<?php echo $item->j2commerce_product_id; ?>" />
 
-                    <?php echo J2CommerceHelper::loadSubTemplate($this->item->product_type, ['product' => $this->item, 'form_prefix' => $this->form_prefix],'form',JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product'); ?>
+                    <?php echo J2CommerceHelper::loadSubTemplate($item->product_type, ['product' => $item, 'form_prefix' => $formPrefix],'form',JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product'); ?>
 
-                    <input type="hidden" name="<?php echo $this->form_prefix.'[product_type]'?>" value="<?php echo $this->item->product_type; ?>" />
+                    <input type="hidden" name="<?php echo $formPrefix.'[product_type]'?>" value="<?php echo $item->product_type; ?>" />
 
                 </div>
             </div>
         </div>
         <?php endif; ?>
 
-        <?php if ($this->item->j2commerce_product_id && $this->item->enabled && $this->item->product_type): ?>
+        <?php if (($item->j2commerce_product_id ?? 0) && ($item->enabled ?? 0) && ($item->product_type ?? '')): ?>
         <!-- Modal: Change Product Type -->
         <div id="changeProductTypeModal" class="modal fade" tabindex="-1" aria-hidden="true" aria-labelledby="changeProductTypeModalLabel">
             <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -355,7 +366,7 @@ $wa->addInlineScript($submitButtonJs);
                                 <select id="j2commerceNewProductType" class="form-select">
                                     <option value=""><?php echo Text::_('COM_J2COMMERCE_SELECT_PRODUCT_TYPE'); ?></option>
                                     <?php foreach ($productTypes as $option) : ?>
-                                        <?php if ($option->value && $option->value !== $this->item->product_type) : ?>
+                                        <?php if ($option->value && $option->value !== $item->product_type) : ?>
                                             <option value="<?php echo htmlspecialchars($option->value, ENT_QUOTES, 'UTF-8'); ?>">
                                                 <?php echo Text::_($option->text); ?>
                                             </option>

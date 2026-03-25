@@ -29,8 +29,13 @@ use Joomla\CMS\Uri\Uri;
 
 //HTMLHelper::_('bootstrap.modal');
 
+$item = $displayData['product'];
+$formPrefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
 
-$this->variant = $this->item->variants;
+// Defaults for Joomla core layout fields to prevent PHP 8.4 undefined variable warnings
+$fancySelectDefaults = ['multiple' => false, 'autofocus' => false, 'onchange' => '', 'dataAttribute' => '', 'readonly' => false, 'disabled' => false, 'hint' => '', 'required' => false];
+
+$variant = $item->variants ?? null;
 
 $priceField = new PriceField();
 $priceField->setDatabase(Factory::getContainer()->get('DatabaseDriver'));
@@ -39,23 +44,16 @@ $priceField->setup($element, '');
 
 $pricing_calculator = J2CommerceHelper::product()->getPricingCalculators();
 
-
 $base_path = rtrim(Uri::root(),'/').'/administrator/';
 
-/*$modalId = 'productPricingModal';
-$iframeUrl = $base_path.'index.php?option=com_j2commerce&view=products&task=setproductprice&variant_id='.$this->item->variant->j2commerce_variant_id.'&layout=productpricing&tmpl=component';*/
-
-$this->item = $displayData['product'];
-$this->form_prefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
-
 $priceValues = [
-    'name' => $this->form_prefix . '[price]',
+    'name' => $formPrefix . '[price]',
     'id' => 'j2commerce-product-price-field',
-    'value' => $this->item->variant->price ?? '',
+    'value' => $item->variant->price ?? '',
     'class' => 'form-control'
 ];
-//$link = $base_path . '/index.php?option=com_j2commerce&view=products&task=setproductprice&variant_id=' . $this->item->variant->j2commerce_variant_id . '&layout=productpricing&tmpl=component';
-$link = $base_path . '/index.php?option=com_j2commerce&view=productprice&layout=productpricing&variant_id='. $this->item->variant->j2commerce_variant_id. '&tmpl=component';
+//$link = $base_path . '/index.php?option=com_j2commerce&view=products&task=setproductprice&variant_id=' . $item->variant->j2commerce_variant_id . '&layout=productpricing&tmpl=component';
+$link = $base_path . '/index.php?option=com_j2commerce&view=productprice&layout=productpricing&variant_id='. $item->variant->j2commerce_variant_id. '&tmpl=component';
 ?>
 
 <div class="j2commerce-product-pricing">
@@ -101,10 +99,10 @@ $link = $base_path . '/index.php?option=com_j2commerce&view=productprice&layout=
                     <label id="j2commerce-product-pricing_calculator-select-group-lbl" for="j2commerce-product-pricing_calculator-select-group"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_PRICING_CALCULATOR');?></label>
                 </div>
                 <div class="controls">
-                    <?php echo LayoutHelper::render('joomla.form.field.list-fancy-select', ['name'  => $this->form_prefix.'[pricing_calculator]','id'    => 'j2commerce-product-pricing_calculator-select-group','value' => $this->item->variant->pricing_calculator,'options' => $pricing_calculator]);?>
+                    <?php echo LayoutHelper::render('joomla.form.field.list-fancy-select', ['name'  => $formPrefix.'[pricing_calculator]','id'    => 'j2commerce-product-pricing_calculator-select-group','value' => $item->variant->pricing_calculator,'options' => $pricing_calculator] + $fancySelectDefaults);?>
                 </div>
             </div>
-            <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductPricingEdit', array($this, $this->item, $this->form_prefix))->getArgument('html', ''); ?>
+            <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductPricingEdit', array($this, $item, $formPrefix))->getArgument('html', ''); ?>
 
         </div>
     </fieldset>

@@ -29,18 +29,18 @@ $wa  = Factory::getApplication()->getDocument()->getWebAssetManager();
 $style = '.com_j2commerce .fa-stack.small {width: 1.25rem;height: 1.25rem;line-height: 1.25rem;}.com_j2commerce .fa-stack.small .fa-stack-2x {font-size:1rem;}.com_j2commerce .fa-stack.small .fa-stack-1x {font-size:0.5rem;top: 50%;left: 50%;transform: translate(-50%, -50%);}';
 $wa->addInlineStyle($style, [], []);
 
-$this->item = $displayData['product'];
-$this->form_prefix = $displayData['form_prefix'];
+$item = $displayData['product'];
+$formPrefix = $displayData['form_prefix'];
 ?>
 <div class="j2commerce-product-variants">
     <fieldset class="options-form">
         <legend><?php echo Text::_('COM_J2COMMERCE_PRODUCT_VARIANTS');?></legend>
 
         <div id="variant_add_block" class="mb-3">
-            <input type="hidden" name="flexi_product_id" value="<?php echo $this->item->j2commerce_product_id;?>"/>
-            <?php if(isset($this->item->product_options) && !empty($this->item->product_options)):?>
+            <input type="hidden" name="flexi_product_id" value="<?php echo $item->j2commerce_product_id;?>"/>
+            <?php if(isset($item->product_options) && !empty($item->product_options)):?>
                 <div class="input-group">
-                    <?php foreach ($this->item->product_options as $product_option): ?>
+                    <?php foreach ($item->product_options as $product_option): ?>
                         <select name="variant_combin[<?php echo $product_option->j2commerce_productoption_id;?>]" class="form-select">
                             <option value="0"><?php echo substr(Text::_('COM_J2COMMERCE_ANY').' '.$this->escape($product_option->option_name),0,10).'...';?></option>
                             <?php foreach ($product_option->option_values as $option_value): ?>
@@ -55,7 +55,7 @@ $this->form_prefix = $displayData['form_prefix'];
             <?php endif;?>
         </div>
         <div id="variant_display_block">
-            <?php if(isset($this->item->variants) && count($this->item->variants)):?>
+            <?php if(isset($item->variants) && count($item->variants)):?>
                 <div class="d-flex justify-content-start align-items-center mb-3">
                     <div class="form-check pt-0 me-2">
                         <input class="form-check-input" type="checkbox" value="" id="toggleAllCheckboxes">
@@ -80,13 +80,13 @@ $this->form_prefix = $displayData['form_prefix'];
                     /* to get ajax advanced variable list need to
                      *  assign these variables
                      */
-                    $this->variant_list = $this->item->variants;
-                    $this->variant_pagination = $this->item->variant_pagination;
-                    $this->weights = $this->item->weights;
-                    $this->lengths = $this->item->lengths;
+                    $variant_list = $item->variants;
+                    $variant_pagination = $item->variant_pagination;
+                    $weights = $item->weights;
+                    $lengths = $item->lengths;
                     $layout = new FileLayout('form_ajax_flexivariableoptions', JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product');
                     ?>
-                    <?php echo $layout->render(['product' => $this->item, 'variant_list' => $this->variant_list, 'variant_pagination' => $this->variant_pagination, 'weights' => $this->weights, 'lengths' => $this->lengths, 'form_prefix' => $this->form_prefix]);?>
+                    <?php echo $layout->render(['product' => $item, 'variant_list' => $variant_list, 'variant_pagination' => $variant_pagination, 'weights' => $weights, 'lengths' => $lengths, 'form_prefix' => $formPrefix]);?>
 
                 </div>
             </div>
@@ -105,11 +105,11 @@ $this->form_prefix = $displayData['form_prefix'];
     var J2CommerceVariants = {
         // Configuration
         config: {
-            currentPage: <?php echo $this->item->variant_pagination->pagesCurrent ?? 1; ?>,
-            totalVariants: <?php echo $this->item->variant_pagination->total ?? 0; ?>,
+            currentPage: <?php echo $item->variant_pagination->pagesCurrent ?? 1; ?>,
+            totalVariants: <?php echo $item->variant_pagination->total ?? 0; ?>,
             limit: <?php echo $limit ?? 20; ?>,
-            productId: <?php echo $this->item->j2commerce_product_id ?? 0; ?>,
-            formPrefix: '<?php echo $this->form_prefix; ?>',
+            productId: <?php echo $item->j2commerce_product_id ?? 0; ?>,
+            formPrefix: '<?php echo $formPrefix; ?>',
             csrfToken: '<?php echo \Joomla\CMS\Session\Session::getFormToken(); ?>'
         },
 

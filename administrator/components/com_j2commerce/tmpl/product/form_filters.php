@@ -28,8 +28,8 @@ $style = '.autocomplete-list{background: var(--form-control-bg);max-height: 200p
 $wa->addInlineStyle($style, [], []);
 
 
-$this->item = $displayData['product'];
-$this->form_prefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
+$item = $displayData['product'];
+$formPrefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
 
 $global_config = Factory::getApplication()->getConfig();
 $limit = $global_config->get('list_limit',20);
@@ -40,17 +40,17 @@ $limit = $global_config->get('list_limit',20);
     <legend><?php echo Text::_('COM_J2COMMERCE_TITLE_FILTERGROUPS'); ?></legend>
     <div class="j2commerce-product-filters">
         <div class="j2commerce-product-filters" id="j2commerce-product-filters">
-            <?php echo (new FileLayout('form_ajax_avfilter', JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product'))->render(['product' => $this->item]);?>
-            <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductFiltersEdit', array($this, $this->item, $this->form_prefix))->getArgument('html', ''); ?>
+            <?php echo (new FileLayout('form_ajax_avfilter', JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product'))->render(['product' => $item]);?>
+            <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductFiltersEdit', array($this, $item, $formPrefix))->getArgument('html', ''); ?>
         </div>
     </div>
 </fieldset>
 
 
 <script type="text/javascript">
-    var total_variants = <?php echo $this->item->productfilter_pagination->total ?? 0; ?>;
+    var total_variants = <?php echo $item->productfilter_pagination->total ?? 0; ?>;
     var limit = <?php echo $limit ?? 20; ?>;
-    var product_id = <?php echo $this->item->j2commerce_product_id ?? 0; ?>;
+    var product_id = <?php echo $item->j2commerce_product_id ?? 0; ?>;
 
     document.addEventListener("DOMContentLoaded", function () {
         var filterBlock = document.getElementById("j2commerce-product-filters");
@@ -60,7 +60,7 @@ $limit = $global_config->get('list_limit',20);
             paginationWrapper.setAttribute('aria-label', '<?php echo Text::_('JLIB_HTML_PAGINATION'); ?>');
             paginationWrapper.innerHTML = `
             <div class="text-end">
-                <span class="me-1"><?php echo $this->item->productfilter_pagination->total ?? 0; ?></span><?php echo Text::_('COM_J2COMMERCE_PRODUCT_FILTERS'); ?>
+                <span class="me-1"><?php echo $item->productfilter_pagination->total ?? 0; ?></span><?php echo Text::_('COM_J2COMMERCE_PRODUCT_FILTERS'); ?>
             </div>
             <div id="filterNav" class="pagination pagination-toolbar text-center mt-0 mx-0">
                 <ul class="pagination pagination-list text-center ms-auto me-0"></ul>
@@ -119,7 +119,7 @@ $limit = $global_config->get('list_limit',20);
             limitstart: limitstart,
             product_id: product_id,
             limit: limit,
-            form_prefix: '<?php echo $this->form_prefix; ?>'
+            form_prefix: '<?php echo $formPrefix; ?>'
         };
         var serializedData = Object.keys(data)
             .map(key => encodeURIComponent(key) + '=' + encodeURIComponent(data[key]))
@@ -290,7 +290,7 @@ $limit = $global_config->get('list_limit',20);
                                     <span class="filterRemove" onclick="this.closest('tr').remove();">
                                         <span class="icon icon-trash text-danger"></span>
                                     </span>
-                                    <input type="hidden" value="${value}" name="<?php echo $this->form_prefix.'[productfilter_ids]' ;?>[]">
+                                    <input type="hidden" value="${value}" name="<?php echo $formPrefix.'[productfilter_ids]' ;?>[]">
                                 </td>
                             </tr>
                         `;

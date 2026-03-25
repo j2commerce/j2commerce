@@ -16,12 +16,15 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
 
-// Extract display data - MUST set $this->item BEFORE using it
-$this->item = $displayData['product'];
-$this->form_prefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
+// Extract display data - MUST set $item BEFORE using it
+$item = $displayData['product'];
+$formPrefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
 
-// Now we can safely use $this->item->product_type
-$this->product_option_list = J2CommerceHelper::product()->getProductOptionList($this->item->product_type);
+// Defaults for Joomla core layout fields to prevent PHP 8.4 undefined variable warnings
+$textFieldDefaults = ['value' => '', 'onchange' => '', 'disabled' => false, 'readonly' => false, 'dataAttribute' => '', 'hint' => '', 'required' => false, 'autofocus' => false, 'spellcheck' => false, 'addonBefore' => '', 'addonAfter' => '', 'dirname' => '', 'charcounter' => false, 'options' => []];
+
+// Now we can safely use $item->product_type
+$productOptionList = J2CommerceHelper::product()->getProductOptionList($item->product_type);
 
 // Initialize key counter for options
 $key = 0;
@@ -31,7 +34,7 @@ $key = 0;
 <div class="j2commerce-product-variants">
     <fieldset id="j2commerce-flexivariable-options" class="options-form">
         <legend><?php echo Text::_('COM_J2COMMERCE_OPTIONS');?></legend>
-        <?php if (empty($this->product_option_list)) : ?>
+        <?php if (empty($productOptionList)) : ?>
             <p class="alert alert-warning">
                 <span class="me-3"><?php echo Text::_('COM_J2COMMERCE_OPTIONS_NO_OPTION_MESSAGE')?></span>
             </p>
@@ -49,14 +52,14 @@ $key = 0;
                     </tr>
                     </thead>
                     <tbody>
-                    <?php if(isset($this->item->product_options) && !empty($this->item->product_options)):?>
-                        <?php foreach($this->item->product_options as $poption):?>
+                    <?php if(isset($item->product_options) && !empty($item->product_options)):?>
+                        <?php foreach($item->product_options as $poption):?>
                             <tr id="pao_flexivar_option_<?php echo $poption->j2commerce_productoption_id;?>">
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <strong><?php echo $this->escape($poption->option_name);?></strong>
-                                        <input type="hidden" name="<?php echo $this->form_prefix.'[item_options]['.$poption->j2commerce_productoption_id.'][j2commerce_productoption_id]';?>" value="<?php echo $poption->j2commerce_productoption_id;?>">
-                                        <input type="hidden" name="<?php echo $this->form_prefix.'[item_options]['.$poption->j2commerce_productoption_id.'][option_id]';?>" value="<?php echo $poption->option_id;?>">
+                                        <input type="hidden" name="<?php echo $formPrefix.'[item_options]['.$poption->j2commerce_productoption_id.'][j2commerce_productoption_id]';?>" value="<?php echo $poption->j2commerce_productoption_id;?>">
+                                        <input type="hidden" name="<?php echo $formPrefix.'[item_options]['.$poption->j2commerce_productoption_id.'][option_id]';?>" value="<?php echo $poption->option_id;?>">
                                         <small class="ms-1">(<?php echo $this->escape($poption->option_unique_name);?>)</small>
                                     </div>
                                     <div>
@@ -64,7 +67,7 @@ $key = 0;
                                     </div>
                                 </td>
                                 <td>
-                                    <?php echo LayoutHelper::render('joomla.form.field.text', ['name'  => $this->form_prefix.'[item_options]['.$poption->j2commerce_productoption_id.'][ordering]','id' => 'flexivar_ordering_'.$poption->j2commerce_productoption_id,'value' => $poption->ordering,'class' => 'form-control',]);?>
+                                    <?php echo LayoutHelper::render('joomla.form.field.text', ['name'  => $formPrefix.'[item_options]['.$poption->j2commerce_productoption_id.'][ordering]','id' => 'flexivar_ordering_'.$poption->j2commerce_productoption_id,'value' => $poption->ordering ?? '','class' => 'form-control',] + $textFieldDefaults);?>
                                 </td>
                                 <td class="text-end">
                                     <span class="optionRemove btn btn-danger btn-sm"
@@ -86,7 +89,7 @@ $key = 0;
                                 <div class="controls">
                                     <div class="input-group">
                                         <select name="option_select_id" id="j2commerce_flexivar_option_select" class="form-select">
-                                            <?php foreach ($this->product_option_list as $option_list):?>
+                                            <?php foreach ($productOptionList as $option_list):?>
                                                 <option value="<?php echo $option_list->j2commerce_option_id?>"><?php echo $this->escape($option_list->option_name) .' ('.$this->escape($option_list->option_unique_name).')';?></option>
                                             <?php endforeach; ?>
                                         </select>
@@ -102,7 +105,7 @@ $key = 0;
         <?php endif;?>
 
         <!-- Hidden field to track deleted option IDs for persistence on save -->
-        <input type="hidden" name="<?php echo $this->form_prefix; ?>[deleted_options]" id="j2commerce-flexivar-deleted-options" value="">
+        <input type="hidden" name="<?php echo $formPrefix; ?>[deleted_options]" id="j2commerce-flexivar-deleted-options" value="">
 
     </fieldset>
     <div class="alert alert-info d-flex align-items-center my-3" role="alert">
@@ -112,7 +115,7 @@ $key = 0;
 
     <?php
     // Show "Create Variants" button if options exist in the table but variant_add_block has no dropdowns yet
-    $hasDbOptions = !empty($this->item->product_options);
+    $hasDbOptions = !empty($item->product_options);
     ?>
     <button type="button"
             id="j2commerce-create-variants-btn"
@@ -125,10 +128,10 @@ $key = 0;
 document.addEventListener('DOMContentLoaded', function() {
     'use strict';
 
-    const formPrefix = '<?php echo $this->form_prefix; ?>';
+    const formPrefix = '<?php echo $formPrefix; ?>';
     let optionKey = <?php echo $key; ?>;
     const createVariantsBtn = document.getElementById('j2commerce-create-variants-btn');
-    const productId = <?php echo (int) ($this->item->j2commerce_product_id ?? 0); ?>;
+    const productId = <?php echo (int) ($item->j2commerce_product_id ?? 0); ?>;
 
     function updateCreateVariantsBtnVisibility() {
         if (!createVariantsBtn) return;
