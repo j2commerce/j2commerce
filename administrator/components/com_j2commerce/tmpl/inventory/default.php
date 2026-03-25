@@ -58,153 +58,153 @@ $wa->addInlineStyle('
 ');
 
 $wa->addInlineScript('
-jQuery(document).ready(function($) {
-    // AJAX save function for individual inventory items
-    window.saveInventoryItem = function(productId, variantId) {
-        var row = $("#inventory-row-" + productId);
-        var quantity = row.find(".quantity-input").val();
-        var manageStock = row.find(".manage-stock-toggle:checked").val() || "0";
-        var availability = row.find(".stock-select").val();
+document.addEventListener("DOMContentLoaded", function() {
+    const csrfToken = "' . Session::getFormToken() . '";
 
-        // Show loading state
-        var saveBtn = row.find(".save-btn");
-        var originalText = saveBtn.text();
-        saveBtn.prop("disabled", true).text("' . Text::_('COM_J2COMMERCE_SAVING') . '...");
+    function getFieldValue(row, selector) {
+        const el = row.querySelector(selector);
+        return el ? el.value : "";
+    }
 
-        $.ajax({
-            url: "index.php?option=com_j2commerce&task=inventory.saveItem",
-            type: "POST",
-            data: {
-                product_id: productId,
-                variant_id: variantId,
-                quantity: quantity,
-                manage_stock: manageStock,
-                availability: availability,
-                "' . Session::getFormToken() . '": 1
-            },
-            dataType: "json",
-            success: function(response) {
-                if (response.success) {
-                    // Show success message
-                    saveBtn.removeClass("btn-primary").addClass("btn-success").text("' . Text::_('COM_J2COMMERCE_SAVED') . '");
-                    setTimeout(function() {
-                        saveBtn.removeClass("btn-success").addClass("btn-primary").text(originalText);
-                    }, 2000);
+    function getManageStockValue(row) {
+        // Check for Joomla radio switcher (btn-check inputs)
+        const checked = row.querySelector(".manage-stock-toggle:checked, input[name*=manage_stock]:checked");
+        if (checked) return checked.value;
+        // Fallback: look for any checked radio in the manage-stock cell
+        const cell = row.querySelector(".j2commerce-inventory-manage-stock, [class*=manage]");
+        if (cell) {
+            const radio = cell.querySelector("input[type=radio]:checked");
+            if (radio) return radio.value;
+        }
+        return "0";
+    }
 
-                    // Show system message if available
-                    if (response.message) {
-                        showSystemMessage(response.message, "success");
-                    }
-                } else {
-                    saveBtn.removeClass("btn-primary").addClass("btn-danger").text("' . Text::_('COM_J2COMMERCE_ERROR') . '");
-                    setTimeout(function() {
-                        saveBtn.removeClass("btn-danger").addClass("btn-primary").text(originalText);
-                    }, 3000);
-
-                    if (response.message) {
-                        showSystemMessage(response.message, "error");
-                    }
-                }
-            },
-            error: function() {
-                saveBtn.removeClass("btn-primary").addClass("btn-danger").text("' . Text::_('COM_J2COMMERCE_ERROR') . '");
-                setTimeout(function() {
-                    saveBtn.removeClass("btn-danger").addClass("btn-primary").text(originalText);
-                }, 3000);
-                showSystemMessage("' . Text::_('COM_J2COMMERCE_INVENTORY_AJAX_ERROR') . '", "error");
-            },
-            complete: function() {
-                saveBtn.prop("disabled", false);
-            }
-        });
-    };
-
-    // Function to show system messages
     function showSystemMessage(message, type) {
-        var alertClass = type === "success" ? "alert-success" : "alert-danger";
-        var alertHtml = "<div class=\"alert " + alertClass + " alert-dismissible fade show\" role=\"alert\">" +
-                       message +
-                       "<button type=\"button\" class=\"btn-close\" data-bs-dismiss=\"alert\" aria-label=\"Close\"></button>" +
-                       "</div>";
-
-        $("#system-message-container").html(alertHtml);
-
-        // Auto-hide after 5 seconds
+        const container = document.getElementById("system-message-container");
+        if (!container) return;
+        const alertClass = type === "success" ? "alert-success" : "alert-danger";
+        container.innerHTML = "<div class=\"alert " + alertClass + " alert-dismissible fade show\" role=\"alert\">"
+            + message
+            + "<button type=\"button\" class=\"btn-close\" data-bs-dismiss=\"alert\" aria-label=\"Close\"></button>"
+            + "</div>";
         setTimeout(function() {
-            $(".alert").fadeOut();
+            const alert = container.querySelector(".alert");
+            if (alert) { alert.style.transition = "opacity 0.5s"; alert.style.opacity = "0"; setTimeout(function() { alert.remove(); }, 500); }
         }, 5000);
     }
 
-    // AJAX save function for individual variant items
-    window.saveVariantItem = function(variantId) {
-        var row = $("#variant-row-" + variantId);
-        var quantity = row.find(".quantity-input").val();
-        var manageStock = row.find(".manage-stock-toggle:checked").val() || "0";
-        var availability = row.find(".stock-select").val();
+    function setBtnState(btn, state, originalText) {
+        btn.classList.remove("btn-primary", "btn-success", "btn-danger");
+        if (state === "saving") {
+            btn.classList.add("btn-primary");
+            btn.disabled = true;
+            btn.textContent = "' . Text::_('COM_J2COMMERCE_SAVING') . '...";
+        } else if (state === "success") {
+            btn.classList.add("btn-success");
+            btn.textContent = "' . Text::_('COM_J2COMMERCE_SAVED') . '";
+            setTimeout(function() { btn.classList.remove("btn-success"); btn.classList.add("btn-primary"); btn.textContent = originalText; }, 2000);
+        } else if (state === "error") {
+            btn.classList.add("btn-danger");
+            btn.textContent = "' . Text::_('COM_J2COMMERCE_ERROR') . '";
+            setTimeout(function() { btn.classList.remove("btn-danger"); btn.classList.add("btn-primary"); btn.textContent = originalText; }, 3000);
+        }
+    }
 
-        // Show loading state
-        var saveBtn = row.find(".save-btn");
-        var originalText = saveBtn.text();
-        saveBtn.prop("disabled", true).text("' . Text::_('COM_J2COMMERCE_SAVING') . '...");
+    // AJAX save for individual inventory items
+    window.saveInventoryItem = function(productId, variantId) {
+        const row = document.getElementById("inventory-row-" + productId);
+        if (!row) return;
+        const quantity = getFieldValue(row, ".quantity-input, input[name*=quantity]");
+        const manageStock = getManageStockValue(row);
+        const availability = getFieldValue(row, ".stock-select, select[name*=availability]");
+        const saveBtn = row.querySelector(".save-btn");
+        if (!saveBtn) return;
+        const originalText = saveBtn.textContent;
+        setBtnState(saveBtn, "saving", originalText);
 
-        $.ajax({
-            url: "index.php?option=com_j2commerce&task=variants.saveVariant",
-            type: "POST",
-            data: {
-                variant_id: variantId,
-                quantity: quantity,
-                manage_stock: manageStock,
-                availability: availability,
-                "' . Session::getFormToken() . '": 1
-            },
-            dataType: "json",
-            success: function(response) {
-                if (response.success) {
-                    // Show success message
-                    saveBtn.removeClass("btn-primary").addClass("btn-success").text("' . Text::_('COM_J2COMMERCE_SAVED') . '");
-                    setTimeout(function() {
-                        saveBtn.removeClass("btn-success").addClass("btn-primary").text(originalText);
-                    }, 2000);
+        const body = new URLSearchParams();
+        body.set("product_id", productId);
+        body.set("variant_id", variantId);
+        body.set("quantity", quantity);
+        body.set("manage_stock", manageStock);
+        body.set("availability", availability);
+        body.set(csrfToken, "1");
 
-                    // Show system message if available
-                    if (response.message) {
-                        showSystemMessage(response.message, "success");
-                    }
-                } else {
-                    saveBtn.removeClass("btn-primary").addClass("btn-danger").text("' . Text::_('COM_J2COMMERCE_ERROR') . '");
-                    setTimeout(function() {
-                        saveBtn.removeClass("btn-danger").addClass("btn-primary").text(originalText);
-                    }, 3000);
-
-                    if (response.message) {
-                        showSystemMessage(response.message, "error");
-                    }
-                }
-            },
-            error: function() {
-                saveBtn.removeClass("btn-primary").addClass("btn-danger").text("' . Text::_('COM_J2COMMERCE_ERROR') . '");
-                setTimeout(function() {
-                    saveBtn.removeClass("btn-danger").addClass("btn-primary").text(originalText);
-                }, 3000);
-                showSystemMessage("' . Text::_('COM_J2COMMERCE_INVENTORY_AJAX_ERROR') . '", "error");
-            },
-            complete: function() {
-                saveBtn.prop("disabled", false);
+        fetch("index.php?option=com_j2commerce&task=inventory.saveItem", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded", "Accept": "application/json" },
+            body: body.toString()
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(response) {
+            if (response.success) {
+                setBtnState(saveBtn, "success", originalText);
+                if (response.message) showSystemMessage(response.message, "success");
+            } else {
+                setBtnState(saveBtn, "error", originalText);
+                if (response.message) showSystemMessage(response.message, "error");
             }
-        });
+        })
+        .catch(function() {
+            setBtnState(saveBtn, "error", originalText);
+            showSystemMessage("' . Text::_('COM_J2COMMERCE_INVENTORY_AJAX_ERROR') . '", "error");
+        })
+        .finally(function() { saveBtn.disabled = false; });
     };
 
-    // Function to toggle variant visibility
-    window.toggleVariants = function(productId) {
-        var variantsRow = $("#variants-" + productId);
-        var toggleBtn = $("#toggle-variants-" + productId);
+    // AJAX save for individual variant items
+    window.saveVariantItem = function(variantId) {
+        const row = document.getElementById("variant-row-" + variantId);
+        if (!row) return;
+        const quantity = getFieldValue(row, ".quantity-input, input[name*=quantity]");
+        const manageStock = getManageStockValue(row);
+        const availability = getFieldValue(row, ".stock-select, select[name*=availability]");
+        const saveBtn = row.querySelector(".save-btn");
+        if (!saveBtn) return;
+        const originalText = saveBtn.textContent;
+        setBtnState(saveBtn, "saving", originalText);
 
-        if (variantsRow.is(":visible")) {
-            variantsRow.hide();
-            toggleBtn.text("' . Text::_('COM_J2COMMERCE_SHOW_VARIANTS') . '");
+        const body = new URLSearchParams();
+        body.set("variant_id", variantId);
+        body.set("quantity", quantity);
+        body.set("manage_stock", manageStock);
+        body.set("availability", availability);
+        body.set(csrfToken, "1");
+
+        fetch("index.php?option=com_j2commerce&task=variants.saveVariant", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded", "Accept": "application/json" },
+            body: body.toString()
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(response) {
+            if (response.success) {
+                setBtnState(saveBtn, "success", originalText);
+                if (response.message) showSystemMessage(response.message, "success");
+            } else {
+                setBtnState(saveBtn, "error", originalText);
+                if (response.message) showSystemMessage(response.message, "error");
+            }
+        })
+        .catch(function() {
+            setBtnState(saveBtn, "error", originalText);
+            showSystemMessage("' . Text::_('COM_J2COMMERCE_INVENTORY_AJAX_ERROR') . '", "error");
+        })
+        .finally(function() { saveBtn.disabled = false; });
+    };
+
+    // Toggle variant visibility (fallback — Bootstrap collapse handles this via data-bs-toggle)
+    window.toggleVariants = function(productId) {
+        const variantsRow = document.getElementById("variants-" + productId);
+        const toggleBtn = document.getElementById("toggle-variants-" + productId);
+        if (!variantsRow) return;
+        const isVisible = variantsRow.style.display !== "none" && variantsRow.classList.contains("show");
+        if (isVisible) {
+            variantsRow.classList.remove("show");
+            if (toggleBtn) toggleBtn.textContent = "' . Text::_('COM_J2COMMERCE_SHOW_VARIANTS') . '";
         } else {
-            variantsRow.show();
-            toggleBtn.text("' . Text::_('COM_J2COMMERCE_HIDE_VARIANTS') . '");
+            variantsRow.classList.add("show");
+            if (toggleBtn) toggleBtn.textContent = "' . Text::_('COM_J2COMMERCE_HIDE_VARIANTS') . '";
         }
     };
 });
