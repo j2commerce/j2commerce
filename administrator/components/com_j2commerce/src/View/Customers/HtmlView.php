@@ -71,6 +71,15 @@ class HtmlView extends BaseHtmlView
     public $activeFilters;
 
     /**
+     * Is this view an empty state.
+     *
+     * @var    bool
+     * @since  6.1.3
+     */
+    private $isEmptyState = false;
+
+
+    /**
      * Display the view.
      *
      * @param   string  $tpl  The name of the template file to parse.
@@ -96,6 +105,14 @@ class HtmlView extends BaseHtmlView
         $this->state         = $model->getState();
         $this->filterForm    = $model->getFilterForm();
         $this->activeFilters = $model->getActiveFilters();
+
+        $this->isEmptyState = empty($this->items)
+            && trim((string) $this->state->get('filter.search', '')) === ''
+            && (string) $this->state->get('filter.country_id', '') === '';
+
+        if ($this->isEmptyState) {
+            $this->setLayout('emptystate');
+        }
 
         // Check for errors
         if (\count($errors = $this->get('Errors'))) {
