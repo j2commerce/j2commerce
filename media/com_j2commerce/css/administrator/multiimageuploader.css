@@ -366,7 +366,7 @@
 .uppymedia-upload-zone .uppy-Dashboard-inner {
     border: 2px dashed var(--uppymedia-border-color);
     border-radius: var(--uppymedia-border-radius);
-    min-height: 150px;
+    min-height: 200px;
 }
 
 .uppymedia-upload-zone .uppy-Dashboard-AddFiles {
@@ -378,14 +378,18 @@
     background-color: rgba(13, 110, 253, 0.05);
 }
 
-/* Constrain file list with scroll so thumbnails are not cut off */
+/* File list with enough room for thumbnails */
 .uppymedia-upload-zone .uppy-Dashboard-files {
-    max-height: 300px;
+    max-height: 400px;
     overflow-y: auto;
 }
 
+.uppymedia-upload-zone .uppy-Dashboard-Item {
+    min-height: 180px;
+}
+
 .uppymedia-upload-zone .uppy-Dashboard-Item-previewImg {
-    max-height: 120px;
+    max-height: 160px;
     object-fit: contain;
 }
 
