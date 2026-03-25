@@ -128,11 +128,59 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             return;
         }
 
+        // Load language files for j2commerce plugins that have registered
+        // for early admin language loading (needed for menu item type
+        // discovery and other admin contexts where plugin language isn't
+        // auto-loaded by Joomla's core language loader).
+        $this->loadPluginLanguageFiles();
+
         // Check if we need to run the inventory control cron
         if ($this->shouldRunInventoryCron()) {
             $this->runInventoryControl();
         }
 
+    }
+
+    /**
+     * Loads language files for j2commerce plugins that have opted in to
+     * early admin language loading. Plugins register by adding their
+     * extension name to the JSON registry at
+     * administrator/components/com_j2commerce/language_registry.json
+     * via their installer scripts.
+     *
+     * This enables translated strings for plugin-registered menu item
+     * types, admin views, and other contexts where Joomla only loads the
+     * component's language by default.
+     *
+     * @return  void
+     *
+     * @since   6.0.3
+     */
+    private function loadPluginLanguageFiles(): void
+    {
+        $app = $this->getApplication();
+
+        if (!$app->isClient('administrator')) {
+            return;
+        }
+
+        $registryFile = JPATH_ADMINISTRATOR . '/components/com_j2commerce/language_registry.json';
+
+        if (!is_file($registryFile)) {
+            return;
+        }
+
+        $extensions = json_decode((string) file_get_contents($registryFile), true);
+
+        if (empty($extensions) || !is_array($extensions)) {
+            return;
+        }
+
+        $lang = $app->getLanguage();
+
+        foreach ($extensions as $extension) {
+            $lang->load($extension . '.sys', JPATH_ADMINISTRATOR);
+        }
     }
 
     /**

@@ -103,17 +103,34 @@ document.addEventListener('DOMContentLoaded', function() {
     const uniqueNameField = document.getElementById('jform_option_unique_name');
 
     if (nameField && uniqueNameField) {
-        nameField.addEventListener('input', function() {
-            // Only auto-generate if unique name field is empty
-            if (!uniqueNameField.value.trim()) {
-                // Convert name to snake_case
-                let uniqueName = this.value
-                    .toLowerCase()
-                    .replace(/[^a-z0-9]/g, '_')
-                    .replace(/_+/g, '_')
-                    .replace(/^_|_$/g, '');
+        // Track the last auto-generated value so we keep updating
+        // until the user manually edits the field
+        let lastAutoValue = uniqueNameField.value.trim() === '' ? '' : null;
 
-                uniqueNameField.value = uniqueName;
+        function toSnakeCase(str) {
+            return str
+                .toLowerCase()
+                .replace(/[^a-z0-9]/g, '_')
+                .replace(/_+/g, '_')
+                .replace(/^_|_$/g, '');
+        }
+
+        nameField.addEventListener('input', function() {
+            const current = uniqueNameField.value;
+
+            // Auto-generate if field is empty or still matches the last auto-generated value
+            if (current === '' || current === lastAutoValue) {
+                const generated = toSnakeCase(this.value);
+                uniqueNameField.value = generated;
+                lastAutoValue = generated;
+            }
+        });
+
+        // If user manually edits the unique name, stop auto-generating
+        uniqueNameField.addEventListener('input', function() {
+            const generated = toSnakeCase(nameField.value);
+            if (this.value !== generated) {
+                lastAutoValue = null;
             }
         });
     }
