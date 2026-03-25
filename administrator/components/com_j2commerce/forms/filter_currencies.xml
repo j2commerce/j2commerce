@@ -34,6 +34,8 @@
             <option value="a.currency_title DESC">COM_J2COMMERCE_HEADING_CURRENCY_TITLE_DESC</option>
             <option value="a.currency_code ASC">COM_J2COMMERCE_HEADING_CURRENCY_CODE_ASC</option>
             <option value="a.currency_code DESC">COM_J2COMMERCE_HEADING_CURRENCY_CODE_DESC</option>
+            <option value="a.currency_symbol ASC">COM_J2COMMERCE_HEADING_CURRENCY_SYMBOL_ASC</option>
+            <option value="a.currency_symbol DESC">COM_J2COMMERCE_HEADING_CURRENCY_SYMBOL_DESC</option>
             <option value="a.currency_value ASC">COM_J2COMMERCE_HEADING_CURRENCY_VALUE_ASC</option>
             <option value="a.currency_value DESC">COM_J2COMMERCE_HEADING_CURRENCY_VALUE_DESC</option>
             <option value="a.j2commerce_currency_id ASC">JGRID_HEADING_ID_ASC</option>
