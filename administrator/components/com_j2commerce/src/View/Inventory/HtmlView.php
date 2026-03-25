@@ -171,7 +171,7 @@ class HtmlView extends BaseHtmlView
         ToolbarHelper::title(Text::_('COM_J2COMMERCE_INVENTORY_MANAGER_TITLE'), 'fa-solid fa-barcode');
 
         if ($canDo->get('core.edit')) {
-            $toolbar->standardButton('batch', Text::_('COM_J2COMMERCE_INVENTORY_BATCH_UPDATE'), 'inventory.batch')
+            $toolbar->standardButton('square', Text::_('COM_J2COMMERCE_INVENTORY_BATCH_UPDATE'), 'inventory.batch')
                 ->listCheck(true);
         }
 
