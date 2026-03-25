@@ -1,6 +1,6 @@
 # J2Commerce
 
-**E-commerce for Joomla 6** — a native, full-featured online store component built on modern Joomla MVC architecture.
+**Ecommerce for Joomla 6** — a native, full-featured online store component built on modern Joomla MVC architecture.
 
 [![License: GPL v2+](https://img.shields.io/badge/License-GPL%20v2%2B-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html)
 [![Joomla 6](https://img.shields.io/badge/Joomla-6.x-orange.svg)](https://www.joomla.org/)
@@ -12,7 +12,7 @@
 
 J2Commerce is the next generation of [J2Store](https://www.j2store.org/), rebuilt from the ground up for Joomla 6. It replaces the legacy FOF 2 framework with native Joomla MVC, swaps jQuery for vanilla ES6+ JavaScript, and ships as a single installable package with 33+ bundled extensions.
 
-If you've used J2Store, J2Commerce is the upgrade path. If you're new, it's a complete e-commerce solution that runs inside Joomla — no external platform, no SaaS dependency.
+If you've used J2Store, J2Commerce is the upgrade path. If you're new, it's a complete ecommerce solution that runs inside Joomla — no external platform, no SaaS dependency.
 
 **Website:** [j2commerce.com](https://www.j2commerce.com)
 

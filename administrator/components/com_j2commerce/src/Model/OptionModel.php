@@ -449,7 +449,7 @@ class OptionModel extends AdminModel
      */
     public function getOptionTypes()
     {
-        // Common option types for e-commerce
+        // Common option types for ecommerce
         return [
             'text' => Text::_('COM_J2COMMERCE_OPTION_TYPE_TEXT'),
             'textarea' => Text::_('COM_J2COMMERCE_OPTION_TYPE_TEXTAREA'),
