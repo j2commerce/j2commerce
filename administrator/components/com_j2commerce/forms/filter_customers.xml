@@ -37,6 +37,8 @@
             <option value="a.city DESC">COM_J2COMMERCE_HEADING_CITY_DESC</option>
             <option value="c.country_name ASC">COM_J2COMMERCE_HEADING_COUNTRY_ASC</option>
             <option value="c.country_name DESC">COM_J2COMMERCE_HEADING_COUNTRY_DESC</option>
+            <option value="z.zone_name ASC">COM_J2COMMERCE_HEADING_ZONE_ASC</option>
+            <option value="z.zone_name DESC">COM_J2COMMERCE_HEADING_ZONE_DESC</option>
             <option value="a.j2commerce_address_id ASC">JGRID_HEADING_ID_ASC</option>
             <option value="a.j2commerce_address_id DESC">JGRID_HEADING_ID_DESC</option>
         </field>
