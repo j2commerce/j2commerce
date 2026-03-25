@@ -156,13 +156,24 @@ document.addEventListener('DOMContentLoaded', () => {
             return response.json();
         })
         .then(data => {
-            if (data.success) {
-                Joomla.renderMessages({'success': [data.message]});
+            // com_ajax wraps plugin result: {success: true, data: ['{"success":true,"message":"..."}'] }
+            let result = data;
+            if (data.data && Array.isArray(data.data) && data.data.length > 0) {
+                try {
+                    result = JSON.parse(data.data[0]);
+                } catch (e) {
+                    // data.data[0] may already be an object
+                    result = typeof data.data[0] === 'object' ? data.data[0] : data;
+                }
+            }
+            if (result.success) {
+                Joomla.renderMessages({'success': [result.message]});
             } else {
-                Joomla.renderMessages({'error': [data.message || '{$errorText}']});
+                Joomla.renderMessages({'error': [result.message || '{$errorText}']});
             }
         })
-        .catch(() => {
+        .catch(err => {
+            console.error('[J2C Localization] Request failed for table:', table, err);
             Joomla.renderMessages({'error': ['{$errorText}']});
         })
         .finally(() => {

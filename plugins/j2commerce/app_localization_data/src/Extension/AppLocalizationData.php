@@ -36,11 +36,11 @@ final class AppLocalizationData extends CMSPlugin implements SubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            'onAjaxAppLocalizationData' => 'onAjaxAppLocalizationData',
+            'onAjaxApp_localization_data' => 'handleAjax',
         ];
     }
 
-    public function onAjaxAppLocalizationData(AjaxEvent $event): void
+    public function handleAjax(AjaxEvent $event): void
     {
         $app = $this->getApplication();
 
@@ -81,6 +81,8 @@ final class AppLocalizationData extends CMSPlugin implements SubscriberInterface
     private function insertTableValues(): array
     {
         $tableName = $this->getApplication()->getInput()->getCmd('table', '');
+
+        Log::add('Localization data reset requested for table: ' . $tableName, Log::DEBUG, 'com_j2commerce');
 
         if ($tableName === 'metrics') {
             return $this->resetMetrics();
