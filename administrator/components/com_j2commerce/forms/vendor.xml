@@ -104,7 +104,7 @@
         <field
             name="company"
             type="text"
-            label="COM_J2COMMERCE_FIELD_COMPANY"
+            label="COM_J2COMMERCE_FIELD_VENDOR_COMPANY"
             maxlength="255"
         />
 
