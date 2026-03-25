@@ -166,7 +166,7 @@ class HtmlView extends BaseHtmlView
                 // Add "View Voucher History"
                 $toolbar->linkButton('voucher-history')
                     ->text('COM_J2COMMERCE_VOUCHER_VIEW_HISTORY')
-                    ->url('index.php?option=com_j2commerce&view=voucher&layout=history&j2commerce_voucher_id=' . $this->item->j2commerce_voucher_id)
+                    ->url('index.php?option=com_j2commerce&view=voucher&layout=history&id=' . $this->item->j2commerce_voucher_id)
                     ->icon('icon-list');
 
                 // Add "Send Voucher"
@@ -179,7 +179,7 @@ class HtmlView extends BaseHtmlView
             } else {
                 $toolbar->linkButton('voucherback')
                     ->text('JTOOLBAR_BACK')
-                    ->url('index.php?option=com_j2commerce&view=voucher&layout=edit&j2commerce_voucher_id=' . $this->item->j2commerce_voucher_id)
+                    ->url('index.php?option=com_j2commerce&view=voucher&layout=edit&id=' . $this->item->j2commerce_voucher_id)
                     ->icon('icon-arrow-left');
             }
         }
