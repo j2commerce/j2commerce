@@ -30,6 +30,8 @@
             onchange="this.form.submit();"
         >
             <option value="">JGLOBAL_SORT_BY</option>
+            <option value="a.enabled ASC">JSTATUS_ASC</option>
+            <option value="a.enabled DESC">JSTATUS_DESC</option>
             <option value="a.orderstatus_name ASC">COM_J2COMMERCE_HEADING_ORDERSTATUS_NAME_ASC</option>
             <option value="a.orderstatus_name DESC">COM_J2COMMERCE_HEADING_ORDERSTATUS_NAME_DESC</option>
             <option value="a.j2commerce_orderstatus_id ASC">JGRID_HEADING_ID_ASC</option>
