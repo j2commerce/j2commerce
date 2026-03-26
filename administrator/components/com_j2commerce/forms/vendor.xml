@@ -22,6 +22,7 @@
             type="user"
             label="COM_J2COMMERCE_FIELD_VENDOR_USER"
             description="COM_J2COMMERCE_FIELD_VENDOR_USER_DESC"
+            required="true"
         />
 
         <!-- Hidden address_id field (internal link to address table) -->
@@ -106,6 +107,7 @@
             type="text"
             label="COM_J2COMMERCE_FIELD_VENDOR_COMPANY"
             maxlength="255"
+            required="true"
         />
 
         <field
