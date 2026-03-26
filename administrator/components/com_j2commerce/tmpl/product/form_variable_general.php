@@ -19,8 +19,8 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
 
-$this->item        = $displayData['product'];
-$this->form_prefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
+$item        = $displayData['product'];
+$formPrefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
 
 $manufacturersField = new ManufacturersField();
 $manufacturersField->setDatabase(Factory::getContainer()->get('DatabaseDriver'));
@@ -43,7 +43,12 @@ $taxprofilesField->setup($element, '');
 $taxprofileTypes = $taxprofilesField->getOptions();
 array_unshift($taxprofileTypes, (object) ['value' => '', 'text' => Text::_('COM_J2COMMERCE_SELECT_TAX_PROFILE')]);
 
-$product_params = json_decode($this->item->params ?? '{}');
+$product_params = json_decode($item->params ?? '{}');
+
+// Defaults for Joomla core layout fields to prevent PHP 8.4 undefined variable warnings
+$switcherDefaults = ['onchange' => '', 'label' => '', 'disabled' => false, 'readonly' => false, 'dataAttribute' => '', 'class' => ''];
+$textFieldDefaults = ['value' => '', 'onchange' => '', 'disabled' => false, 'readonly' => false, 'dataAttribute' => '', 'hint' => '', 'required' => false, 'autofocus' => false, 'spellcheck' => false, 'addonBefore' => '', 'addonAfter' => '', 'dirname' => '', 'charcounter' => false, 'options' => []];
+$fancySelectDefaults = ['multiple' => false, 'autofocus' => false, 'onchange' => '', 'dataAttribute' => '', 'readonly' => false, 'disabled' => false, 'hint' => '', 'required' => false];
 ?>
 
 <div class="j2commerce-product-general">
@@ -56,14 +61,14 @@ $product_params = json_decode($this->item->params ?? '{}');
                 </div>
                 <div class="controls">
                     <?php echo LayoutHelper::render('joomla.form.field.radio.switcher', [
-                        'name'    => $this->form_prefix . '[visibility]',
+                        'name'    => $formPrefix . '[visibility]',
                         'id'      => 'j2commerce-variable-visibility-radio-group',
-                        'value'   => $this->item->visibility,
+                        'value'   => $item->visibility,
                         'options' => [
                             (object) ['value' => 0, 'text' => Text::_('JNO')],
                             (object) ['value' => 1, 'text' => Text::_('JYES')],
                         ],
-                    ]); ?>
+                    ] + $switcherDefaults); ?>
                 </div>
             </div>
 
@@ -73,11 +78,11 @@ $product_params = json_decode($this->item->params ?? '{}');
                 </div>
                 <div class="controls">
                     <?php echo LayoutHelper::render('joomla.form.field.list-fancy-select', [
-                        'name'    => $this->form_prefix . '[manufacturer_id]',
+                        'name'    => $formPrefix . '[manufacturer_id]',
                         'id'      => 'j2commerce-variable-manufacturer-select-group',
-                        'value'   => $this->item->manufacturer_id,
+                        'value'   => $item->manufacturer_id,
                         'options' => $manufacturerTypes,
-                    ]); ?>
+                    ] + $fancySelectDefaults); ?>
                 </div>
             </div>
 
@@ -87,11 +92,11 @@ $product_params = json_decode($this->item->params ?? '{}');
                 </div>
                 <div class="controls">
                     <?php echo LayoutHelper::render('joomla.form.field.list-fancy-select', [
-                        'name'    => $this->form_prefix . '[vendor_id]',
+                        'name'    => $formPrefix . '[vendor_id]',
                         'id'      => 'j2commerce-variable-vendor-select-group',
-                        'value'   => $this->item->vendor_id,
+                        'value'   => $item->vendor_id,
                         'options' => $vendorTypes,
-                    ]); ?>
+                    ] + $fancySelectDefaults); ?>
                 </div>
             </div>
 
@@ -101,11 +106,11 @@ $product_params = json_decode($this->item->params ?? '{}');
                 </div>
                 <div class="controls">
                     <?php echo LayoutHelper::render('joomla.form.field.list-fancy-select', [
-                        'name'    => $this->form_prefix . '[taxprofile_id]',
+                        'name'    => $formPrefix . '[taxprofile_id]',
                         'id'      => 'j2commerce-variable-taxprofile-select-group',
-                        'value'   => $this->item->taxprofile_id,
+                        'value'   => $item->taxprofile_id,
                         'options' => $taxprofileTypes,
-                    ]); ?>
+                    ] + $fancySelectDefaults); ?>
                 </div>
             </div>
 
@@ -115,11 +120,11 @@ $product_params = json_decode($this->item->params ?? '{}');
                 </div>
                 <div class="controls">
                     <?php echo LayoutHelper::render('joomla.form.field.text', [
-                        'name'  => $this->form_prefix . '[addtocart_text]',
+                        'name'  => $formPrefix . '[addtocart_text]',
                         'id'    => 'j2commerce-variable-addtocart_text-group',
-                        'value' => Text::_($this->item->addtocart_text),
+                        'value' => Text::_($item->addtocart_text ?? ''),
                         'class' => 'form-control',
-                    ]); ?>
+                    ] + $textFieldDefaults); ?>
                 </div>
             </div>
 
@@ -129,15 +134,15 @@ $product_params = json_decode($this->item->params ?? '{}');
                 </div>
                 <div class="controls">
                     <?php echo LayoutHelper::render('joomla.form.field.text', [
-                        'name'  => $this->form_prefix . '[product_css_class]',
+                        'name'  => $formPrefix . '[product_css_class]',
                         'id'    => 'j2commerce-variable-product_css_class-group',
                         'value' => $product_params->product_css_class ?? '',
                         'class' => 'form-control',
-                    ]); ?>
+                    ] + $textFieldDefaults); ?>
                 </div>
             </div>
 
-            <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductGeneralEdit', [$this, $this->item, $this->form_prefix])->getArgument('html', ''); ?>
+            <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductGeneralEdit', [$this, $item, $formPrefix])->getArgument('html', ''); ?>
         </div>
     </fieldset>
 </div>

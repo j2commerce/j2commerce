@@ -19,12 +19,12 @@ use Joomla\CMS\Form\Form;
 use Joomla\CMS\Form\FormFactoryInterface;
 use Joomla\CMS\Language\Text;
 
-$this->item = $displayData['product'];
-$this->form_prefix = $displayData['form_prefix'] ?? '';
+$item = $displayData['product'];
+$formPrefix = $displayData['form_prefix'] ?? '';
 
 $apps = J2CommerceHelper::plugin()->eventWithAppData(
     'AfterDisplayProductForm',
-    [$this, $this->item, $this->form_prefix]
+    [$this, $item, $formPrefix]
 );
 
 if (empty($apps)): ?>
@@ -65,7 +65,7 @@ if (empty($apps)): ?>
                 <?php
                 // Render XML form fields if provided
                 if (!empty($app['form_xml']) && file_exists($app['form_xml'])):
-                    $formPrefix = $app['form_prefix'] ?? $this->form_prefix;
+                    $formPrefix = $app['form_prefix'] ?? $formPrefix;
                     $factory = Factory::getContainer()->get(FormFactoryInterface::class);
 
                     $form = $factory->createForm(

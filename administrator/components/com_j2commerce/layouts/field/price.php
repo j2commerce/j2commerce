@@ -18,6 +18,17 @@ use Joomla\CMS\Language\Text;
 
 
 extract($displayData);
+$options       = $options ?? [];
+$disabled      = $disabled ?? false;
+$readonly      = $readonly ?? false;
+$dataAttribute = $dataAttribute ?? '';
+$hint          = $hint ?? '';
+$onchange      = $onchange ?? '';
+$required      = $required ?? false;
+$autofocus     = $autofocus ?? false;
+$spellcheck    = $spellcheck ?? false;
+$dirname       = $dirname ?? '';
+$value         = $value ?? '';
 
 /**
  * Layout variables

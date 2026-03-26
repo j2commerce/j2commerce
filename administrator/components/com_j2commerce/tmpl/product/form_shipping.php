@@ -24,9 +24,14 @@ use Joomla\CMS\Layout\LayoutHelper;
 
 
 
-$this->item = $displayData['product'];
-$this->form_prefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
-$product_params = json_decode($this->item->params);
+$item = $displayData['product'];
+$formPrefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
+$product_params = json_decode($item->params);
+
+// Defaults for Joomla core layout fields to prevent PHP 8.4 undefined variable warnings
+$switcherDefaults = ['onchange' => '', 'label' => '', 'disabled' => false, 'readonly' => false, 'dataAttribute' => '', 'class' => ''];
+$textFieldDefaults = ['value' => '', 'onchange' => '', 'disabled' => false, 'readonly' => false, 'dataAttribute' => '', 'hint' => '', 'required' => false, 'autofocus' => false, 'spellcheck' => false, 'addonBefore' => '', 'addonAfter' => '', 'dirname' => '', 'charcounter' => false, 'options' => []];
+$fancySelectDefaults = ['multiple' => false, 'autofocus' => false, 'onchange' => '', 'dataAttribute' => '', 'readonly' => false, 'disabled' => false, 'hint' => '', 'required' => false];
 
 
 $wa  = Factory::getApplication()->getDocument()->getWebAssetManager();
@@ -52,8 +57,8 @@ $wa->addInlineStyle($style, [], []);
 
 
 // Lengths
-$this->lengths = isset($this->item->lengths) ? $this->item->lengths : [];
-$lengthsArray = (array) $this->lengths; // cast stdClass -> array
+$lengths = isset($item->lengths) ? $item->lengths : [];
+$lengthsArray = (array) $lengths; // cast stdClass -> array
 $lengthsList = array_map(
     function ($text, $value) {
         return (object) ['value' => $value, 'text' => $text];
@@ -63,8 +68,8 @@ $lengthsList = array_map(
 );
 
 // Weights
-$this->weights = isset($this->item->weights) ? $this->item->weights : [];
-$weightsArray = (array) $this->weights;
+$weights = isset($item->weights) ? $item->weights : [];
+$weightsArray = (array) $weights;
 $weightsList = array_map(
     function ($text, $value) {
         return (object) ['value' => $value, 'text' => $text];
@@ -73,13 +78,13 @@ $weightsList = array_map(
     array_keys($weightsArray)
 );
 
-$defaultLengthClassId = empty($this->item->variant->length_class_id)
+$defaultLengthClassId = empty($item->variant->length_class_id)
     ? J2CommerceHelper::config()->get('config_length_class_id', 1)
-    : $this->item->variant->length_class_id;
+    : $item->variant->length_class_id;
 
-$defaultWeightClassId = empty($this->item->variant->weight_class_id)
+$defaultWeightClassId = empty($item->variant->weight_class_id)
     ? J2CommerceHelper::config()->get('config_weight_class_id', 2)
-    : $this->item->variant->weight_class_id;
+    : $item->variant->weight_class_id;
 ?>
 <div class="j2commerce-product-shipping">
     <fieldset class="options-form">
@@ -91,7 +96,7 @@ $defaultWeightClassId = empty($this->item->variant->weight_class_id)
                     <label id="j2commerce-product-shipping-radio-group-lbl" for="j2commerce-product-shipping-radio-group"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_ENABLE_SHIPPING');?></label>
                 </div>
                 <div class="controls">
-                    <?php echo LayoutHelper::render('joomla.form.field.radio.switcher', ['name'  => $this->form_prefix.'[shipping]','id'    => 'j2commerce-product-shipping-radio-group','value' => $this->item->variant->shipping,'options' => [(object) ['value' => 0, 'text' => Text::_('JNO')],(object) ['value' => 1, 'text' => Text::_('JYES')]]]);?>
+                    <?php echo LayoutHelper::render('joomla.form.field.radio.switcher', ['name'  => $formPrefix.'[shipping]','id'    => 'j2commerce-product-shipping-radio-group','value' => $item->variant->shipping,'options' => [(object) ['value' => 0, 'text' => Text::_('JNO')],(object) ['value' => 1, 'text' => Text::_('JYES')]]] + $switcherDefaults);?>
                 </div>
             </div>
 
@@ -102,11 +107,11 @@ $defaultWeightClassId = empty($this->item->variant->weight_class_id)
                 <div class="controls">
                     <div class="input-group dimensions-input-group">
                         <span class="input-group-text"><?php echo Text::_('COM_J2COMMERCE_LENGTH');?></span>
-                        <?php echo LayoutHelper::render('joomla.form.field.text', ['name'  => $this->form_prefix.'[length]','id'    => 'j2commerce-product-length','value' => $this->item->variant->length,'class' => 'form-control','hint' => Text::_('COM_J2COMMERCE_LENGTH'),]);?>
+                        <?php echo LayoutHelper::render('joomla.form.field.text', ['name'  => $formPrefix.'[length]','id'    => 'j2commerce-product-length','value' => $item->variant->length ?? '','class' => 'form-control','hint' => Text::_('COM_J2COMMERCE_LENGTH'),] + $textFieldDefaults);?>
                         <span class="input-group-text"><?php echo Text::_('COM_J2COMMERCE_WIDTH');?></span>
-                        <?php echo LayoutHelper::render('joomla.form.field.text', ['name'  => $this->form_prefix.'[width]','id'    => 'j2commerce-product-width','value' => $this->item->variant->width,'class' => 'form-control','hint' => Text::_('COM_J2COMMERCE_WIDTH'),]);?>
+                        <?php echo LayoutHelper::render('joomla.form.field.text', ['name'  => $formPrefix.'[width]','id'    => 'j2commerce-product-width','value' => $item->variant->width ?? '','class' => 'form-control','hint' => Text::_('COM_J2COMMERCE_WIDTH'),] + $textFieldDefaults);?>
                         <span class="input-group-text"><?php echo Text::_('COM_J2COMMERCE_HEIGHT');?></span>
-                        <?php echo LayoutHelper::render('joomla.form.field.text', ['name'  => $this->form_prefix.'[height]','id'    => 'j2commerce-product-height','value' => $this->item->variant->height,'class' => 'form-control','hint' => Text::_('COM_J2COMMERCE_HEIGHT'),]);?>
+                        <?php echo LayoutHelper::render('joomla.form.field.text', ['name'  => $formPrefix.'[height]','id'    => 'j2commerce-product-height','value' => $item->variant->height ?? '','class' => 'form-control','hint' => Text::_('COM_J2COMMERCE_HEIGHT'),] + $textFieldDefaults);?>
                     </div>
                 </div>
             </div>
@@ -116,7 +121,7 @@ $defaultWeightClassId = empty($this->item->variant->weight_class_id)
                     <label id="j2commerce-product-length_class_id-select-group-lbl" for="j2commerce-product-length_class_id-select-group"><?php echo Text::_('COM_J2COMMERCE_DIMENSIONS_UNIT');?></label>
                 </div>
                 <div class="controls">
-                    <?php echo LayoutHelper::render('joomla.form.field.list-fancy-select', ['name'  => $this->form_prefix.'[length_class_id]','id'    => 'j2commerce-product-length_class_id-select-group','value' => $defaultLengthClassId,'options' => $lengthsList]);?>
+                    <?php echo LayoutHelper::render('joomla.form.field.list-fancy-select', ['name'  => $formPrefix.'[length_class_id]','id'    => 'j2commerce-product-length_class_id-select-group','value' => $defaultLengthClassId,'options' => $lengthsList] + $fancySelectDefaults);?>
                 </div>
             </div>
 
@@ -125,7 +130,7 @@ $defaultWeightClassId = empty($this->item->variant->weight_class_id)
                     <label id="j2commerce-product-weight-lbl" for="j2commerce-product-weight"><?php echo Text::_('COM_J2COMMERCE_WEIGHT');?></label>
                 </div>
                 <div class="controls">
-                    <?php echo LayoutHelper::render('joomla.form.field.text', ['name'  => $this->form_prefix.'[weight]','id'    => 'j2commerce-product-weight','value' => $this->item->variant->weight,'class' => 'form-control',]);?>
+                    <?php echo LayoutHelper::render('joomla.form.field.text', ['name'  => $formPrefix.'[weight]','id'    => 'j2commerce-product-weight','value' => $item->variant->weight ?? '','class' => 'form-control',] + $textFieldDefaults);?>
                 </div>
             </div>
 
@@ -135,11 +140,11 @@ $defaultWeightClassId = empty($this->item->variant->weight_class_id)
                     <label id="j2commerce-product-weight_class_id-select-group-lbl" for="j2commerce-product-weight_class_id-select-group"><?php echo Text::_('COM_J2COMMERCE_WEIGHT_UNIT');?></label>
                 </div>
                 <div class="controls">
-                    <?php echo LayoutHelper::render('joomla.form.field.list-fancy-select', ['name'  => $this->form_prefix.'[weight_class_id]','id'    => 'j2commerce-product-weight_class_id-select-group','value' => $defaultWeightClassId,'options' => $weightsList]);?>
+                    <?php echo LayoutHelper::render('joomla.form.field.list-fancy-select', ['name'  => $formPrefix.'[weight_class_id]','id'    => 'j2commerce-product-weight_class_id-select-group','value' => $defaultWeightClassId,'options' => $weightsList] + $fancySelectDefaults);?>
                 </div>
             </div>
 
-            <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductShippingEdit', array($this, $this->item, $this->form_prefix))->getArgument('html', ''); ?>
+            <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductShippingEdit', array($this, $item, $formPrefix))->getArgument('html', ''); ?>
         </div>
     </fieldset>
 </div>

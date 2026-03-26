@@ -15,48 +15,48 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 
-$this->item = $displayData['product'];
-$this->form_prefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
+$item = $displayData['product'];
+$formPrefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
 
 ?>
 
 <?php echo HTMLHelper::_('uitab.startTabSet', 'j2commercetab', ['active' => 'generalTab', 'recall' => true, 'breakpoint' => 768]); ?>
 
 <?php echo HTMLHelper::_('uitab.addTab', 'j2commercetab', 'generalTab', Text::_('COM_J2COMMERCE_PRODUCT_TAB_GENERAL')); ?>
-    <input type="hidden" name="<?php echo $this->form_prefix . '[j2commerce_variant_id]'; ?>" value="<?php echo isset($this->item->variant->j2commerce_variant_id) && !empty($this->item->variant->j2commerce_variant_id) ? $this->item->variant->j2commerce_variant_id : 0; ?>" />
-    <?php echo J2CommerceHelper::loadSubTemplate('general', ['product' => $this->item], 'form', JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product'); ?>
+    <input type="hidden" name="<?php echo $formPrefix . '[j2commerce_variant_id]'; ?>" value="<?php echo isset($item->variant->j2commerce_variant_id) && !empty($item->variant->j2commerce_variant_id) ? $item->variant->j2commerce_variant_id : 0; ?>" />
+    <?php echo J2CommerceHelper::loadSubTemplate('general', ['product' => $item], 'form', JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product'); ?>
 <?php echo HTMLHelper::_('uitab.endTab'); ?>
 
 <?php echo HTMLHelper::_('uitab.addTab', 'j2commercetab', 'pricingTab', Text::_('COM_J2COMMERCE_PRODUCT_TAB_PRICE')); ?>
-    <?php echo J2CommerceHelper::loadSubTemplate('pricing', ['product' => $this->item], 'form', JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product'); ?>
+    <?php echo J2CommerceHelper::loadSubTemplate('pricing', ['product' => $item], 'form', JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product'); ?>
 <?php echo HTMLHelper::_('uitab.endTab'); ?>
 
 <?php echo HTMLHelper::_('uitab.addTab', 'j2commercetab', 'inventoryTab', Text::_('COM_J2COMMERCE_PRODUCT_TAB_INVENTORY')); ?>
-    <?php echo J2CommerceHelper::loadSubTemplate('inventory', ['product' => $this->item], 'form', JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product'); ?>
+    <?php echo J2CommerceHelper::loadSubTemplate('inventory', ['product' => $item], 'form', JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product'); ?>
 <?php echo HTMLHelper::_('uitab.endTab'); ?>
 
 <?php echo HTMLHelper::_('uitab.addTab', 'j2commercetab', 'imagesTab', Text::_('COM_J2COMMERCE_PRODUCT_TAB_IMAGES')); ?>
-    <?php echo J2CommerceHelper::loadSubTemplate('images', ['product' => $this->item], 'form', JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product'); ?>
+    <?php echo J2CommerceHelper::loadSubTemplate('images', ['product' => $item], 'form', JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product'); ?>
 <?php echo HTMLHelper::_('uitab.endTab'); ?>
 
 <?php echo HTMLHelper::_('uitab.addTab', 'j2commercetab', 'filesTab', Text::_('COM_J2COMMERCE_PRODUCT_TAB_FILES')); ?>
-    <?php echo J2CommerceHelper::loadSubTemplate('downloadablefiles', ['product' => $this->item, 'form_prefix' => $this->form_prefix], 'form', JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product'); ?>
+    <?php echo J2CommerceHelper::loadSubTemplate('downloadablefiles', ['product' => $item, 'form_prefix' => $formPrefix], 'form', JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product'); ?>
 <?php echo HTMLHelper::_('uitab.endTab'); ?>
 
 <?php /*echo HTMLHelper::_('uitab.addTab', 'j2commercetab', 'shippingTab', Text::_('COM_J2COMMERCE_PRODUCT_TAB_SHIPPING')); */?><!--
-    <?php /*echo J2CommerceHelper::loadSubTemplate('shipping', ['product' => $this->item], 'form', JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product'); */?>
+    <?php /*echo J2CommerceHelper::loadSubTemplate('shipping', ['product' => $item], 'form', JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product'); */?>
 --><?php /*echo HTMLHelper::_('uitab.endTab'); */?>
 
 <?php echo HTMLHelper::_('uitab.addTab', 'j2commercetab', 'filterTab', Text::_('COM_J2COMMERCE_PRODUCT_TAB_FILTER')); ?>
-    <?php echo J2CommerceHelper::loadSubTemplate('filters', ['product' => $this->item], 'form', JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product'); ?>
+    <?php echo J2CommerceHelper::loadSubTemplate('filters', ['product' => $item], 'form', JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product'); ?>
 <?php echo HTMLHelper::_('uitab.endTab'); ?>
 
 <?php echo HTMLHelper::_('uitab.addTab', 'j2commercetab', 'relationsTab', Text::_('COM_J2COMMERCE_PRODUCT_TAB_RELATIONS')); ?>
-    <?php echo J2CommerceHelper::loadSubTemplate('relations', ['product' => $this->item], 'form', JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product'); ?>
+    <?php echo J2CommerceHelper::loadSubTemplate('relations', ['product' => $item], 'form', JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product'); ?>
 <?php echo HTMLHelper::_('uitab.endTab'); ?>
 
 <?php echo HTMLHelper::_('uitab.addTab', 'j2commercetab', 'appsTab', Text::_('COM_J2COMMERCE_PRODUCT_TAB_APPS')); ?>
-    <?php echo J2CommerceHelper::loadSubTemplate('apps', ['product' => $this->item, 'form_prefix' => $this->form_prefix], 'form', JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product'); ?>
+    <?php echo J2CommerceHelper::loadSubTemplate('apps', ['product' => $item, 'form_prefix' => $formPrefix], 'form', JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product'); ?>
 <?php echo HTMLHelper::_('uitab.endTab'); ?>
 
 <?php echo HTMLHelper::_('uitab.endTabSet'); ?>

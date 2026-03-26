@@ -23,7 +23,7 @@ $wa->useScript('keepalive')
     ->useScript('form.validate');
 
 ?>
-<form action="<?php echo Route::_('index.php?option=com_j2commerce&layout=edit&id=' . (int) $this->item->j2commerce_product_id); ?>" method="post" name="adminForm" id="product-form" class="form-validate">
+<form action="<?php echo Route::_('index.php?option=com_j2commerce&layout=edit&id=' . (int) $item->j2commerce_product_id); ?>" method="post" name="adminForm" id="product-form" class="form-validate">
 
     <div class="main-card">
         <?php echo HTMLHelper::_('uitab.startTabSet', 'myTab', ['active' => 'details', 'recall' => true, 'breakpoint' => 768]); ?>
