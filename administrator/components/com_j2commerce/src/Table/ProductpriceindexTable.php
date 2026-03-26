@@ -13,6 +13,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Table;
 
 \defined('_JEXEC') or die;
 
+use Joomla\CMS\Language\Text;
 use Joomla\CMS\Table\Table;
 use Joomla\Database\DatabaseDriver;
 
@@ -57,7 +58,7 @@ class ProductpriceindexTable extends Table
 
         // product_id is required
         if (empty($this->product_id)) {
-            $this->setError('Product ID is required');
+            $this->setError(Text::sprintf('COM_J2COMMERCE_ERR_FIELD_REQUIRED', 'Product ID'));
             return false;
         }
 

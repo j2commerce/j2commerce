@@ -16,6 +16,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Table;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use Joomla\CMS\Language\Text;
 use Joomla\CMS\Table\Table;
 use Joomla\Database\DatabaseDriver;
 
@@ -37,12 +38,12 @@ class OrderdownloadTable extends Table
         }
 
         if (empty($this->order_id)) {
-            $this->setError('Order ID is required.');
+            $this->setError(Text::sprintf('COM_J2COMMERCE_ERR_FIELD_REQUIRED', 'Order ID'));
             return false;
         }
 
         if (empty($this->product_id)) {
-            $this->setError('Product ID is required.');
+            $this->setError(Text::sprintf('COM_J2COMMERCE_ERR_FIELD_REQUIRED', 'Product ID'));
             return false;
         }
 
