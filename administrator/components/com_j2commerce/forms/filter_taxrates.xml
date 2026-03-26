@@ -48,6 +48,8 @@
             <option value="a.taxrate_name DESC">COM_J2COMMERCE_HEADING_TAXRATE_NAME_DESC</option>
             <option value="a.tax_percent ASC">COM_J2COMMERCE_HEADING_TAX_PERCENT_ASC</option>
             <option value="a.tax_percent DESC">COM_J2COMMERCE_HEADING_TAX_PERCENT_DESC</option>
+            <option value="g.geozone_name ASC">COM_J2COMMERCE_HEADING_GEOZONE_NAME_ASC</option>
+            <option value="g.geozone_name DESC">COM_J2COMMERCE_HEADING_GEOZONE_NAME_DESC</option>
             <option value="a.ordering ASC">JGRID_HEADING_ORDERING_ASC</option>
             <option value="a.ordering DESC">JGRID_HEADING_ORDERING_DESC</option>
             <option value="a.j2commerce_taxrate_id ASC">JGRID_HEADING_ID_ASC</option>
