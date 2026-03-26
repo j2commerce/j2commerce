@@ -54,12 +54,6 @@
 !components/com_j2commerce/
 !components/com_j2commerce/**
 
-# Site language files
-!language/
-!language/en-GB/
-!language/en-GB/com_j2commerce.ini
-!language/en-GB/com_j2commerce.sys.ini
-
 # J2Commerce core plugins (only those in the package skill)
 !plugins/
 !plugins/j2commerce/
@@ -149,6 +143,7 @@
 # ===========================================================================
 .mcp.json
 configuration.php
+language/
 .env
 *.log
 cache/
@@ -222,3 +217,5 @@ administrator/components/com_j2commerce/tmpl/product/form_guidedbuilder.php
 # Non-core site layouts (inserted by 3rd-party plugins)
 components/com_j2commerce/layouts/app_bootstrap5/list/category/item_guidedbuilder.php
 components/com_j2commerce/layouts/app_bootstrap5/list/tag/item_guidedbuilder.php
+# Non-core site templates (created by plugins on install — do NOT whitelist)
+# components/com_j2commerce/tmpl/vendorapply/  — app_vendormanagement plugin

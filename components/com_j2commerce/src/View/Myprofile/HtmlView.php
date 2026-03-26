@@ -158,17 +158,10 @@ class HtmlView extends BaseHtmlView
                 }
             }
 
-            // Plugin events - only dispatch legacy tab events if NOT using unified payment tab
-            // Plugins implementing onGetSavedPaymentMethods should NOT render legacy tabs
-            if ($this->useUnifiedPaymentTab) {
-                // Dispatch only non-payment-tab plugin events
-                $this->pluginTabHtml     = '';
-                $this->pluginContentHtml = '';
-            } else {
-                // Legacy: dispatch all plugin tab events
-                $this->pluginTabHtml     = J2CommerceHelper::plugin()->eventWithHtml('MyProfileTab')->getArgument('html', '');
-                $this->pluginContentHtml = J2CommerceHelper::plugin()->eventWithHtml('MyProfileTabContent', [$this->orders])->getArgument('html', '');
-            }
+            // Dispatch plugin tab events (app plugins like Change Password, Vendor Management, etc.)
+            // Payment plugins use the unified GetSavedPaymentMethods event instead
+            $this->pluginTabHtml     = J2CommerceHelper::plugin()->eventWithHtml('MyProfileTab')->getArgument('html', '');
+            $this->pluginContentHtml = J2CommerceHelper::plugin()->eventWithHtml('MyProfileTabContent', [$this->orders])->getArgument('html', '');
 
             // These plugin events should always run regardless of payment tab state
             $this->topMessagesHtml   = J2CommerceHelper::plugin()->eventWithHtml('MyProfileTopMessages', [$this->orders])->getArgument('html', '');
