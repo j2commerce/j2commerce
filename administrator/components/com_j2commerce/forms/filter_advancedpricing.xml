@@ -36,6 +36,10 @@
             <option value="product_name DESC">COM_J2COMMERCE_HEADING_PRODUCT_NAME_DESC</option>
             <option value="v.product_id ASC">COM_J2COMMERCE_HEADING_PRODUCT_ID_ASC</option>
             <option value="v.product_id DESC">COM_J2COMMERCE_HEADING_PRODUCT_ID_DESC</option>
+            <option calue="pp.date_from ASC">COM_J2COMMERCE_HEADING_DATE_FROM_ASC</option>
+            <option value="pp.date_from DESC">COM_J2COMMERCE_HEADING_DATE_FROM_DESC</option>
+            <option value="pp.date_to ASC">COM_J2COMMERCE_HEADING_DATE_TO_ASC</option>
+            <option value="pp.date_to DESC">COM_J2COMMERCE_HEADING_DATE_TO_DESC</option>
             <option value="group_name ASC">COM_J2COMMERCE_HEADING_USER_GROUP_ASC</option>
             <option value="group_name DESC">COM_J2COMMERCE_HEADING_USER_GROUP_DESC</option>
             <option value="pp.price ASC">COM_J2COMMERCE_HEADING_PRICE_ASC</option>
