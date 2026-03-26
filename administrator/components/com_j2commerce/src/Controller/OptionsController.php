@@ -26,7 +26,7 @@ class OptionsController extends AdminController
      * @var    string
      * @since  6.0.0
      */
-    protected $text_prefix = 'COM_J2COMMERCE_OPTIONS';
+    protected $text_prefix = 'COM_J2COMMERCE';
 
     /**
      * Method to get a model object, loading it if required.
