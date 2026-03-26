@@ -315,12 +315,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Show/hide the Countries tab based on field_type
+    // Joomla 6 tab structure: <div role="tablist"><button aria-controls="telephone_countries" role="tab">...</button></div>
     function updateCountriesTab() {
         const fieldType = form.querySelector('#jform_field_type')?.value || '';
-        const tabLink = document.querySelector('[href="#telephone_countries"], [data-bs-target="#telephone_countries"]');
-        const tabItem = tabLink ? tabLink.closest('li') : null;
-        if (tabItem) {
-            tabItem.style.display = fieldType === 'telephone' ? '' : 'none';
+        const show = fieldType === 'telephone';
+        const tabBtn = document.querySelector('div[role="tablist"] > button[aria-controls="telephone_countries"]');
+        if (tabBtn) {
+            tabBtn.style.display = show ? '' : 'none';
+        }
+        const tabPane = document.getElementById('telephone_countries');
+        if (tabPane) {
+            tabPane.style.display = show ? '' : 'none';
         }
     }
 
