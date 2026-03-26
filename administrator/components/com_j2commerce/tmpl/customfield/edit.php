@@ -104,8 +104,7 @@ foreach ($translationKeys as $key) {
                 <fieldset id="fieldset-telephone-countries" class="options-form">
                     <legend><?php echo Text::_('COM_J2COMMERCE_FIELDSET_TELEPHONE_COUNTRIES'); ?></legend>
                     <div class="form-grid">
-                        <?php echo $this->form->renderField('phone_all_countries'); ?>
-                        <div class="small text-muted mb-2" data-showon='[{"field":"jform[phone_all_countries]","values":["0"],"sign":"=","op":""}]'><?php echo Text::_('COM_J2COMMERCE_FIELD_PHONE_COUNTRIES_DESC'); ?></div>
+                        <?php echo $this->form->renderField('phone_country_mode'); ?>
                         <?php echo $this->form->renderField('phone_countries'); ?>
                     </div>
                 </fieldset>

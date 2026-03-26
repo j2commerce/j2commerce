@@ -356,7 +356,7 @@ class CustomFieldHelper
         $dialCode       = $parsed['code'];
 
         // Determine which countries to show based on field settings stored in field_options
-        $allowedIso2 = null;
+        $allowedIso2  = null;
         $fieldOptions = [];
         if (!empty($field->field_options)) {
             $decoded = json_decode($field->field_options, true);
@@ -364,8 +364,41 @@ class CustomFieldHelper
                 $fieldOptions = $decoded;
             }
         }
-        $phoneAllCountries = (int) ($fieldOptions['phone_all_countries'] ?? 1);
-        if ($phoneAllCountries === 0 && !empty($fieldOptions['phone_countries'])) {
+
+        // Resolve phone_country_mode with backward compat for legacy phone_all_countries
+        if (isset($fieldOptions['phone_country_mode'])) {
+            $phoneMode = $fieldOptions['phone_country_mode'];
+        } elseif (isset($fieldOptions['phone_all_countries'])) {
+            $phoneMode = ((int) $fieldOptions['phone_all_countries'] === 1) ? 'all' : 'selected';
+        } else {
+            $phoneMode = 'all';
+        }
+
+        // Handle "none" mode: plain tel input, no country dropdown
+        if ($phoneMode === 'none') {
+            $escapedValue = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+            $escapedAc    = htmlspecialchars($field->field_autocomplete ?? 'tel', ENT_QUOTES, 'UTF-8');
+            $plainInput   = '<input type="tel" class="form-control" '
+                . 'name="' . $namekey . '" id="' . $id . '" '
+                . 'value="' . $escapedValue . '" '
+                . 'autocomplete="' . $escapedAc . '" '
+                . 'data-mode="none"'
+                . $requiredAttr . '>';
+
+            if ($isFloating) {
+                return '<div class="form-floating">'
+                    . $plainInput
+                    . '<label for="' . $id . '">' . $labelHtml . '</label>'
+                    . '</div>';
+            }
+
+            return '<div class="form-normal">'
+                . '<label for="' . $id . '" class="form-label">' . $labelHtml . '</label>'
+                . $plainInput
+                . '</div>';
+        }
+
+        if ($phoneMode === 'selected' && !empty($fieldOptions['phone_countries'])) {
             $allowedIso2 = (array) $fieldOptions['phone_countries'];
         }
 

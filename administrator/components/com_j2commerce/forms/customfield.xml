@@ -241,29 +241,33 @@
         />
     </fieldset>
 
-    <fieldset name="telephone_countries" label="COM_J2COMMERCE_FIELDSET_TELEPHONE_COUNTRIES" showon="field_type:telephone"
-        addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field">
+    <fieldset
+        name="telephone_countries"
+        label="COM_J2COMMERCE_FIELDSET_TELEPHONE_COUNTRIES"
+        showon="field_type:telephone"
+        addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field"
+    >
 
         <field
-            name="phone_all_countries"
-            type="radio"
-            label="COM_J2COMMERCE_FIELD_PHONE_ALL_COUNTRIES"
-            description="COM_J2COMMERCE_FIELD_PHONE_ALL_COUNTRIES_DESC"
-            layout="joomla.form.field.radio.switcher"
-            filter="integer"
-            default="1"
+            name="phone_country_mode"
+            type="list"
+            label="COM_J2COMMERCE_FIELD_PHONE_COUNTRY_MODE"
+            description="COM_J2COMMERCE_FIELD_PHONE_COUNTRY_MODE_DESC"
+            default="all"
         >
-            <option value="0">JNO</option>
-            <option value="1">JYES</option>
+            <option value="none">COM_J2COMMERCE_PHONE_MODE_NONE</option>
+            <option value="all">COM_J2COMMERCE_PHONE_MODE_ALL</option>
+            <option value="selected">COM_J2COMMERCE_PHONE_MODE_SELECTED</option>
         </field>
 
         <field
             name="phone_countries"
             type="PhoneCountries"
             label="COM_J2COMMERCE_FIELD_PHONE_COUNTRIES"
-            showon="phone_all_countries:0"
+            showon="phone_country_mode:selected"
             filter="raw"
             multiple="true"
+            hiddenLabel="true"
         />
 
     </fieldset>

@@ -142,8 +142,15 @@ class CustomfieldModel extends AdminModel
                     if (isset($options['zone_type'])) {
                         $data->field_zonetype = $options['zone_type'];
                     }
-                    // Phone country settings
-                    $data->phone_all_countries = (int) ($options['phone_all_countries'] ?? 1);
+                    // Phone country settings — support both new (phone_country_mode) and legacy (phone_all_countries) formats
+                    if (isset($options['phone_country_mode'])) {
+                        $data->phone_country_mode = $options['phone_country_mode'];
+                    } elseif (isset($options['phone_all_countries'])) {
+                        // Backward compat: map old boolean flag to new 3-option mode
+                        $data->phone_country_mode = ((int) $options['phone_all_countries'] === 1) ? 'all' : 'selected';
+                    } else {
+                        $data->phone_country_mode = 'all';
+                    }
                     if (isset($options['phone_countries'])) {
                         // Stored as JSON array; form field expects the raw array
                         $data->phone_countries = $options['phone_countries'];
@@ -249,10 +256,17 @@ class CustomfieldModel extends AdminModel
         }
 
         if ($data['field_type'] === 'telephone') {
-            $phoneAllCountries = (int) ($data['phone_all_countries'] ?? 1);
-            $fieldOptionsData['phone_all_countries'] = $phoneAllCountries;
-            if ($phoneAllCountries === 0 && isset($data['phone_countries'])) {
-                // phone_countries arrives as array from the checkboxes field; flatten forceMultiple wrapping
+            $mode = $data['phone_country_mode'] ?? 'all';
+            // Ensure only valid mode values are stored
+            if (!\in_array($mode, ['none', 'all', 'selected'], true)) {
+                $mode = 'all';
+            }
+            $fieldOptionsData['phone_country_mode'] = $mode;
+            // Remove legacy key on save to keep options clean
+            unset($fieldOptionsData['phone_all_countries']);
+
+            if ($mode === 'selected' && isset($data['phone_countries'])) {
+                // phone_countries arrives as array from the checkboxes field
                 $raw = $data['phone_countries'];
                 if (\is_array($raw) && isset($raw[0]) && \is_array($raw[0])) {
                     $raw = $raw[0];
@@ -269,7 +283,7 @@ class CustomfieldModel extends AdminModel
         }
 
         // Remove virtual fields before save
-        unset($data['field_zonetype'], $data['phone_all_countries'], $data['phone_countries']);
+        unset($data['field_zonetype'], $data['phone_all_countries'], $data['phone_country_mode'], $data['phone_countries']);
 
         // Encode field_value subform data to JSON for dropdown/radio/checkbox options
         if (\in_array($data['field_type'], ['singledropdown', 'radio', 'checkbox'], true)) {

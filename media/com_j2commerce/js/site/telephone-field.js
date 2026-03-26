@@ -46,6 +46,11 @@
     observer.observe(document.body, { childList: true, subtree: true });
 
     function initTelephoneField(container) {
+        // "none" mode renders a plain <input type="tel" data-mode="none"> without the
+        // .j2c-telephone-field wrapper, so this function is never called for none-mode
+        // fields. The guard below handles any edge case where it might be.
+        if (container.dataset.mode === 'none') return;
+
         var countries;
         try {
             countries = JSON.parse(container.dataset.countries || '[]');
