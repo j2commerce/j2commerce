@@ -273,6 +273,14 @@
                     showon="list_show_cart:1" />
 
             </fieldset>
+
+            <fieldset name="advanced">
+                <field
+                    name="moduleclass_sfx"
+                    type="text"
+                    label="COM_MODULES_FIELD_MODULECLASS_SFX_LABEL"
+                />
+            </fieldset>
         </fields>
     </config>
 </extension>
