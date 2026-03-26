@@ -166,8 +166,6 @@ class HtmlView extends BaseHtmlView
     {
         Factory::getApplication()->input->set('hidemainmenu', true);
 
-        $user = Factory::getApplication()->getIdentity();
-        $isNew = empty($this->item->j2commerce_productprice_id);
         $canDo = ContentHelper::getActions('com_j2commerce', 'productprice');
 
         // Get the toolbar object instance

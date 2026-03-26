@@ -92,7 +92,7 @@ class HtmlView extends BaseHtmlView
     {
         Factory::getApplication()->getInput()->set('hidemainmenu', true);
 
-        $isNew = ($this->item->j2commerce_taxrate_id === 0);
+        $isNew = ($this->item->j2commerce_taxrate_id == 0);
         $canDo = ContentHelper::getActions('com_j2commerce');
         $user  = Factory::getApplication()->getIdentity();
         $toolbar = $this->getDocument()->getToolbar();
