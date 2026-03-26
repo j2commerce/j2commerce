@@ -24,11 +24,13 @@
     }
 
     .j2commerce-product-image .j2commerce-product-quickview {
-        visibility:hidden;transition: all .5s;
+        visibility:hidden;
+        transition: all .5s;
     }
 
     .j2commerce-product-image:hover .j2commerce-product-quickview {
-        visibility:visible;transition: all .5s;
+        visibility:visible;
+        transition: all .5s;
     }
 
     .box-shadow-none {
@@ -53,8 +55,7 @@
         width: 2rem;
     }
 
-    .j2commerce-color-options .btn-color:before
-    {
+    .j2commerce-color-options .btn-color:before {
         background-color: currentcolor;
         border-radius: 50%;
         content: "";
@@ -62,7 +63,6 @@
         height: 100%;
         width: 100%;
     }
-
 
     .product-gallery {
         position: relative;
