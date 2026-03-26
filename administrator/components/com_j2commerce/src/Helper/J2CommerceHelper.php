@@ -998,7 +998,7 @@ class J2CommerceHelper extends ContentHelper
      * 1. media/plg_j2commerce_{element}/images/{element}.(webp|png|jpg)
      * 2. plugins/j2commerce/{element}/images/{element}.png
      * 3. media/com_j2commerce/images/{element}.png
-     * 4. media/com_j2commerce/images/default-payment.png (fallback)
+     * 4. media/com_j2commerce/images/default_app_j2commerce.webp (fallback)
      *
      * @param   string  $element  The plugin element name (e.g., 'app_bulkdiscount')
      *
@@ -1030,7 +1030,7 @@ class J2CommerceHelper extends ContentHelper
             return Uri::root(true) . '/media/com_j2commerce/images/' . $element . '.png';
         }
 
-        // Return default placeholder image
-        return Uri::root(true) . '/media/com_j2commerce/images/default-payment.png';
+        // Return default J2Commerce placeholder image
+        return Uri::root(true) . '/media/com_j2commerce/images/default_app_j2commerce.webp';
     }
 }
