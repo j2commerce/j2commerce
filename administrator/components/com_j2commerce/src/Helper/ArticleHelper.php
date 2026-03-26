@@ -207,8 +207,8 @@ class ArticleHelper
                 $wa->addInlineScript("
 				window.jSelectJ2Article_" . $id . " = function (id, title, catid, object, url, language) {
 					window.processModalSelect('Article', '" . $id . "', id, title, catid, object, url, language);
-					jQuery('body').removeClass('modal-open');
-                    jQuery('.modal-backdrop').remove();
+					document.body.classList.remove('modal-open');
+                    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
 				}",
                     [],
                     ['type' => 'module']
