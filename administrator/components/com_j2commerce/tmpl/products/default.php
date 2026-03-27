@@ -84,6 +84,9 @@ $canChangeState = $user->authorise('core.edit.state', 'com_content');
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_SKU', 'v.sku', $listDirn, $listOrder); ?>
                                 </th>
                                 <th scope="col" class="w-10 d-none d-md-table-cell">
+                                    <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_PRODUCT_TYPE', 'a.product_type', $listDirn, $listOrder); ?>
+                                </th>
+                                <th scope="col" class="w-10 d-none d-md-table-cell">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_PRICE', 'v.price', $listDirn, $listOrder); ?>
                                 </th>
                                 <th scope="col" class="w-5 text-center d-none d-md-table-cell">
@@ -152,7 +155,6 @@ $canChangeState = $user->authorise('core.edit.state', 'com_content');
                                                 <?php echo $this->escape($item->product_name ?: Text::_('COM_J2COMMERCE_NO_PRODUCT_NAME')); ?>
                                             </a>
                                             <div class="small">
-                                                <div><?php echo Text::_('COM_J2COMMERCE_PRODUCT_TYPE'); ?>: <strong><?php echo $this->escape($productTypeLabel); ?></strong></div>
                                                 <div><?php echo Text::_('COM_J2COMMERCE_VISIBLE_IN_STOREFRONT'); ?>: <strong><?php echo $item->visibility ? Text::_('JYES') : Text::_('JNO'); ?></strong></div>
                                                 <div><?php echo Text::_('COM_J2COMMERCE_ARTICLE'); ?>: <strong class="<?php echo $articleStateClass; ?>"><?php echo $articleStateText; ?></strong></div>
                                                 <div><?php echo Text::_('COM_J2COMMERCE_TAX_PROFILE'); ?>: <strong><?php echo $taxProfileText; ?></strong></div>
@@ -162,6 +164,9 @@ $canChangeState = $user->authorise('core.edit.state', 'com_content');
                                 </th>
                                 <td class="d-none d-md-table-cell">
                                     <?php echo $this->escape($item->sku ?: '-'); ?>
+                                </td>
+                                <td class="d-none d-md-table-cell">
+                                    <?php echo $this->escape($productTypeLabel); ?>
                                 </td>
                                 <td class="d-none d-md-table-cell">
                                     <?php echo CurrencyHelper::format((float) ($item->price ?? 0)); ?>
