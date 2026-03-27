@@ -9,6 +9,7 @@
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
@@ -16,6 +17,7 @@ use Joomla\CMS\Router\Route;
 
 $listOrder = $this->escape($this->state->get('list.ordering'));
 $listDirn  = $this->escape($this->state->get('list.direction'));
+$currencySymbol = (new CurrencyHelper())->getSymbol();
 
 $wa = $this->getDocument()->getWebAssetManager();
 $wa->useScript('table.columns');
@@ -118,6 +120,7 @@ $wa->useScript('multiselect');
                                     </td>
                                     <td>
                                         <div class="input-group input-group-sm">
+                                            <span class="input-group-text"><?php echo $currencySymbol; ?></span>
                                             <input type="number"
                                                    class="form-control form-control-sm advancedpricing-price-input"
                                                    value="<?php echo number_format((float) $item->price, 2, '.', ''); ?>"
