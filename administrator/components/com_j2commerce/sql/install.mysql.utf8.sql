@@ -25,8 +25,20 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_addresses` (
   `type` varchar(255) NOT NULL DEFAULT '',
   `company` varchar(255) NOT NULL DEFAULT '',
   `tax_number` varchar(255) NOT NULL DEFAULT '',
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
+  `ordering` int NOT NULL DEFAULT 0,
+  `enabled` int NOT NULL DEFAULT 1,
   `params` text NULL,
-  PRIMARY KEY (`j2commerce_address_id`)
+  PRIMARY KEY (`j2commerce_address_id`),
+  KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -94,7 +106,17 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_countries` (
   `country_isocode_num` int NOT NULL DEFAULT 0,
   `enabled` int NOT NULL,
   `ordering` int NOT NULL DEFAULT 0,
-  PRIMARY KEY (`j2commerce_country_id`)
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
+  PRIMARY KEY (`j2commerce_country_id`),
+  KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -122,8 +144,18 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_coupons` (
   `users` text NOT NULL,
   `mycategory` text NOT NULL,
   `brand_ids` text NOT NULL,
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
   PRIMARY KEY (`j2commerce_coupon_id`),
-  UNIQUE KEY `coupon_code` (`coupon_code`)
+  UNIQUE KEY `coupon_code` (`coupon_code`),
+  KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -142,14 +174,17 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_currencies` (
   `currency_value` float(15,8) NOT NULL,
   `enabled` int NOT NULL,
   `ordering` int NOT NULL DEFAULT 0,
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
   `created_on` datetime DEFAULT CURRENT_TIMESTAMP,
   `created_by` bigint unsigned NOT NULL DEFAULT 0,
-  `modified_on` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `modified_on` datetime DEFAULT CURRENT_TIMESTAMP,
   `modified_by` bigint unsigned NOT NULL DEFAULT 0,
   `locked_on` datetime DEFAULT NULL,
   `locked_by` bigint unsigned NOT NULL DEFAULT 0,
   PRIMARY KEY (`j2commerce_currency_id`),
-  UNIQUE KEY `currency_code` (`currency_code`)
+  UNIQUE KEY `currency_code` (`currency_code`),
+  KEY `idx_access` (`access`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Default currencies for new installs
@@ -237,8 +272,18 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_customfields` (
   `field_display_guest` smallint NOT NULL DEFAULT 0,
   `field_display_guest_shipping` smallint NOT NULL DEFAULT 0,
   `field_display_payment` smallint NOT NULL DEFAULT 0,
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
   PRIMARY KEY (`j2commerce_customfield_id`),
-  UNIQUE KEY `field_namekey` (`field_namekey`)
+  UNIQUE KEY `field_namekey` (`field_namekey`),
+  KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Default custom fields data
@@ -278,8 +323,18 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_emailtemplates` (
   `language` varchar(10) NOT NULL DEFAULT '*',
   `enabled` int NOT NULL,
   `ordering` int NOT NULL DEFAULT 0,
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
   PRIMARY KEY (`j2commerce_emailtemplate_id`),
-  KEY `idx_email_type` (`email_type`)
+  KEY `idx_email_type` (`email_type`),
+  KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -326,7 +381,17 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_filtergroups` (
   `group_name` varchar(255) NOT NULL,
   `ordering` int NOT NULL DEFAULT 0,
   `enabled` int NOT NULL,
-  PRIMARY KEY (`j2commerce_filtergroup_id`)
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
+  PRIMARY KEY (`j2commerce_filtergroup_id`),
+  KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -350,7 +415,18 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_geozones` (
   `j2commerce_geozone_id` int NOT NULL AUTO_INCREMENT,
   `geozone_name` varchar(255) NOT NULL,
   `enabled` int NOT NULL,
-  PRIMARY KEY (`j2commerce_geozone_id`)
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
+  `ordering` int NOT NULL DEFAULT 0,
+  PRIMARY KEY (`j2commerce_geozone_id`),
+  KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -385,7 +461,17 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_invoicetemplates` (
   `language` varchar(10) NOT NULL DEFAULT '*',
   `enabled` tinyint NOT NULL,
   `ordering` int NOT NULL DEFAULT 0,
-  PRIMARY KEY (`j2commerce_invoicetemplate_id`)
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
+  PRIMARY KEY (`j2commerce_invoicetemplate_id`),
+  KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -400,7 +486,17 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_lengths` (
   `num_decimals` int NOT NULL DEFAULT 2,
   `enabled` int NOT NULL,
   `ordering` int NOT NULL DEFAULT 1,
-  PRIMARY KEY (`j2commerce_length_id`)
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
+  PRIMARY KEY (`j2commerce_length_id`),
+  KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -413,8 +509,18 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_manufacturers` (
   `enabled` int NOT NULL,
   `ordering` int NOT NULL DEFAULT 0,
   `brand_desc_id` int DEFAULT 0,
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
   PRIMARY KEY (`j2commerce_manufacturer_id`),
-  KEY `address_id` (`address_id`)
+  KEY `address_id` (`address_id`),
+  KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -449,7 +555,17 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_options` (
   `ordering` int NOT NULL DEFAULT 0,
   `enabled` int NOT NULL,
   `option_params` text,
-  PRIMARY KEY (`j2commerce_option_id`)
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
+  PRIMARY KEY (`j2commerce_option_id`),
+  KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -693,14 +809,20 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_orders` (
   `order_state_id` int NOT NULL,
   `order_state` varchar(255) NOT NULL COMMENT 'Legacy compatibility',
   `order_params` text DEFAULT NULL,
-  `created_on` datetime NOT NULL,
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `created_by` int NOT NULL,
-  `modified_on` datetime NOT NULL,
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `modified_by` int NOT NULL,
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
   `campaign_double_opt_in` int DEFAULT NULL,
   `campaign_order_id` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`j2commerce_order_id`),
-  KEY `idx_order_id` (`order_id`)
+  KEY `idx_order_id` (`order_id`),
+  KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -732,7 +854,17 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_orderstatuses` (
   `orderstatus_core` int NOT NULL DEFAULT 0,
   `enabled` int NOT NULL,
   `ordering` int NOT NULL DEFAULT 0,
-  PRIMARY KEY (`j2commerce_orderstatus_id`)
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
+  PRIMARY KEY (`j2commerce_orderstatus_id`),
+  KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Default order statuses
@@ -859,17 +991,23 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_products` (
   `enabled` int DEFAULT NULL,
   `plugins` text,
   `params` text,
-  `created_on` varchar(255) DEFAULT NULL,
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `created_by` int DEFAULT NULL,
-  `modified_on` varchar(45) DEFAULT NULL,
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `modified_by` int DEFAULT NULL,
   `up_sells` varchar(255) NOT NULL,
   `cross_sells` varchar(255) NOT NULL,
   `productfilter_ids` varchar(255) DEFAULT NULL,
   `hits` int unsigned NOT NULL DEFAULT '0',
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
+  `ordering` int NOT NULL DEFAULT 0,
   PRIMARY KEY (`j2commerce_product_id`),
   UNIQUE KEY `catalogsource` (`product_source`,`product_source_id`),
-  KEY `idx_hits` (`hits`)
+  KEY `idx_hits` (`hits`),
+  KEY `idx_access` (`access`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -1048,7 +1186,17 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_taxprofiles` (
   `taxprofile_name` varchar(255) NOT NULL,
   `enabled` int NOT NULL,
   `ordering` int NOT NULL DEFAULT 0,
-  PRIMARY KEY (`j2commerce_taxprofile_id`)
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
+  PRIMARY KEY (`j2commerce_taxprofile_id`),
+  KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -1062,7 +1210,17 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_taxrates` (
   `tax_percent` decimal(11,3) NOT NULL,
   `enabled` int NOT NULL,
   `ordering` int NOT NULL DEFAULT 0,
-  PRIMARY KEY (`j2commerce_taxrate_id`)
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
+  PRIMARY KEY (`j2commerce_taxrate_id`),
+  KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -1114,9 +1272,9 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_variants` (
   `length_class_id` int DEFAULT NULL,
   `weight` decimal(15,5) DEFAULT NULL,
   `weight_class_id` int DEFAULT NULL,
-  `created_on` varchar(255) DEFAULT NULL,
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `created_by` int DEFAULT NULL,
-  `modified_on` varchar(45) DEFAULT NULL,
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `modified_by` int DEFAULT NULL,
   `manage_stock` int DEFAULT NULL,
   `quantity_restriction` int NOT NULL,
@@ -1146,8 +1304,18 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_vendors` (
   `address_id` int NOT NULL,
   `enabled` int NOT NULL,
   `ordering` int NOT NULL DEFAULT 0,
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
   PRIMARY KEY (`j2commerce_vendor_id`),
-  UNIQUE KEY `j2commerce_user_id` (`j2commerce_user_id`)
+  UNIQUE KEY `j2commerce_user_id` (`j2commerce_user_id`),
+  KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -1168,10 +1336,18 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_vouchers` (
   `voucher_value` decimal(15,8) NOT NULL,
   `ordering` int NOT NULL DEFAULT 0,
   `enabled` int NOT NULL,
-  `created_on` datetime NOT NULL,
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `created_by` int NOT NULL,
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
   PRIMARY KEY (`j2commerce_voucher_id`),
-  UNIQUE KEY `voucher_code` (`voucher_code`)
+  UNIQUE KEY `voucher_code` (`voucher_code`),
+  KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -1186,7 +1362,17 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_weights` (
   `num_decimals` int NOT NULL DEFAULT 2,
   `enabled` int NOT NULL,
   `ordering` int NOT NULL DEFAULT 1,
-  PRIMARY KEY (`j2commerce_weight_id`)
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
+  PRIMARY KEY (`j2commerce_weight_id`),
+  KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -1200,7 +1386,17 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_zones` (
   `zone_name` varchar(255) NOT NULL,
   `enabled` int NOT NULL,
   `ordering` int NOT NULL DEFAULT 0,
-  PRIMARY KEY (`j2commerce_zone_id`)
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
+  PRIMARY KEY (`j2commerce_zone_id`),
+  KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- End of J2Commerce install script

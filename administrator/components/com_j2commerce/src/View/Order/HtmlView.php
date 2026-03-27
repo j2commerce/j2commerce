@@ -137,9 +137,11 @@ class HtmlView extends BaseHtmlView
     {
         Factory::getApplication()->getInput()->set('hidemainmenu', true);
 
-        $canDo = ContentHelper::getActions('com_j2commerce');
+        $canDo         = ContentHelper::getActions('com_j2commerce');
         $canEditOrders = $this->getCurrentUser()->authorise('j2commerce.editorders', 'com_j2commerce');
-        $toolbar = $this->getDocument()->getToolbar();
+        $user          = Factory::getApplication()->getIdentity();
+        $checkedOut    = !(\is_null($this->item->checked_out) || $this->item->checked_out == $user->id);
+        $toolbar       = $this->getDocument()->getToolbar();
 
         $orderDisplay = $this->item->invoice ?? $this->item->order_id ?? Text::_('COM_J2COMMERCE_ORDER');
 
@@ -152,7 +154,7 @@ class HtmlView extends BaseHtmlView
             $toolbar->back('JTOOLBAR_BACK', 'index.php?option=com_j2commerce&view=order&layout=view&id=' . (int) $this->item->j2commerce_order_id);
             $toolbar->cancel('order.cancel', 'JTOOLBAR_CLOSE');
 
-            if ($canEditOrders && $canDo->get('core.edit')) {
+            if (!$checkedOut && $canEditOrders && $canDo->get('core.edit')) {
                 $toolbar->apply('order.apply');
                 $toolbar->save('order.save');
             }

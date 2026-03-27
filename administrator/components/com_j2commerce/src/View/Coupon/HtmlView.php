@@ -103,11 +103,11 @@ class HtmlView extends BaseHtmlView
     {
         Factory::getApplication()->getInput()->set('hidemainmenu', true);
 
-        $user = Factory::getApplication()->getIdentity();
-        $isNew = ($this->item->j2commerce_coupon_id == 0);
-        $canDo = ContentHelper::getActions('com_j2commerce');
-        //$checkedOut = !(is_null($this->item->checked_out) || $this->item->checked_out == $user->id);
-        $toolbar = $this->getDocument()->getToolbar();
+        $user       = Factory::getApplication()->getIdentity();
+        $isNew      = ($this->item->j2commerce_coupon_id == 0);
+        $canDo      = ContentHelper::getActions('com_j2commerce');
+        $checkedOut = !(\is_null($this->item->checked_out) || $this->item->checked_out == $user->id);
+        $toolbar    = $this->getDocument()->getToolbar();
 
         $layout = Factory::getApplication()->getInput()->get('layout', 'history');
         $isEditLayout = ($layout === 'edit');
@@ -144,14 +144,14 @@ class HtmlView extends BaseHtmlView
                         ) && $this->item->created_by == $user->id);
 
                 // Can't save the record if it's checked out and editable
-                if (/*!$checkedOut && */$itemEditable) {
+                if (!$checkedOut && $itemEditable) {
                     $toolbar->apply('coupon.apply');
                 }
 
                 $saveGroup = $toolbar->dropdownButton('save-group');
                 $childBar  = $saveGroup->getChildToolbar();
 
-                if (/*!$checkedOut && */$itemEditable) {
+                if (!$checkedOut && $itemEditable) {
                     $childBar->save('coupon.save');
 
                     if ($canDo->get('core.create')) {

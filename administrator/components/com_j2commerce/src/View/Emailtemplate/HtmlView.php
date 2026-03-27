@@ -184,16 +184,18 @@ class HtmlView extends BaseHtmlView
      */
     protected function addToolbar()
     {
-        $toolbar = $this->getDocument()->getToolbar();
-        $isNew   = ($this->item->j2commerce_emailtemplate_id == 0);
-        $canDo   = ContentHelper::getActions('com_j2commerce', 'emailtemplate', $this->item->j2commerce_emailtemplate_id);
+        $toolbar    = $this->getDocument()->getToolbar();
+        $isNew      = ($this->item->j2commerce_emailtemplate_id == 0);
+        $canDo      = ContentHelper::getActions('com_j2commerce', 'emailtemplate', $this->item->j2commerce_emailtemplate_id);
+        $user       = Factory::getApplication()->getIdentity();
+        $checkedOut = !(\is_null($this->item->checked_out) || $this->item->checked_out == $user->id);
 
         Factory::getApplication()->getInput()->set('hidemainmenu', true);
 
         $title = $isNew ? Text::_('COM_J2COMMERCE_EMAILTEMPLATE_NEW') : Text::_('COM_J2COMMERCE_EMAILTEMPLATE_EDIT');
         ToolbarHelper::title($title, 'envelope');
 
-        $canEdit = $canDo->get('core.edit') || ($canDo->get('core.create') && $isNew);
+        $canEdit = !$checkedOut && ($canDo->get('core.edit') || ($canDo->get('core.create') && $isNew));
 
         if ($canEdit) {
             $toolbar->apply('emailtemplate.apply');

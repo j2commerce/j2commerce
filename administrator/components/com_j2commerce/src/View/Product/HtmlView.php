@@ -97,21 +97,23 @@ class HtmlView extends BaseHtmlView
     {
         Factory::getApplication()->getInput()->set('hidemainmenu', true);
 
-        $isNew = empty($this->item->j2commerce_product_id);
-        $canDo = ContentHelper::getActions('com_j2commerce');
-        $toolbar = $this->getDocument()->getToolbar();
+        $isNew      = empty($this->item->j2commerce_product_id);
+        $canDo      = ContentHelper::getActions('com_j2commerce');
+        $user       = Factory::getApplication()->getIdentity();
+        $checkedOut = !(\is_null($this->item->checked_out) || $this->item->checked_out == $user->id);
+        $toolbar    = $this->getDocument()->getToolbar();
 
         ToolbarHelper::title(
             $isNew ? Text::_('COM_J2COMMERCE_TOOLBAR_NEW') : Text::_('COM_J2COMMERCE_TOOLBAR_EDIT'),
             'fa-solid fa-tags'
         );
 
-        if ($canDo->get('core.edit') || $canDo->get('core.create')) {
+        if (!$checkedOut && ($canDo->get('core.edit') || $canDo->get('core.create'))) {
             $toolbar->apply('product.apply');
             $toolbar->save('product.save');
         }
 
-        if ($canDo->get('core.create')) {
+        if (!$checkedOut && $canDo->get('core.create')) {
             $toolbar->save2new('product.save2new');
         }
 

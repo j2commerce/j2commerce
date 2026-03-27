@@ -106,15 +106,16 @@ class HtmlView extends BaseHtmlView
         // Check both possible ID fields to determine if this is a new record
         $isNew = (empty($this->item->j2commerce_option_id) || $this->item->j2commerce_option_id == 0)
                  && (empty($this->item->id) || $this->item->id == 0);
-        $canDo = ContentHelper::getActions('com_j2commerce', 'option', $this->item->j2commerce_option_id ?? 0);
+        $canDo      = ContentHelper::getActions('com_j2commerce', 'option', $this->item->j2commerce_option_id ?? 0);
+        $checkedOut = !(\is_null($this->item->checked_out) || $this->item->checked_out == $user->id);
 
         ToolbarHelper::title(
             Text::_('COM_J2COMMERCE_OPTION') . ': ' . ($isNew ? Text::_('JTOOLBAR_NEW') : Text::_('JTOOLBAR_EDIT')),
             'fa-solid fa-list-ol'
         );
 
-        // If not checked out, can save the item.
-        if ($canDo->get('core.edit') || ($canDo->get('core.create'))) {
+        // Only show save buttons when the item is not checked out by another user.
+        if (!$checkedOut && ($canDo->get('core.edit') || $canDo->get('core.create'))) {
             ToolbarHelper::apply('option.apply');
             ToolbarHelper::save('option.save');
 
