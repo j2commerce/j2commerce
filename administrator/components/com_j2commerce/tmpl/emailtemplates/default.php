@@ -102,7 +102,9 @@ $isMultilang = Multilanguage::isEnabled();
                             <?php foreach ($this->items as $i => $item) :
                                 $canEdit = $user->authorise('core.edit', 'com_j2commerce.emailtemplate.' . $item->j2commerce_emailtemplate_id);
                                 $canCheckin = $user->authorise('core.manage', 'com_checkin') || $item->locked_by == $userId || is_null($item->locked_by);
-                                $canEditOwn = $user->authorise('core.edit.own', 'com_j2commerce.emailtemplate.' . $item->j2commerce_emailtemplate_id) && $item->created_by == $userId;
+                                // TODO: Add created_by column to j2commerce_emailtemplates table
+                                // $canEditOwn = $user->authorise('core.edit.own', 'com_j2commerce.emailtemplate.' . $item->j2commerce_emailtemplate_id) && $item->created_by == $userId;
+                                $canEditOwn = false;
                                 $canChange = $user->authorise('core.edit.state', 'com_j2commerce.emailtemplate.' . $item->j2commerce_emailtemplate_id) && $canCheckin;
                             ?>
                                 <tr class="row<?php echo $i % 2; ?>" data-draggable-group="0">
