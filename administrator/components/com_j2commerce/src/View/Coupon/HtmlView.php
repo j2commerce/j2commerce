@@ -103,11 +103,11 @@ class HtmlView extends BaseHtmlView
     {
         Factory::getApplication()->getInput()->set('hidemainmenu', true);
 
-        $user = Factory::getApplication()->getIdentity();
-        $isNew = ($this->item->j2commerce_coupon_id == 0);
-        $canDo = ContentHelper::getActions('com_j2commerce');
+        $user       = Factory::getApplication()->getIdentity();
+        $isNew      = ($this->item->j2commerce_coupon_id == 0);
+        $canDo      = ContentHelper::getActions('com_j2commerce');
         $checkedOut = !(\is_null($this->item->checked_out) || $this->item->checked_out == $user->id);
-        $toolbar = $this->getDocument()->getToolbar();
+        $toolbar    = $this->getDocument()->getToolbar();
 
         $layout = Factory::getApplication()->getInput()->get('layout', 'history');
         $isEditLayout = ($layout === 'edit');
