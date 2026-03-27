@@ -22,7 +22,6 @@
             type="user"
             label="COM_J2COMMERCE_FIELD_VENDOR_USER"
             description="COM_J2COMMERCE_FIELD_VENDOR_USER_DESC"
-            required="true"
         />
 
         <!-- Hidden address_id field (internal link to address table) -->
@@ -152,7 +151,6 @@
             type="Country"
             label="COM_J2COMMERCE_FIELD_COUNTRY"
             description="COM_J2COMMERCE_FIELD_COUNTRY_DESC"
-            required="true"
             addfieldprefix ="J2Commerce\Component\J2commerce\Administrator\Field"
             class="form-select"
         >
@@ -163,7 +161,6 @@
             name="zone_id"
             type="Zone"
             label="COM_J2COMMERCE_FIELD_ADDRESS_ZONE"
-            required="true"
             addfieldprefix ="J2Commerce\Component\J2commerce\Administrator\Field"
             class="form-select"
             default=""
