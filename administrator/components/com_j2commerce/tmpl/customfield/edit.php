@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
@@ -161,6 +162,9 @@ foreach ($translationKeys as $key) {
     </div>
 
     <input type="hidden" name="task" value="">
+    <?php if ($return = Factory::getApplication()->getInput()->get('return', '', 'base64')) : ?>
+        <input type="hidden" name="return" value="<?php echo htmlspecialchars($return, ENT_QUOTES, 'UTF-8'); ?>">
+    <?php endif; ?>
     <?php echo $this->form->renderField('j2commerce_customfield_id'); ?>
     <?php echo HTMLHelper::_('form.token'); ?>
 </form>
