@@ -18,6 +18,7 @@ use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Helper\ContentHelper;
+use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\MVC\View\GenericDataException;
@@ -162,8 +163,8 @@ class HtmlView extends BaseHtmlView
         }
 
         if (!$this->isEmptyState) {
-            if ($canDo->get('core.edit.state')) {
-                // Dropdown button group for status changes
+            if ($canDo->get('core.edit.state') || $canDo->get('core.edit')) {
+                // Dropdown button group for status changes + batch
                 $dropdown = $toolbar->dropdownButton('status-group')
                     ->text('JTOOLBAR_CHANGE_STATUS')
                     ->toggleSplit(false)
@@ -172,13 +173,27 @@ class HtmlView extends BaseHtmlView
                     ->listCheck(true);
 
                 $childBar = $dropdown->getChildToolbar();
-                $childBar->publish('customfields.publish')->listCheck(true);
-                $childBar->unpublish('customfields.unpublish')->listCheck(true);
 
-                if ($this->state->get('filter.enabled') != -2) {
-                    $childBar->trash('customfields.trash')->listCheck(true);
+                if ($canDo->get('core.edit.state')) {
+                    $childBar->publish('customfields.publish')->listCheck(true);
+                    $childBar->unpublish('customfields.unpublish')->listCheck(true);
+
+                    if ($this->state->get('filter.enabled') != -2) {
+                        $childBar->trash('customfields.trash')->listCheck(true);
+                    }
+                }
+
+                if ($canDo->get('core.edit')) {
+                    $childBar->standardButton('batch')
+                        ->text('JTOOLBAR_BATCH')
+                        ->icon('icon-square')
+                        ->listCheck(true)
+                        ->onclick("bootstrap.Modal.getOrCreateInstance(document.getElementById('collapseModal')).show(); return false;");
                 }
             }
+
+            // Initialise the Bootstrap modal for the batch dialog
+            HTMLHelper::_('bootstrap.modal', 'collapseModal');
         }
 
         if ($canDo->get('core.delete') && ($this->state->get('filter.enabled') == -2)) {
