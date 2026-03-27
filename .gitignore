@@ -218,4 +218,4 @@ administrator/components/com_j2commerce/tmpl/product/form_guidedbuilder.php
 components/com_j2commerce/layouts/app_bootstrap5/list/category/item_guidedbuilder.php
 components/com_j2commerce/layouts/app_bootstrap5/list/tag/item_guidedbuilder.php
 # Non-core site templates (created by plugins on install — do NOT whitelist)
-# components/com_j2commerce/tmpl/vendorapply/  — app_vendormanagement plugin
+components/com_j2commerce/tmpl/vendorapply/
