@@ -81,7 +81,9 @@ if ($saveOrder && !empty($this->items)) {
                         <?php foreach ($this->items as $i => $item) :
                             $ordering   = ($listOrder == 'a.ordering');
                             $canEdit    = $user->authorise('core.edit', 'com_j2commerce.filtergroup.' . $item->j2commerce_filtergroup_id);
-                            $canCheckin = $user->authorise('core.manage', 'com_checkin') || $item->checked_out == $userId || is_null($item->checked_out);
+                            // checked_out columns not yet in filtergroups table — treat as always available
+                            // $canCheckin = $user->authorise('core.manage', 'com_checkin') || $item->checked_out == $userId || is_null($item->checked_out);
+                            $canCheckin = true;
                             $canChange  = $user->authorise('core.edit.state', 'com_j2commerce.filtergroup.' . $item->j2commerce_filtergroup_id) && $canCheckin;
                             ?>
                             <tr class="row<?php echo $i % 2; ?>" data-draggable-group="none">
@@ -108,9 +110,11 @@ if ($saveOrder && !empty($this->items)) {
                                     <?php echo HTMLHelper::_('jgrid.published', $item->enabled, $i, 'filtergroups.', $canChange, 'cb'); ?>
                                 </td>
                                 <th scope="row">
+                                    <?php /* checked_out columns not yet in filtergroups table
                                     <?php if ($item->checked_out) : ?>
                                         <?php echo HTMLHelper::_('jgrid.checkedout', $i, $item->editor, $item->checked_out_time, 'filtergroups.', $canCheckin); ?>
                                     <?php endif; ?>
+                                    */ ?>
                                     <?php if ($canEdit) : ?>
                                         <a href="<?php echo Route::_('index.php?option=com_j2commerce&task=filtergroup.edit&id=' . $item->j2commerce_filtergroup_id); ?>" title="<?php echo Text::_('JACTION_EDIT'); ?> <?php echo $this->escape($item->group_name); ?>">
                                             <?php echo $this->escape($item->group_name); ?>

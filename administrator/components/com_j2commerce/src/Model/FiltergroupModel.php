@@ -19,7 +19,6 @@ use Joomla\CMS\MVC\Model\AdminModel;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Table\Table;
 use Joomla\Database\ParameterType;
-use Joomla\Registry\Registry;
 use Joomla\String\StringHelper;
 use RuntimeException;
 
@@ -305,6 +304,23 @@ class FiltergroupModel extends AdminModel
             throw new RuntimeException(Text::_('COM_J2COMMERCE_ERROR_FILTERGROUP_GROUP_NAME_REQUIRED'));
         }
 
+        // Handle save2copy — generate unique group_name and force new record
+        $app = Factory::getApplication();
+        if ($app->getInput()->get('task') === 'save2copy') {
+            $origTable = clone $this->getTable();
+            $origTable->load($app->getInput()->getInt('id'));
+
+            if ($data['group_name'] === $origTable->group_name) {
+                [$name] = $this->generateNewTitle(null, null, $data['group_name']);
+                $data['group_name'] = $name;
+            }
+
+            // Force new record: clear the PK so AdminModel::save() doesn't
+            // fall back to getState() which still holds the original ID
+            $data['j2commerce_filtergroup_id'] = 0;
+            $this->setState('filtergroup.id', 0);
+        }
+
         // Extract filters data before saving the parent record
         $filtersData = $data['filters'] ?? [];
         unset($data['filters']);
@@ -509,5 +525,27 @@ class FiltergroupModel extends AdminModel
             $db->transactionRollback();
             throw new RuntimeException('Failed to save filters for group ' . $groupId . ': ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Method to generate a unique group name for copies.
+     *
+     * @param   integer|null  $categoryId  Unused (required for parent signature).
+     * @param   string|null   $alias       Unused (required for parent signature).
+     * @param   string        $title       The group name.
+     *
+     * @return  array  Contains the modified title and alias.
+     *
+     * @since   6.1.5
+     */
+    protected function generateNewTitle($categoryId, $alias, $title): array
+    {
+        $table = $this->getTable();
+
+        while ($table->load(['group_name' => $title])) {
+            $title = StringHelper::increment($title);
+        }
+
+        return [$title, $alias];
     }
 }
