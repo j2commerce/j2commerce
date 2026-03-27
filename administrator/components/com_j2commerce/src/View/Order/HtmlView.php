@@ -41,6 +41,7 @@ class HtmlView extends BaseHtmlView
     protected string $currencySymbol = '';
     protected string $currencyCode = '';
     protected bool $hasPackingSlip = false;
+    protected ?Registry $params = null;
 
     public function display($tpl = null): void
     {
@@ -57,8 +58,9 @@ class HtmlView extends BaseHtmlView
         $this->item  = $model->getItem();
         $this->state = $model->getState();
         $this->orderStatuses = $this->getOrderStatuses();
+        $this->params = ComponentHelper::getParams('com_j2commerce');
 
-        $this->dateFormat = ComponentHelper::getParams('com_j2commerce')->get('date_format', 'Y-m-d H:i:s');
+        $this->dateFormat = $this->params->get('date_format', 'Y-m-d H:i:s');
 
         // Currency formatting
         $this->currencyCode = $this->item->currency_code ?? '';
