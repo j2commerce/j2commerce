@@ -36,25 +36,12 @@
 
         <field
             name="field_type"
-            type="list"
+            type="CustomFieldType"
             label="COM_J2COMMERCE_FIELD_FIELD_TYPE"
             description="COM_J2COMMERCE_FIELD_FIELD_TYPE_DESC"
             default="text"
-        >
-            <option value="text">COM_J2COMMERCE_FIELDTYPE_TEXT</option>
-            <option value="email">COM_J2COMMERCE_FIELDTYPE_EMAIL</option>
-            <option value="textarea">COM_J2COMMERCE_FIELDTYPE_TEXTAREA</option>
-            <option value="wysiwyg">COM_J2COMMERCE_FIELDTYPE_WYSIWYG</option>
-            <option value="radio">COM_J2COMMERCE_FIELDTYPE_RADIO</option>
-            <option value="checkbox">COM_J2COMMERCE_FIELDTYPE_CHECKBOX</option>
-            <option value="singledropdown">COM_J2COMMERCE_FIELDTYPE_SINGLEDROPDOWN</option>
-            <option value="zone">COM_J2COMMERCE_FIELDTYPE_ZONE</option>
-            <option value="date">COM_J2COMMERCE_FIELDTYPE_DATE</option>
-            <option value="time">COM_J2COMMERCE_FIELDTYPE_TIME</option>
-            <option value="datetime">COM_J2COMMERCE_FIELDTYPE_DATETIME</option>
-            <option value="customtext">COM_J2COMMERCE_FIELDTYPE_CUSTOMTEXT</option>
-            <option value="telephone">COM_J2COMMERCE_FIELDTYPE_TELEPHONE</option>
-        </field>
+            addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field"
+        />
 
         <field
             name="field_value"

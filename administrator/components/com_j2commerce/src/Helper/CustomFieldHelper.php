@@ -23,10 +23,14 @@ class CustomFieldHelper
 {
     private static array $fieldCache = [];
 
+    /** Core checkout area column names (use SMALLINT columns, not JSON). */
+    private const CORE_AREAS = ['billing', 'register', 'shipping', 'guest', 'guest_shipping', 'payment'];
+
     /**
-     * Get enabled custom fields for a checkout area.
+     * Get enabled custom fields for a checkout area or plugin area.
      *
-     * Valid areas: billing, register, shipping, guest, guest_shipping, payment
+     * Core areas (billing, register, shipping, guest, guest_shipping, payment) query the
+     * dedicated SMALLINT columns. Plugin areas query the field_display JSON column.
      */
     public static function getFieldsByArea(string $area, string $type = 'address'): array
     {
@@ -36,15 +40,25 @@ class CustomFieldHelper
             return self::$fieldCache[$cacheKey];
         }
 
-        $validAreas = ['billing', 'register', 'shipping', 'guest', 'guest_shipping', 'payment'];
-
-        if (!\in_array($area, $validAreas, true)) {
-            return [];
+        if (\in_array($area, self::CORE_AREAS, true)) {
+            $fields = self::getCoreAreaFields($area, $type);
+        } else {
+            $fields = self::getPluginAreaFields($area);
         }
 
+        self::$fieldCache[$cacheKey] = $fields;
+
+        return $fields;
+    }
+
+    /**
+     * Get fields for a core checkout area (SMALLINT column query).
+     */
+    private static function getCoreAreaFields(string $area, string $type): array
+    {
         $column = 'field_display_' . $area;
 
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db    = Factory::getContainer()->get(DatabaseInterface::class);
         $query = $db->getQuery(true);
 
         $query->select('*')
@@ -63,23 +77,93 @@ class CustomFieldHelper
 
         $db->setQuery($query);
 
-        $fields = $db->loadObjectList() ?: [];
-        self::$fieldCache[$cacheKey] = $fields;
-
-        return $fields;
+        return $db->loadObjectList() ?: [];
     }
+
+    /**
+     * Get fields for a plugin-registered area (field_display JSON column query).
+     *
+     * PHP-side filtering is used for broad MySQL compatibility.
+     */
+    private static function getPluginAreaFields(string $area): array
+    {
+        $db    = Factory::getContainer()->get(DatabaseInterface::class);
+        $query = $db->getQuery(true);
+
+        $query->select('*')
+            ->from($db->quoteName('#__j2commerce_customfields'))
+            ->where($db->quoteName('enabled') . ' = 1')
+            ->where($db->quoteName('field_display') . ' != ' . $db->quote(''))
+            ->where($db->quoteName('field_display') . ' IS NOT NULL');
+
+        $db->setQuery($query);
+        $allFields = $db->loadObjectList() ?: [];
+
+        $areaFields = [];
+
+        foreach ($allFields as $field) {
+            $displayData = json_decode($field->field_display, true);
+
+            if (!\is_array($displayData) || empty($displayData[$area]['enabled'])) {
+                continue;
+            }
+
+            $field->area_ordering = (int) ($displayData[$area]['ordering'] ?? 0);
+            $areaFields[]         = $field;
+        }
+
+        usort($areaFields, static fn($a, $b) => $a->area_ordering <=> $b->area_ordering);
+
+        return $areaFields;
+    }
+
+    /**
+     * Get plugin-registered display areas by dispatching onJ2CommerceGetCustomFieldDisplayAreas.
+     *
+     * @return  array  Array of area definitions, each with keys: key, label, description, plugin
+     *
+     * @since   6.1.5
+     */
+    public static function getRegisteredAreas(): array
+    {
+        $areas = [];
+        J2CommerceHelper::plugin()->event('GetCustomFieldDisplayAreas', [&$areas]);
+        return $areas;
+    }
+
+    /** Core field types handled by the built-in switch statement. */
+    private const CORE_FIELD_TYPES = [
+        'text', 'email', 'tel', 'number', 'telephone', 'textarea',
+        'checkbox', 'radio', 'select', 'singledropdown', 'zone',
+        'date', 'time', 'datetime', 'wysiwyg', 'customtext',
+    ];
 
     /**
      * Render a single custom field as Bootstrap 5 HTML.
      */
     public static function renderField(object $field, string $value = '', array $attrs = []): string
     {
+        $fieldType = $field->field_type ?? 'text';
+
+        // Let plugins render non-core field types first
+        if (!\in_array($fieldType, self::CORE_FIELD_TYPES, true)) {
+            $renderEvent = J2CommerceHelper::plugin()->event('RenderCustomField', [
+                'field' => $field,
+                'value' => $value,
+                'attrs' => $attrs,
+            ]);
+            $rendered = $renderEvent->getEventResult();
+
+            if (!empty($rendered)) {
+                return \is_array($rendered) ? implode('', $rendered) : (string) $rendered;
+            }
+        }
+
         $namekey = htmlspecialchars($field->field_namekey, ENT_QUOTES, 'UTF-8');
         $label = htmlspecialchars(Text::_($field->field_name), ENT_QUOTES, 'UTF-8');
         $required = (int) $field->field_required;
         $default = $field->field_default ?? '';
         $fieldValue = $value ?: $default;
-        $fieldType = $field->field_type ?? 'text';
         $id = htmlspecialchars($attrs['id'] ?? $field->field_namekey, ENT_QUOTES, 'UTF-8');
         $extraClass = $attrs['class'] ?? '';
 
@@ -272,13 +356,13 @@ class CustomFieldHelper
         $errors = [];
 
         foreach ($fields as $field) {
-            $namekey = $field->field_namekey;
-            $value = $data[$namekey] ?? '';
+            $namekey  = $field->field_namekey;
+            $value    = $data[$namekey] ?? '';
             $required = (int) $field->field_required;
+            $label    = Text::_($field->field_name);
 
-            $label = Text::_($field->field_name);
-
-            if ($required && trim($value) === '') {
+            // Core required check applies to all field types
+            if ($required && trim((string) $value) === '') {
                 $errors[$namekey] = Text::sprintf('COM_J2COMMERCE_ERR_FIELD_REQUIRED', $label);
                 continue;
             }
@@ -303,6 +387,17 @@ class CustomFieldHelper
                         $lengths['max']
                     );
                 }
+
+                continue;
+            }
+
+            // Dispatch plugin validation for non-core field types
+            if (!\in_array($field->field_type, self::CORE_FIELD_TYPES, true)) {
+                J2CommerceHelper::plugin()->event('ValidateCustomField', [
+                    &$errors,
+                    'field' => $field,
+                    'value' => $value,
+                ]);
             }
         }
 
@@ -570,6 +665,117 @@ class CustomFieldHelper
         }
 
         return 'col-md-6';
+    }
+
+    /**
+     * Get a plugin's params from an address record, namespaced by plugin name.
+     *
+     * @param  int     $addressId   Address record ID
+     * @param  string  $pluginName  Plugin element name (e.g., 'app_vendormanagement')
+     * @return array   The plugin's params (empty array if none)
+     *
+     * @since  6.1.5
+     */
+    public static function getAddressParams(int $addressId, string $pluginName): array
+    {
+        $db    = Factory::getContainer()->get(DatabaseInterface::class);
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('params'))
+            ->from($db->quoteName('#__j2commerce_addresses'))
+            ->where($db->quoteName('j2commerce_address_id') . ' = :id')
+            ->bind(':id', $addressId, ParameterType::INTEGER);
+        $db->setQuery($query);
+        $raw = $db->loadResult();
+
+        if (empty($raw)) {
+            return [];
+        }
+
+        $allParams = json_decode($raw, true);
+
+        if (!\is_array($allParams)) {
+            return [];
+        }
+
+        return $allParams[$pluginName] ?? [];
+    }
+
+    /**
+     * Set a plugin's params on an address record (replaces that plugin's namespace only).
+     *
+     * Other plugins' namespaces are preserved.
+     *
+     * @param  int     $addressId   Address record ID
+     * @param  string  $pluginName  Plugin element name
+     * @param  array   $params      The plugin's params to store
+     *
+     * @since  6.1.5
+     */
+    public static function setAddressParams(int $addressId, string $pluginName, array $params): void
+    {
+        $db    = Factory::getContainer()->get(DatabaseInterface::class);
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('params'))
+            ->from($db->quoteName('#__j2commerce_addresses'))
+            ->where($db->quoteName('j2commerce_address_id') . ' = :id')
+            ->bind(':id', $addressId, ParameterType::INTEGER);
+        $db->setQuery($query);
+        $raw = $db->loadResult();
+
+        $allParams              = (!empty($raw)) ? (json_decode($raw, true) ?: []) : [];
+        $allParams[$pluginName] = $params;
+
+        $json   = json_encode($allParams, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+        $update = $db->getQuery(true)
+            ->update($db->quoteName('#__j2commerce_addresses'))
+            ->set($db->quoteName('params') . ' = :params')
+            ->where($db->quoteName('j2commerce_address_id') . ' = :id')
+            ->bind(':params', $json)
+            ->bind(':id', $addressId, ParameterType::INTEGER);
+        $db->setQuery($update)->execute();
+    }
+
+    /**
+     * Merge values into a plugin's params namespace (preserves existing keys in that namespace).
+     *
+     * @param  int     $addressId   Address record ID
+     * @param  string  $pluginName  Plugin element name
+     * @param  array   $merge       Key-value pairs to merge
+     *
+     * @since  6.1.5
+     */
+    public static function mergeAddressParams(int $addressId, string $pluginName, array $merge): void
+    {
+        $existing = self::getAddressParams($addressId, $pluginName);
+        self::setAddressParams($addressId, $pluginName, array_merge($existing, $merge));
+    }
+
+    /**
+     * Get ALL params from an address record (all plugin namespaces).
+     *
+     * @param  int  $addressId  Address record ID
+     * @return array  Full params array keyed by plugin name
+     *
+     * @since  6.1.5
+     */
+    public static function getAllAddressParams(int $addressId): array
+    {
+        $db    = Factory::getContainer()->get(DatabaseInterface::class);
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('params'))
+            ->from($db->quoteName('#__j2commerce_addresses'))
+            ->where($db->quoteName('j2commerce_address_id') . ' = :id')
+            ->bind(':id', $addressId, ParameterType::INTEGER);
+        $db->setQuery($query);
+        $raw = $db->loadResult();
+
+        if (empty($raw)) {
+            return [];
+        }
+
+        $decoded = json_decode($raw, true);
+
+        return \is_array($decoded) ? $decoded : [];
     }
 
     /**

@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_addresses` (
   `type` varchar(255) NOT NULL DEFAULT '',
   `company` varchar(255) NOT NULL DEFAULT '',
   `tax_number` varchar(255) NOT NULL DEFAULT '',
-  `campaign_addr_id` varchar(255) NOT NULL DEFAULT '',
+  `params` text NULL,
   PRIMARY KEY (`j2commerce_address_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

@@ -13,6 +13,8 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
@@ -93,13 +95,44 @@ class CustomfieldModel extends AdminModel
         }
 
         // Make field_namekey readonly when editing an existing record (not for save2copy which needs a new unique key)
-        $id = (int) $this->getState('customfield.id');
+        $id   = (int) $this->getState('customfield.id');
         $task = Factory::getApplication()->getInput()->get('task', '', 'cmd');
 
         if ($id > 0 && $task !== 'customfield.save2copy') {
             $form->setFieldAttribute('field_namekey', 'readonly', 'true');
             $form->setFieldAttribute('field_namekey', 'hint', 'COM_J2COMMERCE_FIELD_NAMEKEY_READONLY_HINT');
         }
+
+        // Inject plugin display area switchers into the 'display' fieldset
+        $pluginAreas = CustomFieldHelper::getRegisteredAreas();
+
+        if (!empty($pluginAreas)) {
+            $xml = '<form><fieldset name="display">';
+
+            foreach ($pluginAreas as $area) {
+                $key   = htmlspecialchars($area['key'], ENT_QUOTES, 'UTF-8');
+                $label = htmlspecialchars($area['label'], ENT_QUOTES, 'UTF-8');
+                $desc  = htmlspecialchars($area['description'] ?? '', ENT_QUOTES, 'UTF-8');
+                $xml  .= '<field name="plugin_area_' . $key . '" type="radio"'
+                       . ' label="' . $label . '"'
+                       . ' description="' . $desc . '"'
+                       . ' layout="joomla.form.field.radio.switcher"'
+                       . ' filter="integer" default="0">'
+                       . '<option value="0">JNO</option>'
+                       . '<option value="1">JYES</option>'
+                       . '</field>';
+            }
+
+            $xml .= '</fieldset></form>';
+            $form->load(new \SimpleXMLElement($xml));
+        }
+
+        // Let plugins inject additional fieldsets/tabs
+        $formData = $loadData ? $this->loadFormData() : $data;
+        J2CommerceHelper::plugin()->event('CustomFieldFormPrepare', [
+            'form' => $form,
+            'data' => $formData,
+        ]);
 
         return $form;
     }
@@ -173,6 +206,16 @@ class CustomfieldModel extends AdminModel
                 $decoded = json_decode($data->field_value, true);
                 if (\is_array($decoded)) {
                     $data->field_value = $decoded;
+                }
+            }
+
+            // Load plugin area toggles from field_display JSON
+            if (!empty($data->field_display) && $data->field_display !== '') {
+                $displayData = json_decode($data->field_display, true);
+                if (\is_array($displayData)) {
+                    foreach ($displayData as $areaKey => $areaConfig) {
+                        $data->{'plugin_area_' . $areaKey} = (int) ($areaConfig['enabled'] ?? 0);
+                    }
                 }
             }
         }
@@ -310,6 +353,37 @@ class CustomfieldModel extends AdminModel
             !empty($data['field_namekey'])) {
 
             $this->addAddressColumn($data['field_namekey']);
+        }
+
+        // Sync plugin area toggles into field_display JSON before saving
+        $pluginAreas = CustomFieldHelper::getRegisteredAreas();
+
+        if (!empty($pluginAreas)) {
+            $existingDisplay = [];
+
+            if (!empty($data['field_display'])) {
+                $decoded = json_decode($data['field_display'], true);
+                if (\is_array($decoded)) {
+                    $existingDisplay = $decoded;
+                }
+            }
+
+            foreach ($pluginAreas as $area) {
+                $areaKey = $area['key'];
+                $formKey = 'plugin_area_' . $areaKey;
+                $enabled = (int) ($data[$formKey] ?? 0);
+
+                if (!isset($existingDisplay[$areaKey])) {
+                    $existingDisplay[$areaKey] = ['enabled' => 0, 'ordering' => 0];
+                }
+
+                $existingDisplay[$areaKey]['enabled'] = $enabled;
+
+                // Remove virtual form field before passing to parent::save()
+                unset($data[$formKey]);
+            }
+
+            $data['field_display'] = json_encode($existingDisplay, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
         }
 
         return parent::save($data);

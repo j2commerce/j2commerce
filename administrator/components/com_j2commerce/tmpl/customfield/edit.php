@@ -124,11 +124,38 @@ foreach ($translationKeys as $key) {
                         <?php echo $this->form->renderField('field_display_register'); ?>
                         <?php echo $this->form->renderField('field_display_guest'); ?>
                         <?php echo $this->form->renderField('field_display_guest_shipping'); ?>
+                        <?php
+                        // Render plugin-injected display area switchers dynamically
+                        foreach ($this->form->getFieldset('display') as $field) {
+                            if (strncmp($field->fieldname, 'plugin_area_', 12) === 0) {
+                                echo $field->renderField();
+                            }
+                        }
+                        ?>
                     </div>
                 </fieldset>
             </div>
         </div>
         <?php echo HTMLHelper::_('uitab.endTab'); ?>
+
+        <?php
+        // Render plugin-injected fieldsets as additional tabs
+        $coreFieldsets = ['basic', 'telephone_countries', 'display'];
+        foreach ($this->form->getFieldsets() as $fieldset) {
+            if (\in_array($fieldset->name, $coreFieldsets, true)) {
+                continue;
+            }
+            echo HTMLHelper::_('uitab.addTab', 'myTab', $fieldset->name, Text::_($fieldset->label ?? $fieldset->name));
+            echo '<div class="row"><div class="col-lg-9">';
+            echo '<fieldset class="options-form"><div class="form-grid">';
+            foreach ($this->form->getFieldset($fieldset->name) as $field) {
+                echo $field->renderField();
+            }
+            echo '</div></fieldset>';
+            echo '</div></div>';
+            echo HTMLHelper::_('uitab.endTab');
+        }
+        ?>
 
         <?php echo HTMLHelper::_('uitab.endTabSet'); ?>
     </div>
