@@ -39,7 +39,7 @@ $checkoutPriceDisplay = $this->params->get('checkout_price_display_options', 0);
                     <th class="start"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_TAX'); ?></th>
                 <?php endif; ?>
                 <th class="text-end" style="width: 120px;"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_TOTAL'); ?></th>
-                <th class="text-end"></th>
+                <td class="text-end"></td>
             </tr>
         </thead>
         <tbody>
