@@ -199,7 +199,7 @@ HTMLHelper::_('bootstrap.tooltip', '[data-bs-toggle="tooltip"]', ['placement' =>
                                 </th>
                                 <td class="text-center">
                                     <?php if ($item->enabled && $item->files_exist) : ?>
-                                        <a href="<?php echo Route::_('index.php?option=com_j2commerce&view=reports&task=view&id=' . $item->extension_id); ?>" class="btn btn-sm btn-primary" title="<?php echo Text::_('COM_J2COMMERCE_REPORT_VIEW'); ?>">
+                                        <a href="<?php echo Route::_('index.php?option=com_j2commerce&view=reports&task=reports.view&id=' . $item->extension_id); ?>" class="btn btn-sm btn-primary" title="<?php echo Text::_('COM_J2COMMERCE_REPORT_VIEW'); ?>">
                                             <span class="icon-eye" aria-hidden="true"></span>
                                             <?php echo Text::_('COM_J2COMMERCE_REPORT_VIEW'); ?>
                                         </a>
