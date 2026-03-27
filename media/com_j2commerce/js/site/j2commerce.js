@@ -185,10 +185,18 @@ const J2Commerce = {
 
                 const notifications = form.querySelector('.j2commerce-notifications');
                 if (json.error.stock && notifications) {
-                    notifications.innerHTML = `<span class="j2error">${json.error.stock}</span>`;
+                    notifications.textContent = '';
+                    const stockErr = document.createElement('span');
+                    stockErr.className = 'j2error';
+                    stockErr.textContent = json.error.stock;
+                    notifications.appendChild(stockErr);
                 }
                 if (json.error.general && notifications) {
-                    notifications.innerHTML = `<span class="j2error">${json.error.general}</span>`;
+                    notifications.textContent = '';
+                    const generalErr = document.createElement('span');
+                    generalErr.className = 'j2error';
+                    generalErr.textContent = json.error.general;
+                    notifications.appendChild(generalErr);
                 }
                 if (json.error.product && notifications) {
                     const span = document.createElement('span');
@@ -249,7 +257,7 @@ const J2Commerce = {
             if (json?.response) {
                 Object.entries(json.response).forEach(([key, value]) => {
                     document.querySelectorAll(`.j2commerce-cart-module-${key}`).forEach(el => {
-                        el.innerHTML = value;
+                        el.textContent = value;
                     });
                 });
             }
@@ -295,7 +303,7 @@ const J2Commerce = {
             document.querySelectorAll('.wait').forEach(el => el.remove());
 
             if (container && json.msg) {
-                container.innerHTML = json.msg;
+                container.textContent = json.msg;
             }
         } catch (error) {
             console.error('Task error:', error);
