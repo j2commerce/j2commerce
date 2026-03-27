@@ -260,6 +260,26 @@ class OptionModel extends AdminModel
             $data['j2commerce_option_id'] = $data['id'];
         }
 
+        // Handle save2copy — generate unique option_name and force new record
+        $app = Factory::getApplication();
+        if ($app->getInput()->get('task') === 'save2copy') {
+            $origTable = clone $this->getTable();
+            $origTable->load($app->getInput()->getInt('id'));
+
+            if ($data['option_name'] === $origTable->option_name) {
+                [$name] = $this->generateNewTitle(null, null, $data['option_name']);
+                $data['option_name'] = $name;
+            }
+
+            // Regenerate unique alias for the copy
+            $data['option_unique_name'] = $this->generateUniqueAlias($data['option_name']);
+
+            // Force new record: clear the PK so AdminModel::save() doesn't
+            // fall back to getState() which still holds the original ID
+            $data['j2commerce_option_id'] = 0;
+            $this->setState('option.id', 0);
+        }
+
         // Generate unique name from option name if not provided
         if (empty($data['option_unique_name']) && !empty($data['option_name'])) {
             $data['option_unique_name'] = $this->generateUniqueAlias($data['option_name']);
@@ -287,6 +307,18 @@ class OptionModel extends AdminModel
         }
         if (is_string($optionColorValuesData)) {
             $optionColorValuesData = json_decode($optionColorValuesData, true) ?: [];
+        }
+
+        // For save2copy: strip existing IDs so values are inserted as new rows
+        if ($app->getInput()->get('task') === 'save2copy') {
+            foreach ($optionValuesData as &$val) {
+                $val['j2commerce_optionvalue_id'] = 0;
+            }
+            unset($val);
+            foreach ($optionColorValuesData as &$val) {
+                $val['j2commerce_optionvalue_id'] = 0;
+            }
+            unset($val);
         }
 
         // Convert complex arrays to JSON for database storage
@@ -765,5 +797,27 @@ class OptionModel extends AdminModel
 
             return false;
         }
+    }
+
+    /**
+     * Method to generate a unique option name for copies.
+     *
+     * @param   integer|null  $categoryId  Unused (required for parent signature).
+     * @param   string|null   $alias       Unused (required for parent signature).
+     * @param   string        $title       The option name.
+     *
+     * @return  array  Contains the modified title and alias.
+     *
+     * @since   6.1.5
+     */
+    protected function generateNewTitle($categoryId, $alias, $title): array
+    {
+        $table = $this->getTable();
+
+        while ($table->load(['option_name' => $title])) {
+            $title = StringHelper::increment($title);
+        }
+
+        return [$title, $alias];
     }
 }
