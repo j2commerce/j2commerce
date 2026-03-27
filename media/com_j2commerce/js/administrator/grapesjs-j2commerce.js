@@ -59,8 +59,9 @@ function initGrapesJSEditor(options) {
         deviceManager: {
             devices: [
                 { name: 'Desktop', width: '' },
-                { name: 'Tablet', width: '600px' },
-                { name: 'Mobile', width: '320px', widthMedia: '480px' },
+                { name: 'Tablet', width: '768px', widthMedia: '992px' },
+                { name: 'Mobile landscape', width: '480px', widthMedia: '768px' },
+                { name: 'Mobile portrait', width: '320px', widthMedia: '480px' },
             ],
         },
     };
