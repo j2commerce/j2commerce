@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Plugin\J2Commerce\PaymentBanktransfer\Extension;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\Base;
 use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\Payment;
 use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\PluginLayoutTrait;
@@ -197,14 +198,6 @@ final class PaymentBanktransfer extends CMSPlugin implements SubscriberInterface
         return $this->base;
     }
 
-    private function getOrderModel(): object
-    {
-        return Factory::getApplication()
-            ->bootComponent('com_j2commerce')
-            ->getMVCFactory()
-            ->createModel('Order', 'Administrator', ['ignore_request' => true]);
-    }
-
     private function createOrderTable(): object
     {
         return Factory::getApplication()
@@ -316,7 +309,10 @@ final class PaymentBanktransfer extends CMSPlugin implements SubscriberInterface
             $order->customer_note = ($order->customer_note ?? '') . $html;
         }
 
-        // Save order_params and customer_note first
+        // Set status and save everything in a single store() call
+        $orderStateId = (int) $this->params->get('payment_status', 4);
+        $order->order_state_id = $orderStateId;
+
         if (!$order->store()) {
             Log::add('Bank transfer order save failed: ' . $order->getError(), Log::ERROR, 'com_j2commerce');
             $json['error'] = Text::_('PLG_J2COMMERCE_PAYMENT_BANKTRANSFER_ORDER_NOT_FOUND');
@@ -324,14 +320,10 @@ final class PaymentBanktransfer extends CMSPlugin implements SubscriberInterface
             return $json;
         }
 
-        // Update status via OrderModel (fires events + notifications + history)
-        $orderStateId = (int) $this->params->get('payment_status', 4);
-        $model = $this->getOrderModel();
-        $model->updateOrderStatus(
-            (int) $order->j2commerce_order_id,
-            $orderStateId,
-            true,
-            Text::sprintf('COM_J2COMMERCE_ORDER_HISTORY_PAYMENT_RECEIVED', Text::_('PLG_J2COMMERCE_PAYMENT_BANKTRANSFER'))
+        OrderHistoryHelper::add(
+            orderId: $order->order_id,
+            comment: Text::sprintf('COM_J2COMMERCE_ORDER_HISTORY_PAYMENT_RECEIVED', Text::_('PLG_J2COMMERCE_PAYMENT_BANKTRANSFER')),
+            orderStateId: $orderStateId,
         );
 
         $json['success'] = $this->params->get('onafterpayment', '');

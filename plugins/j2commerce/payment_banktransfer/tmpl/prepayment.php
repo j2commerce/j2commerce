@@ -44,7 +44,7 @@ $vars = $displayData['vars'];
 
     </div>
 
-    <button type="submit"
+    <button type="button"
             id="banktransfer-submit-button"
             class="j2commerce-cart-button button btn btn-primary">
         <?php echo htmlspecialchars(Text::_($vars->button_text), ENT_QUOTES, 'UTF-8'); ?>
