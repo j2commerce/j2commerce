@@ -75,7 +75,8 @@ class MyprofileController extends BaseController
         $type = $this->input->getString('type', 'billing');
         $area = ($type === 'shipping') ? 'shipping' : 'billing';
 
-        $errors = CustomFieldHelper::validateFields($formData, $area);
+        $fields = CustomFieldHelper::getFieldsByArea($area);
+        $errors = CustomFieldHelper::validateFields($fields, $formData);
 
         if ($errors) {
             $this->jsonResponse([
