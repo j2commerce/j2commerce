@@ -143,7 +143,6 @@
             name="country_id"
             type="Country"
             label="COM_J2COMMERCE_FIELD_COUNTRY"
-            description="COM_J2COMMERCE_FIELD_COUNTRY_DESC"
             addfieldprefix ="J2Commerce\Component\J2commerce\Administrator\Field"
             class="form-select"
         >
