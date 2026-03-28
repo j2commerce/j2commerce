@@ -322,23 +322,14 @@ final class AppUikit extends CMSPlugin implements SubscriberInterface
             $subtemplate = $view->params->get('subtemplate', '');
         }
 
-        // If no specific subtemplate is set, this plugin should handle it (default behavior)
+        // If no specific subtemplate is set, defer to Bootstrap 5 as the default layout
         if (empty($subtemplate)) {
-            return true;
+            return false;
         }
 
-        // Check if the subtemplate matches our primary template
-        if ($subtemplate === $primaryTemplate) {
-            return true;
-        }
-
-        // Check if the subtemplate matches our alternate template (for tag variants)
-        if (!empty($alternateTemplate) && $subtemplate === $alternateTemplate) {
-            return true;
-        }
-
-        // Subtemplate is set but doesn't match - another plugin should handle it
-        return false;
+        // Check if the subtemplate matches our primary or alternate template
+        return $subtemplate === $primaryTemplate
+            || (!empty($alternateTemplate) && $subtemplate === $alternateTemplate);
     }
 
     /**

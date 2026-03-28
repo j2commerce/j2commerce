@@ -25,7 +25,7 @@ use Joomla\Registry\Registry;
 
 class Com_J2commerceInstallerScript extends InstallerScript
 {
-    protected $minimumJoomlaVersion = '5.0';
+    protected $minimumJoomlaVersion = '6.0';
     protected $maximumJoomlaVersion = '6.99.99';
     protected $minimumPhpVersion = '8.1';
     private string $debugLogFile = '';
@@ -53,7 +53,6 @@ class Com_J2commerceInstallerScript extends InstallerScript
             'finder'      => ['j2commerce' => 1],
             'task'        => ['j2commerce' => 1],
             'webservices' => ['j2commerce' => 1],
-            // 'filesystem' => ['uppymedia' => 1], // Removed: internalized as MultiImageUploader field type
             'schemaorg'   => ['ecommerce' => 1],
             'user'        => ['j2commerce' => 0],
             'j2commerce'  => [
@@ -166,6 +165,9 @@ class Com_J2commerceInstallerScript extends InstallerScript
         $this->installLocalisation($parent);
         $this->debugLog("INSTALL: localisation complete");
 
+        $this->setDefaultParams();
+        $this->debugLog("INSTALL: default params set");
+
         Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_INSTALL_SUCCESS'), 'success');
 
         $this->debugLog("=== INSTALL END ===");
@@ -221,6 +223,75 @@ class Com_J2commerceInstallerScript extends InstallerScript
             @unlink($cacheFile);
         }
         $this->debugLog("=== POSTFLIGHT END ===");
+    }
+
+    // ── Default component params on fresh install ──────────────────────────────
+
+    /**
+     * Populate #__extensions params with config.xml defaults on fresh install.
+     * Prevents empty-params edge case where the frontend renders the wrong layout.
+     */
+    private function setDefaultParams(): void
+    {
+        $db = Factory::getContainer()->get(DatabaseInterface::class);
+
+        // Read current params — only set defaults if truly empty
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('params'))
+            ->from($db->quoteName('#__extensions'))
+            ->where($db->quoteName('element') . ' = ' . $db->quote('com_j2commerce'))
+            ->where($db->quoteName('type') . ' = ' . $db->quote('component'));
+        $db->setQuery($query);
+        $currentParams = (string) $db->loadResult();
+
+        $registry = new Registry($currentParams);
+
+        if ($registry->count() > 0) {
+            return;
+        }
+
+        // Parse config.xml and extract every field's default attribute
+        $configFile = JPATH_ADMINISTRATOR . '/components/com_j2commerce/config.xml';
+
+        if (!file_exists($configFile)) {
+            return;
+        }
+
+        $xml = simplexml_load_file($configFile);
+
+        if ($xml === false) {
+            return;
+        }
+
+        $skipTypes = ['spacer', 'button', 'note', 'cronlasthit', 'queuekey', 'currencymanager'];
+        $defaults = [];
+
+        foreach ($xml->xpath('//field[@name and @default]') as $field) {
+            $name = (string) $field['name'];
+            $type = strtolower((string) ($field['type'] ?? ''));
+            $default = (string) $field['default'];
+
+            if (\in_array($type, $skipTypes, true) || $default === '') {
+                continue;
+            }
+
+            $defaults[$name] = $default;
+        }
+
+        if (empty($defaults)) {
+            return;
+        }
+
+        $registry = new Registry($defaults);
+        $params = $registry->toString();
+
+        $update = $db->getQuery(true)
+            ->update($db->quoteName('#__extensions'))
+            ->set($db->quoteName('params') . ' = ' . $db->quote($params))
+            ->where($db->quoteName('element') . ' = ' . $db->quote('com_j2commerce'))
+            ->where($db->quoteName('type') . ' = ' . $db->quote('component'));
+        $db->setQuery($update);
+        $db->execute();
     }
 
     // ── Leaflet param migration ─────────────────────────────────────────────────
