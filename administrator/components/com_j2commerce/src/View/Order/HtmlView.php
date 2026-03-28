@@ -117,6 +117,8 @@ class HtmlView extends BaseHtmlView
             );
         } elseif ($layout === 'packingslip') {
             $this->setLayout('packingslip');
+        } elseif ($layout === 'invoice') {
+            $this->setLayout('invoice');
         } else {
             $this->setLayout('view');
             $wa->registerAndUseScript(
@@ -140,7 +142,7 @@ class HtmlView extends BaseHtmlView
         $canDo         = ContentHelper::getActions('com_j2commerce');
         $canEditOrders = $this->getCurrentUser()->authorise('j2commerce.editorders', 'com_j2commerce');
         $user          = Factory::getApplication()->getIdentity();
-        $checkedOut    = !(\is_null($this->item->checked_out) || $this->item->checked_out == $user->id);
+        $checkedOut    = isset($this->item->checked_out) && !(\is_null($this->item->checked_out) || $this->item->checked_out == $user->id);
         $toolbar       = $this->getDocument()->getToolbar();
 
         $orderDisplay = $this->item->invoice ?? $this->item->order_id ?? Text::_('COM_J2COMMERCE_ORDER');
