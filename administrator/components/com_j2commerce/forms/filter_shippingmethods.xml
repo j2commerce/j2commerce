@@ -44,7 +44,6 @@
             name="limit"
             type="limitbox"
             label="JGLOBAL_LIST_LIMIT"
-            description="JGLOBAL_LIST_LIMIT_DESC"
             default="25"
             onchange="this.form.submit();"
         />
