@@ -22,6 +22,11 @@ class PluginSubtemplateField extends ListField
 {
     protected $type = 'PluginSubtemplate';
 
+    /**
+     * Functional directories that are not layout subtemplates.
+     */
+    private const EXCLUDED_DIRS = ['admin', 'application', 'confirmation', 'dashboard', 'email'];
+
     public function getOptions(): array
     {
         $options = parent::getOptions();
@@ -35,12 +40,13 @@ class PluginSubtemplateField extends ListField
 
         $folders = [];
 
-        // Scan plugin tmpl/ subdirectories.
+        // Scan plugin tmpl/ subdirectories — only include layout subtemplates.
         $pluginTmpl = JPATH_PLUGINS . '/' . $group . '/' . $element . '/tmpl';
 
         if (is_dir($pluginTmpl)) {
             foreach (new \DirectoryIterator($pluginTmpl) as $entry) {
-                if ($entry->isDir() && !$entry->isDot()) {
+                if ($entry->isDir() && !$entry->isDot()
+                    && !\in_array($entry->getFilename(), self::EXCLUDED_DIRS, true)) {
                     $folders[$entry->getFilename()] = true;
                 }
             }
@@ -52,7 +58,8 @@ class PluginSubtemplateField extends ListField
 
         if (is_dir($overrideDir)) {
             foreach (new \DirectoryIterator($overrideDir) as $entry) {
-                if ($entry->isDir() && !$entry->isDot()) {
+                if ($entry->isDir() && !$entry->isDot()
+                    && !\in_array($entry->getFilename(), self::EXCLUDED_DIRS, true)) {
                     $folders[$entry->getFilename()] = true;
                 }
             }
