@@ -125,6 +125,12 @@ class CustomfieldModel extends AdminModel
 
             $xml .= '</fieldset></form>';
             $form->load(new \SimpleXMLElement($xml));
+
+            // Re-bind data so plugin area values populate the newly injected fields.
+            // The initial loadForm() binding happened before these fields existed.
+            if ($loadData) {
+                $form->bind($this->loadFormData());
+            }
         }
 
         // Let plugins inject additional fieldsets/tabs
