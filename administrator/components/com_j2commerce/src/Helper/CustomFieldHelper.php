@@ -243,7 +243,7 @@ class CustomFieldHelper
                 break;
 
             case 'radio':
-                $options = self::parseOptions($field->field_options ?? '');
+                $options = self::parseOptions($field->field_value ?? '');
                 $html .= '<div class="form-normal"><label class="form-label">' . $labelHtml . '</label>';
                 foreach ($options as $i => $opt) {
                     $optId = $id . '_' . $i;
@@ -257,7 +257,7 @@ class CustomFieldHelper
                 break;
 
             case 'select':
-                $options = self::parseOptions($field->field_options ?? '');
+                $options = self::parseOptions($field->field_value ?? '');
                 if ($isFloating) {
                     $html .= '<div class="form-floating">'
                         . '<select name="' . $namekey . '" id="' . $id . '" class="form-select' . ($extraClass ? ' ' . $extraClass : '') . '"' . $requiredAttr . '>'
@@ -287,7 +287,7 @@ class CustomFieldHelper
                 break;
 
             case 'singledropdown':
-                $options = self::parseOptions($field->field_options ?? '');
+                $options = self::parseOptions($field->field_value ?? '');
                 if ($isFloating) {
                     $html .= '<div class="form-floating">'
                         . '<select name="' . $namekey . '" id="' . $id . '" class="form-select' . ($extraClass ? ' ' . $extraClass : '') . '"' . $requiredAttr . '>'
@@ -341,17 +341,39 @@ class CustomFieldHelper
      */
     private static function parseOptions(string $optionsStr): array
     {
+        if ($optionsStr === '') {
+            return [];
+        }
+
+        // Try JSON first (new format from subform editor)
+        $decoded = json_decode($optionsStr, true);
+
+        if (\is_array($decoded)) {
+            $options = [];
+
+            foreach ($decoded as $item) {
+                if (\is_array($item) && isset($item['value'])) {
+                    $options[] = ['value' => (string) $item['value'], 'name' => (string) ($item['name'] ?? $item['value'])];
+                }
+            }
+
+            return $options;
+        }
+
+        // Legacy format: newline-separated value=name pairs
         $options = [];
         $lines = explode("\n", $optionsStr);
 
         foreach ($lines as $line) {
             $line = trim($line);
+
             if ($line === '') {
                 continue;
             }
 
             $parts = explode('=', $line, 2);
-            if (count($parts) === 2) {
+
+            if (\count($parts) === 2) {
                 $options[] = ['value' => trim($parts[0]), 'name' => trim($parts[1])];
             } else {
                 $options[] = ['value' => trim($line), 'name' => trim($line)];
