@@ -31,12 +31,12 @@
             <option value="">JGLOBAL_SORT_BY</option>
             <option value="a.name ASC">COM_J2COMMERCE_APP_NAME_ASC</option>
             <option value="a.name DESC">COM_J2COMMERCE_APP_NAME_DESC</option>
-            <option value="a.enabled ASC">JSTATUS_ASC</option>
-            <option value="a.enabled DESC">JSTATUS_DESC</option>
-            <option value="a.ordering ASC">JGRID_HEADING_ORDERING_ASC</option>
-            <option value="a.ordering DESC">JGRID_HEADING_ORDERING_DESC</option>
-            <option value="a.extension_id ASC">JGRID_HEADING_ID_ASC</option>
-            <option value="a.extension_id DESC">JGRID_HEADING_ID_DESC</option>
+            <option value="a.enabled ASC">COM_J2COMMERCE_HEADING_STATUS_ASC</option>
+            <option value="a.enabled DESC">COM_J2COMMERCE_HEADING_STATUS_DESC</option>
+            <option value="a.ordering ASC">COM_J2COMMERCE_HEADING_ORDERING_ASC</option>
+            <option value="a.ordering DESC">COM_J2COMMERCE_HEADING_ORDERING_DESC</option>
+            <option value="a.extension_id ASC">COM_J2COMMERCE_HEADING_ID_ASC</option>
+            <option value="a.extension_id DESC">COM_J2COMMERCE_HEADING_ID_DESC</option>
         </field>
 
         <field

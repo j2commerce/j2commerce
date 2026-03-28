@@ -63,8 +63,8 @@
             <option value="a.priority DESC">COM_J2COMMERCE_HEADING_PRIORITY_DESC</option>
             <option value="a.attempt_count ASC">COM_J2COMMERCE_HEADING_ATTEMPTS_ASC</option>
             <option value="a.attempt_count DESC">COM_J2COMMERCE_HEADING_ATTEMPTS_DESC</option>
-            <option value="a.j2commerce_queue_id ASC">JGRID_HEADING_ID_ASC</option>
-            <option value="a.j2commerce_queue_id DESC">JGRID_HEADING_ID_DESC</option>
+            <option value="a.j2commerce_queue_id ASC">COM_J2COMMERCE_HEADING_ID_ASC</option>
+            <option value="a.j2commerce_queue_id DESC">COM_J2COMMERCE_HEADING_ID_DESC</option>
         </field>
 
         <field

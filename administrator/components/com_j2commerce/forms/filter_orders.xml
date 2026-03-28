@@ -121,8 +121,8 @@
             <option value="a.order_total DESC">COM_J2COMMERCE_HEADING_TOTAL_DESC</option>
             <option value="a.order_state_id ASC">COM_J2COMMERCE_HEADING_STATUS_ASC</option>
             <option value="a.order_state_id DESC">COM_J2COMMERCE_HEADING_STATUS_DESC</option>
-            <option value="a.j2commerce_order_id ASC">JGRID_HEADING_ID_ASC</option>
-            <option value="a.j2commerce_order_id DESC">JGRID_HEADING_ID_DESC</option>
+            <option value="a.j2commerce_order_id ASC">COM_J2COMMERCE_HEADING_ID_ASC</option>
+            <option value="a.j2commerce_order_id DESC">COM_J2COMMERCE_HEADING_ID_DESC</option>
         </field>
 
         <field
