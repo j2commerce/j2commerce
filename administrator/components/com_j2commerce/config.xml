@@ -54,7 +54,7 @@
             name="store_zip"
             type="text"
             label="COM_J2COMMERCE_CONFIG_STORE_ZIP"
-            required="true"
+            required="false"
         />
 
         <field
@@ -1254,7 +1254,7 @@
             label="COM_J2COMMERCE_CONFIG_SHOW_TERMS"
             description="COM_J2COMMERCE_CONFIG_SHOW_TERMS_DESC"
             layout="joomla.form.field.radio.switcher"
-            default="1"
+            default="0"
             filter="integer"
         >
             <option value="0">JNO</option>

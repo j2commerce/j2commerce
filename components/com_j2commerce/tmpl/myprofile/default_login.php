@@ -66,7 +66,6 @@ $returnUrl = base64_encode(Uri::getInstance()->toString());
         </div>
         <?php endif; ?>
 
-        <?php if ($params->get('allow_guest_checkout', 0)): ?>
         <div class="col-lg-6">
             <div class="card">
                 <div class="card-header"><h4 class="mb-0"><?php echo Text::_('COM_J2COMMERCE_ORDER_GUEST_VIEW'); ?></h4></div>
@@ -87,6 +86,5 @@ $returnUrl = base64_encode(Uri::getInstance()->toString());
                 </div>
             </div>
         </div>
-        <?php endif; ?>
     </div>
 </div>
