@@ -127,8 +127,8 @@
             onchange="this.form.submit();"
         >
             <option value="">JGLOBAL_SORT_BY</option>
-            <option value="a.j2commerce_product_id ASC">JGRID_HEADING_ID_ASC</option>
-            <option value="a.j2commerce_product_id DESC">JGRID_HEADING_ID_DESC</option>
+            <option value="a.j2commerce_product_id ASC">COM_J2COMMERCE_HEADING_ID_ASC</option>
+            <option value="a.j2commerce_product_id DESC">COM_J2COMMERCE_HEADING_ID_DESC</option>
             <option value="c.title ASC">COM_J2COMMERCE_HEADING_PRODUCT_NAME_ASC</option>
             <option value="c.title DESC">COM_J2COMMERCE_HEADING_PRODUCT_NAME_DESC</option>
             <option value="v.sku ASC">COM_J2COMMERCE_HEADING_SKU_ASC</option>

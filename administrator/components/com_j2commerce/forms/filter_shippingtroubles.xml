@@ -57,8 +57,8 @@
             <option value="v.shipping DESC">COM_J2COMMERCE_HEADING_FILTER_SHIPPING_ENABLED_DESC</option>
             <option value="v.weight ASC">COM_J2COMMERCE_HEADING_FILTER_WEIGHT_ASC</option>
             <option value="v.weight DESC">COM_J2COMMERCE_HEADING_FILTER_WEIGHT_DESC</option>
-            <option value="p.j2commerce_product_id ASC">JGRID_HEADING_ID_ASC</option>
-            <option value="p.j2commerce_product_id DESC">JGRID_HEADING_ID_DESC</option>
+            <option value="p.j2commerce_product_id ASC">COM_J2COMMERCE_HEADING_ID_ASC</option>
+            <option value="p.j2commerce_product_id DESC">COM_J2COMMERCE_HEADING_ID_DESC</option>
         </field>
 
         <field
