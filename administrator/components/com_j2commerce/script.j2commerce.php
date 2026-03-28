@@ -970,11 +970,29 @@ class Com_J2commerceInstallerScript extends InstallerScript
             }
 
             if ($needsEmails) {
-                $this->executeSqlFileDirect($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/emailtemplates.sql');
+                $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/emailtemplates.sql');
             }
         } catch (\Exception $e) {
             $this->debugLog("LOCALISATION: email templates error: " . $e->getMessage());
             Log::add('Error installing email templates: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
+        }
+
+        // Ensure emailtype_tags have default data (install SQL may have already inserted these)
+        try {
+            if (in_array($prefix . 'j2commerce_emailtype_tags', $alltables)) {
+                $query = $db->getQuery(true)
+                    ->select('COUNT(*)')
+                    ->from($db->quoteName('#__j2commerce_emailtype_tags'));
+                $db->setQuery($query);
+
+                if (((int) $db->loadResult()) < 1) {
+                    $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/updates/mysql/6.1.0.sql');
+                    $this->debugLog("LOCALISATION: emailtype tags/contexts loaded from 6.1.0.sql");
+                }
+            }
+        } catch (\Exception $e) {
+            $this->debugLog("LOCALISATION: emailtype data error: " . $e->getMessage());
+            Log::add('Error installing emailtype data: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
         }
 
         // Install invoice templates if needed
@@ -990,7 +1008,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
             }
 
             if ($needsInvoices) {
-                $this->executeSqlFileDirect($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/invoicetemplates.sql');
+                $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/invoicetemplates.sql');
             }
         } catch (\Exception $e) {
             $this->debugLog("LOCALISATION: invoice templates error: " . $e->getMessage());
