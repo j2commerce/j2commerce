@@ -75,6 +75,20 @@ class CurrenciesController extends AdminController
         return parent::getModel($name, $prefix, $config);
     }
 
+    /**
+     * Preserve tmpl parameter in list redirects (modal support).
+     *
+     * @return  string
+     *
+     * @since   6.1.5
+     */
+    protected function getRedirectToListAppend()
+    {
+        $tmpl = $this->input->getCmd('tmpl', '');
+
+        return $tmpl ? '&tmpl=' . $tmpl : '';
+    }
+
     public function updateRates(): void
     {
         $this->checkToken();
