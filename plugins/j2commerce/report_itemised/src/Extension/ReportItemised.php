@@ -19,6 +19,7 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Router\Route;
+use Joomla\CMS\Session\Session;
 use Joomla\Database\DatabaseAwareTrait;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Event\DispatcherInterface;
@@ -179,7 +180,8 @@ final class ReportItemised extends CMSPlugin implements SubscriberInterface
 
         if ($toolbar) {
             $exportUrl = Route::_(
-                'index.php?option=com_j2commerce&task=reportplugin.exportCsv&plugin=' . $this->_element,
+                'index.php?option=com_j2commerce&task=reportplugin.exportCsv&plugin=' . $this->_element
+                . '&' . Session::getFormToken() . '=1',
                 false
             );
             $toolbar->linkButton('export', 'PLG_J2COMMERCE_REPORT_ITEMISED_EXPORT_CSV')
