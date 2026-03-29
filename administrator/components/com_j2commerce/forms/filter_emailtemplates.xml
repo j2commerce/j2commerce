@@ -95,22 +95,22 @@
             class="form-select"
         >
             <option value="">JGLOBAL_SORT_BY</option>
+            <option value="a.enabled ASC">COM_J2COMMERCE_HEADING_STATUS_ASC</option>
+            <option value="a.enabled DESC">COM_J2COMMERCE_HEADING_STATUS_DESC</option>
+            <option value="a.ordering ASC">COM_J2COMMERCE_HEADING_ORDERING_ASC</option>
+            <option value="a.ordering DESC">COM_J2COMMERCE_HEADING_ORDERING_DESC</option>
             <option value="a.receiver_type ASC">COM_J2COMMERCE_EMAILTEMPLATE_RECEIVER_TYPE_SORT_ASC</option>
             <option value="a.receiver_type DESC">COM_J2COMMERCE_EMAILTEMPLATE_RECEIVER_TYPE_SORT_DESC</option>
             <option value="a.subject ASC">COM_J2COMMERCE_EMAILTEMPLATE_SUBJECT_SORT_ASC</option>
             <option value="a.subject DESC">COM_J2COMMERCE_EMAILTEMPLATE_SUBJECT_SORT_DESC</option>
+            <option value="a.language ASC">JGRID_HEADING_LANGUAGE_ASC</option>
+            <option value="a.language DESC">JGRID_HEADING_LANGUAGE_DESC</option>
             <option value="a.orderstatus_id ASC">COM_J2COMMERCE_EMAILTEMPLATE_SORT_ORDERSTATUS_ASC</option>
             <option value="a.orderstatus_id DESC">COM_J2COMMERCE_EMAILTEMPLATE_SORT_ORDERSTATUS_DESC</option>
             <option value="a.group_id ASC">COM_J2COMMERCE_EMAILTEMPLATE_SORT_USERGROUP_ASC</option>
             <option value="a.group_id DESC">COM_J2COMMERCE_EMAILTEMPLATE_SORT_USERGROUP_DESC</option>
             <option value="a.paymentmethod ASC">COM_J2COMMERCE_EMAILTEMPLATE_SORT_PAYMENTMETHOD_ASC</option>
             <option value="a.paymentmethod DESC">COM_J2COMMERCE_EMAILTEMPLATE_SORT_PAYMENTMETHOD_DESC</option>
-            <option value="a.language ASC">JGRID_HEADING_LANGUAGE_ASC</option>
-            <option value="a.language DESC">JGRID_HEADING_LANGUAGE_DESC</option>
-            <option value="a.enabled ASC">COM_J2COMMERCE_HEADING_STATUS_ASC</option>
-            <option value="a.enabled DESC">COM_J2COMMERCE_HEADING_STATUS_DESC</option>
-            <option value="a.ordering ASC">COM_J2COMMERCE_HEADING_ORDERING_ASC</option>
-            <option value="a.ordering DESC">COM_J2COMMERCE_HEADING_ORDERING_DESC</option>
             <option value="a.j2commerce_emailtemplate_id ASC">COM_J2COMMERCE_HEADING_ID_ASC</option>
             <option value="a.j2commerce_emailtemplate_id DESC">COM_J2COMMERCE_HEADING_ID_DESC</option>
         </field>
