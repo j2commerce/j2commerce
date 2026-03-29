@@ -36,7 +36,6 @@
 
 .j2c-step-indicator.active {
     background-color: var(--bs-primary);
-    color: #fff;
     border: 2px solid var(--bs-primary);
 }
 
@@ -190,7 +189,15 @@
 }
 
 /* ---- Inline validation ---- */
+/* Show validation feedback when input inside form-floating is invalid */
+.j2c-onboarding-body .form-floating:has(.is-invalid) + .invalid-feedback,
 .j2c-onboarding-body .is-invalid + .invalid-feedback { display: block; }
+
+/* Ensure floating label inputs with is-invalid show red border */
+.j2c-onboarding-body .form-floating .form-control.is-invalid,
+.j2c-onboarding-body .form-floating .form-select.is-invalid {
+    border-color: var(--bs-danger);
+}
 
 /* ---- Responsive ---- */
 @media (max-width: 767.98px) {
