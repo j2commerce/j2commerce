@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function showError(msg) {
         const area = modal.querySelector('#ob-alert-area');
         if (!area) return;
-        area.innerHTML = '';
+        area.replaceChildren();
         const alert = document.createElement('div');
         alert.className = 'alert alert-danger alert-dismissible fade show mb-3';
         alert.setAttribute('role', 'alert');
@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function clearError() {
         const area = modal.querySelector('#ob-alert-area');
         if (!area) return;
-        area.innerHTML = '';
+        area.replaceChildren();
         area.classList.add('d-none');
     }
 
@@ -78,7 +78,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) return;
             const html = await response.text();
             const zoneEl = modal.querySelector('#ob-zone');
-            if (zoneEl) zoneEl.innerHTML = html;
+            if (zoneEl) {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(`<select>${html}</select>`, 'text/html');
+                const options = doc.querySelectorAll('option');
+                zoneEl.replaceChildren(...options);
+            }
         } catch {
             // Zone loading failure is non-fatal
         }
@@ -96,11 +101,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const weight   = meta.weight   || '';
         const length   = meta.length   || '';
         if (currency || weight || length) {
-            const parts = [];
-            if (currency) parts.push(currency + ' currency');
-            if (weight)   parts.push(weight + ' weight');
-            if (length)   parts.push(length + ' length');
-            preview.textContent = Joomla.Text._('COM_J2COMMERCE_ONBOARDING_DEFAULTS_PREVIEW_PREFIX') + ' ' + parts.join(', ');
+            const currencyStr = currency || '';
+            const weightStr   = weight   || '';
+            const lengthStr   = length   || '';
+            preview.textContent = Joomla.Text.sprintf('COM_J2COMMERCE_ONBOARDING_DEFAULTS_PREVIEW', currencyStr, weightStr, lengthStr);
         } else {
             preview.textContent = '';
         }
@@ -139,23 +143,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateStepper(activeStep) {
-        const indicators = modal.querySelectorAll('.ob-step-indicator');
-        const connectors = modal.querySelectorAll('.ob-step-connector');
+        const indicators = modal.querySelectorAll('[data-step-indicator]');
+        const connectors = modal.querySelectorAll('[data-connector]');
 
         indicators.forEach((el, index) => {
             const step = index + 1;
-            el.classList.remove('active', 'completed', 'upcoming');
-            el.removeAttribute('aria-current');
+            const innerIndicator = el.querySelector('.j2c-step-indicator');
+            if (!innerIndicator) return;
+            innerIndicator.classList.remove('active', 'completed', 'upcoming');
+            innerIndicator.removeAttribute('aria-current');
 
             if (step < activeStep) {
-                el.classList.add('completed');
-                const icon = el.querySelector('.ob-step-icon');
-                if (icon) icon.innerHTML = '<span class="icon-check" aria-hidden="true"></span>';
+                innerIndicator.classList.add('completed');
+                const checkSpan = document.createElement('span');
+                checkSpan.className = 'fa-solid fa-check';
+                checkSpan.setAttribute('aria-hidden', 'true');
+                innerIndicator.textContent = '';
+                innerIndicator.appendChild(checkSpan);
             } else if (step === activeStep) {
-                el.classList.add('active');
-                el.setAttribute('aria-current', 'step');
+                innerIndicator.classList.add('active');
+                innerIndicator.setAttribute('aria-current', 'step');
             } else {
-                el.classList.add('upcoming');
+                innerIndicator.classList.add('upcoming');
             }
         });
 
@@ -207,7 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (activeStep === 4) {
                         labelEl.textContent = Joomla.Text._('COM_J2COMMERCE_ONBOARDING_BTN_FINISH');
                     } else {
-                        labelEl.textContent = Joomla.Text._('COM_J2COMMERCE_ONBOARDING_BTN_NEXT');
+                        labelEl.textContent = Joomla.Text._('COM_J2COMMERCE_ONBOARDING_BTN_CONTINUE');
                     }
                 }
             }
@@ -298,19 +307,19 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (!response.ok) {
-                throw new Error(Joomla.Text._('COM_J2COMMERCE_ERR_GENERIC'));
+                throw new Error(Joomla.Text._('COM_J2COMMERCE_ONBOARDING_ERR_SAVE'));
             }
 
             const json = await response.json();
 
             if (!json.success) {
-                throw new Error(json.message || Joomla.Text._('COM_J2COMMERCE_ERR_GENERIC'));
+                throw new Error(json.message || Joomla.Text._('COM_J2COMMERCE_ONBOARDING_ERR_SAVE'));
             }
 
             await handlePostSave(stepNum, json.data || {});
 
         } catch (err) {
-            showError(err.message || Joomla.Text._('COM_J2COMMERCE_ERR_GENERIC'));
+            showError(err.message || Joomla.Text._('COM_J2COMMERCE_ONBOARDING_ERR_SAVE'));
         } finally {
             setNextButtonSpinner(false);
         }
@@ -377,24 +386,29 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!summaryEl) return;
 
         const rows = [];
-        if (data.storeName)     rows.push([Joomla.Text._('COM_J2COMMERCE_ONBOARDING_SUMMARY_STORE'),        escapeHtml(data.storeName)]);
-        if (data.currency)      rows.push([Joomla.Text._('COM_J2COMMERCE_ONBOARDING_SUMMARY_CURRENCY'),     escapeHtml(data.currency)]);
-        if (data.measurements)  rows.push([Joomla.Text._('COM_J2COMMERCE_ONBOARDING_SUMMARY_MEASUREMENTS'), escapeHtml(data.measurements)]);
-        if (data.tax)           rows.push([Joomla.Text._('COM_J2COMMERCE_ONBOARDING_SUMMARY_TAX'),          escapeHtml(data.tax)]);
-        if (data.productTypes)  rows.push([Joomla.Text._('COM_J2COMMERCE_ONBOARDING_SUMMARY_PRODUCT_TYPES'), escapeHtml(data.productTypes)]);
+        if (data.storeName)     rows.push([Joomla.Text._('COM_J2COMMERCE_ONBOARDING_READY_SUMMARY_STORE'),        data.storeName]);
+        if (data.currency)      rows.push([Joomla.Text._('COM_J2COMMERCE_ONBOARDING_READY_SUMMARY_CURRENCY'),     data.currency]);
+        if (data.measurements)  rows.push([Joomla.Text._('COM_J2COMMERCE_ONBOARDING_READY_SUMMARY_MEASUREMENTS'), data.measurements]);
+        if (data.tax)           rows.push([Joomla.Text._('COM_J2COMMERCE_ONBOARDING_READY_SUMMARY_TAX'),          data.tax]);
+        if (data.productTypes)  rows.push([Joomla.Text._('COM_J2COMMERCE_ONBOARDING_READY_SUMMARY_PRODUCTS'),     data.productTypes]);
 
-        let html = '<table class="table table-sm table-bordered">';
+        const table = document.createElement('table');
+        table.className = 'table table-sm table-bordered';
+        const tbody = document.createElement('tbody');
+
         rows.forEach(([label, value]) => {
-            html += `<tr><th class="w-40">${label}</th><td>${value}</td></tr>`;
+            const tr = document.createElement('tr');
+            const th = document.createElement('th');
+            th.className = 'w-40';
+            th.textContent = label;
+            const td = document.createElement('td');
+            td.textContent = value;
+            tr.append(th, td);
+            tbody.appendChild(tr);
         });
-        html += '</table>';
 
-        summaryEl.innerHTML = html;
-    }
-
-    function escapeHtml(str) {
-        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-        return String(str).replace(/[&<>"']/g, m => map[m]);
+        table.appendChild(tbody);
+        summaryEl.replaceChildren(table);
     }
 
     // -------------------------------------------------------------------------
@@ -464,10 +478,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (json.success) {
                         modalInstance.hide();
                     } else {
-                        showError(json.message || Joomla.Text._('COM_J2COMMERCE_ERR_GENERIC'));
+                        showError(json.message || Joomla.Text._('COM_J2COMMERCE_ONBOARDING_ERR_SAVE'));
                     }
                 } catch {
-                    showError(Joomla.Text._('COM_J2COMMERCE_ERR_GENERIC'));
+                    showError(Joomla.Text._('COM_J2COMMERCE_ONBOARDING_ERR_SAVE'));
                 }
                 break;
             }
@@ -496,7 +510,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     const prompt = modal.querySelector('#ob-lang-prompt');
                     if (json.success) {
                         if (prompt) {
-                            prompt.innerHTML = `<div class="alert alert-success">${escapeHtml(json.message || Joomla.Text._('COM_J2COMMERCE_ONBOARDING_LANG_INSTALLED'))}</div>`;
+                            const successAlert = document.createElement('div');
+                            successAlert.className = 'alert alert-success';
+                            successAlert.textContent = json.message || Joomla.Text._('COM_J2COMMERCE_ONBOARDING_LANG_SUCCESS');
+                            prompt.replaceChildren(successAlert);
                         }
                         applyDefaults(json.data?.defaults);
                         goToStep(2, 'forward');
@@ -510,7 +527,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (spinner) spinner.remove();
                         btn.textContent = originalText;
                     }
-                    showError(err.message || Joomla.Text._('COM_J2COMMERCE_ERR_GENERIC'));
+                    showError(err.message || Joomla.Text._('COM_J2COMMERCE_ONBOARDING_ERR_SAVE'));
                 }
                 break;
             }
@@ -522,6 +539,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 goToStep(2, 'forward');
                 break;
             }
+        }
+    });
+
+    // -------------------------------------------------------------------------
+    // Keyboard support for product type cards
+    // -------------------------------------------------------------------------
+
+    modal.addEventListener('keydown', (e) => {
+        if ((e.key === 'Enter' || e.key === ' ') && e.target.closest('.j2c-product-type-card')) {
+            e.preventDefault();
+            e.target.closest('.j2c-product-type-card').click();
         }
     });
 

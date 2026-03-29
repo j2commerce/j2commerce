@@ -244,6 +244,7 @@ class HtmlView extends BaseHtmlView
             $wa->registerAndUseScript('com_j2commerce.onboarding', 'media/com_j2commerce/js/administrator/onboarding.js', [], ['defer' => true]);
             $wa->registerAndUseStyle('com_j2commerce.onboarding.css', 'media/com_j2commerce/css/administrator/onboarding.css');
 
+            Text::script('COM_J2COMMERCE_ONBOARDING_BTN_CONTINUE');
             Text::script('COM_J2COMMERCE_ONBOARDING_BTN_FINISH');
             Text::script('COM_J2COMMERCE_ONBOARDING_DISMISS_CONFIRM');
             Text::script('COM_J2COMMERCE_ONBOARDING_ERR_REQUIRED');

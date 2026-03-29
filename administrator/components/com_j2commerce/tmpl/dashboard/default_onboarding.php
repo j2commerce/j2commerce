@@ -133,7 +133,7 @@ $e = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
 
       <!-- Progress bar -->
       <div class="progress j2c-onboarding-progress">
-        <div class="progress-bar" role="progressbar" style="width: <?php echo $resumeStep * 20; ?>%"
+        <div class="progress-bar" id="ob-progress-bar" role="progressbar" style="width: <?php echo $resumeStep * 20; ?>%"
              aria-valuenow="<?php echo $resumeStep * 20; ?>" aria-valuemin="0" aria-valuemax="100"></div>
       </div>
 
@@ -271,6 +271,7 @@ $e = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
               </select>
             </div>
           </div>
+          <div class="alert alert-info small d-none mt-3" id="ob-step2-info"></div>
         </div>
 
         <!-- ============ STEP 3: Tax ============ -->
@@ -417,17 +418,18 @@ $e = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
       </div>
 
       <!-- Footer -->
-      <div class="modal-footer j2c-onboarding-footer">
-        <button type="button" class="btn btn-link text-muted d-none" data-action="back">
+      <div class="modal-footer j2c-onboarding-footer" id="ob-footer">
+        <button type="button" id="ob-btn-back" class="btn btn-link text-muted d-none" data-action="back">
           <span class="fa-solid fa-chevron-left me-1" aria-hidden="true"></span>
           <?php echo Text::_('COM_J2COMMERCE_ONBOARDING_BTN_BACK'); ?>
         </button>
         <div class="ms-auto d-flex gap-2">
-          <button type="button" class="btn btn-outline-secondary" data-action="skip">
+          <button type="button" id="ob-btn-skip" class="btn btn-outline-secondary" data-action="skip">
             <?php echo Text::_('COM_J2COMMERCE_ONBOARDING_BTN_SKIP'); ?>
           </button>
-          <button type="button" class="btn btn-primary" data-action="next">
-            <?php echo Text::_('COM_J2COMMERCE_ONBOARDING_BTN_CONTINUE'); ?>
+          <button type="button" id="ob-btn-next" class="btn btn-primary" data-action="next">
+            <span class="btn-label"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_BTN_CONTINUE'); ?></span>
+            <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
             <span class="fa-solid fa-chevron-right ms-1" aria-hidden="true"></span>
           </button>
         </div>

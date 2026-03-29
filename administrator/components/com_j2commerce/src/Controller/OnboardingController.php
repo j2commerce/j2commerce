@@ -343,15 +343,46 @@ class OnboardingController extends BaseController
             'onboarding_last_step' => '5',
         ]);
 
-        // Build summary
+        $db = $this->getDb();
+
+        // Get human-readable country name
+        $countryId   = (int) ConfigHelper::get('country_id', 0);
+        $countryName = $countryId > 0 ? $this->getCountryName($countryId) : '';
+
+        $weightTitle = $this->getUnitTitle('#__j2commerce_weights', 'j2commerce_weight_id', 'weight_title', (int) ConfigHelper::get('config_weight_class_id', 1));
+        $lengthTitle = $this->getUnitTitle('#__j2commerce_lengths', 'j2commerce_length_id', 'length_title', (int) ConfigHelper::get('config_length_class_id', 1));
+
+        // Get the most recently created tax rate, if any
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('tax_percent'))
+            ->from($db->quoteName('#__j2commerce_taxrates'))
+            ->order($db->quoteName('j2commerce_taxrate_id') . ' DESC')
+            ->setLimit(1);
+        $lastTaxPercent = $db->setQuery($query)->loadResult();
+
+        $taxStyle = (int) ConfigHelper::get('config_including_tax', 0) === 1 ? 'Including tax' : 'Excluding tax';
+        $tax      = $lastTaxPercent ? $lastTaxPercent . '% (' . $taxStyle . ')' : '';
+
         return [
-            'store_name'  => ConfigHelper::get('store_name', ''),
-            'country_id'  => (int) ConfigHelper::get('country_id', 0),
-            'currency'    => ConfigHelper::get('config_currency', 'USD'),
-            'weight_id'   => (int) ConfigHelper::get('config_weight_class_id', 1),
-            'length_id'   => (int) ConfigHelper::get('config_length_class_id', 1),
-            'tax_style'   => (int) ConfigHelper::get('config_including_tax', 0) === 1 ? 'including' : 'excluding',
+            'storeName'    => ConfigHelper::get('store_name', ''),
+            'countryName'  => $countryName,
+            'currency'     => ConfigHelper::get('config_currency', 'USD'),
+            'measurements' => trim($weightTitle . ' / ' . $lengthTitle, ' /'),
+            'tax'          => $tax,
+            'productTypes' => ConfigHelper::get('onboarding_product_types', ''),
         ];
+    }
+
+    private function getCountryName(int $countryId): string
+    {
+        $db    = $this->getDb();
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('country_name'))
+            ->from($db->quoteName('#__j2commerce_countries'))
+            ->where($db->quoteName('j2commerce_country_id') . ' = :id')
+            ->bind(':id', $countryId, ParameterType::INTEGER);
+
+        return (string) $db->setQuery($query)->loadResult();
     }
 
     private function getUnitTitle(string $table, string $pkCol, string $titleCol, int $id): string
