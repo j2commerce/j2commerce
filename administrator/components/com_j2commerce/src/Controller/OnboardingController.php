@@ -136,39 +136,30 @@ class OnboardingController extends BaseController
                 throw new \InvalidArgumentException('Only en-US installation is supported');
             }
 
-            // Get available languages from update server
-            $langModel = $this->app->bootComponent('com_installer')
-                ->getMVCFactory()
-                ->createModel('Languages', 'Administrator', ['ignore_request' => true]);
+            // Fetch the details XML to get the actual download URL.
+            // This mirrors the Joomla admin UI: install_url = detailsurl → InstallModel.
+            $detailsUrl = 'https://update.joomla.org/language/details6/en-US_details.xml';
 
-            $langModel->setState('list.limit', 0);
-            $languages = $langModel->getItems();
+            $response = (new \Joomla\Http\HttpFactory())->getHttp()->get($detailsUrl);
 
-            if (empty($languages)) {
+            if ($response->getStatusCode() !== 200) {
                 throw new \RuntimeException(Text::_('COM_J2COMMERCE_ONBOARDING_LANG_NOT_FOUND'));
             }
 
-            // Find en-US in the available languages
-            // The XML attributes vary: element may be "pkg_en-US" or "en-US",
-            // and there may be a "code" attribute with just "en-US"
-            $detailsUrl = null;
+            $xml = simplexml_load_string((string) $response->getBody());
 
-            foreach ($languages as $language) {
-                $element = $language->element ?? '';
-                $code    = $language->code ?? '';
-
-                if ($element === 'pkg_en-US' || $element === 'en-US' || $code === 'en-US') {
-                    $detailsUrl = $language->detailsurl ?? null;
-                    break;
-                }
-            }
-
-            if ($detailsUrl === null) {
+            if (!$xml || !isset($xml->update->downloads->downloadurl)) {
                 throw new \RuntimeException(Text::_('COM_J2COMMERCE_ONBOARDING_LANG_NOT_FOUND'));
             }
 
-            // Download and install the language pack
-            $packageFile = InstallerHelper::downloadPackage($detailsUrl);
+            $downloadUrl = (string) $xml->update->downloads->downloadurl;
+
+            if ($downloadUrl === '') {
+                throw new \RuntimeException(Text::_('COM_J2COMMERCE_ONBOARDING_LANG_NOT_FOUND'));
+            }
+
+            // Download the ZIP package
+            $packageFile = InstallerHelper::downloadPackage($downloadUrl);
 
             if (!$packageFile) {
                 throw new \RuntimeException(Text::_('COM_J2COMMERCE_ONBOARDING_LANG_NOT_FOUND'));
