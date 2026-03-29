@@ -193,7 +193,7 @@ $encodedReturn = base64_encode('index.php?option=com_j2commerce&view=paymentmeth
                                                 <?php endif; ?>
                                             </div>
                                             <?php if ($desc) : ?>
-                                                <div class="small d-none d-md-block"><?php echo Text::_($desc); ?></div>
+                                                <div class="small d-none d-md-block"><?php echo $desc; ?></div>
                                             <?php endif; ?>
                                             <?php if (!$item->files_exist) : ?>
                                                 <div class="small text-danger">
