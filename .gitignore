@@ -37,6 +37,9 @@
 !administrator/language/en-GB/com_j2commerce.sys.ini
 !administrator/language/en-GB/plg_actionlog_j2commerce.ini
 !administrator/language/en-GB/plg_actionlog_j2commerce.sys.ini
+!administrator/language/en-US/
+!administrator/language/en-US/com_j2commerce.ini
+!administrator/language/en-US/com_j2commerce.sys.ini
 
 # J2Commerce admin modules (explicit — no wildcards)
 !administrator/modules/
