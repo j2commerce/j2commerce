@@ -113,6 +113,28 @@ class J2CommerceHelper extends ContentHelper
         return parent::getActions($component, $section, $id);
     }
 
+    /**
+     * Check a J2Commerce custom ACL action with core.manage fallback.
+     *
+     * Custom actions (j2commerce.vieworders, etc.) default to "Inherited" which
+     * resolves to "Not Allowed" for non-Super User groups unless explicitly set.
+     * This method treats core.manage as sufficient base access — the custom actions
+     * serve as additional restrictions, not gates.
+     *
+     * @param   string  $action  The action to check (e.g. 'j2commerce.vieworders').
+     *
+     * @return  bool
+     *
+     * @since   6.2.0
+     */
+    public static function canAccess(string $action): bool
+    {
+        $user = Factory::getApplication()->getIdentity();
+
+        return $user->authorise($action, 'com_j2commerce')
+            || $user->authorise('core.manage', 'com_j2commerce');
+    }
+
     // ========================================================================
     // Helper Class Alias Methods (Similar to J2Store Pattern)
     // ========================================================================

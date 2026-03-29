@@ -26,6 +26,7 @@ use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Pagination\Pagination;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use Joomla\Registry\Registry;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 class HtmlView extends BaseHtmlView
 {
@@ -45,7 +46,7 @@ class HtmlView extends BaseHtmlView
 
     public function display($tpl = null): void
     {
-        if (!$this->getCurrentUser()->authorise('j2commerce.vieworders', 'com_j2commerce')) {
+        if (!J2CommerceHelper::canAccess('j2commerce.vieworders')) {
             throw new \Exception(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 403);
         }
 
@@ -120,7 +121,7 @@ class HtmlView extends BaseHtmlView
 
         ToolbarHelper::title(Text::_('COM_J2COMMERCE_ORDERS'), 'fa-solid fa-list-alt');
 
-        $canEditOrders = $user->authorise('j2commerce.editorders', 'com_j2commerce');
+        $canEditOrders = J2CommerceHelper::canAccess('j2commerce.editorders');
 
         if (!$this->isEmptyState) {
             // Bulk Actions popup (Change Status, Print Packing Slips, Delete)

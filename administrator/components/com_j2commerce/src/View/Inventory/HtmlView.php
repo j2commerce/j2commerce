@@ -86,7 +86,7 @@ class HtmlView extends BaseHtmlView
      */
     public function display($tpl = null): void
     {
-        if (!$this->getCurrentUser()->authorise('j2commerce.viewproducts', 'com_j2commerce')) {
+        if (!J2CommerceHelper::canAccess('j2commerce.viewproducts')) {
             throw new \Exception(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 403);
         }
 
