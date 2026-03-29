@@ -447,7 +447,7 @@ class StrapperHelper
             $context = $forceContext ?? $this->getViewContext();
 
             $wa->registerAndUseScript('com_j2commerce.site', 'media/com_j2commerce/js/site/j2commerce.js', [], ['defer' => true]);
-            $wa->registerAndUseScript('plg_j2commerce_app_flexivariable.flexivariable', Uri::root() . 'media/plg_j2commerce_app_flexivariable/js/flexivariable.js', [], ['defer' => true]);
+            $wa->registerAndUseScript('plg_j2commerce_app_flexivariable.flexivariable', 'media/plg_j2commerce_app_flexivariable/js/flexivariable.js', [], ['defer' => true]);
 
             // Load context-specific scripts
             match ($context) {
@@ -626,17 +626,17 @@ class StrapperHelper
         if (file_exists(JPATH_SITE . '/media/templates/site/' . $template . '/css/j2commerce.css')) {
             // Template override - register and use dynamically
             $wa->registerAndUseStyle(
-                'j2commerce-site-override',
-                Uri::root() . 'media/templates/site/' . $template . '/css/j2commerce.css'
+                'com_j2commerce.site',
+                'media/templates/site/' . $template . '/css/j2commerce.css'
             );
         } elseif (file_exists(JPATH_SITE . '/templates/' . $template . '/css/j2commerce.css')) {
             // Legacy template folder pattern - register and use dynamically
             $wa->registerAndUseStyle(
-                'j2commerce-site-override',
-                Uri::root() . 'templates/' . $template . '/css/j2commerce.css'
+                'com_j2commerce.site',
+                'templates/' . $template . '/css/j2commerce.css'
             );
         } else {
-            $wa->registerAndUseStyle('com_j2commerce.site.css', 'media/com_j2commerce/css/site/j2commerce.css');
+            $wa->registerAndUseStyle('com_j2commerce.site', 'media/com_j2commerce/css/site/j2commerce.css');
         }
     }
 

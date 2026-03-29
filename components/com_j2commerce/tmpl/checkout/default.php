@@ -28,9 +28,7 @@ $wa  = Factory::getApplication()->getDocument()->getWebAssetManager();
 $wa->useScript('bootstrap.collapse');
 $wa->useScript('bootstrap.dropdown');
 
-$wa->registerAndUseStyle('checkout.style', Uri::root() .'media/com_j2commerce/css/site/checkout.css', [], [], []);
-$wa->registerAndUseStyle('com_j2commerce.telephone.css', 'media/com_j2commerce/css/site/telephone-field.css');
-$wa->registerAndUseScript('com_j2commerce.telephone', 'media/com_j2commerce/js/site/telephone-field.js', [], ['defer' => true]);
+$wa->registerAndUseStyle('checkout.style', 'media/com_j2commerce/css/site/checkout.css', [], [], []);
 
 // Grand total for mobile toggle button
 $grandTotal = '';

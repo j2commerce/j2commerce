@@ -25,9 +25,9 @@ use Joomla\Registry\Registry;
 
 $app = Factory::getApplication();
 $wa = $app->getDocument()->getWebAssetManager();
-$wa->registerAndUseStyle('com_j2commerce.site', Uri::root() . 'media/com_j2commerce/css/site/j2commerce.css');
-$wa->registerAndUseScript('com_j2commerce.site', Uri::root() . 'media/com_j2commerce/js/site/j2commerce.js', [], ['defer' => true], []);
-$wa->registerAndUseScript('com_j2commerce.filters', Uri::root() . 'media/com_j2commerce/js/site/j2commerce-filters.es6.js', [], ['defer' => true], []);
+$wa->registerAndUseStyle('com_j2commerce.site', 'media/com_j2commerce/css/site/j2commerce.css');
+$wa->registerAndUseScript('com_j2commerce.site', 'media/com_j2commerce/js/site/j2commerce.js', [], ['defer' => true], []);
+$wa->registerAndUseScript('com_j2commerce.filters', 'media/com_j2commerce/js/site/j2commerce-filters.es6.js', [], ['defer' => true], []);
 
 $itemId = isset($this->active_menu->id) ? (int) $this->active_menu->id : 0;
 $activeLink = Route::_(RouteHelper::getProductsRoute(!empty($this->filter_catid) ? (int) $this->filter_catid : null));
