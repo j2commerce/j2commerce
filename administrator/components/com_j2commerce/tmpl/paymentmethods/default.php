@@ -201,7 +201,7 @@ $encodedReturn = base64_encode('index.php?option=com_j2commerce&view=paymentmeth
                                                     <?php echo Text::_('COM_J2COMMERCE_PAYMENT_METHOD_FILES_MISSING'); ?>
                                                 </div>
                                             <?php endif; ?>
-                                            <div class="small d-block d-lg-none"><b><?php echo Text::_('COM_J2COMMERCE_PAYMENT_METHOD_VERSION'); ?>:</b> <?php echo $this->escape($version); ?></div>
+                                            <div class="small d-block d-md-none"><b><?php echo Text::_('COM_J2COMMERCE_PAYMENT_METHOD_VERSION'); ?>:</b> <?php echo $this->escape($version); ?></div>
                                         </div>
                                     </div>
                                 </th>
