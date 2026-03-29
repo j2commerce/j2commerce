@@ -78,7 +78,7 @@ if ($multiple) {
     </div>
 
     <?php if (!$disabled && !$readonly) : ?>
-    <button type="button" class="btn btn-sm btn-outline-secondary j2commerce-image-choose-btn" data-bs-toggle="modal" data-bs-target="#<?php echo $modalId; ?>">
+    <button type="button" class="btn btn-sm btn-outline-secondary j2commerce-image-choose-btn">
         <i class="fa-solid fa-image" aria-hidden="true"></i>
         <?php echo Text::_($multiple ? 'COM_J2COMMERCE_IMAGE_CHOOSE_MULTIPLE' : 'COM_J2COMMERCE_IMAGE_CHOOSE'); ?>
     </button>
