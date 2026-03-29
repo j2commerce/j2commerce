@@ -718,4 +718,11 @@ class InventoryModel extends ListModel
 
         return $form;
     }
+
+    public function getIsEmptyState(): bool
+    {
+        $filters = $this->getActiveFilters();
+
+        return empty($filters);
+    }
 }
