@@ -93,7 +93,7 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
                                         <?php endif; ?>
                                     </th>
                                     <td>
-                                        <a href="mailto:<?php echo $this->escape($item->email); ?>">
+                                        <a href="<?php echo Route::_('index.php?option=com_j2commerce&task=customer.edit&id=' . (int) $item->j2commerce_address_id); ?>">
                                             <?php echo $this->escape($item->email); ?>
                                         </a>
                                     </td>
