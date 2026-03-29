@@ -123,7 +123,7 @@ if ($multiple) {
                         <!-- Loading indicator -->
                         <div class="uppymedia-browser-loading text-center d-none">
                             <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden"><?php echo Text::_('JLIB_HTML_PLEASE_WAIT'); ?></span>
+                                <span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_LOADING'); ?></span>
                             </div>
                         </div>
                         <!-- Image browser grid -->

@@ -89,7 +89,7 @@ function initPreview(container) {
         }
 
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Packing...';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Packing...';
 
         const customBoxes = collectBoxes();
 

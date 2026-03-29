@@ -593,7 +593,7 @@ function setupPreviewIntegration(editor, options) {
 
         previewBtn.disabled = true;
         const origHtml = previewBtn.innerHTML;
-        previewBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        previewBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></span>';
 
         try {
             const formData = new FormData();

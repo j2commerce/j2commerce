@@ -486,7 +486,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 formData.append(csrfToken, 1);
 
                 confirmBtn.disabled = true;
-                confirmBtn.insertAdjacentHTML('beforeend', ' <span class="spinner-border spinner-border-sm ms-2" role="status" aria-hidden="true"></span>');
+                confirmBtn.insertAdjacentHTML('beforeend', ' <span class="spinner-border spinner-border-sm ms-2" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></span>');
 
                 fetch('index.php?option=com_j2commerce&task=product.changeProductType', {
                     method: 'POST',

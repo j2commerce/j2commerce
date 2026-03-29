@@ -250,7 +250,7 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.disabled = true;
         var spinner = document.createElement('span');
         spinner.className = 'wait';
-        spinner.innerHTML = '&nbsp;<span class="spinner-border spinner-border-sm" role="status"></span>';
+        spinner.innerHTML = '&nbsp;<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_LOADING'); ?></span></span>';
         btn.parentNode.insertBefore(spinner, btn.nextSibling);
     }
 

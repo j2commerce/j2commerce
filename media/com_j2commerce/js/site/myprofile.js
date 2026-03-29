@@ -535,7 +535,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!url || !orderModal || !orderModalBody) return;
 
         // Show modal with spinner
-        orderModalBody.innerHTML = '<div class="text-center py-5"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+        orderModalBody.innerHTML = '<div class="text-center py-5"><div class="spinner-border" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></div></div>';
         orderModal.show();
 
         try {
@@ -563,7 +563,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const url = btn.dataset.url || btn.getAttribute('href');
         if (!url || !orderModal || !orderModalBody) return;
 
-        orderModalBody.innerHTML = '<div class="text-center py-5"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+        orderModalBody.innerHTML = '<div class="text-center py-5"><div class="spinner-border" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></div></div>';
         orderModal.show();
 
         try {

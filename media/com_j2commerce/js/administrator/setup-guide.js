@@ -143,7 +143,7 @@ class SetupGuide {
     }
 
     async loadDetail(checkId) {
-        this.detailView.innerHTML = '<div class="text-center py-4"><div class="spinner-border spinner-border-sm"></div></div>';
+        this.detailView.innerHTML = '<div class="text-center py-4"><div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></div></div>';
         this.showDetail();
 
         try {
@@ -164,7 +164,7 @@ class SetupGuide {
         const params = JSON.parse(btn.dataset.params || '{}');
 
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></span>';
 
         try {
             const body = new URLSearchParams();
@@ -202,7 +202,7 @@ class SetupGuide {
 
         const originalText = btn.textContent;
         btn.disabled       = true;
-        btn.innerHTML      = '<span class="spinner-border spinner-border-sm"></span>';
+        btn.innerHTML      = '<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></span>';
 
         try {
             const body = new URLSearchParams();
@@ -234,7 +234,7 @@ class SetupGuide {
         const originalHtml = btn.outerHTML;
 
         btn.disabled  = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></span>';
 
         try {
             const body = new URLSearchParams();
@@ -263,7 +263,10 @@ class SetupGuide {
         } catch (err) {
             Joomla.renderMessages({ error: [err.message] });
             btn.disabled  = false;
-            btn.innerHTML = btn.innerHTML.replace('<span class="spinner-border spinner-border-sm"></span>', '');
+            const spinner = btn.querySelector('.spinner-border');
+            if (spinner) {
+                spinner.remove();
+            }
             if (!btn.innerHTML.trim()) {
                 btn.outerHTML = originalHtml;
             }
