@@ -13,9 +13,11 @@ namespace J2Commerce\Component\J2commerce\Administrator\View\Dashboard;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\MenuHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OnboardingHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\AnalyticsModel;
 use J2Commerce\Component\J2commerce\Administrator\Model\DashboardModel;
 use J2Commerce\Component\J2commerce\Administrator\SetupGuide\SetupGuideHelper;
@@ -65,6 +67,9 @@ class HtmlView extends BaseHtmlView
 
     // Plugin dashboard messages (independent of quick icons)
     public array $dashboardMessages = [];
+
+    // Onboarding wizard
+    public bool $showOnboarding = false;
 
     public function display($tpl = null): void
     {
@@ -224,6 +229,39 @@ class HtmlView extends BaseHtmlView
             Text::script('COM_J2COMMERCE_SETUP_GUIDE_CHECK_DOWNLOAD_ID_PLACEHOLDER');
             Text::script('COM_J2COMMERCE_SETUP_GUIDE_CHECK_DOWNLOAD_ID_SAVE');
             Text::script('COM_J2COMMERCE_SETUP_GUIDE_CHECK_DOWNLOAD_ID_CLEAR');
+        }
+
+        // Onboarding wizard — show on first visit or when re-run requested
+        $onboardingComplete = (int) ConfigHelper::get('onboarding_complete', 0);
+
+        if (Factory::getApplication()->getInput()->getInt('rerun_onboarding', 0) === 1) {
+            OnboardingHelper::persistConfig(['onboarding_complete' => '0', 'onboarding_last_step' => '0']);
+            $onboardingComplete = 0;
+        }
+
+        if ($onboardingComplete === 0) {
+            $this->showOnboarding = true;
+            $wa->registerAndUseScript('com_j2commerce.onboarding', 'media/com_j2commerce/js/administrator/onboarding.js', [], ['defer' => true]);
+            $wa->registerAndUseStyle('com_j2commerce.onboarding.css', 'media/com_j2commerce/css/administrator/onboarding.css');
+
+            Text::script('COM_J2COMMERCE_ONBOARDING_BTN_FINISH');
+            Text::script('COM_J2COMMERCE_ONBOARDING_DISMISS_CONFIRM');
+            Text::script('COM_J2COMMERCE_ONBOARDING_ERR_REQUIRED');
+            Text::script('COM_J2COMMERCE_ONBOARDING_ERR_NETWORK');
+            Text::script('COM_J2COMMERCE_ONBOARDING_ERR_SAVE');
+            Text::script('COM_J2COMMERCE_ONBOARDING_MEASUREMENTS_SYNCED');
+            Text::script('COM_J2COMMERCE_ONBOARDING_TAX_CREATED');
+            Text::script('COM_J2COMMERCE_ONBOARDING_TAX_SKIPPED');
+            Text::script('COM_J2COMMERCE_ONBOARDING_LANG_INSTALLING');
+            Text::script('COM_J2COMMERCE_ONBOARDING_LANG_SUCCESS');
+            Text::script('COM_J2COMMERCE_ONBOARDING_READY_SUMMARY_STORE');
+            Text::script('COM_J2COMMERCE_ONBOARDING_READY_SUMMARY_CURRENCY');
+            Text::script('COM_J2COMMERCE_ONBOARDING_READY_SUMMARY_MEASUREMENTS');
+            Text::script('COM_J2COMMERCE_ONBOARDING_READY_SUMMARY_TAX');
+            Text::script('COM_J2COMMERCE_ONBOARDING_READY_SUMMARY_PRODUCTS');
+            Text::script('COM_J2COMMERCE_ONBOARDING_READY_SUMMARY_NOT_CONFIGURED');
+            Text::script('COM_J2COMMERCE_ONBOARDING_READY_SUMMARY_NOT_SELECTED');
+            Text::script('COM_J2COMMERCE_ONBOARDING_DEFAULTS_PREVIEW');
         }
 
         $this->addToolbar();
