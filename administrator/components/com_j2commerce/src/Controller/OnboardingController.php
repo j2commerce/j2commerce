@@ -18,6 +18,8 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OnboardingHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Installer\Installer;
+use Joomla\CMS\Installer\InstallerHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\CMS\Response\JsonResponse;
@@ -134,30 +136,54 @@ class OnboardingController extends BaseController
                 throw new \InvalidArgumentException('Only en-US installation is supported');
             }
 
-            // Install via Joomla's language installer model
-            $installerModel = $this->app->bootComponent('com_installer')
+            // Get available languages from update server
+            $langModel = $this->app->bootComponent('com_installer')
                 ->getMVCFactory()
                 ->createModel('Languages', 'Administrator', ['ignore_request' => true]);
 
-            // Get available languages from update server
-            $installerModel->findLanguages();
-            $languages = $installerModel->getItems();
+            $langModel->setState('list.limit', 0);
+            $languages = $langModel->getItems();
 
-            $langId = null;
+            if (empty($languages)) {
+                throw new \RuntimeException(Text::_('COM_J2COMMERCE_ONBOARDING_LANG_NOT_FOUND'));
+            }
+
+            // Find en-US in the available languages
+            $detailsUrl = null;
 
             foreach ($languages as $language) {
                 if (isset($language->element) && $language->element === 'pkg_en-US') {
-                    $langId = $language->update_id;
+                    $detailsUrl = $language->detailsurl ?? null;
                     break;
                 }
             }
 
-            if ($langId === null) {
+            if ($detailsUrl === null) {
                 throw new \RuntimeException(Text::_('COM_J2COMMERCE_ONBOARDING_LANG_NOT_FOUND'));
             }
 
-            // Install the language
-            $installerModel->install([$langId]);
+            // Download and install the language pack
+            $packageFile = InstallerHelper::downloadPackage($detailsUrl);
+
+            if (!$packageFile) {
+                throw new \RuntimeException(Text::_('COM_J2COMMERCE_ONBOARDING_LANG_NOT_FOUND'));
+            }
+
+            $tmpPath = $this->app->get('tmp_path', JPATH_ROOT . '/tmp');
+            $package = InstallerHelper::unpack($tmpPath . '/' . $packageFile, true);
+
+            if (!$package || !isset($package['dir'])) {
+                throw new \RuntimeException(Text::_('COM_J2COMMERCE_ONBOARDING_LANG_NOT_FOUND'));
+            }
+
+            $installer = Installer::getInstance();
+            $result    = $installer->install($package['dir']);
+
+            InstallerHelper::cleanupInstall($package['packagefile'] ?? '', $package['extractdir'] ?? '');
+
+            if (!$result) {
+                throw new \RuntimeException(Text::_('COM_J2COMMERCE_ONBOARDING_LANG_NOT_FOUND'));
+            }
 
             // Set en-US as default for both site and admin
             $db = $this->getDb();
