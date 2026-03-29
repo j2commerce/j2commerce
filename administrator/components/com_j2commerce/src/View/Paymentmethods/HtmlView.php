@@ -22,6 +22,7 @@ use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\Toolbar;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use Joomla\CMS\Uri\Uri;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 /**
  * View class for a list of payment methods.
@@ -86,7 +87,7 @@ class HtmlView extends BaseHtmlView
      */
     public function display($tpl = null)
     {
-        if (!$this->getCurrentUser()->authorise('j2commerce.viewsetup', 'com_j2commerce')) {
+        if (!J2CommerceHelper::canAccess('j2commerce.viewsetup')) {
             throw new \Exception(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 403);
         }
 

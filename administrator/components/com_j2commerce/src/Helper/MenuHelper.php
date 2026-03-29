@@ -33,10 +33,10 @@ class MenuHelper
         $currentUrl = Uri::getInstance()->toString();
         $encodedReturn = base64_encode($currentUrl);
 
-        $canViewOrders   = $user->authorise('j2commerce.vieworders', 'com_j2commerce');
-        $canViewProducts = $user->authorise('j2commerce.viewproducts', 'com_j2commerce');
-        $canViewReports  = $user->authorise('j2commerce.viewreports', 'com_j2commerce');
-        $canViewSetup    = $user->authorise('j2commerce.viewsetup', 'com_j2commerce');
+        $canViewOrders   = J2CommerceHelper::canAccess('j2commerce.vieworders');
+        $canViewProducts = J2CommerceHelper::canAccess('j2commerce.viewproducts');
+        $canViewReports  = J2CommerceHelper::canAccess('j2commerce.viewreports');
+        $canViewSetup    = J2CommerceHelper::canAccess('j2commerce.viewsetup');
         // Dashboard
         if ($user->authorise('core.manage', 'com_j2commerce')) {
             $items[] = [

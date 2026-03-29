@@ -25,6 +25,7 @@ use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Pagination\Pagination;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use Joomla\Registry\Registry;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 /**
  * Vendors list view class.
@@ -101,7 +102,7 @@ class HtmlView extends BaseHtmlView
      */
     public function display($tpl = null): void
     {
-        if (!$this->getCurrentUser()->authorise('j2commerce.viewproducts', 'com_j2commerce')) {
+        if (!J2CommerceHelper::canAccess('j2commerce.viewproducts')) {
             throw new \Exception(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 403);
         }
 

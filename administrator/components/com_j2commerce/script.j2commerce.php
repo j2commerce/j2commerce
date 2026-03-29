@@ -168,6 +168,9 @@ class Com_J2commerceInstallerScript extends InstallerScript
         $this->setDefaultParams();
         $this->debugLog("INSTALL: default params set");
 
+        $this->setDefaultAcl();
+        $this->debugLog("INSTALL: default ACL rules set");
+
         Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_INSTALL_SUCCESS'), 'success');
 
         $this->debugLog("=== INSTALL END ===");
@@ -177,6 +180,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
     public function update($parent)
     {
         $this->debugLog("=== UPDATE START ===");
+
         Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_UPDATE_SUCCESS'), 'success');
 
         $this->debugLog("=== UPDATE END ===");
@@ -290,6 +294,67 @@ class Com_J2commerceInstallerScript extends InstallerScript
             ->set($db->quoteName('params') . ' = ' . $db->quote($params))
             ->where($db->quoteName('element') . ' = ' . $db->quote('com_j2commerce'))
             ->where($db->quoteName('type') . ' = ' . $db->quote('component'));
+        $db->setQuery($update);
+        $db->execute();
+    }
+
+    // ── Default ACL rules ──────────────────────────────────────────────────────
+
+    /**
+     * Set sensible default ACL rules for com_j2commerce if rules are empty.
+     *
+     * Matches Joomla core pattern: Administrator (7) gets full access except
+     * Super Admin, Manager (6) gets core.manage + view/edit permissions.
+     * Only sets rules if currently empty — does not overwrite admin customisation.
+     *
+     * @since  6.2.0
+     */
+    private function setDefaultAcl(): void
+    {
+        $db = Factory::getContainer()->get(DatabaseInterface::class);
+
+        $query = $db->getQuery(true)
+            ->select([$db->quoteName('id'), $db->quoteName('rules')])
+            ->from($db->quoteName('#__assets'))
+            ->where($db->quoteName('name') . ' = ' . $db->quote('com_j2commerce'));
+        $db->setQuery($query);
+        $asset = $db->loadObject();
+
+        if (!$asset) {
+            return;
+        }
+
+        // Only set defaults if rules are empty (not yet configured by admin)
+        $currentRules = trim($asset->rules ?? '');
+
+        if ($currentRules !== '' && $currentRules !== '{}') {
+            return;
+        }
+
+        // Default rules matching the issue requirements:
+        // Super User (8): inherits all (no explicit rules needed)
+        // Administrator (7): everything except core.admin/core.options
+        // Manager (6): core.manage + view orders + view products + edit orders
+        $rules = json_encode([
+            'core.admin'              => ['7' => 1],
+            'core.options'            => ['7' => 1],
+            'core.manage'             => ['6' => 1],
+            'core.create'             => ['6' => 1],
+            'core.delete'             => ['7' => 1],
+            'core.edit'               => ['6' => 1],
+            'core.edit.state'         => ['6' => 1],
+            'core.edit.own'           => ['6' => 1],
+            'j2commerce.vieworders'   => ['6' => 1],
+            'j2commerce.editorders'   => ['7' => 1],
+            'j2commerce.viewproducts' => ['6' => 1],
+            'j2commerce.viewreports'  => ['7' => 1],
+            'j2commerce.viewsetup'    => ['7' => 1],
+        ]);
+
+        $update = $db->getQuery(true)
+            ->update($db->quoteName('#__assets'))
+            ->set($db->quoteName('rules') . ' = ' . $db->quote($rules))
+            ->where($db->quoteName('id') . ' = ' . (int) $asset->id);
         $db->setQuery($update);
         $db->execute();
     }
