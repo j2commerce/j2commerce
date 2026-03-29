@@ -73,7 +73,6 @@ class HtmlView extends BaseHtmlView
 
         if (\count($items) < 1) {
             $cartUrl = Route::_('index.php?option=com_j2commerce&view=carts');
-            $app->enqueueMessage(Text::_('COM_J2COMMERCE_CART_NO_ITEMS'), 'notice');
             $app->redirect($cartUrl);
 
             return;
