@@ -206,7 +206,7 @@ HTMLHelper::_('bootstrap.tooltip', '[data-bs-toggle="tooltip"]', ['placement' =>
                                                     <?php echo Text::_('COM_J2COMMERCE_REPORT_FILES_MISSING'); ?>
                                                 </div>
                                             <?php endif; ?>
-                                            <div class="small d-block d-lg-none"><b><?php echo Text::_('COM_J2COMMERCE_REPORT_VERSION'); ?>:</b> <?php echo $this->escape($version); ?></div>
+                                            <div class="small d-block d-md-none"><b><?php echo Text::_('COM_J2COMMERCE_REPORT_VERSION'); ?>:</b> <?php echo $this->escape($version); ?></div>
                                         </div>
                                     </div>
                                 </th>
