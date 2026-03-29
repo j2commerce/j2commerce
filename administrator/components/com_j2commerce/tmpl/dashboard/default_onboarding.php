@@ -89,7 +89,7 @@ $e = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
 ?>
 
 <div class="modal fade" id="j2commerceOnboardingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-labelledby="j2commerceOnboardingLabel" aria-modal="true" role="dialog">
-  <div class="modal-dialog modal-xl modal-dialog-centered">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
 
       <!-- Header -->
@@ -212,10 +212,10 @@ $e = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
                 <strong><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_LANG_PROMPT_TITLE'); ?></strong>
                 <p class="mb-2"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_LANG_PROMPT_DESC'); ?></p>
                 <div class="d-flex gap-2">
-                  <button type="button" class="btn btn-sm btn-primary" data-action="install-lang">
+                  <button type="button" class="btn btn-sm btn-primary shadow-none" data-action="install-lang">
                     <?php echo Text::_('COM_J2COMMERCE_ONBOARDING_LANG_YES'); ?>
                   </button>
-                  <button type="button" class="btn btn-sm btn-outline-secondary" data-action="skip-lang">
+                  <button type="button" class="btn btn-sm btn-outline-secondary shadow-none" data-action="skip-lang">
                     <?php echo Text::_('COM_J2COMMERCE_ONBOARDING_LANG_NO'); ?>
                   </button>
                 </div>
@@ -441,7 +441,7 @@ $e = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
 
       <!-- Footer -->
       <div class="modal-footer j2c-onboarding-footer" id="ob-footer">
-        <button type="button" id="ob-btn-back" class="btn btn-link text-muted d-none" data-action="back">
+        <button type="button" id="ob-btn-back" class="btn btn-link text-muted" hidden data-action="back">
           <span class="fa-solid fa-chevron-left me-1" aria-hidden="true"></span>
           <?php echo Text::_('COM_J2COMMERCE_ONBOARDING_BTN_BACK'); ?>
         </button>
