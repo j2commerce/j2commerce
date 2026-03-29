@@ -13,10 +13,42 @@ function initPreview(container) {
     const itemsTbody = container.querySelector('.preview-items-body');
     const resultsDiv = container.querySelector('.preview-results');
 
+    function t(key, fallback) {
+        return Joomla.Text._(key) || fallback;
+    }
+
+    function sprintf(str, ...args) {
+        let i = 0;
+        return str.replace(/%[ds]/g, () => args[i++] ?? '');
+    }
+
+    function el(tag, attrs, children) {
+        const node = document.createElement(tag);
+        if (attrs) {
+            for (const [k, v] of Object.entries(attrs)) {
+                if (k === 'className') { node.className = v; }
+                else if (k === 'textContent') { node.textContent = v; }
+                else if (k === 'style' && typeof v === 'string') { node.style.cssText = v; }
+                else { node.setAttribute(k, v); }
+            }
+        }
+        if (children) {
+            (Array.isArray(children) ? children : [children]).forEach(c => {
+                if (typeof c === 'string') { node.appendChild(document.createTextNode(c)); }
+                else if (c) { node.appendChild(c); }
+            });
+        }
+        return node;
+    }
+
+    function icon(classes) {
+        return el('i', { className: classes, 'aria-hidden': 'true' });
+    }
+
     function addTestItemRow() {
         const tr = document.createElement('tr');
         const fields = [
-            { name: 'description', type: 'text', placeholder: 'Item name', value: '' },
+            { name: 'description', type: 'text', placeholder: t('COM_J2COMMERCE_BOXPACKER_PREVIEW_ITEM_NAME', 'Item name'), value: '' },
             { name: 'length', type: 'number', step: '0.1', min: '0.1', value: '' },
             { name: 'width', type: 'number', step: '0.1', min: '0.1', value: '' },
             { name: 'height', type: 'number', step: '0.1', min: '0.1', value: '' },
@@ -39,10 +71,9 @@ function initPreview(container) {
         });
 
         const tdBtn = document.createElement('td');
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'btn btn-sm btn-outline-danger btn-remove-test-item';
-        btn.innerHTML = '<i class="fa-solid fa-times"></i>';
+        const btn = el('button', { type: 'button', className: 'btn btn-sm btn-outline-danger btn-remove-test-item' }, [
+            icon('fa-solid fa-times')
+        ]);
         tdBtn.appendChild(btn);
         tr.appendChild(tdBtn);
 
@@ -79,17 +110,37 @@ function initPreview(container) {
         return boxes;
     }
 
+    function clearElement(node) {
+        while (node.firstChild) { node.removeChild(node.firstChild); }
+    }
+
+    function setButtonLoading(btn, loading) {
+        btn.disabled = loading;
+        clearElement(btn);
+        if (loading) {
+            btn.appendChild(el('span', { className: 'spinner-border spinner-border-sm', role: 'status', 'aria-hidden': 'true' }));
+            btn.appendChild(document.createTextNode(' ' + t('COM_J2COMMERCE_BOXPACKER_PREVIEW_RUNNING', 'Packing...')));
+        } else {
+            btn.appendChild(icon('fa-solid fa-box-open'));
+            btn.appendChild(document.createTextNode(' ' + t('COM_J2COMMERCE_BOXPACKER_PREVIEW_RUN', 'Preview Packing')));
+        }
+    }
+
+    function showAlert(container, type, message) {
+        clearElement(container);
+        container.appendChild(el('div', { className: 'alert alert-' + type, textContent: message }));
+    }
+
     async function runPreview() {
         const btn = container.querySelector('.btn-preview-packing');
         const testItems = collectTestItems();
 
         if (testItems.length === 0) {
-            resultsDiv.innerHTML = '<div class="alert alert-info">Add at least one sample item to test packing.</div>';
+            showAlert(resultsDiv, 'info', t('COM_J2COMMERCE_BOXPACKER_PREVIEW_NO_ITEMS', 'Add at least one sample item to test packing.'));
             return;
         }
 
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Packing...';
+        setButtonLoading(btn, true);
 
         const customBoxes = collectBoxes();
 
@@ -115,75 +166,118 @@ function initPreview(container) {
             const result = await response.json();
             renderResults(result);
         } catch (err) {
-            resultsDiv.innerHTML = `<div class="alert alert-danger">Packing preview failed: ${err.message}</div>`;
+            const msg = sprintf(t('COM_J2COMMERCE_BOXPACKER_PREVIEW_ERROR', 'Packing preview failed: %s'), err.message);
+            showAlert(resultsDiv, 'danger', msg);
         } finally {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-box-open"></i> Preview Packing';
+            setButtonLoading(btn, false);
         }
     }
 
+    function buildProgressBar(pct, colorClass) {
+        const outer = el('div', { className: 'progress', style: 'height:6px' });
+        outer.appendChild(el('div', { className: 'progress-bar ' + colorClass, style: 'width:' + pct.toFixed(1) + '%' }));
+        return outer;
+    }
+
     function renderResults(result) {
+        clearElement(resultsDiv);
+
         if (!result.success) {
-            resultsDiv.innerHTML = `<div class="alert alert-danger">${result.error || 'Unknown error'}</div>`;
+            showAlert(resultsDiv, 'danger', result.error || t('COM_J2COMMERCE_BOXPACKER_PREVIEW_UNKNOWN_ERROR', 'Unknown error'));
             return;
         }
 
-        let html = '';
+        // Summary line
+        const iconClass = result.unpacked.length === 0 ? 'fa-check text-success' : 'fa-exclamation-triangle text-warning';
+        const summaryText = sprintf(t('COM_J2COMMERCE_BOXPACKER_PREVIEW_BOXES_NEEDED', '%d boxes needed for %d items'), result.boxCount, result.itemCount);
 
-        const icon = result.unpacked.length === 0 ? 'fa-check text-success' : 'fa-exclamation-triangle text-warning';
-        html += `<div class="mb-3"><i class="fa-solid ${icon}"></i> <strong>${result.boxCount} box${result.boxCount !== 1 ? 'es' : ''} needed for ${result.itemCount} item${result.itemCount !== 1 ? 's' : ''}</strong>`;
+        const summaryDiv = el('div', { className: 'mb-3' });
+        summaryDiv.appendChild(icon('fa-solid ' + iconClass));
+        summaryDiv.appendChild(document.createTextNode(' '));
+        summaryDiv.appendChild(el('strong', {}, [summaryText]));
+
         if (result.method === 'per_item') {
-            html += ' <span class="badge bg-secondary">per-item mode</span>';
+            summaryDiv.appendChild(document.createTextNode(' '));
+            summaryDiv.appendChild(el('span', {
+                className: 'badge bg-secondary',
+                textContent: t('COM_J2COMMERCE_BOXPACKER_PREVIEW_PER_ITEM_MODE', 'per-item mode')
+            }));
         }
-        html += '</div>';
 
+        resultsDiv.appendChild(summaryDiv);
+
+        // Box cards
         result.boxes.forEach((box, i) => {
             const weightPct = box.maxWeight > 0 ? Math.min(100, (box.totalWeight / box.maxWeight) * 100) : 0;
             const weightColor = weightPct > 90 ? 'bg-danger' : weightPct > 75 ? 'bg-warning' : 'bg-success';
             const volColor = box.volumeUtilisation > 90 ? 'bg-danger' : box.volumeUtilisation > 75 ? 'bg-warning' : 'bg-success';
 
-            html += `<div class="card mb-2">`;
-            html += `<div class="card-header py-2 d-flex justify-content-between align-items-center">`;
-            html += `<strong>Box ${i + 1}: ${escHtml(box.reference)}</strong>`;
-            html += `<span class="text-muted">${box.outerLength} × ${box.outerWidth} × ${box.outerHeight}</span>`;
-            html += `</div>`;
-            html += `<div class="card-body py-2">`;
+            const boxTitle = sprintf(t('COM_J2COMMERCE_BOXPACKER_PREVIEW_BOX_N', 'Box %d: %s'), i + 1, box.reference);
+            const dimText = box.outerLength + ' \u00D7 ' + box.outerWidth + ' \u00D7 ' + box.outerHeight;
 
+            const card = el('div', { className: 'card mb-2' });
+
+            // Card header
+            const header = el('div', { className: 'card-header py-2 d-flex justify-content-between align-items-center' });
+            header.appendChild(el('strong', { textContent: boxTitle }));
+            header.appendChild(el('span', { className: 'text-muted', textContent: dimText }));
+            card.appendChild(header);
+
+            // Card body
+            const body = el('div', { className: 'card-body py-2' });
+
+            // Weight row
+            const weightDiv = el('div', { className: 'mb-2' });
             if (box.maxWeight > 0) {
-                html += `<div class="mb-2"><small class="text-muted">Weight: ${box.totalWeight} / ${box.maxWeight}</small>`;
-                html += `<div class="progress" style="height:6px"><div class="progress-bar ${weightColor}" style="width:${weightPct.toFixed(1)}%"></div></div></div>`;
+                const weightLabel = sprintf(t('COM_J2COMMERCE_BOXPACKER_PREVIEW_WEIGHT_USED', 'Weight: %s / %s'), box.totalWeight, box.maxWeight);
+                weightDiv.appendChild(el('small', { className: 'text-muted', textContent: weightLabel }));
+                weightDiv.appendChild(buildProgressBar(weightPct, weightColor));
             } else {
-                html += `<div class="mb-2"><small class="text-muted">Weight: ${box.totalWeight}</small></div>`;
+                weightDiv.appendChild(el('small', {
+                    className: 'text-muted',
+                    textContent: t('COM_J2COMMERCE_BOXPACKER_PREVIEW_WEIGHT', 'Weight') + ': ' + box.totalWeight
+                }));
             }
+            body.appendChild(weightDiv);
 
-            html += `<div class="mb-2"><small class="text-muted">Volume: ${box.volumeUtilisation.toFixed(1)}%</small>`;
-            html += `<div class="progress" style="height:6px"><div class="progress-bar ${volColor}" style="width:${box.volumeUtilisation}%"></div></div></div>`;
+            // Volume row
+            const volDiv = el('div', { className: 'mb-2' });
+            volDiv.appendChild(el('small', {
+                className: 'text-muted',
+                textContent: t('COM_J2COMMERCE_BOXPACKER_PREVIEW_VOLUME_USED', 'Volume Used') + ': ' + box.volumeUtilisation.toFixed(1) + '%'
+            }));
+            volDiv.appendChild(buildProgressBar(box.volumeUtilisation, volColor));
+            body.appendChild(volDiv);
 
-            html += '<ul class="mb-1 small">';
+            // Items list
+            const ul = el('ul', { className: 'mb-1 small' });
             box.items.forEach(item => {
-                html += `<li>${escHtml(item.description)}</li>`;
+                ul.appendChild(el('li', { textContent: item.description }));
             });
-            html += '</ul>';
+            body.appendChild(ul);
 
-            html += `</div></div>`;
+            card.appendChild(body);
+            resultsDiv.appendChild(card);
         });
 
+        // Unpacked items
         if (result.unpacked.length > 0) {
-            html += '<div class="alert alert-warning">';
-            html += `<strong><i class="fa-solid fa-exclamation-triangle"></i> ${result.unpacked.length} item${result.unpacked.length !== 1 ? 's do' : ' does'} not fit in any defined box:</strong><ul class="mb-0 mt-1">`;
+            const alert = el('div', { className: 'alert alert-warning' });
+
+            const heading = el('strong');
+            heading.appendChild(icon('fa-solid fa-exclamation-triangle'));
+            heading.appendChild(document.createTextNode(' ' + t('COM_J2COMMERCE_BOXPACKER_PREVIEW_UNPACKED_MSG', 'These items do not fit in any defined box and will be shipped individually.')));
+            alert.appendChild(heading);
+
+            const ul = el('ul', { className: 'mb-0 mt-1' });
             result.unpacked.forEach(item => {
-                html += `<li>${escHtml(item.description)} (${item.length} × ${item.width} × ${item.height}, ${item.weight})</li>`;
+                const dimText = item.length + ' \u00D7 ' + item.width + ' \u00D7 ' + item.height + ', ' + item.weight;
+                ul.appendChild(el('li', { textContent: item.description + ' (' + dimText + ')' }));
             });
-            html += '</ul></div>';
+            alert.appendChild(ul);
+
+            resultsDiv.appendChild(alert);
         }
-
-        resultsDiv.innerHTML = html;
-    }
-
-    function escHtml(str) {
-        const div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
     }
 
     // Event delegation
