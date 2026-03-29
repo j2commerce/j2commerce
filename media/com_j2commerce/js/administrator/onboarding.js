@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentStep = parseInt(document.getElementById('ob-resume-step')?.value || '1', 10) || 1;
 
-    const modalInstance = new bootstrap.Modal(modal);
+    const modalInstance = bootstrap.Modal.getOrCreateInstance(modal);
     modalInstance.show();
 
     // -------------------------------------------------------------------------

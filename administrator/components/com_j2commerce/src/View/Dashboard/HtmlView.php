@@ -241,6 +241,13 @@ class HtmlView extends BaseHtmlView
 
         if ($onboardingComplete === 0) {
             $this->showOnboarding = true;
+
+            // Init Bootstrap modal JS — MUST be called before parent::display()
+            HTMLHelper::_('bootstrap.modal', '#j2commerceOnboardingModal', [
+                'backdrop' => 'static',
+                'keyboard' => false,
+            ]);
+
             $wa->registerAndUseScript('com_j2commerce.onboarding', 'media/com_j2commerce/js/administrator/onboarding.js', [], ['defer' => true]);
             $wa->registerAndUseStyle('com_j2commerce.onboarding.css', 'media/com_j2commerce/css/administrator/onboarding.css');
 
