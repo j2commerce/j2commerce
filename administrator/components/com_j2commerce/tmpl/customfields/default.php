@@ -156,4 +156,5 @@ if ($saveOrder && !empty($this->items)) {
     </div>
 </form>
 
+<?php echo $this->loadTemplate('batch'); ?>
 <?php echo $this->footer ?? ''; ?>
