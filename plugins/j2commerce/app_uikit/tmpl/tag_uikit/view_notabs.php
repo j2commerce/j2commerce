@@ -14,7 +14,11 @@
 ?>
 	<div class="uk-grid" uk-grid>
 		<div class="uk-width-1-1">
-				<?php if($this->params->get('item_show_sdesc') || $this->params->get('item_show_ldesc') ):?>
+				<?php
+			$hasShortDesc = $this->params->get('item_show_sdesc') && !empty(trim(strip_tags($this->item->product_short_desc ?? '')));
+			$hasLongDesc  = $this->params->get('item_show_ldesc') && !empty(trim(strip_tags($this->item->product_long_desc ?? '')));
+			?>
+			<?php if($hasShortDesc || $hasLongDesc):?>
 				<div class="product-description">
 					<?php echo $this->loadTemplate('sdesc'); ?>
 					<?php echo $this->loadTemplate('ldesc'); ?>

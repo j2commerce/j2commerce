@@ -30,15 +30,13 @@ if ($wa->assetExists('script', 'bootstrap.esm')) {
 
 $wa->registerAndUseScript('bootstrap.collapse',Uri::base().'media/com_j2commerce/js/site/vendor/bootstrap/collapse.min.js',[],['type' => 'module'],$deps);
 HTMLHelper::_('bootstrap.collapse', '.accordion-button', []);
-$set_specification_active =true;
-if($this->params->get('item_show_sdesc') ||  $this->params->get('item_show_ldesc'))
-    $set_specification_active = false;
-
-
-
+$hasShortDesc = $this->params->get('item_show_sdesc') && !empty(trim(strip_tags($this->product->product_short_desc ?? '')));
+$hasLongDesc  = $this->params->get('item_show_ldesc') && !empty(trim(strip_tags($this->product->product_long_desc ?? '')));
+$hasDescription = $hasShortDesc || $hasLongDesc;
+$set_specification_active = !$hasDescription;
 ?>
 <div class="accordion mt-5" id="j2CommerceAccordion">
-    <?php if($this->params->get('item_show_sdesc') || $this->params->get('item_show_ldesc')):?>
+    <?php if($hasDescription):?>
         <div class="accordion-item border-0 mb-2">
             <div class="accordion-header fs-4" id="headingDescription">
                 <button type="button" class="accordion-button" data-bs-toggle="collapse" data-bs-target="#description" aria-expanded="true" aria-controls="description">

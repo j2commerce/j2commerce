@@ -17,25 +17,14 @@ use Joomla\CMS\Language\Text;
 
 HTMLHelper::_('bootstrap.collapse', '[data-bs-toggle="collapse"]');
 
-$set_specification_active =true;
-if($this->params->get('item_show_sdesc') ||  $this->params->get('item_show_ldesc')){
-    $set_specification_active = false;
-}
+$hasShortDesc = $this->params->get('item_show_sdesc') && !empty(trim(strip_tags($this->item->product_short_desc ?? '')));
+$hasLongDesc  = $this->params->get('item_show_ldesc') && !empty(trim(strip_tags($this->item->product_long_desc ?? '')));
+$hasDescription = $hasShortDesc || $hasLongDesc;
+$set_specification_active = !$hasDescription;
 ?>
-<div class="alert alert-danger">
-    sales price is not working properly - it's showing the base price.
-</div>
-
-<div class="alert alert-danger">
-    $this->filters is null instead of showing the product filters that are assigned to this product.
-</div>
-
-<div class="alert alert-danger">
-    Crossells function is not working properly in getCrossSells() function line 2032 ProductHelper.php
-</div>
 
 <div class="accordion mt-5" id="j2CommerceAccordion">
-    <?php if($this->params->get('item_show_sdesc') || $this->params->get('item_show_ldesc')):?>
+    <?php if($hasDescription):?>
         <div class="accordion-item border-top">
             <div class="accordion-header fs-4" id="headingDescription">
                 <button type="button" class="accordion-button" data-bs-toggle="collapse" data-bs-target="#description" aria-expanded="true" aria-controls="description">
