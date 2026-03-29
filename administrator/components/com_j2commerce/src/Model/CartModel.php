@@ -853,6 +853,13 @@ class CartModel extends BaseDatabaseModel
         $url = '';
 
         switch ($type) {
+            case 'homepage':
+                $app = Factory::getApplication();
+                $menu = $app->getMenu('site');
+                $default = $menu->getDefault($app->getLanguage()->getTag());
+                $url = $default ? Route::_($default->link . '&Itemid=' . $default->id, false) : Route::_('index.php', false);
+                break;
+
             case 'menu':
                 $menuItemid = $params->get('continue_cart_redirect_menu', '');
 

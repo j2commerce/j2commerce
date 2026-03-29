@@ -23,11 +23,9 @@ $user   = $this->user;
 $menuParams = $this->menuItemParams;
 ?>
 
-<?php if ($menuParams && $menuParams->get('show_page_heading', 0)): ?>
 <div class="page-header">
-    <h1><?php echo $this->escape($menuParams->get('page_heading', '')); ?></h1>
+    <h1><?php echo $this->escape($menuParams ? $menuParams->get('page_heading', '') : '') ?: Text::_('COM_J2COMMERCE_MYPROFILE'); ?></h1>
 </div>
-<?php endif; ?>
 
 <?php if ($params->get('show_logout_myprofile', 0) && $user->id > 0): ?>
 <div class="d-flex justify-content-end mb-3">

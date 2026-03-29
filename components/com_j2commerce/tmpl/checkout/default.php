@@ -42,11 +42,9 @@ if ($this->order && method_exists($this->order, 'get_formatted_order_totals')) {
 // Pre-compute JS-safe language strings
 $selectZoneJs = htmlspecialchars(Text::sprintf('COM_J2COMMERCE_SELECT_PLACEHOLDER', Text::_('COM_J2COMMERCE_ZONE')), ENT_QUOTES, 'UTF-8');
 ?>
-<?php if ($pageHeading) : ?>
-    <div class="page-header">
-        <h1><?php echo $this->escape($pageHeadingText ?: Text::_('COM_J2COMMERCE_CHECKOUT')); ?></h1>
-    </div>
-<?php endif; ?>
+<div class="page-header">
+    <h1><?php echo $this->escape($pageHeadingText ?: Text::_('COM_J2COMMERCE_CHECKOUT')); ?></h1>
+</div>
 
 <?php echo J2CommerceHelper::modules()->loadposition('j2commerce-checkout-top'); ?>
 
