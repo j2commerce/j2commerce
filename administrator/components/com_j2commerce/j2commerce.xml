@@ -44,7 +44,10 @@
     </files>
 
     <languages folder="components/com_j2commerce/language">
+        <language tag="en-US">en-US/com_j2commerce.ini</language>
+        <language tag="en-US">en-US/com_j2commerce.sys.ini</language>
         <language tag="en-GB">en-GB/com_j2commerce.ini</language>
+        <language tag="en-GB">en-GB/com_j2commerce.sys.ini</language>
     </languages>
 
 

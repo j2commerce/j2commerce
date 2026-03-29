@@ -160,7 +160,10 @@ class CustomfieldsController extends AdminController
                 $display = json_decode($currentJson, true) ?: [];
 
                 foreach ($pluginUpdates as $key => $val) {
-                    $display[$key] = $val;
+                    if (!isset($display[$key]) || !\is_array($display[$key])) {
+                        $display[$key] = ['enabled' => 0, 'ordering' => 0];
+                    }
+                    $display[$key]['enabled'] = $val;
                 }
 
                 $newJson = json_encode($display);

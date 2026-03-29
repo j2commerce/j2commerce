@@ -13,9 +13,11 @@ namespace J2Commerce\Component\J2commerce\Administrator\View\Dashboard;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\MenuHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OnboardingHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\AnalyticsModel;
 use J2Commerce\Component\J2commerce\Administrator\Model\DashboardModel;
 use J2Commerce\Component\J2commerce\Administrator\SetupGuide\SetupGuideHelper;
@@ -65,6 +67,9 @@ class HtmlView extends BaseHtmlView
 
     // Plugin dashboard messages (independent of quick icons)
     public array $dashboardMessages = [];
+
+    // Onboarding wizard
+    public bool $showOnboarding = false;
 
     public function display($tpl = null): void
     {
@@ -224,6 +229,99 @@ class HtmlView extends BaseHtmlView
             Text::script('COM_J2COMMERCE_SETUP_GUIDE_CHECK_DOWNLOAD_ID_PLACEHOLDER');
             Text::script('COM_J2COMMERCE_SETUP_GUIDE_CHECK_DOWNLOAD_ID_SAVE');
             Text::script('COM_J2COMMERCE_SETUP_GUIDE_CHECK_DOWNLOAD_ID_CLEAR');
+        }
+
+        // Onboarding wizard — show on first visit or when re-run requested
+        $onboardingComplete = (int) ConfigHelper::get('onboarding_complete', 0);
+
+        if (Factory::getApplication()->getInput()->getInt('rerun_onboarding', 0) === 1) {
+            OnboardingHelper::persistConfig(['onboarding_complete' => '0', 'onboarding_last_step' => '0']);
+            $onboardingComplete = 0;
+        }
+
+        if ($onboardingComplete === 0) {
+            $this->showOnboarding = true;
+
+            // Init Bootstrap modal JS — MUST be called before parent::display()
+            HTMLHelper::_('bootstrap.modal', '#j2commerceOnboardingModal', [
+                'backdrop' => 'static',
+                'keyboard' => false,
+            ]);
+
+            $wa->registerAndUseScript('com_j2commerce.onboarding', 'media/com_j2commerce/js/administrator/onboarding.js', [], ['defer' => true]);
+            $wa->registerAndUseStyle('com_j2commerce.onboarding.css', 'media/com_j2commerce/css/administrator/onboarding.css');
+
+            // Build JS options for onboarding (replaces inline <script> in template)
+            $db = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+
+            $currencyQuery = $db->getQuery(true)
+                ->select([$db->quoteName('currency_code'), $db->quoteName('currency_symbol'), $db->quoteName('currency_position')])
+                ->from($db->quoteName('#__j2commerce_currencies'))
+                ->where($db->quoteName('enabled') . ' = 1');
+            $currencyRows = $db->setQuery($currencyQuery)->loadObjectList();
+
+            $currencyMeta = [];
+
+            foreach ($currencyRows as $cr) {
+                $currencyMeta[$cr->currency_code] = ['symbol' => $cr->currency_symbol, 'position' => $cr->currency_position];
+            }
+
+            $weightQuery = $db->getQuery(true)
+                ->select([$db->quoteName('j2commerce_weight_id', 'id'), $db->quoteName('weight_title', 'title')])
+                ->from($db->quoteName('#__j2commerce_weights'))
+                ->where($db->quoteName('enabled') . ' = 1');
+            $weightRows = $db->setQuery($weightQuery)->loadObjectList('id');
+
+            $lengthQuery = $db->getQuery(true)
+                ->select([$db->quoteName('j2commerce_length_id', 'id'), $db->quoteName('length_title', 'title')])
+                ->from($db->quoteName('#__j2commerce_lengths'))
+                ->where($db->quoteName('enabled') . ' = 1');
+            $lengthRows = $db->setQuery($lengthQuery)->loadObjectList('id');
+
+            $countryDefaults = [];
+            $mappedCountries = [223, 222, 38, 13, 101, 14, 21, 33, 53, 55, 56, 57, 67, 72, 73, 81, 84, 97, 103, 105, 117, 123, 124, 132, 150, 170, 171, 175, 189, 190, 195, 203];
+
+            foreach ($mappedCountries as $cid) {
+                $def = OnboardingHelper::getCountryDefaults($cid);
+                $countryDefaults[$cid] = [
+                    'currency'    => $def['currency'],
+                    'weight_id'   => $def['weight_id'],
+                    'weight_name' => $weightRows[$def['weight_id']]->title ?? '',
+                    'length_id'   => $def['length_id'],
+                    'length_name' => $lengthRows[$def['length_id']]->title ?? '',
+                ];
+            }
+
+            $resumeStep = OnboardingHelper::getResumeStep();
+            $savedZoneId = (int) ConfigHelper::get('zone_id', 0);
+
+            $this->getDocument()->addScriptOptions('com_j2commerce.onboarding', [
+                'currencyMeta'    => $currencyMeta,
+                'countryDefaults' => $countryDefaults,
+                'zoneAjaxUrl'     => 'index.php?option=com_j2commerce&task=ajax.getZones',
+                'resumeStep'      => $resumeStep,
+                'savedZoneId'     => $savedZoneId,
+            ]);
+
+            Text::script('COM_J2COMMERCE_ONBOARDING_BTN_CONTINUE');
+            Text::script('COM_J2COMMERCE_ONBOARDING_BTN_FINISH');
+            Text::script('COM_J2COMMERCE_ONBOARDING_DISMISS_CONFIRM');
+            Text::script('COM_J2COMMERCE_ONBOARDING_ERR_REQUIRED');
+            Text::script('COM_J2COMMERCE_ONBOARDING_ERR_NETWORK');
+            Text::script('COM_J2COMMERCE_ONBOARDING_ERR_SAVE');
+            Text::script('COM_J2COMMERCE_ONBOARDING_MEASUREMENTS_SYNCED');
+            Text::script('COM_J2COMMERCE_ONBOARDING_TAX_CREATED');
+            Text::script('COM_J2COMMERCE_ONBOARDING_TAX_SKIPPED');
+            Text::script('COM_J2COMMERCE_ONBOARDING_LANG_INSTALLING');
+            Text::script('COM_J2COMMERCE_ONBOARDING_LANG_SUCCESS');
+            Text::script('COM_J2COMMERCE_ONBOARDING_READY_SUMMARY_STORE');
+            Text::script('COM_J2COMMERCE_ONBOARDING_READY_SUMMARY_CURRENCY');
+            Text::script('COM_J2COMMERCE_ONBOARDING_READY_SUMMARY_MEASUREMENTS');
+            Text::script('COM_J2COMMERCE_ONBOARDING_READY_SUMMARY_TAX');
+            Text::script('COM_J2COMMERCE_ONBOARDING_READY_SUMMARY_PRODUCTS');
+            Text::script('COM_J2COMMERCE_ONBOARDING_READY_SUMMARY_NOT_CONFIGURED');
+            Text::script('COM_J2COMMERCE_ONBOARDING_READY_SUMMARY_NOT_SELECTED');
+            Text::script('COM_J2COMMERCE_ONBOARDING_DEFAULTS_PREVIEW');
         }
 
         $this->addToolbar();
