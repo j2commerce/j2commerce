@@ -143,7 +143,13 @@ class SetupGuide {
     }
 
     async loadDetail(checkId) {
-        this.detailView.innerHTML = '<div class="text-center py-4"><div class="spinner-border spinner-border-sm"></div></div>';
+        this.detailView.replaceChildren();
+        const spinner = document.createElement('div');
+        spinner.className = 'text-center py-4';
+        const icon = document.createElement('div');
+        icon.className = 'spinner-border spinner-border-sm';
+        spinner.appendChild(icon);
+        this.detailView.appendChild(spinner);
         this.showDetail();
 
         try {
@@ -152,9 +158,61 @@ class SetupGuide {
 
             if (!json.success) throw new Error(json.message || 'Error');
 
-            this.detailView.innerHTML = json.data.html;
+            const tpl = document.createElement('template');
+            tpl.innerHTML = json.data.html;
+            this.detailView.replaceChildren(tpl.content);
+            this.initTimezoneClocks();
         } catch (err) {
-            this.detailView.innerHTML = `<div class="alert alert-danger">${err.message}</div>`;
+            this.detailView.replaceChildren();
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-danger';
+            alert.textContent = err.message;
+            this.detailView.appendChild(alert);
+        }
+    }
+
+    initTimezoneClocks() {
+        const container = document.getElementById('j2c-tz-clocks');
+
+        if (!container) return;
+
+        const storeTz     = container.dataset.storeTz;
+        const matchMsg    = container.dataset.matchMsg;
+        const mismatchMsg = container.dataset.mismatchMsg;
+
+        try {
+            const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+            const tzNameEl = document.getElementById('j2c-local-tz-name');
+
+            if (tzNameEl) tzNameEl.textContent = localTz || 'Unknown';
+
+            const fmt = (tz) => new Date().toLocaleString('en-US', {
+                timeZone: tz, hour: 'numeric', minute: '2-digit', hour12: true
+            });
+
+            const update = () => {
+                const storeEl = document.getElementById('j2c-store-time');
+                const localEl = document.getElementById('j2c-local-time');
+
+                if (storeEl) storeEl.textContent = fmt(storeTz);
+                if (localEl && localTz) localEl.textContent = fmt(localTz);
+            };
+
+            update();
+            this._tzInterval = setInterval(update, 30000);
+
+            const matchEl    = document.getElementById('j2c-tz-match');
+            const mismatchEl = document.getElementById('j2c-tz-mismatch');
+
+            if (localTz === storeTz && matchEl) {
+                matchEl.classList.remove('d-none');
+                matchEl.querySelector('.j2c-tz-msg').textContent = matchMsg;
+            } else if (localTz && mismatchEl) {
+                mismatchEl.classList.remove('d-none');
+                mismatchEl.querySelector('.j2c-tz-msg').textContent = mismatchMsg;
+            }
+        } catch (e) {
+            // Browser doesn't support Intl API — leave local time as --:--
         }
     }
 
