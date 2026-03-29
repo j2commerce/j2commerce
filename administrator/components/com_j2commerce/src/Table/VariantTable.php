@@ -77,7 +77,7 @@ class VariantTable extends Table
         }
 
         if (!isset($this->shipping) || $this->shipping === null) {
-            $this->shipping = 0;
+            $this->shipping = 1;
         }
 
         if (!isset($this->manage_stock) || $this->manage_stock === null) {
