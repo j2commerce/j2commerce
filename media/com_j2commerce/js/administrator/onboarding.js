@@ -82,8 +82,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (zoneEl) {
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(`<select>${html}</select>`, 'text/html');
-                const options = doc.querySelectorAll('option');
-                zoneEl.replaceChildren(...options);
+                const newOptions = doc.querySelectorAll('option');
+                zoneEl.replaceChildren(...newOptions);
+
+                // Explicitly set the saved zone value after replacing options
+                if (savedZoneId) {
+                    zoneEl.value = String(savedZoneId);
+                }
             }
         } catch {
             // Zone loading failure is non-fatal

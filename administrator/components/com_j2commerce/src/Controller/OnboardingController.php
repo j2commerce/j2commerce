@@ -149,10 +149,15 @@ class OnboardingController extends BaseController
             }
 
             // Find en-US in the available languages
+            // The XML attributes vary: element may be "pkg_en-US" or "en-US",
+            // and there may be a "code" attribute with just "en-US"
             $detailsUrl = null;
 
             foreach ($languages as $language) {
-                if (isset($language->element) && $language->element === 'pkg_en-US') {
+                $element = $language->element ?? '';
+                $code    = $language->code ?? '';
+
+                if ($element === 'pkg_en-US' || $element === 'en-US' || $code === 'en-US') {
                     $detailsUrl = $language->detailsurl ?? null;
                     break;
                 }
