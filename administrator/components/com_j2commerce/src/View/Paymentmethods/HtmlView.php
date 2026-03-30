@@ -180,7 +180,7 @@ class HtmlView extends BaseHtmlView
 
         if ($user->authorise('core.manage', 'com_installer')) {
             $toolbar->link(
-                Text::_('COM_J2COMMERCE_TOOLBAR_INSTALL_PAYMENT'),
+                'COM_J2COMMERCE_TOOLBAR_INSTALL_PAYMENT',
                 Uri::base() . 'index.php?option=com_installer&view=install'
             )
                 ->icon('fa-solid fa-download')
