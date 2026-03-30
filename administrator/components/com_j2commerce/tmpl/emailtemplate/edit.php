@@ -131,7 +131,7 @@ document.addEventListener("DOMContentLoaded", function() {
             const token = Joomla.getOptions("csrf.token") || document.querySelector("input[type=hidden][name][value=\"1\"]")?.name || "";
 
             previewBtn.disabled = true;
-            previewBtn.innerHTML = "<span class=\"spinner-border spinner-border-sm\"></span> " + Joomla.Text._("COM_J2COMMERCE_EMAILTEMPLATE_LOADING");
+            previewBtn.innerHTML = "<span class=\"spinner-border spinner-border-sm\" aria-hidden=\"true\"></span> " + Joomla.Text._("COM_J2COMMERCE_EMAILTEMPLATE_LOADING");
 
             try {
                 const formData = new FormData();
@@ -179,7 +179,7 @@ document.addEventListener("DOMContentLoaded", function() {
             const token = Joomla.getOptions("csrf.token") || document.querySelector("input[type=hidden][name][value=\"1\"]")?.name || "";
 
             confirmSendBtn.disabled = true;
-            confirmSendBtn.innerHTML = "<span class=\"spinner-border spinner-border-sm\"></span> " + Joomla.Text._("COM_J2COMMERCE_EMAILTEMPLATE_SENDING");
+            confirmSendBtn.innerHTML = "<span class=\"spinner-border spinner-border-sm\" aria-hidden=\"true\"></span> " + Joomla.Text._("COM_J2COMMERCE_EMAILTEMPLATE_SENDING");
 
             try {
                 const formData = new FormData();

@@ -209,6 +209,7 @@ class HtmlView extends BaseHtmlView
         Text::script('COM_J2COMMERCE_DASHBOARD_DAYS');
         Text::script('COM_J2COMMERCE_DASHBOARD_MSG_DISMISS_SESSION');
         Text::script('COM_J2COMMERCE_DASHBOARD_MSG_DISMISS_FOREVER');
+        Text::script('COM_J2COMMERCE_LOADING');
 
         if (!SetupGuideHelper::isComplete()) {
             $wa->registerAndUseScript('com_j2commerce.setup-guide', 'media/com_j2commerce/js/administrator/setup-guide.js', [], ['defer' => true]);

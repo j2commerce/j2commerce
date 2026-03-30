@@ -173,7 +173,7 @@
         const code = input.value.trim();
         const origHTML = btn.innerHTML;
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></span>';
 
         postAction('carts.applyCouponAjax', { coupon: code })
             .then(function (data) {
@@ -238,7 +238,7 @@
         const code = input.value.trim();
         const origHTML = btn.innerHTML;
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></span>';
 
         postAction('carts.applyVoucherAjax', { voucher: code })
             .then(function (data) {

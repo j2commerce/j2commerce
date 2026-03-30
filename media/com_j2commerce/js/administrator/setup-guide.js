@@ -146,8 +146,16 @@ class SetupGuide {
         this.detailView.replaceChildren();
         const spinner = document.createElement('div');
         spinner.className = 'text-center py-4';
+      
         const icon = document.createElement('div');
         icon.className = 'spinner-border spinner-border-sm';
+        icon.setAttribute('role', 'status');
+      
+        const hidden = document.createElement('span');
+        hidden.className = 'visually-hidden';
+        hidden.textContent = Joomla.Text._("COM_J2COMMERCE_LOADING");
+      
+        icon.appendChild(hidden);      
         spinner.appendChild(icon);
         this.detailView.appendChild(spinner);
         this.showDetail();
@@ -222,7 +230,7 @@ class SetupGuide {
         const params = JSON.parse(btn.dataset.params || '{}');
 
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></span>';
 
         try {
             const body = new URLSearchParams();
@@ -260,7 +268,7 @@ class SetupGuide {
 
         const originalText = btn.textContent;
         btn.disabled       = true;
-        btn.innerHTML      = '<span class="spinner-border spinner-border-sm"></span>';
+        btn.innerHTML      = '<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></span>';
 
         try {
             const body = new URLSearchParams();
@@ -292,7 +300,7 @@ class SetupGuide {
         const originalHtml = btn.outerHTML;
 
         btn.disabled  = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></span>';
 
         try {
             const body = new URLSearchParams();
@@ -321,7 +329,10 @@ class SetupGuide {
         } catch (err) {
             Joomla.renderMessages({ error: [err.message] });
             btn.disabled  = false;
-            btn.innerHTML = btn.innerHTML.replace('<span class="spinner-border spinner-border-sm"></span>', '');
+            const spinner = btn.querySelector('.spinner-border');
+            if (spinner) {
+                spinner.remove();
+            }
             if (!btn.innerHTML.trim()) {
                 btn.outerHTML = originalHtml;
             }

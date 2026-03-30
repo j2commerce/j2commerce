@@ -41,7 +41,7 @@ use Joomla\CMS\Language\Text;
             <!-- Loading spinner (shown while fetching) -->
             <div class="setup-loading text-center py-5">
                 <div class="spinner-border text-secondary" role="status">
-                    <span class="visually-hidden"><?php echo Text::_('JLIB_HTML_BEHAVIOR_LOADING'); ?></span>
+                    <span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_LOADING'); ?></span>
                 </div>
             </div>
             <!-- Check groups container (AJAX-loaded) -->

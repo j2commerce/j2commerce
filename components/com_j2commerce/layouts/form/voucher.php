@@ -39,6 +39,7 @@ if (!$assetsRegistered) {
             'remove'       => Text::_('COM_J2COMMERCE_REMOVE'),
         ],
     ]);
+    Text::script('COM_J2COMMERCE_LOADING');
     $assetsRegistered = true;
 }
 
