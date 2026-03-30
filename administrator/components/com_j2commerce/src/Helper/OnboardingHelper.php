@@ -261,8 +261,18 @@ class OnboardingHelper
         DatabaseInterface $db,
     ): array {
         $countryName = self::getCountryName($countryId, $db);
-        $zoneName    = ($zoneId > 0) ? self::getZoneName($zoneId, $db) : '';
-        $geoName     = $zoneName !== '' ? "$zoneName, $countryName Tax Zone" : "$countryName Tax Zone";
+        $isUS        = ($countryId === 223);
+
+        if ($isUS && $zoneId > 0) {
+            $zoneName    = self::getZoneName($zoneId, $db);
+            $geoName     = "$zoneName, $countryName Tax Zone";
+            $ruleZoneId  = $zoneId;
+            $rateName    = "$zoneName Sales Tax";
+        } else {
+            $geoName     = "$countryName Tax Zone";
+            $ruleZoneId  = 0;
+            $rateName    = "$countryName Tax";
+        }
 
         $geozone = (object) [
             'geozone_name' => $geoName,
@@ -275,11 +285,9 @@ class OnboardingHelper
         $geoRule = (object) [
             'geozone_id' => $geozoneId,
             'country_id' => $countryId,
-            'zone_id'    => $zoneId,
+            'zone_id'    => $ruleZoneId,
         ];
         $db->insertObject('#__j2commerce_geozonerules', $geoRule, 'j2commerce_geozonerule_id');
-
-        $rateName = $zoneName !== '' ? "$zoneName Sales Tax" : 'Default Tax';
         $taxRate  = (object) [
             'geozone_id'   => $geozoneId,
             'taxrate_name' => $rateName,
