@@ -105,21 +105,21 @@ class TimezoneCheck extends AbstractSetupCheck
 
         // Store Time (from Joomla global config)
         $html .= '<div class="col-6">'
-            . '<div class="text-center p-3 rounded" style="background:rgba(255,255,255,.06);">'
-            . '<span class="fa-regular fa-clock" style="font-size:2rem;color:#0d6efd;" aria-hidden="true"></span>'
+            . '<div class="text-center p-3 rounded" style="background:rgba(255,255,255,.1);">'
+            . '<span class="fa-regular fa-clock" style="font-size:2rem;" aria-hidden="true"></span>'
             . '<p class="fw-bold fs-4 mb-0 mt-2" id="j2c-store-time">' . ($timeStr !== '' ? $timeStr : '--:--') . '</p>'
-            . '<p class="small mb-1" style="color:rgba(255,255,255,.55);">' . $storeTzLabel . '</p>'
-            . '<p class="small mb-0 fw-semibold" style="color:rgba(255,255,255,.8);">' . $escapedTz . '</p>'
+            . '<p class="small text-body-secondary mb-1">' . $storeTzLabel . '</p>'
+            . '<p class="small mb-0 fw-semibold">' . $escapedTz . '</p>'
             . '</div>'
             . '</div>';
 
         // Local Time (detected from browser via Intl API)
         $html .= '<div class="col-6">'
-            . '<div class="text-center p-3 rounded" style="background:rgba(255,255,255,.06);">'
-            . '<span class="fa-regular fa-clock" style="font-size:2rem;color:#0d6efd;" aria-hidden="true"></span>'
+            . '<div class="text-center p-3 rounded" style="background:rgba(255,255,255,.1);">'
+            . '<span class="fa-regular fa-clock" style="font-size:2rem;" aria-hidden="true"></span>'
             . '<p class="fw-bold fs-4 mb-0 mt-2" id="j2c-local-time">--:--</p>'
-            . '<p class="small mb-1" style="color:rgba(255,255,255,.55);">' . $localTzLabel . '</p>'
-            . '<p class="small mb-0 fw-semibold" id="j2c-local-tz-name" style="color:rgba(255,255,255,.8);">…</p>'
+            . '<p class="small text-body-secondary mb-1">' . $localTzLabel . '</p>'
+            . '<p class="small mb-0 fw-semibold" id="j2c-local-tz-name">…</p>'
             . '</div>'
             . '</div>';
 
@@ -143,7 +143,7 @@ class TimezoneCheck extends AbstractSetupCheck
                 . '</button>';
         }
 
-        $html .= '<a href="' . $globalConfig . '" class="btn btn-link btn-sm text-light w-100 mt-2">'
+        $html .= '<a href="' . $globalConfig . '" class="btn btn-outline-light btn-sm w-100 mt-2">'
             . Text::_('COM_J2COMMERCE_SETUP_GUIDE_CHECK_TIMEZONE_CHANGE')
             . '</a>';
 
