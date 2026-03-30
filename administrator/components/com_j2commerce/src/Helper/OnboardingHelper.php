@@ -265,11 +265,11 @@ class OnboardingHelper
 
         if ($isUS && $zoneId > 0) {
             $zoneName    = self::getZoneName($zoneId, $db);
-            $geoName     = "$zoneName, $countryName Tax Zone";
+            $geoName     = $zoneName;
             $ruleZoneId  = $zoneId;
             $rateName    = "$zoneName Sales Tax";
         } else {
-            $geoName     = "$countryName Tax Zone";
+            $geoName     = $countryName;
             $ruleZoneId  = 0;
             $rateName    = "$countryName Tax";
         }
@@ -299,7 +299,7 @@ class OnboardingHelper
         $taxRateId = (int) $taxRate->j2commerce_taxrate_id;
 
         $taxProfile = (object) [
-            'taxprofile_name' => 'Taxable Goods',
+            'taxprofile_name' => 'Tax',
             'enabled'         => 1,
             'ordering'        => 1,
         ];
