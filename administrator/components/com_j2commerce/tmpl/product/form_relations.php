@@ -21,7 +21,53 @@ use Joomla\CMS\Router\Route;
 J2CommerceHelper::plugin()->importCatalogPlugins();
 
 $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
-$style = '.autocomplete-list{background: var(--form-control-bg);max-height: 200px;overflow-y: auto;width: 100%;}.autocomplete-list.autocomplete-active{border: var(--form-control-border);}.autocomplete-item{padding: 8px;cursor: pointer;font-size: .8rem;}.autocomplete-item:hover {background-color: #f0f0f0;}';
+$style = <<<'CSS'
+.j2commerce-product-relations .autocomplete-list {
+    background: var(--template-bg-light, #fff);
+    max-height: 240px;
+    overflow-y: auto;
+    width: 100%;
+    border-radius: 0 0 .375rem .375rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,.15);
+}
+.j2commerce-product-relations .autocomplete-list.autocomplete-active {
+    border: 1px solid var(--template-bg-dark-20, #ccc);
+    border-top: 0;
+}
+.j2commerce-product-relations .autocomplete-item {
+    padding: .5rem .75rem;
+    cursor: pointer;
+    font-size: .875rem;
+    transition: background-color 150ms;
+}
+.j2commerce-product-relations .autocomplete-item:hover {
+    background-color: var(--template-bg-dark-5, #f5f5f5);
+}
+.j2commerce-product-relations .autocomplete-item + .autocomplete-item {
+    border-top: 1px solid var(--template-bg-dark-5, #f5f5f5);
+}
+.j2commerce-product-relations legend {
+    font-size: 1rem;
+    font-weight: 600;
+}
+.j2commerce-product-relations .table {
+    margin-bottom: 0;
+}
+.j2commerce-product-relations .table td {
+    vertical-align: middle;
+}
+.j2commerce-product-relations .j2c-relations-search {
+    padding: .75rem;
+    background: var(--template-bg-dark-3, #fafafa);
+    border-top: 1px solid var(--template-bg-dark-7, #eee);
+    position: relative;
+    overflow: visible;
+}
+.j2commerce-product-relations fieldset,
+.j2commerce-product-relations .table-responsive {
+    overflow: visible;
+}
+CSS;
 $wa->addInlineStyle($style, [], []);
 
 $item = $displayData['product'];
@@ -73,15 +119,11 @@ $textFieldDefaults = ['value' => '', 'onchange' => '', 'disabled' => false, 'rea
                     <?php endforeach;?>
                 <?php endif;?>
                 </tbody>
-                <tbody>
-                <tr>
-                    <td colspan="2">
-                        <small><strong><?php echo Text::_('COM_J2COMMERCE_SEARCH_AND_RELATED_PRODUCTS');?></strong></small>
-                        <?php echo LayoutHelper::render('joomla.form.field.text', ['name'  => 'J2CommerceupsellSelector','id'    => 'J2CommerceupsellSelector','value' => '','class' => 'form-control ms-2',] + $textFieldDefaults);?>
-                    </td>
-                </tr>
-                </tbody>
             </table>
+            <div class="j2c-relations-search">
+                <label class="form-label small fw-semibold" for="J2CommerceupsellSelector"><?php echo Text::_('COM_J2COMMERCE_SEARCH_AND_RELATED_PRODUCTS');?></label>
+                <?php echo LayoutHelper::render('joomla.form.field.text', ['name'  => 'J2CommerceupsellSelector','id'    => 'J2CommerceupsellSelector','value' => '','class' => 'form-control','hint' => Text::_('COM_J2COMMERCE_SEARCH_AND_RELATED_PRODUCTS'),] + $textFieldDefaults);?>
+            </div>
         </div>
     </fieldset>
     <fieldset class="options-form product-crosssells mb-4">
@@ -123,15 +165,11 @@ $textFieldDefaults = ['value' => '', 'onchange' => '', 'disabled' => false, 'rea
                 <?php endforeach;?>
                 <?php endif;?>
                 </tbody>
-                <tbody>
-                <tr>
-                    <td colspan="2">
-                        <small><strong><?php echo Text::_('COM_J2COMMERCE_SEARCH_AND_RELATED_PRODUCTS');?></strong></small>
-                        <?php echo LayoutHelper::render('joomla.form.field.text', ['name'  => 'J2CommercecrossSellSelector','id'    => 'J2CommercecrossSellSelector','value' => '','class' => 'form-control ms-2',] + $textFieldDefaults);?>
-                    </td>
-                </tr>
-                </tbody>
             </table>
+            <div class="j2c-relations-search">
+                <label class="form-label small fw-semibold" for="J2CommercecrossSellSelector"><?php echo Text::_('COM_J2COMMERCE_SEARCH_AND_RELATED_PRODUCTS');?></label>
+                <?php echo LayoutHelper::render('joomla.form.field.text', ['name'  => 'J2CommercecrossSellSelector','id'    => 'J2CommercecrossSellSelector','value' => '','class' => 'form-control','hint' => Text::_('COM_J2COMMERCE_SEARCH_AND_RELATED_PRODUCTS'),] + $textFieldDefaults);?>
+            </div>
         </div>
     </fieldset>
 </div>
@@ -208,6 +246,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if (data.products && data.products.length > 0) {
                     data.products.forEach(function(item) {
+                        // Skip products already added
+                        if (document.getElementById(rowPrefix + '-' + item.j2commerce_product_id)) {
+                            return;
+                        }
+
                         var option = document.createElement('div');
                         option.className = 'autocomplete-item';
                         option.textContent = item.product_name;
@@ -221,14 +264,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
                             var value = this.dataset.value;
                             var label = this.dataset.label;
-
-                            // Check if already added
-                            if (document.getElementById(rowPrefix + '-' + value)) {
-                                input.value = '';
-                                autocompleteList.innerHTML = '';
-                                updateAutocompleteListState();
-                                return;
-                            }
 
                             // Escape label for safe HTML insertion
                             var escapedLabel = label.replace(/&/g, '&amp;')
