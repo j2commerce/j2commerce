@@ -30,15 +30,16 @@
         />
 
         <field
-            name="free_shipping"
-            type="radio"
-            label="COM_J2COMMERCE_COUPON_FREE_SHIPPING"
-            description="COM_J2COMMERCE_COUPON_FREE_SHIPPING_DESCRIPTION"
-            default="0"
-            layout="joomla.form.field.radio.switcher"
+            name="value_type"
+            type="list"
+            label="COM_J2COMMERCE_COUPON_VALUE_TYPE"
+            description="COM_J2COMMERCE_COUPON_VALUE_TYPE_DESCRIPTION"
+            default="fixed_cart"
         >
-            <option value="0">JNO</option>
-            <option value="1">JYES</option>
+            <option value="fixed_cart">COM_J2COMMERCE_VALUE_TYPE_FIXED_CART</option>
+            <option value="fixed_product">COM_J2COMMERCE_VALUE_TYPE_FIXED_PRODUCT</option>
+            <option value="percentage_cart">COM_J2COMMERCE_VALUE_TYPE_PERCENTAGE_CART</option>
+            <option value="percentage_product">COM_J2COMMERCE_VALUE_TYPE_PERCENTAGE_PRODUCT</option>
         </field>
 
         <field
@@ -52,16 +53,15 @@
         />
 
         <field
-            name="value_type"
-            type="list"
-            label="COM_J2COMMERCE_COUPON_VALUE_TYPE"
-            description="COM_J2COMMERCE_COUPON_VALUE_TYPE_DESCRIPTION"
-            default="fixed_cart"
+            name="free_shipping"
+            type="radio"
+            label="COM_J2COMMERCE_COUPON_FREE_SHIPPING"
+            description="COM_J2COMMERCE_COUPON_FREE_SHIPPING_DESCRIPTION"
+            default="0"
+            layout="joomla.form.field.radio.switcher"
         >
-            <option value="fixed_cart">COM_J2COMMERCE_VALUE_TYPE_FIXED_CART</option>
-            <option value="fixed_product">COM_J2COMMERCE_VALUE_TYPE_FIXED_PRODUCT</option>
-            <option value="percentage_cart">COM_J2COMMERCE_VALUE_TYPE_PERCENTAGE_CART</option>
-            <option value="percentage_product">COM_J2COMMERCE_VALUE_TYPE_PERCENTAGE_PRODUCT</option>
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
         </field>
 
         <field
