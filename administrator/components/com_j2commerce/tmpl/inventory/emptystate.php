@@ -21,7 +21,7 @@ $displayData = [
     'icon'       => 'icon-fa-solid fa-barcode',
 ];
 
-echo $this->navbar;
+echo $this->navbar ?? '';
 
 echo LayoutHelper::render('joomla.content.emptystate', $displayData);
 

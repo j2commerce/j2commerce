@@ -20,7 +20,7 @@ use Joomla\CMS\Layout\LayoutHelper;
 J2CommerceHelper::strapper()->addCSS();
 ?>
 
-<?php echo $this->navbar; ?>
+<?php echo $this->navbar ?? ''; ?>
 
 <div class="container">
     <div class="row">

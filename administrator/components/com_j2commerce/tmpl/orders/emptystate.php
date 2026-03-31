@@ -21,7 +21,7 @@ $displayData = [
     'icon'       => 'icon-shopping-cart fas fa-shopping-cart',
 ];
 
-echo $this->navbar;
+echo $this->navbar ?? '';
 
 echo  LayoutHelper::render('joomla.content.emptystate', $displayData);
 

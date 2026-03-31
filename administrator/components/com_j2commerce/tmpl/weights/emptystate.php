@@ -27,7 +27,7 @@ if ($user->authorise('core.create', 'com_j2commerce')) {
     $displayData['createURL'] = 'index.php?option=com_j2commerce&task=weight.add';
 }
 
-echo $this->navbar;
+echo $this->navbar ?? '';
 
 echo LayoutHelper::render('joomla.content.emptystate', $displayData);
 
