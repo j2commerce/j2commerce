@@ -52,7 +52,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (result.success) {
                 // Update original value
-                input.dataset.original = newPrice.toFixed(2);
+                const decimals = parseInt(input.dataset.decimals, 10) || 2;
+                input.dataset.original = newPrice.toFixed(decimals);
 
                 // Show success feedback
                 saveBtn.innerHTML = '<span class="icon-check" aria-hidden="true"></span>';

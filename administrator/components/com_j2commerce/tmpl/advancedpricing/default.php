@@ -17,7 +17,9 @@ use Joomla\CMS\Router\Route;
 
 $listOrder = $this->escape($this->state->get('list.ordering'));
 $listDirn  = $this->escape($this->state->get('list.direction'));
-$currencySymbol = (new CurrencyHelper())->getSymbol();
+$currencySymbol  = (new CurrencyHelper())->getSymbol();
+$currencyDecimals = CurrencyHelper::getDecimalPlace();
+$stepValue        = $currencyDecimals > 0 ? '0.' . str_repeat('0', $currencyDecimals - 1) . '1' : '1';
 
 $wa = $this->getDocument()->getWebAssetManager();
 $wa->useScript('table.columns');
@@ -123,10 +125,11 @@ $wa->useScript('multiselect');
                                             <span class="input-group-text"><?php echo $currencySymbol; ?></span>
                                             <input type="number"
                                                    class="form-control form-control-sm advancedpricing-price-input"
-                                                   value="<?php echo number_format((float) $item->price, 2, '.', ''); ?>"
+                                                   value="<?php echo number_format((float) $item->price, $currencyDecimals, '.', ''); ?>"
                                                    data-id="<?php echo (int) $item->j2commerce_productprice_id; ?>"
-                                                   data-original="<?php echo number_format((float) $item->price, 2, '.', ''); ?>"
-                                                   step="0.01"
+                                                   data-original="<?php echo number_format((float) $item->price, $currencyDecimals, '.', ''); ?>"
+                                                   data-decimals="<?php echo $currencyDecimals; ?>"
+                                                   step="<?php echo $stepValue; ?>"
                                                    min="0" />
                                             <button type="button" class="btn btn-sm btn-primary price-save-btn" data-id="<?php echo (int) $item->j2commerce_productprice_id; ?>" title="<?php echo Text::_('JAPPLY'); ?>">
                                                 <span class="icon-save" aria-hidden="true"></span>
