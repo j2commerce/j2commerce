@@ -458,4 +458,37 @@ class OnboardingHelper
 
         return (string) $db->setQuery($query)->loadResult();
     }
+
+    /**
+     * Swap address_1 / address_2 ordering based on country convention.
+     *
+     * US (country_id=223): street first  → address_1=4, address_2=5
+     * Non-US:              unit/flat first → address_2=4, address_1=5
+     *
+     * Should only be called once during onboarding when the country is first set.
+     */
+    public static function reorderAddressFields(int $countryId, DatabaseInterface $db): void
+    {
+        if ($countryId === 223) {
+            $addr1Order = 4;
+            $addr2Order = 5;
+        } else {
+            $addr1Order = 5;
+            $addr2Order = 4;
+        }
+
+        $query = $db->getQuery(true)
+            ->update($db->quoteName('#__j2commerce_customfields'))
+            ->set($db->quoteName('ordering') . ' = ' . $addr1Order)
+            ->where($db->quoteName('field_namekey') . ' = ' . $db->quote('address_1'))
+            ->where($db->quoteName('field_core') . ' = 1');
+        $db->setQuery($query)->execute();
+
+        $query = $db->getQuery(true)
+            ->update($db->quoteName('#__j2commerce_customfields'))
+            ->set($db->quoteName('ordering') . ' = ' . $addr2Order)
+            ->where($db->quoteName('field_namekey') . ' = ' . $db->quote('address_2'))
+            ->where($db->quoteName('field_core') . ' = 1');
+        $db->setQuery($query)->execute();
+    }
 }

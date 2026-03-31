@@ -265,6 +265,9 @@ class OnboardingController extends BaseController
         OnboardingHelper::syncWeights($weightId, $db);
         OnboardingHelper::syncLengths($lengthId, $db);
 
+        // Swap address_1/address_2 ordering based on country convention
+        OnboardingHelper::reorderAddressFields($countryId, $db);
+
         // Get recommended defaults for Step 2 pre-fill (currency only now)
         $defaults = OnboardingHelper::getCountryDefaults($countryId);
 
