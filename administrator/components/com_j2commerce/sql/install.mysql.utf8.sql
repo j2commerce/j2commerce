@@ -5727,7 +5727,8 @@ INSERT IGNORE INTO `#__guidedtours` (`title`, `uid`, `description`, `extensions`
 ('COM_J2COMMERCE_GUIDEDTOUR_SETTING_UP_PAYMENTS_TITLE', 'j2commerce-setting-up-payments', 'COM_J2COMMERCE_GUIDEDTOUR_SETTING_UP_PAYMENTS_DESC', '["com_j2commerce"]', 'administrator/index.php?option=com_j2commerce&view=apps&folder=payment', 1, 1, NOW(), NOW(), '*', 3, '', 0),
 ('COM_J2COMMERCE_GUIDEDTOUR_CONFIGURING_SHIPPING_TITLE', 'j2commerce-configuring-shipping', 'COM_J2COMMERCE_GUIDEDTOUR_CONFIGURING_SHIPPING_DESC', '["com_j2commerce"]', 'administrator/index.php?option=com_j2commerce&view=shippingmethods', 1, 1, NOW(), NOW(), '*', 4, '', 0);
 
--- Guided Tour Steps: Creating Your First Product (17 steps)
+-- Guided Tour Steps: Creating Your First Product (18 steps)
+
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
 SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP0_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP0_DESC', 'bottom', '#toolbar-new', 2, 1, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
@@ -5759,57 +5760,62 @@ FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.creating-product';
 
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
-SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP6_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP6_DESC', 'bottom', '#j2commerce-product-visibility-radio-group0', 2, 5, '', 1, '*', '', '{"required":0,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP6_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP6_DESC', 'bottom', 'button[aria-controls="attrib-j2commerce"] span', 2, 4, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.creating-product';
 
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
-SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP7_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP7_DESC', 'bottom', '#j2commerce-product-sku-group', 2, 2, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP7_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP7_DESC', 'bottom', '#j2commerce-product-visibility-radio-group0', 2, 5, '', 1, '*', '', '{"required":0,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.creating-product';
 
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
-SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP8_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP8_DESC', 'top', 'joomla-field-fancy-select:has(#j2commerce-product-taxprofile_id-select-group)', 2, 6, '', 1, '*', '', '{"required":0,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP8_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP8_DESC', 'bottom', '#j2commerce-product-sku-group', 2, 2, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.creating-product';
 
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
-SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP9_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP9_DESC', 'top', 'button[aria-controls="pricingTab"]', 2, 4, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP9_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP9_DESC', 'top', 'joomla-field-fancy-select:has(#j2commerce-product-taxprofile_id-select-group)', 2, 6, '', 1, '*', '', '{"required":0,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.creating-product';
 
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
-SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP10_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP10_DESC', 'bottom', '#j2commerce-product-price-field', 2, 2, '', 1, '*', '', '{"required":0,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP10_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP10_DESC', 'top', 'button[aria-controls="pricingTab"]', 2, 4, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.creating-product';
 
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
-SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP11_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP11_DESC', 'top', 'button[aria-controls="inventoryTab"]', 2, 4, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP11_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP11_DESC', 'bottom', '#j2commerce-product-price-field', 2, 2, '', 1, '*', '', '{"required":0,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.creating-product';
 
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
-SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP12_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP12_DESC', 'bottom', '#j2commerce-product-manage_stock-radio-group1', 2, 5, '', 1, '*', '', '{"required":0,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP12_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP12_DESC', 'top', 'button[aria-controls="inventoryTab"]', 2, 4, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.creating-product';
 
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
-SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP13_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP13_DESC', 'top', 'button[aria-controls="shippingTab"]', 2, 4, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP13_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP13_DESC', 'bottom', '#j2commerce-product-manage_stock-radio-group1', 2, 5, '', 1, '*', '', '{"required":0,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.creating-product';
 
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
-SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP14_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP14_DESC', 'bottom', '#j2commerce-product-shipping-radio-group1', 2, 5, '', 1, '*', '', '{"required":0,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP14_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP14_DESC', 'top', 'button[aria-controls="shippingTab"]', 2, 4, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.creating-product';
 
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
-SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP15_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP15_DESC', 'bottom', '#save-group-children-save .button-save', 2, 1, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP15_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP15_DESC', 'bottom', '#j2commerce-product-shipping-radio-group1', 2, 5, '', 1, '*', '', '{"required":0,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.creating-product';
 
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
-SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP16_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP16_DESC', 'center', '', 0, 1, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP16_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP16_DESC', 'bottom', '#save-group-children-save .button-save', 2, 1, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+FROM `#__guidedtours`
+WHERE `uid` = 'com_j2commerce.creating-product';
+
+INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP17_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP17_DESC', 'center', '', 0, 1, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.creating-product';
 
