@@ -42,6 +42,11 @@ class HtmlView extends BaseHtmlView
 
     public function display($tpl = null): void
     {
+        // Template overrides can write arbitrary PHP — restrict to super users
+        if (!Factory::getApplication()->getIdentity()->authorise('core.admin')) {
+            throw new \Exception(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 403);
+        }
+
         $this->loadAdminAssets();
         $this->navbar = $this->getNavbar();
 

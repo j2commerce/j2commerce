@@ -57,6 +57,26 @@ class HtmlView extends BaseHtmlView
         $this->state      = $model->getState();
         $this->shortcodes = $model->getAvailableShortcodes();
 
+        // File-based body source can execute arbitrary PHP — restrict to super users
+        if (!Factory::getApplication()->getIdentity()->authorise('core.admin')) {
+            $this->form->setFieldAttribute('body_source', 'filter', 'cmd');
+            $bodySourceField = $this->form->getField('body_source');
+            if ($bodySourceField) {
+                $element = $bodySourceField->__get('element');
+                foreach ($element->children() as $option) {
+                    if ((string) $option['value'] === 'file') {
+                        $dom = dom_import_simplexml($option);
+                        $dom->parentNode->removeChild($dom);
+                        break;
+                    }
+                }
+            }
+            // Force back to visual if currently set to file
+            if (($this->item->body_source ?? '') === 'file') {
+                $this->form->setValue('body_source', null, 'visual');
+            }
+        }
+
         // Merge type-specific shortcodes when editing a non-transactional email template
         $emailType = $this->item->email_type ?? 'transactional';
         if ($emailType !== 'transactional') {
