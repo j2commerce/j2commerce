@@ -32,7 +32,7 @@ if ($user->authorise('core.create', 'com_j2commerce')
     || count($user->getAuthorisedCategories('com_j2commerce', 'core.create')) > 0) {
     $displayData['createURL'] = 'index.php?option=com_installer&view=install';
 }
-echo $this->navbar;
+echo $this->navbar ?? '';
 
 echo LayoutHelper::render('joomla.content.emptystate', $displayData);
 
