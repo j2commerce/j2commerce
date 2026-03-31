@@ -181,6 +181,9 @@ class Com_J2commerceInstallerScript extends InstallerScript
     {
         $this->debugLog("=== UPDATE START ===");
 
+        $this->setDefaultAcl();
+        $this->debugLog("UPDATE: default ACL rules set (if empty)");
+
         Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_UPDATE_SUCCESS'), 'success');
 
         $this->debugLog("=== UPDATE END ===");
