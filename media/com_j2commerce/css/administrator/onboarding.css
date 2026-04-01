@@ -91,7 +91,7 @@
     margin-bottom: 0.5rem;
 }
 
-.j2c-step[data-step="5"] .j2c-step-icon {
+.j2c-step[data-step="6"] .j2c-step-icon {
     font-size: 64px;
     color: var(--bs-success);
 }
@@ -180,7 +180,35 @@
     padding: 1rem 2rem;
 }
 
-/* ---- Celebration (step 5) ---- */
+/* ---- Shipping rate table (onboarding) ---- */
+.j2c-onboarding-body .ob-rates-table th,
+.j2c-onboarding-body .ob-rates-table td {
+    padding: 0.375rem 0.5rem;
+    vertical-align: middle;
+}
+
+.j2c-onboarding-body .ob-rates-table input[type="number"] {
+    width: 100px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.j2c-onboarding-body .ob-rates-table select {
+    min-width: 120px;
+    font-size: 0.875rem;
+}
+
+/* ---- Payment plugin list ---- */
+#ob-payment-list .form-check {
+    padding: 0.5rem 0.75rem 0.5rem 2rem;
+    border-bottom: 1px solid var(--bs-border-color);
+}
+
+#ob-payment-list .form-check:last-child {
+    border-bottom: none;
+}
+
+/* ---- Celebration (step 6) ---- */
 .j2c-celebration-icon {
     animation: j2c-bounce 0.6s ease;
 }

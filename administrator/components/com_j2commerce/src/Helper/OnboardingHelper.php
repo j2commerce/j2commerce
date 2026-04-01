@@ -402,7 +402,7 @@ class OnboardingHelper
     {
         $lastStep = (int) ConfigHelper::get('onboarding_last_step', 0);
 
-        return min($lastStep + 1, 5);
+        return min($lastStep + 1, 6);
     }
 
     /**
@@ -490,5 +490,151 @@ class OnboardingHelper
             ->where($db->quoteName('field_namekey') . ' = ' . $db->quote('address_2'))
             ->where($db->quoteName('field_core') . ' = 1');
         $db->setQuery($query)->execute();
+    }
+
+    /**
+     * Update a plugin's params in #__extensions.
+     */
+    public static function updatePluginParam(string $element, string $folder, array $params, DatabaseInterface $db): void
+    {
+        $query = $db->getQuery(true)
+            ->select([$db->quoteName('extension_id'), $db->quoteName('params')])
+            ->from($db->quoteName('#__extensions'))
+            ->where($db->quoteName('element') . ' = :element')
+            ->where($db->quoteName('folder') . ' = :folder')
+            ->where($db->quoteName('type') . ' = ' . $db->quote('plugin'))
+            ->bind(':element', $element)
+            ->bind(':folder', $folder);
+
+        $ext = $db->setQuery($query)->loadObject();
+
+        if (!$ext) {
+            return;
+        }
+
+        $registry = new Registry($ext->params);
+
+        foreach ($params as $key => $value) {
+            $registry->set($key, $value);
+        }
+
+        $paramsJson = $registry->toString();
+        $extId      = (int) $ext->extension_id;
+
+        $update = $db->getQuery(true)
+            ->update($db->quoteName('#__extensions'))
+            ->set($db->quoteName('params') . ' = :params')
+            ->where($db->quoteName('extension_id') . ' = :id')
+            ->bind(':params', $paramsJson)
+            ->bind(':id', $extId, ParameterType::INTEGER);
+
+        $db->setQuery($update)->execute();
+    }
+
+    /**
+     * Set a plugin's enabled state in #__extensions.
+     */
+    public static function setPluginEnabled(string $element, string $folder, int $enabled, DatabaseInterface $db): void
+    {
+        $query = $db->getQuery(true)
+            ->update($db->quoteName('#__extensions'))
+            ->set($db->quoteName('enabled') . ' = :enabled')
+            ->where($db->quoteName('element') . ' = :element')
+            ->where($db->quoteName('folder') . ' = :folder')
+            ->where($db->quoteName('type') . ' = ' . $db->quote('plugin'))
+            ->bind(':enabled', $enabled, ParameterType::INTEGER)
+            ->bind(':element', $element)
+            ->bind(':folder', $folder);
+
+        $db->setQuery($query)->execute();
+    }
+
+    /**
+     * Create a shipping method record.
+     *
+     * @return int  The new shipping method ID.
+     */
+    public static function createShippingMethod(string $name, int $type, DatabaseInterface $db): int
+    {
+        $obj = (object) [
+            'shipping_method_name' => $name,
+            'shipping_method_type' => $type,
+            'published'            => 1,
+            'tax_class_id'         => 0,
+            'address_override'     => '',
+            'subtotal_minimum'     => 0,
+            'subtotal_maximum'     => 0,
+            'params'               => '{}',
+        ];
+
+        $db->insertObject('#__j2commerce_shippingmethods', $obj, 'j2commerce_shippingmethod_id');
+
+        return (int) $obj->j2commerce_shippingmethod_id;
+    }
+
+    /**
+     * Create shipping rate records for a method.
+     */
+    public static function createShippingRates(int $methodId, array $rates, DatabaseInterface $db): void
+    {
+        $now = gmdate('Y-m-d H:i:s');
+
+        foreach ($rates as $rate) {
+            $obj = (object) [
+                'shipping_method_id'          => $methodId,
+                'geozone_id'                  => (int) ($rate['geozone_id'] ?? 0),
+                'shipping_rate_price'         => (float) ($rate['price'] ?? 0),
+                'shipping_rate_handling'      => (float) ($rate['handling'] ?? 0),
+                'shipping_rate_weight_start'  => (float) ($rate['weight_start'] ?? 0),
+                'shipping_rate_weight_end'    => (float) ($rate['weight_end'] ?? 0),
+                'created_date'                => $now,
+                'modified_date'               => $now,
+            ];
+
+            $db->insertObject('#__j2commerce_shippingrates', $obj);
+        }
+    }
+
+    /**
+     * Get all published payment plugins.
+     *
+     * @return array  List of objects with extension_id, element, name, params.
+     */
+    public static function getPublishedPaymentPlugins(DatabaseInterface $db): array
+    {
+        $query = $db->getQuery(true)
+            ->select([
+                $db->quoteName('extension_id'),
+                $db->quoteName('element'),
+                $db->quoteName('name'),
+                $db->quoteName('params'),
+            ])
+            ->from($db->quoteName('#__extensions'))
+            ->where($db->quoteName('type') . ' = ' . $db->quote('plugin'))
+            ->where($db->quoteName('folder') . ' = ' . $db->quote('j2commerce'))
+            ->where($db->quoteName('element') . ' LIKE ' . $db->quote('payment_%'))
+            ->where($db->quoteName('enabled') . ' = 1')
+            ->order($db->quoteName('name') . ' ASC');
+
+        return $db->setQuery($query)->loadObjectList();
+    }
+
+    /**
+     * Get all enabled geozones.
+     *
+     * @return array  List of objects with id and name.
+     */
+    public static function getGeozones(DatabaseInterface $db): array
+    {
+        $query = $db->getQuery(true)
+            ->select([
+                $db->quoteName('j2commerce_geozone_id', 'id'),
+                $db->quoteName('geozone_name', 'name'),
+            ])
+            ->from($db->quoteName('#__j2commerce_geozones'))
+            ->where($db->quoteName('enabled') . ' = 1')
+            ->order($db->quoteName('geozone_name') . ' ASC');
+
+        return $db->setQuery($query)->loadObjectList();
     }
 }
