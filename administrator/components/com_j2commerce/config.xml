@@ -61,7 +61,7 @@
             name="country_id"
             type="country"
             label="COM_J2COMMERCE_CONFIG_STORE_COUNTRY"
-            default="223"
+            default=""
         >
             <option value="">COM_J2COMMERCE_SELECT_COUNTRY</option>
         </field>

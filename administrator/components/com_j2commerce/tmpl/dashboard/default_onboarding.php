@@ -178,11 +178,12 @@ $e = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
             </div>
             <div class="col-md-6">
               <div class="form-floating">
-                <select class="form-select" id="ob-zone" name="zone_id" aria-label="<?php echo $e(Text::_('COM_J2COMMERCE_CONFIG_STORE_ZONE')); ?>">
-                  <option value="0"><?php echo Text::_('COM_J2COMMERCE_SELECT_ZONE'); ?></option>
+                <select class="form-select" id="ob-zone" name="zone_id" required aria-label="<?php echo $e(Text::_('COM_J2COMMERCE_CONFIG_STORE_ZONE')); ?>">
+                  <option value=""><?php echo Text::_('COM_J2COMMERCE_SELECT_ZONE'); ?></option>
                 </select>
-                <label for="ob-zone"><?php echo Text::_('COM_J2COMMERCE_CONFIG_STORE_ZONE'); ?></label>
+                <label for="ob-zone"><?php echo Text::_('COM_J2COMMERCE_CONFIG_STORE_ZONE'); ?> <span class="text-danger">*</span></label>
               </div>
+              <div class="invalid-feedback"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_ERR_REQUIRED'); ?></div>
             </div>
             <div class="col-md-6">
               <div class="form-floating">

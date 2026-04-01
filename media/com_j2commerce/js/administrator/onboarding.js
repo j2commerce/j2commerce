@@ -85,9 +85,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const newOptions = doc.querySelectorAll('option');
                 zoneEl.replaceChildren(...newOptions);
 
-                // Explicitly set the saved zone value after replacing options
+                // Explicitly set the zone value after replacing options
                 if (savedZoneId) {
                     zoneEl.value = String(savedZoneId);
+                } else {
+                    zoneEl.selectedIndex = 0;
                 }
             }
         } catch {
@@ -277,6 +279,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 valid = false;
             } else {
                 country.classList.remove('is-invalid');
+            }
+        }
+
+        const zone = modal.querySelector('#ob-zone');
+        if (zone) {
+            if (!zone.value) {
+                zone.classList.add('is-invalid');
+                valid = false;
+            } else {
+                zone.classList.remove('is-invalid');
             }
         }
 
@@ -591,6 +603,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const countryId = countryEl.value;
             loadZones(countryId, 0);
             updateDefaultsPreview(countryId);
+
+            const zoneEl = modal.querySelector('#ob-zone');
+            if (zoneEl) zoneEl.classList.remove('is-invalid');
         });
     }
 
