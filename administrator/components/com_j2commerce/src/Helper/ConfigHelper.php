@@ -1072,18 +1072,6 @@ class ConfigHelper
     }
 
     /**
-     * Check if content should be prepared (plugins)
-     *
-     * @return  bool  True to prepare
-     *
-     * @since   6.0.0
-     */
-    public static function shouldPrepareContent(): bool
-    {
-        return (int) self::get('prepare_content', 0) === 1;
-    }
-
-    /**
      * Get the download ID for updates
      *
      * @return  string  Download ID
