@@ -130,6 +130,16 @@
             this.modalEl.addEventListener('hidden.bs.modal', () => {
                 this.browserSelections.clear();
                 this.uploadedInSession = [];
+                // Reset Uppy so it reinitializes fresh on next modal open
+                if (this.dashboardObserver) {
+                    this.dashboardObserver.disconnect();
+                    this.dashboardObserver = null;
+                }
+                if (this.uppy) {
+                    this.uppy.clear();
+                    this.uppy.destroy();
+                    this.uppy = null;
+                }
             });
 
             // Done button
@@ -205,15 +215,29 @@
                 locale: this.getLocale(),
             });
 
-            // Replace Uppy's default AddFiles UI with a button + hint matching the empty state
-            const addFilesEl = dashboardTarget.querySelector('.uppy-Dashboard-AddFiles');
-            if (addFilesEl) {
+            // Replace Uppy's default AddFiles UI with custom button + hint.
+            // Uses MutationObserver because Uppy re-renders AddFiles when "+ Add more" is clicked.
+            const customizeAddFiles = () => {
+                const addFilesEl = dashboardTarget.querySelector('.uppy-Dashboard-AddFiles');
+                if (!addFilesEl || addFilesEl.dataset.j2customized) return;
+                addFilesEl.dataset.j2customized = '1';
                 const inner = addFilesEl.querySelector('.uppy-Dashboard-AddFiles-title');
                 if (inner) {
                     inner.innerHTML = `<span class="uppymedia-uppy-btn"><i class="fa-solid fa-images" aria-hidden="true"></i> ${this.escapeHtml(this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_ADD_PRODUCT_IMAGES'))}</span>`
                         + `<p class="uppymedia-uppy-hint">${this.escapeHtml(this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_DRAG_DROP_NOTE'))}</p>`;
                 }
-            }
+                const browseSpan = addFilesEl.querySelector('.uppymedia-uppy-btn');
+                if (browseSpan) {
+                    browseSpan.style.cursor = 'pointer';
+                    browseSpan.addEventListener('click', () => {
+                        const fileInput = dashboardTarget.querySelector('.uppy-Dashboard-input');
+                        if (fileInput) fileInput.click();
+                    });
+                }
+            };
+            customizeAddFiles();
+            this.dashboardObserver = new MutationObserver(() => customizeAddFiles());
+            this.dashboardObserver.observe(dashboardTarget, { childList: true, subtree: true });
 
             if (!this.options.fileMode) {
                 this.uppy.use(Uppy.ThumbnailGenerator, {
