@@ -47,12 +47,16 @@ class VariantPriceField extends FormField
         $currencyHelper = new CurrencyHelper();
         $currencySymbol = $currencyHelper->getSymbol();
 
+        // Format value to match the currency's configured decimal places
+        $decimals = CurrencyHelper::getDecimalPlace();
+        $value    = number_format((float) ($this->value ?? 0), $decimals, '.', '');
+
         // Build attributes
         $attributes = [];
         $attributes[] = 'type="text"';
         $attributes[] = 'name="' . htmlspecialchars($this->name, ENT_COMPAT, 'UTF-8') . '"';
         $attributes[] = 'id="' . htmlspecialchars($this->id, ENT_COMPAT, 'UTF-8') . '"';
-        $attributes[] = 'value="' . htmlspecialchars((string) $this->value, ENT_COMPAT, 'UTF-8') . '"';
+        $attributes[] = 'value="' . htmlspecialchars($value, ENT_COMPAT, 'UTF-8') . '"';
         $attributes[] = 'class="form-control' . ($this->class ? ' ' . htmlspecialchars($this->class, ENT_COMPAT, 'UTF-8') : '') . '"';
         $attributes[] = 'inputmode="decimal"';
 

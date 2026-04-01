@@ -75,7 +75,10 @@ if ($options) {
     $list = 'list="' . $id . '_datalist"';
 }
 
-$currencySymbol = (new J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper)->getSymbol();
+$currencyHelper  = new J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper();
+$currencySymbol  = $currencyHelper->getSymbol();
+$currencyDecimals = CurrencyHelper::getDecimalPlace();
+$value = number_format((float) ($value ?? 0), $currencyDecimals, '.', '');
 
 
 $attributes = [
