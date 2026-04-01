@@ -52,6 +52,11 @@ document.addEventListener('DOMContentLoaded', () => {
         area.classList.add('d-none');
     }
 
+    function toggleElement(selector, show) {
+        const el = modal.querySelector(selector);
+        if (el) el.classList.toggle('d-none', !show);
+    }
+
     function setNextButtonSpinner(loading) {
         const btn = modal.querySelector('#ob-btn-next');
         if (!btn) return;
@@ -161,7 +166,16 @@ document.addEventListener('DOMContentLoaded', () => {
             currentStep = targetStep;
             updateStepper(targetStep);
             updateButtons(targetStep);
+            initStep(targetStep);
         }, 250);
+    }
+
+    function initStep(stepNum) {
+        if (stepNum === 5) {
+            // Initialize PayPal section visibility based on pre-checked state
+            updatePaypalSection();
+            updateDefaultPaymentDropdown();
+        }
     }
 
     function updateStepper(activeStep) {
@@ -201,8 +215,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const bar = modal.querySelector('#ob-progress-bar');
         if (bar) {
-            bar.style.width = (activeStep * 20) + '%';
-            bar.setAttribute('aria-valuenow', activeStep * 20);
+            const pct = Math.round(activeStep * 100 / 6);
+            bar.style.width = pct + '%';
+            bar.setAttribute('aria-valuenow', pct);
         }
     }
 
@@ -222,7 +237,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (btnSkip) {
-            if (activeStep === 1 || activeStep === 5) {
+            if (activeStep === 1 || activeStep === 6) {
                 btnSkip.setAttribute('hidden', '');
             } else {
                 btnSkip.removeAttribute('hidden');
@@ -230,12 +245,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (btnNext) {
-            if (activeStep === 5) {
+            if (activeStep === 6) {
                 btnNext.setAttribute('hidden', '');
             } else {
                 btnNext.removeAttribute('hidden');
                 if (labelEl) {
-                    if (activeStep === 4) {
+                    if (activeStep === 5) {
                         labelEl.textContent = Joomla.Text._('COM_J2COMMERCE_ONBOARDING_BTN_FINISH');
                     } else {
                         labelEl.textContent = Joomla.Text._('COM_J2COMMERCE_ONBOARDING_BTN_CONTINUE');
@@ -245,7 +260,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (footer) {
-            if (activeStep === 5) {
+            if (activeStep === 6) {
                 footer.setAttribute('hidden', '');
             } else {
                 footer.removeAttribute('hidden');
@@ -318,7 +333,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // Step 4: collect selected product type cards
+        // Step 4: collect selected product type cards + shipping rates
         if (stepNum === 4) {
             const selectedCards = modal.querySelectorAll('.j2c-product-type-card.selected');
             const types = [];
@@ -327,6 +342,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (t) types.push(t);
             });
             formData.append('product_types', types.join(','));
+            formData.append('shipping_rates', collectRates());
+        }
+
+        // Step 5: collect selected payment plugins
+        if (stepNum === 5) {
+            const checked = modal.querySelectorAll('#ob-payment-list input:checked');
+            const plugins = [];
+            checked.forEach(cb => plugins.push(cb.value));
+            formData.append('selected_payment_plugins', plugins.join(','));
         }
 
         formData.append(token, '1');
@@ -410,11 +434,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             case 4: {
                 goToStep(5, 'forward');
-                // Auto-save step 5 to mark complete
-                await saveStep(5);
                 break;
             }
             case 5: {
+                goToStep(6, 'forward');
+                // Auto-save step 6 to mark complete
+                await saveStep(6);
+                break;
+            }
+            case 6: {
                 buildSummary(data);
                 break;
             }
@@ -431,6 +459,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (data.measurements)  rows.push([Joomla.Text._('COM_J2COMMERCE_ONBOARDING_READY_SUMMARY_MEASUREMENTS'), data.measurements]);
         if (data.tax)           rows.push([Joomla.Text._('COM_J2COMMERCE_ONBOARDING_READY_SUMMARY_TAX'),          data.tax]);
         if (data.productTypes)  rows.push([Joomla.Text._('COM_J2COMMERCE_ONBOARDING_READY_SUMMARY_PRODUCTS'),     data.productTypes]);
+        if (data.shipping)      rows.push([Joomla.Text._('COM_J2COMMERCE_ONBOARDING_READY_SUMMARY_SHIPPING'),     data.shipping]);
+        if (data.payment)       rows.push([Joomla.Text._('COM_J2COMMERCE_ONBOARDING_READY_SUMMARY_PAYMENT'),      data.payment]);
 
         const table = document.createElement('table');
         table.className = 'table table-sm table-bordered';
@@ -477,6 +507,19 @@ document.addEventListener('DOMContentLoaded', () => {
             if (productType === 'physical') {
                 const note = modal.querySelector('#ob-shipping-question');
                 if (note) note.classList.toggle('d-none', !isSelected);
+
+                // Since "Yes" is pre-selected, show shipping sub-sections immediately
+                const shippingYes = modal.querySelector('#ob-shipping-yes');
+                const requireShipping = isSelected && shippingYes && shippingYes.checked;
+                toggleElement('#ob-free-shipping-question', requireShipping);
+                toggleElement('#ob-shipping-type-question', requireShipping);
+
+                // Hide everything when Physical deselected
+                if (!isSelected) {
+                    toggleElement('#ob-free-shipping-config', false);
+                    toggleElement('#ob-fixed-shipping-config', false);
+                    toggleElement('#ob-calculated-shipping-info', false);
+                }
             }
             return;
         }
@@ -496,7 +539,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 break;
             }
             case 'skip': {
-                if (currentStep > 1 && currentStep < 5) {
+                if (currentStep > 1 && currentStep < 6) {
                     goToStep(currentStep + 1, 'forward');
                 }
                 break;
@@ -581,6 +624,239 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+
+    // -------------------------------------------------------------------------
+    // Shipping sub-flow handlers
+    // -------------------------------------------------------------------------
+
+    modal.addEventListener('change', (e) => {
+        // Show/hide shipping sub-sections when require_shipping changes
+        if (e.target.name === 'require_shipping') {
+            const show = e.target.value === '1';
+            toggleElement('#ob-free-shipping-question', show);
+            toggleElement('#ob-shipping-type-question', show);
+            if (!show) {
+                toggleElement('#ob-free-shipping-config', false);
+                toggleElement('#ob-fixed-shipping-config', false);
+                toggleElement('#ob-calculated-shipping-info', false);
+            }
+        }
+
+        // Show/hide min subtotal when free shipping answer changes
+        if (e.target.name === 'offer_free_shipping') {
+            toggleElement('#ob-free-shipping-config', e.target.value === '1');
+        }
+
+        // Show/hide fixed vs calculated sections
+        if (e.target.name === 'shipping_rate_type') {
+            const val = e.target.value;
+            toggleElement('#ob-fixed-shipping-config', val === 'fixed' || val === 'both');
+            toggleElement('#ob-calculated-shipping-info', val === 'calculated' || val === 'both');
+        }
+
+        // Show/hide range columns based on shipping method type
+        if (e.target.name === 'shipping_method_type') {
+            const rangeTypes = [1, 2, 4, 5, 6];
+            const showRange = rangeTypes.includes(parseInt(e.target.value, 10));
+            modal.querySelectorAll('.ob-rate-range').forEach(el => {
+                el.classList.toggle('d-none', !showRange);
+            });
+        }
+
+        // Payment checkbox changes
+        if (e.target.closest('#ob-payment-list')) {
+            updateDefaultPaymentDropdown();
+            updatePaypalSection();
+
+            // Show warning if all unchecked
+            const anyChecked = modal.querySelectorAll('#ob-payment-list input:checked').length > 0;
+            toggleElement('#ob-payment-none-warning', !anyChecked);
+        }
+
+        // PayPal keys status radio
+        if (e.target.name === 'paypal_keys_status') {
+            toggleElement('#ob-paypal-keys', e.target.value === 'have_keys');
+            toggleElement('#ob-paypal-help-info', e.target.value === 'need_help');
+        }
+    });
+
+    // -------------------------------------------------------------------------
+    // Payment helpers
+    // -------------------------------------------------------------------------
+
+    function updateDefaultPaymentDropdown() {
+        const checked = modal.querySelectorAll('#ob-payment-list input:checked');
+        const select  = modal.querySelector('#ob-default-payment');
+        if (!select) return;
+
+        const currentVal = select.value;
+        // Keep the placeholder option
+        const placeholder = select.querySelector('option[value=""]');
+        select.replaceChildren();
+        if (placeholder) select.appendChild(placeholder);
+
+        checked.forEach(cb => {
+            const opt = document.createElement('option');
+            opt.value = cb.value;
+            opt.textContent = cb.dataset.label;
+            select.appendChild(opt);
+        });
+
+        // Restore selection if still valid
+        if ([...select.options].some(o => o.value === currentVal)) {
+            select.value = currentVal;
+        }
+
+        // Auto-select if only one real option
+        if (checked.length === 1) {
+            select.value = checked[0].value;
+        }
+
+        toggleElement('#ob-default-payment-section', checked.length > 0);
+    }
+
+    function updatePaypalSection() {
+        const paypalCb = modal.querySelector('#ob-payment-list input[value="payment_paypal"]');
+        const paypalChecked = paypalCb ? paypalCb.checked : false;
+        toggleElement('#ob-paypal-config', paypalChecked);
+        if (!paypalChecked) {
+            toggleElement('#ob-paypal-keys', false);
+            toggleElement('#ob-paypal-help-info', false);
+            // Reset radio selection
+            const radios = modal.querySelectorAll('input[name="paypal_keys_status"]');
+            radios.forEach(r => { r.checked = false; });
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Rate row management
+    // -------------------------------------------------------------------------
+
+    let rateRowCount = 1;
+    const MAX_RATE_ROWS = 10;
+
+    // Shipping rate + payment enable (delegated click handler)
+    modal.addEventListener('click', (e) => {
+        // "Enable Payment Methods" button — show the unpublished plugins list
+        if (e.target.closest('[data-action="enable-payment-plugins"]')) {
+            e.preventDefault();
+            toggleElement('#ob-payment-enable-list', true);
+            return;
+        }
+
+        // "Enable Selected" — move checked plugins to the main payment list
+        if (e.target.closest('[data-action="confirm-enable-payment"]')) {
+            e.preventDefault();
+            const enableList = modal.querySelector('#ob-payment-enable-list');
+            const mainList   = modal.querySelector('#ob-payment-list');
+            if (!enableList || !mainList) return;
+
+            const checked = enableList.querySelectorAll('input:checked');
+            if (checked.length === 0) return;
+
+            checked.forEach(cb => {
+                const div = document.createElement('div');
+                div.className = 'form-check';
+
+                const input = document.createElement('input');
+                input.className = 'form-check-input';
+                input.type = 'checkbox';
+                input.name = 'payment_plugins[]';
+                input.value = cb.value;
+                input.id = 'ob-pay-' + cb.value;
+                input.dataset.label = cb.dataset.label;
+                input.checked = true;
+
+                const label = document.createElement('label');
+                label.className = 'form-check-label';
+                label.htmlFor = input.id;
+                label.textContent = cb.dataset.label;
+
+                div.appendChild(input);
+                div.appendChild(label);
+                mainList.appendChild(div);
+
+                // Remove from the enable list
+                cb.closest('.form-check').remove();
+            });
+
+            // Show the main list, hide warning
+            mainList.classList.remove('d-none');
+            toggleElement('#ob-payment-none-warning', false);
+
+            // Update default dropdown and PayPal section
+            updateDefaultPaymentDropdown();
+            updatePaypalSection();
+            return;
+        }
+
+        if (e.target.closest('[data-action="add-rate"]')) {
+            e.preventDefault();
+            addRateRow();
+            return;
+        }
+        if (e.target.closest('[data-action="remove-rate"]')) {
+            e.preventDefault();
+            const row = e.target.closest('tr');
+            if (row) {
+                row.remove();
+                rateRowCount--;
+            }
+            return;
+        }
+    });
+
+    function addRateRow() {
+        if (rateRowCount >= MAX_RATE_ROWS) return;
+        rateRowCount++;
+
+        const tbody = modal.querySelector('#ob-rates-body');
+        if (!tbody) return;
+
+        const firstRow = tbody.querySelector('tr');
+        if (!firstRow) return;
+
+        const row = firstRow.cloneNode(true);
+        row.dataset.rateRow = rateRowCount;
+        row.querySelectorAll('input[type="number"]').forEach(input => { input.value = '0'; });
+
+        // Add remove button in the last cell
+        const lastCell = row.querySelector('td:last-child');
+        if (lastCell) {
+            lastCell.innerHTML = '';
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'btn btn-sm btn-link text-danger shadow-none';
+            btn.dataset.action = 'remove-rate';
+            btn.innerHTML = '<span class="fa-solid fa-trash-can" aria-hidden="true"></span>';
+            lastCell.appendChild(btn);
+        }
+
+        tbody.appendChild(row);
+    }
+
+    function collectRates() {
+        const rows = modal.querySelectorAll('#ob-rates-body tr[data-rate-row]');
+        const rates = [];
+
+        rows.forEach(row => {
+            const geozone    = row.querySelector('.ob-rate-geozone');
+            const price      = row.querySelector('.ob-rate-price');
+            const handling   = row.querySelector('.ob-rate-handling');
+            const weightStart = row.querySelector('.ob-rate-weight-start');
+            const weightEnd   = row.querySelector('.ob-rate-weight-end');
+
+            rates.push({
+                geozone_id:   parseInt(geozone?.value || '0', 10),
+                price:        parseFloat(price?.value || '0'),
+                handling:     parseFloat(handling?.value || '0'),
+                weight_start: parseFloat(weightStart?.value || '0'),
+                weight_end:   parseFloat(weightEnd?.value || '0'),
+            });
+        });
+
+        return JSON.stringify(rates);
+    }
 
     // -------------------------------------------------------------------------
     // Keyboard support for product type cards

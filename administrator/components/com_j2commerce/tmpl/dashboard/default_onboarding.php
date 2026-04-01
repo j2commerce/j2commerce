@@ -60,6 +60,45 @@ $lengthQuery = $db->getQuery(true)
     ->order($db->quoteName('ordering') . ' ASC');
 $lengths = $db->setQuery($lengthQuery)->loadObjectList();
 
+// Load ALL payment plugins for Step 5 (both published and unpublished)
+$paymentQuery = $db->getQuery(true)
+    ->select([
+        $db->quoteName('extension_id', 'id'),
+        $db->quoteName('element'),
+        $db->quoteName('name'),
+        $db->quoteName('params'),
+        $db->quoteName('enabled'),
+    ])
+    ->from($db->quoteName('#__extensions'))
+    ->where($db->quoteName('type') . ' = ' . $db->quote('plugin'))
+    ->where($db->quoteName('folder') . ' = ' . $db->quote('j2commerce'))
+    ->where($db->quoteName('element') . ' LIKE ' . $db->quote('payment_%'))
+    ->order($db->quoteName('name') . ' ASC');
+$allPaymentPlugins = $db->setQuery($paymentQuery)->loadObjectList();
+
+$lang = Factory::getApplication()->getLanguage();
+$paymentPlugins    = [];
+$unpublishedPlugins = [];
+
+foreach ($allPaymentPlugins as $plugin) {
+    $langPrefix = 'plg_j2commerce_' . $plugin->element;
+    $lang->load($langPrefix, JPATH_ADMINISTRATOR);
+    $lang->load($langPrefix, JPATH_PLUGINS . '/j2commerce/' . $plugin->element);
+
+    $params = new \Joomla\Registry\Registry($plugin->params);
+    $displayName = $params->get('display_name', '');
+    $plugin->display_name = $displayName ?: Text::_(strtoupper('PLG_J2COMMERCE_' . $plugin->element));
+
+    if ((int) $plugin->enabled === 1) {
+        $paymentPlugins[] = $plugin;
+    } else {
+        $unpublishedPlugins[] = $plugin;
+    }
+}
+
+// Load geozones for shipping rate entry
+$geozones = OnboardingHelper::getGeozones($db);
+
 // Existing config values (for resume)
 $storeName   = ConfigHelper::get('store_name', '');
 $address1    = ConfigHelper::get('store_address_1', '');
@@ -102,6 +141,7 @@ $e = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
             3 => Text::_('COM_J2COMMERCE_ONBOARDING_STEP3_LABEL'),
             4 => Text::_('COM_J2COMMERCE_ONBOARDING_STEP4_LABEL'),
             5 => Text::_('COM_J2COMMERCE_ONBOARDING_STEP5_LABEL'),
+            6 => Text::_('COM_J2COMMERCE_ONBOARDING_STEP6_LABEL'),
         ];
         foreach ($stepLabels as $num => $label) :
             $state = $num < $resumeStep ? 'completed' : ($num === $resumeStep ? 'active' : 'upcoming');
@@ -125,8 +165,9 @@ $e = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
 
       <!-- Progress bar -->
       <div class="progress j2c-onboarding-progress">
-        <div class="progress-bar" id="ob-progress-bar" role="progressbar" style="width: <?php echo $resumeStep * 20; ?>%"
-             aria-valuenow="<?php echo $resumeStep * 20; ?>" aria-valuemin="0" aria-valuemax="100"></div>
+        <?php $progressPct = (int) round($resumeStep * 100 / 6); ?>
+        <div class="progress-bar" id="ob-progress-bar" role="progressbar" style="width: <?php echo $progressPct; ?>%"
+             aria-valuenow="<?php echo $progressPct; ?>" aria-valuemin="0" aria-valuemax="100"></div>
       </div>
 
       <!-- Step content -->
@@ -384,13 +425,264 @@ $e = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
             </div>
             <div class="form-text"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_SHIPPING_NOTE'); ?></div>
           </div>
+
+          <!-- Free shipping question (shown when require_shipping = Yes) -->
+          <div class="mt-3 d-none" id="ob-free-shipping-question">
+            <label class="form-label"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_FREE_SHIPPING_QUESTION'); ?></label>
+            <div class="d-flex gap-3">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="offer_free_shipping" id="ob-free-yes" value="1">
+                <label class="form-check-label" for="ob-free-yes"><?php echo Text::_('JYES'); ?></label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="offer_free_shipping" id="ob-free-no" value="0">
+                <label class="form-check-label" for="ob-free-no"><?php echo Text::_('JNO'); ?></label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Free shipping min subtotal (shown when offer_free_shipping = Yes) -->
+          <div class="mt-3 d-none" id="ob-free-shipping-config">
+            <label class="form-label" for="ob-free-min-subtotal"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_FREE_SHIPPING_MIN_SUBTOTAL'); ?></label>
+            <div class="col-md-6">
+              <input type="number" class="form-control" id="ob-free-min-subtotal" name="free_shipping_min_subtotal" value="0" min="0" step="0.01" placeholder="<?php echo $e(Text::_('COM_J2COMMERCE_ONBOARDING_FREE_SHIPPING_MIN_SUBTOTAL_PLACEHOLDER')); ?>">
+            </div>
+            <div class="form-text"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_FREE_SHIPPING_MIN_SUBTOTAL_DESC'); ?></div>
+          </div>
+
+          <!-- Fixed vs Calculated question (shown when require_shipping = Yes) -->
+          <div class="mt-3 d-none" id="ob-shipping-type-question">
+            <label class="form-label"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_SHIPPING_TYPE_QUESTION'); ?></label>
+            <div class="d-flex flex-column gap-2">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="shipping_rate_type" id="ob-rate-fixed" value="fixed">
+                <label class="form-check-label" for="ob-rate-fixed">
+                  <strong><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_SHIPPING_TYPE_FIXED'); ?></strong>
+                  <div class="form-text mt-0"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_SHIPPING_TYPE_FIXED_DESC'); ?></div>
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="shipping_rate_type" id="ob-rate-calculated" value="calculated">
+                <label class="form-check-label" for="ob-rate-calculated">
+                  <strong><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_SHIPPING_TYPE_CALCULATED'); ?></strong>
+                  <div class="form-text mt-0"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_SHIPPING_TYPE_CALCULATED_DESC'); ?></div>
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="shipping_rate_type" id="ob-rate-both" value="both">
+                <label class="form-check-label" for="ob-rate-both">
+                  <strong><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_SHIPPING_TYPE_BOTH'); ?></strong>
+                  <div class="form-text mt-0"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_SHIPPING_TYPE_BOTH_DESC'); ?></div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Calculated shipping info (shown when shipping_rate_type = calculated or both) -->
+          <div class="mt-3 d-none" id="ob-calculated-shipping-info">
+            <div class="alert alert-info d-flex align-items-start gap-3">
+              <span class="fa-solid fa-truck-plane fa-2x mt-1 text-primary" aria-hidden="true"></span>
+              <div>
+                <strong><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_SHIPPING_CALCULATED_LINK'); ?></strong>
+                <p class="mb-2"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_SHIPPING_CALCULATED_INFO'); ?></p>
+                <a href="https://www.j2commerce.com/extensions/shipping-plugins" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-info shadow-none">
+                  <?php echo Text::_('COM_J2COMMERCE_ONBOARDING_SHIPPING_CALCULATED_LINK'); ?>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Fixed shipping config (shown when shipping_rate_type = fixed) -->
+          <div class="mt-3 d-none" id="ob-fixed-shipping-config">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label" for="ob-shipping-method-type"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_SHIPPING_FIXED_TYPE'); ?></label>
+                <select class="form-select" id="ob-shipping-method-type" name="shipping_method_type">
+                  <option value="0"><?php echo Text::_('COM_J2COMMERCE_SHIPPING_TYPE_PER_ORDER_FLAT'); ?></option>
+                  <option value="1"><?php echo Text::_('COM_J2COMMERCE_SHIPPING_TYPE_PER_ORDER_QUANTITY'); ?></option>
+                  <option value="2"><?php echo Text::_('COM_J2COMMERCE_SHIPPING_TYPE_PER_ORDER_PRICE'); ?></option>
+                  <option value="3"><?php echo Text::_('COM_J2COMMERCE_SHIPPING_TYPE_PER_ITEM_FLAT'); ?></option>
+                  <option value="4"><?php echo Text::_('COM_J2COMMERCE_SHIPPING_TYPE_PER_ITEM_WEIGHT'); ?></option>
+                  <option value="5"><?php echo Text::_('COM_J2COMMERCE_SHIPPING_TYPE_PER_ORDER_WEIGHT'); ?></option>
+                  <option value="6"><?php echo Text::_('COM_J2COMMERCE_SHIPPING_TYPE_PER_ITEM_PERCENTAGE'); ?></option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="ob-shipping-method-name"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_SHIPPING_METHOD_NAME'); ?></label>
+                <input type="text" class="form-control" id="ob-shipping-method-name" name="shipping_method_name" value="<?php echo $e(Text::_('COM_J2COMMERCE_ONBOARDING_SHIPPING_METHOD_NAME_DEFAULT')); ?>" maxlength="255">
+              </div>
+            </div>
+
+            <!-- Rate entry table -->
+            <div class="mt-3">
+              <table class="table table-sm ob-rates-table mb-0">
+                <thead>
+                  <tr>
+                    <th><?php echo Text::_('COM_J2COMMERCE_GEOZONE'); ?></th>
+                    <th class="ob-rate-range d-none"><?php echo Text::_('COM_J2COMMERCE_FIELD_RANGE_START'); ?></th>
+                    <th class="ob-rate-range d-none"><?php echo Text::_('COM_J2COMMERCE_FIELD_RANGE_END'); ?></th>
+                    <th><?php echo Text::_('COM_J2COMMERCE_SHIPPING_COST'); ?></th>
+                    <th><?php echo Text::_('COM_J2COMMERCE_HANDLING_COST'); ?></th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="ob-rates-body">
+                  <tr data-rate-row="1">
+                    <td>
+                      <select class="form-select form-select-sm ob-rate-geozone">
+                        <?php foreach ($geozones as $gz) : ?>
+                          <option value="<?php echo (int) $gz->id; ?>"><?php echo $e($gz->name); ?></option>
+                        <?php endforeach; ?>
+                        <?php if (empty($geozones)) : ?>
+                          <option value="0"><?php echo Text::_('COM_J2COMMERCE_OPTION_NONE'); ?></option>
+                        <?php endif; ?>
+                      </select>
+                    </td>
+                    <td class="ob-rate-range d-none">
+                      <input type="number" class="form-control form-control-sm ob-rate-weight-start" value="0" min="0" step="0.001">
+                    </td>
+                    <td class="ob-rate-range d-none">
+                      <input type="number" class="form-control form-control-sm ob-rate-weight-end" value="0" min="0" step="0.001">
+                    </td>
+                    <td>
+                      <input type="number" class="form-control form-control-sm ob-rate-price" value="0" min="0" step="0.01">
+                    </td>
+                    <td>
+                      <input type="number" class="form-control form-control-sm ob-rate-handling" value="0" min="0" step="0.01">
+                    </td>
+                    <td></td>
+                  </tr>
+                </tbody>
+              </table>
+              <div class="text-end mt-2">
+                <button type="button" class="btn btn-sm btn-success shadow-none" data-action="add-rate">
+                  <span class="fa-solid fa-plus me-1" aria-hidden="true"></span>
+                  <?php echo Text::_('COM_J2COMMERCE_ONBOARDING_SHIPPING_ADD_RATE'); ?>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <!-- ============ STEP 5: Ready! ============ -->
+        <!-- ============ STEP 5: Payment ============ -->
         <div class="j2c-step" data-step="5" <?php echo $resumeStep !== 5 ? 'hidden' : ''; ?>>
-          <div class="j2c-step-icon j2c-celebration-icon"><span class="fa-solid fa-circle-check text-primary" aria-hidden="true"></span></div>
+          <div class="j2c-step-icon"><span class="fa-solid fa-credit-card" aria-hidden="true"></span></div>
           <h4 class="j2c-step-title"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_STEP5_TITLE'); ?></h4>
           <p class="j2c-step-desc"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_STEP5_DESC'); ?></p>
+          <hr>
+
+          <!-- Payment plugin checkbox list -->
+          <label class="form-label mb-2"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_PAYMENT_SELECT'); ?></label>
+          <div class="border rounded mb-3 <?php echo empty($paymentPlugins) ? 'd-none' : ''; ?>" id="ob-payment-list">
+            <?php foreach ($paymentPlugins as $plugin) : ?>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="payment_plugins[]"
+                       value="<?php echo $e($plugin->element); ?>"
+                       id="ob-pay-<?php echo $e($plugin->element); ?>"
+                       data-label="<?php echo $e($plugin->display_name); ?>"
+                       checked>
+                <label class="form-check-label" for="ob-pay-<?php echo $e($plugin->element); ?>"><?php echo $e($plugin->display_name); ?></label>
+              </div>
+            <?php endforeach; ?>
+          </div>
+
+          <!-- Warning shown when no payment plugins are published -->
+          <div class="<?php echo !empty($paymentPlugins) ? 'd-none' : ''; ?>" id="ob-payment-none-warning">
+            <div class="alert alert-warning">
+              <span class="fa-solid fa-triangle-exclamation me-1" aria-hidden="true"></span>
+              <?php echo Text::_('COM_J2COMMERCE_ONBOARDING_PAYMENT_NONE_WARNING'); ?>
+              <?php if (!empty($unpublishedPlugins)) : ?>
+                <div class="mt-2">
+                  <button type="button" class="btn btn-sm btn-warning shadow-none" data-action="enable-payment-plugins">
+                    <span class="fa-solid fa-plug me-1" aria-hidden="true"></span>
+                    <?php echo Text::_('COM_J2COMMERCE_ONBOARDING_PAYMENT_ENABLE_BTN'); ?>
+                  </button>
+                </div>
+              <?php endif; ?>
+            </div>
+
+            <!-- Hidden checkbox list of unpublished payment plugins -->
+            <?php if (!empty($unpublishedPlugins)) : ?>
+              <div class="mb-3 d-none" id="ob-payment-enable-list">
+                <?php foreach ($unpublishedPlugins as $plugin) : ?>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="enable_payment_plugins[]"
+                           value="<?php echo $e($plugin->element); ?>"
+                           id="ob-enable-<?php echo $e($plugin->element); ?>"
+                           data-label="<?php echo $e($plugin->display_name); ?>">
+                    <label class="form-check-label" for="ob-enable-<?php echo $e($plugin->element); ?>"><?php echo $e($plugin->display_name); ?></label>
+                  </div>
+                <?php endforeach; ?>
+                <div class="p-2 text-end">
+                  <button type="button" class="btn btn-sm btn-success shadow-none" data-action="confirm-enable-payment">
+                    <span class="fa-solid fa-check me-1" aria-hidden="true"></span>
+                    <?php echo Text::_('COM_J2COMMERCE_ONBOARDING_PAYMENT_ENABLE_CONFIRM'); ?>
+                  </button>
+                </div>
+              </div>
+            <?php endif; ?>
+          </div>
+
+          <!-- Default payment dropdown (shown when at least one plugin checked) -->
+          <div class="mb-3 <?php echo empty($paymentPlugins) ? 'd-none' : ''; ?>" id="ob-default-payment-section">
+            <label class="form-label" for="ob-default-payment"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_PAYMENT_DEFAULT'); ?></label>
+            <select class="form-select" id="ob-default-payment" name="default_payment_method">
+              <option value=""><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_PAYMENT_SELECT_DEFAULT'); ?></option>
+              <?php foreach ($paymentPlugins as $plugin) : ?>
+                <option value="<?php echo $e($plugin->element); ?>"><?php echo $e($plugin->display_name); ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+
+          <!-- PayPal configuration (shown when PayPal is checked) -->
+          <div class="d-none" id="ob-paypal-config">
+            <hr>
+            <label class="form-label"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_PAYPAL_HAVE_KEYS'); ?></label>
+            <div class="d-flex gap-3 mb-3">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="paypal_keys_status" id="ob-paypal-have" value="have_keys">
+                <label class="form-check-label" for="ob-paypal-have"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_PAYPAL_YES_KEYS'); ?></label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="paypal_keys_status" id="ob-paypal-help" value="need_help">
+                <label class="form-check-label" for="ob-paypal-help"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_PAYPAL_NEED_HELP'); ?></label>
+              </div>
+            </div>
+
+            <!-- PayPal key fields (shown when have_keys selected) -->
+            <div class="d-none" id="ob-paypal-keys">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label" for="ob-paypal-client-id"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_PAYPAL_CLIENT_ID'); ?></label>
+                  <input type="text" class="form-control" id="ob-paypal-client-id" name="paypal_client_id" placeholder="<?php echo $e(Text::_('COM_J2COMMERCE_ONBOARDING_PAYPAL_CLIENT_ID_PLACEHOLDER')); ?>">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label" for="ob-paypal-client-secret"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_PAYPAL_CLIENT_SECRET'); ?></label>
+                  <input type="text" class="form-control" id="ob-paypal-client-secret" name="paypal_client_secret" placeholder="<?php echo $e(Text::_('COM_J2COMMERCE_ONBOARDING_PAYPAL_CLIENT_SECRET_PLACEHOLDER')); ?>">
+                </div>
+              </div>
+            </div>
+
+            <!-- PayPal help link (shown when need_help selected) -->
+            <div class="d-none" id="ob-paypal-help-info">
+              <div class="alert alert-info">
+                <span class="fa-solid fa-book me-1" aria-hidden="true"></span>
+                <?php echo Text::_('COM_J2COMMERCE_ONBOARDING_PAYPAL_HELP_TEXT'); ?>
+                <div class="mt-2">
+                  <a href="https://docs.j2commerce.com/v6/payment-methods/payment_paypal" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-info shadow-none">
+                    <?php echo Text::_('COM_J2COMMERCE_ONBOARDING_PAYPAL_HELP_LINK'); ?>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============ STEP 6: Ready! ============ -->
+        <div class="j2c-step" data-step="6" <?php echo $resumeStep !== 6 ? 'hidden' : ''; ?>>
+          <div class="j2c-step-icon j2c-celebration-icon"><span class="fa-solid fa-circle-check text-primary" aria-hidden="true"></span></div>
+          <h4 class="j2c-step-title"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_STEP6_TITLE'); ?></h4>
+          <p class="j2c-step-desc"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_STEP6_DESC'); ?></p>
           <hr>
 
           <div class="card mb-4 shadow-none">
@@ -400,19 +692,25 @@ $e = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
           </div>
 
           <div class="row g-3 text-center">
-            <div class="col-md-4">
-              <a href="index.php?option=com_content&view=article&layout=edit" class="btn btn-primary w-100">
+            <div class="col-md-3">
+              <button type="button" class="btn btn-outline-secondary w-100 shadow-none" data-action="back">
+                <span class="fa-solid fa-chevron-left me-1" aria-hidden="true"></span>
+                <?php echo Text::_('COM_J2COMMERCE_ONBOARDING_BTN_BACK'); ?>
+              </button>
+            </div>
+            <div class="col-md-3">
+              <a href="index.php?option=com_content&view=article&layout=edit" class="btn btn-primary w-100 shadow-none">
                 <span class="fa-solid fa-plus me-1" aria-hidden="true"></span>
                 <?php echo Text::_('COM_J2COMMERCE_ONBOARDING_READY_ADD_PRODUCT'); ?>
               </a>
             </div>
-            <div class="col-md-4">
-              <a href="index.php?option=com_j2commerce&view=dashboard" class="btn btn-outline-primary w-100" data-action="close-onboarding">
+            <div class="col-md-3">
+              <a href="index.php?option=com_j2commerce&view=dashboard" class="btn btn-outline-primary w-100 shadow-none" data-action="close-onboarding">
                 <span class="fa-solid fa-gauge-high me-1" aria-hidden="true"></span>
                 <?php echo Text::_('COM_J2COMMERCE_ONBOARDING_READY_DASHBOARD'); ?>
               </a>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
               <a href="index.php?option=com_config&view=component&component=com_j2commerce" class="btn btn-outline-secondary w-100 shadow-none">
                 <span class="fa-solid fa-gear me-1" aria-hidden="true"></span>
                 <?php echo Text::_('COM_J2COMMERCE_ONBOARDING_READY_SETTINGS'); ?>

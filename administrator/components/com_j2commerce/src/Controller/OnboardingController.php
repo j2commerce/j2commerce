@@ -61,7 +61,7 @@ class OnboardingController extends BaseController
 
     /**
      * Save a single onboarding step.
-     * POST params: step (int 1-5) + step-specific form fields.
+     * POST params: step (int 1-6) + step-specific form fields.
      */
     public function saveStep(): void
     {
@@ -83,6 +83,7 @@ class OnboardingController extends BaseController
                 3 => $this->saveStep3(),
                 4 => $this->saveStep4(),
                 5 => $this->saveStep5(),
+                6 => $this->saveStep6(),
                 default => throw new \InvalidArgumentException('Invalid step number'),
             };
 
@@ -344,22 +345,115 @@ class OnboardingController extends BaseController
 
     private function saveStep4(): array
     {
+        $db = $this->getDb();
+        $requireShipping   = $this->input->getInt('require_shipping', 1);
+        $offerFreeShipping = $this->input->getInt('offer_free_shipping', 0);
+        $shippingRateType  = $this->input->getString('shipping_rate_type', '');
+
         $config = [
-            'onboarding_product_types' => $this->input->getString('product_types', ''),
-            'require_shipping'         => (string) $this->input->getInt('require_shipping', 1),
-            'onboarding_last_step'     => '4',
+            'onboarding_product_types'      => $this->input->getString('product_types', ''),
+            'require_shipping'              => (string) $requireShipping,
+            'onboarding_shipping_rate_type' => $shippingRateType,
+            'onboarding_last_step'          => '4',
         ];
 
         OnboardingHelper::persistConfig($config);
 
-        return ['saved' => true];
+        if ($requireShipping === 1) {
+            // Free shipping configuration
+            if ($offerFreeShipping === 1) {
+                $minSubtotal = $this->input->getString('free_shipping_min_subtotal', '0');
+                OnboardingHelper::updatePluginParam('shipping_free', 'j2commerce', [
+                    'min_subtotal' => $minSubtotal,
+                ], $db);
+                OnboardingHelper::setPluginEnabled('shipping_free', 'j2commerce', 1, $db);
+            } else {
+                OnboardingHelper::setPluginEnabled('shipping_free', 'j2commerce', 0, $db);
+            }
+
+            // Fixed shipping rates (also applies to "both")
+            if ($shippingRateType === 'fixed' || $shippingRateType === 'both') {
+                $methodType = $this->input->getInt('shipping_method_type', 0);
+                $methodName = $this->input->getString('shipping_method_name', 'Standard Shipping');
+                $ratesJson  = $this->input->getRaw('shipping_rates');
+                $rates      = json_decode($ratesJson ?: '[]', true) ?: [];
+
+                if ($methodName !== '' && !empty($rates)) {
+                    $methodId = OnboardingHelper::createShippingMethod($methodName, $methodType, $db);
+                    OnboardingHelper::createShippingRates($methodId, $rates, $db);
+                }
+            }
+        }
+
+        return ['saved' => true, 'requireShipping' => $requireShipping];
     }
 
     private function saveStep5(): array
     {
+        $db              = $this->getDb();
+        $selectedPlugins = $this->input->getString('selected_payment_plugins', '');
+        $selectedArray   = array_filter(explode(',', $selectedPlugins));
+        $defaultPayment  = $this->input->getString('default_payment_method', '');
+
+        // Get ALL payment plugins regardless of current enabled state
+        $query = $db->getQuery(true)
+            ->select([$db->quoteName('extension_id'), $db->quoteName('element')])
+            ->from($db->quoteName('#__extensions'))
+            ->where($db->quoteName('type') . ' = ' . $db->quote('plugin'))
+            ->where($db->quoteName('folder') . ' = ' . $db->quote('j2commerce'))
+            ->where($db->quoteName('element') . ' LIKE ' . $db->quote('payment_%'));
+        $allPlugins = $db->setQuery($query)->loadObjectList();
+
+        // Publish selected, unpublish unselected
+        foreach ($allPlugins as $plugin) {
+            $shouldEnable = \in_array($plugin->element, $selectedArray, true);
+            OnboardingHelper::setPluginEnabled($plugin->element, 'j2commerce', $shouldEnable ? 1 : 0, $db);
+        }
+
+        // PayPal credentials
+        $paypalClientId     = $this->input->getString('paypal_client_id', '');
+        $paypalClientSecret = $this->input->getString('paypal_client_secret', '');
+
+        if (\in_array('payment_paypal', $selectedArray, true) && $paypalClientId !== '' && $paypalClientSecret !== '') {
+            OnboardingHelper::updatePluginParam('payment_paypal', 'j2commerce', [
+                'client_id'     => $paypalClientId,
+                'client_secret' => $paypalClientSecret,
+            ], $db);
+        }
+
+        // Validation: if no payment selected OR (PayPal only + no keys), unpublish all
+        $paypalOnly      = \count($selectedArray) === 1 && $selectedArray[0] === 'payment_paypal';
+        $paypalKeysEmpty = $paypalClientId === '' || $paypalClientSecret === '';
+
+        if (empty($selectedArray) || ($paypalOnly && $paypalKeysEmpty)) {
+            foreach ($allPlugins as $plugin) {
+                OnboardingHelper::setPluginEnabled($plugin->element, 'j2commerce', 0, $db);
+            }
+            $paymentConfigured = false;
+        } else {
+            $paymentConfigured = true;
+        }
+
+        // Set default payment method
+        if ($paymentConfigured && $defaultPayment !== '') {
+            OnboardingHelper::persistConfig(['default_payment_method' => $defaultPayment]);
+        }
+
+        OnboardingHelper::persistConfig(['onboarding_last_step' => '5']);
+
+        return [
+            'saved'             => true,
+            'paymentConfigured' => $paymentConfigured,
+            'selectedPlugins'   => $selectedArray,
+            'defaultPayment'    => $defaultPayment,
+        ];
+    }
+
+    private function saveStep6(): array
+    {
         OnboardingHelper::persistConfig([
             'onboarding_complete'  => '1',
-            'onboarding_last_step' => '5',
+            'onboarding_last_step' => '6',
         ]);
 
         $db = $this->getDb();
@@ -389,6 +483,8 @@ class OnboardingController extends BaseController
             'measurements' => trim($weightTitle . ' / ' . $lengthTitle, ' /'),
             'tax'          => $tax,
             'productTypes' => ConfigHelper::get('onboarding_product_types', ''),
+            'shipping'     => $this->getShippingSummary(),
+            'payment'      => $this->getPaymentSummary(),
         ];
     }
 
@@ -414,5 +510,137 @@ class OnboardingController extends BaseController
             ->bind(':id', $id, ParameterType::INTEGER);
 
         return (string) $db->setQuery($query)->loadResult();
+    }
+
+    private function getShippingSummary(): string
+    {
+        $requireShipping = (int) ConfigHelper::get('require_shipping', 1);
+
+        if ($requireShipping === 0) {
+            return Text::_('COM_J2COMMERCE_ONBOARDING_SHIPPING_NOT_REQUIRED');
+        }
+
+        $db    = $this->getDb();
+        $parts = [];
+
+        // Check free shipping plugin
+        $query = $db->getQuery(true)
+            ->select([$db->quoteName('enabled'), $db->quoteName('params')])
+            ->from($db->quoteName('#__extensions'))
+            ->where($db->quoteName('element') . ' = ' . $db->quote('shipping_free'))
+            ->where($db->quoteName('folder') . ' = ' . $db->quote('j2commerce'))
+            ->where($db->quoteName('type') . ' = ' . $db->quote('plugin'));
+        $freePlugin = $db->setQuery($query)->loadObject();
+
+        if ($freePlugin && (int) $freePlugin->enabled === 1) {
+            $freeParams  = new \Joomla\Registry\Registry($freePlugin->params);
+            $minSubtotal = (float) $freeParams->get('min_subtotal', 0);
+
+            if ($minSubtotal > 0) {
+                $parts[] = Text::sprintf('Free shipping (min %s)', number_format($minSubtotal, 2));
+            } else {
+                $parts[] = 'Free shipping';
+            }
+        }
+
+        // Check standard shipping methods
+        $typeLabels = [
+            0 => Text::_('COM_J2COMMERCE_SHIPPING_TYPE_PER_ORDER_FLAT'),
+            1 => Text::_('COM_J2COMMERCE_SHIPPING_TYPE_PER_ORDER_QUANTITY'),
+            2 => Text::_('COM_J2COMMERCE_SHIPPING_TYPE_PER_ORDER_PRICE'),
+            3 => Text::_('COM_J2COMMERCE_SHIPPING_TYPE_PER_ITEM_FLAT'),
+            4 => Text::_('COM_J2COMMERCE_SHIPPING_TYPE_PER_ITEM_WEIGHT'),
+            5 => Text::_('COM_J2COMMERCE_SHIPPING_TYPE_PER_ORDER_WEIGHT'),
+            6 => Text::_('COM_J2COMMERCE_SHIPPING_TYPE_PER_ITEM_PERCENTAGE'),
+        ];
+
+        $query = $db->getQuery(true)
+            ->select([
+                $db->quoteName('m.shipping_method_name'),
+                $db->quoteName('m.shipping_method_type'),
+                $db->quoteName('m.j2commerce_shippingmethod_id', 'id'),
+            ])
+            ->from($db->quoteName('#__j2commerce_shippingmethods', 'm'))
+            ->where($db->quoteName('m.published') . ' = 1');
+        $methods = $db->setQuery($query)->loadObjectList();
+
+        foreach ($methods as $method) {
+            $type = (int) $method->shipping_method_type;
+            $typeName = $typeLabels[$type] ?? '';
+            $methodId = (int) $method->id;
+
+            // Count rates for this method
+            $rateQuery = $db->getQuery(true)
+                ->select('COUNT(*)')
+                ->from($db->quoteName('#__j2commerce_shippingrates'))
+                ->where($db->quoteName('shipping_method_id') . ' = :mid')
+                ->bind(':mid', $methodId, ParameterType::INTEGER);
+            $rateCount = (int) $db->setQuery($rateQuery)->loadResult();
+
+            $label = $method->shipping_method_name;
+
+            if ($typeName !== '') {
+                $label .= ' (' . $typeName . ')';
+            }
+
+            if ($rateCount > 0) {
+                $label .= ' — ' . $rateCount . ' ' . ($rateCount === 1 ? 'rate' : 'rates');
+            }
+
+            $parts[] = $label;
+        }
+
+        // Note if calculated carrier rates were also selected
+        $shippingRateType = ConfigHelper::get('onboarding_shipping_rate_type', '');
+
+        if ($shippingRateType === 'calculated' || $shippingRateType === 'both') {
+            if (empty($methods)) {
+                $parts[] = Text::_('COM_J2COMMERCE_ONBOARDING_SHIPPING_CALCULATED_LATER');
+            } else {
+                $parts[] = 'Calculated carrier rates (configure separately)';
+            }
+        }
+
+        if (empty($parts)) {
+            return Text::_('COM_J2COMMERCE_ONBOARDING_SHIPPING_CALCULATED_LATER');
+        }
+
+        return implode(' + ', $parts);
+    }
+
+    private function getPaymentSummary(): string
+    {
+        $db             = $this->getDb();
+        $defaultPayment = ConfigHelper::get('default_payment_method', '');
+
+        $plugins = OnboardingHelper::getPublishedPaymentPlugins($db);
+
+        if (empty($plugins)) {
+            return Text::_('COM_J2COMMERCE_ONBOARDING_PAYMENT_NOT_CONFIGURED');
+        }
+
+        $lang  = Factory::getApplication()->getLanguage();
+        $names = [];
+
+        foreach ($plugins as $plugin) {
+            $langPrefix = 'plg_j2commerce_' . $plugin->element;
+            $lang->load($langPrefix, JPATH_ADMINISTRATOR);
+            $lang->load($langPrefix, JPATH_PLUGINS . '/j2commerce/' . $plugin->element);
+
+            $params      = new \Joomla\Registry\Registry($plugin->params);
+            $displayName = $params->get('display_name', '');
+
+            if ($displayName === '') {
+                $displayName = Text::_(strtoupper('PLG_J2COMMERCE_' . $plugin->element));
+            }
+
+            if ($plugin->element === $defaultPayment) {
+                $displayName .= ' (default)';
+            }
+
+            $names[] = $displayName;
+        }
+
+        return implode(', ', $names);
     }
 }
