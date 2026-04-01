@@ -561,26 +561,28 @@ document.addEventListener('DOMContentLoaded', function() {
     // Heading edit link clicks - open that step
     document.addEventListener('click', function(e) {
         var link = e.target.closest('.checkout-heading a');
-        if (!link) return;
+        if (!link || link.classList.contains('checkout-logout')) return;
         e.preventDefault();
         var step = link.closest('[id]');
         if (!step) return;
         hideAllContents();
         slideDown(getContent(step.id));
-        link.setAttribute('aria-expanded', 'true');
+        // Remove the edit link from the step we just navigated to —
+        // being ON a step means its own "Change" link is redundant.
+        link.remove();
     });
 
     // Keyboard accessibility for edit links (Enter/Space)
     document.addEventListener('keydown', function(e) {
         if (e.key !== 'Enter' && e.key !== ' ') return;
         var link = e.target.closest('.checkout-heading a');
-        if (!link) return;
+        if (!link || link.classList.contains('checkout-logout')) return;
         e.preventDefault();
         var step = link.closest('[id]');
         if (!step) return;
         hideAllContents();
         slideDown(getContent(step.id));
-        link.setAttribute('aria-expanded', 'true');
+        link.remove();
     });
 
     // Toggle existing/new address form visibility (billing)
