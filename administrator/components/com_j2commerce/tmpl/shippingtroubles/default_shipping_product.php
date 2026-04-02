@@ -61,7 +61,7 @@ function getProductStatusBadge($status) {
             $text = 'COM_J2COMMERCE_SHIPPING_TROUBLESHOOTER_STATUS_UNKNOWN';
     }
 
-    return '<span class="badge ' . $badgeClass . '"><span class="fa-solid ' . $icon . ' me-1"></span>' . Text::_($text) . '</span>';
+    return '<span class="badge ' . $badgeClass . '"><span class="fa-solid ' . $icon . ' me-1" aria-hidden="true"></span>' . Text::_($text) . '</span>';
 }
 ?>
 <?php echo $this->navbar;?>
@@ -210,13 +210,13 @@ function getProductStatusBadge($status) {
                                             <div class="small text-muted mt-1">
                                                 <?php foreach ($product->shipping_issues as $issue): ?>
                                                     <div class="text-danger">
-                                                        <span class="fa-solid fa-times-circle me-1"></span>
+                                                        <span class="fa-solid fa-times-circle me-1" aria-hidden="true"></span>
                                                         <?php echo Text::_($issue); ?>
                                                     </div>
                                                 <?php endforeach; ?>
                                                 <?php foreach ($product->shipping_warnings as $warning): ?>
                                                     <div class="text-warning">
-                                                        <span class="fa-solid fa-exclamation-triangle me-1"></span>
+                                                        <span class="fa-solid fa-exclamation-triangle me-1" aria-hidden="true"></span>
                                                         <?php echo Text::_($warning); ?>
                                                     </div>
                                                 <?php endforeach; ?>

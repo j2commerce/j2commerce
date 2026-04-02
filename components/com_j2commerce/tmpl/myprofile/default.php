@@ -50,7 +50,7 @@ $menuParams = $this->menuItemParams;
             <button class="nav-link active" id="orders-tab" data-bs-toggle="tab"
                 data-bs-target="#orders-pane" type="button" role="tab"
                 aria-controls="orders-pane" aria-selected="true">
-                <span class="fa-solid fa-receipt me-1"></span>
+                <span class="fa-solid fa-receipt me-1" aria-hidden="true"></span>
                 <?php echo Text::_('COM_J2COMMERCE_MYPROFILE_ORDERS'); ?>
             </button>
         </li>
@@ -60,7 +60,7 @@ $menuParams = $this->menuItemParams;
             <button class="nav-link" id="downloads-tab" data-bs-toggle="tab"
                 data-bs-target="#downloads-pane" type="button" role="tab"
                 aria-controls="downloads-pane" aria-selected="false">
-                <span class="fa-solid fa-download me-1"></span>
+                <span class="fa-solid fa-download me-1" aria-hidden="true"></span>
                 <?php echo Text::_('COM_J2COMMERCE_MYPROFILE_DOWNLOADS'); ?>
             </button>
         </li>
@@ -71,7 +71,7 @@ $menuParams = $this->menuItemParams;
             <button class="nav-link" id="addresses-tab" data-bs-toggle="tab"
                 data-bs-target="#addresses-pane" type="button" role="tab"
                 aria-controls="addresses-pane" aria-selected="false">
-                <span class="fa-solid fa-map-marker me-1"></span>
+                <span class="fa-solid fa-map-marker me-1" aria-hidden="true"></span>
                 <?php echo Text::_('COM_J2COMMERCE_MYPROFILE_ADDRESSES'); ?>
             </button>
         </li>
@@ -82,7 +82,7 @@ $menuParams = $this->menuItemParams;
             <button class="nav-link" id="payment-methods-tab" data-bs-toggle="tab"
                 data-bs-target="#payment-methods-pane" type="button" role="tab"
                 aria-controls="payment-methods-pane" aria-selected="false">
-                <span class="fa-solid fa-credit-card me-1"></span>
+                <span class="fa-solid fa-credit-card me-1" aria-hidden="true"></span>
                 <?php echo Text::_('COM_J2COMMERCE_PAYMENT_METHODS_TITLE'); ?>
             </button>
         </li>

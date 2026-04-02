@@ -79,12 +79,12 @@ $clearCartUrl = J2CommerceHelper::platform()->getCartUrl(['task' => 'clearCart']
                                 <span class="cart-continue-shopping-button">
                                     <?php if ($this->continue_shopping_url->type !== 'previous'): ?>
                                         <button type="button" class="btn btn-primary btn-sm" onclick="window.location='<?php echo $this->continue_shopping_url->url; ?>';">
-                                            <span class="fa-solid fa-chevron-left me-1"></span>
+                                            <span class="fa-solid fa-chevron-left me-1" aria-hidden="true"></span>
                                             <?php echo Text::_('COM_J2COMMERCE_CART_CONTINUE_SHOPPING'); ?>
                                         </button>
                                     <?php else: ?>
                                         <button type="button" class="btn btn-primary btn-sm" onclick="window.history.back();">
-                                            <span class="fa-solid fa-chevron-left me-1"></span>
+                                            <span class="fa-solid fa-chevron-left me-1" aria-hidden="true"></span>
                                             <?php echo Text::_('COM_J2COMMERCE_CART_CONTINUE_SHOPPING'); ?>
                                         </button>
                                     <?php endif; ?>

@@ -43,23 +43,23 @@ $token = Session::getFormToken();
         <!-- Device Buttons -->
         <div class="btn-group" role="group">
             <button type="button" class="btn btn-outline-secondary active" data-device="desktop" data-bs-toggle="tooltip" title="<?php echo Text::_('COM_J2COMMERCE_BUILDER_DEVICE_DESKTOP'); ?>">
-                <span class="fa-solid fa-desktop"></span>
+                <span class="fa-solid fa-desktop" aria-hidden="true"></span>
             </button>
             <button type="button" class="btn btn-outline-secondary" data-device="tablet" data-bs-toggle="tooltip" title="<?php echo Text::_('COM_J2COMMERCE_BUILDER_DEVICE_TABLET'); ?>">
-                <span class="fa-solid fa-tablet-screen-button"></span>
+                <span class="fa-solid fa-tablet-screen-button" aria-hidden="true"></span>
             </button>
             <button type="button" class="btn btn-outline-secondary" data-device="mobile" data-bs-toggle="tooltip" title="<?php echo Text::_('COM_J2COMMERCE_BUILDER_DEVICE_MOBILE'); ?>">
-                <span class="fa-solid fa-mobile-screen-button"></span>
+                <span class="fa-solid fa-mobile-screen-button" aria-hidden="true"></span>
             </button>
         </div>
 
         <!-- Undo/Redo -->
         <div class="btn-group btn-group-sm" role="group">
             <button type="button" class="btn btn-outline-secondary" id="builder-undo" disabled data-bs-toggle="tooltip" title="<?php echo Text::_('COM_J2COMMERCE_BUILDER_UNDO'); ?>">
-                <span class="fa-solid fa-rotate-left"></span>
+                <span class="fa-solid fa-rotate-left" aria-hidden="true"></span>
             </button>
             <button type="button" class="btn btn-outline-secondary" id="builder-redo" disabled data-bs-toggle="tooltip" title="<?php echo Text::_('COM_J2COMMERCE_BUILDER_REDO'); ?>">
-                <span class="fa-solid fa-rotate-right"></span>
+                <span class="fa-solid fa-rotate-right" aria-hidden="true"></span>
             </button>
         </div>
 
@@ -71,7 +71,7 @@ $token = Session::getFormToken();
 
         <!-- Save Button -->
         <button type="button" class="btn btn-primary btn-sm" id="builder-save" disabled>
-            <span class="fa-solid fa-floppy-disk me-1"></span>
+            <span class="fa-solid fa-floppy-disk me-1" aria-hidden="true"></span>
             <span id="builder-save-label"><?php echo Text::_('COM_J2COMMERCE_BUILDER_SAVE'); ?></span>
         </button>
     </div>
@@ -86,11 +86,11 @@ $token = Session::getFormToken();
             <div class="card-builder card box-shadow-none">
                 <?php echo HTMLHelper::_('uitab.startTabSet', 'builderSidebarTabs', ['active' => 'builder-blocks', 'recall' => false, 'breakpoint' => 768]); ?>
 
-                    <?php echo HTMLHelper::_('uitab.addTab', 'builderSidebarTabs', 'builder-blocks', '<span class="fa-solid fa-cubes me-1"></span>' . Text::_('COM_J2COMMERCE_BUILDER_BLOCKS')); ?>
+                    <?php echo HTMLHelper::_('uitab.addTab', 'builderSidebarTabs', 'builder-blocks', '<span class="fa-solid fa-cubes me-1" aria-hidden="true"></span>' . Text::_('COM_J2COMMERCE_BUILDER_BLOCKS')); ?>
                         <!-- Templates button -->
                         <div class="mb-2">
                             <button type="button" class="btn btn-outline-secondary btn-sm w-100" id="builder-templates-btn">
-                                <span class="fa-solid fa-layer-group me-1"></span><?php echo Text::_('COM_J2COMMERCE_BUILDER_TEMPLATES'); ?>
+                                <span class="fa-solid fa-layer-group me-1" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_BUILDER_TEMPLATES'); ?>
                             </button>
                         </div>
                         <div id="builder-blocks-list">
@@ -100,13 +100,13 @@ $token = Session::getFormToken();
                         </div>
                     <?php echo HTMLHelper::_('uitab.endTab'); ?>
 
-                    <?php echo HTMLHelper::_('uitab.addTab', 'builderSidebarTabs', 'builder-properties', '<span class="fa-solid fa-sliders me-1"></span>' . Text::_('COM_J2COMMERCE_BUILDER_PROPERTIES')); ?>
+                    <?php echo HTMLHelper::_('uitab.addTab', 'builderSidebarTabs', 'builder-properties', '<span class="fa-solid fa-sliders me-1" aria-hidden="true"></span>' . Text::_('COM_J2COMMERCE_BUILDER_PROPERTIES')); ?>
                         <div id="builder-properties-panel">
                             <!-- Properties panel populated by JS -->
                         </div>
                     <?php echo HTMLHelper::_('uitab.endTab'); ?>
 
-                    <?php echo HTMLHelper::_('uitab.addTab', 'builderSidebarTabs', 'builder-styles', '<span class="fa-solid fa-palette me-1"></span>' . Text::_('COM_J2COMMERCE_BUILDER_TAB_STYLES')); ?>
+                    <?php echo HTMLHelper::_('uitab.addTab', 'builderSidebarTabs', 'builder-styles', '<span class="fa-solid fa-palette me-1" aria-hidden="true"></span>' . Text::_('COM_J2COMMERCE_BUILDER_TAB_STYLES')); ?>
                         <div id="builder-styles-panel">
                             <!-- GrapeJS Style Manager renders here via appendTo -->
                         </div>
@@ -123,7 +123,7 @@ $token = Session::getFormToken();
                     <div id="builder-canvas" class="j2commerce-builder-canvas">
                         <div class="d-flex align-items-center justify-content-center h-100 align-self-stretch" id="builder-placeholder">
                             <div class="text-center builder-placeholder-content">
-                                <span class="fa-solid fa-wand-magic-sparkles text-warning fa-3x mb-3"></span>
+                                <span class="fa-solid fa-wand-magic-sparkles text-warning fa-3x mb-3" aria-hidden="true"></span>
                                 <h4 class="mt-3"><?php echo Text::_('COM_J2COMMERCE_BUILDER_PLACEHOLDER_TITLE'); ?></h4>
                                 <p class="text-muted"><?php echo Text::_('COM_J2COMMERCE_BUILDER_PLACEHOLDER_TEXT'); ?></p>
                             </div>

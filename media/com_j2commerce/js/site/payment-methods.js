@@ -115,7 +115,7 @@
             console.error('Delete card error:', error);
             showErrorMessage(error.message || Joomla.JText._('COM_J2COMMERCE_PAYMENT_METHODS_ERROR', 'An error occurred'));
             button.disabled = false;
-            button.innerHTML = '<span class="fa-solid fa-trash me-1"></span>' + Joomla.JText._('JACTION_DELETE', 'Delete');
+            button.innerHTML = '<span class="fa-solid fa-trash me-1" aria-hidden="true"></span>' + Joomla.JText._('JACTION_DELETE', 'Delete');
         }
     }
 
@@ -192,7 +192,7 @@
             console.error('Set default card error:', error);
             showErrorMessage(error.message || Joomla.JText._('COM_J2COMMERCE_PAYMENT_METHODS_ERROR', 'An error occurred'));
             button.disabled = false;
-            button.innerHTML = '<span class="fa-solid fa-star me-1"></span>' + Joomla.JText._('COM_J2COMMERCE_PAYMENT_METHODS_SET_DEFAULT', 'Set as Default');
+            button.innerHTML = '<span class="fa-solid fa-star me-1" aria-hidden="true"></span>' + Joomla.JText._('COM_J2COMMERCE_PAYMENT_METHODS_SET_DEFAULT', 'Set as Default');
         }
     }
 

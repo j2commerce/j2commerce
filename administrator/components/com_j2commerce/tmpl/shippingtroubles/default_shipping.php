@@ -48,7 +48,7 @@ function getStatusBadge($status, $message = '') {
             $icon = 'fa-question-circle';
     }
 
-    return '<span class="badge ' . $badgeClass . '"><span class="fa-solid ' . $icon . ' me-1"></span>' . Text::_($message) . '</span>';
+    return '<span class="badge ' . $badgeClass . '"><span class="fa-solid ' . $icon . ' me-1" aria-hidden="true"></span>' . Text::_($message) . '</span>';
 }
 
 
@@ -215,7 +215,7 @@ function getStatusBadge($status, $message = '') {
                     </div>
                 <?php elseif ($hasWarnings): ?>
                     <div class="alert alert-warning" role="alert">
-                        <h5 class="text-warning"><span class="fa-solid fa-info-circle me-2"></span><?php echo Text::_('COM_J2COMMERCE_SHIPPING_TROUBLESHOOTER_IMPROVEMENTS'); ?></h5>
+                        <h5 class="text-warning"><span class="fa-solid fa-info-circle me-2" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_SHIPPING_TROUBLESHOOTER_IMPROVEMENTS'); ?></h5>
                         <ul class="mb-0">
                             <?php if ($diagnostics['geozones']['status'] === 'warning'): ?>
                                 <li><?php echo Text::_('COM_J2COMMERCE_SHIPPING_TROUBLESHOOTER_RECOMMENDATION_ADD_GEOZONES'); ?></li>
@@ -224,7 +224,7 @@ function getStatusBadge($status, $message = '') {
                     </div>
                 <?php else: ?>
                     <div class="alert alert-success" role="alert">
-                        <h5 class="text-success"><span class="fa-solid fa-check-circle me-2"></span><?php echo Text::_('COM_J2COMMERCE_SHIPPING_TROUBLESHOOTER_ALL_GOOD'); ?></h5>
+                        <h5 class="text-success"><span class="fa-solid fa-check-circle me-2" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_SHIPPING_TROUBLESHOOTER_ALL_GOOD'); ?></h5>
                         <p class="mb-0"><?php echo Text::_('COM_J2COMMERCE_SHIPPING_TROUBLESHOOTER_ALL_GOOD_DESCRIPTION'); ?></p>
                     </div>
                 <?php endif; ?>
