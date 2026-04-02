@@ -127,7 +127,7 @@ $e = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
 
       <!-- Header -->
       <div class="modal-header border-0 p-3">
-        <h5 class="visually-hidden" id="j2commerceOnboardingLabel"><?php echo Text::_('COM_J2COMMERCE_CONFIG_RERUN_ONBOARDING'); ?></h5>
+        <h5 class="modal-title" id="j2commerceOnboardingLabel"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_WIZARD_TITLE'); ?></h5>
         <button type="button" class="btn-close" data-action="dismiss-onboarding"
                 aria-label="<?php echo Text::_('JCLOSE'); ?>"></button>
       </div>
