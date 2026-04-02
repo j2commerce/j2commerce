@@ -21,6 +21,7 @@ use Joomla\CMS\MVC\Controller\AdminController;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\CMS\Router\Route;
 use Joomla\Database\DatabaseInterface;
+use Joomla\Database\ParameterType;
 use Joomla\Input\Input;
 use Joomla\Utilities\ArrayHelper;
 
@@ -131,14 +132,21 @@ class CustomfieldsController extends AdminController
             return;
         }
 
-        $updated = 0;
+        $updated    = 0;
+        $user       = $this->app->getIdentity();
+        $modifiedOn = Factory::getDate()->toSql();
+        $userId     = (int) $user->id;
 
         foreach ($pks as $pk) {
             // Apply core column updates
             if (!empty($coreUpdates)) {
                 $query = $db->getQuery(true)
                     ->update($db->quoteName('#__j2commerce_customfields'))
-                    ->where($db->quoteName('j2commerce_customfield_id') . ' = ' . $pk);
+                    ->set($db->quoteName('modified_on') . ' = :modified_on')
+                    ->set($db->quoteName('modified_by') . ' = :modified_by')
+                    ->where($db->quoteName('j2commerce_customfield_id') . ' = ' . $pk)
+                    ->bind(':modified_on', $modifiedOn)
+                    ->bind(':modified_by', $userId, ParameterType::INTEGER);
 
                 foreach ($coreUpdates as $col => $val) {
                     $query->set($db->quoteName($col) . ' = ' . $val);
@@ -170,8 +178,13 @@ class CustomfieldsController extends AdminController
 
                 $update = $db->getQuery(true)
                     ->update($db->quoteName('#__j2commerce_customfields'))
-                    ->set($db->quoteName('field_display') . ' = ' . $db->quote($newJson))
-                    ->where($db->quoteName('j2commerce_customfield_id') . ' = ' . $pk);
+                    ->set($db->quoteName('field_display') . ' = :field_display')
+                    ->set($db->quoteName('modified_on') . ' = :modified_on')
+                    ->set($db->quoteName('modified_by') . ' = :modified_by')
+                    ->where($db->quoteName('j2commerce_customfield_id') . ' = ' . $pk)
+                    ->bind(':field_display', $newJson)
+                    ->bind(':modified_on', $modifiedOn)
+                    ->bind(':modified_by', $userId, ParameterType::INTEGER);
                 $db->setQuery($update);
                 $db->execute();
             }

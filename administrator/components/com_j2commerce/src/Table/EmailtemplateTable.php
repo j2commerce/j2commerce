@@ -147,6 +147,36 @@ class EmailtemplateTable extends Table
     }
 
     /**
+     * Method to store a row in the database from the Table instance properties.
+     *
+     * @param   boolean  $updateNulls  True to update fields even if they are null.
+     *
+     * @return  boolean  True on success.
+     *
+     * @since   6.1.3
+     */
+    public function store($updateNulls = true)
+    {
+        $date = Factory::getDate()->toSql();
+        $user = Factory::getApplication()->getIdentity();
+
+        if (empty($this->j2commerce_emailtemplate_id)) {
+            if (empty($this->created_on) || $this->created_on === '0000-00-00 00:00:00') {
+                $this->created_on = $date;
+            }
+
+            if (empty($this->created_by)) {
+                $this->created_by = (int) $user->id;
+            }
+        }
+
+        $this->modified_on = $date;
+        $this->modified_by = (int) $user->id;
+
+        return parent::store($updateNulls);
+    }
+
+    /**
      * Method to return the next ordering value for a new record.
      *
      * @param   string  $where  Additional where clause to use for the query.

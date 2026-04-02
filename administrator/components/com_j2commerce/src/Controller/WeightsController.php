@@ -73,7 +73,7 @@ class WeightsController extends AdminController
         $redirectUrl = Route::_('index.php?option=com_j2commerce&view=weights', false);
 
         // ACL check
-        $user = Factory::getApplication()->getIdentity();
+        $user = $this->app->getIdentity();
 
         if (!$user->authorise('core.edit', 'com_j2commerce')) {
             $this->setMessage(Text::_('JLIB_APPLICATION_ERROR_EDITSTATE_NOT_PERMITTED'), 'error');
@@ -94,7 +94,9 @@ class WeightsController extends AdminController
             't'  => 1000000.0,
         ];
 
-        $db = Factory::getContainer()->get('DatabaseDriver');
+        $db         = Factory::getContainer()->get('DatabaseDriver');
+        $modifiedOn = Factory::getDate()->toSql();
+        $userId     = (int) $user->id;
 
         // Load all weight records
         $query = $db->getQuery(true)
@@ -151,8 +153,12 @@ class WeightsController extends AdminController
                 $update         = $db->getQuery(true)
                     ->update($db->quoteName('#__j2commerce_weights'))
                     ->set($db->quoteName('weight_value') . ' = :value')
+                    ->set($db->quoteName('modified_on') . ' = :modified_on')
+                    ->set($db->quoteName('modified_by') . ' = :modified_by')
                     ->where($db->quoteName('j2commerce_weight_id') . ' = :id')
                     ->bind(':value', $formattedValue)
+                    ->bind(':modified_on', $modifiedOn)
+                    ->bind(':modified_by', $userId, ParameterType::INTEGER)
                     ->bind(':id', $weightId, ParameterType::INTEGER);
                 $db->setQuery($update)->execute();
             }
@@ -186,8 +192,12 @@ class WeightsController extends AdminController
             $update         = $db->getQuery(true)
                 ->update($db->quoteName('#__j2commerce_weights'))
                 ->set($db->quoteName('weight_value') . ' = :value')
+                ->set($db->quoteName('modified_on') . ' = :modified_on')
+                ->set($db->quoteName('modified_by') . ' = :modified_by')
                 ->where($db->quoteName('j2commerce_weight_id') . ' = :id')
                 ->bind(':value', $formattedValue)
+                ->bind(':modified_on', $modifiedOn)
+                ->bind(':modified_by', $userId, ParameterType::INTEGER)
                 ->bind(':id', $weightId, ParameterType::INTEGER);
             $db->setQuery($update)->execute();
         }

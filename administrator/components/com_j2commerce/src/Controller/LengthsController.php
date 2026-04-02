@@ -73,7 +73,7 @@ class LengthsController extends AdminController
         $redirectUrl = Route::_('index.php?option=com_j2commerce&view=lengths', false);
 
         // ACL check
-        $user = Factory::getApplication()->getIdentity();
+        $user = $this->app->getIdentity();
 
         if (!$user->authorise('core.edit', 'com_j2commerce')) {
             $this->setMessage(Text::_('JLIB_APPLICATION_ERROR_EDITSTATE_NOT_PERMITTED'), 'error');
@@ -96,7 +96,9 @@ class LengthsController extends AdminController
             'mi' => 1609344.0,
         ];
 
-        $db = Factory::getContainer()->get('DatabaseDriver');
+        $db         = Factory::getContainer()->get('DatabaseDriver');
+        $modifiedOn = Factory::getDate()->toSql();
+        $userId     = (int) $user->id;
 
         // Load all length records
         $query = $db->getQuery(true)
@@ -153,8 +155,12 @@ class LengthsController extends AdminController
                 $update         = $db->getQuery(true)
                     ->update($db->quoteName('#__j2commerce_lengths'))
                     ->set($db->quoteName('length_value') . ' = :value')
+                    ->set($db->quoteName('modified_on') . ' = :modified_on')
+                    ->set($db->quoteName('modified_by') . ' = :modified_by')
                     ->where($db->quoteName('j2commerce_length_id') . ' = :id')
                     ->bind(':value', $formattedValue)
+                    ->bind(':modified_on', $modifiedOn)
+                    ->bind(':modified_by', $userId, ParameterType::INTEGER)
                     ->bind(':id', $lengthId, ParameterType::INTEGER);
                 $db->setQuery($update)->execute();
             }
@@ -188,8 +194,12 @@ class LengthsController extends AdminController
             $update         = $db->getQuery(true)
                 ->update($db->quoteName('#__j2commerce_lengths'))
                 ->set($db->quoteName('length_value') . ' = :value')
+                ->set($db->quoteName('modified_on') . ' = :modified_on')
+                ->set($db->quoteName('modified_by') . ' = :modified_by')
                 ->where($db->quoteName('j2commerce_length_id') . ' = :id')
                 ->bind(':value', $formattedValue)
+                ->bind(':modified_on', $modifiedOn)
+                ->bind(':modified_by', $userId, ParameterType::INTEGER)
                 ->bind(':id', $lengthId, ParameterType::INTEGER);
             $db->setQuery($update)->execute();
         }

@@ -398,6 +398,8 @@ class EmailtemplatesController extends AdminController
         $db = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
         $allowedFields = ['subject', 'body', 'body_source', 'body_source_file', 'custom_css', 'email_type', 'receiver_type', 'language', 'orderstatus_id', 'group_id', 'paymentmethod', 'enabled', 'ordering'];
         $imported = 0;
+        $userId = (int) $this->app->getIdentity()->id;
+        $now    = Factory::getDate()->toSql();
 
         foreach ($data['templates'] as $template) {
             $row = new \stdClass();
@@ -405,7 +407,10 @@ class EmailtemplatesController extends AdminController
                 $row->$field = $template[$field] ?? '';
             }
             $row->j2commerce_emailtemplate_id = 0;
-            $row->created_by = Factory::getApplication()->getIdentity()->id;
+            $row->created_on  = $now;
+            $row->created_by  = $userId;
+            $row->modified_on = $now;
+            $row->modified_by = $userId;
 
             try {
                 $db->insertObject('#__j2commerce_emailtemplates', $row, 'j2commerce_emailtemplate_id');

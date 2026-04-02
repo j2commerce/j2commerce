@@ -144,15 +144,31 @@ class OptionTable extends Table
      */
     public function store($updateNulls = true)
     {
-        // Set default enabled value for new records
-        if (!(int) $this->j2commerce_option_id && !isset($this->enabled)) {
-            $this->enabled = 1;
+        $date = Factory::getDate()->toSql();
+        $user = Factory::getApplication()->getIdentity();
+
+        if (!(int) $this->j2commerce_option_id) {
+            if (empty($this->created_on) || $this->created_on === '0000-00-00 00:00:00') {
+                $this->created_on = $date;
+            }
+
+            if (empty($this->created_by)) {
+                $this->created_by = (int) $user->id;
+            }
+
+            // Set default enabled value for new records
+            if (!isset($this->enabled)) {
+                $this->enabled = 1;
+            }
+
+            // Set default ordering value for new records
+            if (!isset($this->ordering)) {
+                $this->ordering = $this->getNextOrder();
+            }
         }
 
-        // Set default ordering value for new records
-        if (!(int) $this->j2commerce_option_id && !isset($this->ordering)) {
-            $this->ordering = $this->getNextOrder();
-        }
+        $this->modified_on = $date;
+        $this->modified_by = (int) $user->id;
 
         // Ensure option_params is set
         if (!isset($this->option_params) || $this->option_params === '') {

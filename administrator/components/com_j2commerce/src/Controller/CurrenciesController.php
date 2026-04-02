@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Application\CMSApplication;
+use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\AdminController;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
@@ -153,13 +154,20 @@ class CurrenciesController extends AdminController
             $this->app->close();
         }
 
-        $db = $this->app->getContainer()->get(DatabaseInterface::class);
+        $db         = $this->app->getContainer()->get(DatabaseInterface::class);
+        $user       = $this->app->getIdentity();
+        $modifiedOn = Factory::getDate()->toSql();
+        $userId     = (int) $user->id;
 
         // Disable all except the selected currency
         $query = $db->getQuery(true)
             ->update($db->quoteName('#__j2commerce_currencies'))
             ->set($db->quoteName('enabled') . ' = 0')
+            ->set($db->quoteName('modified_on') . ' = :modified_on')
+            ->set($db->quoteName('modified_by') . ' = :modified_by')
             ->where($db->quoteName('currency_code') . ' != :code')
+            ->bind(':modified_on', $modifiedOn)
+            ->bind(':modified_by', $userId, ParameterType::INTEGER)
             ->bind(':code', $currencyCode);
         $db->setQuery($query);
         $db->execute();
@@ -169,7 +177,11 @@ class CurrenciesController extends AdminController
         $query = $db->getQuery(true)
             ->update($db->quoteName('#__j2commerce_currencies'))
             ->set($db->quoteName('enabled') . ' = 1')
+            ->set($db->quoteName('modified_on') . ' = :modified_on')
+            ->set($db->quoteName('modified_by') . ' = :modified_by')
             ->where($db->quoteName('currency_code') . ' = :code')
+            ->bind(':modified_on', $modifiedOn)
+            ->bind(':modified_by', $userId, ParameterType::INTEGER)
             ->bind(':code', $currencyCode);
         $db->setQuery($query);
         $db->execute();
