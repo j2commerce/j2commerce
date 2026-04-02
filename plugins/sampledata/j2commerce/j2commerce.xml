@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extension type="plugin" group="sampledata" method="upgrade">
+    <name>plg_sampledata_j2commerce</name>
+    <author>J2Commerce, LLC</author>
+    <creationDate>2026-04</creationDate>
+    <copyright>(C)2024-2026 J2Commerce, LLC. All rights reserved.</copyright>
+    <license>GNU General Public License version 2 or later; see LICENSE.txt</license>
+    <authorEmail>support@j2commerce.com</authorEmail>
+    <authorUrl>https://www.j2commerce.com</authorUrl>
+    <version>6.0.0</version>
+    <description>PLG_SAMPLEDATA_J2COMMERCE_XML_DESCRIPTION</description>
+    <namespace path="src">J2Commerce\Plugin\SampleData\J2Commerce</namespace>
+    <files>
+        <folder plugin="j2commerce">services</folder>
+        <folder>src</folder>
+    </files>
+    <media destination="plg_sampledata_j2commerce" folder="media">
+        <folder>images</folder>
+    </media>
+    <languages>
+        <language tag="en-GB">language/en-GB/plg_sampledata_j2commerce.ini</language>
+        <language tag="en-GB">language/en-GB/plg_sampledata_j2commerce.sys.ini</language>
+    </languages>
+    <config>
+        <fields name="params">
+        </fields>
+    </config>
+</extension>

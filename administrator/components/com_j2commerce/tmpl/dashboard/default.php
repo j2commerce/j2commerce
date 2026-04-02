@@ -57,6 +57,31 @@ if($doc->countModules('j2commerce-dashboard-module-main-tab') && $doc->countModu
 <?php echo $this->navbar; ?>
 
 <div id="j2commerce-dashboard">
+    <?php if ($this->hasSampleData) : ?>
+    <div class="alert alert-purple d-flex align-items-center mb-4">
+        <span class="fa-solid fa-circle-info me-2"></span>
+        <span class="me-auto"><?php echo Text::_('COM_J2COMMERCE_DASHBOARD_SAMPLEDATA_ACTIVE'); ?></span>
+        <button type="button" class="btn btn-sm btn-primary" id="j2c-remove-sampledata">
+            <span class="fa-solid fa-trash me-1"></span>
+            <?php echo Text::_('COM_J2COMMERCE_DASHBOARD_REMOVE_SAMPLEDATA'); ?>
+        </button>
+    </div>
+    <?php endif; ?>
+
+    <?php if (!$this->hasProducts && !$this->hasSampleData) : ?>
+    <div class="card mb-4">
+        <div class="card-body text-center py-5">
+            <span class="fa-solid fa-box-open fa-3x text-muted d-block mb-3"></span>
+            <h5><?php echo Text::_('COM_J2COMMERCE_DASHBOARD_EMPTY_STORE_TITLE'); ?></h5>
+            <p class="text-muted"><?php echo Text::_('COM_J2COMMERCE_DASHBOARD_EMPTY_STORE_DESC'); ?></p>
+            <button type="button" class="btn btn-primary" id="j2c-load-sampledata">
+                <span class="fa-solid fa-database me-1"></span>
+                <?php echo Text::_('COM_J2COMMERCE_DASHBOARD_LOAD_SAMPLEDATA'); ?>
+            </button>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <!-- Date Filter Bar -->
     <div class="row mb-4">
         <div class="col-12">

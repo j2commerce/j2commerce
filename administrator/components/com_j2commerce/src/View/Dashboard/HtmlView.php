@@ -18,6 +18,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\MenuHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OnboardingHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\SampleDataHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\AnalyticsModel;
 use J2Commerce\Component\J2commerce\Administrator\Model\DashboardModel;
 use J2Commerce\Component\J2commerce\Administrator\SetupGuide\SetupGuideHelper;
@@ -71,6 +72,10 @@ class HtmlView extends BaseHtmlView
     // Onboarding wizard
     public bool $showOnboarding = false;
 
+    // Sample data state
+    public bool $hasProducts = false;
+    public bool $hasSampleData = false;
+
     public function display($tpl = null): void
     {
         $this->loadAdminAssets();
@@ -105,6 +110,16 @@ class HtmlView extends BaseHtmlView
         $this->customersCount = $model->getCustomersCount();
         $this->recentOrders   = $model->getRecentOrders(5);
         $this->liveUsers      = $model->getLiveUsers();
+
+        // Sample data state
+        $db = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $productCheckQuery = $db->getQuery(true)
+            ->select('1')
+            ->from($db->quoteName('#__j2commerce_products'))
+            ->where($db->quoteName('enabled') . ' = 1');
+        $db->setQuery($productCheckQuery, 0, 1);
+        $this->hasProducts  = (bool) $db->loadResult();
+        $this->hasSampleData = (new SampleDataHelper($db))->isLoaded();
 
         // All-time sales data for tabs
         $this->monthlySales = $model->getMonthlySales();
@@ -200,6 +215,90 @@ class HtmlView extends BaseHtmlView
                 'messageIds' => array_column($this->dashboardMessages, 'id'),
             ]);
         }
+
+        Text::script('COM_J2COMMERCE_DASHBOARD_SAMPLEDATA_LOADED');
+        Text::script('COM_J2COMMERCE_DASHBOARD_SAMPLEDATA_REMOVED');
+        Text::script('COM_J2COMMERCE_DASHBOARD_SAMPLEDATA_CONFIRM_REMOVE');
+        Text::script('COM_J2COMMERCE_LOADING');
+
+        // Sample data AJAX handlers
+        $wa->addInlineScript(<<<'JS'
+document.addEventListener('DOMContentLoaded', function () {
+    const loadBtn   = document.getElementById('j2c-load-sampledata');
+    const removeBtn = document.getElementById('j2c-remove-sampledata');
+    const tokenEl   = document.getElementById('dashboard-token');
+
+    if (!tokenEl) return;
+
+    function getToken() {
+        return tokenEl.value || '';
+    }
+
+    function reloadPage() {
+        window.location.href = window.location.pathname + '?option=com_j2commerce&view=dashboard';
+    }
+
+    if (loadBtn) {
+        loadBtn.addEventListener('click', async function () {
+            loadBtn.disabled = true;
+            const spinner = document.createElement('span');
+            spinner.className = 'spinner-border spinner-border-sm me-1';
+            spinner.setAttribute('role', 'status');
+            loadBtn.prepend(spinner);
+
+            const fd = new FormData();
+            fd.append(getToken(), '1');
+
+            try {
+                const res  = await fetch('index.php?option=com_j2commerce&task=dashboard.loadSampleData&format=json', { method: 'POST', body: fd });
+                const json = await res.json();
+                if (json.success) {
+                    Joomla.renderMessages({ success: [Joomla.Text._('COM_J2COMMERCE_DASHBOARD_SAMPLEDATA_LOADED')] });
+                    reloadPage();
+                } else {
+                    Joomla.renderMessages({ error: [json.message || Joomla.Text._('COM_J2COMMERCE_LOADING')] });
+                    loadBtn.disabled = false;
+                    spinner.remove();
+                }
+            } catch {
+                loadBtn.disabled = false;
+                spinner.remove();
+            }
+        });
+    }
+
+    if (removeBtn) {
+        removeBtn.addEventListener('click', async function () {
+            if (!window.confirm(Joomla.Text._('COM_J2COMMERCE_DASHBOARD_SAMPLEDATA_CONFIRM_REMOVE'))) return;
+
+            removeBtn.disabled = true;
+            const spinner = document.createElement('span');
+            spinner.className = 'spinner-border spinner-border-sm me-1';
+            spinner.setAttribute('role', 'status');
+            removeBtn.prepend(spinner);
+
+            const fd = new FormData();
+            fd.append(getToken(), '1');
+
+            try {
+                const res  = await fetch('index.php?option=com_j2commerce&task=dashboard.removeSampleData&format=json', { method: 'POST', body: fd });
+                const json = await res.json();
+                if (json.success) {
+                    Joomla.renderMessages({ success: [Joomla.Text._('COM_J2COMMERCE_DASHBOARD_SAMPLEDATA_REMOVED')] });
+                    reloadPage();
+                } else {
+                    Joomla.renderMessages({ error: [json.message || Joomla.Text._('COM_J2COMMERCE_LOADING')] });
+                    removeBtn.disabled = false;
+                    spinner.remove();
+                }
+            } catch {
+                removeBtn.disabled = false;
+                spinner.remove();
+            }
+        });
+    }
+});
+JS);
 
         Text::script('COM_J2COMMERCE_LIVE_USERS_JUST_NOW');
         Text::script('COM_J2COMMERCE_LIVE_USERS_MINUTES_AGO');
@@ -339,6 +438,8 @@ class HtmlView extends BaseHtmlView
             Text::script('COM_J2COMMERCE_ONBOARDING_PAYMENT_SELECT');
             Text::script('COM_J2COMMERCE_ONBOARDING_PAYPAL_HELP_TEXT');
             Text::script('COM_J2COMMERCE_ONBOARDING_PAYPAL_HELP_LINK');
+            Text::script('COM_J2COMMERCE_ONBOARDING_SAMPLEDATA_LOAD');
+            Text::script('COM_J2COMMERCE_ONBOARDING_SAMPLEDATA_SKIP');
         }
 
         $this->addToolbar();

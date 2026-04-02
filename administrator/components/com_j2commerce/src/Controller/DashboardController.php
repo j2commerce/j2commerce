@@ -15,6 +15,8 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\SampleDataHelper;
+use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Controller\BaseController;
@@ -115,6 +117,72 @@ class DashboardController extends BaseController
             $this->app->setHeader('Content-Type', 'application/json; charset=utf-8');
             echo new JsonResponse($data);
         } catch (\Exception $e) {
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $this->app->setHeader('Content-Type', 'application/json; charset=utf-8');
+            $this->app->setHeader('status', '500');
+            echo new JsonResponse(null, Text::_('COM_J2COMMERCE_ERROR_INTERNAL'), true);
+        }
+
+        $this->app->close();
+    }
+
+    public function loadSampleData(): void
+    {
+        if (!Session::checkToken('post')) {
+            $this->app->setHeader('Content-Type', 'application/json; charset=utf-8');
+            $this->app->setHeader('status', '403');
+            echo new JsonResponse(null, Text::_('COM_J2COMMERCE_ERROR_INVALID_TOKEN'), true);
+            $this->app->close();
+            return;
+        }
+
+        if (!$this->app->getIdentity()->authorise('core.admin', 'com_j2commerce')) {
+            $this->app->setHeader('Content-Type', 'application/json; charset=utf-8');
+            $this->app->setHeader('status', '403');
+            echo new JsonResponse(null, Text::_('COM_J2COMMERCE_ERROR_ACCESS_DENIED'), true);
+            $this->app->close();
+            return;
+        }
+
+        try {
+            $db = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+            $summary = (new SampleDataHelper($db))->load('standard');
+            $this->app->setHeader('Content-Type', 'application/json; charset=utf-8');
+            echo new JsonResponse($summary, Text::_('COM_J2COMMERCE_DASHBOARD_SAMPLEDATA_LOADED'));
+        } catch (\Throwable $e) {
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $this->app->setHeader('Content-Type', 'application/json; charset=utf-8');
+            $this->app->setHeader('status', '500');
+            echo new JsonResponse(null, Text::_('COM_J2COMMERCE_ERROR_INTERNAL'), true);
+        }
+
+        $this->app->close();
+    }
+
+    public function removeSampleData(): void
+    {
+        if (!Session::checkToken('post')) {
+            $this->app->setHeader('Content-Type', 'application/json; charset=utf-8');
+            $this->app->setHeader('status', '403');
+            echo new JsonResponse(null, Text::_('COM_J2COMMERCE_ERROR_INVALID_TOKEN'), true);
+            $this->app->close();
+            return;
+        }
+
+        if (!$this->app->getIdentity()->authorise('core.admin', 'com_j2commerce')) {
+            $this->app->setHeader('Content-Type', 'application/json; charset=utf-8');
+            $this->app->setHeader('status', '403');
+            echo new JsonResponse(null, Text::_('COM_J2COMMERCE_ERROR_ACCESS_DENIED'), true);
+            $this->app->close();
+            return;
+        }
+
+        try {
+            $db = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+            $summary = (new SampleDataHelper($db))->remove();
+            $this->app->setHeader('Content-Type', 'application/json; charset=utf-8');
+            echo new JsonResponse($summary, Text::_('COM_J2COMMERCE_DASHBOARD_SAMPLEDATA_REMOVED'));
+        } catch (\Throwable $e) {
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
             $this->app->setHeader('Content-Type', 'application/json; charset=utf-8');
             $this->app->setHeader('status', '500');

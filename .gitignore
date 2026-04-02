@@ -121,6 +121,9 @@
 !plugins/webservices/
 !plugins/webservices/j2commerce/
 !plugins/webservices/j2commerce/**
+!plugins/sampledata/
+!plugins/sampledata/j2commerce/
+!plugins/sampledata/j2commerce/**
 
 # J2Commerce core frontend modules (only those in the package skill)
 !modules/
@@ -137,6 +140,8 @@
 !media/
 !media/com_j2commerce/
 !media/com_j2commerce/**
+!media/plg_sampledata_j2commerce/
+!media/plg_sampledata_j2commerce/**
 !media/lib_j2commerce/
 !media/lib_j2commerce/**
 

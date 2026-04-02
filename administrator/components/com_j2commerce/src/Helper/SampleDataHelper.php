@@ -18,6 +18,7 @@ use Joomla\CMS\Table\Table;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
 
+
 /**
  * Generates and removes sample data for a J2Commerce store.
  *
@@ -223,6 +224,29 @@ final class SampleDataHelper
         ['name' => 'Student Discount', 'code' => 'STUDENT', 'value' => 10.00, 'value_type' => 'percentage', 'free_shipping' => 0, 'min_subtotal' => '0'],
     ];
 
+    private const DESCRIPTIONS = [
+        'electronics' => [
+            'introtext' => '<p>Experience cutting-edge technology with the <strong>%s</strong>. Designed for performance and built to last, this product delivers everything you need for modern life.</p>',
+            'fulltext'  => '<p>The <strong>%s</strong> combines innovative engineering with sleek design to give you a product that stands out from the crowd. Whether you\'re a professional or an enthusiast, this device will exceed your expectations.</p><h3>Key Features</h3><ul><li>Premium build quality with durable materials</li><li>Advanced technology for maximum performance</li><li>Intuitive design for effortless use</li><li>Energy efficient and environmentally responsible</li><li>Backed by our comprehensive warranty</li></ul><h3>Specifications</h3><p>Compatible with all major operating systems and platforms. Plug-and-play installation requires no technical expertise.</p>',
+        ],
+        'clothing' => [
+            'introtext' => '<p>Elevate your wardrobe with the <strong>%s</strong>. Crafted from premium materials, this piece offers the perfect blend of comfort and style for everyday wear.</p>',
+            'fulltext'  => '<p>The <strong>%s</strong> is designed for those who demand quality without sacrificing comfort. Made from carefully selected fabrics, it offers a fit that flatters every body type and keeps you looking sharp all day long.</p><h3>Features</h3><ul><li>Premium fabric blend for comfort and durability</li><li>Available in multiple sizes and colours</li><li>Easy care — machine washable</li><li>Reinforced stitching at stress points</li><li>Versatile style for casual and smart-casual occasions</li></ul><h3>Care Instructions</h3><p>Machine wash cold with similar colours. Tumble dry low. Do not bleach. Iron on low heat if needed.</p>',
+        ],
+        'home' => [
+            'introtext' => '<p>Transform your living space with the <strong>%s</strong>. Thoughtfully designed to blend seamlessly with any home decor while delivering outstanding functionality.</p>',
+            'fulltext'  => '<p>The <strong>%s</strong> is the perfect addition to any home. Crafted with attention to detail and made from sustainable materials, it brings both beauty and practicality to your everyday life.</p><h3>Why You\'ll Love It</h3><ul><li>Sustainable and eco-friendly materials</li><li>Timeless design that complements any decor</li><li>Easy to clean and maintain</li><li>Durable construction for years of use</li><li>Makes an ideal gift for any occasion</li></ul><h3>Dimensions</h3><p>Please refer to the size guide for exact measurements. Assembly instructions included where required.</p>',
+        ],
+        'sporting' => [
+            'introtext' => '<p>Take your performance to the next level with the <strong>%s</strong>. Engineered for athletes and fitness enthusiasts who demand the best from their equipment.</p>',
+            'fulltext'  => '<p>The <strong>%s</strong> is designed by athletes for athletes. Whether you\'re training for competition or staying fit for life, this equipment gives you the edge you need to reach your goals.</p><h3>Performance Benefits</h3><ul><li>Professional-grade materials for peak performance</li><li>Ergonomic design reduces fatigue and injury risk</li><li>Suitable for all fitness levels from beginner to advanced</li><li>Lightweight yet incredibly durable</li><li>Tested by certified sports performance coaches</li></ul><h3>Training Tips</h3><p>For best results, incorporate this equipment into a structured training programme. Consult a fitness professional for personalised guidance.</p>',
+        ],
+        'books' => [
+            'introtext' => '<p>Expand your knowledge and skills with <strong>%s</strong>. Written by industry experts, this book delivers practical insights you can apply immediately.</p>',
+            'fulltext'  => '<p><strong>%s</strong> is a comprehensive guide that takes you from the fundamentals to advanced techniques. Whether you\'re a complete beginner or looking to sharpen existing skills, this book has something valuable to offer.</p><h3>What\'s Inside</h3><ul><li>Step-by-step guidance with real-world examples</li><li>Expert tips and insider knowledge from practitioners</li><li>Practical exercises to reinforce your learning</li><li>Reference material you\'ll return to again and again</li><li>Up-to-date content reflecting current best practices</li></ul><h3>Who Is This For</h3><p>This book is suitable for readers at all stages. Whether you are just starting out or are an experienced professional seeking fresh perspectives, you will find immense value in these pages.</p>',
+        ],
+    ];
+
     private const OPTIONS_DATA = [
         ['name' => 'Color', 'type' => 'radio', 'values' => ['Red', 'Blue', 'Green', 'Black', 'White', 'Yellow', 'Purple', 'Orange']],
         ['name' => 'Size', 'type' => 'select', 'values' => ['XS', 'S', 'M', 'L', 'XL', 'XXL', '2XL', '3XL']],
@@ -302,6 +326,10 @@ final class SampleDataHelper
             $summary['products_downloadable'] = count($dlIds);
         }
 
+        // 4b. Create product images
+        $imageCount = $this->createProductImages($productIds, $catIds);
+        $summary['product_images'] = $imageCount;
+
         // 5. Create customers
         $customerIds = $this->createCustomers((int) $cfg['customers'], $now);
         $summary['customers'] = count($customerIds);
@@ -313,6 +341,18 @@ final class SampleDataHelper
         // 7. Create coupons
         $couponCount = $this->createCoupons((int) $cfg['coupons'], $now);
         $summary['coupons'] = $couponCount;
+
+        // 8. Create advanced pricing for full profile
+        if ($profile === 'full' && !empty($productIds)) {
+            $advancedPricingCount = $this->createAdvancedPricing($productIds, $this->db);
+            $summary['advanced_pricing'] = $advancedPricingCount;
+        }
+
+        // 9. Ensure store has basic tax, shipping, and payment configured
+        $storeSetup = $this->ensureStoreSetup($this->db);
+        foreach ($storeSetup as $key => $value) {
+            $summary['setup_' . $key] = $value;
+        }
 
         $summary['profile'] = $profile;
         $summary['success'] = true;
@@ -345,6 +385,15 @@ final class SampleDataHelper
             $productIds = array_column($db->loadObjectList(), 'j2commerce_product_id');
 
             if (!empty($productIds)) {
+                // Remove product images first
+                $db->setQuery(
+                    $db->getQuery(true)
+                        ->delete($db->quoteName('#__j2commerce_productimages'))
+                        ->whereIn($db->quoteName('product_id'), $productIds)
+                );
+                $db->execute();
+                $counts['product_images'] = $db->getAffectedRows();
+
                 // Collect variant IDs first for quantity cleanup
                 $variantQuery = $db->getQuery(true)
                     ->select('j2commerce_variant_id')
@@ -367,6 +416,15 @@ final class SampleDataHelper
                             ->whereIn($db->quoteName('variant_id'), $variantIds)
                     );
                     $db->execute();
+
+                    // Remove advanced pricing rows for sample product variants
+                    $db->setQuery(
+                        $db->getQuery(true)
+                            ->delete($db->quoteName('#__j2commerce_product_prices'))
+                            ->whereIn($db->quoteName('variant_id'), $variantIds)
+                    );
+                    $db->execute();
+                    $counts['advanced_pricing'] = $db->getAffectedRows();
                 }
 
                 // Remove product option linkage
@@ -431,21 +489,21 @@ final class SampleDataHelper
                     $db->setQuery(
                         $db->getQuery(true)
                             ->delete($db->quoteName('#__j2commerce_orderitems'))
-                            ->whereIn($db->quoteName('order_id'), $orderNos)
+                            ->whereIn($db->quoteName('order_id'), $orderNos, ParameterType::STRING)
                     );
                     $db->execute();
 
                     $db->setQuery(
                         $db->getQuery(true)
                             ->delete($db->quoteName('#__j2commerce_orderinfos'))
-                            ->whereIn($db->quoteName('order_id'), $orderNos)
+                            ->whereIn($db->quoteName('order_id'), $orderNos, ParameterType::STRING)
                     );
                     $db->execute();
 
                     $db->setQuery(
                         $db->getQuery(true)
                             ->delete($db->quoteName('#__j2commerce_orderhistories'))
-                            ->whereIn($db->quoteName('order_id'), $orderNos)
+                            ->whereIn($db->quoteName('order_id'), $orderNos, ParameterType::STRING)
                     );
                     $db->execute();
 
@@ -592,14 +650,21 @@ final class SampleDataHelper
 
     private function getOrCreateJ2CommerceRootCategory(string $now): int
     {
-        $db    = $this->db;
+        $db = $this->db;
+
+        // Check if a "Shop" category tagged as sample data already exists
+        $ext = 'com_content';
         $query = $db->getQuery(true)
             ->select('id')
             ->from($db->quoteName('#__categories'))
             ->where($db->quoteName('extension') . ' = :ext')
-            ->where($db->quoteName('parent_id') . ' = 1')
-            ->bind(':ext', $ext);
-        $ext   = 'com_content';
+            ->where($db->quoteName('alias') . ' = :alias')
+            ->where($db->quoteName('metakey') . ' = :tag')
+            ->bind(':ext', $ext)
+            ->bind(':alias', $shopAlias)
+            ->bind(':tag', $sampleTag);
+        $shopAlias = 'shop';
+        $sampleTag = self::SAMPLE_TAG;
         $db->setQuery($query);
         $existing = (int) $db->loadResult();
 
@@ -607,8 +672,32 @@ final class SampleDataHelper
             return $existing;
         }
 
-        // Return global root — we'll nest under root (id=1) using com_content
-        // Products reference com_content category IDs
+        // Create "Shop" as a sibling of "Uncategorised" under the global root (id=1)
+        $table = Table::getInstance('Category');
+        $table->extension        = 'com_content';
+        $table->title            = 'Shop';
+        $table->alias            = $this->uniqueAlias('shop', 'categories');
+        $table->published        = 1;
+        $table->access           = 1;
+        $table->language         = '*';
+        $table->description      = '';
+        $table->note             = '';
+        $table->metadesc         = '';
+        $table->metakey          = self::SAMPLE_TAG;
+        $table->metadata         = '';
+        $table->params           = '{}';
+        $table->created_time     = $now;
+        $table->modified_time    = $now;
+        $table->created_user_id  = 0;
+        $table->modified_user_id = 0;
+        $table->hits             = 0;
+        $table->version          = 1;
+        $table->setLocation(1, 'last-child');
+
+        if ($table->check() && $table->store()) {
+            return (int) $table->id;
+        }
+
         return 1;
     }
 
@@ -770,10 +859,11 @@ final class SampleDataHelper
             // Create Joomla content article as the product source
             $alias   = $this->uniqueAlias(strtolower(preg_replace('/[^a-z0-9]+/i', '-', $uniqueName)), 'content');
             $article = new \stdClass();
+            $descTemplates = self::DESCRIPTIONS[$catKey] ?? self::DESCRIPTIONS['electronics'];
             $article->title       = $uniqueName;
             $article->alias       = $alias;
-            $article->introtext   = '<p>Sample product: ' . htmlspecialchars($uniqueName) . '</p>';
-            $article->fulltext    = '';
+            $article->introtext   = sprintf($descTemplates['introtext'], htmlspecialchars($uniqueName));
+            $article->fulltext    = sprintf($descTemplates['fulltext'], htmlspecialchars($uniqueName));
             $article->state       = 1;
             $article->catid       = $catId;
             $article->created     = $now;
@@ -912,10 +1002,11 @@ final class SampleDataHelper
 
             $alias   = $this->uniqueAlias(strtolower(preg_replace('/[^a-z0-9]+/i', '-', $productName)), 'content');
             $article = new \stdClass();
+            $descTemplates = self::DESCRIPTIONS[$catKey] ?? self::DESCRIPTIONS['electronics'];
             $article->title       = $productName;
             $article->alias       = $alias;
-            $article->introtext   = '<p>Variable product: ' . htmlspecialchars($productName) . '</p>';
-            $article->fulltext    = '';
+            $article->introtext   = sprintf($descTemplates['introtext'], htmlspecialchars($productName));
+            $article->fulltext    = sprintf($descTemplates['fulltext'], htmlspecialchars($productName));
             $article->state       = 1;
             $article->catid       = $catId;
             $article->created     = $now;
@@ -1220,18 +1311,21 @@ final class SampleDataHelper
             $shipping = $subtotal > 50 ? 0.0 : 7.99;
             $total    = round($subtotal + $tax + $shipping, 5);
 
-            $orderId    = 'J2C-' . strtoupper(dechex($i + 1000)) . '-' . str_pad((string) $i, 6, '0', STR_PAD_LEFT);
             $addrEntry  = $addrData[$i % $addrCount];
 
+            // Use a temporary order_id; will be replaced after insert with time() . PK
+            $tempOrderId = (string) strtotime($createdOn);
+            $invoicePrefix = J2CommerceHelper::config()->get('invoice_prefix', 'INV-');
+
             $order                         = new \stdClass();
-            $order->order_id               = $orderId;
+            $order->order_id               = $tempOrderId;
             $order->order_type             = 'normal';
             $order->parent_id              = null;
             $order->subscription_id        = null;
             $order->cart_id                = $i + 1;
-            $order->invoice_prefix         = 'INV';
+            $order->invoice_prefix         = $invoicePrefix;
             $order->invoice_number         = $i + 1001;
-            $order->token                  = md5($orderId . $createdOn);
+            $order->token                  = '';
             $order->user_id                = $customer['id'];
             $order->user_email             = $customer['email'];
             $order->order_total            = $total;
@@ -1247,7 +1341,7 @@ final class SampleDataHelper
             $order->order_surcharge        = 0.0;
             $order->order_fees             = 0.0;
             $order->orderpayment_type      = 'plg_j2commerce_payment_cod';
-            $order->transaction_id         = 'TXN-' . $orderId;
+            $order->transaction_id         = 'TXN-SAMPLE-' . ($i + 1);
             $order->transaction_status     = 'success';
             $order->transaction_details    = '';
             $order->currency_id            = 1;
@@ -1269,7 +1363,22 @@ final class SampleDataHelper
             $order->campaign_double_opt_in = null;
             $order->campaign_order_id      = null;
 
-            $db->insertObject('#__j2commerce_orders', $order);
+            $db->insertObject('#__j2commerce_orders', $order, 'j2commerce_order_id');
+            $pk = (int) $order->j2commerce_order_id;
+
+            // Generate real order_id: timestamp + PK (matches CartOrder / OrderTable pattern)
+            $orderId = (string) (strtotime($createdOn) . $pk);
+            $orderToken = md5($orderId . bin2hex(random_bytes(8)));
+
+            $updateOrder = $db->getQuery(true)
+                ->update($db->quoteName('#__j2commerce_orders'))
+                ->set($db->quoteName('order_id') . ' = :oid')
+                ->set($db->quoteName('token') . ' = :token')
+                ->where($db->quoteName('j2commerce_order_id') . ' = :pk')
+                ->bind(':oid', $orderId)
+                ->bind(':token', $orderToken)
+                ->bind(':pk', $pk, ParameterType::INTEGER);
+            $db->setQuery($updateOrder)->execute();
 
             // Create order info
             $info                     = new \stdClass();
@@ -1394,11 +1503,9 @@ final class SampleDataHelper
             $coupon->ordering    = $i + 1;
             $coupon->value       = $couponData['value'];
             $coupon->value_type  = $couponData['value_type'];
-            $coupon->max_value   = null;
+            $coupon->max_value   = '';
             $coupon->free_shipping = $couponData['free_shipping'];
             $coupon->max_uses    = 1000;
-            $coupon->max_quantity = 0;
-            $coupon->user_group  = null;
             $coupon->logged      = 0;
             $coupon->max_customer_uses = 0;
             $coupon->valid_from  = $nullDate;
@@ -1407,11 +1514,231 @@ final class SampleDataHelper
             $coupon->products    = '';
             $coupon->min_subtotal = $couponData['min_subtotal'];
             $coupon->users       = '';
-            $coupon->mycategory  = null;
+            $coupon->mycategory  = '';
             $coupon->brand_ids   = '';
 
             $db->insertObject('#__j2commerce_coupons', $coupon);
             $created++;
+        }
+
+        return $created;
+    }
+
+    private function createProductImages(array $productIds, array $catIds): int
+    {
+        if (empty($productIds)) {
+            return 0;
+        }
+
+        $db = $this->db;
+
+        // Build a lookup of product_id → category key using the catIds we created
+        $catKeyByIndex = [];
+        foreach ($catIds as $index => $catEntry) {
+            $catKeyByIndex[$index] = $catEntry['key'] ?? 'electronics';
+        }
+
+        $imageBase   = 'media/plg_sampledata_j2commerce/images';
+        $categories  = ['electronics', 'clothing', 'home', 'sporting', 'books'];
+        $imageCount  = 5;
+        $created     = 0;
+
+        foreach ($productIds as $index => $productData) {
+            $productId = (int) ($productData['id'] ?? 0);
+
+            if ($productId <= 0) {
+                continue;
+            }
+
+            // Determine category from rotation
+            $catCount = count($catIds);
+            $catEntry = $catCount > 0 ? $catIds[$index % $catCount] : null;
+            $catKey   = $catEntry['key'] ?? $categories[$index % count($categories)];
+
+            $imageNum  = ($index % $imageCount) + 1;
+            $imagePath = $imageBase . '/' . $catKey . '/' . $imageNum . '.svg';
+
+            $img                          = new \stdClass();
+            $img->product_id              = $productId;
+            $img->main_image              = $imagePath;
+            $img->main_image_alt          = '';
+            $img->thumb_image             = $imagePath;
+            $img->thumb_image_alt         = '';
+            $img->tiny_image              = $imagePath;
+            $img->tiny_image_alt          = '';
+            $img->additional_images       = null;
+            $img->additional_images_alt   = null;
+            $img->additional_thumb_images = null;
+            $img->additional_thumb_images_alt = null;
+            $img->additional_tiny_images  = null;
+            $img->additional_tiny_images_alt = null;
+
+            $db->insertObject('#__j2commerce_productimages', $img);
+
+            if ((int) $db->insertid() > 0) {
+                $created++;
+            }
+        }
+
+        return $created;
+    }
+
+    /**
+     * Ensure the store has minimal tax, shipping, and payment configured.
+     *
+     * Checks are additive only — nothing is created if it already exists.
+     * These records are NOT tagged as sample data and persist after remove().
+     *
+     * @return array<string, string>  Human-readable messages about what was done.
+     */
+    private function ensureStoreSetup(DatabaseInterface $db): array
+    {
+        $results = [];
+
+        // --- Tax ---
+        $taxCheck = $db->getQuery(true)
+            ->select('COUNT(*)')
+            ->from($db->quoteName('#__j2commerce_taxprofiles'));
+        $taxCount = (int) $db->setQuery($taxCheck)->loadResult();
+
+        if ($taxCount === 0) {
+            OnboardingHelper::createDefaultTax(223, 0, 8.25, $db);
+            $results['tax'] = 'Created default US tax profile (8.25%)';
+        } else {
+            $results['tax'] = 'Tax profile already exists — skipped';
+        }
+
+        // --- Shipping ---
+        $shipCheck = $db->getQuery(true)
+            ->select('COUNT(*)')
+            ->from($db->quoteName('#__j2commerce_shippingmethods'))
+            ->where($db->quoteName('published') . ' = 1');
+        $shipCount = (int) $db->setQuery($shipCheck)->loadResult();
+
+        if ($shipCount === 0) {
+            // Enable the standard shipping plugin if it exists
+            OnboardingHelper::setPluginEnabled('shipping_standard', 'j2commerce', 1, $db);
+
+            // Create a flat-rate shipping method (type 1 = Standard)
+            $methodId = OnboardingHelper::createShippingMethod('Standard Shipping', 1, $db);
+
+            if ($methodId > 0) {
+                // Create a single worldwide rate at $5.99
+                OnboardingHelper::createShippingRates($methodId, [
+                    ['geozone_id' => 0, 'price' => 5.99, 'handling' => 0, 'weight_start' => 0, 'weight_end' => 0],
+                ], $db);
+                $results['shipping'] = 'Created default flat-rate shipping method ($5.99)';
+            } else {
+                $results['shipping'] = 'Could not create shipping method';
+            }
+        } else {
+            $results['shipping'] = 'Shipping method already exists — skipped';
+        }
+
+        // --- Payment ---
+        $payCheck = $db->getQuery(true)
+            ->select('COUNT(*)')
+            ->from($db->quoteName('#__extensions'))
+            ->where($db->quoteName('type') . ' = ' . $db->quote('plugin'))
+            ->where($db->quoteName('folder') . ' = ' . $db->quote('j2commerce'))
+            ->where($db->quoteName('element') . ' LIKE ' . $db->quote('payment_%'))
+            ->where($db->quoteName('enabled') . ' = 1');
+        $payCount = (int) $db->setQuery($payCheck)->loadResult();
+
+        if ($payCount === 0) {
+            OnboardingHelper::setPluginEnabled('payment_cash', 'j2commerce', 1, $db);
+            $results['payment'] = 'Enabled cash-on-delivery payment plugin';
+        } else {
+            $results['payment'] = 'Payment plugin already enabled — skipped';
+        }
+
+        return $results;
+    }
+
+    /**
+     * Create advanced / sale pricing for a random selection of products.
+     *
+     * Used only for the "full" profile to showcase advanced pricing features.
+     *
+     * @param  array<array{id: int, variant_id: int, price: float, ...}>  $productIds
+     * @return int  Number of price rows created.
+     */
+    private function createAdvancedPricing(array $productIds, DatabaseInterface $db): int
+    {
+        if (empty($productIds)) {
+            return 0;
+        }
+
+        $created  = 0;
+        $total    = count($productIds);
+
+        // Pick 5 products (or fewer if not enough exist)
+        $pickCount = min(5, $total);
+        $indices   = array_rand($productIds, $pickCount);
+
+        if (!is_array($indices)) {
+            $indices = [$indices];
+        }
+
+        $selected = array_map(fn($i) => $productIds[$i], $indices);
+
+        $now      = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        $dateFrom = $now->modify('-30 days')->format('Y-m-d H:i:s');
+        $dateTo   = $now->modify('+30 days')->format('Y-m-d H:i:s');
+
+        foreach ($selected as $k => $product) {
+            $variantId = (int) ($product['variant_id'] ?? 0);
+            $basePrice = (float) ($product['price'] ?? 0.0);
+
+            if ($variantId <= 0 || $basePrice <= 0.0) {
+                continue;
+            }
+
+            if ($k < 3) {
+                // Sale / special price: 20% off, active now
+                $salePrice = round($basePrice * 0.80, 5);
+
+                $row                  = new \stdClass();
+                $row->variant_id      = $variantId;
+                $row->quantity_from   = null;
+                $row->quantity_to     = null;
+                $row->date_from       = $dateFrom;
+                $row->date_to         = $dateTo;
+                $row->customer_group_id = null;
+                $row->price           = number_format($salePrice, 5, '.', '');
+                $row->params          = null;
+
+                $db->insertObject('#__j2commerce_product_prices', $row);
+                $created++;
+            } else {
+                // Quantity-based tier pricing
+                $tiers = [
+                    ['qty_from' => 5.00000,  'qty_to' => 9.00000,  'discount' => 0.10],
+                    ['qty_from' => 10.00000, 'qty_to' => 24.00000, 'discount' => 0.15],
+                    ['qty_from' => 25.00000, 'qty_to' => null,     'discount' => 0.20],
+                ];
+
+                foreach ($tiers as $tier) {
+                    $tierPrice = round($basePrice * (1.0 - $tier['discount']), 5);
+                    $qtyFrom   = number_format($tier['qty_from'], 5, '.', '');
+                    $qtyTo     = $tier['qty_to'] !== null
+                        ? number_format($tier['qty_to'], 5, '.', '')
+                        : null;
+
+                    $row                  = new \stdClass();
+                    $row->variant_id      = $variantId;
+                    $row->quantity_from   = $qtyFrom;
+                    $row->quantity_to     = $qtyTo;
+                    $row->date_from       = null;
+                    $row->date_to         = null;
+                    $row->customer_group_id = null;
+                    $row->price           = number_format($tierPrice, 5, '.', '');
+                    $row->params          = null;
+
+                    $db->insertObject('#__j2commerce_product_prices', $row);
+                    $created++;
+                }
+            }
         }
 
         return $created;
