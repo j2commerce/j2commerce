@@ -269,6 +269,10 @@ class OnboardingController extends BaseController
         // Swap address_1/address_2 ordering based on country convention
         OnboardingHelper::reorderAddressFields($countryId, $db);
 
+        // Create default geozone so it's available for tax (step 3) and shipping (step 4)
+        $zoneId = $this->input->getInt('zone_id', 0);
+        $geo    = OnboardingHelper::createDefaultGeozone($countryId, $zoneId, $db);
+
         // Get recommended defaults for Step 2 pre-fill (currency only now)
         $defaults = OnboardingHelper::getCountryDefaults($countryId);
 
@@ -283,6 +287,7 @@ class OnboardingController extends BaseController
         return [
             'defaults'       => $defaults,
             'languagePrompt' => $languagePrompt,
+            'geozone'        => $geo,
         ];
     }
 

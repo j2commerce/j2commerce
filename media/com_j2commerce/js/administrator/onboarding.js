@@ -403,9 +403,22 @@ document.addEventListener('DOMContentLoaded', () => {
         if (lengthEl   && defaults.length_id) lengthEl.value = defaults.length_id;
     }
 
+    function populateGeozoneDropdowns(geozone) {
+        if (!geozone || !geozone.geozone_id) return;
+        modal.querySelectorAll('.ob-rate-geozone').forEach(select => {
+            // Clear existing options and add the new geozone
+            select.replaceChildren();
+            const opt = document.createElement('option');
+            opt.value = geozone.geozone_id;
+            opt.textContent = geozone.geozone_name;
+            select.appendChild(opt);
+        });
+    }
+
     async function handlePostSave(stepNum, data) {
         switch (stepNum) {
             case 1: {
+                populateGeozoneDropdowns(data.geozone);
                 if (data.languagePrompt === true) {
                     const prompt = modal.querySelector('#ob-lang-prompt');
                     if (prompt) prompt.classList.remove('d-none');

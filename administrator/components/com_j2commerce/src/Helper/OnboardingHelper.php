@@ -250,28 +250,40 @@ class OnboardingHelper
     }
 
     /**
-     * Create a default tax setup: geozone → geozone rule → tax rate → tax profile → tax rule.
+     * Create the default geozone and rule for a country/zone pair.
      *
-     * @return array{geozone_id: int, taxrate_id: int, taxprofile_id: int, taxrule_id: int}
+     * Idempotent: if a geozone with the same name already exists, it is reused.
+     * For US (country_id 223): geozone name = zone name.
+     * For all others: geozone name = country name.
+     *
+     * @return array{geozone_id: int, geozone_name: string}
      */
-    public static function createDefaultTax(
+    public static function createDefaultGeozone(
         int $countryId,
         int $zoneId,
-        float $taxPercent,
         DatabaseInterface $db,
     ): array {
         $countryName = self::getCountryName($countryId, $db);
         $isUS        = ($countryId === 223);
 
         if ($isUS && $zoneId > 0) {
-            $zoneName    = self::getZoneName($zoneId, $db);
-            $geoName     = $zoneName;
-            $ruleZoneId  = $zoneId;
-            $rateName    = "$zoneName Sales Tax";
+            $geoName    = self::getZoneName($zoneId, $db);
+            $ruleZoneId = $zoneId;
         } else {
-            $geoName     = $countryName;
-            $ruleZoneId  = 0;
-            $rateName    = "$countryName Tax";
+            $geoName    = $countryName;
+            $ruleZoneId = 0;
+        }
+
+        // Check if a geozone with this name already exists
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('j2commerce_geozone_id'))
+            ->from($db->quoteName('#__j2commerce_geozones'))
+            ->where($db->quoteName('geozone_name') . ' = :name')
+            ->bind(':name', $geoName);
+        $existingId = (int) $db->setQuery($query)->loadResult();
+
+        if ($existingId > 0) {
+            return ['geozone_id' => $existingId, 'geozone_name' => $geoName];
         }
 
         $geozone = (object) [
@@ -288,6 +300,32 @@ class OnboardingHelper
             'zone_id'    => $ruleZoneId,
         ];
         $db->insertObject('#__j2commerce_geozonerules', $geoRule, 'j2commerce_geozonerule_id');
+
+        return ['geozone_id' => $geozoneId, 'geozone_name' => $geoName];
+    }
+
+    /**
+     * Create a default tax setup: geozone → geozone rule → tax rate → tax profile → tax rule.
+     *
+     * Reuses the geozone from createDefaultGeozone() if it already exists.
+     *
+     * @return array{geozone_id: int, taxrate_id: int, taxprofile_id: int, taxrule_id: int}
+     */
+    public static function createDefaultTax(
+        int $countryId,
+        int $zoneId,
+        float $taxPercent,
+        DatabaseInterface $db,
+    ): array {
+        $geo       = self::createDefaultGeozone($countryId, $zoneId, $db);
+        $geozoneId = $geo['geozone_id'];
+        $geoName   = $geo['geozone_name'];
+
+        $isUS = ($countryId === 223);
+        $rateName = $isUS && $zoneId > 0
+            ? "$geoName Sales Tax"
+            : "$geoName Tax";
+
         $taxRate  = (object) [
             'geozone_id'   => $geozoneId,
             'taxrate_name' => $rateName,
