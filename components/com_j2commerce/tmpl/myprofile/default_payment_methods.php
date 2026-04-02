@@ -72,9 +72,10 @@ $csrfToken = Session::getFormToken();
                                         </div>
                                         <div class="d-flex align-items-center">
                                         <span class="dropdown dropstart">
-                                           <a role="button" class="text-reset dropdown-toggle" href="#" id="paymentDropdown<?php echo htmlspecialchars($method->id, ENT_QUOTES, 'UTF-8'); ?>" data-bs-toggle="dropdown" data-bs-offset="-20,20" aria-expanded="false">
-                                              <span class="fa-solid fa-ellipsis-vertical"></span>
-                                           </a>
+                                           <button type="button" class="btn btn-link text-reset dropdown-toggle p-0" id="paymentDropdown<?php echo htmlspecialchars($method->id, ENT_QUOTES, 'UTF-8'); ?>" data-bs-toggle="dropdown" data-bs-offset="-20,20" aria-expanded="false" aria-label="<?php echo Text::_('COM_J2COMMERCE_ACTIONS'); ?>">
+                                              <span class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></span>
+                                              <span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_ACTIONS'); ?></span>
+                                           </button>
                                            <span class="dropdown-menu" aria-labelledby="paymentDropdown<?php echo htmlspecialchars($method->id, ENT_QUOTES, 'UTF-8'); ?>">
                                               <?php if ($method->canDelete()) : ?>
                                                 <a role="button" class="dropdown-item j2commerce-delete-card-btn" href="#" data-provider="<?php echo htmlspecialchars($method->provider, ENT_QUOTES, 'UTF-8'); ?>" data-method-id="<?php echo htmlspecialchars($method->id, ENT_QUOTES, 'UTF-8'); ?>">
