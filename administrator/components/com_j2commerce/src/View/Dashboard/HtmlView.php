@@ -212,6 +212,7 @@ class HtmlView extends BaseHtmlView
         Text::script('COM_J2COMMERCE_LOADING');
 
         if (!SetupGuideHelper::isComplete()) {
+            HTMLHelper::_('bootstrap.offcanvas', '#j2commerce-setup-guide');
             $wa->registerAndUseScript('com_j2commerce.setup-guide', 'media/com_j2commerce/js/administrator/setup-guide.js', [], ['defer' => true]);
             $wa->registerAndUseStyle('com_j2commerce.setup-guide.css', 'media/com_j2commerce/css/administrator/setup-guide.css');
             $this->getDocument()->addScriptOptions('com_j2commerce.setupGuide', [
