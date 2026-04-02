@@ -1,0 +1,5 @@
+{
+    "name": "Detailed Card",
+    "description": "Full product card with all details",
+    "blockOrder": ["product-image", "product-title", "product-description", "product-sku", "product-price", "product-stock", "cart-form"]
+}

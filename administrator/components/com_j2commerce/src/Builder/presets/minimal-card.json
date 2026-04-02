@@ -1,0 +1,5 @@
+{
+    "name": "Minimal Card",
+    "description": "Clean layout with image, title, price, and cart button",
+    "blockOrder": ["product-image", "product-title", "product-price", "cart-form"]
+}

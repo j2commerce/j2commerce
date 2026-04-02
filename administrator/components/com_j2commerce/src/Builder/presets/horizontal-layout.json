@@ -1,0 +1,6 @@
+{
+    "name": "Horizontal Layout",
+    "description": "Side-by-side image and details",
+    "blockOrder": ["product-image", "product-title", "product-price", "product-description", "cart-form"],
+    "customStyles": ".j2commerce-product-card { display: flex; gap: 1rem; }"
+}

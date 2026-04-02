@@ -19,6 +19,7 @@ use J2Commerce\Component\J2commerce\Administrator\Service\OverrideRegistry;
 use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
+use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
@@ -99,6 +100,9 @@ class HtmlView extends BaseHtmlView
             'subLayoutFiles' => $this->builderSubLayoutFiles,
         ]);
 
+        // Initialize Bootstrap components for the builder tab
+        HTMLHelper::_('bootstrap.modal', '#builder-templates-modal');
+
         $this->addToolbar();
 
         parent::display($tpl);
@@ -119,10 +123,6 @@ class HtmlView extends BaseHtmlView
             $layoutFiles = OverrideRegistry::getLayoutFiles($element, $this->templateOverridePath);
 
             foreach ($layoutFiles as $file) {
-                if (!($file['hasOverride'] ?? false)) {
-                    continue;
-                }
-
                 $sourcePath = OverrideRegistry::getSourcePath($element, $file['relativePath']);
                 $fileType = OverrideRegistry::classifyLayoutFile($sourcePath);
 
@@ -132,9 +132,10 @@ class HtmlView extends BaseHtmlView
                 }
 
                 $files[] = [
-                    'value'    => $element . '::' . $file['relativePath'],
-                    'label'    => '[' . $subtemplateLabel . '] ' . $file['displayName'] . ' (' . $file['relativePath'] . ')',
-                    'fileType' => $fileType,
+                    'value'       => $element . '::' . $file['relativePath'],
+                    'label'       => '[' . $subtemplateLabel . '] ' . $file['displayName'] . ' (' . $file['relativePath'] . ')',
+                    'fileType'    => $fileType,
+                    'hasOverride' => $file['hasOverride'] ?? false,
                 ];
             }
         }
