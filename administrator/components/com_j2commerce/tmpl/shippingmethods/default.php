@@ -47,6 +47,8 @@ HTMLHelper::_('bootstrap.tooltip', '[data-bs-toggle="tooltip"]', ['placement' =>
 
 <?php echo $this->navbar; ?>
 
+<?php echo $this->shippingCards; ?>
+
 <form action="<?php echo Route::_('index.php?option=com_j2commerce&view=shippingmethods'); ?>" method="post" name="adminForm" id="adminForm">
     <div class="row">
         <div class="col-md-12">
@@ -223,6 +225,4 @@ HTMLHelper::_('bootstrap.tooltip', '[data-bs-toggle="tooltip"]', ['placement' =>
         </div>
     </div>
 </form>
-<?php echo $this->shippingCards;?>
-
 <?php echo $this->footer ?? ''; ?>
