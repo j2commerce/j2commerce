@@ -9,6 +9,13 @@ $settings      = $settings ?? [];
 $showSpecial   = $settings['show_special'] ?? true;
 $showTaxInfo   = $settings['show_tax_info'] ?? false;
 $cssClass      = $settings['css_class'] ?? 'j2commerce-product-price';
+$format        = $settings['format'] ?? 'standard';
+$showSaleBadge = $settings['show_sale_badge'] ?? true;
+$salePriceClass = match ($format) {
+    'large'   => 'sale-price lh-1 fs-3 fw-semibold',
+    'compact' => 'sale-price lh-1 fs-6 fw-semibold',
+    default   => 'sale-price lh-1 fs-5 fw-semibold',
+};
 $productHelper = J2CommerceHelper::product();
 
 if (!($showPrice ?? true) || !$productHelper->canShowprice($params ?? null)) {
@@ -36,7 +43,7 @@ $salePrice  = $pricing->price ?? 0;
 
 <div class="<?php echo htmlspecialchars($cssClass, ENT_QUOTES, 'UTF-8'); ?> d-flex align-items-center gap-1">
     <?php if ($showSpecialPrice && isset($pricing->price)): ?>
-        <div class="sale-price lh-1 fs-5 fw-semibold">
+        <div class="<?php echo $salePriceClass; ?>">
             <?php echo $productHelper->displayPrice((float) $salePrice, $product, $params); ?>
         </div>
     <?php endif; ?>

@@ -143,7 +143,7 @@ class HtmlView extends BaseHtmlView
         $canDo         = ContentHelper::getActions('com_j2commerce');
         $canEditOrders = J2CommerceHelper::canAccess('j2commerce.editorders');
         $user          = Factory::getApplication()->getIdentity();
-        $checkedOut    = isset($this->item->checked_out) && !(\is_null($this->item->checked_out) || $this->item->checked_out == $user->id);
+        $checkedOut    = !(($this->item->checked_out ?? null) === null || ($this->item->checked_out ?? 0) == $user->id);
         $toolbar       = $this->getDocument()->getToolbar();
 
         $orderDisplay = $this->item->invoice ?? $this->item->order_id ?? Text::_('COM_J2COMMERCE_ORDER');

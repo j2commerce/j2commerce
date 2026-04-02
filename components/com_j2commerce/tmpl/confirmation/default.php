@@ -90,6 +90,10 @@ if ($info) {
 ?>
 
 
+<div class="page-header">
+    <h1><?php echo Text::_('COM_J2COMMERCE_ORDER_CONFIRMATION'); ?></h1>
+</div>
+
 <div class="j2commerce-confirmation">
     <?php if ($this->showingRecent) : ?>
     <div class="alert alert-info d-flex justify-content-between align-items-center mb-3">

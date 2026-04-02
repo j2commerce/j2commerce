@@ -210,7 +210,7 @@ document.addEventListener('DOMContentLoaded', function() {
             buttonQuote.disabled = true;
             buttonQuote.classList.add('disabled');
             const originalText = buttonQuote.innerHTML;
-            buttonQuote.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_LOADING'); ?>';
+            buttonQuote.innerHTML = '<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_LOADING'); ?>';
 
             try {
                 // Use POST for the estimate task with AJAX flag

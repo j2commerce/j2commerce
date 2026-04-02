@@ -52,45 +52,67 @@ class ShippingMethodCheck extends AbstractSetupCheck
 
     public function check(): SetupCheckResult
     {
-        $db    = $this->getDatabase();
+        $db     = $this->getDatabase();
+        $folder = 'j2commerce';
+        $like   = 'shipping_%';
+        $type   = 'plugin';
+
+        // Check for enabled shipping plugins in #__extensions
         $query = $db->getQuery(true)
             ->select('COUNT(*)')
-            ->from($db->quoteName('#__j2commerce_shippingmethods'))
-            ->where($db->quoteName('published') . ' = 1');
+            ->from($db->quoteName('#__extensions'))
+            ->where($db->quoteName('type') . ' = :type')
+            ->where($db->quoteName('folder') . ' = :folder')
+            ->where($db->quoteName('element') . ' LIKE :element')
+            ->where($db->quoteName('enabled') . ' = 1')
+            ->bind(':type', $type)
+            ->bind(':folder', $folder)
+            ->bind(':element', $like);
 
-        $count = (int) $db->setQuery($query)->loadResult();
+        $pluginCount = (int) $db->setQuery($query)->loadResult();
 
-        return $count > 0
-            ? new SetupCheckResult('pass', Text::sprintf('COM_J2COMMERCE_SETUP_GUIDE_CHECK_SHIPPING_METHOD_PASS', $count))
+        return $pluginCount > 0
+            ? new SetupCheckResult('pass', Text::sprintf('COM_J2COMMERCE_SETUP_GUIDE_CHECK_SHIPPING_METHOD_PASS', $pluginCount))
             : new SetupCheckResult('fail', Text::_('COM_J2COMMERCE_SETUP_GUIDE_CHECK_SHIPPING_METHOD_FAIL'));
     }
 
     public function getDetailView(): string
     {
-        $db    = $this->getDatabase();
-        $query = $db->getQuery(true)
-            ->select([$db->quoteName('j2commerce_shippingmethod_id'), $db->quoteName('shipping_method_name')])
-            ->from($db->quoteName('#__j2commerce_shippingmethods'))
-            ->where($db->quoteName('published') . ' = 1')
-            ->order($db->quoteName('shipping_method_name') . ' ASC');
+        $db     = $this->getDatabase();
+        $folder = 'j2commerce';
+        $like   = 'shipping_%';
+        $type   = 'plugin';
 
-        $methods = $db->setQuery($query)->loadObjectList();
+        // Get enabled shipping plugins
+        $query = $db->getQuery(true)
+            ->select([$db->quoteName('extension_id'), $db->quoteName('element'), $db->quoteName('name')])
+            ->from($db->quoteName('#__extensions'))
+            ->where($db->quoteName('type') . ' = :type')
+            ->where($db->quoteName('folder') . ' = :folder')
+            ->where($db->quoteName('element') . ' LIKE :element')
+            ->where($db->quoteName('enabled') . ' = 1')
+            ->bind(':type', $type)
+            ->bind(':folder', $folder)
+            ->bind(':element', $like)
+            ->order($db->quoteName('name') . ' ASC');
+
+        $plugins = $db->setQuery($query)->loadObjectList();
 
         $shippingUrl = 'index.php?option=com_j2commerce&view=shippingmethods';
 
         $html = '<h5>' . Text::_('COM_J2COMMERCE_SETUP_GUIDE_CHECK_SHIPPING_METHOD') . '</h5>'
             . '<p>' . Text::_('COM_J2COMMERCE_SETUP_GUIDE_CHECK_SHIPPING_METHOD_DESC') . '</p>';
 
-        if ($methods) {
+        if ($plugins) {
             $html .= '<p class="text-muted small mb-1">' . Text::_('COM_J2COMMERCE_SETUP_GUIDE_ENABLED_SHIPPING_METHODS') . '</p>'
                 . '<ul class="list-unstyled mb-3">';
 
-            foreach ($methods as $method) {
-                $editUrl = 'index.php?option=com_j2commerce&task=shippingmethod.edit&id=' . (int) $method->j2commerce_shippingmethod_id;
+            foreach ($plugins as $plugin) {
+                $editUrl = 'index.php?option=com_plugins&task=plugin.edit&extension_id=' . (int) $plugin->extension_id;
 
                 $html .= '<li class="py-1 small">'
                     . '<i class="fa-regular fa-circle-check text-success me-1" aria-hidden="true"></i>'
-                    . '<a href="' . $editUrl . '">' . htmlspecialchars($method->shipping_method_name) . '</a>'
+                    . '<a href="' . $editUrl . '">' . htmlspecialchars($plugin->name) . '</a>'
                     . '</li>';
             }
 

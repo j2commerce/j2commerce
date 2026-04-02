@@ -1,0 +1,5 @@
+{
+    "name": "Price Focused",
+    "description": "Price-first layout for deal-oriented stores",
+    "blockOrder": ["product-price", "product-image", "product-title", "cart-form"]
+}

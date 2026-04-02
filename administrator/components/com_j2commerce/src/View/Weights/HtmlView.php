@@ -20,9 +20,9 @@ use Joomla\CMS\Form\Form;
 use Joomla\CMS\Helper\ContentHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
-use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Pagination\Pagination;
+use Joomla\CMS\Session\Session;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use Joomla\Registry\Registry;
 
@@ -147,8 +147,7 @@ class HtmlView extends BaseHtmlView
      */
     protected function addToolbar(): void
     {
-        $canDo = ContentHelper::getActions('com_j2commerce');
-        $user  = Factory::getApplication()->getIdentity();
+        $canDo   = ContentHelper::getActions('com_j2commerce');
         $toolbar = $this->getDocument()->getToolbar();
 
         ToolbarHelper::title(Text::_('COM_J2COMMERCE_WEIGHTS'), 'fa-solid fa-weight-scale');
@@ -178,6 +177,14 @@ class HtmlView extends BaseHtmlView
 
         if ($canDo->get('core.delete') && ($this->state->get('filter.enabled') == -2)) {
             $toolbar->delete('weights.delete', 'JTOOLBAR_DELETE_FROM_TRASH')->listCheck(true);
+        }
+
+        if (!$this->isEmptyState && $canDo->get('core.edit')) {
+            $syncUrl = 'index.php?option=com_j2commerce&task=weights.syncValues&' . Session::getFormToken() . '=1';
+            $toolbar->linkButton('sync-values', 'COM_J2COMMERCE_TOOLBAR_SYNC_VALUES')
+                ->url($syncUrl)
+                ->icon('fa-solid fa-arrows-rotate')
+                ->buttonClass('btn btn-info');
         }
 
         if ($canDo->get('core.admin') || $canDo->get('core.options')) {

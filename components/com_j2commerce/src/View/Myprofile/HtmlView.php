@@ -220,6 +220,8 @@ class HtmlView extends BaseHtmlView
         Text::script('COM_J2COMMERCE_NEVER_EXPIRES');
         Text::script('COM_J2COMMERCE_NO_DOWNLOADS');
 
+        Text::script('COM_J2COMMERCE_LOADING');
+
         $this->_prepareDocument();
         parent::display($tpl);
     }

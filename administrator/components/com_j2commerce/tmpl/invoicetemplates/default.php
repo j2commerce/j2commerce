@@ -63,7 +63,8 @@ $isMultilang = Multilanguage::isEnabled();
                     <table class="table" id="invoicetemplateList">
                         <caption class="visually-hidden">
                             <?php echo Text::_('COM_J2COMMERCE_INVOICETEMPLATES_TABLE_CAPTION'); ?>,
-                            <span id="orderable"><?php echo Text::_('JGLOBAL_SORTED_TABLE'); ?></span>
+                            <span id="orderedBy"><?php echo Text::_('JGLOBAL_SORTED_BY'); ?> </span>,
+                            <span id="filteredBy"><?php echo Text::_('JGLOBAL_FILTERED_BY'); ?></span>
                         </caption>
                         <thead>
                             <tr>

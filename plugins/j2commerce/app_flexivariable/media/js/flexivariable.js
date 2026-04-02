@@ -270,7 +270,7 @@ const J2CommerceFlexivariable = {
         const deleteButton = document.querySelector(`[data-variant-id="${variantId}"][data-flexivariable-action="delete"]`);
         if (deleteButton) {
             deleteButton.disabled = true;
-            deleteButton.innerHTML = '<span class="spinner-border spinner-border-sm"></span> ' + (Joomla.Text._('PLG_J2COMMERCE_APP_FLEXIVARIABLE_DELETING') || 'Deleting...');
+            deleteButton.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span> ' + Joomla.Text._('PLG_J2COMMERCE_APP_FLEXIVARIABLE_DELETING');
         }
 
         const formData = new FormData();

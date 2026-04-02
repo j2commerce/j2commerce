@@ -176,12 +176,103 @@ final class AppCurrencyupdater extends CMSPlugin implements SubscriberInterface
                 'ExchangeRate.host',
                 'error'
             ),
-            default => $this->fetchRatesFromEndpoint(
-                "https://api.frankfurter.dev/v1/latest?from={$baseCurrency}&to=" . implode(',', $targetCodes),
-                'Frankfurter',
-                'message'
-            ),
+            default => $this->fetchBulkFromFrankfurter($baseCurrency, $targetCodes),
         };
+    }
+
+    private function fetchBulkFromFrankfurter(string $base, array $codes): array
+    {
+        $source = 'Frankfurter';
+        $url = "https://api.frankfurter.dev/v1/latest?from={$base}&to=" . implode(',', $codes);
+
+        try {
+            $http = $this->createHttp();
+            $response = $http->get($url, [], 30);
+            $statusCode = $response->getStatusCode();
+            $body = (string) $response->getBody();
+
+            // Bulk request succeeded — parse and report any missing currencies
+            if ($statusCode === 200) {
+                $data = json_decode($body, false, 512, JSON_THROW_ON_ERROR);
+
+                if (!isset($data->rates) || !\is_object($data->rates)) {
+                    $this->surfaceError($source, $data->message ?? 'No rates in response');
+                    return [];
+                }
+
+                $rates = [];
+                foreach ($data->rates as $code => $rate) {
+                    $rates[(string) $code] = (float) $rate;
+                }
+
+                // Report currencies that were requested but missing from the response
+                $missing = array_diff($codes, array_keys($rates));
+                if (!empty($missing)) {
+                    $this->getApplication()->enqueueMessage(
+                        Text::sprintf(
+                            'PLG_J2COMMERCE_APP_CURRENCYUPDATER_ERROR_UNSUPPORTED_CURRENCIES',
+                            implode(', ', $missing)
+                        ),
+                        'warning'
+                    );
+                }
+
+                return $rates;
+            }
+
+            // 404 means one or more currencies are not supported by Frankfurter
+            if ($statusCode === 404) {
+                // Single currency — report it directly as unsupported
+                if (\count($codes) === 1) {
+                    $this->getApplication()->enqueueMessage(
+                        Text::sprintf(
+                            'PLG_J2COMMERCE_APP_CURRENCYUPDATER_ERROR_UNSUPPORTED_CURRENCIES',
+                            $codes[0]
+                        ),
+                        'warning'
+                    );
+                    return [];
+                }
+
+                // Multiple currencies — retry individually to salvage supported ones
+                $rates = [];
+                $unsupported = [];
+
+                foreach ($codes as $code) {
+                    $singleUrl = "https://api.frankfurter.dev/v1/latest?from={$base}&to={$code}";
+                    $singleResponse = $http->get($singleUrl, [], 30);
+
+                    if ($singleResponse->getStatusCode() === 200) {
+                        $singleData = json_decode((string) $singleResponse->getBody(), false, 512, JSON_THROW_ON_ERROR);
+
+                        if (isset($singleData->rates->$code)) {
+                            $rates[$code] = (float) $singleData->rates->$code;
+                        }
+                    } else {
+                        $unsupported[] = $code;
+                    }
+                }
+
+                if (!empty($unsupported)) {
+                    $this->getApplication()->enqueueMessage(
+                        Text::sprintf(
+                            'PLG_J2COMMERCE_APP_CURRENCYUPDATER_ERROR_UNSUPPORTED_CURRENCIES',
+                            implode(', ', $unsupported)
+                        ),
+                        'warning'
+                    );
+                }
+
+                return $rates;
+            }
+
+            // Other error
+            $this->surfaceError($source, "HTTP {$statusCode}: " . substr($body, 0, 200));
+            return [];
+        } catch (\Throwable $e) {
+            $this->surfaceError($source, $e->getMessage());
+            return [];
+        }
     }
 
     private function fetchRatesFromEndpoint(string $url, string $source, string $errorProperty = 'message'): array

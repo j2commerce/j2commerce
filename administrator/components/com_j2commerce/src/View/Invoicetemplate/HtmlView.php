@@ -125,7 +125,7 @@ class HtmlView extends BaseHtmlView
         $isNew      = ($this->item->j2commerce_invoicetemplate_id == 0);
         $canDo      = ContentHelper::getActions('com_j2commerce', 'invoicetemplate', $this->item->j2commerce_invoicetemplate_id ?? 0);
         $user       = Factory::getApplication()->getIdentity();
-        $checkedOut = !(\is_null($this->item->checked_out) || $this->item->checked_out == $user->id);
+        $checkedOut = !(($this->item->checked_out ?? null) === null || ($this->item->checked_out ?? 0) == $user->id);
 
         Factory::getApplication()->getInput()->set('hidemainmenu', true);
 

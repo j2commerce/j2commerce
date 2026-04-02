@@ -72,7 +72,7 @@
 
         try {
             button.disabled = true;
-            button.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>' + Joomla.JText._('JLIB_HTML_BEHAVIOR_LOADING', 'Loading...');
+            button.innerHTML = '<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span> ' + Joomla.JText._('COM_J2COMMERCE_LOADING');
 
             const response = await fetch('index.php?option=com_ajax&plugin=' + provider + '&group=j2commerce&method=deleteCard&format=json', {
                 method: 'POST',
@@ -138,7 +138,7 @@
 
         try {
             button.disabled = true;
-            button.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>';
+            button.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></span>';
 
             const response = await fetch('index.php?option=com_ajax&plugin=' + provider + '&group=j2commerce&method=setDefaultCard&format=json', {
                 method: 'POST',

@@ -10,6 +10,9 @@ extract($displayData);
 $settings    = $settings ?? [];
 $linkEnabled = $settings['link'] ?? true;
 $cssClass    = $settings['css_class'] ?? 'j2commerce-product-image position-relative border mb-3';
+$aspectRatio = $settings['aspect_ratio'] ?? 'auto';
+$objectFit   = $settings['object_fit'] ?? 'cover';
+$maxHeight   = $settings['max_height'] ?? '200px';
 
 if (!($showImage ?? true)) {
     return;
@@ -30,7 +33,24 @@ if (empty($image)) {
         <a href="<?php echo htmlspecialchars($productLink, ENT_QUOTES, 'UTF-8'); ?>">
     <?php endif; ?>
 
-    <?php echo ImageHelper::getProductImage($image, $imageWidth, 'html', $imageWidth, 'j2commerce-img-responsive img-fluid', $imageAlt); ?>
+    <?php
+    $imgStyle = '';
+    if ($maxHeight !== 'auto' && $maxHeight !== '') {
+        $imgStyle .= 'max-height:' . htmlspecialchars($maxHeight, ENT_QUOTES, 'UTF-8') . ';';
+    }
+    if ($objectFit !== 'cover') {
+        $imgStyle .= 'object-fit:' . htmlspecialchars($objectFit, ENT_QUOTES, 'UTF-8') . ';';
+    }
+    $imgClass = 'j2commerce-img-responsive img-fluid';
+    if ($aspectRatio !== 'auto') {
+        $ratioMap = ['1:1' => '1x1', '4:3' => '4x3', '16:9' => '16x9', '3:4' => '3x4'];
+        $ratioClass = $ratioMap[$aspectRatio] ?? '';
+        if ($ratioClass) {
+            $imgClass .= ' ratio ratio-' . $ratioClass;
+        }
+    }
+    echo ImageHelper::getProductImage($image, $imageWidth, 'html', $imageWidth, $imgClass, $imageAlt, $imgStyle ? ' style="' . $imgStyle . '"' : '');
+    ?>
 
     <?php if ($linkEnabled && !empty($productLink)): ?>
         </a>

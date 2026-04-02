@@ -68,7 +68,7 @@ class CountriesCheck extends AbstractSetupCheck
             . '<a href="' . $countriesUrl . '" class="btn btn-primary w-100 mb-2">'
             . Text::_('COM_J2COMMERCE_SETUP_GUIDE_ACTION_MANAGE_COUNTRIES')
             . '</a>'
-            . '<button type="button" class="btn btn-outline-info w-100 button-start-guidedtour" data-gt-uid="j2commerce-managing-countries">'
+            . '<button type="button" class="btn btn-outline-info w-100 button-start-guidedtour" data-gt-uid="com_j2commerce.managing-countries">'
             . '<span class="icon-map-signs me-1" aria-hidden="true"></span> '
             . Text::_('COM_J2COMMERCE_SETUP_GUIDE_START_GUIDED_TOUR')
             . '</button>';
@@ -76,6 +76,6 @@ class CountriesCheck extends AbstractSetupCheck
 
     public function getGuidedTourUid(): ?string
     {
-        return 'j2commerce-managing-countries';
+        return 'com_j2commerce.managing-countries';
     }
 }

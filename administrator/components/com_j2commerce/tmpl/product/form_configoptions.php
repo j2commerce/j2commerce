@@ -335,7 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (createBtn) {
             createBtn.addEventListener('click', async () => {
                 createBtn.disabled = true;
-                createBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> <?php echo Text::_('COM_J2COMMERCE_SAVING'); ?>';
+                createBtn.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_SAVING'); ?>';
 
                 const formData = new FormData();
                 formData.append('option', 'com_j2commerce');
@@ -387,7 +387,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (addAllBtn) {
             addAllBtn.addEventListener('click', async () => {
                 addAllBtn.disabled = true;
-                addAllBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> <?php echo Text::_('COM_J2COMMERCE_LOADING'); ?>';
+                addAllBtn.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_LOADING'); ?>';
 
                 const formData = new FormData();
                 formData.append('option', 'com_j2commerce');
@@ -479,7 +479,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const povId = btn.dataset.povId;
                 btn.disabled = true;
-                btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_LOADING'); ?></span></span>';
 
                 const formData = new FormData();
                 formData.append('option', 'com_j2commerce');

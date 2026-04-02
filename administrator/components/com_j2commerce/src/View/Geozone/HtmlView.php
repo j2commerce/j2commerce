@@ -95,7 +95,7 @@ class HtmlView extends BaseHtmlView
         $isNew      = ($this->item->j2commerce_geozone_id == 0);
         $canDo      = ContentHelper::getActions('com_j2commerce');
         $user       = Factory::getApplication()->getIdentity();
-        $checkedOut = !(\is_null($this->item->checked_out) || $this->item->checked_out == $user->id);
+        $checkedOut = !(($this->item->checked_out ?? null) === null || ($this->item->checked_out ?? 0) == $user->id);
         $toolbar    = $this->getDocument()->getToolbar();
 
         $title = $isNew ? Text::_('COM_J2COMMERCE_TOOLBAR_NEW').' '.Text::_('COM_J2COMMERCE_GEOZONE') : Text::_('COM_J2COMMERCE_TOOLBAR_EDIT').' '.Text::_('COM_J2COMMERCE_GEOZONE');

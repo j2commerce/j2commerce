@@ -28,7 +28,8 @@ $row_class = 'row';
 $col_class = 'col-md-';
 $app = Factory::getApplication();
 $input = $app->getInput();
-$currencySymbol = (new CurrencyHelper())->getSymbol();
+$currencySymbol   = (new CurrencyHelper())->getSymbol();
+$currencyDecimals = CurrencyHelper::getDecimalPlace();
 
 // Initialize tooltips
 HTMLHelper::_('bootstrap.tooltip', '[data-bs-toggle="tooltip"]', ['placement' => 'top']);
@@ -218,6 +219,7 @@ $wa->addInlineScript($script);
         $this->form->setValue('date_to', null, '');
         $this->form->setValue('quantity_from', null, '');
         $this->form->setValue('customer_group_id', null, 1);
+        $this->form->setValue('price', null, number_format(0, $currencyDecimals, '.', ''));
         ?>
         <div class="note <?php echo $row_class; ?> mb-3">
             <fieldset class="options-form">
@@ -373,7 +375,7 @@ $wa->addInlineScript($script);
                                     <span class="input-group-text"><?php echo $currencySymbol; ?></span>
                                     <input type="text"
                                            name="<?php echo $fieldPrefix; ?>[price]"
-                                           value="<?php echo number_format((float) $pricing->price, 5, '.', ''); ?>"
+                                           value="<?php echo number_format((float) $pricing->price, $currencyDecimals, '.', ''); ?>"
                                            class="form-control" />
                                 </div>
                                 <input type="hidden"

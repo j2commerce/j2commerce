@@ -288,19 +288,19 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_customfields` (
 
 -- Default custom fields data
 INSERT IGNORE INTO `#__j2commerce_customfields` (`j2commerce_customfield_id`, `field_table`, `field_name`, `field_namekey`, `field_type`, `field_value`, `enabled`, `ordering`, `field_options`, `field_core`, `field_required`, `field_default`, `field_placeholder`, `field_autocomplete`, `field_access`, `field_categories`, `field_with_sub_categories`, `field_frontend`, `field_backend`, `field_display`, `field_display_billing`, `field_display_register`, `field_display_shipping`, `field_display_guest`, `field_display_guest_shipping`, `field_display_payment`) VALUES
-(1, 'address', 'J2COMMERCE_ADDRESS_FIRSTNAME', 'first_name', 'text', '', 1, 99, 'a:8:{s:12:"errormessage";s:24:"J2COMMERCE_FIELD_REQUIRED";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 1, '', 'J2COMMERCE_PLACEHOLDER_FIRSTNAME', 'given-name', 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
-(2, 'address', 'J2COMMERCE_ADDRESS_LASTNAME', 'last_name', 'text', '', 1, 99, 'a:8:{s:12:"errormessage";s:24:"J2COMMERCE_FIELD_REQUIRED";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 1, '', 'J2COMMERCE_PLACEHOLDER_LASTNAME', 'family-name', 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
-(3, 'address', 'J2COMMERCE_EMAIL', 'email', 'email', '', 1, 99, 'a:8:{s:12:"errormessage";s:38:"J2COMMERCE_VALIDATION_ENTER_VALID_EMAIL";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 1, '', 'J2COMMERCE_PLACEHOLDER_EMAIL', 'email', 'all', 'all', 0, 0, 1, '', 1, 1, 0, 1, 0, 0),
-(4, 'address', 'J2COMMERCE_ADDRESS_LINE1', 'address_1', 'text', '', 1, 99, 'a:8:{s:12:"errormessage";s:24:"J2COMMERCE_FIELD_REQUIRED";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 1, '', 'J2COMMERCE_PLACEHOLDER_ADDRESS_1', 'address-line1', 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
-(5, 'address', 'J2COMMERCE_ADDRESS_LINE2', 'address_2', 'text', '', 1, 99, 'a:8:{s:12:"errormessage";s:24:"J2COMMERCE_FIELD_REQUIRED";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 0, '', 'J2COMMERCE_PLACEHOLDER_ADDRESS_2', 'address-line2', 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
-(6, 'address', 'J2COMMERCE_ADDRESS_CITY', 'city', 'text', '', 1, 99, 'a:8:{s:12:"errormessage";s:24:"J2COMMERCE_FIELD_REQUIRED";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 1, '', 'J2COMMERCE_PLACEHOLDER_CITY', 'address-level2', 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
-(7, 'address', 'J2COMMERCE_ADDRESS_ZIP', 'zip', 'text', '', 1, 99, 'a:8:{s:12:"errormessage";s:24:"J2COMMERCE_FIELD_REQUIRED";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 1, '', 'J2COMMERCE_PLACEHOLDER_ZIP', 'postal-code', 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
-(8, 'address', 'J2COMMERCE_ADDRESS_PHONE', 'phone_1', 'text', '', 1, 99, 'a:8:{s:12:"errormessage";s:0:"";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 0, '', 'J2COMMERCE_PLACEHOLDER_PHONE', 'tel', 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
-(9, 'address', 'J2COMMERCE_ADDRESS_MOBILE', 'phone_2', 'text', '', 1, 99, 'a:8:{s:12:"errormessage";s:24:"J2COMMERCE_FIELD_REQUIRED";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 1, '', 'J2COMMERCE_PLACEHOLDER_MOBILE', 'tel', 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
-(10, 'address', 'J2COMMERCE_ADDRESS_COMPANY_NAME', 'company', 'text', '', 1, 99, 'a:8:{s:12:"errormessage";s:0:"";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 0, '', 'J2COMMERCE_PLACEHOLDER_COMPANY', 'organization', 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
-(11, 'address', 'J2COMMERCE_ADDRESS_TAX_NUMBER', 'tax_number', 'text', '', 1, 99, 'a:8:{s:12:"errormessage";s:0:"";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 0, '', 'J2COMMERCE_PLACEHOLDER_TAX_NUMBER', 'off', 'all', 'all', 0, 0, 1, '', 1, 1, 0, 1, 0, 0),
-(12, 'address', 'J2COMMERCE_ADDRESS_COUNTRY', 'country_id', 'zone', '', 1, 99, 'a:8:{s:12:"errormessage";s:24:"J2COMMERCE_FIELD_REQUIRED";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 1, '223', NULL, NULL, 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
-(13, 'address', 'J2COMMERCE_ADDRESS_ZONE', 'zone_id', 'zone', '', 1, 99, 'a:8:{s:12:"errormessage";s:24:"J2COMMERCE_FIELD_REQUIRED";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:4:"zone";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 1, '3624', NULL, NULL, 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0);
+(1, 'address', 'J2COMMERCE_ADDRESS_FIRSTNAME', 'first_name', 'text', '', 1, 2, 'a:8:{s:12:"errormessage";s:24:"J2COMMERCE_FIELD_REQUIRED";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 1, '', 'J2COMMERCE_PLACEHOLDER_FIRSTNAME', 'given-name', 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
+(2, 'address', 'J2COMMERCE_ADDRESS_LASTNAME', 'last_name', 'text', '', 1, 3, 'a:8:{s:12:"errormessage";s:24:"J2COMMERCE_FIELD_REQUIRED";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 1, '', 'J2COMMERCE_PLACEHOLDER_LASTNAME', 'family-name', 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
+(3, 'address', 'J2COMMERCE_EMAIL', 'email', 'email', '', 1, 1, 'a:8:{s:12:"errormessage";s:38:"J2COMMERCE_VALIDATION_ENTER_VALID_EMAIL";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 1, '', 'J2COMMERCE_PLACEHOLDER_EMAIL', 'email', 'all', 'all', 0, 0, 1, '', 1, 1, 0, 1, 0, 0),
+(4, 'address', 'J2COMMERCE_ADDRESS_LINE1', 'address_1', 'text', '', 1, 4, 'a:8:{s:12:"errormessage";s:24:"J2COMMERCE_FIELD_REQUIRED";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 1, '', 'J2COMMERCE_PLACEHOLDER_ADDRESS_1', 'address-line1', 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
+(5, 'address', 'J2COMMERCE_ADDRESS_LINE2', 'address_2', 'text', '', 1, 5, 'a:8:{s:12:"errormessage";s:24:"J2COMMERCE_FIELD_REQUIRED";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 0, '', 'J2COMMERCE_PLACEHOLDER_ADDRESS_2', 'address-line2', 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
+(6, 'address', 'J2COMMERCE_ADDRESS_CITY', 'city', 'text', '', 1, 6, 'a:8:{s:12:"errormessage";s:24:"J2COMMERCE_FIELD_REQUIRED";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 1, '', 'J2COMMERCE_PLACEHOLDER_CITY', 'address-level2', 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
+(7, 'address', 'J2COMMERCE_ADDRESS_ZIP', 'zip', 'text', '', 1, 7, 'a:8:{s:12:"errormessage";s:24:"J2COMMERCE_FIELD_REQUIRED";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 1, '', 'J2COMMERCE_PLACEHOLDER_ZIP', 'postal-code', 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
+(8, 'address', 'J2COMMERCE_ADDRESS_PHONE', 'phone_1', 'text', '', 1, 10, 'a:8:{s:12:"errormessage";s:0:"";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 0, '', 'J2COMMERCE_PLACEHOLDER_PHONE', 'tel', 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
+(9, 'address', 'J2COMMERCE_ADDRESS_MOBILE', 'phone_2', 'text', '', 1, 11, 'a:8:{s:12:"errormessage";s:24:"J2COMMERCE_FIELD_REQUIRED";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 1, '', 'J2COMMERCE_PLACEHOLDER_MOBILE', 'tel', 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
+(10, 'address', 'J2COMMERCE_ADDRESS_COMPANY_NAME', 'company', 'text', '', 1, 12, 'a:8:{s:12:"errormessage";s:0:"";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 0, '', 'J2COMMERCE_PLACEHOLDER_COMPANY', 'organization', 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
+(11, 'address', 'J2COMMERCE_ADDRESS_TAX_NUMBER', 'tax_number', 'text', '', 1, 13, 'a:8:{s:12:"errormessage";s:0:"";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 0, '', 'J2COMMERCE_PLACEHOLDER_TAX_NUMBER', 'off', 'all', 'all', 0, 0, 1, '', 1, 1, 0, 1, 0, 0),
+(12, 'address', 'J2COMMERCE_ADDRESS_COUNTRY', 'country_id', 'zone', '', 1, 8, 'a:8:{s:12:"errormessage";s:24:"J2COMMERCE_FIELD_REQUIRED";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 1, '', NULL, NULL, 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
+(13, 'address', 'J2COMMERCE_ADDRESS_ZONE', 'zone_id', 'zone', '', 1, 9, 'a:8:{s:12:"errormessage";s:24:"J2COMMERCE_FIELD_REQUIRED";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:4:"zone";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 1, '', NULL, NULL, 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0);
 
 -- --------------------------------------------------------
 -- Table structure for table `#__j2commerce_emailtemplates`
@@ -1038,6 +1038,7 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_products` (
   UNIQUE KEY `catalogsource` (`product_source`,`product_source_id`),
   KEY `idx_hits` (`hits`),
   KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
   KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -5722,11 +5723,12 @@ INSERT IGNORE INTO `#__j2commerce_weights` (`j2commerce_weight_id`, `weight_titl
 
 INSERT IGNORE INTO `#__guidedtours` (`title`, `uid`, `description`, `extensions`, `url`, `published`, `access`, `created`, `modified`, `language`, `ordering`, `note`, `autostart`) VALUES
 ('COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_TITLE', 'com_j2commerce.creating-product', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_DESC', '["com_j2commerce"]', 'administrator/index.php?option=com_j2commerce&view=products', 1, 1, NOW(), NOW(), '*', 1, '', 0),
-('COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_TITLE', 'j2commerce-managing-countries', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_DESC', '["com_j2commerce"]', 'administrator/index.php?option=com_j2commerce&view=countries', 1, 1, NOW(), NOW(), '*', 2, '', 0),
-('COM_J2COMMERCE_GUIDEDTOUR_SETTING_UP_PAYMENTS_TITLE', 'j2commerce-setting-up-payments', 'COM_J2COMMERCE_GUIDEDTOUR_SETTING_UP_PAYMENTS_DESC', '["com_j2commerce"]', 'administrator/index.php?option=com_j2commerce&view=apps&folder=payment', 1, 1, NOW(), NOW(), '*', 3, '', 0),
-('COM_J2COMMERCE_GUIDEDTOUR_CONFIGURING_SHIPPING_TITLE', 'j2commerce-configuring-shipping', 'COM_J2COMMERCE_GUIDEDTOUR_CONFIGURING_SHIPPING_DESC', '["com_j2commerce"]', 'administrator/index.php?option=com_j2commerce&view=shippingmethods', 1, 1, NOW(), NOW(), '*', 4, '', 0);
+('COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_TITLE', 'com_j2commerce.managing-countries', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_DESC', '["com_j2commerce"]', 'administrator/index.php?option=com_j2commerce&view=countries', 1, 1, NOW(), NOW(), '*', 2, '', 0),
+('COM_J2COMMERCE_GUIDEDTOUR_SETTING_UP_PAYMENTS_TITLE', 'com_j2commerce.setting-up-payments', 'COM_J2COMMERCE_GUIDEDTOUR_SETTING_UP_PAYMENTS_DESC', '["com_j2commerce"]', 'administrator/index.php?option=com_j2commerce&view=apps&folder=payment', 1, 1, NOW(), NOW(), '*', 3, '', 0),
+('COM_J2COMMERCE_GUIDEDTOUR_CONFIGURING_SHIPPING_TITLE', 'com_j2commerce.configuring-shipping', 'COM_J2COMMERCE_GUIDEDTOUR_CONFIGURING_SHIPPING_DESC', '["com_j2commerce"]', 'administrator/index.php?option=com_j2commerce&view=shippingmethods', 1, 1, NOW(), NOW(), '*', 4, '', 0);
 
--- Guided Tour Steps: Creating Your First Product (17 steps)
+-- Guided Tour Steps: Creating Your First Product (18 steps)
+
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
 SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP0_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP0_DESC', 'bottom', '#toolbar-new', 2, 1, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
@@ -5758,92 +5760,96 @@ FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.creating-product';
 
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
-SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP6_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP6_DESC', 'bottom', '#j2commerce-product-visibility-radio-group0', 2, 5, '', 1, '*', '', '{"required":0,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP6_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP6_DESC', 'bottom', 'button[aria-controls="attrib-j2commerce"] span', 2, 4, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.creating-product';
 
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
-SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP7_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP7_DESC', 'bottom', '#j2commerce-product-sku-group', 2, 2, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP7_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP7_DESC', 'bottom', '#j2commerce-product-visibility-radio-group0', 2, 5, '', 1, '*', '', '{"required":0,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.creating-product';
 
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
-SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP8_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP8_DESC', 'top', 'joomla-field-fancy-select:has(#j2commerce-product-taxprofile_id-select-group)', 2, 6, '', 1, '*', '', '{"required":0,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP8_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP8_DESC', 'bottom', '#j2commerce-product-sku-group', 2, 2, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.creating-product';
 
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
-SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP9_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP9_DESC', 'top', 'button[aria-controls="pricingTab"]', 2, 4, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP9_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP9_DESC', 'top', 'joomla-field-fancy-select:has(#j2commerce-product-taxprofile_id-select-group)', 2, 6, '', 1, '*', '', '{"required":0,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.creating-product';
 
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
-SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP10_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP10_DESC', 'bottom', '#j2commerce-product-price-field', 2, 2, '', 1, '*', '', '{"required":0,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP10_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP10_DESC', 'top', 'button[aria-controls="pricingTab"]', 2, 4, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.creating-product';
 
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
-SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP11_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP11_DESC', 'top', 'button[aria-controls="inventoryTab"]', 2, 4, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP11_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP11_DESC', 'bottom', '#j2commerce-product-price-field', 2, 2, '', 1, '*', '', '{"required":0,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.creating-product';
 
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
-SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP12_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP12_DESC', 'bottom', '#j2commerce-product-manage_stock-radio-group1', 2, 5, '', 1, '*', '', '{"required":0,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP12_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP12_DESC', 'top', 'button[aria-controls="inventoryTab"]', 2, 4, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.creating-product';
 
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
-SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP13_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP13_DESC', 'top', 'button[aria-controls="shippingTab"]', 2, 4, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP13_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP13_DESC', 'bottom', '#j2commerce-product-manage_stock-radio-group1', 2, 5, '', 1, '*', '', '{"required":0,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.creating-product';
 
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
-SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP14_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP14_DESC', 'bottom', '#j2commerce-product-shipping-radio-group1', 2, 5, '', 1, '*', '', '{"required":0,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP14_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP14_DESC', 'top', 'button[aria-controls="shippingTab"]', 2, 4, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.creating-product';
 
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
-SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP15_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP15_DESC', 'bottom', '#save-group-children-save .button-save', 2, 1, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP15_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP15_DESC', 'bottom', '#j2commerce-product-shipping-radio-group1', 2, 5, '', 1, '*', '', '{"required":0,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.creating-product';
 
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
-SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP16_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP16_DESC', 'center', '', 0, 1, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP16_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP16_DESC', 'bottom', '#save-group-children-save .button-save', 2, 1, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+FROM `#__guidedtours`
+WHERE `uid` = 'com_j2commerce.creating-product';
+
+INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP17_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP17_DESC', 'center', '', 0, 1, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.creating-product';
 
 -- Guided Tour Steps: Managing Countries
-INSERT IGNORE INTO `#__guidedtour_steps` (`tour_id`, `title`, `description`, `ordering`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `created`, `modified`, `language`, `note`, `params`)
-SELECT t.`id`, s.`title`, s.`description`, s.`ordering`, s.`position`, s.`target`, s.`type`, s.`interactive_type`, s.`url`, s.`published`, NOW(), NOW(), '*', '', '{}'
-FROM `#__guidedtours` t
-CROSS JOIN (
-    SELECT 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP1_TITLE' AS `title`, 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP1_DESC' AS `description`, 1 AS `ordering`, 'bottom' AS `position`, '.js-stools-container-filters' AS `target`, 0 AS `type`, 1 AS `interactive_type`, '' AS `url`, 1 AS `published`
-    UNION ALL SELECT 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP2_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP2_DESC', 2, 'bottom', 'table.table tbody', 0, 1, '', 1
-    UNION ALL SELECT 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP3_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP3_DESC', 3, 'bottom', '#toolbar-publish button', 2, 3, '', 1
-) s
-WHERE t.`uid` = 'j2commerce-managing-countries';
 
--- Guided Tour Steps: Setting Up Payments
-INSERT IGNORE INTO `#__guidedtour_steps` (`tour_id`, `title`, `description`, `ordering`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `created`, `modified`, `language`, `note`, `params`)
-SELECT t.`id`, s.`title`, s.`description`, s.`ordering`, s.`position`, s.`target`, s.`type`, s.`interactive_type`, s.`url`, s.`published`, NOW(), NOW(), '*', '', '{}'
-FROM `#__guidedtours` t
-CROSS JOIN (
-    SELECT 'COM_J2COMMERCE_GUIDEDTOUR_SETTING_UP_PAYMENTS_STEP1_TITLE' AS `title`, 'COM_J2COMMERCE_GUIDEDTOUR_SETTING_UP_PAYMENTS_STEP1_DESC' AS `description`, 1 AS `ordering`, 'bottom' AS `position`, '.j2c-app-list' AS `target`, 0 AS `type`, 1 AS `interactive_type`, '' AS `url`, 1 AS `published`
-    UNION ALL SELECT 'COM_J2COMMERCE_GUIDEDTOUR_SETTING_UP_PAYMENTS_STEP2_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_SETTING_UP_PAYMENTS_STEP2_DESC', 2, 'bottom', '.j2c-app-list .j2c-app-item:first-child', 0, 1, '', 1
-    UNION ALL SELECT 'COM_J2COMMERCE_GUIDEDTOUR_SETTING_UP_PAYMENTS_STEP3_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_SETTING_UP_PAYMENTS_STEP3_DESC', 3, 'bottom', '', 0, 1, '', 1
-) s
-WHERE t.`uid` = 'j2commerce-setting-up-payments';
+INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP0_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP0_DESC', 'bottom', '#filter_search', 2, 2, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+FROM `#__guidedtours`
+WHERE `uid` = 'com_j2commerce.managing-countries';
 
--- Guided Tour Steps: Configuring Shipping
-INSERT IGNORE INTO `#__guidedtour_steps` (`tour_id`, `title`, `description`, `ordering`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `created`, `modified`, `language`, `note`, `params`)
-SELECT t.`id`, s.`title`, s.`description`, s.`ordering`, s.`position`, s.`target`, s.`type`, s.`interactive_type`, s.`url`, s.`published`, NOW(), NOW(), '*', '', '{}'
-FROM `#__guidedtours` t
-CROSS JOIN (
-    SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CONFIGURING_SHIPPING_STEP1_TITLE' AS `title`, 'COM_J2COMMERCE_GUIDEDTOUR_CONFIGURING_SHIPPING_STEP1_DESC' AS `description`, 1 AS `ordering`, 'bottom' AS `position`, '#toolbar-new button' AS `target`, 2 AS `type`, 3 AS `interactive_type`, '' AS `url`, 1 AS `published`
-    UNION ALL SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CONFIGURING_SHIPPING_STEP2_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CONFIGURING_SHIPPING_STEP2_DESC', 2, 'bottom', '#jform_shipping_method_name', 2, 1, '', 1
-    UNION ALL SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CONFIGURING_SHIPPING_STEP3_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CONFIGURING_SHIPPING_STEP3_DESC', 3, 'bottom', '#toolbar-apply button', 2, 3, '', 1
-) s
-WHERE t.`uid` = 'j2commerce-configuring-shipping';
+INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP1_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP1_DESC', 'bottom', 'td:has(a[data-item-id="cb0"])', 2, 5, '', 1, '*', '', '{"required":0,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+FROM `#__guidedtours`
+WHERE `uid` = 'com_j2commerce.managing-countries';
+
+INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP2_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP2_DESC', 'bottom', 'td:has(input[name="checkall-toggle"])', 2, 5, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+FROM `#__guidedtours`
+WHERE `uid` = 'com_j2commerce.managing-countries';
+
+INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP3_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP3_DESC', 'right', '#toolbar-status-group', 2, 4, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+FROM `#__guidedtours`
+WHERE `uid` = 'com_j2commerce.managing-countries';
+
+INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP4_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP4_DESC', 'bottom', '#status-group-children-unpublish', 2, 1, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+FROM `#__guidedtours`
+WHERE `uid` = 'com_j2commerce.managing-countries';
+
+INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP5_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP5_DESC', 'center', '', 0, 1, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+FROM `#__guidedtours`
+WHERE `uid` = 'com_j2commerce.managing-countries';
 
 -- --------------------------------------------------------
 -- Table structure for table `#__j2commerce_geocode_cache`

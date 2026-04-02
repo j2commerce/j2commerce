@@ -96,7 +96,7 @@ class HtmlView extends BaseHtmlView
         $isNew      = ($this->item->j2commerce_currency_id == 0);
         $canDo      = ContentHelper::getActions('com_j2commerce');
         $user       = Factory::getApplication()->getIdentity();
-        $checkedOut = !(\is_null($this->item->checked_out) || $this->item->checked_out == $user->id);
+        $checkedOut = !(($this->item->checked_out ?? null) === null || ($this->item->checked_out ?? 0) == $user->id);
         $toolbar    = $this->getDocument()->getToolbar();
 
         // Title: "New Currency" or "Edit Currency"

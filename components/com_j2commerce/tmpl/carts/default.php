@@ -51,11 +51,9 @@ $cartUrl = J2CommerceHelper::platform()->getCartUrl();
 $clearCartUrl = J2CommerceHelper::platform()->getCartUrl(['task' => 'clearCart']);
 
 ?>
-<?php if ($pageHeading): ?>
-    <div class="page-header">
-        <h1><?php echo $this->escape($pageHeadingText); ?></h1>
-    </div>
-<?php endif; ?>
+<div class="page-header">
+    <h1><?php echo $this->escape($pageHeadingText ?: Text::_('COM_J2COMMERCE_CARTS_PAGE_TITLE')); ?></h1>
+</div>
 
 <?php echo J2CommerceHelper::modules()->loadposition('j2commerce-cart-top'); ?>
 

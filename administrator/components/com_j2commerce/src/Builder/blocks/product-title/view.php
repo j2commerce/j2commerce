@@ -3,10 +3,16 @@ defined('_JEXEC') or die;
 
 extract($displayData);
 
-$settings  = $settings ?? [];
-$tag       = $settings['tag'] ?? 'h3';
-$cssClass  = $settings['css_class'] ?? 'j2commerce-product-title fs-6';
+$settings    = $settings ?? [];
+$tag         = $settings['tag'] ?? 'h3';
+$fontSize    = $settings['font_size'] ?? 'fs-5';
+$cssClass    = $settings['css_class'] ?? 'j2commerce-product-title';
 $linkEnabled = $settings['link'] ?? true;
+
+// Merge font_size class if not already present in css_class
+if ($fontSize && strpos($cssClass, $fontSize) === false) {
+    $cssClass .= ' ' . $fontSize;
+}
 
 if (!($showTitle ?? true)) {
     return;

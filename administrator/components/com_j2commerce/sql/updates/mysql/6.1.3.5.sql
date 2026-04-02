@@ -4,4 +4,4 @@
 --
 
 ALTER TABLE `#__j2commerce_addresses`
-  CHANGE `campaign_addr_id` `params` TEXT NULL;
+  CHANGE `campaign_addr_id` `params` TEXT NULL/** CAN FAIL **/;

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <form>
     <fields name="params">
-        <fieldset name="j2commerce" label="J2Commerce"
+        <fieldset name="j2commerce" label="PLG_CONTENT_J2COMMERCE_TAB_LABEL"
             addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field">
 
             <field name="category_view_type" type="list" default=""

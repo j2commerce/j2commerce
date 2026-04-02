@@ -30,7 +30,7 @@ if ($user->authorise('core.create', 'com_j2commerce')) {
     $displayData['createURL'] = Route::_('index.php?option=com_content&view=article&layout=edit&return=' . $return, false);
 }
 
-echo $this->navbar;
+echo $this->navbar ?? '';
 
 echo LayoutHelper::render('joomla.content.emptystate', $displayData);
 

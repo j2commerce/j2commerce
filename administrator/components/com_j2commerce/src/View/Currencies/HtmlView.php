@@ -184,9 +184,19 @@ class HtmlView extends BaseHtmlView
         }
 
         if ($canDo->get('core.manage') && PluginHelper::isEnabled('j2commerce', 'app_currencyupdater')) {
-            $toolbar->standardButton('updaterates', 'COM_J2COMMERCE_TOOLBAR_UPDATE_RATES', 'currencies.updateRates')
-                ->icon('fa-solid fa-arrows-rotate')
-                ->listCheck(false);
+            $db = Factory::getContainer()->get('DatabaseDriver');
+            $publishedCount = (int) $db->setQuery(
+                $db->getQuery(true)
+                    ->select('COUNT(*)')
+                    ->from($db->quoteName('#__j2commerce_currencies'))
+                    ->where($db->quoteName('enabled') . ' = 1')
+            )->loadResult();
+
+            if ($publishedCount > 1) {
+                $toolbar->standardButton('updaterates', 'COM_J2COMMERCE_TOOLBAR_UPDATE_RATES', 'currencies.updateRates')
+                    ->icon('fa-solid fa-arrows-rotate')
+                    ->listCheck(false);
+            }
         }
 
         if ($canDo->get('core.admin') || $canDo->get('core.options')) {
