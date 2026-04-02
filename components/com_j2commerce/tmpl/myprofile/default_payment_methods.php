@@ -73,7 +73,7 @@ $csrfToken = Session::getFormToken();
                                         <div class="d-flex align-items-center">
                                         <span class="dropdown dropstart">
                                            <a role="button" class="text-reset dropdown-toggle" href="#" id="paymentDropdown<?php echo htmlspecialchars($method->id, ENT_QUOTES, 'UTF-8'); ?>" data-bs-toggle="dropdown" data-bs-offset="-20,20" aria-expanded="false">
-                                              <span class="fa-solid fa-ellipsis-vertical"></span>
+                                              <span class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></span>
                                            </a>
                                            <span class="dropdown-menu" aria-labelledby="paymentDropdown<?php echo htmlspecialchars($method->id, ENT_QUOTES, 'UTF-8'); ?>">
                                               <?php if ($method->canDelete()) : ?>
