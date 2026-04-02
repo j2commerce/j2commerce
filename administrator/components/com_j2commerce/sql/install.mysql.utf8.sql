@@ -5822,32 +5822,32 @@ WHERE `uid` = 'com_j2commerce.creating-product';
 -- Guided Tour Steps: Managing Countries
 
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
-SELECT 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP_0_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP_0_DESC', 'bottom', '#filter_search', 2, 2, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP0_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP0_DESC', 'bottom', '#filter_search', 2, 2, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.managing-countries';
 
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
-SELECT 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP_1_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP_1_DESC', 'bottom', 'td:has(a[data-item-id="cb0"])', 2, 5, '', 1, '*', '', '{"required":0,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP1_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP1_DESC', 'bottom', 'td:has(a[data-item-id="cb0"])', 2, 5, '', 1, '*', '', '{"required":0,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.managing-countries';
 
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
-SELECT 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP_2_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP_2_DESC', 'bottom', 'td:has(input[name="checkall-toggle"])', 2, 5, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP2_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP2_DESC', 'bottom', 'td:has(input[name="checkall-toggle"])', 2, 5, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.managing-countries';
 
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
-SELECT 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP_3_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP_3_DESC', 'right', '#toolbar-status-group', 2, 4, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP3_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP3_DESC', 'right', '#toolbar-status-group', 2, 4, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.managing-countries';
 
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
-SELECT 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP_4_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP_4_DESC', 'bottom', '#status-group-children-unpublish', 2, 1, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP4_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP4_DESC', 'bottom', '#status-group-children-unpublish', 2, 1, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.managing-countries';
 
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
-SELECT 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP_5_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP_5_DESC', 'center', '', 0, 1, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP5_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP5_DESC', 'center', '', 0, 1, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.managing-countries';
 
