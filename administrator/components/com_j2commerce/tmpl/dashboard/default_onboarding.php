@@ -89,7 +89,14 @@ foreach ($allPaymentPlugins as $plugin) {
 
     $params = new \Joomla\Registry\Registry($plugin->params);
     $displayName = $params->get('display_name', '');
-    $plugin->display_name = $displayName ? Text::_($displayName) : Text::_(strtoupper('PLG_J2COMMERCE_' . $plugin->element));
+
+    // Use proper plugin language key — ignore legacy _DEFAULT keys
+    $pluginLangKey = strtoupper('PLG_J2COMMERCE_' . $plugin->element);
+    if ($displayName === '' || str_ends_with(strtoupper($displayName), '_DEFAULT')) {
+        $plugin->display_name = Text::_($pluginLangKey);
+    } else {
+        $plugin->display_name = Text::_($displayName);
+    }
 
     if ((int) $plugin->enabled === 1) {
         $paymentPlugins[] = $plugin;
@@ -693,15 +700,17 @@ $e = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
             </div>
           </div>
 
-          <div id="ob-sampledata-prompt" class="text-center mt-4 d-none">
-            <p><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_SAMPLEDATA_PROMPT'); ?></p>
-            <button type="button" class="btn btn-outline-primary me-2" data-action="load-sampledata">
-              <span class="fa-solid fa-database me-1"></span>
-              <?php echo Text::_('COM_J2COMMERCE_ONBOARDING_SAMPLEDATA_LOAD'); ?>
-            </button>
-            <button type="button" class="btn btn-link" data-action="skip-sampledata">
-              <?php echo Text::_('COM_J2COMMERCE_ONBOARDING_SAMPLEDATA_SKIP'); ?>
-            </button>
+          <div id="ob-sampledata-prompt" class="d-none">
+            <div class="alert alert-info text-center mb-0">
+              <p class="mb-2"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_SAMPLEDATA_PROMPT'); ?></p>
+              <button type="button" class="btn btn-outline-primary btn-sm me-2" data-action="load-sampledata">
+                <span class="fa-solid fa-database me-1"></span>
+                <?php echo Text::_('COM_J2COMMERCE_ONBOARDING_SAMPLEDATA_LOAD'); ?>
+              </button>
+              <button type="button" class="btn btn-link btn-sm" data-action="skip-sampledata">
+                <?php echo Text::_('COM_J2COMMERCE_ONBOARDING_SAMPLEDATA_SKIP'); ?>
+              </button>
+            </div>
           </div>
 
           <div class="row g-3 text-center">

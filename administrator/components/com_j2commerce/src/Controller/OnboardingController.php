@@ -635,8 +635,12 @@ class OnboardingController extends BaseController
             $params      = new \Joomla\Registry\Registry($plugin->params);
             $displayName = $params->get('display_name', '');
 
-            if ($displayName === '') {
-                $displayName = Text::_(strtoupper('PLG_J2COMMERCE_' . $plugin->element));
+            // Use proper plugin language key — ignore legacy _DEFAULT keys
+            $pluginLangKey = strtoupper('PLG_J2COMMERCE_' . $plugin->element);
+            if ($displayName === '' || str_ends_with(strtoupper($displayName), '_DEFAULT')) {
+                $displayName = Text::_($pluginLangKey);
+            } else {
+                $displayName = Text::_($displayName);
             }
 
             if ($plugin->element === $defaultPayment) {

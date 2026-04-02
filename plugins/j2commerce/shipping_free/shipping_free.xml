@@ -60,7 +60,7 @@
                     type="text"
                     label="PLG_J2COMMERCE_SHIPPING_FREE_DISPLAY_NAME"
                     description="PLG_J2COMMERCE_SHIPPING_FREE_DISPLAY_NAME_DESC"
-                    default="PLG_J2COMMERCE_SHIPPING_FREE_DEFAULT"
+                    default="PLG_J2COMMERCE_SHIPPING_FREE"
                 />
 
                 <field

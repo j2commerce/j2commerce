@@ -143,7 +143,7 @@ final class PaymentBanktransfer extends CMSPlugin implements SubscriberInterface
         $result = $event->getArgument('result', []);
         $result[] = [
             'element' => $this->_element,
-            'name'    => Text::_($this->params->get('display_name', 'PLG_J2COMMERCE_PAYMENT_BANKTRANSFER_DEFAULT')),
+            'name'    => Text::_($this->params->get('display_name', 'PLG_J2COMMERCE_PAYMENT_BANKTRANSFER')),
             'image'   => $this->params->get('display_image', ''),
         ];
         $event->setArgument('result', $result);
@@ -217,7 +217,7 @@ final class PaymentBanktransfer extends CMSPlugin implements SubscriberInterface
         $vars->orderpayment_type = $this->_element;
         $vars->bank_information = $this->params->get('bank_details', '');
 
-        $vars->display_name = Text::_($this->params->get('display_name', 'PLG_J2COMMERCE_PAYMENT_BANKTRANSFER_DEFAULT'));
+        $vars->display_name = Text::_($this->params->get('display_name', 'PLG_J2COMMERCE_PAYMENT_BANKTRANSFER'));
         $vars->onbeforepayment_text = $this->params->get('onbeforepayment', '');
         $vars->button_text = $this->params->get('button_text', Text::_('COM_J2COMMERCE_PLACE_ORDER'));
 

@@ -115,7 +115,7 @@ final class ShippingFree extends CMSPlugin implements SubscriberInterface
         $result   = $event->getArgument('result', []);
         $result[] = [
             'element' => $this->_name,
-            'name'    => Text::_($this->params->get('display_name', 'PLG_J2COMMERCE_SHIPPING_FREE_DEFAULT')),
+            'name'    => Text::_($this->params->get('display_name', 'PLG_J2COMMERCE_SHIPPING_FREE')),
             'code'    => '',
             'price'   => 0,
             'tax'     => 0,

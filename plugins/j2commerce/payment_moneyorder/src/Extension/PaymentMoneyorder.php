@@ -197,7 +197,7 @@ final class PaymentMoneyorder extends CMSPlugin implements SubscriberInterface
         $result = $event->getArgument('result', []);
         $result[] = [
             'element' => $this->_name,
-            'name'    => Text::_($this->params->get('display_name', 'PLG_J2COMMERCE_PAYMENT_MONEYORDER_DEFAULT')),
+            'name'    => Text::_($this->params->get('display_name', 'PLG_J2COMMERCE_PAYMENT_MONEYORDER')),
             'image'   => $this->params->get('display_image', ''),
         ];
         $event->setArgument('result', $result);
@@ -290,7 +290,7 @@ final class PaymentMoneyorder extends CMSPlugin implements SubscriberInterface
         $vars->orderpayment_amount = $data['orderpayment_amount'];
         $vars->orderpayment_type = $this->_name;
 
-        $vars->display_name = Text::_($this->params->get('display_name', 'PLG_J2COMMERCE_PAYMENT_MONEYORDER_DEFAULT'));
+        $vars->display_name = Text::_($this->params->get('display_name', 'PLG_J2COMMERCE_PAYMENT_MONEYORDER'));
         $vars->display_image = $this->params->get('display_image', '');
         $vars->onbeforepayment_text = $this->params->get('onbeforepayment', '');
         $vars->moneyorder_information = $this->params->get('moneyorder_information', '');

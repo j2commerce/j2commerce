@@ -229,7 +229,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
         $result = $event->getArgument('result', []);
         $result[] = [
             'element' => $this->_name,
-            'name'    => Text::_($this->params->get('display_name', 'PLG_J2COMMERCE_PAYMENT_PAYPAL_DEFAULT')),
+            'name'    => Text::_($this->params->get('display_name', 'PLG_J2COMMERCE_PAYMENT_PAYPAL')),
             'image'   => $this->params->get('display_image', ''),
         ];
         $event->setArgument('result', $result);
@@ -455,7 +455,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
         $vars->orderpayment_amount = $data['orderpayment_amount'];
         $vars->orderpayment_type = $this->_name;
 
-        $vars->display_name = Text::_($this->params->get('display_name', 'PLG_J2COMMERCE_PAYMENT_PAYPAL_DEFAULT'));
+        $vars->display_name = Text::_($this->params->get('display_name', 'PLG_J2COMMERCE_PAYMENT_PAYPAL'));
         $vars->display_image = $this->params->get('display_image', '');
         $vars->onbeforepayment_text = $this->params->get('onbeforepayment', '');
 
