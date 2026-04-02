@@ -457,6 +457,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             case 6: {
                 buildSummary(data);
+                const sdPrompt = modal.querySelector('#ob-sampledata-prompt');
+                if (sdPrompt) sdPrompt.classList.remove('d-none');
                 break;
             }
         }
@@ -633,6 +635,46 @@ document.addEventListener('DOMContentLoaded', () => {
                 const defaults = options.defaults || {};
                 applyDefaults(defaults);
                 goToStep(2, 'forward');
+                break;
+            }
+            case 'load-sampledata': {
+                const btn = e.target.closest('[data-action="load-sampledata"]');
+                if (!btn) break;
+                btn.disabled = true;
+                const spinner = document.createElement('span');
+                spinner.className = 'spinner-border spinner-border-sm me-1';
+                spinner.setAttribute('role', 'status');
+                btn.prepend(spinner);
+
+                const fd = new FormData();
+                fd.append(token, '1');
+
+                try {
+                    const res  = await fetch('index.php?option=com_j2commerce&task=dashboard.loadSampleData&format=json', { method: 'POST', body: fd });
+                    const json = await res.json();
+                    const sdPrompt = modal.querySelector('#ob-sampledata-prompt');
+                    if (json.success) {
+                        if (sdPrompt) {
+                            const successAlert = document.createElement('div');
+                            successAlert.className = 'alert alert-success mt-3';
+                            successAlert.textContent = Joomla.Text._('COM_J2COMMERCE_DASHBOARD_SAMPLEDATA_LOADED');
+                            sdPrompt.replaceChildren(successAlert);
+                        }
+                    } else {
+                        btn.disabled = false;
+                        spinner.remove();
+                        showError(json.message || Joomla.Text._('COM_J2COMMERCE_ONBOARDING_ERR_SAVE'));
+                    }
+                } catch {
+                    btn.disabled = false;
+                    spinner.remove();
+                    showError(Joomla.Text._('COM_J2COMMERCE_ONBOARDING_ERR_SAVE'));
+                }
+                break;
+            }
+            case 'skip-sampledata': {
+                const sdPrompt = modal.querySelector('#ob-sampledata-prompt');
+                if (sdPrompt) sdPrompt.classList.add('d-none');
                 break;
             }
         }

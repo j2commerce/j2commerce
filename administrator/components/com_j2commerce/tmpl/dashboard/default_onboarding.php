@@ -693,6 +693,17 @@ $e = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
             </div>
           </div>
 
+          <div id="ob-sampledata-prompt" class="text-center mt-4 d-none">
+            <p><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_SAMPLEDATA_PROMPT'); ?></p>
+            <button type="button" class="btn btn-outline-primary me-2" data-action="load-sampledata">
+              <span class="fa-solid fa-database me-1"></span>
+              <?php echo Text::_('COM_J2COMMERCE_ONBOARDING_SAMPLEDATA_LOAD'); ?>
+            </button>
+            <button type="button" class="btn btn-link" data-action="skip-sampledata">
+              <?php echo Text::_('COM_J2COMMERCE_ONBOARDING_SAMPLEDATA_SKIP'); ?>
+            </button>
+          </div>
+
           <div class="row g-3 text-center">
             <div class="col-md-3">
               <button type="button" class="btn btn-outline-secondary w-100 shadow-none" data-action="back">

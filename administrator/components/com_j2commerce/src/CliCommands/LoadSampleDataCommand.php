@@ -35,6 +35,11 @@ class LoadSampleDataCommand extends AbstractCommand
         $this->addOption('yes', 'y', InputOption::VALUE_NONE, 'Skip confirmation prompt');
         $this->addOption('clean', null, InputOption::VALUE_NONE, 'Remove existing sample data before loading');
         $this->addOption('remove', null, InputOption::VALUE_NONE, 'Remove all sample data and exit');
+        $this->addOption('categories', null, InputOption::VALUE_OPTIONAL, 'Override number of categories');
+        $this->addOption('products', null, InputOption::VALUE_OPTIONAL, 'Override number of simple products');
+        $this->addOption('variable', null, InputOption::VALUE_OPTIONAL, 'Override number of variable products');
+        $this->addOption('customers', null, InputOption::VALUE_OPTIONAL, 'Override number of customers');
+        $this->addOption('orders', null, InputOption::VALUE_OPTIONAL, 'Override number of orders');
     }
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int
@@ -81,10 +86,36 @@ class LoadSampleDataCommand extends AbstractCommand
             }
         }
 
+        // Collect numeric override options
+        $overrides = [];
+        $overrideMap = [
+            'categories' => 'categories',
+            'products'   => 'simple',
+            'variable'   => 'variable',
+            'customers'  => 'customers',
+            'orders'     => 'orders',
+        ];
+
+        foreach ($overrideMap as $optionName => $profileKey) {
+            $value = $input->getOption($optionName);
+
+            if ($value !== null && is_numeric($value) && (int) $value >= 0) {
+                $overrides[$profileKey] = (int) $value;
+            }
+        }
+
         $io->section(sprintf('Loading sample data (profile: %s)...', $profile));
 
+        if (!empty($overrides)) {
+            $io->text('Applying overrides: ' . implode(', ', array_map(
+                fn($k, $v) => "$k=$v",
+                array_keys($overrides),
+                $overrides
+            )));
+        }
+
         try {
-            $result = $helper->load($profile);
+            $result = $helper->load($profile, $overrides);
         } catch (\Throwable $e) {
             $io->error('Failed to load sample data: ' . $e->getMessage());
             return 2;

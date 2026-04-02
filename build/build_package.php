@@ -86,6 +86,7 @@ $plugins = [
     ['group' => 'j2commerce', 'element' => 'shipping_free'],
     ['group' => 'j2commerce', 'element' => 'report_itemised'],
     ['group' => 'j2commerce', 'element' => 'report_products'],
+    ['group' => 'sampledata', 'element' => 'j2commerce'],
 ];
 
 $adminModules = [

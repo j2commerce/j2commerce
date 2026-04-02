@@ -46,6 +46,7 @@ class Pkg_J2commerceInstallerScript extends InstallerScript
         ['j2commerce',  'shipping_free',        true],
         ['j2commerce',  'report_itemised',      true],
         ['j2commerce',  'report_products',      true],
+        ['sampledata',  'j2commerce',           true],
     ];
 
     /**
