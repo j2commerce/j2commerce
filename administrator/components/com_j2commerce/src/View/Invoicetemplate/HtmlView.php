@@ -121,16 +121,18 @@ class HtmlView extends BaseHtmlView
 
     protected function addToolbar()
     {
-        $toolbar = $this->getDocument()->getToolbar();
-        $isNew   = ($this->item->j2commerce_invoicetemplate_id == 0);
-        $canDo   = ContentHelper::getActions('com_j2commerce', 'invoicetemplate', $this->item->j2commerce_invoicetemplate_id ?? 0);
+        $toolbar    = $this->getDocument()->getToolbar();
+        $isNew      = ($this->item->j2commerce_invoicetemplate_id == 0);
+        $canDo      = ContentHelper::getActions('com_j2commerce', 'invoicetemplate', $this->item->j2commerce_invoicetemplate_id ?? 0);
+        $user       = Factory::getApplication()->getIdentity();
+        $checkedOut = !(($this->item->checked_out ?? null) === null || ($this->item->checked_out ?? 0) == $user->id);
 
         Factory::getApplication()->getInput()->set('hidemainmenu', true);
 
         $title = $isNew ? Text::_('COM_J2COMMERCE_INVOICETEMPLATE_NEW') : Text::_('COM_J2COMMERCE_INVOICETEMPLATE_EDIT');
         ToolbarHelper::title($title, 'fa-solid fa-print');
 
-        $canEdit = $canDo->get('core.edit') || ($canDo->get('core.create') && $isNew);
+        $canEdit = !$checkedOut && ($canDo->get('core.edit') || ($canDo->get('core.create') && $isNew));
 
         if ($canEdit) {
             $toolbar->apply('invoicetemplate.apply');

@@ -59,8 +59,9 @@ function initGrapesJSEditor(options) {
         deviceManager: {
             devices: [
                 { name: 'Desktop', width: '' },
-                { name: 'Tablet', width: '600px' },
-                { name: 'Mobile', width: '320px', widthMedia: '480px' },
+                { name: 'Tablet', width: '768px', widthMedia: '992px' },
+                { name: 'Mobile landscape', width: '480px', widthMedia: '768px' },
+                { name: 'Mobile portrait', width: '320px', widthMedia: '480px' },
             ],
         },
     };
@@ -99,12 +100,22 @@ function initGrapesJSEditor(options) {
 
     window._j2cGrapesEditor = editor;
 
-    // After load, swap any shortcode src attributes to placeholders (handles saved projectData)
+    // After load, inject responsive styles and swap shortcode src placeholders
     editor.on('load', () => {
         const frame = editor.Canvas.getFrameEl();
         if (!frame) return;
         const doc = frame.contentDocument;
         if (!doc) return;
+
+        // Responsive override so email tables/images scale in device preview
+        const style = doc.createElement('style');
+        style.setAttribute('data-j2c-responsive', '1');
+        style.textContent = 'body{overflow-x:hidden}'
+            + 'table{max-width:100%!important}'
+            + 'img{max-width:100%!important;height:auto!important}'
+            + 'td,th{word-break:break-word}';
+        doc.head.appendChild(style);
+
         doc.querySelectorAll('img').forEach(img => {
             const src = img.getAttribute('src') || '';
             if (/^\[[A-Z_]+\]$/.test(src)) {
@@ -592,7 +603,7 @@ function setupPreviewIntegration(editor, options) {
 
         previewBtn.disabled = true;
         const origHtml = previewBtn.innerHTML;
-        previewBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        previewBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></span>';
 
         try {
             const formData = new FormData();

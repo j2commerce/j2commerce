@@ -15,7 +15,7 @@ use Joomla\CMS\Layout\LayoutHelper;
 
 /** @var \J2Commerce\Component\J2commerce\Administrator\View\Queuelogs\HtmlView $this */
 
-echo $this->navbar;
+echo $this->navbar ?? '';
 
 echo LayoutHelper::render('joomla.content.emptystate', [
     'textPrefix' => 'COM_J2COMMERCE_QUEUE_LOGS',

@@ -18,6 +18,7 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\ToolbarHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 /**
  * Filtergroup View
@@ -61,7 +62,7 @@ class HtmlView extends BaseHtmlView
      */
     public function display($tpl = null)
     {
-        if (!$this->getCurrentUser()->authorise('j2commerce.viewproducts', 'com_j2commerce')) {
+        if (!J2CommerceHelper::canAccess('j2commerce.viewproducts')) {
             throw new \Exception(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 403);
         }
 
@@ -108,15 +109,16 @@ class HtmlView extends BaseHtmlView
         $isNew = (empty($this->item->j2commerce_filtergroup_id) || $this->item->j2commerce_filtergroup_id == 0)
                  && (empty($this->item->id) || $this->item->id == 0);
 
-        $canDo = ContentHelper::getActions('com_j2commerce', 'filtergroup', $this->item->j2commerce_filtergroup_id ?? 0);
+        $canDo      = ContentHelper::getActions('com_j2commerce', 'filtergroup', $this->item->j2commerce_filtergroup_id ?? 0);
+        $checkedOut = !(($this->item->checked_out ?? null) === null || ($this->item->checked_out ?? 0) == $user->id);
 
         ToolbarHelper::title(
             Text::_('COM_J2COMMERCE_FILTERGROUP') . ': ' . ($isNew ? Text::_('JTOOLBAR_NEW') : Text::_('JTOOLBAR_EDIT')),
             'filter'
         );
 
-        // If not checked out, can save the item.
-        if ($canDo->get('core.edit') || ($canDo->get('core.create'))) {
+        // Only show save buttons when the item is not checked out by another user.
+        if (!$checkedOut && ($canDo->get('core.edit') || $canDo->get('core.create'))) {
             ToolbarHelper::apply('filtergroup.apply');
             ToolbarHelper::save('filtergroup.save');
 

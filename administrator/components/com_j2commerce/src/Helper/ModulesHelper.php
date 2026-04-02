@@ -30,7 +30,7 @@ class ModulesHelper
     /**
      * Singleton instance
      *
-     * @var   ModulesHelper|null
+     * @var ModulesHelper|null
      * @since 6.0.0
      */
     protected static ?ModulesHelper $instance = null;
@@ -38,7 +38,7 @@ class ModulesHelper
     /**
      * Get the singleton instance
      *
-     * @param   array|null  $properties  Optional properties (unused, for interface compatibility)
+     * @param   array|null  $properties  Optional properties
      *
      * @return  ModulesHelper
      *
@@ -47,7 +47,7 @@ class ModulesHelper
     public static function getInstance(?array $properties = null): ModulesHelper
     {
         if (self::$instance === null) {
-            self::$instance = new self();
+            self::$instance = new self($properties);
         }
 
         return self::$instance;
@@ -303,5 +303,4 @@ class ModulesHelper
             'j2commerce-order-bottom'     => 'Below order details',
         ];
     }
-
 }

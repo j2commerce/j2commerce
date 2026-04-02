@@ -36,6 +36,8 @@ class InvoicetemplateTable extends Table
         $this->typeAlias = 'com_j2commerce.invoicetemplate';
 
         parent::__construct('#__j2commerce_invoicetemplates', 'j2commerce_invoicetemplate_id', $db);
+
+        $this->setColumnAlias('published', 'enabled');
     }
 
     /**
@@ -113,63 +115,33 @@ class InvoicetemplateTable extends Table
     }
 
     /**
-     * Method to set the enabled state for a row or list of rows in the database
-     * table. The method respects checked out rows by other users and will attempt
-     * to checkin rows that it can after adjustments are made.
+     * Method to store a row in the database from the Table instance properties.
      *
-     * @param   mixed    $pks     An optional array of primary key values to update.
-     *                           If not set the instance property value is used.
-     * @param   integer  $state   The enabled state. eg. [0 = disabled, 1 = enabled]
-     * @param   integer  $userId  The user ID of the user performing the operation.
+     * @param   boolean  $updateNulls  True to update fields even if they are null.
      *
-     * @return  boolean  True on success; false if $pks is empty.
+     * @return  boolean  True on success.
      *
-     * @since   6.0.0
+     * @since   6.1.3
      */
-    public function publish($pks = null, $state = 1, $userId = 0)
+    public function store($updateNulls = true)
     {
-        $k = $this->_tbl_key;
+        $date = Factory::getDate()->toSql();
+        $user = Factory::getApplication()->getIdentity();
 
-        // Sanitize input.
-        $pks = array_unique((array) $pks);
-        $userId = (int) $userId;
-        $state = (int) $state;
+        if (empty($this->j2commerce_invoicetemplate_id)) {
+            if (empty($this->created_on) || $this->created_on === '0000-00-00 00:00:00') {
+                $this->created_on = $date;
+            }
 
-        // If there are no primary keys set then use the instance.
-        if (empty($pks)) {
-            if ($this->$k) {
-                $pks = [(int) $this->$k];
-            } else {
-                $this->setError(Text::_('JLIB_DATABASE_ERROR_NO_ROWS_SELECTED'));
-                return false;
+            if (empty($this->created_by)) {
+                $this->created_by = (int) $user->id;
             }
         }
 
-        // Build the WHERE clause for the primary keys.
-        $where = $k . '=' . implode(' OR ' . $k . '=', $pks);
+        $this->modified_on = $date;
+        $this->modified_by = (int) $user->id;
 
-        // Update the enabled field for the list of primary keys.
-        $query = $this->_db->getQuery(true)
-            ->update($this->_tbl)
-            ->set($this->_db->quoteName('enabled') . ' = :state')
-            ->where($where)
-            ->bind(':state', $state, ParameterType::INTEGER);
-
-        $this->_db->setQuery($query);
-
-        try {
-            $this->_db->execute();
-        } catch (\RuntimeException $e) {
-            $this->setError($e->getMessage());
-            return false;
-        }
-
-        // If the Table instance value is in the list of primary keys that were set, set the instance.
-        if (in_array($this->$k, $pks)) {
-            $this->enabled = $state;
-        }
-
-        return true;
+        return parent::store($updateNulls);
     }
 
     /**

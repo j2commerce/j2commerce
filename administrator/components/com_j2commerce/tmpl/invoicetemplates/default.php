@@ -63,7 +63,8 @@ $isMultilang = Multilanguage::isEnabled();
                     <table class="table" id="invoicetemplateList">
                         <caption class="visually-hidden">
                             <?php echo Text::_('COM_J2COMMERCE_INVOICETEMPLATES_TABLE_CAPTION'); ?>,
-                            <span id="orderable"><?php echo Text::_('JGLOBAL_SORTED_TABLE'); ?></span>
+                            <span id="orderedBy"><?php echo Text::_('JGLOBAL_SORTED_BY'); ?> </span>,
+                            <span id="filteredBy"><?php echo Text::_('JGLOBAL_FILTERED_BY'); ?></span>
                         </caption>
                         <thead>
                             <tr>
@@ -103,7 +104,9 @@ $isMultilang = Multilanguage::isEnabled();
                             <?php foreach ($this->items as $i => $item) :
                                 $canEdit = $user->authorise('core.edit', 'com_j2commerce.invoicetemplate.' . $item->j2commerce_invoicetemplate_id);
                                 $canCheckin = $user->authorise('core.manage', 'com_checkin') || $item->locked_by == $userId || is_null($item->locked_by);
-                                $canEditOwn = $user->authorise('core.edit.own', 'com_j2commerce.invoicetemplate.' . $item->j2commerce_invoicetemplate_id) && $item->created_by == $userId;
+                                // TODO: Add created_by column to j2commerce_invoicetemplates table
+                                // $canEditOwn = $user->authorise('core.edit.own', 'com_j2commerce.invoicetemplate.' . $item->j2commerce_invoicetemplate_id) && $item->created_by == $userId;
+                                $canEditOwn = false;
                                 $canChange = $user->authorise('core.edit.state', 'com_j2commerce.invoicetemplate.' . $item->j2commerce_invoicetemplate_id) && $canCheckin;
 
 

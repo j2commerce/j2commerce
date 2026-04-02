@@ -13,7 +13,9 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
 \defined('_JEXEC') or die;
 
+use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\FormController;
+use Joomla\CMS\Router\Route;
 
 /**
  * Voucher item controller class.
@@ -62,5 +64,35 @@ class VoucherController extends FormController
     public function cancel($key = 'id')
     {
         return parent::cancel($key);
+    }
+
+    /**
+     * Send a voucher email to the recipient.
+     *
+     * @return  void
+     *
+     * @since   6.0.6
+     */
+    public function send(): void
+    {
+        $this->checkToken();
+
+        $id  = $this->input->getInt('id', 0);
+        $url = Route::_('index.php?option=com_j2commerce&view=voucher&layout=edit&id=' . $id, false);
+
+        if (!$id) {
+            $this->setRedirect($url, Text::_('COM_J2COMMERCE_VOUCHER_SEND_NO_VOUCHER'), 'error');
+
+            return;
+        }
+
+        /** @var \J2Commerce\Component\J2commerce\Administrator\Model\VoucherModel $model */
+        $model = $this->getModel();
+
+        if ($model->send($id)) {
+            $this->setRedirect($url, Text::_('COM_J2COMMERCE_VOUCHER_SEND_SUCCESS'));
+        } else {
+            $this->setRedirect($url, Text::_('COM_J2COMMERCE_VOUCHER_SEND_FAILED'), 'error');
+        }
     }
 }

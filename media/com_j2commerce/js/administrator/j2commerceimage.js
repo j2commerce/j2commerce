@@ -77,6 +77,18 @@
             this.modalEl = this.element.querySelector('.uppymedia-modal');
             if (!this.modalEl) return;
 
+            // Open modal via JS instead of data-bs-target to avoid duplicate-ID
+            // issues when this field is inside a Joomla subform repeatable row.
+            const chooseBtn = this.element.querySelector('.j2commerce-image-choose-btn');
+            if (chooseBtn) {
+                chooseBtn.addEventListener('click', () => {
+                    if (!this.bsModal) {
+                        this.bsModal = new bootstrap.Modal(this.modalEl);
+                    }
+                    this.bsModal.show();
+                });
+            }
+
             this.setupModalHandlers();
             this.setupRemoveHandlers();
             this.updateChooseButton();

@@ -87,7 +87,9 @@ if ($saveOrder && !empty($this->items)) {
                         <?php foreach ($this->items as $i => $item) :
                             $ordering   = ($listOrder == 'a.ordering');
                             $canEdit    = $user->authorise('core.edit', 'com_j2commerce.option.' . $item->j2commerce_option_id);
-                            $canCheckin = $user->authorise('core.manage', 'com_checkin') || $item->checked_out == $userId || is_null($item->checked_out);
+                            // checked_out columns not yet in options table — treat as always available
+                            // $canCheckin = $user->authorise('core.manage', 'com_checkin') || $item->checked_out == $userId || is_null($item->checked_out);
+                            $canCheckin = true;
                             $canChange  = $user->authorise('core.edit.state', 'com_j2commerce.option.' . $item->j2commerce_option_id) && $canCheckin;
                             ?>
                             <tr class="row<?php echo $i % 2; ?>" data-draggable-group="none">
@@ -114,9 +116,11 @@ if ($saveOrder && !empty($this->items)) {
                                     <?php echo HTMLHelper::_('jgrid.published', $item->enabled, $i, 'options.', $canChange, 'cb'); ?>
                                 </td>
                                 <th scope="row">
+                                    <?php /* checked_out columns not yet in options table
                                     <?php if ($item->checked_out) : ?>
                                         <?php echo HTMLHelper::_('jgrid.checkedout', $i, $item->editor, $item->checked_out_time, 'options.', $canCheckin); ?>
                                     <?php endif; ?>
+                                    */ ?>
                                     <?php if ($canEdit) : ?>
                                         <a href="<?php echo Route::_('index.php?option=com_j2commerce&task=option.edit&id=' . $item->j2commerce_option_id); ?>" title="<?php echo Text::_('JACTION_EDIT'); ?> <?php echo $this->escape($item->option_name); ?>">
                                             <?php echo $this->escape($item->option_name); ?>

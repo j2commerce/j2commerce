@@ -47,10 +47,10 @@
             <option value="p.taxprofile_name DESC">COM_J2COMMERCE_HEADING_TAXPROFILE_DESC</option>
             <option value="r.taxrate_name ASC">COM_J2COMMERCE_HEADING_TAXRATE_ASC</option>
             <option value="r.taxrate_name DESC">COM_J2COMMERCE_HEADING_TAXRATE_DESC</option>
-            <option value="a.ordering ASC">JGRID_HEADING_ORDERING_ASC</option>
-            <option value="a.ordering DESC">JGRID_HEADING_ORDERING_DESC</option>
-            <option value="a.j2commerce_taxrule_id ASC">JGRID_HEADING_ID_ASC</option>
-            <option value="a.j2commerce_taxrule_id DESC">JGRID_HEADING_ID_DESC</option>
+            <option value="a.ordering ASC">COM_J2COMMERCE_HEADING_ORDERING_ASC</option>
+            <option value="a.ordering DESC">COM_J2COMMERCE_HEADING_ORDERING_DESC</option>
+            <option value="a.j2commerce_taxrule_id ASC">COM_J2COMMERCE_HEADING_ID_ASC</option>
+            <option value="a.j2commerce_taxrule_id DESC">COM_J2COMMERCE_HEADING_ID_DESC</option>
         </field>
 
         <field

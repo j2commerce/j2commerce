@@ -142,7 +142,7 @@
             if (!country) return;
             selectedIso = iso;
 
-            var currentFlag = container.querySelector('.j2c-phone-flag');
+            var currentFlag = countryBtn.querySelector('.j2c-phone-flag');
             if (country.flagUrl) {
                 if (currentFlag && currentFlag.tagName === 'IMG') {
                     currentFlag.src = country.flagUrl;
@@ -155,7 +155,14 @@
                     if (currentFlag) currentFlag.replaceWith(img);
                 }
             } else if (currentFlag) {
-                currentFlag.textContent = iso;
+                if (currentFlag.tagName === 'IMG') {
+                    var span = document.createElement('span');
+                    span.className = 'j2c-phone-flag';
+                    span.textContent = iso;
+                    currentFlag.replaceWith(span);
+                } else {
+                    currentFlag.textContent = iso;
+                }
             }
 
             codeSpan.textContent = '+' + country.code;

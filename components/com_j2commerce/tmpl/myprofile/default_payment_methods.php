@@ -47,7 +47,7 @@ $csrfToken = Session::getFormToken();
                             $lastFour = htmlspecialchars($method->last4, ENT_QUOTES, 'UTF-8');
                             ?>
                             <div class="j2commerce-payment-method mb-3">
-                                <div class="border py-3 px-4 rounded-3 mb-3 j2commerce-payment-card" data-provider="<?php echo htmlspecialchars($method->provider, ENT_QUOTES, 'UTF-8'); ?>" data-method-id="<?php echo htmlspecialchars($method->id, ENT_QUOTES, 'UTF-8'); ?>">
+                                <div class="border py-3 px-4 rounded-3 mb-3 j2commerce-payment-card" data-provider="<?php echo htmlspecialchars($method->provider, ENT_QUOTES, 'UTF-8'); ?>" data-method-id="<?php echo (int) $method->id; ?>">
                                     <div class="j2commerce-payment-method-inner d-flex justify-content-between align-items-center">
                                         <div class="j2commerce-payment-method-details d-flex align-items-center">
                                             <?php if($method->getBrandIcon()):?>
@@ -72,18 +72,18 @@ $csrfToken = Session::getFormToken();
                                         </div>
                                         <div class="d-flex align-items-center">
                                         <span class="dropdown dropstart">
-                                           <a role="button" class="text-reset dropdown-toggle" href="#" id="paymentDropdown<?php echo htmlspecialchars($method->id, ENT_QUOTES, 'UTF-8'); ?>" data-bs-toggle="dropdown" data-bs-offset="-20,20" aria-expanded="false">
-                                              <span class="fa-solid fa-ellipsis-vertical"></span>
-                                           </a>
-                                           <span class="dropdown-menu" aria-labelledby="paymentDropdown<?php echo htmlspecialchars($method->id, ENT_QUOTES, 'UTF-8'); ?>">
+                                           <button type="button" class="btn btn-link text-reset dropdown-toggle p-0" id="paymentDropdown<?php echo (int) $method->id; ?>" data-bs-toggle="dropdown" data-bs-offset="-20,20" aria-expanded="false" aria-label="<?php echo Text::_('COM_J2COMMERCE_ACTIONS'); ?>">
+                                              <span class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></span>
+                                           </button>
+                                           <span class="dropdown-menu" aria-labelledby="paymentDropdown<?php echo (int) $method->id; ?>">
                                               <?php if ($method->canDelete()) : ?>
-                                                <a role="button" class="dropdown-item j2commerce-delete-card-btn" href="#" data-provider="<?php echo htmlspecialchars($method->provider, ENT_QUOTES, 'UTF-8'); ?>" data-method-id="<?php echo htmlspecialchars($method->id, ENT_QUOTES, 'UTF-8'); ?>">
+                                                <a role="button" class="dropdown-item j2commerce-delete-card-btn" href="#" data-provider="<?php echo htmlspecialchars($method->provider, ENT_QUOTES, 'UTF-8'); ?>" data-method-id="<?php echo (int) $method->id; ?>">
                                                     <span class="fa-solid fa-trash text-danger fa-fw" aria-hidden="true"></span>
                                                     <span class="ms-1"><?php echo Text::_('JACTION_DELETE'); ?></span>
                                                 </a>
                                               <?php endif; ?>
                                                <?php if ($method->canSetDefault() && !$method->isDefault) : ?>
-                                                   <a role="button" class="dropdown-item j2commerce-set-default-btn" href="#" data-provider="<?php echo htmlspecialchars($method->provider, ENT_QUOTES, 'UTF-8'); ?>" data-method-id="<?php echo htmlspecialchars($method->id, ENT_QUOTES, 'UTF-8'); ?>">
+                                                   <a role="button" class="dropdown-item j2commerce-set-default-btn" href="#" data-provider="<?php echo htmlspecialchars($method->provider, ENT_QUOTES, 'UTF-8'); ?>" data-method-id="<?php echo (int) $method->id; ?>">
                                                        <span class="fa-solid fa-star fa-fw" aria-hidden="true"></span>
                                                        <span class="ms-1"><?php echo Text::_('COM_J2COMMERCE_PAYMENT_METHODS_SET_DEFAULT'); ?></span>
                                                   </a>

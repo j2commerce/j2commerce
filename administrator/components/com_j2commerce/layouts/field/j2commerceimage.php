@@ -78,7 +78,7 @@ if ($multiple) {
     </div>
 
     <?php if (!$disabled && !$readonly) : ?>
-    <button type="button" class="btn btn-sm btn-outline-secondary j2commerce-image-choose-btn" data-bs-toggle="modal" data-bs-target="#<?php echo $modalId; ?>">
+    <button type="button" class="btn btn-sm btn-outline-secondary j2commerce-image-choose-btn">
         <i class="fa-solid fa-image" aria-hidden="true"></i>
         <?php echo Text::_($multiple ? 'COM_J2COMMERCE_IMAGE_CHOOSE_MULTIPLE' : 'COM_J2COMMERCE_IMAGE_CHOOSE'); ?>
     </button>
@@ -123,7 +123,7 @@ if ($multiple) {
                         <!-- Loading indicator -->
                         <div class="uppymedia-browser-loading text-center d-none">
                             <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden"><?php echo Text::_('JLIB_HTML_PLEASE_WAIT'); ?></span>
+                                <span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_LOADING'); ?></span>
                             </div>
                         </div>
                         <!-- Image browser grid -->

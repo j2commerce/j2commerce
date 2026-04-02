@@ -61,7 +61,8 @@ $isMultilang = Multilanguage::isEnabled();
                     <table class="table" id="emailtemplateList">
                         <caption class="visually-hidden">
                             <?php echo Text::_('COM_J2COMMERCE_EMAILTEMPLATES_TABLE_CAPTION'); ?>,
-                            <span id="orderable"><?php echo Text::_('JGLOBAL_SORTED_TABLE'); ?></span>
+                            <span id="orderedBy"><?php echo Text::_('JGLOBAL_SORTED_BY'); ?> </span>,
+                            <span id="filteredBy"><?php echo Text::_('JGLOBAL_FILTERED_BY'); ?></span>
                         </caption>
                         <thead>
                             <tr>
@@ -90,7 +91,7 @@ $isMultilang = Multilanguage::isEnabled();
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_EMAILTEMPLATE_GROUP', 'a.group_id', $listDirn, $listOrder); ?>
                                 </th>
                                 <th scope="col" class="w-10 d-none d-lg-table-cell">
-                                    <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_EMAILTEMPLATE_PAYMENTMETHOD', 'a.paymentmethod', $listDirn, $listOrder); ?>
+                                    <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_EMAILTEMPLATE_EMAIL_TYPE', 'a.email_type', $listDirn, $listOrder); ?>
                                 </th>
 
                                 <th scope="col" class="w-3 d-none d-lg-table-cell">
@@ -102,7 +103,9 @@ $isMultilang = Multilanguage::isEnabled();
                             <?php foreach ($this->items as $i => $item) :
                                 $canEdit = $user->authorise('core.edit', 'com_j2commerce.emailtemplate.' . $item->j2commerce_emailtemplate_id);
                                 $canCheckin = $user->authorise('core.manage', 'com_checkin') || $item->locked_by == $userId || is_null($item->locked_by);
-                                $canEditOwn = $user->authorise('core.edit.own', 'com_j2commerce.emailtemplate.' . $item->j2commerce_emailtemplate_id) && $item->created_by == $userId;
+                                // TODO: Add created_by column to j2commerce_emailtemplates table
+                                // $canEditOwn = $user->authorise('core.edit.own', 'com_j2commerce.emailtemplate.' . $item->j2commerce_emailtemplate_id) && $item->created_by == $userId;
+                                $canEditOwn = false;
                                 $canChange = $user->authorise('core.edit.state', 'com_j2commerce.emailtemplate.' . $item->j2commerce_emailtemplate_id) && $canCheckin;
                             ?>
                                 <tr class="row<?php echo $i % 2; ?>" data-draggable-group="0">
@@ -195,11 +198,7 @@ $isMultilang = Multilanguage::isEnabled();
                                         <?php endif; ?>
                                     </td>
                                     <td class="d-none d-lg-table-cell">
-                                        <?php if ($item->paymentmethod === '*') : ?>
-                                            <?php echo Text::_('JALL'); ?>
-                                        <?php else : ?>
-                                            <?php echo Text::_($item->paymentmethod); ?>
-                                        <?php endif; ?>
+                                        <?php echo $this->escape($item->email_type); ?>
                                     </td>
                                     <?php if ($isMultilang) : ?>
                                     <td class="d-none d-lg-table-cell">

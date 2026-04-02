@@ -131,9 +131,19 @@ class OrderTable extends Table
      */
     public function store($updateNulls = false): bool
     {
+        $user = Factory::getApplication()->getIdentity();
+        $isNew = empty($this->j2commerce_order_id);
+
+        if ($isNew) {
+            if (empty($this->created_by)) {
+                $this->created_by = (int) $user->id;
+            }
+        }
+
+        $this->modified_by = (int) $user->id;
+
         // Capture old status before storing (for new records, treat as status change from 5=Incomplete)
         $oldStatusId = null;
-        $isNew = empty($this->j2commerce_order_id);
 
         if (!$isNew) {
             $db = $this->getDatabase();

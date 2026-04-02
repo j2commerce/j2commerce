@@ -87,6 +87,7 @@
         >
             <option value="0">JUNPUBLISHED</option>
             <option value="1">JPUBLISHED</option>
+            <option value="-2">JTRASHED</option>
         </field>
 
     </fieldset>
@@ -95,13 +96,13 @@
         <field
             name="body_source"
             type="list"
-            label="COM_J2COMMERCE_EMAILTEMPLATE_BODY_SOURCE"
-            description="COM_J2COMMERCE_EMAILTEMPLATE_BODY_SOURCE_DESC"
+            label="COM_J2COMMERCE_INVOICETEMPLATE_BODY_SOURCE"
+            description="COM_J2COMMERCE_INVOICETEMPLATE_BODY_SOURCE_DESC"
             class="form-select"
             default="editor"
         >
-            <option value="visual">COM_J2COMMERCE_EMAILTEMPLATE_BODY_SOURCE_VISUAL</option>
-            <option value="editor">COM_J2COMMERCE_EMAILTEMPLATE_BODY_SOURCE_EDITOR</option>
+            <option value="visual">COM_J2COMMERCE_INVOICETEMPLATE_BODY_SOURCE_VISUAL</option>
+            <option value="editor">COM_J2COMMERCE_INVOICETEMPLATE_BODY_SOURCE_EDITOR</option>
         </field>
 
         <field

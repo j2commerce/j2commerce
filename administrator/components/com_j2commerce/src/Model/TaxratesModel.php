@@ -58,7 +58,7 @@ class TaxratesModel extends ListModel
      *
      * @since   6.0.3
      */
-    protected function populateState($ordering = 'a.ordering', $direction = 'asc'): void
+    protected function populateState($ordering = 'a.taxrate_name', $direction = 'asc'): void
     {
         $search = $this->getUserStateFromRequest($this->context . '.filter.search', 'filter_search', '', 'string');
         $this->setState('filter.search', $search);

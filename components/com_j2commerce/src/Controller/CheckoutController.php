@@ -98,6 +98,12 @@ class CheckoutController extends BaseController
         $redirect = $params->get('config_cart_empty_redirect', 'cart');
 
         switch ($redirect) {
+            case 'homepage':
+                $menu = $this->app->getMenu('site');
+                $default = $menu->getDefault($this->app->getLanguage()->getTag());
+                $url = $default ? Route::_($default->link . '&Itemid=' . $default->id) : Route::_('index.php');
+                break;
+
             case 'menu':
                 $menuItemId = (int) $params->get('continue_cart_redirect_menu', 0);
                 $url = $menuItemId ? Route::_('index.php?Itemid=' . $menuItemId) : Route::_('index.php');
@@ -1394,9 +1400,10 @@ class CheckoutController extends BaseController
         $this->app->setUserState('j2commerce.order_id', null);
         $this->app->setUserState('j2commerce.orderpayment_id', null);
 
-        // Redirect to the dedicated confirmation view with order_id in URL
+        // Redirect to the dedicated confirmation view with order_id and token in URL
         $confirmUrl = Route::_(
-            'index.php?option=com_j2commerce&view=confirmation&order_id=' . urlencode($orderId),
+            'index.php?option=com_j2commerce&view=confirmation&order_id=' . urlencode($orderId)
+            . '&token=' . urlencode($orderTable->token ?? ''),
             false
         );
         $this->app->redirect($confirmUrl);

@@ -20,6 +20,7 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\ToolbarHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 /**
  * Customer edit view class.
@@ -64,7 +65,7 @@ class HtmlView extends BaseHtmlView
      */
     public function display($tpl = null): void
     {
-        if (!$this->getCurrentUser()->authorise('j2commerce.vieworders', 'com_j2commerce')) {
+        if (!J2CommerceHelper::canAccess('j2commerce.vieworders')) {
             throw new \Exception(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 403);
         }
 
@@ -97,21 +98,23 @@ class HtmlView extends BaseHtmlView
     {
         Factory::getApplication()->getInput()->set('hidemainmenu', true);
 
-        $isNew = ($this->item->j2commerce_address_id == 0);
-        $canDo = ContentHelper::getActions('com_j2commerce');
-        $toolbar = $this->getDocument()->getToolbar();
+        $isNew      = ($this->item->j2commerce_address_id == 0);
+        $canDo      = ContentHelper::getActions('com_j2commerce');
+        $user       = Factory::getApplication()->getIdentity();
+        $checkedOut = !(($this->item->checked_out ?? null) === null || ($this->item->checked_out ?? 0) == $user->id);
+        $toolbar    = $this->getDocument()->getToolbar();
 
         ToolbarHelper::title(
             $isNew ? Text::_('COM_J2COMMERCE_CUSTOMER_NEW') : Text::_('COM_J2COMMERCE_CUSTOMER_EDIT'),
             'user'
         );
 
-        if ($canDo->get('core.edit') || $canDo->get('core.create')) {
+        if (!$checkedOut && ($canDo->get('core.edit') || $canDo->get('core.create'))) {
             $toolbar->apply('customer.apply');
             $toolbar->save('customer.save');
         }
 
-        if ($canDo->get('core.create')) {
+        if (!$checkedOut && $canDo->get('core.create')) {
             $toolbar->save2new('customer.save2new');
         }
 

@@ -287,7 +287,7 @@ class InvoiceHelper
      *
      * @since   6.0.0
      */
-    public function getFormatedInvoice(object $order): string
+    public function getFormattedInvoice(object $order): string
     {
         $text = $this->loadInvoiceTemplate($order);
         $template = EmailHelper::getInstance()->processTags($text, $order, []);

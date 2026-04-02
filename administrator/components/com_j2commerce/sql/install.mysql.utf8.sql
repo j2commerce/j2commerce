@@ -25,8 +25,20 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_addresses` (
   `type` varchar(255) NOT NULL DEFAULT '',
   `company` varchar(255) NOT NULL DEFAULT '',
   `tax_number` varchar(255) NOT NULL DEFAULT '',
-  `campaign_addr_id` varchar(255) NOT NULL DEFAULT '',
-  PRIMARY KEY (`j2commerce_address_id`)
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
+  `ordering` int NOT NULL DEFAULT 0,
+  `enabled` int NOT NULL DEFAULT 1,
+  `params` text NULL,
+  PRIMARY KEY (`j2commerce_address_id`),
+  KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -94,7 +106,17 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_countries` (
   `country_isocode_num` int NOT NULL DEFAULT 0,
   `enabled` int NOT NULL,
   `ordering` int NOT NULL DEFAULT 0,
-  PRIMARY KEY (`j2commerce_country_id`)
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
+  PRIMARY KEY (`j2commerce_country_id`),
+  KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -122,8 +144,18 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_coupons` (
   `users` text NOT NULL,
   `mycategory` text NOT NULL,
   `brand_ids` text NOT NULL,
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
   PRIMARY KEY (`j2commerce_coupon_id`),
-  UNIQUE KEY `coupon_code` (`coupon_code`)
+  UNIQUE KEY `coupon_code` (`coupon_code`),
+  KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -142,14 +174,17 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_currencies` (
   `currency_value` float(15,8) NOT NULL,
   `enabled` int NOT NULL,
   `ordering` int NOT NULL DEFAULT 0,
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
   `created_on` datetime DEFAULT CURRENT_TIMESTAMP,
   `created_by` bigint unsigned NOT NULL DEFAULT 0,
-  `modified_on` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `modified_on` datetime DEFAULT CURRENT_TIMESTAMP,
   `modified_by` bigint unsigned NOT NULL DEFAULT 0,
   `locked_on` datetime DEFAULT NULL,
   `locked_by` bigint unsigned NOT NULL DEFAULT 0,
   PRIMARY KEY (`j2commerce_currency_id`),
-  UNIQUE KEY `currency_code` (`currency_code`)
+  UNIQUE KEY `currency_code` (`currency_code`),
+  KEY `idx_access` (`access`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Default currencies for new installs
@@ -237,25 +272,35 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_customfields` (
   `field_display_guest` smallint NOT NULL DEFAULT 0,
   `field_display_guest_shipping` smallint NOT NULL DEFAULT 0,
   `field_display_payment` smallint NOT NULL DEFAULT 0,
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
   PRIMARY KEY (`j2commerce_customfield_id`),
-  UNIQUE KEY `field_namekey` (`field_namekey`)
+  UNIQUE KEY `field_namekey` (`field_namekey`),
+  KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Default custom fields data
 INSERT IGNORE INTO `#__j2commerce_customfields` (`j2commerce_customfield_id`, `field_table`, `field_name`, `field_namekey`, `field_type`, `field_value`, `enabled`, `ordering`, `field_options`, `field_core`, `field_required`, `field_default`, `field_placeholder`, `field_autocomplete`, `field_access`, `field_categories`, `field_with_sub_categories`, `field_frontend`, `field_backend`, `field_display`, `field_display_billing`, `field_display_register`, `field_display_shipping`, `field_display_guest`, `field_display_guest_shipping`, `field_display_payment`) VALUES
-(1, 'address', 'J2COMMERCE_ADDRESS_FIRSTNAME', 'first_name', 'text', '', 1, 99, 'a:8:{s:12:"errormessage";s:24:"J2COMMERCE_FIELD_REQUIRED";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 1, '', 'J2COMMERCE_PLACEHOLDER_FIRSTNAME', 'given-name', 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
-(2, 'address', 'J2COMMERCE_ADDRESS_LASTNAME', 'last_name', 'text', '', 1, 99, 'a:8:{s:12:"errormessage";s:24:"J2COMMERCE_FIELD_REQUIRED";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 1, '', 'J2COMMERCE_PLACEHOLDER_LASTNAME', 'family-name', 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
-(3, 'address', 'J2COMMERCE_EMAIL', 'email', 'email', '', 1, 99, 'a:8:{s:12:"errormessage";s:38:"J2COMMERCE_VALIDATION_ENTER_VALID_EMAIL";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 1, '', 'J2COMMERCE_PLACEHOLDER_EMAIL', 'email', 'all', 'all', 0, 0, 1, '', 1, 1, 0, 1, 0, 0),
-(4, 'address', 'J2COMMERCE_ADDRESS_LINE1', 'address_1', 'text', '', 1, 99, 'a:8:{s:12:"errormessage";s:24:"J2COMMERCE_FIELD_REQUIRED";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 1, '', 'J2COMMERCE_PLACEHOLDER_ADDRESS_1', 'address-line1', 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
-(5, 'address', 'J2COMMERCE_ADDRESS_LINE2', 'address_2', 'text', '', 1, 99, 'a:8:{s:12:"errormessage";s:24:"J2COMMERCE_FIELD_REQUIRED";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 0, '', 'J2COMMERCE_PLACEHOLDER_ADDRESS_2', 'address-line2', 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
-(6, 'address', 'J2COMMERCE_ADDRESS_CITY', 'city', 'text', '', 1, 99, 'a:8:{s:12:"errormessage";s:24:"J2COMMERCE_FIELD_REQUIRED";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 1, '', 'J2COMMERCE_PLACEHOLDER_CITY', 'address-level2', 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
-(7, 'address', 'J2COMMERCE_ADDRESS_ZIP', 'zip', 'text', '', 1, 99, 'a:8:{s:12:"errormessage";s:24:"J2COMMERCE_FIELD_REQUIRED";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 1, '', 'J2COMMERCE_PLACEHOLDER_ZIP', 'postal-code', 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
-(8, 'address', 'J2COMMERCE_ADDRESS_PHONE', 'phone_1', 'text', '', 1, 99, 'a:8:{s:12:"errormessage";s:0:"";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 0, '', 'J2COMMERCE_PLACEHOLDER_PHONE', 'tel', 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
-(9, 'address', 'J2COMMERCE_ADDRESS_MOBILE', 'phone_2', 'text', '', 1, 99, 'a:8:{s:12:"errormessage";s:24:"J2COMMERCE_FIELD_REQUIRED";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 1, '', 'J2COMMERCE_PLACEHOLDER_MOBILE', 'tel', 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
-(10, 'address', 'J2COMMERCE_ADDRESS_COMPANY_NAME', 'company', 'text', '', 1, 99, 'a:8:{s:12:"errormessage";s:0:"";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 0, '', 'J2COMMERCE_PLACEHOLDER_COMPANY', 'organization', 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
-(11, 'address', 'J2COMMERCE_ADDRESS_TAX_NUMBER', 'tax_number', 'text', '', 1, 99, 'a:8:{s:12:"errormessage";s:0:"";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 0, '', 'J2COMMERCE_PLACEHOLDER_TAX_NUMBER', 'off', 'all', 'all', 0, 0, 1, '', 1, 1, 0, 1, 0, 0),
-(12, 'address', 'J2COMMERCE_ADDRESS_COUNTRY', 'country_id', 'zone', '', 1, 99, 'a:8:{s:12:"errormessage";s:24:"J2COMMERCE_FIELD_REQUIRED";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 1, '223', NULL, NULL, 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
-(13, 'address', 'J2COMMERCE_ADDRESS_ZONE', 'zone_id', 'zone', '', 1, 99, 'a:8:{s:12:"errormessage";s:24:"J2COMMERCE_FIELD_REQUIRED";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:4:"zone";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 1, '3624', NULL, NULL, 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0);
+(1, 'address', 'J2COMMERCE_ADDRESS_FIRSTNAME', 'first_name', 'text', '', 1, 2, 'a:8:{s:12:"errormessage";s:24:"J2COMMERCE_FIELD_REQUIRED";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 1, '', 'J2COMMERCE_PLACEHOLDER_FIRSTNAME', 'given-name', 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
+(2, 'address', 'J2COMMERCE_ADDRESS_LASTNAME', 'last_name', 'text', '', 1, 3, 'a:8:{s:12:"errormessage";s:24:"J2COMMERCE_FIELD_REQUIRED";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 1, '', 'J2COMMERCE_PLACEHOLDER_LASTNAME', 'family-name', 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
+(3, 'address', 'J2COMMERCE_EMAIL', 'email', 'email', '', 1, 1, 'a:8:{s:12:"errormessage";s:38:"J2COMMERCE_VALIDATION_ENTER_VALID_EMAIL";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 1, '', 'J2COMMERCE_PLACEHOLDER_EMAIL', 'email', 'all', 'all', 0, 0, 1, '', 1, 1, 0, 1, 0, 0),
+(4, 'address', 'J2COMMERCE_ADDRESS_LINE1', 'address_1', 'text', '', 1, 4, 'a:8:{s:12:"errormessage";s:24:"J2COMMERCE_FIELD_REQUIRED";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 1, '', 'J2COMMERCE_PLACEHOLDER_ADDRESS_1', 'address-line1', 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
+(5, 'address', 'J2COMMERCE_ADDRESS_LINE2', 'address_2', 'text', '', 1, 5, 'a:8:{s:12:"errormessage";s:24:"J2COMMERCE_FIELD_REQUIRED";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 0, '', 'J2COMMERCE_PLACEHOLDER_ADDRESS_2', 'address-line2', 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
+(6, 'address', 'J2COMMERCE_ADDRESS_CITY', 'city', 'text', '', 1, 6, 'a:8:{s:12:"errormessage";s:24:"J2COMMERCE_FIELD_REQUIRED";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 1, '', 'J2COMMERCE_PLACEHOLDER_CITY', 'address-level2', 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
+(7, 'address', 'J2COMMERCE_ADDRESS_ZIP', 'zip', 'text', '', 1, 7, 'a:8:{s:12:"errormessage";s:24:"J2COMMERCE_FIELD_REQUIRED";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 1, '', 'J2COMMERCE_PLACEHOLDER_ZIP', 'postal-code', 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
+(8, 'address', 'J2COMMERCE_ADDRESS_PHONE', 'phone_1', 'text', '', 1, 10, 'a:8:{s:12:"errormessage";s:0:"";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 0, '', 'J2COMMERCE_PLACEHOLDER_PHONE', 'tel', 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
+(9, 'address', 'J2COMMERCE_ADDRESS_MOBILE', 'phone_2', 'text', '', 1, 11, 'a:8:{s:12:"errormessage";s:24:"J2COMMERCE_FIELD_REQUIRED";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 1, '', 'J2COMMERCE_PLACEHOLDER_MOBILE', 'tel', 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
+(10, 'address', 'J2COMMERCE_ADDRESS_COMPANY_NAME', 'company', 'text', '', 1, 12, 'a:8:{s:12:"errormessage";s:0:"";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 0, '', 'J2COMMERCE_PLACEHOLDER_COMPANY', 'organization', 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
+(11, 'address', 'J2COMMERCE_ADDRESS_TAX_NUMBER', 'tax_number', 'text', '', 1, 13, 'a:8:{s:12:"errormessage";s:0:"";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 0, '', 'J2COMMERCE_PLACEHOLDER_TAX_NUMBER', 'off', 'all', 'all', 0, 0, 1, '', 1, 1, 0, 1, 0, 0),
+(12, 'address', 'J2COMMERCE_ADDRESS_COUNTRY', 'country_id', 'zone', '', 1, 8, 'a:8:{s:12:"errormessage";s:24:"J2COMMERCE_FIELD_REQUIRED";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:7:"country";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 1, '', NULL, NULL, 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0),
+(13, 'address', 'J2COMMERCE_ADDRESS_ZONE', 'zone_id', 'zone', '', 1, 9, 'a:8:{s:12:"errormessage";s:24:"J2COMMERCE_FIELD_REQUIRED";s:9:"filtering";s:1:"0";s:9:"maxlength";s:1:"0";s:4:"size";s:0:"";s:4:"cols";s:0:"";s:9:"zone_type";s:4:"zone";s:6:"format";s:0:"";s:8:"readonly";s:1:"0";}', 1, 1, '', NULL, NULL, 'all', 'all', 0, 0, 1, '', 1, 1, 1, 1, 1, 0);
 
 -- --------------------------------------------------------
 -- Table structure for table `#__j2commerce_emailtemplates`
@@ -278,8 +323,18 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_emailtemplates` (
   `language` varchar(10) NOT NULL DEFAULT '*',
   `enabled` int NOT NULL,
   `ordering` int NOT NULL DEFAULT 0,
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
   PRIMARY KEY (`j2commerce_emailtemplate_id`),
-  KEY `idx_email_type` (`email_type`)
+  KEY `idx_email_type` (`email_type`),
+  KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -300,6 +355,28 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_emailtype_tags` (
   KEY `idx_tag_name` (`tag_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Default tags for transactional email type
+INSERT IGNORE INTO `#__j2commerce_emailtype_tags`
+  (`email_type`, `tag_name`, `tag_label`, `tag_description`, `tag_group`, `ordering`)
+VALUES
+  ('transactional', 'ORDER_ID', 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_ORDERID', 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_ORDERID_DESC', 'order', 1),
+  ('transactional', 'ORDER_DATE', 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_ORDERDATE', 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_ORDERDATE_DESC', 'order', 2),
+  ('transactional', 'ORDER_STATUS', 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_ORDERSTATUS', 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_ORDERSTATUS_DESC', 'order', 3),
+  ('transactional', 'ORDER_TOTAL', 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_ORDERAMOUNT', 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_ORDERAMOUNT_DESC', 'order', 4),
+  ('transactional', 'ORDER_SUBTOTAL', 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_SUBTOTAL', 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_SUBTOTAL_DESC', 'order', 5),
+  ('transactional', 'ORDER_TAX', 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_TAX_AMOUNT', 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_TAX_AMOUNT_DESC', 'order', 6),
+  ('transactional', 'ORDER_SHIPPING', 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_SHIPPING_AMOUNT', 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_SHIPPING_AMOUNT_DESC', 'order', 7),
+  ('transactional', 'ORDER_DISCOUNT', 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_DISCOUNT_AMOUNT', 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_DISCOUNT_AMOUNT_DESC', 'order', 8),
+  ('transactional', 'ORDER_ITEMS', 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_ITEMS', 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_ITEMS_DESC', 'order', 9),
+  ('transactional', 'CUSTOMER_NAME', 'COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_CUSTOMER_NAME', 'COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_CUSTOMER_NAME_DESC', 'customer', 10),
+  ('transactional', 'CUSTOMER_EMAIL', 'COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_CUSTOMER_EMAIL', 'COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_CUSTOMER_EMAIL_DESC', 'customer', 11),
+  ('transactional', 'BILLING_ADDRESS', 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_BILLING_ADDRESS', 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_BILLING_ADDRESS_DESC', 'customer', 12),
+  ('transactional', 'SHIPPING_ADDRESS', 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_SHIPPING_ADDRESS', 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_SHIPPING_ADDRESS_DESC', 'customer', 13),
+  ('transactional', 'PAYMENT_METHOD', 'COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_PAYMENT_METHOD', 'COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_PAYMENT_METHOD_DESC', 'payment', 14),
+  ('transactional', 'SHIPPING_METHOD', 'COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_SHIPPING_METHOD', 'COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_SHIPPING_METHOD_DESC', 'shipping', 15),
+  ('transactional', 'SITE_NAME', 'COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_SITE_NAME', 'COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_SITE_NAME_DESC', 'store', 16),
+  ('transactional', 'SITE_URL', 'COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_STORE_URL', 'COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_STORE_URL_DESC', 'store', 17);
+
 -- --------------------------------------------------------
 -- Table structure for table `#__j2commerce_emailtype_contexts`
 -- Defines contexts for each email type (sent, expired, etc.)
@@ -316,6 +393,15 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_emailtype_contexts` (
   UNIQUE KEY `idx_type_context` (`email_type`, `context`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Default contexts for transactional email type
+INSERT IGNORE INTO `#__j2commerce_emailtype_contexts`
+  (`email_type`, `context`, `label`, `description`, `ordering`)
+VALUES
+  ('transactional', 'order_confirmed', 'COM_J2COMMERCE_EMAILTYPE_CONTEXT_ORDER_CONFIRMED', '', 1),
+  ('transactional', 'order_cancelled', 'COM_J2COMMERCE_EMAILTYPE_CONTEXT_ORDER_CANCELLED', '', 2),
+  ('transactional', 'order_shipped', 'COM_J2COMMERCE_EMAILTYPE_CONTEXT_ORDER_SHIPPED', '', 3),
+  ('transactional', 'order_refunded', 'COM_J2COMMERCE_EMAILTYPE_CONTEXT_ORDER_REFUNDED', '', 4),
+  ('transactional', 'payment_received', 'COM_J2COMMERCE_EMAILTYPE_CONTEXT_PAYMENT_RECEIVED', '', 5);
 
 -- --------------------------------------------------------
 -- Table structure for table `#__j2commerce_filtergroups`
@@ -326,7 +412,17 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_filtergroups` (
   `group_name` varchar(255) NOT NULL,
   `ordering` int NOT NULL DEFAULT 0,
   `enabled` int NOT NULL,
-  PRIMARY KEY (`j2commerce_filtergroup_id`)
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
+  PRIMARY KEY (`j2commerce_filtergroup_id`),
+  KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -350,7 +446,18 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_geozones` (
   `j2commerce_geozone_id` int NOT NULL AUTO_INCREMENT,
   `geozone_name` varchar(255) NOT NULL,
   `enabled` int NOT NULL,
-  PRIMARY KEY (`j2commerce_geozone_id`)
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
+  `ordering` int NOT NULL DEFAULT 0,
+  PRIMARY KEY (`j2commerce_geozone_id`),
+  KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -385,7 +492,17 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_invoicetemplates` (
   `language` varchar(10) NOT NULL DEFAULT '*',
   `enabled` tinyint NOT NULL,
   `ordering` int NOT NULL DEFAULT 0,
-  PRIMARY KEY (`j2commerce_invoicetemplate_id`)
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
+  PRIMARY KEY (`j2commerce_invoicetemplate_id`),
+  KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -400,7 +517,17 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_lengths` (
   `num_decimals` int NOT NULL DEFAULT 2,
   `enabled` int NOT NULL,
   `ordering` int NOT NULL DEFAULT 1,
-  PRIMARY KEY (`j2commerce_length_id`)
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
+  PRIMARY KEY (`j2commerce_length_id`),
+  KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -413,8 +540,18 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_manufacturers` (
   `enabled` int NOT NULL,
   `ordering` int NOT NULL DEFAULT 0,
   `brand_desc_id` int DEFAULT 0,
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
   PRIMARY KEY (`j2commerce_manufacturer_id`),
-  KEY `address_id` (`address_id`)
+  KEY `address_id` (`address_id`),
+  KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -449,7 +586,17 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_options` (
   `ordering` int NOT NULL DEFAULT 0,
   `enabled` int NOT NULL,
   `option_params` text,
-  PRIMARY KEY (`j2commerce_option_id`)
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
+  PRIMARY KEY (`j2commerce_option_id`),
+  KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -693,14 +840,20 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_orders` (
   `order_state_id` int NOT NULL,
   `order_state` varchar(255) NOT NULL COMMENT 'Legacy compatibility',
   `order_params` text DEFAULT NULL,
-  `created_on` datetime NOT NULL,
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `created_by` int NOT NULL,
-  `modified_on` datetime NOT NULL,
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `modified_by` int NOT NULL,
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
   `campaign_double_opt_in` int DEFAULT NULL,
   `campaign_order_id` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`j2commerce_order_id`),
-  KEY `idx_order_id` (`order_id`)
+  KEY `idx_order_id` (`order_id`),
+  KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -732,7 +885,17 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_orderstatuses` (
   `orderstatus_core` int NOT NULL DEFAULT 0,
   `enabled` int NOT NULL,
   `ordering` int NOT NULL DEFAULT 0,
-  PRIMARY KEY (`j2commerce_orderstatus_id`)
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
+  PRIMARY KEY (`j2commerce_orderstatus_id`),
+  KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Default order statuses
@@ -859,17 +1022,24 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_products` (
   `enabled` int DEFAULT NULL,
   `plugins` text,
   `params` text,
-  `created_on` varchar(255) DEFAULT NULL,
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `created_by` int DEFAULT NULL,
-  `modified_on` varchar(45) DEFAULT NULL,
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `modified_by` int DEFAULT NULL,
   `up_sells` varchar(255) NOT NULL,
   `cross_sells` varchar(255) NOT NULL,
   `productfilter_ids` varchar(255) DEFAULT NULL,
   `hits` int unsigned NOT NULL DEFAULT '0',
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
+  `ordering` int NOT NULL DEFAULT 0,
   PRIMARY KEY (`j2commerce_product_id`),
   UNIQUE KEY `catalogsource` (`product_source`,`product_source_id`),
-  KEY `idx_hits` (`hits`)
+  KEY `idx_hits` (`hits`),
+  KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -1048,7 +1218,17 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_taxprofiles` (
   `taxprofile_name` varchar(255) NOT NULL,
   `enabled` int NOT NULL,
   `ordering` int NOT NULL DEFAULT 0,
-  PRIMARY KEY (`j2commerce_taxprofile_id`)
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
+  PRIMARY KEY (`j2commerce_taxprofile_id`),
+  KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -1062,7 +1242,17 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_taxrates` (
   `tax_percent` decimal(11,3) NOT NULL,
   `enabled` int NOT NULL,
   `ordering` int NOT NULL DEFAULT 0,
-  PRIMARY KEY (`j2commerce_taxrate_id`)
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
+  PRIMARY KEY (`j2commerce_taxrate_id`),
+  KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -1114,9 +1304,9 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_variants` (
   `length_class_id` int DEFAULT NULL,
   `weight` decimal(15,5) DEFAULT NULL,
   `weight_class_id` int DEFAULT NULL,
-  `created_on` varchar(255) DEFAULT NULL,
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `created_by` int DEFAULT NULL,
-  `modified_on` varchar(45) DEFAULT NULL,
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `modified_by` int DEFAULT NULL,
   `manage_stock` int DEFAULT NULL,
   `quantity_restriction` int NOT NULL,
@@ -1146,8 +1336,18 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_vendors` (
   `address_id` int NOT NULL,
   `enabled` int NOT NULL,
   `ordering` int NOT NULL DEFAULT 0,
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
   PRIMARY KEY (`j2commerce_vendor_id`),
-  UNIQUE KEY `j2commerce_user_id` (`j2commerce_user_id`)
+  UNIQUE KEY `j2commerce_user_id` (`j2commerce_user_id`),
+  KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -1168,10 +1368,18 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_vouchers` (
   `voucher_value` decimal(15,8) NOT NULL,
   `ordering` int NOT NULL DEFAULT 0,
   `enabled` int NOT NULL,
-  `created_on` datetime NOT NULL,
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `created_by` int NOT NULL,
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
   PRIMARY KEY (`j2commerce_voucher_id`),
-  UNIQUE KEY `voucher_code` (`voucher_code`)
+  UNIQUE KEY `voucher_code` (`voucher_code`),
+  KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -1186,7 +1394,17 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_weights` (
   `num_decimals` int NOT NULL DEFAULT 2,
   `enabled` int NOT NULL,
   `ordering` int NOT NULL DEFAULT 1,
-  PRIMARY KEY (`j2commerce_weight_id`)
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
+  PRIMARY KEY (`j2commerce_weight_id`),
+  KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -1200,7 +1418,17 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_zones` (
   `zone_name` varchar(255) NOT NULL,
   `enabled` int NOT NULL,
   `ordering` int NOT NULL DEFAULT 0,
-  PRIMARY KEY (`j2commerce_zone_id`)
+  `access` int UNSIGNED NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_by` int UNSIGNED NOT NULL DEFAULT '0',
+  `checked_out` int UNSIGNED DEFAULT NULL,
+  `checked_out_time` datetime DEFAULT NULL,
+  PRIMARY KEY (`j2commerce_zone_id`),
+  KEY `idx_access` (`access`),
+  KEY `idx_checkout` (`checked_out`),
+  KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- End of J2Commerce install script
@@ -5495,11 +5723,12 @@ INSERT IGNORE INTO `#__j2commerce_weights` (`j2commerce_weight_id`, `weight_titl
 
 INSERT IGNORE INTO `#__guidedtours` (`title`, `uid`, `description`, `extensions`, `url`, `published`, `access`, `created`, `modified`, `language`, `ordering`, `note`, `autostart`) VALUES
 ('COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_TITLE', 'com_j2commerce.creating-product', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_DESC', '["com_j2commerce"]', 'administrator/index.php?option=com_j2commerce&view=products', 1, 1, NOW(), NOW(), '*', 1, '', 0),
-('COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_TITLE', 'j2commerce-managing-countries', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_DESC', '["com_j2commerce"]', 'administrator/index.php?option=com_j2commerce&view=countries', 1, 1, NOW(), NOW(), '*', 2, '', 0),
-('COM_J2COMMERCE_GUIDEDTOUR_SETTING_UP_PAYMENTS_TITLE', 'j2commerce-setting-up-payments', 'COM_J2COMMERCE_GUIDEDTOUR_SETTING_UP_PAYMENTS_DESC', '["com_j2commerce"]', 'administrator/index.php?option=com_j2commerce&view=apps&folder=payment', 1, 1, NOW(), NOW(), '*', 3, '', 0),
-('COM_J2COMMERCE_GUIDEDTOUR_CONFIGURING_SHIPPING_TITLE', 'j2commerce-configuring-shipping', 'COM_J2COMMERCE_GUIDEDTOUR_CONFIGURING_SHIPPING_DESC', '["com_j2commerce"]', 'administrator/index.php?option=com_j2commerce&view=shippingmethods', 1, 1, NOW(), NOW(), '*', 4, '', 0);
+('COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_TITLE', 'com_j2commerce.managing-countries', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_DESC', '["com_j2commerce"]', 'administrator/index.php?option=com_j2commerce&view=countries', 1, 1, NOW(), NOW(), '*', 2, '', 0),
+('COM_J2COMMERCE_GUIDEDTOUR_SETTING_UP_PAYMENTS_TITLE', 'com_j2commerce.setting-up-payments', 'COM_J2COMMERCE_GUIDEDTOUR_SETTING_UP_PAYMENTS_DESC', '["com_j2commerce"]', 'administrator/index.php?option=com_j2commerce&view=apps&folder=payment', 1, 1, NOW(), NOW(), '*', 3, '', 0),
+('COM_J2COMMERCE_GUIDEDTOUR_CONFIGURING_SHIPPING_TITLE', 'com_j2commerce.configuring-shipping', 'COM_J2COMMERCE_GUIDEDTOUR_CONFIGURING_SHIPPING_DESC', '["com_j2commerce"]', 'administrator/index.php?option=com_j2commerce&view=shippingmethods', 1, 1, NOW(), NOW(), '*', 4, '', 0);
 
--- Guided Tour Steps: Creating Your First Product (17 steps)
+-- Guided Tour Steps: Creating Your First Product (18 steps)
+
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
 SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP0_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP0_DESC', 'bottom', '#toolbar-new', 2, 1, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
@@ -5531,92 +5760,96 @@ FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.creating-product';
 
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
-SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP6_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP6_DESC', 'bottom', '#j2commerce-product-visibility-radio-group0', 2, 5, '', 1, '*', '', '{"required":0,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP6_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP6_DESC', 'bottom', 'button[aria-controls="attrib-j2commerce"] span', 2, 4, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.creating-product';
 
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
-SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP7_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP7_DESC', 'bottom', '#j2commerce-product-sku-group', 2, 2, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP7_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP7_DESC', 'bottom', '#j2commerce-product-visibility-radio-group0', 2, 5, '', 1, '*', '', '{"required":0,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.creating-product';
 
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
-SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP8_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP8_DESC', 'top', 'joomla-field-fancy-select:has(#j2commerce-product-taxprofile_id-select-group)', 2, 6, '', 1, '*', '', '{"required":0,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP8_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP8_DESC', 'bottom', '#j2commerce-product-sku-group', 2, 2, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.creating-product';
 
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
-SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP9_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP9_DESC', 'top', 'button[aria-controls="pricingTab"]', 2, 4, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP9_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP9_DESC', 'top', 'joomla-field-fancy-select:has(#j2commerce-product-taxprofile_id-select-group)', 2, 6, '', 1, '*', '', '{"required":0,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.creating-product';
 
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
-SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP10_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP10_DESC', 'bottom', '#j2commerce-product-price-field', 2, 2, '', 1, '*', '', '{"required":0,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP10_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP10_DESC', 'top', 'button[aria-controls="pricingTab"]', 2, 4, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.creating-product';
 
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
-SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP11_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP11_DESC', 'top', 'button[aria-controls="inventoryTab"]', 2, 4, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP11_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP11_DESC', 'bottom', '#j2commerce-product-price-field', 2, 2, '', 1, '*', '', '{"required":0,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.creating-product';
 
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
-SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP12_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP12_DESC', 'bottom', '#j2commerce-product-manage_stock-radio-group1', 2, 5, '', 1, '*', '', '{"required":0,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP12_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP12_DESC', 'top', 'button[aria-controls="inventoryTab"]', 2, 4, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.creating-product';
 
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
-SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP13_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP13_DESC', 'top', 'button[aria-controls="shippingTab"]', 2, 4, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP13_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP13_DESC', 'bottom', '#j2commerce-product-manage_stock-radio-group1', 2, 5, '', 1, '*', '', '{"required":0,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.creating-product';
 
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
-SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP14_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP14_DESC', 'bottom', '#j2commerce-product-shipping-radio-group1', 2, 5, '', 1, '*', '', '{"required":0,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP14_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP14_DESC', 'top', 'button[aria-controls="shippingTab"]', 2, 4, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.creating-product';
 
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
-SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP15_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP15_DESC', 'bottom', '#save-group-children-save .button-save', 2, 1, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP15_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP15_DESC', 'bottom', '#j2commerce-product-shipping-radio-group1', 2, 5, '', 1, '*', '', '{"required":0,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.creating-product';
 
 INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
-SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP16_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP16_DESC', 'center', '', 0, 1, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP16_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP16_DESC', 'bottom', '#save-group-children-save .button-save', 2, 1, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+FROM `#__guidedtours`
+WHERE `uid` = 'com_j2commerce.creating-product';
+
+INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP17_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_STEP17_DESC', 'center', '', 0, 1, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
 FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.creating-product';
 
 -- Guided Tour Steps: Managing Countries
-INSERT IGNORE INTO `#__guidedtour_steps` (`tour_id`, `title`, `description`, `ordering`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `created`, `modified`, `language`, `note`, `params`)
-SELECT t.`id`, s.`title`, s.`description`, s.`ordering`, s.`position`, s.`target`, s.`type`, s.`interactive_type`, s.`url`, s.`published`, NOW(), NOW(), '*', '', '{}'
-FROM `#__guidedtours` t
-CROSS JOIN (
-    SELECT 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP1_TITLE' AS `title`, 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP1_DESC' AS `description`, 1 AS `ordering`, 'bottom' AS `position`, '.js-stools-container-filters' AS `target`, 0 AS `type`, 1 AS `interactive_type`, '' AS `url`, 1 AS `published`
-    UNION ALL SELECT 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP2_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP2_DESC', 2, 'bottom', 'table.table tbody', 0, 1, '', 1
-    UNION ALL SELECT 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP3_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP3_DESC', 3, 'bottom', '#toolbar-publish button', 2, 3, '', 1
-) s
-WHERE t.`uid` = 'j2commerce-managing-countries';
 
--- Guided Tour Steps: Setting Up Payments
-INSERT IGNORE INTO `#__guidedtour_steps` (`tour_id`, `title`, `description`, `ordering`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `created`, `modified`, `language`, `note`, `params`)
-SELECT t.`id`, s.`title`, s.`description`, s.`ordering`, s.`position`, s.`target`, s.`type`, s.`interactive_type`, s.`url`, s.`published`, NOW(), NOW(), '*', '', '{}'
-FROM `#__guidedtours` t
-CROSS JOIN (
-    SELECT 'COM_J2COMMERCE_GUIDEDTOUR_SETTING_UP_PAYMENTS_STEP1_TITLE' AS `title`, 'COM_J2COMMERCE_GUIDEDTOUR_SETTING_UP_PAYMENTS_STEP1_DESC' AS `description`, 1 AS `ordering`, 'bottom' AS `position`, '.j2c-app-list' AS `target`, 0 AS `type`, 1 AS `interactive_type`, '' AS `url`, 1 AS `published`
-    UNION ALL SELECT 'COM_J2COMMERCE_GUIDEDTOUR_SETTING_UP_PAYMENTS_STEP2_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_SETTING_UP_PAYMENTS_STEP2_DESC', 2, 'bottom', '.j2c-app-list .j2c-app-item:first-child', 0, 1, '', 1
-    UNION ALL SELECT 'COM_J2COMMERCE_GUIDEDTOUR_SETTING_UP_PAYMENTS_STEP3_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_SETTING_UP_PAYMENTS_STEP3_DESC', 3, 'bottom', '', 0, 1, '', 1
-) s
-WHERE t.`uid` = 'j2commerce-setting-up-payments';
+INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP0_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP0_DESC', 'bottom', '#filter_search', 2, 2, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+FROM `#__guidedtours`
+WHERE `uid` = 'com_j2commerce.managing-countries';
 
--- Guided Tour Steps: Configuring Shipping
-INSERT IGNORE INTO `#__guidedtour_steps` (`tour_id`, `title`, `description`, `ordering`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `created`, `modified`, `language`, `note`, `params`)
-SELECT t.`id`, s.`title`, s.`description`, s.`ordering`, s.`position`, s.`target`, s.`type`, s.`interactive_type`, s.`url`, s.`published`, NOW(), NOW(), '*', '', '{}'
-FROM `#__guidedtours` t
-CROSS JOIN (
-    SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CONFIGURING_SHIPPING_STEP1_TITLE' AS `title`, 'COM_J2COMMERCE_GUIDEDTOUR_CONFIGURING_SHIPPING_STEP1_DESC' AS `description`, 1 AS `ordering`, 'bottom' AS `position`, '#toolbar-new button' AS `target`, 2 AS `type`, 3 AS `interactive_type`, '' AS `url`, 1 AS `published`
-    UNION ALL SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CONFIGURING_SHIPPING_STEP2_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CONFIGURING_SHIPPING_STEP2_DESC', 2, 'bottom', '#jform_shipping_method_name', 2, 1, '', 1
-    UNION ALL SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CONFIGURING_SHIPPING_STEP3_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CONFIGURING_SHIPPING_STEP3_DESC', 3, 'bottom', '#toolbar-apply button', 2, 3, '', 1
-) s
-WHERE t.`uid` = 'j2commerce-configuring-shipping';
+INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP1_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP1_DESC', 'bottom', 'td:has(a[data-item-id="cb0"])', 2, 5, '', 1, '*', '', '{"required":0,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+FROM `#__guidedtours`
+WHERE `uid` = 'com_j2commerce.managing-countries';
+
+INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP2_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP2_DESC', 'bottom', 'td:has(input[name="checkall-toggle"])', 2, 5, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+FROM `#__guidedtours`
+WHERE `uid` = 'com_j2commerce.managing-countries';
+
+INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP3_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP3_DESC', 'right', '#toolbar-status-group', 2, 4, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+FROM `#__guidedtours`
+WHERE `uid` = 'com_j2commerce.managing-countries';
+
+INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP4_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP4_DESC', 'bottom', '#status-group-children-unpublish', 2, 1, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+FROM `#__guidedtours`
+WHERE `uid` = 'com_j2commerce.managing-countries';
+
+INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP5_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP5_DESC', 'center', '', 0, 1, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+FROM `#__guidedtours`
+WHERE `uid` = 'com_j2commerce.managing-countries';
 
 -- --------------------------------------------------------
 -- Table structure for table `#__j2commerce_geocode_cache`

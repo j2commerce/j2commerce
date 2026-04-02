@@ -20,6 +20,7 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\ToolbarHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 /**
  * Product edit view class.
@@ -64,7 +65,7 @@ class HtmlView extends BaseHtmlView
      */
     public function display($tpl = null): void
     {
-        if (!$this->getCurrentUser()->authorise('j2commerce.viewproducts', 'com_j2commerce')) {
+        if (!J2CommerceHelper::canAccess('j2commerce.viewproducts')) {
             throw new \Exception(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 403);
         }
 
@@ -97,21 +98,23 @@ class HtmlView extends BaseHtmlView
     {
         Factory::getApplication()->getInput()->set('hidemainmenu', true);
 
-        $isNew = empty($this->item->j2commerce_product_id);
-        $canDo = ContentHelper::getActions('com_j2commerce');
-        $toolbar = $this->getDocument()->getToolbar();
+        $isNew      = empty($this->item->j2commerce_product_id);
+        $canDo      = ContentHelper::getActions('com_j2commerce');
+        $user       = Factory::getApplication()->getIdentity();
+        $checkedOut = !(($this->item->checked_out ?? null) === null || ($this->item->checked_out ?? 0) == $user->id);
+        $toolbar    = $this->getDocument()->getToolbar();
 
         ToolbarHelper::title(
             $isNew ? Text::_('COM_J2COMMERCE_TOOLBAR_NEW') : Text::_('COM_J2COMMERCE_TOOLBAR_EDIT'),
             'fa-solid fa-tags'
         );
 
-        if ($canDo->get('core.edit') || $canDo->get('core.create')) {
+        if (!$checkedOut && ($canDo->get('core.edit') || $canDo->get('core.create'))) {
             $toolbar->apply('product.apply');
             $toolbar->save('product.save');
         }
 
-        if ($canDo->get('core.create')) {
+        if (!$checkedOut && $canDo->get('core.create')) {
             $toolbar->save2new('product.save2new');
         }
 

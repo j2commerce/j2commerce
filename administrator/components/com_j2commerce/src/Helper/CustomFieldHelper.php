@@ -15,6 +15,8 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Session\Session;
+use Joomla\CMS\Uri\Uri;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
 use J2Commerce\Component\J2commerce\Administrator\Helper\PhoneHelper;
@@ -23,10 +25,14 @@ class CustomFieldHelper
 {
     private static array $fieldCache = [];
 
+    /** Core checkout area column names (use SMALLINT columns, not JSON). */
+    private const CORE_AREAS = ['billing', 'register', 'shipping', 'guest', 'guest_shipping', 'payment'];
+
     /**
-     * Get enabled custom fields for a checkout area.
+     * Get enabled custom fields for a checkout area or plugin area.
      *
-     * Valid areas: billing, register, shipping, guest, guest_shipping, payment
+     * Core areas (billing, register, shipping, guest, guest_shipping, payment) query the
+     * dedicated SMALLINT columns. Plugin areas query the field_display JSON column.
      */
     public static function getFieldsByArea(string $area, string $type = 'address'): array
     {
@@ -36,15 +42,25 @@ class CustomFieldHelper
             return self::$fieldCache[$cacheKey];
         }
 
-        $validAreas = ['billing', 'register', 'shipping', 'guest', 'guest_shipping', 'payment'];
-
-        if (!\in_array($area, $validAreas, true)) {
-            return [];
+        if (\in_array($area, self::CORE_AREAS, true)) {
+            $fields = self::getCoreAreaFields($area, $type);
+        } else {
+            $fields = self::getPluginAreaFields($area);
         }
 
+        self::$fieldCache[$cacheKey] = $fields;
+
+        return $fields;
+    }
+
+    /**
+     * Get fields for a core checkout area (SMALLINT column query).
+     */
+    private static function getCoreAreaFields(string $area, string $type): array
+    {
         $column = 'field_display_' . $area;
 
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db    = Factory::getContainer()->get(DatabaseInterface::class);
         $query = $db->getQuery(true);
 
         $query->select('*')
@@ -63,23 +79,93 @@ class CustomFieldHelper
 
         $db->setQuery($query);
 
-        $fields = $db->loadObjectList() ?: [];
-        self::$fieldCache[$cacheKey] = $fields;
-
-        return $fields;
+        return $db->loadObjectList() ?: [];
     }
+
+    /**
+     * Get fields for a plugin-registered area (field_display JSON column query).
+     *
+     * PHP-side filtering is used for broad MySQL compatibility.
+     */
+    private static function getPluginAreaFields(string $area): array
+    {
+        $db    = Factory::getContainer()->get(DatabaseInterface::class);
+        $query = $db->getQuery(true);
+
+        $query->select('*')
+            ->from($db->quoteName('#__j2commerce_customfields'))
+            ->where($db->quoteName('enabled') . ' = 1')
+            ->where($db->quoteName('field_display') . ' != ' . $db->quote(''))
+            ->where($db->quoteName('field_display') . ' IS NOT NULL');
+
+        $db->setQuery($query);
+        $allFields = $db->loadObjectList() ?: [];
+
+        $areaFields = [];
+
+        foreach ($allFields as $field) {
+            $displayData = json_decode($field->field_display, true);
+
+            if (!\is_array($displayData) || empty($displayData[$area]['enabled'])) {
+                continue;
+            }
+
+            $field->area_ordering = (int) ($displayData[$area]['ordering'] ?? 0);
+            $areaFields[]         = $field;
+        }
+
+        usort($areaFields, static fn($a, $b) => $a->area_ordering <=> $b->area_ordering);
+
+        return $areaFields;
+    }
+
+    /**
+     * Get plugin-registered display areas by dispatching onJ2CommerceGetCustomFieldDisplayAreas.
+     *
+     * @return  array  Array of area definitions, each with keys: key, label, description, plugin
+     *
+     * @since   6.1.5
+     */
+    public static function getRegisteredAreas(): array
+    {
+        $areas = [];
+        J2CommerceHelper::plugin()->event('GetCustomFieldDisplayAreas', [&$areas]);
+        return $areas;
+    }
+
+    /** Core field types handled by the built-in switch statement. */
+    private const CORE_FIELD_TYPES = [
+        'text', 'email', 'tel', 'number', 'telephone', 'textarea',
+        'checkbox', 'radio', 'select', 'singledropdown', 'zone',
+        'date', 'time', 'datetime', 'wysiwyg', 'customtext', 'multiuploader',
+    ];
 
     /**
      * Render a single custom field as Bootstrap 5 HTML.
      */
     public static function renderField(object $field, string $value = '', array $attrs = []): string
     {
+        $fieldType = $field->field_type ?? 'text';
+
+        // Let plugins render non-core field types first
+        if (!\in_array($fieldType, self::CORE_FIELD_TYPES, true)) {
+            $renderEvent = J2CommerceHelper::plugin()->event('RenderCustomField', [
+                'field' => $field,
+                'value' => $value,
+                'attrs' => $attrs,
+            ]);
+            $rendered = $renderEvent->getEventResult();
+
+            if (!empty($rendered)) {
+                return \is_array($rendered) ? implode('', $rendered) : (string) $rendered;
+            }
+        }
+
         $namekey = htmlspecialchars($field->field_namekey, ENT_QUOTES, 'UTF-8');
         $label = htmlspecialchars(Text::_($field->field_name), ENT_QUOTES, 'UTF-8');
         $required = (int) $field->field_required;
         $default = $field->field_default ?? '';
         $fieldValue = $value ?: $default;
-        $fieldType = $field->field_type ?? 'text';
         $id = htmlspecialchars($attrs['id'] ?? $field->field_namekey, ENT_QUOTES, 'UTF-8');
         $extraClass = $attrs['class'] ?? '';
 
@@ -159,7 +245,7 @@ class CustomFieldHelper
                 break;
 
             case 'radio':
-                $options = self::parseOptions($field->field_options ?? '');
+                $options = self::parseOptions($field->field_value ?? '');
                 $html .= '<div class="form-normal"><label class="form-label">' . $labelHtml . '</label>';
                 foreach ($options as $i => $opt) {
                     $optId = $id . '_' . $i;
@@ -173,7 +259,7 @@ class CustomFieldHelper
                 break;
 
             case 'select':
-                $options = self::parseOptions($field->field_options ?? '');
+                $options = self::parseOptions($field->field_value ?? '');
                 if ($isFloating) {
                     $html .= '<div class="form-floating">'
                         . '<select name="' . $namekey . '" id="' . $id . '" class="form-select' . ($extraClass ? ' ' . $extraClass : '') . '"' . $requiredAttr . '>'
@@ -203,19 +289,39 @@ class CustomFieldHelper
                 break;
 
             case 'singledropdown':
-                $options = self::parseOptions($field->field_options ?? '');
-                $html .= '<div class="form-normal">'
-                    . '<label for="' . $id . '" class="form-label">' . $labelHtml . '</label>'
-                    . '<select name="' . $namekey . '" id="' . $id . '" class="form-select' . ($extraClass ? ' ' . $extraClass : '') . '"' . $requiredAttr . '>';
-                foreach ($options as $opt) {
-                    $selected = ($fieldValue === $opt['value']) ? ' selected' : '';
-                    $html .= '<option value="' . htmlspecialchars($opt['value'], ENT_QUOTES, 'UTF-8') . '"' . $selected . '>' . htmlspecialchars($opt['name'], ENT_QUOTES, 'UTF-8') . '</option>';
+                $options = self::parseOptions($field->field_value ?? '');
+                if ($isFloating) {
+                    $html .= '<div class="form-floating">'
+                        . '<select name="' . $namekey . '" id="' . $id . '" class="form-select' . ($extraClass ? ' ' . $extraClass : '') . '"' . $requiredAttr . '>'
+                        . '<option value="">' . Text::sprintf('COM_J2COMMERCE_SELECT_PLACEHOLDER', $label) . '</option>';
+                    foreach ($options as $opt) {
+                        $selected = ($fieldValue === $opt['value']) ? ' selected' : '';
+                        $html .= '<option value="' . htmlspecialchars($opt['value'], ENT_QUOTES, 'UTF-8') . '"' . $selected . '>' . htmlspecialchars($opt['name'], ENT_QUOTES, 'UTF-8') . '</option>';
+                    }
+                    $html .= '</select>'
+                        . '<label for="' . $id . '">' . $labelHtml . '</label>'
+                        . '</div>';
+                } else {
+                    $html .= '<div class="form-normal">'
+                        . '<label for="' . $id . '" class="form-label">' . $labelHtml . '</label>'
+                        . '<select name="' . $namekey . '" id="' . $id . '" class="form-select' . ($extraClass ? ' ' . $extraClass : '') . '"' . $requiredAttr . '>';
+                    foreach ($options as $opt) {
+                        $selected = ($fieldValue === $opt['value']) ? ' selected' : '';
+                        $html .= '<option value="' . htmlspecialchars($opt['value'], ENT_QUOTES, 'UTF-8') . '"' . $selected . '>' . htmlspecialchars($opt['name'], ENT_QUOTES, 'UTF-8') . '</option>';
+                    }
+                    $html .= '</select></div>';
                 }
-                $html .= '</select></div>';
                 break;
 
             case 'customtext':
                 $html .= '<div class="form-text">' . $field->field_default . '</div>';
+                break;
+
+            case 'multiuploader':
+                $html .= self::renderMultiuploaderField(
+                    $field, $fieldValue, $id, $namekey, $requiredAttr,
+                    $labelHtml, $colClass, $extraClass
+                );
                 break;
 
             default:
@@ -244,17 +350,39 @@ class CustomFieldHelper
      */
     private static function parseOptions(string $optionsStr): array
     {
+        if ($optionsStr === '') {
+            return [];
+        }
+
+        // Try JSON first (new format from subform editor)
+        $decoded = json_decode($optionsStr, true);
+
+        if (\is_array($decoded)) {
+            $options = [];
+
+            foreach ($decoded as $item) {
+                if (\is_array($item) && isset($item['value'])) {
+                    $options[] = ['value' => (string) $item['value'], 'name' => (string) ($item['name'] ?? $item['value'])];
+                }
+            }
+
+            return $options;
+        }
+
+        // Legacy format: newline-separated value=name pairs
         $options = [];
         $lines = explode("\n", $optionsStr);
 
         foreach ($lines as $line) {
             $line = trim($line);
+
             if ($line === '') {
                 continue;
             }
 
             $parts = explode('=', $line, 2);
-            if (count($parts) === 2) {
+
+            if (\count($parts) === 2) {
                 $options[] = ['value' => trim($parts[0]), 'name' => trim($parts[1])];
             } else {
                 $options[] = ['value' => trim($line), 'name' => trim($line)];
@@ -272,13 +400,13 @@ class CustomFieldHelper
         $errors = [];
 
         foreach ($fields as $field) {
-            $namekey = $field->field_namekey;
-            $value = $data[$namekey] ?? '';
+            $namekey  = $field->field_namekey;
+            $value    = $data[$namekey] ?? '';
             $required = (int) $field->field_required;
+            $label    = Text::_($field->field_name);
 
-            $label = Text::_($field->field_name);
-
-            if ($required && trim($value) === '') {
+            // Core required check applies to all field types
+            if ($required && trim((string) $value) === '') {
                 $errors[$namekey] = Text::sprintf('COM_J2COMMERCE_ERR_FIELD_REQUIRED', $label);
                 continue;
             }
@@ -303,6 +431,28 @@ class CustomFieldHelper
                         $lengths['max']
                     );
                 }
+
+                continue;
+            }
+
+            // Multiuploader: validate JSON array has at least one file when required
+            if ($field->field_type === 'multiuploader') {
+                if ($required) {
+                    $files = json_decode((string) $value, true);
+                    if (!\is_array($files) || \count($files) === 0) {
+                        $errors[$namekey] = Text::sprintf('COM_J2COMMERCE_ERR_FIELD_REQUIRED', $label);
+                    }
+                }
+                continue;
+            }
+
+            // Dispatch plugin validation for non-core field types
+            if (!\in_array($field->field_type, self::CORE_FIELD_TYPES, true)) {
+                J2CommerceHelper::plugin()->event('ValidateCustomField', [
+                    &$errors,
+                    'field' => $field,
+                    'value' => $value,
+                ]);
             }
         }
 
@@ -331,6 +481,12 @@ class CustomFieldHelper
                 continue;
             }
 
+            // Multiuploader: preserve JSON array value as-is
+            if ($field->field_type === 'multiuploader') {
+                $data[$namekey] = $formData[$namekey] ?? '[]';
+                continue;
+            }
+
             $data[$namekey] = $formData[$namekey] ?? '';
         }
 
@@ -348,6 +504,11 @@ class CustomFieldHelper
         string $extraClass,
         string $autocompleteAttr
     ): string {
+        // Register telephone field assets once per request
+        $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
+        $wa->registerAndUseStyle('com_j2commerce.telephone.css', 'media/com_j2commerce/css/site/telephone-field.css');
+        $wa->registerAndUseScript('com_j2commerce.telephone', 'media/com_j2commerce/js/site/telephone-field.js', [], ['defer' => true]);
+
         $defaultCountry = J2CommerceHelper::config()->get('default_country', '223');
         $defaultIso     = self::getCountryIso2((int) $defaultCountry) ?: 'US';
         $parsed         = PhoneHelper::parseE164($value, $defaultIso);
@@ -504,6 +665,86 @@ class CustomFieldHelper
             . '</div>';
     }
 
+    private static function renderMultiuploaderField(
+        object $field,
+        string $value,
+        string $id,
+        string $namekey,
+        string $requiredAttr,
+        string $labelHtml,
+        string $colClass,
+        string $extraClass
+    ): string {
+        $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
+
+        // Register Uppy library (same assets as admin, loaded from administrator/ dir)
+        $wa->registerAndUseStyle('com_j2commerce.uppy.css', 'media/com_j2commerce/css/administrator/uppy.min.css');
+        $wa->registerAndUseScript('com_j2commerce.uppy.js', 'media/com_j2commerce/js/administrator/uppy.min.js', [], ['defer' => true]);
+
+        // Register checkout uploader assets
+        $wa->registerAndUseStyle('com_j2commerce.checkout-uploader.css', 'media/com_j2commerce/css/site/checkout-uploader.css');
+        $wa->registerAndUseScript('com_j2commerce.checkout-uploader', 'media/com_j2commerce/js/site/checkout-uploader.js', [], ['defer' => true]);
+
+        // Parse upload configuration from field_options
+        $options = [];
+        if (!empty($field->field_options)) {
+            $decoded = json_decode($field->field_options, true);
+            if (\is_array($decoded)) {
+                $options = $decoded;
+            }
+        }
+
+        $maxFiles     = (int) ($options['upload_max_files'] ?? 5);
+        $maxFileSizeMB = (float) ($options['upload_max_file_size'] ?? 0);
+        if ($maxFileSizeMB <= 0) {
+            $maxFileSizeMB = 10.0; // Default 10 MB when not set or zero
+        }
+        $maxFileSize  = (int) ($maxFileSizeMB * 1024 * 1024); // Convert MB to bytes
+        $allowedTypes = trim($options['upload_allowed_types'] ?? '');
+        $directory    = trim($options['upload_directory'] ?? 'images/checkout-uploads');
+
+        // Build the upload endpoint URL
+        $token    = Session::getFormToken();
+        $uploadUrl = Uri::root() . 'index.php?option=com_j2commerce&task=checkoutuploader.upload&format=json&' . $token . '=1';
+
+        // Register frontend language strings for JS
+        Text::script('COM_J2COMMERCE_CHECKOUT_UPLOAD_DROP_OR_BROWSE');
+        Text::script('COM_J2COMMERCE_CHECKOUT_UPLOAD_BROWSE');
+        Text::script('COM_J2COMMERCE_CHECKOUT_UPLOAD_NOTE');
+        Text::script('COM_J2COMMERCE_CHECKOUT_UPLOAD_REMOVE');
+        Text::script('COM_J2COMMERCE_CHECKOUT_UPLOAD_UPLOADING');
+        Text::script('COM_J2COMMERCE_CHECKOUT_UPLOAD_COMPLETE');
+        Text::script('COM_J2COMMERCE_CHECKOUT_UPLOAD_ERROR');
+        Text::script('COM_J2COMMERCE_CHECKOUT_UPLOAD_MAX_FILES');
+        Text::script('COM_J2COMMERCE_CHECKOUT_UPLOAD_FILE_TOO_LARGE');
+        Text::script('COM_J2COMMERCE_CHECKOUT_UPLOAD_TYPE_NOT_ALLOWED');
+        Text::script('COM_J2COMMERCE_CHECKOUT_UPLOAD_REQUIRED');
+
+        $html = '<div class="form-normal">'
+            . '<label for="' . $id . '" class="form-label">' . $labelHtml . '</label>'
+            . '<div class="j2c-checkout-uploader' . ($extraClass ? ' ' . $extraClass : '') . '"'
+            . ' data-field-id="' . $id . '"'
+            . ' data-field-name="' . $namekey . '"'
+            . ' data-max-files="' . $maxFiles . '"'
+            . ' data-max-file-size="' . $maxFileSize . '"'
+            . ' data-allowed-types="' . htmlspecialchars($allowedTypes, ENT_QUOTES, 'UTF-8') . '"'
+            . ' data-upload-url="' . htmlspecialchars($uploadUrl, ENT_QUOTES, 'UTF-8') . '"'
+            . ' data-directory="' . htmlspecialchars($directory, ENT_QUOTES, 'UTF-8') . '"'
+            . ' data-required="' . ((int) $field->field_required) . '"'
+            . '>'
+            . '<input type="hidden" name="' . $namekey . '" id="' . $id . '" value="' . htmlspecialchars($value ?: '[]', ENT_QUOTES, 'UTF-8') . '"' . $requiredAttr . '>'
+            . '<div class="j2c-uppy-dashboard" id="uppy-dashboard-' . $id . '"></div>'
+            . '<div class="j2c-upload-constraints text-muted small mt-1">'
+            . Text::_('COM_J2COMMERCE_CHECKOUT_UPLOAD_MAX_SIZE') . ': ' . rtrim(rtrim((string) $maxFileSizeMB, '0'), '.') . ' MB'
+            . ($allowedTypes ? ' &middot; ' . Text::_('COM_J2COMMERCE_CHECKOUT_UPLOAD_ACCEPTED_TYPES') . ': ' . htmlspecialchars(strtoupper($allowedTypes), ENT_QUOTES, 'UTF-8') : '')
+            . '</div>'
+            . '<div class="j2c-upload-file-list" id="file-list-' . $id . '"></div>'
+            . '</div>'
+            . '</div>';
+
+        return $html;
+    }
+
     private static function getCountryIso2(int $countryId): ?string
     {
         if ($countryId <= 0) {
@@ -570,6 +811,117 @@ class CustomFieldHelper
         }
 
         return 'col-md-6';
+    }
+
+    /**
+     * Get a plugin's params from an address record, namespaced by plugin name.
+     *
+     * @param  int     $addressId   Address record ID
+     * @param  string  $pluginName  Plugin element name (e.g., 'app_vendormanagement')
+     * @return array   The plugin's params (empty array if none)
+     *
+     * @since  6.1.5
+     */
+    public static function getAddressParams(int $addressId, string $pluginName): array
+    {
+        $db    = Factory::getContainer()->get(DatabaseInterface::class);
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('params'))
+            ->from($db->quoteName('#__j2commerce_addresses'))
+            ->where($db->quoteName('j2commerce_address_id') . ' = :id')
+            ->bind(':id', $addressId, ParameterType::INTEGER);
+        $db->setQuery($query);
+        $raw = $db->loadResult();
+
+        if (empty($raw)) {
+            return [];
+        }
+
+        $allParams = json_decode($raw, true);
+
+        if (!\is_array($allParams)) {
+            return [];
+        }
+
+        return $allParams[$pluginName] ?? [];
+    }
+
+    /**
+     * Set a plugin's params on an address record (replaces that plugin's namespace only).
+     *
+     * Other plugins' namespaces are preserved.
+     *
+     * @param  int     $addressId   Address record ID
+     * @param  string  $pluginName  Plugin element name
+     * @param  array   $params      The plugin's params to store
+     *
+     * @since  6.1.5
+     */
+    public static function setAddressParams(int $addressId, string $pluginName, array $params): void
+    {
+        $db    = Factory::getContainer()->get(DatabaseInterface::class);
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('params'))
+            ->from($db->quoteName('#__j2commerce_addresses'))
+            ->where($db->quoteName('j2commerce_address_id') . ' = :id')
+            ->bind(':id', $addressId, ParameterType::INTEGER);
+        $db->setQuery($query);
+        $raw = $db->loadResult();
+
+        $allParams              = (!empty($raw)) ? (json_decode($raw, true) ?: []) : [];
+        $allParams[$pluginName] = $params;
+
+        $json   = json_encode($allParams, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+        $update = $db->getQuery(true)
+            ->update($db->quoteName('#__j2commerce_addresses'))
+            ->set($db->quoteName('params') . ' = :params')
+            ->where($db->quoteName('j2commerce_address_id') . ' = :id')
+            ->bind(':params', $json)
+            ->bind(':id', $addressId, ParameterType::INTEGER);
+        $db->setQuery($update)->execute();
+    }
+
+    /**
+     * Merge values into a plugin's params namespace (preserves existing keys in that namespace).
+     *
+     * @param  int     $addressId   Address record ID
+     * @param  string  $pluginName  Plugin element name
+     * @param  array   $merge       Key-value pairs to merge
+     *
+     * @since  6.1.5
+     */
+    public static function mergeAddressParams(int $addressId, string $pluginName, array $merge): void
+    {
+        $existing = self::getAddressParams($addressId, $pluginName);
+        self::setAddressParams($addressId, $pluginName, array_merge($existing, $merge));
+    }
+
+    /**
+     * Get ALL params from an address record (all plugin namespaces).
+     *
+     * @param  int  $addressId  Address record ID
+     * @return array  Full params array keyed by plugin name
+     *
+     * @since  6.1.5
+     */
+    public static function getAllAddressParams(int $addressId): array
+    {
+        $db    = Factory::getContainer()->get(DatabaseInterface::class);
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('params'))
+            ->from($db->quoteName('#__j2commerce_addresses'))
+            ->where($db->quoteName('j2commerce_address_id') . ' = :id')
+            ->bind(':id', $addressId, ParameterType::INTEGER);
+        $db->setQuery($query);
+        $raw = $db->loadResult();
+
+        if (empty($raw)) {
+            return [];
+        }
+
+        $decoded = json_decode($raw, true);
+
+        return \is_array($decoded) ? $decoded : [];
     }
 
     /**

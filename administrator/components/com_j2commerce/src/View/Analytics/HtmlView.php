@@ -24,6 +24,7 @@ use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Toolbar\ToolbarHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 class HtmlView extends BaseHtmlView
 {
@@ -57,7 +58,7 @@ class HtmlView extends BaseHtmlView
 
     public function display($tpl = null): void
     {
-        if (!$this->getCurrentUser()->authorise('j2commerce.viewreports', 'com_j2commerce')) {
+        if (!J2CommerceHelper::canAccess('j2commerce.viewreports')) {
             throw new \Exception(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 403);
         }
 

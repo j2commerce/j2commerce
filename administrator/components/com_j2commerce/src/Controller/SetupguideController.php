@@ -15,6 +15,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\SetupGuide\SetupGuideHelper;
+use Joomla\CMS\Application\ApplicationHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\BaseController;
@@ -247,14 +248,30 @@ class SetupguideController extends BaseController
             ->from($db->quoteName('#__extensions'))
             ->where($db->quoteName('element') . ' = ' . $db->quote('com_j2commerce'))
             ->where($db->quoteName('type') . ' = ' . $db->quote('component'))
-            ->where($db->quoteName('client_id') . ' = 0');
+            ->where($db->quoteName('client_id') . ' = 1');
 
         $componentId = (int) $db->setQuery($query)->loadResult();
+
+        $alias = ApplicationHelper::stringURLSafe($title);
+
+        // If a menu item with this alias already exists at the same level, append -2
+        $query = $db->getQuery(true)
+            ->select('COUNT(*)')
+            ->from($db->quoteName('#__menu'))
+            ->where($db->quoteName('alias') . ' = ' . $db->quote($alias))
+            ->where($db->quoteName('parent_id') . ' = 1')
+            ->where($db->quoteName('client_id') . ' = 0')
+            ->where($db->quoteName('language') . ' = ' . $db->quote('*'));
+
+        if ((int) $db->setQuery($query)->loadResult() > 0) {
+            $alias .= '-2';
+        }
 
         $menuItem               = new \stdClass();
         $menuItem->menutype     = 'j2commerce';
         $menuItem->title        = $title;
-        $menuItem->alias        = '';
+        $menuItem->alias        = $alias;
+        $menuItem->path         = $alias;
         $menuItem->link         = $link;
         $menuItem->type         = 'component';
         $menuItem->published    = 1;
@@ -263,6 +280,7 @@ class SetupguideController extends BaseController
         $menuItem->component_id = $componentId;
         $menuItem->access       = 1;
         $menuItem->params       = '{}';
+        $menuItem->img          = ' ';
         $menuItem->lft          = 0;
         $menuItem->rgt          = 0;
         $menuItem->home         = 0;

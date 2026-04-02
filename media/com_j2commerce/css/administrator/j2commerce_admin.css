@@ -60,7 +60,7 @@ body.com_j2commerce #content, #fieldset-j2commerce-product-settings, .j2commerce
     }
 
     .btn-success {
-        -btn-bg: var(--success)!important;
+        --btn-bg: var(--success)!important;
         background-color:var(--success)!important;
         border-color:var(--success)!important;
         color:#fff!important;

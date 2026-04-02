@@ -13,6 +13,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Table;
 
 \defined('_JEXEC') or die;
 
+use Joomla\CMS\Language\Text;
 use Joomla\CMS\Table\Table;
 use Joomla\Database\DatabaseDriver;
 
@@ -64,18 +65,18 @@ class CartitemTable extends Table
 
         // Ensure required fields have values
         if (empty($this->cart_id)) {
-            $this->setError('Cart ID is required');
+            $this->setError(Text::sprintf('COM_J2COMMERCE_ERR_FIELD_REQUIRED', 'Cart ID'));
             return false;
         }
 
         if (empty($this->product_id)) {
-            $this->setError('Product ID is required');
+            $this->setError(Text::sprintf('COM_J2COMMERCE_ERR_FIELD_REQUIRED', 'Product ID'));
             return false;
         }
 
         // Every product should have a variant_id - check variants or variant object
         if (empty($this->variant_id)) {
-            $this->setError('Variant ID is required');
+            $this->setError(Text::sprintf('COM_J2COMMERCE_ERR_FIELD_REQUIRED', 'Variant ID'));
             return false;
         }
 

@@ -168,26 +168,32 @@ $encodedReturn = base64_encode('index.php?option=com_j2commerce&view=paymentmeth
                                     ?>
                                 </td>
                                 <th scope="row">
-                                    <div class="d-flex align-items-center">
-                                        <div class="flex-shrink-0 me-3">
+                                    <div class="d-block d-lg-flex">
+                                        <div class="flex-shrink-0">
                                             <?php if ($canEdit) : ?>
-                                                <a href="<?php echo $link; ?>" title="<?php echo Text::_('JACTION_EDIT'); ?> <?php echo Text::_($this->escape($item->name)); ?>">
-                                                    <img src="<?php echo $imagePath; ?>" class="j2commerce-payment-image" alt="<?php echo Text::_($item->name); ?>">
+                                                <a href="<?php echo $link; ?>" class="d-none d-lg-inline-block d-md-block">
+                                            <?php else : ?>
+                                                <span class="d-none d-lg-inline-block d-md-block">
+                                            <?php endif; ?>
+                                                <img src="<?php echo $imagePath; ?>" class="img-fluid j2commerce-payment-image" alt="<?php echo Text::_($item->name); ?>"/>
+                                            <?php if ($canEdit) : ?>
                                                 </a>
                                             <?php else : ?>
-                                                <img src="<?php echo $imagePath; ?>" class="j2commerce-payment-image" alt="<?php echo Text::_($item->name); ?>">
+                                                </span>
                                             <?php endif; ?>
                                         </div>
-                                        <div class="flex-grow-1">
-                                            <?php if ($canEdit) : ?>
-                                                <a href="<?php echo $link; ?>" title="<?php echo Text::_('JACTION_EDIT'); ?> <?php echo Text::_($this->escape($item->name)); ?>">
-                                                    <?php echo Text::_($item->name); ?>
-                                                </a>
-                                            <?php else : ?>
-                                                <span><?php echo Text::_($item->name); ?></span>
-                                            <?php endif; ?>
+                                        <div class="flex-grow-1 ms-lg-3 mt-0 mt-lg-0">
+                                            <div>
+                                                <?php if ($canEdit) : ?>
+                                                    <a href="<?php echo $link; ?>">
+                                                        <?php echo Text::_($item->name); ?>
+                                                    </a>
+                                                <?php else : ?>
+                                                    <span><?php echo Text::_($item->name); ?></span>
+                                                <?php endif; ?>
+                                            </div>
                                             <?php if ($desc) : ?>
-                                                <div class="small text-muted"><?php echo Text::_($desc); ?></div>
+                                                <div class="small d-none d-md-block"><?php echo $desc; ?></div>
                                             <?php endif; ?>
                                             <?php if (!$item->files_exist) : ?>
                                                 <div class="small text-danger">
@@ -195,6 +201,7 @@ $encodedReturn = base64_encode('index.php?option=com_j2commerce&view=paymentmeth
                                                     <?php echo Text::_('COM_J2COMMERCE_PAYMENT_METHOD_FILES_MISSING'); ?>
                                                 </div>
                                             <?php endif; ?>
+                                            <div class="small d-block d-md-none"><b><?php echo Text::_('COM_J2COMMERCE_PAYMENT_METHOD_VERSION'); ?>:</b> <?php echo $this->escape($version); ?></div>
                                         </div>
                                     </div>
                                 </th>

@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
@@ -24,11 +25,15 @@ $wa->useScript('table.columns')
 
 $listOrder = $this->escape($this->state->get('list.ordering'));
 $listDirn  = $this->escape($this->state->get('list.direction'));
+$tmpl      = Factory::getApplication()->getInput()->getCmd('tmpl', '');
+$tmplParam = $tmpl ? '&tmpl=' . $tmpl : '';
 
 ?>
-<?php echo $this->navbar; ?>
+<?php if (!$tmpl) : ?>
+    <?php echo $this->navbar; ?>
+<?php endif; ?>
 
-<form action="<?php echo Route::_('index.php?option=com_j2commerce&view=currencies'); ?>" method="post" name="adminForm" id="adminForm">
+<form action="<?php echo Route::_('index.php?option=com_j2commerce&view=currencies' . $tmplParam); ?>" method="post" name="adminForm" id="adminForm">
     <div class="row">
         <div class="col-md-12">
             <div id="j-main-container" class="j-main-container">
@@ -81,9 +86,13 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
                                     <?php echo HTMLHelper::_('jgrid.published', $item->enabled, $i, 'currencies.', true, 'cb'); ?>
                                 </td>
                                 <th scope="row">
-                                    <a href="<?php echo Route::_('index.php?option=com_j2commerce&task=currency.edit&id=' . $item->j2commerce_currency_id); ?>">
+                                    <?php if ($tmpl) : ?>
                                         <?php echo $this->escape($item->currency_title); ?>
-                                    </a>
+                                    <?php else : ?>
+                                        <a href="<?php echo Route::_('index.php?option=com_j2commerce&task=currency.edit&id=' . $item->j2commerce_currency_id); ?>">
+                                            <?php echo $this->escape($item->currency_title); ?>
+                                        </a>
+                                    <?php endif; ?>
                                 </th>
                                 <td class="d-none d-md-table-cell">
                                     <?php echo $this->escape($item->currency_code); ?>
@@ -113,4 +122,6 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
     </div>
 </form>
 
-<?php echo $this->footer ?? ''; ?>
+<?php if (!$tmpl) : ?>
+    <?php echo $this->footer ?? ''; ?>
+<?php endif; ?>

@@ -287,7 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
             data.append(Joomla.getOptions('csrf.token'), 1);
 
             addAllBtn.setAttribute('disabled', 'disabled');
-            addAllBtn.insertAdjacentHTML('afterend', '<span class="wait spinner-border spinner-border-sm ms-2"></span>');
+            addAllBtn.insertAdjacentHTML('afterend', '<span class="wait spinner-border spinner-border-sm ms-2" role="status"><span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_LOADING'); ?></span></span>');
 
             fetch('index.php', {
                 method: 'POST',

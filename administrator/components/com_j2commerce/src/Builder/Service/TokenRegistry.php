@@ -62,7 +62,61 @@ final class TokenRegistry
             'php' => '<?php echo (int) ($variant->quantity ?? 0); ?>',
             'preview_field' => 'quantity',
         ],
+        // Sub-layout specific tokens
+        'PRODUCT_PRICE_FORMATTED' => [
+            'label' => 'Price (full formatted)',
+            'php' => '<?php echo $productHelper->displayPrice((float) ($pricing->price ?? 0), $product, $params); ?>',
+            'preview_field' => 'price',
+        ],
+        'PRODUCT_BASE_PRICE' => [
+            'label' => 'Base Price (before discount)',
+            'php' => '<?php echo $productHelper->displayPrice((float) ($pricing->base_price ?? 0), $product, $params); ?>',
+            'preview_field' => 'base_price',
+        ],
+        'PRODUCT_TAX_TEXT' => [
+            'label' => 'Tax Info Text',
+            'php' => '<?php echo $productHelper->get_tax_text(); ?>',
+            'preview_field' => 'tax_text',
+        ],
+        'CART_FORM_ACTION' => [
+            'label' => 'Cart Form Action URL',
+            'php' => '<?php echo htmlspecialchars($product->cart_form_action ?? \'\', ENT_QUOTES, \'UTF-8\'); ?>',
+            'preview_field' => 'cart_form_action',
+        ],
+        'STOCK_BADGE_HTML' => [
+            'label' => 'Stock Status Badge (HTML)',
+            'php' => '<?php echo $stockBadgeHtml ?? \'\'; ?>',
+            'preview_field' => 'stockStatus',
+        ],
     ];
+
+    /**
+     * Map of sub-layout IDs to the token names relevant to each.
+     */
+    private static array $subLayoutTokenMap = [
+        'item-title'       => ['PRODUCT_NAME', 'PRODUCT_LINK'],
+        'item-images'      => ['PRODUCT_IMAGE_URL', 'PRODUCT_IMAGE_ALT', 'PRODUCT_LINK', 'PRODUCT_PRICE', 'PRODUCT_BASE_PRICE'],
+        'item-price'       => ['PRODUCT_PRICE_FORMATTED', 'PRODUCT_BASE_PRICE', 'PRODUCT_TAX_TEXT'],
+        'item-cart'        => ['CART_FORM_ACTION', 'PRODUCT_LINK', 'PRODUCT_NAME'],
+        'item-description' => ['PRODUCT_NAME'],
+        'item-sku'         => ['PRODUCT_SKU'],
+        'item-stock'       => ['STOCK_STATUS', 'STOCK_QUANTITY', 'STOCK_BADGE_HTML'],
+        'item-quickview'   => ['PRODUCT_LINK', 'PRODUCT_NAME'],
+    ];
+
+    public function getSubLayoutTokens(string $subLayoutId): array
+    {
+        $tokenNames = self::$subLayoutTokenMap[$subLayoutId] ?? array_keys(self::$tokens);
+        $result = [];
+
+        foreach ($tokenNames as $name) {
+            if (isset(self::$tokens[$name])) {
+                $result[$name] = self::$tokens[$name];
+            }
+        }
+
+        return $result;
+    }
 
     public function getTokenList(): array
     {
@@ -92,6 +146,21 @@ final class TokenRegistry
                 $tokenName = $matches[1];
                 $php = $this->getPhpForToken($tokenName);
                 return $php ?? $matches[0]; // Keep original if unknown token
+            },
+            $html
+        ) ?? $html;
+    }
+
+    public function replaceSubLayoutTokensWithPhp(string $html): string
+    {
+        // Replace <j2c-token data-token="TOKEN_NAME">preview text</j2c-token>
+        // (sub-layout companion templates use data-token, not data-j2c-token)
+        return preg_replace_callback(
+            '/<j2c-token\s+data-token="([A-Z_]+)"[^>]*>.*?<\/j2c-token>/s',
+            function (array $matches): string {
+                $tokenName = $matches[1];
+                $php = $this->getPhpForToken($tokenName);
+                return $php ?? $matches[0];
             },
             $html
         ) ?? $html;

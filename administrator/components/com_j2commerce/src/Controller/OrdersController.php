@@ -22,6 +22,7 @@ use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Router\Route;
 use Joomla\Database\ParameterType;
 use Joomla\Input\Input;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 /**
  * Orders list controller class.
@@ -62,7 +63,7 @@ class OrdersController extends AdminController
     {
         $this->checkToken();
 
-        if (!$this->app->getIdentity()->authorise('j2commerce.editorders', 'com_j2commerce')) {
+        if (!J2CommerceHelper::canAccess('j2commerce.editorders')) {
             throw new \Exception(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 403);
         }
 
@@ -111,7 +112,7 @@ class OrdersController extends AdminController
     {
         $this->checkToken();
 
-        if (!$this->app->getIdentity()->authorise('j2commerce.editorders', 'com_j2commerce')) {
+        if (!J2CommerceHelper::canAccess('j2commerce.editorders')) {
             throw new \Exception(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 403);
         }
 

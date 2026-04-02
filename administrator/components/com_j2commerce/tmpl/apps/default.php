@@ -174,8 +174,8 @@ $return = rawurlencode($encodedReturn);
                                                     <span class="badge text-bg-info ms-1"><?php echo $this->escape($item->folder); ?></span>
                                                 <?php endif; ?>
                                             </div>
-                                            <div class="small d-none d-md-block"><?php echo Text::_(HTMLHelper::_('string.truncate', $desc, 120, true, true));?></div>
-                                            <div class="small d-block d-lg-none"><b><?php echo Text::_('COM_J2COMMERCE_APP_VERSION');?>:</b> <?php echo $this->escape($item->version); ?></div>
+                                            <div class="small d-none d-md-block"><?php echo $desc; ?></div>
+                                            <div class="small d-block d-md-none"><b><?php echo Text::_('COM_J2COMMERCE_APP_VERSION');?>:</b> <?php echo $this->escape($item->version); ?></div>
                                         </div>
                                     </div>
 

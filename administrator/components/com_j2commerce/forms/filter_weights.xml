@@ -30,16 +30,16 @@
             onchange="this.form.submit();"
         >
             <option value="">JGLOBAL_SORT_BY</option>
-            <option value="a.enabled ASC">JSTATUS_ASC</option>
-            <option value="a.enabled DESC">JSTATUS_DESC</option>
+            <option value="a.enabled ASC">COM_J2COMMERCE_HEADING_STATUS_ASC</option>
+            <option value="a.enabled DESC">COM_J2COMMERCE_HEADING_STATUS_DESC</option>
             <option value="a.weight_title ASC">COM_J2COMMERCE_HEADING_WEIGHT_TITLE_ASC</option>
             <option value="a.weight_title DESC">COM_J2COMMERCE_HEADING_WEIGHT_TITLE_DESC</option>
             <option value="a.weight_unit ASC">COM_J2COMMERCE_HEADING_WEIGHT_UNIT_ASC</option>
             <option value="a.weight_unit DESC">COM_J2COMMERCE_HEADING_WEIGHT_UNIT_DESC</option>
             <option value="a.weight_value ASC">COM_J2COMMERCE_HEADING_WEIGHT_VALUE_ASC</option>
             <option value="a.weight_value DESC">COM_J2COMMERCE_HEADING_WEIGHT_VALUE_DESC</option>
-            <option value="a.j2commerce_weight_id ASC">JGRID_HEADING_ID_ASC</option>
-            <option value="a.j2commerce_weight_id DESC">JGRID_HEADING_ID_DESC</option>
+            <option value="a.j2commerce_weight_id ASC">COM_J2COMMERCE_HEADING_ID_ASC</option>
+            <option value="a.j2commerce_weight_id DESC">COM_J2COMMERCE_HEADING_ID_DESC</option>
         </field>
 
         <field

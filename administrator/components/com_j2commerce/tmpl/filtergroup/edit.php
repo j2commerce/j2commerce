@@ -45,6 +45,11 @@ $tmpl    = Factory::getApplication()->input->get('tmpl', '', 'cmd') === 'compone
                             <legend><?php echo Text::sprintf('COM_J2COMMERCE_FILTERGROUP_FIELDSET_FILTERS', $this->item->group_name); ?> </legend>
                             <?php echo $this->form->renderField('filters'); ?>
                         </fieldset>
+                        <?php else : ?>
+                        <div class="alert alert-info">
+                            <span class="icon-info-circle" aria-hidden="true"></span>
+                            <?php echo Text::_('COM_J2COMMERCE_FILTERGROUP_SAVE_FIRST_TO_ADD_FILTERS'); ?>
+                        </div>
                         <?php endif; ?>
 
                         <?php echo $this->form->renderField('id'); ?>

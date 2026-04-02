@@ -23,6 +23,7 @@ use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use Joomla\CMS\Uri\Uri;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 /**
  * View class for a list of shipping methods.
@@ -87,7 +88,7 @@ class HtmlView extends BaseHtmlView
      */
     public function display($tpl = null): void
     {
-        if (!$this->getCurrentUser()->authorise('j2commerce.viewsetup', 'com_j2commerce')) {
+        if (!J2CommerceHelper::canAccess('j2commerce.viewsetup')) {
             throw new \Exception(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 403);
         }
 
@@ -178,7 +179,7 @@ class HtmlView extends BaseHtmlView
 
         if ($this->getCurrentUser()->authorise('core.manage', 'com_installer')) {
             $toolbar->link(
-                Text::_('COM_J2COMMERCE_TOOLBAR_INSTALL_SHIPPING'),
+                'COM_J2COMMERCE_TOOLBAR_INSTALL_SHIPPING',
                 Uri::base() . 'index.php?option=com_installer&view=install'
             )
                 ->icon('fa-solid fa-download')

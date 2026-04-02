@@ -13,6 +13,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Table;
 
 \defined('_JEXEC') or die;
 
+use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Table\Table;
 use Joomla\Database\DatabaseDriver;
@@ -61,7 +62,11 @@ class CustomfieldTable extends Table
             return false;
         }
 
-        // Validate field_namekey
+        // Auto-generate field_namekey from field_name if empty
+        if (empty($this->field_namekey) && !empty($this->field_name)) {
+            $this->field_namekey = preg_replace('/[^a-z0-9_]/', '', str_replace([' ', '-'], '_', strtolower(trim($this->field_name))));
+        }
+
         if (empty($this->field_namekey)) {
             $this->setError(Text::sprintf('COM_J2COMMERCE_ERR_FIELD_REQUIRED', Text::_('COM_J2COMMERCE_FIELD_FIELD_NAMEKEY')));
             return false;
@@ -88,6 +93,36 @@ class CustomfieldTable extends Table
         }
 
         return true;
+    }
+
+    /**
+     * Method to store a row in the database from the Table instance properties.
+     *
+     * @param   boolean  $updateNulls  True to update fields even if they are null.
+     *
+     * @return  boolean  True on success.
+     *
+     * @since   6.1.3
+     */
+    public function store($updateNulls = true): bool
+    {
+        $date = Factory::getDate()->toSql();
+        $user = Factory::getApplication()->getIdentity();
+
+        if (empty($this->j2commerce_customfield_id)) {
+            if (empty($this->created_on) || $this->created_on === '0000-00-00 00:00:00') {
+                $this->created_on = $date;
+            }
+
+            if (empty($this->created_by)) {
+                $this->created_by = (int) $user->id;
+            }
+        }
+
+        $this->modified_on = $date;
+        $this->modified_by = (int) $user->id;
+
+        return parent::store($updateNulls);
     }
 
     /**

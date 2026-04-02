@@ -17,6 +17,7 @@ use J2Commerce\Component\J2commerce\Administrator\Builder\Service\BlockPreviewSe
 use J2Commerce\Component\J2commerce\Administrator\Service\OverrideRegistry;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
+use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 use Joomla\Filesystem\File;
 use Joomla\Filesystem\Folder;
@@ -57,14 +58,14 @@ class OverridesModel extends BaseDatabaseModel
         [$type, $tmplFolder, $relativePath] = $this->parseFileId($decoded);
 
         if (empty($relativePath) || empty($pluginElement)) {
-            $this->setError('Invalid file or plugin.');
+            $this->setError(Text::_('COM_J2COMMERCE_ERR_INVALID_FILE_OR_PLUGIN'));
             return false;
         }
 
         $sourcePath = OverrideRegistry::getSourcePath($pluginElement, $relativePath, $type, $tmplFolder);
 
         if (!is_file($sourcePath)) {
-            $this->setError('Source file not found.');
+            $this->setError(Text::_('COM_J2COMMERCE_ERR_SOURCE_FILE_NOT_FOUND'));
             return false;
         }
 
@@ -72,17 +73,17 @@ class OverridesModel extends BaseDatabaseModel
         $overrideDir = \dirname($overridePath);
 
         if (!is_dir($overrideDir) && !Folder::create($overrideDir)) {
-            $this->setError('Could not create override directory.');
+            $this->setError(Text::_('COM_J2COMMERCE_ERR_OVERRIDE_DIR_CREATE'));
             return false;
         }
 
         if (is_file($overridePath)) {
-            $this->setError('Override already exists.');
+            $this->setError(Text::_('COM_J2COMMERCE_ERR_OVERRIDE_EXISTS'));
             return false;
         }
 
         if (!@copy($sourcePath, $overridePath)) {
-            $this->setError('Failed to copy file.');
+            $this->setError(Text::_('COM_J2COMMERCE_ERR_FILE_COPY_FAILED'));
             return false;
         }
 
@@ -95,14 +96,14 @@ class OverridesModel extends BaseDatabaseModel
         [$type, $tmplFolder, $relativePath] = $this->parseFileId($decoded);
 
         if (empty($relativePath) || empty($pluginElement)) {
-            $this->setError('Invalid file or plugin.');
+            $this->setError(Text::_('COM_J2COMMERCE_ERR_INVALID_FILE_OR_PLUGIN'));
             return false;
         }
 
         $overridePath = Path::clean($this->getTemplateOverridePath($pluginElement, $type, $tmplFolder) . '/' . $relativePath);
 
         if (!is_file($overridePath)) {
-            $this->setError('No override exists to revert.');
+            $this->setError(Text::_('COM_J2COMMERCE_ERR_NO_OVERRIDE'));
             return false;
         }
 
@@ -158,14 +159,14 @@ class OverridesModel extends BaseDatabaseModel
         [$type, $tmplFolder, $relativePath] = $this->parseFileId($decoded);
 
         if (empty($relativePath) || empty($pluginElement)) {
-            $this->setError('Invalid file or plugin.');
+            $this->setError(Text::_('COM_J2COMMERCE_ERR_INVALID_FILE_OR_PLUGIN'));
             return false;
         }
 
         $overridePath = Path::clean($this->getTemplateOverridePath($pluginElement, $type, $tmplFolder) . '/' . $relativePath);
 
         if (!is_file($overridePath)) {
-            $this->setError('Override file not found. Create the override first.');
+            $this->setError(Text::_('COM_J2COMMERCE_ERR_OVERRIDE_NOT_FOUND'));
             return false;
         }
 
@@ -174,7 +175,7 @@ class OverridesModel extends BaseDatabaseModel
         $cleanOverride = Path::clean($overridePath);
 
         if (strpos($cleanOverride, $layoutBase) !== 0 && strpos($cleanOverride, $tmplBase) !== 0) {
-            $this->setError('Invalid file path.');
+            $this->setError(Text::_('COM_J2COMMERCE_ERR_INVALID_FILE_PATH'));
             return false;
         }
 
@@ -276,13 +277,13 @@ class OverridesModel extends BaseDatabaseModel
         }
 
         if (!is_file($fullPath)) {
-            $this->setError('File not found.');
+            $this->setError(Text::_('COM_J2COMMERCE_ERR_FILE_NOT_FOUND'));
             return false;
         }
 
         $cleanFull = Path::clean($fullPath);
         if (strpos($cleanFull, Path::clean($layoutBase)) !== 0 && strpos($cleanFull, Path::clean($tmplBase)) !== 0) {
-            $this->setError('Invalid file path.');
+            $this->setError(Text::_('COM_J2COMMERCE_ERR_INVALID_FILE_PATH'));
             return false;
         }
 

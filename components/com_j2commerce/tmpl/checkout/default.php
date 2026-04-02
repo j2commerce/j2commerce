@@ -28,7 +28,7 @@ $wa  = Factory::getApplication()->getDocument()->getWebAssetManager();
 $wa->useScript('bootstrap.collapse');
 $wa->useScript('bootstrap.dropdown');
 
-$wa->registerAndUseStyle('checkout.style', Uri::root() .'media/com_j2commerce/css/site/checkout.css', [], [], []);
+$wa->registerAndUseStyle('checkout.style', 'media/com_j2commerce/css/site/checkout.css', [], [], []);
 $wa->registerAndUseStyle('com_j2commerce.telephone.css', 'media/com_j2commerce/css/site/telephone-field.css');
 $wa->registerAndUseScript('com_j2commerce.telephone', 'media/com_j2commerce/js/site/telephone-field.js', [], ['defer' => true]);
 
@@ -42,11 +42,9 @@ if ($this->order && method_exists($this->order, 'get_formatted_order_totals')) {
 // Pre-compute JS-safe language strings
 $selectZoneJs = htmlspecialchars(Text::sprintf('COM_J2COMMERCE_SELECT_PLACEHOLDER', Text::_('COM_J2COMMERCE_ZONE')), ENT_QUOTES, 'UTF-8');
 ?>
-<?php if ($pageHeading) : ?>
-    <div class="page-header">
-        <h1><?php echo $this->escape($pageHeadingText ?: Text::_('COM_J2COMMERCE_CHECKOUT')); ?></h1>
-    </div>
-<?php endif; ?>
+<div class="page-header">
+    <h1><?php echo $this->escape($pageHeadingText ?: Text::_('COM_J2COMMERCE_CHECKOUT')); ?></h1>
+</div>
 
 <?php echo J2CommerceHelper::modules()->loadposition('j2commerce-checkout-top'); ?>
 
@@ -250,7 +248,7 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.disabled = true;
         var spinner = document.createElement('span');
         spinner.className = 'wait';
-        spinner.innerHTML = '&nbsp;<span class="spinner-border spinner-border-sm" role="status"></span>';
+        spinner.innerHTML = '&nbsp;<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_LOADING'); ?></span></span>';
         btn.parentNode.insertBefore(spinner, btn.nextSibling);
     }
 
@@ -563,26 +561,28 @@ document.addEventListener('DOMContentLoaded', function() {
     // Heading edit link clicks - open that step
     document.addEventListener('click', function(e) {
         var link = e.target.closest('.checkout-heading a');
-        if (!link) return;
+        if (!link || link.classList.contains('checkout-logout')) return;
         e.preventDefault();
         var step = link.closest('[id]');
         if (!step) return;
         hideAllContents();
         slideDown(getContent(step.id));
-        link.setAttribute('aria-expanded', 'true');
+        // Remove the edit link from the step we just navigated to —
+        // being ON a step means its own "Change" link is redundant.
+        link.remove();
     });
 
     // Keyboard accessibility for edit links (Enter/Space)
     document.addEventListener('keydown', function(e) {
         if (e.key !== 'Enter' && e.key !== ' ') return;
         var link = e.target.closest('.checkout-heading a');
-        if (!link) return;
+        if (!link || link.classList.contains('checkout-logout')) return;
         e.preventDefault();
         var step = link.closest('[id]');
         if (!step) return;
         hideAllContents();
         slideDown(getContent(step.id));
-        link.setAttribute('aria-expanded', 'true');
+        link.remove();
     });
 
     // Toggle existing/new address form visibility (billing)

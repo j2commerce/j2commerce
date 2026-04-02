@@ -13,6 +13,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
 defined('_JEXEC') or die;
 
+use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
@@ -20,8 +21,16 @@ use Joomla\CMS\Language\Text;
 
 class OverridesController extends BaseController
 {
+    private function requireSuperUser(): void
+    {
+        if (!Factory::getApplication()->getIdentity()->authorise('core.admin')) {
+            throw new \RuntimeException(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 403);
+        }
+    }
+
     public function createOverride(): void
     {
+        $this->requireSuperUser();
         Session::checkToken('get') || Session::checkToken() || jexit(Text::_('JINVALID_TOKEN'));
 
         $plugin = $this->input->get('plugin', '', 'cmd');
@@ -47,6 +56,7 @@ class OverridesController extends BaseController
 
     public function revertOverride(): void
     {
+        $this->requireSuperUser();
         Session::checkToken('get') || Session::checkToken() || jexit(Text::_('JINVALID_TOKEN'));
 
         $plugin = $this->input->get('plugin', '', 'cmd');
@@ -66,6 +76,7 @@ class OverridesController extends BaseController
 
     public function save(): void
     {
+        $this->requireSuperUser();
         Session::checkToken() || jexit(Text::_('JINVALID_TOKEN'));
 
         $data = $this->input->post->get('jform', [], 'array');

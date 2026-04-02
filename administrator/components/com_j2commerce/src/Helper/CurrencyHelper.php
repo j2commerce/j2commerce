@@ -146,15 +146,21 @@ class CurrencyHelper
         $input   = $app->getInput();
 
         $requestedCurrency = $input->getString('currency', '');
+        $params            = ComponentHelper::getParams('com_j2commerce');
+        $defaultCurrency   = $params->get('config_currency', 'USD');
 
         if (!empty($requestedCurrency) && self::has($requestedCurrency)) {
             self::setCurrencyInternal($requestedCurrency);
         } elseif ($session->has('j2commerce_currency') && self::has($session->get('j2commerce_currency', ''))) {
-            self::$currentCode = $session->get('j2commerce_currency', '');
-        } else {
-            $params          = ComponentHelper::getParams('com_j2commerce');
-            $defaultCurrency = $params->get('config_currency', 'USD');
+            $sessionCurrency = $session->get('j2commerce_currency', '');
 
+            // If the config default changed, update session to match
+            if ($sessionCurrency !== $defaultCurrency && self::has($defaultCurrency)) {
+                self::setCurrencyInternal($defaultCurrency);
+            } else {
+                self::$currentCode = $sessionCurrency;
+            }
+        } else {
             if (self::has($defaultCurrency)) {
                 self::setCurrencyInternal($defaultCurrency);
             } elseif (!empty(self::$currencies)) {

@@ -23,6 +23,7 @@ use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\Toolbar;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use Joomla\Registry\Registry;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 /**
  * Manufacturer edit view class.
@@ -76,7 +77,7 @@ class HtmlView extends BaseHtmlView
      */
     public function display($tpl = null): void
     {
-        if (!$this->getCurrentUser()->authorise('j2commerce.viewproducts', 'com_j2commerce')) {
+        if (!J2CommerceHelper::canAccess('j2commerce.viewproducts')) {
             throw new \Exception(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 403);
         }
 
@@ -108,17 +109,18 @@ class HtmlView extends BaseHtmlView
     {
         Factory::getApplication()->getInput()->set('hidemainmenu', true);
 
-        $isNew = ($this->item->j2commerce_manufacturer_id == 0);
-        $canDo = ContentHelper::getActions('com_j2commerce');
-        $user  = Factory::getApplication()->getIdentity();
-        $toolbar = $this->getDocument()->getToolbar();
+        $isNew      = ($this->item->j2commerce_manufacturer_id == 0);
+        $canDo      = ContentHelper::getActions('com_j2commerce');
+        $user       = Factory::getApplication()->getIdentity();
+        $checkedOut = !(($this->item->checked_out ?? null) === null || ($this->item->checked_out ?? 0) == $user->id);
+        $toolbar    = $this->getDocument()->getToolbar();
 
         // Title: "New Manufacturer" or "Edit Manufacturer"
         $title = $isNew ? Text::_('COM_J2COMMERCE_TOOLBAR_NEW') . ' ' . Text::_('COM_J2COMMERCE_MANUFACTURER') : Text::_('COM_J2COMMERCE_TOOLBAR_EDIT') . ' ' . Text::_('COM_J2COMMERCE_MANUFACTURER');
         ToolbarHelper::title($title, 'fas fa-solid fa-city');
 
-        // If not checked out, can save the item.
-        if ($canDo->get('core.edit') || ($canDo->get('core.create'))) {
+        // Only show save buttons when the item is not checked out by another user.
+        if (!$checkedOut && ($canDo->get('core.edit') || $canDo->get('core.create'))) {
             $toolbar->apply('manufacturer.apply');
         }
 
@@ -126,8 +128,8 @@ class HtmlView extends BaseHtmlView
             // Dropdown save group with configure() callback
             $saveGroup = $toolbar->dropdownButton('save-group');
             $saveGroup->configure(
-                function (Toolbar $childBar) use ($canDo, $isNew) {
-                    if ($canDo->get('core.edit') || ($canDo->get('core.create'))) {
+                function (Toolbar $childBar) use ($canDo, $isNew, $checkedOut) {
+                    if (!$checkedOut && ($canDo->get('core.edit') || $canDo->get('core.create'))) {
                         $childBar->save('manufacturer.save');
                     }
 

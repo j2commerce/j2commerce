@@ -13,6 +13,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Table;
 
 \defined('_JEXEC') or die;
 
+use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Table\Table;
 use Joomla\Database\DatabaseDriver;
@@ -117,5 +118,35 @@ class CurrencyTable extends Table
         $this->currency_code = strtoupper($this->currency_code);
 
         return true;
+    }
+
+    /**
+     * Method to store a row in the database from the Table instance properties.
+     *
+     * @param   boolean  $updateNulls  True to update fields even if they are null.
+     *
+     * @return  boolean  True on success.
+     *
+     * @since   6.1.3
+     */
+    public function store($updateNulls = true): bool
+    {
+        $date = Factory::getDate()->toSql();
+        $user = Factory::getApplication()->getIdentity();
+
+        if (empty($this->j2commerce_currency_id)) {
+            if (empty($this->created_on) || $this->created_on === '0000-00-00 00:00:00') {
+                $this->created_on = $date;
+            }
+
+            if (empty($this->created_by)) {
+                $this->created_by = (int) $user->id;
+            }
+        }
+
+        $this->modified_on = $date;
+        $this->modified_by = (int) $user->id;
+
+        return parent::store($updateNulls);
     }
 }

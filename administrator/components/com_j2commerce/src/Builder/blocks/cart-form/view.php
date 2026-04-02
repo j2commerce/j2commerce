@@ -9,6 +9,10 @@ $settings     = $settings ?? [];
 $showQuantity = $settings['show_quantity'] ?? true;
 $btnClass     = $settings['btn_class'] ?? 'btn btn-primary';
 $cssClass     = $settings['css_class'] ?? 'j2commerce-addtocart-form mt-auto';
+$btnText      = $settings['btn_text'] ?? '';
+$btnSize      = $settings['btn_size'] ?? 'default';
+$btnSizeClass = ($btnSize !== 'default') ? ' ' . $btnSize : '';
+$buttonLabel  = $btnText ?: Text::_('COM_J2COMMERCE_ADD_TO_CART');
 ?>
 <form class="<?php echo htmlspecialchars($cssClass, ENT_QUOTES, 'UTF-8'); ?>">
     <div class="j2commerce-product-options mb-3">
@@ -27,8 +31,8 @@ $cssClass     = $settings['css_class'] ?? 'j2commerce-addtocart-form mt-auto';
                 <?php if ($showQuantity): ?>
                     <input type="number" value="1" min="1" class="form-control qty-input" style="max-width:70px;" disabled />
                 <?php endif; ?>
-                <button type="button" class="j2commerce-cart-button flex-fill <?php echo htmlspecialchars($btnClass, ENT_QUOTES, 'UTF-8'); ?>" disabled>
-                    <?php echo Text::_('COM_J2COMMERCE_ADD_TO_CART'); ?>
+                <button type="button" class="j2commerce-cart-button flex-fill <?php echo htmlspecialchars($btnClass . $btnSizeClass, ENT_QUOTES, 'UTF-8'); ?>" disabled>
+                    <?php echo htmlspecialchars($buttonLabel, ENT_QUOTES, 'UTF-8'); ?>
                 </button>
             </div>
         </div>

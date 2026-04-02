@@ -22,9 +22,9 @@
             type="text"
             label="COM_J2COMMERCE_FIELD_FIELD_NAMEKEY"
             description="COM_J2COMMERCE_FIELD_FIELD_NAMEKEY_DESC"
-            required="true"
             maxlength="50"
             filter="cmd"
+            hint="COM_J2COMMERCE_FIELD_FIELD_NAMEKEY_HINT"
         />
 
         <field
@@ -36,25 +36,12 @@
 
         <field
             name="field_type"
-            type="list"
+            type="CustomFieldType"
             label="COM_J2COMMERCE_FIELD_FIELD_TYPE"
             description="COM_J2COMMERCE_FIELD_FIELD_TYPE_DESC"
             default="text"
-        >
-            <option value="text">COM_J2COMMERCE_FIELDTYPE_TEXT</option>
-            <option value="email">COM_J2COMMERCE_FIELDTYPE_EMAIL</option>
-            <option value="textarea">COM_J2COMMERCE_FIELDTYPE_TEXTAREA</option>
-            <option value="wysiwyg">COM_J2COMMERCE_FIELDTYPE_WYSIWYG</option>
-            <option value="radio">COM_J2COMMERCE_FIELDTYPE_RADIO</option>
-            <option value="checkbox">COM_J2COMMERCE_FIELDTYPE_CHECKBOX</option>
-            <option value="singledropdown">COM_J2COMMERCE_FIELDTYPE_SINGLEDROPDOWN</option>
-            <option value="zone">COM_J2COMMERCE_FIELDTYPE_ZONE</option>
-            <option value="date">COM_J2COMMERCE_FIELDTYPE_DATE</option>
-            <option value="time">COM_J2COMMERCE_FIELDTYPE_TIME</option>
-            <option value="datetime">COM_J2COMMERCE_FIELDTYPE_DATETIME</option>
-            <option value="customtext">COM_J2COMMERCE_FIELDTYPE_CUSTOMTEXT</option>
-            <option value="telephone">COM_J2COMMERCE_FIELDTYPE_TELEPHONE</option>
-        </field>
+            addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field"
+        />
 
         <field
             name="field_value"
@@ -163,7 +150,7 @@
             label="COM_J2COMMERCE_FIELD_FIELD_DEFAULT"
             description="COM_J2COMMERCE_FIELD_FIELD_DEFAULT_DESC"
             maxlength="250"
-            showon="field_type!:zone"
+            showon="field_type!:zone[AND]field_type!:multiuploader"
         />
 
         <field
@@ -172,7 +159,7 @@
             label="COM_J2COMMERCE_FIELD_FIELD_PLACEHOLDER"
             description="COM_J2COMMERCE_FIELD_FIELD_PLACEHOLDER_DESC"
             maxlength="250"
-            showon="field_type!:zone[AND]field_type!:customtext[AND]field_type!:radio[AND]field_type!:checkbox"
+            showon="field_type!:zone[AND]field_type!:customtext[AND]field_type!:radio[AND]field_type!:checkbox[AND]field_type!:multiuploader"
         />
 
         <field
@@ -182,7 +169,7 @@
             description="COM_J2COMMERCE_FIELD_FIELD_AUTOCOMPLETE_DESC"
             maxlength="100"
             default="off"
-            showon="field_type!:zone[AND]field_type!:customtext[AND]field_type!:radio[AND]field_type!:checkbox"
+            showon="field_type!:zone[AND]field_type!:customtext[AND]field_type!:radio[AND]field_type!:checkbox[AND]field_type!:multiuploader"
         />
 
         <field
@@ -229,6 +216,7 @@
         >
             <option value="1">JPUBLISHED</option>
             <option value="0">JUNPUBLISHED</option>
+            <option value="-2">JTRASHED</option>
         </field>
 
         <field
@@ -238,6 +226,49 @@
             description="JFIELD_ORDERING_DESC"
             default="0"
             content_type="com_j2commerce.customfield"
+        />
+
+        <field
+            name="upload_max_files"
+            type="number"
+            label="COM_J2COMMERCE_FIELD_UPLOAD_MAX_FILES"
+            description="COM_J2COMMERCE_FIELD_UPLOAD_MAX_FILES_DESC"
+            default="5"
+            min="1"
+            max="50"
+            showon="field_type:multiuploader"
+        />
+
+        <field
+            name="upload_max_file_size"
+            type="number"
+            label="COM_J2COMMERCE_FIELD_UPLOAD_MAX_FILE_SIZE"
+            description="COM_J2COMMERCE_FIELD_UPLOAD_MAX_FILE_SIZE_DESC"
+            default="10"
+            min="0.01"
+            max="100"
+            step="0.01"
+            showon="field_type:multiuploader"
+        />
+
+        <field
+            name="upload_allowed_types"
+            type="text"
+            label="COM_J2COMMERCE_FIELD_UPLOAD_ALLOWED_TYPES"
+            description="COM_J2COMMERCE_FIELD_UPLOAD_ALLOWED_TYPES_DESC"
+            default=""
+            hint="pdf,jpg,png,doc,docx"
+            showon="field_type:multiuploader"
+        />
+
+        <field
+            name="upload_directory"
+            type="text"
+            label="COM_J2COMMERCE_FIELD_UPLOAD_DIRECTORY"
+            description="COM_J2COMMERCE_FIELD_UPLOAD_DIRECTORY_DESC"
+            default="images/checkout-uploads"
+            filter="path"
+            showon="field_type:multiuploader"
         />
     </fieldset>
 

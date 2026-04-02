@@ -94,8 +94,8 @@ if ($showWelcome) {
                                             <li><h6 class="dropdown-header"><?php echo Text::_($child['title']); ?></h6></li>
                                         <?php else : ?>
                                             <li>
-                                                <a class="dropdown-item <?php echo $active == $child['view'] ? 'active' : ''; ?>"
-                                                   id="j2c-nav-<?php echo $child['view']; ?>"
+                                                <a class="dropdown-item <?php echo $active == ($child['view'] ?? '') ? 'active' : ''; ?>"
+                                                   id="j2c-nav-<?php echo $child['view'] ?? ''; ?>"
                                                    href="<?php echo Route::_($child['link']); ?>">
                                                     <?php if (!empty($child['icon'])) : ?>
                                                         <span class="<?php echo $child['icon']; ?> fa-fw me-1"></span>

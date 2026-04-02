@@ -136,7 +136,7 @@ $csrfToken   = Session::getFormToken();
 
         var originalContent = button.innerHTML;
         button.classList.add('disabled');
-        button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+        button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_LOADING'); ?></span></span>';
 
         var controllerTask = task === 'setDefault' ? 'products.setDefaultVariantAjax' : 'products.unsetDefaultVariantAjax';
 
@@ -254,7 +254,7 @@ $csrfToken   = Session::getFormToken();
     async function deleteVariantAjax(variantId, button, productId) {
         var originalContent = button.innerHTML;
         button.disabled = true;
-        button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+        button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_LOADING'); ?></span></span>';
 
         try {
             var formData = new FormData();
@@ -323,7 +323,7 @@ $csrfToken   = Session::getFormToken();
             if (loading) {
                 button.setAttribute('data-original-text', button.innerHTML);
                 button.disabled = true;
-                button.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_LOADING'); ?>';
+                button.innerHTML = '<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_LOADING'); ?>';
             } else {
                 button.disabled = false;
                 var originalText = button.getAttribute('data-original-text');

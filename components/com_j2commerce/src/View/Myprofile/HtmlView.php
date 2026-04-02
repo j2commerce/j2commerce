@@ -158,7 +158,6 @@ class HtmlView extends BaseHtmlView
                 }
             }
 
-            // Dispatch plugin tab events (app plugins like Change Password, Vendor Management, etc.)
             // Payment plugins use the unified GetSavedPaymentMethods event instead
             $this->pluginTabHtml     = J2CommerceHelper::plugin()->eventWithHtml('MyProfileTab')->getArgument('html', '');
             $this->pluginContentHtml = J2CommerceHelper::plugin()->eventWithHtml('MyProfileTabContent', [$this->orders])->getArgument('html', '');
@@ -220,6 +219,8 @@ class HtmlView extends BaseHtmlView
         Text::script('COM_J2COMMERCE_LIMIT_REACHED');
         Text::script('COM_J2COMMERCE_NEVER_EXPIRES');
         Text::script('COM_J2COMMERCE_NO_DOWNLOADS');
+
+        Text::script('COM_J2COMMERCE_LOADING');
 
         $this->_prepareDocument();
         parent::display($tpl);

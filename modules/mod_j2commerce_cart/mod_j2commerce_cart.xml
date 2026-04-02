@@ -201,15 +201,13 @@
                 <field
                     name="moduleclass_sfx"
                     type="text"
-                    label="COM_MODULES_FIELD_MODULE_CLASS_SUFFIX_LABEL"
-                    description="COM_MODULES_FIELD_MODULE_CLASS_SUFFIX_DESC"
+                    label="COM_MODULES_FIELD_MODULECLASS_SFX_LABEL"
                 />
                 <field
                     name="cache"
                     type="list"
                     default="0"
                     label="COM_MODULES_FIELD_CACHING_LABEL"
-                    description="COM_MODULES_FIELD_CACHING_DESC"
                     class="form-select"
                 >
                     <option value="1">JGLOBAL_USE_GLOBAL</option>

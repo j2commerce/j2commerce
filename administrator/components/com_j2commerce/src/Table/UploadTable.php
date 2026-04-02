@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Table;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
+use Joomla\CMS\Language\Text;
 use Joomla\CMS\Table\Table;
 use Joomla\Database\DatabaseDriver;
 
@@ -57,17 +58,17 @@ class UploadTable extends Table
 
         // Ensure required fields have values
         if (empty($this->original_name)) {
-            $this->setError('Original name is required');
+            $this->setError(Text::sprintf('COM_J2COMMERCE_ERR_FIELD_REQUIRED', 'Original name'));
             return false;
         }
 
         if (empty($this->mangled_name)) {
-            $this->setError('Mangled name is required');
+            $this->setError(Text::sprintf('COM_J2COMMERCE_ERR_FIELD_REQUIRED', 'Mangled name'));
             return false;
         }
 
         if (empty($this->saved_name)) {
-            $this->setError('Saved name is required');
+            $this->setError(Text::sprintf('COM_J2COMMERCE_ERR_FIELD_REQUIRED', 'Saved name'));
             return false;
         }
 

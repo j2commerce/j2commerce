@@ -282,4 +282,8 @@ if($doc->countModules('j2commerce-dashboard-module-main-tab') && $doc->countModu
 
 <input type="hidden" id="dashboard-token" value="<?php echo Session::getFormToken(); ?>">
 
+<?php if ($this->showOnboarding) : ?>
+    <?php echo $this->loadTemplate('onboarding'); ?>
+<?php endif; ?>
+
 <?php echo $this->footer ?? ''; ?>

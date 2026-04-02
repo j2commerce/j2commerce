@@ -41,9 +41,9 @@ $tmpl    = Factory::getApplication()->input->get('tmpl', '', 'cmd') === 'compone
                     <?php echo $this->form->renderField('j2commerce_coupon_id'); ?>
                     <?php echo $this->form->renderField('coupon_name'); ?>
                     <?php echo $this->form->renderField('coupon_code'); ?>
-                    <?php echo $this->form->renderField('free_shipping'); ?>
-                    <?php echo $this->form->renderField('value'); ?>
                     <?php echo $this->form->renderField('value_type'); ?>
+                    <?php echo $this->form->renderField('value'); ?>
+                    <?php echo $this->form->renderField('free_shipping'); ?>
                     <?php echo $this->form->renderField('valid_from'); ?>
                     <?php echo $this->form->renderField('valid_to'); ?>
                 </fieldset>

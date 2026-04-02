@@ -37,6 +37,9 @@ class ConfirmationModel extends BaseDatabaseModel
         $orderId = $app->getInput()->getString('order_id', '');
         $this->setState('order_id', $orderId);
 
+        $token = $app->getInput()->getString('token', '');
+        $this->setState('token', $token);
+
         $params = $app->getParams();
         $this->setState('params', $params);
     }
@@ -55,6 +58,16 @@ class ConfirmationModel extends BaseDatabaseModel
         $orderId = (string) $this->getState('order_id');
 
         if ($orderId === '') {
+            // No order_id in URL — try most recent order for logged-in users
+            $recentOrder = $this->getMostRecentOrder();
+
+            if ($recentOrder) {
+                $this->_order = $recentOrder;
+                $this->setState('showing_recent', true);
+
+                return $this->_order;
+            }
+
             return null;
         }
 
@@ -277,13 +290,62 @@ class ConfirmationModel extends BaseDatabaseModel
         return $this->_orderDiscounts = $db->loadObjectList() ?: [];
     }
 
+    /**
+     * Load the most recent order for the current logged-in user.
+     */
+    public function getMostRecentOrder(): ?object
+    {
+        $user = Factory::getApplication()->getIdentity();
+
+        if (!$user || $user->id <= 0) {
+            return null;
+        }
+
+        $db     = $this->getDatabase();
+        $userId = $user->id;
+
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('order_id'))
+            ->from($db->quoteName('#__j2commerce_orders'))
+            ->where($db->quoteName('user_id') . ' = :userId')
+            ->bind(':userId', $userId, ParameterType::INTEGER)
+            ->order($db->quoteName('created_on') . ' DESC')
+            ->setLimit(1);
+
+        $db->setQuery($query);
+        $orderId = $db->loadResult();
+
+        if (!$orderId) {
+            return null;
+        }
+
+        $orderTable = Factory::getApplication()
+            ->bootComponent('com_j2commerce')
+            ->getMVCFactory()
+            ->createTable('Order', 'Administrator');
+
+        if (!$orderTable || !$orderTable->load(['order_id' => $orderId])) {
+            return null;
+        }
+
+        return $orderTable;
+    }
+
     protected function isAuthorised(object $orderTable): bool
     {
         $app  = Factory::getApplication();
         $user = $app->getIdentity();
 
-        if ($user && $user->id > 0) {
-            return (int) $orderTable->user_id === $user->id;
+        // Logged-in user owns this order
+        if ($user && $user->id > 0 && (int) $orderTable->user_id === $user->id) {
+            return true;
+        }
+
+        // URL token check — allows bookmarks, back button, email links
+        $urlToken = (string) $this->getState('token');
+
+        if ($urlToken !== '' && hash_equals($orderTable->token ?? '', $urlToken)) {
+            return true;
         }
 
         $session      = $app->getSession();

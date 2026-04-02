@@ -52,8 +52,8 @@
             <option value="a.duration_ms DESC">COM_J2COMMERCE_HEADING_DURATION_DESC</option>
             <option value="a.items_total ASC">COM_J2COMMERCE_HEADING_TOTAL_ASC</option>
             <option value="a.items_total DESC">COM_J2COMMERCE_HEADING_TOTAL_DESC</option>
-            <option value="a.j2commerce_queue_log_id ASC">JGRID_HEADING_ID_ASC</option>
-            <option value="a.j2commerce_queue_log_id DESC">JGRID_HEADING_ID_DESC</option>
+            <option value="a.j2commerce_queue_log_id ASC">COM_J2COMMERCE_HEADING_ID_ASC</option>
+            <option value="a.j2commerce_queue_log_id DESC">COM_J2COMMERCE_HEADING_ID_DESC</option>
         </field>
 
         <field

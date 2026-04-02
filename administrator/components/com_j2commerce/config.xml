@@ -54,14 +54,14 @@
             name="store_zip"
             type="text"
             label="COM_J2COMMERCE_CONFIG_STORE_ZIP"
-            required="true"
+            required="false"
         />
 
         <field
             name="country_id"
             type="country"
             label="COM_J2COMMERCE_CONFIG_STORE_COUNTRY"
-            default="223"
+            default=""
         >
             <option value="">COM_J2COMMERCE_SELECT_COUNTRY</option>
         </field>
@@ -551,6 +551,20 @@
                 filter="integer"
                 showon="enable_inventory:1"
             />
+
+            <field
+                name="onboarding_complete"
+                type="hidden"
+                default="0"
+                filter="integer"
+            />
+
+            <field
+                name="onboarding_last_step"
+                type="hidden"
+                default="0"
+                filter="integer"
+            />
         </fieldset>
 
         <!-- ========================================== -->
@@ -686,6 +700,7 @@
                 layout="joomla.form.field.radio.switcher"
                 default="1"
                 filter="integer"
+                showon="enable_voucher:1"
             >
                 <option value="0">JNO</option>
                 <option value="1">JYES</option>
@@ -795,9 +810,10 @@
             type="list"
             label="COM_J2COMMERCE_CONFIG_CART_EMPTY_REDIRECT"
             description="COM_J2COMMERCE_CONFIG_CART_EMPTY_REDIRECT_DESC"
-            default="cart"
+            default="homepage"
             validate="options"
         >
+            <option value="homepage">COM_J2COMMERCE_TO_HOMEPAGE</option>
             <option value="cart">COM_J2COMMERCE_TO_CART</option>
             <option value="menu">COM_J2COMMERCE_TO_MENU</option>
             <option value="url">COM_J2COMMERCE_TO_URL</option>
@@ -831,7 +847,7 @@
             label="COM_J2COMMERCE_CONFIG_SHOW_CART_IMAGE"
             description="COM_J2COMMERCE_CONFIG_SHOW_CART_IMAGE_DESC"
             layout="joomla.form.field.radio.switcher"
-            default="0"
+            default="1"
             filter="integer"
         >
             <option value="0">JHIDE</option>
@@ -1254,7 +1270,7 @@
             label="COM_J2COMMERCE_CONFIG_SHOW_TERMS"
             description="COM_J2COMMERCE_CONFIG_SHOW_TERMS_DESC"
             layout="joomla.form.field.radio.switcher"
-            default="1"
+            default="0"
             filter="integer"
         >
             <option value="0">JNO</option>
@@ -1286,19 +1302,6 @@
             addfieldprefix="Joomla\Component\Content\Administrator\Field"
             showon="show_terms:1"
         />
-
-        <field
-            name="prepare_content"
-            type="radio"
-            label="COM_J2COMMERCE_CONFIG_PREPARE_CONTENT"
-            description="COM_J2COMMERCE_CONFIG_PREPARE_CONTENT_DESC"
-            layout="joomla.form.field.radio.switcher"
-            default="0"
-            filter="integer"
-        >
-            <option value="0">JNO</option>
-            <option value="1">JYES</option>
-        </field>
     </fieldset>
 
 
@@ -1315,7 +1318,7 @@
             type="list"
             label="COM_J2COMMERCE_CONFIG_EMAIL_TEMPLATE_MODE"
             description="COM_J2COMMERCE_CONFIG_EMAIL_TEMPLATE_MODE_DESC"
-            default="1"
+            default="0"
             validate="options"
         >
             <option value="0">COM_J2COMMERCE_EMAIL_CONFIGURED_ONLY</option>
@@ -1328,7 +1331,7 @@
             label="COM_J2COMMERCE_CONFIG_EMAIL_SHOW_IMAGE"
             description="COM_J2COMMERCE_CONFIG_EMAIL_SHOW_IMAGE_DESC"
             layout="joomla.form.field.radio.switcher"
-            default="0"
+            default="1"
             filter="integer"
         >
             <option value="0">JHIDE</option>

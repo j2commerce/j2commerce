@@ -40,6 +40,20 @@ class BoxPackerField extends FormField
         );
         $wa->registerAndUseStyle('j2commerce-admin-css', 'media/com_j2commerce/css/administrator/j2commerce_admin.css');
 
+        Text::script('COM_J2COMMERCE_BOXPACKER_PREVIEW_ITEM_NAME');
+        Text::script('COM_J2COMMERCE_BOXPACKER_PREVIEW_NO_ITEMS');
+        Text::script('COM_J2COMMERCE_BOXPACKER_PREVIEW_RUNNING');
+        Text::script('COM_J2COMMERCE_BOXPACKER_PREVIEW_ERROR');
+        Text::script('COM_J2COMMERCE_BOXPACKER_PREVIEW_RUN');
+        Text::script('COM_J2COMMERCE_BOXPACKER_PREVIEW_UNKNOWN_ERROR');
+        Text::script('COM_J2COMMERCE_BOXPACKER_PREVIEW_BOXES_NEEDED');
+        Text::script('COM_J2COMMERCE_BOXPACKER_PREVIEW_PER_ITEM_MODE');
+        Text::script('COM_J2COMMERCE_BOXPACKER_PREVIEW_BOX_N');
+        Text::script('COM_J2COMMERCE_BOXPACKER_PREVIEW_WEIGHT_USED');
+        Text::script('COM_J2COMMERCE_BOXPACKER_PREVIEW_WEIGHT');
+        Text::script('COM_J2COMMERCE_BOXPACKER_PREVIEW_VOLUME_USED');
+        Text::script('COM_J2COMMERCE_BOXPACKER_PREVIEW_UNPACKED_MSG');
+
         HTMLHelper::_('bootstrap.modal', '#boxpacker3dModal');
 
         $boxes = [];

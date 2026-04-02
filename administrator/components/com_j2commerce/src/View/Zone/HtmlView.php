@@ -92,17 +92,18 @@ class HtmlView extends BaseHtmlView
     {
         Factory::getApplication()->getInput()->set('hidemainmenu', true);
 
-        $isNew = ($this->item->j2commerce_zone_id == 0);
-        $canDo = ContentHelper::getActions('com_j2commerce');
-        $user  = Factory::getApplication()->getIdentity();
-        $toolbar = $this->getDocument()->getToolbar();
+        $isNew      = ($this->item->j2commerce_zone_id == 0);
+        $canDo      = ContentHelper::getActions('com_j2commerce');
+        $user       = Factory::getApplication()->getIdentity();
+        $checkedOut = !(($this->item->checked_out ?? null) === null || ($this->item->checked_out ?? 0) == $user->id);
+        $toolbar    = $this->getDocument()->getToolbar();
 
         // Title: "New Zone" or "Edit Zone"
         $title = $isNew ? Text::_('COM_J2COMMERCE_TOOLBAR_NEW') . ' ' . Text::_('COM_J2COMMERCE_ZONE') : Text::_('COM_J2COMMERCE_TOOLBAR_EDIT') . ' ' . Text::_('COM_J2COMMERCE_ZONE');
         ToolbarHelper::title($title, 'fa-solid fa-location-dot');
 
-        // If not checked out, can save the item.
-        if ($canDo->get('core.edit') || ($canDo->get('core.create'))) {
+        // Only show save buttons when the item is not checked out by another user.
+        if (!$checkedOut && ($canDo->get('core.edit') || $canDo->get('core.create'))) {
             $toolbar->apply('zone.apply');
         }
 
@@ -110,8 +111,8 @@ class HtmlView extends BaseHtmlView
             // Dropdown save group with configure() callback
             $saveGroup = $toolbar->dropdownButton('save-group');
             $saveGroup->configure(
-                function (Toolbar $childBar) use ($canDo, $isNew) {
-                    if ($canDo->get('core.edit') || ($canDo->get('core.create'))) {
+                function (Toolbar $childBar) use ($canDo, $isNew, $checkedOut) {
+                    if (!$checkedOut && ($canDo->get('core.edit') || $canDo->get('core.create'))) {
                         $childBar->save('zone.save');
                     }
 

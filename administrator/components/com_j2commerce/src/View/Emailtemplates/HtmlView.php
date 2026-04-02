@@ -101,7 +101,9 @@ class HtmlView extends BaseHtmlView
         $this->filterForm    = $model->getFilterForm();
         $this->activeFilters = $model->getActiveFilters();
 
-        if ((!is_array($this->items) || !\count($this->items)) && $this->isEmptyState = $this->getModel()->getIsEmptyState()) {
+        $requestedLayout = Factory::getApplication()->getInput()->get('layout', '');
+
+        if ((!is_array($this->items) || !\count($this->items)) && !$requestedLayout && $this->isEmptyState = $this->getModel()->getIsEmptyState()) {
             $this->setLayout('emptystate');
         }
 
@@ -162,12 +164,11 @@ class HtmlView extends BaseHtmlView
                 $childBar = $dropdown->getChildToolbar();
 
                 $childBar->publish('emailtemplates.publish')->listCheck(true);
-
                 $childBar->unpublish('emailtemplates.unpublish')->listCheck(true);
-
+                $childBar->trash('emailtemplates.trash')->listCheck(true);
             }
 
-            if ($canDo->get('core.delete')) {
+            if ($canDo->get('core.delete') && $this->state->get('filter.enabled') == -2) {
                 $toolbar->delete('emailtemplates.delete')
                     ->text('JTOOLBAR_DELETE')
                     ->message('JGLOBAL_CONFIRM_DELETE')

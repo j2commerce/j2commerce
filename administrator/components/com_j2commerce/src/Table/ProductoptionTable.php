@@ -13,6 +13,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Table;
 
 \defined('_JEXEC') or die;
 
+use Joomla\CMS\Language\Text;
 use Joomla\CMS\Table\Table;
 use Joomla\Database\DatabaseDriver;
 
@@ -55,13 +56,13 @@ class ProductoptionTable extends Table
 
         // Validate option_id is set
         if (empty($this->option_id)) {
-            $this->setError('Option ID is required');
+            $this->setError(Text::sprintf('COM_J2COMMERCE_ERR_FIELD_REQUIRED', 'Option ID'));
             return false;
         }
 
         // Validate product_id is set
         if (empty($this->product_id)) {
-            $this->setError('Product ID is required');
+            $this->setError(Text::sprintf('COM_J2COMMERCE_ERR_FIELD_REQUIRED', 'Product ID'));
             return false;
         }
 

@@ -139,6 +139,14 @@ class EmailtemplateModel extends AdminModel
             return false;
         }
 
+        // File-based body source can execute arbitrary PHP — restrict to super users
+        if (($validData['body_source'] ?? '') === 'file'
+            && !Factory::getApplication()->getIdentity()->authorise('core.admin')
+        ) {
+            $this->setError(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'));
+            return false;
+        }
+
         return $validData;
     }
 

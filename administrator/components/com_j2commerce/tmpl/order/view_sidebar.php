@@ -79,7 +79,7 @@ if ($orderInfo) {
                     </div>
                     <div class="customer-information-item mb-2">
                         <span class="icon-envelope me-1 fa-fw" aria-hidden="true"></span>
-                        <a href="mailto:<?php echo $this->escape($item->user_email); ?>"><?php echo $this->escape($item->user_email); ?></a>
+                        <?php echo $this->escape($item->user_email); ?>
                     </div>
                     <?php if (!empty($orderInfo->billing_phone_1)) : ?>
                         <div class="customer-information-item mb-2"><span class="icon-phone me-1 fa-fw" aria-hidden="true"></span> <?php echo $this->escape($orderInfo->billing_phone_1); ?></div>

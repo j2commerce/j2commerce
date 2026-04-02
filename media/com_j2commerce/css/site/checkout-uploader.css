@@ -1,0 +1,88 @@
+/**
+ * @package     J2Commerce
+ * @subpackage  com_j2commerce
+ *
+ * @copyright   (C)2024-2026 J2Commerce, LLC <https://www.j2commerce.com>
+ * @license     GNU General Public License version 2 or later; see LICENSE.txt
+ *
+ * Checkout file uploader — compact Uppy Dashboard styling.
+ *
+ * @since  6.2.0
+ */
+
+/* Compact dashboard container */
+.j2c-checkout-uploader .uppy-Dashboard {
+    border-radius: 0.375rem;
+}
+
+.j2c-checkout-uploader .uppy-Dashboard-inner {
+    border: 2px dashed var(--bs-border-color, #dee2e6);
+    border-radius: 0.375rem;
+    background: var(--bs-body-bg, #fff);
+}
+
+.j2c-checkout-uploader .uppy-Dashboard-AddFiles {
+    border: none;
+}
+
+/* Drag-over feedback */
+.j2c-checkout-uploader .uppy-Dashboard--isDraggingOver .uppy-Dashboard-inner {
+    border-color: var(--bs-primary, #0d6efd);
+    background: rgba(13, 110, 253, 0.04);
+}
+
+/* File list styling */
+.j2c-upload-file-list {
+    margin-top: 0.5rem;
+}
+
+.j2c-file-item {
+    padding: 0.375rem 0.5rem;
+    border-bottom: 1px solid var(--bs-border-color-translucent, rgba(0,0,0,.075));
+}
+
+.j2c-file-item:last-child {
+    border-bottom: none;
+}
+
+.j2c-file-item i {
+    color: var(--bs-secondary-color, #6c757d);
+    width: 1.25rem;
+    text-align: center;
+}
+
+.j2c-file-name {
+    font-size: 0.875rem;
+    min-width: 0;
+}
+
+.j2c-file-size {
+    white-space: nowrap;
+}
+
+.j2c-file-remove {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    padding: 0.125rem 0.375rem;
+}
+
+/* Validation message */
+.j2c-upload-validation-msg {
+    margin-top: 0.25rem;
+    font-size: 0.875em;
+}
+
+/* Responsive: stack file items on small screens */
+@media (max-width: 575.98px) {
+    .j2c-checkout-uploader .uppy-Dashboard-inner {
+        min-height: 150px;
+    }
+
+    .j2c-file-item {
+        flex-wrap: wrap;
+    }
+
+    .j2c-file-name {
+        width: calc(100% - 3rem);
+    }
+}

@@ -13,6 +13,8 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
@@ -93,13 +95,50 @@ class CustomfieldModel extends AdminModel
         }
 
         // Make field_namekey readonly when editing an existing record (not for save2copy which needs a new unique key)
-        $id = (int) $this->getState('customfield.id');
+        $id   = (int) $this->getState('customfield.id');
         $task = Factory::getApplication()->getInput()->get('task', '', 'cmd');
 
         if ($id > 0 && $task !== 'customfield.save2copy') {
             $form->setFieldAttribute('field_namekey', 'readonly', 'true');
             $form->setFieldAttribute('field_namekey', 'hint', 'COM_J2COMMERCE_FIELD_NAMEKEY_READONLY_HINT');
         }
+
+        // Inject plugin display area switchers into the 'display' fieldset
+        $pluginAreas = CustomFieldHelper::getRegisteredAreas();
+
+        if (!empty($pluginAreas)) {
+            $xml = '<form><fieldset name="display">';
+
+            foreach ($pluginAreas as $area) {
+                $key   = htmlspecialchars($area['key'], ENT_QUOTES, 'UTF-8');
+                $label = htmlspecialchars($area['label'], ENT_QUOTES, 'UTF-8');
+                $desc  = htmlspecialchars($area['description'] ?? '', ENT_QUOTES, 'UTF-8');
+                $xml  .= '<field name="plugin_area_' . $key . '" type="radio"'
+                       . ' label="' . $label . '"'
+                       . ' description="' . $desc . '"'
+                       . ' layout="joomla.form.field.radio.switcher"'
+                       . ' filter="integer" default="0">'
+                       . '<option value="0">JNO</option>'
+                       . '<option value="1">JYES</option>'
+                       . '</field>';
+            }
+
+            $xml .= '</fieldset></form>';
+            $form->load(new \SimpleXMLElement($xml));
+
+            // Re-bind data so plugin area values populate the newly injected fields.
+            // The initial loadForm() binding happened before these fields existed.
+            if ($loadData) {
+                $form->bind($this->loadFormData());
+            }
+        }
+
+        // Let plugins inject additional fieldsets/tabs
+        $formData = $loadData ? $this->loadFormData() : $data;
+        J2CommerceHelper::plugin()->event('CustomFieldFormPrepare', [
+            'form' => $form,
+            'data' => $formData,
+        ]);
 
         return $form;
     }
@@ -155,6 +194,19 @@ class CustomfieldModel extends AdminModel
                         // Stored as JSON array; form field expects the raw array
                         $data->phone_countries = $options['phone_countries'];
                     }
+                    // Multiuploader settings
+                    if (isset($options['upload_max_files'])) {
+                        $data->upload_max_files = $options['upload_max_files'];
+                    }
+                    if (isset($options['upload_max_file_size'])) {
+                        $data->upload_max_file_size = $options['upload_max_file_size'];
+                    }
+                    if (isset($options['upload_allowed_types'])) {
+                        $data->upload_allowed_types = $options['upload_allowed_types'];
+                    }
+                    if (isset($options['upload_directory'])) {
+                        $data->upload_directory = $options['upload_directory'];
+                    }
                 }
             }
 
@@ -173,6 +225,16 @@ class CustomfieldModel extends AdminModel
                 $decoded = json_decode($data->field_value, true);
                 if (\is_array($decoded)) {
                     $data->field_value = $decoded;
+                }
+            }
+
+            // Load plugin area toggles from field_display JSON
+            if (!empty($data->field_display) && $data->field_display !== '') {
+                $displayData = json_decode($data->field_display, true);
+                if (\is_array($displayData)) {
+                    foreach ($displayData as $areaKey => $areaConfig) {
+                        $data->{'plugin_area_' . $areaKey} = (int) ($areaConfig['enabled'] ?? 0);
+                    }
                 }
             }
         }
@@ -202,6 +264,11 @@ class CustomfieldModel extends AdminModel
 
     public function save($data): bool
     {
+        // Auto-generate field_namekey from field_name when empty (like Joomla alias)
+        if (empty($data['field_namekey']) && !empty($data['field_name'])) {
+            $data['field_namekey'] = preg_replace('/[^a-z0-9_]/', '', str_replace([' ', '-'], '_', strtolower(trim($data['field_name']))));
+        }
+
         // Normalize field_namekey early (before addAddressColumn which uses it for DDL)
         if (!empty($data['field_namekey'])) {
             $data['field_namekey'] = strtolower(trim($data['field_namekey']));
@@ -278,12 +345,20 @@ class CustomfieldModel extends AdminModel
             }
         }
 
+        if ($data['field_type'] === 'multiuploader') {
+            $fieldOptionsData['upload_max_files'] = (int) ($data['upload_max_files'] ?? 5);
+            $fieldOptionsData['upload_max_file_size'] = (float) ($data['upload_max_file_size'] ?? 10);
+            $fieldOptionsData['upload_allowed_types'] = trim($data['upload_allowed_types'] ?? '');
+            $fieldOptionsData['upload_directory'] = trim($data['upload_directory'] ?? 'images/checkout-uploads');
+        }
+
         if (!empty($fieldOptionsData)) {
             $data['field_options'] = json_encode($fieldOptionsData, JSON_UNESCAPED_UNICODE);
         }
 
         // Remove virtual fields before save
-        unset($data['field_zonetype'], $data['phone_all_countries'], $data['phone_country_mode'], $data['phone_countries']);
+        unset($data['field_zonetype'], $data['phone_all_countries'], $data['phone_country_mode'], $data['phone_countries'],
+              $data['upload_max_files'], $data['upload_max_file_size'], $data['upload_allowed_types'], $data['upload_directory']);
 
         // Encode field_value subform data to JSON for dropdown/radio/checkbox options
         if (\in_array($data['field_type'], ['singledropdown', 'radio', 'checkbox'], true)) {
@@ -306,10 +381,41 @@ class CustomfieldModel extends AdminModel
         $isNew = empty($data['j2commerce_customfield_id']);
         if ($isNew &&
             isset($data['field_table']) && $data['field_table'] === 'address' &&
-            isset($data['field_type']) && $data['field_type'] !== 'customtext' &&
+            isset($data['field_type']) && $data['field_type'] !== 'customtext' && $data['field_type'] !== 'multiuploader' &&
             !empty($data['field_namekey'])) {
 
             $this->addAddressColumn($data['field_namekey']);
+        }
+
+        // Sync plugin area toggles into field_display JSON before saving
+        $pluginAreas = CustomFieldHelper::getRegisteredAreas();
+
+        if (!empty($pluginAreas)) {
+            $existingDisplay = [];
+
+            if (!empty($data['field_display'])) {
+                $decoded = json_decode($data['field_display'], true);
+                if (\is_array($decoded)) {
+                    $existingDisplay = $decoded;
+                }
+            }
+
+            foreach ($pluginAreas as $area) {
+                $areaKey = $area['key'];
+                $formKey = 'plugin_area_' . $areaKey;
+                $enabled = (int) ($data[$formKey] ?? 0);
+
+                if (!isset($existingDisplay[$areaKey])) {
+                    $existingDisplay[$areaKey] = ['enabled' => 0, 'ordering' => 0];
+                }
+
+                $existingDisplay[$areaKey]['enabled'] = $enabled;
+
+                // Remove virtual form field before passing to parent::save()
+                unset($data[$formKey]);
+            }
+
+            $data['field_display'] = json_encode($existingDisplay, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
         }
 
         return parent::save($data);

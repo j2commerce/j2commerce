@@ -478,6 +478,95 @@ class MultiimageuploaderController extends BaseController
         $this->sendJson($deleted, $deleted ? '' : 'Failed to delete directory');
     }
 
+    /**
+     * Handle file upload from frontend checkout — allows guest users with active cart session.
+     *
+     * @since  6.2.0
+     */
+    public function uploadCheckout(): void
+    {
+        if (!$this->authorizeCheckout()) {
+            return;
+        }
+
+        $input = $this->app->getInput();
+        $file  = $input->files->get('file', [], 'array');
+
+        if (empty($file['name'])) {
+            $this->sendJson(false, 'No file uploaded');
+            return;
+        }
+
+        if (!(new MediaHelper())->canUpload($file)) {
+            $this->sendJson(false, 'File type not allowed');
+            return;
+        }
+
+        // Force directory to checkout-uploads only (security: prevent path manipulation)
+        $directory = $this->sanitizePath($input->getString('path', 'images/checkout-uploads'));
+
+        if (!str_starts_with($directory, 'images/checkout-uploads')) {
+            $directory = 'images/checkout-uploads';
+        }
+
+        $uploadPath = JPATH_ROOT . '/' . $directory;
+
+        if (!is_dir($uploadPath)) {
+            Folder::create($uploadPath);
+        }
+
+        if (!$this->isPathWithinRoot($uploadPath)) {
+            $this->sendJson(false, 'Access denied');
+            return;
+        }
+
+        $extension = strtolower(File::getExt($file['name']));
+        $safeName  = File::makeSafe($file['name']);
+        $baseName  = File::stripExt($safeName);
+        $fileName  = $baseName . '_' . uniqid() . '.' . $extension;
+        $filePath  = $uploadPath . '/' . $fileName;
+
+        if (!File::upload($file['tmp_name'], $filePath)) {
+            $this->sendJson(false, 'Failed to save file');
+            return;
+        }
+
+        $relativePath = $directory . '/' . $fileName;
+        $fileSize     = filesize($filePath) ?: 0;
+
+        $this->sendJson(true, '', [
+            'name' => $file['name'],
+            'path' => $relativePath,
+            'url'  => Uri::root() . $relativePath,
+            'size' => $fileSize,
+        ]);
+    }
+
+    /**
+     * Authorize checkout upload — requires CSRF token and active cart session.
+     * Does NOT require authenticated user (guests can upload during checkout).
+     *
+     * @since  6.2.0
+     */
+    private function authorizeCheckout(): bool
+    {
+        if (!Session::checkToken('request')) {
+            $this->sendJson(false, 'Invalid security token');
+            return false;
+        }
+
+        // Verify active checkout session (cart with items)
+        $session = $this->app->getSession();
+        $cartId  = $session->get('j2commerce.cart_id', 0);
+
+        if (empty($cartId)) {
+            $this->sendJson(false, 'No active checkout session');
+            return false;
+        }
+
+        return true;
+    }
+
     // -------------------------------------------------------------------------
     // Private helpers
     // -------------------------------------------------------------------------

@@ -38,10 +38,17 @@ use Joomla\CMS\Language\Text;
                     <div class="setup-progress-fill rounded-1" style="width: 0%"></div>
                 </div>
             </div>
+            <!-- Re-run onboarding link -->
+            <div class="px-3 py-2 border-bottom">
+                <a href="index.php?option=com_j2commerce&view=dashboard&rerun_onboarding=1" class="btn btn-sm btn-outline-light w-100 shadow-none">
+                    <span class="fa-solid fa-wand-magic-sparkles me-1" aria-hidden="true"></span>
+                    <?php echo Text::_('COM_J2COMMERCE_SETUP_GUIDE_RUN_ONBOARDING'); ?>
+                </a>
+            </div>
             <!-- Loading spinner (shown while fetching) -->
             <div class="setup-loading text-center py-5">
                 <div class="spinner-border text-secondary" role="status">
-                    <span class="visually-hidden"><?php echo Text::_('JLIB_HTML_BEHAVIOR_LOADING'); ?></span>
+                    <span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_LOADING'); ?></span>
                 </div>
             </div>
             <!-- Check groups container (AJAX-loaded) -->

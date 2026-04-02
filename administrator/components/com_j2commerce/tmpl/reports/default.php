@@ -27,7 +27,7 @@ $wa->useScript('table.columns')
     ->useScript('multiselect')
     ->useScript('core');
 
-$style = '#reportList .j2commerce-report-image {width: 100px;}';
+$style = '#reportList .j2commerce-report-image {width: 140px;}';
 $wa->addInlineStyle($style, [], []);
 
 $user      = $this->getCurrentUser();
@@ -60,7 +60,7 @@ HTMLHelper::_('bootstrap.tooltip', '[data-bs-toggle="tooltip"]', ['placement' =>
                         <?php echo Text::_('JGLOBAL_NO_MATCHING_RESULTS'); ?>
                     </div>
                 <?php else : ?>
-                    <table class="table" id="reportList">
+                    <table class="table align-middle" id="reportList">
                         <caption class="visually-hidden">
                             <?php echo Text::_('COM_J2COMMERCE_REPORTS_TABLE_CAPTION'); ?>,
                             <span id="orderedBy"><?php echo Text::_('JGLOBAL_SORTED_BY'); ?> </span>,
@@ -173,20 +173,32 @@ HTMLHelper::_('bootstrap.tooltip', '[data-bs-toggle="tooltip"]', ['placement' =>
                                     ?>
                                 </td>
                                 <th scope="row">
-                                    <div class="d-flex align-items-center">
-                                        <div class="flex-shrink-0 me-3">
-                                            <img src="<?php echo $imagePath; ?>" class="j2commerce-report-image" alt="<?php echo Text::_($item->name); ?>" style="max-width: 100px; height: auto;">
-                                        </div>
-                                        <div class="flex-grow-1">
+                                    <div class="d-block d-lg-flex">
+                                        <div class="flex-shrink-0">
                                             <?php if ($canEdit) : ?>
-                                                <a href="<?php echo Route::_('index.php?option=com_plugins&task=plugin.edit&extension_id=' . $item->extension_id . '&return=' . $returnUrl); ?>" title="<?php echo Text::_('JACTION_EDIT'); ?> <?php echo $this->escape($item->name); ?>">
-                                                    <?php echo Text::_($item->name); ?>
+                                                <a href="<?php echo Route::_('index.php?option=com_plugins&task=plugin.edit&extension_id=' . $item->extension_id . '&return=' . $returnUrl); ?>" class="d-none d-lg-inline-block d-md-block">
+                                            <?php else : ?>
+                                                <span class="d-none d-lg-inline-block d-md-block">
+                                            <?php endif; ?>
+                                                <img src="<?php echo $imagePath; ?>" class="img-fluid j2commerce-report-image" alt="<?php echo Text::_($item->name); ?>"/>
+                                            <?php if ($canEdit) : ?>
                                                 </a>
                                             <?php else : ?>
-                                                <span><?php echo Text::_($item->name); ?></span>
+                                                </span>
                                             <?php endif; ?>
+                                        </div>
+                                        <div class="flex-grow-1 ms-lg-3 mt-0 mt-lg-0">
+                                            <div>
+                                                <?php if ($canEdit) : ?>
+                                                    <a href="<?php echo Route::_('index.php?option=com_plugins&task=plugin.edit&extension_id=' . $item->extension_id . '&return=' . $returnUrl); ?>">
+                                                        <?php echo Text::_($item->name); ?>
+                                                    </a>
+                                                <?php else : ?>
+                                                    <span><?php echo Text::_($item->name); ?></span>
+                                                <?php endif; ?>
+                                            </div>
                                             <?php if ($desc) : ?>
-                                                <div class="small text-muted"><?php echo $desc; ?></div>
+                                                <div class="small d-none d-md-block"><?php echo $desc; ?></div>
                                             <?php endif; ?>
                                             <?php if (!$item->files_exist) : ?>
                                                 <div class="small text-danger">
@@ -194,12 +206,13 @@ HTMLHelper::_('bootstrap.tooltip', '[data-bs-toggle="tooltip"]', ['placement' =>
                                                     <?php echo Text::_('COM_J2COMMERCE_REPORT_FILES_MISSING'); ?>
                                                 </div>
                                             <?php endif; ?>
+                                            <div class="small d-block d-md-none"><b><?php echo Text::_('COM_J2COMMERCE_REPORT_VERSION'); ?>:</b> <?php echo $this->escape($version); ?></div>
                                         </div>
                                     </div>
                                 </th>
                                 <td class="text-center">
                                     <?php if ($item->enabled && $item->files_exist) : ?>
-                                        <a href="<?php echo Route::_('index.php?option=com_j2commerce&view=reports&task=view&id=' . $item->extension_id); ?>" class="btn btn-sm btn-primary" title="<?php echo Text::_('COM_J2COMMERCE_REPORT_VIEW'); ?>">
+                                        <a href="<?php echo Route::_('index.php?option=com_j2commerce&view=reports&task=reports.view&id=' . $item->extension_id); ?>" class="btn btn-sm btn-primary" title="<?php echo Text::_('COM_J2COMMERCE_REPORT_VIEW'); ?>">
                                             <span class="icon-eye" aria-hidden="true"></span>
                                             <?php echo Text::_('COM_J2COMMERCE_REPORT_VIEW'); ?>
                                         </a>

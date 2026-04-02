@@ -11,6 +11,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
 defined('_JEXEC') or die;
 
+use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\FormController;
 use Joomla\CMS\Router\Route;
 
@@ -63,6 +64,39 @@ class FiltergroupController extends FormController
 
         // Since there is no item, fall back to component permissions.
         return parent::allowEdit($data, $key);
+    }
+
+    /**
+     * Method to save a record, redirecting new items to the edit view
+     * so users can immediately add filters after the first save.
+     *
+     * @param   string  $key     The name of the primary key of the URL variable.
+     * @param   string  $urlVar  The name of the URL variable if different from the primary key.
+     *
+     * @return  boolean  True if save succeeded.
+     *
+     * @since  6.0.0
+     */
+    public function save($key = null, $urlVar = 'id')
+    {
+        $isNew = empty($this->input->getInt('id', 0));
+
+        $result = parent::save($key, $urlVar);
+
+        if ($result && $isNew && $this->getTask() === 'save2close') {
+            $model    = $this->getModel();
+            $recordId = (int) $model->getState('filtergroup.id');
+
+            if ($recordId) {
+                $this->setRedirect(
+                    Route::_('index.php?option=com_j2commerce&task=filtergroup.edit&id=' . $recordId, false),
+                    Text::_('COM_J2COMMERCE_FILTERGROUP_SAVED_NOW_ADD_FILTERS'),
+                    'success'
+                );
+            }
+        }
+
+        return $result;
     }
 
     /**

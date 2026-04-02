@@ -60,7 +60,7 @@ class EmailtemplatesModel extends ListModel
      *
      * @since   6.0.0
      */
-    protected function populateState($ordering = 'a.email_type', $direction = 'asc')
+    protected function populateState($ordering = 'a.j2commerce_emailtemplate_id', $direction = 'asc')
     {
         // Load the filter state.
         $search = $this->getUserStateFromRequest($this->context . '.filter.search', 'filter_search');
@@ -195,7 +195,7 @@ class EmailtemplatesModel extends ListModel
         }
 
         // Add the list ordering clause.
-        $orderCol = $this->getState('list.ordering', 'a.email_type');
+        $orderCol = $this->getState('list.ordering', 'a.j2commerce_emailtemplate_id');
         $orderDirn = $this->getState('list.direction', 'ASC');
 
         if ($orderCol && $orderDirn) {

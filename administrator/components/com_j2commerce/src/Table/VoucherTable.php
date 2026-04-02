@@ -58,16 +58,6 @@ class VoucherTable extends Table
             $this->enabled = 1;
         }
 
-        // Set created_on and created_by for new records
-        if (empty($this->j2commerce_voucher_id)) {
-            if (empty($this->created_on)) {
-                $this->created_on = Factory::getDate()->toSql();
-            }
-            if (empty($this->created_by)) {
-                $this->created_by = Factory::getApplication()->getIdentity()->id;
-            }
-        }
-
         // Set default voucher_type if empty
         if (empty($this->voucher_type)) {
             $this->voucher_type = 'giftcard';
@@ -108,6 +98,22 @@ class VoucherTable extends Table
      */
     public function store($updateNulls = false)
     {
+        $date = Factory::getDate()->toSql();
+        $user = Factory::getApplication()->getIdentity();
+
+        if (empty($this->j2commerce_voucher_id)) {
+            if (empty($this->created_on) || $this->created_on === '0000-00-00 00:00:00') {
+                $this->created_on = $date;
+            }
+
+            if (empty($this->created_by)) {
+                $this->created_by = (int) $user->id;
+            }
+        }
+
+        $this->modified_on = $date;
+        $this->modified_by = (int) $user->id;
+
         $nullDate = $this->getDatabase()->getNullDate();
 
         // Convert '0000-00-00 00:00:00' to null before storing

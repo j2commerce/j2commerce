@@ -33,10 +33,10 @@ class MenuHelper
         $currentUrl = Uri::getInstance()->toString();
         $encodedReturn = base64_encode($currentUrl);
 
-        $canViewOrders   = $user->authorise('j2commerce.vieworders', 'com_j2commerce');
-        $canViewProducts = $user->authorise('j2commerce.viewproducts', 'com_j2commerce');
-        $canViewReports  = $user->authorise('j2commerce.viewreports', 'com_j2commerce');
-        $canViewSetup    = $user->authorise('j2commerce.viewsetup', 'com_j2commerce');
+        $canViewOrders   = J2CommerceHelper::canAccess('j2commerce.vieworders');
+        $canViewProducts = J2CommerceHelper::canAccess('j2commerce.viewproducts');
+        $canViewReports  = J2CommerceHelper::canAccess('j2commerce.viewreports');
+        $canViewSetup    = J2CommerceHelper::canAccess('j2commerce.viewsetup');
         // Dashboard
         if ($user->authorise('core.manage', 'com_j2commerce')) {
             $items[] = [
@@ -190,30 +190,36 @@ class MenuHelper
 
         // Design
         if ($user->authorise('core.manage', 'com_j2commerce')) {
+            $designChildren = [];
+
+            // Template overrides — super users only (can write arbitrary PHP)
+            if ($user->authorise('core.admin')) {
+                $designChildren[] = [
+                    'title' => 'COM_J2COMMERCE_TEMPLATE_OVERRIDES',
+                    'view' => 'overrides',
+                    'link' => 'index.php?option=com_j2commerce&view=overrides',
+                    'icon' => 'fa-solid fa-layer-group'
+                ];
+            }
+
+            $designChildren[] = [
+                'title' => 'COM_J2COMMERCE_TEMPLATES_EMAIL',
+                'view' => 'emailtemplates',
+                'link' => 'index.php?option=com_j2commerce&view=emailtemplates',
+                'icon' => 'fa-solid fa-envelope'
+            ];
+            $designChildren[] = [
+                'title' => 'COM_J2COMMERCE_TEMPLATES_INVOICE',
+                'view' => 'invoice',
+                'link' => 'index.php?option=com_j2commerce&view=invoicetemplates',
+                'icon' => 'fa-solid fa-print'
+            ];
+
             $items[] = [
                 'title' => 'COM_J2COMMERCE_DESIGN',
-                'view' => 'overrides',
+                'view' => !empty($designChildren) && $designChildren[0]['view'] === 'overrides' ? 'overrides' : 'emailtemplates',
                 'icon' => 'fa-solid fa-compass-drafting',
-                'children' => [
-                    [
-                        'title' => 'COM_J2COMMERCE_TEMPLATE_OVERRIDES',
-                        'view' => 'overrides',
-                        'link' => 'index.php?option=com_j2commerce&view=overrides',
-                        'icon' => 'fa-solid fa-layer-group'
-                    ],
-                    [
-                        'title' => 'COM_J2COMMERCE_TEMPLATES_EMAIL',
-                        'view' => 'emailtemplates',
-                        'link' => 'index.php?option=com_j2commerce&view=emailtemplates',
-                        'icon' => 'fa-solid fa-envelope'
-                    ],
-                    [
-                        'title' => 'COM_J2COMMERCE_TEMPLATES_INVOICE',
-                        'view' => 'invoice',
-                        'link' => 'index.php?option=com_j2commerce&view=invoicetemplates',
-                        'icon' => 'fa-solid fa-print'
-                    ]
-                ]
+                'children' => $designChildren,
             ];
         }
         // Setup

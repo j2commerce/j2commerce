@@ -36,6 +36,7 @@ class HtmlView extends BaseHtmlView
     public array $orderTaxes = [];
     public array $orderFees = [];
     public array $orderDiscounts = [];
+    public bool $showingRecent = false;
 
     public function display($tpl = null): void
     {
@@ -57,11 +58,28 @@ class HtmlView extends BaseHtmlView
         $this->order = $model->getOrder();
 
         if ($this->order === null) {
-            $app->enqueueMessage(Text::_('COM_J2COMMERCE_CONFIRMATION_ORDER_NOT_FOUND'), 'error');
-            $app->redirect(Route::_('index.php?option=com_j2commerce&view=products', false));
+            $user = $app->getIdentity();
+
+            // Guest → redirect to My Profile (has login + guest order lookup form)
+            if (!$user || $user->id <= 0) {
+                $app->enqueueMessage(
+                    Text::_('COM_J2COMMERCE_CONFIRMATION_LOGIN_TO_VIEW'),
+                    'notice'
+                );
+                $app->redirect(Route::_('index.php?option=com_j2commerce&view=myprofile', false));
+
+                return;
+            }
+
+            // Logged-in user with no orders → show token entry form
+            $this->_prepareDocument();
+            parent::display('noorder');
 
             return;
         }
+
+        // Check if showing most recent order (no order_id was in URL)
+        $this->showingRecent = (bool) $model->getState('showing_recent', false);
 
         // Payment cancel detection
         $this->paction = $app->getInput()->getCmd('paction', '');

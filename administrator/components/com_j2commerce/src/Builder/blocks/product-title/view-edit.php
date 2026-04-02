@@ -5,8 +5,13 @@ extract($displayData);
 
 $settings    = $settings ?? [];
 $tag         = $settings['tag'] ?? 'h3';
-$cssClass    = $settings['css_class'] ?? 'j2commerce-product-title fs-6';
+$fontSize    = $settings['font_size'] ?? 'fs-5';
+$cssClass    = $settings['css_class'] ?? 'j2commerce-product-title';
 $linkEnabled = $settings['link'] ?? true;
+
+if ($fontSize && strpos($cssClass, $fontSize) === false) {
+    $cssClass .= ' ' . $fontSize;
+}
 ?>
 <<?php echo $tag; ?> class="<?php echo htmlspecialchars($cssClass, ENT_QUOTES, 'UTF-8'); ?>" data-j2c-block="product-title">
     <?php if ($linkEnabled): ?>

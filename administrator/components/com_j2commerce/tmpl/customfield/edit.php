@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
@@ -79,6 +80,11 @@ foreach ($translationKeys as $key) {
                         <?php echo $this->form->renderField('field_default_country'); ?>
                         <?php echo $this->form->renderField('field_default_zone'); ?>
                         <?php echo $this->form->renderField('field_width'); ?>
+                        <?php // Multiuploader options — inline, controlled by showon in XML ?>
+                        <?php echo $this->form->renderField('upload_max_files'); ?>
+                        <?php echo $this->form->renderField('upload_max_file_size'); ?>
+                        <?php echo $this->form->renderField('upload_allowed_types'); ?>
+                        <?php echo $this->form->renderField('upload_directory'); ?>
                     </div>
                 </fieldset>
             </div>
@@ -124,16 +130,46 @@ foreach ($translationKeys as $key) {
                         <?php echo $this->form->renderField('field_display_register'); ?>
                         <?php echo $this->form->renderField('field_display_guest'); ?>
                         <?php echo $this->form->renderField('field_display_guest_shipping'); ?>
+                        <?php
+                        // Render plugin-injected display area switchers dynamically
+                        foreach ($this->form->getFieldset('display') as $field) {
+                            if (strncmp($field->fieldname, 'plugin_area_', 12) === 0) {
+                                echo $field->renderField();
+                            }
+                        }
+                        ?>
                     </div>
                 </fieldset>
             </div>
         </div>
         <?php echo HTMLHelper::_('uitab.endTab'); ?>
 
+        <?php
+        // Render plugin-injected fieldsets as additional tabs
+        $coreFieldsets = ['basic', 'telephone_countries', 'display'];
+        foreach ($this->form->getFieldsets() as $fieldset) {
+            if (\in_array($fieldset->name, $coreFieldsets, true)) {
+                continue;
+            }
+            echo HTMLHelper::_('uitab.addTab', 'myTab', $fieldset->name, Text::_($fieldset->label ?? $fieldset->name));
+            echo '<div class="row"><div class="col-lg-9">';
+            echo '<fieldset class="options-form"><div class="form-grid">';
+            foreach ($this->form->getFieldset($fieldset->name) as $field) {
+                echo $field->renderField();
+            }
+            echo '</div></fieldset>';
+            echo '</div></div>';
+            echo HTMLHelper::_('uitab.endTab');
+        }
+        ?>
+
         <?php echo HTMLHelper::_('uitab.endTabSet'); ?>
     </div>
 
     <input type="hidden" name="task" value="">
+    <?php if ($return = Factory::getApplication()->getInput()->get('return', '', 'base64')) : ?>
+        <input type="hidden" name="return" value="<?php echo htmlspecialchars($return, ENT_QUOTES, 'UTF-8'); ?>">
+    <?php endif; ?>
     <?php echo $this->form->renderField('j2commerce_customfield_id'); ?>
     <?php echo HTMLHelper::_('form.token'); ?>
 </form>
@@ -314,12 +350,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Show/hide the Countries tab based on field_type
+    // Joomla 6 tab structure: <div role="tablist"><button aria-controls="telephone_countries" role="tab">...</button></div>
     function updateCountriesTab() {
         const fieldType = form.querySelector('#jform_field_type')?.value || '';
-        const tabLink = document.querySelector('[href="#telephone_countries"], [data-bs-target="#telephone_countries"]');
-        const tabItem = tabLink ? tabLink.closest('li') : null;
-        if (tabItem) {
-            tabItem.style.display = fieldType === 'telephone' ? '' : 'none';
+        const show = fieldType === 'telephone';
+        const tabBtn = document.querySelector('div[role="tablist"] > button[aria-controls="telephone_countries"]');
+        if (tabBtn) {
+            tabBtn.style.display = show ? '' : 'none';
+        }
+        const tabPane = document.getElementById('telephone_countries');
+        if (tabPane) {
+            tabPane.style.display = show ? '' : 'none';
         }
     }
 

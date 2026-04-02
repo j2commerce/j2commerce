@@ -156,12 +156,13 @@ $dateFormat = ComponentHelper::getParams('com_j2commerce')->get('date_format', '
                                                     title="<?php echo Text::_('COM_J2COMMERCE_SAVE_STATUS'); ?>">
                                                 <?php echo Text::_('JAPPLY'); ?>
                                             </button>
-                                            <a href="<?php echo $orderViewUrl; ?>" class="btn btn-sm btn-link" title="<?php echo Text::_('JACTION_VIEW'); ?>">
+                                            <a href="<?php echo $orderViewUrl; ?>" class="btn btn-sm btn-link" title="<?php echo Text::_('COM_J2COMMERCE_VIEW'); ?>">
                                                 <span class="icon-eye" aria-hidden="true"></span>
                                             </a>
-                                            <a href="<?php echo $orderEditUrl; ?>" class="btn btn-sm btn-link" title="<?php echo Text::_('JACTION_EDIT'); ?>">
+                                            <?php // TODO: Re-enable edit link in a future release when order editing is fully implemented ?>
+                                            <?php /* <a href="<?php echo $orderEditUrl; ?>" class="btn btn-sm btn-link" title="<?php echo Text::_('JACTION_EDIT'); ?>">
                                                 <span class="icon-pencil-alt" aria-hidden="true"></span>
-                                            </a>
+                                            </a> */ ?>
                                         </div>
                                         <div class="form-check form-switch mt-1 d-flex align-items-center justify-content-center gap-1">
                                             <input type="checkbox" class="form-check-input order-notify-check me-2" role="switch" id="notify_<?php echo (int) $item->j2commerce_order_id; ?>" data-order-id="<?php echo (int) $item->j2commerce_order_id; ?>" style="position: relative;top: -3px;" />

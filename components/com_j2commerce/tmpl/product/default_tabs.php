@@ -16,12 +16,12 @@ use Joomla\CMS\Language\Text;
     <div class="col-sm-12">
         <ul class="nav nav-tabs" id="j2commerce-product-detail-tab" role="tablist">
 			<?php
-			$set_specification_active = true;
-			if ($this->params->get('item_show_sdesc') || $this->params->get('item_show_ldesc')) {
-				$set_specification_active = false;
-			}
+			$hasShortDesc = $this->params->get('item_show_sdesc') && !empty(trim(strip_tags($this->item->product_short_desc ?? '')));
+			$hasLongDesc  = $this->params->get('item_show_ldesc') && !empty(trim(strip_tags($this->item->product_long_desc ?? '')));
+			$hasDescription = $hasShortDesc || $hasLongDesc;
+			$set_specification_active = !$hasDescription;
             ?>
-			<?php if ($this->params->get('item_show_sdesc') || $this->params->get('item_show_ldesc')) : ?>
+			<?php if ($hasDescription) : ?>
                 <li class="nav-item">
                     <a class="nav-link active" href="#description" data-bs-toggle="tab"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_DESCRIPTION')?></a>
                 </li>
@@ -43,7 +43,7 @@ use Joomla\CMS\Language\Text;
         </ul>
 
         <div class="tab-content">
-			<?php if ($this->params->get('item_show_sdesc') || $this->params->get('item_show_ldesc')) : ?>
+			<?php if ($hasDescription) : ?>
                 <div class="tab-pane fade show active" id="description">
 					<?php echo $this->loadTemplate('sdesc'); ?>
 					<?php echo $this->loadTemplate('ldesc'); ?>

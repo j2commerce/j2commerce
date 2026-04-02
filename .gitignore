@@ -15,6 +15,10 @@
 !.gitignore
 !LICENSE.txt
 
+# Build scripts (package builder + install script)
+!build/
+!build/**
+
 # ===========================================================================
 # J2Commerce component files
 # Must un-ignore parent directories in order for negation to work
@@ -37,6 +41,9 @@
 !administrator/language/en-GB/com_j2commerce.sys.ini
 !administrator/language/en-GB/plg_actionlog_j2commerce.ini
 !administrator/language/en-GB/plg_actionlog_j2commerce.sys.ini
+!administrator/language/en-US/
+!administrator/language/en-US/com_j2commerce.ini
+!administrator/language/en-US/com_j2commerce.sys.ini
 
 # J2Commerce admin modules (explicit — no wildcards)
 !administrator/modules/
@@ -218,4 +225,4 @@ administrator/components/com_j2commerce/tmpl/product/form_guidedbuilder.php
 components/com_j2commerce/layouts/app_bootstrap5/list/category/item_guidedbuilder.php
 components/com_j2commerce/layouts/app_bootstrap5/list/tag/item_guidedbuilder.php
 # Non-core site templates (created by plugins on install — do NOT whitelist)
-# components/com_j2commerce/tmpl/vendorapply/  — app_vendormanagement plugin
+components/com_j2commerce/tmpl/vendorapply/

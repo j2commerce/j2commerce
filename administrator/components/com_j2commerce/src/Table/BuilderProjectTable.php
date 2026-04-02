@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Table;
 
+use Joomla\CMS\Language\Text;
 use Joomla\CMS\Table\Table;
 use Joomla\Database\DatabaseDriver;
 
@@ -28,13 +29,13 @@ final class BuilderProjectTable extends Table
     public function check(): bool
     {
         if (empty($this->plugin_element)) {
-            $this->setError('Plugin element is required');
+            $this->setError(Text::sprintf('COM_J2COMMERCE_ERR_FIELD_REQUIRED', 'Plugin element'));
 
             return false;
         }
 
         if (empty($this->file_id)) {
-            $this->setError('File ID is required');
+            $this->setError(Text::sprintf('COM_J2COMMERCE_ERR_FIELD_REQUIRED', 'File ID'));
 
             return false;
         }

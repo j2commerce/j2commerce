@@ -124,7 +124,7 @@ document.addEventListener("DOMContentLoaded", function() {
             const token = Joomla.getOptions("csrf.token") || document.querySelector("input[type=hidden][name][value=\"1\"]")?.name || "";
 
             printBtn.disabled = true;
-            printBtn.innerHTML = "<div class=\"spinner-border text-light\"><span class=\"visually-hidden\">Loading...</span></div> " + Joomla.Text._("COM_J2COMMERCE_INVOICETEMPLATE_LOADING");
+            printBtn.innerHTML = "<div class=\"spinner-border text-light\" aria-hidden=\"true\"></div> " + Joomla.Text._("COM_J2COMMERCE_INVOICETEMPLATE_LOADING");
 
             try {
                 const formData = new FormData();
@@ -240,7 +240,7 @@ document.addEventListener("DOMContentLoaded", function() {
             const grid = document.getElementById("template-grid");
             const token = Joomla.getOptions("csrf.token") || document.querySelector("input[type=hidden][name][value=\"1\"]")?.name || "";
 
-            grid.innerHTML = \'<div class="text-center py-4"><div class="spinner-border text-primary" role="status"></div></div>\';
+            grid.innerHTML = \'<div class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">\' + Joomla.Text._("COM_J2COMMERCE_LOADING") + \'</span></div></div>\';
 
             try {
                 const presetsUrl = Joomla.getOptions("com_j2commerce.emaileditor")?.getPresetsUrl || "";

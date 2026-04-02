@@ -18,6 +18,7 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\ToolbarHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 /**
  * Voucher View
@@ -60,7 +61,7 @@ class HtmlView extends BaseHtmlView
      */
     public function display($tpl = null)
     {
-        if (!$this->getCurrentUser()->authorise('j2commerce.vieworders', 'com_j2commerce')) {
+        if (!J2CommerceHelper::canAccess('j2commerce.vieworders')) {
             throw new \Exception(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 403);
         }
 
@@ -104,7 +105,7 @@ class HtmlView extends BaseHtmlView
 
         $user       = Factory::getApplication()->getIdentity();
         $isNew      = (empty($this->item->j2commerce_voucher_id) || $this->item->j2commerce_voucher_id == 0);
-        //$checkedOut = !(is_null($this->item->checked_out) || $this->item->checked_out == $user->get('id'));
+        $checkedOut = !(($this->item->checked_out ?? null) === null || ($this->item->checked_out ?? 0) == $user->id);
         $canDo      = ContentHelper::getActions('com_j2commerce', 'voucher', $this->item->j2commerce_voucher_id ?? 0);
 
         $layout = Factory::getApplication()->getInput()->get('layout', 'history');
@@ -143,14 +144,14 @@ class HtmlView extends BaseHtmlView
                 $itemEditable = $canDo->get('core.edit') || ($canDo->get('core.edit.own') && $this->item->created_by == $user->id);
 
                 // Can't save the record if it's checked out and editable
-                if (/*!$checkedOut && */$itemEditable) {
+                if (!$checkedOut && $itemEditable) {
                     $toolbar->apply('voucher.apply');
                 }
 
                 $saveGroup = $toolbar->dropdownButton('save-group');
                 $childBar = $saveGroup->getChildToolbar();
 
-                if (/*!$checkedOut && */$itemEditable) {
+                if (!$checkedOut && $itemEditable) {
                     $childBar->save('voucher.save');
 
                     if ($canDo->get('core.create')) {
