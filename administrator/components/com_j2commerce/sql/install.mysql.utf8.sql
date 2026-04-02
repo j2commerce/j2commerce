@@ -5723,9 +5723,9 @@ INSERT IGNORE INTO `#__j2commerce_weights` (`j2commerce_weight_id`, `weight_titl
 
 INSERT IGNORE INTO `#__guidedtours` (`title`, `uid`, `description`, `extensions`, `url`, `published`, `access`, `created`, `modified`, `language`, `ordering`, `note`, `autostart`) VALUES
 ('COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_TITLE', 'com_j2commerce.creating-product', 'COM_J2COMMERCE_GUIDEDTOUR_CREATING_PRODUCT_DESC', '["com_j2commerce"]', 'administrator/index.php?option=com_j2commerce&view=products', 1, 1, NOW(), NOW(), '*', 1, '', 0),
-('COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_TITLE', 'j2commerce-managing-countries', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_DESC', '["com_j2commerce"]', 'administrator/index.php?option=com_j2commerce&view=countries', 1, 1, NOW(), NOW(), '*', 2, '', 0),
-('COM_J2COMMERCE_GUIDEDTOUR_SETTING_UP_PAYMENTS_TITLE', 'j2commerce-setting-up-payments', 'COM_J2COMMERCE_GUIDEDTOUR_SETTING_UP_PAYMENTS_DESC', '["com_j2commerce"]', 'administrator/index.php?option=com_j2commerce&view=apps&folder=payment', 1, 1, NOW(), NOW(), '*', 3, '', 0),
-('COM_J2COMMERCE_GUIDEDTOUR_CONFIGURING_SHIPPING_TITLE', 'j2commerce-configuring-shipping', 'COM_J2COMMERCE_GUIDEDTOUR_CONFIGURING_SHIPPING_DESC', '["com_j2commerce"]', 'administrator/index.php?option=com_j2commerce&view=shippingmethods', 1, 1, NOW(), NOW(), '*', 4, '', 0);
+('COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_TITLE', 'com_j2commerce.managing-countries', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_DESC', '["com_j2commerce"]', 'administrator/index.php?option=com_j2commerce&view=countries', 1, 1, NOW(), NOW(), '*', 2, '', 0),
+('COM_J2COMMERCE_GUIDEDTOUR_SETTING_UP_PAYMENTS_TITLE', 'com_j2commerce.setting-up-payments', 'COM_J2COMMERCE_GUIDEDTOUR_SETTING_UP_PAYMENTS_DESC', '["com_j2commerce"]', 'administrator/index.php?option=com_j2commerce&view=apps&folder=payment', 1, 1, NOW(), NOW(), '*', 3, '', 0),
+('COM_J2COMMERCE_GUIDEDTOUR_CONFIGURING_SHIPPING_TITLE', 'com_j2commerce.configuring-shipping', 'COM_J2COMMERCE_GUIDEDTOUR_CONFIGURING_SHIPPING_DESC', '["com_j2commerce"]', 'administrator/index.php?option=com_j2commerce&view=shippingmethods', 1, 1, NOW(), NOW(), '*', 4, '', 0);
 
 -- Guided Tour Steps: Creating Your First Product (18 steps)
 
@@ -5820,37 +5820,36 @@ FROM `#__guidedtours`
 WHERE `uid` = 'com_j2commerce.creating-product';
 
 -- Guided Tour Steps: Managing Countries
-INSERT IGNORE INTO `#__guidedtour_steps` (`tour_id`, `title`, `description`, `ordering`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `created`, `modified`, `language`, `note`, `params`)
-SELECT t.`id`, s.`title`, s.`description`, s.`ordering`, s.`position`, s.`target`, s.`type`, s.`interactive_type`, s.`url`, s.`published`, NOW(), NOW(), '*', '', '{}'
-FROM `#__guidedtours` t
-CROSS JOIN (
-    SELECT 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP1_TITLE' AS `title`, 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP1_DESC' AS `description`, 1 AS `ordering`, 'bottom' AS `position`, '.js-stools-container-filters' AS `target`, 0 AS `type`, 1 AS `interactive_type`, '' AS `url`, 1 AS `published`
-    UNION ALL SELECT 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP2_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP2_DESC', 2, 'bottom', 'table.table tbody', 0, 1, '', 1
-    UNION ALL SELECT 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP3_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP3_DESC', 3, 'bottom', '#toolbar-publish button', 2, 3, '', 1
-) s
-WHERE t.`uid` = 'j2commerce-managing-countries';
 
--- Guided Tour Steps: Setting Up Payments
-INSERT IGNORE INTO `#__guidedtour_steps` (`tour_id`, `title`, `description`, `ordering`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `created`, `modified`, `language`, `note`, `params`)
-SELECT t.`id`, s.`title`, s.`description`, s.`ordering`, s.`position`, s.`target`, s.`type`, s.`interactive_type`, s.`url`, s.`published`, NOW(), NOW(), '*', '', '{}'
-FROM `#__guidedtours` t
-CROSS JOIN (
-    SELECT 'COM_J2COMMERCE_GUIDEDTOUR_SETTING_UP_PAYMENTS_STEP1_TITLE' AS `title`, 'COM_J2COMMERCE_GUIDEDTOUR_SETTING_UP_PAYMENTS_STEP1_DESC' AS `description`, 1 AS `ordering`, 'bottom' AS `position`, '.j2c-app-list' AS `target`, 0 AS `type`, 1 AS `interactive_type`, '' AS `url`, 1 AS `published`
-    UNION ALL SELECT 'COM_J2COMMERCE_GUIDEDTOUR_SETTING_UP_PAYMENTS_STEP2_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_SETTING_UP_PAYMENTS_STEP2_DESC', 2, 'bottom', '.j2c-app-list .j2c-app-item:first-child', 0, 1, '', 1
-    UNION ALL SELECT 'COM_J2COMMERCE_GUIDEDTOUR_SETTING_UP_PAYMENTS_STEP3_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_SETTING_UP_PAYMENTS_STEP3_DESC', 3, 'bottom', '', 0, 1, '', 1
-) s
-WHERE t.`uid` = 'j2commerce-setting-up-payments';
+INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP_0_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP_0_DESC', 'bottom', '#filter_search', 2, 2, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+FROM `#__guidedtours`
+WHERE `uid` = 'com_j2commerce.managing-countries';
 
--- Guided Tour Steps: Configuring Shipping
-INSERT IGNORE INTO `#__guidedtour_steps` (`tour_id`, `title`, `description`, `ordering`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `created`, `modified`, `language`, `note`, `params`)
-SELECT t.`id`, s.`title`, s.`description`, s.`ordering`, s.`position`, s.`target`, s.`type`, s.`interactive_type`, s.`url`, s.`published`, NOW(), NOW(), '*', '', '{}'
-FROM `#__guidedtours` t
-CROSS JOIN (
-    SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CONFIGURING_SHIPPING_STEP1_TITLE' AS `title`, 'COM_J2COMMERCE_GUIDEDTOUR_CONFIGURING_SHIPPING_STEP1_DESC' AS `description`, 1 AS `ordering`, 'bottom' AS `position`, '#toolbar-new button' AS `target`, 2 AS `type`, 3 AS `interactive_type`, '' AS `url`, 1 AS `published`
-    UNION ALL SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CONFIGURING_SHIPPING_STEP2_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CONFIGURING_SHIPPING_STEP2_DESC', 2, 'bottom', '#jform_shipping_method_name', 2, 1, '', 1
-    UNION ALL SELECT 'COM_J2COMMERCE_GUIDEDTOUR_CONFIGURING_SHIPPING_STEP3_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_CONFIGURING_SHIPPING_STEP3_DESC', 3, 'bottom', '#toolbar-apply button', 2, 3, '', 1
-) s
-WHERE t.`uid` = 'j2commerce-configuring-shipping';
+INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP_1_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP_1_DESC', 'bottom', 'td:has(a[data-item-id="cb0"])', 2, 5, '', 1, '*', '', '{"required":0,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+FROM `#__guidedtours`
+WHERE `uid` = 'com_j2commerce.managing-countries';
+
+INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP_2_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP_2_DESC', 'bottom', 'td:has(input[name="checkall-toggle"])', 2, 5, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+FROM `#__guidedtours`
+WHERE `uid` = 'com_j2commerce.managing-countries';
+
+INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP_3_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP_3_DESC', 'right', '#toolbar-status-group', 2, 4, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+FROM `#__guidedtours`
+WHERE `uid` = 'com_j2commerce.managing-countries';
+
+INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP_4_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP_4_DESC', 'bottom', '#status-group-children-unpublish', 2, 1, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+FROM `#__guidedtours`
+WHERE `uid` = 'com_j2commerce.managing-countries';
+
+INSERT INTO `#__guidedtour_steps` (`title`, `description`, `position`, `target`, `type`, `interactive_type`, `url`, `published`, `language`, `note`, `params`, `created`, `created_by`, `modified`, `modified_by`, `tour_id`)
+SELECT 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP_5_TITLE', 'COM_J2COMMERCE_GUIDEDTOUR_MANAGING_COUNTRIES_STEP_5_DESC', 'center', '', 0, 1, '', 1, '*', '', '{"required":1,"requiredvalue":""}', CURRENT_TIMESTAMP(), 0, CURRENT_TIMESTAMP(), 0, MAX(`id`)
+FROM `#__guidedtours`
+WHERE `uid` = 'com_j2commerce.managing-countries';
 
 -- --------------------------------------------------------
 -- Table structure for table `#__j2commerce_geocode_cache`
