@@ -335,48 +335,28 @@ final class SampleDataHelper
         // 4. Create products
         $productIds = [];
 
-<<<<<<< fix/issue-364
         $simpleIds = $this->createSimpleProducts((int) $cfg['simple'], $catIds, $mfgIds, $now, 'simple', $taxProfileId, $defaultStageId);
         $productIds = array_merge($productIds, $simpleIds);
         $summary['products_simple'] = count($simpleIds);
 
         $varIds = $this->createVariableProducts((int) $cfg['variable'], $catIds, $mfgIds, $optionIds, $now, $taxProfileId, $defaultStageId);
-=======
-        $simpleIds = $this->createSimpleProducts((int) $cfg['simple'], $catIds, $mfgIds, $vendorIds, $now);
-        $productIds = array_merge($productIds, $simpleIds);
-        $summary['products_simple'] = count($simpleIds);
-
-        $varIds = $this->createVariableProducts((int) $cfg['variable'], $catIds, $mfgIds, $vendorIds, $optionIds, $now);
->>>>>>> main
         $productIds = array_merge($productIds, $varIds);
         $summary['products_variable'] = count($varIds);
 
         if (!empty($cfg['configurable'])) {
-<<<<<<< fix/issue-364
             $cfgIds = $this->createSimpleProducts((int) $cfg['configurable'], $catIds, $mfgIds, $now, 'configurable', $taxProfileId, $defaultStageId);
-=======
-            $cfgIds = $this->createSimpleProducts((int) $cfg['configurable'], $catIds, $mfgIds, $vendorIds, $now, 'configurable');
->>>>>>> main
             $productIds = array_merge($productIds, $cfgIds);
             $summary['products_configurable'] = count($cfgIds);
         }
 
         if (!empty($cfg['bundle'])) {
-<<<<<<< fix/issue-364
             $bundleIds = $this->createSimpleProducts((int) $cfg['bundle'], $catIds, $mfgIds, $now, 'bundle', $taxProfileId, $defaultStageId);
-=======
-            $bundleIds = $this->createSimpleProducts((int) $cfg['bundle'], $catIds, $mfgIds, $vendorIds, $now, 'bundle');
->>>>>>> main
             $productIds = array_merge($productIds, $bundleIds);
             $summary['products_bundle'] = count($bundleIds);
         }
 
         if (!empty($cfg['downloadable'])) {
-<<<<<<< fix/issue-364
             $dlIds = $this->createSimpleProducts((int) $cfg['downloadable'], $catIds, $mfgIds, $now, 'downloadable', $taxProfileId, $defaultStageId);
-=======
-            $dlIds = $this->createSimpleProducts((int) $cfg['downloadable'], $catIds, $mfgIds, $vendorIds, $now, 'downloadable');
->>>>>>> main
             $productIds = array_merge($productIds, $dlIds);
             $summary['products_downloadable'] = count($dlIds);
         }
@@ -955,11 +935,7 @@ final class SampleDataHelper
         return $optionIds;
     }
 
-<<<<<<< fix/issue-364
     private function createSimpleProducts(int $count, array $catIds, array $mfgIds, string $now, string $type = 'simple', int $taxProfileId = 0, int $defaultStageId = 0): array
-=======
-    private function createSimpleProducts(int $count, array $catIds, array $mfgIds, array $vendorIds, string $now, string $type = 'simple'): array
->>>>>>> main
     {
         if ($count <= 0 || empty($catIds)) {
             return [];
@@ -1091,11 +1067,7 @@ final class SampleDataHelper
         return $productIds;
     }
 
-<<<<<<< fix/issue-364
     private function createVariableProducts(int $count, array $catIds, array $mfgIds, array $optionIds, string $now, int $taxProfileId = 0, int $defaultStageId = 0): array
-=======
-    private function createVariableProducts(int $count, array $catIds, array $mfgIds, array $vendorIds, array $optionIds, string $now): array
->>>>>>> main
     {
         if ($count <= 0 || empty($catIds)) {
             return [];

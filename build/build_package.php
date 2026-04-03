@@ -476,6 +476,55 @@ echo "Joomla Root: {$joomlaRoot}\n\n";
 $sqlDir = $joomlaRoot . '/administrator/components/com_j2commerce/sql/updates/mysql';
 validateSqlAlignment($sqlDir, $version);
 
+// Check for unresolved merge conflict markers in all PHP source files
+$conflictDirs = [
+    $joomlaRoot . '/administrator/components/com_j2commerce',
+    $joomlaRoot . '/components/com_j2commerce',
+    $joomlaRoot . '/libraries/j2commerce',
+];
+
+foreach ($plugins as $p) {
+    $conflictDirs[] = $joomlaRoot . '/plugins/' . $p['group'] . '/' . $p['element'];
+}
+
+foreach (array_merge($adminModules, $siteModules) as $mod) {
+    $clientDir = in_array($mod, $adminModules) ? 'administrator/modules' : 'modules';
+    $conflictDirs[] = $joomlaRoot . '/' . $clientDir . '/' . $mod;
+}
+
+$conflictFiles = [];
+
+foreach ($conflictDirs as $dir) {
+    if (!is_dir($dir)) {
+        continue;
+    }
+
+    $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS));
+
+    foreach ($iterator as $file) {
+        if ($file->getExtension() !== 'php') {
+            continue;
+        }
+
+        $contents = file_get_contents($file->getPathname());
+
+        if (preg_match('/^<{7}\s/m', $contents) || preg_match('/^>{7}\s/m', $contents)) {
+            $conflictFiles[] = str_replace($joomlaRoot . '/', '', $file->getPathname());
+        }
+    }
+}
+
+if (!empty($conflictFiles)) {
+    die(
+        "\nERROR: Unresolved merge conflict markers found!\n" .
+        "  The following files contain <<<<<<< or >>>>>>> markers:\n" .
+        implode("\n", array_map(fn($f) => "    - {$f}", $conflictFiles)) . "\n" .
+        "  Resolve all conflicts before building.\n\n"
+    );
+}
+
+echo "Conflict marker check OK\n";
+
 $finalZipName = "pkg_j2commerce_{$baseVersionDashed}_beta_{$buildNum}.zip";
 $finalZipPath = $outputDir . '/' . $finalZipName;
 echo "\nBuilding: {$finalZipName}\n\n";
