@@ -638,12 +638,12 @@ final class SampleDataHelper
             $counts['options'] = $db->getAffectedRows();
         }
 
-        // Remove sample manufacturer addresses (company = '[SAMPLE]')
-        $sampleCompany = '[SAMPLE]';
+        // Remove sample manufacturer addresses (company LIKE '[SAMPLE]%')
+        $sampleCompany = '[SAMPLE]%';
         $addrQuery = $db->getQuery(true)
             ->select('j2commerce_address_id')
             ->from($db->quoteName('#__j2commerce_addresses'))
-            ->where($db->quoteName('company') . ' = :company')
+            ->where($db->quoteName('company') . ' LIKE :company')
             ->bind(':company', $sampleCompany);
         $db->setQuery($addrQuery);
         $sampleAddrIds = array_column($db->loadObjectList(), 'j2commerce_address_id');
@@ -792,7 +792,7 @@ final class SampleDataHelper
             $addr->phone_1     = '+1-555-000-0000';
             $addr->phone_2     = '';
             $addr->type        = 'manufacturer';
-            $addr->company     = '[SAMPLE]'; // tag for removal
+            $addr->company     = '[SAMPLE] ' . $mfgName;
             $addr->tax_number  = '';
 
             $db->insertObject('#__j2commerce_addresses', $addr);
