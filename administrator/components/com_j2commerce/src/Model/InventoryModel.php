@@ -231,8 +231,9 @@ class InventoryModel extends ListModel
                     $item->sku = $this->getProductSku($item->j2commerce_product_id);
                 }
 
-                // Pre-load variants for products that have options
-                if ($item->has_options == 1) {
+                // Pre-load variants only for true variant product types (not configurable/simple with options)
+                $variantTypes = ['variable', 'flexivariable'];
+                if ($item->has_options == 1 && \in_array($item->product_type ?? '', $variantTypes, true)) {
                     $item->variants = $this->getProductVariants($item->j2commerce_product_id);
                 } else {
                     $item->variants = [];
