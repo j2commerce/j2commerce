@@ -123,6 +123,25 @@ abstract class AbstractMenuItemCheck extends AbstractSetupCheck
         $html .= '<p>' . $result->message . '</p>'
             . '<p>' . Text::_('COM_J2COMMERCE_SETUP_GUIDE_CHECK_MENU_DETAIL') . '</p>';
 
+        // Add action button matching the card's data-setup-action pattern
+        $actions = $this->getActions();
+
+        if (!empty($actions[0])) {
+            $act       = $actions[0];
+            $label     = Text::_($act['label']);
+            $action    = htmlspecialchars($act['action'], ENT_QUOTES, 'UTF-8');
+            $checkId   = htmlspecialchars($this->getId(), ENT_QUOTES, 'UTF-8');
+            $params    = htmlspecialchars(json_encode($act['params'] ?? []), ENT_QUOTES, 'UTF-8');
+
+            $html .= '<button type="button" class="btn btn-primary w-100 mt-2"'
+                . ' data-setup-action="' . $checkId . '"'
+                . ' data-action="' . $action . '"'
+                . ' data-params=\'' . $params . '\''
+                . ' data-label="' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '">'
+                . htmlspecialchars($label, ENT_QUOTES, 'UTF-8')
+                . '</button>';
+        }
+
         return $html;
     }
 }
