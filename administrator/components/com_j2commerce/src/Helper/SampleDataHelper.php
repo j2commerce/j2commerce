@@ -308,31 +308,43 @@ final class SampleDataHelper
         $optionIds = $this->createOptions((int) $cfg['options']);
         $summary['options'] = count($optionIds);
 
+        // 3b. Ensure store has basic tax, shipping, and payment configured (before product creation)
+        $storeSetup = $this->ensureStoreSetup($this->db);
+        foreach ($storeSetup as $key => $value) {
+            $summary['setup_' . $key] = $value;
+        }
+
+        // 3c. Get default tax profile for products
+        $taxProfileId = $this->getDefaultTaxProfileId();
+
+        // 3d. Get default workflow stage for article workflow associations
+        $defaultStageId = $this->getDefaultWorkflowStageId();
+
         // 4. Create products
         $productIds = [];
 
-        $simpleIds = $this->createSimpleProducts((int) $cfg['simple'], $catIds, $mfgIds, $now);
+        $simpleIds = $this->createSimpleProducts((int) $cfg['simple'], $catIds, $mfgIds, $now, 'simple', $taxProfileId, $defaultStageId);
         $productIds = array_merge($productIds, $simpleIds);
         $summary['products_simple'] = count($simpleIds);
 
-        $varIds = $this->createVariableProducts((int) $cfg['variable'], $catIds, $mfgIds, $optionIds, $now);
+        $varIds = $this->createVariableProducts((int) $cfg['variable'], $catIds, $mfgIds, $optionIds, $now, $taxProfileId, $defaultStageId);
         $productIds = array_merge($productIds, $varIds);
         $summary['products_variable'] = count($varIds);
 
         if (!empty($cfg['configurable'])) {
-            $cfgIds = $this->createSimpleProducts((int) $cfg['configurable'], $catIds, $mfgIds, $now, 'configurable');
+            $cfgIds = $this->createSimpleProducts((int) $cfg['configurable'], $catIds, $mfgIds, $now, 'configurable', $taxProfileId, $defaultStageId);
             $productIds = array_merge($productIds, $cfgIds);
             $summary['products_configurable'] = count($cfgIds);
         }
 
         if (!empty($cfg['bundle'])) {
-            $bundleIds = $this->createSimpleProducts((int) $cfg['bundle'], $catIds, $mfgIds, $now, 'bundle');
+            $bundleIds = $this->createSimpleProducts((int) $cfg['bundle'], $catIds, $mfgIds, $now, 'bundle', $taxProfileId, $defaultStageId);
             $productIds = array_merge($productIds, $bundleIds);
             $summary['products_bundle'] = count($bundleIds);
         }
 
         if (!empty($cfg['downloadable'])) {
-            $dlIds = $this->createSimpleProducts((int) $cfg['downloadable'], $catIds, $mfgIds, $now, 'downloadable');
+            $dlIds = $this->createSimpleProducts((int) $cfg['downloadable'], $catIds, $mfgIds, $now, 'downloadable', $taxProfileId, $defaultStageId);
             $productIds = array_merge($productIds, $dlIds);
             $summary['products_downloadable'] = count($dlIds);
         }
@@ -361,12 +373,6 @@ final class SampleDataHelper
         if ($profile === 'full' && !empty($productIds)) {
             $advancedPricingCount = $this->createAdvancedPricing($productIds, $this->db);
             $summary['advanced_pricing'] = $advancedPricingCount;
-        }
-
-        // 9. Ensure store has basic tax, shipping, and payment configured
-        $storeSetup = $this->ensureStoreSetup($this->db);
-        foreach ($storeSetup as $key => $value) {
-            $summary['setup_' . $key] = $value;
         }
 
         $summary['profile'] = $profile;
@@ -857,7 +863,7 @@ final class SampleDataHelper
         return $optionIds;
     }
 
-    private function createSimpleProducts(int $count, array $catIds, array $mfgIds, string $now, string $type = 'simple'): array
+    private function createSimpleProducts(int $count, array $catIds, array $mfgIds, string $now, string $type = 'simple', int $taxProfileId = 0, int $defaultStageId = 0): array
     {
         if ($count <= 0 || empty($catIds)) {
             return [];
@@ -923,6 +929,11 @@ final class SampleDataHelper
                 continue;
             }
 
+            // Create workflow association so article appears in com_content list
+            if ($defaultStageId > 0) {
+                $this->createWorkflowAssociation($articleId, $defaultStageId);
+            }
+
             // Create J2Commerce product record
             $prefix = match ($type) {
                 'variable'     => 'VAR',
@@ -938,7 +949,7 @@ final class SampleDataHelper
             $product->product_source_id = $articleId;
             $product->product_type     = $type;
             $product->main_tag         = '';
-            $product->taxprofile_id    = 0;
+            $product->taxprofile_id    = $taxProfileId;
             $product->manufacturer_id  = $mfgId;
             $product->vendor_id        = 0;
             $product->has_options      = 0;
@@ -984,7 +995,7 @@ final class SampleDataHelper
         return $productIds;
     }
 
-    private function createVariableProducts(int $count, array $catIds, array $mfgIds, array $optionIds, string $now): array
+    private function createVariableProducts(int $count, array $catIds, array $mfgIds, array $optionIds, string $now, int $taxProfileId = 0, int $defaultStageId = 0): array
     {
         if ($count <= 0 || empty($catIds)) {
             return [];
@@ -1066,13 +1077,18 @@ final class SampleDataHelper
                 continue;
             }
 
+            // Create workflow association so article appears in com_content list
+            if ($defaultStageId > 0) {
+                $this->createWorkflowAssociation($articleId, $defaultStageId);
+            }
+
             $product                    = new \stdClass();
             $product->visibility        = 1;
             $product->product_source    = 'com_content';
             $product->product_source_id = $articleId;
             $product->product_type      = 'variable';
             $product->main_tag          = '';
-            $product->taxprofile_id     = 0;
+            $product->taxprofile_id     = $taxProfileId;
             $product->manufacturer_id   = $mfgId;
             $product->vendor_id         = 0;
             $product->has_options       = 1;
@@ -1669,6 +1685,51 @@ final class SampleDataHelper
      *
      * @return array<string, string>  Human-readable messages about what was done.
      */
+    private function getDefaultTaxProfileId(): int
+    {
+        $db = $this->db;
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('j2commerce_taxprofile_id'))
+            ->from($db->quoteName('#__j2commerce_taxprofiles'))
+            ->where($db->quoteName('enabled') . ' = 1')
+            ->order($db->quoteName('ordering') . ' ASC')
+            ->setLimit(1);
+        $db->setQuery($query);
+
+        return (int) $db->loadResult();
+    }
+
+    private function getDefaultWorkflowStageId(): int
+    {
+        $db = $this->db;
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('ws.id'))
+            ->from($db->quoteName('#__workflow_stages', 'ws'))
+            ->join('INNER', $db->quoteName('#__workflows', 'w') . ' ON ' . $db->quoteName('w.id') . ' = ' . $db->quoteName('ws.workflow_id'))
+            ->where($db->quoteName('w.default') . ' = 1')
+            ->where($db->quoteName('ws.default') . ' = 1')
+            ->setLimit(1);
+        $db->setQuery($query);
+
+        return (int) $db->loadResult();
+    }
+
+    private function createWorkflowAssociation(int $articleId, int $stageId): void
+    {
+        $db = $this->db;
+
+        try {
+            $assoc = new \stdClass();
+            $assoc->item_id   = $articleId;
+            $assoc->stage_id  = $stageId;
+            $assoc->extension = 'com_content.article';
+
+            $db->insertObject('#__workflow_associations', $assoc);
+        } catch (\Exception $e) {
+            // Ignore duplicate key errors (association may already exist)
+        }
+    }
+
     private function ensureStoreSetup(DatabaseInterface $db): array
     {
         $results = [];
