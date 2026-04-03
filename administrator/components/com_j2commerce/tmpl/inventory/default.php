@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", function() {
     };
 
     // AJAX save for individual variant items
-    window.saveVariantItem = function(variantId) {
+    window.saveVariantItem = function(variantId, productId) {
         const row = document.getElementById("variant-row-" + variantId);
         if (!row) return;
         const quantity = getFieldValue(row, ".quantity-input, input[name*=quantity]");
@@ -165,13 +165,14 @@ document.addEventListener("DOMContentLoaded", function() {
         setBtnState(saveBtn, "saving", originalText);
 
         const body = new URLSearchParams();
+        body.set("product_id", productId);
         body.set("variant_id", variantId);
         body.set("quantity", quantity);
         body.set("manage_stock", manageStock);
         body.set("availability", availability);
         body.set(csrfToken, "1");
 
-        fetch("index.php?option=com_j2commerce&task=variants.saveVariant", {
+        fetch("index.php?option=com_j2commerce&task=inventory.saveItem", {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded", "Accept": "application/json" },
             body: body.toString()
@@ -478,7 +479,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                                     <div class="col-md-2 text-end">
                                                         <button type="button"
                                                                 class="btn btn-sm btn-primary save-btn"
-                                                                onclick="saveVariantItem(<?php echo $variant->j2commerce_variant_id; ?>)">
+                                                                onclick="saveVariantItem(<?php echo $variant->j2commerce_variant_id; ?>, <?php echo (int) $variant->product_id; ?>)">
                                                             <?php echo Text::_('COM_J2COMMERCE_SAVE'); ?>
                                                         </button>
                                                     </div>
