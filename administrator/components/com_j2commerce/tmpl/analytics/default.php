@@ -55,11 +55,11 @@ $changeHtml = function (array $change): string {
                 <div class="card-body d-flex flex-wrap align-items-center gap-3">
                     <div class="d-flex align-items-center gap-2">
                         <label for="analytics-from" class="form-label mb-0 fw-bold"><?php echo Text::_('COM_J2COMMERCE_ANALYTICS_DATE_FROM'); ?></label>
-                        <input type="date" id="analytics-from" class="form-control form-control-sm" style="width:160px" value="<?php echo $this->escape($this->fromDate); ?>">
+                        <?php echo HTMLHelper::_('calendar', $this->escape($this->fromDate), 'analytics-from', 'analytics-from', '%Y-%m-%d', ['class' => 'form-control-sm', 'style' => 'width:160px']); ?>
                     </div>
                     <div class="d-flex align-items-center gap-2">
                         <label for="analytics-to" class="form-label mb-0 fw-bold"><?php echo Text::_('COM_J2COMMERCE_ANALYTICS_DATE_TO'); ?></label>
-                        <input type="date" id="analytics-to" class="form-control form-control-sm" style="width:160px" value="<?php echo $this->escape($this->toDate); ?>">
+                        <?php echo HTMLHelper::_('calendar', $this->escape($this->toDate), 'analytics-to', 'analytics-to', '%Y-%m-%d', ['class' => 'form-control-sm', 'style' => 'width:160px']); ?>
                     </div>
                     <button type="button" id="analytics-refresh" class="btn btn-primary btn-sm">
                         <span class="icon-loop"></span> <?php echo Text::_('COM_J2COMMERCE_ANALYTICS_REFRESH'); ?>
