@@ -178,7 +178,7 @@ $selectZoneJs = htmlspecialchars(Text::sprintf('COM_J2COMMERCE_SELECT_PLACEHOLDE
 document.addEventListener('DOMContentLoaded', function() {
     'use strict';
 
-    var baseUrl = 'index.php';
+    var baseUrl = '<?php echo Route::_('index.php'); ?>';
     var token = '<?php echo $token; ?>';
     var showShipping = <?php echo $this->showShipping ? 'true' : 'false'; ?>;
     var isLoggedIn = <?php echo $this->logged ? 'true' : 'false'; ?>;
