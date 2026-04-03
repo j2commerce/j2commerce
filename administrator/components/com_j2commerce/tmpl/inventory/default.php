@@ -52,7 +52,8 @@ $wa->addInlineStyle('
 .variants-row { background-color: #f8f9fa; }
 .variant-item {margin-bottom: 5px; }
 .inventory-row .control-group .controls {min-width:80px; min-inline-size:80px;}
-
+.inventory-row .switcher {width:auto;}
+.j2commerce-inventory-quantity > .control-group, .j2commerce-inventory-quantity > .control-group input, .variant-item .quantity-input  {max-width:100px;}
 .variants-container { padding: 10px; background-color: #fff; border: 1px solid #dee2e6; border-radius: 3px; }
 .has-variants .inventory-fields { display: none; }
 ');
@@ -280,6 +281,8 @@ document.addEventListener("DOMContentLoaded", function() {
                                     ];
                                     $form->bind($itemData);
                                 }
+                                $isVariantProduct = $item->has_options == 1
+                                    && \in_array($item->product_type ?? '', ['variable', 'flexivariable'], true);
                             ?>
                             <tr class="row<?php echo $i % 2; ?> inventory-row align-items-center" id="inventory-row-<?php echo $item->j2commerce_product_id; ?>">
                                 <td class="text-center">
@@ -300,7 +303,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                     </div>
                                 </th>
                                 <td class="text-start j2commerce-inventory-sku">
-                                    <?php if ($item->has_options == 1) : ?>
+                                    <?php if ($isVariantProduct) : ?>
                                         <button type="button" class="btn btn-sm btn-outline-info position-relative" data-bs-toggle="collapse" data-bs-target="#variants-<?php echo $item->j2commerce_product_id; ?>" aria-expanded="false">
                                             <?php echo Text::_('COM_J2COMMERCE_VARIANTS'); ?>
                                             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary"><?php echo count($item->variants ?? []); ?><span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_VARIANT_COUNT');?></span></span>
@@ -309,7 +312,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                         <span class="font-monospace"><?php echo $this->escape($item->sku ?? ''); ?></span>
                                     <?php endif; ?>
                                 </td>
-                                <?php if ($item->has_options == 1) : ?>
+                                <?php if ($isVariantProduct) : ?>
                                     <!-- Product has variants - empty cells for quantity, stock management, stock status, and actions -->
                                     <td class="text-center">
                                         <span class="text-muted">—</span>
@@ -329,11 +332,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                         <?php if ($form) : ?>
                                             <?php echo $form->renderField('quantity', null, $item->quantity, null, null, null, ['hiddenLabel' => true]); ?>
                                         <?php else : ?>
-                                            <input type="number"
-                                                   class="form-control quantity-input"
-                                                   value="<?php echo (int) $item->quantity; ?>"
-                                                   min="0"
-                                                   step="1" />
+                                            <input type="number" class="form-control quantity-input" value="<?php echo (int) $item->quantity; ?>" min="0" step="1" />
                                         <?php endif; ?>
                                     </td>
                                     <td class="text-center j2commerce-inventory-manage-stock">
@@ -380,7 +379,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                             </select>
                                         <?php endif; ?>
                                     </td>
-                                    <td class="text-center inventory-actions">
+                                    <td class="text-end inventory-actions">
                                         <button type="button" class="btn btn-sm btn-primary save-btn" onclick="saveInventoryItem(<?php echo $item->j2commerce_product_id; ?>, <?php echo $item->j2commerce_variant_id ?: 0; ?>)">
                                             <?php echo Text::_('COM_J2COMMERCE_SAVE'); ?>
                                         </button>
@@ -388,7 +387,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                 <?php endif; ?>
                             </tr>
 
-                            <?php if ($item->has_options == 1 && !empty($item->variants)) : ?>
+                            <?php if ($isVariantProduct && !empty($item->variants)) : ?>
                                 <!-- Collapsible variants row -->
                                 <tr id="variants-<?php echo $item->j2commerce_product_id; ?>" class="collapse variants-row">
                                     <td colspan="8">
@@ -408,34 +407,30 @@ document.addEventListener("DOMContentLoaded", function() {
                                                     $variantForm->bind($variantData);
                                                 }
                                             ?>
-                                                <div class="row variant-item <?php echo $variant->is_master ? 'variant-master' : ''; ?>" id="variant-row-<?php echo $variant->j2commerce_variant_id; ?>">
+                                                <div class="row variant-item align-items-center <?php echo $variant->is_master ? 'variant-master' : ''; ?>" id="variant-row-<?php echo $variant->j2commerce_variant_id; ?>">
                                                     <div class="col-md-3">
                                                         <strong>
                                                             <?php if ($variant->is_master) : ?>
-                                                                <span class="badge bg-success me-1"><?php echo Text::_('COM_J2COMMERCE_MASTER'); ?></span>
+                                                                <span class="badge text-bg-success me-1"><?php echo Text::_('COM_J2COMMERCE_MASTER'); ?></span>
                                                             <?php endif; ?>
                                                             <?php echo Text::_('COM_J2COMMERCE_VARIANT'); ?> #<?php echo $variant->j2commerce_variant_id; ?>
                                                         </strong>
                                                         <?php if (!empty($variant->sku)) : ?>
-                                                            <div class="variant-sku">SKU: <?php echo $this->escape($variant->sku); ?></div>
+                                                            <div class="variant-sku small">SKU: <?php echo $this->escape($variant->sku); ?></div>
                                                         <?php endif; ?>
                                                     </div>
 
                                                     <div class="col-md-2">
-                                                        <label class="form-label small"><?php echo Text::_('COM_J2COMMERCE_VARIANTS_QUANTITY'); ?>:</label>
+                                                        <label class="form-label small fw-bold"><?php echo Text::_('COM_J2COMMERCE_VARIANTS_QUANTITY'); ?></label>
                                                         <?php if ($variantForm) : ?>
                                                             <?php echo $variantForm->renderField('quantity', null, $variant->quantity, null, null, null, ['hiddenLabel' => true]); ?>
                                                         <?php else : ?>
-                                                            <input type="number"
-                                                                   class="form-control form-control-sm quantity-input"
-                                                                   value="<?php echo (int) $variant->quantity; ?>"
-                                                                   min="0"
-                                                                   step="1" />
+                                                            <input type="number" class="form-control form-control-sm quantity-input" value="<?php echo (int) $variant->quantity; ?>" min="0" step="1" />
                                                         <?php endif; ?>
                                                     </div>
 
                                                     <div class="col-md-3">
-                                                        <label class="form-label small"><?php echo Text::_('COM_J2COMMERCE_VARIANTS_MANAGE_STOCK'); ?>:</label>
+                                                        <label class="form-label small fw-bold mb-3"><?php echo Text::_('COM_J2COMMERCE_VARIANTS_MANAGE_STOCK'); ?></label>
                                                         <?php if ($variantForm) : ?>
                                                             <?php
                                                             $variantManageStockHtml = $variantForm->renderField('manage_stock', null, (string)$variant->manage_stock, null, null, null, ['hiddenLabel' => true]);
@@ -460,7 +455,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                                     </div>
 
                                                     <div class="col-md-2">
-                                                        <label class="form-label small"><?php echo Text::_('COM_J2COMMERCE_VARIANTS_STOCK_STATUS'); ?>:</label>
+                                                        <label class="form-label small fw-bold"><?php echo Text::_('COM_J2COMMERCE_VARIANTS_STOCK_STATUS'); ?></label>
                                                         <?php if ($variantForm) : ?>
                                                             <?php echo $variantForm->renderField('availability', null, $variant->availability, null, null, null, ['hiddenLabel' => true]); ?>
                                                         <?php else : ?>
@@ -476,9 +471,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                                     </div>
 
                                                     <div class="col-md-2 text-end">
-                                                        <button type="button"
-                                                                class="btn btn-sm btn-primary save-btn"
-                                                                onclick="saveVariantItem(<?php echo $variant->j2commerce_variant_id; ?>)">
+                                                        <button type="button" class="btn btn-sm btn-primary save-btn" onclick="saveVariantItem(<?php echo $variant->j2commerce_variant_id; ?>)">
                                                             <?php echo Text::_('COM_J2COMMERCE_SAVE'); ?>
                                                         </button>
                                                     </div>
