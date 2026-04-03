@@ -42,6 +42,7 @@ final class SampleDataHelper
             'options'       => 2,
             'manufacturers' => 2,
             'coupons'       => 2,
+            'vouchers'      => 2,
             'date_range_days' => 30,
         ],
         'standard' => [
@@ -56,6 +57,7 @@ final class SampleDataHelper
             'options'       => 5,
             'manufacturers' => 5,
             'coupons'       => 5,
+            'vouchers'      => 3,
             'date_range_days' => 90,
         ],
         'full' => [
@@ -70,6 +72,7 @@ final class SampleDataHelper
             'options'       => 10,
             'manufacturers' => 15,
             'coupons'       => 15,
+            'vouchers'      => 5,
             'date_range_days' => 365,
         ],
     ];
@@ -224,6 +227,14 @@ final class SampleDataHelper
         ['name' => 'Student Discount', 'code' => 'STUDENT', 'value' => 10.00, 'value_type' => 'percentage', 'free_shipping' => 0, 'min_subtotal' => '0'],
     ];
 
+    private const VOUCHERS_DATA = [
+        ['code' => 'GIFT25', 'value' => 25.00, 'type' => 'fixed', 'subject' => 'Gift Card - $25', 'email_to' => 'recipient@example.com', 'body' => 'Enjoy this $25 gift card for your next purchase!'],
+        ['code' => 'GIFT50', 'value' => 50.00, 'type' => 'fixed', 'subject' => 'Gift Card - $50', 'email_to' => 'friend@example.com', 'body' => 'Here is a $50 gift card just for you!'],
+        ['code' => 'GIFT100', 'value' => 100.00, 'type' => 'fixed', 'subject' => 'Gift Card - $100', 'email_to' => 'family@example.com', 'body' => 'Treat yourself with this $100 gift card!'],
+        ['code' => 'BDAY20', 'value' => 20.00, 'type' => 'fixed', 'subject' => 'Birthday Voucher', 'email_to' => 'birthday@example.com', 'body' => 'Happy Birthday! Enjoy this $20 voucher on us!'],
+        ['code' => 'REWARD15', 'value' => 15.00, 'type' => 'fixed', 'subject' => 'Loyalty Reward Voucher', 'email_to' => 'loyal@example.com', 'body' => 'Thank you for being a loyal customer. Here is a $15 reward!'],
+    ];
+
     private const DESCRIPTIONS = [
         'electronics' => [
             'introtext' => '<p>Experience cutting-edge technology with the <strong>%s</strong>. Designed for performance and built to last, this product delivers everything you need for modern life.</p>',
@@ -341,6 +352,10 @@ final class SampleDataHelper
         // 7. Create coupons
         $couponCount = $this->createCoupons((int) $cfg['coupons'], $now);
         $summary['coupons'] = $couponCount;
+
+        // 7b. Create vouchers
+        $voucherCount = $this->createVouchers((int) ($cfg['vouchers'] ?? 0), $now);
+        $summary['vouchers'] = $voucherCount;
 
         // 8. Create advanced pricing for full profile
         if ($profile === 'full' && !empty($productIds)) {
@@ -584,6 +599,17 @@ final class SampleDataHelper
         );
         $db->execute();
         $counts['coupons'] = $db->getAffectedRows();
+
+        // Remove sample vouchers tagged via subject prefix
+        $voucherPrefix = '[SAMPLE]%';
+        $db->setQuery(
+            $db->getQuery(true)
+                ->delete($db->quoteName('#__j2commerce_vouchers'))
+                ->where($db->quoteName('subject') . ' LIKE :voucherPrefix')
+                ->bind(':voucherPrefix', $voucherPrefix)
+        );
+        $db->execute();
+        $counts['vouchers'] = $db->getAffectedRows();
 
         // Remove sample options tagged via option_unique_name prefix
         $sampleOptQuery = $db->getQuery(true)
@@ -1518,6 +1544,58 @@ final class SampleDataHelper
             $coupon->brand_ids   = '';
 
             $db->insertObject('#__j2commerce_coupons', $coupon);
+            $created++;
+        }
+
+        return $created;
+    }
+
+    private function createVouchers(int $count, string $now): int
+    {
+        if ($count < 1) {
+            return 0;
+        }
+
+        $db      = $this->db;
+        $data    = array_slice(self::VOUCHERS_DATA, 0, $count);
+        $created = 0;
+
+        $validFrom = date('Y-m-d H:i:s');
+        $validTo   = date('Y-m-d H:i:s', strtotime('+1 year'));
+
+        foreach ($data as $i => $voucherData) {
+            $code = $voucherData['code'];
+            $checkQuery = $db->getQuery(true)
+                ->select('j2commerce_voucher_id')
+                ->from($db->quoteName('#__j2commerce_vouchers'))
+                ->where($db->quoteName('voucher_code') . ' = :code')
+                ->bind(':code', $code);
+            $db->setQuery($checkQuery);
+
+            if ($db->loadResult()) {
+                continue;
+            }
+
+            $voucher                = new \stdClass();
+            $voucher->order_id      = '0';
+            $voucher->email_to      = $voucherData['email_to'];
+            $voucher->voucher_code  = $voucherData['code'];
+            $voucher->voucher_type  = $voucherData['type'];
+            $voucher->subject       = '[SAMPLE] ' . $voucherData['subject'];
+            $voucher->email_body    = $voucherData['body'];
+            $voucher->valid_from    = $validFrom;
+            $voucher->valid_to      = $validTo;
+            $voucher->from_order_id = '0';
+            $voucher->voucher_value = $voucherData['value'];
+            $voucher->ordering      = $i + 1;
+            $voucher->enabled       = 1;
+            $voucher->access        = 1;
+            $voucher->created_on    = $now;
+            $voucher->created_by    = 0;
+            $voucher->modified_on   = $now;
+            $voucher->modified_by   = 0;
+
+            $db->insertObject('#__j2commerce_vouchers', $voucher);
             $created++;
         }
 
