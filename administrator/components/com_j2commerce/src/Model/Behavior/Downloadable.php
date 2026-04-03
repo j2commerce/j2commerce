@@ -273,12 +273,28 @@ class Downloadable
             return;
         }
 
-        // Save variant data
+        // Save variant data — load existing master variant first so store() does UPDATE not INSERT
         /** @var VariantTable $variant */
         $variant = $this->mvcFactory->createTable('Variant', 'Administrator');
         if (!$variant) {
             throw new \RuntimeException('Unable to create Variant table instance.');
         }
+
+        // Try to load existing master variant by product_id
+        $db = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('j2commerce_variant_id'))
+            ->from($db->quoteName('#__j2commerce_variants'))
+            ->where($db->quoteName('product_id') . ' = :productId')
+            ->where($db->quoteName('is_master') . ' = 1')
+            ->bind(':productId', $table->j2commerce_product_id, \Joomla\Database\ParameterType::INTEGER);
+        $db->setQuery($query);
+        $existingVariantId = (int) $db->loadResult();
+
+        if ($existingVariantId) {
+            $variant->load($existingVariantId);
+        }
+
         $variant->bind($this->_rawData);
         $variant->is_master = 1;
         $variant->product_id = $table->j2commerce_product_id;
