@@ -107,12 +107,19 @@ class ShippingMethodCheck extends AbstractSetupCheck
             $html .= '<p class="text-muted small mb-1">' . Text::_('COM_J2COMMERCE_SETUP_GUIDE_ENABLED_SHIPPING_METHODS') . '</p>'
                 . '<ul class="list-unstyled mb-3">';
 
+            $lang = \Joomla\CMS\Factory::getApplication()->getLanguage();
+
             foreach ($plugins as $plugin) {
+                $ext = 'plg_j2commerce_' . $plugin->element;
+                $lang->load($ext . '.sys', JPATH_ADMINISTRATOR)
+                    || $lang->load($ext . '.sys', JPATH_PLUGINS . '/j2commerce/' . $plugin->element);
+                $title = Text::_($plugin->name);
+
                 $editUrl = 'index.php?option=com_plugins&task=plugin.edit&extension_id=' . (int) $plugin->extension_id;
 
                 $html .= '<li class="py-1 small">'
                     . '<i class="fa-regular fa-circle-check text-success me-1" aria-hidden="true"></i>'
-                    . '<a href="' . $editUrl . '">' . htmlspecialchars($plugin->name) . '</a>'
+                    . '<a href="' . $editUrl . '">' . htmlspecialchars($title) . '</a>'
                     . '</li>';
             }
 
