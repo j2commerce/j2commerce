@@ -286,12 +286,13 @@ class InventoryModel extends ListModel
                 } else {
                     // Insert new record
                     $query = $db->getQuery(true);
+                    $emptyAttributes = '';
                     $query->insert($db->quoteName('#__j2commerce_productquantities'))
                         ->columns($db->quoteName(['variant_id', 'quantity', 'on_hold', 'sold', 'product_attributes']))
                         ->values(':variantId, :quantity, 0, 0, :productAttributes')
                         ->bind(':variantId', $variantId, ParameterType::INTEGER)
                         ->bind(':quantity', $quantity, ParameterType::INTEGER)
-                        ->bind(':productAttributes', '');
+                        ->bind(':productAttributes', $emptyAttributes);
                 }
 
                 $db->setQuery($query);
