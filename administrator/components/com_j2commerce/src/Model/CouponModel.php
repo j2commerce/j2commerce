@@ -935,8 +935,8 @@ class CouponModel extends AdminModel
         $validFrom = $this->coupon->valid_from;
         $validTo = $this->coupon->valid_to;
 
-        $isValidFrom = (empty($valid_from) || $validFrom === $nullDate || Factory::getDate($valid_from)->toSql() <= $now);
-        $isValidTo = (empty($valid_to) || $validTo === $nullDate || Factory::getDate($valid_to)->toSql() >= $now);
+        $isValidFrom = (empty($validFrom) || $validFrom === $nullDate || Factory::getDate($validFrom)->toSql() <= $now);
+        $isValidTo = (empty($validTo) || $validTo === $nullDate || Factory::getDate($validTo)->toSql() >= $now);
 
         if (!$isValidFrom || !$isValidTo) {
             throw new Exception(Text::_('COM_J2COMMERCE_COUPON_HAS_EXPIRED'));
