@@ -185,8 +185,11 @@ class HtmlView extends BaseHtmlView
         $db->setQuery($query);
 
         foreach ($db->loadColumn() ?: [] as $element) {
-            $lang->load('plg_j2commerce_' . $element, JPATH_ADMINISTRATOR);
-            $lang->load('plg_j2commerce_' . $element, JPATH_PLUGINS . '/j2commerce/' . $element);
+            $ext = 'plg_j2commerce_' . $element;
+            $lang->load($ext . '.sys', JPATH_ADMINISTRATOR)
+                || $lang->load($ext . '.sys', JPATH_PLUGINS . '/j2commerce/' . $element);
+            $lang->load($ext, JPATH_ADMINISTRATOR)
+                || $lang->load($ext, JPATH_PLUGINS . '/j2commerce/' . $element);
         }
     }
 

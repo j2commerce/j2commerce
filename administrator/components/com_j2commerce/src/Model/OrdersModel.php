@@ -197,11 +197,13 @@ class OrdersModel extends ListModel
         );
 
         // Join extensions for payment plugin display name
+        // Handle both new format (payment_cash) and legacy J2Store format (plg_j2commerce_payment_cash)
         $query->select($db->quoteName('ext.name', 'payment_plugin_name'));
         $query->join(
             'LEFT',
             $db->quoteName('#__extensions', 'ext') .
-            ' ON ' . $db->quoteName('ext.element') . ' = ' . $db->quoteName('a.orderpayment_type') .
+            ' ON ' . $db->quoteName('ext.element') .
+            ' = REPLACE(' . $db->quoteName('a.orderpayment_type') . ', ' . $db->quote('plg_j2commerce_') . ', ' . $db->quote('') . ')' .
             ' AND ' . $db->quoteName('ext.folder') . ' = ' . $db->quote('j2commerce') .
             ' AND ' . $db->quoteName('ext.type') . ' = ' . $db->quote('plugin')
         );
