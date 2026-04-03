@@ -149,7 +149,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
     }
 
     /**
-     * Step 4: Coupons were already created in step 1 (via load()).
+     * Step 4: Coupons and vouchers were already created in step 1 (via load()).
      * This step reports the final results.
      */
     public function onAjaxSampledataApplyStep4(AjaxEvent $event): void
@@ -164,7 +164,8 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         $response['success'] = true;
         $response['message'] = Text::sprintf(
             'PLG_SAMPLEDATA_J2COMMERCE_STEP4_SUCCESS',
-            (int) ($summary['coupons'] ?? 0)
+            (int) ($summary['coupons'] ?? 0),
+            (int) ($summary['vouchers'] ?? 0)
         );
 
         // Clear user state
