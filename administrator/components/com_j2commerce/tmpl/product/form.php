@@ -21,6 +21,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
+use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
 
 /** @var HtmlView $this */
@@ -266,7 +267,19 @@ $wa->addInlineScript($submitButtonJs);
                         </div>
                         <div class="notice-bar">
                             <span class="icon-info-circle"></span>
-                            <span><?php echo Text::_('COM_J2COMMERCE_PLUGIN_SHORTCODE_FOOTER_WARNING');?></span>
+                            <?php
+                            $db = Factory::getContainer()->get('DatabaseDriver');
+                            $query = $db->getQuery(true)
+                                ->select($db->quoteName('extension_id'))
+                                ->from($db->quoteName('#__extensions'))
+                                ->where($db->quoteName('type') . ' = ' . $db->quote('plugin'))
+                                ->where($db->quoteName('folder') . ' = ' . $db->quote('content'))
+                                ->where($db->quoteName('element') . ' = ' . $db->quote('j2commerce'));
+                            $pluginId = (int) $db->setQuery($query)->loadResult();
+                            $pluginLink = '<a href="' . Route::_('index.php?option=com_plugins&task=plugin.edit&extension_id=' . $pluginId) . '">'
+                                . Text::_('COM_J2COMMERCE_CONTENT_PLUGIN_LINK_TEXT') . '</a>';
+                            ?>
+                            <span><?php echo Text::sprintf('COM_J2COMMERCE_PLUGIN_SHORTCODE_FOOTER_WARNING', $pluginLink);?></span>
                         </div>
                     </div>
                 </div>

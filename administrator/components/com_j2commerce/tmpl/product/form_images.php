@@ -14,8 +14,10 @@
 
 use J2Commerce\Component\J2commerce\Administrator\Field\MultiImageUploaderField;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\FileLayout;
+use Joomla\CMS\Router\Route;
 use Joomla\CMS\Uri\Uri;
 
 
@@ -206,7 +208,19 @@ $base_path = JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product';
     <div class="alert alert-info mt-3">
         <h4 class="alert-heading"><?php echo Text::_('COM_J2COMMERCE_QUICK_HELP'); ?></h4>
         <p class="mb-1"><?php echo Text::_('COM_J2COMMERCE_FEATURE_AVAILABLE_IN_J2STORE_PRODUCT_LAYOUTS_AND_ARTICLES'); ?></p>
-        <p><?php echo Text::_('COM_J2COMMERCE_PRODUCT_IMAGES_HELP_TEXT'); ?></p>
+        <?php
+        $db = Factory::getContainer()->get('DatabaseDriver');
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('extension_id'))
+            ->from($db->quoteName('#__extensions'))
+            ->where($db->quoteName('type') . ' = ' . $db->quote('plugin'))
+            ->where($db->quoteName('folder') . ' = ' . $db->quote('content'))
+            ->where($db->quoteName('element') . ' = ' . $db->quote('j2commerce'));
+        $pluginId = (int) $db->setQuery($query)->loadResult();
+        $pluginLink = '<a href="' . Route::_('index.php?option=com_plugins&task=plugin.edit&extension_id=' . $pluginId) . '">'
+            . Text::_('COM_J2COMMERCE_CONTENT_PLUGIN_LINK_TEXT') . '</a>';
+        ?>
+        <p><?php echo Text::sprintf('COM_J2COMMERCE_PRODUCT_IMAGES_HELP_TEXT', $pluginLink); ?></p>
     </div>
 </div>
 
