@@ -269,7 +269,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
             }
 
             if ($needsCountries) {
-                $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/countries.sql');
+                $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/countries.sql');
             }
         } catch (\Exception $e) {
             Log::add('Error installing countries: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
@@ -288,7 +288,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
             }
 
             if ($needsZones) {
-                $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/zones.sql');
+                $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/zones.sql');
             }
         } catch (\Exception $e) {
             Log::add('Error installing zones: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
@@ -296,8 +296,8 @@ class Com_J2commerceInstallerScript extends InstallerScript
 
         // Install metrics (lengths and weights)
         try {
-            $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/lengths.sql');
-            $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/weights.sql');
+            $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/lengths.sql');
+            $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/weights.sql');
         } catch (\Exception $e) {
             Log::add('Error installing metrics: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
         }

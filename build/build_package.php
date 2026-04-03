@@ -538,7 +538,9 @@ if (file_exists($pkgScript)) {
     echo "  WARNING: Package script not found at {$pkgScript}\n";
 }
 
-// Package language file
+// Package language file (add directory entries so all extractors create the folder)
+$outerZip->addEmptyDir('language');
+$outerZip->addEmptyDir('language/en-GB');
 $pkgLang = $buildDir . '/language/en-GB/pkg_j2commerce.sys.ini';
 if (file_exists($pkgLang)) {
     $outerZip->addFile($pkgLang, 'language/en-GB/pkg_j2commerce.sys.ini');
