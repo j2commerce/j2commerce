@@ -116,9 +116,9 @@ $dateFormat = ComponentHelper::getParams('com_j2commerce')->get('date_format', '
                                     <small><?php echo HTMLHelper::_('date', $item->created_on, $dateFormat); ?></small>
                                 </td>
                                 <td>
-                                    <small><?php echo $this->escape($customerName); ?></small>
+                                    <strong class="small"><?php echo $this->escape($customerName); ?></strong>
                                     <?php if (!empty($item->user_email) && $customerName !== $item->user_email) : ?>
-                                        <small class="text-muted">(<?php echo $this->escape($item->user_email); ?>)</small>
+                                        <div class="small text-break"><?php echo $this->escape($item->user_email); ?></div>
                                     <?php endif; ?>
                                     <?php if (!empty($item->discount_code)) : ?>
                                         <span class="clickTooltip ms-1" role="button" tabindex="0" style="cursor:pointer;" data-bs-toggle="tooltip" data-bs-trigger="click" data-bs-placement="top" title="<?php echo $this->escape(Text::_('COM_J2COMMERCE_COUPON_CODE') . ': ' . $item->discount_code); ?>">
