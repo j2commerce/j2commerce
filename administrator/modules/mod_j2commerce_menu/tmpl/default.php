@@ -12,7 +12,9 @@ defined('_JEXEC') or die;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 
-if (empty($menuItems)) {
+$hideLinks = $app->getInput()->getBool('hidemainmenu');
+
+if ($hideLinks || $menuItems < 1) {
     return;
 }
 
