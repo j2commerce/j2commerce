@@ -177,9 +177,22 @@ class HtmlView extends BaseHtmlView
         }
 
         if ($canDo->get('core.delete')) {
-            $toolbar->delete('products.delete')
-                ->text('JTOOLBAR_DELETE')
-                ->message('JGLOBAL_CONFIRM_DELETE')
+            $dropdown = $toolbar->dropdownButton('delete-group', 'JTOOLBAR_DELETE')
+                ->toggleSplit(false)
+                ->icon('icon-times')
+                ->buttonClass('btn btn-action')
+                ->listCheck(true);
+
+            $childBar = $dropdown->getChildToolbar();
+
+            $childBar->delete('products.delete')
+                ->text('COM_J2COMMERCE_TOOLBAR_DELETE_PRODUCT')
+                ->message('COM_J2COMMERCE_CONFIRM_DELETE_PRODUCT')
+                ->listCheck(true);
+
+            $childBar->delete('products.deleteWithArticles')
+                ->text('COM_J2COMMERCE_TOOLBAR_DELETE_PRODUCT_AND_ARTICLE')
+                ->message('COM_J2COMMERCE_CONFIRM_DELETE_PRODUCT_AND_ARTICLE')
                 ->listCheck(true);
         }
 
