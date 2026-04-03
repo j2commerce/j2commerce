@@ -41,7 +41,7 @@ class Pkg_J2commerceInstallerScript extends InstallerScript
         ['j2commerce',  'payment_cash',         true],
         ['j2commerce',  'payment_moneyorder',   true],
         ['j2commerce',  'payment_banktransfer', true],
-        ['j2commerce',  'payment_paypal',       false],
+        ['j2commerce',  'payment_paypal',       true],
         ['j2commerce',  'shipping_standard',    true],
         ['j2commerce',  'shipping_free',        true],
         ['j2commerce',  'report_itemised',      true],
