@@ -15,6 +15,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Table;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\DownloadHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\InventoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -178,6 +179,21 @@ class OrderTable extends Table
             $oldStatusId,
             $newStatusId,
         ]);
+
+        // Stock reduction on confirmation, restoration on cancellation
+        // Status 1 = Confirmed, Status 4 = Pending (stock already reduced), Status 6 = Cancelled
+        $confirmedStatuses = [1];
+        $cancelledStatuses = [6];
+
+        if (\in_array($newStatusId, $confirmedStatuses, true) && $oldStatusId !== 4) {
+            // Reduce stock when order is confirmed (skip if was Pending — already reduced)
+            InventoryHelper::reduceOrderStock($this->order_id);
+        } elseif (\in_array($newStatusId, $cancelledStatuses, true)
+            && $oldStatusId !== null
+            && !\in_array($oldStatusId, [5, 6], true)) {
+            // Restore stock when order is cancelled (skip if was Incomplete/5 or already Cancelled/6)
+            InventoryHelper::restoreOrderStock($this->order_id);
+        }
 
         // Grant download access when status changes to an allowed download status
         if (\in_array($newStatusId, ConfigHelper::getDownloadAllowedStatuses(), true)) {

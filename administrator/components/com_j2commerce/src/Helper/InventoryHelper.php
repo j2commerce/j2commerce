@@ -13,6 +13,8 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\Database\DatabaseInterface;
@@ -949,5 +951,324 @@ class InventoryHelper
         $db->setQuery($query);
 
         return (int) $db->loadResult();
+    }
+
+    // =========================================================================
+    // ORDER STOCK REDUCTION & RESTORATION
+    // =========================================================================
+
+    /**
+     * Reduce stock for all items in an order.
+     *
+     * Called when an order status changes to Confirmed (1).
+     * Mirrors J2Store's OrderTable::reduce_order_stock().
+     *
+     * @param   string  $orderId  The order_id string (NOT the PK).
+     *
+     * @return  void
+     *
+     * @since   6.0.10
+     */
+    public static function reduceOrderStock(string $orderId): void
+    {
+        if (empty($orderId)) {
+            return;
+        }
+
+        $items = self::loadOrderItemsWithVariants($orderId);
+
+        if (empty($items)) {
+            return;
+        }
+
+        \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2commerce');
+
+        foreach ($items as $item) {
+            if ((int) ($item->product_id ?? 0) <= 0 || (int) ($item->variant_id ?? 0) <= 0) {
+                continue;
+            }
+
+            $variant = self::buildVariantObject($item);
+
+            if (!self::isManagingStock($variant)) {
+                continue;
+            }
+
+            J2CommerceHelper::plugin()->event('BeforeStockReduction', [$orderId, &$item]);
+
+            $qty = (int) $item->orderitem_quantity;
+            $oldStock = self::getStockQuantity((int) $item->variant_id);
+            $allowBackorder = self::isBackorderAllowed($variant);
+            $wasAlreadyZero = ($oldStock <= 0 && $allowBackorder);
+
+            $newStock = self::adjustVariantStock((int) $item->variant_id, -$qty, $allowBackorder);
+
+            if ($newStock <= 0 && !$allowBackorder) {
+                self::setVariantAvailability((int) $item->variant_id, 0);
+            }
+
+            $historyComment = Text::sprintf(
+                'COM_J2COMMERCE_ORDERITEM_STOCK_REDUCED',
+                $item->orderitem_name ?? '',
+                $oldStock,
+                $newStock
+            );
+
+            if ($wasAlreadyZero) {
+                $historyComment .= ' (backorder)';
+            }
+
+            OrderHistoryHelper::add(orderId: $orderId, comment: $historyComment);
+
+            $variant->quantity = $newStock;
+            self::sendStockNotifications($variant, $newStock, $qty, $orderId);
+        }
+    }
+
+    /**
+     * Restore stock for all items in an order.
+     *
+     * Called when an order status changes to Cancelled (6).
+     * Mirrors J2Store's OrderTable::restore_order_stock().
+     *
+     * @param   string  $orderId  The order_id string (NOT the PK).
+     *
+     * @return  void
+     *
+     * @since   6.0.10
+     */
+    public static function restoreOrderStock(string $orderId): void
+    {
+        if (empty($orderId)) {
+            return;
+        }
+
+        $items = self::loadOrderItemsWithVariants($orderId);
+
+        if (empty($items)) {
+            return;
+        }
+
+        \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2commerce');
+
+        foreach ($items as $item) {
+            if ((int) ($item->product_id ?? 0) <= 0 || (int) ($item->variant_id ?? 0) <= 0) {
+                continue;
+            }
+
+            $variant = self::buildVariantObject($item);
+
+            if (!self::isManagingStock($variant)) {
+                continue;
+            }
+
+            J2CommerceHelper::plugin()->event('BeforeStockRestore', [$orderId, &$item]);
+
+            $qty = (int) $item->orderitem_quantity;
+            $oldStock = self::getStockQuantity((int) $item->variant_id);
+
+            $newStock = self::adjustVariantStock((int) $item->variant_id, $qty, false);
+
+            if ($newStock > 0) {
+                self::setVariantAvailability((int) $item->variant_id, 1);
+            }
+
+            OrderHistoryHelper::add(
+                orderId: $orderId,
+                comment: Text::sprintf(
+                    'COM_J2COMMERCE_ORDERITEM_STOCK_INCREASED',
+                    $item->orderitem_name ?? '',
+                    $oldStock,
+                    $newStock
+                ),
+            );
+        }
+    }
+
+    /**
+     * Load order items joined with variant data for stock processing.
+     *
+     * @param   string  $orderId  The order_id string.
+     *
+     * @return  array  List of order item objects with variant fields.
+     *
+     * @since   6.0.10
+     */
+    private static function loadOrderItemsWithVariants(string $orderId): array
+    {
+        $db = self::getDatabase();
+
+        $query = $db->getQuery(true)
+            ->select([
+                $db->quoteName('oi.product_id'),
+                $db->quoteName('oi.variant_id'),
+                $db->quoteName('oi.orderitem_quantity'),
+                $db->quoteName('oi.orderitem_name'),
+                $db->quoteName('oi.orderitem_sku'),
+                $db->quoteName('v.manage_stock'),
+                $db->quoteName('v.allow_backorder'),
+                $db->quoteName('v.notify_qty'),
+            ])
+            ->from($db->quoteName('#__j2commerce_orderitems', 'oi'))
+            ->join(
+                'LEFT',
+                $db->quoteName('#__j2commerce_variants', 'v') .
+                ' ON ' . $db->quoteName('v.j2commerce_variant_id') . ' = ' . $db->quoteName('oi.variant_id')
+            )
+            ->where($db->quoteName('oi.order_id') . ' = :orderId')
+            ->bind(':orderId', $orderId);
+
+        $db->setQuery($query);
+
+        return $db->loadObjectList() ?: [];
+    }
+
+    /**
+     * Build a variant-like object from an order item row.
+     *
+     * @param   object  $item  Order item row with variant fields from JOIN.
+     *
+     * @return  object  Variant object suitable for isManagingStock/isBackorderAllowed checks.
+     *
+     * @since   6.0.10
+     */
+    private static function buildVariantObject(object $item): object
+    {
+        return (object) [
+            'j2commerce_variant_id' => (int) $item->variant_id,
+            'product_id'            => (int) $item->product_id,
+            'manage_stock'          => (int) ($item->manage_stock ?? 0),
+            'allow_backorder'       => (int) ($item->allow_backorder ?? 0),
+            'notify_qty'            => (float) ($item->notify_qty ?? 0),
+            'sku'                   => $item->orderitem_sku ?? '',
+        ];
+    }
+
+    /**
+     * Adjust variant stock quantity atomically.
+     *
+     * Uses atomic SQL update to prevent race conditions on concurrent orders.
+     * For reductions without backorders, stock is clamped at zero.
+     * For reductions with backorders, stock can go negative.
+     *
+     * @param   int   $variantId       The variant ID.
+     * @param   int   $delta           Amount to adjust (negative to reduce).
+     * @param   bool  $allowNegative   Whether stock can go below zero (backorders).
+     *
+     * @return  int  The new stock quantity.
+     *
+     * @since   6.0.10
+     */
+    private static function adjustVariantStock(int $variantId, int $delta, bool $allowNegative = false): int
+    {
+        $db = self::getDatabase();
+
+        // Check if record exists
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('j2commerce_productquantity_id'))
+            ->from($db->quoteName('#__j2commerce_productquantities'))
+            ->where($db->quoteName('variant_id') . ' = :variantId')
+            ->bind(':variantId', $variantId, ParameterType::INTEGER);
+
+        $db->setQuery($query);
+        $existingId = $db->loadResult();
+
+        if ($existingId) {
+            // Atomic update — avoids read-then-write race condition
+            if ($delta < 0 && !$allowNegative) {
+                // Clamp at zero: GREATEST(0, quantity + delta)
+                $db->setQuery(
+                    'UPDATE ' . $db->quoteName('#__j2commerce_productquantities') .
+                    ' SET ' . $db->quoteName('quantity') . ' = GREATEST(0, ' .
+                    $db->quoteName('quantity') . ' + ' . (int) $delta . ')' .
+                    ' WHERE ' . $db->quoteName('variant_id') . ' = ' . (int) $variantId
+                );
+            } else {
+                // Allow negative (backorders) or positive (restore)
+                $db->setQuery(
+                    'UPDATE ' . $db->quoteName('#__j2commerce_productquantities') .
+                    ' SET ' . $db->quoteName('quantity') . ' = ' .
+                    $db->quoteName('quantity') . ' + ' . (int) $delta .
+                    ' WHERE ' . $db->quoteName('variant_id') . ' = ' . (int) $variantId
+                );
+            }
+
+            $db->execute();
+        } else {
+            // Insert new record
+            $newQty = $delta < 0 && !$allowNegative ? max(0, $delta) : $delta;
+
+            $query = $db->getQuery(true)
+                ->insert($db->quoteName('#__j2commerce_productquantities'))
+                ->columns($db->quoteName(['variant_id', 'quantity', 'on_hold', 'sold', 'product_attributes']))
+                ->values((int) $variantId . ', ' . (int) $newQty . ', 0, 0, ' . $db->quote(''));
+
+            $db->setQuery($query);
+            $db->execute();
+        }
+
+        // Read back the actual new quantity
+        return self::getStockQuantity($variantId);
+    }
+
+    /**
+     * Set variant availability flag.
+     *
+     * @param   int  $variantId     The variant ID.
+     * @param   int  $availability  0 = unavailable, 1 = available.
+     *
+     * @return  void
+     *
+     * @since   6.0.10
+     */
+    private static function setVariantAvailability(int $variantId, int $availability): void
+    {
+        $db = self::getDatabase();
+
+        $query = $db->getQuery(true)
+            ->update($db->quoteName('#__j2commerce_variants'))
+            ->set($db->quoteName('availability') . ' = :availability')
+            ->where($db->quoteName('j2commerce_variant_id') . ' = :variantId')
+            ->bind(':availability', $availability, ParameterType::INTEGER)
+            ->bind(':variantId', $variantId, ParameterType::INTEGER);
+
+        $db->setQuery($query);
+        $db->execute();
+    }
+
+    /**
+     * Dispatch stock notification events after stock change.
+     *
+     * Dispatches: onJ2CommerceProductOnBackorder, onJ2CommerceNotifyNoStock, onJ2CommerceNotifyLowStock
+     *
+     * @param   object  $variant     Variant object (must have notify_qty, quantity).
+     * @param   int     $newStock    The new stock quantity after adjustment.
+     * @param   int     $qtyOrdered  The quantity ordered/restored.
+     * @param   string  $orderId     The order_id string.
+     *
+     * @return  void
+     *
+     * @since   6.0.10
+     */
+    private static function sendStockNotifications(object $variant, int $newStock, int $qtyOrdered, string $orderId): void
+    {
+        $pluginHelper = J2CommerceHelper::plugin();
+
+        if ($newStock < 0) {
+            $pluginHelper->event('ProductOnBackorder', [$variant, $orderId, $qtyOrdered]);
+        }
+
+        $notificationSent = false;
+
+        if ($newStock <= 0) {
+            $pluginHelper->event('NotifyNoStock', [$variant]);
+            $notificationSent = true;
+        }
+
+        $notifyQty = (float) ($variant->notify_qty ?? 0);
+
+        if (!$notificationSent && $notifyQty > 0 && $notifyQty >= $newStock) {
+            $pluginHelper->event('NotifyLowStock', [$variant, $newStock]);
+        }
     }
 }
