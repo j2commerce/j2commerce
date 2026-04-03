@@ -55,9 +55,6 @@ if (empty($orders)) {
                 </td>
                 <td>
                     <small><?php echo htmlspecialchars($customerName, ENT_QUOTES, 'UTF-8'); ?></small>
-                    <?php if (!empty($order->user_email) && $customerName !== $order->user_email) : ?>
-                        <small class="text-muted">(<?php echo htmlspecialchars($order->user_email, ENT_QUOTES, 'UTF-8'); ?>)</small>
-                    <?php endif; ?>
                 </td>
                 <td class="text-center">
                     <span class="order-status-badge <?php echo htmlspecialchars($order->orderstatus_cssclass ?? 'badge text-bg-secondary', ENT_QUOTES, 'UTF-8'); ?>">
