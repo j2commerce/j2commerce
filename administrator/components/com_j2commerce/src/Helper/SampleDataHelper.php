@@ -1543,7 +1543,7 @@ final class SampleDataHelper
             $order->order_refund           = 0.0;
             $order->order_surcharge        = 0.0;
             $order->order_fees             = 0.0;
-            $order->orderpayment_type      = 'plg_j2commerce_payment_cod';
+            $order->orderpayment_type      = 'payment_cash';
             $order->transaction_id         = 'TXN-SAMPLE-' . ($i + 1);
             $order->transaction_status     = 'success';
             $order->transaction_details    = '';
