@@ -19,11 +19,11 @@ use Joomla\CMS\Router\Route;
 
 /** @var \J2Commerce\Component\J2commerce\Site\View\Myprofile\HtmlView $this */
 
-$orders     = $this->orders;
+$orders     = $this->orders ?? [];
 $params     = $this->params;
 $dateFormat = $params->get('date_format', 'Y-m-d');
-$total      = $this->pagination ? $this->pagination->total : \count($orders);
-$limit      = $this->pagination ? $this->pagination->limit : 20;
+$total      = isset($this->pagination) ? $this->pagination->total : \count($orders);
+$limit      = isset($this->pagination) ? $this->pagination->limit : 20;
 ?>
 
 <div id="j2c-orders-container">
