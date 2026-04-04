@@ -311,4 +311,6 @@ if($doc->countModules('j2commerce-dashboard-module-main-tab') && $doc->countModu
     <?php echo $this->loadTemplate('onboarding'); ?>
 <?php endif; ?>
 
+<?php echo $this->loadTemplate('categorywizard'); ?>
+
 <?php echo $this->footer ?? ''; ?>

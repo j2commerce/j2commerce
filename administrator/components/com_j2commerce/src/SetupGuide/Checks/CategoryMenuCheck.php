@@ -95,9 +95,9 @@ class CategoryMenuCheck extends AbstractSetupCheck
         }
 
         return [[
-            'action' => 'create_menu_item',
-            'label'  => 'COM_J2COMMERCE_SETUP_GUIDE_ACTION_CREATE',
-            'params' => ['link' => 'index.php?option=com_j2commerce&view=categories', 'title' => 'Shop'],
+            'action' => 'open_category_wizard',
+            'label'  => 'COM_J2COMMERCE_SETUP_GUIDE_ACTION_WIZARD',
+            'params' => [],
         ]];
     }
 
@@ -138,7 +138,12 @@ class CategoryMenuCheck extends AbstractSetupCheck
         }
 
         $html .= '<p>' . $result->message . '</p>'
-            . '<p>' . Text::_('COM_J2COMMERCE_SETUP_GUIDE_CHECK_MENU_DETAIL') . '</p>';
+            . '<p>' . Text::_('COM_J2COMMERCE_SETUP_GUIDE_CHECK_MENU_DETAIL') . '</p>'
+            . '<button type="button" class="btn btn-primary w-100 mb-2" id="j2c-open-category-wizard"'
+            . ' data-bs-toggle="modal" data-bs-target="#j2commerceCategoryWizardModal">'
+            . '<span class="fa-solid fa-wand-magic-sparkles me-2"></span>'
+            . Text::_('COM_J2COMMERCE_SETUP_GUIDE_ACTION_WIZARD')
+            . '</button>';
 
         return $html;
     }

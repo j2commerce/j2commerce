@@ -1,0 +1,79 @@
+/**
+ * J2Commerce Product Category Wizard styles
+ *
+ * @copyright (C)2024-2026 J2Commerce, LLC
+ * @license   GNU General Public License version 2 or later
+ */
+
+/* =========================================================================
+   Wizard card radio buttons
+   ========================================================================= */
+#j2commerceCategoryWizardModal .modal-body {
+    padding: var(--modal-padding);
+
+}
+
+
+.j2c-wizard-card {
+    display: block;
+    cursor: pointer;
+    border: 2px solid var(--bs-border-color, #dee2e6);
+    border-radius: 0.5rem;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    margin: 0;
+    height: 100%;
+}
+
+.j2c-wizard-card:hover {
+    border-color: var(--bs-primary, #0d6efd);
+    box-shadow: 0 0 0 0.1rem rgba(13, 110, 253, 0.15);
+}
+
+.j2c-wizard-card.selected {
+    border-color: var(--bs-primary, #0d6efd);
+    background-color: rgba(13, 110, 253, 0.05);
+    box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.2);
+}
+
+.j2c-wizard-card-body {
+    padding: 0.875rem 1rem;
+}
+
+/* =========================================================================
+   Step transitions
+   ========================================================================= */
+
+.j2c-wizard-step {
+    animation: j2cFadeIn 0.15s ease-in;
+}
+
+@keyframes j2cFadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* =========================================================================
+   Option/value rows
+   ========================================================================= */
+
+.j2c-option-title-row .btn-outline-danger,
+.j2c-option-value-row .btn-outline-danger,
+.j2c-category-name-row .btn-outline-danger {
+    width: 2.25rem;
+    padding: 0.375rem 0;
+}
+
+.j2c-option-value-group h6 {
+    font-size: 0.875rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--bs-secondary, #6c757d);
+}
+
+/* =========================================================================
+   Success step
+   ========================================================================= */
+
+#j2c-wizard-success-details .btn {
+    justify-content: flex-start;
+}

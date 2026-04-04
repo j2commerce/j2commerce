@@ -43,6 +43,11 @@ class SetupGuide {
             if (!this.inDetail) this.loadStatus();
         });
 
+        // Refresh when category wizard completes successfully
+        document.addEventListener('j2commerce:wizard:complete', () => {
+            this.loadStatus();
+        });
+
         this.el.addEventListener('click', (e) => {
             const actionBtn = e.target.closest('[data-setup-action]');
             if (actionBtn) {
@@ -228,6 +233,15 @@ class SetupGuide {
         const checkId = btn.dataset.setupAction;
         const action = btn.dataset.action;
         const params = JSON.parse(btn.dataset.params || '{}');
+
+        // Client-side actions — no AJAX needed
+        if (action === 'open_category_wizard') {
+            const wizardModal = document.getElementById('j2commerceCategoryWizardModal');
+            if (wizardModal) {
+                bootstrap.Modal.getOrCreateInstance(wizardModal).show();
+            }
+            return;
+        }
 
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></span>';

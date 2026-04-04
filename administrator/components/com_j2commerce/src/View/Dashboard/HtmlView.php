@@ -310,6 +310,49 @@ JS);
         Text::script('COM_J2COMMERCE_DASHBOARD_MSG_DISMISS_FOREVER');
         Text::script('COM_J2COMMERCE_LOADING');
 
+        // Category Wizard — always register so the modal is available from setup guide and dashboard
+        HTMLHelper::_('bootstrap.modal', '#j2commerceCategoryWizardModal');
+        $wa->registerAndUseScript('com_j2commerce.category-wizard', 'media/com_j2commerce/js/administrator/category-wizard.js', [], ['defer' => true]);
+        $wa->registerAndUseStyle('com_j2commerce.category-wizard.css', 'media/com_j2commerce/css/administrator/category-wizard.css');
+
+        Text::script('COM_J2COMMERCE_WIZARD_ERR_PRODUCT_NAME_REQUIRED');
+        Text::script('COM_J2COMMERCE_WIZARD_ERR_CATEGORY_NAMES_REQUIRED');
+        Text::script('COM_J2COMMERCE_WIZARD_ERR_OPTION_TITLE_REQUIRED');
+        Text::script('COM_J2COMMERCE_WIZARD_ERR_OPTION_VALUES_REQUIRED');
+        Text::script('COM_J2COMMERCE_WIZARD_ERR_CREATION_FAILED');
+        Text::script('COM_J2COMMERCE_WIZARD_STEP_OF');
+        Text::script('COM_J2COMMERCE_WIZARD_OPTION_TITLE_PLACEHOLDER');
+        Text::script('COM_J2COMMERCE_WIZARD_OPTION_VALUE_PLACEHOLDER');
+        Text::script('COM_J2COMMERCE_WIZARD_ADD_VALUE');
+        Text::script('COM_J2COMMERCE_WIZARD_REMOVE_VALUE');
+        Text::script('COM_J2COMMERCE_WIZARD_REMOVE_OPTION');
+        Text::script('COM_J2COMMERCE_WIZARD_CATEGORY_NAME');
+        Text::script('COM_J2COMMERCE_WIZARD_CATEGORY_NAMES');
+        Text::script('COM_J2COMMERCE_WIZARD_CATEGORY_NAME_PLACEHOLDER');
+        Text::script('COM_J2COMMERCE_WIZARD_CATEGORY_10_PLUS_NOTE');
+        Text::script('COM_J2COMMERCE_WIZARD_SUCCESS_EDIT_PRODUCT');
+        Text::script('COM_J2COMMERCE_WIZARD_SUCCESS_EDIT_VARIANTS');
+        Text::script('COM_J2COMMERCE_WIZARD_SUCCESS_VARIANTS_NOTE');
+        Text::script('COM_J2COMMERCE_WIZARD_SUCCESS_ADD_PRODUCTS');
+        Text::script('COM_J2COMMERCE_WIZARD_SUCCESS_MANAGE_CATEGORIES');
+        Text::script('COM_J2COMMERCE_WIZARD_SUCCESS_VIEW_STORE');
+        Text::script('COM_J2COMMERCE_WIZARD_SUCCESS_NEXT_STEPS');
+        Text::script('COM_J2COMMERCE_WIZARD_SUCCESS_SINGLE_CATEGORY');
+        Text::script('COM_J2COMMERCE_WIZARD_SUCCESS_PRODUCT_CREATED');
+        Text::script('COM_J2COMMERCE_WIZARD_SUCCESS_MENU_ITEM');
+        Text::script('COM_J2COMMERCE_WIZARD_SUCCESS_ROOT_CATEGORY');
+        Text::script('COM_J2COMMERCE_WIZARD_SUCCESS_SUBCATEGORIES');
+        Text::script('COM_J2COMMERCE_WIZARD_SUCCESS_MENU_ITEMS');
+        Text::script('COM_J2COMMERCE_WIZARD_CONFIRM_SUMMARY_SHOP_CATEGORY');
+        Text::script('COM_J2COMMERCE_WIZARD_CONFIRM_SUMMARY_ARTICLE');
+        Text::script('COM_J2COMMERCE_WIZARD_CONFIRM_SUMMARY_PRODUCT');
+        Text::script('COM_J2COMMERCE_WIZARD_CONFIRM_SUMMARY_OPTIONS');
+        Text::script('COM_J2COMMERCE_WIZARD_CONFIRM_SUMMARY_MENU_SINGLE');
+        Text::script('COM_J2COMMERCE_WIZARD_CONFIRM_SUMMARY_ROOT_CATEGORY');
+        Text::script('COM_J2COMMERCE_WIZARD_CONFIRM_SUMMARY_SUBCATEGORIES');
+        Text::script('COM_J2COMMERCE_WIZARD_CONFIRM_SUMMARY_MENU_MULTI');
+        Text::script('COM_J2COMMERCE_ERR_GENERIC');
+
         if (!SetupGuideHelper::isComplete()) {
             HTMLHelper::_('bootstrap.offcanvas', '#j2commerce-setup-guide');
             $wa->registerAndUseScript('com_j2commerce.setup-guide', 'media/com_j2commerce/js/administrator/setup-guide.js', [], ['defer' => true]);
@@ -330,6 +373,7 @@ JS);
             Text::script('COM_J2COMMERCE_SETUP_GUIDE_CHECK_DOWNLOAD_ID_PLACEHOLDER');
             Text::script('COM_J2COMMERCE_SETUP_GUIDE_CHECK_DOWNLOAD_ID_SAVE');
             Text::script('COM_J2COMMERCE_SETUP_GUIDE_CHECK_DOWNLOAD_ID_CLEAR');
+            Text::script('COM_J2COMMERCE_SETUP_GUIDE_ACTION_WIZARD');
         }
 
         // Onboarding wizard — show on first visit or when re-run requested
