@@ -1683,8 +1683,6 @@ final class SampleDataHelper
         $data    = array_slice(self::COUPONS_DATA, 0, $count);
         $created = 0;
 
-        $nullDate = '1000-01-01 00:00:00';
-
         foreach ($data as $i => $couponData) {
             // Check if code already exists
             $code = $couponData['code'];
@@ -1711,8 +1709,8 @@ final class SampleDataHelper
             $coupon->max_uses    = 1000;
             $coupon->logged      = 0;
             $coupon->max_customer_uses = 0;
-            $coupon->valid_from  = $nullDate;
-            $coupon->valid_to    = $nullDate;
+            $coupon->valid_from  = null;
+            $coupon->valid_to    = null;
             $coupon->product_category = '';
             $coupon->products    = '';
             $coupon->min_subtotal = $couponData['min_subtotal'];
