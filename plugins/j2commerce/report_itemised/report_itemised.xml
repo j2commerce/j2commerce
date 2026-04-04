@@ -21,14 +21,20 @@
     <languages folder="language">
         <language tag="ar-AA">ar-AA/plg_j2commerce_report_itemised.ini</language>
         <language tag="ar-AA">ar-AA/plg_j2commerce_report_itemised.sys.ini</language>
+        <language tag="da-DK">da-DK/plg_j2commerce_report_itemised.ini</language>
+        <language tag="da-DK">da-DK/plg_j2commerce_report_itemised.sys.ini</language>
         <language tag="de-DE">de-DE/plg_j2commerce_report_itemised.ini</language>
         <language tag="de-DE">de-DE/plg_j2commerce_report_itemised.sys.ini</language>
         <language tag="el-GR">el-GR/plg_j2commerce_report_itemised.ini</language>
         <language tag="el-GR">el-GR/plg_j2commerce_report_itemised.sys.ini</language>
         <language tag="en-GB">en-GB/plg_j2commerce_report_itemised.ini</language>
         <language tag="en-GB">en-GB/plg_j2commerce_report_itemised.sys.ini</language>
+        <language tag="en-US">en-US/plg_j2commerce_report_itemised.ini</language>
+        <language tag="en-US">en-US/plg_j2commerce_report_itemised.sys.ini</language>
         <language tag="es-ES">es-ES/plg_j2commerce_report_itemised.ini</language>
         <language tag="es-ES">es-ES/plg_j2commerce_report_itemised.sys.ini</language>
+        <language tag="fi-FI">fi-FI/plg_j2commerce_report_itemised.ini</language>
+        <language tag="fi-FI">fi-FI/plg_j2commerce_report_itemised.sys.ini</language>
         <language tag="fr-FR">fr-FR/plg_j2commerce_report_itemised.ini</language>
         <language tag="fr-FR">fr-FR/plg_j2commerce_report_itemised.sys.ini</language>
         <language tag="he-IL">he-IL/plg_j2commerce_report_itemised.ini</language>
@@ -37,6 +43,8 @@
         <language tag="it-IT">it-IT/plg_j2commerce_report_itemised.sys.ini</language>
         <language tag="ja-JP">ja-JP/plg_j2commerce_report_itemised.ini</language>
         <language tag="ja-JP">ja-JP/plg_j2commerce_report_itemised.sys.ini</language>
+        <language tag="nb-NO">nb-NO/plg_j2commerce_report_itemised.ini</language>
+        <language tag="nb-NO">nb-NO/plg_j2commerce_report_itemised.sys.ini</language>
         <language tag="nl-NL">nl-NL/plg_j2commerce_report_itemised.ini</language>
         <language tag="nl-NL">nl-NL/plg_j2commerce_report_itemised.sys.ini</language>
         <language tag="pl-PL">pl-PL/plg_j2commerce_report_itemised.ini</language>
@@ -47,6 +55,10 @@
         <language tag="ru-RU">ru-RU/plg_j2commerce_report_itemised.sys.ini</language>
         <language tag="sv-SE">sv-SE/plg_j2commerce_report_itemised.ini</language>
         <language tag="sv-SE">sv-SE/plg_j2commerce_report_itemised.sys.ini</language>
+        <language tag="tr-TR">tr-TR/plg_j2commerce_report_itemised.ini</language>
+        <language tag="tr-TR">tr-TR/plg_j2commerce_report_itemised.sys.ini</language>
+        <language tag="zh-TW">zh-TW/plg_j2commerce_report_itemised.ini</language>
+        <language tag="zh-TW">zh-TW/plg_j2commerce_report_itemised.sys.ini</language>
     </languages>
 
     <config>
