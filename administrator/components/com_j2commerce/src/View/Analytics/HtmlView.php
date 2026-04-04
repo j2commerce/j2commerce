@@ -69,7 +69,7 @@ class HtmlView extends BaseHtmlView
         $wa = $this->getDocument()->getWebAssetManager();
         $wa->registerAndUseScript(
             'chartjs',
-            'media/com_j2commerce/js/administrator/chart.umd.min.js',
+            'media/com_j2commerce/vendor/chartjs/js/chart.umd.min.js',
             [],
             ['defer' => true]
         );

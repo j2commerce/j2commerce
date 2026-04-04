@@ -678,8 +678,8 @@ class CustomFieldHelper
         $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
 
         // Register Uppy library (same assets as admin, loaded from administrator/ dir)
-        $wa->registerAndUseStyle('com_j2commerce.uppy.css', 'media/com_j2commerce/css/administrator/uppy.min.css');
-        $wa->registerAndUseScript('com_j2commerce.uppy.js', 'media/com_j2commerce/js/administrator/uppy.min.js', [], ['defer' => true]);
+        $wa->registerAndUseStyle('com_j2commerce.vendor.uppy.css', 'media/com_j2commerce/vendor/uppy/css/uppy.min.css');
+        $wa->registerAndUseScript('com_j2commerce.vendor.uppy', 'media/com_j2commerce/vendor/uppy/js/uppy.min.js', [], ['defer' => true]);
 
         // Register checkout uploader assets
         $wa->registerAndUseStyle('com_j2commerce.checkout-uploader.css', 'media/com_j2commerce/css/site/checkout-uploader.css');

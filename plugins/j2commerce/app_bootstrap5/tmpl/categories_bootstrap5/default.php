@@ -295,8 +295,8 @@ $colsMd = match ($category_columns) {
                         ], JSON_THROW_ON_ERROR);
 
                         $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
-                        $wa->registerAndUseScript('com_j2commerce.swiper.js', 'media/com_j2commerce/js/site/swiper-bundle.min.js', [], ['defer' => true]);
-                        $wa->registerAndUseStyle('com_j2commerce.swiper.css', 'media/com_j2commerce/css/site/swiper-bundle.min.css');
+                        $wa->registerAndUseScript('com_j2commerce.vendor.swiper', 'media/com_j2commerce/vendor/swiper/js/swiper-bundle.min.js', [], ['defer' => true]);
+                        $wa->registerAndUseStyle('com_j2commerce.vendor.swiper.css', 'media/com_j2commerce/vendor/swiper/css/swiper-bundle.min.css');
                         $wa->addInlineScript(
                             "document.addEventListener('DOMContentLoaded', function() {
                                 var el = document.getElementById('{$swiperId}');
@@ -307,7 +307,7 @@ $colsMd = match ($category_columns) {
                             });",
                             [],
                             [],
-                            ['com_j2commerce.swiper.js']
+                            ['com_j2commerce.vendor.swiper']
                         );
                         ?>
                     <?php else : ?>

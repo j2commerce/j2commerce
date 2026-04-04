@@ -66,9 +66,9 @@ class LeafletMapHelper
         $document = Factory::getApplication()->getDocument();
         $wa       = $document->getWebAssetManager();
 
-        $wa->registerAndUseStyle('com_j2commerce.leaflet.css', 'media/com_j2commerce/css/site/leaflet.css');
+        $wa->registerAndUseStyle('com_j2commerce.vendor.leaflet.css', 'media/com_j2commerce/vendor/leaflet/css/leaflet.css');
         $wa->registerAndUseStyle('com_j2commerce.leaflet-custom.css', 'media/com_j2commerce/css/site/leaflet-custom.css');
-        $wa->registerAndUseScript('com_j2commerce.leaflet.js', 'media/com_j2commerce/js/site/leaflet.js', [], ['defer' => false]);
+        $wa->registerAndUseScript('com_j2commerce.vendor.leaflet', 'media/com_j2commerce/vendor/leaflet/js/leaflet.js', [], ['defer' => false]);
         $wa->registerAndUseScript('com_j2commerce.map-init', 'media/com_j2commerce/js/site/map-init.js', [], ['defer' => true]);
 
         $document->addScriptOptions('com_j2commerce.leafletmap', [

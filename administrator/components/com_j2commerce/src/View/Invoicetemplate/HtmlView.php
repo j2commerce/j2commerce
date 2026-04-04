@@ -66,9 +66,9 @@ class HtmlView extends BaseHtmlView
         $bodySource = $this->item->body_source ?? 'editor';
 
         $wa = $this->getDocument()->getWebAssetManager();
-        $wa->registerAndUseStyle('com_j2commerce.grapes.css', 'media/com_j2commerce/css/administrator/grapes.min.css');
-        $wa->registerAndUseScript('com_j2commerce.grapes.js', 'media/com_j2commerce/js/administrator/grapes.min.js', [], ['defer' => true]);
-        $wa->registerAndUseScript('com_j2commerce.grapes.newsletter.js', 'media/com_j2commerce/js/administrator/grapesjs-preset-newsletter.min.js', [], ['defer' => true]);
+        $wa->registerAndUseStyle('com_j2commerce.vendor.grapesjs.css', 'media/com_j2commerce/vendor/grapesjs/css/grapes.min.css');
+        $wa->registerAndUseScript('com_j2commerce.vendor.grapesjs', 'media/com_j2commerce/vendor/grapesjs/js/grapes.min.js', [], ['defer' => true]);
+        $wa->registerAndUseScript('com_j2commerce.vendor.grapesjs.newsletter', 'media/com_j2commerce/vendor/grapesjs/js/grapesjs-preset-newsletter.min.js', [], ['defer' => true]);
         $wa->registerAndUseStyle('com_j2commerce.grapes.j2commerce.css', 'media/com_j2commerce/css/administrator/grapesjs-j2commerce.css');
         $wa->registerAndUseScript('com_j2commerce.grapes.j2commerce.js', 'media/com_j2commerce/js/administrator/grapesjs-j2commerce.js', [], ['defer' => true]);
 

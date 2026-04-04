@@ -83,7 +83,7 @@ class HtmlView extends BaseHtmlView
 
         // Register Chart.js and dashboard JS
         $wa = $this->getDocument()->getWebAssetManager();
-        $wa->registerAndUseScript('chartjs', 'media/com_j2commerce/js/administrator/chart.umd.min.js', [], ['defer' => true]);
+        $wa->registerAndUseScript('chartjs', 'media/com_j2commerce/vendor/chartjs/js/chart.umd.min.js', [], ['defer' => true]);
         $wa->registerAndUseScript('com_j2commerce.dashboard', 'media/com_j2commerce/js/administrator/dashboard.js', [], ['defer' => true], ['chartjs']);
         $wa->registerAndUseScript('com_j2commerce.liveusers', 'media/com_j2commerce/js/administrator/liveusers.js', [], ['defer' => true]);
 
@@ -209,8 +209,8 @@ class HtmlView extends BaseHtmlView
         usort($this->dashboardMessages, fn($a, $b) => ($a['priority'] ?? 500) <=> ($b['priority'] ?? 500));
 
         if (!empty($this->dashboardMessages)) {
-            $wa->registerAndUseScript('com_j2commerce.swiper', 'media/com_j2commerce/js/site/swiper-bundle.min.js', [], ['defer' => true]);
-            $wa->registerAndUseStyle('com_j2commerce.swiper.css', 'media/com_j2commerce/css/site/swiper-bundle.min.css');
+            $wa->registerAndUseScript('com_j2commerce.vendor.swiper', 'media/com_j2commerce/vendor/swiper/js/swiper-bundle.min.js', [], ['defer' => true]);
+            $wa->registerAndUseStyle('com_j2commerce.vendor.swiper.css', 'media/com_j2commerce/vendor/swiper/css/swiper-bundle.min.css');
             $this->getDocument()->addScriptOptions('com_j2commerce.dashboardMessages', [
                 'messageIds' => array_column($this->dashboardMessages, 'id'),
             ]);

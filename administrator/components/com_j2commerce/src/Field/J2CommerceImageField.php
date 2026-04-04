@@ -107,7 +107,7 @@ class J2CommerceImageField extends FormField
             'media/com_j2commerce/js/administrator/j2commerceimage.js',
             ['version' => 'auto'],
             ['defer' => true],
-            ['com_j2commerce.uppy.js']
+            ['com_j2commerce.vendor.uppy']
         );
 
         Text::script('COM_J2COMMERCE_IMAGE_CHOOSE');

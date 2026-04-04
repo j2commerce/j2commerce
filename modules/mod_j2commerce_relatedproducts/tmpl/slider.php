@@ -98,7 +98,7 @@ $wa->addInlineScript(
 });",
     [],
     [],
-    ['com_j2commerce.swiper']
+    ['com_j2commerce.vendor.swiper']
 );
 
 if ($ajaxRefresh) :
@@ -146,6 +146,6 @@ $wa->addInlineScript(
 });",
     [],
     [],
-    ['com_j2commerce.swiper']
+    ['com_j2commerce.vendor.swiper']
 );
 endif;
