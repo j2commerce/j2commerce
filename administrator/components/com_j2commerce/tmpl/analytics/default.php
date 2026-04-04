@@ -41,8 +41,9 @@ $changeHtml = function (array $change): string {
         return '';
     }
     $icon  = $change['dir'] === 'up' ? 'fa-arrow-up' : 'fa-arrow-down';
+    $dirText = $change['dir'] === 'up' ? 'Up' : 'Down';
 
-    return '<span><span class="fa-solid ' . $icon . '" aria-hidden="true"></span> ' . $change['pct'] . '%</span>';
+    return '<span><span class="fa-solid ' . $icon . '" aria-hidden="true"></span><span class="visually-hidden">' . $dirText . '</span> ' . $change['pct'] . '%</span>';
 };
 ?>
 
