@@ -141,7 +141,7 @@ class CategoryMenuCheck extends AbstractSetupCheck
             . '<p>' . Text::_('COM_J2COMMERCE_SETUP_GUIDE_CHECK_MENU_DETAIL') . '</p>'
             . '<button type="button" class="btn btn-primary w-100 mb-2" id="j2c-open-category-wizard"'
             . ' data-bs-toggle="modal" data-bs-target="#j2commerceCategoryWizardModal">'
-            . '<span class="fa-solid fa-wand-magic-sparkles me-2"></span>'
+            . '<span class="fa-solid fa-wand-magic-sparkles me-2" aria-hidden="true"></span>'
             . Text::_('COM_J2COMMERCE_SETUP_GUIDE_ACTION_WIZARD')
             . '</button>';
 

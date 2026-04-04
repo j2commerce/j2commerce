@@ -109,7 +109,7 @@ $key = 0;
 
     </fieldset>
     <div class="alert alert-info d-flex align-items-center my-3" role="alert">
-        <span class="fas fa-solid fa-exclamation-circle me-3"></span>
+        <span class="fas fa-solid fa-exclamation-circle me-3" aria-hidden="true"></span>
         <div><?php echo Text::_('COM_J2COMMERCE_PRODUCT_FLEXIVARIANT_GENERATION_HELP_TEXT'); ?></div>
     </div>
 
@@ -121,7 +121,7 @@ $key = 0;
             id="j2commerce-create-variants-btn"
             class="btn btn-success mb-3<?php echo $hasDbOptions ? ' d-none' : ' d-none'; ?>"
             style="display: none;">
-        <span class="fas fa-solid fa-cogs me-1"></span><?php echo Text::_('COM_J2COMMERCE_CREATE_VARIANTS'); ?>
+        <span class="fas fa-solid fa-cogs me-1" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_CREATE_VARIANTS'); ?>
     </button>
 </div>
 <script type="text/javascript">

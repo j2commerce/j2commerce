@@ -126,7 +126,7 @@ $csrfToken  = Session::getFormToken();
 
     </fieldset>
     <div class="alert alert-info d-flex align-items-center my-3" role="alert">
-        <span class="fas fa-solid fa-exclamation-circle me-3"></span>
+        <span class="fas fa-solid fa-exclamation-circle me-3" aria-hidden="true"></span>
         <div><?php echo Text::_('COM_J2COMMERCE_PRODUCT_VARIABLE_GENERATION_HELP_TEXT'); ?></div>
     </div>
 </div>

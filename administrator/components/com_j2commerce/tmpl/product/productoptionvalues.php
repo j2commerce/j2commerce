@@ -55,7 +55,7 @@ $conSpan = 0;
             <fieldset class="options-form">
                 <legend><?php echo Text::_('COM_J2COMMERCE_PAO_SET_OPTIONS_FOR'); ?>: <?php echo htmlspecialchars($productOption->option_name ?? '', ENT_QUOTES, 'UTF-8'); ?></legend>
                 <div class="alert alert-info d-flex align-items-center" role="alert">
-                    <span class="fas fa-solid fa-exclamation-circle flex-shrink-0 me-2"></span>
+                    <span class="fas fa-solid fa-exclamation-circle flex-shrink-0 me-2" aria-hidden="true"></span>
                     <div><?php echo Text::_('COM_J2COMMERCE_PAO_ADD_NEW_OPTION'); ?></div>
                 </div>
                 <table class="adminlist table itemList">

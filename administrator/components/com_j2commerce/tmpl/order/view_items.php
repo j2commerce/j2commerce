@@ -68,7 +68,7 @@ $currencyCode = $item->currency_code ?? '';
                                     </div>
                                 </div>
                                 <div class="col-lg-4">
-                                    <div class="fw-medium fs-6 text-end"><?php echo (int) $orderItem->orderitem_quantity; ?><span class="fa-solid fa-times small text-muted mx-1"></span><?php echo CurrencyHelper::format((float) $orderItem->orderitem_price, $currencyCode); ?></div>
+                                    <div class="fw-medium fs-6 text-end"><?php echo (int) $orderItem->orderitem_quantity; ?><span class="fa-solid fa-times small text-muted mx-1" aria-hidden="true"></span><?php echo CurrencyHelper::format((float) $orderItem->orderitem_price, $currencyCode); ?></div>
                                 </div>
                             </div>
                         </div>

@@ -3171,7 +3171,7 @@ class ProductsController extends AdminController
         }
 
         $html .= '<button type="button" onclick="addFlexiVariant(event);" class="btn btn-primary" id="addVariantBtn">';
-        $html .= '<span class="fas fa-solid fa-plus me-1"></span>' . Text::_('COM_J2COMMERCE_ADD_VARIANT');
+        $html .= '<span class="fas fa-solid fa-plus me-1" aria-hidden="true"></span>' . Text::_('COM_J2COMMERCE_ADD_VARIANT');
         $html .= '</button>';
         $html .= '</div>';
 

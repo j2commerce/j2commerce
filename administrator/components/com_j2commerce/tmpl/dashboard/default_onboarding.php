@@ -704,7 +704,7 @@ $e = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
             <div class="alert alert-info text-center mb-0">
               <p class="mb-2"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_SAMPLEDATA_PROMPT'); ?></p>
               <button type="button" class="btn btn-outline-primary btn-sm me-2" data-action="load-sampledata">
-                <span class="fa-solid fa-database me-1"></span>
+                <span class="fa-solid fa-database me-1" aria-hidden="true"></span>
                 <?php echo Text::_('COM_J2COMMERCE_ONBOARDING_SAMPLEDATA_LOAD'); ?>
               </button>
               <button type="button" class="btn btn-link btn-sm" data-action="skip-sampledata">

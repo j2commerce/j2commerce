@@ -49,7 +49,7 @@ $formPrefix = $displayData['form_prefix'];
                         </select>
                     <?php endforeach; ?>
                     <button type="button" onclick="addFlexiVariant(event);" class="btn btn-primary" id="addVariantBtn">
-                        <span class="fas fa-solid fa-plus me-1"></span><?php echo Text::_('COM_J2COMMERCE_ADD_VARIANT');?>
+                        <span class="fas fa-solid fa-plus me-1" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_ADD_VARIANT');?>
                     </button>
                 </div>
             <?php endif;?>
@@ -61,16 +61,16 @@ $formPrefix = $displayData['form_prefix'];
                         <input class="form-check-input" type="checkbox" value="" id="toggleAllCheckboxes">
                     </div>
                     <button type="button" class="btn btn-soft-danger btn-sm me-2" id="deleteCheckedVariants" data-bs-toggle="tooltip" title="<?php echo Text::_('COM_J2COMMERCE_PRODUCT_VARIANTS_DELETE_CHECKED');?>" disabled>
-                        <span class="fas fa-solid fa-trash"></span>
+                        <span class="fas fa-solid fa-trash" aria-hidden="true"></span>
                     </button>
                     <button type="button" onclick="removeFlexiAllVariant(event);" class="btn btn-sm btn-soft-danger" id="deleteAllVariantsBtn">
-                        <span class="fas fa-solid fa-trash me-2"></span><?php echo Text::_('COM_J2COMMERCE_DELETE_ALL_VARIANTS');?>
+                        <span class="fas fa-solid fa-trash me-2" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_DELETE_ALL_VARIANTS');?>
                     </button>
                     <button type="button" id="openAll-panel" class="btn btn-soft-dark btn-sm ms-auto" onclick="setExpandAll();" data-bs-toggle="tooltip" title="<?php echo Text::_('COM_J2COMMERCE_OPEN_ALL');?>">
-                        <span class="fas fa-solid fa-chevron-down"></span>
+                        <span class="fas fa-solid fa-chevron-down" aria-hidden="true"></span>
                     </button>
                     <button type="button" id="closeAll-panel" class="btn btn-soft-dark btn-sm ms-2" onclick="setCloseAll();" data-bs-toggle="tooltip" title="<?php echo Text::_('COM_J2COMMERCE_CLOSE_ALL');?>">
-                        <span class="fas fa-solid fa-chevron-up"></span>
+                        <span class="fas fa-solid fa-chevron-up" aria-hidden="true"></span>
                     </button>
                 </div>
             <?php endif;?>

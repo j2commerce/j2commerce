@@ -65,7 +65,7 @@ $token = Session::getFormToken();
 
         <!-- Reset to Default Button (hidden until a customized file is selected) -->
         <button type="button" class="btn btn-outline-danger btn-sm d-none" id="builder-reset">
-            <span class="fa-solid fa-rotate-left me-1"></span>
+            <span class="fa-solid fa-rotate-left me-1" aria-hidden="true"></span>
             <?php echo Text::_('COM_J2COMMERCE_BUILDER_RESET_DEFAULT'); ?>
         </button>
 
@@ -141,7 +141,7 @@ $token = Session::getFormToken();
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="builderTemplatesModalLabel">
-                    <span class="fa-solid fa-layer-group me-2 text-warning"></span><?php echo Text::_('COM_J2COMMERCE_BUILDER_TEMPLATES_TITLE'); ?>
+                    <span class="fa-solid fa-layer-group me-2 text-warning" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_BUILDER_TEMPLATES_TITLE'); ?>
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>

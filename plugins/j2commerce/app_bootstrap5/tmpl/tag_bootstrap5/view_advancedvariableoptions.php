@@ -274,7 +274,7 @@ $parentOptionIds = [];
                         class="btn btn-default j2c-file-upload-btn"
                         data-product-id="<?php echo $productId; ?>"
                         data-option-id="<?php echo $optionId; ?>">
-                    <span class="fas fa-solid fa-upload me-1"></span><?php echo Text::_('J2STORE_PRODUCT_OPTION_CHOOSE_FILE'); ?>
+                    <span class="fas fa-solid fa-upload me-1" aria-hidden="true"></span><?php echo Text::_('J2STORE_PRODUCT_OPTION_CHOOSE_FILE'); ?>
                 </button>
                 <input type="hidden"
                        name="product_option[<?php echo $optionId; ?>]"

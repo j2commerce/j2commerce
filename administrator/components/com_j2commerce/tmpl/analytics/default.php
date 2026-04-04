@@ -42,7 +42,7 @@ $changeHtml = function (array $change): string {
     }
     $icon  = $change['dir'] === 'up' ? 'fa-arrow-up' : 'fa-arrow-down';
 
-    return '<span><span class="fa-solid ' . $icon . '"></span> ' . $change['pct'] . '%</span>';
+    return '<span><span class="fa-solid ' . $icon . '" aria-hidden="true"></span> ' . $change['pct'] . '%</span>';
 };
 ?>
 
@@ -265,7 +265,7 @@ $changeHtml = function (array $change): string {
         <div class="col-12 col-lg-6 mb-3">
             <div class="card h-100">
                 <div class="card-header">
-                    <h2 class="mb-0 fs-4"><span class="fa-solid fa-trophy me-2 text-info"></span><?php echo Text::_('COM_J2COMMERCE_ANALYTICS_TOP_PRODUCTS'); ?></h2>
+                    <h2 class="mb-0 fs-4"><span class="fa-solid fa-trophy me-2 text-info" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_ANALYTICS_TOP_PRODUCTS'); ?></h2>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">

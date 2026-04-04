@@ -38,7 +38,7 @@ $is_pro = $versionHelper->isPro();
                 <div class="card-body">
                     <div class="d-flex flex-column text-center h-100">
                         <div class="mt-auto">
-                            <span class="fa-4x mb-2 fa-solid fas fa-circle-info"></span>
+                            <span class="fa-4x mb-2 fa-solid fas fa-circle-info" aria-hidden="true"></span>
                             <h2 class="fs-1 fw-bold"><?php echo Text::_('COM_J2COMMERCE_SHIPPING_LAYOUT_CARDS_HELP_TITLE');?></h2>
                             <p class="fs-3 text-muted mb-5"><?php echo Text::_('COM_J2COMMERCE_SHIPPING_LAYOUT_CARDS_HELP_DESC');?></p>
                         </div>
@@ -55,7 +55,7 @@ $is_pro = $versionHelper->isPro();
                 <div class="card-body">
                     <div class="d-flex flex-column text-center h-100">
                         <div class="mt-auto">
-                            <span class="fa-4x mb-2 fa-solid fas fa-truck-fast"></span>
+                            <span class="fa-4x mb-2 fa-solid fas fa-truck-fast" aria-hidden="true"></span>
                             <h2 class="fs-1 fw-bold"><?php echo Text::_('COM_J2COMMERCE_SHIPPING_LAYOUT_CARDS_ADD_TITLE');?></h2>
                             <p class="fs-3 text-muted mb-5"><?php echo Text::_('COM_J2COMMERCE_SHIPPING_LAYOUT_CARDS_ADD_DESC');?></p>
                         </div>

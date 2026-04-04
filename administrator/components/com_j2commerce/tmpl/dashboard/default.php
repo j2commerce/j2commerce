@@ -45,7 +45,7 @@ $changeHtml = function (array $change): string {
         return '';
     }
     $icon = $change['dir'] === 'up' ? 'fa-arrow-up' : 'fa-arrow-down';
-    return '<span><span class="fa-solid ' . $icon . '"></span> ' . $change['pct'] . '%</span>';
+    return '<span><span class="fa-solid ' . $icon . '" aria-hidden="true"></span> ' . $change['pct'] . '%</span>';
 };
 if($doc->countModules('j2commerce-dashboard-module-main-tab') && $doc->countModules('j2commerce-dashboard-module-side-tab')){
     $colClass = 'col-lg-6';
@@ -59,10 +59,10 @@ if($doc->countModules('j2commerce-dashboard-module-main-tab') && $doc->countModu
 <div id="j2commerce-dashboard">
     <?php if ($this->hasSampleData) : ?>
     <div class="alert alert-purple d-flex align-items-center mb-4">
-        <span class="fa-solid fa-circle-info me-2"></span>
+        <span class="fa-solid fa-circle-info me-2" aria-hidden="true"></span>
         <span class="me-auto"><?php echo Text::_('COM_J2COMMERCE_DASHBOARD_SAMPLEDATA_ACTIVE'); ?></span>
         <button type="button" class="btn btn-sm btn-primary" id="j2c-remove-sampledata">
-            <span class="fa-solid fa-trash me-1"></span>
+            <span class="fa-solid fa-trash me-1" aria-hidden="true"></span>
             <?php echo Text::_('COM_J2COMMERCE_DASHBOARD_REMOVE_SAMPLEDATA'); ?>
         </button>
     </div>
@@ -71,11 +71,11 @@ if($doc->countModules('j2commerce-dashboard-module-main-tab') && $doc->countModu
     <?php if (!$this->hasProducts && !$this->hasSampleData) : ?>
     <div class="card mb-4">
         <div class="card-body text-center py-5">
-            <span class="fa-solid fa-box-open fa-3x text-muted d-block mb-3"></span>
+            <span class="fa-solid fa-box-open fa-3x text-muted d-block mb-3" aria-hidden="true"></span>
             <h5><?php echo Text::_('COM_J2COMMERCE_DASHBOARD_EMPTY_STORE_TITLE'); ?></h5>
             <p class="text-muted"><?php echo Text::_('COM_J2COMMERCE_DASHBOARD_EMPTY_STORE_DESC'); ?></p>
             <button type="button" class="btn btn-primary" id="j2c-load-sampledata">
-                <span class="fa-solid fa-database me-1"></span>
+                <span class="fa-solid fa-database me-1" aria-hidden="true"></span>
                 <?php echo Text::_('COM_J2COMMERCE_DASHBOARD_LOAD_SAMPLEDATA'); ?>
             </button>
         </div>
@@ -281,7 +281,7 @@ if($doc->countModules('j2commerce-dashboard-module-main-tab') && $doc->countModu
     <?php if (!empty($this->pluginQuickIcons)) : ?>
         <div class="card h-100">
             <div class="card-header p-3">
-                <h2 class="mb-0 fs-4"><span class="fa-solid fa-bolt me-2 text-warning"></span><?php echo Text::_('COM_J2COMMERCE_DASHBOARD_PLUGIN_ICONS'); ?></h2>
+                <h2 class="mb-0 fs-4"><span class="fa-solid fa-bolt me-2 text-warning" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_DASHBOARD_PLUGIN_ICONS'); ?></h2>
             </div>
             <div class="card-body bg-white">
                 <nav class="quick-icons px-0 pb-3" aria-label="<?php echo Text::_('COM_J2COMMERCE_DASHBOARD_PLUGIN_ICONS'); ?>">

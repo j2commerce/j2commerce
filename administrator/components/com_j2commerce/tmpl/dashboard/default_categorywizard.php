@@ -33,7 +33,7 @@ $sefRewrite = (bool) $app->get('sef_rewrite', false);
             <!-- Header -->
             <div class="modal-header border-0 p-3">
                 <h5 class="modal-title" id="categoryWizardModalLabel">
-                    <span class="fa-solid fa-wand-magic-sparkles me-2"></span>
+                    <span class="fa-solid fa-wand-magic-sparkles me-2" aria-hidden="true"></span>
                     <?php echo Text::_('COM_J2COMMERCE_WIZARD_TITLE'); ?>
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"
@@ -109,7 +109,7 @@ $sefRewrite = (bool) $app->get('sef_rewrite', false);
                                 <input type="radio" name="product_type" value="downloadable" class="visually-hidden">
                                 <div class="j2c-wizard-card-body">
                                     <div class="d-flex align-items-center">
-                                        <span class="fa-solid fa-download fa-lg me-3 text-primary"></span>
+                                        <span class="fa-solid fa-download fa-lg me-3 text-primary" aria-hidden="true"></span>
                                         <div>
                                             <div class="fw-bold"><?php echo Text::_('COM_J2COMMERCE_WIZARD_PRODUCT_TYPE_DOWNLOADABLE'); ?></div>
                                             <div class="text-muted small"><?php echo Text::_('COM_J2COMMERCE_WIZARD_PRODUCT_TYPE_DOWNLOADABLE_DESC'); ?></div>
@@ -123,7 +123,7 @@ $sefRewrite = (bool) $app->get('sef_rewrite', false);
                                 <input type="radio" name="product_type" value="simple" class="visually-hidden">
                                 <div class="j2c-wizard-card-body">
                                     <div class="d-flex align-items-center">
-                                        <span class="fa-solid fa-box fa-lg me-3 text-success"></span>
+                                        <span class="fa-solid fa-box fa-lg me-3 text-success" aria-hidden="true"></span>
                                         <div>
                                             <div class="fw-bold"><?php echo Text::_('COM_J2COMMERCE_WIZARD_PRODUCT_TYPE_SIMPLE'); ?></div>
                                             <div class="text-muted small"><?php echo Text::_('COM_J2COMMERCE_WIZARD_PRODUCT_TYPE_SIMPLE_DESC'); ?></div>
@@ -137,7 +137,7 @@ $sefRewrite = (bool) $app->get('sef_rewrite', false);
                                 <input type="radio" name="product_type" value="variable" class="visually-hidden">
                                 <div class="j2c-wizard-card-body">
                                     <div class="d-flex align-items-center">
-                                        <span class="fa-solid fa-layer-group fa-lg me-3 text-warning"></span>
+                                        <span class="fa-solid fa-layer-group fa-lg me-3 text-warning" aria-hidden="true"></span>
                                         <div>
                                             <div class="fw-bold"><?php echo Text::_('COM_J2COMMERCE_WIZARD_PRODUCT_TYPE_VARIABLE'); ?></div>
                                             <div class="text-muted small"><?php echo Text::_('COM_J2COMMERCE_WIZARD_PRODUCT_TYPE_VARIABLE_DESC'); ?></div>
@@ -160,7 +160,7 @@ $sefRewrite = (bool) $app->get('sef_rewrite', false);
                         </div>
                     </div>
                     <button type="button" class="btn btn-outline-secondary btn-sm" id="j2c-add-option-title">
-                        <span class="fa-solid fa-plus me-1"></span>
+                        <span class="fa-solid fa-plus me-1" aria-hidden="true"></span>
                         <?php echo Text::_('COM_J2COMMERCE_WIZARD_ADD_OPTION'); ?>
                     </button>
                 </div>
@@ -245,7 +245,7 @@ $sefRewrite = (bool) $app->get('sef_rewrite', false);
                         <!-- Populated by JS based on category count selection -->
                     </div>
                     <button type="button" class="btn btn-outline-secondary btn-sm d-none" id="j2c-add-category">
-                        <span class="fa-solid fa-plus me-1"></span>
+                        <span class="fa-solid fa-plus me-1" aria-hidden="true"></span>
                         <?php echo Text::_('COM_J2COMMERCE_WIZARD_ADD_CATEGORY'); ?>
                     </button>
                 </div>
@@ -253,7 +253,7 @@ $sefRewrite = (bool) $app->get('sef_rewrite', false);
                 <!-- Step: Template detection (shown only if YOOtheme + UIkit available) -->
                 <div class="j2c-wizard-step d-none" data-step="template">
                     <div class="alert alert-info">
-                        <span class="fa-solid fa-circle-info me-2"></span>
+                        <span class="fa-solid fa-circle-info me-2" aria-hidden="true"></span>
                         <?php echo Text::_('COM_J2COMMERCE_WIZARD_TEMPLATE_YOOTHEME'); ?>
                     </div>
                     <p><?php echo Text::_('COM_J2COMMERCE_WIZARD_TEMPLATE_UIKIT'); ?></p>
@@ -288,12 +288,12 @@ $sefRewrite = (bool) $app->get('sef_rewrite', false);
                 <!-- Step: Success -->
                 <div class="j2c-wizard-step d-none" data-step="success">
                     <div class="text-center py-3">
-                        <span class="fa-solid fa-circle-check fa-4x text-success mb-3 d-block"></span>
+                        <span class="fa-solid fa-circle-check fa-4x text-success mb-3 d-block" aria-hidden="true"></span>
                         <h4><?php echo Text::_('COM_J2COMMERCE_WIZARD_SUCCESS_TITLE'); ?></h4>
                     </div>
                     <div class="alert alert-info mb-3">
                         <h6 class="alert-heading">
-                            <span class="fa-solid fa-circle-info me-2"></span>
+                            <span class="fa-solid fa-circle-info me-2" aria-hidden="true"></span>
                             <?php echo Text::_('COM_J2COMMERCE_WIZARD_URL_TITLE'); ?>
                         </h6>
                         <p class="mb-1"><?php echo Text::_('COM_J2COMMERCE_WIZARD_URL_DESC'); ?></p>
@@ -311,20 +311,20 @@ $sefRewrite = (bool) $app->get('sef_rewrite', false);
                 <div class="text-muted small" id="j2c-wizard-step-indicator"></div>
                 <div class="d-flex gap-2">
                     <button type="button" class="btn btn-sm btn-secondary d-none" id="j2c-wizard-back">
-                        <span class="fa-solid fa-arrow-left me-1"></span>
+                        <span class="fa-solid fa-arrow-left me-1" aria-hidden="true"></span>
                         <?php echo Text::_('COM_J2COMMERCE_WIZARD_BTN_BACK'); ?>
                     </button>
                     <button type="button" class="btn btn-sm btn-primary" id="j2c-wizard-next">
                         <?php echo Text::_('COM_J2COMMERCE_WIZARD_BTN_NEXT'); ?>
-                        <span class="fa-solid fa-arrow-right ms-1"></span>
+                        <span class="fa-solid fa-arrow-right ms-1" aria-hidden="true"></span>
                     </button>
                     <button type="button" class="btn btn-sm btn-success d-none" id="j2c-wizard-create">
-                        <span class="fa-solid fa-wand-magic-sparkles me-1"></span>
+                        <span class="fa-solid fa-wand-magic-sparkles me-1" aria-hidden="true"></span>
                         <?php echo Text::_('COM_J2COMMERCE_WIZARD_BTN_CREATE'); ?>
                     </button>
                     <button type="button" class="btn btn-sm btn-success d-none" id="j2c-wizard-done"
                             data-bs-dismiss="modal">
-                        <span class="fa-solid fa-check me-1"></span>
+                        <span class="fa-solid fa-check me-1" aria-hidden="true"></span>
                         <?php echo Text::_('COM_J2COMMERCE_WIZARD_BTN_DONE'); ?>
                     </button>
                 </div>

@@ -203,7 +203,7 @@ function getStatusBadge($status, $message = '') {
 
                 <?php if ($hasErrors): ?>
                     <div class="alert alert-danger" role="alert">
-                        <h5 class="text-danger"><span class="fa-solid fa-exclamation-triangle me-2"></span><?php echo Text::_('COM_J2COMMERCE_SHIPPING_TROUBLESHOOTER_CRITICAL_ISSUES'); ?></h5>
+                        <h5 class="text-danger"><span class="fa-solid fa-exclamation-triangle me-2" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_SHIPPING_TROUBLESHOOTER_CRITICAL_ISSUES'); ?></h5>
                         <ul class="mb-0">
                             <?php if ($diagnostics['shipping_methods']['status'] === 'error'): ?>
                                 <li><?php echo Text::_('COM_J2COMMERCE_SHIPPING_TROUBLESHOOTER_RECOMMENDATION_ADD_METHODS'); ?></li>
