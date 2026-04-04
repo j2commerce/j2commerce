@@ -33,6 +33,7 @@
         <folder>css</folder>
         <folder>js</folder>
         <folder>images</folder>
+        <folder>vendor</folder>
         <filename>joomla.asset.json</filename>
     </media>
 
