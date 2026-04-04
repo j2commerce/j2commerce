@@ -35,7 +35,7 @@ final class SampleDataHelper
             'simple'        => 5,
             'variable'      => 2,
             'configurable'  => 0,
-            'bundle'        => 0,
+            'flexivariable' => 0,
             'downloadable'  => 0,
             'customers'     => 5,
             'orders'        => 10,
@@ -51,7 +51,7 @@ final class SampleDataHelper
             'simple'        => 10,
             'variable'      => 5,
             'configurable'  => 3,
-            'bundle'        => 2,
+            'flexivariable' => 2,
             'downloadable'  => 2,
             'customers'     => 20,
             'orders'        => 50,
@@ -67,7 +67,7 @@ final class SampleDataHelper
             'simple'        => 40,
             'variable'      => 25,
             'configurable'  => 15,
-            'bundle'        => 10,
+            'flexivariable' => 10,
             'downloadable'  => 10,
             'customers'     => 100,
             'orders'        => 500,
@@ -349,10 +349,10 @@ final class SampleDataHelper
             $summary['products_configurable'] = count($cfgIds);
         }
 
-        if (!empty($cfg['bundle'])) {
-            $bundleIds = $this->createSimpleProducts((int) $cfg['bundle'], $catIds, $mfgIds, $now, 'bundle', $taxProfileId, $defaultStageId, $vendorIds);
-            $productIds = array_merge($productIds, $bundleIds);
-            $summary['products_bundle'] = count($bundleIds);
+        if (!empty($cfg['flexivariable'])) {
+            $flexiIds = $this->createSimpleProducts((int) $cfg['flexivariable'], $catIds, $mfgIds, $now, 'flexivariable', $taxProfileId, $defaultStageId, $vendorIds);
+            $productIds = array_merge($productIds, $flexiIds);
+            $summary['products_flexivariable'] = count($flexiIds);
         }
 
         if (!empty($cfg['downloadable'])) {
@@ -1050,11 +1050,11 @@ final class SampleDataHelper
 
             // Create J2Commerce product record
             $prefix = match ($type) {
-                'variable'     => 'VAR',
-                'configurable' => 'CFG',
-                'bundle'       => 'BND',
-                'downloadable' => 'DLD',
-                default        => 'SMPL',
+                'variable'       => 'VAR',
+                'configurable'   => 'CFG',
+                'flexivariable'  => 'FLX',
+                'downloadable'   => 'DLD',
+                default          => 'SMPL',
             };
 
             $product                   = new \stdClass();
@@ -1103,7 +1103,7 @@ final class SampleDataHelper
                 $db->insertObject('#__j2commerce_productquantities', $qty);
             }
 
-            $productIds[] = ['id' => $productId, 'variant_id' => $variantId, 'name' => $uniqueName, 'price' => $price, 'sku' => $sku];
+            $productIds[] = ['id' => $productId, 'variant_id' => $variantId, 'name' => $uniqueName, 'price' => $price, 'sku' => $sku, 'product_type' => $type];
         }
 
         return $productIds;
@@ -1308,7 +1308,7 @@ final class SampleDataHelper
                 }
             }
 
-            $productIds[] = ['id' => $productId, 'variant_id' => $masterVariantId, 'name' => $productName, 'price' => $basePrice, 'sku' => $masterSku];
+            $productIds[] = ['id' => $productId, 'variant_id' => $masterVariantId, 'name' => $productName, 'price' => $basePrice, 'sku' => $masterSku, 'product_type' => 'variable'];
         }
 
         return $productIds;
@@ -1504,6 +1504,7 @@ final class SampleDataHelper
                     'variant_id'   => $prod['variant_id'] ?? 0,
                     'name'         => $prod['name'] ?? 'Sample Product',
                     'sku'          => $prod['sku'] ?? 'SMPL-000',
+                    'product_type' => $prod['product_type'] ?? 'simple',
                     'price'        => $price,
                     'qty'          => $qty,
                     'line_total'   => $lineTotal,
@@ -1633,7 +1634,7 @@ final class SampleDataHelper
                 $oi->cart_id                         = $order->cart_id;
                 $oi->cartitem_id                     = $k + 1;
                 $oi->product_id                      = $item['product_id'];
-                $oi->product_type                    = 'simple';
+                $oi->product_type                    = $item['product_type'] ?? 'simple';
                 $oi->variant_id                      = $item['variant_id'];
                 $oi->vendor_id                       = 0;
                 $oi->orderitem_sku                   = $item['sku'];
