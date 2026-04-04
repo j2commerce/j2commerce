@@ -272,6 +272,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
                 $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/countries.sql');
             }
         } catch (\Exception $e) {
+            $this->debugLog("LOCALISATION: countries error: " . $e->getMessage());
             Log::add('Error installing countries: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
         }
 
@@ -291,6 +292,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
                 $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/zones.sql');
             }
         } catch (\Exception $e) {
+            $this->debugLog("LOCALISATION: zones error: " . $e->getMessage());
             Log::add('Error installing zones: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
         }
 
@@ -299,6 +301,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
             $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/lengths.sql');
             $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/weights.sql');
         } catch (\Exception $e) {
+            $this->debugLog("LOCALISATION: metrics error: " . $e->getMessage());
             Log::add('Error installing metrics: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
         }
 
@@ -315,29 +318,11 @@ class Com_J2commerceInstallerScript extends InstallerScript
             }
 
             if ($needsEmails) {
-                $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/emailtemplates.sql');
+                $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/emailtemplates.sql');
             }
         } catch (\Exception $e) {
             $this->debugLog("LOCALISATION: email templates error: " . $e->getMessage());
             Log::add('Error installing email templates: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
-        }
-
-        // Ensure emailtype_tags have default data (install SQL may have already inserted these)
-        try {
-            if (in_array($prefix . 'j2commerce_emailtype_tags', $alltables)) {
-                $query = $db->getQuery(true)
-                    ->select('COUNT(*)')
-                    ->from($db->quoteName('#__j2commerce_emailtype_tags'));
-                $db->setQuery($query);
-
-                if (((int) $db->loadResult()) < 1) {
-                    $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/updates/mysql/6.1.0.sql');
-                    $this->debugLog("LOCALISATION: emailtype tags/contexts loaded from 6.1.0.sql");
-                }
-            }
-        } catch (\Exception $e) {
-            $this->debugLog("LOCALISATION: emailtype data error: " . $e->getMessage());
-            Log::add('Error installing emailtype data: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
         }
 
         // Install invoice templates if needed
@@ -353,32 +338,23 @@ class Com_J2commerceInstallerScript extends InstallerScript
             }
 
             if ($needsInvoices) {
-                $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/invoicetemplates.sql');
+                $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/invoicetemplates.sql');
             }
         } catch (\Exception $e) {
             $this->debugLog("LOCALISATION: invoice templates error: " . $e->getMessage());
             Log::add('Error installing invoice templates: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
         }
 
-        // Add unique index to productquantities table if not exists
+        // Install guided tours if guided tours exist
         try {
-            $db->setQuery('SHOW INDEX FROM `#__j2commerce_productquantities`');
-            $indexes = $db->loadObjectList();
-            $hasIndex = false;
+            $guidedToursExist = (in_array($prefix . 'guidedtours', $alltables) && in_array($prefix . 'guidedtour_steps', $alltables));
 
-            foreach ($indexes as $index) {
-                if ($index->Key_name === 'variantidx') {
-                    $hasIndex = true;
-                    break;
-                }
-            }
-
-            if (!$hasIndex) {
-                $db->setQuery('ALTER TABLE #__j2commerce_productquantities ADD UNIQUE INDEX variantidx (variant_id)');
-                $db->execute();
+            if ($guidedToursExist) {
+                $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/guidedtours.sql');
             }
         } catch (\Exception $e) {
-            Log::add('Could not add index: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
+            $this->debugLog("LOCALISATION: guided tours error: " . $e->getMessage());
+            Log::add('Error installing guided tours: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
         }
     }
 
