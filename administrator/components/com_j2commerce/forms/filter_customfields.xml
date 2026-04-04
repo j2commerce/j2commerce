@@ -49,6 +49,8 @@
             <option value="a.field_name DESC">COM_J2COMMERCE_HEADING_FIELD_NAME_DESC</option>
             <option value="a.field_type ASC">COM_J2COMMERCE_HEADING_FIELD_TYPE_ASC</option>
             <option value="a.field_type DESC">COM_J2COMMERCE_HEADING_FIELD_TYPE_DESC</option>
+            <option value="a.field_required ASC">COM_J2COMMERCE_HEADING_FIELD_REQUIRED_ASC</option>
+            <option value="a.field_required DESC">COM_J2COMMERCE_HEADING_FIELD_REQUIRED_DESC</option>
             <option value="a.field_namekey ASC">COM_J2COMMERCE_HEADING_FIELD_NAMEKEY_ASC</option>
             <option value="a.field_namekey DESC">COM_J2COMMERCE_HEADING_FIELD_NAMEKEY_DESC</option>
             <option value="a.j2commerce_customfield_id ASC">COM_J2COMMERCE_HEADING_ID_ASC</option>
