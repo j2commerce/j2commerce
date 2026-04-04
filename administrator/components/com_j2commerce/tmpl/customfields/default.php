@@ -107,11 +107,11 @@ if ($saveOrder && !empty($this->items)) {
                                 <td class="text-center">
                                     <?php echo HTMLHelper::_('jgrid.published', $item->enabled, $i, 'customfields.', true, 'cb'); ?>
                                 </td>
-                                <td class="d-none d-md-table-cell">
+                                <th scope="row" class="d-none d-md-table-cell">
                                     <a href="<?php echo Route::_('index.php?option=com_j2commerce&task=customfield.edit&id=' . $item->j2commerce_customfield_id); ?>">
                                         <?php echo Text::_($this->escape($item->field_name)); ?>
                                     </a>
-                                </td>
+                                </th>
 
                                 <td class="d-none d-md-table-cell">
                                     <?php echo $this->escape($item->field_type); ?>
