@@ -88,11 +88,8 @@ $getImagePath = function (?string $imagePath): string {
                     <th scope="col" class="w-10 d-none d-md-table-cell">
                         <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_PRICE', 'v.price', $listDirn, $listOrder); ?>
                     </th>
-                    <th scope="col" class="w-10 d-none d-lg-table-cell">
-                        <?php echo Text::_('COM_J2COMMERCE_HEADING_SOURCE'); ?>
-                    </th>
                     <th scope="col" class="w-5 d-none d-lg-table-cell text-center">
-                        <?php echo Text::_('COM_J2COMMERCE_HEADING_SOURCE_ID'); ?>
+                        <?php echo Text::_('COM_J2COMMERCE_HEADING_ARTICLE_ID'); ?>
                     </th>
                 </tr>
                 </thead>
@@ -166,9 +163,6 @@ $getImagePath = function (?string $imagePath): string {
                         </td>
                         <td class="d-none d-md-table-cell">
                             <?php echo CurrencyHelper::format((float) ($item->price ?? 0)); ?>
-                        </td>
-                        <td class="d-none d-lg-table-cell">
-                            <?php echo $this->escape($item->product_source ?: '-'); ?>
                         </td>
                         <td class="text-center d-none d-lg-table-cell">
                             <?php echo (int) $item->product_source_id; ?>

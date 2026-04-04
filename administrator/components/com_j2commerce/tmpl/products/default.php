@@ -95,11 +95,8 @@ $canChangeState = $user->authorise('core.edit.state', 'com_content');
                                 <th scope="col" class="w-5 text-center d-none d-md-table-cell">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_VISIBILITY', 'a.visibility', $listDirn, $listOrder); ?>
                                 </th>
-                                <th scope="col" class="w-10 d-none d-md-table-cell">
-                                    <?php echo Text::_('COM_J2COMMERCE_HEADING_SOURCE'); ?>
-                                </th>
                                 <th scope="col" class="w-5 d-none d-md-table-cell text-center">
-                                    <?php echo Text::_('COM_J2COMMERCE_HEADING_SOURCE_ID'); ?>
+                                    <?php echo Text::_('COM_J2COMMERCE_HEADING_ARTICLE_ID'); ?>
                                 </th>
                             </tr>
                         </thead>
@@ -189,9 +186,6 @@ $canChangeState = $user->authorise('core.edit.state', 'com_content');
                                     <?php else : ?>
                                         <span class="badge text-bg-danger"><?php echo Text::_('JNO'); ?></span>
                                     <?php endif; ?>
-                                </td>
-                                <td class="d-none d-md-table-cell">
-                                    <?php echo $this->escape($item->product_source ?: '-'); ?>
                                 </td>
                                 <td class="text-center d-none d-md-table-cell">
                                     <?php echo (int) $item->product_source_id; ?>
