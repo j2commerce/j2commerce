@@ -45,7 +45,8 @@ $changeHtml = function (array $change): string {
         return '';
     }
     $icon = $change['dir'] === 'up' ? 'fa-arrow-up' : 'fa-arrow-down';
-    return '<span><span class="fa-solid ' . $icon . '" aria-hidden="true"></span> ' . $change['pct'] . '%</span>';
+    $dirText = $change['dir'] === 'up' ? 'Up' : 'Down';
+    return '<span><span class="fa-solid ' . $icon . '" aria-hidden="true"></span><span class="visually-hidden">' . $dirText . '</span> ' . $change['pct'] . '%</span>';
 };
 if($doc->countModules('j2commerce-dashboard-module-main-tab') && $doc->countModules('j2commerce-dashboard-module-side-tab')){
     $colClass = 'col-lg-6';
