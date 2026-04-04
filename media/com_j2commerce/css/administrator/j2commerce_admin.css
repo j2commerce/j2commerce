@@ -103,6 +103,18 @@ body.com_j2commerce #content, #fieldset-j2commerce-product-settings, .j2commerce
         }
     }
 
+    .j-main-container > .alert-info {
+        color: var(--state-info-text)!important;
+        background-color: var(--state-info-bg)!important;
+        border-color: var(--state-info-border)!important;
+        .alert-link {color: var(--state-info-text)!important;}
+        .btn-info{
+            background-color: var(--state-info-text);
+            color: #fff;
+            text-decoration:none;
+        }
+    }
+
     .text-bg-warning {
         color: var(--warning)!important;
         background-color: var(--warning-bg-subtle)!important;
