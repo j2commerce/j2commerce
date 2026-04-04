@@ -405,9 +405,14 @@ class J2CommerceSchemaHelper
     public function getManufacturer(int $manufacturerId): ?object
     {
         $query = $this->db->getQuery(true)
-            ->select('*')
-            ->from($this->db->quoteName('#__j2commerce_manufacturers'))
-            ->where($this->db->quoteName('j2commerce_manufacturer_id') . ' = :manufacturerId')
+            ->select('m.*, a.company')
+            ->from($this->db->quoteName('#__j2commerce_manufacturers', 'm'))
+            ->join(
+                'LEFT',
+                $this->db->quoteName('#__j2commerce_addresses', 'a')
+                . ' ON ' . $this->db->quoteName('m.address_id') . ' = ' . $this->db->quoteName('a.j2commerce_address_id')
+            )
+            ->where($this->db->quoteName('m.j2commerce_manufacturer_id') . ' = :manufacturerId')
             ->bind(':manufacturerId', $manufacturerId, ParameterType::INTEGER);
 
         $this->db->setQuery($query);
@@ -554,14 +559,14 @@ class J2CommerceSchemaHelper
             return '';
         }
 
-        // If already a full URL, return as-is
+        // If already a full URL, encode spaces and return
         if (strpos($imagePath, 'http://') === 0 || strpos($imagePath, 'https://') === 0) {
-            return $imagePath;
+            return str_replace(' ', '%20', $imagePath);
         }
 
         $imagePath = ltrim($imagePath, '/');
 
-        return Uri::root() . $imagePath;
+        return Uri::root() . str_replace(' ', '%20', $imagePath);
     }
 
     /**
