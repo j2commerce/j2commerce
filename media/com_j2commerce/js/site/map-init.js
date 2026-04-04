@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Set default marker icon path to self-hosted images
     const leafletScript = document.querySelector('script[src*="com_j2commerce"][src*="leaflet"]');
     const basePath = leafletScript
-        ? leafletScript.src.replace(/\/js\/leaflet\/leaflet\.js.*$/, '')
+        ? leafletScript.src.replace(/\/vendor\/leaflet\/js\/leaflet\.js.*$/, '')
         : '/media/com_j2commerce';
     L.Icon.Default.imagePath = basePath + '/images/leaflet/';
 

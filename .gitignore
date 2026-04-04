@@ -171,6 +171,8 @@ vendor/
 !administrator/components/com_j2commerce/src/View/Vendor/**
 !administrator/components/com_j2commerce/tmpl/vendor/
 !administrator/components/com_j2commerce/tmpl/vendor/**
+!media/com_j2commerce/vendor/
+!media/com_j2commerce/vendor/**
 *.bak
 
 # Ignore SQL dumps but allow J2Commerce schema files

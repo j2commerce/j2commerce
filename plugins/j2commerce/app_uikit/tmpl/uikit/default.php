@@ -149,11 +149,11 @@ if ($this->params->get('list_show_filter', 1) && $filterPosition === 'left'){
 
 <?php if ($this->params->get('list_enable_quickview', 0)) : ?>
 <?php
-    $wa->registerAndUseScript('com_j2commerce.fancybox', 'media/com_j2commerce/js/site/fancybox.umd.js', [], ['defer' => true]);
-    $wa->registerAndUseStyle('com_j2commerce.fancybox.css', 'media/com_j2commerce/css/site/fancybox.css');
+    $wa->registerAndUseScript('com_j2commerce.vendor.fancybox', 'media/com_j2commerce/vendor/fancybox/js/fancybox.umd.js', [], ['defer' => true]);
+    $wa->registerAndUseStyle('com_j2commerce.vendor.fancybox.css', 'media/com_j2commerce/vendor/fancybox/css/fancybox.css');
     $scriptName = 'com_j2commerce.fancybox.init';
     if (!$wa->assetExists('script', $scriptName)) {
-        $wa->registerScript($scriptName,'',[],['defer' => true],['com_j2commerce.fancybox']);
+        $wa->registerScript($scriptName,'',[],['defer' => true],['com_j2commerce.vendor.fancybox']);
         $inlineScript = "document.addEventListener('DOMContentLoaded', () => {
                 if (typeof Fancybox !== 'undefined') {
                     Fancybox.bind('[data-fancybox]', {

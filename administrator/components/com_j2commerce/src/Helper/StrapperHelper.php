@@ -419,8 +419,8 @@ class StrapperHelper
             $wa = $this->app->getDocument()->getWebAssetManager();
 
             $wa->registerAndUseScript('com_j2commerce.admin', 'media/com_j2commerce/js/administrator/j2commerce.js', [], ['defer' => true]);
-            $wa->registerAndUseScript('com_j2commerce.admin.dual-listbox', 'media/com_j2commerce/js/administrator/dual-listbox.js', [], ['defer' => true]);
-            $wa->registerAndUseScript('com_j2commerce.admin.chart', 'media/com_j2commerce/js/administrator/chart.umd.min.js', [], ['defer' => true]);
+            $wa->registerAndUseScript('com_j2commerce.vendor.dual-listbox', 'media/com_j2commerce/vendor/dual-listbox/js/dual-listbox.js', [], ['defer' => true]);
+            $wa->registerAndUseScript('com_j2commerce.vendor.chartjs', 'media/com_j2commerce/vendor/chartjs/js/chart.umd.min.js', [], ['defer' => true]);
             $wa->registerAndUseScript('com_j2commerce.admin.modal-products', 'media/com_j2commerce/js/administrator/modal-products.js', [], ['defer' => true]);
 
         } catch (Exception $e) {
@@ -478,13 +478,13 @@ class StrapperHelper
         // Fancybox lightbox for image gallery (if enabled in config)
         $loadFancybox = (int) $this->getParam('load_fancybox', 1);
         if ($loadFancybox) {
-            $wa->registerAndUseScript('com_j2commerce.fancybox', 'media/com_j2commerce/js/site/fancybox.umd.js', [], ['defer' => true]);
+            $wa->registerAndUseScript('com_j2commerce.vendor.fancybox', 'media/com_j2commerce/vendor/fancybox/js/fancybox.umd.js', [], ['defer' => true]);
         }
 
         // Swiper for product image carousel (if enabled in config)
         $loadSwiper = (int) $this->getParam('load_swiper', 1);
         if ($loadSwiper) {
-            $wa->registerAndUseScript('com_j2commerce.swiper', 'media/com_j2commerce/js/site/swiper-bundle.min.js', [], ['defer' => true]);
+            $wa->registerAndUseScript('com_j2commerce.vendor.swiper', 'media/com_j2commerce/vendor/swiper/js/swiper-bundle.min.js', [], ['defer' => true]);
         }
     }
 
@@ -554,7 +554,7 @@ class StrapperHelper
 
         try {
             $wa = $this->app->getDocument()->getWebAssetManager();
-            $wa->registerAndUseStyle('com_j2commerce.admin.dual-listbox.css', 'media/com_j2commerce/css/administrator/dual-listbox.css');
+            $wa->registerAndUseStyle('com_j2commerce.vendor.dual-listbox.css', 'media/com_j2commerce/vendor/dual-listbox/css/dual-listbox.css');
             $wa->registerAndUseStyle('com_j2commerce.editview', 'media/com_j2commerce/css/administrator/editview.css');
             $wa->registerAndUseStyle('com_j2commerce.admin.css', 'media/com_j2commerce/css/administrator/j2commerce_admin.css');
 
@@ -654,13 +654,13 @@ class StrapperHelper
         // Fancybox CSS for image gallery (if enabled in config)
         $loadFancybox = (int) $this->getParam('load_fancybox', 1);
         if ($loadFancybox) {
-            $wa->registerAndUseStyle('com_j2commerce.fancybox.css', 'media/com_j2commerce/css/site/fancybox.css');
+            $wa->registerAndUseStyle('com_j2commerce.vendor.fancybox.css', 'media/com_j2commerce/vendor/fancybox/css/fancybox.css');
         }
 
         // Swiper CSS for product image carousel (if enabled in config)
         $loadSwiper = (int) $this->getParam('load_swiper', 1);
         if ($loadSwiper) {
-            $wa->registerAndUseStyle('com_j2commerce.swiper.css', 'media/com_j2commerce/css/site/swiper-bundle.min.css');
+            $wa->registerAndUseStyle('com_j2commerce.vendor.swiper.css', 'media/com_j2commerce/vendor/swiper/css/swiper-bundle.min.css');
         }
     }
 

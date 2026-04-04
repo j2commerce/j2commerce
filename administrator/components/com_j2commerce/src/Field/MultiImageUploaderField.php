@@ -81,8 +81,8 @@ class MultiImageUploaderField extends FormField
         $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
 
         $wa->registerAndUseStyle(
-            'com_j2commerce.uppy.css',
-            'media/com_j2commerce/css/administrator/uppy.min.css',
+            'com_j2commerce.vendor.uppy.css',
+            'media/com_j2commerce/vendor/uppy/css/uppy.min.css',
             ['version' => 'auto']
         );
 
@@ -93,8 +93,8 @@ class MultiImageUploaderField extends FormField
         );
 
         $wa->registerAndUseScript(
-            'com_j2commerce.uppy.js',
-            'media/com_j2commerce/js/administrator/uppy.min.js',
+            'com_j2commerce.vendor.uppy',
+            'media/com_j2commerce/vendor/uppy/js/uppy.min.js',
             ['version' => 'auto'],
             ['defer' => true]
         );
@@ -104,7 +104,7 @@ class MultiImageUploaderField extends FormField
             'media/com_j2commerce/js/administrator/multiimageuploader.js',
             ['version' => 'auto'],
             ['defer' => true, 'type' => 'module'],
-            ['com_j2commerce.uppy.js']
+            ['com_j2commerce.vendor.uppy']
         );
 
         // JS language strings used by multiimageuploader.js

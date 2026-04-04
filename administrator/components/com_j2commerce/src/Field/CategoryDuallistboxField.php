@@ -68,8 +68,8 @@ class CategoryDuallistboxField extends ListField
     protected function getInput(): string
     {
         $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
-        $wa->registerAndUseScript('dual-listbox-script', 'media/com_j2commerce/js/administrator/dual-listbox.js', [], ['defer' => true]);
-        $wa->registerAndUseStyle('dual-listbox-style', 'media/com_j2commerce/css/administrator/dual-listbox.css');
+        $wa->registerAndUseScript('com_j2commerce.vendor.dual-listbox', 'media/com_j2commerce/vendor/dual-listbox/js/dual-listbox.js', [], ['defer' => true]);
+        $wa->registerAndUseStyle('com_j2commerce.vendor.dual-listbox.css', 'media/com_j2commerce/vendor/dual-listbox/css/dual-listbox.css');
 
         $options = $this->getOptions();
         $selectedValues = $this->processValue($this->value);

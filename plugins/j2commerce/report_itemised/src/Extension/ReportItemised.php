@@ -229,7 +229,7 @@ final class ReportItemised extends CMSPlugin implements SubscriberInterface
             Factory::getApplication()->getDocument()->getWebAssetManager()
                 ->registerAndUseScript(
                     'chartjs',
-                    'media/com_j2commerce/js/administrator/chart.umd.min.js',
+                    'media/com_j2commerce/vendor/chartjs/js/chart.umd.min.js',
                     [],
                     ['defer' => false]
                 );
@@ -451,7 +451,7 @@ final class ReportItemised extends CMSPlugin implements SubscriberInterface
             $app->getDocument()->getWebAssetManager()
                 ->registerAndUseScript(
                     'chartjs',
-                    'media/com_j2commerce/js/administrator/chart.umd.min.js',
+                    'media/com_j2commerce/vendor/chartjs/js/chart.umd.min.js',
                     [],
                     ['defer' => false]
                 );

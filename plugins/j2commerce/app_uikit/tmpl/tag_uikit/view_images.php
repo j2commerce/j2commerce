@@ -27,11 +27,11 @@ $additional_width  = (int) $this->params->get('item_product_additional_image_wid
 
 
 $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
-$wa->registerAndUseStyle('com_j2commerce.swiper.css', 'media/com_j2commerce/css/site/swiper-bundle.min.css');
-$wa->registerAndUseScript('com_j2commerce.swiper', 'media/com_j2commerce/js/site/swiper-bundle.min.js', [], ['defer' => true]);
+$wa->registerAndUseStyle('com_j2commerce.vendor.swiper.css', 'media/com_j2commerce/vendor/swiper/css/swiper-bundle.min.css');
+$wa->registerAndUseScript('com_j2commerce.vendor.swiper', 'media/com_j2commerce/vendor/swiper/js/swiper-bundle.min.js', [], ['defer' => true]);
 if ($enableZoom) {
-    $wa->registerAndUseStyle('com_j2commerce.zoom.css', 'media/com_j2commerce/css/site/zoom.css');
-    $wa->registerAndUseScript('com_j2commerce.zoom', 'media/com_j2commerce/js/site/zoom-vanilla.min.js', [], ['defer' => true]);
+    $wa->registerAndUseStyle('com_j2commerce.vendor.zoom.css', 'media/com_j2commerce/vendor/zoom-vanilla/css/zoom.css');
+    $wa->registerAndUseScript('com_j2commerce.vendor.zoom', 'media/com_j2commerce/vendor/zoom-vanilla/js/zoom-vanilla.min.js', [], ['defer' => true]);
 }
 
 $slides = [];

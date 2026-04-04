@@ -62,14 +62,14 @@ class Dispatcher extends AbstractModuleDispatcher implements HelperFactoryAwareI
         if ($data['layoutType'] === 'slider') {
             $wa = $this->app->getDocument()->getWebAssetManager();
             $wa->registerAndUseScript(
-                'com_j2commerce.swiper',
-                'media/com_j2commerce/js/site/swiper-bundle.min.js',
+                'com_j2commerce.vendor.swiper',
+                'media/com_j2commerce/vendor/swiper/js/swiper-bundle.min.js',
                 [],
                 ['defer' => true]
             );
             $wa->registerAndUseStyle(
-                'com_j2commerce.swiper.css',
-                'media/com_j2commerce/css/site/swiper-bundle.min.css'
+                'com_j2commerce.vendor.swiper.css',
+                'media/com_j2commerce/vendor/swiper/css/swiper-bundle.min.css'
             );
         }
 

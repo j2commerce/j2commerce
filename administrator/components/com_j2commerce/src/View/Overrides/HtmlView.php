@@ -85,10 +85,10 @@ class HtmlView extends BaseHtmlView
         $doc = $this->getDocument();
         $wa  = $doc->getWebAssetManager();
 
-        $wa->registerAndUseStyle('com_j2commerce.grapes.core', 'media/com_j2commerce/css/administrator/grapes.min.css');
+        $wa->registerAndUseStyle('com_j2commerce.vendor.grapesjs', 'media/com_j2commerce/vendor/grapesjs/css/grapes.min.css');
         $wa->registerAndUseStyle('com_j2commerce.builder', 'media/com_j2commerce/css/administrator/builder.css');
         $wa->registerAndUseStyle('com_j2commerce.grapesjs', 'media/com_j2commerce/css/administrator/grapesjs-j2commerce.css');
-        $wa->registerAndUseScript('com_j2commerce.grapes.core', 'media/com_j2commerce/js/administrator/grapes.min.js', [], ['defer' => true]);
+        $wa->registerAndUseScript('com_j2commerce.vendor.grapesjs', 'media/com_j2commerce/vendor/grapesjs/js/grapes.min.js', [], ['defer' => true]);
         $wa->registerAndUseScript('com_j2commerce.builder', 'media/com_j2commerce/js/administrator/builder-phppagebuilder.js', [], ['defer' => true]);
 
         $doc->addScriptOptions('com_j2commerce.builder', [
