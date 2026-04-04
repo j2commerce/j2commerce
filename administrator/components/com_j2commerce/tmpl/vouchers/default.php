@@ -114,11 +114,11 @@ if ($saveOrder && !empty($this->items)) {
                                 <td class="text-center">
                                     <?php echo HTMLHelper::_('jgrid.published', $item->enabled, $i, 'vouchers.', $canChange, 'cb'); ?>
                                 </td>
-                                <td>
+                                <th scope="row">
                                     <a href="<?php echo Route::_('index.php?option=com_j2commerce&task=voucher.edit&id=' . $item->j2commerce_voucher_id); ?>">
                                         <?php echo $this->escape($item->voucher_code); ?>
                                     </a>
-                                </td>
+                                </th>
                                 <td class="d-none d-md-table-cell">
                                     <?php echo number_format((float) $item->voucher_value, 2); ?>
                                 </td>
