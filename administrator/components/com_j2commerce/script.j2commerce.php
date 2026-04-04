@@ -318,7 +318,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
             }
 
             if ($needsEmails) {
-                $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/emailtemplates.sql');
+                $this->executeSqlFileDirect($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/emailtemplates.sql');
             }
         } catch (\Exception $e) {
             $this->debugLog("LOCALISATION: email templates error: " . $e->getMessage());
@@ -338,7 +338,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
             }
 
             if ($needsInvoices) {
-                $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/invoicetemplates.sql');
+                $this->executeSqlFileDirect($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/invoicetemplates.sql');
             }
         } catch (\Exception $e) {
             $this->debugLog("LOCALISATION: invoice templates error: " . $e->getMessage());

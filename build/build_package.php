@@ -593,6 +593,9 @@ $outerZip->addEmptyDir('language/en-GB');
 $pkgLang = $buildDir . '/language/en-GB/pkg_j2commerce.sys.ini';
 if (file_exists($pkgLang)) {
     $outerZip->addFile($pkgLang, 'language/en-GB/pkg_j2commerce.sys.ini');
+    // Also add at root en-GB/ for Joomla 6 package installer compatibility
+    $outerZip->addEmptyDir('en-GB');
+    $outerZip->addFile($pkgLang, 'en-GB/pkg_j2commerce.sys.ini');
 } else {
     echo "  WARNING: Package language file not found at {$pkgLang}\n";
 }
