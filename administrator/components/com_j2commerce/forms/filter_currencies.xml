@@ -30,6 +30,8 @@
             onchange="this.form.submit();"
         >
             <option value="">JGLOBAL_SORT_BY</option>
+            <option value="a.enabled ASC">COM_J2COMMERCE_HEADING_STATUS_ASC</option>
+            <option value="a.enabled DESC">COM_J2COMMERCE_HEADING_STATUS_DESC</option>
             <option value="a.currency_title ASC">COM_J2COMMERCE_HEADING_CURRENCY_TITLE_ASC</option>
             <option value="a.currency_title DESC">COM_J2COMMERCE_HEADING_CURRENCY_TITLE_DESC</option>
             <option value="a.currency_code ASC">COM_J2COMMERCE_HEADING_CURRENCY_CODE_ASC</option>
