@@ -366,12 +366,12 @@ class ProductSchemaBuilder
             return '';
         }
 
-        // Already absolute
+        // Already absolute — encode spaces
         if (strpos($imagePath, 'http://') === 0 || strpos($imagePath, 'https://') === 0) {
-            return $imagePath;
+            return str_replace(' ', '%20', $imagePath);
         }
 
-        return Uri::root() . ltrim($imagePath, '/');
+        return Uri::root() . str_replace(' ', '%20', ltrim($imagePath, '/'));
     }
 
     /**
@@ -402,8 +402,12 @@ class ProductSchemaBuilder
             ];
         }
 
-        // Use default from params
+        // Use default from params, fall back to store name
         $defaultBrand = $this->params->get('default_brand', '');
+
+        if (empty($defaultBrand)) {
+            $defaultBrand = $this->helper->getStoreName();
+        }
 
         if (!empty($defaultBrand)) {
             return [
