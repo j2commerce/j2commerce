@@ -15,8 +15,7 @@ use Joomla\CMS\Router\Route;
 /** @var \J2Commerce\Component\J2commerce\Administrator\View\Dashboard\HtmlView $this */
 
 ?>
-
-<div class="j2commerce-dashboard">
+<div class="j2commerce j2commerce-dashboard">
     <div class="row">
         <div class="col-lg-12">
             <h1><?php echo Text::_('COM_J2COMMERCE_DASHBOARD'); ?></h1>
