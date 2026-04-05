@@ -27,13 +27,12 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Plugin\CMSPlugin;
-use Joomla\CMS\Router\Route;
-use Joomla\Component\Content\Site\Helper\RouteHelper;
 use Joomla\Database\DatabaseAwareTrait;
 use Joomla\Database\ParameterType;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use J2Commerce\Component\J2commerce\Administrator\Service\ProductService;
+use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 use Joomla\CMS\Session\Session;
 use Joomla\Event\DispatcherInterface;
 use Joomla\Event\SubscriberInterface;
@@ -60,6 +59,36 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
      * @var bool
      */
     protected $autoloadLanguage = true;
+
+    /**
+     * Shortcode option → FileLayout ID mapping for card-style (list) rendering.
+     *
+     * The `detail` option is NOT in this map — it is special-cased to dispatch
+     * the `onJ2CommerceViewProductHtml` event so the active subtemplate plugin
+     * (app_bootstrap5 / app_uikit) renders it using its own `view_*.php`
+     * templates, matching the real product detail page.
+     */
+    private const SHORTCODE_LAYOUT_MAP = [
+        'full'           => 'list.category.item',
+        'card'           => 'list.category.item',
+        'title'          => 'list.category.item_title',
+        'price'          => 'list.category.item_price',
+        'saleprice'      => 'list.category.item_price',
+        'regularprice'   => 'list.category.item_price',
+        'sku'            => 'list.category.item_sku',
+        'stock'          => 'list.category.item_stock',
+        'description'    => 'list.category.item_description',
+        'desc'           => 'list.category.item_description',
+        'images'         => 'list.category.item_images',
+        'gallery'        => 'list.category.item_images',
+        'mainimage'      => 'list.category.item_images',
+        'thumbnail'      => 'list.category.item_images',
+        'mainadditional' => 'list.category.item_images',
+        'cart'           => 'list.category.item_cart',
+        'cartonly'       => 'list.category.item_cart',
+        'options'        => 'list.category.item_options',
+        'quickview'      => 'list.category.item_quickview',
+    ];
 
     private bool $cacheCleared = false;
 
@@ -109,6 +138,16 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         $context = $event->getContext();
         $article = $event->getItem();
         $params  = $event->getParams();
+
+        // Strip shortcodes when Smart Search indexer is running
+        if ($context === 'com_finder.indexer' && (bool) $this->params->get('shortcode_strip_in_finder', 1)) {
+            if (isset($article->text)) {
+                $article->text = preg_replace('/{j2commerce}.*?{\/j2commerce}/s', '', $article->text);
+                $article->text = preg_replace('/{j2commerce\s+[^}]*}/s', '', $article->text);
+            }
+
+            return;
+        }
 
         // Skip backend and API processing — Route::_() crashes in API context
         if ($this->getApplication()->isClient('administrator') || $this->getApplication()->isClient('api')) {
@@ -847,7 +886,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
     /** @since 6.0.0 */
     private function processWithinArticle(object $article): void
     {
-        if (!isset($article->text) || !str_contains($article->text, '{j2commerce}')) {
+        if (!isset($article->text) || !str_contains($article->text, '{j2commerce')) {
             return;
         }
 
@@ -857,9 +896,14 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
     /** @since 6.0.0 */
     private function processShortcodes(string $context, object $article, object $params): void
     {
-        if (!isset($article->text)) {
+        if (!isset($article->text) || !str_contains($article->text, '{j2commerce')) {
             return;
         }
+
+        // WYSIWYG editors (TinyMCE, JCE) often wrap pasted shortcodes in <pre>
+        // or <code> tags which would render the product HTML inside a monospace
+        // block. Unwrap them before parsing.
+        $article->text = $this->unwrapShortcodes($article->text);
 
         $matches = $this->parseShortcodes($article->text);
 
@@ -867,16 +911,12 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             return;
         }
 
-        $j2params  = ComponentHelper::getParams('com_j2commerce');
-        $placement = $j2params->get('addtocart_placement', 'default');
-
         foreach ($matches as $match) {
-            if (empty($match[1])) {
+            if (empty($match['body'])) {
                 continue;
             }
 
-            $values = explode('|', $match[1]);
-            $html   = '';
+            $values = explode('|', $match['body']);
 
             // First value is always the product ID
             if (!isset($values[0]) || !is_numeric($values[0])) {
@@ -887,219 +927,295 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             $product   = $this->getProductById($productId);
 
             if (!$product) {
-                $article->text = str_replace($match[0], '', $article->text);
+                $article->text = $this->replaceAtPosition($article->text, $match['raw'], '');
                 continue;
             }
 
             // Check publish date if product has source article
             if (!empty($product->product_source_id)) {
                 $sourceArticle = $this->getArticle((int) $product->product_source_id);
+
                 if (!$this->checkPublishDate($sourceArticle)) {
-                    $article->text = str_replace($match[0], '', $article->text);
+                    $article->text = $this->replaceAtPosition($article->text, $match['raw'], '');
                     continue;
                 }
             }
 
-            // Process shortcode options
-            if (\in_array($placement, ['tag', 'both'], true) && \in_array('cart', $values, true)) {
-                $html .= $this->renderProductHtml($product, true);
+            // Options are everything after the product ID
+            $options = array_slice($values, 1);
+            $html    = '<div class="com_j2commerce j2commerce-single-product j2commerce-shortcode j2commerce-shortcode-article">';
+
+            foreach ($options as $option) {
+                $option = strtolower(trim($option));
+
+                // Special case: |detail dispatches onJ2CommerceViewProductHtml so the
+                // active subtemplate plugin renders it with its own view_*.php files.
+                if ($option === 'detail') {
+                    $html .= $this->renderProductDetail($productId);
+                    continue;
+                }
+
+                if (!isset(self::SHORTCODE_LAYOUT_MAP[$option])) {
+                    continue;
+                }
+
+                $layoutId    = self::SHORTCODE_LAYOUT_MAP[$option];
+                $displayData = $this->buildDisplayData($product, $option, $options);
+                $html       .= ProductLayoutService::renderLayout($layoutId, $displayData);
             }
 
-            if (\in_array('cartonly', $values, true)) {
-                $html .= $this->renderProductHtml($product, false);
-            }
+            $html .= '</div>';
 
-            if (\in_array('price', $values, true)) {
-                $html .= $this->getProductPriceHtml($product, 'price');
-            }
-
-            if (\in_array('saleprice', $values, true)) {
-                $html .= $this->getProductPriceHtml($product, 'saleprice');
-            }
-
-            if (\in_array('regularprice', $values, true)) {
-                $html .= $this->getProductPriceHtml($product, 'regularprice');
-            }
-
-            if (\in_array('thumbnail', $values, true)) {
-                $html .= $this->getProductImagesHtml($product, 'thumbnail');
-            }
-
-            if (\in_array('mainimage', $values, true)) {
-                $html .= $this->getProductImagesHtml($product, 'main');
-            }
-
-            if (\in_array('mainadditional', $values, true)) {
-                $html .= $this->getProductImagesHtml($product, 'mainadditional');
-            }
-
-            if (\in_array('upsells', $values, true)) {
-                $html .= $this->getProductUpsellsHtml($product);
-            }
-
-            if (\in_array('crosssells', $values, true)) {
-                $html .= $this->getProductCrossSellsHtml($product);
-            }
-
-            if (\in_array('manufacturer', $values, true) || \in_array('brand', $values, true)) {
-                $html .= $this->getProductBrandHtml($product);
-            }
-
-            $article->text = str_replace($match[0], $html, $article->text);
+            $article->text = $this->replaceAtPosition($article->text, $match['raw'], $html);
         }
+    }
+
+    /**
+     * Strip `<pre>` / `<code>` wrappers that WYSIWYG editors add around
+     * shortcodes. This lets the replaced product HTML render as a block-level
+     * element instead of inside a monospace formatted block.
+     *
+     * Handles both paired `{j2commerce}...{/j2commerce}` and inline
+     * `{j2commerce 5|opts}` forms, with optional whitespace/&nbsp; around them.
+     *
+     * @since  6.0.0
+     */
+    private function unwrapShortcodes(string $text): string
+    {
+        $whitespace = '(?:\s|&nbsp;|&#160;)*';
+        $shortcode  = '(?:{j2commerce}.*?{\/j2commerce}|{j2commerce\s+[0-9]+(?:\|[^}]*)?})';
+
+        $patterns = [
+            // <pre>{shortcode}</pre> with optional attributes and whitespace
+            '~<pre\b[^>]*>' . $whitespace . '(' . $shortcode . ')' . $whitespace . '</pre>~is',
+            // <code>{shortcode}</code>
+            '~<code\b[^>]*>' . $whitespace . '(' . $shortcode . ')' . $whitespace . '</code>~is',
+            // <p>{shortcode}</p> — when the shortcode is the only content in
+            // its paragraph, unwrapping avoids a <div> inside <p> (invalid HTML)
+            '~<p\b[^>]*>' . $whitespace . '(' . $shortcode . ')' . $whitespace . '</p>~is',
+        ];
+
+        foreach ($patterns as $pattern) {
+            $text = preg_replace($pattern, '$1', $text) ?? $text;
+        }
+
+        return $text;
     }
 
     /** @since 6.0.0 */
     private function parseShortcodes(string $text): array
     {
-        $regex = '/{j2commerce}(.*?){\/j2commerce}/';
-        preg_match_all($regex, $text, $matches, PREG_SET_ORDER);
+        $matches = [];
+
+        // Paired form: {j2commerce}ID|opt1|opt2{/j2commerce}
+        preg_match_all('/{j2commerce}(.*?){\/j2commerce}/', $text, $paired, PREG_SET_ORDER);
+        foreach ($paired as $m) {
+            $matches[] = ['raw' => $m[0], 'body' => $m[1]];
+        }
+
+        // Inline form: {j2commerce ID|opt1|opt2}
+        preg_match_all('/{j2commerce\s+([0-9]+(?:\|[^}]*)?)}/', $text, $inline, PREG_SET_ORDER);
+        foreach ($inline as $m) {
+            $matches[] = ['raw' => $m[0], 'body' => $m[1]];
+        }
 
         return $matches;
     }
 
-    /** @since 6.0.0 */
-    private function getProductPriceHtml(object $product, string $priceType): string
+    /**
+     * Render the full product detail view through the active subtemplate plugin.
+     *
+     * Manufactures a Site\View\Product\HtmlView + ProductModel via the component MVC
+     * factory, hydrates it with the target product, then dispatches
+     * `onJ2CommerceViewProductHtml` so the active subtemplate plugin (app_bootstrap5
+     * / app_uikit) renders the detail view using its own subtemplate view_* files.
+     *
+     * @param   int  $productId  Product ID to render.
+     *
+     * @return  string  Rendered HTML, or empty string on failure.
+     *
+     * @since   6.0.0
+     */
+    private function renderProductDetail(int $productId): string
     {
-        $variant = $this->getProductVariant($product->j2commerce_product_id);
+        try {
+            $app = $this->getApplication();
+            $mvcFactory = $app->bootComponent('com_j2commerce')->getMVCFactory();
 
-        if (!$variant) {
-            return '';
-        }
+            /** @var \J2Commerce\Component\J2commerce\Site\Model\ProductModel $model */
+            $model = $mvcFactory->createModel('Product', 'Site', ['ignore_request' => true]);
 
-        $price = 0;
-
-        switch ($priceType) {
-            case 'price':
-                $price = $variant->special_price ?: $variant->price;
-                break;
-            case 'saleprice':
-                $price = $variant->special_price ?: 0;
-                break;
-            case 'regularprice':
-                $price = $variant->price;
-                break;
-        }
-
-        if (!$price) {
-            return '';
-        }
-
-        return '<span class="j2commerce-price j2commerce-' . $priceType . '">' . $this->formatPrice((float) $price) . '</span>';
-    }
-
-    /** @since 6.0.0 */
-    private function getProductImagesHtml(object $product, string $imageType): string
-    {
-        $images = $this->getProductImagesData($product->j2commerce_product_id, $imageType);
-        $html   = '';
-
-        if (!empty($images)) {
-            $html .= '<div class="j2commerce-product-images j2commerce-' . $imageType . '">';
-            foreach ($images as $image) {
-                $html .= '<img src="' . $this->escape($image->image_path) . '" alt="" class="j2commerce-product-image">';
+            if (!$model) {
+                return '';
             }
-            $html .= '</div>';
-        }
 
-        return $html;
+            $model->setState('product.id', $productId);
+            $model->setState('params', $app->getParams());
+
+            $item = $model->getItem();
+            if (!$item) {
+                return '';
+            }
+
+            /** @var \J2Commerce\Component\J2commerce\Site\View\Product\HtmlView $view */
+            $view = $mvcFactory->createView('Product', 'Site', 'Html');
+
+            if (!$view) {
+                return '';
+            }
+
+            $view->setModel($model, true);
+
+            // Seed the view with the same properties Site\View\Product\HtmlView::display()
+            // sets before dispatching the event. The subtemplate plugin reads these.
+            $params = $this->buildArticleParams();
+            $subtemplate = trim((string) $this->params->get('shortcode_subtemplate', ''));
+            if ($subtemplate !== '') {
+                // Strip the 'app_' prefix — subtemplate plugins expect short names
+                // like 'bootstrap5' in $view->params->get('subtemplate').
+                $short = str_starts_with($subtemplate, 'app_') ? substr($subtemplate, 4) : $subtemplate;
+                $params->set('subtemplate', $short);
+            }
+
+            // `item`, `state`, and `user` are protected on ProductView. Bind a closure
+            // to the view class so we can write them without reflection overhead.
+            $state    = $model->getState();
+            $identity = $app->getIdentity();
+            $setter = \Closure::bind(
+                function ($item, $params, $state, $user) {
+                    $this->item    = $item;
+                    $this->product = $item;
+                    $this->params  = $params;
+                    $this->state   = $state;
+                    $this->user    = $user;
+                },
+                $view,
+                \get_class($view)
+            );
+            $setter($item, $params, $state, $identity);
+
+            // Dispatch the event directly — subtemplate plugin renders via its
+            // view_*.php files and sets the 'html' argument. We don't use
+            // J2CommerceHelper::plugin()->eventWithHtml() because it overwrites
+            // the 'html' argument with the concat of 'result' entries after dispatch.
+            \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2commerce');
+            $dispatcher = $app->getDispatcher();
+            $pluginEvent = new \J2Commerce\Component\J2commerce\Administrator\Event\PluginEvent(
+                'onJ2CommerceViewProductHtml',
+                [null, &$view, $model]
+            );
+            $dispatcher->dispatch('onJ2CommerceViewProductHtml', $pluginEvent);
+
+            return (string) $pluginEvent->getArgument('html', '');
+        } catch (\Throwable $e) {
+            return '';
+        }
     }
 
-    /** @since 6.0.0 */
-    private function getProductUpsellsHtml(object $product): string
+    private function buildDisplayData(object $product, string $option, array $allOptions): array
     {
-        if (empty($product->up_sells)) {
-            return '';
-        }
+        $params = $this->buildArticleParams();
+        $itemId = $this->resolveItemId();
 
-        $ids      = array_map('intval', explode(',', $product->up_sells));
-        $products = $this->getProductsByIds($ids);
-
-        if (empty($products)) {
-            return '';
-        }
-
-        $html = '<div class="j2commerce-upsells">';
-        $html .= '<h4>' . Text::_('PLG_CONTENT_J2COMMERCE_UPSELLS') . '</h4>';
-        $html .= '<div class="j2commerce-related-products">';
-
-        foreach ($products as $relatedProduct) {
-            $html .= $this->renderRelatedProductHtml($relatedProduct);
-        }
-
-        $html .= '</div></div>';
-
-        return $html;
+        return [
+            'product'         => $product,
+            'params'          => $params,
+            'context'         => ProductLayoutService::CONTEXT_ARTICLE,
+            'contextBase'     => 'article',
+            'contextSub'      => null,
+            'contextChain'    => ['article', 'list'],
+            'itemId'          => $itemId,
+            'columns'         => 1,
+            'imageWidth'      => (int) $this->params->get('shortcode_image_width', 300),
+            'showImage'       => $this->optionsContainAny($allOptions, ['images', 'gallery', 'mainimage', 'thumbnail', 'mainadditional', 'full', 'card', 'detail']),
+            'showTitle'       => $this->optionsContainAny($allOptions, ['title', 'full', 'card', 'detail']),
+            'showPrice'       => $this->optionsContainAny($allOptions, ['price', 'saleprice', 'regularprice', 'full', 'card', 'detail']),
+            'showCart'        => $this->optionsContainAny($allOptions, ['cart', 'cartonly', 'full', 'card', 'detail']),
+            'showSku'         => $this->optionsContainAny($allOptions, ['sku', 'full', 'card', 'detail']),
+            'showStock'       => $this->optionsContainAny($allOptions, ['stock', 'full', 'card', 'detail']),
+            'showDescription' => $this->optionsContainAny($allOptions, ['description', 'desc', 'full', 'card', 'detail']),
+            'showQuickview'   => \in_array('quickview', $allOptions, true),
+            'linkTitle'       => true,
+            'linkImage'       => true,
+            'productLink'     => $product->product_link ?? null,
+            'cartText'        => Text::_('COM_J2COMMERCE_ADD_TO_CART'),
+            'layoutBasePath'  => '',
+            'shortcodeOption' => $option,
+            'priceMode'       => $this->resolvePriceMode($option),
+            'imageMode'       => $this->resolveImageMode($option),
+            'showOptions'     => $option !== 'cartonly',
+            'sourceContext'   => 'article',
+        ];
     }
 
-    /** @since 6.0.0 */
-    private function getProductCrossSellsHtml(object $product): string
+    private function buildArticleParams(): \Joomla\Registry\Registry
     {
-        if (empty($product->cross_sells)) {
-            return '';
-        }
+        $params = new \Joomla\Registry\Registry();
+        $params->set('list_no_of_columns', 1);
+        $params->set('list_show_image', 1);
+        $params->set('list_show_title', 1);
+        $params->set('list_show_description', 0);
+        $params->set('list_show_product_sku', 0);
+        $params->set('list_show_product_stock', 0);
+        $params->set('list_enable_quickview', 0);
+        $params->set('list_link_title', 1);
+        $params->set('list_image_link_to_product', 1);
+        $params->set('list_image_width', (int) $this->params->get('shortcode_image_width', 300));
 
-        $ids      = array_map('intval', explode(',', $product->cross_sells));
-        $products = $this->getProductsByIds($ids);
-
-        if (empty($products)) {
-            return '';
-        }
-
-        $html = '<div class="j2commerce-crosssells">';
-        $html .= '<h4>' . Text::_('PLG_CONTENT_J2COMMERCE_CROSSSELLS') . '</h4>';
-        $html .= '<div class="j2commerce-related-products">';
-
-        foreach ($products as $relatedProduct) {
-            $html .= $this->renderRelatedProductHtml($relatedProduct);
-        }
-
-        $html .= '</div></div>';
-
-        return $html;
+        return $params;
     }
 
-    /** @since 6.0.0 */
-    private function renderRelatedProductHtml(object $product): string
+    private function resolveItemId(): int
     {
-        $html = '<div class="j2commerce-related-product">';
+        try {
+            $app  = $this->getApplication();
+            $menu = $app->getMenu();
 
-        // Get product name from source
-        $name = '';
-        if ($product->product_source === 'com_content' && !empty($product->product_source_id)) {
-            $article = $this->getArticle((int) $product->product_source_id);
-            if ($article) {
-                $name = $article->title;
-                $link = RouteHelper::getArticleRoute($article->id, $article->catid, $article->language ?? '*');
-                $html .= '<a href="' . Route::_($link) . '">' . $this->escape($name) . '</a>';
+            return $menu ? (int) ($menu->getActive()?->id ?? 0) : 0;
+        } catch (\Throwable) {
+            return 0;
+        }
+    }
+
+    private function optionsContainAny(array $options, array $needles): bool
+    {
+        foreach ($needles as $needle) {
+            if (\in_array($needle, $options, true)) {
+                return true;
             }
         }
 
-        // Price
-        $variant = $this->getProductVariant($product->j2commerce_product_id);
-        if ($variant) {
-            $html .= '<span class="j2commerce-price">' . $this->formatPrice((float) ($variant->special_price ?: $variant->price)) . '</span>';
-        }
-
-        $html .= '</div>';
-
-        return $html;
+        return false;
     }
 
-    /** @since 6.0.0 */
-    private function getProductBrandHtml(object $product): string
+    private function resolvePriceMode(string $option): ?string
     {
-        if (empty($product->manufacturer_id)) {
-            return '';
+        return match ($option) {
+            'saleprice'    => 'sale',
+            'regularprice' => 'regular',
+            default        => null,
+        };
+    }
+
+    private function resolveImageMode(string $option): ?string
+    {
+        return match ($option) {
+            'mainimage'      => 'main',
+            'thumbnail'      => 'thumb',
+            'mainadditional' => 'mainadditional',
+            default          => null,
+        };
+    }
+
+    private function replaceAtPosition(string $haystack, string $needle, string $replacement): string
+    {
+        $pos = strpos($haystack, $needle);
+
+        if ($pos === false) {
+            return $haystack;
         }
 
-        $manufacturer = $this->getManufacturer((int) $product->manufacturer_id);
-
-        if (!$manufacturer) {
-            return '';
-        }
-
-        return '<div class="j2commerce-brand"><span class="brand-label">' . Text::_('PLG_CONTENT_J2COMMERCE_BRAND') . ':</span> <span class="brand-name">' . $this->escape($manufacturer->company ?? '') . '</span></div>';
+        return substr_replace($haystack, $replacement, $pos, \strlen($needle));
     }
 
     /** @since 6.0.0 */
@@ -1245,7 +1361,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         $db    = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select([
-                $db->quoteName('a.*'),
+                'a.*',
                 $db->quoteName('c.title', 'category_title'),
                 $db->quoteName('c.alias', 'category_alias'),
                 $db->quoteName('c.access', 'category_access'),
