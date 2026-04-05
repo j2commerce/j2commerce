@@ -275,7 +275,7 @@
                     description="PLG_CONTENT_J2COMMERCE_SHORTCODE_SUBTEMPLATE_DESC"
                     default="app_bootstrap5"
                 >
-                    <option value="">JUSE_GLOBAL</option>
+                    <option value="">JGLOBAL_USE_GLOBAL</option>
                     <option value="app_bootstrap5">Bootstrap 5</option>
                     <option value="app_uikit">UIkit 3</option>
                 </field>
