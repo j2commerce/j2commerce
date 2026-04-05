@@ -5,280 +5,283 @@
  * Registered via onJ2CommerceAfterAddCSS event in AppBootstrap5.
  */
 
-.com_j2commerce {
-    .btn-success {
-        --btn-bg: var(--success);
-    }
+.j2commerce .btn-success {
+    --btn-bg: var(--success);
+}
 
-    .text-bg-success {
-        color: var(--success)!important;
-        background-color: var(--success-bg-subtle)!important;
-    }
-    
-    .border-success {
-        border-color: var(--success)!important;
-    }
+.j2commerce .text-bg-success {
+    color: var(--success)!important;
+    background-color: var(--success-bg-subtle)!important;
+}
 
-    .alert-success {
-        color: var(--success)!important;
-        background-color: var(--success-bg-subtle)!important;
-    }
+.j2commerce .border-success {
+    border-color: var(--success)!important;
+}
 
-    .text-bg-info {
-        color: var(--info)!important;
-        background-color: var(--info-bg-subtle)!important;
-    }
+.j2commerce .alert-success {
+    color: var(--success)!important;
+    background-color: var(--success-bg-subtle)!important;
+}
 
-    .alert-info {
-        color: var(--info)!important;
-        background-color: var(--info-bg-subtle)!important;
-    }
+.j2commerce .text-bg-info {
+    color: var(--info)!important;
+    background-color: var(--info-bg-subtle)!important;
+}
 
-    .text-bg-warning {
-        color: var(--warning)!important;
-        background-color: var(--warning-bg-subtle)!important;
-    }
+.j2commerce .alert-info {
+    color: var(--info)!important;
+    background-color: var(--info-bg-subtle)!important;
+}
 
-    .alert-warning {
-        color: var(--warning)!important;
-        background-color: var(--warning-bg-subtle)!important;
-    }
+.j2commerce .text-bg-warning {
+    color: var(--warning)!important;
+    background-color: var(--warning-bg-subtle)!important;
+}
 
-    .text-bg-danger {
-        color: var(--danger)!important;
-        background-color: var(--danger-bg-subtle)!important;
-    }
+.j2commerce .alert-warning {
+    color: var(--warning)!important;
+    background-color: var(--warning-bg-subtle)!important;
+}
 
-    .alert-danger {
-        color: var(--danger)!important;
-        background-color: var(--danger-bg-subtle)!important;
-    }
+.j2commerce .text-bg-danger {
+    color: var(--danger)!important;
+    background-color: var(--danger-bg-subtle)!important;
+}
 
-    button.choices__button_joomla {
-        color: var(--danger);opacity:1!important;
-    }
+.j2commerce .alert-danger {
+    color: var(--danger)!important;
+    background-color: var(--danger-bg-subtle)!important;
+}
 
-    .alert-purple {
-        color: var(--purple)!important;
-        background-color: var(--purple-bg-subtle)!important;
-    }
+.j2commerce button.choices__button_joomla {
+    color: var(--danger);opacity:1!important;
+}
 
-    .text-bg-purple {
-        color: var(--purple)!important;
-        background-color: var(--purple-bg-subtle)!important;
-    }
+.j2commerce .alert-purple {
+    color: var(--purple)!important;
+    background-color: var(--purple-bg-subtle)!important;
+}
 
-    .text-bg-light {
-        color: #000 !important;
-        background-color: RGBA(var(--light-rgb), var(--bg-opacity, 1)) !important;
-    }
+.j2commerce .text-bg-purple {
+    color: var(--purple)!important;
+    background-color: var(--purple-bg-subtle)!important;
+}
 
-    .text-bg-dark {
-        color:#111827!important;
-        background-color:#f9fafb!important;
-        border:1px solid #e5e7eb!important;
-    }
+.j2commerce .text-bg-light {
+    color: #000 !important;
+    background-color: RGBA(var(--light-rgb), var(--bg-opacity, 1)) !important;
+}
 
-    .text-bg-dark:hover {
-        color:#111827!important;
-        background-color:#f3f4f6!important;
-        border:1px solid #e5e7eb!important;
-    }
+.j2commerce .text-bg-dark {
+    color:#111827!important;
+    background-color:#f9fafb!important;
+    border:1px solid #e5e7eb!important;
+}
 
-    .text-bg-action {
-        color: #fff !important;
-        background-color: RGBA(var(--action-rgb), var(--bg-opacity, 1)) !important;
-    }
+.j2commerce .text-bg-dark:hover {
+    color:#111827!important;
+    background-color:#f3f4f6!important;
+    border:1px solid #e5e7eb!important;
+}
 
-    .btn-soft-success {
-        color:#166534;
-        background:#f0fdf4;
-        border:1px solid #bbf7d0;
-    }
-    
-    .btn-soft-success:hover {
-        background:#dcfce7!important;
-    }
+.j2commerce .text-bg-action {
+    color: #fff !important;
+    background-color: RGBA(var(--action-rgb), var(--bg-opacity, 1)) !important;
+}
 
-    .btn-soft-warning {
-        color:#92400e;
-        background:#fffbeb;
-        border:1px solid #fde68a;
-    }
-    
-    .btn-soft-warning:hover {
-        background:#fef3c7!important;
-    }
+.j2commerce .btn-soft-success {
+    color:#166534;
+    background:#f0fdf4;
+    border:1px solid #bbf7d0;
+}
 
-    .btn-soft-danger {
-        color:#991b1b;
-        background:#fef2f2;
-        border:1px solid #fecaca;
-    }
-    
-    .btn-soft-danger:hover {
-        background:#fee2e2!important;
-        color:#991b1b!important;
-    }
+.j2commerce .btn-soft-success:hover {
+    background:#dcfce7!important;
+}
 
-    .btn-soft-info {
-        color:#1e40af;
-        background:#eff6ff;
-        border:1px solid #bfdbfe;
-    }
+.j2commerce .btn-soft-warning {
+    color:#92400e;
+    background:#fffbeb;
+    border:1px solid #fde68a;
+}
 
-    .btn-soft-info:hover {
-        background:#dbeafe!important;
-    }
+.j2commerce .btn-soft-warning:hover {
+    background:#fef3c7!important;
+}
 
-    .btn-soft-primary {
-        color:#5b21b6 !important;
-        background:#f5f3ff !important;
-        border:1px solid #ddd6fe;
-    }
+.j2commerce .btn-soft-danger {
+    color:#991b1b;
+    background:#fef2f2;
+    border:1px solid #fecaca;
+}
 
-    .btn-soft-primary:hover {
-        background:#ede9fe!important;
-    }
+.j2commerce .btn-soft-danger:hover {
+    background:#fee2e2!important;
+    color:#991b1b!important;
+}
 
-    .btn-soft-dark {
-        color:#111827;
-        background:#f9fafb;
-        border:1px solid #e5e7eb;
-    }
-    .btn-soft-dark:hover {
-        background:#f3f4f6!important;
-    }
+.j2commerce .btn-soft-info {
+    color:#1e40af;
+    background:#eff6ff;
+    border:1px solid #bfdbfe;
+}
 
-    .btn-light {
-        background-color: #F9FAFB!important;
-    }
-    
-    .j2commerce-cart-buttons .form-control.qty-input {
-        max-width: 60px;
-        padding:0.6rem;
-        text-align:center;
-    }
+.j2commerce .btn-soft-info:hover {
+    background:#dbeafe!important;
+}
 
-    .j2commerce-cart-buttons input[type="number"]::-webkit-outer-spin-button,
-    .j2commerce-cart-buttons input[type="number"]::-webkit-inner-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
-    }
+.j2commerce .btn-soft-primary {
+    color:#5b21b6 !important;
+    background:#f5f3ff !important;
+    border:1px solid #ddd6fe;
+}
 
-    .j2commerce-configurable-button.btn[data-bs-toggle="collapse"] .fa-chevron-down {
-        transition: transform .25s ease;
-    }
+.j2commerce .btn-soft-primary:hover {
+    background:#ede9fe!important;
+}
 
-    /* when collapse is open */
-    .j2commerce-configurable-button.btn[data-bs-toggle="collapse"][aria-expanded="true"] .fa-chevron-down {
-        transform: rotate(180deg);
-    }
+.j2commerce .btn-soft-dark {
+    color:#111827;
+    background:#f9fafb;
+    border:1px solid #e5e7eb;
+}
 
-    input.btn-check:checked + label.btn-color {
-        border: 2px solid #9ca3af !important;
-    }
+.j2commerce .btn-soft-dark:hover {
+    background:#f3f4f6!important;
+}
 
-    #j2commerce-product-detail-tab, #j2commerceProfileTabs {
-        box-shadow: rgba(0, 0, 0, 0.05) 0px -4px inset;
-    }
+.j2commerce .btn-light {
+    background-color: #F9FAFB!important;
+}
 
-    #j2commerce-product-detail-tab.nav.nav-tabs .nav-link, #j2commerceProfileTabs .nav-link {
-        box-shadow:none!important;
-    }
+.j2commerce-cart-buttons .form-control.qty-input {
+    max-width: 60px;
+    padding:0.6rem;
+    text-align:center;
+}
 
-    #j2commerce-product-detail-tab.nav.nav-tabs .nav-link.active, #j2commerceProfileTabs .nav-link.active {
-        background:transparent;font-weight:700;
-    }
+.j2commerce-cart-buttons input[type="number"]::-webkit-outer-spin-button,
+.j2commerce-cart-buttons input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
 
-    @media (width >= 768px) {
-        .j2commerce-sidebar-filters-container .offcanvas-md {
-            --offcanvas-height: auto;
-            --offcanvas-border-width: 0;
-            background-color: #0000 !important;
-            transform: translateX(0);
-            width:100%;
-        }
-    }
-    @media (width <=767px) {
-        .j2commerce-sidebar-filters-container .offcanvas-md {
-            transform: translateX(-100%);
-        }
-    }
+.j2commerce-configurable-button.btn[data-bs-toggle="collapse"] .fa-chevron-down {
+    transition: transform .25s ease;
+}
 
-    #j2CommerceAccordion.accordion {
-        --bs-accordion-btn-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23333333' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M8 3v10M3 8h10'/%3E%3C/svg%3E");
-        --bs-accordion-btn-active-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23333333' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M3 8h10'/%3E%3C/svg%3E");
-        --accordion-active-color: #0f244d;
-        --accordion-active-bg: #e7e9ee;
-        --accordion-border-color: #dfe3e7;
-        --accordion-border-width: 1px;
-    }
+/* when collapse is open */
+.j2commerce-configurable-button.btn[data-bs-toggle="collapse"][aria-expanded="true"] .fa-chevron-down {
+    transform: rotate(180deg);
+}
 
-    #j2CommerceAccordion.accordion .accordion-button[aria-expanded="false"]::after {
-        background-image: var(--bs-accordion-btn-icon);
-    }
+.j2commerce input.btn-check:checked + label.btn-color {
+    border: 2px solid #9ca3af !important;
+}
 
-    #j2CommerceAccordion.accordion .accordion-button[aria-expanded="true"]::after {
-        background-image: var(--bs-accordion-btn-active-icon);
-    }
+#j2commerce-product-detail-tab,
+#j2commerceProfileTabs {
+    box-shadow: rgba(0, 0, 0, 0.05) 0 -4px inset;
+}
 
-    #j2CommerceAccordion .accordion-button {
-        color: var(--accordion-active-color)!important;
-        background-color: var(--accordion-active-bg)!important;
-        box-shadow:none!important;
-    }
+#j2commerce-product-detail-tab.nav.nav-tabs .nav-link,
+#j2commerceProfileTabs .nav-link {
+    box-shadow:none!important;
+}
 
-    .product-accordion .accordion-item {
-        border: none;
-        border-bottom: 1px solid var(--product-color-border);
-        border-radius: 0 !important;
-        background: none;
-    }
+#j2commerce-product-detail-tab.nav.nav-tabs .nav-link.active,
+#j2commerceProfileTabs .nav-link.active {
+    background:transparent;font-weight:700;
+}
 
-    .product-accordion .accordion-button {
-        padding: 1rem 0;
-        font-size: 0.875rem;
-        font-weight: 400;
-        color: var(--product-color-text);
-        background: none;
-        border-radius: 0 !important;
-        box-shadow: none;
-        letter-spacing: 0.01em;
-    }
-    
-    .product-accordion .accordion-button:not(.collapsed) {
-        background: none;
-        color: var(--product-color-text);
-        box-shadow: none;
-    }
-    
-    .product-accordion .accordion-button::after {
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236b7280' viewBox='0 0 16 16'%3E%3Cpath d='M8 1v14M1 8h14' stroke='%236b7280' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
-        background-size: 0.875rem;
-        width: 0.875rem;
-        height: 0.875rem;
-        transition: transform 0.2s ease;
-    }
-    
-    .product-accordion .accordion-button:not(.collapsed)::after {
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236b7280' viewBox='0 0 16 16'%3E%3Cpath d='M1 8h14' stroke='%236b7280' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
-        transform: none;
-    }
-    
-    .product-accordion .accordion-body {
-        padding: 0 0 1rem;
-        font-size: 0.875rem;
-        line-height: 1.7;
-        color: var(--product-color-text-light);
-    }
-
-    .j2commerce-product-item .j2commerce-product-title {
-        min-height:40px;
+@media (width >= 768px) {
+    .j2commerce-sidebar-filters-container .offcanvas-md {
+        --offcanvas-height: auto;
+        --offcanvas-border-width: 0;
+        background-color: #0000 !important;
+        transform: translateX(0);
+        width:100%;
     }
 }
 
-.btn-secondary {
+@media (width <=767px) {
+    .j2commerce-sidebar-filters-container .offcanvas-md {
+        transform: translateX(-100%);
+    }
+}
+
+#j2CommerceAccordion.accordion {
+    --bs-accordion-btn-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23333333' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M8 3v10M3 8h10'/%3E%3C/svg%3E");
+    --bs-accordion-btn-active-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23333333' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M3 8h10'/%3E%3C/svg%3E");
+    --accordion-active-color: #0f244d;
+    --accordion-active-bg: #e7e9ee;
+    --accordion-border-color: #dfe3e7;
+    --accordion-border-width: 1px;
+}
+
+#j2CommerceAccordion.accordion .accordion-button[aria-expanded="false"]::after {
+    background-image: var(--bs-accordion-btn-icon);
+}
+
+#j2CommerceAccordion.accordion .accordion-button[aria-expanded="true"]::after {
+    background-image: var(--bs-accordion-btn-active-icon);
+}
+
+#j2CommerceAccordion .accordion-button {
+    color: var(--accordion-active-color)!important;
+    background-color: var(--accordion-active-bg)!important;
+    box-shadow:none!important;
+}
+
+.product-accordion .accordion-item {
+    border: none;
+    border-bottom: 1px solid var(--product-color-border);
+    border-radius: 0 !important;
+    background: none;
+}
+
+.product-accordion .accordion-button {
+    padding: 1rem 0;
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: var(--product-color-text);
+    background: none;
+    border-radius: 0 !important;
+    box-shadow: none;
+    letter-spacing: 0.01em;
+}
+
+.product-accordion .accordion-button:not(.collapsed) {
+    background: none;
+    color: var(--product-color-text);
+    box-shadow: none;
+}
+
+.product-accordion .accordion-button::after {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236b7280' viewBox='0 0 16 16'%3E%3Cpath d='M8 1v14M1 8h14' stroke='%236b7280' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+    background-size: 0.875rem;
+    width: 0.875rem;
+    height: 0.875rem;
+    transition: transform 0.2s ease;
+}
+
+.product-accordion .accordion-button:not(.collapsed)::after {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236b7280' viewBox='0 0 16 16'%3E%3Cpath d='M1 8h14' stroke='%236b7280' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+    transform: none;
+}
+
+.product-accordion .accordion-body {
+    padding: 0 0 1rem;
+    font-size: 0.875rem;
+    line-height: 1.7;
+    color: var(--product-color-text-light);
+}
+
+.j2commerce-product-item .j2commerce-product-title {
+    min-height:40px;
+}
+
+.j2commerce .btn-secondary {
     --btn-color: #333d4c;
     --btn-bg: #eef1f6;
     --btn-border-color: var(--btn-bg);
@@ -293,7 +296,7 @@
     --btn-disabled-border-color:var(--btn-bg);
 }
 
-.btn-outline-secondary {
+.j2commerce .btn-outline-secondary {
     --btn-color: #6d757e;
     --btn-border-color: #6d757e;
     --btn-hover-color: #fff;
