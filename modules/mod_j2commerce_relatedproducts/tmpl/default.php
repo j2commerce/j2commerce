@@ -49,7 +49,7 @@ $colClass = match ($columns) {
     default => 'col-6 col-md-3',
 };
 ?>
-<div class="j2commerce-relatedproducts-module mod-j2commerce-relatedproducts-<?php echo $moduleId; ?> com_j2commerce"
+<div class="j2commerce-relatedproducts-module mod-j2commerce-relatedproducts-<?php echo $moduleId; ?> j2commerce"
      data-module-id="<?php echo $moduleId; ?>">
 
     <?php if ($showHeading) : ?>

@@ -35,7 +35,7 @@ $defaultHeading = match ($relationType) {
 };
 $heading = !empty($headingText) ? $headingText : $defaultHeading;
 ?>
-<div class="j2commerce-relatedproducts-module j2commerce-relatedproducts-slider mod-j2commerce-relatedproducts-<?php echo $moduleId; ?> com_j2commerce"
+<div class="j2commerce-relatedproducts-module j2commerce-relatedproducts-slider mod-j2commerce-relatedproducts-<?php echo $moduleId; ?> j2commerce"
      data-module-id="<?php echo $moduleId; ?>">
 
     <?php if ($showHeading) : ?>

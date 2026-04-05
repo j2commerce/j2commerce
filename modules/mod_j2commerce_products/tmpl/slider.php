@@ -36,7 +36,7 @@ $loopEnabled = $loop && count($products) > $slidesPerView;
 
 echo J2CommerceHelper::plugin()->eventWithHtml('BeforeViewProductListDisplay', [$products])->getArgument('html', '');
 ?>
-<div class="j2commerce-products-module j2commerce-products-slider mod-j2commerce-products-<?php echo $moduleId; ?> com_j2commerce">
+<div class="j2commerce-products-module j2commerce-products-slider mod-j2commerce-products-<?php echo $moduleId; ?> j2commerce">
     <div class="swiper" id="j2commerce-swiper-<?php echo $moduleId; ?>">
         <div class="swiper-wrapper">
             <?php foreach ($products as $product) : ?>

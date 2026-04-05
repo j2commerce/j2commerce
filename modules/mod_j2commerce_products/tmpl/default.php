@@ -43,7 +43,7 @@ $colClass = match ($columns) {
 echo J2CommerceHelper::plugin()->eventWithHtml('BeforeViewProductListDisplay', [$products])->getArgument('html', '');
 echo J2CommerceHelper::modules()->loadPosition('j2commerce-product-list-top');
 ?>
-<div class="j2commerce-products-module mod-j2commerce-products-<?php echo $moduleId; ?> com_j2commerce">
+<div class="j2commerce-products-module mod-j2commerce-products-<?php echo $moduleId; ?> j2commerce">
     <div class="row g-3">
         <?php foreach ($products as $product) : ?>
             <div class="<?php echo $colClass; ?>">

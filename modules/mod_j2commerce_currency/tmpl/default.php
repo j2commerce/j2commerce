@@ -71,7 +71,7 @@ $scopeId    = 'mod-j2commerce-currency-' . $moduleId;
 }
 </style>
 
-<div id="<?php echo $scopeId; ?>" class="j2commerce-currency-switcher">
+<div id="<?php echo $scopeId; ?>" class="j2commerce j2commerce-currency-switcher">
     <div class="dropdown">
         <button class="btn j2commerce-currency-btn dropdown-toggle" type="button"
                 id="<?php echo $scopeId; ?>-btn"
