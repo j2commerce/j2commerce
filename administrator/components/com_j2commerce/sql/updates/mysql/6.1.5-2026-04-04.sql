@@ -1,3 +1,0 @@
--- J2Commerce 6.1.5-2026-04-04
--- Adopt Joomla core date-based schema versioning pattern
--- No schema changes — establishes new naming convention
