@@ -47,9 +47,8 @@ $wa->useScript('keepalive')
                 </fieldset>
             </div>
             <div class="col-lg-3">
-                <fieldset id="fieldset-type" class="options-form">
-                    <legend><?php echo Text::_('COM_J2COMMERCE_FIELDSET_ADDRESS_TYPE'); ?></legend>
-                    <?php echo $this->form->renderField('type'); ?>
+                <fieldset id="fieldset-user" class="options-form">
+                    <legend><?php echo Text::_('COM_J2COMMERCE_FIELD_USER'); ?></legend>
                     <?php echo $this->form->renderField('user_id'); ?>
                 </fieldset>
             </div>
@@ -82,6 +81,10 @@ $wa->useScript('keepalive')
                 </fieldset>
             </div>
             <div class="col-lg-3">
+                <fieldset id="fieldset-type" class="options-form">
+                    <legend><?php echo Text::_('COM_J2COMMERCE_FIELDSET_ADDRESS_TYPE'); ?></legend>
+                    <?php echo $this->form->renderField('type'); ?>
+                </fieldset>
                 <fieldset id="fieldset-tax" class="options-form">
                     <legend><?php echo Text::_('COM_J2COMMERCE_FIELDSET_TAX_INFO'); ?></legend>
                     <?php echo $this->form->renderField('tax_number'); ?>
