@@ -8,7 +8,7 @@
  */
 return [
     'exact' => [
-        // E-commerce terms (customer-facing)
+        // Ecommerce terms (customer-facing)
         'Shopping Cart'     => 'Shopping Basket',
         'shopping cart'     => 'shopping basket',
         'Add to Cart'       => 'Add to Basket',
