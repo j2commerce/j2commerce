@@ -45,7 +45,7 @@ $limit      = isset($this->pagination) ? $this->pagination->limit : 20;
                         <th scope="col"><?php echo Text::_('COM_J2COMMERCE_INVOICE_NO'); ?></th>
                         <th scope="col"><?php echo Text::_('COM_J2COMMERCE_ORDER_STATUS'); ?></th>
                         <th scope="col" class="text-end"><?php echo Text::_('COM_J2COMMERCE_ORDER_AMOUNT'); ?></th>
-                        <th scope="col" class="text-center" style="width:1%"></th>
+                        <th scope="col" class="text-center" style="width:1%"><span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_ACTIONS'); ?></span></th>
                     </tr>
                 </thead>
                 <tbody id="j2c-orders-body">

@@ -45,7 +45,7 @@ $nullDate   = '0000-00-00 00:00:00';
                         <th scope="col"><?php echo Text::_('COM_J2COMMERCE_FILES'); ?></th>
                         <th scope="col"><?php echo Text::_('COM_J2COMMERCE_ACCESS_EXPIRES'); ?></th>
                         <th scope="col" class="text-center"><?php echo Text::_('COM_J2COMMERCE_DOWNLOADS_REMAINING'); ?></th>
-                        <th scope="col" class="text-center" style="width:1%"></th>
+                        <th scope="col" class="text-center" style="width:1%"><span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_ACTIONS'); ?></span></th>
                     </tr>
                 </thead>
                 <tbody id="j2c-downloads-body">

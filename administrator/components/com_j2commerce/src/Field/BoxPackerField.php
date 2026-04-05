@@ -96,7 +96,7 @@ class BoxPackerField extends FormField
         $html .= '<th scope="col"><small>' . Text::_('COM_J2COMMERCE_BOXPACKER_INNER_HEIGHT') . '</small></th>';
         $html .= '<th scope="col"><small>' . Text::_('COM_J2COMMERCE_BOXPACKER_BOX_WEIGHT') . '</small></th>';
         $html .= '<th scope="col"><small>' . Text::_('COM_J2COMMERCE_BOXPACKER_MAX_WEIGHT') . '</small></th>';
-        $html .= '<th></th>';
+        $html .= '<th scope="col"><span class="visually-hidden">' . Text::_('COM_J2COMMERCE_ACTIONS') . '</span></th>';
         $html .= '</tr></thead>';
         $html .= '<tbody class="boxpacker-boxes-body">';
 
@@ -131,7 +131,7 @@ class BoxPackerField extends FormField
         $html .= '<th>' . Text::_('COM_J2COMMERCE_BOXPACKER_PREVIEW_HEIGHT') . '</th>';
         $html .= '<th>' . Text::_('COM_J2COMMERCE_BOXPACKER_PREVIEW_WEIGHT') . '</th>';
         $html .= '<th>' . Text::_('COM_J2COMMERCE_BOXPACKER_PREVIEW_QTY') . '</th>';
-        $html .= '<th></th>';
+        $html .= '<th><span class="visually-hidden">' . Text::_('COM_J2COMMERCE_ACTIONS') . '</span></th>';
         $html .= '</tr></thead>';
         $html .= '<tbody class="preview-items-body"></tbody>';
         $html .= '</table></div>';

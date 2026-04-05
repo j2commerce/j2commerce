@@ -532,7 +532,7 @@ $e = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
                     <th class="ob-rate-range d-none"><?php echo Text::_('COM_J2COMMERCE_FIELD_RANGE_END'); ?></th>
                     <th><?php echo Text::_('COM_J2COMMERCE_SHIPPING_COST'); ?></th>
                     <th><?php echo Text::_('COM_J2COMMERCE_HANDLING_COST'); ?></th>
-                    <th></th>
+                    <th><span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_ACTIONS'); ?></span></th>
                   </tr>
                 </thead>
                 <tbody id="ob-rates-body">

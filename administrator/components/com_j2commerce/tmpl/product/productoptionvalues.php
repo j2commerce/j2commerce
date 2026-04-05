@@ -184,7 +184,7 @@ $conSpan = 0;
                             <?php endif; ?>
                         <?php endif; ?>
                         <th scope="col"><?php echo Text::_('COM_J2COMMERCE_OPTION_ORDERING'); ?></th>
-                        <th></th>
+                        <th scope="col"><span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_ACTIONS'); ?></span></th>
                     </tr>
                     </thead>
                     <tbody>

@@ -131,7 +131,7 @@ $statusName = !empty($order->orderstatus_name) ? Text::_($order->orderstatus_nam
             <thead>
                 <tr>
                     <?php if ($params->get('show_thumb_cart', 0)): ?>
-                    <th style="width:60px"></th>
+                    <th style="width:60px"><span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_IMAGE'); ?></span></th>
                     <?php endif; ?>
                     <th><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM'); ?></th>
                     <?php if ($params->get('show_sku', 0)): ?>

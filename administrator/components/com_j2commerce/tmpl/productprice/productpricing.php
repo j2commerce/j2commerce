@@ -241,7 +241,7 @@ $wa->addInlineScript($script);
                         </th>
                         <th scope="col" class="w-20"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_PRICE_GROUP_RANGE'); ?></th>
                         <th scope="col" class="w-15"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_PRICE_VALUE'); ?></th>
-                        <th scope="col" class="w-10"></th>
+                        <th scope="col" class="w-10"><span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_ACTIONS'); ?></span></th>
                     </tr>
                     </thead>
                     <tbody>
@@ -315,7 +315,7 @@ $wa->addInlineScript($script);
                         </th>
                         <th scope="col" class="w-10"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_PRICE_GROUP_RANGE'); ?></th>
                         <th scope="col" class="w-20"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_PRICE_VALUE'); ?></th>
-                        <th scope="col" class="w-10"></th>
+                        <th scope="col" class="w-10"><span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_ACTIONS'); ?></span></th>
                     </tr>
                     </thead>
                     <tbody>

@@ -57,7 +57,7 @@ $rightColumn = [
                         <caption class="visually-hidden"><?php echo Text::_('MOD_J2COMMERCE_STATS_ORDER_STATISTICS'); ?></caption>
                         <thead>
                         <tr>
-                            <th scope="col"></th>
+                            <th scope="col"><span class="visually-hidden"><?php echo Text::_('MOD_J2COMMERCE_STATS_PERIOD'); ?></span></th>
                             <th scope="col" class="text-center"><?php echo Text::_('MOD_J2COMMERCE_STATS_TOTAL'); ?></th>
                             <th scope="col" class="text-end"><?php echo Text::_('MOD_J2COMMERCE_STATS_AMOUNT'); ?></th>
                         </tr>

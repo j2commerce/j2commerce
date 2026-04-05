@@ -69,7 +69,7 @@ class ModuleproductaddField extends ProductMultiSelectField
             . '<th scope="col" class="w-10">' . Text::_('COM_J2COMMERCE_PRODUCT_FIELD_ID') . '</th>'
             . '<th scope="col">' . Text::_('COM_J2COMMERCE_PRODUCT_FIELD_NAME') . '</th>'
             . '<th scope="col" class="text-end w-6"><button type="button" class="btn btn-sm btn-soft-danger" onclick="clearAllItems_' . $this->id . '()" title="' . Text::_('COM_J2COMMERCE_PRODUCTS_CLEAR_ALL') . '"><span class="icon-trash" aria-hidden="true"></span></button></th>'
-            . '<th class="w-1"></th>'
+            . '<th class="w-1"><span class="visually-hidden">' . Text::_('COM_J2COMMERCE_REMOVE') . '</span></th>'
             . '</tr></thead><tbody>';
 
         foreach ($this->value as $index => $productId) {
@@ -106,6 +106,7 @@ class ModuleproductaddField extends ProductMultiSelectField
         Text::script('COM_J2COMMERCE_PRODUCT_FIELD_NAME');
         Text::script('COM_J2COMMERCE_PRODUCTS_CLEAR_ALL');
         Text::script('COM_J2COMMERCE_PRODUCT_CLEAR');
+        Text::script('COM_J2COMMERCE_REMOVE');
 
         $fieldName = addslashes(htmlspecialchars($this->name, ENT_QUOTES, 'UTF-8'));
 
@@ -141,7 +142,7 @@ class ModuleproductaddField extends ProductMultiSelectField
                                               '<i class="icon-trash" aria-hidden="true"></i>' +
                                           '</button>' +
                                       '</th>' +
-                                      '<th class="w-1"></th>'
+                                      '<th class="w-1"><span class="visually-hidden">' + Joomla.Text._('COM_J2COMMERCE_REMOVE') + '</span></th>'
                         });
 
                         thead.appendChild(headerRow);

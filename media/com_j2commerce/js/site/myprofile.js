@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 + `<th scope="col">${Joomla.Text._('COM_J2COMMERCE_INVOICE_NO') || 'Order #'}</th>`
                 + `<th scope="col">${Joomla.Text._('COM_J2COMMERCE_ORDER_STATUS') || 'Status'}</th>`
                 + `<th scope="col" class="text-end">${Joomla.Text._('COM_J2COMMERCE_ORDER_AMOUNT') || 'Amount'}</th>`
-                + '<th scope="col" class="text-center" style="width:1%"></th>'
+                + `<th scope="col" class="text-center" style="width:1%"><span class="visually-hidden">${Joomla.Text._('COM_J2COMMERCE_ACTIONS') || 'Actions'}</span></th>`
                 + '</tr></thead>';
 
             wrap.innerHTML = '<div class="table-responsive">'
@@ -297,7 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 + `<th scope="col">${Joomla.Text._('COM_J2COMMERCE_FILES') || 'Files'}</th>`
                 + `<th scope="col">${Joomla.Text._('COM_J2COMMERCE_ACCESS_EXPIRES') || 'Expires'}</th>`
                 + `<th scope="col" class="text-center">${Joomla.Text._('COM_J2COMMERCE_DOWNLOADS_REMAINING') || 'Remaining'}</th>`
-                + '<th scope="col" class="text-center" style="width:1%"></th>'
+                + `<th scope="col" class="text-center" style="width:1%"><span class="visually-hidden">${Joomla.Text._('COM_J2COMMERCE_ACTIONS') || 'Actions'}</span></th>`
                 + '</tr></thead>';
 
             dlWrap.innerHTML = '<div class="table-responsive">'

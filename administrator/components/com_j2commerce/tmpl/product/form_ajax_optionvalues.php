@@ -167,7 +167,7 @@ $wa->addInlineStyle($style, [], []);
                 <table class="table itemList" id="j2commerce-optionvalues-table">
                     <thead>
                     <tr>
-                        <th scope="col" style="width: 40px;"></th>
+                        <th scope="col" style="width: 40px;"><span class="visually-hidden"><?php echo Text::_('JGRID_HEADING_ORDERING'); ?></span></th>
                         <th scope="col"><?php echo Text::_('COM_J2COMMERCE_PAO_NAME'); ?></th>
                         <?php if ($product->product_type === 'variable' || $product->product_type === 'variablesubscriptionproduct'): ?>
                             <th scope="col"><?php echo Text::_('COM_J2COMMERCE_PAO_FIELDATTRIBS'); ?></th>
@@ -188,7 +188,7 @@ $wa->addInlineStyle($style, [], []);
                             <?php endif; ?>
                         <?php endif; ?>
                         <th scope="col"><?php echo Text::_('COM_J2COMMERCE_OPTION_ORDERING'); ?></th>
-                        <th scope="col" style="width: 60px;"></th>
+                        <th scope="col" style="width: 60px;"><span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_ACTIONS'); ?></span></th>
                     </tr>
                     </thead>
                     <tbody id="j2commerce-optionvalues-tbody">

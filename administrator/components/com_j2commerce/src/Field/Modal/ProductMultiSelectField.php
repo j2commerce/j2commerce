@@ -128,7 +128,7 @@ class ProductMultiSelectField extends ModalMultiSelectField
             // Fetch product titles from the database
             $products = $this->getValueTitles();
             $html .= '<div class="my-2"><strong>' . Text::_('COM_J2COMMERCE_SELECTED_PRODUCTS') . ' (' . count($this->value) . '):</strong></div>';
-            $html .= '<table class="table table-sm table-striped"><thead><tr><th class="w-10">' . Text::_('COM_J2COMMERCE_PRODUCT_FIELD_ID') . '</th><th>' . Text::_('COM_J2COMMERCE_PRODUCT_FIELD_NAME') . '</th><th class="text-end w-6"><button type="button" class="btn btn-sm btn-outline-danger" onclick="clearAllItems_' . $this->id . '()" title="' . Text::_('COM_J2COMMERCE_PRODUCTS_CLEAR_ALL') . '"><i class="icon-trash" aria-hidden="true"></i></button></th><th class="w-1"></th></tr></thead><tbody>';
+            $html .= '<table class="table table-sm table-striped"><thead><tr><th class="w-10">' . Text::_('COM_J2COMMERCE_PRODUCT_FIELD_ID') . '</th><th>' . Text::_('COM_J2COMMERCE_PRODUCT_FIELD_NAME') . '</th><th class="text-end w-6"><button type="button" class="btn btn-sm btn-outline-danger" onclick="clearAllItems_' . $this->id . '()" title="' . Text::_('COM_J2COMMERCE_PRODUCTS_CLEAR_ALL') . '"><i class="icon-trash" aria-hidden="true"></i></button></th><th class="w-1"><span class="visually-hidden">' . Text::_('COM_J2COMMERCE_REMOVE') . '</span></th></tr></thead><tbody>';
             foreach ($this->value as $index => $productId) {
                 $productName = isset($products[$productId]) ? htmlspecialchars($products[$productId]->title, ENT_QUOTES, 'UTF-8') : $productId;
                 $html .= '<tr>';
@@ -171,6 +171,7 @@ class ProductMultiSelectField extends ModalMultiSelectField
         Text::script('COM_J2COMMERCE_PRODUCT_FIELD_NAME');
         Text::script('COM_J2COMMERCE_PRODUCTS_CLEAR_ALL');
         Text::script('COM_J2COMMERCE_PRODUCT_CLEAR');
+        Text::script('COM_J2COMMERCE_REMOVE');
 
         // Initialize this specific field instance via inline script
         $initScript = "
@@ -211,7 +212,7 @@ class ProductMultiSelectField extends ModalMultiSelectField
                                               '<i class=\"icon-trash\" aria-hidden=\"true\"></i>' +
                                           '</button>' +
                                       '</th>' +
-                                      '<th class=\"w-1\"></th>'
+                                      '<th class=\"w-1\"><span class=\"visually-hidden\">' + Joomla.Text._('COM_J2COMMERCE_REMOVE') + '</span></th>'
                         });
 
                         thead.appendChild(headerRow);
