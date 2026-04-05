@@ -148,7 +148,7 @@
     animation: j2c-spin 0.8s linear infinite;
     z-index: 10;
 }
-.btn-secondary {
+.j2commerce.checkout .btn-secondary {
     --btn-color: #333d4c;
     --btn-bg: #eef1f6;
     --btn-border-color: var(--btn-bg);
@@ -162,7 +162,7 @@
     --btn-disabled-bg: var(--btn-bg);
     --btn-disabled-border-color:var(--btn-bg);
 }
-.btn-outline-secondary {
+.j2commerce.checkout .btn-outline-secondary {
     --btn-color: #6d757e;
     --btn-border-color: #6d757e;
     --btn-hover-color: #fff;
@@ -218,22 +218,22 @@
 .j2commerce.checkout .shipping-method-display {
     line-height:1;
 }
-.payment-methods-group .checkout-payment-icons .payment-plugin-image {
+.j2commerce.checkout .payment-methods-group .checkout-payment-icons .payment-plugin-image {
     height:36px;
 }
 @media (prefers-color-scheme: dark){
-    .payment-methods-group .checkout-payment-icons .dark-mode.payment-plugin-image {
+    .j2commerce.checkout .payment-methods-group .checkout-payment-icons .dark-mode.payment-plugin-image {
         display:block;
     }
-    .payment-methods-group .checkout-payment-icons .light-mode.payment-plugin-image {
+    .j2commerce.checkout .payment-methods-group .checkout-payment-icons .light-mode.payment-plugin-image {
         display:none;
     }
 }
 @media (prefers-color-scheme: light){
-    .payment-methods-group .checkout-payment-icons .dark-mode.payment-plugin-image, #paymentIcons .payment-icon.dark-mode {
+    .j2commerce.checkout .payment-methods-group .checkout-payment-icons .dark-mode.payment-plugin-image, #paymentIcons .payment-icon.dark-mode {
         display:none;
     }
-    .payment-methods-group .checkout-payment-icons .light-mode.payment-plugin-image, #paymentIcons .payment-icon.light-mode {
+    .j2commerce.checkout .payment-methods-group .checkout-payment-icons .light-mode.payment-plugin-image, #paymentIcons .payment-icon.light-mode {
         display:block;
     }
 }
