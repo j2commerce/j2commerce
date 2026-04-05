@@ -164,6 +164,10 @@ $changeHtml = function (array $change): string {
                             echo ModuleHelper::renderModule($analyticsMainTab, $analyticsModuleOptions);
                             echo HTMLHelper::_('uitab.endTab');
                         endforeach; ?>
+
+                        <?php echo HTMLHelper::_('uitab.addTab', 'analyticsMainTabs', 'analytics-add-main', '<span aria-hidden="true">+</span><span class="visually-hidden">' . Text::_('COM_J2COMMERCE_DASHBOARD_ADD_TAB_LABEL') . '</span>'); ?>
+                            <p class="text-body-secondary mb-0"><?php echo Text::sprintf('COM_J2COMMERCE_DASHBOARD_ADD_TAB_HELP', '<code>j2commerce-analytics-main-tab</code>'); ?></p>
+                        <?php echo HTMLHelper::_('uitab.endTab'); ?>
                     <?php echo HTMLHelper::_('uitab.endTabSet'); ?>
                 </div>
             </div>
@@ -182,6 +186,10 @@ $changeHtml = function (array $change): string {
                             echo ModuleHelper::renderModule($analyticsSideTab, $analyticsModuleOptions);
                             echo HTMLHelper::_('uitab.endTab');
                         endforeach; ?>
+
+                        <?php echo HTMLHelper::_('uitab.addTab', 'analyticsSideTabs', 'analytics-add-side', '<span aria-hidden="true">+</span><span class="visually-hidden">' . Text::_('COM_J2COMMERCE_DASHBOARD_ADD_TAB_LABEL') . '</span>'); ?>
+                            <p class="text-body-secondary mb-0"><?php echo Text::sprintf('COM_J2COMMERCE_DASHBOARD_ADD_TAB_HELP', '<code>j2commerce-analytics-side-tab</code>'); ?></p>
+                        <?php echo HTMLHelper::_('uitab.endTab'); ?>
                     <?php echo HTMLHelper::_('uitab.endTabSet'); ?>
                 </div>
             </div>

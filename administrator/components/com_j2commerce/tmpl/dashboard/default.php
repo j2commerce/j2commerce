@@ -48,11 +48,9 @@ $changeHtml = function (array $change): string {
     $dirText = $change['dir'] === 'up' ? Text::_('COM_J2COMMERCE_DASHBOARD_TREND_UP') : Text::_('COM_J2COMMERCE_DASHBOARD_TREND_DOWN');
     return '<span><span class="fa-solid ' . $icon . '" aria-hidden="true"></span><span class="visually-hidden">' . $dirText . '</span> ' . $change['pct'] . '%</span>';
 };
-if($doc->countModules('j2commerce-dashboard-module-main-tab') && $doc->countModules('j2commerce-dashboard-module-side-tab')){
-    $colClass = 'col-lg-6';
-} else {
-    $colClass = 'col-12';
-}
+// The two bottom module-tab sections always render (each with a "+" tab as a
+// discovery hint) so they split the row 50/50 regardless of module count.
+$colClass = 'col-lg-6';
 ?>
 
 <?php echo $this->navbar; ?>
@@ -206,6 +204,10 @@ if($doc->countModules('j2commerce-dashboard-module-main-tab') && $doc->countModu
                     endif; ?>
 
                     <?php echo $this->dashboardMainTabHtml; ?>
+
+                    <?php echo HTMLHelper::_('uitab.addTab', 'dashboardMainTabs', 'dashboard-add-main', '<span aria-hidden="true">+</span><span class="visually-hidden">' . Text::_('COM_J2COMMERCE_DASHBOARD_ADD_TAB_LABEL') . '</span>'); ?>
+                        <p class="text-body-secondary mb-0"><?php echo Text::sprintf('COM_J2COMMERCE_DASHBOARD_ADD_TAB_HELP', '<code>j2commerce-dashboard-main-tab</code>'); ?></p>
+                    <?php echo HTMLHelper::_('uitab.endTab'); ?>
                 <?php echo HTMLHelper::_('uitab.endTabSet'); ?>
             </div>
         </div>
@@ -229,54 +231,58 @@ if($doc->countModules('j2commerce-dashboard-module-main-tab') && $doc->countModu
                     endforeach; ?>
 
                     <?php echo $this->dashboardSideTabHtml; ?>
+
+                    <?php echo HTMLHelper::_('uitab.addTab', 'dashboardSideTabs', 'dashboard-add-side', '<span aria-hidden="true">+</span><span class="visually-hidden">' . Text::_('COM_J2COMMERCE_DASHBOARD_ADD_TAB_LABEL') . '</span>'); ?>
+                        <p class="text-body-secondary mb-0"><?php echo Text::sprintf('COM_J2COMMERCE_DASHBOARD_ADD_TAB_HELP', '<code>j2commerce-dashboard-side-tab</code>'); ?></p>
+                    <?php echo HTMLHelper::_('uitab.endTab'); ?>
                 <?php echo HTMLHelper::_('uitab.endTabSet'); ?>
             </div>
         </div>
     </div>
-    <?php if($doc->countModules('j2commerce-dashboard-module-main-tab') || $doc->countModules('j2commerce-dashboard-module-side-tab')):?>
-        <div id="dashboardModuleTabs" class="row mb-4 align-items-stretch">
-            <?php if($doc->countModules('j2commerce-dashboard-module-main-tab')):?>
-                <div class="<?php echo $colClass;?> mb-3">
-                    <div class="dashboard-chart-tabs h-100">
-                        <?php if ($doc->countModules('j2commerce-dashboard-module-main-tab')) :
-                            $modules = ModuleHelper::getModules('j2commerce-dashboard-module-main-tab');
-                            echo HTMLHelper::_('uitab.startTabSet', 'dashboardModuleTabs', ['active' => 'module' . (int) $modules[0]->id, 'recall' => true, 'breakpoint' => 768]);
+    <div id="dashboardModuleTabs" class="row mb-4 align-items-stretch">
+        <div class="<?php echo $colClass;?> mb-3">
+            <div class="dashboard-chart-tabs h-100">
+                <?php $moduleMainModules = ModuleHelper::getModules('j2commerce-dashboard-module-main-tab');
+                $moduleMainActive = !empty($moduleMainModules) ? 'module' . (int) $moduleMainModules[0]->id : 'dashboard-add-module-main';
+                echo HTMLHelper::_('uitab.startTabSet', 'dashboardModuleTabs', ['active' => $moduleMainActive, 'recall' => true, 'breakpoint' => 768]);
 
-                            foreach ($modules as $module) :
-                                $tabId    = 'module' . (int) $module->id;
-                                $tabTitle = htmlspecialchars($module->title ?? ('Module ' . (int) $module->id), ENT_QUOTES, 'UTF-8');
-                                ?>
-                                <?php echo HTMLHelper::_('uitab.addTab', 'dashboardModuleTabs', $tabId, $tabTitle); ?>
-                                <?php echo ModuleHelper::renderModule($module, $options); ?>
-                                <?php echo HTMLHelper::_('uitab.endTab'); ?>
-                            <?php endforeach; ?>
-                            <?php echo HTMLHelper::_('uitab.endTabSet'); ?>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            <?php endif; ?>
-            <?php if($doc->countModules('j2commerce-dashboard-module-side-tab')):?>
-                <div class="<?php echo $colClass;?> mb-3">
-                    <div class="dashboard-chart-tabs h-100">
-                        <?php if ($doc->countModules('j2commerce-dashboard-module-side-tab')) :
-                            $modules = ModuleHelper::getModules('j2commerce-dashboard-module-side-tab');
-                            echo HTMLHelper::_('uitab.startTabSet', 'dashboardModuleSideTabs', ['active' => 'moduleside' . (int) $modules[0]->id, 'recall' => true, 'breakpoint' => 768]);
+                foreach ($moduleMainModules as $module) :
+                    $tabId    = 'module' . (int) $module->id;
+                    $tabTitle = htmlspecialchars($module->title ?? ('Module ' . (int) $module->id), ENT_QUOTES, 'UTF-8');
+                    ?>
+                    <?php echo HTMLHelper::_('uitab.addTab', 'dashboardModuleTabs', $tabId, $tabTitle); ?>
+                    <?php echo ModuleHelper::renderModule($module, $options); ?>
+                    <?php echo HTMLHelper::_('uitab.endTab'); ?>
+                <?php endforeach; ?>
 
-                            foreach ($modules as $module) :
-                                $tabId    = 'moduleside' . (int) $module->id;
-                                $tabTitle = htmlspecialchars($module->title ?? ('ModuleSide ' . (int) $module->id), ENT_QUOTES, 'UTF-8');
-                                ?>
-                                <?php echo HTMLHelper::_('uitab.addTab', 'dashboardModuleSideTabs', $tabId, $tabTitle); ?>
-                                <?php echo ModuleHelper::renderModule($module, $options); ?>
-                                <?php echo HTMLHelper::_('uitab.endTab'); ?>
-                            <?php endforeach; ?>
-                            <?php echo HTMLHelper::_('uitab.endTabSet'); ?>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            <?php endif; ?>
+                <?php echo HTMLHelper::_('uitab.addTab', 'dashboardModuleTabs', 'dashboard-add-module-main', '<span aria-hidden="true">+</span><span class="visually-hidden">' . Text::_('COM_J2COMMERCE_DASHBOARD_ADD_TAB_LABEL') . '</span>'); ?>
+                    <p class="text-body-secondary mb-0"><?php echo Text::sprintf('COM_J2COMMERCE_DASHBOARD_ADD_TAB_HELP', '<code>j2commerce-dashboard-module-main-tab</code>'); ?></p>
+                <?php echo HTMLHelper::_('uitab.endTab'); ?>
+                <?php echo HTMLHelper::_('uitab.endTabSet'); ?>
+            </div>
         </div>
-    <?php endif; ?>
+        <div class="<?php echo $colClass;?> mb-3">
+            <div class="dashboard-chart-tabs h-100">
+                <?php $moduleSideModules = ModuleHelper::getModules('j2commerce-dashboard-module-side-tab');
+                $moduleSideActive = !empty($moduleSideModules) ? 'moduleside' . (int) $moduleSideModules[0]->id : 'dashboard-add-module-side';
+                echo HTMLHelper::_('uitab.startTabSet', 'dashboardModuleSideTabs', ['active' => $moduleSideActive, 'recall' => true, 'breakpoint' => 768]);
+
+                foreach ($moduleSideModules as $module) :
+                    $tabId    = 'moduleside' . (int) $module->id;
+                    $tabTitle = htmlspecialchars($module->title ?? ('ModuleSide ' . (int) $module->id), ENT_QUOTES, 'UTF-8');
+                    ?>
+                    <?php echo HTMLHelper::_('uitab.addTab', 'dashboardModuleSideTabs', $tabId, $tabTitle); ?>
+                    <?php echo ModuleHelper::renderModule($module, $options); ?>
+                    <?php echo HTMLHelper::_('uitab.endTab'); ?>
+                <?php endforeach; ?>
+
+                <?php echo HTMLHelper::_('uitab.addTab', 'dashboardModuleSideTabs', 'dashboard-add-module-side', '<span aria-hidden="true">+</span><span class="visually-hidden">' . Text::_('COM_J2COMMERCE_DASHBOARD_ADD_TAB_LABEL') . '</span>'); ?>
+                    <p class="text-body-secondary mb-0"><?php echo Text::sprintf('COM_J2COMMERCE_DASHBOARD_ADD_TAB_HELP', '<code>j2commerce-dashboard-module-side-tab</code>'); ?></p>
+                <?php echo HTMLHelper::_('uitab.endTab'); ?>
+                <?php echo HTMLHelper::_('uitab.endTabSet'); ?>
+            </div>
+        </div>
+    </div>
 
 
     <?php if (!empty($this->pluginQuickIcons)) : ?>
