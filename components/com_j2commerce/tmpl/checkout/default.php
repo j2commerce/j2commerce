@@ -332,7 +332,10 @@ document.addEventListener('DOMContentLoaded', function() {
             span.id = fieldId + '-error';
             span.setAttribute('role', 'alert');
             span.textContent = message;
-            field.parentNode.insertBefore(span, field.nextSibling);
+            // Anchor after the telephone wrapper (if any) so the error
+            // renders below the full widget, not inside its flex row.
+            var anchor = field.closest('.j2c-telephone-field') || field;
+            anchor.parentNode.insertBefore(span, anchor.nextSibling);
         }
     }
 

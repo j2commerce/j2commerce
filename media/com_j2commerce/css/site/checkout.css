@@ -61,11 +61,11 @@
     padding-inline-end: calc(1.5em + 0.75rem);
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23dc3545' viewBox='0 0 16 16'%3E%3Cpath d='M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M8 4a.905.905 0 0 0-.9.995l.35 3.507a.553.553 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 4m.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
-    background-position: inline-end calc(0.375em + 0.1875rem) center;
+    background-position: right calc(0.375em + 0.1875rem) center;
     background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
 }
 .j2commerce.checkout select.j2-invalid {
-    background-position: inline-end calc(0.375em + 1.5rem) center;
+    background-position: right calc(0.375em + 1.5rem) center;
 }
 .j2commerce.checkout .wait {
     display: inline-block;
