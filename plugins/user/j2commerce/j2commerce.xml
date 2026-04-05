@@ -18,6 +18,49 @@
         <folder>language</folder>
     </files>
 
+    <languages>
+        <language tag="en-US">language/en-US/en-US.plg_user_j2commerce.ini</language>
+        <language tag="en-US">language/en-US/en-US.plg_user_j2commerce.sys.ini</language>
+        <language tag="en-GB">language/en-GB/en-GB.plg_user_j2commerce.ini</language>
+        <language tag="en-GB">language/en-GB/en-GB.plg_user_j2commerce.sys.ini</language>
+        <language tag="ar-AA">language/ar-AA/ar-AA.plg_user_j2commerce.ini</language>
+        <language tag="ar-AA">language/ar-AA/ar-AA.plg_user_j2commerce.sys.ini</language>
+        <language tag="da-DK">language/da-DK/da-DK.plg_user_j2commerce.ini</language>
+        <language tag="da-DK">language/da-DK/da-DK.plg_user_j2commerce.sys.ini</language>
+        <language tag="de-DE">language/de-DE/de-DE.plg_user_j2commerce.ini</language>
+        <language tag="de-DE">language/de-DE/de-DE.plg_user_j2commerce.sys.ini</language>
+        <language tag="el-GR">language/el-GR/el-GR.plg_user_j2commerce.ini</language>
+        <language tag="el-GR">language/el-GR/el-GR.plg_user_j2commerce.sys.ini</language>
+        <language tag="es-ES">language/es-ES/es-ES.plg_user_j2commerce.ini</language>
+        <language tag="es-ES">language/es-ES/es-ES.plg_user_j2commerce.sys.ini</language>
+        <language tag="fi-FI">language/fi-FI/fi-FI.plg_user_j2commerce.ini</language>
+        <language tag="fi-FI">language/fi-FI/fi-FI.plg_user_j2commerce.sys.ini</language>
+        <language tag="fr-FR">language/fr-FR/fr-FR.plg_user_j2commerce.ini</language>
+        <language tag="fr-FR">language/fr-FR/fr-FR.plg_user_j2commerce.sys.ini</language>
+        <language tag="he-IL">language/he-IL/he-IL.plg_user_j2commerce.ini</language>
+        <language tag="he-IL">language/he-IL/he-IL.plg_user_j2commerce.sys.ini</language>
+        <language tag="it-IT">language/it-IT/it-IT.plg_user_j2commerce.ini</language>
+        <language tag="it-IT">language/it-IT/it-IT.plg_user_j2commerce.sys.ini</language>
+        <language tag="ja-JP">language/ja-JP/ja-JP.plg_user_j2commerce.ini</language>
+        <language tag="ja-JP">language/ja-JP/ja-JP.plg_user_j2commerce.sys.ini</language>
+        <language tag="nb-NO">language/nb-NO/nb-NO.plg_user_j2commerce.ini</language>
+        <language tag="nb-NO">language/nb-NO/nb-NO.plg_user_j2commerce.sys.ini</language>
+        <language tag="nl-NL">language/nl-NL/nl-NL.plg_user_j2commerce.ini</language>
+        <language tag="nl-NL">language/nl-NL/nl-NL.plg_user_j2commerce.sys.ini</language>
+        <language tag="pl-PL">language/pl-PL/pl-PL.plg_user_j2commerce.ini</language>
+        <language tag="pl-PL">language/pl-PL/pl-PL.plg_user_j2commerce.sys.ini</language>
+        <language tag="pt-PT">language/pt-PT/pt-PT.plg_user_j2commerce.ini</language>
+        <language tag="pt-PT">language/pt-PT/pt-PT.plg_user_j2commerce.sys.ini</language>
+        <language tag="ru-RU">language/ru-RU/ru-RU.plg_user_j2commerce.ini</language>
+        <language tag="ru-RU">language/ru-RU/ru-RU.plg_user_j2commerce.sys.ini</language>
+        <language tag="sv-SE">language/sv-SE/sv-SE.plg_user_j2commerce.ini</language>
+        <language tag="sv-SE">language/sv-SE/sv-SE.plg_user_j2commerce.sys.ini</language>
+        <language tag="tr-TR">language/tr-TR/tr-TR.plg_user_j2commerce.ini</language>
+        <language tag="tr-TR">language/tr-TR/tr-TR.plg_user_j2commerce.sys.ini</language>
+        <language tag="zh-TW">language/zh-TW/zh-TW.plg_user_j2commerce.ini</language>
+        <language tag="zh-TW">language/zh-TW/zh-TW.plg_user_j2commerce.sys.ini</language>
+    </languages>
+
     <config>
         <fields name="params">
             <fieldset name="basic">
