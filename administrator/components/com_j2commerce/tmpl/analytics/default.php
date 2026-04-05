@@ -272,9 +272,7 @@ $changeHtml = function (array $change): string {
                     <div class="table-responsive">
                         <table class="table" id="analytics-products">
                             <caption class="visually-hidden">
-                                <?php echo Text::_('COM_J2COMMERCE_ANALYTICS_TOP_PRODUCTS'); ?>,
-                                <span id="orderedBy"><?php echo Text::_('JGLOBAL_SORTED_BY'); ?> </span>,
-                                <span id="filteredBy"><?php echo Text::_('JGLOBAL_FILTERED_BY'); ?></span>
+                                <?php echo Text::_('COM_J2COMMERCE_ANALYTICS_TOP_PRODUCTS'); ?>
                             </caption>
                             <thead>
                                 <tr>
