@@ -1,7 +1,7 @@
 <?php
 /**
  * @package     J2Commerce
- * @subpackage  Plugin.J2Commerce.AppBootstrap5
+ * @subpackage  com_j2commerce
  *
  * @copyright   (C)2024-2026 J2Commerce, LLC <https://www.j2commerce.com>
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
@@ -29,7 +29,7 @@ $htag = $params->get('show_category_root_title', 1) ? 'h2' : 'h1';
 $category_columns = (int) $params->get('category_columns', 4);
 
 ?>
-<div class="j2commerce-categories bootstrap5 <?php echo $this->escape($params->get('pageclass_sfx', '')); ?>">
+<div class="j2commerce j2commerce-categories <?php echo $this->escape($params->get('pageclass_sfx', '')); ?>">
     <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeCategoriesView', array($this))->getArgument('html', ''); ?>
     <div class="container">
         <?php if ($params->get('show_category_root_title', 1)) : ?>

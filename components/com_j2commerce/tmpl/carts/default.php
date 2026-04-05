@@ -51,13 +51,13 @@ $cartUrl = J2CommerceHelper::platform()->getCartUrl();
 $clearCartUrl = J2CommerceHelper::platform()->getCartUrl(['task' => 'clearCart']);
 
 ?>
-<div class="page-header">
-    <h1><?php echo $this->escape($pageHeadingText ?: Text::_('COM_J2COMMERCE_CARTS_PAGE_TITLE')); ?></h1>
-</div>
-
-<?php echo J2CommerceHelper::modules()->loadposition('j2commerce-cart-top'); ?>
-
 <div class="j2commerce">
+    <div class="page-header">
+        <h1><?php echo $this->escape($pageHeadingText ?: Text::_('COM_J2COMMERCE_CARTS_PAGE_TITLE')); ?></h1>
+    </div>
+
+    <?php echo J2CommerceHelper::modules()->loadposition('j2commerce-cart-top'); ?>
+
     <div class="j2commerce-cart">
         <?php if (\count($this->items)): ?>
             <div class="row">
@@ -168,9 +168,9 @@ $clearCartUrl = J2CommerceHelper::platform()->getCartUrl(['task' => 'clearCart']
             </div>
         <?php endif; ?>
     </div>
-</div>
 
-<?php echo J2CommerceHelper::modules()->loadposition('j2commerce-cart-bottom'); ?>
+    <?php echo J2CommerceHelper::modules()->loadposition('j2commerce-cart-bottom'); ?>
+</div>
 
 <script>
 // Cart page: refresh totals via AJAX on coupon/voucher apply/remove

@@ -48,137 +48,137 @@ if ($this->order && method_exists($this->order, 'get_formatted_order_totals')) {
 // Pre-compute JS-safe language strings
 $selectZoneJs = htmlspecialchars(Text::sprintf('COM_J2COMMERCE_SELECT_PLACEHOLDER', Text::_('COM_J2COMMERCE_ZONE')), ENT_QUOTES, 'UTF-8');
 ?>
-<div class="page-header">
-    <h1><?php echo $this->escape($pageHeadingText ?: Text::_('COM_J2COMMERCE_CHECKOUT')); ?></h1>
-</div>
+<div class="j2commerce">
+    <div class="page-header">
+        <h1><?php echo $this->escape($pageHeadingText ?: Text::_('COM_J2COMMERCE_CHECKOUT')); ?></h1>
+    </div>
 
-<?php echo J2CommerceHelper::modules()->loadposition('j2commerce-checkout-top'); ?>
+    <?php echo J2CommerceHelper::modules()->loadposition('j2commerce-checkout-top'); ?>
 
-<div id="j2commerce-checkout" class="j2commerce checkout">
-    <a href="#j2commerce-checkout-content" class="j2commerce-skip-link visually-hidden-focusable"><?php echo Text::_('COM_J2COMMERCE_SKIP_TO_CHECKOUT'); ?></a>
+    <div id="j2commerce-checkout" class="checkout">
+        <a href="#j2commerce-checkout-content" class="j2commerce-skip-link visually-hidden-focusable"><?php echo Text::_('COM_J2COMMERCE_SKIP_TO_CHECKOUT'); ?></a>
 
-    <div id="j2commerce-checkout-content">
-        <?php
-        $showStoreLogo = (int) J2CommerceHelper::config()->get('checkout_show_store_logo', 1);
-        if ($showStoreLogo) {
-            $storeLogo = J2CommerceHelper::config()->get('store_logo');
-            if (\is_string($storeLogo)) {
-                $storeLogo = json_decode($storeLogo);
-            }
-            $logoFile = $storeLogo->imagefile ?? '';
-            $logoAlt  = $storeLogo->alt_text ?? '';
-            if ($logoFile && $logoAlt !== '') :
-        ?>
-        <div class="text-center mb-3">
-            <img src="<?php echo Uri::root() . htmlspecialchars($logoFile, ENT_QUOTES, 'UTF-8'); ?>"
-                 alt="<?php echo htmlspecialchars($logoAlt, ENT_QUOTES, 'UTF-8'); ?>"
-                 class="img-fluid">
-        </div>
-        <?php endif; } ?>
-        <div class="j2commerce-checkout-row row justify-content-xl-center">
-            <div class="j2commerce-checkout-steps col-lg-8 col-xl-6 order-2 order-lg-1">
-                <section id="checkout" role="region" aria-labelledby="checkout-heading-label">
-                    <div class="checkout-heading mb-2 d-flex justify-content-between align-items-center">
-                        <div>
-                            <span id="checkout-heading-label" class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_OPTIONS'); ?></span>
-                        </div>
-                        <?php if ($this->logged) : ?>
-                            <a href="<?php echo Route::_('index.php?option=com_j2commerce&task=checkout.logout&' . $token . '=1'); ?>" class="checkout-logout text-danger">
-                                <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_LOGOUT'); ?>
-                            </a>
-                        <?php endif; ?>
-                    </div>
-                    <div class="checkout-content" aria-busy="false"></div>
-                </section>
-
-                <?php if (!$this->logged) : ?>
-                <section id="billing-address" role="region" aria-labelledby="billing-heading-label">
-                    <div class="checkout-heading mb-2"><span id="billing-heading-label"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_ACCOUNT'); ?></span></div>
-                    <div class="checkout-content" aria-busy="false"></div>
-                </section>
-                <?php else : ?>
-                <section id="billing-address" role="region" aria-labelledby="billing-heading-label">
-                    <div class="checkout-heading mb-2"><span id="billing-heading-label"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_BILLING_ADDRESS'); ?></span></div>
-                    <div class="checkout-content" aria-busy="false"></div>
-                </section>
-                <?php endif; ?>
-
-                <section id="custom-steps-after-billing" role="region" aria-labelledby="custom-steps-after-billing-label" style="display:none;">
-                    <div class="checkout-heading mb-2"><span id="custom-steps-after-billing-label"></span></div>
-                    <div class="checkout-content" aria-busy="false"></div>
-                </section>
-
-                <?php if ($this->showShipping) : ?>
-                <section id="shipping-address" role="region" aria-labelledby="shipping-heading-label" style="display:none;">
-                    <div class="checkout-heading mb-2"><span id="shipping-heading-label"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_SHIPPING_ADDRESS'); ?></span></div>
-                    <div class="checkout-content" aria-busy="false"></div>
-                </section>
-                <?php endif; ?>
-
-                <section id="custom-steps-after-shipping" role="region" aria-labelledby="custom-steps-after-shipping-label" style="display:none;">
-                    <div class="checkout-heading mb-2"><span id="custom-steps-after-shipping-label"></span></div>
-                    <div class="checkout-content" aria-busy="false"></div>
-                </section>
-
-                <section id="custom-steps-before-payment" role="region" aria-labelledby="custom-steps-before-payment-label" style="display:none;">
-                    <div class="checkout-heading mb-2"><span id="custom-steps-before-payment-label"></span></div>
-                    <div class="checkout-content" aria-busy="false"></div>
-                </section>
-
-                <section id="shipping-payment-method" role="region" aria-labelledby="payment-heading-label">
-                    <div class="checkout-heading mb-2">
-                    <span id="payment-heading-label">
-                    <?php if ($this->showShipping) : ?>
-                        <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_SHIPPING_PAYMENT_METHOD'); ?>
-                    <?php else : ?>
-                        <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_PAYMENT_METHOD'); ?>
-                    <?php endif; ?>
-                    </span>
-                    </div>
-                    <div class="checkout-content" aria-busy="false"></div>
-                </section>
-
-                <section id="custom-steps-before-confirm" role="region" aria-labelledby="custom-steps-before-confirm-label" style="display:none;">
-                    <div class="checkout-heading mb-2"><span id="custom-steps-before-confirm-label"></span></div>
-                    <div class="checkout-content" aria-busy="false"></div>
-                </section>
-
-                <section id="confirm" role="region" aria-labelledby="confirm-heading-label">
-                    <div class="checkout-heading"><span id="confirm-heading-label"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_CONFIRM'); ?></span></div>
-                    <div class="checkout-content" aria-busy="false"></div>
-                </section>
+        <div id="j2commerce-checkout-content">
+            <?php
+            $showStoreLogo = (int) J2CommerceHelper::config()->get('checkout_show_store_logo', 1);
+            if ($showStoreLogo) {
+                $storeLogo = J2CommerceHelper::config()->get('store_logo');
+                if (\is_string($storeLogo)) {
+                    $storeLogo = json_decode($storeLogo);
+                }
+                $logoFile = $storeLogo->imagefile ?? '';
+                $logoAlt  = $storeLogo->alt_text ?? '';
+                if ($logoFile && $logoAlt !== '') :
+            ?>
+            <div class="text-center mb-3">
+                <img src="<?php echo Uri::root() . htmlspecialchars($logoFile, ENT_QUOTES, 'UTF-8'); ?>"
+                     alt="<?php echo htmlspecialchars($logoAlt, ENT_QUOTES, 'UTF-8'); ?>"
+                     class="img-fluid">
             </div>
+            <?php endif; } ?>
+            <div class="j2commerce-checkout-row row justify-content-xl-center">
+                <div class="j2commerce-checkout-steps col-lg-8 col-xl-6 order-2 order-lg-1">
+                    <section id="checkout" role="region" aria-labelledby="checkout-heading-label">
+                        <div class="checkout-heading mb-2 d-flex justify-content-between align-items-center">
+                            <div>
+                                <span id="checkout-heading-label" class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_OPTIONS'); ?></span>
+                            </div>
+                            <?php if ($this->logged) : ?>
+                                <a href="<?php echo Route::_('index.php?option=com_j2commerce&task=checkout.logout&' . $token . '=1'); ?>" class="checkout-logout text-danger">
+                                    <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_LOGOUT'); ?>
+                                </a>
+                            <?php endif; ?>
+                        </div>
+                        <div class="checkout-content" aria-busy="false"></div>
+                    </section>
 
-            <div class="j2commerce-checkout-sidebar col-lg-4 offset-xl-1 order-1 order-lg-2">
-                <?php echo J2CommerceHelper::modules()->loadposition('j2commerce-checkout-sidecart-top'); ?>
+                    <?php if (!$this->logged) : ?>
+                    <section id="billing-address" role="region" aria-labelledby="billing-heading-label">
+                        <div class="checkout-heading mb-2"><span id="billing-heading-label"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_ACCOUNT'); ?></span></div>
+                        <div class="checkout-content" aria-busy="false"></div>
+                    </section>
+                    <?php else : ?>
+                    <section id="billing-address" role="region" aria-labelledby="billing-heading-label">
+                        <div class="checkout-heading mb-2"><span id="billing-heading-label"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_BILLING_ADDRESS'); ?></span></div>
+                        <div class="checkout-content" aria-busy="false"></div>
+                    </section>
+                    <?php endif; ?>
 
-                <button class="btn btn-light w-100 d-lg-none d-flex justify-content-between align-items-center border py-3 mb-3"
-                        type="button"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#checkoutSidecartCollapse"
-                        aria-expanded="false"
-                        aria-controls="checkoutSidecartCollapse">
-                    <span class="d-flex align-items-center gap-2">
-                        <span class="icon-cart" aria-hidden="true"></span>
-                        <span class="j2commerce-sidecart-toggle-text"><?php echo Text::_('COM_J2COMMERCE_SHOW_ORDER_SUMMARY'); ?></span>
-                        <span class="icon-chevron-down small j2commerce-sidecart-chevron" aria-hidden="true"></span>
-                    </span>
-                    <span class="fw-bold fs-5 j2commerce-sidecart-toggle-total"><?php echo $grandTotal; ?></span>
-                </button>
+                    <section id="custom-steps-after-billing" role="region" aria-labelledby="custom-steps-after-billing-label" style="display:none;">
+                        <div class="checkout-heading mb-2"><span id="custom-steps-after-billing-label"></span></div>
+                        <div class="checkout-content" aria-busy="false"></div>
+                    </section>
 
-                <div class="bg-light rounded p-3 p-lg-4">
-                    <?php echo $this->loadTemplate('sidecart'); ?>
+                    <?php if ($this->showShipping) : ?>
+                    <section id="shipping-address" role="region" aria-labelledby="shipping-heading-label" style="display:none;">
+                        <div class="checkout-heading mb-2"><span id="shipping-heading-label"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_SHIPPING_ADDRESS'); ?></span></div>
+                        <div class="checkout-content" aria-busy="false"></div>
+                    </section>
+                    <?php endif; ?>
+
+                    <section id="custom-steps-after-shipping" role="region" aria-labelledby="custom-steps-after-shipping-label" style="display:none;">
+                        <div class="checkout-heading mb-2"><span id="custom-steps-after-shipping-label"></span></div>
+                        <div class="checkout-content" aria-busy="false"></div>
+                    </section>
+
+                    <section id="custom-steps-before-payment" role="region" aria-labelledby="custom-steps-before-payment-label" style="display:none;">
+                        <div class="checkout-heading mb-2"><span id="custom-steps-before-payment-label"></span></div>
+                        <div class="checkout-content" aria-busy="false"></div>
+                    </section>
+
+                    <section id="shipping-payment-method" role="region" aria-labelledby="payment-heading-label">
+                        <div class="checkout-heading mb-2">
+                        <span id="payment-heading-label">
+                        <?php if ($this->showShipping) : ?>
+                            <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_SHIPPING_PAYMENT_METHOD'); ?>
+                        <?php else : ?>
+                            <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_PAYMENT_METHOD'); ?>
+                        <?php endif; ?>
+                        </span>
+                        </div>
+                        <div class="checkout-content" aria-busy="false"></div>
+                    </section>
+
+                    <section id="custom-steps-before-confirm" role="region" aria-labelledby="custom-steps-before-confirm-label" style="display:none;">
+                        <div class="checkout-heading mb-2"><span id="custom-steps-before-confirm-label"></span></div>
+                        <div class="checkout-content" aria-busy="false"></div>
+                    </section>
+
+                    <section id="confirm" role="region" aria-labelledby="confirm-heading-label">
+                        <div class="checkout-heading"><span id="confirm-heading-label"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_CONFIRM'); ?></span></div>
+                        <div class="checkout-content" aria-busy="false"></div>
+                    </section>
                 </div>
 
-                <?php echo J2CommerceHelper::modules()->loadposition('j2commerce-checkout-sidecart-bottom'); ?>
+                <div class="j2commerce-checkout-sidebar col-lg-4 offset-xl-1 order-1 order-lg-2">
+                    <?php echo J2CommerceHelper::modules()->loadposition('j2commerce-checkout-sidecart-top'); ?>
+
+                    <button class="btn btn-light w-100 d-lg-none d-flex justify-content-between align-items-center border py-3 mb-3"
+                            type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#checkoutSidecartCollapse"
+                            aria-expanded="false"
+                            aria-controls="checkoutSidecartCollapse">
+                        <span class="d-flex align-items-center gap-2">
+                            <span class="icon-cart" aria-hidden="true"></span>
+                            <span class="j2commerce-sidecart-toggle-text"><?php echo Text::_('COM_J2COMMERCE_SHOW_ORDER_SUMMARY'); ?></span>
+                            <span class="icon-chevron-down small j2commerce-sidecart-chevron" aria-hidden="true"></span>
+                        </span>
+                        <span class="fw-bold fs-5 j2commerce-sidecart-toggle-total"><?php echo $grandTotal; ?></span>
+                    </button>
+
+                    <div class="bg-light rounded p-3 p-lg-4">
+                        <?php echo $this->loadTemplate('sidecart'); ?>
+                    </div>
+
+                    <?php echo J2CommerceHelper::modules()->loadposition('j2commerce-checkout-sidecart-bottom'); ?>
+                </div>
             </div>
         </div>
     </div>
+
+    <?php echo J2CommerceHelper::modules()->loadposition('j2commerce-checkout-bottom'); ?>
 </div>
-
-<?php echo J2CommerceHelper::modules()->loadposition('j2commerce-checkout-bottom'); ?>
-
-
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

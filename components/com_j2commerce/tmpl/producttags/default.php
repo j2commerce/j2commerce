@@ -16,7 +16,7 @@ use Joomla\CMS\Language\Text;
 
 /** @var \J2Commerce\Component\J2commerce\Site\View\Producttags\HtmlView $this */
 ?>
-<div class="j2commerce-products j2commerce-product-list j2commerce-producttags bootstrap5 <?php echo $this->escape($this->params->get('pageclass_sfx', '')); ?>">
+<div class="j2commerce j2commerce-products j2commerce-product-list j2commerce-producttags <?php echo $this->escape($this->params->get('pageclass_sfx', '')); ?>">
     <div class="container">
         <?php if ($this->params->get('show_page_heading')) : ?>
             <div class="page-header">

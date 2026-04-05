@@ -17,7 +17,7 @@ Text::script('COM_J2COMMERCE_INSTOCK');
 Text::script('COM_J2COMMERCE_NOTINSTOCK');
 Text::script('COM_J2COMMERCE_AVAILABLE');
 ?>
-<div class="j2commerce-single-product product-<?php echo $this->item->j2commerce_product_id; ?> <?php echo $this->item->product_type; ?> detail bootstrap5 <?php echo $this->params->get('product_css_class', ''); ?>">
+<div class="j2commerce j2commerce-single-product product-<?php echo $this->item->j2commerce_product_id; ?> <?php echo $this->item->product_type; ?> detail <?php echo $this->params->get('product_css_class', ''); ?>">
     <div class="container">
         <?php if ($this->params->get('show_page_heading')) : ?>
             <div class="page-header">
@@ -41,17 +41,16 @@ Text::script('COM_J2COMMERCE_AVAILABLE');
             <?php echo $this->loadTemplate($this->item->product_type); ?>
         <?php endif; ?>
     </div>
-        <?php if ($this->params->get('item_show_product_upsells', 0) && isset($this->up_sells) && count($this->up_sells) > 0) : ?>
-            <?php echo $this->loadTemplate('upsells'); ?>
-        <?php endif;?>
+    <?php if ($this->params->get('item_show_product_upsells', 0) && isset($this->up_sells) && count($this->up_sells) > 0) : ?>
+        <?php echo $this->loadTemplate('upsells'); ?>
+    <?php endif;?>
 
-        <?php if ($this->params->get('item_show_product_cross_sells', 0) && isset($this->cross_sells) && count($this->cross_sells) > 0) : ?>
-            <?php echo $this->loadTemplate('crosssells'); ?>
-        <?php endif;?>
+    <?php if ($this->params->get('item_show_product_cross_sells', 0) && isset($this->cross_sells) && count($this->cross_sells) > 0) : ?>
+        <?php echo $this->loadTemplate('crosssells'); ?>
+    <?php endif;?>
 
-        <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductDisplay', [&$result, &$this, &$this->item])->getArgument('html'); ?>
+    <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductDisplay', [&$result, &$this, &$this->item])->getArgument('html'); ?>
 
-        <?php echo J2CommerceHelper::modules()->loadposition('j2commerce-single-product-bottom'); ?>
-
+    <?php echo J2CommerceHelper::modules()->loadposition('j2commerce-single-product-bottom'); ?>
 </div>
 
