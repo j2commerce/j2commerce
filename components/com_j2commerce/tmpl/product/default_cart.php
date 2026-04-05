@@ -55,11 +55,9 @@ if($is_out_of_stock){
 
     <div id="add-to-cart-<?php echo $this->item->j2commerce_product_id; ?>" class="j2commerce-add-to-cart d-flex flex-wrap flex-sm-nowrap flex-md-wrap flex-lg-nowrap gap-3 gap-lg-2 gap-xl-3 mb-4 mt-4">
 
-        <?php echo J2CommerceHelper::product()->displayQuantity('com_j2commerce.product.bootstrap5', $this->item, $this->params, ['class' => 'form-control form-control-sm']); ?>
+        <?php echo J2CommerceHelper::product()->displayQuantity('com_j2commerce.product', $this->item, $this->params, ['class' => 'form-control form-control-sm']); ?>
 
         <input type="hidden" id="j2commerce_product_id" name="product_id" value="<?php echo $this->item->j2commerce_product_id;?>" />
-
-
 
         <button data-cart-action-always="<?php echo Text::_('COM_J2COMMERCE_ADDING_TO_CART'); ?>" data-cart-action-done="<?php echo $cart_text; ?>" data-cart-action-timeout="1000" value="<?php echo $cart_text; ?>" type="submit" class="j2commerce-cart-button j2commerce-cart-button rounded-1 btn btn-lg w-100 animate-slide-end order-sm-2 order-md-4 order-lg-2 d-flex align-items-center justify-content-center <?php echo $this->params->get('addtocart_button_class', 'btn-primary');?>"<?php echo $disabled;?>>
             <i class="si-shopping-cart fs-4 animate-target ms-n1 me-2"></i><span class="fs-6 text-capitalize"><?php echo $cart_text; ?></span>
