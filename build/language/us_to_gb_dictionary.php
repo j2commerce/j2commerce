@@ -139,7 +139,7 @@ return [
         'Caliber'           => 'Calibre',
         'somber'            => 'sombre',
         'Somber'            => 'Sombre',
-        // -og /
+        // -og / -ogue
         'dialog'            => 'dialogue',
         'Dialog'            => 'Dialogue',
         'analog'            => 'analogue',
