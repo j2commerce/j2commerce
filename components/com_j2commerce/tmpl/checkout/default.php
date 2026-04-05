@@ -386,6 +386,28 @@ document.addEventListener('DOMContentLoaded', function() {
         var savedCountryId = countrySelect.value || '';
         var savedZoneId = zoneSelect ? (zoneSelect.value || '') : '';
 
+        // Remember whether the zone field was originally marked required so we
+        // can restore that state when the selected country has zones, and lift
+        // it when the country has none — otherwise checkout is blocked for
+        // shoppers from countries with no zones (see issue #472).
+        var zoneWasRequired = zoneSelect ? zoneSelect.required : false;
+
+        function syncZoneRequired() {
+            if (!zoneSelect) return;
+            var hasRealZones = zoneSelect.querySelector('option[value]:not([value=""])') !== null;
+            if (hasRealZones) {
+                if (zoneWasRequired) {
+                    zoneSelect.setAttribute('required', 'required');
+                } else {
+                    zoneSelect.removeAttribute('required');
+                }
+                zoneSelect.disabled = false;
+            } else {
+                zoneSelect.removeAttribute('required');
+                zoneSelect.disabled = true;
+            }
+        }
+
         // Fetch and populate countries, restoring saved selection
         var countryUrl = baseUrl + '?option=com_j2commerce&task=ajax.getCountries';
         if (savedCountryId) countryUrl += '&country_id=' + savedCountryId;
@@ -413,6 +435,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!countryId || countryId === '0' || countryId === '') {
                 zoneSelect.innerHTML = '<option value=""><?php echo $selectZoneJs; ?></option>';
                 zoneSelect.disabled = false;
+                syncZoneRequired();
                 return;
             }
 
@@ -424,11 +447,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 .then(function(html) {
                     zoneSelect.innerHTML = html;
                     zoneSelect.disabled = false;
+                    syncZoneRequired();
                 })
                 .catch(function(err) {
                     console.error('Error loading zones:', err);
                     zoneSelect.innerHTML = '<option value=""><?php echo $selectZoneJs; ?></option>';
                     zoneSelect.disabled = false;
+                    syncZoneRequired();
                 });
         }
 
