@@ -41,7 +41,7 @@ $changeHtml = function (array $change): string {
         return '';
     }
     $icon  = $change['dir'] === 'up' ? 'fa-arrow-up' : 'fa-arrow-down';
-    $dirText = $change['dir'] === 'up' ? 'Up' : 'Down';
+    $dirText = $change['dir'] === 'up' ? Text::_('COM_J2COMMERCE_DASHBOARD_TREND_UP') : Text::_('COM_J2COMMERCE_DASHBOARD_TREND_DOWN');
 
     return '<span><span class="fa-solid ' . $icon . '" aria-hidden="true"></span><span class="visually-hidden">' . $dirText . '</span> ' . $change['pct'] . '%</span>';
 };
