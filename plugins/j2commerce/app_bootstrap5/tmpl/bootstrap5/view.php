@@ -34,9 +34,8 @@ $showBackTo = ($viewParams instanceof Registry) ? (bool) $viewParams->get('item_
 
 // Detect quickview context (tmpl=component inside an iframe)
 $isQuickview = $app->getInput()->getCmd('tmpl', '') === 'component';
-
 ?>
-<div class="<?php echo $isQuickview ? 'com_j2commerce ' : ''; ?>j2commerce-single-product <?php echo $this->escape($this->product->product_type ?? ''); ?> detail bs5 py-4 <?php echo $this->escape($productCssClass); ?>">
+<div class="j2commerce j2commerce-single-product <?php echo $this->escape($this->product->product_type ?? ''); ?> detail bootstrap5 py-4 <?php echo $this->escape($productCssClass); ?>">
     <?php if ($showPageHeading) : ?>
         <div class="page-header">
             <h1><?php echo $this->escape($pageHeading); ?></h1>

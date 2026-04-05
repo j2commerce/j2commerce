@@ -36,7 +36,7 @@ $childWidth = match ($category_columns) {
     default => 'uk-child-width-1-2@s uk-child-width-1-3@m uk-child-width-1-4@l',
 };
 ?>
-<div class="j2commerce-categories uikit <?php echo $this->escape($params->get('pageclass_sfx', '')); ?>">
+<div class="j2commerce j2commerce-categories uikit <?php echo $this->escape($params->get('pageclass_sfx', '')); ?>">
     <?php if ($params->get('show_category_root_title', 1)) : ?>
         <div class="uk-margin-medium-bottom">
             <h1><?php echo $this->escape($params->get('page_heading', '')); ?></h1>

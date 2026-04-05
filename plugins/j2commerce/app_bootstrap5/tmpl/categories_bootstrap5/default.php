@@ -37,7 +37,7 @@ $colsMd = match ($category_columns) {
 };
 
 ?>
-<div class="j2commerce-categories bootstrap5 <?php echo $this->escape($params->get('pageclass_sfx', '')); ?>">
+<div class="j2commerce j2commerce-categories bootstrap5 <?php echo $this->escape($params->get('pageclass_sfx', '')); ?>">
     <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeCategoriesView', array($this))->getArgument('html', ''); ?>
     <div class="container">
         <?php if ($params->get('show_category_root_title', 1)) : ?>
