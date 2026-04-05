@@ -30,6 +30,7 @@ final class ProductLayoutService
     public const CONTEXT_SEARCH         = 'search';
     public const CONTEXT_AJAX           = 'ajax';
     public const CONTEXT_CUSTOMERBOUGHT = 'customerbought';
+    public const CONTEXT_ARTICLE        = 'article';
 
     public static function renderProductItem(
         object $product,

@@ -153,6 +153,51 @@
                 />
             </fieldset>
 
+            <fieldset name="shortcodes" label="PLG_CONTENT_J2COMMERCE_SHORTCODES_FIELDSET_LABEL">
+                <field
+                    name="shortcode_subtemplate"
+                    type="list"
+                    label="PLG_CONTENT_J2COMMERCE_SHORTCODE_SUBTEMPLATE_LABEL"
+                    description="PLG_CONTENT_J2COMMERCE_SHORTCODE_SUBTEMPLATE_DESC"
+                    default=""
+                >
+                    <option value="">JUSE_GLOBAL</option>
+                    <option value="app_bootstrap5">Bootstrap 5</option>
+                    <option value="app_uikit">UIkit 3</option>
+                </field>
+                <field
+                    name="shortcode_image_width"
+                    type="number"
+                    label="PLG_CONTENT_J2COMMERCE_SHORTCODE_IMAGE_WIDTH_LABEL"
+                    description="PLG_CONTENT_J2COMMERCE_SHORTCODE_IMAGE_WIDTH_DESC"
+                    default="300"
+                    min="50"
+                    max="2000"
+                />
+                <field
+                    name="shortcode_show_cart_options"
+                    type="radio"
+                    layout="joomla.form.field.radio.switcher"
+                    label="PLG_CONTENT_J2COMMERCE_SHORTCODE_SHOW_CART_OPTIONS_LABEL"
+                    description="PLG_CONTENT_J2COMMERCE_SHORTCODE_SHOW_CART_OPTIONS_DESC"
+                    default="1"
+                >
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                <field
+                    name="shortcode_strip_in_finder"
+                    type="radio"
+                    layout="joomla.form.field.radio.switcher"
+                    label="PLG_CONTENT_J2COMMERCE_SHORTCODE_STRIP_IN_FINDER_LABEL"
+                    description="PLG_CONTENT_J2COMMERCE_SHORTCODE_STRIP_IN_FINDER_DESC"
+                    default="1"
+                >
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+            </fieldset>
+
             <fieldset name="itemview" label="PLG_CONTENT_J2COMMERCE_FIELDSET_ITEM_VIEW">
                 <field
                     name="item_product_block_position"
