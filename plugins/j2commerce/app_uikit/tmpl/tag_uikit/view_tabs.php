@@ -24,11 +24,11 @@ use Joomla\CMS\Language\Text;
 			?>
 			<ul uk-tab>
 				<?php if($hasDescription): ?>
-					<li class="uk-active"><a href="#"><?php echo Text::_('J2STORE_PRODUCT_DESCRIPTION')?></a></li>
+					<li class="uk-active"><a href="#"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_DESCRIPTION')?></a></li>
 				<?php endif; ?>
 
 				<?php if($this->params->get('item_show_product_specification')): ?>
-					<li<?php echo isset($set_specification_active) && $set_specification_active ? ' class="uk-active"' : ''; ?>><a href="#"><?php echo Text::_('J2STORE_PRODUCT_SPECIFICATIONS')?></a></li>
+					<li<?php echo isset($set_specification_active) && $set_specification_active ? ' class="uk-active"' : ''; ?>><a href="#"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_SPECIFICATIONS')?></a></li>
 				<?php endif; ?>
 			</ul>
 
