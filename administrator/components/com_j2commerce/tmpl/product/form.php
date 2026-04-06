@@ -370,7 +370,7 @@ $wa->addInlineScript($submitButtonJs);
                 <div class="modal-content">
                     <div class="modal-header border-0">
                         <h5 class="modal-title fs-3 fw-bold" id="changeProductTypeModalLabel"><?php echo Text::_('COM_J2COMMERCE_CHANGE_PRODUCT_TYPE'); ?></h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?php echo Text::_('JGLOBAL_CLOSE'); ?>"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?php echo Text::_('JCLOSE'); ?>"></button>
                     </div>
                     <div class="modal-body">
                         <div class="modal-body_inner p-3">
