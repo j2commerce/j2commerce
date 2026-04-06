@@ -190,7 +190,7 @@ class HtmlView extends BaseHtmlView
             $toolbar->preferences('com_j2commerce');
         }
 
-        $toolbar->help('Shipping_Methods', true, 'https://docs.j2commerce.com/shipping-methods');
+        $toolbar->help('Shipping_Methods', true, 'https://docs.j2commerce.com/v6/shipping-methods');
     }
 
     protected function loadShippingPluginLanguages(): void

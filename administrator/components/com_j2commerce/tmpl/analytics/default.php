@@ -11,11 +11,19 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use Joomla\CMS\Factory;
 use Joomla\CMS\Helper\ModuleHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Session\Session;
+
+Factory::getApplication()->getDocument()->getWebAssetManager()->registerAndUseScript(
+    'com_j2commerce.add-module-modal',
+    'media/com_j2commerce/js/administrator/add-module-modal.js',
+    [],
+    ['defer' => true]
+);
 
 /** @var \J2Commerce\Component\J2commerce\Administrator\View\Analytics\HtmlView $this */
 
@@ -166,7 +174,8 @@ $changeHtml = function (array $change): string {
                         endforeach; ?>
 
                         <?php echo HTMLHelper::_('uitab.addTab', 'analyticsMainTabs', 'analytics-add-main', '<span aria-hidden="true">+</span><span class="visually-hidden">' . Text::_('COM_J2COMMERCE_DASHBOARD_ADD_TAB_LABEL') . '</span>'); ?>
-                            <p class="text-body-secondary mb-0"><?php echo Text::sprintf('COM_J2COMMERCE_DASHBOARD_ADD_TAB_HELP', '<code>j2commerce-analytics-main-tab</code>'); ?></p>
+                            <p class="text-body-secondary"><?php echo Text::sprintf('COM_J2COMMERCE_DASHBOARD_ADD_TAB_HELP', '<code>j2commerce-analytics-main-tab</code>'); ?></p>
+                            <button type="button" class="btn btn-primary btn-sm" data-j2c-add-module-position="j2commerce-analytics-main-tab"><span class="icon-plus" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_DASHBOARD_ADD_MODULE_BTN'); ?></button>
                         <?php echo HTMLHelper::_('uitab.endTab'); ?>
                     <?php echo HTMLHelper::_('uitab.endTabSet'); ?>
                 </div>
@@ -188,7 +197,8 @@ $changeHtml = function (array $change): string {
                         endforeach; ?>
 
                         <?php echo HTMLHelper::_('uitab.addTab', 'analyticsSideTabs', 'analytics-add-side', '<span aria-hidden="true">+</span><span class="visually-hidden">' . Text::_('COM_J2COMMERCE_DASHBOARD_ADD_TAB_LABEL') . '</span>'); ?>
-                            <p class="text-body-secondary mb-0"><?php echo Text::sprintf('COM_J2COMMERCE_DASHBOARD_ADD_TAB_HELP', '<code>j2commerce-analytics-side-tab</code>'); ?></p>
+                            <p class="text-body-secondary"><?php echo Text::sprintf('COM_J2COMMERCE_DASHBOARD_ADD_TAB_HELP', '<code>j2commerce-analytics-side-tab</code>'); ?></p>
+                            <button type="button" class="btn btn-primary btn-sm" data-j2c-add-module-position="j2commerce-analytics-side-tab"><span class="icon-plus" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_DASHBOARD_ADD_MODULE_BTN'); ?></button>
                         <?php echo HTMLHelper::_('uitab.endTab'); ?>
                     <?php echo HTMLHelper::_('uitab.endTabSet'); ?>
                 </div>
@@ -322,5 +332,7 @@ $changeHtml = function (array $change): string {
 </div>
 
 <input type="hidden" id="analytics-token" value="<?php echo Session::getFormToken(); ?>">
+
+<?php echo LayoutHelper::render('dashboard.addmodulemodal', [], JPATH_ADMINISTRATOR . '/components/com_j2commerce/layouts'); ?>
 
 <?php echo $this->footer ?? ''; ?>

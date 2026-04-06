@@ -14,6 +14,7 @@ defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
@@ -78,15 +79,17 @@ try {
 
         <ul class="uk-list uk-list-divider j2commerce-cart-item-list uk-margin-small-bottom">
             <?php foreach ($items as $item) :
-                $itemParams = null;
                 $thumbImage = '';
+                if ($showThumb) {
+                    $itemParams = $platform
+                        ? $platform->getRegistry($item->orderitem_params ?? '{}')
+                        : new Registry($item->orderitem_params ?? '{}');
+                    $rawThumbImage = (string) $itemParams->get('thumb_image', '');
 
-                if ($platform) {
-                    $itemParams = $platform->getRegistry($item->orderitem_params ?? '{}');
-                    $thumbImage = $itemParams->get('thumb_image', '');
-                } else {
-                    $itemParams = new Registry($item->orderitem_params ?? '{}');
-                    $thumbImage = $itemParams->get('thumb_image', '');
+                    if ($rawThumbImage !== '') {
+                        $thumbSource = $platform ? $platform->getImagePath($rawThumbImage) : $rawThumbImage;
+                        $thumbImage = HTMLHelper::_('cleanImageURL', $thumbSource)->url;
+                    }
                 }
 
                 $cartitemId = $item->cartitem_id ?? $item->j2commerce_cartitem_id ?? 0;
@@ -104,7 +107,7 @@ try {
             ?>
             <li class="j2commerce-minicart-item uk-padding-remove-horizontal" data-cartitem-id="<?php echo (int) $cartitemId; ?>">
                 <div class="uk-flex uk-flex-top uk-grid-small" uk-grid>
-                    <?php if ($showThumb && !empty($thumbImage)) : ?>
+                    <?php if (!empty($thumbImage)) : ?>
                         <div class="j2commerce-cart-thumb uk-width-auto" style="width:60px;">
                             <img src="<?php echo htmlspecialchars($thumbImage, ENT_QUOTES, 'UTF-8'); ?>"
                                  alt="<?php echo htmlspecialchars($item->orderitem_name ?? '', ENT_QUOTES, 'UTF-8'); ?>"

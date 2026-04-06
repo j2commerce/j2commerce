@@ -45,7 +45,7 @@ $is_pro = $versionHelper->isPro();
                         </div>
                         <div class="text-center mt-auto mb-4">
                             <a class="btn btn-outline-primary app-button-open" href="https://www.j2commerce.com/support/technical-support" target="_blank" title="<?php echo Text::_('COM_J2COMMERCE_PAYMENT_LAYOUT_CARDS_HELP_BTN2_TITLE');?>"><span class="ps-1"><?php echo Text::_('COM_J2COMMERCE_PAYMENT_LAYOUT_CARDS_HELP_BTN2_TITLE');?></span></a>
-                            <a class="btn btn-primary app-button-open" href="https://docs.j2commerce.com/payment-methods" target="_blank" title="<?php echo Text::_('COM_J2COMMERCE_PAYMENT_LAYOUT_CARDS_HELP_BTN1_TITLE');?>"><span class="ps-1"><?php echo Text::_('COM_J2COMMERCE_PAYMENT_LAYOUT_CARDS_HELP_BTN1_TITLE');?></span></a>
+                            <a class="btn btn-primary app-button-open" href="https://docs.j2commerce.com/v6/payment-methods" target="_blank" title="<?php echo Text::_('COM_J2COMMERCE_PAYMENT_LAYOUT_CARDS_HELP_BTN1_TITLE');?>"><span class="ps-1"><?php echo Text::_('COM_J2COMMERCE_PAYMENT_LAYOUT_CARDS_HELP_BTN1_TITLE');?></span></a>
                         </div>
                     </div>
                 </div>

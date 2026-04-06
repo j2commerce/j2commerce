@@ -17,8 +17,46 @@
     </files>
 
     <languages folder="language">
+        <language tag="en-US">en-US/plg_system_j2commerce.ini</language>
+        <language tag="en-US">en-US/plg_system_j2commerce.sys.ini</language>
         <language tag="en-GB">en-GB/plg_system_j2commerce.ini</language>
         <language tag="en-GB">en-GB/plg_system_j2commerce.sys.ini</language>
+        <language tag="de-DE">de-DE/plg_system_j2commerce.ini</language>
+        <language tag="de-DE">de-DE/plg_system_j2commerce.sys.ini</language>
+        <language tag="es-ES">es-ES/plg_system_j2commerce.ini</language>
+        <language tag="es-ES">es-ES/plg_system_j2commerce.sys.ini</language>
+        <language tag="pt-PT">pt-PT/plg_system_j2commerce.ini</language>
+        <language tag="pt-PT">pt-PT/plg_system_j2commerce.sys.ini</language>
+        <language tag="it-IT">it-IT/plg_system_j2commerce.ini</language>
+        <language tag="it-IT">it-IT/plg_system_j2commerce.sys.ini</language>
+        <language tag="nl-NL">nl-NL/plg_system_j2commerce.ini</language>
+        <language tag="nl-NL">nl-NL/plg_system_j2commerce.sys.ini</language>
+        <language tag="fr-FR">fr-FR/plg_system_j2commerce.ini</language>
+        <language tag="fr-FR">fr-FR/plg_system_j2commerce.sys.ini</language>
+        <language tag="ru-RU">ru-RU/plg_system_j2commerce.ini</language>
+        <language tag="ru-RU">ru-RU/plg_system_j2commerce.sys.ini</language>
+        <language tag="el-GR">el-GR/plg_system_j2commerce.ini</language>
+        <language tag="el-GR">el-GR/plg_system_j2commerce.sys.ini</language>
+        <language tag="he-IL">he-IL/plg_system_j2commerce.ini</language>
+        <language tag="he-IL">he-IL/plg_system_j2commerce.sys.ini</language>
+        <language tag="ar-AA">ar-AA/plg_system_j2commerce.ini</language>
+        <language tag="ar-AA">ar-AA/plg_system_j2commerce.sys.ini</language>
+        <language tag="ja-JP">ja-JP/plg_system_j2commerce.ini</language>
+        <language tag="ja-JP">ja-JP/plg_system_j2commerce.sys.ini</language>
+        <language tag="pl-PL">pl-PL/plg_system_j2commerce.ini</language>
+        <language tag="pl-PL">pl-PL/plg_system_j2commerce.sys.ini</language>
+        <language tag="sv-SE">sv-SE/plg_system_j2commerce.ini</language>
+        <language tag="sv-SE">sv-SE/plg_system_j2commerce.sys.ini</language>
+        <language tag="zh-TW">zh-TW/plg_system_j2commerce.ini</language>
+        <language tag="zh-TW">zh-TW/plg_system_j2commerce.sys.ini</language>
+        <language tag="nb-NO">nb-NO/plg_system_j2commerce.ini</language>
+        <language tag="nb-NO">nb-NO/plg_system_j2commerce.sys.ini</language>
+        <language tag="da-DK">da-DK/plg_system_j2commerce.ini</language>
+        <language tag="da-DK">da-DK/plg_system_j2commerce.sys.ini</language>
+        <language tag="fi-FI">fi-FI/plg_system_j2commerce.ini</language>
+        <language tag="fi-FI">fi-FI/plg_system_j2commerce.sys.ini</language>
+        <language tag="tr-TR">tr-TR/plg_system_j2commerce.ini</language>
+        <language tag="tr-TR">tr-TR/plg_system_j2commerce.sys.ini</language>
     </languages>
 
     <config>

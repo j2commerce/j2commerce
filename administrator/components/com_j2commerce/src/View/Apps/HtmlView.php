@@ -118,7 +118,7 @@ class HtmlView extends BaseHtmlView
         if ($user->authorise('core.admin', 'com_j2commerce') || $user->authorise('core.options', 'com_j2commerce')) {
             $toolbar->preferences('com_j2commerce');
         }
-        $toolbar->help('Apps', true, 'https://docs.j2commerce.com/apps');
+        $toolbar->help('Apps', true, 'https://docs.j2commerce.com/v6/apps-and-extensions/');
     }
 
     protected function loadAppPluginLanguages(): void

@@ -1,1 +1,0 @@
--- Intentionally empty: EDI tables moved to app_edi plugin's own install SQL.

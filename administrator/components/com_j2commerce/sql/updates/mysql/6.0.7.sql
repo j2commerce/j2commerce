@@ -1,4 +1,0 @@
---
--- J2Commerce 6.0.7 Update
--- (Legacy migration removed — handled by install script)
---

@@ -16,7 +16,45 @@
         <folder>src</folder>
     </files>
     <languages>
+        <language tag="en-US">language/en-US/plg_task_j2commerce.ini</language>
+        <language tag="en-US">language/en-US/plg_task_j2commerce.sys.ini</language>
         <language tag="en-GB">language/en-GB/plg_task_j2commerce.ini</language>
         <language tag="en-GB">language/en-GB/plg_task_j2commerce.sys.ini</language>
+        <language tag="de-DE">language/de-DE/plg_task_j2commerce.ini</language>
+        <language tag="de-DE">language/de-DE/plg_task_j2commerce.sys.ini</language>
+        <language tag="es-ES">language/es-ES/plg_task_j2commerce.ini</language>
+        <language tag="es-ES">language/es-ES/plg_task_j2commerce.sys.ini</language>
+        <language tag="pt-PT">language/pt-PT/plg_task_j2commerce.ini</language>
+        <language tag="pt-PT">language/pt-PT/plg_task_j2commerce.sys.ini</language>
+        <language tag="it-IT">language/it-IT/plg_task_j2commerce.ini</language>
+        <language tag="it-IT">language/it-IT/plg_task_j2commerce.sys.ini</language>
+        <language tag="nl-NL">language/nl-NL/plg_task_j2commerce.ini</language>
+        <language tag="nl-NL">language/nl-NL/plg_task_j2commerce.sys.ini</language>
+        <language tag="fr-FR">language/fr-FR/plg_task_j2commerce.ini</language>
+        <language tag="fr-FR">language/fr-FR/plg_task_j2commerce.sys.ini</language>
+        <language tag="ru-RU">language/ru-RU/plg_task_j2commerce.ini</language>
+        <language tag="ru-RU">language/ru-RU/plg_task_j2commerce.sys.ini</language>
+        <language tag="el-GR">language/el-GR/plg_task_j2commerce.ini</language>
+        <language tag="el-GR">language/el-GR/plg_task_j2commerce.sys.ini</language>
+        <language tag="he-IL">language/he-IL/plg_task_j2commerce.ini</language>
+        <language tag="he-IL">language/he-IL/plg_task_j2commerce.sys.ini</language>
+        <language tag="ar-AA">language/ar-AA/plg_task_j2commerce.ini</language>
+        <language tag="ar-AA">language/ar-AA/plg_task_j2commerce.sys.ini</language>
+        <language tag="ja-JP">language/ja-JP/plg_task_j2commerce.ini</language>
+        <language tag="ja-JP">language/ja-JP/plg_task_j2commerce.sys.ini</language>
+        <language tag="pl-PL">language/pl-PL/plg_task_j2commerce.ini</language>
+        <language tag="pl-PL">language/pl-PL/plg_task_j2commerce.sys.ini</language>
+        <language tag="sv-SE">language/sv-SE/plg_task_j2commerce.ini</language>
+        <language tag="sv-SE">language/sv-SE/plg_task_j2commerce.sys.ini</language>
+        <language tag="zh-TW">language/zh-TW/plg_task_j2commerce.ini</language>
+        <language tag="zh-TW">language/zh-TW/plg_task_j2commerce.sys.ini</language>
+        <language tag="nb-NO">language/nb-NO/plg_task_j2commerce.ini</language>
+        <language tag="nb-NO">language/nb-NO/plg_task_j2commerce.sys.ini</language>
+        <language tag="da-DK">language/da-DK/plg_task_j2commerce.ini</language>
+        <language tag="da-DK">language/da-DK/plg_task_j2commerce.sys.ini</language>
+        <language tag="fi-FI">language/fi-FI/plg_task_j2commerce.ini</language>
+        <language tag="fi-FI">language/fi-FI/plg_task_j2commerce.sys.ini</language>
+        <language tag="tr-TR">language/tr-TR/plg_task_j2commerce.ini</language>
+        <language tag="tr-TR">language/tr-TR/plg_task_j2commerce.sys.ini</language>
     </languages>
 </extension>

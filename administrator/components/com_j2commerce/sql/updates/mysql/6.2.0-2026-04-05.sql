@@ -1,0 +1,3 @@
+-- J2Commerce 6.2.0 Initial Release
+-- This file serves as the schema version marker for Joomla's extension update tracking
+-- No SQL needed for initial installation as install.mysql.utf8.sql handles table creation

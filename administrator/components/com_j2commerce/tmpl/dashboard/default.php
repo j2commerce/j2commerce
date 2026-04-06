@@ -51,6 +51,14 @@ $changeHtml = function (array $change): string {
 // The two bottom module-tab sections always render (each with a "+" tab as a
 // discovery hint) so they split the row 50/50 regardless of module count.
 $colClass = 'col-lg-6';
+
+// Register the "Add Module" modal + its JS helper
+$doc->getWebAssetManager()->registerAndUseScript(
+    'com_j2commerce.add-module-modal',
+    'media/com_j2commerce/js/administrator/add-module-modal.js',
+    [],
+    ['defer' => true]
+);
 ?>
 
 <?php echo $this->navbar; ?>
@@ -206,7 +214,8 @@ $colClass = 'col-lg-6';
                     <?php echo $this->dashboardMainTabHtml; ?>
 
                     <?php echo HTMLHelper::_('uitab.addTab', 'dashboardMainTabs', 'dashboard-add-main', '<span aria-hidden="true">+</span><span class="visually-hidden">' . Text::_('COM_J2COMMERCE_DASHBOARD_ADD_TAB_LABEL') . '</span>'); ?>
-                        <p class="text-body-secondary mb-0"><?php echo Text::sprintf('COM_J2COMMERCE_DASHBOARD_ADD_TAB_HELP', '<code>j2commerce-dashboard-main-tab</code>'); ?></p>
+                        <p class="text-body-secondary"><?php echo Text::sprintf('COM_J2COMMERCE_DASHBOARD_ADD_TAB_HELP', '<code>j2commerce-dashboard-main-tab</code>'); ?></p>
+                        <button type="button" class="btn btn-primary btn-sm" data-j2c-add-module-position="j2commerce-dashboard-main-tab"><span class="icon-plus" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_DASHBOARD_ADD_MODULE_BTN'); ?></button>
                     <?php echo HTMLHelper::_('uitab.endTab'); ?>
                 <?php echo HTMLHelper::_('uitab.endTabSet'); ?>
             </div>
@@ -233,7 +242,8 @@ $colClass = 'col-lg-6';
                     <?php echo $this->dashboardSideTabHtml; ?>
 
                     <?php echo HTMLHelper::_('uitab.addTab', 'dashboardSideTabs', 'dashboard-add-side', '<span aria-hidden="true">+</span><span class="visually-hidden">' . Text::_('COM_J2COMMERCE_DASHBOARD_ADD_TAB_LABEL') . '</span>'); ?>
-                        <p class="text-body-secondary mb-0"><?php echo Text::sprintf('COM_J2COMMERCE_DASHBOARD_ADD_TAB_HELP', '<code>j2commerce-dashboard-side-tab</code>'); ?></p>
+                        <p class="text-body-secondary"><?php echo Text::sprintf('COM_J2COMMERCE_DASHBOARD_ADD_TAB_HELP', '<code>j2commerce-dashboard-side-tab</code>'); ?></p>
+                        <button type="button" class="btn btn-primary btn-sm" data-j2c-add-module-position="j2commerce-dashboard-side-tab"><span class="icon-plus" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_DASHBOARD_ADD_MODULE_BTN'); ?></button>
                     <?php echo HTMLHelper::_('uitab.endTab'); ?>
                 <?php echo HTMLHelper::_('uitab.endTabSet'); ?>
             </div>
@@ -256,7 +266,8 @@ $colClass = 'col-lg-6';
                 <?php endforeach; ?>
 
                 <?php echo HTMLHelper::_('uitab.addTab', 'dashboardModuleTabs', 'dashboard-add-module-main', '<span aria-hidden="true">+</span><span class="visually-hidden">' . Text::_('COM_J2COMMERCE_DASHBOARD_ADD_TAB_LABEL') . '</span>'); ?>
-                    <p class="text-body-secondary mb-0"><?php echo Text::sprintf('COM_J2COMMERCE_DASHBOARD_ADD_TAB_HELP', '<code>j2commerce-dashboard-module-main-tab</code>'); ?></p>
+                    <p class="text-body-secondary"><?php echo Text::sprintf('COM_J2COMMERCE_DASHBOARD_ADD_TAB_HELP', '<code>j2commerce-dashboard-module-main-tab</code>'); ?></p>
+                    <button type="button" class="btn btn-primary btn-sm" data-j2c-add-module-position="j2commerce-dashboard-module-main-tab"><span class="icon-plus" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_DASHBOARD_ADD_MODULE_BTN'); ?></button>
                 <?php echo HTMLHelper::_('uitab.endTab'); ?>
                 <?php echo HTMLHelper::_('uitab.endTabSet'); ?>
             </div>
@@ -277,7 +288,8 @@ $colClass = 'col-lg-6';
                 <?php endforeach; ?>
 
                 <?php echo HTMLHelper::_('uitab.addTab', 'dashboardModuleSideTabs', 'dashboard-add-module-side', '<span aria-hidden="true">+</span><span class="visually-hidden">' . Text::_('COM_J2COMMERCE_DASHBOARD_ADD_TAB_LABEL') . '</span>'); ?>
-                    <p class="text-body-secondary mb-0"><?php echo Text::sprintf('COM_J2COMMERCE_DASHBOARD_ADD_TAB_HELP', '<code>j2commerce-dashboard-module-side-tab</code>'); ?></p>
+                    <p class="text-body-secondary"><?php echo Text::sprintf('COM_J2COMMERCE_DASHBOARD_ADD_TAB_HELP', '<code>j2commerce-dashboard-module-side-tab</code>'); ?></p>
+                    <button type="button" class="btn btn-primary btn-sm" data-j2c-add-module-position="j2commerce-dashboard-module-side-tab"><span class="icon-plus" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_DASHBOARD_ADD_MODULE_BTN'); ?></button>
                 <?php echo HTMLHelper::_('uitab.endTab'); ?>
                 <?php echo HTMLHelper::_('uitab.endTabSet'); ?>
             </div>
@@ -319,5 +331,7 @@ $colClass = 'col-lg-6';
 <?php endif; ?>
 
 <?php echo $this->loadTemplate('categorywizard'); ?>
+
+<?php echo LayoutHelper::render('dashboard.addmodulemodal', [], JPATH_ADMINISTRATOR . '/components/com_j2commerce/layouts'); ?>
 
 <?php echo $this->footer ?? ''; ?>

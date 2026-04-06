@@ -13,10 +13,11 @@ declare(strict_types=1);
 defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
+use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
-use Joomla\CMS\Uri\Uri;
 use Joomla\Registry\Registry;
 
 $moduleId       = (int) $module->id;
@@ -43,6 +44,12 @@ $customCss = strip_tags((string) $params->get('custom_css', ''));
 if (!empty($customCss)) {
     $doc = \Joomla\CMS\Factory::getApplication()->getDocument();
     $doc->getWebAssetManager()->addInlineStyle($customCss);
+}
+
+$platform = null;
+try {
+    $platform = J2CommerceHelper::platform();
+} catch (\Throwable $e) {
 }
 
 $panelId = 'j2commerce-cart-detail-' . $moduleId;
@@ -94,15 +101,25 @@ $panelId = 'j2commerce-cart-detail-' . $moduleId;
             <!-- Item list -->
             <ul class="uk-list uk-list-divider j2commerce-cart-item-list">
                 <?php foreach ($items as $item) :
-                    $itemParams = new Registry($item->orderitem_params ?? '{}');
-                    $thumbImage = $itemParams->get('thumb_image', '');
+                    $thumbImage = '';
+
+                    if ($showThumb) {
+                        $itemParams = new Registry($item->orderitem_params ?? '{}');
+                        $rawThumbImage = (string) $itemParams->get('thumb_image', '');
+
+                        if ($rawThumbImage !== '') {
+                            $thumbSource = $platform ? $platform->getImagePath($rawThumbImage) : $rawThumbImage;
+                            $thumbImage = HTMLHelper::_('cleanImageURL', $thumbSource)->url;
+                        }
+                    }
+
                     $itemPrice  = (float) ($item->orderitem_final_price ?? $item->orderitem_price ?? 0);
                 ?>
                 <li>
                     <div class="uk-flex uk-flex-top uk-grid-small" uk-grid>
-                        <?php if ($showThumb && !empty($thumbImage)) : ?>
+                        <?php if (!empty($thumbImage)) : ?>
                             <div class="j2commerce-cart-thumb uk-width-auto" style="width:60px;">
-                                <img src="<?php echo htmlspecialchars(Uri::root(true) . '/' . $thumbImage, ENT_QUOTES, 'UTF-8'); ?>"
+                                <img src="<?php echo htmlspecialchars($thumbImage, ENT_QUOTES, 'UTF-8'); ?>"
                                      alt="<?php echo htmlspecialchars($item->orderitem_name ?? '', ENT_QUOTES, 'UTF-8'); ?>"
                                      uk-border-rounded loading="lazy" style="max-width:100%;height:auto;" />
                             </div>

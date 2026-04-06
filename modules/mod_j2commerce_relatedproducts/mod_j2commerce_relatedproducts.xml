@@ -17,8 +17,46 @@
     </files>
 
     <languages folder="language">
+        <language tag="en-US">en-US/mod_j2commerce_relatedproducts.ini</language>
+        <language tag="en-US">en-US/mod_j2commerce_relatedproducts.sys.ini</language>
         <language tag="en-GB">en-GB/mod_j2commerce_relatedproducts.ini</language>
         <language tag="en-GB">en-GB/mod_j2commerce_relatedproducts.sys.ini</language>
+        <language tag="de-DE">de-DE/mod_j2commerce_relatedproducts.ini</language>
+        <language tag="de-DE">de-DE/mod_j2commerce_relatedproducts.sys.ini</language>
+        <language tag="es-ES">es-ES/mod_j2commerce_relatedproducts.ini</language>
+        <language tag="es-ES">es-ES/mod_j2commerce_relatedproducts.sys.ini</language>
+        <language tag="pt-PT">pt-PT/mod_j2commerce_relatedproducts.ini</language>
+        <language tag="pt-PT">pt-PT/mod_j2commerce_relatedproducts.sys.ini</language>
+        <language tag="it-IT">it-IT/mod_j2commerce_relatedproducts.ini</language>
+        <language tag="it-IT">it-IT/mod_j2commerce_relatedproducts.sys.ini</language>
+        <language tag="nl-NL">nl-NL/mod_j2commerce_relatedproducts.ini</language>
+        <language tag="nl-NL">nl-NL/mod_j2commerce_relatedproducts.sys.ini</language>
+        <language tag="fr-FR">fr-FR/mod_j2commerce_relatedproducts.ini</language>
+        <language tag="fr-FR">fr-FR/mod_j2commerce_relatedproducts.sys.ini</language>
+        <language tag="ru-RU">ru-RU/mod_j2commerce_relatedproducts.ini</language>
+        <language tag="ru-RU">ru-RU/mod_j2commerce_relatedproducts.sys.ini</language>
+        <language tag="el-GR">el-GR/mod_j2commerce_relatedproducts.ini</language>
+        <language tag="el-GR">el-GR/mod_j2commerce_relatedproducts.sys.ini</language>
+        <language tag="he-IL">he-IL/mod_j2commerce_relatedproducts.ini</language>
+        <language tag="he-IL">he-IL/mod_j2commerce_relatedproducts.sys.ini</language>
+        <language tag="ar-AA">ar-AA/mod_j2commerce_relatedproducts.ini</language>
+        <language tag="ar-AA">ar-AA/mod_j2commerce_relatedproducts.sys.ini</language>
+        <language tag="ja-JP">ja-JP/mod_j2commerce_relatedproducts.ini</language>
+        <language tag="ja-JP">ja-JP/mod_j2commerce_relatedproducts.sys.ini</language>
+        <language tag="pl-PL">pl-PL/mod_j2commerce_relatedproducts.ini</language>
+        <language tag="pl-PL">pl-PL/mod_j2commerce_relatedproducts.sys.ini</language>
+        <language tag="sv-SE">sv-SE/mod_j2commerce_relatedproducts.ini</language>
+        <language tag="sv-SE">sv-SE/mod_j2commerce_relatedproducts.sys.ini</language>
+        <language tag="zh-TW">zh-TW/mod_j2commerce_relatedproducts.ini</language>
+        <language tag="zh-TW">zh-TW/mod_j2commerce_relatedproducts.sys.ini</language>
+        <language tag="nb-NO">nb-NO/mod_j2commerce_relatedproducts.ini</language>
+        <language tag="nb-NO">nb-NO/mod_j2commerce_relatedproducts.sys.ini</language>
+        <language tag="da-DK">da-DK/mod_j2commerce_relatedproducts.ini</language>
+        <language tag="da-DK">da-DK/mod_j2commerce_relatedproducts.sys.ini</language>
+        <language tag="fi-FI">fi-FI/mod_j2commerce_relatedproducts.ini</language>
+        <language tag="fi-FI">fi-FI/mod_j2commerce_relatedproducts.sys.ini</language>
+        <language tag="tr-TR">tr-TR/mod_j2commerce_relatedproducts.ini</language>
+        <language tag="tr-TR">tr-TR/mod_j2commerce_relatedproducts.sys.ini</language>
     </languages>
 
     <config>

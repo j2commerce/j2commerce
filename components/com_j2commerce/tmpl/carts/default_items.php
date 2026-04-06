@@ -12,6 +12,7 @@
 // phpcs:enable PSR1.Files.SideEffects
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Router\Route;
@@ -47,7 +48,10 @@ $checkoutPriceDisplay = $this->params->get('checkout_price_display_options', 0);
             <?php foreach ($this->items as $item): ?>
                 <?php
                 $itemParams = $platform->getRegistry($item->orderitem_params ?? '{}');
-                $thumbImage = $itemParams->get('thumb_image', '');
+                $rawThumbImage = (string) $itemParams->get('thumb_image', '');
+                $thumbImage = $rawThumbImage !== ''
+                    ? HTMLHelper::_('cleanImageURL', $platform->getImagePath($rawThumbImage))->url
+                    : '';
                 $backOrderText = $itemParams->get('back_order_item', '');
                 $removeUrl = J2CommerceHelper::platform()->getCartUrl(['task' => 'remove','cartitem_id' => $item->cartitem_id ?? $item->j2commerce_cartitem_id ?? 0
                 ]);

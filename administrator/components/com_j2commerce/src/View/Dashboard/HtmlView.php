@@ -517,6 +517,6 @@ JS);
             ToolbarHelper::preferences('com_j2commerce');
         }
 
-        ToolbarHelper::help('J2Commerce', true, 'https://docs.j2commerce.com/');
+        ToolbarHelper::help('J2Commerce', true, 'https://docs.j2commerce.com/v6/');
     }
 }
