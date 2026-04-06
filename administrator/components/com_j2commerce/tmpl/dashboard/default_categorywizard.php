@@ -37,7 +37,7 @@ $sefRewrite = (bool) $app->get('sef_rewrite', false);
                     <?php echo Text::_('COM_J2COMMERCE_WIZARD_TITLE'); ?>
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"
-                        aria-label="<?php echo Text::_('COM_J2COMMERCE_TOOLBAR_CANCEL'); ?>"></button>
+                        aria-label="<?php echo Text::_('JCLOSE'); ?>"></button>
             </div>
 
             <!-- Body -->
