@@ -1136,7 +1136,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
     }
 
     /**
-     * Check if J2Store is available
+     * Check if J2Commerce is available
      *
      * @return  bool
      *
@@ -1273,7 +1273,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
     /**
      * Build a simple Product schema
      *
-     * @param   object  $product  The J2Store product
+     * @param   object  $product  The J2Commerce product
      *
      * @return  array
      *
@@ -1355,7 +1355,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
     /**
      * Build Product schema for variable products (with hasVariant)
      *
-     * @param   object  $product   The J2Store product
+     * @param   object  $product   The J2Commerce product
      * @param   array   $variants  Array of variant objects
      *
      * @return  array
