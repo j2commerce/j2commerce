@@ -37,15 +37,15 @@ $is_pro = $versionHelper->isPro();
         <div class="col-md-6 align-self-stretch mb-3 mb-lg-0">
             <div class="card">
                 <div class="card-body">
-                    <div class="d-flex flex-column text-center h-100">
+                    <div class="d-flex flex-column text-center h-100 pt-3">
                         <div class="mt-auto">
-                            <span class="fa-4x mb-2 fa-solid fas fa-circle-info" aria-hidden="true"></span>
+                            <span class="fa-4x mb-2 fa-solid fa-circle-info" aria-hidden="true"></span>
                             <h2 class="fs-1 fw-bold"><?php echo Text::_('COM_J2COMMERCE_REPORT_LAYOUT_CARDS_HELP_TITLE');?></h2>
-                            <p class="fs-3 text-muted mb-5"><?php echo Text::_('COM_J2COMMERCE_REPORT_LAYOUT_CARDS_HELP_DESC');?></p>
+                            <p class="text-muted mb-5"><?php echo Text::_('COM_J2COMMERCE_REPORT_LAYOUT_CARDS_HELP_DESC');?></p>
                         </div>
                         <div class="text-center mt-auto mb-4">
                             <a class="btn btn-outline-primary app-button-open" href="https://www.j2commerce.com/support/technical-support" target="_blank" title="<?php echo Text::_('COM_J2COMMERCE_REPORT_LAYOUT_CARDS_HELP_BTN2_TITLE');?>"><span class="ps-1"><?php echo Text::_('COM_J2COMMERCE_REPORT_LAYOUT_CARDS_HELP_BTN2_TITLE');?></span></a>
-                            <a class="btn btn-primary app-button-open" href="https://docs.j2commerce.com/report-sales" target="_blank" title="<?php echo Text::_('COM_J2COMMERCE_REPORT_LAYOUT_CARDS_HELP_BTN1_TITLE');?>"><span class="ps-1"><?php echo Text::_('COM_J2COMMERCE_REPORT_LAYOUT_CARDS_HELP_BTN1_TITLE');?></span></a>
+                            <a class="btn btn-primary app-button-open" href="https://docs.j2commerce.com/v6/reports" target="_blank" title="<?php echo Text::_('COM_J2COMMERCE_REPORT_LAYOUT_CARDS_HELP_BTN1_TITLE');?>"><span class="ps-1"><?php echo Text::_('COM_J2COMMERCE_REPORT_LAYOUT_CARDS_HELP_BTN1_TITLE');?></span></a>
                         </div>
                     </div>
                 </div>
@@ -54,11 +54,11 @@ $is_pro = $versionHelper->isPro();
         <div class="col-md-6 align-self-stretch">
             <div class="card">
                 <div class="card-body">
-                    <div class="d-flex flex-column text-center h-100">
+                    <div class="d-flex flex-column text-center h-100 pt-3">
                         <div class="mt-auto">
-                            <span class="fa-4x mb-2 fa-solid fas fa-chart-line" aria-hidden="true"></span>
+                            <span class="fa-4x mb-2 fa-solid fa-chart-bar" aria-hidden="true"></span>
                             <h2 class="fs-1 fw-bold"><?php echo Text::_('COM_J2COMMERCE_REPORT_LAYOUT_CARDS_ADD_TITLE');?></h2>
-                            <p class="fs-3 text-muted mb-5"><?php echo Text::_('COM_J2COMMERCE_REPORT_LAYOUT_CARDS_ADD_DESC');?></p>
+                            <p class="text-muted mb-5"><?php echo Text::_('COM_J2COMMERCE_REPORT_LAYOUT_CARDS_ADD_DESC');?></p>
                         </div>
                         <div class="text-center mt-auto mb-4">
                             <a class="btn btn-primary app-button-open" href="https://www.j2commerce.com/extensions/reporting-plugins" target="_blank" title="<?php echo Text::_('COM_J2COMMERCE_REPORT_LAYOUT_CARDS_ADD_BTN1_TITLE');?>"><span class="ps-1"><?php echo Text::_('COM_J2COMMERCE_REPORT_LAYOUT_CARDS_ADD_BTN1_TITLE');?></span></a>

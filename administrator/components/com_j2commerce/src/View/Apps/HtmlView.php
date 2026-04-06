@@ -44,6 +44,7 @@ class HtmlView extends BaseHtmlView
         $this->loadAppPluginLanguages();
 
         $this->navbar = $this->getNavbar();
+        $this->appCards = $this->getAppCards();
 
         $model = $this->getModel();
         $this->items = $model->getItems();
@@ -64,6 +65,13 @@ class HtmlView extends BaseHtmlView
         $this->addToolbar();
 
         parent::display($tpl);
+    }
+
+    protected function getAppCards(): string
+    {
+        $displayData = [];
+
+        return LayoutHelper::render('app.default', $displayData, JPATH_COMPONENT_ADMINISTRATOR . '/layouts');
     }
 
     protected function getNavbar(): string

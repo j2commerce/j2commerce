@@ -31,7 +31,8 @@ $is_pro = $versionHelper->isPro();
 
 ?>
 
-<div class="j2commerce-shipping-container inline-content my-3">
+
+<div class="j2commerce-app-container inline-content my-3">
     <div class="row">
         <div class="col-md-6 align-self-stretch mb-3 mb-lg-0">
             <div class="card">
@@ -39,12 +40,12 @@ $is_pro = $versionHelper->isPro();
                     <div class="d-flex flex-column text-center h-100 pt-3">
                         <div class="mt-auto">
                             <span class="fa-4x mb-2 fa-solid fa-circle-info" aria-hidden="true"></span>
-                            <h2 class="fs-1 fw-bold"><?php echo Text::_('COM_J2COMMERCE_SHIPPING_LAYOUT_CARDS_HELP_TITLE');?></h2>
-                            <p class="text-muted mb-5"><?php echo Text::_('COM_J2COMMERCE_SHIPPING_LAYOUT_CARDS_HELP_DESC');?></p>
+                            <h2 class="fs-1 fw-bold"><?php echo Text::_('COM_J2COMMERCE_APP_LAYOUT_CARDS_HELP_TITLE');?></h2>
+                            <p class="text-muted mb-5"><?php echo Text::_('COM_J2COMMERCE_APP_LAYOUT_CARDS_HELP_DESC');?></p>
                         </div>
                         <div class="text-center mt-auto mb-4">
-                            <a class="btn btn-outline-primary app-button-open" href="https://docs.j2commerce.com/v6/shipping-methods" target="_blank" title="<?php echo Text::_('COM_J2COMMERCE_SHIPPING_LAYOUT_CARDS_HELP_BTN1_TITLE');?>"><span class="ps-1"><?php echo Text::_('COM_J2COMMERCE_SHIPPING_LAYOUT_CARDS_HELP_BTN1_TITLE');?></span></a>
-                            <a class="btn btn-primary app-button-open" href="<?php echo Route::_('index.php?option=com_j2commerce&view=shippingtroubles');?>" title="<?php echo Text::_('COM_J2COMMERCE_SHIPPING_TROUBLESHOOTER');?>"><span class="ps-1"><?php echo Text::_('COM_J2COMMERCE_SHIPPING_TROUBLESHOOTER');?></span></a>
+                            <a class="btn btn-outline-primary app-button-open" href="https://www.j2commerce.com/support/technical-support" target="_blank" title="<?php echo Text::_('COM_J2COMMERCE_APP_LAYOUT_CARDS_HELP_BTN2_TITLE');?>"><span class="ps-1"><?php echo Text::_('COM_J2COMMERCE_APP_LAYOUT_CARDS_HELP_BTN2_TITLE');?></span></a>
+                            <a class="btn btn-primary app-button-open" href="https://docs.j2commerce.com/v6/apps-and-extensions" target="_blank" title="<?php echo Text::_('COM_J2COMMERCE_APP_LAYOUT_CARDS_HELP_BTN1_TITLE');?>"><span class="ps-1"><?php echo Text::_('COM_J2COMMERCE_APP_LAYOUT_CARDS_HELP_BTN1_TITLE');?></span></a>
                         </div>
                     </div>
                 </div>
@@ -55,12 +56,12 @@ $is_pro = $versionHelper->isPro();
                 <div class="card-body">
                     <div class="d-flex flex-column text-center h-100 pt-3">
                         <div class="mt-auto">
-                            <span class="fa-4x mb-2 fa-solid fa-truck-plane" aria-hidden="true"></span>
-                            <h2 class="fs-1 fw-bold"><?php echo Text::_('COM_J2COMMERCE_SHIPPING_LAYOUT_CARDS_ADD_TITLE');?></h2>
-                            <p class="text-muted mb-5"><?php echo Text::_('COM_J2COMMERCE_SHIPPING_LAYOUT_CARDS_ADD_DESC');?></p>
+                            <span class="fa-4x mb-2 fa-solid fa-cart-arrow-down" aria-hidden="true"></span>
+                            <h2 class="fs-1 fw-bold"><?php echo Text::_('COM_J2COMMERCE_APP_LAYOUT_CARDS_ADD_TITLE');?></h2>
+                            <p class="text-muted mb-5"><?php echo Text::_('COM_J2COMMERCE_APP_LAYOUT_CARDS_ADD_DESC');?></p>
                         </div>
                         <div class="text-center mt-auto mb-4">
-                            <a class="btn btn-primary app-button-open" href="https://www.j2commerce.com/extensions/shipping-plugins" target="_blank" title="<?php echo Text::_('COM_J2COMMERCE_SHIPPING_LAYOUT_CARDS_ADD_BTN1_TITLE');?>"><span class="ps-1"><?php echo Text::_('COM_J2COMMERCE_SHIPPING_LAYOUT_CARDS_ADD_BTN1_TITLE');?></span></a>
+                            <a class="btn btn-primary app-button-open" href="https://www.j2commerce.com/extensions/apps" target="_blank" title="<?php echo Text::_('COM_J2COMMERCE_APP_LAYOUT_CARDS_ADD_BTN1_TITLE');?>"><span class="ps-1"><?php echo Text::_('COM_J2COMMERCE_APP_LAYOUT_CARDS_ADD_BTN1_TITLE');?></span></a>
                         </div>
                     </div>
                 </div>
@@ -68,4 +69,3 @@ $is_pro = $versionHelper->isPro();
         </div>
     </div>
 </div>
-
