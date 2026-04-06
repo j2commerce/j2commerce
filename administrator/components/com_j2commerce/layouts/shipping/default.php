@@ -43,7 +43,7 @@ $is_pro = $versionHelper->isPro();
                             <p class="fs-3 text-muted mb-5"><?php echo Text::_('COM_J2COMMERCE_SHIPPING_LAYOUT_CARDS_HELP_DESC');?></p>
                         </div>
                         <div class="text-center mt-auto mb-4">
-                            <a class="btn btn-outline-primary app-button-open" href="https://docs.j2commerce.com/shipping-methods" target="_blank" title="<?php echo Text::_('COM_J2COMMERCE_SHIPPING_LAYOUT_CARDS_HELP_BTN1_TITLE');?>"><span class="ps-1"><?php echo Text::_('COM_J2COMMERCE_SHIPPING_LAYOUT_CARDS_HELP_BTN1_TITLE');?></span></a>
+                            <a class="btn btn-outline-primary app-button-open" href="https://docs.j2commerce.com/v6/shipping-methods" target="_blank" title="<?php echo Text::_('COM_J2COMMERCE_SHIPPING_LAYOUT_CARDS_HELP_BTN1_TITLE');?>"><span class="ps-1"><?php echo Text::_('COM_J2COMMERCE_SHIPPING_LAYOUT_CARDS_HELP_BTN1_TITLE');?></span></a>
                             <a class="btn btn-primary app-button-open" href="<?php echo Route::_('index.php?option=com_j2commerce&view=shippingtroubles');?>" title="<?php echo Text::_('COM_J2COMMERCE_SHIPPING_TROUBLESHOOTER');?>"><span class="ps-1"><?php echo Text::_('COM_J2COMMERCE_SHIPPING_TROUBLESHOOTER');?></span></a>
                         </div>
                     </div>
