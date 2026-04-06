@@ -63,7 +63,7 @@ $product_helper = J2CommerceHelper::product();
 
                         <?php if (isset($this->product->variant->allow_backorder) && $this->product->variant->allow_backorder == 2 && !$this->product->variant->availability) : ?>
                             <span class="backorder-notification">
-                                <?php echo Text::_('J2STORE_BACKORDER_NOTIFICATION'); ?>
+                                <?php echo Text::_('COM_J2COMMERCE_BACKORDER_NOTIFICATION'); ?>
                             </span>
                         <?php else : ?>
                             <span class="backorder-notification"></span>

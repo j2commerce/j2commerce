@@ -196,9 +196,9 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
                 <b><?php echo $this->escape(Text::_($option['option_name'])); ?>:</b><br>
                 <button type="button"
                     id="product-option-<?php echo $option['productoption_id']; ?>"
-                    data-loading-text="<?php echo Text::_('J2STORE_LOADING'); ?>"
+                    data-loading-text="<?php echo Text::_('COM_J2COMMERCE_LOADING'); ?>"
                     class="uk-button uk-button-default">
-                    <span uk-icon="icon: upload"></span> <?php echo Text::_('J2STORE_PRODUCT_OPTION_CHOOSE_FILE'); ?>
+                    <span uk-icon="icon: upload"></span> <?php echo Text::_('COM_J2COMMERCE_PRODUCT_OPTION_CHOOSE_FILE'); ?>
                 </button>
                 <input type="hidden"
                     name="product_option[<?php echo $option['productoption_id']; ?>]"

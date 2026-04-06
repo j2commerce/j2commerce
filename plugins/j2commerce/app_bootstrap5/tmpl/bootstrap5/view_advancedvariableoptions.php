@@ -99,7 +99,7 @@ $parentOptionIds = [];
                         data-product-id="<?php echo $productId; ?>"
                         data-option-id="<?php echo $optionId; ?>">
                     <?php if ($option['is_variant'] == 0) : ?>
-                        <option value=""><?php echo Text::_('J2STORE_ADDTOCART_SELECT'); ?></option>
+                        <option value=""><?php echo Text::_('COM_J2COMMERCE_ADDTOCART_SELECT'); ?></option>
                     <?php endif; ?>
                     <?php foreach ($option['optionvalue'] as $optionValue) : ?>
                         <?php $checked = $optionValue['product_optionvalue_default'] ? 'selected="selected"' : ''; ?>
@@ -274,7 +274,7 @@ $parentOptionIds = [];
                         class="btn btn-default j2c-file-upload-btn"
                         data-product-id="<?php echo $productId; ?>"
                         data-option-id="<?php echo $optionId; ?>">
-                    <span class="fas fa-solid fa-upload me-1" aria-hidden="true"></span><?php echo Text::_('J2STORE_PRODUCT_OPTION_CHOOSE_FILE'); ?>
+                    <span class="fas fa-solid fa-upload me-1" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_PRODUCT_OPTION_CHOOSE_FILE'); ?>
                 </button>
                 <input type="hidden"
                        name="product_option[<?php echo $optionId; ?>]"

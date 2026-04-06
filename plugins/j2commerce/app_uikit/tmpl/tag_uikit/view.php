@@ -42,7 +42,7 @@ $isQuickview = $app->getInput()->getCmd('tmpl', '') === 'component';
     <?php if ($showBackTo && isset($this->back_link) && !empty($this->back_link)) : ?>
         <div class="j2commerce-view-back-button uk-margin-small-bottom">
             <a href="<?php echo $this->escape($this->back_link); ?>" class="j2commerce-product-back-btn uk-button uk-button-small uk-button-default">
-                <span uk-icon="icon: arrow-left"></span> <?php echo Text::_('J2STORE_PRODUCT_BACK_TO') . ' ' . $this->escape($this->back_link_title ?? ''); ?>
+                <span uk-icon="icon: arrow-left"></span> <?php echo Text::_('COM_J2COMMERCE_PRODUCT_BACK_TO') . ' ' . $this->escape($this->back_link_title ?? ''); ?>
             </a>
         </div>
     <?php endif; ?>

@@ -57,7 +57,7 @@ $productHelper = J2CommerceHelper::product();
         <?php if (isset($product->pricing->is_discount_pricing_available) && isset($product->pricing->base_price) && !empty($product->pricing->base_price)) : ?>
             <?php $discount = (1 - ($product->pricing->price / $product->pricing->base_price)) * 100; ?>
             <?php if ($discount > 0) : ?>
-                <?php echo Text::sprintf('J2STORE_PRODUCT_OFFER', round($discount) . '%'); ?>
+                <?php echo Text::sprintf('COM_J2COMMERCE_PRODUCT_OFFER', round($discount) . '%'); ?>
             <?php endif; ?>
         <?php endif; ?>
     </div>
