@@ -204,4 +204,6 @@ $return = rawurlencode($encodedReturn);
     </div>
 </form>
 
+<?php echo $this->appCards; ?>
+
 <?php echo $this->footer ?? ''; ?>

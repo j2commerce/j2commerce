@@ -225,8 +225,6 @@ HTMLHelper::_('bootstrap.tooltip', '[data-bs-toggle="tooltip"]', ['placement' =>
 
                 <?php endif; ?>
 
-                <?php echo $this->reportCards;?>
-
                 <input type="hidden" name="task" value="" />
                 <input type="hidden" name="boxchecked" value="0" />
                 <?php echo HTMLHelper::_('form.token'); ?>
@@ -234,5 +232,7 @@ HTMLHelper::_('bootstrap.tooltip', '[data-bs-toggle="tooltip"]', ['placement' =>
         </div>
     </div>
 </form>
+
+<?php echo $this->reportCards; ?>
 
 <?php echo $this->footer ?? ''; ?>
