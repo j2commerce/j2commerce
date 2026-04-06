@@ -1,3 +1,7 @@
+.text-muted {
+    color: #495057 !important;
+}
+
 :root {
     --j2c-error: #dc3545;
     --j2c-success: #33b36b;
