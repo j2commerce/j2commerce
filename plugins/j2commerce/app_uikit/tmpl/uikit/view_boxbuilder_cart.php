@@ -17,6 +17,7 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Uri\Uri;
 use Joomla\Registry\Registry;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 $plugin = PluginHelper::getPlugin('j2commerce', 'app_boxbuilderproduct');
 $params = new Registry($plugin->params);
@@ -39,13 +40,13 @@ if (!empty($this->product->addtocart_text)) {
     }
 }
 
-$show          = J2Commerce::product()->validateVariableProduct($this->product);
-$manageStock   = J2Commerce::product()->managing_stock($this->product->variant);
+$show          = J2CommerceHelper::product()->validateVariableProduct($this->product);
+$manageStock   = J2CommerceHelper::product()->managing_stock($this->product->variant);
 $is_available  = $this->product->variant->availability;
 $is_out_of_stock = ($manageStock === true && $is_available === 0);
 $disabled      = $is_out_of_stock ? ' disabled' : '';
 ?>
-<?php echo J2Commerce::plugin()->eventWithHtml('BeforeAddToCartButton', [$this->product, J2Commerce::utilities()->getContext('view_cart')]); ?>
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeAddToCartButton', [$this->product, J2CommerceHelper::utilities()->getContext('view_cart')]); ?>
 <?php if ($show): ?>
     <div class="cart-action-complete uk-hidden" style="display:none;">
         <p class="uk-text-success">
@@ -62,7 +63,7 @@ $disabled      = $is_out_of_stock ? ' disabled' : '';
 
     <div id="add-to-cart-<?php echo $this->product->j2commerce_product_id; ?>" class="j2commerce-add-to-cart uk-flex uk-flex-wrap uk-flex-between uk-margin-top uk-margin-bottom">
         <?php if ($show_qty_btn): ?>
-            <?php echo J2Commerce::product()->displayQuantity('com_j2commerce.product.uikit', $this->product, $this->params, ['class' => 'uk-input']); ?>
+            <?php echo J2CommerceHelper::product()->displayQuantity('com_j2commerce.product.uikit', $this->product, $this->params, ['class' => 'uk-input']); ?>
         <?php else: ?>
             <input type="hidden" name="product_qty" value="1" />
         <?php endif; ?>
@@ -80,11 +81,11 @@ $disabled      = $is_out_of_stock ? ' disabled' : '';
             <span class="uk-text-capitalize boxbuilder-btn-text"><?php echo $cart_text; ?></span>
         </button>
 
-        <?php echo J2Commerce::plugin()->eventWithHtml('AfterAddToCartButton', [$this->product, J2Commerce::utilities()->getContext('view_cart')]); ?>
+        <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterAddToCartButton', [$this->product, J2CommerceHelper::utilities()->getContext('view_cart')]); ?>
     </div>
 <?php else: ?>
     <div class="uk-margin AfterAddToCartButton">
-        <?php echo J2Commerce::plugin()->eventWithHtml('AfterAddToCartButton', [$this->product, J2Commerce::utilities()->getContext('view_cart')]); ?>
+        <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterAddToCartButton', [$this->product, J2CommerceHelper::utilities()->getContext('view_cart')]); ?>
     </div>
 <?php endif; ?>
 
@@ -115,10 +116,10 @@ $disabled      = $is_out_of_stock ? ' disabled' : '';
 
 <div id="AfterProductCartGrid">
     <div class="uk-flex uk-flex-wrap" style="gap:1rem;">
-        <?php echo J2Commerce::plugin()->eventWithHtml('AfterProductCartGrid', [$this->product, J2Commerce::utilities()->getContext('view_cart')]); ?>
+        <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductCartGrid', [$this->product, J2CommerceHelper::utilities()->getContext('view_cart')]); ?>
     </div>
 </div>
 
 <div id="AfterProductCart" class="uk-margin">
-    <?php echo J2Commerce::plugin()->eventWithHtml('AfterProductCart', [$this->product, J2Commerce::utilities()->getContext('view_cart')]); ?>
+    <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductCart', [$this->product, J2CommerceHelper::utilities()->getContext('view_cart')]); ?>
 </div>
