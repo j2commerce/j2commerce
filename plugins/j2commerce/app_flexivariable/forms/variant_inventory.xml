@@ -8,7 +8,7 @@
 -->
 <form>
     <fieldset name="variant_inventory">
-        <!-- Manage Stock - matches J2Store field: manage_stock -->
+        <!-- Manage Stock - matches J2Commerce field: manage_stock -->
         <field
             name="manage_stock"
             type="list"
@@ -20,14 +20,14 @@
             <option value="1">JYES</option>
         </field>
 
-        <!-- Hidden productquantity ID - matches J2Store nested field: quantity[j2store_productquantity_id] -->
+        <!-- Hidden productquantity ID - matches J2Commerce nested field: quantity[j2commerce_productquantity_id] -->
         <field
             name="j2commerce_productquantity_id"
             type="hidden"
             default="0"
         />
 
-        <!-- Quantity - matches J2Store nested field: quantity[quantity] -->
+        <!-- Quantity - matches J2Commerce nested field: quantity[quantity] -->
         <field
             name="quantity"
             type="number"
@@ -37,7 +37,7 @@
             filter="integer"
         />
 
-        <!-- Allow Backorder - matches J2Store field: allow_backorder -->
+        <!-- Allow Backorder - matches J2Commerce field: allow_backorder -->
         <field
             name="allow_backorder"
             type="list"
@@ -50,7 +50,7 @@
             <option value="2">COM_J2COMMERCE_ALLOW_BUT_NOTIFY_CUSTOMER</option>
         </field>
 
-        <!-- Availability/Stock Status - matches J2Store field: availability -->
+        <!-- Availability/Stock Status - matches J2Commerce field: availability -->
         <field
             name="availability"
             type="list"
@@ -62,7 +62,7 @@
             <option value="1">COM_J2COMMERCE_IN_STOCK</option>
         </field>
 
-        <!-- Notify Quantity - matches J2Store field: notify_qty -->
+        <!-- Notify Quantity - matches J2Commerce field: notify_qty -->
         <field
             name="notify_qty"
             type="text"
@@ -72,7 +72,7 @@
             filter="float"
         />
 
-        <!-- Use Store Config for Notify Qty - matches J2Store field: use_store_config_notify_qty -->
+        <!-- Use Store Config for Notify Qty - matches J2Commerce field: use_store_config_notify_qty -->
         <field
             name="use_store_config_notify_qty"
             type="checkbox"
@@ -81,7 +81,7 @@
             value="1"
         />
 
-        <!-- Quantity Restriction - matches J2Store field: quantity_restriction -->
+        <!-- Quantity Restriction - matches J2Commerce field: quantity_restriction -->
         <field
             name="quantity_restriction"
             type="list"
@@ -93,7 +93,7 @@
             <option value="1">JYES</option>
         </field>
 
-        <!-- Max Sale Quantity - matches J2Store field: max_sale_qty -->
+        <!-- Max Sale Quantity - matches J2Commerce field: max_sale_qty -->
         <field
             name="max_sale_qty"
             type="text"
@@ -103,7 +103,7 @@
             filter="float"
         />
 
-        <!-- Use Store Config for Max Sale Qty - matches J2Store field: use_store_config_max_sale_qty -->
+        <!-- Use Store Config for Max Sale Qty - matches J2Commerce field: use_store_config_max_sale_qty -->
         <field
             name="use_store_config_max_sale_qty"
             type="checkbox"
@@ -112,7 +112,7 @@
             value="1"
         />
 
-        <!-- Min Sale Quantity - matches J2Store field: min_sale_qty -->
+        <!-- Min Sale Quantity - matches J2Commerce field: min_sale_qty -->
         <field
             name="min_sale_qty"
             type="text"
@@ -122,7 +122,7 @@
             filter="float"
         />
 
-        <!-- Use Store Config for Min Sale Qty - matches J2Store field: use_store_config_min_sale_qty -->
+        <!-- Use Store Config for Min Sale Qty - matches J2Commerce field: use_store_config_min_sale_qty -->
         <field
             name="use_store_config_min_sale_qty"
             type="checkbox"

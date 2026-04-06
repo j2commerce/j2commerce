@@ -245,7 +245,7 @@ class ReportitemisedModel extends BaseReportModel
     /**
      * Override getItems to attach order item attributes to each row.
      *
-     * The J2Store version loaded orderitemattributes in a sub-query per item.
+     * The J2Commerce version loaded orderitemattributes in a sub-query per item.
      * We batch-load them here for efficiency.
      *
      * @return  array

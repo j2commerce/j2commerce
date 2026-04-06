@@ -53,7 +53,7 @@
             filter="float"
         />
 
-        <!-- Weight Class - matches J2Store field: weight_class_id -->
+        <!-- Weight Class - matches J2Commerce field: weight_class_id -->
         <field
             name="weight_class_id"
             type="Weight"

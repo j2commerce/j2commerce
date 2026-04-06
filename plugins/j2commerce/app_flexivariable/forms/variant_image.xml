@@ -8,7 +8,7 @@
 -->
 <form>
     <fieldset name="variant_image">
-        <!-- Use as Thumbnail - matches J2Store params field: is_main_as_thum -->
+        <!-- Use as Thumbnail - matches J2Commerce params field: is_main_as_thum -->
         <field
             name="is_main_as_thum"
             type="radio"
