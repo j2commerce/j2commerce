@@ -27,7 +27,7 @@ $params = $this->singleton_params;
 			<?php if(isset($product->pricing->is_discount_pricing_available)) $class='strike'; ?>
 			<div class="base-price <?php echo $class?>">
 					<span class="product-element-value">
-						<?php echo J2Store::product()->displayPrice($product->pricing->base_price, $product, $params);?>
+						<?php echo J2CommerceHelper::product()->displayPrice($product->pricing->base_price, $product, $params);?>
 					</span>
 			</div>
 		<?php endif; ?>
@@ -35,14 +35,14 @@ $params = $this->singleton_params;
 		<?php if($params->get('item_show_product_special_price', 1) && isset($product->pricing->price) ): ?>
 		<div class="sale-price">
 			<span class="product-element-value">
-				<?php echo J2Store::product()->displayPrice($product->pricing->price, $product, $params);?>
+				<?php echo J2CommerceHelper::product()->displayPrice($product->pricing->price, $product, $params);?>
 				</span>
 		</div>
 	<?php endif; ?>
 
 	<?php if($params->get('display_price_with_tax_info', 0) ): ?>
 		<div class="tax-text">
-			<?php echo J2Store::product()->get_tax_text(); ?>
+			<?php echo J2CommerceHelper::product()->get_tax_text(); ?>
 		</div>
 	<?php endif; ?>
 
