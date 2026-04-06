@@ -1,7 +1,3 @@
-.text-muted {
-    color: #495057 !important;
-}
-
 .j2commerce {
     --primary: #112855;
     --success: #0d9347;
@@ -870,5 +866,13 @@
     .j2commerce-confirmation .j2c-confirmation-main {
         border-right: none !important;
         padding-right: 0 !important;
+    }
+}
+
+html[data-bs-theme="light"] .j2commerce {
+    .text-muted {
+        --text-muted-color:#495057;
+        color: var(--text-muted-color)!important;
+        opacity:1!important;
     }
 }

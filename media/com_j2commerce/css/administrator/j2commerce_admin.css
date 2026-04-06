@@ -1,6 +1,3 @@
-.text-muted {
-    color: #495057 !important;
-}
 
 :root {
     --j2c-error: #dc3545;
@@ -210,6 +207,28 @@ body.com_j2commerce #content, #fieldset-j2commerce-product-settings, .j2commerce
     .j2commerce-variant-inventory .form-check {padding-block-start: 3px;}
     #dashboardModuleTabs nav.quick-icons {padding:0!important;}
 
+
+
+}
+
+html[data-bs-theme="light"] body.com_j2commerce {
+    .text-muted {
+        --text-muted-color:#495057;
+        color: var(--text-muted-color)!important;
+        opacity:1!important;
+    }
+}
+
+
+html[data-bs-theme="dark"] body.com_j2commerce {
+    .btn-outline-primary {
+        --btn-color: var(--btn-active-color)!important;
+        border: var(--btn-primary-border-hvr);
+    }
+    .btn-outline-primary:hover, .btn-outline-primary:focus, .btn-outline-primary:active {
+        background-color: var(--btn-primary-bg-hvr);
+        border: var(--btn-primary-border-hvr);
+    }
 }
 
 .j2commerce-social-share a[target="_blank"]:before {display:none;}
