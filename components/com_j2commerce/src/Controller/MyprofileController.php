@@ -560,15 +560,15 @@ class MyprofileController extends BaseController
         $errors = [];
 
         if (empty($password)) {
-            $errors['password'] = Text::_('PLG_J2COMMERCE_APP_CHANGEPASSWORD_NEW_PASSWORD_REQUIRED');
+            $errors['password'] = Text::_('J2COMMERCE_APP_CHANGEPASSWORD_NEW_PASSWORD_REQUIRED');
         }
 
         if (empty($confirmPassword)) {
-            $errors['confirm_password'] = Text::_('PLG_J2COMMERCE_APP_CHANGEPASSWORD_CONFIRM_PASSWORD_REQUIRED');
+            $errors['confirm_password'] = Text::_('J2COMMERCE_APP_CHANGEPASSWORD_CONFIRM_PASSWORD_REQUIRED');
         }
 
         if (!empty($password) && !empty($confirmPassword) && $password !== $confirmPassword) {
-            $errors['confirm_password'] = Text::_('PLG_J2COMMERCE_APP_CHANGEPASSWORD_NEW_PASSWORD_MISMATCH');
+            $errors['confirm_password'] = Text::_('J2COMMERCE_APP_CHANGEPASSWORD_NEW_PASSWORD_MISMATCH');
         }
 
         if ($errors) {
@@ -583,12 +583,12 @@ class MyprofileController extends BaseController
         $table->password = UserHelper::hashPassword($password);
 
         if (!$table->store()) {
-            $this->jsonResponse(['success' => false, 'error' => ['general' => Text::_('PLG_J2COMMERCE_APP_CHANGEPASSWORD_SAVE_PROBLEM')]]);
+            $this->jsonResponse(['success' => false, 'error' => ['general' => Text::_('J2COMMERCE_APP_CHANGEPASSWORD_SAVE_PROBLEM')]]);
 
             return;
         }
 
-        $this->jsonResponse(['success' => Text::_('PLG_J2COMMERCE_APP_CHANGEPASSWORD_UPDATED_SUCCESSFULLY')]);
+        $this->jsonResponse(['success' => Text::_('J2COMMERCE_APP_CHANGEPASSWORD_UPDATED_SUCCESSFULLY')]);
     }
 
     /**
