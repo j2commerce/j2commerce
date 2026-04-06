@@ -184,6 +184,6 @@ class HtmlView extends BaseHtmlView
         }
 
         $toolbar->divider();
-        ToolbarHelper::help('Coupons', true, 'https://docs.j2commerce.com/sales#coupons');
+        ToolbarHelper::help('Coupons', true, 'https://docs.j2commerce.com/v6/sales/coupons');
     }
 }

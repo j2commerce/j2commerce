@@ -190,6 +190,6 @@ class HtmlView extends BaseHtmlView
             ToolbarHelper::preferences('com_j2commerce');
         }
 
-        ToolbarHelper::help('Vendors', true, 'https://docs.j2commerce.com/catalog/vendors/');
+        ToolbarHelper::help('Vendors', true, 'https://docs.j2commerce.com/v6/catalog/vendors');
     }
 }

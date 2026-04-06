@@ -130,6 +130,6 @@ class HtmlView extends BaseHtmlView
 
         $toolbar->cancel('currency.cancel', $isNew ? 'JTOOLBAR_CANCEL' : 'JTOOLBAR_CLOSE');
         $toolbar->divider();
-        ToolbarHelper::help('Currencies', true, 'https://docs.j2commerce.com/set-up/currency');
+        ToolbarHelper::help('Currencies', true, 'https://docs.j2commerce.com/v6/localisation/currencies');
     }
 }

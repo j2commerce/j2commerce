@@ -184,6 +184,6 @@ class HtmlView extends BaseHtmlView
             ToolbarHelper::preferences('com_j2commerce');
         }
 
-        ToolbarHelper::help('Geozones', true, 'https://docs.j2commerce.com/localisation#geozones');
+        ToolbarHelper::help('Geozones', true, 'https://docs.j2commerce.com/v6/localisation/geozones');
     }
 }

@@ -167,6 +167,6 @@ class HtmlView extends BaseHtmlView
             ToolbarHelper::preferences('com_j2commerce');
         }
 
-        ToolbarHelper::help('Tax_Rules', true, 'https://docs.j2commerce.com/taxation#tax-rules');
+        ToolbarHelper::help('Tax_Rules', true, 'https://docs.j2commerce.com/v6/taxation/tax-rules');
     }
 }

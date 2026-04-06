@@ -205,6 +205,6 @@ class HtmlView extends BaseHtmlView
             ToolbarHelper::preferences('com_j2commerce');
         }
 
-        ToolbarHelper::help('Custom_Fields', true, 'https://docs.j2commerce.com/set-up/custom-fields');
+        ToolbarHelper::help('Custom_Fields', true, 'https://docs.j2commerce.com/v6/configuration/custom-fields');
     }
 }

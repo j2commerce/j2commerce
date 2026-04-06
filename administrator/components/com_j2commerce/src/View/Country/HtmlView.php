@@ -129,6 +129,6 @@ class HtmlView extends BaseHtmlView
 
         $toolbar->cancel('country.cancel', $isNew ? 'JTOOLBAR_CANCEL' : 'JTOOLBAR_CLOSE');
         $toolbar->divider();
-        ToolbarHelper::help('Countries', true, 'https://docs.j2commerce.com/localisation#countries');
+        ToolbarHelper::help('Countries', true, 'https://docs.j2commerce.com/v6/localisation/countries');
     }
 }

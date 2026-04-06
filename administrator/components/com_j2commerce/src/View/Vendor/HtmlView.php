@@ -145,6 +145,6 @@ class HtmlView extends BaseHtmlView
 
         $toolbar->cancel('vendor.cancel', $isNew ? 'JTOOLBAR_CANCEL' : 'JTOOLBAR_CLOSE');
         $toolbar->divider();
-        ToolbarHelper::help('Vendors', true, 'https://docs.j2commerce.com/catalog/vendors/');
+        ToolbarHelper::help('Vendors', true, 'https://docs.j2commerce.com/v6/catalog/vendors');
     }
 }

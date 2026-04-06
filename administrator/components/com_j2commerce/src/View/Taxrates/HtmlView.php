@@ -184,6 +184,6 @@ class HtmlView extends BaseHtmlView
             ToolbarHelper::preferences('com_j2commerce');
         }
 
-        ToolbarHelper::help('Tax_Rates', true, 'https://docs.j2commerce.com/localisation/#tax-rates');
+        ToolbarHelper::help('Tax_Rates', true, 'https://docs.j2commerce.com/v6/localisation/tax-rates');
     }
 }

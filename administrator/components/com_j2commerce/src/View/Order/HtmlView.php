@@ -193,7 +193,7 @@ class HtmlView extends BaseHtmlView
         }
 
         $toolbar->divider();
-        ToolbarHelper::help('Orders', true, 'https://docs.j2commerce.com/sales/orders');
+        ToolbarHelper::help('Orders', true, 'https://docs.j2commerce.com/v6/sales/orders');
     }
 
     protected function getOrderStatuses(): array

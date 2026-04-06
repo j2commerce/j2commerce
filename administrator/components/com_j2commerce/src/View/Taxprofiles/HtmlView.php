@@ -176,6 +176,6 @@ class HtmlView extends BaseHtmlView
             ToolbarHelper::preferences('com_j2commerce');
         }
 
-        ToolbarHelper::help('Tax_Profiles', true, 'https://docs.j2commerce.com/localisation/#tax-profiles');
+        ToolbarHelper::help('Tax_Profiles', true, 'https://docs.j2commerce.com/v6/localisation/tax-profiles');
     }
 }

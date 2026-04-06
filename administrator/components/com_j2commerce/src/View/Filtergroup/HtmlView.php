@@ -138,6 +138,6 @@ class HtmlView extends BaseHtmlView
             ToolbarHelper::cancel('filtergroup.cancel', 'JTOOLBAR_CLOSE');
         }
 
-        ToolbarHelper::help('Filtergroup');
+        ToolbarHelper::help('Filtergroup', true, 'https://docs.j2commerce.com/v6/catalog/filters');
     }
 }

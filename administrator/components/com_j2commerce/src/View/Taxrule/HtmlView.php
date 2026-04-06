@@ -126,6 +126,6 @@ class HtmlView extends BaseHtmlView
 
         $toolbar->cancel('taxrule.cancel', $isNew ? 'JTOOLBAR_CANCEL' : 'JTOOLBAR_CLOSE');
         $toolbar->divider();
-        ToolbarHelper::help('Tax_Rules', true, 'https://docs.j2commerce.com/taxation#tax-rules');
+        ToolbarHelper::help('Tax_Rules', true, 'https://docs.j2commerce.com/v6/taxation/tax-rules');
     }
 }

@@ -127,6 +127,6 @@ class HtmlView extends BaseHtmlView
 
         $toolbar->cancel('geozone.cancel', $isNew ? 'JTOOLBAR_CANCEL' : 'JTOOLBAR_CLOSE');
         $toolbar->divider();
-        ToolbarHelper::help('Geozones', true, 'https://docs.j2commerce.com/localisation#geozones');
+        ToolbarHelper::help('Geozones', true, 'https://docs.j2commerce.com/v6/localisation/geozones');
     }
 }

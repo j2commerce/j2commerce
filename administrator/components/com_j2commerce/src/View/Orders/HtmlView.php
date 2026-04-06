@@ -150,7 +150,7 @@ class HtmlView extends BaseHtmlView
             $toolbar->preferences('com_j2commerce');
         }
 
-        ToolbarHelper::help('Orders', true, 'https://docs.j2commerce.com/sales/orders');
+        ToolbarHelper::help('Orders', true, 'https://docs.j2commerce.com/v6/sales/orders');
     }
 
     protected function loadOrderStatuses(): array
