@@ -747,12 +747,12 @@ $e = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
 
       <!-- Footer -->
       <div class="modal-footer j2c-onboarding-footer" id="ob-footer">
-        <button type="button" id="ob-btn-back" class="btn btn-link text-muted shadow-none" hidden data-action="back">
+        <button type="button" id="ob-btn-back" class="btn btn-secondary shadow-none" hidden data-action="back">
           <span class="fa-solid fa-chevron-left me-1" aria-hidden="true"></span>
           <?php echo Text::_('COM_J2COMMERCE_ONBOARDING_BTN_BACK'); ?>
         </button>
         <div class="ms-auto d-flex gap-2">
-          <button type="button" id="ob-btn-skip" class="btn btn-outline-secondary shadow-none" data-action="skip">
+          <button type="button" id="ob-btn-skip" class="btn btn-secondary shadow-none" data-action="skip">
             <?php echo Text::_('COM_J2COMMERCE_ONBOARDING_BTN_SKIP'); ?>
           </button>
           <button type="button" id="ob-btn-next" class="btn btn-primary shadow-none" data-action="next">
