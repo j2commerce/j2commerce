@@ -12,9 +12,10 @@ declare(strict_types=1);
 defined('_JEXEC') or die;
 
 use Joomla\CMS\Language\Text;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 $images = $this->loadTemplate('images');
-J2Commerce::plugin()->event('BeforeDisplayImages', [&$images, $this, 'com_j2commerce.products.list.uikit']);
+J2CommerceHelper::plugin()->event('BeforeDisplayImages', [&$images, $this, 'com_j2commerce.products.list.uikit']);
 echo $images;
 ?>
 <?php echo $this->loadTemplate('title'); ?>
@@ -34,7 +35,7 @@ echo $images;
     <?php echo $this->loadTemplate('sku'); ?>
 <?php endif; ?>
 
-<?php if ($this->params->get('list_show_product_stock', 1) && J2Commerce::product()->managing_stock($this->product->variant)): ?>
+<?php if ($this->params->get('list_show_product_stock', 1) && J2CommerceHelper::product()->managing_stock($this->product->variant)): ?>
     <?php echo $this->loadTemplate('stock'); ?>
 <?php endif; ?>
 

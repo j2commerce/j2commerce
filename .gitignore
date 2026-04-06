@@ -1,0 +1,255 @@
+# Joomla 6 + J2Commerce - GitHub Repository
+# Strategy: Only track custom J2Commerce code, ignore ALL Joomla core
+
+# ===========================================================================
+# IGNORE ALL JOOMLA CORE - We only want J2Commerce custom code
+# ===========================================================================
+*
+*/
+
+# ===========================================================================
+# EXPLICITLY INCLUDE - Only our custom J2Commerce files
+# ===========================================================================
+
+# Root level files
+!.gitignore
+!LICENSE.txt
+
+# Build scripts (package builder + install script)
+!build/
+!build/**
+
+# ===========================================================================
+# J2Commerce component files
+# Must un-ignore parent directories in order for negation to work
+# ===========================================================================
+
+# Admin component
+!administrator/
+!administrator/components/
+!administrator/components/com_j2commerce/
+!administrator/components/com_j2commerce/**
+
+# J2Commerce admin modules (explicit — no wildcards)
+!administrator/modules/
+!administrator/modules/mod_j2commerce_menu/
+!administrator/modules/mod_j2commerce_menu/**
+!administrator/modules/mod_j2commerce_orders/
+!administrator/modules/mod_j2commerce_orders/**
+!administrator/modules/mod_j2commerce_quickicons/
+!administrator/modules/mod_j2commerce_quickicons/**
+!administrator/modules/mod_j2commerce_stats/
+!administrator/modules/mod_j2commerce_stats/**
+
+# Site component
+!components/
+!components/com_j2commerce/
+!components/com_j2commerce/**
+
+# J2Commerce core plugins (only those in the package skill)
+!plugins/
+!plugins/j2commerce/
+!plugins/j2commerce/app_bootstrap5/
+!plugins/j2commerce/app_bootstrap5/**
+!plugins/j2commerce/app_flexivariable/
+!plugins/j2commerce/app_flexivariable/**
+!plugins/j2commerce/app_diagnostics/
+!plugins/j2commerce/app_diagnostics/**
+!plugins/j2commerce/app_localization_data/
+!plugins/j2commerce/app_localization_data/**
+!plugins/j2commerce/app_currencyupdater/
+!plugins/j2commerce/app_currencyupdater/**
+!plugins/j2commerce/app_uikit/
+!plugins/j2commerce/app_uikit/**
+!plugins/j2commerce/payment_cash/
+!plugins/j2commerce/payment_cash/**
+!plugins/j2commerce/payment_moneyorder/
+!plugins/j2commerce/payment_moneyorder/**
+!plugins/j2commerce/payment_banktransfer/
+!plugins/j2commerce/payment_banktransfer/**
+!plugins/j2commerce/payment_paypal/
+!plugins/j2commerce/payment_paypal/**
+!plugins/j2commerce/shipping_standard/
+!plugins/j2commerce/shipping_standard/**
+!plugins/j2commerce/shipping_free/
+!plugins/j2commerce/shipping_free/**
+!plugins/j2commerce/report_itemised/
+!plugins/j2commerce/report_itemised/**
+!plugins/j2commerce/report_products/
+!plugins/j2commerce/report_products/**
+!plugins/console/
+!plugins/console/j2commerce/
+!plugins/console/j2commerce/**
+!plugins/system/
+!plugins/system/j2commerce/
+!plugins/system/j2commerce/**
+!plugins/system/ecommerceschema/
+!plugins/system/ecommerceschema/**
+!plugins/user/
+!plugins/user/j2commerce/
+!plugins/user/j2commerce/**
+!plugins/content/
+!plugins/content/j2commerce/
+!plugins/content/j2commerce/**
+!plugins/finder/
+!plugins/finder/j2commerce/
+!plugins/finder/j2commerce/**
+!plugins/schemaorg/
+!plugins/schemaorg/ecommerce/
+!plugins/schemaorg/ecommerce/**
+!plugins/actionlog/
+!plugins/actionlog/j2commerce/
+!plugins/actionlog/j2commerce/**
+!plugins/task/
+!plugins/task/j2commerce/
+!plugins/task/j2commerce/**
+!plugins/webservices/
+!plugins/webservices/j2commerce/
+!plugins/webservices/j2commerce/**
+!plugins/sampledata/
+!plugins/sampledata/j2commerce/
+!plugins/sampledata/j2commerce/**
+
+# J2Commerce core frontend modules (only those in the package skill)
+!modules/
+!modules/mod_j2commerce_cart/
+!modules/mod_j2commerce_cart/**
+!modules/mod_j2commerce_currency/
+!modules/mod_j2commerce_currency/**
+!modules/mod_j2commerce_products/
+!modules/mod_j2commerce_products/**
+!modules/mod_j2commerce_relatedproducts/
+!modules/mod_j2commerce_relatedproducts/**
+
+# Media files
+!media/
+!media/com_j2commerce/
+!media/com_j2commerce/**
+!media/plg_sampledata_j2commerce/
+!media/plg_sampledata_j2commerce/**
+!media/lib_j2commerce/
+!media/lib_j2commerce/**
+
+# J2Commerce library
+!libraries/
+!libraries/j2commerce/
+!libraries/j2commerce/**
+
+# ===========================================================================
+# ALWAYS IGNORE - Even if paths match above
+# ===========================================================================
+.mcp.json
+configuration.php
+language/
+!build/language/
+!build/language/**
+# Re-allow language dirs inside core J2Commerce component
+!administrator/components/com_j2commerce/language/
+!administrator/components/com_j2commerce/language/**
+!components/com_j2commerce/language/
+!components/com_j2commerce/language/**
+# Re-allow language dirs inside core J2Commerce plugins
+!plugins/j2commerce/*/language/
+!plugins/j2commerce/*/language/**
+!plugins/console/j2commerce/language/
+!plugins/console/j2commerce/language/**
+!plugins/system/j2commerce/language/
+!plugins/system/j2commerce/language/**
+!plugins/system/ecommerceschema/language/
+!plugins/system/ecommerceschema/language/**
+!plugins/user/j2commerce/language/
+!plugins/user/j2commerce/language/**
+!plugins/content/j2commerce/language/
+!plugins/content/j2commerce/language/**
+!plugins/finder/j2commerce/language/
+!plugins/finder/j2commerce/language/**
+!plugins/schemaorg/ecommerce/language/
+!plugins/schemaorg/ecommerce/language/**
+!plugins/task/j2commerce/language/
+!plugins/task/j2commerce/language/**
+!plugins/webservices/j2commerce/language/
+!plugins/webservices/j2commerce/language/**
+!plugins/actionlog/j2commerce/language/
+!plugins/actionlog/j2commerce/language/**
+# Re-allow language dirs inside core J2Commerce modules
+!modules/mod_j2commerce_*/language/
+!modules/mod_j2commerce_*/language/**
+!administrator/modules/mod_j2commerce_*/language/
+!administrator/modules/mod_j2commerce_*/language/**
+.env
+*.log
+cache/
+tmp/
+logs/
+node_modules/
+vendor/
+!libraries/j2commerce/vendor/
+!libraries/j2commerce/vendor/**
+!administrator/components/com_j2commerce/src/View/Vendor/
+!administrator/components/com_j2commerce/src/View/Vendor/**
+!administrator/components/com_j2commerce/tmpl/vendor/
+!administrator/components/com_j2commerce/tmpl/vendor/**
+!media/com_j2commerce/vendor/
+!media/com_j2commerce/vendor/**
+*.bak
+
+# Ignore SQL dumps but allow J2Commerce schema files
+*.sql
+!administrator/components/com_j2commerce/**/*.sql
+
+# Claude Code temp files
+tmpclaude-*
+
+# ===========================================================================
+# SEPARATE EXTENSIONS — belong in j2commerce6extensions repo, NOT here
+# ===========================================================================
+# Chatbot
+administrator/components/com_j2commerce_chatbot/
+plugins/j2commerce_chat/
+modules/mod_j2commerce_chatbot/
+# Non-core j2commerce plugins (belong in j2commerce6extensions repo)
+plugins/j2commerce/app_acymailing/
+plugins/j2commerce/app_addressautocomplete/
+plugins/j2commerce/app_affiliatetracker/
+plugins/j2commerce/app_boxbuilderproduct/
+plugins/j2commerce/app_bulkdiscount/
+plugins/j2commerce/app_bundleproduct/
+plugins/j2commerce/app_calculatorsortbyprice/
+plugins/j2commerce/app_changepasswords/
+plugins/j2commerce/app_customaccordions/
+plugins/j2commerce/app_customtabs/
+plugins/j2commerce/app_edi/
+plugins/j2commerce/app_faker/
+plugins/j2commerce/app_giftcertificate/
+plugins/j2commerce/app_giftwrapping/
+plugins/j2commerce/app_printify/
+plugins/j2commerce/app_reorder/
+plugins/j2commerce/app_storemapper/
+plugins/j2commerce/payment_authorizenet/
+plugins/j2commerce/payment_paytrace/
+plugins/j2commerce/shipping_atoship/
+plugins/j2commerce/shipping_ups/
+# Non-core system plugins
+plugins/system/j2commercemcp/
+plugins/system/j2commerce_advancedcart/
+plugins/system/j2commerce_migration_tool/
+# Non-core fields plugins
+plugins/fields/j2commercecountry/
+plugins/fields/j2commerceregion/
+# Non-core modules
+modules/mod_j2commerce_advancedcart_toggle/
+modules/mod_j2commerce_categories/
+modules/mod_j2commerce_tags/
+# Non-core Behavior files (inserted by 3rd-party plugins, not part of core install)
+administrator/components/com_j2commerce/src/Model/Behavior/Bundleproduct.php
+administrator/components/com_j2commerce/src/Model/Behavior/Boxbuilderproduct.php
+administrator/components/com_j2commerce/src/Model/Behavior/CartBoxbuilderproduct.php
+administrator/components/com_j2commerce/src/Model/Behavior/CartBundleproduct.php
+administrator/components/com_j2commerce/src/Model/Behavior/Guidedbuilder.php
+# Non-core admin templates (inserted by 3rd-party plugins)
+administrator/components/com_j2commerce/tmpl/product/form_guidedbuilder.php
+# Non-core site layouts (inserted by 3rd-party plugins)
+components/com_j2commerce/layouts/app_bootstrap5/list/category/item_guidedbuilder.php
+components/com_j2commerce/layouts/app_bootstrap5/list/tag/item_guidedbuilder.php
+# Non-core site templates (created by plugins on install — do NOT whitelist)
+components/com_j2commerce/tmpl/vendorapply/

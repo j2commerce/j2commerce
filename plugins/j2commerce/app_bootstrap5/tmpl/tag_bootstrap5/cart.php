@@ -18,7 +18,7 @@ $product = $this->singleton_product;
 $params = $this->singleton_params;
 $action = 'index.php?option=com_j2commerce&view=carts&task=carts.addItem&product_id=' . (int) $product->j2commerce_product_id;
 ?>
-<?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeAddToCartButton', array($product, J2Store::utilities()->getContext('cart')))->getArgument('html', ''); ?>
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeAddToCartButton', array($product, J2CommerceHelper::utilities()->getContext('cart')))->getArgument('html', ''); ?>
 <div class="cart-action-complete" style="display:none;">
 		<p class="text-success">
 			<?php echo JText::_('COM_J2COMMERCE_ITEM_ADDED_TO_CART');?>
@@ -32,4 +32,4 @@ href="<?php echo JRoute::_($action); ?>" data-quantity="1" data-product_id="<?ph
 rel="nofollow">
 <?php echo $this->singleton_cartext; ?>
 </a>
-<?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterAddToCartButton', array($product, J2Store::utilities()->getContext('cart')))->getArgument('html', ''); ?>
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterAddToCartButton', array($product, J2CommerceHelper::utilities()->getContext('cart')))->getArgument('html', ''); ?>

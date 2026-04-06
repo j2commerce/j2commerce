@@ -15,6 +15,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Uri\Uri;
 use Joomla\Registry\Registry;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 $productParams = $this->product->params;
 if (!$productParams instanceof Registry) {
@@ -30,7 +31,7 @@ if (!empty($boxbuilderProducts)) {
     $this->availableProducts    = [];
     $this->boxSize              = $boxSize;
     $this->boxPrice             = $this->product->pricing->price ?? 0;
-    $this->boxPriceFormatted    = J2Commerce::currency()->format($this->boxPrice);
+    $this->boxPriceFormatted    = J2CommerceHelper::currency()->format($this->boxPrice);
     $this->addToCartButtonText  = $productParams->get('add_to_cart_button_text', Text::_('COM_J2COMMERCE_ADD_TO_CART'));
     $this->productDisplay       = $productDisplay;
 
@@ -42,12 +43,12 @@ if (!empty($boxbuilderProducts)) {
             continue;
         }
 
-        $product = J2Commerce::product()->setId($productId)->getProduct();
+        $product = J2CommerceHelper::product()->setId($productId)->getProduct();
         if (!$product) {
             continue;
         }
 
-        J2Commerce::product()->runBehaviorFlag(true)->getProduct($product);
+        J2CommerceHelper::product()->runBehaviorFlag(true)->getProduct($product);
 
         $productImage = '';
         if (!empty($product->thumb_image)) {
@@ -57,8 +58,8 @@ if (!empty($boxbuilderProducts)) {
         }
 
         $isOutOfStock = false;
-        if (J2Commerce::product()->managing_stock($product->variant)) {
-            $isOutOfStock = !J2Commerce::product()->check_stock_status($product->variant, 1);
+        if (J2CommerceHelper::product()->managing_stock($product->variant)) {
+            $isOutOfStock = !J2CommerceHelper::product()->check_stock_status($product->variant, 1);
         }
 
         $articleOrdering = 0;
@@ -127,7 +128,7 @@ if (!empty($boxbuilderProducts)) {
     <div class="uk-container">
         <div class="uk-grid" uk-grid>
             <div class="uk-width-1-1">
-                <?php if (J2Commerce::product()->canShowCart($this->params)): ?>
+                <?php if (J2CommerceHelper::product()->canShowCart($this->params)): ?>
                     <?php if (!empty($this->availableProducts)): ?>
                         <?php echo $this->loadTemplate('boxbuilder_interactive'); ?>
                     <?php endif; ?>
@@ -146,7 +147,7 @@ if (!empty($boxbuilderProducts)) {
 </section>
 
 <?php if ($this->params->get('item_use_tabs', 1)): ?>
-    <?php echo J2Commerce::plugin()->eventWithHtml('DisplayBoxBuilderDetails', [$this->product]); ?>
+    <?php echo J2CommerceHelper::plugin()->eventWithHtml('DisplayBoxBuilderDetails', [$this->product]); ?>
 <?php endif; ?>
 
 <?php if ($this->params->get('item_use_tabs', 1)): ?>
@@ -165,4 +166,4 @@ if (!empty($boxbuilderProducts)) {
     <?php echo $this->product->source->event->afterDisplayContent; ?>
 <?php endif; ?>
 
-<?php echo J2Commerce::plugin()->eventWithHtml('afterDisplayProductPage', [$this->product]); ?>
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('afterDisplayProductPage', [$this->product]); ?>
