@@ -13,6 +13,7 @@
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Factory;
+use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
 
@@ -64,14 +65,20 @@ $grandTotalValue = $totals['grandtotal']['value'] ?? '';
                 <?php foreach ($this->items as $item): ?>
                     <?php
                     $itemParams = $platform->getRegistry($item->orderitem_params ?? '{}');
-                    $thumbImage = $itemParams->get('thumb_image', '');
+
+                    $rawThumb = (string) $itemParams->get('thumb_image', '');
+                    $thumbImage = '';
+                    if ($showThumbCart && $rawThumb !== '') {
+                        $thumbImage = HTMLHelper::_('cleanImageURL', $platform->getImagePath($rawThumb))->url;
+                    }
+
                     $qty = (int) ($item->orderitem_quantity ?? $item->product_qty ?? 1);
                     $lineTotal = ($this->order && method_exists($this->order, 'get_formatted_lineitem_total'))
                         ? $this->order->get_formatted_lineitem_total($item, $checkoutPriceDisplay)
                         : 0;
                     ?>
                     <div class="checkout-sidebar-item list-group-item px-0 d-flex align-items-center gap-3">
-                        <?php if ($showThumbCart && !empty($thumbImage)): ?>
+                        <?php if (!empty($thumbImage)): ?>
                         <div class="position-relative flex-shrink-0" style="width:64px;height:64px;">
                             <img class="rounded border w-100 h-100 object-fit-cover" src="<?php echo $this->escape($thumbImage); ?>" alt="<?php echo $this->escape($item->orderitem_name); ?>">
                             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary"><?php echo $qty; ?></span>

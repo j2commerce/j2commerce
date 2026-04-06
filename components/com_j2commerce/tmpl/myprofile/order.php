@@ -12,6 +12,7 @@ declare(strict_types=1);
 defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -27,6 +28,7 @@ $history    = $this->orderHistory;
 $shippings  = $this->orderShippings;
 $taxes      = $this->orderTaxes;
 $fees       = $this->orderFees;
+$platform   = J2CommerceHelper::platform();
 $params     = $this->params;
 $dateFormat = $params->get('date_format', 'Y-m-d');
 $isPrint    = Factory::getApplication()->getInput()->getCmd('tmpl') === 'component';
@@ -151,7 +153,10 @@ $statusName = !empty($order->orderstatus_name) ? Text::_($order->orderstatus_nam
                 <?php foreach ($items as $lineItem): ?>
                 <?php
                 $itemParams = !empty($lineItem->orderitem_params) ? json_decode($lineItem->orderitem_params, true) : [];
-                $thumb = $itemParams['thumb_image'] ?? '';
+                $rawThumb = (string) ($itemParams['thumb_image'] ?? '');
+                $thumb = $rawThumb !== ''
+                    ? HTMLHelper::_('cleanImageURL', $platform->getImagePath($rawThumb))->url
+                    : '';
                 ?>
                 <tr>
                     <?php if ($params->get('show_thumb_cart', 0)): ?>

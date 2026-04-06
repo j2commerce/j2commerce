@@ -19,7 +19,6 @@ use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Router\Route;
-use Joomla\CMS\Uri\Uri;
 
 /** @var \J2Commerce\Component\J2commerce\Site\View\Confirmation\HtmlView $this */
 
@@ -31,6 +30,7 @@ $shippings = $this->orderShippings;
 $taxes     = $this->orderTaxes;
 $fees      = $this->orderFees;
 $discounts = $this->orderDiscounts;
+$platform  = J2CommerceHelper::platform();
 
 $currencyCode  = $order->currency_code ?? '';
 $currencyValue = (float) ($order->currency_value ?? 1);
@@ -330,7 +330,10 @@ if ($info) {
                         <?php foreach ($items as $item) : ?>
                             <?php
                             $params   = json_decode($item->orderitem_params ?? '{}', true) ?: [];
-                            $thumb    = $params['thumb_image'] ?? '';
+                            $rawThumb = (string) ($params['thumb_image'] ?? '');
+                            $thumb    = $rawThumb !== ''
+                                ? HTMLHelper::_('cleanImageURL', $platform->getImagePath($rawThumb))->url
+                                : '';
                             $qty      = (int) $item->orderitem_quantity;
                             $lineTotal = (float) $item->orderitem_finalprice;
                             ?>
@@ -338,7 +341,7 @@ if ($info) {
                                 <?php // Product image with quantity badge ?>
                                 <div class="position-relative flex-shrink-0">
                                     <?php if (!empty($thumb)) : ?>
-                                        <img src="<?php echo $this->escape(Uri::root() . $thumb); ?>"
+                                        <img src="<?php echo $this->escape($thumb); ?>"
                                              alt="<?php echo $this->escape($item->orderitem_name); ?>"
                                              class="j2c-order-item-img rounded border" loading="lazy">
                                     <?php else : ?>

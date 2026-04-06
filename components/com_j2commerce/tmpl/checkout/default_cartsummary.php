@@ -12,6 +12,7 @@
 // phpcs:enable PSR1.Files.SideEffects
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
 
@@ -59,7 +60,10 @@ if ($showItemTax && isset($this->taxes) && \count($this->taxes)) {
                 <?php foreach ($this->items as $item) : ?>
                     <?php
                     $itemParams = $platform->getRegistry($item->orderitem_params ?? '{}');
-                    $thumbImage = $itemParams->get('thumb_image', '');
+                    $rawThumbImage = (string) $itemParams->get('thumb_image', '');
+                    $thumbImage = $rawThumbImage !== ''
+                        ? HTMLHelper::_('cleanImageURL', $platform->getImagePath($rawThumbImage))->url
+                        : '';
                     $qty = (int) ($item->orderitem_quantity ?? $item->product_qty ?? 1);
                     ?>
                     <tr>
