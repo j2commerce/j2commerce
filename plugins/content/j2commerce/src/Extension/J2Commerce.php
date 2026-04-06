@@ -635,7 +635,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         if ($variant) {
             // Price display
             $html .= '<div class="j2commerce-product-price">';
-            $html .= $this->formatPrice($variant->price ?? 0);
+            $html .= $this->formatPrice((float) ($variant->price ?? 0));
             $html .= '</div>';
 
             // Add to cart button
@@ -1311,7 +1311,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             ->from($db->quoteName('#__j2commerce_productimages'))
             ->where($db->quoteName('product_id') . ' = :productId')
             ->bind(':productId', $productId, ParameterType::INTEGER)
-            ->order($db->quoteName('ordering') . ' ASC');
+            ->order($db->quoteName('j2commerce_productimage_id') . ' ASC');
 
         $db->setQuery($query);
         $images = $db->loadObjectList() ?: [];
