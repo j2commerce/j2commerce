@@ -11,6 +11,8 @@
             class="form-control"
         />
 
+        <!-- Column-matched filters (in column order: Status, Language, Order Status, Group, Email Type) -->
+
         <field
             name="enabled"
             type="list"
@@ -26,15 +28,15 @@
         </field>
 
         <field
-            name="email_type"
-            type="EmailtypeList"
-            label="COM_J2COMMERCE_EMAILTEMPLATE_EMAIL_TYPE"
-            description="COM_J2COMMERCE_EMAILTEMPLATE_EMAIL_TYPE_DESC"
-            addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field"
+            name="language"
+            type="contentlanguage"
+            label="JFIELD_LANGUAGE_LABEL"
+            description="COM_J2COMMERCE_FILTER_LANGUAGE_DESC"
             onchange="this.form.submit();"
             class="form-select"
         >
-            <option value="">COM_J2COMMERCE_EMAILTYPE_ALL</option>
+            <option value="">JOPTION_SELECT_LANGUAGE</option>
+            <option value="*">JALL</option>
         </field>
 
         <field
@@ -61,6 +63,20 @@
         </field>
 
         <field
+            name="email_type"
+            type="EmailtypeList"
+            label="COM_J2COMMERCE_EMAILTEMPLATE_EMAIL_TYPE"
+            description="COM_J2COMMERCE_EMAILTEMPLATE_EMAIL_TYPE_DESC"
+            addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field"
+            onchange="this.form.submit();"
+            class="form-select"
+        >
+            <option value="">COM_J2COMMERCE_EMAILTYPE_ALL</option>
+        </field>
+
+        <!-- Non-column filters -->
+
+        <field
             name="paymentmethod"
             type="PaymentMethods"
             label="COM_J2COMMERCE_EMAILTEMPLATE_PAYMENTMETHOD"
@@ -70,18 +86,6 @@
             class="form-select"
         >
             <option value="">COM_J2COMMERCE_SELECT_PAYMENT_METHOD</option>
-        </field>
-
-        <field
-            name="language"
-            type="contentlanguage"
-            label="JFIELD_LANGUAGE_LABEL"
-            description="COM_J2COMMERCE_FILTER_LANGUAGE_DESC"
-            onchange="this.form.submit();"
-            class="form-select"
-        >
-            <option value="">JOPTION_SELECT_LANGUAGE</option>
-            <option value="*">JALL</option>
         </field>
     </fields>
 
