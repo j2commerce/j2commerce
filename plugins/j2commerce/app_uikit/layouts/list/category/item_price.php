@@ -43,7 +43,7 @@ $salePrice = $pricing->price ?? 0;
 ?>
 <?php echo $beforeHtml; ?>
 
-<div class="j2commerce-product-price-container uk-flex uk-flex-middle" style="gap:0.25rem;">
+<div class="j2commerce-product-price-container uk-flex uk-flex-middle" style="gap: .25rem;">
     <?php if ($showSpecialPrice && isset($pricing->price)): ?>
         <div class="sale-price uk-text-large uk-text-bold">
             <?php echo $productHelper->displayPrice((float) $salePrice, $product, $params); ?>

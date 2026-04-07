@@ -55,7 +55,7 @@ $afterCart = J2CommerceHelper::plugin()->eventWithHtml(
     <?php elseif ($show): ?>
         <form action="<?php echo htmlspecialchars($product->cart_form_action ?? '', ENT_QUOTES, 'UTF-8'); ?>"
               method="post"
-              class="j2commerce-addtocart-form"
+              class="j2commerce-addtocart-form uk-margin-auto-top"
               id="j2commerce-addtocart-form-<?php echo $productId; ?>"
               data-product_id="<?php echo $productId; ?>"
               data-product_type="<?php echo $productType; ?>">

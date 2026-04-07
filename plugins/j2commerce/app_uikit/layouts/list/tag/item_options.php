@@ -73,7 +73,7 @@ $optionsSummary = $productHelper::getOptionsSummary($options);
                         <?php endif; ?>
                         <span id="radioOption<?php echo $option['productoption_id']; ?>"></span>
                     </label>
-                    <div class="j2commerce-radio-options uk-flex uk-flex-wrap" style="gap:0.5rem;" data-binded-label="#radioOption<?php echo $option['productoption_id']; ?>">
+                    <div class="j2commerce-radio-options uk-flex uk-flex-wrap" style="gap: .5rem;" data-binded-label="#radioOption<?php echo $option['productoption_id']; ?>">
                         <?php foreach ($option['optionvalue'] as $option_value) : ?>
                             <?php $checked = $option_value['product_optionvalue_default'] ? 'checked="checked"' : ''; ?>
                             <input <?php echo $checked; ?> type="radio" name="product_option[<?php echo (int) $option['productoption_id']; ?>]" value="<?php echo (int) $option_value['product_optionvalue_id']; ?>" id="option-value-<?php echo (int) $option_value['product_optionvalue_id']; ?>" class="uk-hidden" onchange="doAjaxFilter(this.value, <?php echo (int) $productId; ?>, <?php echo (int) $option['productoption_id']; ?>, '#option-<?php echo (int) $option['productoption_id']; ?>');" autocomplete="off" />
@@ -108,7 +108,7 @@ $optionsSummary = $productHelper::getOptionsSummary($options);
                         <?php endif; ?>
                         <span id="colorOption<?php echo (int) $option['productoption_id']; ?>"></span>
                     </label>
-                    <div class="j2commerce-color-options uk-flex uk-flex-wrap" style="gap:0.5rem;" data-binded-label="#colorOption<?php echo (int) $option['productoption_id']; ?>">
+                    <div class="j2commerce-color-options uk-flex uk-flex-wrap" style="gap: .5rem;" data-binded-label="#colorOption<?php echo (int) $option['productoption_id']; ?>">
                         <?php foreach ($option['optionvalue'] as $option_value) : ?>
                             <?php $checked = !empty($option_value['product_optionvalue_default']) ? 'checked="checked"' : ''; ?>
                             <input <?php echo $checked; ?> type="radio" name="product_option[<?php echo (int) $option['productoption_id']; ?>]" value="<?php echo (int) $option_value['product_optionvalue_id']; ?>" id="option-value-<?php echo (int) $option_value['product_optionvalue_id']; ?>" class="uk-hidden" onchange="doAjaxFilter(this.value, <?php echo (int) $productId; ?>, <?php echo (int) $option['productoption_id']; ?>, '#option-<?php echo (int) $option['productoption_id']; ?>');" />

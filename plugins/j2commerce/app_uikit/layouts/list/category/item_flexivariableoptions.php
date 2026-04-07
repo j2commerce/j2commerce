@@ -67,7 +67,7 @@ $optionsSummary = $productHelper::getOptionsSummary($options);
                         <?php endif; ?>
                         <span id="radioOption<?php echo $option['productoption_id']; ?>"></span>
                     </label>
-                    <div class="j2commerce-radio-options uk-flex uk-flex-wrap" style="gap:0.5rem;" data-binded-label="#radioOption<?php echo $option['productoption_id']; ?>">
+                    <div class="j2commerce-radio-options uk-flex uk-flex-wrap" style="gap: .5rem;" data-binded-label="#radioOption<?php echo $option['productoption_id']; ?>">
                         <?php foreach ($option['optionvalue'] as $ov) : ?>
                             <input type="radio"
                                    name="product_option[<?php echo $option['productoption_id']; ?>]"
@@ -105,7 +105,7 @@ $optionsSummary = $productHelper::getOptionsSummary($options);
                         <?php endif; ?>
                         <span id="colorOption<?php echo $option['productoption_id']; ?>"></span>
                     </label>
-                    <div class="j2commerce-color-options uk-flex uk-flex-wrap" style="gap:0.5rem;" data-binded-label="#colorOption<?php echo $option['productoption_id']; ?>">
+                    <div class="j2commerce-color-options uk-flex uk-flex-wrap" style="gap: .5rem;" data-binded-label="#colorOption<?php echo $option['productoption_id']; ?>">
                         <?php foreach ($option['optionvalue'] as $ov) : ?>
                             <input
                                 type="radio"
