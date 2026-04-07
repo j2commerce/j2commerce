@@ -16,8 +16,9 @@ use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 
 extract($displayData);
 
-$productId = $product->j2commerce_product_id;
-$cssClass = $product->params->get('product_css_class', '') ?? '';
+$productId = (int) $product->j2commerce_product_id;
+$cssClass = htmlspecialchars($product->params->get('product_css_class', '') ?? '', ENT_QUOTES, 'UTF-8');
+$productType = htmlspecialchars($product->product_type ?? '', ENT_QUOTES, 'UTF-8');
 
 $beforeHtml = J2CommerceHelper::plugin()->eventWithHtml(
     'BeforeProductListItemDisplay',
@@ -29,9 +30,9 @@ $afterHtml = J2CommerceHelper::plugin()->eventWithHtml(
     [$product, $context, &$displayData]
 )->getArgument('html', '');
 ?>
-<div class="j2commerce-product-item j2commerce-product-<?php echo $productId; ?> j2commerce-type-configurable <?php echo $cssClass; ?>"
+<div class="j2commerce-product-item j2commerce-product-<?php echo $productId; ?> j2commerce-type-<?php echo $productType;?> <?php echo $cssClass; ?> d-flex flex-column h-100"
      data-product-id="<?php echo $productId; ?>"
-     data-product-type="configurable">
+     data-product-type="<?php echo $productType;?>">
 
     <?php echo $beforeHtml; ?>
 

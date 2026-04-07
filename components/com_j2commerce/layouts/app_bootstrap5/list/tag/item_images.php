@@ -38,11 +38,11 @@ if (empty($image)) {
 }
 
 $productName = htmlspecialchars($product->product_name ?? '', ENT_QUOTES, 'UTF-8');
-$imageAlt = htmlspecialchars($imageAlt, ENT_QUOTES, 'UTF-8');
+$imageAlt = htmlspecialchars($imageAlt ?? '', ENT_QUOTES, 'UTF-8');
 ?>
 <div class="j2commerce-product-image">
     <?php if ($linkImage): ?>
-        <a href="<?php echo htmlspecialchars($productLink, ENT_QUOTES, 'UTF-8'); ?>">
+        <a href="<?php echo htmlspecialchars($productLink ?? '', ENT_QUOTES, 'UTF-8'); ?>">
     <?php endif; ?>
 
     <img src="<?php echo $image; ?>"
