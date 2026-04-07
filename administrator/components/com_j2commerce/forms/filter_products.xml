@@ -10,6 +10,26 @@
             inputmode="search"
         />
 
+        <!-- Column-matched filters (in column order: Product ID, Product Type, Price, Visibility) -->
+
+        <field
+            name="product_id_from"
+            type="text"
+            label="COM_J2COMMERCE_FILTER_PRODUCT_ID_FROM"
+            hint="COM_J2COMMERCE_FILTER_PRODUCT_ID_FROM"
+            inputmode="numeric"
+            onchange="this.form.submit();"
+        />
+
+        <field
+            name="product_id_to"
+            type="text"
+            label="COM_J2COMMERCE_FILTER_PRODUCT_ID_TO"
+            hint="COM_J2COMMERCE_FILTER_PRODUCT_ID_TO"
+            inputmode="numeric"
+            onchange="this.form.submit();"
+        />
+
         <field
             name="product_type"
             type="ProductType"
@@ -19,6 +39,37 @@
         >
             <option value="">COM_J2COMMERCE_FILTER_SELECT_PRODUCT_TYPE</option>
         </field>
+
+        <field
+            name="price_from"
+            type="text"
+            label="COM_J2COMMERCE_FILTER_PRICE_FROM"
+            hint="COM_J2COMMERCE_FILTER_PRICE_FROM"
+            inputmode="decimal"
+            onchange="this.form.submit();"
+        />
+
+        <field
+            name="price_to"
+            type="text"
+            label="COM_J2COMMERCE_FILTER_PRICE_TO"
+            hint="COM_J2COMMERCE_FILTER_PRICE_TO"
+            inputmode="decimal"
+            onchange="this.form.submit();"
+        />
+
+        <field
+            name="visibility"
+            type="list"
+            label="COM_J2COMMERCE_FILTER_VISIBILITY"
+            onchange="this.form.submit();"
+        >
+            <option value="">COM_J2COMMERCE_FILTER_SELECT_VISIBILITY</option>
+            <option value="1">JYES</option>
+            <option value="0">JNO</option>
+        </field>
+
+        <!-- Non-column filters -->
 
         <field
             name="manufacturer_id"
@@ -62,17 +113,6 @@
         </field>
 
         <field
-            name="visibility"
-            type="list"
-            label="COM_J2COMMERCE_FILTER_VISIBILITY"
-            onchange="this.form.submit();"
-        >
-            <option value="">COM_J2COMMERCE_FILTER_SELECT_VISIBILITY</option>
-            <option value="1">JYES</option>
-            <option value="0">JNO</option>
-        </field>
-
-        <field
             name="date_from"
             type="calendar"
             label="COM_J2COMMERCE_FILTER_DATE_FROM"
@@ -89,42 +129,6 @@
             hint="COM_J2COMMERCE_FILTER_DATE_TO"
             format="%Y-%m-%d"
             showtime="false"
-            onchange="this.form.submit();"
-        />
-
-        <field
-            name="product_id_from"
-            type="text"
-            label="COM_J2COMMERCE_FILTER_PRODUCT_ID_FROM"
-            hint="COM_J2COMMERCE_FILTER_PRODUCT_ID_FROM"
-            inputmode="numeric"
-            onchange="this.form.submit();"
-        />
-
-        <field
-            name="product_id_to"
-            type="text"
-            label="COM_J2COMMERCE_FILTER_PRODUCT_ID_TO"
-            hint="COM_J2COMMERCE_FILTER_PRODUCT_ID_TO"
-            inputmode="numeric"
-            onchange="this.form.submit();"
-        />
-
-        <field
-            name="price_from"
-            type="text"
-            label="COM_J2COMMERCE_FILTER_PRICE_FROM"
-            hint="COM_J2COMMERCE_FILTER_PRICE_FROM"
-            inputmode="decimal"
-            onchange="this.form.submit();"
-        />
-
-        <field
-            name="price_to"
-            type="text"
-            label="COM_J2COMMERCE_FILTER_PRICE_TO"
-            hint="COM_J2COMMERCE_FILTER_PRICE_TO"
-            inputmode="decimal"
             onchange="this.form.submit();"
         />
     </fields>

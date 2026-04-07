@@ -10,60 +10,7 @@
             hint="JSEARCH_FILTER"
         />
 
-        <field
-            name="order_state_id"
-            type="sql"
-            query="SELECT j2commerce_orderstatus_id AS value, orderstatus_name AS text FROM #__j2commerce_orderstatuses WHERE enabled = 1 ORDER BY ordering ASC"
-            key_field="value"
-            value_field="text"
-            translate="true"
-            header="COM_J2COMMERCE_SELECT_ORDER_STATUS"
-            onchange="this.form.submit();"
-        />
-
-        <field
-            name="payment_type"
-            type="sql"
-            query="SELECT element AS value, name AS text FROM #__extensions WHERE type = &apos;plugin&apos; AND folder = &apos;j2commerce&apos; AND element LIKE &apos;payment_%&apos; AND enabled = 1 ORDER BY name"
-            key_field="value"
-            value_field="text"
-            translate="true"
-            header="COM_J2COMMERCE_SELECT_PAYMENT_METHOD"
-            onchange="this.form.submit();"
-        />
-
-        <field
-            name="user_id"
-            type="user"
-            label="COM_J2COMMERCE_FILTER_USER"
-            hint="COM_J2COMMERCE_FILTER_SELECT_USER"
-            onchange="this.form.submit();"
-        />
-
-        <field
-            name="coupon_code"
-            type="text"
-            label="COM_J2COMMERCE_FILTER_COUPON_CODE"
-            hint="COM_J2COMMERCE_FILTER_COUPON_CODE_HINT"
-        />
-
-        <field
-            name="amount_from"
-            type="number"
-            label="COM_J2COMMERCE_FILTER_AMOUNT_FROM"
-            hint="COM_J2COMMERCE_FILTER_AMOUNT_FROM_HINT"
-            step="0.01"
-            min="0"
-        />
-
-        <field
-            name="amount_to"
-            type="number"
-            label="COM_J2COMMERCE_FILTER_AMOUNT_TO"
-            hint="COM_J2COMMERCE_FILTER_AMOUNT_TO_HINT"
-            step="0.01"
-            min="0"
-        />
+        <!-- Column-matched filters (in column order: Order, Date, Customer, Total, Payment, Status) -->
 
         <field
             name="from_order_id"
@@ -99,6 +46,63 @@
             hint="COM_J2COMMERCE_FILTER_DATE_TO"
             format="%Y-%m-%d"
             showtime="false"
+        />
+
+        <field
+            name="user_id"
+            type="user"
+            label="COM_J2COMMERCE_FILTER_USER"
+            hint="COM_J2COMMERCE_FILTER_SELECT_USER"
+            onchange="this.form.submit();"
+        />
+
+        <field
+            name="amount_from"
+            type="number"
+            label="COM_J2COMMERCE_FILTER_AMOUNT_FROM"
+            hint="COM_J2COMMERCE_FILTER_AMOUNT_FROM_HINT"
+            step="0.01"
+            min="0"
+        />
+
+        <field
+            name="amount_to"
+            type="number"
+            label="COM_J2COMMERCE_FILTER_AMOUNT_TO"
+            hint="COM_J2COMMERCE_FILTER_AMOUNT_TO_HINT"
+            step="0.01"
+            min="0"
+        />
+
+        <field
+            name="payment_type"
+            type="sql"
+            query="SELECT element AS value, name AS text FROM #__extensions WHERE type = &apos;plugin&apos; AND folder = &apos;j2commerce&apos; AND element LIKE &apos;payment_%&apos; AND enabled = 1 ORDER BY name"
+            key_field="value"
+            value_field="text"
+            translate="true"
+            header="COM_J2COMMERCE_SELECT_PAYMENT_METHOD"
+            onchange="this.form.submit();"
+        />
+
+        <field
+            name="order_state_id"
+            type="sql"
+            query="SELECT j2commerce_orderstatus_id AS value, orderstatus_name AS text FROM #__j2commerce_orderstatuses WHERE enabled = 1 ORDER BY ordering ASC"
+            key_field="value"
+            value_field="text"
+            translate="true"
+            header="COM_J2COMMERCE_SELECT_ORDER_STATUS"
+            onchange="this.form.submit();"
+        />
+
+        <!-- Non-column filters -->
+
+        <field
+            name="coupon_code"
+            type="text"
+            label="COM_J2COMMERCE_FILTER_COUPON_CODE"
+            hint="COM_J2COMMERCE_FILTER_COUPON_CODE_HINT"
         />
     </fields>
 

@@ -23,6 +23,33 @@
             <option value="0">JUNPUBLISHED</option>
         </field>
 
+        <!-- Column-matched filters (in column order: Type, Language, Order Status, Group, Payment Method) -->
+
+        <field
+            name="invoice_type"
+            type="list"
+            label="COM_J2COMMERCE_INVOICETEMPLATE_TYPE"
+            onchange="this.form.submit();"
+            class="form-select"
+        >
+            <option value="">COM_J2COMMERCE_SELECT_TEMPLATE_TYPE</option>
+            <option value="invoice">COM_J2COMMERCE_INVOICETEMPLATE_TYPE_INVOICE</option>
+            <option value="packingslip">COM_J2COMMERCE_INVOICETEMPLATE_TYPE_PACKINGSLIP</option>
+            <option value="receipt">COM_J2COMMERCE_INVOICETEMPLATE_TYPE_RECEIPT</option>
+        </field>
+
+        <field
+            name="language"
+            type="contentlanguage"
+            label="JFIELD_LANGUAGE_LABEL"
+            description="JFIELD_LANGUAGE_DESC"
+            onchange="this.form.submit();"
+            class="form-select"
+        >
+            <option value="">JOPTION_SELECT_LANGUAGE</option>
+            <option value="*">JALL</option>
+        </field>
+
         <field
             name="orderstatus_id"
             type="OrderStatus"
@@ -56,31 +83,6 @@
             class="form-select"
         >
             <option value="">COM_J2COMMERCE_SELECT_PAYMENT_METHOD</option>
-        </field>
-
-        <field
-            name="language"
-            type="contentlanguage"
-            label="JFIELD_LANGUAGE_LABEL"
-            description="JFIELD_LANGUAGE_DESC"
-            onchange="this.form.submit();"
-            class="form-select"
-        >
-            <option value="">JOPTION_SELECT_LANGUAGE</option>
-            <option value="*">JALL</option>
-        </field>
-
-        <field
-            name="invoice_type"
-            type="list"
-            label="COM_J2COMMERCE_INVOICETEMPLATE_TYPE"
-            onchange="this.form.submit();"
-            class="form-select"
-        >
-            <option value="">COM_J2COMMERCE_SELECT_TEMPLATE_TYPE</option>
-            <option value="invoice">COM_J2COMMERCE_INVOICETEMPLATE_TYPE_INVOICE</option>
-            <option value="packingslip">COM_J2COMMERCE_INVOICETEMPLATE_TYPE_PACKINGSLIP</option>
-            <option value="receipt">COM_J2COMMERCE_INVOICETEMPLATE_TYPE_RECEIPT</option>
         </field>
     </fields>
 

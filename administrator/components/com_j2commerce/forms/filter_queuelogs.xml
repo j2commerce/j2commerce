@@ -10,14 +10,7 @@
             inputmode="search"
         />
 
-        <field
-            name="queue_type"
-            type="sql"
-            label="COM_J2COMMERCE_HEADING_QUEUE_TYPE"
-            query="SELECT DISTINCT queue_type AS value, queue_type AS text FROM #__j2commerce_queue_logs ORDER BY queue_type ASC"
-            class="js-select-submit-on-change"
-            header="COM_J2COMMERCE_FILTER_SELECT_QUEUE_TYPE"
-        />
+        <!-- Column-matched filters (in column order: Status, Queue Type) -->
 
         <field
             name="status"
@@ -30,6 +23,15 @@
             <option value="completed">COM_J2COMMERCE_QUEUE_STATUS_COMPLETED</option>
             <option value="error">COM_J2COMMERCE_QUEUE_LOG_STATUS_ERROR</option>
         </field>
+
+        <field
+            name="queue_type"
+            type="sql"
+            label="COM_J2COMMERCE_HEADING_QUEUE_TYPE"
+            query="SELECT DISTINCT queue_type AS value, queue_type AS text FROM #__j2commerce_queue_logs ORDER BY queue_type ASC"
+            class="js-select-submit-on-change"
+            header="COM_J2COMMERCE_FILTER_SELECT_QUEUE_TYPE"
+        />
     </fields>
 
     <fields name="list">
