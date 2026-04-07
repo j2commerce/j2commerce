@@ -15,7 +15,6 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\Database\ParameterType;
-use Joomla\Registry\Registry;
 
 /**
  * Inventory Model
@@ -412,36 +411,6 @@ class InventoryModel extends ListModel
         }
 
         return $form;
-    }
-
-    /**
-     * Method to get the data that should be injected in the form.
-     *
-     * @return  mixed  The data for the form.
-     *
-     * @since   6.0.0
-     */
-    protected function loadFormData()
-    {
-        // Check the session for previously entered form data.
-        $app = Factory::getApplication();
-        $data = $app->getUserState('com_j2commerce.edit.inventory.data', []);
-
-        if (empty($data)) {
-            $data = $this->getItem();
-        }
-
-        // Ensure data is in the correct format for forms
-        if ($data instanceof \stdClass) {
-            $data = (array) $data;
-        }
-
-        // Convert data to Registry object for form compatibility
-        if (is_array($data)) {
-            $data = new Registry($data);
-        }
-
-        return $data;
     }
 
     /**
