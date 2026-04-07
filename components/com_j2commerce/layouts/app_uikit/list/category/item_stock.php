@@ -46,6 +46,6 @@ if (!$inStock) {
     $stockText = Text::_('COM_J2COMMERCE_IN_STOCK');
 }
 ?>
-<div class="j2commerce-product-stock small p-2 text-center <?php echo $stockClass; ?>">
+<div class="j2commerce-product-stock uk-text-small uk-padding-small uk-text-center <?php echo $stockClass; ?>">
     <?php echo $stockText; ?>
 </div>

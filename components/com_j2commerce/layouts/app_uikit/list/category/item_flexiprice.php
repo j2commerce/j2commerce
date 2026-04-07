@@ -40,26 +40,26 @@ $basePrice = $pricing->base_price ?? 0;
 $salePrice = $pricing->price ?? 0;
 ?>
 <?php if ($hasRange && $showRange): ?>
-    <div class="price-range text-muted small">
+    <div class="price-range uk-text-muted uk-text-small">
         <?php echo $currency->format($minPrice); ?> - <?php echo $currency->format($maxPrice); ?>
     </div>
 <?php endif; ?>
-<div class="j2commerce-product-price-container j2commerce-flexiprice d-flex align-items-center gap-1">
+<div class="j2commerce-product-price-container j2commerce-flexiprice uk-flex uk-flex-middle" style="gap: .25rem;">
     <?php if ($showSpecialPrice && isset($pricing->price)): ?>
-        <div class="sale-price lh-1 fs-5 fw-semibold">
+        <div class="sale-price uk-text-large uk-text-bold">
             <?php echo $productHelper->displayPrice((float) $salePrice, $product, $params); ?>
         </div>
     <?php endif; ?>
 
     <?php if ($showBasePrice && $basePrice > 0 && $basePrice != $salePrice): ?>
-        <del class="base-price fs-6 fw-normal text-body-tertiary lh-1">
+        <del class="base-price uk-text-muted">
             <?php echo $productHelper->displayPrice((float) $basePrice, $product, $params); ?>
         </del>
     <?php endif; ?>
 
     <?php if ($showTaxInfo): ?>
         <div class="tax-text">
-            <small class="fw-normal text-body-tertiary"><?php echo $productHelper->get_tax_text(); ?></small>
+            <small class="uk-text-muted"><?php echo $productHelper->get_tax_text(); ?></small>
         </div>
     <?php endif; ?>
 </div>

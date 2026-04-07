@@ -21,12 +21,15 @@ extract($displayData);
 
 $productId = $product->j2commerce_product_id;
 $cssClass  = $product->params->get('product_css_class', '') ?? '';
+$productType = htmlspecialchars($product->product_type ?? '', ENT_QUOTES, 'UTF-8');
 $beforeHtml = J2CommerceHelper::plugin()->eventWithHtml('BeforeProductListItemDisplay', [$product, $context, &$displayData])->getArgument('html', '');
 $afterHtml  = J2CommerceHelper::plugin()->eventWithHtml('AfterProductListItemDisplay', [$product, $context, &$displayData])->getArgument('html', '');
 $cartText   = !empty($product->addtocart_text) ? $product->addtocart_text : Text::_('PLG_J2COMMERCE_APP_GUIDEDBUILDER_CONFIGURE');
 ?>
 
-<div class="j2commerce-product-item j2commerce-product-<?php echo $productId; ?> j2commerce-type-<?php echo htmlspecialchars($product->product_type ?? '', ENT_QUOTES, 'UTF-8'); ?> <?php echo htmlspecialchars($cssClass, ENT_QUOTES, 'UTF-8'); ?>" data-product-id="<?php echo $productId; ?>" data-product-type="<?php echo htmlspecialchars($product->product_type ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+<div class="j2commerce-product-item j2commerce-product-<?php echo $productId; ?> j2commerce-type-<?php echo $productType;?> <?php echo $cssClass; ?> uk-flex uk-flex-column uk-height-1-1"
+     data-product-id="<?php echo $productId; ?>"
+     data-product-type="<?php echo $productType;?>">
 
     <?php echo $beforeHtml; ?>
 
@@ -50,7 +53,7 @@ $cartText   = !empty($product->addtocart_text) ? $product->addtocart_text : Text
         <?php echo ProductLayoutService::renderLayout('list.category.item_description', $displayData); ?>
     <?php endif; ?>
 
-    <div class="j2commerce-price-sku-container uk-flex uk-flex-middle uk-flex-between uk-margin-bottom">
+    <div class="j2commerce-price-sku-container uk-flex uk-flex-wrap uk-flex-middle uk-flex-between">
         <?php if ($showPrice && !empty($product->pricing->is_from_price)): ?>
             <?php
             $productHelper = J2CommerceHelper::product();

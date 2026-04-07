@@ -24,7 +24,7 @@ $currentDir = $displayData['currentDir'] ?? 'asc';
 <div class="j2commerce-sortfilter-container">
     <div class="j2commerce-sort-options">
         <label for="j2commerce-sort"><?php echo Text::_('COM_J2COMMERCE_SORT_BY'); ?></label>
-        <select id="j2commerce-sort" class="form-select j2commerce-sort-select">
+        <select id="j2commerce-sort" class="uk-select j2commerce-sort-select">
             <option value=""><?php echo Text::_('COM_J2COMMERCE_SELECT_SORT'); ?></option>
             <option value="product_name" <?php echo $currentSort === 'product_name' ? 'selected' : ''; ?>>
                 <?php echo Text::_('COM_J2COMMERCE_SORT_NAME'); ?>

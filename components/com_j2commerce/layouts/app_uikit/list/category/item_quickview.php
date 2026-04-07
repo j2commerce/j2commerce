@@ -23,8 +23,8 @@ if (!$showQuickview) {
 
 $quickviewUrl = Route::_(RouteHelper::getProductRoute((int) $product->j2commerce_product_id) . '&tmpl=component');
 ?>
-<div class="j2commerce-product-quickview position-absolute bottom-0 end-0 mb-2 me-2 mb-lg-3 me-lg-3">
-    <a data-fancybox data-type="iframe" class="btn btn-dark btn-sm j2commerce-quickview-btn" data-src="<?php echo $quickviewUrl; ?>" href="javascript:;" title="<?php echo Text::_('COM_J2COMMERCE_PRODUCT_QUICKVIEW'); ?>">
+<div class="j2commerce-product-quickview uk-position-absolute uk-position-bottom-right uk-margin-small">
+    <a data-fancybox data-type="iframe" class="uk-button uk-button-secondary uk-button-small j2commerce-quickview-btn" data-src="<?php echo $quickviewUrl; ?>" href="javascript:;" title="<?php echo Text::_('COM_J2COMMERCE_PRODUCT_QUICKVIEW'); ?>">
         <span class="fa-solid fa-eye" aria-hidden="true"></span>
     </a>
 </div>

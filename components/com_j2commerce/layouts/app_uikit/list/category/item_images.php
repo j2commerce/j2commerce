@@ -51,17 +51,17 @@ $basePrice = $product->pricing->base_price ?? 0;
 $salePrice = $product->pricing->price ?? 0;
 
 ?>
-<div class="j2commerce-product-image position-relative border mb-3">
+<div class="j2commerce-product-image uk-position-relative uk-margin-small-bottom uk-border">
     <?php if ($showDiscountPercentage && $basePrice > 0): ?>
         <?php $discount = (1 - ($salePrice / $basePrice)) * 100; ?>
         <?php if ($discount > 0): ?>
-            <span class="discount-percentage badge text-bg-info position-absolute top-0 start-0 mt-2 ms-2 mt-lg-3 ms-lg-3"><?php echo Text::sprintf('COM_J2COMMERCE_PRODUCT_OFFER', round($discount) . '%'); ?></span>
+            <span class="discount-percentage uk-badge uk-position-absolute uk-position-top-left uk-margin-small"><?php echo Text::sprintf('COM_J2COMMERCE_PRODUCT_OFFER', round($discount) . '%'); ?></span>
         <?php endif; ?>
     <?php endif; ?>
     <?php if ($linkImage): ?>
         <a href="<?php echo htmlspecialchars($productLink, ENT_QUOTES, 'UTF-8'); ?>">
     <?php endif; ?>
-    <?php echo ImageHelper::getProductImage($image, $image_width, 'html', $image_width, 'j2commerce-img-responsive img-fluid', $imageAlt);?>
+    <?php echo ImageHelper::getProductImage($image, $image_width, 'html', $image_width, 'j2commerce-img-responsive uk-responsive-width', $imageAlt);?>
 
     <?php if ($linkImage): ?>
         </a>

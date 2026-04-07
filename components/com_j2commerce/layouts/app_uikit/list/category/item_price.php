@@ -43,22 +43,22 @@ $salePrice = $pricing->price ?? 0;
 ?>
 <?php echo $beforeHtml; ?>
 
-<div class="j2commerce-product-price-container d-flex align-items-center gap-1">
+<div class="j2commerce-product-price-container uk-flex uk-flex-middle" style="gap: .25rem;">
     <?php if ($showSpecialPrice && isset($pricing->price)): ?>
-        <div class="sale-price lh-1 fs-5 fw-semibold">
+        <div class="sale-price uk-text-large uk-text-bold">
             <?php echo $productHelper->displayPrice((float) $salePrice, $product, $params); ?>
         </div>
     <?php endif; ?>
 
     <?php if ($showBasePrice && $basePrice > 0 && $basePrice != $salePrice): ?>
-        <del class="base-price fs-6 fw-normal text-body-tertiary lh-1">
+        <del class="base-price uk-text-muted">
             <?php echo $productHelper->displayPrice((float) $basePrice, $product, $params); ?>
         </del>
     <?php endif; ?>
 
     <?php if ($showTaxInfo): ?>
         <div class="tax-text">
-            <small class="fw-normal text-body-tertiary"><?php echo $productHelper->get_tax_text(); ?></small>
+            <small class="uk-text-muted"><?php echo $productHelper->get_tax_text(); ?></small>
         </div>
     <?php endif; ?>
 </div>

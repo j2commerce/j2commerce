@@ -28,8 +28,8 @@ $hasOptions = !empty($product->options) ||
     in_array($product->product_type ?? 'simple', ['variable', 'flexivariable', 'configurable', 'advancedvariable']);
 
 $cartType = (int) $params->get('list_show_cart', 1);
-$btnClass = $params->get('addtocart_button_class', 'btn btn-primary');
-$chooseBtnClass = $params->get('choosebtn_class', 'btn btn-success');
+$btnClass = $params->get('addtocart_button_class', 'uk-button uk-button-primary');
+$chooseBtnClass = $params->get('choosebtn_class', 'uk-button uk-button-primary');
 $productId = $product->j2commerce_product_id;
 $productType = $product->product_type;
 
@@ -43,7 +43,7 @@ $afterCart = J2CommerceHelper::plugin()->eventWithHtml('AfterAddToCartButton',[$
 
 <?php if($show): ?>
     <div class="cart-action-complete" style="display:none;">
-        <p class="text-success">
+        <p class="uk-text-success">
             <?php echo Text::_('COM_J2COMMERCE_ITEM_ADDED_TO_CART'); ?>
             <a href="<?php echo htmlspecialchars($product->checkout_link ?? '', ENT_QUOTES, 'UTF-8'); ?>" class="j2commerce-checkout-link">
                 <?php echo Text::_('COM_J2COMMERCE_CHECKOUT'); ?>
@@ -53,19 +53,17 @@ $afterCart = J2CommerceHelper::plugin()->eventWithHtml('AfterAddToCartButton',[$
 
     <div id="add-to-cart-<?php echo $productId; ?>" class="j2commerce-add-to-cart">
         <input type="hidden" name="product_id" value="<?php echo $productId; ?>" />
-        <div class="j2commerce-cart-buttons d-flex align-items-center">
-            <div class="input-group">
-                <?php echo $productHelper->displayQuantity('com_j2commerce.productlist', $product, $params, ['class' => 'form-control qty-input','show_buttons' => false]); ?>
-                <button type="submit" class="j2commerce-cart-button flex-fill <?php echo $btnClass; ?>" data-cart-action-always="<?php echo Text::_('COM_J2COMMERCE_ADDING_TO_CART'); ?>" data-cart-action-done="<?php echo $cartText; ?>" data-cart-action-timeout="1000">
-                    <?php echo $cartText; ?>
-                </button>
-            </div>
+        <div class="j2commerce-cart-buttons uk-flex uk-flex-middle">
+            <?php echo $productHelper->displayQuantity('com_j2commerce.productlist', $product, $params, ['class' => 'uk-input qty-input','show_buttons' => false]); ?>
+            <button type="submit" class="j2commerce-cart-button uk-width-expand <?php echo $btnClass; ?>" data-cart-action-always="<?php echo Text::_('COM_J2COMMERCE_ADDING_TO_CART'); ?>" data-cart-action-done="<?php echo $cartText; ?>" data-cart-action-timeout="1000">
+                <?php echo $cartText; ?>
+            </button>
 
             <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterAddToCartButtonIcon',[$product, $context])->getArgument('html', ''); ?>
         </div>
     </div>
 <?php else: ?>
-    <button type="button" class="j2commerce_button_no_stock btn btn-warning" disabled>
+    <button type="button" class="j2commerce_button_no_stock uk-button uk-button-default" disabled>
         <?php echo Text::_('COM_J2COMMERCE_OUT_OF_STOCK'); ?>
     </button>
 <?php endif; ?>
