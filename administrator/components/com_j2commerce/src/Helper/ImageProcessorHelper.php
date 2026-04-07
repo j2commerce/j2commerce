@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 
+use enshrined\svgSanitize\Sanitizer;
 use Joomla\CMS\Image\Image;
 
 \defined('_JEXEC') or die;
@@ -66,7 +67,13 @@ class ImageProcessorHelper
     ): bool {
         try {
             if (strtolower(pathinfo($sourcePath, PATHINFO_EXTENSION)) === 'svg') {
-                return copy($sourcePath, $thumbPath);
+                $sanitized = self::sanitizeSvgFile($sourcePath);
+
+                if ($sanitized === false) {
+                    return false;
+                }
+
+                return file_put_contents($thumbPath, $sanitized) !== false;
             }
 
             $image = new Image($sourcePath);
@@ -96,7 +103,7 @@ class ImageProcessorHelper
     public function processMainImage(string $sourcePath, int $maxDimension, bool $maintainRatio): string|false
     {
         if (strtolower(pathinfo($sourcePath, PATHINFO_EXTENSION)) === 'svg') {
-            return file_get_contents($sourcePath);
+            return self::sanitizeSvgFile($sourcePath) ?: false;
         }
 
         if (!\function_exists('imagewebp') || $maxDimension < 1) {
@@ -171,8 +178,13 @@ class ImageProcessorHelper
 
     public function validateImage(string $data): bool
     {
-        if (str_starts_with(trim($data), '<svg')) {
-            return true;
+        $trimmed = trim($data);
+
+        if (str_starts_with($trimmed, '<svg') || str_starts_with($trimmed, '<?xml')) {
+            $sanitizer = new Sanitizer();
+            $clean     = $sanitizer->sanitize($data);
+
+            return $clean !== false;
         }
 
         $imageInfo = @getimagesizefromstring($data);
@@ -193,6 +205,24 @@ class ImageProcessorHelper
         }
 
         return \in_array($imageInfo[2], $validTypes);
+    }
+
+    /**
+     * Sanitize an SVG file using Joomla's bundled enshrined/svg-sanitize library.
+     * Returns sanitized SVG string, or false on failure.
+     */
+    public static function sanitizeSvgFile(string $filePath): string|false
+    {
+        $raw = file_get_contents($filePath);
+
+        if ($raw === false) {
+            return false;
+        }
+
+        $sanitizer = new Sanitizer();
+        $clean     = $sanitizer->sanitize($raw);
+
+        return \is_string($clean) && $clean !== '' ? $clean : false;
     }
 
     public function getImageDimensions(string $data): array|false
