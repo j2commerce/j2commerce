@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  Plugin.Console.J2Commerce
@@ -9,7 +10,7 @@
 
 namespace J2Commerce\Plugin\Console\J2Commerce\Command;
 
-defined('_JEXEC') || die;
+\defined('_JEXEC') || die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
@@ -19,19 +20,19 @@ use Joomla\DI\ServiceProviderInterface;
 
 class CommandFactoryProvider implements ServiceProviderInterface
 {
-	public function register(Container $container)
-	{
-		$container->set(
-			CommandFactoryInterface::class,
-			function (Container $container) {
-				$factory = new CommandFactory();
+    public function register(Container $container)
+    {
+        $container->set(
+            CommandFactoryInterface::class,
+            function (Container $container) {
+                $factory = new CommandFactory();
 
-				$factory->setMVCFactory($container->get(MVCFactoryInterface::class));
-				$factory->setDatabase($container->get(DatabaseInterface::class));
-				$factory->setApplication(Factory::getApplication());
+                $factory->setMVCFactory($container->get(MVCFactoryInterface::class));
+                $factory->setDatabase($container->get(DatabaseInterface::class));
+                $factory->setApplication(Factory::getApplication());
 
-				return $factory;
-			}
-		);
-	}
+                return $factory;
+            }
+        );
+    }
 }

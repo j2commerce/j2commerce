@@ -30,7 +30,7 @@ class LocalizationDataField extends FormField
     protected function getInput(): string
     {
         $app = Factory::getApplication();
-        $wa = $app->getDocument()?->getWebAssetManager();
+        $wa  = $app->getDocument()?->getWebAssetManager();
 
         if ($wa === null) {
             return '';
@@ -38,7 +38,7 @@ class LocalizationDataField extends FormField
 
         $wa->useScript('core');
 
-        $token = Session::getFormToken();
+        $token   = Session::getFormToken();
         $ajaxUrl = Uri::base() . 'index.php?option=com_ajax&plugin=app_localization_data&group=j2commerce&format=json&task=insertTableValues';
 
         $html = $this->buildHtml();
@@ -50,13 +50,13 @@ class LocalizationDataField extends FormField
     private function buildHtml(): string
     {
         $countriesLabel = Text::_('PLG_J2COMMERCE_APP_LOCALIZATION_DATA_COUNTRIES');
-        $zonesLabel = Text::_('PLG_J2COMMERCE_APP_LOCALIZATION_DATA_ZONES');
-        $metricsLabel = Text::_('PLG_J2COMMERCE_APP_LOCALIZATION_DATA_METRICS');
-        $noteLabel = Text::_('PLG_J2COMMERCE_APP_LOCALIZATION_DATA_NOTE');
-        $installLabel = Text::_('PLG_J2COMMERCE_APP_LOCALIZATION_DATA_INSTALL');
-        $helpText = Text::_('PLG_J2COMMERCE_APP_LOCALIZATION_DATA_HELP_TEXT');
-        $processing = Text::_('PLG_J2COMMERCE_APP_LOCALIZATION_DATA_PROCESSING');
-        $baseURL = Uri::root();
+        $zonesLabel     = Text::_('PLG_J2COMMERCE_APP_LOCALIZATION_DATA_ZONES');
+        $metricsLabel   = Text::_('PLG_J2COMMERCE_APP_LOCALIZATION_DATA_METRICS');
+        $noteLabel      = Text::_('PLG_J2COMMERCE_APP_LOCALIZATION_DATA_NOTE');
+        $installLabel   = Text::_('PLG_J2COMMERCE_APP_LOCALIZATION_DATA_INSTALL');
+        $helpText       = Text::_('PLG_J2COMMERCE_APP_LOCALIZATION_DATA_HELP_TEXT');
+        $processing     = Text::_('PLG_J2COMMERCE_APP_LOCALIZATION_DATA_PROCESSING');
+        $baseURL        = Uri::root();
 
         return <<<HTML
 <div class="j2commerce-localization-data">
@@ -118,7 +118,7 @@ HTML;
     private function buildScript(string $ajaxUrl, string $token): string
     {
         $confirmText = Text::_('PLG_J2COMMERCE_APP_LOCALIZATION_DATA_CONFIRM_RESET', true);
-        $errorText = Text::_('PLG_J2COMMERCE_APP_LOCALIZATION_DATA_ERR_REQUEST_FAILED', true);
+        $errorText   = Text::_('PLG_J2COMMERCE_APP_LOCALIZATION_DATA_ERR_REQUEST_FAILED', true);
 
         return <<<SCRIPT
 document.addEventListener('DOMContentLoaded', () => {

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Field;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Form\FormField;
 use Joomla\CMS\Language\Text;
@@ -54,9 +55,9 @@ class TemplateCustomField extends FormField
         $html[] = '<tbody>';
 
         $billingFields = [
-            'company' => Text::_('COM_J2COMMERCE_TEMPLATE_CUSTOM_FIELD_BILLING_COMPANY'),
-            'tax_number' => Text::_('COM_J2COMMERCE_TEMPLATE_CUSTOM_FIELD_BILLING_TAX_NUMBER'),
-            'custom_note' => Text::_('COM_J2COMMERCE_TEMPLATE_CUSTOM_FIELD_BILLING_CUSTOM_NOTE')
+            'company'     => Text::_('COM_J2COMMERCE_TEMPLATE_CUSTOM_FIELD_BILLING_COMPANY'),
+            'tax_number'  => Text::_('COM_J2COMMERCE_TEMPLATE_CUSTOM_FIELD_BILLING_TAX_NUMBER'),
+            'custom_note' => Text::_('COM_J2COMMERCE_TEMPLATE_CUSTOM_FIELD_BILLING_CUSTOM_NOTE'),
         ];
 
         foreach ($billingFields as $fieldName => $description) {
@@ -90,8 +91,8 @@ class TemplateCustomField extends FormField
 
         $shippingFields = [
             'delivery_instructions' => Text::_('COM_J2COMMERCE_TEMPLATE_CUSTOM_FIELD_SHIPPING_DELIVERY_INSTRUCTIONS'),
-            'special_handling' => Text::_('COM_J2COMMERCE_TEMPLATE_CUSTOM_FIELD_SHIPPING_SPECIAL_HANDLING'),
-            'preferred_time' => Text::_('COM_J2COMMERCE_TEMPLATE_CUSTOM_FIELD_SHIPPING_PREFERRED_TIME')
+            'special_handling'      => Text::_('COM_J2COMMERCE_TEMPLATE_CUSTOM_FIELD_SHIPPING_SPECIAL_HANDLING'),
+            'preferred_time'        => Text::_('COM_J2COMMERCE_TEMPLATE_CUSTOM_FIELD_SHIPPING_PREFERRED_TIME'),
         ];
 
         foreach ($shippingFields as $fieldName => $description) {
@@ -124,9 +125,9 @@ class TemplateCustomField extends FormField
         $html[] = '<tbody>';
 
         $paymentFields = [
-            'po_number' => Text::_('COM_J2COMMERCE_TEMPLATE_CUSTOM_FIELD_PAYMENT_PO_NUMBER'),
+            'po_number'         => Text::_('COM_J2COMMERCE_TEMPLATE_CUSTOM_FIELD_PAYMENT_PO_NUMBER'),
             'payment_reference' => Text::_('COM_J2COMMERCE_TEMPLATE_CUSTOM_FIELD_PAYMENT_REFERENCE'),
-            'billing_contact' => Text::_('COM_J2COMMERCE_TEMPLATE_CUSTOM_FIELD_PAYMENT_BILLING_CONTACT')
+            'billing_contact'   => Text::_('COM_J2COMMERCE_TEMPLATE_CUSTOM_FIELD_PAYMENT_BILLING_CONTACT'),
         ];
 
         foreach ($paymentFields as $fieldName => $description) {

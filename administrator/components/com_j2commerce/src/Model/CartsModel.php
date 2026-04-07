@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -130,7 +131,7 @@ class CartsModel extends ListModel
      */
     protected function getListQuery(): QueryInterface
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         // Select required fields
@@ -173,7 +174,7 @@ class CartsModel extends ListModel
         // Filter by user_id
         $userId = $this->getState('filter.user_id');
 
-        if (\is_numeric($userId)) {
+        if (is_numeric($userId)) {
             $userId = (int) $userId;
             $query->where($db->quoteName('tbl.user_id') . ' = :userId')
                 ->bind(':userId', $userId, ParameterType::INTEGER);
@@ -269,7 +270,7 @@ class CartsModel extends ListModel
      */
     public function loadCart(int $cartId = 0): ?object
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $this->getListQuery();
 
         if ($cartId > 0) {

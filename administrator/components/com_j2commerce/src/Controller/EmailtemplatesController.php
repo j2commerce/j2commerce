@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -9,7 +10,7 @@
 
 namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -61,9 +62,9 @@ class EmailtemplatesController extends AdminController
         Session::checkToken() or jexit(Text::_('JINVALID_TOKEN'));
 
         // Get items to publish from the request.
-        $cid = $this->input->get('cid', [], 'array');
-        $data = ['publish' => 1, 'unpublish' => 0, 'archive' => 2, 'trash' => -2, 'report' => -3];
-        $task = $this->getTask();
+        $cid   = $this->input->get('cid', [], 'array');
+        $data  = ['publish' => 1, 'unpublish' => 0, 'archive' => 2, 'trash' => -2, 'report' => -3];
+        $task  = $this->getTask();
         $value = \Joomla\Utilities\ArrayHelper::getValue($data, $task, 0, 'int');
 
         if (empty($cid)) {
@@ -196,8 +197,8 @@ class EmailtemplatesController extends AdminController
         // Check for request forgeries.
         Session::checkToken() or jexit(Text::_('JINVALID_TOKEN'));
 
-        $ids = $this->input->get('cid', [], 'post', 'array');
-        $model = $this->getModel();
+        $ids    = $this->input->get('cid', [], 'post', 'array');
+        $model  = $this->getModel();
         $return = $model->checkin($ids);
 
         if ($return === false) {
@@ -206,13 +207,13 @@ class EmailtemplatesController extends AdminController
             $this->setRedirect(Route::_('index.php?option=' . $this->option . '&view=' . $this->view_list, false), $message, 'error');
 
             return false;
-        } else {
-            // Checkin succeeded.
-            $message = Text::plural($this->text_prefix . '_N_ITEMS_CHECKED_IN', \count($ids));
-            $this->setRedirect(Route::_('index.php?option=' . $this->option . '&view=' . $this->view_list, false), $message);
-
-            return true;
         }
+        // Checkin succeeded.
+        $message = Text::plural($this->text_prefix . '_N_ITEMS_CHECKED_IN', \count($ids));
+        $this->setRedirect(Route::_('index.php?option=' . $this->option . '&view=' . $this->view_list, false), $message);
+
+        return true;
+
     }
 
     /**
@@ -225,11 +226,11 @@ class EmailtemplatesController extends AdminController
     public function saveOrderAjax()
     {
         // Get the input
-        $pks = $this->input->post->get('cid', [], 'array');
+        $pks   = $this->input->post->get('cid', [], 'array');
         $order = $this->input->post->get('order', [], 'array');
 
         // Sanitize the input
-        $pks = \Joomla\Utilities\ArrayHelper::toInteger($pks);
+        $pks   = \Joomla\Utilities\ArrayHelper::toInteger($pks);
         $order = \Joomla\Utilities\ArrayHelper::toInteger($order);
 
         // Get the model
@@ -261,7 +262,7 @@ class EmailtemplatesController extends AdminController
         $ids = $this->input->get('cid', [], 'post', 'array');
         $inc = $this->getTask() === 'orderup' ? -1 : 1;
 
-        $model = $this->getModel();
+        $model  = $this->getModel();
         $return = $model->reorder($ids, $inc);
 
         if ($return === false) {
@@ -270,13 +271,13 @@ class EmailtemplatesController extends AdminController
             $this->setRedirect(Route::_('index.php?option=' . $this->option . '&view=' . $this->view_list, false), $message, 'error');
 
             return false;
-        } else {
-            // Reorder succeeded.
-            $message = Text::_('JLIB_APPLICATION_SUCCESS_ITEM_REORDERED');
-            $this->setRedirect(Route::_('index.php?option=' . $this->option . '&view=' . $this->view_list, false), $message);
-
-            return true;
         }
+        // Reorder succeeded.
+        $message = Text::_('JLIB_APPLICATION_SUCCESS_ITEM_REORDERED');
+        $this->setRedirect(Route::_('index.php?option=' . $this->option . '&view=' . $this->view_list, false), $message);
+
+        return true;
+
     }
 
     /**
@@ -330,7 +331,7 @@ class EmailtemplatesController extends AdminController
             return;
         }
 
-        $db = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $db    = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
         $query = $db->getQuery(true)
             ->select('*')
             ->from($db->quoteName('#__j2commerce_emailtemplates'))
@@ -339,12 +340,12 @@ class EmailtemplatesController extends AdminController
         $items = $db->loadAssocList();
 
         $exportFields = ['subject', 'body', 'body_source', 'body_source_file', 'custom_css', 'email_type', 'receiver_type', 'language', 'orderstatus_id', 'group_id', 'paymentmethod', 'enabled', 'ordering'];
-        $exportData = [];
+        $exportData   = [];
 
         foreach ($items as $item) {
             $row = [];
             foreach ($exportFields as $field) {
-                if (array_key_exists($field, $item)) {
+                if (\array_key_exists($field, $item)) {
                     $row[$field] = $item[$field];
                 }
             }
@@ -352,9 +353,9 @@ class EmailtemplatesController extends AdminController
         }
 
         $json = json_encode([
-            'version' => '6.0',
-            'type' => 'j2commerce_emailtemplates',
-            'exported' => date('c'),
+            'version'   => '6.0',
+            'type'      => 'j2commerce_emailtemplates',
+            'exported'  => date('c'),
             'templates' => $exportData,
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
 
@@ -362,7 +363,7 @@ class EmailtemplatesController extends AdminController
 
         header('Content-Type: application/json; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
-        header('Content-Length: ' . strlen($json));
+        header('Content-Length: ' . \strlen($json));
         echo $json;
         Factory::getApplication()->close();
     }
@@ -387,7 +388,7 @@ class EmailtemplatesController extends AdminController
         }
 
         $content = file_get_contents($file['tmp_name']);
-        $data = json_decode($content, true);
+        $data    = json_decode($content, true);
 
         if (!$data || !isset($data['type']) || $data['type'] !== 'j2commerce_emailtemplates' || empty($data['templates'])) {
             $this->setMessage(Text::_('COM_J2COMMERCE_EMAILTEMPLATE_IMPORT_INVALID'), 'error');
@@ -395,11 +396,11 @@ class EmailtemplatesController extends AdminController
             return;
         }
 
-        $db = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $db            = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
         $allowedFields = ['subject', 'body', 'body_source', 'body_source_file', 'custom_css', 'email_type', 'receiver_type', 'language', 'orderstatus_id', 'group_id', 'paymentmethod', 'enabled', 'ordering'];
-        $imported = 0;
-        $userId = (int) $this->app->getIdentity()->id;
-        $now    = Factory::getDate()->toSql();
+        $imported      = 0;
+        $userId        = (int) $this->app->getIdentity()->id;
+        $now           = Factory::getDate()->toSql();
 
         foreach ($data['templates'] as $template) {
             $row = new \stdClass();
@@ -407,10 +408,10 @@ class EmailtemplatesController extends AdminController
                 $row->$field = $template[$field] ?? '';
             }
             $row->j2commerce_emailtemplate_id = 0;
-            $row->created_on  = $now;
-            $row->created_by  = $userId;
-            $row->modified_on = $now;
-            $row->modified_by = $userId;
+            $row->created_on                  = $now;
+            $row->created_by                  = $userId;
+            $row->modified_on                 = $now;
+            $row->modified_by                 = $userId;
 
             try {
                 $db->insertObject('#__j2commerce_emailtemplates', $row, 'j2commerce_emailtemplate_id');

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -52,15 +53,15 @@ class InputHelper
         string $placeholder,
         array $options = []
     ): string {
-        $class = htmlspecialchars($options['class'] ?? '', ENT_QUOTES, 'UTF-8');
-        $required = !empty($options['required']) ? ' required' : '';
-        $id = !empty($options['id']) ? ' id="' . htmlspecialchars($options['id'], ENT_QUOTES, 'UTF-8') . '"' : '';
-        $disabled = !empty($options['disabled']) ? ' disabled' : '';
-        $readonly = !empty($options['readonly']) ? ' readonly' : '';
-        $maxlength = isset($options['maxlength']) ? ' maxlength="' . (int) $options['maxlength'] . '"' : '';
-        $min = isset($options['min']) ? ' min="' . htmlspecialchars((string) $options['min'], ENT_QUOTES, 'UTF-8') . '"' : '';
-        $max = isset($options['max']) ? ' max="' . htmlspecialchars((string) $options['max'], ENT_QUOTES, 'UTF-8') . '"' : '';
-        $step = isset($options['step']) ? ' step="' . htmlspecialchars((string) $options['step'], ENT_QUOTES, 'UTF-8') . '"' : '';
+        $class        = htmlspecialchars($options['class'] ?? '', ENT_QUOTES, 'UTF-8');
+        $required     = !empty($options['required']) ? ' required' : '';
+        $id           = !empty($options['id']) ? ' id="' . htmlspecialchars($options['id'], ENT_QUOTES, 'UTF-8') . '"' : '';
+        $disabled     = !empty($options['disabled']) ? ' disabled' : '';
+        $readonly     = !empty($options['readonly']) ? ' readonly' : '';
+        $maxlength    = isset($options['maxlength']) ? ' maxlength="' . (int) $options['maxlength'] . '"' : '';
+        $min          = isset($options['min']) ? ' min="' . htmlspecialchars((string) $options['min'], ENT_QUOTES, 'UTF-8') . '"' : '';
+        $max          = isset($options['max']) ? ' max="' . htmlspecialchars((string) $options['max'], ENT_QUOTES, 'UTF-8') . '"' : '';
+        $step         = isset($options['step']) ? ' step="' . htmlspecialchars((string) $options['step'], ENT_QUOTES, 'UTF-8') . '"' : '';
         $autocomplete = isset($options['autocomplete']) ? ' autocomplete="' . htmlspecialchars($options['autocomplete'], ENT_QUOTES, 'UTF-8') . '"' : '';
 
         // Build additional attributes string
@@ -97,10 +98,10 @@ class InputHelper
      */
     public static function getLabel(string $name, array $options = []): string
     {
-        $text = Text::_($name);
+        $text  = Text::_($name);
         $class = htmlspecialchars($options['class'] ?? 'form-label', ENT_QUOTES, 'UTF-8');
-        $for = !empty($options['for']) ? ' for="' . htmlspecialchars($options['for'], ENT_QUOTES, 'UTF-8') . '"' : '';
-        $id = !empty($options['id']) ? ' id="' . htmlspecialchars($options['id'], ENT_QUOTES, 'UTF-8') . '"' : '';
+        $for   = !empty($options['for']) ? ' for="' . htmlspecialchars($options['for'], ENT_QUOTES, 'UTF-8') . '"' : '';
+        $id    = !empty($options['id']) ? ' id="' . htmlspecialchars($options['id'], ENT_QUOTES, 'UTF-8') . '"' : '';
 
         return '<label class="' . $class . '"' . $for . $id . '>'
             . htmlspecialchars($text, ENT_QUOTES, 'UTF-8') . '</label>';
@@ -128,14 +129,14 @@ class InputHelper
         string $type,
         array $options = []
     ): string {
-        $class = htmlspecialchars($options['class'] ?? '', ENT_QUOTES, 'UTF-8');
-        $required = !empty($options['required']) ? ' required' : '';
-        $id = !empty($options['id']) ? ' id="' . htmlspecialchars($options['id'], ENT_QUOTES, 'UTF-8') . '"' : '';
-        $disabled = !empty($options['disabled']) ? ' disabled' : '';
-        $readonly = !empty($options['readonly']) ? ' readonly' : '';
-        $rows = isset($options['rows']) ? ' rows="' . (int) $options['rows'] . '"' : '';
-        $cols = isset($options['cols']) ? ' cols="' . (int) $options['cols'] . '"' : '';
-        $maxlength = isset($options['maxlength']) ? ' maxlength="' . (int) $options['maxlength'] . '"' : '';
+        $class       = htmlspecialchars($options['class'] ?? '', ENT_QUOTES, 'UTF-8');
+        $required    = !empty($options['required']) ? ' required' : '';
+        $id          = !empty($options['id']) ? ' id="' . htmlspecialchars($options['id'], ENT_QUOTES, 'UTF-8') . '"' : '';
+        $disabled    = !empty($options['disabled']) ? ' disabled' : '';
+        $readonly    = !empty($options['readonly']) ? ' readonly' : '';
+        $rows        = isset($options['rows']) ? ' rows="' . (int) $options['rows'] . '"' : '';
+        $cols        = isset($options['cols']) ? ' cols="' . (int) $options['cols'] . '"' : '';
+        $maxlength   = isset($options['maxlength']) ? ' maxlength="' . (int) $options['maxlength'] . '"' : '';
         $placeholder = !empty($options['placeholder'])
             ? ' placeholder="' . htmlspecialchars($options['placeholder'], ENT_QUOTES, 'UTF-8') . '"'
             : '';
@@ -177,16 +178,16 @@ class InputHelper
         $groupClass = htmlspecialchars($options['groupClass'] ?? 'mb-3', ENT_QUOTES, 'UTF-8');
         $labelClass = htmlspecialchars($options['labelClass'] ?? 'form-label', ENT_QUOTES, 'UTF-8');
         $inputClass = htmlspecialchars($options['class'] ?? 'form-control', ENT_QUOTES, 'UTF-8');
-        $required = !empty($options['required']) ? ' required' : '';
-        $id = !empty($options['id']) ? $options['id'] : 'input_' . preg_replace('/[^a-z0-9_]/i', '_', $name);
+        $required   = !empty($options['required']) ? ' required' : '';
+        $id         = !empty($options['id']) ? $options['id'] : 'input_' . preg_replace('/[^a-z0-9_]/i', '_', $name);
 
         // Escape values for HTML attributes
-        $escapedId = htmlspecialchars($id, ENT_QUOTES, 'UTF-8');
-        $escapedName = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
-        $escapedValue = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
-        $escapedType = htmlspecialchars($type, ENT_QUOTES, 'UTF-8');
+        $escapedId          = htmlspecialchars($id, ENT_QUOTES, 'UTF-8');
+        $escapedName        = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
+        $escapedValue       = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+        $escapedType        = htmlspecialchars($type, ENT_QUOTES, 'UTF-8');
         $escapedPlaceholder = htmlspecialchars($placeholder, ENT_QUOTES, 'UTF-8');
-        $labelText = htmlspecialchars(Text::_($label), ENT_QUOTES, 'UTF-8');
+        $labelText          = htmlspecialchars(Text::_($label), ENT_QUOTES, 'UTF-8');
 
         return '<div class="' . $groupClass . '">'
             . '<label class="' . $labelClass . '" for="' . $escapedId . '">' . $labelText . '</label>'
@@ -221,22 +222,22 @@ class InputHelper
         string $value,
         array $options = []
     ): string {
-        $groupClass = htmlspecialchars($options['groupClass'] ?? 'mb-3', ENT_QUOTES, 'UTF-8');
-        $labelClass = htmlspecialchars($options['labelClass'] ?? 'form-label', ENT_QUOTES, 'UTF-8');
+        $groupClass    = htmlspecialchars($options['groupClass'] ?? 'mb-3', ENT_QUOTES, 'UTF-8');
+        $labelClass    = htmlspecialchars($options['labelClass'] ?? 'form-label', ENT_QUOTES, 'UTF-8');
         $textareaClass = htmlspecialchars($options['class'] ?? 'form-control', ENT_QUOTES, 'UTF-8');
-        $required = !empty($options['required']) ? ' required' : '';
-        $id = !empty($options['id']) ? $options['id'] : 'textarea_' . preg_replace('/[^a-z0-9_]/i', '_', $name);
-        $rows = isset($options['rows']) ? ' rows="' . (int) $options['rows'] . '"' : ' rows="3"';
-        $cols = isset($options['cols']) ? ' cols="' . (int) $options['cols'] . '"' : '';
-        $placeholder = !empty($options['placeholder'])
+        $required      = !empty($options['required']) ? ' required' : '';
+        $id            = !empty($options['id']) ? $options['id'] : 'textarea_' . preg_replace('/[^a-z0-9_]/i', '_', $name);
+        $rows          = isset($options['rows']) ? ' rows="' . (int) $options['rows'] . '"' : ' rows="3"';
+        $cols          = isset($options['cols']) ? ' cols="' . (int) $options['cols'] . '"' : '';
+        $placeholder   = !empty($options['placeholder'])
             ? ' placeholder="' . htmlspecialchars($options['placeholder'], ENT_QUOTES, 'UTF-8') . '"'
             : '';
 
         // Escape values for HTML attributes
-        $escapedId = htmlspecialchars($id, ENT_QUOTES, 'UTF-8');
-        $escapedName = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
+        $escapedId    = htmlspecialchars($id, ENT_QUOTES, 'UTF-8');
+        $escapedName  = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
         $escapedValue = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
-        $labelText = htmlspecialchars(Text::_($label), ENT_QUOTES, 'UTF-8');
+        $labelText    = htmlspecialchars(Text::_($label), ENT_QUOTES, 'UTF-8');
 
         return '<div class="' . $groupClass . '">'
             . '<label class="' . $labelClass . '" for="' . $escapedId . '">' . $labelText . '</label>'
@@ -270,9 +271,9 @@ class InputHelper
         mixed $selected = null,
         array $attribs = []
     ): string {
-        $class = htmlspecialchars($attribs['class'] ?? 'form-select', ENT_QUOTES, 'UTF-8');
+        $class    = htmlspecialchars($attribs['class'] ?? 'form-select', ENT_QUOTES, 'UTF-8');
         $required = !empty($attribs['required']) ? ' required' : '';
-        $id = !empty($attribs['id'])
+        $id       = !empty($attribs['id'])
             ? ' id="' . htmlspecialchars($attribs['id'], ENT_QUOTES, 'UTF-8') . '"'
             : '';
         $disabled = !empty($attribs['disabled']) ? ' disabled' : '';
@@ -299,20 +300,20 @@ class InputHelper
 
         foreach ($options as $key => $option) {
             if (\is_object($option)) {
-                $optValue = (string) ($option->value ?? $key);
-                $optText = (string) ($option->text ?? $option->title ?? $optValue);
+                $optValue    = (string) ($option->value ?? $key);
+                $optText     = (string) ($option->text ?? $option->title ?? $optValue);
                 $optDisabled = !empty($option->disabled);
             } elseif (\is_array($option)) {
-                $optValue = (string) ($option['value'] ?? $key);
-                $optText = (string) ($option['text'] ?? $option['title'] ?? $optValue);
+                $optValue    = (string) ($option['value'] ?? $key);
+                $optText     = (string) ($option['text'] ?? $option['title'] ?? $optValue);
                 $optDisabled = !empty($option['disabled']);
             } else {
-                $optValue = (string) $key;
-                $optText = (string) $option;
+                $optValue    = (string) $key;
+                $optText     = (string) $option;
                 $optDisabled = false;
             }
 
-            $isSelected = \in_array($optValue, $selectedValues, true) ? ' selected' : '';
+            $isSelected      = \in_array($optValue, $selectedValues, true) ? ' selected' : '';
             $optDisabledAttr = $optDisabled ? ' disabled' : '';
 
             $html .= '<option value="' . htmlspecialchars($optValue, ENT_QUOTES, 'UTF-8') . '"'
@@ -348,16 +349,16 @@ class InputHelper
         bool $checked = false,
         array $options = []
     ): string {
-        $id = !empty($options['id']) ? $options['id'] : 'check_' . preg_replace('/[^a-z0-9_]/i', '_', $name);
-        $class = htmlspecialchars($options['class'] ?? 'form-check-input', ENT_QUOTES, 'UTF-8');
-        $disabled = !empty($options['disabled']) ? ' disabled' : '';
+        $id          = !empty($options['id']) ? $options['id'] : 'check_' . preg_replace('/[^a-z0-9_]/i', '_', $name);
+        $class       = htmlspecialchars($options['class'] ?? 'form-check-input', ENT_QUOTES, 'UTF-8');
+        $disabled    = !empty($options['disabled']) ? ' disabled' : '';
         $checkedAttr = $checked ? ' checked' : '';
 
         // Escape values
-        $escapedId = htmlspecialchars($id, ENT_QUOTES, 'UTF-8');
-        $escapedName = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
+        $escapedId    = htmlspecialchars($id, ENT_QUOTES, 'UTF-8');
+        $escapedName  = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
         $escapedValue = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
-        $labelText = htmlspecialchars(Text::_($label), ENT_QUOTES, 'UTF-8');
+        $labelText    = htmlspecialchars(Text::_($label), ENT_QUOTES, 'UTF-8');
 
         return '<div class="form-check">'
             . '<input type="checkbox"'
@@ -394,16 +395,16 @@ class InputHelper
         bool $checked = false,
         array $options = []
     ): string {
-        $id = !empty($options['id']) ? $options['id'] : 'radio_' . preg_replace('/[^a-z0-9_]/i', '_', $name . '_' . $value);
-        $class = htmlspecialchars($options['class'] ?? 'form-check-input', ENT_QUOTES, 'UTF-8');
-        $disabled = !empty($options['disabled']) ? ' disabled' : '';
+        $id          = !empty($options['id']) ? $options['id'] : 'radio_' . preg_replace('/[^a-z0-9_]/i', '_', $name . '_' . $value);
+        $class       = htmlspecialchars($options['class'] ?? 'form-check-input', ENT_QUOTES, 'UTF-8');
+        $disabled    = !empty($options['disabled']) ? ' disabled' : '';
         $checkedAttr = $checked ? ' checked' : '';
 
         // Escape values
-        $escapedId = htmlspecialchars($id, ENT_QUOTES, 'UTF-8');
-        $escapedName = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
+        $escapedId    = htmlspecialchars($id, ENT_QUOTES, 'UTF-8');
+        $escapedName  = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
         $escapedValue = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
-        $labelText = htmlspecialchars(Text::_($label), ENT_QUOTES, 'UTF-8');
+        $labelText    = htmlspecialchars(Text::_($label), ENT_QUOTES, 'UTF-8');
 
         return '<div class="form-check">'
             . '<input type="radio"'
@@ -456,11 +457,11 @@ class InputHelper
      */
     public static function getButton(string $text, string $type = 'button', array $options = []): string
     {
-        $class = htmlspecialchars($options['class'] ?? 'btn btn-primary', ENT_QUOTES, 'UTF-8');
-        $id = !empty($options['id']) ? ' id="' . htmlspecialchars($options['id'], ENT_QUOTES, 'UTF-8') . '"' : '';
+        $class    = htmlspecialchars($options['class'] ?? 'btn btn-primary', ENT_QUOTES, 'UTF-8');
+        $id       = !empty($options['id']) ? ' id="' . htmlspecialchars($options['id'], ENT_QUOTES, 'UTF-8') . '"' : '';
         $disabled = !empty($options['disabled']) ? ' disabled' : '';
-        $name = !empty($options['name']) ? ' name="' . htmlspecialchars($options['name'], ENT_QUOTES, 'UTF-8') . '"' : '';
-        $value = !empty($options['value']) ? ' value="' . htmlspecialchars($options['value'], ENT_QUOTES, 'UTF-8') . '"' : '';
+        $name     = !empty($options['name']) ? ' name="' . htmlspecialchars($options['name'], ENT_QUOTES, 'UTF-8') . '"' : '';
+        $value    = !empty($options['value']) ? ' value="' . htmlspecialchars($options['value'], ENT_QUOTES, 'UTF-8') . '"' : '';
 
         // Optional icon
         $iconHtml = '';

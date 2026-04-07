@@ -60,7 +60,7 @@ class J2CommerceImageField extends FormField
         if ($multiple) {
             if (\is_string($value) && !empty($value)) {
                 $decoded = json_decode($value, true);
-                $value = \is_array($decoded) ? $decoded : [$value];
+                $value   = \is_array($decoded) ? $decoded : [$value];
             }
             if (!\is_array($value)) {
                 $value = [];
@@ -106,7 +106,7 @@ class J2CommerceImageField extends FormField
             'com_j2commerce.j2commerceimage.js',
             'media/com_j2commerce/js/administrator/j2commerceimage.js',
             ['version' => 'auto'],
-            ['defer' => true],
+            ['defer'   => true],
             ['com_j2commerce.vendor.uppy']
         );
 

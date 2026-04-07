@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  Plugin.J2Commerce.ReportItemised
@@ -67,27 +68,42 @@ class ReportitemisedModel extends BaseReportModel
     protected function populateState($ordering = 'total_qty', $direction = 'desc'): void
     {
         $search = $this->getUserStateFromRequest(
-            $this->context . '.filter.search', 'filter_search', '', 'string'
+            $this->context . '.filter.search',
+            'filter_search',
+            '',
+            'string'
         );
         $this->setState('filter.search', $search);
 
         $orderstatus = $this->getUserStateFromRequest(
-            $this->context . '.filter.orderstatus', 'filter_orderstatus', '', 'string'
+            $this->context . '.filter.orderstatus',
+            'filter_orderstatus',
+            '',
+            'string'
         );
         $this->setState('filter.orderstatus', $orderstatus);
 
         $datetype = $this->getUserStateFromRequest(
-            $this->context . '.filter.datetype', 'filter_datetype', '', 'string'
+            $this->context . '.filter.datetype',
+            'filter_datetype',
+            '',
+            'string'
         );
         $this->setState('filter.datetype', $datetype);
 
         $fromDate = $this->getUserStateFromRequest(
-            $this->context . '.filter.order_from_date', 'filter_order_from_date', '', 'string'
+            $this->context . '.filter.order_from_date',
+            'filter_order_from_date',
+            '',
+            'string'
         );
         $this->setState('filter.order_from_date', $fromDate);
 
         $toDate = $this->getUserStateFromRequest(
-            $this->context . '.filter.order_to_date', 'filter_order_to_date', '', 'string'
+            $this->context . '.filter.order_to_date',
+            'filter_order_to_date',
+            '',
+            'string'
         );
         $this->setState('filter.order_to_date', $toDate);
 

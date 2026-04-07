@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -19,7 +20,7 @@ use Joomla\Registry\Registry;
 class ConfigHelper
 {
     private static ?ConfigHelper $instance = null;
-    private static ?Registry $params = null;
+    private static ?Registry $params       = null;
 
     private function __construct()
     {

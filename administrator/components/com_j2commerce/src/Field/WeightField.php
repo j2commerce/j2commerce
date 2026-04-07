@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Field;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Field\ListField;
@@ -51,7 +52,7 @@ class WeightField extends ListField
             $query = $db->getQuery(true)
                 ->select([
                     $db->quoteName('j2commerce_weight_id', 'value'),
-                    $db->quoteName('weight_title', 'text')
+                    $db->quoteName('weight_title', 'text'),
                 ])
                 ->from($db->quoteName('#__j2commerce_weights'))
                 ->where($db->quoteName('enabled') . ' = 1')
@@ -59,7 +60,7 @@ class WeightField extends ListField
 
             // Apply unit filter if specified (e.g. filter_units="lb,kg")
             if ($this->filterUnits !== '') {
-                $units = array_map('trim', explode(',', $this->filterUnits));
+                $units  = array_map('trim', explode(',', $this->filterUnits));
                 $quoted = array_map([$db, 'quote'], $units);
                 $query->where($db->quoteName('weight_unit') . ' IN (' . implode(',', $quoted) . ')');
             }

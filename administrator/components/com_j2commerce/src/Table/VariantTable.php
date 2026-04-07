@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -217,8 +218,8 @@ class VariantTable extends Table
      */
     public function delete($pk = null): bool
     {
-        $k = $this->_tbl_key;
-        $pk = (is_null($pk)) ? $this->$k : $pk;
+        $k  = $this->_tbl_key;
+        $pk = (\is_null($pk)) ? $this->$k : $pk;
 
         // Load the record to verify it exists
         if (!$this->load($pk)) {
@@ -249,7 +250,7 @@ class VariantTable extends Table
 
         // Child tables to cascade delete
         $childTables = [
-            '#__j2commerce_productquantities' => 'variant_id',
+            '#__j2commerce_productquantities'            => 'variant_id',
             '#__j2commerce_product_variant_optionvalues' => 'variant_id',
         ];
 

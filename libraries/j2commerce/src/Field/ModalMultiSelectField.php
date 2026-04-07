@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce Library
  * @subpackage  lib_j2commerce

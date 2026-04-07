@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -19,7 +20,6 @@ use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\Database\ParameterType;
-use RuntimeException;
 
 /**
  * Ordershippings Model
@@ -43,7 +43,7 @@ class OrdershippingsModel extends ListModel
                 'ordershipping_type', 'ordershipping_price',
                 'ordershipping_name', 'ordershipping_code',
                 'ordershipping_tax', 'ordershipping_extra',
-                'ordershipping_tracking_id'
+                'ordershipping_tracking_id',
             ];
         }
 
@@ -101,7 +101,7 @@ class OrdershippingsModel extends ListModel
     protected function getListQuery()
     {
         // Create a new query object.
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         // Select the required fields from the table.
@@ -134,7 +134,7 @@ class OrdershippingsModel extends ListModel
         }
 
         // Add the list ordering clause.
-        $orderCol = $this->getState('list.ordering', 'ordershipping_name');
+        $orderCol  = $this->getState('list.ordering', 'ordershipping_name');
         $orderDirn = $this->getState('list.direction', 'ASC');
 
         if ($orderCol && $orderDirn) {
@@ -156,7 +156,7 @@ class OrdershippingsModel extends ListModel
         $items = parent::getItems();
 
         // Ensure we always return an array
-        if ($items === false || !is_array($items)) {
+        if ($items === false || !\is_array($items)) {
             // Log the error for debugging
             $app = Factory::getApplication();
             $app->enqueueMessage('Failed to retrieve order shipping data from database. Please check if the j2commerce_ordershippings table exists.', 'warning');
@@ -210,9 +210,9 @@ class OrdershippingsModel extends ListModel
      */
     public function publish(&$pks, $value = 1)
     {
-        $user = Factory::getApplication()->getIdentity();
+        $user  = Factory::getApplication()->getIdentity();
         $table = $this->getTable();
-        $pks = (array) $pks;
+        $pks   = (array) $pks;
 
         // Include the content plugins for the on-save events.
         PluginHelper::importPlugin('content');
@@ -230,7 +230,7 @@ class OrdershippingsModel extends ListModel
 
         // Attempt to change the state of the records.
         if (!$table->publish($pks, $value, $user->id)) {
-            throw new RuntimeException($table->getError());
+            throw new \RuntimeException($table->getError());
         }
 
         $context = $this->option . '.' . $this->name;
@@ -238,8 +238,8 @@ class OrdershippingsModel extends ListModel
         // Trigger the content plugins for the enabled state change.
         $result = Factory::getApplication()->triggerEvent('onContentChangeState', [$context, $pks, $value]);
 
-        if (in_array(false, $result, true)) {
-            throw new RuntimeException($table->getError());
+        if (\in_array(false, $result, true)) {
+            throw new \RuntimeException($table->getError());
         }
 
         // Clear the component's cache
@@ -259,9 +259,9 @@ class OrdershippingsModel extends ListModel
      */
     public function delete(&$pks)
     {
-        $user = Factory::getApplication()->getIdentity();
+        $user  = Factory::getApplication()->getIdentity();
         $table = $this->getTable();
-        $pks = (array) $pks;
+        $pks   = (array) $pks;
 
         // Include the content plugins for the on delete events.
         PluginHelper::importPlugin('content');
@@ -286,21 +286,21 @@ class OrdershippingsModel extends ListModel
         // Trigger the before delete event.
         $result = Factory::getApplication()->triggerEvent('onContentBeforeDelete', [$context, $table]);
 
-        if (in_array(false, $result, true)) {
-            throw new RuntimeException($table->getError());
+        if (\in_array(false, $result, true)) {
+            throw new \RuntimeException($table->getError());
         }
 
         // Attempt to delete the records.
         foreach ($pks as $pk) {
             if (!$table->delete($pk)) {
-                throw new RuntimeException($table->getError());
+                throw new \RuntimeException($table->getError());
             }
 
             // Trigger the after delete event.
             $result = Factory::getApplication()->triggerEvent('onContentAfterDelete', [$context, $table]);
 
-            if (in_array(false, $result, true)) {
-                throw new RuntimeException($table->getError());
+            if (\in_array(false, $result, true)) {
+                throw new \RuntimeException($table->getError());
             }
         }
 
@@ -321,9 +321,9 @@ class OrdershippingsModel extends ListModel
      */
     public function checkin(&$pks = [])
     {
-        $user = Factory::getApplication()->getIdentity();
+        $user  = Factory::getApplication()->getIdentity();
         $table = $this->getTable();
-        $pks = (array) $pks;
+        $pks   = (array) $pks;
 
         // If there are no primary keys set then use the instance.
         if (empty($pks)) {
@@ -338,7 +338,7 @@ class OrdershippingsModel extends ListModel
                 }
 
                 if (!$table->checkIn($pk)) {
-                    throw new RuntimeException($table->getError());
+                    throw new \RuntimeException($table->getError());
                 }
             }
         }

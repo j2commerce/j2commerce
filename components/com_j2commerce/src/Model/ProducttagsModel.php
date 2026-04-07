@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -19,7 +20,6 @@ use Joomla\CMS\Language\Multilanguage;
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\Database\ParameterType;
 use Joomla\Database\QueryInterface;
-use Joomla\Registry\Registry;
 
 class ProducttagsModel extends ListModel
 {
@@ -60,14 +60,14 @@ class ProducttagsModel extends ListModel
 
         if ($menu) {
             if (isset($menu->query['tag_ids'])) {
-                $raw = $menu->query['tag_ids'];
+                $raw    = $menu->query['tag_ids'];
                 $tagIds = \is_array($raw)
                     ? array_map('intval', $raw)
                     : [(int) $raw];
             } elseif (!empty($menu->link)) {
                 parse_str(parse_url($menu->link, PHP_URL_QUERY) ?: '', $linkQuery);
                 if (isset($linkQuery['tag_ids'])) {
-                    $raw = $linkQuery['tag_ids'];
+                    $raw    = $linkQuery['tag_ids'];
                     $tagIds = \is_array($raw)
                         ? array_map('intval', $raw)
                         : [(int) $raw];
@@ -97,16 +97,16 @@ class ProducttagsModel extends ListModel
         };
 
         $orderMapping = match ($orderBy) {
-            'date'     => 'a.' . $orderDate,
-            'title'    => 'a.title',
-            'author'   => 'a.created_by',
-            'hits'     => 'a.hits',
-            'price'    => 'v.price',
-            'popular'  => 'p.hits',
-            'order'    => 'a.ordering',
+            'date'      => 'a.' . $orderDate,
+            'title'     => 'a.title',
+            'author'    => 'a.created_by',
+            'hits'      => 'a.hits',
+            'price'     => 'v.price',
+            'popular'   => 'p.hits',
+            'order'     => 'a.ordering',
             'cat_order' => 'c.lft',
-            'featured' => 'a.featured',
-            default    => 'a.ordering',
+            'featured'  => 'a.featured',
+            default     => 'a.ordering',
         };
 
         $listOrdering  = $input->get('filter_order', '', 'cmd');
@@ -329,7 +329,7 @@ class ProducttagsModel extends ListModel
         $productfilterIds = $this->getState('filter.productfilter_ids', []);
         if (!empty($productfilterIds)) {
             $sanitizedFilterIds = implode(',', array_map('intval', $productfilterIds));
-            $subQueryPf = $db->getQuery(true);
+            $subQueryPf         = $db->getQuery(true);
             $subQueryPf->select('DISTINCT ' . $db->quoteName('pf.product_id'))
                 ->from($db->quoteName('#__j2commerce_product_filters', 'pf'))
                 ->where($db->quoteName('pf.filter_id') . ' IN (' . $sanitizedFilterIds . ')');
@@ -419,9 +419,9 @@ class ProducttagsModel extends ListModel
         float $priceFrom,
         float $priceTo
     ): void {
-        $now = Factory::getDate()->toSql();
+        $now        = Factory::getDate()->toSql();
         $userGroups = $user->getAuthorisedGroups();
-        $groupList = !empty($userGroups) ? implode(',', array_map('intval', $userGroups)) : '0';
+        $groupList  = !empty($userGroups) ? implode(',', array_map('intval', $userGroups)) : '0';
 
         // Subquery: min child variant price per product (variable, flexivariable, etc.)
         $vcSub = $db->getQuery(true)

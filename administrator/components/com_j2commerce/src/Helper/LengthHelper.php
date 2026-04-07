@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -123,7 +124,7 @@ class LengthHelper
             return;
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select($db->quoteName([
@@ -133,7 +134,7 @@ class LengthHelper
                 'length_value',
                 'num_decimals',
                 'enabled',
-                'ordering'
+                'ordering',
             ]))
             ->from($db->quoteName('#__j2commerce_lengths'))
             ->where($db->quoteName('enabled') . ' = 1')
@@ -162,7 +163,7 @@ class LengthHelper
      */
     public static function reset(): void
     {
-        self::$lengths = [];
+        self::$lengths     = [];
         self::$initialized = false;
     }
 
@@ -305,7 +306,7 @@ class LengthHelper
 
         // Get the conversion values
         $fromValue = isset(self::$lengths[$from]) ? self::$lengths[$from]['value'] : 1.0;
-        $toValue = isset(self::$lengths[$to]) ? self::$lengths[$to]['value'] : 1.0;
+        $toValue   = isset(self::$lengths[$to]) ? self::$lengths[$to]['value'] : 1.0;
 
         // Avoid division by zero
         if ($fromValue <= 0.0) {
@@ -364,11 +365,11 @@ class LengthHelper
         $options = [];
 
         foreach (self::$lengths as $id => $length) {
-            $option = new \stdClass();
+            $option        = new \stdClass();
             $option->value = $id;
-            $option->text = $length['title'] . ' (' . $length['unit'] . ')';
-            $option->unit = $length['unit'];
-            $options[] = $option;
+            $option->text  = $length['title'] . ' (' . $length['unit'] . ')';
+            $option->unit  = $length['unit'];
+            $options[]     = $option;
         }
 
         return $options;
@@ -442,7 +443,7 @@ class LengthHelper
     public static function formatValue(mixed $value, string $unit = '', ?int $lengthClassId = null): string
     {
         $floatValue = (float) $value;
-        $decimals = self::getDecimalPlaces($lengthClassId);
+        $decimals   = self::getDecimalPlaces($lengthClassId);
 
         $formatted = number_format($floatValue, $decimals, '.', '');
 

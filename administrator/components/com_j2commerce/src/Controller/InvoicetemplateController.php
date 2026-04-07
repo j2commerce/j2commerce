@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -9,11 +10,10 @@
 
 namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\EmailHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\PackingSlipHelper;
-use Joomla\CMS\Application\CMSApplication;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\FormController;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
@@ -94,7 +94,7 @@ class InvoicetemplateController extends FormController
     protected function allowEdit($data = [], $key = 'j2commerce_invoicetemplate_id')
     {
         $recordId = (int) isset($data[$key]) ? $data[$key] : 0;
-        $user = $this->app->getIdentity();
+        $user     = $this->app->getIdentity();
 
         // Zero record (id:0), return component edit permission by calling parent
         if (!$recordId) {
@@ -125,7 +125,7 @@ class InvoicetemplateController extends FormController
     protected function getRedirectToItemAppend($recordId = null, $urlVar = 'j2commerce_invoicetemplate_id')
     {
         // Need to override the parent method completely.
-        $tmpl = $this->input->get('tmpl');
+        $tmpl   = $this->input->get('tmpl');
         $layout = $this->input->get('layout', 'edit', 'string');
         $append = '';
 
@@ -153,7 +153,7 @@ class InvoicetemplateController extends FormController
 
     protected function getRedirectToListAppend()
     {
-        $tmpl = $this->input->get('tmpl');
+        $tmpl   = $this->input->get('tmpl');
         $append = '';
 
         // Setup redirect info.
@@ -252,7 +252,7 @@ class InvoicetemplateController extends FormController
             }
         }
 
-        $json['success'] = true;
+        $json['success']  = true;
         $json['presets']  = $presets;
 
         header('Content-Type: application/json');
@@ -301,14 +301,14 @@ class InvoicetemplateController extends FormController
         // Check for request forgeries.
         $this->checkToken();
 
-        $app = $this->app;
-        $lang = $app->getLanguage();
-        $model = $this->getModel();
-        $table = $model->getTable();
-        $data = $this->input->post->get('jform', [], 'array');
+        $app     = $this->app;
+        $lang    = $app->getLanguage();
+        $model   = $this->getModel();
+        $table   = $model->getTable();
+        $data    = $this->input->post->get('jform', [], 'array');
         $checkin = property_exists($table, 'checked_out');
         $context = "$this->option.edit.$this->context";
-        $task = $this->getTask();
+        $task    = $this->getTask();
 
         // Determine the name of the primary key for the data.
         if (empty($key)) {
@@ -353,7 +353,8 @@ class InvoicetemplateController extends FormController
                 $this->setRedirect(
                     Route::_(
                         'index.php?option=' . $this->option . '&view=' . $this->view_item
-                        . $this->getRedirectToItemAppend($recordId, $urlVar), false
+                        . $this->getRedirectToItemAppend($recordId, $urlVar),
+                        false
                     )
                 );
 
@@ -361,9 +362,9 @@ class InvoicetemplateController extends FormController
             }
 
             // Reset the ID, the multilingual associations and then treat the request as for Apply.
-            $data[$key] = 0;
+            $data[$key]           = 0;
             $data['associations'] = [];
-            $task = 'apply';
+            $task                 = 'apply';
         }
 
         // Access check.
@@ -411,7 +412,8 @@ class InvoicetemplateController extends FormController
             $this->setRedirect(
                 Route::_(
                     'index.php?option=' . $this->option . '&view=' . $this->view_item
-                    . $this->getRedirectToItemAppend($recordId, $urlVar), false
+                    . $this->getRedirectToItemAppend($recordId, $urlVar),
+                    false
                 )
             );
 
@@ -429,7 +431,8 @@ class InvoicetemplateController extends FormController
             $this->setRedirect(
                 Route::_(
                     'index.php?option=' . $this->option . '&view=' . $this->view_item
-                    . $this->getRedirectToItemAppend($recordId, $urlVar), false
+                    . $this->getRedirectToItemAppend($recordId, $urlVar),
+                    false
                 )
             );
 
@@ -447,7 +450,8 @@ class InvoicetemplateController extends FormController
             $this->setRedirect(
                 Route::_(
                     'index.php?option=' . $this->option . '&view=' . $this->view_item
-                    . $this->getRedirectToItemAppend($recordId, $urlVar), false
+                    . $this->getRedirectToItemAppend($recordId, $urlVar),
+                    false
                 )
             );
 

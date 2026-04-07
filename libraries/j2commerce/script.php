@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce Library
  * @subpackage  lib_j2commerce
@@ -16,7 +17,7 @@ use Joomla\Filesystem\File;
 use Joomla\Filesystem\Folder;
 
 // phpcs:disable PSR1.Files.SideEffects
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
 /**
@@ -24,8 +25,7 @@ defined('_JEXEC') or die;
  *
  * @since  1.0.0
  */
-return new class () implements InstallerScriptInterface
-{
+return new class () implements InstallerScriptInterface {
     private string $minimumJoomla = '4.4.0';
 
     /**
@@ -81,7 +81,7 @@ return new class () implements InstallerScriptInterface
     public function preflight(string $type, InstallerAdapter $adapter): bool
     {
         if (version_compare(JVERSION, $this->minimumJoomla, '<')) {
-            Factory::getApplication()->enqueueMessage(sprintf(Text::_('JLIB_INSTALLER_MINIMUM_JOOMLA'), $this->minimumJoomla), 'error');
+            Factory::getApplication()->enqueueMessage(\sprintf(Text::_('JLIB_INSTALLER_MINIMUM_JOOMLA'), $this->minimumJoomla), 'error');
             return false;
         }
 
@@ -108,16 +108,16 @@ return new class () implements InstallerScriptInterface
         $overrides = [
             [
                 'src'  => JPATH_LIBRARIES . '/j2commerce/layouts/com_users/users/modal_multiselect.php',
-                'dest' => JPATH_ADMINISTRATOR . '/templates/atum/html/com_users/users/modal_multiselect.php'
+                'dest' => JPATH_ADMINISTRATOR . '/templates/atum/html/com_users/users/modal_multiselect.php',
             ],
             [
                 'src'  => JPATH_LIBRARIES . '/j2commerce/layouts/com_content/articles/modal_multiselect.php',
-                'dest' => JPATH_ADMINISTRATOR . '/templates/atum/html/com_content/articles/modal_multiselect.php'
+                'dest' => JPATH_ADMINISTRATOR . '/templates/atum/html/com_content/articles/modal_multiselect.php',
             ],
             [
                 'src'  => JPATH_LIBRARIES . '/j2commerce/layouts/com_contact/contacts/modal_multiselect.php',
-                'dest' => JPATH_ADMINISTRATOR . '/templates/atum/html/com_contact/contacts/modal_multiselect.php'
-            ]
+                'dest' => JPATH_ADMINISTRATOR . '/templates/atum/html/com_contact/contacts/modal_multiselect.php',
+            ],
         ];
 
         // Check for additional admin templates and add overrides for them too
@@ -127,15 +127,15 @@ return new class () implements InstallerScriptInterface
             if ($template !== 'atum') {
                 $overrides[] = [
                     'src'  => JPATH_LIBRARIES . '/j2commerce/layouts/com_users/users/modal_multiselect.php',
-                    'dest' => JPATH_ADMINISTRATOR . '/templates/' . $template . '/html/com_users/users/modal_multiselect.php'
+                    'dest' => JPATH_ADMINISTRATOR . '/templates/' . $template . '/html/com_users/users/modal_multiselect.php',
                 ];
                 $overrides[] = [
                     'src'  => JPATH_LIBRARIES . '/j2commerce/layouts/com_content/articles/modal_multiselect.php',
-                    'dest' => JPATH_ADMINISTRATOR . '/templates/' . $template . '/html/com_content/articles/modal_multiselect.php'
+                    'dest' => JPATH_ADMINISTRATOR . '/templates/' . $template . '/html/com_content/articles/modal_multiselect.php',
                 ];
                 $overrides[] = [
                     'src'  => JPATH_LIBRARIES . '/j2commerce/layouts/com_contact/contacts/modal_multiselect.php',
-                    'dest' => JPATH_ADMINISTRATOR . '/templates/' . $template . '/html/com_contact/contacts/modal_multiselect.php'
+                    'dest' => JPATH_ADMINISTRATOR . '/templates/' . $template . '/html/com_contact/contacts/modal_multiselect.php',
                 ];
             }
         }
@@ -144,7 +144,7 @@ return new class () implements InstallerScriptInterface
             try {
                 if (is_file($override['src'])) {
                     // Create destination directory if it doesn't exist
-                    $destDir = dirname($override['dest']);
+                    $destDir = \dirname($override['dest']);
 
                     if (!is_dir($destDir)) {
                         if (!Folder::create($destDir, 0755)) {

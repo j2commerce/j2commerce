@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -159,10 +160,10 @@ class ImageHelper
         }
 
         // Check if it looks like a file path with an image extension
-        $extension = strtolower(pathinfo($clean, PATHINFO_EXTENSION));
+        $extension       = strtolower(pathinfo($clean, PATHINFO_EXTENSION));
         $validExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico', 'avif'];
 
-        return in_array($extension, $validExtensions, true);
+        return \in_array($extension, $validExtensions, true);
     }
 
     /**
@@ -297,12 +298,12 @@ class ImageHelper
 
         if ($hashPos !== false) {
             $result['path'] = substr($imagePath, 0, $hashPos);
-            $queryPos = strpos($imagePath, '?', $hashPos);
+            $queryPos       = strpos($imagePath, '?', $hashPos);
 
             if ($queryPos !== false) {
                 $queryString = html_entity_decode(substr($imagePath, $queryPos + 1), ENT_QUOTES, 'UTF-8');
                 parse_str($queryString, $query);
-                $result['width'] = (int) ($query['width'] ?? 0);
+                $result['width']  = (int) ($query['width'] ?? 0);
                 $result['height'] = (int) ($query['height'] ?? 0);
             }
         }
@@ -341,10 +342,10 @@ class ImageHelper
             return $imagePath;
         }
 
-        $params = self::getImageUploadParams();
+        $params     = self::getImageUploadParams();
         $normalized = self::normalizePath($imagePath);
-        $dir = dirname($normalized);
-        $file = basename($normalized);
+        $dir        = \dirname($normalized);
+        $file       = basename($normalized);
 
         if ($height <= $params['tiny_height']) {
             $candidate = $dir . '/tiny/' . $file;
@@ -378,8 +379,8 @@ class ImageHelper
 
         // Auto mode: fit within the requested width x height box preserving aspect ratio
         if ($auto && $parsed['width'] > 0 && $parsed['height'] > 0 && $width > 0 && $height > 0) {
-            $ratio = $parsed['width'] / $parsed['height'];
-            $fitWidth = (int) round($height * $ratio);
+            $ratio     = $parsed['width'] / $parsed['height'];
+            $fitWidth  = (int) round($height * $ratio);
             $fitHeight = (int) round($width / $ratio);
 
             if ($fitWidth <= $width) {
@@ -390,7 +391,7 @@ class ImageHelper
         }
 
         $resolved = self::resolveImageVersion($parsed['path'], $height);
-        $url = self::getImageUrl($resolved);
+        $url      = self::getImageUrl($resolved);
 
         if ($output === 'raw') {
             return $url;
@@ -407,7 +408,7 @@ class ImageHelper
             }
         }
 
-        $attrs = ['src="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '"'];
+        $attrs   = ['src="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '"'];
         $attrs[] = 'alt="' . htmlspecialchars($alt, ENT_QUOTES, 'UTF-8') . '"';
 
         if ($height > 0) {
@@ -459,7 +460,7 @@ class ImageHelper
         }
 
         $normalized = strtolower(str_replace('-', '_', $langCode));
-        $relPath = 'media/mod_languages/images/' . $normalized . '.gif';
+        $relPath    = 'media/mod_languages/images/' . $normalized . '.gif';
 
         if (file_exists(JPATH_SITE . '/' . $relPath)) {
             return $relPath;
@@ -470,7 +471,7 @@ class ImageHelper
 
     public static function reset(): void
     {
-        self::$instance = null;
+        self::$instance          = null;
         self::$imageUploadParams = null;
     }
 }

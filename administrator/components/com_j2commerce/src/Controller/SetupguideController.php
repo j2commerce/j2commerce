@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\SetupGuide\SetupGuideHelper;
 use Joomla\CMS\Application\ApplicationHelper;
@@ -116,11 +116,11 @@ class SetupguideController extends BaseController
 
         try {
             match ($action) {
-                'enable_plugin'    => $this->handleEnablePlugin($params['folder'] ?? '', $params['element'] ?? ''),
-                'create_menu_item' => $this->handleCreateMenuItem($params['link'] ?? '', $params['title'] ?? ''),
+                'enable_plugin'     => $this->handleEnablePlugin($params['folder'] ?? '', $params['element'] ?? ''),
+                'create_menu_item'  => $this->handleCreateMenuItem($params['link'] ?? '', $params['title'] ?? ''),
                 'publish_menu_item' => $this->handlePublishMenuItem((int) ($params['menuItemId'] ?? 0)),
-                'save_param'       => $this->handleSaveParam($params['param_name'] ?? '', $params['param_value'] ?? ''),
-                default            => throw new \InvalidArgumentException('Unknown action: ' . $action),
+                'save_param'        => $this->handleSaveParam($params['param_name'] ?? '', $params['param_value'] ?? ''),
+                default             => throw new \InvalidArgumentException('Unknown action: ' . $action),
             };
 
             $this->jsonSuccess(null, Text::_('JLIB_APPLICATION_SAVE_SUCCESS'));
@@ -198,7 +198,7 @@ class SetupguideController extends BaseController
             'content/j2commerce',
         ];
 
-        if (!in_array($folder . '/' . $element, $allowed, true)) {
+        if (!\in_array($folder . '/' . $element, $allowed, true)) {
             throw new \InvalidArgumentException('Plugin not in allowlist: ' . $folder . '/' . $element);
         }
 
@@ -234,11 +234,11 @@ class SetupguideController extends BaseController
         $menuTypeId = $db->setQuery($query)->loadResult();
 
         if (!$menuTypeId) {
-            $menuType          = new \stdClass();
-            $menuType->menutype  = 'j2commerce';
-            $menuType->title     = 'J2Commerce';
+            $menuType              = new \stdClass();
+            $menuType->menutype    = 'j2commerce';
+            $menuType->title       = 'J2Commerce';
             $menuType->description = '';
-            $menuType->client_id = 0;
+            $menuType->client_id   = 0;
             $db->insertObject('#__menu_types', $menuType);
         }
 
@@ -297,7 +297,7 @@ class SetupguideController extends BaseController
     {
         $allowlist = ['downloadid'];
 
-        if (!in_array($paramName, $allowlist, true)) {
+        if (!\in_array($paramName, $allowlist, true)) {
             throw new \InvalidArgumentException(Text::_('COM_J2COMMERCE_SETUP_GUIDE_PARAM_NOT_ALLOWED'));
         }
 

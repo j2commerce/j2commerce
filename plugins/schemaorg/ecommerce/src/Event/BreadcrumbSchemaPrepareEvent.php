@@ -185,8 +185,8 @@ class BreadcrumbSchemaPrepareEvent extends AbstractSchemaEvent
      */
     public function removeBreadcrumbItem(int $position): void
     {
-        $items = $this->getBreadcrumbItems();
-        $newItems = [];
+        $items      = $this->getBreadcrumbItems();
+        $newItems   = [];
         $adjustment = 0;
 
         foreach ($items as $item) {

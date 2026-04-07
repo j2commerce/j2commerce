@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\CliCommands;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\Console\Command\AbstractCommand;
 use Joomla\Filesystem\File;
@@ -46,8 +47,8 @@ class CreatePluginCommand extends AbstractCommand
         $name = strtolower($input->getArgument('name'));
 
         // Validate type
-        if (!in_array($type, self::ALLOWED_TYPES)) {
-            $io->error(sprintf('Invalid type "%s". Allowed types: %s', $type, implode(', ', self::ALLOWED_TYPES)));
+        if (!\in_array($type, self::ALLOWED_TYPES)) {
+            $io->error(\sprintf('Invalid type "%s". Allowed types: %s', $type, implode(', ', self::ALLOWED_TYPES)));
             return 1;
         }
 
@@ -63,26 +64,26 @@ class CreatePluginCommand extends AbstractCommand
             : $this->collectOptions($io, $type, $name);
 
         // Get output path — default to plugins/j2commerce/ (overridable via --path)
-        $path = $input->getOption('path') ?? JPATH_PLUGINS . '/j2commerce';
+        $path  = $input->getOption('path') ?? JPATH_PLUGINS . '/j2commerce';
         $force = $input->getOption('force');
 
         // Generate plugin
         try {
             $scaffolder = new PluginScaffolder($type, $name, $options);
-            $files = $scaffolder->generate($path, $force);
+            $files      = $scaffolder->generate($path, $force);
         } catch (\RuntimeException $e) {
             $io->error($e->getMessage());
             return 4;
         }
 
         $element = $type . '_' . $name;
-        $io->success(sprintf('Created %s plugin: %s', $type, $element));
-        $io->listing(array_map(fn($f) => basename(dirname($f)) . '/' . basename($f), $files));
+        $io->success(\sprintf('Created %s plugin: %s', $type, $element));
+        $io->listing(array_map(fn ($f) => basename(\dirname($f)) . '/' . basename($f), $files));
 
         // Install if requested
         if ($input->getOption('install')) {
-            $pluginPath = rtrim($path, '/\\') . '/' . $element;
-            $destPath = JPATH_PLUGINS . '/j2commerce/' . $element;
+            $pluginPath     = rtrim($path, '/\\') . '/' . $element;
+            $destPath       = JPATH_PLUGINS . '/j2commerce/' . $element;
             $alreadyInPlace = is_dir($pluginPath) && is_dir($destPath)
                 && realpath($pluginPath) === realpath($destPath);
 
@@ -104,7 +105,7 @@ class CreatePluginCommand extends AbstractCommand
 
     private function collectOptions(SymfonyStyle $io, string $type, string $name): array
     {
-        $io->title(sprintf('Creating %s plugin', ucfirst($type)));
+        $io->title(\sprintf('Creating %s plugin', ucfirst($type)));
         $io->text('Answer the following questions to customize your plugin:');
         $io->newLine();
 
@@ -113,25 +114,25 @@ class CreatePluginCommand extends AbstractCommand
         $options = ['display_name' => $displayName];
 
         if ($type === 'payment') {
-            $options['sandbox'] = $io->confirm('Include sandbox mode support?', true);
+            $options['sandbox']             = $io->confirm('Include sandbox mode support?', true);
             $options['sandbox_credentials'] = $options['sandbox']
                 ? $io->confirm('Include sandbox credential fields?', true)
                 : false;
-            $options['webhook'] = $io->confirm('Include webhook support?', false);
-            $options['surcharge'] = $io->confirm('Include surcharge support?', true);
-            $options['geozone'] = $io->confirm('Include geozone restriction?', true);
+            $options['webhook']         = $io->confirm('Include webhook support?', false);
+            $options['surcharge']       = $io->confirm('Include surcharge support?', true);
+            $options['geozone']         = $io->confirm('Include geozone restriction?', true);
             $options['minmax_subtotal'] = $io->confirm('Include min/max subtotal limits?', false);
-            $options['debug'] = $io->confirm('Include debug logging?', true);
+            $options['debug']           = $io->confirm('Include debug logging?', true);
         }
 
         if ($type === 'shipping') {
-            $options['api_credentials'] = $io->confirm('Include API credentials?', true);
-            $options['sandbox'] = $io->confirm('Include sandbox mode support?', true);
-            $options['surcharge'] = $io->confirm('Include surcharge support?', true);
-            $options['geozone'] = $io->confirm('Include geozone restriction?', true);
-            $options['shipping_tax'] = $io->confirm('Include shipping tax (tax profile field)?', true);
+            $options['api_credentials']   = $io->confirm('Include API credentials?', true);
+            $options['sandbox']           = $io->confirm('Include sandbox mode support?', true);
+            $options['surcharge']         = $io->confirm('Include surcharge support?', true);
+            $options['geozone']           = $io->confirm('Include geozone restriction?', true);
+            $options['shipping_tax']      = $io->confirm('Include shipping tax (tax profile field)?', true);
             $options['custom_rate_table'] = $io->confirm('Include custom rate table?', false);
-            $options['debug'] = $io->confirm('Include debug logging?', true);
+            $options['debug']             = $io->confirm('Include debug logging?', true);
         }
 
         return $options;
@@ -143,22 +144,22 @@ class CreatePluginCommand extends AbstractCommand
 
         return match ($type) {
             'payment' => $base + [
-                'sandbox' => true,
+                'sandbox'             => true,
                 'sandbox_credentials' => true,
-                'webhook' => false,
-                'surcharge' => true,
-                'geozone' => true,
-                'minmax_subtotal' => false,
-                'debug' => true,
+                'webhook'             => false,
+                'surcharge'           => true,
+                'geozone'             => true,
+                'minmax_subtotal'     => false,
+                'debug'               => true,
             ],
             default => $base + [
-                'api_credentials' => true,
-                'sandbox' => true,
-                'surcharge' => true,
-                'geozone' => true,
-                'shipping_tax' => true,
+                'api_credentials'   => true,
+                'sandbox'           => true,
+                'surcharge'         => true,
+                'geozone'           => true,
+                'shipping_tax'      => true,
                 'custom_rate_table' => false,
-                'debug' => true,
+                'debug'             => true,
             ],
         };
     }

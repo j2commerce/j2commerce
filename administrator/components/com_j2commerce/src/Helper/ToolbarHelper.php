@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -91,12 +92,12 @@ class ToolbarHelper
         $toolbar = self::getToolbar();
 
         // Build export URL with CSV format
-        $uri = Uri::getInstance();
-        $query = $uri->getQuery(true);
+        $uri             = Uri::getInstance();
+        $query           = $uri->getQuery(true);
         $query['format'] = 'csv';
         $query['option'] = 'com_j2commerce';
-        $query['view'] = $view;
-        $query['task'] = $task;
+        $query['view']   = $view;
+        $query['task']   = $task;
 
         $uri->setQuery($query);
         $exportUrl = $uri->toString();
@@ -272,7 +273,7 @@ class ToolbarHelper
         bool $canEditState = false,
         bool $canDelete = false
     ): void {
-        $toolbar = self::getToolbar();
+        $toolbar    = self::getToolbar();
         $pluralName = $singularName . 's';
 
         if ($canCreate) {

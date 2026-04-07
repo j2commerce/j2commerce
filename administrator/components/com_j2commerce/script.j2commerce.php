@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -24,8 +25,8 @@ class Com_J2commerceInstallerScript extends InstallerScript
 {
     protected $minimumJoomlaVersion = '6.0';
     protected $maximumJoomlaVersion = '6.99.99';
-    protected $minimumPhpVersion = '8.1';
-    private string $debugLogFile = '';
+    protected $minimumPhpVersion    = '8.1';
+    private string $debugLogFile    = '';
 
     private function debugLog(string $message): void
     {
@@ -48,12 +49,12 @@ class Com_J2commerceInstallerScript extends InstallerScript
             return false;
         }
 
-        if (!function_exists('curl_init') || !is_callable('curl_init')) {
+        if (!\function_exists('curl_init') || !\is_callable('curl_init')) {
             Log::add('cURL extension is not enabled in your PHP installation.', Log::WARNING, 'jerror');
             return false;
         }
 
-        if (!function_exists('json_encode')) {
+        if (!\function_exists('json_encode')) {
             Log::add('JSON extension is not enabled in your PHP installation.', Log::WARNING, 'jerror');
             return false;
         }
@@ -71,9 +72,9 @@ class Com_J2commerceInstallerScript extends InstallerScript
 
     private function repairMissingTables($parent): void
     {
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db        = Factory::getContainer()->get(DatabaseInterface::class);
         $allTables = $db->getTableList();
-        $prefix = $db->getPrefix();
+        $prefix    = $db->getPrefix();
 
         $coreTables = [
             'j2commerce_products',
@@ -85,7 +86,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
         $missing = 0;
 
         foreach ($coreTables as $table) {
-            if (!in_array($prefix . $table, $allTables)) {
+            if (!\in_array($prefix . $table, $allTables)) {
                 $missing++;
             }
         }
@@ -97,7 +98,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
         $this->debugLog("REPAIR: {$missing} core tables missing — running install SQL");
 
         $installer = $parent->getParent();
-        $sqlFile = $installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install.mysql.utf8.sql';
+        $sqlFile   = $installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install.mysql.utf8.sql';
 
         if (!file_exists($sqlFile)) {
             $this->debugLog("REPAIR: install SQL file not found at {$sqlFile}");
@@ -201,11 +202,11 @@ class Com_J2commerceInstallerScript extends InstallerScript
         }
 
         $skipTypes = ['spacer', 'button', 'note', 'cronlasthit', 'queuekey', 'currencymanager'];
-        $defaults = [];
+        $defaults  = [];
 
         foreach ($xml->xpath('//field[@name and @default]') as $field) {
-            $name = (string) $field['name'];
-            $type = strtolower((string) ($field['type'] ?? ''));
+            $name    = (string) $field['name'];
+            $type    = strtolower((string) ($field['type'] ?? ''));
             $default = (string) $field['default'];
 
             if (\in_array($type, $skipTypes, true) || $default === '') {
@@ -220,7 +221,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
         }
 
         $registry = new Registry($defaults);
-        $params = $registry->toString();
+        $params   = $registry->toString();
 
         $update = $db->getQuery(true)
             ->update($db->quoteName('#__extensions'))
@@ -298,13 +299,13 @@ class Com_J2commerceInstallerScript extends InstallerScript
     {
         $this->debugLog("LOCALISATION: start");
         $installer = $parent->getParent();
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db        = Factory::getContainer()->get(DatabaseInterface::class);
         $alltables = $db->getTableList();
-        $prefix = $db->getPrefix();
+        $prefix    = $db->getPrefix();
 
         // Install countries if needed
         try {
-            $needsCountries = !in_array($prefix . 'j2commerce_countries', $alltables);
+            $needsCountries = !\in_array($prefix . 'j2commerce_countries', $alltables);
 
             if (!$needsCountries) {
                 $query = $db->getQuery(true)
@@ -324,7 +325,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
 
         // Install zones if needed
         try {
-            $needsZones = !in_array($prefix . 'j2commerce_zones', $alltables);
+            $needsZones = !\in_array($prefix . 'j2commerce_zones', $alltables);
 
             if (!$needsZones) {
                 $query = $db->getQuery(true)
@@ -353,7 +354,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
 
         // Install email templates if needed
         try {
-            $needsEmails = !in_array($prefix . 'j2commerce_emailtemplates', $alltables);
+            $needsEmails = !\in_array($prefix . 'j2commerce_emailtemplates', $alltables);
 
             if (!$needsEmails) {
                 $query = $db->getQuery(true)
@@ -373,7 +374,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
 
         // Install invoice templates if needed
         try {
-            $needsInvoices = !in_array($prefix . 'j2commerce_invoicetemplates', $alltables);
+            $needsInvoices = !\in_array($prefix . 'j2commerce_invoicetemplates', $alltables);
 
             if (!$needsInvoices) {
                 $query = $db->getQuery(true)
@@ -393,7 +394,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
 
         // Install guided tours if guided tours exist
         try {
-            $guidedToursExist = (in_array($prefix . 'guidedtours', $alltables) && in_array($prefix . 'guidedtour_steps', $alltables));
+            $guidedToursExist = (\in_array($prefix . 'guidedtours', $alltables) && \in_array($prefix . 'guidedtour_steps', $alltables));
 
             if ($guidedToursExist) {
                 $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/guidedtours.sql');
@@ -412,7 +413,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
         }
 
         $this->debugLog("SQL DIRECT: executing {$sqlPath} (" . filesize($sqlPath) . " bytes)");
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db  = Factory::getContainer()->get(DatabaseInterface::class);
         $sql = trim(file_get_contents($sqlPath));
 
         if ($sql === '') {
@@ -438,12 +439,12 @@ class Com_J2commerceInstallerScript extends InstallerScript
         }
 
         $this->debugLog("SQL FILE: executing {$sqlPath}");
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db      = Factory::getContainer()->get(DatabaseInterface::class);
         $queries = DatabaseDriver::splitSql(file_get_contents($sqlPath));
-        $this->debugLog("SQL FILE: " . count($queries) . " queries found");
+        $this->debugLog("SQL FILE: " . \count($queries) . " queries found");
 
         $executed = 0;
-        $skipped = 0;
+        $skipped  = 0;
         foreach ($queries as $query) {
             $query = trim($query);
             if ($query !== '' && $query[0] !== '#') {

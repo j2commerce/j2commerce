@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Site\Model;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use Joomla\CMS\Categories\Categories;
@@ -20,7 +21,6 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Multilanguage;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 use Joomla\Database\ParameterType;
-use Joomla\Registry\Registry;
 
 /**
  * Categories model for site frontend.
@@ -73,7 +73,7 @@ class CategoriesModel extends BaseDatabaseModel
      */
     protected function populateState(): void
     {
-        $app = Factory::getApplication();
+        $app    = Factory::getApplication();
         $params = $app->getParams();
 
         $this->setState('params', $params);
@@ -136,7 +136,7 @@ class CategoriesModel extends BaseDatabaseModel
 
         $parentId = (int) $this->getState('filter.parent_id', 1);
 
-        $categories = Categories::getInstance('Content');
+        $categories    = Categories::getInstance('Content');
         $this->_parent = $categories->get($parentId);
 
         return $this->_parent;
@@ -169,8 +169,8 @@ class CategoriesModel extends BaseDatabaseModel
 
         $showSubcategories = (int) $this->getState('filter.show_subcategories', 1);
         $subcategoryLevels = (int) $this->getState('filter.subcategory_levels', 1);
-        $showEmpty = (int) $this->getState('filter.show_empty', 0);
-        $accessLevels = $this->getState('filter.access', [1]);
+        $showEmpty         = (int) $this->getState('filter.show_empty', 0);
+        $accessLevels      = $this->getState('filter.access', [1]);
 
         // Get children of parent category
         $children = $parent->getChildren();
@@ -188,7 +188,7 @@ class CategoriesModel extends BaseDatabaseModel
 
         foreach ($children as $category) {
             // Check access level
-            if (!in_array((int) $category->access, $accessLevels, true)) {
+            if (!\in_array((int) $category->access, $accessLevels, true)) {
                 continue;
             }
 
@@ -201,21 +201,21 @@ class CategoriesModel extends BaseDatabaseModel
             }
 
             // Build category item
-            $item = new \stdClass();
-            $item->id = $category->id;
-            $item->title = $category->title;
-            $item->alias = $category->alias;
-            $item->description = $category->description ?? '';
-            $item->path = $category->path ?? '';
-            $item->parent_id = $category->parent_id;
-            $item->level = $category->level;
-            $item->access = $category->access;
-            $item->language = $category->language ?? '*';
+            $item                = new \stdClass();
+            $item->id            = $category->id;
+            $item->title         = $category->title;
+            $item->alias         = $category->alias;
+            $item->description   = $category->description ?? '';
+            $item->path          = $category->path ?? '';
+            $item->parent_id     = $category->parent_id;
+            $item->level         = $category->level;
+            $item->access        = $category->access;
+            $item->language      = $category->language ?? '*';
             $item->product_count = $productCount;
 
             // Get category image from params
-            $catParams = $category->getParams();
-            $item->image = $catParams->get('image', '');
+            $catParams       = $category->getParams();
+            $item->image     = $catParams->get('image', '');
             $item->image_alt = $catParams->get('image_alt', '');
 
             // Get children if enabled
@@ -270,7 +270,7 @@ class CategoriesModel extends BaseDatabaseModel
 
         foreach ($children as $category) {
             // Check access level
-            if (!in_array((int) $category->access, $accessLevels, true)) {
+            if (!\in_array((int) $category->access, $accessLevels, true)) {
                 continue;
             }
 
@@ -281,21 +281,21 @@ class CategoriesModel extends BaseDatabaseModel
                 continue;
             }
 
-            $item = new \stdClass();
-            $item->id = $category->id;
-            $item->title = $category->title;
-            $item->alias = $category->alias;
-            $item->description = $category->description ?? '';
-            $item->path = $category->path ?? '';
-            $item->parent_id = $category->parent_id;
-            $item->level = $category->level;
-            $item->access = $category->access;
-            $item->language = $category->language ?? '*';
+            $item                = new \stdClass();
+            $item->id            = $category->id;
+            $item->title         = $category->title;
+            $item->alias         = $category->alias;
+            $item->description   = $category->description ?? '';
+            $item->path          = $category->path ?? '';
+            $item->parent_id     = $category->parent_id;
+            $item->level         = $category->level;
+            $item->access        = $category->access;
+            $item->language      = $category->language ?? '*';
             $item->product_count = $productCount;
 
             // Get category image from params
-            $catParams = $category->getParams();
-            $item->image = $catParams->get('image', '');
+            $catParams       = $category->getParams();
+            $item->image     = $catParams->get('image', '');
             $item->image_alt = $catParams->get('image_alt', '');
 
             // Get children if levels remain
@@ -357,7 +357,7 @@ class CategoriesModel extends BaseDatabaseModel
      */
     protected function getProductCounts(): array
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         $query->select([
@@ -410,10 +410,10 @@ class CategoriesModel extends BaseDatabaseModel
             return $this->_products;
         }
 
-        $db = $this->getDatabase();
-        $query = $db->getQuery(true);
-        $params = $this->getState('params');
-        $user = $this->getCurrentUser();
+        $db       = $this->getDatabase();
+        $query    = $db->getQuery(true);
+        $params   = $this->getState('params');
+        $user     = $this->getCurrentUser();
         $parentId = (int) $this->getState('filter.parent_id', 1);
 
         // Select product fields
@@ -502,25 +502,25 @@ class CategoriesModel extends BaseDatabaseModel
         }
 
         // Ordering from menu item params
-        $orderBy = $params->get('orderby_sec', 'order');
+        $orderBy        = $params->get('orderby_sec', 'order');
         $orderDirection = $params->get('list_order_direction', 'ASC');
-        $orderDate = match ($params->get('order_date', 'created')) {
+        $orderDate      = match ($params->get('order_date', 'created')) {
             'published' => 'publish_up',
-            default => $params->get('order_date', 'created'),
+            default     => $params->get('order_date', 'created'),
         };
 
         // Map ordering param to actual SQL ordering
         $orderMapping = match ($orderBy) {
-            'date' => 'a.' . $orderDate,
-            'title' => 'a.title',
-            'author' => 'a.created_by',
-            'hits' => 'a.hits',
-            'price' => 'v.price',
-            'popular' => 'p.hits',
-            'order' => 'a.ordering',
+            'date'      => 'a.' . $orderDate,
+            'title'     => 'a.title',
+            'author'    => 'a.created_by',
+            'hits'      => 'a.hits',
+            'price'     => 'v.price',
+            'popular'   => 'p.hits',
+            'order'     => 'a.ordering',
             'cat_order' => 'c.lft',
-            'featured' => 'a.featured',
-            default => 'a.ordering',
+            'featured'  => 'a.featured',
+            default     => 'a.ordering',
         };
 
         $query->order($db->escape($orderMapping) . ' ' . $db->escape(strtoupper($orderDirection) === 'DESC' ? 'DESC' : 'ASC'));
@@ -547,7 +547,7 @@ class CategoriesModel extends BaseDatabaseModel
             if ($product) {
                 // Merge list-level data with full product
                 $product->article_ordering = $item->ordering ?? 0;
-                $product->article_hits = $item->hits ?? 0;
+                $product->article_hits     = $item->hits ?? 0;
                 $product->article_featured = $item->featured ?? 0;
 
                 $hydratedItems[] = $product;
@@ -561,13 +561,13 @@ class CategoriesModel extends BaseDatabaseModel
 
     public function getPopularProducts(int $categoryId, int $limit = 12): array
     {
-        $db = $this->getDatabase();
-        $query = $db->getQuery(true);
-        $user = $this->getCurrentUser();
+        $db     = $this->getDatabase();
+        $query  = $db->getQuery(true);
+        $user   = $this->getCurrentUser();
         $groups = $user->getAuthorisedViewLevels();
 
         // Get category and all its descendant IDs for deep product aggregation
-        $categoryIds = $this->getCategoryDescendants($categoryId);
+        $categoryIds   = $this->getCategoryDescendants($categoryId);
         $categoryIds[] = $categoryId;
 
         $query->select([
@@ -578,11 +578,17 @@ class CategoriesModel extends BaseDatabaseModel
                 $db->quoteName('a.hits'),
             ])
             ->from($db->quoteName('#__j2commerce_products', 'p'))
-            ->join('INNER', $db->quoteName('#__content', 'a'),
+            ->join(
+                'INNER',
+                $db->quoteName('#__content', 'a'),
                 $db->quoteName('a.id') . ' = ' . $db->quoteName('p.product_source_id')
-                . ' AND ' . $db->quoteName('p.product_source') . ' = ' . $db->quote('com_content'))
-            ->join('LEFT', $db->quoteName('#__categories', 'c'),
-                $db->quoteName('c.id') . ' = ' . $db->quoteName('a.catid'))
+                . ' AND ' . $db->quoteName('p.product_source') . ' = ' . $db->quote('com_content')
+            )
+            ->join(
+                'LEFT',
+                $db->quoteName('#__categories', 'c'),
+                $db->quoteName('c.id') . ' = ' . $db->quoteName('a.catid')
+            )
             ->where($db->quoteName('p.enabled') . ' = 1')
             ->where($db->quoteName('p.visibility') . ' = 1')
             ->where($db->quoteName('a.state') . ' = 1')
@@ -593,9 +599,11 @@ class CategoriesModel extends BaseDatabaseModel
             ->setLimit($limit);
 
         if (Multilanguage::isEnabled()) {
-            $query->whereIn($db->quoteName('a.language'),
+            $query->whereIn(
+                $db->quoteName('a.language'),
                 [Factory::getApplication()->getLanguage()->getTag(), '*'],
-                ParameterType::STRING);
+                ParameterType::STRING
+            );
         }
 
         $db->setQuery($query);
@@ -619,13 +627,13 @@ class CategoriesModel extends BaseDatabaseModel
     protected function getCategoryDescendants(int $categoryId): array
     {
         $categories = Categories::getInstance('Content');
-        $node = $categories->get($categoryId);
+        $node       = $categories->get($categoryId);
 
         if (!$node) {
             return [];
         }
 
-        $ids = [];
+        $ids      = [];
         $children = $node->getChildren(true);
 
         foreach ($children as $child) {
@@ -638,20 +646,20 @@ class CategoriesModel extends BaseDatabaseModel
     public function getSiblingCategories(int $categoryId): array
     {
         $categories = Categories::getInstance('Content');
-        $node = $categories->get($categoryId);
+        $node       = $categories->get($categoryId);
 
         if (!$node || !$node->getParent()) {
             return [];
         }
 
-        $parent = $node->getParent();
-        $siblings = $parent->getChildren();
+        $parent        = $node->getParent();
+        $siblings      = $parent->getChildren();
         $productCounts = $this->getProductCounts();
-        $accessLevels = $this->getState('filter.access', [1]);
-        $items = [];
+        $accessLevels  = $this->getState('filter.access', [1]);
+        $items         = [];
 
         foreach ($siblings as $sibling) {
-            if (!in_array((int) $sibling->access, $accessLevels, true)) {
+            if (!\in_array((int) $sibling->access, $accessLevels, true)) {
                 continue;
             }
 

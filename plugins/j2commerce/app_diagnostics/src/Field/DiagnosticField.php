@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  plg_j2commerce_app_diagnostics
@@ -14,7 +15,6 @@ namespace J2Commerce\Plugin\J2Commerce\AppDiagnostics\Field;
 // phpcs:enable PSR1.Files.SideEffects
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
-use J2Commerce\Plugin\J2Commerce\AppDiagnostics\Extension\AppDiagnostics;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\FormField;
 use Joomla\CMS\Language\Text;
@@ -34,7 +34,7 @@ class DiagnosticField extends FormField
     protected function getInput(): string
     {
         $diagnostics = $this->getInfo();
-        $cronKey = J2CommerceHelper::config()->get('queue_key', '');
+        $cronKey     = J2CommerceHelper::config()->get('queue_key', '');
 
         $html = [];
 
@@ -56,19 +56,19 @@ class DiagnosticField extends FormField
         $html[] = '<tbody>';
 
         $rows = [
-            'PLG_J2COMMERCE_APP_DIAGNOSTICS_PHP_BUILT_ON'      => php_uname(),
-            'PLG_J2COMMERCE_APP_DIAGNOSTICS_WEB_SERVER'        => $diagnostics['server'],
-            'PLG_J2COMMERCE_APP_DIAGNOSTICS_PHP_VERSION'       => $diagnostics['phpversion'],
-            'PLG_J2COMMERCE_APP_DIAGNOSTICS_JOOMLA_VERSION'    => $diagnostics['version'],
+            'PLG_J2COMMERCE_APP_DIAGNOSTICS_PHP_BUILT_ON'       => php_uname(),
+            'PLG_J2COMMERCE_APP_DIAGNOSTICS_WEB_SERVER'         => $diagnostics['server'],
+            'PLG_J2COMMERCE_APP_DIAGNOSTICS_PHP_VERSION'        => $diagnostics['phpversion'],
+            'PLG_J2COMMERCE_APP_DIAGNOSTICS_JOOMLA_VERSION'     => $diagnostics['version'],
             'PLG_J2COMMERCE_APP_DIAGNOSTICS_J2COMMERCE_VERSION' => $diagnostics['j2c_version'],
-            'PLG_J2COMMERCE_APP_DIAGNOSTICS_MEMORY_LIMIT'      => $diagnostics['memory_limit'],
-            'PLG_J2COMMERCE_APP_DIAGNOSTICS_CURL'              => $diagnostics['curl'],
-            'PLG_J2COMMERCE_APP_DIAGNOSTICS_JSON'              => $diagnostics['json'],
-            'PLG_J2COMMERCE_APP_DIAGNOSTICS_ERROR_REPORTING'   => $diagnostics['error_reporting'],
-            'PLG_J2COMMERCE_APP_DIAGNOSTICS_CACHE'             => $diagnostics['caching'],
-            'PLG_J2COMMERCE_APP_DIAGNOSTICS_CACHE_PLUGIN'      => $diagnostics['plg_cache_enabled'],
-            'PLG_J2COMMERCE_APP_DIAGNOSTICS_DB_VERSION'        => $diagnostics['dbversion'],
-            'PLG_J2COMMERCE_APP_DIAGNOSTICS_DB_COLLATION'      => $diagnostics['dbcollation'],
+            'PLG_J2COMMERCE_APP_DIAGNOSTICS_MEMORY_LIMIT'       => $diagnostics['memory_limit'],
+            'PLG_J2COMMERCE_APP_DIAGNOSTICS_CURL'               => $diagnostics['curl'],
+            'PLG_J2COMMERCE_APP_DIAGNOSTICS_JSON'               => $diagnostics['json'],
+            'PLG_J2COMMERCE_APP_DIAGNOSTICS_ERROR_REPORTING'    => $diagnostics['error_reporting'],
+            'PLG_J2COMMERCE_APP_DIAGNOSTICS_CACHE'              => $diagnostics['caching'],
+            'PLG_J2COMMERCE_APP_DIAGNOSTICS_CACHE_PLUGIN'       => $diagnostics['plg_cache_enabled'],
+            'PLG_J2COMMERCE_APP_DIAGNOSTICS_DB_VERSION'         => $diagnostics['dbversion'],
+            'PLG_J2COMMERCE_APP_DIAGNOSTICS_DB_COLLATION'       => $diagnostics['dbcollation'],
         ];
 
         foreach ($rows as $label => $value) {
@@ -109,30 +109,30 @@ class DiagnosticField extends FormField
     private function getInfo(): array
     {
         $version = new Version();
-        $db = Factory::getContainer()->get('DatabaseDriver');
-        $config = Factory::getApplication()->getConfig();
+        $db      = Factory::getContainer()->get('DatabaseDriver');
+        $config  = Factory::getApplication()->getConfig();
 
-        $server = $_SERVER['SERVER_SOFTWARE'] ?? getenv('SERVER_SOFTWARE') ?: '';
-        $caching = $config->get('caching');
+        $server      = $_SERVER['SERVER_SOFTWARE'] ?? getenv('SERVER_SOFTWARE') ?: '';
+        $caching     = $config->get('caching');
         $cachePlugin = PluginHelper::isEnabled('system', 'cache');
 
         return [
-            'php'              => php_uname(),
-            'dbversion'        => $db->getVersion(),
-            'dbcollation'      => $db->getCollation(),
-            'phpversion'       => phpversion(),
-            'server'           => $server,
-            'sapi_name'        => php_sapi_name(),
-            'version'          => $version->getLongVersion(),
-            'useragent'        => $_SERVER['HTTP_USER_AGENT'] ?? '',
-            'j2c_version'      => $this->getJ2CommerceVersion(),
-            'is_pro'           => J2CommerceHelper::isPro(),
-            'curl'             => \function_exists('curl_version') ? Text::_('JENABLED') : Text::_('JDISABLED'),
-            'json'             => \function_exists('json_encode') ? Text::_('JENABLED') : Text::_('JDISABLED'),
-            'error_reporting'  => $config->get('error_reporting'),
-            'caching'          => $caching ? Text::_('JENABLED') : Text::_('JDISABLED'),
+            'php'               => php_uname(),
+            'dbversion'         => $db->getVersion(),
+            'dbcollation'       => $db->getCollation(),
+            'phpversion'        => phpversion(),
+            'server'            => $server,
+            'sapi_name'         => php_sapi_name(),
+            'version'           => $version->getLongVersion(),
+            'useragent'         => $_SERVER['HTTP_USER_AGENT'] ?? '',
+            'j2c_version'       => $this->getJ2CommerceVersion(),
+            'is_pro'            => J2CommerceHelper::isPro(),
+            'curl'              => \function_exists('curl_version') ? Text::_('JENABLED') : Text::_('JDISABLED'),
+            'json'              => \function_exists('json_encode') ? Text::_('JENABLED') : Text::_('JDISABLED'),
+            'error_reporting'   => $config->get('error_reporting'),
+            'caching'           => $caching ? Text::_('JENABLED') : Text::_('JDISABLED'),
             'plg_cache_enabled' => $cachePlugin ? Text::_('JENABLED') : Text::_('JDISABLED'),
-            'memory_limit'     => ini_get('memory_limit'),
+            'memory_limit'      => \ini_get('memory_limit'),
         ];
     }
 
@@ -145,7 +145,7 @@ class DiagnosticField extends FormField
      */
     private function getJ2CommerceVersion(): string
     {
-        $db = Factory::getContainer()->get('DatabaseDriver');
+        $db    = Factory::getContainer()->get('DatabaseDriver');
         $query = $db->getQuery(true)
             ->select($db->quoteName('manifest_cache'))
             ->from($db->quoteName('#__extensions'))

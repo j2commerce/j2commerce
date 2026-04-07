@@ -11,11 +11,8 @@
 namespace Joomla\Plugin\Schemaorg\Ecommerce\Field;
 
 use Joomla\CMS\Component\ComponentHelper;
-use Joomla\CMS\Factory;
-use Joomla\CMS\Form\Field\TextField;
 use Joomla\CMS\Form\FormField;
 use Joomla\CMS\Language\Text;
-use Joomla\Database\DatabaseInterface;
 
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
@@ -82,7 +79,7 @@ class J2CommerceCurrencyField extends FormField
 
         try {
             if ($this->isJ2CommerceAvailable()) {
-                $params = ComponentHelper::getParams('com_j2commerce');
+                $params          = ComponentHelper::getParams('com_j2commerce');
                 $defaultCurrency = $params->get('config_currency', 'USD');
 
                 return $defaultCurrency;

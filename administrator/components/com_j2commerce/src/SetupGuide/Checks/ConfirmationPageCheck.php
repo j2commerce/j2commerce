@@ -14,7 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\SetupGuide\Checks;
 
 use Joomla\CMS\Language\Text;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 class ConfirmationPageCheck extends AbstractMenuItemCheck
 {

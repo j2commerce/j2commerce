@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Field;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Field\ListField;
@@ -38,7 +39,7 @@ class VendorsField extends ListField
             $query = $db->getQuery(true)
                 ->select([
                     $db->quoteName('v.j2commerce_vendor_id', 'value'),
-                    $db->quoteName('a.company', 'text')
+                    $db->quoteName('a.company', 'text'),
                 ])
                 ->from($db->quoteName('#__j2commerce_vendors', 'v'))
                 ->join('INNER', $db->quoteName('#__j2commerce_addresses', 'a') . ' ON ' . $db->quoteName('v.address_id') . ' = ' . $db->quoteName('a.j2commerce_address_id'))

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,13 +12,13 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
+use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
-use Joomla\CMS\Language\Text;
 
 class OverridesController extends BaseController
 {
@@ -34,7 +35,7 @@ class OverridesController extends BaseController
         Session::checkToken('get') || Session::checkToken() || jexit(Text::_('JINVALID_TOKEN'));
 
         $plugin = $this->input->get('plugin', '', 'cmd');
-        $file = $this->input->get('file', '', 'base64');
+        $file   = $this->input->get('file', '', 'base64');
 
         /** @var \J2Commerce\Component\J2commerce\Administrator\Model\OverridesModel $model */
         $model = $this->getModel('Overrides', 'Administrator');
@@ -60,7 +61,7 @@ class OverridesController extends BaseController
         Session::checkToken('get') || Session::checkToken() || jexit(Text::_('JINVALID_TOKEN'));
 
         $plugin = $this->input->get('plugin', '', 'cmd');
-        $file = $this->input->get('file', '', 'base64');
+        $file   = $this->input->get('file', '', 'base64');
 
         /** @var \J2Commerce\Component\J2commerce\Administrator\Model\OverridesModel $model */
         $model = $this->getModel('Overrides', 'Administrator');
@@ -79,9 +80,9 @@ class OverridesController extends BaseController
         $this->requireSuperUser();
         Session::checkToken() || jexit(Text::_('JINVALID_TOKEN'));
 
-        $data = $this->input->post->get('jform', [], 'array');
+        $data   = $this->input->post->get('jform', [], 'array');
         $plugin = $this->input->get('plugin', '', 'cmd');
-        $file = $this->input->get('file', '', 'base64');
+        $file   = $this->input->get('file', '', 'base64');
 
         /** @var \J2Commerce\Component\J2commerce\Administrator\Model\OverridesModel $model */
         $model = $this->getModel('Overrides', 'Administrator');

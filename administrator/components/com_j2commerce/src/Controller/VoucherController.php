@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -27,9 +28,9 @@ use Joomla\CMS\Router\Route;
  */
 class VoucherController extends FormController
 {
-    protected $option = 'com_j2commerce';
-    protected $view_item = 'voucher';
-    protected $view_list = 'vouchers';
+    protected $option      = 'com_j2commerce';
+    protected $view_item   = 'voucher';
+    protected $view_list   = 'vouchers';
     protected $text_prefix = 'COM_J2COMMERCE_VOUCHER';
 
     /**

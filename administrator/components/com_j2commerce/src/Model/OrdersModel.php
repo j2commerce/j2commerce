@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -102,7 +103,7 @@ class OrdersModel extends ListModel
 
     protected function getListQuery(): QueryInterface
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         // Select order fields
@@ -216,10 +217,10 @@ class OrdersModel extends ListModel
         $orderDir = $this->state->get('list.direction', 'DESC');
 
         // Validate ordering column is in filter_fields
-        if (!in_array($orderCol, $this->filter_fields)) {
+        if (!\in_array($orderCol, $this->filter_fields)) {
             $orderCol = 'a.created_on';
         }
-        if (!in_array(strtoupper($orderDir), ['ASC', 'DESC'])) {
+        if (!\in_array(strtoupper($orderDir), ['ASC', 'DESC'])) {
             $orderDir = 'DESC';
         }
 
@@ -254,8 +255,8 @@ class OrdersModel extends ListModel
 
         // Multiple order statuses filter (array)
         $orderStatuses = $this->getState('filter.orderstatus', []);
-        if (!empty($orderStatuses) && is_array($orderStatuses)) {
-            if (!in_array('*', $orderStatuses)) {
+        if (!empty($orderStatuses) && \is_array($orderStatuses)) {
+            if (!\in_array('*', $orderStatuses)) {
                 $statusIds = array_map('intval', $orderStatuses);
                 $query->whereIn($db->quoteName('a.order_state_id'), $statusIds);
             }
@@ -429,7 +430,7 @@ class OrdersModel extends ListModel
      */
     public function getOrdersTotal(bool $sum = false): float|int
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         if ($sum) {
@@ -464,7 +465,7 @@ class OrdersModel extends ListModel
      */
     protected function convertTimeToUtc(string $datetime, string $format = 'Y-m-d H:i:s'): string
     {
-        $tz = Factory::getApplication()->get('offset', 'UTC');
+        $tz   = Factory::getApplication()->get('offset', 'UTC');
         $date = Factory::getDate($datetime, $tz);
         $date->setTimezone(new \DateTimeZone('UTC'));
 
@@ -483,7 +484,7 @@ class OrdersModel extends ListModel
     {
         $params = ComponentHelper::getParams('com_j2commerce');
 
-        $heldDuration = (int) $params->get('hold_stock', 0);
+        $heldDuration     = (int) $params->get('hold_stock', 0);
         $inventoryEnabled = (int) $params->get('enable_inventory', 0);
 
         // Skip if hold stock is disabled or inventory management is off
@@ -491,8 +492,8 @@ class OrdersModel extends ListModel
             return 0;
         }
 
-        $db = $this->getDatabase();
-        $now = Factory::getDate();
+        $db         = $this->getDatabase();
+        $now        = Factory::getDate();
         $cutoffTime = Factory::getDate('-' . $heldDuration . ' minutes')->toSql();
 
         // Find unpaid orders (pending=4, incomplete=5) older than hold duration
@@ -541,7 +542,7 @@ class OrdersModel extends ListModel
 
     public function getPendingCount(): int
     {
-        $db = $this->getDatabase();
+        $db              = $this->getDatabase();
         $pendingStatusId = 4;
 
         $query = $db->getQuery(true)

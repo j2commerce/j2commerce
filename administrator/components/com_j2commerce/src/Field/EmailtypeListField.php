@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -13,10 +14,10 @@ namespace J2Commerce\Component\J2commerce\Administrator\Field;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\EmailHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Field\ListField;
 use Joomla\CMS\Language\Text;
-use J2Commerce\Component\J2commerce\Administrator\Helper\EmailHelper;
 
 class EmailtypeListField extends ListField
 {
@@ -28,7 +29,7 @@ class EmailtypeListField extends ListField
 
         try {
             $emailTypes = EmailHelper::getEmailTypes();
-            $lang = Factory::getApplication()->getLanguage();
+            $lang       = Factory::getApplication()->getLanguage();
 
             foreach ($emailTypes as $typeId => $typeConfig) {
                 $label = $typeConfig['label'] ?? $typeId;

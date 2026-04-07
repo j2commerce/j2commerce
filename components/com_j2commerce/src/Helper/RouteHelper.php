@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -197,7 +198,7 @@ abstract class RouteHelper
     public static function getCategoryRoute(int $catid, ?int $parentId = null, ?string $language = null): string
     {
         // PRIORITY 1: Check for a single category menu item (products view with this catid)
-        $menu = \Joomla\CMS\Factory::getApplication()->getMenu();
+        $menu  = \Joomla\CMS\Factory::getApplication()->getMenu();
         $menus = $menu->getItems('component', 'com_j2commerce');
 
         foreach ($menus as $menuItem) {
@@ -267,7 +268,7 @@ abstract class RouteHelper
             return $cache[$catid];
         }
 
-        $db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $db    = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
         $query = $db->getQuery(true);
 
         $query->select($db->quoteName('parent_id'))

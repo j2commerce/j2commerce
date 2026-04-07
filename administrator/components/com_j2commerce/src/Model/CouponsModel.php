@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -253,7 +254,7 @@ class CouponsModel extends ListModel
             }
 
             // Check if coupon is expired
-            $now = Factory::getDate()->toSql();
+            $now              = Factory::getDate()->toSql();
             $item->is_expired = false;
             if ($item->valid_to && $item->valid_to !== '0000-00-00 00:00:00' && $item->valid_to < $now) {
                 $item->is_expired = true;
@@ -344,9 +345,9 @@ class CouponsModel extends ListModel
      */
     public function publish(array &$pks, int $value = 1): bool
     {
-        $user = Factory::getApplication()->getIdentity();
+        $user  = Factory::getApplication()->getIdentity();
         $table = $this->getTable();
-        $pks = (array) $pks;
+        $pks   = (array) $pks;
 
         // Include the content plugins for the on save events.
         PluginHelper::importPlugin('content');
@@ -393,9 +394,9 @@ class CouponsModel extends ListModel
      */
     public function delete(array &$pks): bool
     {
-        $user = Factory::getApplication()->getIdentity();
+        $user  = Factory::getApplication()->getIdentity();
         $table = $this->getTable();
-        $pks = (array) $pks;
+        $pks   = (array) $pks;
 
         // Include the content plugins for the on delete events.
         PluginHelper::importPlugin('content');
@@ -455,9 +456,9 @@ class CouponsModel extends ListModel
      */
     public function checkin(array &$pks = []): bool
     {
-        $user = Factory::getApplication()->getIdentity();
+        $user  = Factory::getApplication()->getIdentity();
         $table = $this->getTable();
-        $pks = (array) $pks;
+        $pks   = (array) $pks;
 
         // If there are no primary keys set then use the instance.
         if (empty($pks)) {
@@ -493,8 +494,8 @@ class CouponsModel extends ListModel
      */
     public function get_coupon(): string
     {
-        $app = Factory::getApplication();
-        $session = $app->getSession();
+        $app        = Factory::getApplication();
+        $session    = $app->getSession();
         $couponCode = '';
 
         try {

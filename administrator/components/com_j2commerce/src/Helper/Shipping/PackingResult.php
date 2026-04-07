@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -24,7 +25,8 @@ class PackingResult
         public readonly array $boxes,
         public readonly array $unpacked = [],
         public readonly string $method = 'box_packing',
-    ) {}
+    ) {
+    }
 
     public function getTotalWeight(): float
     {
@@ -37,7 +39,7 @@ class PackingResult
 
     public function getBoxCount(): int
     {
-        return count($this->boxes);
+        return \count($this->boxes);
     }
 
     public function hasUnpackedItems(): bool

@@ -61,19 +61,19 @@ final class PaymentBanktransfer extends CMSPlugin implements SubscriberInterface
         parent::__construct($dispatcher, $config);
 
         $this->pluginDispatcher = $dispatcher;
-        $this->pluginConfig = $config;
+        $this->pluginConfig     = $config;
         $this->setDatabase($db);
     }
 
     public static function getSubscribedEvents(): array
     {
         return [
-            'onJ2CommerceAcceptSubscriptionPayment'  => 'onAcceptSubscriptionPayment',
-            'onJ2CommerceProcessRenewalPayment'      => 'onProcessRenewalPayment',
-            'onJ2CommerceCalculateFees'              => 'onCalculateFees',
-            'onJ2CommerceGetPaymentPlugins'          => 'onGetPaymentPlugins',
-            'onJ2CommercePrePayment'                 => 'onPrePayment',
-            'onJ2CommercePostPayment'                => 'onPostPayment',
+            'onJ2CommerceAcceptSubscriptionPayment' => 'onAcceptSubscriptionPayment',
+            'onJ2CommerceProcessRenewalPayment'     => 'onProcessRenewalPayment',
+            'onJ2CommerceCalculateFees'             => 'onCalculateFees',
+            'onJ2CommerceGetPaymentPlugins'         => 'onGetPaymentPlugins',
+            'onJ2CommercePrePayment'                => 'onPrePayment',
+            'onJ2CommercePostPayment'               => 'onPostPayment',
         ];
     }
 
@@ -85,7 +85,7 @@ final class PaymentBanktransfer extends CMSPlugin implements SubscriberInterface
             return;
         }
 
-        $result = $event->getArgument('result', []);
+        $result   = $event->getArgument('result', []);
         $result[] = true;
         $event->setArgument('result', $result);
     }
@@ -97,9 +97,9 @@ final class PaymentBanktransfer extends CMSPlugin implements SubscriberInterface
 
     public function onCalculateFees(Event $event): void
     {
-        $args = $event->getArguments();
+        $args    = $event->getArguments();
         $element = $args[0] ?? null;
-        $order = $args[1] ?? null;
+        $order   = $args[1] ?? null;
 
         if ($element !== $this->_element || $order === null) {
             return;
@@ -117,10 +117,10 @@ final class PaymentBanktransfer extends CMSPlugin implements SubscriberInterface
             return;
         }
 
-        $total = $order->order_subtotal + $order->order_shipping + $order->order_shipping_tax;
-        $surcharge = 0.0;
+        $total            = $order->order_subtotal + $order->order_shipping + $order->order_shipping_tax;
+        $surcharge        = 0.0;
         $surchargePercent = (float) $this->params->get('surcharge_percent', 0);
-        $surchargeFixed = (float) $this->params->get('surcharge_fixed', 0);
+        $surchargeFixed   = (float) $this->params->get('surcharge_fixed', 0);
 
         if ($surchargePercent > 0) {
             $surcharge += ($total * $surchargePercent) / 100;
@@ -131,16 +131,16 @@ final class PaymentBanktransfer extends CMSPlugin implements SubscriberInterface
         }
 
         if ($surcharge > 0) {
-            $name = $this->params->get('surcharge_name', Text::_('COM_J2COMMERCE_CART_SURCHARGE'));
+            $name       = $this->params->get('surcharge_name', Text::_('COM_J2COMMERCE_CART_SURCHARGE'));
             $taxClassId = $this->params->get('surcharge_tax_class_id', '');
-            $taxable = ($taxClassId > 0);
+            $taxable    = ($taxClassId > 0);
             $order->add_fee($name, round($surcharge, 2), $taxable, $taxClassId);
         }
     }
 
     public function onGetPaymentPlugins(Event $event): void
     {
-        $result = $event->getArgument('result', []);
+        $result   = $event->getArgument('result', []);
         $result[] = [
             'element' => $this->_element,
             'name'    => Text::_($this->params->get('display_name', 'PLG_J2COMMERCE_PAYMENT_BANKTRANSFER')),
@@ -151,30 +151,30 @@ final class PaymentBanktransfer extends CMSPlugin implements SubscriberInterface
 
     public function onPrePayment(Event $event): void
     {
-        $args = $event->getArguments();
+        $args    = $event->getArguments();
         $element = $args[0] ?? '';
-        $data = $args[1] ?? [];
+        $data    = $args[1] ?? [];
 
         if ($element !== $this->_element) {
             return;
         }
 
-        $result = $event->getArgument('result', []);
+        $result   = $event->getArgument('result', []);
         $result[] = $this->prePayment($data);
         $event->setArgument('result', $result);
     }
 
     public function onPostPayment(Event $event): void
     {
-        $args = $event->getArguments();
+        $args    = $event->getArguments();
         $element = $args[0] ?? '';
-        $data = $args[1] ?? [];
+        $data    = $args[1] ?? [];
 
         if ($element !== $this->_element) {
             return;
         }
 
-        $result = $event->getArgument('result', []);
+        $result   = $event->getArgument('result', []);
         $result[] = $this->postPayment((object) $data);
         $event->setArgument('result', $result);
     }
@@ -182,7 +182,7 @@ final class PaymentBanktransfer extends CMSPlugin implements SubscriberInterface
     private function getPayment(): Payment
     {
         if ($this->payment === null) {
-            $this->payment = new Payment($this->pluginDispatcher, $this->pluginConfig);
+            $this->payment           = new Payment($this->pluginDispatcher, $this->pluginConfig);
             $this->payment->_element = $this->_name;
         }
 
@@ -210,16 +210,16 @@ final class PaymentBanktransfer extends CMSPlugin implements SubscriberInterface
     {
         $this->ensureLanguageLoaded();
 
-        $vars = new \stdClass();
-        $vars->order_id = $data['order_id'];
-        $vars->orderpayment_id = $data['orderpayment_id'];
+        $vars                      = new \stdClass();
+        $vars->order_id            = $data['order_id'];
+        $vars->orderpayment_id     = $data['orderpayment_id'];
         $vars->orderpayment_amount = $data['orderpayment_amount'];
-        $vars->orderpayment_type = $this->_element;
-        $vars->bank_information = $this->params->get('bank_details', '');
+        $vars->orderpayment_type   = $this->_element;
+        $vars->bank_information    = $this->params->get('bank_details', '');
 
-        $vars->display_name = Text::_($this->params->get('display_name', 'PLG_J2COMMERCE_PAYMENT_BANKTRANSFER'));
+        $vars->display_name         = Text::_($this->params->get('display_name', 'PLG_J2COMMERCE_PAYMENT_BANKTRANSFER'));
         $vars->onbeforepayment_text = $this->params->get('onbeforepayment', '');
-        $vars->button_text = $this->params->get('button_text', Text::_('COM_J2COMMERCE_PLACE_ORDER'));
+        $vars->button_text          = $this->params->get('button_text', Text::_('COM_J2COMMERCE_PLACE_ORDER'));
 
         $order = $this->createOrderTable();
         $order->load(['order_id' => $vars->order_id]);
@@ -235,8 +235,8 @@ final class PaymentBanktransfer extends CMSPlugin implements SubscriberInterface
     {
         $this->ensureLanguageLoaded();
 
-        $app = Factory::getApplication();
-        $vars = new \stdClass();
+        $app     = Factory::getApplication();
+        $vars    = new \stdClass();
         $paction = $app->getInput()->getString('paction');
 
         $layoutPath = JPATH_PLUGINS . '/' . $this->_type . '/' . $this->_element . '/tmpl';
@@ -244,14 +244,14 @@ final class PaymentBanktransfer extends CMSPlugin implements SubscriberInterface
         return match ($paction) {
             'display' => $this->postPaymentDisplay($vars, $layoutPath),
             'process' => $this->postPaymentProcess($data),
-            default => $this->postPaymentError($vars, $layoutPath),
+            default   => $this->postPaymentError($vars, $layoutPath),
         };
     }
 
     private function postPaymentDisplay(\stdClass $vars, string $layoutPath): string
     {
         $vars->onafterpayment_text = $this->params->get('onafterpayment', '');
-        $html = (new FileLayout('postpayment', $layoutPath))->render(['vars' => $vars]);
+        $html                      = (new FileLayout('postpayment', $layoutPath))->render(['vars' => $vars]);
         $html .= $this->getBase()->_displayArticle();
 
         return $html;
@@ -275,9 +275,9 @@ final class PaymentBanktransfer extends CMSPlugin implements SubscriberInterface
 
     private function processPayment(): array
     {
-        $app = Factory::getApplication();
+        $app     = Factory::getApplication();
         $orderId = $app->getInput()->getString('order_id');
-        $json = [];
+        $json    = [];
 
         $order = $this->createOrderTable();
 
@@ -296,11 +296,11 @@ final class PaymentBanktransfer extends CMSPlugin implements SubscriberInterface
         $bankDetails = $this->params->get('bank_details', '');
 
         if (\strlen($bankDetails) > 5) {
-            $sanitized = htmlspecialchars($bankDetails, ENT_QUOTES, 'UTF-8');
-            $html = '<br>' . $sanitized;
-            $array = json_decode($order->order_params ?? '{}', true) ?: [];
+            $sanitized              = htmlspecialchars($bankDetails, ENT_QUOTES, 'UTF-8');
+            $html                   = '<br>' . $sanitized;
+            $array                  = json_decode($order->order_params ?? '{}', true) ?: [];
             $array[$this->_element] = $html;
-            $order->order_params = json_encode($array);
+            $order->order_params    = json_encode($array);
 
             if ($this->params->get('enable_bank_transfer_strip_tags', 0)) {
                 $html = strip_tags(preg_replace('#<br\s*/?>#i', "\n", $html));
@@ -310,7 +310,7 @@ final class PaymentBanktransfer extends CMSPlugin implements SubscriberInterface
         }
 
         // Set status and save everything in a single store() call
-        $orderStateId = (int) $this->params->get('payment_status', 4);
+        $orderStateId          = (int) $this->params->get('payment_status', 4);
         $order->order_state_id = $orderStateId;
 
         if (!$order->store()) {
@@ -326,7 +326,7 @@ final class PaymentBanktransfer extends CMSPlugin implements SubscriberInterface
             orderStateId: $orderStateId,
         );
 
-        $json['success'] = $this->params->get('onafterpayment', '');
+        $json['success']  = $this->params->get('onafterpayment', '');
         $json['redirect'] = $this->getPayment()->getReturnUrl();
 
         return $json;

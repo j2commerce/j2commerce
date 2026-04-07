@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Field;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Form\FormField;
 use Joomla\CMS\Language\Text;
@@ -44,16 +45,16 @@ class ButtonField extends FormField
     protected function getInput(): string
     {
         // Get attributes from XML
-        $label = (string) $this->element['label'] ?: '';
-        $class = (string) $this->element['class'] ?: 'btn btn-primary';
+        $label   = (string) $this->element['label'] ?: '';
+        $class   = (string) $this->element['class'] ?: 'btn btn-primary';
         $onclick = (string) $this->element['onclick'] ?: '';
 
         // Translate the label if it's a language constant
         $buttonText = Text::_($label);
 
         // Build button attributes
-        $buttonId = htmlspecialchars($this->id, ENT_QUOTES, 'UTF-8');
-        $buttonClass = htmlspecialchars($class, ENT_QUOTES, 'UTF-8');
+        $buttonId      = htmlspecialchars($this->id, ENT_QUOTES, 'UTF-8');
+        $buttonClass   = htmlspecialchars($class, ENT_QUOTES, 'UTF-8');
         $buttonOnclick = htmlspecialchars($onclick, ENT_QUOTES, 'UTF-8');
 
         // Build the button HTML

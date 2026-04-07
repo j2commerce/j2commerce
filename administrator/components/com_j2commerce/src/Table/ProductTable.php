@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -142,8 +143,8 @@ class ProductTable extends Table
      */
     public function delete($pk = null): bool
     {
-        $k = $this->_tbl_key;
-        $pk = (is_null($pk)) ? $this->$k : $pk;
+        $k  = $this->_tbl_key;
+        $pk = (\is_null($pk)) ? $this->$k : $pk;
 
         // Load the record to verify it exists
         if (!$this->load($pk)) {
@@ -174,10 +175,10 @@ class ProductTable extends Table
 
         // Child tables to cascade delete
         $childTables = [
-            '#__j2commerce_variants' => 'product_id',
+            '#__j2commerce_variants'        => 'product_id',
             '#__j2commerce_product_options' => 'product_id',
-            '#__j2commerce_productimages' => 'product_id',
-            '#__j2commerce_productfiles' => 'product_id',
+            '#__j2commerce_productimages'   => 'product_id',
+            '#__j2commerce_productfiles'    => 'product_id',
             '#__j2commerce_product_filters' => 'product_id',
         ];
 

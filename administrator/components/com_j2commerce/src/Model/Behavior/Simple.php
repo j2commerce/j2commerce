@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -25,6 +26,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\Registry\Registry;
+
 class Simple
 {
     protected MVCFactoryInterface $mvcFactory;
@@ -90,7 +92,7 @@ class Simple
             return;
         }
 
-        $app = Factory::getApplication();
+        $app           = Factory::getApplication();
         $utilityHelper = J2CommerceHelper::utilities();
 
         // Set default visibility
@@ -118,11 +120,11 @@ class Simple
         }
 
         // Process item options
-        if (isset($data['item_options']) && is_object($data['item_options'])) {
+        if (isset($data['item_options']) && \is_object($data['item_options'])) {
             $data['item_options'] = (array)$data['item_options'];
         }
 
-        if (isset($data['item_options']) && count($data['item_options']) > 0) {
+        if (isset($data['item_options']) && \count($data['item_options']) > 0) {
             $data['has_options'] = 1;
         }
 
@@ -133,7 +135,7 @@ class Simple
             'vendor_id',
             'isdefault_variant',
             'length_class_id',
-            'weight_class_id'
+            'weight_class_id',
         ];
         foreach ($integerFields as $key) {
             if (isset($data[$key]) && !empty($data[$key])) {
@@ -152,7 +154,7 @@ class Simple
             'weight',
             'min_sale_qty',
             'max_sale_qty',
-            'notify_qty'
+            'notify_qty',
         ];
         foreach ($floatFields as $key) {
             if (isset($data[$key]) && !empty($data[$key])) {
@@ -163,17 +165,17 @@ class Simple
         }
 
         // Process quantity data
-        if (is_object($data['quantity']) &&
+        if (\is_object($data['quantity']) &&
             (!isset($data['quantity']->product_attributes) || empty($data['quantity']->product_attributes))) {
             $data['quantity']->product_attributes = '';
         }
 
         $quantityIntegerFields = ['quantity'];
         foreach ($quantityIntegerFields as $key) {
-            if (isset($data['quantity']) && is_object($data['quantity']) &&
+            if (isset($data['quantity']) && \is_object($data['quantity']) &&
                 isset($data['quantity']->$key) && !empty($data['quantity']->$key)) {
                 $data['quantity']->$key = (int)$data['quantity']->$key;
-            } elseif (isset($data['quantity']) && is_object($data['quantity'])) {
+            } elseif (isset($data['quantity']) && \is_object($data['quantity'])) {
                 $data['quantity']->$key = 0;
             }
         }
@@ -234,7 +236,7 @@ class Simple
         }
 
         // Try to load existing master variant by product_id
-        $db = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $db    = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
         $query = $db->getQuery(true)
             ->select($db->quoteName('j2commerce_variant_id'))
             ->from($db->quoteName('#__j2commerce_variants'))
@@ -382,7 +384,7 @@ class Simple
     public function onAfterGetProduct(AbstractEvent $event): void
     {
         // Model is optional - may be null when called from ProductHelper::getFullProduct()
-        $model = $event->getArgument('subject');
+        $model   = $event->getArgument('subject');
         $product = $event->getArgument('product');
 
         // Product is required, check product_type for simple products

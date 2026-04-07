@@ -17,7 +17,7 @@ use J2Commerce\Component\J2commerce\Administrator\SetupGuide\SetupCheckResult;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 class TimezoneCheck extends AbstractSetupCheck
 {

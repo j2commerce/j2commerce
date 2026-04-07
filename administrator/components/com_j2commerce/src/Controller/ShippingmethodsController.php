@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -9,7 +10,7 @@
 
 namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\AdminController;
@@ -74,7 +75,7 @@ class ShippingmethodsController extends AdminController
             // Checkin the items.
             try {
                 $model->checkin($cid);
-                $this->setMessage(Text::plural('COM_J2COMMERCE_N_ITEMS_CHECKED_IN', count($cid)));
+                $this->setMessage(Text::plural('COM_J2COMMERCE_N_ITEMS_CHECKED_IN', \count($cid)));
             } catch (\Exception $e) {
                 $this->setMessage($e->getMessage(), 'error');
             }

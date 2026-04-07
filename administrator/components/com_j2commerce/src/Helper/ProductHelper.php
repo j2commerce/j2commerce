@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -15,8 +16,8 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 
 use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use Joomla\CMS\Factory;
-use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Uri\Uri;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
 use Joomla\Registry\Registry;
@@ -214,7 +215,7 @@ class ProductHelper
      */
     public function setState(string $property, mixed $value = null): mixed
     {
-        $previous = $this->state->$property ?? null;
+        $previous               = $this->state->$property ?? null;
         $this->state->$property = $value;
 
         return $previous;
@@ -325,9 +326,9 @@ class ProductHelper
             }
 
             // Use the MVC factory to create and load the product table
-            $component = $app->bootComponent('com_j2commerce');
+            $component  = $app->bootComponent('com_j2commerce');
             $mvcFactory = $component->getMVCFactory();
-            $product = $mvcFactory->createTable('Product', 'Administrator');
+            $product    = $mvcFactory->createTable('Product', 'Administrator');
 
             if ($product && $product->load($productId)) {
                 // Trigger event for plugins to modify product data
@@ -392,7 +393,7 @@ class ProductHelper
      */
     public function set(string $property, mixed $value = null): mixed
     {
-        $previous = $this->properties[$property] ?? null;
+        $previous                    = $this->properties[$property] ?? null;
         $this->properties[$property] = $value;
 
         return $previous;
@@ -449,7 +450,7 @@ class ProductHelper
      */
     public static function getVariants(int $productId): array
     {
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         // Select all variant fields plus quantity data from productquantities table
@@ -525,7 +526,7 @@ class ProductHelper
             return $cache[$productId];
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select('*')
@@ -601,21 +602,21 @@ class ProductHelper
         $product->params = new Registry($product->params ?? '{}');
 
         // Add product images (includes j2commerce_productimage_id, brand_desc_id)
-        $images = self::getProductImages($productId);
+        $images                              = self::getProductImages($productId);
         $product->j2commerce_productimage_id = $images->j2commerce_productimage_id ?? 0;
-        $product->main_image = $images->main_image ?? '';
-        $product->main_image_alt = $images->main_image_alt ?? '';
-        $product->thumb_image = $images->thumb_image ?? '';
-        $product->thumb_image_alt = $images->thumb_image_alt ?? '';
-        $product->additional_images = $images->additional_images ?? '';
-        $product->additional_images_alt = $images->additional_images_alt ?? '';
-        $product->brand_desc_id = $images->brand_desc_id ?? 0;
+        $product->main_image                 = $images->main_image ?? '';
+        $product->main_image_alt             = $images->main_image_alt ?? '';
+        $product->thumb_image                = $images->thumb_image ?? '';
+        $product->thumb_image_alt            = $images->thumb_image_alt ?? '';
+        $product->additional_images          = $images->additional_images ?? '';
+        $product->additional_images_alt      = $images->additional_images_alt ?? '';
+        $product->brand_desc_id              = $images->brand_desc_id ?? 0;
 
         // Add manufacturer data (company name + first/last name from address)
-        $manufacturerData = self::getManufacturerData((int) ($product->manufacturer_id ?? 0));
-        $product->manufacturer = $manufacturerData['company'] ?? '';
+        $manufacturerData                 = self::getManufacturerData((int) ($product->manufacturer_id ?? 0));
+        $product->manufacturer            = $manufacturerData['company'] ?? '';
         $product->manufacturer_first_name = $manufacturerData['first_name'] ?? null;
-        $product->manufacturer_last_name = $manufacturerData['last_name'] ?? null;
+        $product->manufacturer_last_name  = $manufacturerData['last_name'] ?? null;
 
         // Add article data (for com_content source products)
         $articleData = self::getArticleData(
@@ -623,10 +624,10 @@ class ProductHelper
             (int) ($product->product_source_id ?? 0)
         );
 
-        $product->source = $articleData;
-        $product->product_name = $articleData->title ?? '';
+        $product->source             = $articleData;
+        $product->product_name       = $articleData->title ?? '';
         $product->product_short_desc = $articleData->introtext ?? '';
-        $product->product_long_desc = $articleData->fulltext ?? '';
+        $product->product_long_desc  = $articleData->fulltext ?? '';
 
         // Expose catid and alias at top level for routing
         // Required by RouteHelper::getProductRoute() for canonical URLs
@@ -638,7 +639,7 @@ class ProductHelper
         $product->product_view_url = '';
 
         if ($articleData && !empty($articleData->id)) {
-            $return = base64_encode(Uri::getInstance()->toString());
+            $return                    = base64_encode(Uri::getInstance()->toString());
             $product->product_edit_url = 'index.php?option=com_content&task=article.edit&id=' . (int) $articleData->id . '&return=' . $return;
 
             // Build frontend view URL using J2Commerce RouteHelper for proper SEF routing
@@ -651,7 +652,7 @@ class ProductHelper
         }
 
         // Add master variant (single object) and all variants (array)
-        $allVariants = [];
+        $allVariants   = [];
         $masterVariant = null;
 
         if ($loadVariants) {
@@ -674,7 +675,7 @@ class ProductHelper
             $masterVariant = self::getMasterVariant($productId);
         }
 
-        $product->variant = $masterVariant;
+        $product->variant  = $masterVariant;
         $product->variants = $allVariants;
 
         // Add variant pagination (count non-master variants for display)
@@ -688,11 +689,11 @@ class ProductHelper
 
         // Add pricing (based on master variant and default quantity of 1)
         // Default display quantity used for pricing calculations
-        $product->pricing = null;
+        $product->pricing  = null;
         $product->quantity = 1;
 
         if ($masterVariant) {
-            $pricing = (new self())->getPrice($masterVariant, 1);
+            $pricing          = (new self())->getPrice($masterVariant, 1);
             $product->pricing = $pricing !== false ? $pricing : null;
         }
 
@@ -714,7 +715,7 @@ class ProductHelper
         $product->app_detail = null;
 
         // Product filter pagination (for product filter listings)
-        $filterCount = self::getProductFilterCount($productId);
+        $filterCount                       = self::getProductFilterCount($productId);
         $product->productfilter_pagination = new \Joomla\CMS\Pagination\Pagination($filterCount, 0, 10);
 
         // Populate productfilter_ids from junction table (not from deprecated products column)
@@ -764,7 +765,7 @@ class ProductHelper
         // Use ProductService to get the appropriate behavior
         try {
             $productService = new \J2Commerce\Component\J2commerce\Administrator\Service\ProductService();
-            $behavior = $productService->getBehavior($productType);
+            $behavior       = $productService->getBehavior($productType);
 
             // Check if the behavior has the onAfterGetProduct method
             if (method_exists($behavior, 'onAfterGetProduct')) {
@@ -807,7 +808,7 @@ class ProductHelper
         bool $loadVariants = true,
         bool $loadOptions = true
     ): ?object {
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select($db->quoteName('j2commerce_product_id'))
@@ -845,7 +846,7 @@ class ProductHelper
             return $cache[$productId];
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select('*')
@@ -878,7 +879,7 @@ class ProductHelper
             return $cache[$productId];
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select('COUNT(*)')
@@ -911,7 +912,7 @@ class ProductHelper
             return $cache[$productId];
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select($db->quoteName('filter_id'))
@@ -949,13 +950,13 @@ class ProductHelper
         }
 
         static $cache = [];
-        $cacheKey = $source . ':' . $sourceId;
+        $cacheKey     = $source . ':' . $sourceId;
 
         if (isset($cache[$cacheKey])) {
             return $cache[$cacheKey];
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         // Select all article fields for the product source object
@@ -1030,7 +1031,7 @@ class ProductHelper
             return $cache[$manufacturerId];
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select($db->quoteName('a.company'))
@@ -1062,9 +1063,9 @@ class ProductHelper
     public static function getManufacturerData(int $manufacturerId): array
     {
         $default = [
-            'company' => '',
+            'company'    => '',
             'first_name' => null,
-            'last_name' => null,
+            'last_name'  => null,
         ];
 
         if ($manufacturerId <= 0) {
@@ -1077,7 +1078,7 @@ class ProductHelper
             return $cache[$manufacturerId];
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select([
@@ -1098,9 +1099,9 @@ class ProductHelper
 
         if ($result) {
             $cache[$manufacturerId] = [
-                'company' => $result->company ?? '',
+                'company'    => $result->company ?? '',
                 'first_name' => $result->first_name ?? null,
-                'last_name' => $result->last_name ?? null,
+                'last_name'  => $result->last_name ?? null,
             ];
         } else {
             $cache[$manufacturerId] = $default;
@@ -1126,7 +1127,7 @@ class ProductHelper
             return $cache;
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select([
@@ -1166,7 +1167,7 @@ class ProductHelper
             return $cache;
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select([
@@ -1210,7 +1211,7 @@ class ProductHelper
             return $cache[$productId];
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select([
@@ -1351,7 +1352,7 @@ class ProductHelper
             static $lastPid = null;
 
             if ($lastPid === null) {
-                $db = self::getDatabase();
+                $db    = self::getDatabase();
                 $query = $db->getQuery(true)
                     ->select('MAX(' . $db->quoteName('j2commerce_product_id') . ')')
                     ->from($db->quoteName('#__j2commerce_products'));
@@ -1401,7 +1402,7 @@ class ProductHelper
         }
 
         $productOptionValues = explode(',', $csv);
-        $names = [];
+        $names               = [];
 
         foreach ($productOptionValues as $productOptionValueId) {
             $optionValueName = self::getOptionValueName((int) $productOptionValueId);
@@ -1427,7 +1428,7 @@ class ProductHelper
      */
     public static function getOptionValueName(int $productOptionValueId): string
     {
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true)
             ->select($db->quoteName('ov.optionvalue_name'))
             ->from($db->quoteName('#__j2commerce_product_optionvalues', 'pov'))
@@ -1459,7 +1460,7 @@ class ProductHelper
      */
     public static function getTraits(int $productId): array
     {
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select($db->quoteName([
@@ -1468,13 +1469,13 @@ class ProductHelper
                 'po.parent_id',
                 'po.ordering',
                 'po.required',
-                'po.is_variant'
+                'po.is_variant',
             ]))
             ->select($db->quoteName([
                 'o.option_name',
                 'o.option_unique_name',
                 'o.type',
-                'o.option_params'
+                'o.option_params',
             ]))
             ->from($db->quoteName('#__j2commerce_product_options', 'po'))
             ->join(
@@ -1526,7 +1527,7 @@ class ProductHelper
             return $cache[$optionId];
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select($db->quoteName([
@@ -1534,7 +1535,7 @@ class ProductHelper
                 'option_id',
                 'optionvalue_name',
                 'optionvalue_image',
-                'ordering'
+                'ordering',
             ]))
             ->from($db->quoteName('#__j2commerce_optionvalues'))
             ->where($db->quoteName('option_id') . ' = :optionId')
@@ -1582,49 +1583,49 @@ class ProductHelper
             // If multiple choices available
             if (\in_array($type, ['select', 'radio', 'checkbox', 'color'])) {
                 $productOptionValueData = [];
-                $productOptionValues = self::getProductOptionValues((int) $productOption->j2commerce_productoption_id);
+                $productOptionValues    = self::getProductOptionValues((int) $productOption->j2commerce_productoption_id);
 
                 foreach ($productOptionValues as $productOptionValue) {
                     $productOptionValueData[] = [
-                        'product_optionvalue_id'         => $productOptionValue->j2commerce_product_optionvalue_id ?? '',
-                        'optionvalue_id'                 => $productOptionValue->optionvalue_id ?? '',
-                        'optionvalue_name'               => $productOptionValue->optionvalue_name ?? '',
-                        'product_optionvalue_price'      => $productOptionValue->product_optionvalue_price ?? 0,
-                        'product_optionvalue_prefix'     => $productOptionValue->product_optionvalue_prefix ?? '+',
-                        'product_optionvalue_weight'     => $productOptionValue->product_optionvalue_weight ?? 0,
-                        'product_optionvalue_sku'        => $productOptionValue->product_optionvalue_sku ?? '',
+                        'product_optionvalue_id'            => $productOptionValue->j2commerce_product_optionvalue_id ?? '',
+                        'optionvalue_id'                    => $productOptionValue->optionvalue_id ?? '',
+                        'optionvalue_name'                  => $productOptionValue->optionvalue_name ?? '',
+                        'product_optionvalue_price'         => $productOptionValue->product_optionvalue_price ?? 0,
+                        'product_optionvalue_prefix'        => $productOptionValue->product_optionvalue_prefix ?? '+',
+                        'product_optionvalue_weight'        => $productOptionValue->product_optionvalue_weight ?? 0,
+                        'product_optionvalue_sku'           => $productOptionValue->product_optionvalue_sku ?? '',
                         'product_optionvalue_weight_prefix' => $productOptionValue->product_optionvalue_weight_prefix ?? '+',
-                        'product_optionvalue_default'    => $productOptionValue->product_optionvalue_default ?? 0,
-                        'optionvalue_image'              => $productOptionValue->optionvalue_image ?? '',
-                        'product_optionvalue_attribs'    => $productOptionValue->product_optionvalue_attribs ?? '',
+                        'product_optionvalue_default'       => $productOptionValue->product_optionvalue_default ?? 0,
+                        'optionvalue_image'                 => $productOptionValue->optionvalue_image ?? '',
+                        'product_optionvalue_attribs'       => $productOptionValue->product_optionvalue_attribs ?? '',
                     ];
                 }
 
                 $productOptionData[] = [
-                    'productoption_id'    => $productOption->j2commerce_productoption_id,
-                    'option_id'           => $productOption->option_id,
-                    'parent_id'           => (int) ($productOption->parent_id ?? 0),
-                    'option_name'         => $productOption->option_name ?? '',
-                    'option_unique_name'  => $productOption->option_unique_name ?? '',
-                    'type'                => $type,
-                    'optionvalue'         => $productOptionValueData,
-                    'required'            => $productOption->required ?? 0,
-                    'option_params'       => $productOption->option_params ?? '',
-                    'is_variant'          => $productOption->is_variant ?? 0,
+                    'productoption_id'   => $productOption->j2commerce_productoption_id,
+                    'option_id'          => $productOption->option_id,
+                    'parent_id'          => (int) ($productOption->parent_id ?? 0),
+                    'option_name'        => $productOption->option_name ?? '',
+                    'option_unique_name' => $productOption->option_unique_name ?? '',
+                    'type'               => $type,
+                    'optionvalue'        => $productOptionValueData,
+                    'required'           => $productOption->required ?? 0,
+                    'option_params'      => $productOption->option_params ?? '',
+                    'is_variant'         => $productOption->is_variant ?? 0,
                 ];
             } else {
                 // Text, textarea, date, datetime, time, file options
                 $productOptionData[] = [
-                    'productoption_id'    => $productOption->j2commerce_productoption_id,
-                    'option_id'           => $productOption->option_id,
-                    'parent_id'           => (int) ($productOption->parent_id ?? 0),
-                    'option_name'         => $productOption->option_name ?? '',
-                    'option_unique_name'  => $productOption->option_unique_name ?? '',
-                    'type'                => $type,
-                    'optionvalue'         => '',
-                    'required'            => $productOption->required ?? 0,
-                    'option_params'       => $productOption->option_params ?? '',
-                    'is_variant'          => $productOption->is_variant ?? 0,
+                    'productoption_id'   => $productOption->j2commerce_productoption_id,
+                    'option_id'          => $productOption->option_id,
+                    'parent_id'          => (int) ($productOption->parent_id ?? 0),
+                    'option_name'        => $productOption->option_name ?? '',
+                    'option_unique_name' => $productOption->option_unique_name ?? '',
+                    'type'               => $type,
+                    'optionvalue'        => '',
+                    'required'           => $productOption->required ?? 0,
+                    'option_params'      => $productOption->option_params ?? '',
+                    'is_variant'         => $productOption->is_variant ?? 0,
                 ];
             }
         }
@@ -1647,7 +1648,7 @@ class ProductHelper
             $count = \is_array($option['optionvalue']) ? \count($option['optionvalue']) : 0;
             if ($count > 0) {
                 $optionName = Text::_($option['option_name']);
-                $parts[] = Text::plural('COM_J2COMMERCE_N_OPTION_VALUES', $count, $optionName);
+                $parts[]    = Text::plural('COM_J2COMMERCE_N_OPTION_VALUES', $count, $optionName);
             }
         }
 
@@ -1671,7 +1672,7 @@ class ProductHelper
             return $cache[$productOptionId];
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select($db->quoteName([
@@ -1685,11 +1686,11 @@ class ProductHelper
                 'pov.product_optionvalue_sku',
                 'pov.product_optionvalue_default',
                 'pov.ordering',
-                'pov.product_optionvalue_attribs'
+                'pov.product_optionvalue_attribs',
             ]))
             ->select($db->quoteName([
                 'ov.optionvalue_name',
-                'ov.optionvalue_image'
+                'ov.optionvalue_image',
             ]))
             ->from($db->quoteName('#__j2commerce_product_optionvalues', 'pov'))
             ->join(
@@ -1756,7 +1757,7 @@ class ProductHelper
             return $cache[$cacheKey];
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select($db->quoteName('po', null, 'po') . '.*')
@@ -1811,7 +1812,7 @@ class ProductHelper
             return $cache[$cacheKey];
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select($db->quoteName('pov', null, 'pov') . '.*')
@@ -1864,9 +1865,9 @@ class ProductHelper
         }
 
         // Recursive case: get combinations of remaining traits
-        $first = array_shift($traits);
+        $first                 = array_shift($traits);
         $remainingCombinations = self::getCombinations($traits);
-        $result = [];
+        $result                = [];
 
         foreach ($first as $value) {
             foreach ($remainingCombinations as $combination) {
@@ -1935,7 +1936,7 @@ class ProductHelper
         }
 
         // getCombinations() returns array of arrays — convert to CSV strings for comparison
-        $csvArray = array_map(fn(array $combo) => implode(',', $combo), self::getCombinations($traits));
+        $csvArray = array_map(fn (array $combo) => implode(',', $combo), self::getCombinations($traits));
 
         foreach ($variants as $variant) {
             // Use variant_name_ids (original CSV) if available, fall back to variant_name
@@ -1976,14 +1977,14 @@ class ProductHelper
      */
     public static function getPricingCalculators(): array
     {
-        $calculators = array('standard' => Text::_('COM_J2COMMERCE_PRODUCT_PRICING_CALCULATOR_STANDARD'));
+        $calculators = ['standard' => Text::_('COM_J2COMMERCE_PRODUCT_PRICING_CALCULATOR_STANDARD')];
 
         $event = J2CommerceHelper::plugin()->event('GetPricingCalculators', ['calculators' => $calculators]);
 
         // Collect all results from plugins
         $results = $event->getEventResult();
 
-        if (!empty($results) && is_array($results)) {
+        if (!empty($results) && \is_array($results)) {
             // Filter out non-array items, then merge all at once
             $validResults = array_filter($results, 'is_array');
             if (!empty($validResults)) {
@@ -1993,12 +1994,12 @@ class ProductHelper
 
         return (array) $calculators;
     }
-   /* public static function getPricingCalculators(): array
-    {
-        return [
-            'standard' => Text::_('COM_J2COMMERCE_PRODUCT_PRICING_CALCULATOR_STANDARD'),
-        ];
-    }*/
+    /* public static function getPricingCalculators(): array
+     {
+         return [
+             'standard' => Text::_('COM_J2COMMERCE_PRODUCT_PRICING_CALCULATOR_STANDARD'),
+         ];
+     }*/
 
     /**
      * Calculate option price and weight adjustments.
@@ -2012,9 +2013,9 @@ class ProductHelper
      */
     public static function getOptionPrice(array $options, int $productId): array
     {
-        $optionPrice = 0.0;
+        $optionPrice  = 0.0;
         $optionWeight = 0.0;
-        $optionData = [];
+        $optionData   = [];
 
         foreach ($options as $productOptionId => $optionValue) {
             $productOption = self::getCartProductOptions((int) $productOptionId, $productId);
@@ -2031,7 +2032,7 @@ class ProductHelper
                 if ($productOptionValue) {
                     // Calculate option price
                     $prefix = $productOptionValue->product_optionvalue_prefix ?? '+';
-                    $price = (float) ($productOptionValue->product_optionvalue_price ?? 0);
+                    $price  = (float) ($productOptionValue->product_optionvalue_price ?? 0);
 
                     if ($prefix === '+') {
                         $optionPrice += $price;
@@ -2041,7 +2042,7 @@ class ProductHelper
 
                     // Calculate option weight
                     $weightPrefix = $productOptionValue->product_optionvalue_weight_prefix ?? '+';
-                    $weight = (float) ($productOptionValue->product_optionvalue_weight ?? 0);
+                    $weight       = (float) ($productOptionValue->product_optionvalue_weight ?? 0);
 
                     if ($weightPrefix === '+') {
                         $optionWeight += $weight;
@@ -2050,18 +2051,18 @@ class ProductHelper
                     }
 
                     $optionData[] = [
-                        'product_option_id'       => $productOptionId,
-                        'product_optionvalue_id'  => $optionValue,
-                        'option_id'               => $productOption->option_id ?? '',
-                        'optionvalue_id'          => $productOptionValue->optionvalue_id ?? '',
-                        'name'                    => $productOption->option_name ?? '',
-                        'option_value'            => $productOptionValue->optionvalue_name ?? '',
-                        'type'                    => $type,
-                        'price'                   => $price,
-                        'price_prefix'            => $prefix,
-                        'weight'                  => $weight,
-                        'option_sku'              => $productOptionValue->product_optionvalue_sku ?? '',
-                        'weight_prefix'           => $weightPrefix,
+                        'product_option_id'      => $productOptionId,
+                        'product_optionvalue_id' => $optionValue,
+                        'option_id'              => $productOption->option_id ?? '',
+                        'optionvalue_id'         => $productOptionValue->optionvalue_id ?? '',
+                        'name'                   => $productOption->option_name ?? '',
+                        'option_value'           => $productOptionValue->optionvalue_name ?? '',
+                        'type'                   => $type,
+                        'price'                  => $price,
+                        'price_prefix'           => $prefix,
+                        'weight'                 => $weight,
+                        'option_sku'             => $productOptionValue->product_optionvalue_sku ?? '',
+                        'weight_prefix'          => $weightPrefix,
                     ];
                 }
             } elseif ($type === 'checkbox' && \is_array($optionValue)) {
@@ -2074,7 +2075,7 @@ class ProductHelper
                     if ($productOptionValue) {
                         // Calculate option price
                         $prefix = $productOptionValue->product_optionvalue_prefix ?? '+';
-                        $price = (float) ($productOptionValue->product_optionvalue_price ?? 0);
+                        $price  = (float) ($productOptionValue->product_optionvalue_price ?? 0);
 
                         if ($prefix === '+') {
                             $optionPrice += $price;
@@ -2084,7 +2085,7 @@ class ProductHelper
 
                         // Calculate option weight
                         $weightPrefix = $productOptionValue->product_optionvalue_weight_prefix ?? '+';
-                        $weight = (float) ($productOptionValue->product_optionvalue_weight ?? 0);
+                        $weight       = (float) ($productOptionValue->product_optionvalue_weight ?? 0);
 
                         if ($weightPrefix === '+') {
                             $optionWeight += $weight;
@@ -2093,34 +2094,34 @@ class ProductHelper
                         }
 
                         $optionData[] = [
-                            'product_option_id'       => $productOptionId,
-                            'product_optionvalue_id'  => $productOptionValueId,
-                            'option_id'               => $productOption->option_id ?? '',
-                            'optionvalue_id'          => $productOptionValue->optionvalue_id ?? '',
-                            'name'                    => $productOption->option_name ?? '',
-                            'option_value'            => $productOptionValue->optionvalue_name ?? '',
-                            'type'                    => $type,
-                            'price'                   => $price,
-                            'price_prefix'            => $prefix,
-                            'weight'                  => $weight,
-                            'option_sku'              => $productOptionValue->product_optionvalue_sku ?? '',
-                            'weight_prefix'           => $weightPrefix,
+                            'product_option_id'      => $productOptionId,
+                            'product_optionvalue_id' => $productOptionValueId,
+                            'option_id'              => $productOption->option_id ?? '',
+                            'optionvalue_id'         => $productOptionValue->optionvalue_id ?? '',
+                            'name'                   => $productOption->option_name ?? '',
+                            'option_value'           => $productOptionValue->optionvalue_name ?? '',
+                            'type'                   => $type,
+                            'price'                  => $price,
+                            'price_prefix'           => $prefix,
+                            'weight'                 => $weight,
+                            'option_sku'             => $productOptionValue->product_optionvalue_sku ?? '',
+                            'weight_prefix'          => $weightPrefix,
                         ];
                     }
                 }
             } elseif (\in_array($type, ['text', 'textarea', 'date', 'datetime', 'time', 'file'])) {
                 $optionData[] = [
-                    'product_option_id'       => $productOptionId,
-                    'product_optionvalue_id'  => '',
-                    'option_id'               => $productOption->option_id ?? '',
-                    'optionvalue_id'          => '',
-                    'name'                    => $productOption->option_name ?? '',
-                    'option_value'            => htmlspecialchars((string) $optionValue, ENT_QUOTES, 'UTF-8'),
-                    'type'                    => $type,
-                    'price'                   => '',
-                    'price_prefix'            => '',
-                    'weight'                  => '',
-                    'weight_prefix'           => '',
+                    'product_option_id'      => $productOptionId,
+                    'product_optionvalue_id' => '',
+                    'option_id'              => $productOption->option_id ?? '',
+                    'optionvalue_id'         => '',
+                    'name'                   => $productOption->option_name ?? '',
+                    'option_value'           => htmlspecialchars((string) $optionValue, ENT_QUOTES, 'UTF-8'),
+                    'type'                   => $type,
+                    'price'                  => '',
+                    'price_prefix'           => '',
+                    'weight'                 => '',
+                    'weight_prefix'          => '',
                 ];
             }
         }
@@ -2246,7 +2247,7 @@ class ProductHelper
      */
     public static function getStockQuantity(int $variantId): int
     {
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true)
             ->select($db->quoteName('quantity'))
             ->from($db->quoteName('#__j2commerce_productquantities'))
@@ -2270,9 +2271,9 @@ class ProductHelper
      */
     public static function displayStock(object $variant, Registry $params): string
     {
-        $text = '';
+        $text          = '';
         $displayFormat = $params->get('stock_display_format', 'always_show');
-        $quantity = (int) ($variant->quantity ?? 0);
+        $quantity      = (int) ($variant->quantity ?? 0);
 
         switch ($displayFormat) {
             case 'always_show':
@@ -2319,10 +2320,10 @@ class ProductHelper
      */
     public static function applyQuantityRestriction(object &$variant): void
     {
-        $config = J2CommerceHelper::config();
+        $config          = J2CommerceHelper::config();
         $storeMinSaleQty = (float) $config->get('store_min_sale_qty', 1);
         $storeMaxSaleQty = (float) $config->get('store_max_sale_qty', 0);
-        $storeNotifyQty = (float) $config->get('store_notify_qty', 0);
+        $storeNotifyQty  = (float) $config->get('store_notify_qty', 0);
 
         if (!empty($variant->use_store_config_min_sale_qty) && $variant->use_store_config_min_sale_qty > 0) {
             $variant->min_sale_qty = $storeMinSaleQty;
@@ -2357,8 +2358,8 @@ class ProductHelper
         }
 
         $quantityTotal = $cartTotalQty + $addToQty;
-        $min = (float) ($variant->min_sale_qty ?? 0);
-        $max = (float) ($variant->max_sale_qty ?? 0);
+        $min           = (float) ($variant->min_sale_qty ?? 0);
+        $max           = (float) ($variant->max_sale_qty ?? 0);
 
         if ($max > 0 && $quantityTotal > $max) {
             $error = Text::sprintf('COM_J2COMMERCE_MAX_QUANTITY_FOR_PRODUCT', $max, $cartTotalQty);
@@ -2387,7 +2388,7 @@ class ProductHelper
             return 0;
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true)
             ->select('SUM(' . $db->quoteName('product_qty') . ') AS total_cart_qty')
             ->from($db->quoteName('#__j2commerce_cartitems'))
@@ -2422,7 +2423,7 @@ class ProductHelper
      */
     public static function setTaxText(float $price, int $taxProfileId, array $rates = [], bool $includesTax = false): void
     {
-        $text = '';
+        $text  = '';
         $total = 0.0;
 
         foreach ($rates as $rate) {
@@ -2544,7 +2545,7 @@ class ProductHelper
      */
     public static function getUpsells(object $sourceProduct): array
     {
-        $products = [];
+        $products  = [];
         $upSellCsv = $sourceProduct->up_sells ?? '';
 
         if (empty($upSellCsv)) {
@@ -2610,7 +2611,7 @@ class ProductHelper
      */
     public static function getCrossSells(object $sourceProduct): array
     {
-        $products = [];
+        $products     = [];
         $crossSellCsv = $sourceProduct->cross_sells ?? '';
 
         if (empty($crossSellCsv)) {
@@ -2662,7 +2663,7 @@ class ProductHelper
             return [];
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         // Select product fields, variant fields, and content title as product_name
@@ -2775,7 +2776,7 @@ class ProductHelper
      */
     public static function canShowCart(Registry $params): bool
     {
-        $isRegister = (int) $params->get('isregister', 0);
+        $isRegister   = (int) $params->get('isregister', 0);
         $allowDisplay = true;
 
         if ($isRegister && !Factory::getApplication()->getIdentity()->id) {
@@ -2800,7 +2801,7 @@ class ProductHelper
     public static function canShowPrice(Registry $params): bool
     {
         $showPriceForRegistered = (int) $params->get('show_product_price_for_register_user', 0);
-        $userId = Factory::getApplication()->getIdentity()->id;
+        $userId                 = Factory::getApplication()->getIdentity()->id;
 
         if ($showPriceForRegistered && empty($userId)) {
             return false;
@@ -2821,7 +2822,7 @@ class ProductHelper
     public static function canShowSku(Registry $params): bool
     {
         $showSkuForRegistered = (int) $params->get('show_product_sku_for_register_user', 0);
-        $userId = Factory::getApplication()->getIdentity()->id;
+        $userId               = Factory::getApplication()->getIdentity()->id;
 
         if ($showSkuForRegistered && empty($userId)) {
             return false;
@@ -2843,7 +2844,7 @@ class ProductHelper
      */
     public static function getCategories(): array
     {
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select($db->quoteName(['id', 'title', 'level']))
@@ -2866,12 +2867,12 @@ class ProductHelper
      */
     public static function getVendors(): array
     {
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select($db->quoteName([
                 'v.j2commerce_vendor_id',
-                'a.company'
+                'a.company',
             ]))
             ->from($db->quoteName('#__j2commerce_vendors', 'v'))
             ->join(
@@ -2896,12 +2897,12 @@ class ProductHelper
      */
     public static function getManufacturers(): array
     {
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select($db->quoteName([
                 'm.j2commerce_manufacturer_id',
-                'a.company'
+                'a.company',
             ]))
             ->from($db->quoteName('#__j2commerce_manufacturers', 'm'))
             ->join(
@@ -2942,7 +2943,7 @@ class ProductHelper
             return $cache[$cacheKey];
         }
 
-        $db = self::getDatabase();
+        $db                = self::getDatabase();
         $productOptionData = [];
 
         $query = $db->getQuery(true);
@@ -2951,12 +2952,12 @@ class ProductHelper
                 'po.option_id',
                 'po.parent_id',
                 'po.ordering',
-                'po.required'
+                'po.required',
             ]))
             ->select($db->quoteName([
                 'o.option_name',
                 'o.type',
-                'o.option_params'
+                'o.option_params',
             ]))
             ->from($db->quoteName('#__j2commerce_product_options', 'po'))
             ->join(
@@ -2978,7 +2979,7 @@ class ProductHelper
 
             if (\in_array($type, ['select', 'radio', 'checkbox', 'color'])) {
                 $productOptionValueData = [];
-                $productOptionValues = self::getChildProductOptionValues(
+                $productOptionValues    = self::getChildProductOptionValues(
                     (int) $productOption->j2commerce_productoption_id,
                     $productId,
                     $parentOptionvalueId
@@ -3055,7 +3056,7 @@ class ProductHelper
             return $cache[$cacheKey];
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $parentStr  = (string) $parentOptionvalueId;
@@ -3108,7 +3109,7 @@ class ProductHelper
      */
     public static function getProductOptionList(?string $productType): array
     {
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select($db->quoteName(['j2commerce_option_id', 'option_unique_name', 'option_name']))
@@ -3142,7 +3143,7 @@ class ProductHelper
             return null;
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select('*')
@@ -3177,10 +3178,10 @@ class ProductHelper
         }
 
         $modifiers = self::getPriceModifiers();
-        $options = [];
+        $options   = [];
 
         foreach ($modifiers as $key => $text) {
-            $selected = ($key === $value) ? ' selected="selected"' : '';
+            $selected  = ($key === $value) ? ' selected="selected"' : '';
             $options[] = '<option value="' . htmlspecialchars($key, ENT_QUOTES, 'UTF-8') . '"' . $selected . '>'
                 . htmlspecialchars($text, ENT_QUOTES, 'UTF-8') . '</option>';
         }
@@ -3217,20 +3218,20 @@ class ProductHelper
         }
 
         $pricingCalculator = $variant->pricing_calculator ?? 'standard';
-        $basePrice = (float) ($variant->price ?? 0);
+        $basePrice         = (float) ($variant->price ?? 0);
 
         // Initialize pricing object with base values
-        $pricing = new \stdClass();
-        $pricing->base_price = $basePrice;
-        $pricing->price = $basePrice;
+        $pricing                = new \stdClass();
+        $pricing->base_price    = $basePrice;
+        $pricing->price         = $basePrice;
         $pricing->special_price = null;
         $pricing->is_sale_price = false;
-        $pricing->calculator = $pricingCalculator;
-        $pricing->variant_id = (int) ($variant->j2commerce_variant_id ?? 0);
-        $pricing->sku = $variant->sku ?? '';
-        $pricing->quantity = $quantity;
-        $pricing->group_id = $groupId;
-        $pricing->date = $date;
+        $pricing->calculator    = $pricingCalculator;
+        $pricing->variant_id    = (int) ($variant->j2commerce_variant_id ?? 0);
+        $pricing->sku           = $variant->sku ?? '';
+        $pricing->quantity      = $quantity;
+        $pricing->group_id      = $groupId;
+        $pricing->date          = $date;
 
         $variantId = (int) ($variant->j2commerce_variant_id ?? 0);
 
@@ -3240,7 +3241,7 @@ class ProductHelper
 
         // Get current user's groups if not specified
         if (empty($groupId)) {
-            $user = Factory::getApplication()->getIdentity();
+            $user       = Factory::getApplication()->getIdentity();
             $userGroups = $user ? $user->getAuthorisedGroups() : [1]; // Default to public group
 
             if (!\in_array(1, $userGroups)) {
@@ -3260,7 +3261,7 @@ class ProductHelper
 
         if ($advancedPrice !== false && $advancedPrice < $basePrice) {
             $pricing->special_price = $advancedPrice;
-            $pricing->price = $advancedPrice;
+            $pricing->price         = $advancedPrice;
             $pricing->is_sale_price = true;
         }
 
@@ -3377,7 +3378,7 @@ class ProductHelper
         }
 
         $productId = (int) ($product->j2commerce_product_id ?? 0);
-        $qtyFloat = (float) $qty;
+        $qtyFloat  = (float) $qty;
 
         $query = $db->getQuery(true)
             ->select($db->quoteName('price'))
@@ -3410,7 +3411,7 @@ class ProductHelper
      */
     public function set_tax_text(float $price, int $taxProfileId, array $rates = [], bool $includesTax = false): void
     {
-        $text = '';
+        $text  = '';
         $total = 0.0;
 
         foreach ($rates as $rate) {
@@ -3554,7 +3555,7 @@ class ProductHelper
         // TODO: Get from J2Commerce store profile when available
         $storeMinSaleQty = 1.0;
         $storeMaxSaleQty = 0.0;
-        $storeNotifyQty = 5.0;
+        $storeNotifyQty  = 5.0;
 
         if (!empty($variant->use_store_config_min_sale_qty) && $variant->use_store_config_min_sale_qty > 0) {
             $variant->min_sale_qty = $storeMinSaleQty;
@@ -3629,8 +3630,8 @@ class ProductHelper
      */
     public function getProductLink(object &$product): void
     {
-        $productId = $product->j2commerce_product_id ?? 0;
-        $product->product_link = J2CommerceHelper::platform()->getProductUrl(['task' => 'view','id'   => (int) $productId]);
+        $productId             = $product->j2commerce_product_id ?? 0;
+        $product->product_link = J2CommerceHelper::platform()->getProductUrl(['task' => 'view','id' => (int) $productId]);
     }
 
     /**
@@ -3680,9 +3681,9 @@ class ProductHelper
         $inputClass = $options['class'] ?? $options['input_class'] ?? 'j2commerce-qty-input form-control';
         $iconMinus  = $options['icon-minus'] ?? 'icon-minus fs-sm';
         $iconPlus   = $options['icon-plus'] ?? 'icon-plus fs-sm';
-        $minQty  = (int) ($product->min_sale_qty ?? 1);
-        $maxQty  = (int) ($product->max_sale_qty ?? 0);
-        $isCart  = str_contains($context, 'cart');
+        $minQty     = (int) ($product->min_sale_qty ?? 1);
+        $maxQty     = (int) ($product->max_sale_qty ?? 0);
+        $isCart     = str_contains($context, 'cart');
 
         if ($isCart) {
             $currentQty = (int) ($product->orderitem_quantity ?? $product->product_qty ?? 1);
@@ -3800,7 +3801,7 @@ class ProductHelper
             return 0.0;
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select($db->quoteName('tr.tax_percent'))
@@ -3841,7 +3842,7 @@ class ProductHelper
         $imageUrl = $product->main_image ?? '';
 
         if (!empty($imageUrl)) {
-            $alt = htmlspecialchars($product->product_name ?? '', ENT_QUOTES, 'UTF-8');
+            $alt  = htmlspecialchars($product->product_name ?? '', ENT_QUOTES, 'UTF-8');
             $html = '<img src="' . htmlspecialchars($imageUrl, ENT_QUOTES, 'UTF-8')
                 . '" alt="' . $alt . '" class="j2commerce-product-image" />';
         }
@@ -3861,13 +3862,13 @@ class ProductHelper
      */
     public static function getFilters(array $items = [], array $catids = []): array
     {
-        $filters = [];
+        $filters                      = [];
         $filters['filter_categories'] = [];
-        $filters['sorting'] = [];
-        $filters['productfilters'] = [];
-        $filters['manufacturers'] = [];
-        $filters['vendors'] = [];
-        $filters['pricefilters'] = [];
+        $filters['sorting']           = [];
+        $filters['productfilters']    = [];
+        $filters['manufacturers']     = [];
+        $filters['vendors']           = [];
+        $filters['pricefilters']      = [];
 
         // Get product IDs from items
         $productIds = [];
@@ -3908,14 +3909,14 @@ class ProductHelper
      */
     public static function getVendorsWithNames(): array
     {
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select($db->quoteName([
                 'v.j2commerce_vendor_id',
                 'a.company',
                 'a.first_name',
-                'a.last_name'
+                'a.last_name',
             ]))
             ->from($db->quoteName('#__j2commerce_vendors', 'v'))
             ->join(
@@ -3942,7 +3943,7 @@ class ProductHelper
      */
     public static function getCategoriesForFilter(array $catids = []): array
     {
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select($db->quoteName(['id', 'title', 'level', 'parent_id']))
@@ -3954,7 +3955,7 @@ class ProductHelper
         // If parent categories specified, filter to those and their children
         if (!empty($catids)) {
             $sanitizedCatids = array_map('intval', $catids);
-            $catidList = implode(',', $sanitizedCatids);
+            $catidList       = implode(',', $sanitizedCatids);
 
             // Get the parent categories and all their children
             $subQuery = $db->getQuery(true);
@@ -3987,7 +3988,7 @@ class ProductHelper
      */
     public static function getPriceFilters(array $catids = []): array
     {
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         // Use min child variant price for variable/flexi products where master price is $0.
@@ -4060,7 +4061,7 @@ class ProductHelper
      */
     public static function getProductFilters(array $productIds = []): array
     {
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         // Get filter groups with their filters
@@ -4068,7 +4069,7 @@ class ProductHelper
                 'fg.j2commerce_filtergroup_id',
                 'fg.group_name',
                 'f.j2commerce_filter_id',
-                'f.filter_name'
+                'f.filter_name',
             ]))
             ->from($db->quoteName('#__j2commerce_filtergroups', 'fg'))
             ->join(
@@ -4079,13 +4080,13 @@ class ProductHelper
             ->where($db->quoteName('fg.enabled') . ' = 1')
             ->order([
                 $db->quoteName('fg.ordering') . ' ASC',
-                $db->quoteName('f.ordering') . ' ASC'
+                $db->quoteName('f.ordering') . ' ASC',
             ]);
 
         // If product IDs provided, only get filters that are assigned to those products
         if (!empty($productIds)) {
             $sanitizedIds = array_map('intval', $productIds);
-            $idList = implode(',', $sanitizedIds);
+            $idList       = implode(',', $sanitizedIds);
 
             $query->join(
                 'INNER',
@@ -4098,7 +4099,7 @@ class ProductHelper
                 $db->quoteName('fg.j2commerce_filtergroup_id'),
                 $db->quoteName('fg.group_name'),
                 $db->quoteName('f.j2commerce_filter_id'),
-                $db->quoteName('f.filter_name')
+                $db->quoteName('f.filter_name'),
             ]);
         }
 
@@ -4114,20 +4115,20 @@ class ProductHelper
             if (!isset($grouped[$groupId])) {
                 $grouped[$groupId] = [
                     'group_name' => $row->group_name,
-                    'filters' => []
+                    'filters'    => [],
                 ];
             }
 
             if ($row->j2commerce_filter_id) {
                 $grouped[$groupId]['filters'][] = (object) [
-                    'filter_id' => (int) $row->j2commerce_filter_id,
-                    'filter_name' => $row->filter_name
+                    'filter_id'   => (int) $row->j2commerce_filter_id,
+                    'filter_name' => $row->filter_name,
                 ];
             }
         }
 
         // Remove groups with no filters
-        return array_filter($grouped, fn($group) => !empty($group['filters']));
+        return array_filter($grouped, fn ($group) => !empty($group['filters']));
     }
 
     /**
@@ -4145,13 +4146,13 @@ class ProductHelper
         $lang->load('com_j2commerce', JPATH_SITE);
 
         return [
-            'a.ordering'    => \Joomla\CMS\Language\Text::_('COM_J2COMMERCE_SORT_DEFAULT'),
-            'a.title ASC'   => \Joomla\CMS\Language\Text::_('COM_J2COMMERCE_SORT_NAME_ASC'),
-            'a.title DESC'  => \Joomla\CMS\Language\Text::_('COM_J2COMMERCE_SORT_NAME_DESC'),
-            'v.price ASC'   => \Joomla\CMS\Language\Text::_('COM_J2COMMERCE_SORT_PRICE_ASC'),
-            'v.price DESC'  => \Joomla\CMS\Language\Text::_('COM_J2COMMERCE_SORT_PRICE_DESC'),
+            'a.ordering'     => \Joomla\CMS\Language\Text::_('COM_J2COMMERCE_SORT_DEFAULT'),
+            'a.title ASC'    => \Joomla\CMS\Language\Text::_('COM_J2COMMERCE_SORT_NAME_ASC'),
+            'a.title DESC'   => \Joomla\CMS\Language\Text::_('COM_J2COMMERCE_SORT_NAME_DESC'),
+            'v.price ASC'    => \Joomla\CMS\Language\Text::_('COM_J2COMMERCE_SORT_PRICE_ASC'),
+            'v.price DESC'   => \Joomla\CMS\Language\Text::_('COM_J2COMMERCE_SORT_PRICE_DESC'),
             'a.created DESC' => \Joomla\CMS\Language\Text::_('COM_J2COMMERCE_SORT_NEWEST'),
-            'p.hits DESC'   => \Joomla\CMS\Language\Text::_('COM_J2COMMERCE_SORT_POPULAR'),
+            'p.hits DESC'    => \Joomla\CMS\Language\Text::_('COM_J2COMMERCE_SORT_POPULAR'),
         ];
     }
 
@@ -4225,7 +4226,7 @@ class ProductHelper
     public function generateVariantSKU(object $variant): string
     {
         $productId = $this->getId();
-        $product = $productId ? self::getProductById($productId) : new \stdClass();
+        $product   = $productId ? self::getProductById($productId) : new \stdClass();
 
         return self::generateSKU($variant, $product);
     }

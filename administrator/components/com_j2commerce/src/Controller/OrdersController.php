@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -13,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Application\CMSApplication;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -22,7 +24,6 @@ use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Router\Route;
 use Joomla\Database\ParameterType;
 use Joomla\Input\Input;
-use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 /**
  * Orders list controller class.
@@ -67,11 +68,11 @@ class OrdersController extends AdminController
             throw new \Exception(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 403);
         }
 
-        $pks = (array) $this->input->post->get('cid', [], 'int');
-        $pks = array_filter($pks);
+        $pks      = (array) $this->input->post->get('cid', [], 'int');
+        $pks      = array_filter($pks);
         $statusId = $this->input->post->getInt('order_state_id', 0);
-        $notify = $this->input->post->getInt('notify_customer', 0) === 1;
-        $comment = $this->input->post->getString('status_comment', '');
+        $notify   = $this->input->post->getInt('notify_customer', 0) === 1;
+        $comment  = $this->input->post->getString('status_comment', '');
 
         try {
             if (empty($pks)) {
@@ -82,7 +83,7 @@ class OrdersController extends AdminController
                 throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_NO_STATUS_SELECTED'));
             }
 
-            $model = $this->getModel();
+            $model        = $this->getModel();
             $updatedCount = 0;
 
             foreach ($pks as $pk) {
@@ -157,9 +158,9 @@ class OrdersController extends AdminController
             return;
         }
 
-        $orderId = $this->input->post->getInt('order_id', 0);
+        $orderId   = $this->input->post->getInt('order_id', 0);
         $newStatus = $this->input->post->getInt('new_status', 0);
-        $notify = $this->input->post->getInt('notify', 0) === 1;
+        $notify    = $this->input->post->getInt('notify', 0) === 1;
 
         // Buffer output — plugin events (onJ2CommerceOrderStatusChange) can produce
         // stray output that would corrupt the JSON response on the first status change.
@@ -178,12 +179,12 @@ class OrdersController extends AdminController
             }
 
             $statusInfo = $this->getStatusInfo($newStatus);
-            $response = [
+            $response   = [
                 'success' => true,
                 'message' => Text::sprintf('COM_J2COMMERCE_ORDER_STATUS_UPDATED_TO', Text::_($statusInfo->orderstatus_name ?? '')),
-                'data' => [
+                'data'    => [
                     'statusName' => Text::_($statusInfo->orderstatus_name ?? ''),
-                    'cssclass' => $statusInfo->orderstatus_cssclass ?? 'badge text-bg-secondary',
+                    'cssclass'   => $statusInfo->orderstatus_cssclass ?? 'badge text-bg-secondary',
                 ],
             ];
         } catch (\Exception $e) {
@@ -238,7 +239,7 @@ class OrdersController extends AdminController
 
     private function getStatusInfo(int $statusId): ?object
     {
-        $db = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $db    = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
         $query = $db->getQuery(true)
             ->select([
                 $db->quoteName('orderstatus_name'),

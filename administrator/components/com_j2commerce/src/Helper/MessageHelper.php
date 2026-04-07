@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -33,7 +34,6 @@ use Joomla\CMS\Language\Text;
  */
 class MessageHelper
 {
-
     protected static $instance = null;
 
     /**
@@ -124,16 +124,16 @@ class MessageHelper
             '[SHIPPING_AMOUNT]' => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_SHIPPING_AMOUNT'),
             '[DISCOUNT_AMOUNT]' => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_DISCOUNT_AMOUNT'),
             '[CURRENT_YEAR]'    => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_CURRENT_YEAR'),
-            '[TAX_LINES]'      => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_TAX_LINES'),
+            '[TAX_LINES]'       => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_TAX_LINES'),
             '[ITEMS]'           => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_ITEMS'),
             '[PACKING_ITEMS]'   => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_PACKING_ITEMS'),
         ];
 
         // Dispatch plugin event to allow adding custom tags
         try {
-            $app = Factory::getApplication();
+            $app        = Factory::getApplication();
             $dispatcher = $app->getDispatcher();
-            $event = new \Joomla\CMS\Event\GenericEvent('onJ2CommerceAfterAdditionalTags', ['result' => &$result]);
+            $event      = new \Joomla\CMS\Event\GenericEvent('onJ2CommerceAfterAdditionalTags', ['result' => &$result]);
             $dispatcher->dispatch('onJ2CommerceAfterAdditionalTags', $event);
         } catch (\Exception $e) {
             // Silently continue if event dispatch fails
@@ -214,20 +214,20 @@ class MessageHelper
     public static function getBillingTags(): array
     {
         return [
-            '[CUSTOMER_NAME]'      => Text::_('COM_J2COMMERCE_CUSTOMER_NAME'),
-            '[BILLING_FIRSTNAME]'  => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_BILLING_FIRSTNAME'),
-            '[BILLING_LASTNAME]'   => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_BILLING_LASTNAME'),
-            '[BILLING_EMAIL]'      => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_BILLING_EMAIL'),
-            '[BILLING_ADDRESS_1]'  => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_BILLING_ADDRESS_1'),
-            '[BILLING_ADDRESS_2]'  => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_BILLING_ADDRESS_2'),
-            '[BILLING_CITY]'       => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_BILLING_CITY'),
-            '[BILLING_ZIP]'        => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_BILLING_ZIP'),
-            '[BILLING_COUNTRY]'    => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_BILLING_COUNTRY'),
-            '[BILLING_STATE]'      => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_BILLING_STATE'),
-            '[BILLING_PHONE]'      => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_BILLING_PHONE'),
-            '[BILLING_MOBILE]'     => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_BILLING_MOBILE'),
-            '[BILLING_COMPANY]'    => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_BILLING_COMPANY'),
-            '[BILLING_VATID]'      => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_BILLING_VATID'),
+            '[CUSTOMER_NAME]'     => Text::_('COM_J2COMMERCE_CUSTOMER_NAME'),
+            '[BILLING_FIRSTNAME]' => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_BILLING_FIRSTNAME'),
+            '[BILLING_LASTNAME]'  => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_BILLING_LASTNAME'),
+            '[BILLING_EMAIL]'     => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_BILLING_EMAIL'),
+            '[BILLING_ADDRESS_1]' => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_BILLING_ADDRESS_1'),
+            '[BILLING_ADDRESS_2]' => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_BILLING_ADDRESS_2'),
+            '[BILLING_CITY]'      => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_BILLING_CITY'),
+            '[BILLING_ZIP]'       => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_BILLING_ZIP'),
+            '[BILLING_COUNTRY]'   => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_BILLING_COUNTRY'),
+            '[BILLING_STATE]'     => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_BILLING_STATE'),
+            '[BILLING_PHONE]'     => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_BILLING_PHONE'),
+            '[BILLING_MOBILE]'    => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_BILLING_MOBILE'),
+            '[BILLING_COMPANY]'   => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_BILLING_COMPANY'),
+            '[BILLING_VATID]'     => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_BILLING_VATID'),
         ];
     }
 

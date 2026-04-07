@@ -46,7 +46,7 @@ class ImageProcessorHelper
         }
 
         ob_start();
-        $result  = imagewebp($image, null, $this->webpQuality);
+        $result   = imagewebp($image, null, $this->webpQuality);
         $webpData = ob_get_clean();
 
         imagedestroy($image);
@@ -142,7 +142,7 @@ class ImageProcessorHelper
         imagecopy($canvas, $scaledHandle, $offsetX, $offsetY, 0, 0, $scaledW, $scaledH);
 
         ob_start();
-        $result  = imagewebp($canvas, null, $this->webpQuality);
+        $result   = imagewebp($canvas, null, $this->webpQuality);
         $webpData = ob_get_clean();
 
         imagedestroy($canvas);
@@ -155,7 +155,7 @@ class ImageProcessorHelper
         $handle = $image->getHandle();
 
         ob_start();
-        $result  = imagewebp($handle, null, $this->webpQuality);
+        $result   = imagewebp($handle, null, $this->webpQuality);
         $webpData = ob_get_clean();
 
         return ($result && !empty($webpData)) ? $webpData : false;

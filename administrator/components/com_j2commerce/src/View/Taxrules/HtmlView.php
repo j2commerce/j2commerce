@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -20,7 +21,6 @@ use Joomla\CMS\Form\Form;
 use Joomla\CMS\Helper\ContentHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
-use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Pagination\Pagination;
 use Joomla\CMS\Toolbar\ToolbarHelper;
@@ -131,8 +131,8 @@ class HtmlView extends BaseHtmlView
     protected function getNavbar(): string
     {
         $displayData = [
-            'items' => MenuHelper::getMenuItems(),
-            'active' => MenuHelper::getActiveView()
+            'items'  => MenuHelper::getMenuItems(),
+            'active' => MenuHelper::getActiveView(),
         ];
 
         return LayoutHelper::render('navbar.default', $displayData, JPATH_COMPONENT_ADMINISTRATOR . '/layouts');
@@ -147,8 +147,8 @@ class HtmlView extends BaseHtmlView
      */
     protected function addToolbar(): void
     {
-        $canDo = ContentHelper::getActions('com_j2commerce');
-        $user  = Factory::getApplication()->getIdentity();
+        $canDo   = ContentHelper::getActions('com_j2commerce');
+        $user    = Factory::getApplication()->getIdentity();
         $toolbar = $this->getDocument()->getToolbar();
 
         ToolbarHelper::title(Text::_('COM_J2COMMERCE_TAXRULES'), 'fas fa-gavel');

@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\SetupGuide;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 final class SetupCheckResult
 {
@@ -20,5 +20,6 @@ final class SetupCheckResult
         public readonly string $status,
         public readonly string $message,
         public readonly array $data = [],
-    ) {}
+    ) {
+    }
 }

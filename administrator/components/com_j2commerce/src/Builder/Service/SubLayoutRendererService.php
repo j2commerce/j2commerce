@@ -265,7 +265,7 @@ PHP;
 
         // Prepend the correct PHP header for this sub-layout
         $header = $this->getSubLayoutHeader($subLayoutId);
-        $php = $header . $php . "\n";
+        $php    = $header . $php . "\n";
 
         $syntaxCheck = $this->validatePhpSyntax($php);
 

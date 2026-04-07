@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -9,7 +10,7 @@
 
 namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Event\GenericEvent;
 use Joomla\CMS\Factory;
@@ -38,7 +39,7 @@ class AppsModel extends ListModel
                 'ordering', 'a.ordering',
                 'access', 'a.access',
                 'checked_out', 'a.checked_out',
-                'checked_out_time', 'a.checked_out_time'
+                'checked_out_time', 'a.checked_out_time',
             ];
         }
 
@@ -71,10 +72,10 @@ class AppsModel extends ListModel
 
         try {
             $dispatcher = Factory::getApplication()->getDispatcher();
-            $event = new GenericEvent('onJ2CommerceRegisterApps', ['subject' => $this]);
+            $event      = new GenericEvent('onJ2CommerceRegisterApps', ['subject' => $this]);
             $dispatcher->dispatch('onJ2CommerceRegisterApps', $event);
 
-            $results = $event->getArgument('result', []);
+            $results      = $event->getArgument('result', []);
             $candidateIds = [];
 
             foreach ($results as $result) {
@@ -88,7 +89,7 @@ class AppsModel extends ListModel
             }
 
             if (!empty($candidateIds)) {
-                $db = $this->getDatabase();
+                $db    = $this->getDatabase();
                 $query = $db->getQuery(true)
                     ->select($db->quoteName('extension_id'))
                     ->from($db->quoteName('#__extensions'))
@@ -118,7 +119,7 @@ class AppsModel extends ListModel
     protected function getListQuery()
     {
         // Create a new query object.
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         // Select the required fields from the table.
@@ -144,7 +145,7 @@ class AppsModel extends ListModel
             $placeholders = [];
 
             foreach ($externalIds as $idx => $extId) {
-                $paramName = ':extId' . $idx;
+                $paramName      = ':extId' . $idx;
                 $placeholders[] = $paramName;
                 $query->bind($paramName, $externalIds[$idx], ParameterType::INTEGER);
             }
@@ -197,7 +198,7 @@ class AppsModel extends ListModel
         }
 
         // Add the list ordering clause (name sorting handled in PHP after translation)
-        $orderCol = $this->getState('list.ordering', 'a.name');
+        $orderCol  = $this->getState('list.ordering', 'a.name');
         $orderDirn = $this->getState('list.direction', 'ASC');
 
         if ($orderCol && $orderDirn && $orderCol !== 'a.name') {
@@ -211,7 +212,7 @@ class AppsModel extends ListModel
 
     public function getItems()
     {
-        $orderCol = $this->getState('list.ordering', 'a.name');
+        $orderCol     = $this->getState('list.ordering', 'a.name');
         $isSortByName = ($orderCol === 'a.name');
 
         // When sorting by name, fetch ALL items so PHP can sort by translated name
@@ -231,35 +232,35 @@ class AppsModel extends ListModel
             $this->setState('list.limit', $origLimit);
         }
 
-        if ($items === false || !is_array($items)) {
+        if ($items === false || !\is_array($items)) {
             Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_APPS_NO_PLUGINS_FOUND'), 'warning');
             return [];
         }
 
         foreach ($items as $item) {
             if (str_starts_with($item->element, 'app_')) {
-                $item->plugin_type = 'app';
+                $item->plugin_type         = 'app';
                 $item->plugin_type_display = Text::_('COM_J2COMMERCE_APP_TYPE_APP');
             } elseif (str_starts_with($item->element, 'payment_')) {
-                $item->plugin_type = 'payment';
+                $item->plugin_type         = 'payment';
                 $item->plugin_type_display = Text::_('COM_J2COMMERCE_APP_TYPE_PAYMENT');
             } elseif (str_starts_with($item->element, 'shipping_')) {
-                $item->plugin_type = 'shipping';
+                $item->plugin_type         = 'shipping';
                 $item->plugin_type_display = Text::_('COM_J2COMMERCE_APP_TYPE_SHIPPING');
             } elseif (str_starts_with($item->element, 'report_')) {
-                $item->plugin_type = 'report';
+                $item->plugin_type         = 'report';
                 $item->plugin_type_display = Text::_('COM_J2COMMERCE_APP_TYPE_REPORT');
             } else {
-                $item->plugin_type = 'other';
+                $item->plugin_type         = 'other';
                 $item->plugin_type_display = Text::_('COM_J2COMMERCE_APP_TYPE_OTHER');
             }
 
-            $pluginPath = JPATH_SITE . '/plugins/' . $item->folder . '/' . $item->element;
+            $pluginPath        = JPATH_SITE . '/plugins/' . $item->folder . '/' . $item->element;
             $item->files_exist = is_dir($pluginPath);
 
-            $manifest = !empty($item->manifest_cache) ? json_decode($item->manifest_cache) : null;
-            $item->version = $manifest?->version ?? '';
-            $item->author = $manifest?->author ?? '';
+            $manifest          = !empty($item->manifest_cache) ? json_decode($item->manifest_cache) : null;
+            $item->version     = $manifest?->version ?? '';
+            $item->author      = $manifest?->author ?? '';
             $item->description = $manifest?->description ?? '';
 
             // All plugins edit via Joomla Plugin Manager (no App singular view exists)
@@ -271,7 +272,9 @@ class AppsModel extends ListModel
         // Sort by translated name and manually paginate
         if ($isSortByName) {
             $direction = strtoupper($this->getState('list.direction', 'ASC'));
-            usort($items, static fn ($a, $b) => $direction === 'ASC'
+            usort(
+                $items,
+                static fn ($a, $b) => $direction === 'ASC'
                 ? strcasecmp($a->display_name, $b->display_name)
                 : strcasecmp($b->display_name, $a->display_name)
             );

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -9,7 +10,7 @@
 
 namespace J2Commerce\Component\J2commerce\Administrator\Table;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -37,7 +38,7 @@ class OptionTable extends Table
         $this->typeAlias = 'com_j2commerce.option';
 
         // Set up the table for publish/unpublish functionality
-        $this->_columnAlias = array('published' => 'enabled');
+        $this->_columnAlias = ['published' => 'enabled'];
 
         parent::__construct('#__j2commerce_options', 'j2commerce_option_id', $db);
     }
@@ -54,16 +55,16 @@ class OptionTable extends Table
      */
     public function bind($src, $ignore = [])
     {
-        if (is_array($src)) {
+        if (\is_array($src)) {
             // Handle complex array fields that need JSON conversion
             $complexFields = ['option_params', 'option_values'];
 
             foreach ($complexFields as $field) {
-                if (isset($src[$field]) && is_array($src[$field])) {
+                if (isset($src[$field]) && \is_array($src[$field])) {
                     // Use Registry to handle complex data structure
-                    $registry = new Registry($src[$field]);
+                    $registry    = new Registry($src[$field]);
                     $src[$field] = $registry->toString();
-                } elseif (isset($src[$field]) && is_string($src[$field])) {
+                } elseif (isset($src[$field]) && \is_string($src[$field])) {
                     // Validate JSON string
                     if (!empty($src[$field]) && !$this->isValidJson($src[$field])) {
                         // If invalid JSON, try to fix common issues
@@ -117,7 +118,7 @@ class OptionTable extends Table
 
         // Validate type is one of the allowed types
         $allowedTypes = ['text', 'textarea', 'select', 'radio', 'checkbox', 'date', 'datetime', 'time', 'file', 'image', 'color', 'number', 'email', 'url'];
-        if (!in_array($this->type, $allowedTypes)) {
+        if (!\in_array($this->type, $allowedTypes)) {
             throw new \Exception(Text::_('COM_J2COMMERCE_OPTION_ERROR_INVALID_TYPE'));
         }
 
@@ -202,7 +203,7 @@ class OptionTable extends Table
         // If option deletion was successful, also delete related option values
         if ($result && $optionId > 0) {
             try {
-                $db = $this->getDbo();
+                $db    = $this->getDbo();
                 $query = $db->getQuery(true)
                     ->delete($db->quoteName('#__j2commerce_optionvalues'))
                     ->where($db->quoteName('option_id') . ' = :option_id')
@@ -245,7 +246,7 @@ class OptionTable extends Table
 
         // Make it unique by adding a number if necessary
         $originalAlias = $alias;
-        $counter = 1;
+        $counter       = 1;
 
         while (!$this->validateUniqueAlias($alias)) {
             $alias = $originalAlias . '_' . $counter;
@@ -272,7 +273,7 @@ class OptionTable extends Table
      */
     protected function validateUniqueAlias($alias)
     {
-        $db = $this->getDbo();
+        $db    = $this->getDbo();
         $query = $db->getQuery(true)
             ->select('COUNT(*)')
             ->from($db->quoteName('#__j2commerce_options'))

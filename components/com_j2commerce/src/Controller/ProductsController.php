@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,27 +12,22 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Site\Controller;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
-use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
-use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\CMS\MVC\Model\ListModel;
-use Joomla\CMS\MVC\View\HtmlView;
 use Joomla\CMS\Response\JsonResponse;
-use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
-use Joomla\Filesystem\Path;
 use Joomla\Registry\Registry;
 
 class ProductsController extends BaseController
 {
     public function filter(): void
     {
-        $app = Factory::getApplication();
+        $app   = Factory::getApplication();
         $input = $app->getInput();
 
         // Load component language file for translated strings
@@ -70,7 +66,7 @@ class ProductsController extends BaseController
                     $filterValues = explode(',', $filtersParam);
                     // Check if values are numeric IDs or aliases
                     $numericFilters = array_filter($filterValues, 'is_numeric');
-                    if (count($numericFilters) === count($filterValues)) {
+                    if (\count($numericFilters) === \count($filterValues)) {
                         // All numeric - use as IDs directly
                         $productfilterIds = $numericFilters;
                     } else {
@@ -80,12 +76,12 @@ class ProductsController extends BaseController
                 }
             }
 
-            $catid = $input->getInt('filter_catid', 0);
-            $tagIds = $input->get('tag_ids', [], 'array');
-            $tagMatch = $input->getString('tag_match', 'any');
+            $catid     = $input->getInt('filter_catid', 0);
+            $tagIds    = $input->get('tag_ids', [], 'array');
+            $tagMatch  = $input->getString('tag_match', 'any');
             $priceFrom = $input->getFloat('pricefrom', 0);
-            $priceTo = $input->getFloat('priceto', 0);
-            $search = $input->getString('search', '');
+            $priceTo   = $input->getFloat('priceto', 0);
+            $search    = $input->getString('search', '');
 
             // Support both full sort key and SEF-friendly sort names
             $sortby = $input->getString('sortby', '');
@@ -94,12 +90,12 @@ class ProductsController extends BaseController
                 if (!empty($sortParam)) {
                     // Map SEF-friendly names back to internal sort keys
                     $sortMap = [
-                        'name-asc' => 'a.title ASC',
-                        'name-desc' => 'a.title DESC',
-                        'price-asc' => 'v.price ASC',
+                        'name-asc'   => 'a.title ASC',
+                        'name-desc'  => 'a.title DESC',
+                        'price-asc'  => 'v.price ASC',
                         'price-desc' => 'v.price DESC',
-                        'newest' => 'a.created DESC',
-                        'popular' => 'a.hits DESC',
+                        'newest'     => 'a.created DESC',
+                        'popular'    => 'a.hits DESC',
                     ];
                     $sortby = $sortMap[$sortParam] ?? $sortParam;
                 }
@@ -115,7 +111,7 @@ class ProductsController extends BaseController
             // During AJAX requests, $app->getParams() returns component defaults without Itemid context
             $itemid = $input->getInt('Itemid', 0);
             if ($itemid > 0) {
-                $menu = $app->getMenu();
+                $menu     = $app->getMenu();
                 $menuItem = $menu->getItem($itemid);
                 if ($menuItem && $menuItem->component === 'com_j2commerce') {
                     $params = clone $app->getParams();
@@ -174,9 +170,9 @@ class ProductsController extends BaseController
                 $this->applySortOrder($model, $sortby);
             }
 
-            $items = $model->getItems();
+            $items      = $model->getItems();
             $pagination = $model->getPagination();
-            $filters = $model->getFilters($items);
+            $filters    = $model->getFilters($items);
 
             // Set subtemplate override from menu item params before rendering
             $subtemplate = $params->get('subtemplate', '');
@@ -184,7 +180,7 @@ class ProductsController extends BaseController
                 ProductLayoutService::setSubtemplateOverride($subtemplate);
             }
 
-            $productsHtml = $this->renderProducts($items, $params, $catid);
+            $productsHtml   = $this->renderProducts($items, $params, $catid);
             $paginationHtml = $this->renderPagination($pagination, $catid);
 
             if (!empty($subtemplate)) {
@@ -192,11 +188,11 @@ class ProductsController extends BaseController
             }
 
             $response = [
-                'products' => $productsHtml,
+                'products'   => $productsHtml,
                 'pagination' => $paginationHtml,
-                'total' => $pagination->total,
-                'start' => $pagination->limitstart,
-                'limit' => $pagination->limit,
+                'total'      => $pagination->total,
+                'start'      => $pagination->limitstart,
+                'limit'      => $pagination->limit,
             ];
 
             $app->setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -220,9 +216,9 @@ class ProductsController extends BaseController
                 . '</div></div></div>';
         }
 
-        $app = Factory::getApplication();
-        $itemId = $app->getInput()->getInt('Itemid', 0);
-        $columns = (int) $params->get('list_no_of_columns', 3);
+        $app      = Factory::getApplication();
+        $itemId   = $app->getInput()->getInt('Itemid', 0);
+        $columns  = (int) $params->get('list_no_of_columns', 3);
         $colClass = 'col-md-' . (int) round(12 / $columns);
 
         ob_start();
@@ -315,7 +311,7 @@ class ProductsController extends BaseController
             return [];
         }
 
-        $db = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $db    = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
         $query = $db->getQuery(true);
 
         $query->select($db->quoteName(['j2commerce_filter_id', 'filter_name']))

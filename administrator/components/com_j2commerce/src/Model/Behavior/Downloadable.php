@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -95,7 +96,7 @@ class Downloadable
 
             // Downloadable products have only one variant (like simple products)
             try {
-                $variants = $variantModel->getItems();
+                $variants         = $variantModel->getItems();
                 $record->variants = $variants[0] ?? new \stdClass();
             } catch (\Exception $e) {
                 $app->enqueueMessage($e->getMessage(), 'error');
@@ -118,7 +119,7 @@ class Downloadable
             }
 
             // Process params as Registry
-            $registry = new Registry($record->params);
+            $registry       = new Registry($record->params);
             $record->params = $registry;
         }
     }
@@ -136,7 +137,7 @@ class Downloadable
             return;
         }
 
-        $app = Factory::getApplication();
+        $app           = Factory::getApplication();
         $utilityHelper = J2CommerceHelper::utilities();
 
         // Set default visibility
@@ -175,7 +176,7 @@ class Downloadable
             'vendor_id',
             'isdefault_variant',
             'length_class_id',
-            'weight_class_id'
+            'weight_class_id',
         ];
         foreach ($integerFields as $key) {
             $data[$key] = isset($data[$key]) && !empty($data[$key])
@@ -192,7 +193,7 @@ class Downloadable
             'weight',
             'min_sale_qty',
             'max_sale_qty',
-            'notify_qty'
+            'notify_qty',
         ];
         foreach ($floatFields as $key) {
             $data[$key] = isset($data[$key]) && !empty($data[$key])
@@ -281,7 +282,7 @@ class Downloadable
         }
 
         // Try to load existing master variant by product_id
-        $db = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $db    = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
         $query = $db->getQuery(true)
             ->select($db->quoteName('j2commerce_variant_id'))
             ->from($db->quoteName('#__j2commerce_variants'))
@@ -296,9 +297,9 @@ class Downloadable
         }
 
         $variant->bind($this->_rawData);
-        $variant->is_master = 1;
+        $variant->is_master  = 1;
         $variant->product_id = $table->j2commerce_product_id;
-        $variant->shipping = 0;
+        $variant->shipping   = 0;
         $variant->check();
         $variant->store();
 
@@ -389,10 +390,10 @@ class Downloadable
         $submittedIds = [];
 
         foreach ($files as $fileData) {
-            $fileData = (array) $fileData;
-            $fileId = (int) ($fileData['id'] ?? 0);
+            $fileData    = (array) $fileData;
+            $fileId      = (int) ($fileData['id'] ?? 0);
             $displayName = trim($fileData['display_name'] ?? '');
-            $path = trim($fileData['path'] ?? '');
+            $path        = trim($fileData['path'] ?? '');
 
             if (empty($path)) {
                 continue;
@@ -410,10 +411,10 @@ class Downloadable
                 $submittedIds[] = $fileId;
             }
 
-            $fileTable->product_id = $productId;
+            $fileTable->product_id                = $productId;
             $fileTable->product_file_display_name = $displayName;
-            $fileTable->product_file_save_name = $path;
-            $fileTable->download_total = (int) ($fileData['download_total'] ?? $fileTable->download_total ?? 0);
+            $fileTable->product_file_save_name    = $path;
+            $fileTable->download_total            = (int) ($fileData['download_total'] ?? $fileTable->download_total ?? 0);
 
             $fileTable->store();
 
@@ -485,7 +486,7 @@ class Downloadable
     public function onAfterGetProduct(AbstractEvent $event): void
     {
         // Model is optional - may be null when called from ProductHelper::getFullProduct()
-        $model = $event->getArgument('subject');
+        $model   = $event->getArgument('subject');
         $product = $event->getArgument('product');
 
         // Product is required, check product_type for downloadable products
@@ -493,7 +494,7 @@ class Downloadable
             return;
         }
 
-        $app = Factory::getApplication();
+        $app           = Factory::getApplication();
         $productHelper = new ProductHelper();
 
         // Get links
@@ -507,7 +508,7 @@ class Downloadable
 
         // Downloadable products have only one variant
         try {
-            $variants = $variantModel->getItems();
+            $variants          = $variantModel->getItems();
             $product->variants = $variants[0] ?? $this->mvcFactory->createTable('Variant', 'Administrator');
         } catch (\Exception $e) {
             // Only set error on model if model is available (may be null when called from ProductHelper)
@@ -518,7 +519,7 @@ class Downloadable
         }
 
         // Process params as Registry
-        $registry = new Registry($product->params);
+        $registry        = new Registry($product->params);
         $product->params = $registry;
 
         // Process variant
@@ -565,7 +566,7 @@ class Downloadable
             }
 
             try {
-                $product->options = $productHelper->getProductOptions($product);
+                $product->options       = $productHelper->getProductOptions($product);
                 $defaultSelectedOptions = $productHelper->getDefaultProductOptions($product->options);
 
                 $productOptionData = $productHelper->getOptionPrice(
@@ -593,11 +594,11 @@ class Downloadable
             return [];
         }
 
-        $app = Factory::getApplication();
-        $input = $app->getInput();
-        $config = J2CommerceHelper::config();
+        $app           = Factory::getApplication();
+        $input         = $app->getInput();
+        $config        = J2CommerceHelper::config();
         $productHelper = new ProductHelper();
-        $pluginHelper = J2CommerceHelper::plugin();
+        $pluginHelper  = J2CommerceHelper::plugin();
 
         $productId = $input->getInt('product_id', 0);
         if (!$productId) {
@@ -609,7 +610,7 @@ class Downloadable
         $variantModel = $this->mvcFactory->createModel('Variants', 'Administrator');
         $variantModel->setState('filter.product_id', $product->j2commerce_product_id);
         $variantModel->setState('filter.is_master', 1);
-        $variants = $variantModel->getItems();
+        $variants          = $variantModel->getItems();
         $product->variants = $variants[0] ?? new \stdClass();
 
         // Process variant
@@ -637,22 +638,22 @@ class Downloadable
                 $product->j2commerce_product_id
             );
             $basePrice = $pricing->base_price + $productOptionData['option_price'];
-            $price = $pricing->price + $productOptionData['option_price'];
+            $price     = $pricing->price + $productOptionData['option_price'];
         } else {
             $basePrice = $pricing->base_price;
-            $price = $pricing->price;
+            $price     = $pricing->price;
         }
 
         // Trigger plugin events
         $pluginHelper->event('BeforeUpdateProductReturn', [&$config, $product]);
 
-        $return = [];
-        $return['pricing'] = [];
-        $return['pricing']['base_price'] = $productHelper->displayPrice($basePrice, $product, $config);
-        $return['pricing']['price'] = $productHelper->displayPrice($price, $product, $config);
-        $return['pricing']['original'] = [];
+        $return                                      = [];
+        $return['pricing']                           = [];
+        $return['pricing']['base_price']             = $productHelper->displayPrice($basePrice, $product, $config);
+        $return['pricing']['price']                  = $productHelper->displayPrice($price, $product, $config);
+        $return['pricing']['original']               = [];
         $return['pricing']['original']['base_price'] = $basePrice;
-        $return['pricing']['original']['price'] = $price;
+        $return['pricing']['original']['price']      = $price;
 
         // Trigger plugin events
         $pluginHelper->event('AfterUpdateProductReturn', [&$return, $product, $config]);

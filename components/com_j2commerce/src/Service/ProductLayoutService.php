@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,26 +12,26 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Site\Service;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\FileLayout;
 use Joomla\CMS\Router\Route;
 use Joomla\Registry\Registry;
-use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
-use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 
 final class ProductLayoutService
 {
     public const CONTEXT_LIST            = 'list';
-    public const CONTEXT_CROSSSELL      = 'crosssell';
-    public const CONTEXT_UPSELL         = 'upsell';
-    public const CONTEXT_MODULE         = 'module';
-    public const CONTEXT_SEARCH         = 'search';
-    public const CONTEXT_AJAX           = 'ajax';
-    public const CONTEXT_CUSTOMERBOUGHT = 'customerbought';
-    public const CONTEXT_ARTICLE        = 'article';
+    public const CONTEXT_CROSSSELL       = 'crosssell';
+    public const CONTEXT_UPSELL          = 'upsell';
+    public const CONTEXT_MODULE          = 'module';
+    public const CONTEXT_SEARCH          = 'search';
+    public const CONTEXT_AJAX            = 'ajax';
+    public const CONTEXT_CUSTOMERBOUGHT  = 'customerbought';
+    public const CONTEXT_ARTICLE         = 'article';
 
     public static function renderProductItem(
         object $product,
@@ -42,7 +43,7 @@ final class ProductLayoutService
         $productLink = $product->product_link ?? self::buildProductLink($product);
 
         $productHelper = J2CommerceHelper::product();
-        $contextParts = self::parseContext($context);
+        $contextParts  = self::parseContext($context);
 
         $displayData = [
             'product'         => $product,
@@ -62,15 +63,15 @@ final class ProductLayoutService
             'showSku'         => (bool) $params->get('list_show_product_sku', 0),
             'showStock'       => (bool) $params->get('list_show_product_stock', 0)
                                  && isset($product->variant)
-                                 && is_object($product->variant),
-            'showQuickview'   => (bool) $params->get('list_enable_quickview', 0),
-            'linkTitle'       => (bool) $params->get('list_link_title', 1),
-            'linkImage'       => (bool) $params->get('list_image_link_to_product', 1),
-            'productLink'     => $productLink,
-            'cartText'        => !empty($product->addtocart_text)
+                                 && \is_object($product->variant),
+            'showQuickview' => (bool) $params->get('list_enable_quickview', 0),
+            'linkTitle'     => (bool) $params->get('list_link_title', 1),
+            'linkImage'     => (bool) $params->get('list_image_link_to_product', 1),
+            'productLink'   => $productLink,
+            'cartText'      => !empty($product->addtocart_text)
                                  ? Text::_($product->addtocart_text)
                                  : Text::_('COM_J2COMMERCE_ADD_TO_CART'),
-            'layoutBasePath'  => self::getActivePluginLayoutPath(),
+            'layoutBasePath' => self::getActivePluginLayoutPath(),
         ];
 
         $displayData = array_merge($displayData, $overrides);
@@ -81,8 +82,8 @@ final class ProductLayoutService
     public static function parseContext(string $context): array
     {
         $parts = explode('.', $context, 2);
-        $base = $parts[0] ?: self::CONTEXT_LIST;
-        $sub = $parts[1] ?? null;
+        $base  = $parts[0] ?: self::CONTEXT_LIST;
+        $sub   = $parts[1] ?? null;
 
         $chain = [];
         if ($sub !== null) {
@@ -103,7 +104,7 @@ final class ProductLayoutService
     public static function contextMatches(string $context, string|array $patterns): bool
     {
         $patterns = (array) $patterns;
-        $parsed = self::parseContext($context);
+        $parsed   = self::parseContext($context);
 
         foreach ($patterns as $pattern) {
             if ($pattern === $context) {
@@ -121,7 +122,7 @@ final class ProductLayoutService
                 }
             }
 
-            if (in_array($pattern, $parsed['chain'], true)) {
+            if (\in_array($pattern, $parsed['chain'], true)) {
                 return true;
             }
         }
@@ -137,10 +138,10 @@ final class ProductLayoutService
     public static function renderLayout(string $layoutId, array $displayData): string
     {
         $pluginElement = self::getActivePluginElement();
-        $layout = new FileLayout($layoutId);
+        $layout        = new FileLayout($layoutId);
 
         $template = Factory::getApplication()->getTemplate();
-        $paths = [];
+        $paths    = [];
 
         if ($pluginElement) {
             // Template override for this subtemplate (highest priority)
@@ -217,8 +218,8 @@ final class ProductLayoutService
 
         $folder = match ($subtemplate) {
             'tag_bootstrap5', 'bootstrap5' => 'app_bootstrap5',
-            'uikit'                        => 'app_uikit',
-            default                        => 'app_' . $subtemplate,
+            'uikit' => 'app_uikit',
+            default => 'app_' . $subtemplate,
         };
 
         return $folder;
@@ -239,8 +240,8 @@ final class ProductLayoutService
     private static function buildProductLink(object $product): string
     {
         $productId = (int) ($product->j2commerce_product_id ?? 0);
-        $alias = $product->product_alias ?? $product->alias ?? null;
-        $catid = (int) ($product->catid ?? $product->product_catid ?? 0);
+        $alias     = $product->product_alias ?? $product->alias ?? null;
+        $catid     = (int) ($product->catid ?? $product->product_catid ?? 0);
 
         $rawUrl = RouteHelper::getProductRoute($productId, $alias, $catid ?: null);
 

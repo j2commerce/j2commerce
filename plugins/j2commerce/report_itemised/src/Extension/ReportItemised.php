@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  Plugin.J2Commerce.ReportItemised
@@ -102,8 +103,8 @@ final class ReportItemised extends CMSPlugin implements SubscriberInterface
             'onJ2CommerceReportPluginAjax'   => 'onReportPluginAjax',
             'onJ2CommerceReportPluginExport' => 'onReportPluginExport',
             // Legacy events (backwards compatibility)
-            'onJ2CommerceGetReportView'      => 'onGetReportView',
-            'onJ2CommerceGetReportExported'  => 'onGetReportExported',
+            'onJ2CommerceGetReportView'     => 'onGetReportView',
+            'onJ2CommerceGetReportExported' => 'onGetReportExported',
         ];
     }
 
@@ -209,7 +210,7 @@ final class ReportItemised extends CMSPlugin implements SubscriberInterface
         $event->setArgument('items', $items);
 
         // Build chart data + template variables
-        $vars = new \stdClass();
+        $vars            = new \stdClass();
         $vars->items     = $items;
         $vars->currency  = J2CommerceHelper::currency();
         $vars->listOrder = $model->getState('list.ordering', 'total_qty');
@@ -326,12 +327,12 @@ final class ReportItemised extends CMSPlugin implements SubscriberInterface
         $qtyCol       = Text::_('PLG_J2COMMERCE_REPORT_ITEMISED_COL_QUANTITY');
         $purchasesCol = Text::_('PLG_J2COMMERCE_REPORT_ITEMISED_COL_PURCHASES');
 
-        $export   = [];
-        $qtyTotal = 0;
+        $export     = [];
+        $qtyTotal   = 0;
         $orderTotal = 0;
 
         foreach ($items as $item) {
-            $qtyTotal   += (int) $item->total_qty;
+            $qtyTotal += (int) $item->total_qty;
             $orderTotal += (int) $item->order_count;
 
             // Build options string from attributes
@@ -347,7 +348,7 @@ final class ReportItemised extends CMSPlugin implements SubscriberInterface
                 $optionStr = implode(', ', $parts);
             }
 
-            $csvRow = new \stdClass();
+            $csvRow                = new \stdClass();
             $csvRow->$productIdCol = $item->product_id;
             $csvRow->$nameCol      = $item->orderitem_name;
             $csvRow->$optionsCol   = $optionStr;
@@ -358,7 +359,7 @@ final class ReportItemised extends CMSPlugin implements SubscriberInterface
         }
 
         // Totals row
-        $finalRow = new \stdClass();
+        $finalRow                = new \stdClass();
         $finalRow->$productIdCol = '';
         $finalRow->$nameCol      = Text::_('PLG_J2COMMERCE_REPORT_ITEMISED_TOTAL');
         $finalRow->$optionsCol   = '';
@@ -427,7 +428,7 @@ final class ReportItemised extends CMSPlugin implements SubscriberInterface
         $model = $this->createModel();
         $items = $model->getItems();
 
-        $vars = new \stdClass();
+        $vars           = new \stdClass();
         $vars->items    = $items;
         $vars->currency = J2CommerceHelper::currency();
         $vars->reportId = $app->getInput()->getInt('id', 0);

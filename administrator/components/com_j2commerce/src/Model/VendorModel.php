@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -125,7 +126,7 @@ class VendorModel extends AdminModel
 
         if ($item && $item->address_id) {
             // Load the associated address record
-            $db = $this->getDatabase();
+            $db    = $this->getDatabase();
             $query = $db->getQuery(true);
 
             $query->select('*')
@@ -139,19 +140,19 @@ class VendorModel extends AdminModel
             if ($address) {
                 // Merge address fields into the item
                 $item->j2commerce_address_id = $address->j2commerce_address_id;
-                $item->first_name = $address->first_name;
-                $item->last_name = $address->last_name;
-                $item->email = $address->email;
-                $item->address_1 = $address->address_1;
-                $item->address_2 = $address->address_2;
-                $item->city = $address->city;
-                $item->zip = $address->zip;
-                $item->country_id = $address->country_id;
-                $item->zone_id = $address->zone_id;
-                $item->phone_1 = $address->phone_1;
-                $item->phone_2 = $address->phone_2;
-                $item->company = $address->company;
-                $item->tax_number = $address->tax_number;
+                $item->first_name            = $address->first_name;
+                $item->last_name             = $address->last_name;
+                $item->email                 = $address->email;
+                $item->address_1             = $address->address_1;
+                $item->address_2             = $address->address_2;
+                $item->city                  = $address->city;
+                $item->zip                   = $address->zip;
+                $item->country_id            = $address->country_id;
+                $item->zone_id               = $address->zone_id;
+                $item->phone_1               = $address->phone_1;
+                $item->phone_2               = $address->phone_2;
+                $item->company               = $address->company;
+                $item->tax_number            = $address->tax_number;
 
                 // Load custom address fields dynamically
                 $customFields = $this->getAddressCustomFields();
@@ -175,7 +176,7 @@ class VendorModel extends AdminModel
      */
     public function getAddressCustomFields(): array
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         $query->select($db->quoteName(['field_namekey', 'field_name', 'field_type', 'field_required']))
@@ -223,7 +224,7 @@ class VendorModel extends AdminModel
         $addressFields = [
             'first_name', 'last_name', 'email', 'address_1', 'address_2',
             'city', 'zip', 'country_id', 'zone_id', 'phone_1', 'phone_2',
-            'company', 'tax_number'
+            'company', 'tax_number',
         ];
 
         $addressData = [];
@@ -249,9 +250,9 @@ class VendorModel extends AdminModel
         } else {
             // Create new address
             $addressData['user_id'] = (int) ($data['j2commerce_user_id'] ?? 0);
-            $addressData['type'] = 'vendor';
-            $addressId = $this->saveAddress($addressData);
-            $data['address_id'] = $addressId;
+            $addressData['type']    = 'vendor';
+            $addressId              = $this->saveAddress($addressData);
+            $data['address_id']     = $addressId;
         }
 
         // Remove address fields from vendor data before saving
@@ -278,19 +279,19 @@ class VendorModel extends AdminModel
      */
     protected function saveAddress(array $addressData): int
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $isNew = empty($addressData['j2commerce_address_id']);
 
         if ($isNew) {
             // Insert new address
             $columns = [];
-            $values = [];
-            $binds = [];
+            $values  = [];
+            $binds   = [];
 
             foreach ($addressData as $key => $value) {
-                $columns[] = $db->quoteName($key);
-                $placeholder = ':' . $key;
-                $values[] = $placeholder;
+                $columns[]           = $db->quoteName($key);
+                $placeholder         = ':' . $key;
+                $values[]            = $placeholder;
                 $binds[$placeholder] = $value;
             }
 
@@ -307,35 +308,35 @@ class VendorModel extends AdminModel
             $db->execute();
 
             return (int) $db->insertid();
-        } else {
-            // Update existing address
-            $addressId = (int) $addressData['j2commerce_address_id'];
-            unset($addressData['j2commerce_address_id']);
-
-            $fields = [];
-            $binds = [];
-
-            foreach ($addressData as $key => $value) {
-                $placeholder = ':' . $key;
-                $fields[] = $db->quoteName($key) . ' = ' . $placeholder;
-                $binds[$placeholder] = $value;
-            }
-
-            $query = $db->getQuery(true);
-            $query->update($db->quoteName('#__j2commerce_addresses'))
-                ->set($fields)
-                ->where($db->quoteName('j2commerce_address_id') . ' = :address_id')
-                ->bind(':address_id', $addressId, \Joomla\Database\ParameterType::INTEGER);
-
-            foreach ($binds as $placeholder => $value) {
-                $query->bind($placeholder, $binds[$placeholder]);
-            }
-
-            $db->setQuery($query);
-            $db->execute();
-
-            return $addressId;
         }
+        // Update existing address
+        $addressId = (int) $addressData['j2commerce_address_id'];
+        unset($addressData['j2commerce_address_id']);
+
+        $fields = [];
+        $binds  = [];
+
+        foreach ($addressData as $key => $value) {
+            $placeholder         = ':' . $key;
+            $fields[]            = $db->quoteName($key) . ' = ' . $placeholder;
+            $binds[$placeholder] = $value;
+        }
+
+        $query = $db->getQuery(true);
+        $query->update($db->quoteName('#__j2commerce_addresses'))
+            ->set($fields)
+            ->where($db->quoteName('j2commerce_address_id') . ' = :address_id')
+            ->bind(':address_id', $addressId, \Joomla\Database\ParameterType::INTEGER);
+
+        foreach ($binds as $placeholder => $value) {
+            $query->bind($placeholder, $binds[$placeholder]);
+        }
+
+        $db->setQuery($query);
+        $db->execute();
+
+        return $addressId;
+
     }
 
     /**

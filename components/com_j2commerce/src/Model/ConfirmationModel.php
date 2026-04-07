@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Site\Model;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderItemAttributeHelper;
 use Joomla\CMS\Factory;
@@ -22,13 +23,13 @@ class ConfirmationModel extends BaseDatabaseModel
 {
     protected string $_context = 'com_j2commerce.confirmation';
 
-    protected ?object $_order = null;
-    protected ?array $_orderItems = null;
-    protected ?object $_orderInfo = null;
+    protected ?object $_order         = null;
+    protected ?array $_orderItems     = null;
+    protected ?object $_orderInfo     = null;
     protected ?array $_orderShippings = null;
-    protected ?array $_orderTaxes = null;
+    protected ?array $_orderTaxes     = null;
     protected ?array $_orderDiscounts = null;
-    protected ?array $_orderFees = null;
+    protected ?array $_orderFees      = null;
 
     protected function populateState(): void
     {

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -97,7 +98,7 @@ class ProductpricesModel extends ListModel
      */
     protected function getListQuery()
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         // Select fields from productprices table
@@ -117,7 +118,7 @@ class ProductpricesModel extends ListModel
         }
 
         // Add the list ordering clause
-        $orderCol = $this->state->get('list.ordering', 'pp.customer_group_id');
+        $orderCol  = $this->state->get('list.ordering', 'pp.customer_group_id');
         $orderDirn = $this->state->get('list.direction', 'ASC');
 
         $query->order($db->escape($orderCol) . ' ' . $db->escape($orderDirn));

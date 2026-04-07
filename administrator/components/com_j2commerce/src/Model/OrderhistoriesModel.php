@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -9,15 +10,13 @@
 
 namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\CMS\Plugin\PluginHelper;
-use Joomla\Database\ParameterType;
-use RuntimeException;
 
 /**
  * Orderhistories Model
@@ -40,7 +39,7 @@ class OrderhistoriesModel extends ListModel
                 'j2commerce_orderhistory_id', 'order_id',
                 'order_state_id', 'notify_customer',
                 'comment', 'created_on',
-                'created_by', 'params'
+                'created_by', 'params',
             ];
         }
 
@@ -100,7 +99,7 @@ class OrderhistoriesModel extends ListModel
     protected function getListQuery()
     {
         // Create a new query object.
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         // Select the required fields from the table.
@@ -113,7 +112,7 @@ class OrderhistoriesModel extends ListModel
         $query->from($db->quoteName('#__j2commerce_orderhistories', 'a'));
 
         // Add the list ordering clause.
-        $orderCol = $this->getState('list.ordering', 'a.created_on');
+        $orderCol  = $this->getState('list.ordering', 'a.created_on');
         $orderDirn = $this->getState('list.direction', 'DESC');
 
         if ($orderCol && $orderDirn) {
@@ -135,7 +134,7 @@ class OrderhistoriesModel extends ListModel
         $items = parent::getItems();
 
         // Ensure we always return an array
-        if ($items === false || !is_array($items)) {
+        if ($items === false || !\is_array($items)) {
             // Log the error for debugging
             $app = Factory::getApplication();
             $app->enqueueMessage('Failed to retrieve order histories from database. Please check if the j2commerce_orderhistories table exists.', 'warning');
@@ -189,9 +188,9 @@ class OrderhistoriesModel extends ListModel
      */
     public function publish(&$pks, $value = 1)
     {
-        $user = Factory::getApplication()->getIdentity();
+        $user  = Factory::getApplication()->getIdentity();
         $table = $this->getTable();
-        $pks = (array) $pks;
+        $pks   = (array) $pks;
 
         // Include the content plugins for the on-save events.
         PluginHelper::importPlugin('content');
@@ -209,7 +208,7 @@ class OrderhistoriesModel extends ListModel
 
         // Attempt to change the state of the records.
         if (!$table->publish($pks, $value, $user->id)) {
-            throw new RuntimeException($table->getError());
+            throw new \RuntimeException($table->getError());
         }
 
         $context = $this->option . '.' . $this->name;
@@ -217,8 +216,8 @@ class OrderhistoriesModel extends ListModel
         // Trigger the content plugins for the enabled state change.
         $result = Factory::getApplication()->triggerEvent('onContentChangeState', [$context, $pks, $value]);
 
-        if (in_array(false, $result, true)) {
-            throw new RuntimeException($table->getError());
+        if (\in_array(false, $result, true)) {
+            throw new \RuntimeException($table->getError());
         }
 
         // Clear the component's cache
@@ -238,9 +237,9 @@ class OrderhistoriesModel extends ListModel
      */
     public function delete(&$pks)
     {
-        $user = Factory::getApplication()->getIdentity();
+        $user  = Factory::getApplication()->getIdentity();
         $table = $this->getTable();
-        $pks = (array) $pks;
+        $pks   = (array) $pks;
 
         // Include the content plugins for the on delete events.
         PluginHelper::importPlugin('content');
@@ -265,21 +264,21 @@ class OrderhistoriesModel extends ListModel
         // Trigger the before delete event.
         $result = Factory::getApplication()->triggerEvent('onContentBeforeDelete', [$context, $table]);
 
-        if (in_array(false, $result, true)) {
-            throw new RuntimeException($table->getError());
+        if (\in_array(false, $result, true)) {
+            throw new \RuntimeException($table->getError());
         }
 
         // Attempt to delete the records.
         foreach ($pks as $pk) {
             if (!$table->delete($pk)) {
-                throw new RuntimeException($table->getError());
+                throw new \RuntimeException($table->getError());
             }
 
             // Trigger the after delete event.
             $result = Factory::getApplication()->triggerEvent('onContentAfterDelete', [$context, $table]);
 
-            if (in_array(false, $result, true)) {
-                throw new RuntimeException($table->getError());
+            if (\in_array(false, $result, true)) {
+                throw new \RuntimeException($table->getError());
             }
         }
 
@@ -289,23 +288,26 @@ class OrderhistoriesModel extends ListModel
         return true;
     }
 
-    public function setOrderHistory($order, $comment = '', $notify=0) {
+    public function setOrderHistory($order, $comment = '', $notify=0)
+    {
 
-        if(!isset($order->order_id)) return;
+        if (!isset($order->order_id)) {
+            return;
+        }
 
-        if(empty($comment)) {
+        if (empty($comment)) {
             $comment = Text::_('COM_J2COMMERCE_ORDER_UPDATED');
         }
 
         $history = $this->getTable();
         $history->reset();
-        $history->j2commerce_orderhistory_id = 0;
-        $values = array();
+        $history->j2commerce_orderhistory_id  = 0;
+        $values                               = [];
         $values['j2commerce_orderhistory_id'] = null;
-        $values['order_id'] = $order->order_id;
-        $values['order_state_id'] = $order->order_state_id;
-        $values['comment'] = $comment;
-        $values['notify_customer'] = $notify;
+        $values['order_id']                   = $order->order_id;
+        $values['order_state_id']             = $order->order_state_id;
+        $values['comment']                    = $comment;
+        $values['notify_customer']            = $notify;
         $history->save($values);
 
         return true;

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  plg_user_j2commerce
@@ -11,10 +12,9 @@ declare(strict_types=1);
 
 namespace J2Commerce\Plugin\User\J2Commerce\Extension;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
-use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
@@ -23,7 +23,6 @@ use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\User\UserFactoryInterface;
 use Joomla\Database\DatabaseAwareTrait;
 use Joomla\Database\ParameterType;
-use Joomla\Event\DispatcherInterface;
 use Joomla\Event\Event;
 use Joomla\Event\SubscriberInterface;
 
@@ -37,8 +36,8 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
     {
         return [
             'onContentPrepareForm' => 'onContentPrepareForm',
-            'onUserAfterSave'     => 'onUserAfterSave',
-            'onAjaxJ2commerce'    => 'onAjaxJ2commerce',
+            'onUserAfterSave'      => 'onUserAfterSave',
+            'onAjaxJ2commerce'     => 'onAjaxJ2commerce',
         ];
     }
 
@@ -155,7 +154,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         $html = $this->buildFieldsHtml($fields, $address, $sessionData, $fieldHtml, $disableName);
 
         // Inject as a custom XML field into the form
-        $xml = new \SimpleXMLElement('<form></form>');
+        $xml      = new \SimpleXMLElement('<form></form>');
         $fieldset = $xml->addChild('fields');
         $fieldset->addAttribute('name', 'j2commerce_address');
         $fs = $fieldset->addChild('fieldset');
@@ -197,14 +196,14 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
                     continue;
                 }
 
-                $value = $sessionData[$namekey] ?? ($address?->$namekey ?? '');
+                $value    = $sessionData[$namekey] ?? ($address?->$namekey ?? '');
                 $rendered = CustomFieldHelper::renderField($field, (string) $value, [
                     'id' => $namekey,
                 ]);
 
                 // Wrap field name for form submission as j2reg[field_name]
                 $rendered = $this->wrapFieldNames($rendered, $namekey);
-                $html = str_replace('[' . $namekey . ']', $rendered, $html);
+                $html     = str_replace('[' . $namekey . ']', $rendered, $html);
             }
 
             // Remove any unprocessed placeholders
@@ -235,7 +234,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
 
         // Wrap in container with address ID hidden field
         $addressId = $address ? (int) $address->j2commerce_address_id : 0;
-        $html = '<div id="billing-new">' . $html
+        $html      = '<div id="billing-new">' . $html
             . '<input type="hidden" name="j2reg[j2commerce_address_id]" value="' . $addressId . '">'
             . '</div>';
 
@@ -315,7 +314,7 @@ document.addEventListener("DOMContentLoaded", function() {
         $app       = $this->getApplication();
         $joomForm  = $app->getInput()->get('jform', [], 'ARRAY');
 
-        $name = $joomForm['name'] ?? ($joomForm['username'] ?? '');
+        $name  = $joomForm['name'] ?? ($joomForm['username'] ?? '');
         $parts = explode(' ', trim($name), 2);
 
         $j2Fields['first_name'] = $parts[0] ?: $name;

@@ -1,8 +1,8 @@
 <?php
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
-use Joomla\CMS\Language\Text;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use Joomla\CMS\Language\Text;
 
 extract($displayData);
 

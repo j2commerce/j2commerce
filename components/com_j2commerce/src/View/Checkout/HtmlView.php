@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Site\View\Checkout;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
@@ -29,12 +30,12 @@ class HtmlView extends BaseHtmlView
     public $currency;
     public $storeProfile;
     public $user;
-    public bool $logged = false;
+    public bool $logged       = false;
     public bool $showShipping = false;
-    public $menuItemParams = null;
-    public $order = null;
-    public array $items = [];
-    public array $taxes = [];
+    public $menuItemParams    = null;
+    public $order             = null;
+    public array $items       = [];
+    public array $taxes       = [];
 
     public function display($tpl = null): void
     {
@@ -42,14 +43,14 @@ class HtmlView extends BaseHtmlView
 
         UtilitiesHelper::sendNoCacheHeaders();
 
-        $this->params = J2CommerceHelper::config();
-        $this->currency = J2CommerceHelper::currency();
+        $this->params       = J2CommerceHelper::config();
+        $this->currency     = J2CommerceHelper::currency();
         $this->storeProfile = J2CommerceHelper::storeProfile();
-        $this->user = $app->getIdentity();
-        $this->logged = ($this->user && $this->user->id > 0);
+        $this->user         = $app->getIdentity();
+        $this->logged       = ($this->user && $this->user->id > 0);
 
-        $menu = $app->getMenu();
-        $active = $menu->getActive();
+        $menu                 = $app->getMenu();
+        $active               = $menu->getActive();
         $this->menuItemParams = \is_object($active) ? $active->getParams() : new Registry('{}');
 
         // Check cart has items — use cart model to get order with items

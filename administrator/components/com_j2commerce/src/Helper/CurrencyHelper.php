@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -14,7 +15,6 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\Database\DatabaseInterface;
-use Joomla\Database\ParameterType;
 
 // No direct access
 \defined('_JEXEC') or die;
@@ -186,7 +186,7 @@ class CurrencyHelper
             return;
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select('*')
@@ -211,7 +211,7 @@ class CurrencyHelper
      */
     public static function reset(): void
     {
-        self::$currencies = [];
+        self::$currencies  = [];
         self::$currentCode = '';
         self::$initialized = false;
     }
@@ -531,17 +531,17 @@ class CurrencyHelper
         }
 
         // Get currency properties
-        $currency = self::$currencies[$currencyCode] ?? [];
+        $currency         = self::$currencies[$currencyCode] ?? [];
         $currencyPosition = (string) ($currency['currency_position'] ?? 'pre');
-        $currencySymbol = (string) ($currency['currency_symbol'] ?? '');
-        $decimalPlaces = (int) ($currency['currency_num_decimals'] ?? 2);
+        $currencySymbol   = (string) ($currency['currency_symbol'] ?? '');
+        $decimalPlaces    = (int) ($currency['currency_num_decimals'] ?? 2);
 
         // Determine exchange rate
         if ($exchangeRate > 0) {
             $value = $number * $exchangeRate;
         } else {
             $currencyValue = (float) ($currency['currency_value'] ?? 1.0);
-            $value = $currencyValue > 0 ? $number * $currencyValue : $number;
+            $value         = $currencyValue > 0 ? $number * $currencyValue : $number;
         }
 
         // Build the formatted string
@@ -554,11 +554,11 @@ class CurrencyHelper
 
         // Determine separators
         if ($format) {
-            $decimalPoint = (string) ($currency['currency_decimal'] ?? '.');
+            $decimalPoint       = (string) ($currency['currency_decimal'] ?? '.');
             $thousandsSeparator = (string) ($currency['currency_thousands'] ?? ',');
         } else {
             // For raw numbers, use standard format
-            $decimalPoint = '.';
+            $decimalPoint       = '.';
             $thousandsSeparator = '';
         }
 
@@ -595,7 +595,7 @@ class CurrencyHelper
 
         // Get exchange rates
         $fromRate = self::has($from) ? self::getValue($from) : 0.0;
-        $toRate = self::has($to) ? self::getValue($to) : 0.0;
+        $toRate   = self::has($to) ? self::getValue($to) : 0.0;
 
         // Avoid division by zero
         if ($fromRate <= 0) {
@@ -794,7 +794,7 @@ class CurrencyHelper
     public static function getNumericCurrencies(): array
     {
         $currencies = self::getNumericCodes();
-        $result = [];
+        $result     = [];
 
         foreach ($currencies as $code => $numericCode) {
             $result[$code] = $code;
@@ -837,12 +837,12 @@ class CurrencyHelper
         $options = [];
 
         foreach (self::$currencies as $code => $currency) {
-            $option = new \stdClass();
-            $option->value = $code;
-            $option->text = $currency['currency_title'] . ' (' . $currency['currency_symbol'] . ')';
-            $option->code = $code;
+            $option         = new \stdClass();
+            $option->value  = $code;
+            $option->text   = $currency['currency_title'] . ' (' . $currency['currency_symbol'] . ')';
+            $option->code   = $code;
             $option->symbol = $currency['currency_symbol'];
-            $options[] = $option;
+            $options[]      = $option;
         }
 
         return $options;

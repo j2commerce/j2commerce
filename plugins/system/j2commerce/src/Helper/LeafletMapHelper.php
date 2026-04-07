@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Plugin\System\J2Commerce\Helper;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Factory;

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -117,7 +118,7 @@ class WeightHelper
             return;
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select($db->quoteName([
@@ -127,7 +128,7 @@ class WeightHelper
                 'weight_value',
                 'num_decimals',
                 'enabled',
-                'ordering'
+                'ordering',
             ]))
             ->from($db->quoteName('#__j2commerce_weights'))
             ->where($db->quoteName('enabled') . ' = 1')
@@ -156,7 +157,7 @@ class WeightHelper
      */
     public static function reset(): void
     {
-        self::$weights = [];
+        self::$weights     = [];
         self::$initialized = false;
     }
 
@@ -347,11 +348,11 @@ class WeightHelper
         $options = [];
 
         foreach (self::$weights as $id => $weight) {
-            $option = new \stdClass();
+            $option        = new \stdClass();
             $option->value = $id;
-            $option->text = $weight['title'] . ' (' . $weight['unit'] . ')';
-            $option->unit = $weight['unit'];
-            $options[] = $option;
+            $option->text  = $weight['title'] . ' (' . $weight['unit'] . ')';
+            $option->unit  = $weight['unit'];
+            $options[]     = $option;
         }
 
         return $options;
@@ -421,7 +422,7 @@ class WeightHelper
     public static function formatValue(mixed $value, string $unit = '', ?int $weightClassId = null): string
     {
         $floatValue = (float) $value;
-        $decimals = self::getDecimalPlaces($weightClassId);
+        $decimals   = self::getDecimalPlaces($weightClassId);
 
         $formatted = number_format($floatValue, $decimals, '.', '');
 

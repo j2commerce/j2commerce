@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,13 +12,12 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Field;
 
-use Joomla\CMS\Form\Field\SpacerField;
-use Joomla\CMS\Language\Text;
-use Joomla\CMS\Layout\FileLayout;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CategoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use Joomla\CMS\Form\Field\SpacerField;
+use Joomla\CMS\Language\Text;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 /**
  * Custom field type to render J2Commerce category settings accordion.
@@ -83,22 +83,22 @@ class Categoryj2commerceField extends SpacerField
         }
 
         // Render the accordion
-        $html = [];
+        $html   = [];
         $html[] = '<div class="accordion" id="j2commerce-category-accordion">';
 
         foreach ($apps as $index => $app) {
-            $element = $app['element'] ?? '';
-            $nameKey = $app['name'] ?? 'PLG_J2COMMERCE_' . strtoupper($element);
+            $element     = $app['element'] ?? '';
+            $nameKey     = $app['name'] ?? 'PLG_J2COMMERCE_' . strtoupper($element);
             $description = $app['description'] ?? ($nameKey . '_DESCRIPTION');
-            $imagePath = $app['image'] ?? J2CommerceHelper::getAppImagePath($element);
-            $collapseId = 'category-app-collapse-' . htmlspecialchars($element, ENT_QUOTES, 'UTF-8');
-            $headingId = 'category-heading-' . htmlspecialchars($element, ENT_QUOTES, 'UTF-8');
+            $imagePath   = $app['image'] ?? J2CommerceHelper::getAppImagePath($element);
+            $collapseId  = 'category-app-collapse-' . htmlspecialchars($element, ENT_QUOTES, 'UTF-8');
+            $headingId   = 'category-heading-' . htmlspecialchars($element, ENT_QUOTES, 'UTF-8');
 
             // First accordion item is open by default for better UX
-            $isFirst = $index === 0;
-            $buttonClass = $isFirst ? 'accordion-button' : 'accordion-button collapsed';
+            $isFirst       = $index === 0;
+            $buttonClass   = $isFirst ? 'accordion-button' : 'accordion-button collapsed';
             $collapseClass = $isFirst ? 'accordion-collapse collapse show' : 'accordion-collapse collapse';
-            $ariaExpanded = $isFirst ? 'true' : 'false';
+            $ariaExpanded  = $isFirst ? 'true' : 'false';
 
             $html[] = '<div class="accordion-item">';
             $html[] = '    <h2 class="accordion-header" id="' . $headingId . '">';

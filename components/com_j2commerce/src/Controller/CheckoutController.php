@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -16,7 +17,6 @@ namespace J2Commerce\Component\J2commerce\Site\Controller;
 // phpcs:enable PSR1.Files.SideEffects
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CartHelper;
-use J2Commerce\Component\J2commerce\Administrator\Helper\CartOrder;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
@@ -42,12 +42,12 @@ class CheckoutController extends BaseController
 
     protected function getCheckoutView(): \Joomla\CMS\MVC\View\HtmlView
     {
-        $view = $this->getView('Checkout', 'Html');
-        $view->params = J2CommerceHelper::config();
-        $view->currency = J2CommerceHelper::currency();
+        $view               = $this->getView('Checkout', 'Html');
+        $view->params       = J2CommerceHelper::config();
+        $view->currency     = J2CommerceHelper::currency();
         $view->storeProfile = J2CommerceHelper::storeProfile();
-        $view->user = $this->app->getIdentity();
-        $view->logged = ($view->user && $view->user->id > 0);
+        $view->user         = $this->app->getIdentity();
+        $view->logged       = ($view->user && $view->user->id > 0);
 
         return $view;
     }
@@ -94,19 +94,19 @@ class CheckoutController extends BaseController
 
         $this->app->logout();
 
-        $params = J2CommerceHelper::config();
+        $params   = J2CommerceHelper::config();
         $redirect = $params->get('config_cart_empty_redirect', 'cart');
 
         switch ($redirect) {
             case 'homepage':
-                $menu = $this->app->getMenu('site');
+                $menu    = $this->app->getMenu('site');
                 $default = $menu->getDefault($this->app->getLanguage()->getTag());
-                $url = $default ? Route::_($default->link . '&Itemid=' . $default->id) : Route::_('index.php');
+                $url     = $default ? Route::_($default->link . '&Itemid=' . $default->id) : Route::_('index.php');
                 break;
 
             case 'menu':
                 $menuItemId = (int) $params->get('continue_cart_redirect_menu', 0);
-                $url = $menuItemId ? Route::_('index.php?Itemid=' . $menuItemId) : Route::_('index.php');
+                $url        = $menuItemId ? Route::_('index.php?Itemid=' . $menuItemId) : Route::_('index.php');
                 break;
 
             case 'url':
@@ -134,7 +134,7 @@ class CheckoutController extends BaseController
      */
     protected function collectFormData(): array
     {
-        $data = [];
+        $data     = [];
         $postData = $this->input->post->getArray();
 
         foreach ($postData as $key => $value) {
@@ -222,9 +222,9 @@ class CheckoutController extends BaseController
     {
         $this->validateAjaxToken() or $this->jsonResponse(['error' => ['warning' => Text::_('JINVALID_TOKEN')]]);
 
-        $user = $this->app->getIdentity();
+        $user    = $this->app->getIdentity();
         $session = $this->app->getSession();
-        $json = [];
+        $json    = [];
 
         if ($user && $user->id) {
             $json['redirect'] = $this->getCheckoutUrl();
@@ -236,19 +236,19 @@ class CheckoutController extends BaseController
         J2CommerceHelper::plugin()->event('CheckoutBeforeLogin', [&$json]);
 
         if (!$json) {
-            $email = trim($this->input->getString('email', ''));
+            $email    = trim($this->input->getString('email', ''));
             $password = $this->input->getRaw('password', '');
 
             if ($email === '') {
                 $json['error']['warning'] = Text::_('COM_J2COMMERCE_CHECKOUT_ERROR_EMAIL_REQUIRED');
-                $json['error']['email'] = Text::_('COM_J2COMMERCE_CHECKOUT_ERROR_EMAIL_REQUIRED');
+                $json['error']['email']   = Text::_('COM_J2COMMERCE_CHECKOUT_ERROR_EMAIL_REQUIRED');
                 $this->jsonResponse($json);
 
                 return;
             }
 
             if ($password === '') {
-                $json['error']['warning'] = Text::_('COM_J2COMMERCE_CHECKOUT_ERROR_PASSWORD_REQUIRED');
+                $json['error']['warning']  = Text::_('COM_J2COMMERCE_CHECKOUT_ERROR_PASSWORD_REQUIRED');
                 $json['error']['password'] = Text::_('COM_J2COMMERCE_CHECKOUT_ERROR_PASSWORD_REQUIRED');
                 $this->jsonResponse($json);
 
@@ -256,7 +256,7 @@ class CheckoutController extends BaseController
             }
 
             $guestSessionId = $session->getId();
-            $credentials = ['username' => $email, 'password' => $password];
+            $credentials    = ['username' => $email, 'password' => $password];
 
             try {
                 $result = $this->app->login($credentials);
@@ -337,13 +337,13 @@ class CheckoutController extends BaseController
         $session = $this->app->getSession();
         $session->set('uaccount', 'register', 'j2commerce');
 
-        $order = $this->getCartOrder();
+        $order        = $this->getCartOrder();
         $showShipping = $this->determineShowShipping($order);
-        $fields = CustomFieldHelper::getFieldsByArea('register');
+        $fields       = CustomFieldHelper::getFieldsByArea('register');
 
         $this->renderStep('register', [
             'showShipping' => $showShipping,
-            'fields' => $fields,
+            'fields'       => $fields,
         ]);
     }
 
@@ -351,8 +351,8 @@ class CheckoutController extends BaseController
     {
         $this->validateAjaxToken() or $this->jsonResponse(['error' => ['warning' => Text::_('JINVALID_TOKEN')]]);
 
-        $session = $this->app->getSession();
-        $json = [];
+        $session  = $this->app->getSession();
+        $json     = [];
         $formData = $this->collectFormData();
 
         // Validate custom fields
@@ -361,7 +361,7 @@ class CheckoutController extends BaseController
 
         // Validate password
         $password = $this->input->getRaw('password', '');
-        $confirm = $this->input->getRaw('confirm', '');
+        $confirm  = $this->input->getRaw('confirm', '');
 
         if (empty($password)) {
             $errors['password'] = Text::_('COM_J2COMMERCE_CHECKOUT_PASSWORD_REQUIRED');
@@ -379,13 +379,13 @@ class CheckoutController extends BaseController
         }
 
         // Create user
-        $email = trim($formData['email'] ?? '');
+        $email     = trim($formData['email'] ?? '');
         $firstName = trim($formData['first_name'] ?? '');
-        $lastName = trim($formData['last_name'] ?? '');
-        $name = $firstName . ' ' . $lastName;
+        $lastName  = trim($formData['last_name'] ?? '');
+        $name      = $firstName . ' ' . $lastName;
 
         // Check if email already exists
-        $userFactory = Factory::getContainer()->get(UserFactoryInterface::class);
+        $userFactory  = Factory::getContainer()->get(UserFactoryInterface::class);
         $existingUser = $userFactory->loadUserByUsername($email);
 
         if ($existingUser && $existingUser->id > 0) {
@@ -399,18 +399,18 @@ class CheckoutController extends BaseController
         $guestSessionId = $session->getId();
 
         try {
-            $user = new \Joomla\CMS\User\User();
-            $user->name = $name;
-            $user->username = $email;
-            $user->email = $email;
+            $user                 = new \Joomla\CMS\User\User();
+            $user->name           = $name;
+            $user->username       = $email;
+            $user->email          = $email;
             $user->password_clear = $password;
 
             // Get default user group from Joomla global config
-            $params = \Joomla\CMS\Component\ComponentHelper::getParams('com_users');
+            $params       = \Joomla\CMS\Component\ComponentHelper::getParams('com_users');
             $defaultGroup = $params->get('new_usertype', 2);
             $user->groups = [$defaultGroup];
 
-            $user->block = 0;
+            $user->block        = 0;
             $user->registerDate = Factory::getDate()->toSql();
 
             if (!$user->save()) {
@@ -432,10 +432,10 @@ class CheckoutController extends BaseController
             }
 
             // Save address to database
-            $addressData = CustomFieldHelper::collectAddressData($fields, $formData);
+            $addressData            = CustomFieldHelper::collectAddressData($fields, $formData);
             $addressData['user_id'] = (int) $loggedUser->id;
-            $addressData['email'] = $email;
-            $addressData['type'] = 'billing';
+            $addressData['email']   = $email;
+            $addressData['type']    = 'billing';
 
             $newAddressId = $this->saveAddress($addressData);
 
@@ -483,17 +483,17 @@ class CheckoutController extends BaseController
         $session = $this->app->getSession();
         $session->set('uaccount', 'guest', 'j2commerce');
 
-        $order = $this->getCartOrder();
+        $order        = $this->getCartOrder();
         $showShipping = $this->determineShowShipping($order);
-        $fields = CustomFieldHelper::getFieldsByArea('guest');
+        $fields       = CustomFieldHelper::getFieldsByArea('guest');
 
         // Retrieve previously-entered guest address from session for re-population
         $guestData = $session->get('guest', [], 'j2commerce');
 
         $this->renderStep('guest', [
             'showShipping' => $showShipping,
-            'fields' => $fields,
-            'guestData' => \is_array($guestData) ? $guestData : [],
+            'fields'       => $fields,
+            'guestData'    => \is_array($guestData) ? $guestData : [],
         ]);
     }
 
@@ -501,8 +501,8 @@ class CheckoutController extends BaseController
     {
         $this->validateAjaxToken() or $this->jsonResponse(['error' => ['warning' => Text::_('JINVALID_TOKEN')]]);
 
-        $session = $this->app->getSession();
-        $json = [];
+        $session  = $this->app->getSession();
+        $json     = [];
         $formData = $this->collectFormData();
 
         $fields = CustomFieldHelper::getFieldsByArea('guest');
@@ -550,10 +550,10 @@ class CheckoutController extends BaseController
     {
         $this->validateAjaxToken() or $this->jsonResponse(['error' => ['warning' => Text::_('JINVALID_TOKEN')]]);
 
-        $user = $this->app->getIdentity();
+        $user    = $this->app->getIdentity();
         $session = $this->app->getSession();
 
-        $addresses = [];
+        $addresses        = [];
         $billingAddressId = '';
 
         if ($user && $user->id) {
@@ -566,15 +566,15 @@ class CheckoutController extends BaseController
             $billingAddressId = $session->get('billing_address_id', '', 'j2commerce');
         }
 
-        $order = $this->getCartOrder();
+        $order        = $this->getCartOrder();
         $showShipping = $this->determineShowShipping($order);
-        $fields = CustomFieldHelper::getFieldsByArea('billing');
+        $fields       = CustomFieldHelper::getFieldsByArea('billing');
 
         $this->renderStep('billing', [
-            'addresses' => $addresses,
+            'addresses'        => $addresses,
             'billingAddressId' => $billingAddressId,
-            'showShipping' => $showShipping,
-            'fields' => $fields,
+            'showShipping'     => $showShipping,
+            'fields'           => $fields,
         ]);
     }
 
@@ -582,9 +582,9 @@ class CheckoutController extends BaseController
     {
         $this->validateAjaxToken() or $this->jsonResponse(['error' => ['warning' => Text::_('JINVALID_TOKEN')]]);
 
-        $user = $this->app->getIdentity();
+        $user    = $this->app->getIdentity();
         $session = $this->app->getSession();
-        $json = [];
+        $json    = [];
 
         if (!$user || !$user->id) {
             $json['redirect'] = $this->getCheckoutUrl();
@@ -594,7 +594,7 @@ class CheckoutController extends BaseController
         }
 
         $billingAddress = $this->input->getString('billing_address', 'existing');
-        $addressId = $this->input->getInt('address_id', 0);
+        $addressId      = $this->input->getInt('address_id', 0);
 
         if ($billingAddress === 'existing' && $addressId > 0) {
             $session->set('billing_address_id', $addressId, 'j2commerce');
@@ -611,11 +611,11 @@ class CheckoutController extends BaseController
                 }
 
                 $countryId = (int) ($addressTable->country_id ?? 0);
-                $zoneId = (int) ($addressTable->zone_id ?? 0);
-                $postcode = $addressTable->zip ?? '';
+                $zoneId    = (int) ($addressTable->zone_id ?? 0);
+                $postcode  = $addressTable->zip ?? '';
 
                 if (empty($countryId)) {
-                    $store = J2CommerceHelper::storeProfile();
+                    $store     = J2CommerceHelper::storeProfile();
                     $countryId = (int) $store->get('country_id', 0);
                 }
 
@@ -628,8 +628,8 @@ class CheckoutController extends BaseController
             $session->clear('payment_methods', 'j2commerce');
         } else {
             $formData = $this->collectFormData();
-            $fields = CustomFieldHelper::getFieldsByArea('billing');
-            $errors = CustomFieldHelper::validateFields($fields, $formData);
+            $fields   = CustomFieldHelper::getFieldsByArea('billing');
+            $errors   = CustomFieldHelper::validateFields($fields, $formData);
 
             if ($errors) {
                 $json['error'] = $errors;
@@ -638,10 +638,10 @@ class CheckoutController extends BaseController
                 return;
             }
 
-            $addressData = CustomFieldHelper::collectAddressData($fields, $formData);
+            $addressData            = CustomFieldHelper::collectAddressData($fields, $formData);
             $addressData['user_id'] = (int) $user->id;
-            $addressData['email'] = $formData['email'] ?? $user->email;
-            $addressData['type'] = 'billing';
+            $addressData['email']   = $formData['email'] ?? $user->email;
+            $addressData['type']    = 'billing';
 
             $newAddressId = $this->saveAddress($addressData);
 
@@ -649,7 +649,7 @@ class CheckoutController extends BaseController
                 $session->set('billing_address_id', $newAddressId, 'j2commerce');
                 $this->setBillingSession($addressData);
             } else {
-                $errorDetail = $this->lastAddressError ?? '';
+                $errorDetail              = $this->lastAddressError ?? '';
                 $json['error']['warning'] = Text::_('COM_J2COMMERCE_ADDRESS_SAVE_ERROR')
                     . ($errorDetail ? ' (' . $errorDetail . ')' : '');
                 $this->jsonResponse($json);
@@ -695,12 +695,12 @@ class CheckoutController extends BaseController
     {
         $this->validateAjaxToken() or $this->jsonResponse(['error' => ['warning' => Text::_('JINVALID_TOKEN')]]);
 
-        $user = $this->app->getIdentity();
-        $session = $this->app->getSession();
+        $user     = $this->app->getIdentity();
+        $session  = $this->app->getSession();
         $uaccount = $session->get('uaccount', '', 'j2commerce');
-        $isGuest = ($uaccount === 'guest');
+        $isGuest  = ($uaccount === 'guest');
 
-        $addresses = [];
+        $addresses         = [];
         $shippingAddressId = '';
 
         if ($user && $user->id) {
@@ -713,7 +713,7 @@ class CheckoutController extends BaseController
             $shippingAddressId = $session->get('shipping_address_id', '', 'j2commerce');
         }
 
-        $area = $isGuest ? 'guest_shipping' : 'shipping';
+        $area   = $isGuest ? 'guest_shipping' : 'shipping';
         $fields = CustomFieldHelper::getFieldsByArea($area);
 
         // Retrieve previously-entered guest shipping data from session for re-population
@@ -728,10 +728,10 @@ class CheckoutController extends BaseController
         }
 
         $this->renderStep('shipping', [
-            'addresses' => $addresses,
+            'addresses'         => $addresses,
             'shippingAddressId' => $shippingAddressId,
-            'fields' => $fields,
-            'isGuest' => $isGuest,
+            'fields'            => $fields,
+            'isGuest'           => $isGuest,
             'guestShippingData' => $guestShippingData,
         ]);
     }
@@ -740,9 +740,9 @@ class CheckoutController extends BaseController
     {
         $this->validateAjaxToken() or $this->jsonResponse(['error' => ['warning' => Text::_('JINVALID_TOKEN')]]);
 
-        $user = $this->app->getIdentity();
+        $user    = $this->app->getIdentity();
         $session = $this->app->getSession();
-        $json = [];
+        $json    = [];
 
         if (!$user || !$user->id) {
             $json['redirect'] = $this->getCheckoutUrl();
@@ -752,7 +752,7 @@ class CheckoutController extends BaseController
         }
 
         $shippingAddress = $this->input->getString('shipping_address', 'existing');
-        $addressId = $this->input->getInt('address_id', 0);
+        $addressId       = $this->input->getInt('address_id', 0);
 
         if ($shippingAddress === 'existing' && $addressId > 0) {
             $session->set('shipping_address_id', $addressId, 'j2commerce');
@@ -777,8 +777,8 @@ class CheckoutController extends BaseController
             $session->clear('shipping_methods', 'j2commerce');
         } else {
             $formData = $this->collectFormData();
-            $fields = CustomFieldHelper::getFieldsByArea('shipping');
-            $errors = CustomFieldHelper::validateFields($fields, $formData);
+            $fields   = CustomFieldHelper::getFieldsByArea('shipping');
+            $errors   = CustomFieldHelper::validateFields($fields, $formData);
 
             if ($errors) {
                 $json['error'] = $errors;
@@ -787,9 +787,9 @@ class CheckoutController extends BaseController
                 return;
             }
 
-            $addressData = CustomFieldHelper::collectAddressData($fields, $formData);
+            $addressData            = CustomFieldHelper::collectAddressData($fields, $formData);
             $addressData['user_id'] = (int) $user->id;
-            $addressData['type'] = 'shipping';
+            $addressData['type']    = 'shipping';
 
             // Set email if not collected from shipping fields
             if (empty($addressData['email'])) {
@@ -828,8 +828,8 @@ class CheckoutController extends BaseController
     {
         $this->validateAjaxToken() or $this->jsonResponse(['error' => ['warning' => Text::_('JINVALID_TOKEN')]]);
 
-        $session = $this->app->getSession();
-        $json = [];
+        $session  = $this->app->getSession();
+        $json     = [];
         $formData = $this->collectFormData();
 
         $fields = CustomFieldHelper::getFieldsByArea('guest_shipping');
@@ -870,12 +870,12 @@ class CheckoutController extends BaseController
     {
         $this->validateAjaxToken() or $this->jsonResponse(['error' => ['warning' => Text::_('JINVALID_TOKEN')]]);
 
-        $session = $this->app->getSession();
-        $order = $this->getCartOrder();
-        $showShipping = $this->determineShowShipping($order);
+        $session             = $this->app->getSession();
+        $order               = $this->getCartOrder();
+        $showShipping        = $this->determineShowShipping($order);
         $showShippingMethods = $this->determineShowShippingMethods($order);
 
-        $shippingRates = [];
+        $shippingRates  = [];
         $shippingValues = $session->get('shipping_values', [], 'j2commerce');
 
         if ($showShippingMethods && $order) {
@@ -904,7 +904,7 @@ class CheckoutController extends BaseController
 
             // Auto-select cheapest rate if no selection exists or previous selection is no longer available
             if (!empty($shippingRates)) {
-                $existingName = $shippingValues['shipping_name'] ?? '';
+                $existingName            = $shippingValues['shipping_name'] ?? '';
                 $selectionStillAvailable = false;
 
                 $matchedRate = null;
@@ -913,7 +913,7 @@ class CheckoutController extends BaseController
                     foreach ($shippingRates as $rate) {
                         if (($rate['name'] ?? '') === $existingName) {
                             $selectionStillAvailable = true;
-                            $matchedRate = $rate;
+                            $matchedRate             = $rate;
                             break;
                         }
                     }
@@ -928,7 +928,7 @@ class CheckoutController extends BaseController
                 }
 
                 if (!$selectionStillAvailable) {
-                    $cheapest = $shippingRates[0];
+                    $cheapest       = $shippingRates[0];
                     $shippingValues = [
                         'shipping_plugin'       => $cheapest['element'] ?? '',
                         'shipping_name'         => $cheapest['name'] ?? '',
@@ -958,7 +958,7 @@ class CheckoutController extends BaseController
         }
 
         $defaultPaymentMethod = J2CommerceHelper::config()->get('default_payment_method', '');
-        $selectedPayment = $session->get('payment_method', $defaultPaymentMethod, 'j2commerce');
+        $selectedPayment      = $session->get('payment_method', $defaultPaymentMethod, 'j2commerce');
 
         $showPayment = true;
 
@@ -968,16 +968,16 @@ class CheckoutController extends BaseController
         }
 
         $this->renderStep('shipping_payment', [
-            'order' => $order,
-            'showShipping' => $showShipping,
+            'order'               => $order,
+            'showShipping'        => $showShipping,
             'showShippingMethods' => $showShippingMethods,
-            'shippingRates' => $shippingRates,
-            'shippingValues' => $shippingValues,
-            'paymentMethods' => $paymentMethods,
-            'selectedPayment' => $selectedPayment,
-            'showPayment' => $showPayment,
-            'showTerms' => (int) J2CommerceHelper::config()->get('show_terms', 0),
-            'termsDisplayType' => J2CommerceHelper::config()->get('terms_display_type', 'link'),
+            'shippingRates'       => $shippingRates,
+            'shippingValues'      => $shippingValues,
+            'paymentMethods'      => $paymentMethods,
+            'selectedPayment'     => $selectedPayment,
+            'showPayment'         => $showPayment,
+            'showTerms'           => (int) J2CommerceHelper::config()->get('show_terms', 0),
+            'termsDisplayType'    => J2CommerceHelper::config()->get('terms_display_type', 'link'),
         ]);
     }
 
@@ -986,8 +986,8 @@ class CheckoutController extends BaseController
         $this->validateAjaxToken() or $this->jsonResponse(['error' => ['warning' => Text::_('JINVALID_TOKEN')]]);
 
         $session = $this->app->getSession();
-        $params = J2CommerceHelper::config();
-        $json = [];
+        $params  = J2CommerceHelper::config();
+        $json    = [];
 
         // Allowlist known checkout fields
         $allowedFields = [
@@ -1017,7 +1017,7 @@ class CheckoutController extends BaseController
             }
         }
 
-        $order = $this->getCartOrder();
+        $order               = $this->getCartOrder();
         $showShippingMethods = $this->determineShowShippingMethods($order);
 
         if ($showShippingMethods && $order) {
@@ -1083,8 +1083,8 @@ class CheckoutController extends BaseController
         $this->validateAjaxToken() or $this->jsonResponse(['error' => ['warning' => Text::_('JINVALID_TOKEN')]]);
 
         $position = $this->input->getString('position', 'after_billing');
-        $order = $this->getCartOrder();
-        $items = $order ? $order->getItems() : [];
+        $order    = $this->getCartOrder();
+        $items    = $order ? $order->getItems() : [];
 
         $context = [
             'items'   => $items,
@@ -1093,9 +1093,9 @@ class CheckoutController extends BaseController
             'user'    => $this->app->getIdentity(),
         ];
 
-        $html = CheckoutStepsHelper::renderSteps($position, $context);
+        $html     = CheckoutStepsHelper::renderSteps($position, $context);
         $hasSteps = !empty(trim($html));
-        $heading = $hasSteps ? CheckoutStepsHelper::getHeading($position, $context) : '';
+        $heading  = $hasSteps ? CheckoutStepsHelper::getHeading($position, $context) : '';
 
         $this->jsonResponse([
             'html'     => $html,
@@ -1109,8 +1109,8 @@ class CheckoutController extends BaseController
         $this->validateAjaxToken() or $this->jsonResponse(['error' => ['warning' => Text::_('JINVALID_TOKEN')]]);
 
         $position = $this->input->getString('position', 'after_billing');
-        $order = $this->getCartOrder();
-        $items = $order ? $order->getItems() : [];
+        $order    = $this->getCartOrder();
+        $items    = $order ? $order->getItems() : [];
 
         $context = [
             'items'   => $items,
@@ -1119,8 +1119,8 @@ class CheckoutController extends BaseController
             'user'    => $this->app->getIdentity(),
         ];
 
-        $steps = CheckoutStepsHelper::getStepsForPosition($position, $context);
-        $postData = $this->input->post->getArray();
+        $steps     = CheckoutStepsHelper::getStepsForPosition($position, $context);
+        $postData  = $this->input->post->getArray();
         $allErrors = [];
 
         foreach ($steps as $step) {
@@ -1155,7 +1155,7 @@ class CheckoutController extends BaseController
         UtilitiesHelper::sendNoCacheHeaders();
 
         $session = $this->app->getSession();
-        $errors = [];
+        $errors  = [];
 
         if ($session->has('payment_values', 'j2commerce')) {
             $paymentValues = $session->get('payment_values', [], 'j2commerce');
@@ -1181,11 +1181,11 @@ class CheckoutController extends BaseController
 
         $orderpaymentType = $session->get('payment_method', '', 'j2commerce');
 
-        $showPayment = true;
+        $showPayment  = true;
         $freeRedirect = '';
 
         if ($order && (float) ($order->order_total ?? 0) === 0.0) {
-            $showPayment = false;
+            $showPayment      = false;
             $orderpaymentType = Text::_('COM_J2COMMERCE_PAYMENT_FREE');
             J2CommerceHelper::plugin()->event('ChangeShowPaymentOnTotalZero', [$order, &$showPayment]);
 
@@ -1202,10 +1202,10 @@ class CheckoutController extends BaseController
 
         $pluginHtml = '';
         $orderItems = [];
-        $taxes = [];
-        $shipping = null;
-        $coupons = [];
-        $vouchers = [];
+        $taxes      = [];
+        $shipping   = null;
+        $coupons    = [];
+        $vouchers   = [];
 
         if (!$errors && $order) {
             $order->orderpayment_type = $orderpaymentType;
@@ -1219,10 +1219,10 @@ class CheckoutController extends BaseController
 
                 if ($showPayment && !empty($orderpaymentType)) {
                     $paymentValues = [
-                        'order_id' => $savedOrder->order_id ?? '',
-                        'orderpayment_id' => $savedOrder->j2commerce_order_id ?? '',
+                        'order_id'            => $savedOrder->order_id ?? '',
+                        'orderpayment_id'     => $savedOrder->j2commerce_order_id ?? '',
                         'orderpayment_amount' => $savedOrder->order_total ?? 0,
-                        'order' => $savedOrder,
+                        'order'               => $savedOrder,
                     ];
 
                     $prePaymentResults = J2CommerceHelper::plugin()->eventWithArray('PrePayment', [$orderpaymentType, $paymentValues]);
@@ -1240,25 +1240,25 @@ class CheckoutController extends BaseController
 
         if ($order) {
             $orderItems = \is_object($order) && method_exists($order, 'getItems') ? $order->getItems() : [];
-            $taxes = \is_object($order) && method_exists($order, 'getOrderTaxrates') ? $order->getOrderTaxrates() : [];
-            $shipping = \is_object($order) && method_exists($order, 'getOrderShippingRate') ? $order->getOrderShippingRate() : null;
-            $coupons = \is_object($order) && method_exists($order, 'getOrderCoupons') ? $order->getOrderCoupons() : [];
-            $vouchers = \is_object($order) && method_exists($order, 'getOrderVouchers') ? $order->getOrderVouchers() : [];
+            $taxes      = \is_object($order) && method_exists($order, 'getOrderTaxrates') ? $order->getOrderTaxrates() : [];
+            $shipping   = \is_object($order) && method_exists($order, 'getOrderShippingRate') ? $order->getOrderShippingRate() : null;
+            $coupons    = \is_object($order) && method_exists($order, 'getOrderCoupons') ? $order->getOrderCoupons() : [];
+            $vouchers   = \is_object($order) && method_exists($order, 'getOrderVouchers') ? $order->getOrderVouchers() : [];
         }
 
         J2CommerceHelper::plugin()->event('BeforeCheckoutConfirm', [$this]);
 
         $this->renderStep('confirm', [
-            'order' => $order,
-            'items' => $orderItems,
-            'taxes' => $taxes,
-            'shipping' => $shipping,
-            'coupons' => $coupons,
-            'vouchers' => $vouchers,
-            'plugin_html' => $pluginHtml,
-            'showPayment' => $showPayment,
+            'order'         => $order,
+            'items'         => $orderItems,
+            'taxes'         => $taxes,
+            'shipping'      => $shipping,
+            'coupons'       => $coupons,
+            'vouchers'      => $vouchers,
+            'plugin_html'   => $pluginHtml,
+            'showPayment'   => $showPayment,
             'free_redirect' => $freeRedirect,
-            'errors' => $errors,
+            'errors'        => $errors,
         ]);
     }
 
@@ -1272,10 +1272,10 @@ class CheckoutController extends BaseController
             Session::checkToken('get') or $this->app->redirect($this->getCheckoutUrl());
         }
 
-        $session = $this->app->getSession();
-        $params = J2CommerceHelper::config();
+        $session        = $this->app->getSession();
+        $params         = J2CommerceHelper::config();
         $orderpaymentId = (int) $this->app->getUserState('j2commerce.orderpayment_id', 0);
-        $orderId = $this->app->getUserState('j2commerce.order_id', '');
+        $orderId        = $this->app->getUserState('j2commerce.order_id', '');
 
         $orderTable = $this->getMvcFactory()->createTable('Order', 'Administrator');
 
@@ -1338,7 +1338,7 @@ class CheckoutController extends BaseController
             $this->sendOrderEmails($orderId);
         } else {
             $values = [
-                'order_id' => $orderId,
+                'order_id'       => $orderId,
                 'order_state_id' => 1,
             ];
 
@@ -1450,7 +1450,7 @@ class CheckoutController extends BaseController
     public function createPayPalOrder(): void
     {
         $rawInput = file_get_contents('php://input');
-        $input = json_decode($rawInput, true) ?? [];
+        $input    = json_decode($rawInput, true) ?? [];
 
         // Validate CSRF token from JSON body
         $tokenName = Session::getFormToken();
@@ -1466,7 +1466,7 @@ class CheckoutController extends BaseController
         }
 
         // Dispatch to payment plugin via event
-        $event = J2CommerceHelper::plugin()->event('PaymentCreateOrder', ['payment_paypal', $input]);
+        $event  = J2CommerceHelper::plugin()->event('PaymentCreateOrder', ['payment_paypal', $input]);
         $result = $event->getArgument('result', ['success' => false, 'error' => 'No payment plugin responded']);
 
         $this->jsonResponse($result);
@@ -1475,7 +1475,7 @@ class CheckoutController extends BaseController
     public function capturePayPalOrder(): void
     {
         $rawInput = file_get_contents('php://input');
-        $input = json_decode($rawInput, true) ?? [];
+        $input    = json_decode($rawInput, true) ?? [];
 
         // Validate CSRF token from JSON body
         $tokenName = Session::getFormToken();
@@ -1485,13 +1485,13 @@ class CheckoutController extends BaseController
         }
 
         $paypalOrderId = $input['paypal_order_id'] ?? '';
-        $orderId = $input['order_id'] ?? '';
+        $orderId       = $input['order_id'] ?? '';
 
         if (empty($paypalOrderId) || empty($orderId)) {
             $this->jsonResponse(['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_INVALID_REQUEST')]);
         }
 
-        $event = J2CommerceHelper::plugin()->event('PaymentCaptureOrder', ['payment_paypal', $input]);
+        $event  = J2CommerceHelper::plugin()->event('PaymentCaptureOrder', ['payment_paypal', $input]);
         $result = $event->getArgument('result', ['success' => false, 'error' => 'No payment plugin responded']);
 
         $this->jsonResponse($result);
@@ -1579,7 +1579,7 @@ class CheckoutController extends BaseController
             $html = ob_get_clean();
 
             $json['success'] = true;
-            $json['html'] = $html;
+            $json['html']    = $html;
         } catch (\Exception $e) {
             $json['success'] = false;
             $json['message'] = $e->getMessage();
@@ -1663,7 +1663,7 @@ class CheckoutController extends BaseController
 
     protected function getUserFirstAddress(int $userId): ?object
     {
-        $db = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $db    = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
         $query = $db->getQuery(true)
             ->select('*')
             ->from($db->quoteName('#__j2commerce_addresses'))

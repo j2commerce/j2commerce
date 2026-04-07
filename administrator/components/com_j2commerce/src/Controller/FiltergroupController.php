@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -9,7 +10,7 @@
 
 namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\FormController;
@@ -111,11 +112,11 @@ class FiltergroupController extends FormController
      */
     public function edit($key = null, $urlVar = null)
     {
-        $app = $this->app;
-        $input = $app->getInput();
+        $app      = $this->app;
+        $input    = $app->getInput();
         $recordId = $input->getInt('id', 0);
 
-        if (!$this->allowEdit(array(), 'id')) {
+        if (!$this->allowEdit([], 'id')) {
             $this->setMessage(\JText::_('JLIB_APPLICATION_ERROR_EDIT_NOT_PERMITTED'), 'error');
             $listUrl = 'index.php?option=' . $this->option . '&view=' . $this->view_list . $this->getRedirectToListAppend();
             $this->setRedirect(Route::_($listUrl, false));
@@ -155,7 +156,7 @@ class FiltergroupController extends FormController
     {
         // If no record ID is provided, try to get it from the model state
         if ($recordId === null) {
-            $model = $this->getModel();
+            $model    = $this->getModel();
             $recordId = $model->getState('filtergroup.id');
         }
 

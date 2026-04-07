@@ -588,10 +588,10 @@ class AnalyticsModel extends BaseDatabaseModel
         $extension = 'com_j2commerce';
 
         $query->select(
-                'COUNT(DISTINCT CASE WHEN ' . $db->quoteName('user_id') . ' > 0 THEN '
+            'COUNT(DISTINCT CASE WHEN ' . $db->quoteName('user_id') . ' > 0 THEN '
                     . $db->quoteName('user_id') . ' ELSE ' . $db->quoteName('id') . ' END) AS '
                     . $db->quoteName('total')
-            )
+        )
             ->from($db->quoteName('#__action_logs'))
             ->where($db->quoteName('extension') . ' = :extension')
             ->where($db->quoteName('log_date') . ' >= :from')
@@ -616,7 +616,7 @@ class AnalyticsModel extends BaseDatabaseModel
             'reachedCheckout' => $reachedCheckout,
             'completedOrder'  => $completedOrder,
             'rates'           => [
-                'sessions'    => 100.0,
+                'sessions'        => 100.0,
                 'addedToCart'     => $totalSessions > 0 ? round(($addedToCart / $totalSessions) * 100, 1) : 0.0,
                 'reachedCheckout' => $totalSessions > 0 ? round(($reachedCheckout / $totalSessions) * 100, 1) : 0.0,
                 'completedOrder'  => $overallRate,

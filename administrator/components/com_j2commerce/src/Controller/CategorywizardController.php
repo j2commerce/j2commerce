@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CategoryWizardHelper;
 use Joomla\CMS\Factory;
@@ -67,7 +67,7 @@ class CategorywizardController extends BaseController
         try {
             $subtemplates       = CategoryWizardHelper::getAvailableSubtemplates();
             $yoothemeInstalled  = CategoryWizardHelper::isYooThemeActive();
-            $defaultSubtemplate = in_array('uikit', $subtemplates, true) && $yoothemeInstalled
+            $defaultSubtemplate = \in_array('uikit', $subtemplates, true) && $yoothemeInstalled
                 ? 'uikit'
                 : 'bootstrap5';
 
@@ -104,12 +104,12 @@ class CategorywizardController extends BaseController
         // Validate product type
         $allowedTypes = ['simple', 'variable', 'downloadable'];
 
-        if (!in_array($productType, $allowedTypes, true)) {
+        if (!\in_array($productType, $allowedTypes, true)) {
             $productType = 'simple';
         }
 
         // Validate subtemplate
-        if (!in_array($subtemplate, ['bootstrap5', 'uikit'], true)) {
+        if (!\in_array($subtemplate, ['bootstrap5', 'uikit'], true)) {
             $subtemplate = 'bootstrap5';
         }
 
@@ -178,7 +178,7 @@ class CategorywizardController extends BaseController
                         $isVariable
                     );
 
-                    $optionValueCount += count($optionValues);
+                    $optionValueCount += \count($optionValues);
                 }
 
                 if (!empty($optionIds)) {
@@ -187,8 +187,8 @@ class CategorywizardController extends BaseController
             }
 
             // 5. Create menu item
-            $link     = 'index.php?option=com_j2commerce&view=product&id=' . $productId;
-            $params   = ['subtemplate' => $subtemplate];
+            $link       = 'index.php?option=com_j2commerce&view=product&id=' . $productId;
+            $params     = ['subtemplate' => $subtemplate];
             $menuItemId = CategoryWizardHelper::createMenuItem('Shop', $link, $params, $db);
 
             $editUrl     = 'index.php?option=com_j2commerce&task=products.editProduct&id=' . $productId;
@@ -237,11 +237,11 @@ class CategorywizardController extends BaseController
             $rootCategoryName = 'Shop';
         }
 
-        if (!in_array($menuType, ['categories', 'products'], true)) {
+        if (!\in_array($menuType, ['categories', 'products'], true)) {
             $menuType = 'categories';
         }
 
-        if (!in_array($subtemplate, ['bootstrap5', 'uikit'], true)) {
+        if (!\in_array($subtemplate, ['bootstrap5', 'uikit'], true)) {
             $subtemplate = 'bootstrap5';
         }
 
@@ -300,11 +300,11 @@ class CategorywizardController extends BaseController
             }
 
             $this->jsonSuccess([
-                'rootCategoryId'     => $rootCategoryId,
-                'subcategoryIds'     => array_column($subcategoryIds, 'id'),
-                'menuItemIds'        => $menuItemIds,
-                'adminCategoryUrl'   => 'index.php?option=com_categories&extension=com_content',
-                'adminProductsUrl'   => 'index.php?option=com_j2commerce&view=products',
+                'rootCategoryId'   => $rootCategoryId,
+                'subcategoryIds'   => array_column($subcategoryIds, 'id'),
+                'menuItemIds'      => $menuItemIds,
+                'adminCategoryUrl' => 'index.php?option=com_categories&extension=com_content',
+                'adminProductsUrl' => 'index.php?option=com_j2commerce&view=products',
             ]);
         } catch (\Throwable $e) {
             \Joomla\CMS\Log\Log::add($e->getMessage(), \Joomla\CMS\Log\Log::ERROR, 'com_j2commerce');
@@ -325,14 +325,14 @@ class CategorywizardController extends BaseController
         $options = [];
 
         foreach ($raw as $optionData) {
-            if (!is_array($optionData)) {
+            if (!\is_array($optionData)) {
                 continue;
             }
 
             $title  = trim((string) ($optionData['title'] ?? ''));
             $values = [];
 
-            if (!empty($optionData['values']) && is_array($optionData['values'])) {
+            if (!empty($optionData['values']) && \is_array($optionData['values'])) {
                 foreach ($optionData['values'] as $val) {
                     $clean = trim((string) $val);
 

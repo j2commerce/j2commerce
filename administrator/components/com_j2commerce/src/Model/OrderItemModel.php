@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,22 +12,11 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
-// phpcs:enable PSR1.Files.SideEffects
-
-use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
-use J2Commerce\Component\J2commerce\Administrator\Model\VariantModel;
-use J2Commerce\Component\J2commerce\Administrator\Model\OrderhistoriesModel;
-use J2Commerce\Component\J2commerce\Administrator\Model\OrderItemsModel;
-use J2Commerce\Component\J2commerce\Administrator\Model\CartsModel;
-use Joomla\CMS\Access\Access;
-use Joomla\CMS\Application\ApplicationHelper;
-use Joomla\CMS\Factory;
+// phpcs:enable PSR1.Files.SideEffectsuse Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
-use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Model\AdminModel;
 use Joomla\CMS\Table\Table;
 use Joomla\Database\ParameterType;
-use RuntimeException;
 
 /**
  * Order Item Model
@@ -98,7 +88,7 @@ class OrderItemModel extends AdminModel
         $pk = (!empty($pk)) ? $pk : (int) $this->getState($this->getName() . '.id');
 
         if ($pk > 0) {
-            $db = $this->getDatabase();
+            $db    = $this->getDatabase();
             $query = $db->getQuery(true);
 
             // Select main order data
@@ -116,7 +106,7 @@ class OrderItemModel extends AdminModel
 
                     return $item;
                 }
-            } catch (RuntimeException $e) {
+            } catch (\RuntimeException $e) {
                 Factory::getApplication()->enqueueMessage('Error loading order: ' . $e->getMessage(), 'error');
             }
         }
@@ -154,7 +144,7 @@ class OrderItemModel extends AdminModel
     public function save($data)
     {
         $input = Factory::getApplication()->getInput();
-        $task = $input->get('task');
+        $task  = $input->get('task');
 
 
         return parent::save($data);

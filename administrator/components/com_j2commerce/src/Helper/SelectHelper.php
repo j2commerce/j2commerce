@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -13,7 +14,6 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
-use Joomla\CMS\Language\LanguageHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
@@ -117,8 +117,8 @@ class SelectHelper
      */
     public static function getCountries(): array
     {
-        $db = self::getDatabase();
-        $query = $db->getQuery(true);
+        $db      = self::getDatabase();
+        $query   = $db->getQuery(true);
         $enabled = 1;
 
         $query->select($db->quoteName(['j2commerce_country_id', 'country_name']))
@@ -185,8 +185,8 @@ class SelectHelper
      */
     public static function getCurrencies(): array
     {
-        $db = self::getDatabase();
-        $query = $db->getQuery(true);
+        $db      = self::getDatabase();
+        $query   = $db->getQuery(true);
         $enabled = 1;
 
         $query->select($db->quoteName(['j2commerce_currency_id', 'currency_title', 'currency_code']))
@@ -253,8 +253,8 @@ class SelectHelper
      */
     public static function getTaxRates(): array
     {
-        $db = self::getDatabase();
-        $query = $db->getQuery(true);
+        $db      = self::getDatabase();
+        $query   = $db->getQuery(true);
         $enabled = 1;
 
         $query->select($db->quoteName(['j2commerce_taxrate_id', 'taxrate_name']))
@@ -321,8 +321,8 @@ class SelectHelper
      */
     public static function getTaxProfiles(): array
     {
-        $db = self::getDatabase();
-        $query = $db->getQuery(true);
+        $db      = self::getDatabase();
+        $query   = $db->getQuery(true);
         $enabled = 1;
 
         $query->select($db->quoteName(['j2commerce_taxprofile_id', 'taxprofile_name']))
@@ -385,8 +385,8 @@ class SelectHelper
      */
     public static function getOrderStates(): array
     {
-        $db = self::getDatabase();
-        $query = $db->getQuery(true);
+        $db      = self::getDatabase();
+        $query   = $db->getQuery(true);
         $enabled = 1;
 
         $query->select($db->quoteName(['j2commerce_orderstate_id', 'orderstatus_name']))
@@ -453,8 +453,8 @@ class SelectHelper
      */
     public static function getGeozones(): array
     {
-        $db = self::getDatabase();
-        $query = $db->getQuery(true);
+        $db      = self::getDatabase();
+        $query   = $db->getQuery(true);
         $enabled = 1;
 
         $query->select($db->quoteName(['j2commerce_geozone_id', 'geozone_name']))
@@ -521,8 +521,8 @@ class SelectHelper
      */
     public static function getManufacturers(): array
     {
-        $db = self::getDatabase();
-        $query = $db->getQuery(true);
+        $db      = self::getDatabase();
+        $query   = $db->getQuery(true);
         $enabled = 1;
 
         $query->select($db->quoteName(['j2commerce_manufacturer_id', 'manufacturer_name']))
@@ -589,8 +589,8 @@ class SelectHelper
      */
     public static function getVendors(): array
     {
-        $db = self::getDatabase();
-        $query = $db->getQuery(true);
+        $db      = self::getDatabase();
+        $query   = $db->getQuery(true);
         $enabled = 1;
 
         $query->select($db->quoteName(['j2commerce_vendor_id', 'vendor_name']))
@@ -658,12 +658,12 @@ class SelectHelper
     public static function getProductTypes(): array
     {
         return [
-            'simple' => Text::_('COM_J2COMMERCE_PRODUCT_TYPE_SIMPLE'),
-            'variable' => Text::_('COM_J2COMMERCE_PRODUCT_TYPE_VARIABLE'),
-            'downloadable' => Text::_('COM_J2COMMERCE_PRODUCT_TYPE_DOWNLOADABLE'),
-            'configurable' => Text::_('COM_J2COMMERCE_PRODUCT_TYPE_CONFIGURABLE'),
+            'simple'        => Text::_('COM_J2COMMERCE_PRODUCT_TYPE_SIMPLE'),
+            'variable'      => Text::_('COM_J2COMMERCE_PRODUCT_TYPE_VARIABLE'),
+            'downloadable'  => Text::_('COM_J2COMMERCE_PRODUCT_TYPE_DOWNLOADABLE'),
+            'configurable'  => Text::_('COM_J2COMMERCE_PRODUCT_TYPE_CONFIGURABLE'),
             'flexivariable' => Text::_('COM_J2COMMERCE_PRODUCT_TYPE_FLEXIVARIABLE'),
-            'bundle' => Text::_('COM_J2COMMERCE_PRODUCT_TYPE_BUNDLE'),
+            'bundle'        => Text::_('COM_J2COMMERCE_PRODUCT_TYPE_BUNDLE'),
         ];
     }
 
@@ -714,8 +714,8 @@ class SelectHelper
      */
     public static function getLengths(): array
     {
-        $db = self::getDatabase();
-        $query = $db->getQuery(true);
+        $db      = self::getDatabase();
+        $query   = $db->getQuery(true);
         $enabled = 1;
 
         $query->select($db->quoteName(['j2commerce_length_id', 'length_title', 'length_unit']))
@@ -782,8 +782,8 @@ class SelectHelper
      */
     public static function getWeights(): array
     {
-        $db = self::getDatabase();
-        $query = $db->getQuery(true);
+        $db      = self::getDatabase();
+        $query   = $db->getQuery(true);
         $enabled = 1;
 
         $query->select($db->quoteName(['j2commerce_weight_id', 'weight_title', 'weight_unit']))
@@ -850,8 +850,8 @@ class SelectHelper
      */
     public static function getShippingMethods(): array
     {
-        $db = self::getDatabase();
-        $query = $db->getQuery(true);
+        $db      = self::getDatabase();
+        $query   = $db->getQuery(true);
         $enabled = 1;
 
         $query->select($db->quoteName(['j2commerce_shippingmethod_id', 'shippingmethod_name']))
@@ -918,8 +918,8 @@ class SelectHelper
      */
     public static function getPaymentMethods(): array
     {
-        $db = self::getDatabase();
-        $query = $db->getQuery(true);
+        $db      = self::getDatabase();
+        $query   = $db->getQuery(true);
         $enabled = 1;
 
         $query->select($db->quoteName(['j2commerce_paymentmethod_id', 'paymentmethod_name']))

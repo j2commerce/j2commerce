@@ -345,7 +345,7 @@ class ProductSchemaBuilder
         // If no override images, get from product
         if (empty($images) && $product) {
             $productImages = $this->helper->getAllProductImages($product);
-            $images = array_merge($images, $productImages);
+            $images        = array_merge($images, $productImages);
         }
 
         return array_unique(array_filter($images));
@@ -439,7 +439,7 @@ class ProductSchemaBuilder
         if (!empty($overrides['offers']['price'])) {
             $offer['price'] = (string) number_format((float) $overrides['offers']['price'], 2, '.', '');
         } elseif ($product && isset($product->variant)) {
-            $price = $this->helper->getProductPrice($product->variant);
+            $price          = $this->helper->getProductPrice($product->variant);
             $offer['price'] = (string) number_format($price, 2, '.', '');
         }
 
@@ -573,7 +573,7 @@ class ProductSchemaBuilder
      */
     private function buildVariesByArray(object $product): array
     {
-        $options = $this->helper->getVariantOptions((int) $product->j2commerce_product_id);
+        $options  = $this->helper->getVariantOptions((int) $product->j2commerce_product_id);
         $variesBy = [];
 
         foreach ($options as $optionName) {
@@ -595,7 +595,7 @@ class ProductSchemaBuilder
      */
     private function buildVariantSchemas(object $product, array $overrides): array
     {
-        $variants = [];
+        $variants  = [];
         $productId = (int) $product->j2commerce_product_id;
 
         foreach ($product->variants as $variant) {

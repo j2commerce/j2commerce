@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Field;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Form\FormField;
 use Joomla\CMS\Language\Text;
@@ -101,7 +102,7 @@ class DimensionsField extends FormField
                 $heightValue = $formData->get($heightFieldName, '');
             } else {
                 // Fallback for array or object data
-                $data = (array) $formData;
+                $data        = (array) $formData;
                 $lengthValue = $data[$lengthFieldName] ?? '';
                 $widthValue  = $data[$widthFieldName] ?? '';
                 $heightValue = $data[$heightFieldName] ?? '';

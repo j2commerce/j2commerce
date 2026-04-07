@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -9,12 +10,11 @@
 
 namespace J2Commerce\Component\J2commerce\Administrator\Table;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Table\Table;
 use Joomla\Database\DatabaseDriver;
-use Joomla\Database\ParameterType;
 
 /**
  * Product File Table
@@ -73,7 +73,7 @@ class ProductfileTable extends Table
         }
 
         //check variant id exists
-        if(empty($this->product_id)){
+        if (empty($this->product_id)) {
             $this->setError(Text::_('COM_J2COMMERCE_VARIANT_ID_MISSING'));
             $result = false;
         }
@@ -85,7 +85,7 @@ class ProductfileTable extends Table
         }
 
         // Check for duplicate display name within the same product
-        $db = $this->getDbo();
+        $db    = $this->getDbo();
         $query = $db->getQuery(true)
             ->select($db->quoteName('j2commerce_productfile_id'))
             ->from($db->quoteName('#__j2commerce_productfiles'))

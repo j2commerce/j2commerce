@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,8 +12,9 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\View\Shippingmethods;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\MenuHelper;
 use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
 use Joomla\CMS\Factory;
@@ -23,7 +25,6 @@ use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use Joomla\CMS\Uri\Uri;
-use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 /**
  * View class for a list of shipping methods.
@@ -99,11 +100,11 @@ class HtmlView extends BaseHtmlView
 
         $this->shippingCards = $this->getShippingCards();
 
-        $model = $this->getModel();
-        $this->items = $model->getItems();
-        $this->pagination = $model->getPagination();
-        $this->state = $model->getState();
-        $this->filterForm = $model->getFilterForm();
+        $model               = $this->getModel();
+        $this->items         = $model->getItems();
+        $this->pagination    = $model->getPagination();
+        $this->state         = $model->getState();
+        $this->filterForm    = $model->getFilterForm();
         $this->activeFilters = $model->getActiveFilters();
 
         if (!\count($this->items) && $this->isEmptyState = $model->getIsEmptyState()) {
@@ -128,8 +129,8 @@ class HtmlView extends BaseHtmlView
     protected function getNavbar(): string
     {
         $displayData = [
-            'items' => MenuHelper::getMenuItems(),
-            'active' => MenuHelper::getActiveView()
+            'items'  => MenuHelper::getMenuItems(),
+            'active' => MenuHelper::getActiveView(),
         ];
 
         return LayoutHelper::render('navbar.default', $displayData, JPATH_COMPONENT_ADMINISTRATOR . '/layouts');
@@ -196,7 +197,7 @@ class HtmlView extends BaseHtmlView
     protected function loadShippingPluginLanguages(): void
     {
         $lang = Factory::getApplication()->getLanguage();
-        $db = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $db   = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 
         $query = $db->getQuery(true)
             ->select($db->quoteName('element'))

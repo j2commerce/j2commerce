@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,13 +12,13 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Field;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Service\OverrideRegistry;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Field\ListField;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
-use J2Commerce\Component\J2commerce\Administrator\Service\OverrideRegistry;
 
 class SubtemplateField extends ListField
 {
@@ -28,7 +29,7 @@ class SubtemplateField extends ListField
         $options  = parent::getOptions();
         $excluded = $this->getExcludeList();
 
-        if ($this->element['show_auto'] && !in_array('auto', $excluded, true)) {
+        if ($this->element['show_auto'] && !\in_array('auto', $excluded, true)) {
             $auto        = new \stdClass();
             $auto->value = 'auto';
             $auto->text  = Text::_('COM_J2COMMERCE_SUBTEMPLATE_AUTO');
@@ -38,7 +39,7 @@ class SubtemplateField extends ListField
         $subtemplates = $this->getEnabledSubtemplates();
 
         foreach ($subtemplates as $sub) {
-            if (in_array($sub['element'], $excluded, true)) {
+            if (\in_array($sub['element'], $excluded, true)) {
                 continue;
             }
 
@@ -61,7 +62,7 @@ class SubtemplateField extends ListField
         $hasImages    = false;
 
         foreach ($subtemplates as $sub) {
-            if (in_array($sub['element'], $excluded, true)) {
+            if (\in_array($sub['element'], $excluded, true)) {
                 continue;
             }
 
@@ -79,10 +80,10 @@ class SubtemplateField extends ListField
         $html .= '<input type="hidden" name="' . $this->name . '" id="' . $this->id . '" value="' . htmlspecialchars((string) $this->value, ENT_QUOTES, 'UTF-8') . '">';
         $html .= '<div class="d-flex flex-wrap gap-3">';
 
-        if ($this->element['show_auto'] && !in_array('auto', $excluded, true)) {
+        if ($this->element['show_auto'] && !\in_array('auto', $excluded, true)) {
             $isAutoSelected = ($this->value === 'auto' || $this->value === '');
-            $autoClass = $isAutoSelected ? ' border-primary' : '';
-            $autoLabel = htmlspecialchars(Text::_('COM_J2COMMERCE_SUBTEMPLATE_AUTO'), ENT_QUOTES, 'UTF-8');
+            $autoClass      = $isAutoSelected ? ' border-primary' : '';
+            $autoLabel      = htmlspecialchars(Text::_('COM_J2COMMERCE_SUBTEMPLATE_AUTO'), ENT_QUOTES, 'UTF-8');
             $html .= '<div class="j2commerce-subtemplate-option card text-center bg-body box-shadow-none border rounded-1 border-2' . $autoClass . '" '
                 . 'data-value="auto" '
                 . 'style="cursor:pointer;width:160px;transition:border-color 0.2s;" '
@@ -98,15 +99,15 @@ class SubtemplateField extends ListField
         }
 
         foreach ($subtemplates as $sub) {
-            if (in_array($sub['element'], $excluded, true)) {
+            if (\in_array($sub['element'], $excluded, true)) {
                 continue;
             }
 
-            $element = htmlspecialchars($sub['element'], ENT_QUOTES, 'UTF-8');
-            $name = htmlspecialchars($sub['translatedName'], ENT_QUOTES, 'UTF-8');
-            $isSelected = ($this->value === $sub['element']);
+            $element       = htmlspecialchars($sub['element'], ENT_QUOTES, 'UTF-8');
+            $name          = htmlspecialchars($sub['translatedName'], ENT_QUOTES, 'UTF-8');
+            $isSelected    = ($this->value === $sub['element']);
             $selectedClass = $isSelected ? ' border-primary' : '';
-            $thumbPath = !empty($sub['imagePath'])
+            $thumbPath     = !empty($sub['imagePath'])
                 ? str_replace($sub['element'] . '.webp', $sub['element'] . '_thumb.webp', $sub['imagePath'])
                 : '';
             $imageSrc = $thumbPath ?: ($sub['imagePath'] ?? '');
@@ -148,8 +149,8 @@ class SubtemplateField extends ListField
     private function getEnabledSubtemplates(): array
     {
         $subtemplates = OverrideRegistry::getInstalledSubtemplates();
-        $lang = Factory::getApplication()->getLanguage();
-        $result = [];
+        $lang         = Factory::getApplication()->getLanguage();
+        $result       = [];
 
         foreach ($subtemplates as $sub) {
             if (!$sub['enabled']) {
@@ -161,7 +162,7 @@ class SubtemplateField extends ListField
             $lang->load('plg_j2commerce_' . $sub['element'], JPATH_ADMINISTRATOR);
 
             $sub['translatedName'] = Text::_($sub['name']);
-            $result[] = $sub;
+            $result[]              = $sub;
         }
 
         return $result;

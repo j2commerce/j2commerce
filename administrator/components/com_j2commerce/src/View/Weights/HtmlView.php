@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -131,8 +132,8 @@ class HtmlView extends BaseHtmlView
     protected function getNavbar(): string
     {
         $displayData = [
-            'items' => MenuHelper::getMenuItems(),
-            'active' => MenuHelper::getActiveView()
+            'items'  => MenuHelper::getMenuItems(),
+            'active' => MenuHelper::getActiveView(),
         ];
 
         return LayoutHelper::render('navbar.default', $displayData, JPATH_COMPONENT_ADMINISTRATOR . '/layouts');

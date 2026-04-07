@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -13,14 +14,13 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
 \defined('_JEXEC') or die;
 
-use Joomla\CMS\MVC\Controller\FormController;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\MVC\Controller\FormController;
 use Joomla\CMS\Router\Route;
-use Joomla\CMS\Session\Session;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
-use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 
 /**
  * Product item controller class.
@@ -72,15 +72,15 @@ class ProductController extends FormController
      */
     public function display($cachable = false, $urlparams = []): static
     {
-        $app = Factory::getApplication();
-        $input = $app->getInput();
+        $app    = Factory::getApplication();
+        $input  = $app->getInput();
         $layout = $input->get('layout', '');
-        $id = $input->getInt('id', 0);
+        $id     = $input->getInt('id', 0);
 
         if ($layout === 'edit') {
             if ($id > 0) {
                 // Existing product — find linked article and redirect to its editor
-                $db = Factory::getContainer()->get(DatabaseInterface::class);
+                $db    = Factory::getContainer()->get(DatabaseInterface::class);
                 $query = $db->getQuery(true)
                     ->select($db->quoteName('product_source_id'))
                     ->from($db->quoteName('#__j2commerce_products'))
@@ -165,7 +165,7 @@ class ProductController extends FormController
     {
         $this->checkToken();
 
-        $app = Factory::getApplication();
+        $app       = Factory::getApplication();
         $productId = $app->getInput()->getInt('id', 0);
 
         if (empty($productId)) {
@@ -213,12 +213,12 @@ class ProductController extends FormController
 
         // Get master variant for base SKU and price
         $masterVariant = ProductHelper::getMasterVariant($productId);
-        $baseSku = $masterVariant->sku ?? 'PROD-' . $productId;
-        $basePrice = (float) ($masterVariant->price ?? 0);
+        $baseSku       = $masterVariant->sku ?? 'PROD-' . $productId;
+        $basePrice     = (float) ($masterVariant->price ?? 0);
 
         // Create variant records
-        $db = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-        $date = Factory::getDate()->toSql();
+        $db           = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $date         = Factory::getDate()->toSql();
         $createdCount = 0;
         $skippedCount = 0;
 
@@ -253,9 +253,9 @@ class ProductController extends FormController
         }
 
         foreach ($combinations as $combination) {
-            $skuParts = [];
+            $skuParts        = [];
             $priceAdjustment = 0.0;
-            $povIds = [];
+            $povIds          = [];
 
             foreach ($combination as $optionValue) {
                 if (!empty($optionValue['sku_suffix'])) {
@@ -269,7 +269,7 @@ class ProductController extends FormController
             }
 
             // Skip combinations with missing/invalid option value IDs
-            $povIds = array_filter($povIds, static fn(int $id): bool => $id > 0);
+            $povIds = array_filter($povIds, static fn (int $id): bool => $id > 0);
 
             if (empty($povIds)) {
                 continue;
@@ -300,7 +300,7 @@ class ProductController extends FormController
                 'weight'                        => 0,
                 'weight_class_id'               => 0,
                 'manage_stock'                  => 0,
-                'quantity_restriction'           => 0,
+                'quantity_restriction'          => 0,
                 'min_out_qty'                   => 0,
                 'use_store_config_min_out_qty'  => 1,
                 'min_sale_qty'                  => 0,
@@ -360,19 +360,19 @@ class ProductController extends FormController
     {
         $this->checkToken();
 
-        $app = Factory::getApplication();
+        $app       = Factory::getApplication();
         $articleId = $app->getInput()->getInt('article_id', 0);
 
         if (empty($articleId)) {
             echo json_encode([
                 'success' => false,
-                'message' => Text::_('COM_J2COMMERCE_ERROR_NO_ARTICLE_SELECTED')
+                'message' => Text::_('COM_J2COMMERCE_ERROR_NO_ARTICLE_SELECTED'),
             ]);
             return;
         }
 
         // Check if product already exists for this article
-        $db = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $db    = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
         $query = $db->getQuery(true)
             ->select($db->quoteName('j2commerce_product_id'))
             ->from($db->quoteName('#__j2commerce_products'))
@@ -385,9 +385,9 @@ class ProductController extends FormController
 
         if ($existingProductId > 0) {
             echo json_encode([
-                'success' => true,
+                'success'    => true,
                 'product_id' => $existingProductId,
-                'message' => Text::_('COM_J2COMMERCE_PRODUCT_ALREADY_EXISTS')
+                'message'    => Text::_('COM_J2COMMERCE_PRODUCT_ALREADY_EXISTS'),
             ]);
             return;
         }
@@ -404,35 +404,35 @@ class ProductController extends FormController
         if (!$article) {
             echo json_encode([
                 'success' => false,
-                'message' => Text::_('COM_J2COMMERCE_ERROR_ARTICLE_NOT_FOUND')
+                'message' => Text::_('COM_J2COMMERCE_ERROR_ARTICLE_NOT_FOUND'),
             ]);
             return;
         }
 
         // Create new product
-        $date = Factory::getDate()->toSql();
+        $date        = Factory::getDate()->toSql();
         $productData = (object) [
-            'visibility' => 1,
-            'product_source' => 'com_content',
+            'visibility'        => 1,
+            'product_source'    => 'com_content',
             'product_source_id' => $articleId,
-            'product_type' => 'simple',
-            'main_tag' => '',
-            'taxprofile_id' => 0,
-            'manufacturer_id' => 0,
-            'vendor_id' => 0,
-            'has_options' => 0,
-            'addtocart_text' => 'COM_J2COMMERCE_ADD_TO_CART',
-            'enabled' => 1,
-            'plugins' => '',
-            'params' => '',
-            'created_on' => $date,
-            'created_by' => Factory::getApplication()->getIdentity()->id,
-            'modified_on' => $date,
-            'modified_by' => Factory::getApplication()->getIdentity()->id,
-            'up_sells' => '',
-            'cross_sells' => '',
+            'product_type'      => 'simple',
+            'main_tag'          => '',
+            'taxprofile_id'     => 0,
+            'manufacturer_id'   => 0,
+            'vendor_id'         => 0,
+            'has_options'       => 0,
+            'addtocart_text'    => 'COM_J2COMMERCE_ADD_TO_CART',
+            'enabled'           => 1,
+            'plugins'           => '',
+            'params'            => '',
+            'created_on'        => $date,
+            'created_by'        => Factory::getApplication()->getIdentity()->id,
+            'modified_on'       => $date,
+            'modified_by'       => Factory::getApplication()->getIdentity()->id,
+            'up_sells'          => '',
+            'cross_sells'       => '',
             'productfilter_ids' => '',
-            'hits' => 0,
+            'hits'              => 0,
         ];
 
         try {
@@ -441,51 +441,51 @@ class ProductController extends FormController
 
             // Create master variant for the product
             $variantData = (object) [
-                'product_id' => $productId,
-                'sku' => 'PROD-' . $productId,
-                'upc' => '',
-                'price' => 0,
-                'pricing_calculator' => 'standard',
-                'shipping' => 0,
-                'params' => '',
-                'length' => 0,
-                'width' => 0,
-                'height' => 0,
-                'length_class_id' => 0,
-                'weight' => 0,
-                'weight_class_id' => 0,
-                'manage_stock' => 0,
-                'quantity_restriction' => 0,
-                'min_out_qty' => 0,
-                'use_store_config_min_out_qty' => 1,
-                'min_sale_qty' => 1,
+                'product_id'                    => $productId,
+                'sku'                           => 'PROD-' . $productId,
+                'upc'                           => '',
+                'price'                         => 0,
+                'pricing_calculator'            => 'standard',
+                'shipping'                      => 0,
+                'params'                        => '',
+                'length'                        => 0,
+                'width'                         => 0,
+                'height'                        => 0,
+                'length_class_id'               => 0,
+                'weight'                        => 0,
+                'weight_class_id'               => 0,
+                'manage_stock'                  => 0,
+                'quantity_restriction'          => 0,
+                'min_out_qty'                   => 0,
+                'use_store_config_min_out_qty'  => 1,
+                'min_sale_qty'                  => 1,
                 'use_store_config_min_sale_qty' => 1,
-                'max_sale_qty' => 0,
+                'max_sale_qty'                  => 0,
                 'use_store_config_max_sale_qty' => 1,
-                'notify_qty' => 0,
-                'use_store_config_notify_qty' => 1,
-                'availability' => 1,
-                'sold' => 0,
-                'allow_backorder' => 0,
-                'isdefault_variant' => 1,
-                'is_master' => 1,
-                'created_on' => $date,
-                'created_by' => Factory::getApplication()->getIdentity()->id,
-                'modified_on' => $date,
-                'modified_by' => Factory::getApplication()->getIdentity()->id,
+                'notify_qty'                    => 0,
+                'use_store_config_notify_qty'   => 1,
+                'availability'                  => 1,
+                'sold'                          => 0,
+                'allow_backorder'               => 0,
+                'isdefault_variant'             => 1,
+                'is_master'                     => 1,
+                'created_on'                    => $date,
+                'created_by'                    => Factory::getApplication()->getIdentity()->id,
+                'modified_on'                   => $date,
+                'modified_by'                   => Factory::getApplication()->getIdentity()->id,
             ];
 
             $db->insertObject('#__j2commerce_variants', $variantData, 'j2commerce_variant_id');
 
             echo json_encode([
-                'success' => true,
+                'success'    => true,
                 'product_id' => $productId,
-                'message' => Text::_('COM_J2COMMERCE_PRODUCT_CREATED_SUCCESS')
+                'message'    => Text::_('COM_J2COMMERCE_PRODUCT_CREATED_SUCCESS'),
             ]);
         } catch (\Exception $e) {
             echo json_encode([
                 'success' => false,
-                'message' => Text::sprintf('COM_J2COMMERCE_ERROR_CREATING_PRODUCT', $e->getMessage())
+                'message' => Text::sprintf('COM_J2COMMERCE_ERROR_CREATING_PRODUCT', $e->getMessage()),
             ]);
         }
     }
@@ -500,9 +500,9 @@ class ProductController extends FormController
     {
         $this->checkToken();
 
-        $app = Factory::getApplication();
+        $app       = Factory::getApplication();
         $productId = $app->getInput()->getInt('product_id', 0);
-        $newType = $app->getInput()->getCmd('new_product_type', '');
+        $newType   = $app->getInput()->getCmd('new_product_type', '');
 
         header('Content-Type: application/json; charset=utf-8');
 

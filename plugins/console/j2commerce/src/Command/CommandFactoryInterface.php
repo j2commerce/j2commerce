@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  Plugin.Console.J2Commerce
@@ -9,11 +10,11 @@
 
 namespace J2Commerce\Plugin\Console\J2Commerce\Command;
 
-defined('_JEXEC') || die;
+\defined('_JEXEC') || die;
 
 use Joomla\Console\Command\AbstractCommand;
 
 interface CommandFactoryInterface
 {
-	public function getCLICommand(string $commandName): AbstractCommand;
+    public function getCLICommand(string $commandName): AbstractCommand;
 }

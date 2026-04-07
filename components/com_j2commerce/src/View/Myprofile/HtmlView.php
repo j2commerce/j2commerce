@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Site\View\Myprofile;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
@@ -28,29 +29,29 @@ use Joomla\Registry\Registry;
 
 class HtmlView extends BaseHtmlView
 {
-    public array $orders = [];
-    public ?Pagination $pagination = null;
-    public array $addresses = [];
-    public array $downloads = [];
-    public int $downloadsTotal = 0;
-    public ?object $params = null;
-    public $currency = null;
+    public array $orders                = [];
+    public ?Pagination $pagination      = null;
+    public array $addresses             = [];
+    public array $downloads             = [];
+    public int $downloadsTotal          = 0;
+    public ?object $params              = null;
+    public $currency                    = null;
     public ?\Joomla\CMS\User\User $user = null;
-    public bool $isGuest = false;
-    public ?object $order = null;
-    public array $orderItems = [];
-    public ?object $orderInfo = null;
-    public array $orderHistory = [];
-    public array $orderShippings = [];
-    public array $orderTaxes = [];
-    public array $orderFees = [];
-    public ?object $address = null;
-    public array $customFields = [];
-    public string $pluginTabHtml = '';
-    public string $pluginContentHtml = '';
-    public string $topMessagesHtml = '';
-    public ?Registry $menuItemParams = null;
-    public bool $useUnifiedPaymentTab = false;
+    public bool $isGuest                = false;
+    public ?object $order               = null;
+    public array $orderItems            = [];
+    public ?object $orderInfo           = null;
+    public array $orderHistory          = [];
+    public array $orderShippings        = [];
+    public array $orderTaxes            = [];
+    public array $orderFees             = [];
+    public ?object $address             = null;
+    public array $customFields          = [];
+    public string $pluginTabHtml        = '';
+    public string $pluginContentHtml    = '';
+    public string $topMessagesHtml      = '';
+    public ?Registry $menuItemParams    = null;
+    public bool $useUnifiedPaymentTab   = false;
     public array $paymentMethodsGrouped = [];
 
     public function display($tpl = null): void
@@ -63,16 +64,16 @@ class HtmlView extends BaseHtmlView
         $this->currency = J2CommerceHelper::currency();
         $this->user     = $app->getIdentity();
 
-        $menu   = $app->getMenu();
-        $active = $menu->getActive();
+        $menu                 = $app->getMenu();
+        $active               = $menu->getActive();
         $this->menuItemParams = \is_object($active) ? $active->getParams() : new Registry('{}');
 
         $layout  = $this->getLayout();
         $session = $app->getSession();
 
         // Check if guest access via session tokens
-        $guestToken = $session->get('guest_order_token', '', 'j2commerce');
-        $guestEmail = $session->get('guest_order_email', '', 'j2commerce');
+        $guestToken    = $session->get('guest_order_token', '', 'j2commerce');
+        $guestEmail    = $session->get('guest_order_email', '', 'j2commerce');
         $this->isGuest = (!$this->user || (int) $this->user->id === 0) && $guestToken && $guestEmail;
 
         // If not logged in and not guest, show login page
@@ -142,8 +143,8 @@ class HtmlView extends BaseHtmlView
 
             // Load downloads if enabled
             if ($this->params->get('download_area', 1)) {
-                $downloadData = $model->getDownloads($userId, $guestEmail, 0, $limit);
-                $this->downloads = $downloadData['downloads'];
+                $downloadData         = $model->getDownloads($userId, $guestEmail, 0, $limit);
+                $this->downloads      = $downloadData['downloads'];
                 $this->downloadsTotal = $downloadData['total'];
             }
 
@@ -153,7 +154,7 @@ class HtmlView extends BaseHtmlView
                 $paymentMethods = PaymentMethodsHelper::getPaymentMethods($userId);
 
                 if (!empty($paymentMethods)) {
-                    $this->useUnifiedPaymentTab = true;
+                    $this->useUnifiedPaymentTab  = true;
                     $this->paymentMethodsGrouped = PaymentMethodsHelper::groupByProvider($paymentMethods);
                 }
             }

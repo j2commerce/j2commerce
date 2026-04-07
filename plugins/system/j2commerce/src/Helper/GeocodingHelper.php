@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Plugin\System\J2Commerce\Helper;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Http\HttpFactory;
@@ -36,7 +36,7 @@ class GeocodingHelper
         }
 
         $cacheKey = self::normalizeAddress($address);
-        $cached = self::getFromCache($cacheKey);
+        $cached   = self::getFromCache($cacheKey);
 
         if ($cached !== null) {
             return $cached;

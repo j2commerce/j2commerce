@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -17,7 +18,6 @@ use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\Database\DatabaseInterface;
-use Joomla\Database\ParameterType;
 use Joomla\Event\Event;
 
 /**
@@ -74,8 +74,8 @@ class CronController extends BaseController
         }
 
         // Record last trigger
-        $tz         = $app->get('offset');
-        $nowDate    = Factory::getDate('now', $tz);
+        $tz          = $app->get('offset');
+        $nowDate     = Factory::getDate('now', $tz);
         $lastTrigger = json_encode([
             'date'    => $nowDate->toSql(),
             'command' => $command,
@@ -100,7 +100,7 @@ class CronController extends BaseController
             $params = ComponentHelper::getParams('com_j2commerce');
             $params->set($key, $value);
 
-            $db = Factory::getContainer()->get(DatabaseInterface::class);
+            $db         = Factory::getContainer()->get(DatabaseInterface::class);
             $paramsJson = $params->toString();
 
             $query = $db->createQuery()

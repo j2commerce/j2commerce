@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\View\Overrides;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Builder\Service\BlockPreviewService;
 use J2Commerce\Component\J2commerce\Administrator\Helper\MenuHelper;
@@ -30,16 +31,16 @@ class HtmlView extends BaseHtmlView
 {
     use AdminAssetsTrait;
 
-    protected array $subtemplates = [];
-    protected array $overrideFiles = [];
-    protected ?Form $editorForm = null;
-    protected ?\stdClass $source = null;
-    protected string $activeTemplate = '';
-    protected string $templateOverridePath = '';
-    protected string $activeTab = 'overrides';
-    protected string $navbar = '';
+    protected array $subtemplates           = [];
+    protected array $overrideFiles          = [];
+    protected ?Form $editorForm             = null;
+    protected ?\stdClass $source            = null;
+    protected string $activeTemplate        = '';
+    protected string $templateOverridePath  = '';
+    protected string $activeTab             = 'overrides';
+    protected string $navbar                = '';
     protected array $builderPreviewProducts = [];
-    protected array $builderSubLayoutFiles = [];
+    protected array $builderSubLayoutFiles  = [];
 
     public function display($tpl = null): void
     {
@@ -51,20 +52,20 @@ class HtmlView extends BaseHtmlView
         $this->loadAdminAssets();
         $this->navbar = $this->getNavbar();
 
-        $app = Factory::getApplication();
+        $app             = Factory::getApplication();
         $this->activeTab = $app->getInput()->get('tab', 'overrides', 'cmd');
 
         /** @var \J2Commerce\Component\J2commerce\Administrator\Model\OverridesModel $model */
         $model = $this->getModel();
 
-        $this->subtemplates = $model->getSubtemplates();
-        $this->activeTemplate = $model->getActiveTemplate();
+        $this->subtemplates         = $model->getSubtemplates();
+        $this->activeTemplate       = $model->getActiveTemplate();
         $this->templateOverridePath = $model->getBaseTemplateOverridePath();
-        $this->overrideFiles = $model->getOverrideFiles();
-        $this->editorForm = $model->getEditorForm();
+        $this->overrideFiles        = $model->getOverrideFiles();
+        $this->editorForm           = $model->getEditorForm();
 
         $plugin = $app->getInput()->get('plugin', '', 'cmd');
-        $file = $app->getInput()->get('file', '', 'base64');
+        $file   = $app->getInput()->get('file', '', 'base64');
 
         if (!empty($plugin) && !empty($file)) {
             $this->source = $model->getSource($plugin, $file);
@@ -77,10 +78,10 @@ class HtmlView extends BaseHtmlView
             $this->editorForm->setFieldAttribute('source', 'syntax', 'php');
         }
 
-        $db = Factory::getContainer()->get('DatabaseDriver');
-        $previewService = new BlockPreviewService($db);
+        $db                           = Factory::getContainer()->get('DatabaseDriver');
+        $previewService               = new BlockPreviewService($db);
         $this->builderPreviewProducts = $previewService->getPreviewProducts();
-        $this->builderSubLayoutFiles = $this->getBuilderSubLayoutFiles();
+        $this->builderSubLayoutFiles  = $this->getBuilderSubLayoutFiles();
 
         $doc = $this->getDocument();
         $wa  = $doc->getWebAssetManager();
@@ -111,20 +112,20 @@ class HtmlView extends BaseHtmlView
     private function getBuilderSubLayoutFiles(): array
     {
         $subtemplates = OverrideRegistry::getInstalledSubtemplates();
-        $files = [];
+        $files        = [];
 
         foreach ($subtemplates as $subtemplate) {
             if (!$subtemplate['enabled']) {
                 continue;
             }
 
-            $element = $subtemplate['element'];
+            $element          = $subtemplate['element'];
             $subtemplateLabel = ucwords(str_replace(['app_', '_'], ['', ' '], $element));
-            $layoutFiles = OverrideRegistry::getLayoutFiles($element, $this->templateOverridePath);
+            $layoutFiles      = OverrideRegistry::getLayoutFiles($element, $this->templateOverridePath);
 
             foreach ($layoutFiles as $file) {
                 $sourcePath = OverrideRegistry::getSourcePath($element, $file['relativePath']);
-                $fileType = OverrideRegistry::classifyLayoutFile($sourcePath);
+                $fileType   = OverrideRegistry::classifyLayoutFile($sourcePath);
 
                 // Only show block-layout files — dispatchers and other files can't be edited visually
                 if ($fileType !== OverrideRegistry::FILE_TYPE_BLOCK_LAYOUT) {

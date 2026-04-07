@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  mod_j2commerce_products
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Module\Products\Site\Library;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Categories\Categories;
 use Joomla\CMS\Factory;
@@ -24,37 +25,37 @@ class ProductSourceJoomla implements DatabaseAwareInterface
 
     private $type = 'joomla';
 
-    function getProductIdsByTags($params)
+    public function getProductIdsByTags($params)
     {
-        static $cache = [];
+        static $cache      = [];
         static $staticData = null;
 
         // Initialize static data once per request
         if ($staticData === null) {
-            $tz = Factory::getApplication()->getConfig()->get('offset');
+            $tz   = Factory::getApplication()->getConfig()->get('offset');
             $date = Factory::getDate('now', $tz);
             $user = Factory::getApplication()->getIdentity();
 
             $staticData = [
-                'nowDate' => $date->toSql(),
-                'viewLevels' => $user->getAuthorisedViewLevels()
+                'nowDate'    => $date->toSql(),
+                'viewLevels' => $user->getAuthorisedViewLevels(),
             ];
         }
 
         $product_ids = [];
 
-        $limit = $params->get('number_of_items', 6);
+        $limit   = $params->get('number_of_items', 6);
         $sort_by = $params->get('sort_by', '');
 
         $tag_list = $params->get('tag_list', []);
         if (!empty($tag_list)) {
             // Create cache key based on all parameters that affect the query
             $cacheKey = md5(serialize([
-                'tag_list' => $tag_list,
-                'limit' => $limit,
-                'sort_by' => $sort_by,
+                'tag_list'   => $tag_list,
+                'limit'      => $limit,
+                'sort_by'    => $sort_by,
                 'viewLevels' => $staticData['viewLevels'],
-                'nowDate' => $staticData['nowDate']
+                'nowDate'    => $staticData['nowDate'],
             ]));
 
             // Return cached result if available
@@ -108,20 +109,20 @@ class ProductSourceJoomla implements DatabaseAwareInterface
      *
      * @param mixed $params
      */
-    function getProductIdsByIds($params)
+    public function getProductIdsByIds($params)
     {
-        static $cache = [];
+        static $cache      = [];
         static $staticData = null;
 
         // Initialize static data once per request
         if ($staticData === null) {
-            $tz = Factory::getApplication()->getConfig()->get('offset');
+            $tz   = Factory::getApplication()->getConfig()->get('offset');
             $date = Factory::getDate('now', $tz);
             $user = Factory::getApplication()->getIdentity();
 
             $staticData = [
-                'nowDate' => $date->toSql(),
-                'viewLevels' => $user->getAuthorisedViewLevels()
+                'nowDate'    => $date->toSql(),
+                'viewLevels' => $user->getAuthorisedViewLevels(),
             ];
         }
 
@@ -130,7 +131,7 @@ class ProductSourceJoomla implements DatabaseAwareInterface
         $limit = $params->get('number_of_items', 6);
 
         $p_ids = $params->get('product_ids', []);
-        if (!is_array($p_ids)) {
+        if (!\is_array($p_ids)) {
             $p_ids = explode(',', $p_ids);
         }
 
@@ -139,11 +140,11 @@ class ProductSourceJoomla implements DatabaseAwareInterface
 
             // Create cache key based on all parameters that affect the query
             $cacheKey = md5(serialize([
-                'p_ids' => $p_ids,
-                'limit' => $limit,
-                'sort_by' => $sort_by,
+                'p_ids'      => $p_ids,
+                'limit'      => $limit,
+                'sort_by'    => $sort_by,
                 'viewLevels' => $staticData['viewLevels'],
-                'nowDate' => $staticData['nowDate']
+                'nowDate'    => $staticData['nowDate'],
             ]));
 
             // Return cached result if available
@@ -192,34 +193,34 @@ class ProductSourceJoomla implements DatabaseAwareInterface
      *
      * @param mixed $params
      */
-    function getProductIdsByBestSelling($params)
+    public function getProductIdsByBestSelling($params)
     {
-        static $cache = [];
+        static $cache      = [];
         static $staticData = null;
 
         // Initialize static data once per request
         if ($staticData === null) {
-            $tz = Factory::getApplication()->getConfig()->get('offset');
+            $tz   = Factory::getApplication()->getConfig()->get('offset');
             $date = Factory::getDate('now', $tz);
             $user = Factory::getApplication()->getIdentity();
 
             $staticData = [
-                'nowDate' => $date->toSql(),
-                'viewLevels' => $user->getAuthorisedViewLevels()
+                'nowDate'    => $date->toSql(),
+                'viewLevels' => $user->getAuthorisedViewLevels(),
             ];
         }
 
         $product_ids = [];
 
-        $limit = $params->get('number_of_items', 6);
+        $limit   = $params->get('number_of_items', 6);
         $sort_by = $params->get('sort_by', '');
 
         // Create cache key based on all parameters that affect the query
         $cacheKey = md5(serialize([
-            'limit' => $limit,
-            'sort_by' => $sort_by,
+            'limit'      => $limit,
+            'sort_by'    => $sort_by,
             'viewLevels' => $staticData['viewLevels'],
-            'nowDate' => $staticData['nowDate']
+            'nowDate'    => $staticData['nowDate'],
         ]));
 
         // Return cached result if available
@@ -272,39 +273,39 @@ class ProductSourceJoomla implements DatabaseAwareInterface
      *
      * @param mixed $params
      */
-    function getProductIdsByCategories($params)
+    public function getProductIdsByCategories($params)
     {
-        static $cache = [];
+        static $cache      = [];
         static $staticData = null;
 
         // Initialize static data once per request
         if ($staticData === null) {
-            $tz = Factory::getApplication()->getConfig()->get('offset');
+            $tz   = Factory::getApplication()->getConfig()->get('offset');
             $date = Factory::getDate('now', $tz);
             $user = Factory::getApplication()->getIdentity();
 
             $staticData = [
-                'nowDate' => $date->toSql(),
-                'viewLevels' => $user->getAuthorisedViewLevels()
+                'nowDate'    => $date->toSql(),
+                'viewLevels' => $user->getAuthorisedViewLevels(),
             ];
         }
 
         $product_ids = [];
 
-        $show_feature_only = $params->get('show_feature_only',0);
-        $limit = $params->get('number_of_items', 6);
-        $sort_by = $params->get('sort_by', '');
+        $show_feature_only = $params->get('show_feature_only', 0);
+        $limit             = $params->get('number_of_items', 6);
+        $sort_by           = $params->get('sort_by', '');
 
         $cat_ids = $this->getCategoryArray($params);
 
         // Create cache key based on all parameters that affect the query
         $cacheKey = md5(serialize([
-            'cat_ids' => $cat_ids,
+            'cat_ids'           => $cat_ids,
             'show_feature_only' => $show_feature_only,
-            'limit' => $limit,
-            'sort_by' => $sort_by,
-            'viewLevels' => $staticData['viewLevels'],
-            'nowDate' => $staticData['nowDate']
+            'limit'             => $limit,
+            'sort_by'           => $sort_by,
+            'viewLevels'        => $staticData['viewLevels'],
+            'nowDate'           => $staticData['nowDate'],
         ]));
 
         // Return cached result if available
@@ -326,7 +327,7 @@ class ProductSourceJoomla implements DatabaseAwareInterface
             $query->where($db->quoteName('a.featured') . ' = 1');
         }
 
-		if (!empty($cat_ids)) {
+        if (!empty($cat_ids)) {
             $query->whereIn($db->quoteName('a.catid'), $cat_ids);
         }
 
@@ -345,11 +346,11 @@ class ProductSourceJoomla implements DatabaseAwareInterface
 
         $db->setQuery($query, 0, $limit);
 
-		try {
-			$product_ids = $db->loadColumn();
-		} catch (\RuntimeException $e) {
-			$product_ids = [];
-		}
+        try {
+            $product_ids = $db->loadColumn();
+        } catch (\RuntimeException $e) {
+            $product_ids = [];
+        }
 
         // Cache the result
         $cache[$cacheKey] = $product_ids;
@@ -388,14 +389,14 @@ class ProductSourceJoomla implements DatabaseAwareInterface
         }
 
         // More complex sorting requiring additional JOINs
-        if (in_array($sort_by, ['sku', 'rsku'])) {
+        if (\in_array($sort_by, ['sku', 'rsku'])) {
             $query->join('LEFT', $db->quoteName('#__j2commerce_variants', 'variants'), $db->quoteName('p.j2commerce_product_id') . ' = ' . $db->quoteName('variants.product_id'));
             $query->where($db->quoteName('variants.is_master') .' = 1');
             $query->group($db->quoteName('p.j2commerce_product_id'));
 
             $order = ($sort_by === 'sku') ? 'ASC' : 'DESC';
             $query->order($db->quoteName('variants.sku') . ' ' . $order);
-        } elseif (in_array($sort_by, ['min_price', 'rmin_price'])) {
+        } elseif (\in_array($sort_by, ['min_price', 'rmin_price'])) {
             $query->join('LEFT OUTER', $db->quoteName('#__j2commerce_productprice_index', 'price_index'), $db->quoteName('p.j2commerce_product_id') . ' = ' . $db->quoteName('price_index.product_id'));
             $query->join('LEFT', $db->quoteName('#__j2commerce_variants', 'variants'), $db->quoteName('p.j2commerce_product_id') . ' = ' . $db->quoteName('variants.product_id'));
             $query->where($db->quoteName('variants.is_master') .' = 1');
@@ -412,19 +413,19 @@ class ProductSourceJoomla implements DatabaseAwareInterface
     /**
      * get the list of categories to select in params
      */
-    function getCategoryArray($params)
+    public function getCategoryArray($params)
     {
         static $categoryCache = [];
 
-        $categories_array = $params->get('catids', []);
+        $categories_array   = $params->get('catids', []);
         $get_sub_categories = $params->get('include_subcategories', 0);
-        $levels = $params->get('include_subcat_level', 0);
+        $levels             = $params->get('include_subcat_level', 0);
 
         // Create cache key for category processing
         $cacheKey = md5(serialize([
-            'catids' => $categories_array,
+            'catids'                => $categories_array,
             'include_subcategories' => $get_sub_categories,
-            'include_subcat_level' => $levels
+            'include_subcat_level'  => $levels,
         ]));
 
         // Return cached result if available
@@ -433,44 +434,44 @@ class ProductSourceJoomla implements DatabaseAwareInterface
         }
 
         $array_of_category_values = array_count_values($categories_array);
-		if (isset($array_of_category_values['*']) && $array_of_category_values['*'] > 0) { // '*' was selected among the list of categories
-			// take all categories
+        if (isset($array_of_category_values['*']) && $array_of_category_values['*'] > 0) { // '*' was selected among the list of categories
+            // take all categories
             $result = [];
-		} else {
-			if (!empty($categories_array)) {
-			    $categories_ids_array = array();
-			    foreach ($categories_array as $category_id) {
-			        $categories_ids_array[$category_id] = array($category_id);
-			    }
-				// sub-category inclusion
-				if ($get_sub_categories) {
-					$categories_object = Categories::getInstance('Content');
-					foreach ($categories_array as $category_id) {
-						$category_object = $categories_object->get($category_id); // if category unpublished, unset
-						if (isset($category_object) && $category_object->hasChildren()) {
+        } else {
+            if (!empty($categories_array)) {
+                $categories_ids_array = [];
+                foreach ($categories_array as $category_id) {
+                    $categories_ids_array[$category_id] = [$category_id];
+                }
+                // sub-category inclusion
+                if ($get_sub_categories) {
+                    $categories_object = Categories::getInstance('Content');
+                    foreach ($categories_array as $category_id) {
+                        $category_object = $categories_object->get($category_id); // if category unpublished, unset
+                        if (isset($category_object) && $category_object->hasChildren()) {
 
-							$sub_categories_array = $category_object->getChildren(true); // get all levels recursively
-							foreach ($sub_categories_array as $subcategory_object) {
-								$condition = ($subcategory_object->level - $category_object->level) <= $levels;
-								if ($condition) {
-								    $categories_ids_array[$category_id][] = $subcategory_object->id;
-								}
-							}
-						}
-					}
-					$final_categories_array = array();
-					foreach ($categories_array as $category_id) {
-					    $final_categories_array = array_merge($final_categories_array, $categories_ids_array[$category_id]);
-					}
+                            $sub_categories_array = $category_object->getChildren(true); // get all levels recursively
+                            foreach ($sub_categories_array as $subcategory_object) {
+                                $condition = ($subcategory_object->level - $category_object->level) <= $levels;
+                                if ($condition) {
+                                    $categories_ids_array[$category_id][] = $subcategory_object->id;
+                                }
+                            }
+                        }
+                    }
+                    $final_categories_array = [];
+                    foreach ($categories_array as $category_id) {
+                        $final_categories_array = array_merge($final_categories_array, $categories_ids_array[$category_id]);
+                    }
 
-					$result = array_unique($final_categories_array);
-				} else {
-				    $result = $categories_array;
-				}
-			} else {
-			    $result = $categories_array;
-			}
-		}
+                    $result = array_unique($final_categories_array);
+                } else {
+                    $result = $categories_array;
+                }
+            } else {
+                $result = $categories_array;
+            }
+        }
 
         // Cache the result
         $categoryCache[$cacheKey] = $result;
@@ -479,10 +480,10 @@ class ProductSourceJoomla implements DatabaseAwareInterface
         return $result;
     }
 
-    function prepareProduct($module_params, &$product)
+    public function prepareProduct($module_params, &$product)
     {
         // after title, content events, product links
-        if (isset($product->source) && isset($product->source->category_title)) {
+        if (isset($product->source, $product->source->category_title)) {
             $product->category_name = $product->source->category_title;
         }
     }
@@ -491,15 +492,15 @@ class ProductSourceJoomla implements DatabaseAwareInterface
      * Method to get the category table name
      * TODO: add support for other component categories like zoo, dj catlog, easyblog, rs events, sobipro
      * */
-    function getTableData()
+    public function getTableData()
     {
-        $table = new \stdClass();
+        $table                      = new \stdClass();
         $table->category_key_field 	= 'id';
         $table->category_name_field = 'title';
         $table->category_table_name = '#__categories';
-        $table->item_key_field 		= 'id';
-        $table->item_name_field 	= 'title';
-        $table->item_table_name 	= '#__content';
+        $table->item_key_field 		   = 'id';
+        $table->item_name_field 	   = 'title';
+        $table->item_table_name 	   = '#__content';
         $table->item_cat_rel_field 	= 'catid';
         $table->item_cat_rel_table 	= '#__content';
 

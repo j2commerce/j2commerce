@@ -57,7 +57,7 @@ class OrdersHelper
             $placeholders = [];
 
             foreach ($statusIds as $i => $statusId) {
-                $placeholder = ':status_' . $i;
+                $placeholder    = ':status_' . $i;
                 $placeholders[] = $placeholder;
                 $query->bind($placeholder, $statusIds[$i], ParameterType::INTEGER);
             }

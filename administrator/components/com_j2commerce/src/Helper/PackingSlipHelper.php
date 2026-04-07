@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -20,7 +21,7 @@ use Joomla\Database\DatabaseInterface;
 
 class PackingSlipHelper
 {
-    private static ?DatabaseInterface $db = null;
+    private static ?DatabaseInterface $db       = null;
     private static ?PackingSlipHelper $instance = null;
 
     private static function getDatabase(): DatabaseInterface
@@ -78,8 +79,8 @@ class PackingSlipHelper
 
     public function getPackingSlipTemplates(object $order): array
     {
-        $db          = self::getDatabase();
-        $query       = $db->getQuery(true);
+        $db           = self::getDatabase();
+        $query        = $db->getQuery(true);
         $orderStateId = (string) ($order->order_state_id ?? '');
         $paymentType  = $order->orderpayment_type ?? '';
         $invoiceType  = 'packingslip';

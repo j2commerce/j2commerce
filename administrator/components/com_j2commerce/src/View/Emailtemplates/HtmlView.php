@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -9,7 +10,7 @@
 
 namespace J2Commerce\Component\J2commerce\Administrator\View\Emailtemplates;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\MenuHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\EmailtemplatesModel;
@@ -24,7 +25,6 @@ use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Pagination\Pagination;
 use Joomla\CMS\Toolbar\Toolbar;
 use Joomla\CMS\Toolbar\ToolbarHelper;
-
 
 /**
  * View for J2Commerce email templates
@@ -94,7 +94,7 @@ class HtmlView extends BaseHtmlView
         /** @var EmailtemplatesModel $model */
         $this->navbar = $this->getNavbar();
 
-        $model = $this->getModel();
+        $model               = $this->getModel();
         $this->items         = $model->getItems();
         $this->pagination    = $model->getPagination();
         $this->state         = $model->getState();
@@ -103,7 +103,7 @@ class HtmlView extends BaseHtmlView
 
         $requestedLayout = Factory::getApplication()->getInput()->get('layout', '');
 
-        if ((!is_array($this->items) || !\count($this->items)) && !$requestedLayout && $this->isEmptyState = $this->getModel()->getIsEmptyState()) {
+        if ((!\is_array($this->items) || !\count($this->items)) && !$requestedLayout && $this->isEmptyState = $this->getModel()->getIsEmptyState()) {
             $this->setLayout('emptystate');
         }
 
@@ -125,8 +125,8 @@ class HtmlView extends BaseHtmlView
     protected function getNavbar(): string
     {
         $displayData = [
-            'items' => MenuHelper::getMenuItems(),
-            'active' => MenuHelper::getActiveView()
+            'items'  => MenuHelper::getMenuItems(),
+            'active' => MenuHelper::getActiveView(),
         ];
 
         return LayoutHelper::render('navbar.default', $displayData, JPATH_COMPONENT_ADMINISTRATOR . '/layouts');

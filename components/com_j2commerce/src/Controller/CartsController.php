@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -19,13 +20,10 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\CartModel;
-use J2Commerce\Component\J2commerce\Administrator\Model\CouponModel;
-use J2Commerce\Component\J2commerce\Administrator\Model\CouponsModel;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\CMS\Plugin\PluginHelper;
-use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Router\Route;
 use Joomla\Database\ParameterType;
 
@@ -138,7 +136,7 @@ class CartsController extends BaseController
 
         /** @var \J2Commerce\Component\J2commerce\Site\Model\CartsModel $cartsModel */
         $cartsModel = $this->getModel('Carts');
-        $items = $cartsModel->getItems();
+        $items      = $cartsModel->getItems();
 
         // Cart is empty -- clear shipping session data
         if (empty($items)) {
@@ -148,11 +146,11 @@ class CartsController extends BaseController
             return;
         }
 
-        $order = OrderHelper::getInstance()->populateOrder($items)->getOrder();
+        $order   = OrderHelper::getInstance()->populateOrder($items)->getOrder();
         $methods = J2CommerceHelper::plugin()->eventWithArray('GetShippingRates', [$order]);
 
         // Sort by price ascending so cheapest rates appear first
-        usort($methods, fn(array $a, array $b) => ((float) ($a['price'] ?? 0)) <=> ((float) ($b['price'] ?? 0)));
+        usort($methods, fn (array $a, array $b) => ((float) ($a['price'] ?? 0)) <=> ((float) ($b['price'] ?? 0)));
 
         $session->set('shipping_methods', $methods, 'j2commerce');
 
@@ -214,7 +212,7 @@ class CartsController extends BaseController
             return 'Unknown Product';
         }
 
-        $db = Factory::getContainer()->get('DatabaseDriver');
+        $db    = Factory::getContainer()->get('DatabaseDriver');
         $query = $db->getQuery(true)
             ->select($db->quoteName('c.title'))
             ->from($db->quoteName('#__j2commerce_products', 'p'))
@@ -260,9 +258,9 @@ class CartsController extends BaseController
 
             // Log to action log on success
             if (!empty($json['success'])) {
-                $logProductId = $this->input->getInt('product_id', 0);
+                $logProductId   = $this->input->getInt('product_id', 0);
                 $logProductName = $this->getProductNameByProductId($logProductId);
-                $logQuantity = $this->input->getInt('product_qty', 1);
+                $logQuantity    = $this->input->getInt('product_qty', 1);
                 PluginHelper::importPlugin('actionlog');
                 $this->app->getDispatcher()->dispatch(
                     'onJ2CommerceAfterAddToCart',
@@ -282,7 +280,7 @@ class CartsController extends BaseController
 
                 $json['product_redirect'] = J2CommerceHelper::platform()->getProductUrl([
                     'task' => 'view',
-                    'id'   => $this->input->getInt('product_id')
+                    'id'   => $this->input->getInt('product_id'),
                 ]);
 
                 $this->sendJsonResponse($json);
@@ -309,7 +307,7 @@ class CartsController extends BaseController
             if ($ajax) {
                 $this->sendJsonResponse([
                     'success' => 0,
-                    'error'   => ['general' => $e->getMessage()]
+                    'error'   => ['general' => $e->getMessage()],
                 ]);
             } else {
                 // For non-AJAX, redirect with error message
@@ -494,7 +492,7 @@ class CartsController extends BaseController
             $this->sendJsonResponse($json);
         }
 
-        $model = $this->getCartModel();
+        $model      = $this->getCartModel();
         $cartitemId = $this->input->getInt('cartitem_id', 0);
 
         if (!$cartitemId) {
@@ -508,7 +506,7 @@ class CartsController extends BaseController
             $cartitem->load($cartitemId);
 
             // Ownership check: verify cartitem belongs to the current user's cart
-            $cart = $model->getCart(0, false);
+            $cart          = $model->getCart(0, false);
             $currentCartId = $cart ? (int) $cart->j2commerce_cart_id : 0;
 
             if (!$cartitem->j2commerce_cartitem_id || (int) $cartitem->cart_id !== $currentCartId) {
@@ -529,8 +527,8 @@ class CartsController extends BaseController
                         new \Joomla\Event\Event('onJ2CommerceAfterRemoveFromCart', [$logRemoveProductName, (int) ($cartitem->product_id ?? 0)])
                     );
 
-                    $json['success'] = true;
-                    $json['message'] = Text::_('COM_J2COMMERCE_CART_UPDATED_SUCCESSFULLY');
+                    $json['success']  = true;
+                    $json['message']  = Text::_('COM_J2COMMERCE_CART_UPDATED_SUCCESSFULLY');
                     $json['redirect'] = $model->getCartUrl();
                 } else {
                     $json['success'] = false;
@@ -567,7 +565,7 @@ class CartsController extends BaseController
         }
 
         $cartitemId = $this->input->getInt('cartitem_id', 0);
-        $newQty = $this->input->getInt('qty', 1);
+        $newQty     = $this->input->getInt('qty', 1);
 
         if (!$cartitemId) {
             $json['success'] = false;
@@ -593,8 +591,8 @@ class CartsController extends BaseController
 
             // Validate quantity against min/max constraints
             // Load product to get constraints
-            $model = $this->getCartModel();
-            $db = Factory::getContainer()->get('DatabaseDriver');
+            $model     = $this->getCartModel();
+            $db        = Factory::getContainer()->get('DatabaseDriver');
             $variantId = (int) $cartitem->variant_id;
 
             $query = $db->getQuery(true)
@@ -617,12 +615,12 @@ class CartsController extends BaseController
             $maxQty = (int) ($productInfo->max_sale_qty ?? 0);
 
             if ($newQty < $minQty) {
-                $newQty = $minQty;
+                $newQty          = $minQty;
                 $json['message'] = Text::sprintf('COM_J2COMMERCE_MINIMUM_QUANTITY_REQUIRED', $minQty);
             }
 
             if ($maxQty > 0 && $newQty > $maxQty) {
-                $newQty = $maxQty;
+                $newQty          = $maxQty;
                 $json['message'] = Text::sprintf('COM_J2COMMERCE_MAXIMUM_QUANTITY_ALLOWED', $maxQty);
             }
 
@@ -630,8 +628,8 @@ class CartsController extends BaseController
                 $stockQty = (int) $productInfo->stock_qty;
 
                 if ($newQty > $stockQty) {
-                    $json['success'] = false;
-                    $json['message'] = Text::sprintf('COM_J2COMMERCE_NOT_ENOUGH_STOCK', $stockQty);
+                    $json['success']      = false;
+                    $json['message']      = Text::sprintf('COM_J2COMMERCE_NOT_ENOUGH_STOCK', $stockQty);
                     $json['original_qty'] = $originalQty;
                     $this->sendJsonResponse($json);
                 }
@@ -652,19 +650,19 @@ class CartsController extends BaseController
                     new \Joomla\Event\Event('onJ2CommerceAfterUpdateCartQuantity', [$logUpdateProductName, $originalQty, $newQty])
                 );
 
-                $json['success'] = true;
-                $json['qty'] = $newQty;
+                $json['success']  = true;
+                $json['qty']      = $newQty;
                 $json['redirect'] = $model->getCartUrl();
 
                 // Get the refreshed order with recalculated totals
                 // Use the site CartsModel to get the order with proper line item calculations
                 /** @var \J2Commerce\Component\J2commerce\Site\Model\CartsModel $cartsModel */
                 $cartsModel = $this->getModel('Carts');
-                $order = $cartsModel->getOrder();
+                $order      = $cartsModel->getOrder();
 
                 if ($order) {
-                    $currency = J2CommerceHelper::currency();
-                    $params = J2CommerceHelper::config();
+                    $currency             = J2CommerceHelper::currency();
+                    $params               = J2CommerceHelper::config();
                     $checkoutPriceDisplay = (int) $params->get('checkout_price_display_options', 0);
 
                     // Find the updated item in the order and get its calculated line total
@@ -672,7 +670,7 @@ class CartsController extends BaseController
                     foreach ($orderItems as $orderItem) {
                         $itemCartId = $orderItem->cartitem_id ?? $orderItem->j2commerce_cartitem_id ?? 0;
                         if ((int) $itemCartId === $cartitemId) {
-                            $lineTotal = $order->get_formatted_lineitem_total($orderItem, $checkoutPriceDisplay);
+                            $lineTotal          = $order->get_formatted_lineitem_total($orderItem, $checkoutPriceDisplay);
                             $json['line_total'] = $currency->format($lineTotal);
                             break;
                         }
@@ -683,13 +681,13 @@ class CartsController extends BaseController
                     $json['message'] = Text::_('COM_J2COMMERCE_CART_UPDATED_SUCCESSFULLY');
                 }
             } else {
-                $json['success'] = false;
-                $json['message'] = Text::_('COM_J2COMMERCE_ERROR_UPDATING_CART');
+                $json['success']      = false;
+                $json['message']      = Text::_('COM_J2COMMERCE_ERROR_UPDATING_CART');
                 $json['original_qty'] = $originalQty;
             }
         } catch (\Exception $e) {
-            $json['success'] = false;
-            $json['message'] = $e->getMessage();
+            $json['success']      = false;
+            $json['message']      = $e->getMessage();
             $json['original_qty'] = $originalQty ?? 1;
         }
 
@@ -734,9 +732,9 @@ class CartsController extends BaseController
 
             // CRITICAL: Populate view properties needed by default_totals.php
             // The template requires $this->order and $this->checkout_url
-            $view->params = J2CommerceHelper::config();
-            $view->currency = $model->getCurrency();
-            $view->order = $model->getOrder();
+            $view->params       = J2CommerceHelper::config();
+            $view->currency     = $model->getCurrency();
+            $view->order        = $model->getOrder();
             $view->checkout_url = $model->getCheckoutUrl();
 
             // Capture the totals template output
@@ -747,14 +745,14 @@ class CartsController extends BaseController
 
             // Also render shipping methods for estimate flow
             $view->shipping_methods = $model->getShippingMethods();
-            $view->shipping_values = $model->getShippingValues();
+            $view->shipping_values  = $model->getShippingValues();
 
             ob_start();
             echo $view->loadTemplate('shipping');
             $shippingHtml = ob_get_clean();
 
-            $json['success'] = true;
-            $json['html'] = $html;
+            $json['success']       = true;
+            $json['html']          = $html;
             $json['shipping_html'] = $shippingHtml;
         } catch (\Exception $e) {
             $json['success'] = false;
@@ -919,8 +917,8 @@ class CartsController extends BaseController
         UtilitiesHelper::sendNoCacheHeaders();
         UtilitiesHelper::clearCache();
 
-        $model   = $this->getCartModel();
-        $voucher = $this->input->getString('voucher', '');
+        $model        = $this->getCartModel();
+        $voucher      = $this->input->getString('voucher', '');
         $voucherModel = $this->factory->createModel('Voucher', 'Administrator');
         if (!empty($voucher)) {
             $voucherModel->setVoucher($voucher);
@@ -996,8 +994,8 @@ class CartsController extends BaseController
             $couponModel->init();
 
             // Build lightweight order context for validateMinimumAmount
-            $orderContext = new \stdClass();
-            $orderContext->subtotal = 0;
+            $orderContext                 = new \stdClass();
+            $orderContext->subtotal       = 0;
             $orderContext->order_subtotal = 0;
 
             try {
@@ -1229,7 +1227,7 @@ class CartsController extends BaseController
                 $session->set('billing_city', $city, 'j2commerce');
             }
 
-            $url             = $model->getCartUrl();
+            $url              = $model->getCartUrl();
             $json['redirect'] = $url;
         }
 
@@ -1318,7 +1316,7 @@ class CartsController extends BaseController
 
             /** @var \J2Commerce\Component\J2commerce\Site\Model\CartsModel $cartsModel */
             $cartsModel = $this->getModel('Carts');
-            $items = $cartsModel->getItems();
+            $items      = $cartsModel->getItems();
 
             if (!empty($items)) {
                 $order = OrderHelper::getInstance()->populateOrder($items)->getOrder();
@@ -1326,7 +1324,7 @@ class CartsController extends BaseController
                 $methods = J2CommerceHelper::plugin()->eventWithArray('GetShippingRates', [$order]);
 
                 // Sort by price ascending so cheapest rates appear first
-                usort($methods, fn(array $a, array $b) => ((float) ($a['price'] ?? 0)) <=> ((float) ($b['price'] ?? 0)));
+                usort($methods, fn (array $a, array $b) => ((float) ($a['price'] ?? 0)) <=> ((float) ($b['price'] ?? 0)));
 
                 $session->set('shipping_methods', $methods, 'j2commerce');
 
@@ -1449,11 +1447,11 @@ class CartsController extends BaseController
 
                 if (\is_array($zones)) {
                     $json = [
-                        'country_id'  => $countryInfo->j2commerce_country_id,
-                        'name'        => $countryInfo->country_name,
-                        'iso_code_2'  => $countryInfo->country_isocode_2,
-                        'iso_code_3'  => $countryInfo->country_isocode_3,
-                        'zone'        => $zones,
+                        'country_id' => $countryInfo->j2commerce_country_id,
+                        'name'       => $countryInfo->country_name,
+                        'iso_code_2' => $countryInfo->country_isocode_2,
+                        'iso_code_3' => $countryInfo->country_isocode_3,
+                        'zone'       => $zones,
                     ];
                 }
             }

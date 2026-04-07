@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -76,12 +77,12 @@ final class OrderItemAttributeHelper
             return [];
         }
 
-        $groups = [];
+        $groups     = [];
         $childItems = [];
 
         foreach ($attributes as $attr) {
-            $type = $attr->orderitemattribute_type ?? 'select';
-            $name = $attr->orderitemattribute_name ?? '';
+            $type  = $attr->orderitemattribute_type ?? 'select';
+            $name  = $attr->orderitemattribute_name ?? '';
             $value = $attr->orderitemattribute_value ?? '';
 
             if (\in_array($type, self::SKIP_TYPES, true)) {
@@ -110,7 +111,7 @@ final class OrderItemAttributeHelper
         // Add deduplicated child products as a single group
         if (!empty($childItems)) {
             $result[] = [
-                'type' => 'product_children',
+                'type'  => 'product_children',
                 'items' => array_values($childItems),
             ];
         }
@@ -118,7 +119,7 @@ final class OrderItemAttributeHelper
         // Add standard attributes (each as its own entry in a 'standard' group)
         if (!empty($groups)) {
             $result[] = [
-                'type' => 'standard',
+                'type'  => 'standard',
                 'items' => $groups,
             ];
         }
@@ -139,14 +140,14 @@ final class OrderItemAttributeHelper
         foreach ($grouped as $group) {
             foreach ($group['items'] as $item) {
                 if ($group['type'] === 'product_children') {
-                    $qty = (int) ($item['qty'] ?? 1);
+                    $qty   = (int) ($item['qty'] ?? 1);
                     $label = $qty > 1
                         ? '(' . $qty . ') ' . htmlspecialchars($item['name'], ENT_QUOTES, 'UTF-8')
                         : htmlspecialchars($item['name'], ENT_QUOTES, 'UTF-8');
                     $parts[] = $label;
                 } else {
-                    $name = htmlspecialchars($item['name'] ?? '', ENT_QUOTES, 'UTF-8');
-                    $value = htmlspecialchars($item['value'] ?? '', ENT_QUOTES, 'UTF-8');
+                    $name    = htmlspecialchars($item['name'] ?? '', ENT_QUOTES, 'UTF-8');
+                    $value   = htmlspecialchars($item['value'] ?? '', ENT_QUOTES, 'UTF-8');
                     $parts[] = $value !== '' ? $name . ': ' . $value : $name;
                 }
             }
@@ -170,7 +171,7 @@ final class OrderItemAttributeHelper
                 continue;
             }
 
-            $name = $option['name'] ?? '';
+            $name  = $option['name'] ?? '';
             $value = $option['option_value'] ?? '';
 
             if ($name === '' && $value === '') {
@@ -178,9 +179,9 @@ final class OrderItemAttributeHelper
             }
 
             $attributes[] = (object) [
-                'orderitemattribute_name' => $name,
+                'orderitemattribute_name'  => $name,
                 'orderitemattribute_value' => $value,
-                'orderitemattribute_type' => $type,
+                'orderitemattribute_type'  => $type,
                 'orderitemattribute_price' => (float) ($option['price'] ?? 0),
             ];
         }
@@ -194,7 +195,7 @@ final class OrderItemAttributeHelper
             return [];
         }
 
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db         = Factory::getContainer()->get(DatabaseInterface::class);
         $attributes = [];
 
         foreach ($options as $optionId => $optionValue) {
@@ -206,8 +207,11 @@ final class OrderItemAttributeHelper
             $query = $db->getQuery(true)
                 ->select([$db->quoteName('o.option_name'), $db->quoteName('o.type')])
                 ->from($db->quoteName('#__j2commerce_product_options', 'po'))
-                ->join('LEFT', $db->quoteName('#__j2commerce_options', 'o'),
-                    $db->quoteName('o.j2commerce_option_id') . ' = ' . $db->quoteName('po.option_id'))
+                ->join(
+                    'LEFT',
+                    $db->quoteName('#__j2commerce_options', 'o'),
+                    $db->quoteName('o.j2commerce_option_id') . ' = ' . $db->quoteName('po.option_id')
+                )
                 ->where($db->quoteName('po.j2commerce_productoption_id') . ' = :optionId')
                 ->bind(':optionId', $optId, ParameterType::INTEGER);
 
@@ -237,9 +241,9 @@ final class OrderItemAttributeHelper
             }
 
             $attributes[] = (object) [
-                'orderitemattribute_name' => $optionName,
+                'orderitemattribute_name'  => $optionName,
                 'orderitemattribute_value' => $displayValue,
-                'orderitemattribute_type' => $optionType,
+                'orderitemattribute_type'  => $optionType,
             ];
         }
 
@@ -255,8 +259,11 @@ final class OrderItemAttributeHelper
         $query = $db->getQuery(true)
             ->select($db->quoteName('ov.optionvalue_name'))
             ->from($db->quoteName('#__j2commerce_product_optionvalues', 'pov'))
-            ->join('LEFT', $db->quoteName('#__j2commerce_optionvalues', 'ov'),
-                $db->quoteName('pov.optionvalue_id') . ' = ' . $db->quoteName('ov.j2commerce_optionvalue_id'))
+            ->join(
+                'LEFT',
+                $db->quoteName('#__j2commerce_optionvalues', 'ov'),
+                $db->quoteName('pov.optionvalue_id') . ' = ' . $db->quoteName('ov.j2commerce_optionvalue_id')
+            )
             ->where($db->quoteName('pov.j2commerce_product_optionvalue_id') . ' = :valueId')
             ->bind(':valueId', $valueId, ParameterType::INTEGER);
 

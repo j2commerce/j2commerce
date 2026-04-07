@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -63,7 +64,7 @@ class Configurable
         $variantModel->setState('filter.product_id', $record->j2commerce_product_id);
 
         try {
-            $variants = $variantModel->getItems();
+            $variants         = $variantModel->getItems();
             $record->variants = $variants[0] ?? new \stdClass();
         } catch (\Exception $e) {
             $app->enqueueMessage($e->getMessage(), 'error');
@@ -89,7 +90,7 @@ class Configurable
             $record->product_options = [];
         }
 
-        $registry = new Registry($record->params);
+        $registry       = new Registry($record->params);
         $record->params = $registry;
     }
 
@@ -99,7 +100,7 @@ class Configurable
             return;
         }
 
-        $app = Factory::getApplication();
+        $app           = Factory::getApplication();
         $utilityHelper = J2CommerceHelper::utilities();
 
         if (!isset($data['visibility'])) {
@@ -118,11 +119,11 @@ class Configurable
             $data['shippingmethods'] = implode(',', $data['shippingmethods']);
         }
 
-        if (isset($data['item_options']) && is_object($data['item_options'])) {
+        if (isset($data['item_options']) && \is_object($data['item_options'])) {
             $data['item_options'] = (array) $data['item_options'];
         }
 
-        if (isset($data['item_options']) && count($data['item_options']) > 0) {
+        if (isset($data['item_options']) && \count($data['item_options']) > 0) {
             $data['has_options'] = 1;
         }
 
@@ -136,12 +137,12 @@ class Configurable
             $data[$key] = !empty($data[$key]) ? (float) $data[$key] : 0;
         }
 
-        if (is_object($data['quantity'] ?? null)
+        if (\is_object($data['quantity'] ?? null)
             && (!isset($data['quantity']->product_attributes) || empty($data['quantity']->product_attributes))) {
             $data['quantity']->product_attributes = '';
         }
 
-        if (isset($data['quantity']) && is_object($data['quantity'])) {
+        if (isset($data['quantity']) && \is_object($data['quantity'])) {
             $data['quantity']->quantity = !empty($data['quantity']->quantity)
                 ? (int) $data['quantity']->quantity
                 : 0;
@@ -193,7 +194,7 @@ class Configurable
         }
 
         // Try to load existing master variant by product_id
-        $db = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $db    = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
         $query = $db->getQuery(true)
             ->select($db->quoteName('j2commerce_variant_id'))
             ->from($db->quoteName('#__j2commerce_variants'))
@@ -208,7 +209,7 @@ class Configurable
         }
 
         $variant->bind($this->_rawData);
-        $variant->is_master = 1;
+        $variant->is_master  = 1;
         $variant->product_id = $table->j2commerce_product_id;
         $variant->check();
         $variant->store();
@@ -217,7 +218,7 @@ class Configurable
         if (!empty($this->_rawData['deleted_options'])) {
             $deletedIds = array_filter(array_map('intval', explode(',', $this->_rawData['deleted_options'])));
             if (!empty($deletedIds)) {
-                $db = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+                $db        = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
                 $productId = $table->j2commerce_product_id;
 
                 foreach ($deletedIds as $deletedId) {
@@ -250,7 +251,7 @@ class Configurable
                 if (!$poption) {
                     throw new \RuntimeException('Unable to create Productoption table instance.');
                 }
-                $itemData = \is_object($item) ? (array) $item : $item;
+                $itemData               = \is_object($item) ? (array) $item : $item;
                 $itemData['product_id'] = $table->j2commerce_product_id;
                 try {
                     $poption->save($itemData);
@@ -323,14 +324,14 @@ class Configurable
 
     public function onAfterGetProduct(AbstractEvent $event): void
     {
-        $model = $event->getArgument('subject');
+        $model   = $event->getArgument('subject');
         $product = $event->getArgument('product');
 
         if (!$product || ($product->product_type ?? '') !== 'configurable') {
             return;
         }
 
-        $app = Factory::getApplication();
+        $app           = Factory::getApplication();
         $productHelper = new ProductHelper();
 
         $productHelper->getAddtocartAction($product);
@@ -342,7 +343,7 @@ class Configurable
         $variantModel->setState('filter.product_id', $product->j2commerce_product_id);
 
         try {
-            $variants = $variantModel->getItems();
+            $variants          = $variantModel->getItems();
             $product->variants = $variants[0] ?? $this->mvcFactory->createTable('Variant', 'Administrator');
         } catch (\Exception $e) {
             if ($model !== null && method_exists($model, 'setError')) {
@@ -351,7 +352,7 @@ class Configurable
             $product->variants = $this->mvcFactory->createTable('Variant', 'Administrator');
         }
 
-        $registry = new Registry($product->params);
+        $registry        = new Registry($product->params);
         $product->params = $registry;
 
         $product->variant = $product->variants;
@@ -394,7 +395,7 @@ class Configurable
             }
 
             try {
-                $product->options = $productHelper->getProductOptions($product);
+                $product->options       = $productHelper->getProductOptions($product);
                 $defaultSelectedOptions = $productHelper->getDefaultProductOptions($product->options);
 
                 $productOptionData = $productHelper->getOptionPrice(
@@ -415,11 +416,11 @@ class Configurable
             return [];
         }
 
-        $app = Factory::getApplication();
-        $input = $app->getInput();
-        $config = J2CommerceHelper::config()->getParams();
+        $app           = Factory::getApplication();
+        $input         = $app->getInput();
+        $config        = J2CommerceHelper::config()->getParams();
         $productHelper = new ProductHelper();
-        $pluginHelper = J2CommerceHelper::plugin();
+        $pluginHelper  = J2CommerceHelper::plugin();
 
         $productId = $input->getInt('product_id', 0);
         if (!$productId) {
@@ -427,15 +428,15 @@ class Configurable
         }
 
         // Handle cascading child options
-        $poId = $input->getInt('po_id', 0);
+        $poId  = $input->getInt('po_id', 0);
         $povId = $input->getInt('pov_id', 0);
 
-        $html = '';
+        $html           = '';
         $responseOption = [];
 
         if ($poId && $povId) {
             // Fetch the parent option's option_id
-            $db = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+            $db    = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
             $query = $db->getQuery(true)
                 ->select($db->quoteName(['j2commerce_productoption_id', 'option_id']))
                 ->from($db->quoteName('#__j2commerce_product_options'))
@@ -452,16 +453,16 @@ class Configurable
                 );
 
                 if (!empty($childOpts)) {
-                    $options = [];
+                    $options        = [];
                     $childOptionIds = [];
                     foreach ($childOpts as $attr) {
                         if (isset($attr['optionvalue'])) {
-                            $options[] = $attr;
+                            $options[]        = $attr;
                             $childOptionIds[] = (int) $attr['productoption_id'];
                         }
                     }
                     $product->options = $options;
-                    $responseOption = $options;
+                    $responseOption   = $options;
 
                     // Render child options using FileLayout
                     $layout = new FileLayout('product.configurablechildoptions');
@@ -471,7 +472,7 @@ class Configurable
 
                     $html = $layout->render([
                         'product' => $product,
-                        'params' => $config,
+                        'params'  => $config,
                         'options' => $options,
                     ]);
                 }
@@ -484,9 +485,9 @@ class Configurable
         $variantModel->getState();
         $variantModel->setState('filter.product_id', $product->j2commerce_product_id);
         $variantModel->setState('filter.is_master', 1);
-        $variants = $variantModel->getItems();
+        $variants          = $variantModel->getItems();
         $product->variants = $variants[0] ?? new \stdClass();
-        $product->variant = $product->variants;
+        $product->variant  = $product->variants;
 
         $productHelper->getQuantityRestriction($product->variant);
 
@@ -499,27 +500,27 @@ class Configurable
 
         $parentProductOptions = $input->get('product_option', [], 'ARRAY');
 
-        if (count($parentProductOptions)) {
+        if (\count($parentProductOptions)) {
             $productOptionData = $productHelper->getOptionPrice($parentProductOptions, $product->j2commerce_product_id);
-            $basePrice = $pricing->base_price + $productOptionData['option_price'];
-            $price = $pricing->price + $productOptionData['option_price'];
+            $basePrice         = $pricing->base_price + $productOptionData['option_price'];
+            $price             = $pricing->price + $productOptionData['option_price'];
         } else {
             $basePrice = $pricing->base_price;
-            $price = $pricing->price;
+            $price     = $pricing->price;
         }
 
         $pluginHelper->event('BeforeUpdateProductReturn', [&$config, $product]);
 
-        $return = [];
-        $return['pricing'] = [];
+        $return                          = [];
+        $return['pricing']               = [];
         $return['pricing']['base_price'] = $productHelper->displayPrice($basePrice, $product, $config);
-        $return['pricing']['price'] = $productHelper->displayPrice($price, $product, $config);
-        $return['child_options'] = $responseOption;
-        $return['child_option_ids'] = $childOptionIds ?? [];
-        $return['optionhtml'] = $html;
-        $return['pricing']['original'] = [
+        $return['pricing']['price']      = $productHelper->displayPrice($price, $product, $config);
+        $return['child_options']         = $responseOption;
+        $return['child_option_ids']      = $childOptionIds ?? [];
+        $return['optionhtml']            = $html;
+        $return['pricing']['original']   = [
             'base_price' => $basePrice,
-            'price' => $price,
+            'price'      => $price,
         ];
 
         $pluginHelper->event('AfterUpdateProductReturn', [&$return, $product, $config]);

@@ -321,7 +321,7 @@ class OnboardingHelper
         $geozoneId = $geo['geozone_id'];
         $geoName   = $geo['geozone_name'];
 
-        $isUS = ($countryId === 223);
+        $isUS     = ($countryId === 223);
         $rateName = $isUS && $zoneId > 0
             ? "$geoName Sales Tax"
             : "$geoName Tax";
@@ -619,14 +619,14 @@ class OnboardingHelper
 
         foreach ($rates as $rate) {
             $obj = (object) [
-                'shipping_method_id'          => $methodId,
-                'geozone_id'                  => (int) ($rate['geozone_id'] ?? 0),
-                'shipping_rate_price'         => (float) ($rate['price'] ?? 0),
-                'shipping_rate_handling'      => (float) ($rate['handling'] ?? 0),
-                'shipping_rate_weight_start'  => (float) ($rate['weight_start'] ?? 0),
-                'shipping_rate_weight_end'    => (float) ($rate['weight_end'] ?? 0),
-                'created_date'                => $now,
-                'modified_date'               => $now,
+                'shipping_method_id'         => $methodId,
+                'geozone_id'                 => (int) ($rate['geozone_id'] ?? 0),
+                'shipping_rate_price'        => (float) ($rate['price'] ?? 0),
+                'shipping_rate_handling'     => (float) ($rate['handling'] ?? 0),
+                'shipping_rate_weight_start' => (float) ($rate['weight_start'] ?? 0),
+                'shipping_rate_weight_end'   => (float) ($rate['weight_end'] ?? 0),
+                'created_date'               => $now,
+                'modified_date'              => $now,
             ];
 
             $db->insertObject('#__j2commerce_shippingrates', $obj);

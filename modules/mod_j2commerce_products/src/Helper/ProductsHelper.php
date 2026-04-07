@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  mod_j2commerce_products
@@ -11,14 +12,14 @@ declare(strict_types=1);
 
 namespace J2Commerce\Module\Products\Site\Helper;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
 use Joomla\Registry\Registry;
-use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 
 class ProductsHelper
 {
@@ -62,12 +63,12 @@ class ProductsHelper
     {
         $productIds = $params->get('product_ids', []);
 
-        if (is_string($productIds)) {
+        if (\is_string($productIds)) {
             $productIds = explode(',', $productIds);
         }
 
         $productIds = array_map('intval', array_filter((array) $productIds));
-        $count = (int) $params->get('count', 8);
+        $count      = (int) $params->get('count', 8);
         $productIds = \array_slice($productIds, 0, $count);
 
         $products = [];
@@ -116,12 +117,12 @@ class ProductsHelper
         $productTypes = $params->get('product_types', '');
 
         if (!empty($productTypes)) {
-            $types = is_array($productTypes) ? $productTypes : explode(',', (string) $productTypes);
-            $types = array_values(array_filter($types, fn($t) => trim((string) $t) !== ''));
+            $types = \is_array($productTypes) ? $productTypes : explode(',', (string) $productTypes);
+            $types = array_values(array_filter($types, fn ($t) => trim((string) $t) !== ''));
 
             if (!empty($types)) {
                 $query->where($db->quoteName('a.product_type') . ' IN (' . implode(',', array_map(
-                    fn($t) => $db->quote(trim((string) $t)),
+                    fn ($t) => $db->quote(trim((string) $t)),
                     $types
                 )) . ')');
             }
@@ -163,7 +164,7 @@ class ProductsHelper
             return;
         }
 
-        $ids = is_array($categoryIds)
+        $ids = \is_array($categoryIds)
             ? array_map('intval', $categoryIds)
             : array_map('intval', explode(',', (string) $categoryIds));
 
@@ -192,7 +193,7 @@ class ProductsHelper
             return;
         }
 
-        $ids = is_array($tagIds)
+        $ids = \is_array($tagIds)
             ? array_map('intval', $tagIds)
             : array_map('intval', explode(',', (string) $tagIds));
 

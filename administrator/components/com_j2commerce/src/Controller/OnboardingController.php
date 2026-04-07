@@ -16,7 +16,6 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OnboardingHelper;
-use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Installer\Installer;
 use Joomla\CMS\Installer\InstallerHelper;
@@ -78,12 +77,12 @@ class OnboardingController extends BaseController
 
         try {
             $result = match ($step) {
-                1 => $this->saveStep1(),
-                2 => $this->saveStep2(),
-                3 => $this->saveStep3(),
-                4 => $this->saveStep4(),
-                5 => $this->saveStep5(),
-                6 => $this->saveStep6(),
+                1       => $this->saveStep1(),
+                2       => $this->saveStep2(),
+                3       => $this->saveStep3(),
+                4       => $this->saveStep4(),
+                5       => $this->saveStep5(),
+                6       => $this->saveStep6(),
                 default => throw new \InvalidArgumentException('Invalid step number'),
             };
 
@@ -323,8 +322,8 @@ class OnboardingController extends BaseController
         $taxPercent   = $this->input->getFloat('tax_percent', 0.0);
 
         $config = [
-            'config_including_tax'   => (string) $includingTax,
-            'onboarding_last_step'   => '3',
+            'config_including_tax' => (string) $includingTax,
+            'onboarding_last_step' => '3',
         ];
 
         OnboardingHelper::persistConfig($config);
@@ -350,7 +349,7 @@ class OnboardingController extends BaseController
 
     private function saveStep4(): array
     {
-        $db = $this->getDb();
+        $db                = $this->getDb();
         $requireShipping   = $this->input->getInt('require_shipping', 1);
         $offerFreeShipping = $this->input->getInt('offer_free_shipping', 0);
         $shippingRateType  = $this->input->getString('shipping_rate_type', '');
@@ -570,7 +569,7 @@ class OnboardingController extends BaseController
         $methods = $db->setQuery($query)->loadObjectList();
 
         foreach ($methods as $method) {
-            $type = (int) $method->shipping_method_type;
+            $type     = (int) $method->shipping_method_type;
             $typeName = $typeLabels[$type] ?? '';
             $methodId = (int) $method->id;
 

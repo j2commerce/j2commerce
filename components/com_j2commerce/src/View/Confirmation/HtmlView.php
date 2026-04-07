@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Site\View\Confirmation;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
@@ -23,20 +24,20 @@ use Joomla\Registry\Registry;
 
 class HtmlView extends BaseHtmlView
 {
-    public ?object $order = null;
-    public string $plugin_html = '';
-    public string $order_link = '';
-    public ?object $params = null;
-    public ?object $currency = null;
+    public ?object $order            = null;
+    public string $plugin_html       = '';
+    public string $order_link        = '';
+    public ?object $params           = null;
+    public ?object $currency         = null;
     public ?Registry $menuItemParams = null;
-    public string $paction = '';
-    public array $orderItems = [];
-    public ?object $orderInfo = null;
-    public array $orderShippings = [];
-    public array $orderTaxes = [];
-    public array $orderFees = [];
-    public array $orderDiscounts = [];
-    public bool $showingRecent = false;
+    public string $paction           = '';
+    public array $orderItems         = [];
+    public ?object $orderInfo        = null;
+    public array $orderShippings     = [];
+    public array $orderTaxes         = [];
+    public array $orderFees          = [];
+    public array $orderDiscounts     = [];
+    public bool $showingRecent       = false;
 
     public function display($tpl = null): void
     {
@@ -47,8 +48,8 @@ class HtmlView extends BaseHtmlView
         $this->params   = J2CommerceHelper::config();
         $this->currency = J2CommerceHelper::currency();
 
-        $menu   = $app->getMenu();
-        $active = $menu->getActive();
+        $menu                 = $app->getMenu();
+        $active               = $menu->getActive();
         $this->menuItemParams = \is_object($active) ? $active->getParams() : new Registry('{}');
 
         /** @var \J2Commerce\Component\J2commerce\Site\Model\ConfirmationModel $model */

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -122,7 +123,7 @@ class ProducttagsModel extends ListModel
             return [];
         }
 
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         $query->select('*')
@@ -148,7 +149,7 @@ class ProducttagsModel extends ListModel
     public function getSFProducts(): array
     {
         if ($this->sfList === null) {
-            $query = $this->getSFQuery();
+            $query        = $this->getSFQuery();
             $this->sfList = $this->executeSFQuery(
                 $query,
                 $this->getStart(),
@@ -210,7 +211,7 @@ class ProducttagsModel extends ListModel
     public function getSFPageTotal(): int
     {
         if ($this->sfPageTotal === null) {
-            $query = $this->getSFQuery();
+            $query      = $this->getSFQuery();
             $countQuery = clone $query;
             $countQuery->clear('select')
                 ->clear('order')
@@ -259,8 +260,8 @@ class ProducttagsModel extends ListModel
      */
     public function getSFQuery(): QueryInterface
     {
-        $db = $this->getDatabase();
-        $user = Factory::getApplication()->getIdentity();
+        $db    = $this->getDatabase();
+        $user  = Factory::getApplication()->getIdentity();
         $query = $db->getQuery(true);
 
         // Select from content (articles)
@@ -368,7 +369,7 @@ class ProducttagsModel extends ListModel
      */
     protected function buildContentSelect(QueryInterface $query): void
     {
-        $db = $this->getDatabase();
+        $db       = $this->getDatabase();
         $nullDate = $db->quote($db->getNullDate());
 
         // Build the select list from state or default
@@ -501,17 +502,17 @@ class ProducttagsModel extends ListModel
      */
     protected function buildSFWhereQuery(QueryInterface $query): void
     {
-        $db = $this->getDatabase();
-        $app = Factory::getApplication();
-        $user = $app->getIdentity();
+        $db    = $this->getDatabase();
+        $app   = Factory::getApplication();
+        $user  = $app->getIdentity();
         $state = $this->getSFFilterValues();
 
         // Filter by tag ID
         $tagId = $this->getState('tagid');
         if (is_numeric($tagId)) {
-            $tagIdInt = (int) $tagId;
+            $tagIdInt       = (int) $tagId;
             $includeSubtags = $this->getState('filter.subtags', false);
-            $typeAlias = 'com_content.article';
+            $typeAlias      = 'com_content.article';
 
             if ($includeSubtags) {
                 $levels = (int) $this->getState('filter.max_tag_levels', 1);
@@ -558,7 +559,7 @@ class ProducttagsModel extends ListModel
 
         // Publish date filters
         $nullDate = $db->quote($db->getNullDate());
-        $nowDate = $db->quote(Factory::getDate()->toSql());
+        $nowDate  = $db->quote(Factory::getDate()->toSql());
 
         $query->where('(' . $db->quoteName('a.publish_up') . ' = ' . $nullDate .
             ' OR ' . $db->quoteName('a.publish_up') . ' <= ' . $nowDate .
@@ -732,9 +733,9 @@ class ProducttagsModel extends ListModel
     {
         if (($state->pricefrom !== null && ($state->pricefrom >= 0 || $state->pricefrom !== ''))
             && !empty($state->priceto)) {
-            $db = $this->getDatabase();
+            $db        = $this->getDatabase();
             $priceFrom = (int) $state->pricefrom;
-            $priceTo = (int) $state->priceto;
+            $priceTo   = (int) $state->priceto;
 
             // Subquery to find products within price range
             $subQuery = $db->getQuery(true)
@@ -765,7 +766,7 @@ class ProducttagsModel extends ListModel
             return;
         }
 
-        $db = $this->getDatabase();
+        $db      = $this->getDatabase();
         $session = Factory::getApplication()->getSession();
 
         $filterIds = \is_array($state->productfilter_id)
@@ -779,16 +780,16 @@ class ProducttagsModel extends ListModel
             $allFilterIds = [];
             foreach ($filterIds as $ids) {
                 if (!empty($ids)) {
-                    $arrIds = explode(',', $ids);
+                    $arrIds       = explode(',', $ids);
                     $allFilterIds = array_merge($arrIds, $allFilterIds);
                 }
             }
             $allFilterIds = array_unique($allFilterIds);
-            $countIds = \count($allFilterIds);
+            $countIds     = \count($allFilterIds);
 
             if ($countIds > 0) {
                 $filterList = implode(',', array_map('intval', $allFilterIds));
-                $subQuery = $db->getQuery(true)
+                $subQuery   = $db->getQuery(true)
                     ->select($db->quoteName('product_id'))
                     ->from($db->quoteName('#__j2commerce_product_filters'))
                     ->where($db->quoteName('filter_id') . ' IN (' . $filterList . ')')
@@ -821,13 +822,13 @@ class ProducttagsModel extends ListModel
         $this->buildSFSortQuery($query);
 
         // Get merged params for default ordering
-        $params = $this->getMergedParams();
+        $params                  = $this->getMergedParams();
         $articleCategoryOrdering = (int) $params->get('consider_category', 0);
-        $articleOrderby = $params->get('orderby_sec', 'rdate');
-        $articleOrderDate = $params->get('order_date', 'created');
+        $articleOrderby          = $params->get('orderby_sec', 'rdate');
+        $articleOrderDate        = $params->get('order_date', 'created');
 
         $secondary = $this->getOrderbySecondary($articleOrderby, $articleOrderDate);
-        $orderby = empty($secondary) ? 'a.created' : trim($secondary);
+        $orderby   = empty($secondary) ? 'a.created' : trim($secondary);
 
         if ($articleCategoryOrdering) {
             $query->order($db->quoteName('category_title') . ' ' .
@@ -853,7 +854,7 @@ class ProducttagsModel extends ListModel
      */
     protected function buildSFSortQuery(QueryInterface $query): void
     {
-        $db = $this->getDatabase();
+        $db     = $this->getDatabase();
         $sortby = $this->getState('sortby', '');
 
         if (empty($sortby)) {
@@ -861,15 +862,15 @@ class ProducttagsModel extends ListModel
         }
 
         $sortOrder = match ($sortby) {
-            'pname' => 'product_name ASC',
-            'rpname' => 'product_name DESC',
-            'min_price' => 'min_price ASC',
+            'pname'      => 'product_name ASC',
+            'rpname'     => 'product_name DESC',
+            'min_price'  => 'min_price ASC',
             'rmin_price' => 'min_price DESC',
-            'sku' => $db->quoteName('var.sku') . ' ASC',
-            'rsku' => $db->quoteName('var.sku') . ' DESC',
-            'brand' => 'brand_name ASC',
-            'rbrand' => 'brand_name DESC',
-            default => '',
+            'sku'        => $db->quoteName('var.sku') . ' ASC',
+            'rsku'       => $db->quoteName('var.sku') . ' DESC',
+            'brand'      => 'brand_name ASC',
+            'rbrand'     => 'brand_name DESC',
+            default      => '',
         };
 
         if (!empty($sortOrder)) {
@@ -892,17 +893,17 @@ class ProducttagsModel extends ListModel
         $queryDate = $this->getQueryDate($orderDate);
 
         return match ($orderby) {
-            'date' => $queryDate,
-            'rdate' => $queryDate . ' DESC',
-            'alpha' => 'a.title',
-            'ralpha' => 'a.title DESC',
-            'hits' => 'a.hits DESC',
-            'rhits' => 'a.hits',
-            'order' => 'a.ordering',
-            'author' => 'a.created_by_alias',
+            'date'    => $queryDate,
+            'rdate'   => $queryDate . ' DESC',
+            'alpha'   => 'a.title',
+            'ralpha'  => 'a.title DESC',
+            'hits'    => 'a.hits DESC',
+            'rhits'   => 'a.hits',
+            'order'   => 'a.ordering',
+            'author'  => 'a.created_by_alias',
             'rauthor' => 'a.created_by_alias DESC',
-            'front' => 'a.featured DESC',
-            default => 'a.ordering',
+            'front'   => 'a.featured DESC',
+            default   => 'a.ordering',
         };
     }
 
@@ -917,7 +918,7 @@ class ProducttagsModel extends ListModel
      */
     protected function getQueryDate(string $orderDate): string
     {
-        $db = $this->getDatabase();
+        $db       = $this->getDatabase();
         $nullDate = $db->quote($db->getNullDate());
 
         return match ($orderDate) {
@@ -939,27 +940,27 @@ class ProducttagsModel extends ListModel
     protected function getSFFilterValues(): object
     {
         return (object) [
-            'search' => $this->getState('search', ''),
-            'product_ids' => $this->getState('product_ids', ''),
-            'product_type' => $this->getState('product_type', ''),
-            'visible' => $this->getState('visible', ''),
-            'vendor_id' => $this->getState('vendor_id', ''),
-            'manufacturer_id' => $this->getState('manufacturer_id', ''),
-            'productid_from' => $this->getState('productid_from', 0),
-            'productid_to' => $this->getState('productid_to', 0),
-            'pricefrom' => $this->getState('pricefrom'),
-            'priceto' => $this->getState('priceto'),
-            'since' => $this->getState('since', ''),
-            'until' => $this->getState('until', ''),
-            'taxprofile_id' => $this->getState('taxprofile_id', 0),
-            'enabled' => $this->getState('enabled', ''),
-            'shippingmethod' => $this->getState('shippingmethod', 0),
-            'sku' => $this->getState('sku', ''),
-            'tagid' => $this->getState('tagid'),
-            'sortby' => $this->getState('sortby', ''),
-            'instock' => $this->getState('instock', 0),
-            'productfilter_id' => $this->getState('productfilter_id'),
-            'product_types' => $this->getState('product_types', []),
+            'search'            => $this->getState('search', ''),
+            'product_ids'       => $this->getState('product_ids', ''),
+            'product_type'      => $this->getState('product_type', ''),
+            'visible'           => $this->getState('visible', ''),
+            'vendor_id'         => $this->getState('vendor_id', ''),
+            'manufacturer_id'   => $this->getState('manufacturer_id', ''),
+            'productid_from'    => $this->getState('productid_from', 0),
+            'productid_to'      => $this->getState('productid_to', 0),
+            'pricefrom'         => $this->getState('pricefrom'),
+            'priceto'           => $this->getState('priceto'),
+            'since'             => $this->getState('since', ''),
+            'until'             => $this->getState('until', ''),
+            'taxprofile_id'     => $this->getState('taxprofile_id', 0),
+            'enabled'           => $this->getState('enabled', ''),
+            'shippingmethod'    => $this->getState('shippingmethod', 0),
+            'sku'               => $this->getState('sku', ''),
+            'tagid'             => $this->getState('tagid'),
+            'sortby'            => $this->getState('sortby', ''),
+            'instock'           => $this->getState('instock', 0),
+            'productfilter_id'  => $this->getState('productfilter_id'),
+            'product_types'     => $this->getState('product_types', []),
             'show_feature_only' => $this->getState('show_feature_only', 0),
         ];
     }
@@ -1002,7 +1003,7 @@ class ProducttagsModel extends ListModel
         }
 
         // Get menu params
-        $aparams = $app->getParams();
+        $aparams    = $app->getParams();
         $menuParams = new Registry('{}');
 
         if ($menu = $app->getMenu()->getActive()) {
@@ -1028,15 +1029,15 @@ class ProducttagsModel extends ListModel
     public function getSortFields(): array
     {
         return [
-            '' => Text::_('COM_J2COMMERCE_PRODUCT_SORT_BY'),
-            'pname' => Text::_('COM_J2COMMERCE_PRODUCT_FILTER_SORT_NAME_ASCENDING'),
-            'rpname' => Text::_('COM_J2COMMERCE_PRODUCT_FILTER_SORT_NAME_DESCENDING'),
-            'min_price' => Text::_('COM_J2COMMERCE_PRODUCT_FILTER_SORT_PRICE_ASCENDING'),
+            ''           => Text::_('COM_J2COMMERCE_PRODUCT_SORT_BY'),
+            'pname'      => Text::_('COM_J2COMMERCE_PRODUCT_FILTER_SORT_NAME_ASCENDING'),
+            'rpname'     => Text::_('COM_J2COMMERCE_PRODUCT_FILTER_SORT_NAME_DESCENDING'),
+            'min_price'  => Text::_('COM_J2COMMERCE_PRODUCT_FILTER_SORT_PRICE_ASCENDING'),
             'rmin_price' => Text::_('COM_J2COMMERCE_PRODUCT_FILTER_SORT_PRICE_DESCENDING'),
-            'sku' => Text::_('COM_J2COMMERCE_PRODUCT_FILTER_SORT_SKU_ASCENDING'),
-            'rsku' => Text::_('COM_J2COMMERCE_PRODUCT_FILTER_SORT_SKU_DESCENDING'),
-            'brand' => Text::_('COM_J2COMMERCE_PRODUCT_FILTER_SORT_BRAND_ASCENDING'),
-            'rbrand' => Text::_('COM_J2COMMERCE_PRODUCT_FILTER_SORT_BRAND_DESCENDING'),
+            'sku'        => Text::_('COM_J2COMMERCE_PRODUCT_FILTER_SORT_SKU_ASCENDING'),
+            'rsku'       => Text::_('COM_J2COMMERCE_PRODUCT_FILTER_SORT_SKU_DESCENDING'),
+            'brand'      => Text::_('COM_J2COMMERCE_PRODUCT_FILTER_SORT_BRAND_ASCENDING'),
+            'rbrand'     => Text::_('COM_J2COMMERCE_PRODUCT_FILTER_SORT_BRAND_DESCENDING'),
         ];
     }
 
@@ -1059,7 +1060,7 @@ class ProducttagsModel extends ListModel
         $cacheKey = $source . ':' . $sourceId;
 
         if (!isset(self::$sourceCache[$cacheKey])) {
-            $db = $this->getDatabase();
+            $db    = $this->getDatabase();
             $query = $db->getQuery(true)
                 ->select('*')
                 ->from($db->quoteName('#__j2commerce_products'))
@@ -1086,7 +1087,7 @@ class ProducttagsModel extends ListModel
      */
     public function getManufacturersByProduct(int|array|null $productId = null): array
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select($db->quoteName('p') . '.*')
             ->from($db->quoteName('#__j2commerce_products', 'p'))
@@ -1096,7 +1097,7 @@ class ProducttagsModel extends ListModel
 
         if ($productId !== null) {
             $productIds = \is_array($productId) ? $productId : [$productId];
-            $productIds = array_filter($productIds, fn($id) => $id > 0);
+            $productIds = array_filter($productIds, fn ($id) => $id > 0);
 
             if (!empty($productIds)) {
                 $query->whereIn($db->quoteName('p.j2commerce_product_id'), $productIds, ParameterType::INTEGER);
@@ -1125,7 +1126,7 @@ class ProducttagsModel extends ListModel
      */
     public function getManufacturers(): array
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select($db->quoteName('m') . '.*')
             ->from($db->quoteName('#__j2commerce_manufacturers', 'm'))
@@ -1151,7 +1152,7 @@ class ProducttagsModel extends ListModel
      */
     public function getVendorsByProduct(int|array|null $productId = null): array
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select($db->quoteName('p') . '.*')
             ->from($db->quoteName('#__j2commerce_products', 'p'))
@@ -1161,7 +1162,7 @@ class ProducttagsModel extends ListModel
 
         if ($productId !== null) {
             $productIds = \is_array($productId) ? $productId : [$productId];
-            $productIds = array_filter($productIds, fn($id) => $id > 0);
+            $productIds = array_filter($productIds, fn ($id) => $id > 0);
 
             if (!empty($productIds)) {
                 $query->whereIn($db->quoteName('p.j2commerce_product_id'), $productIds, ParameterType::INTEGER);
@@ -1192,7 +1193,7 @@ class ProducttagsModel extends ListModel
      */
     public function getVendors(string $vendorIds = ''): array
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select($db->quoteName('a') . '.*')
             ->select($db->quoteName('v') . '.*')

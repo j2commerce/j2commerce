@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Field;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\FormField;
@@ -32,12 +33,12 @@ class AlertField extends FormField
             return parent::getInput();
         }
 
-        $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
+        $wa     = Factory::getApplication()->getDocument()->getWebAssetManager();
         $helpID = htmlspecialchars($this->id, ENT_COMPAT, 'UTF-8') . '-desc';
         $wa->addInlineStyle('#' . $helpID . ' {display:none!important;}');
 
-        $title = (string) $this->element['label'];
-        $class = ' ' . $this->class;
+        $title  = (string) $this->element['label'];
+        $class  = ' ' . $this->class;
         $margin = $this->description ? '' : ' mb-0';
 
         $html = '<div id="' . htmlspecialchars($this->id, ENT_COMPAT, 'UTF-8') . '" class="alert' . htmlspecialchars($class, ENT_COMPAT, 'UTF-8') . '">';

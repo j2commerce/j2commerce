@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  plg_content_j2commerce
@@ -11,13 +12,12 @@ declare(strict_types=1);
 
 namespace J2Commerce\Plugin\Content\J2Commerce\Field;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\FormField;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\FileLayout;
 use Joomla\Database\DatabaseInterface;
-use Joomla\Database\ParameterType;
-use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
@@ -61,9 +61,9 @@ final class J2CommerceField extends FormField
         } catch (\Throwable $e) {
             // Log the full error for debugging
             Factory::getApplication()->getLogger()->error('J2Commerce Field Error: ' . $e->getMessage(), [
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'class' => get_class($e),
+                'file'  => $e->getFile(),
+                'line'  => $e->getLine(),
+                'class' => \get_class($e),
             ]);
 
             // Show generic error to user
@@ -89,20 +89,20 @@ final class J2CommerceField extends FormField
 
         // Calculate variant statistics
         $variantStats = $this->calculateVariantStats($productId, $productType);
-        $imageCount = $this->getImageCount($productId);
-        $filterCount = $this->getFilterCount($product);
+        $imageCount   = $this->getImageCount($productId);
+        $filterCount  = $this->getFilterCount($product);
         $hasRelations = !empty($product->up_sells) || !empty($product->cross_sells);
 
         $layout = new FileLayout('form', JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product');
 
         return $layout->render([
-            'product' => $product,
-            'form_prefix' => $formPrefix,
+            'product'         => $product,
+            'form_prefix'     => $formPrefix,
             'loadSubTemplate' => [$this, 'loadSubTemplate'],
-            'variantStats' => $variantStats,
-            'imageCount' => $imageCount,
-            'filterCount' => $filterCount,
-            'hasRelations' => $hasRelations,
+            'variantStats'    => $variantStats,
+            'imageCount'      => $imageCount,
+            'filterCount'     => $filterCount,
+            'hasRelations'    => $hasRelations,
         ]);
     }
 
@@ -110,12 +110,12 @@ final class J2CommerceField extends FormField
     private function calculateVariantStats(int $productId, string $productType): array
     {
         $stats = [
-            'total' => 0,
+            'total'                => 0,
             'manage_inventory_yes' => 0,
-            'manage_inventory_no' => 0,
-            'shipping_enabled' => 0,
-            'shipping_disabled' => 0,
-            'in_stock_percent' => 100,
+            'manage_inventory_no'  => 0,
+            'shipping_enabled'     => 0,
+            'shipping_disabled'    => 0,
+            'in_stock_percent'     => 100,
             'out_of_stock_percent' => 0,
         ];
 
@@ -137,8 +137,8 @@ final class J2CommerceField extends FormField
             return $stats;
         }
 
-        $stats['total'] = count($variants);
-        $variantIds = array_map(fn($v) => $v->j2commerce_variant_id, $variants);
+        $stats['total'] = \count($variants);
+        $variantIds     = array_map(fn ($v) => $v->j2commerce_variant_id, $variants);
 
         foreach ($variants as $variant) {
             if ($variant->manage_stock) {
@@ -162,7 +162,7 @@ final class J2CommerceField extends FormField
             $db->setQuery($query);
             $quantities = $db->loadObjectList('variant_id');
 
-            $inStock = 0;
+            $inStock    = 0;
             $outOfStock = 0;
             foreach ($variants as $variant) {
                 $qty = $quantities[$variant->j2commerce_variant_id]->quantity ?? 0;
@@ -173,7 +173,7 @@ final class J2CommerceField extends FormField
                 }
             }
 
-            $stats['in_stock_percent'] = $stats['total'] > 0 ? round(($inStock / $stats['total']) * 100) : 0;
+            $stats['in_stock_percent']     = $stats['total'] > 0 ? round(($inStock / $stats['total']) * 100) : 0;
             $stats['out_of_stock_percent'] = $stats['total'] > 0 ? round(($outOfStock / $stats['total']) * 100) : 0;
         }
 
@@ -187,7 +187,7 @@ final class J2CommerceField extends FormField
             return 0;
         }
 
-        $db = $this->getDb();
+        $db    = $this->getDb();
         $query = $db->getQuery(true)
             ->select($db->quoteName('main_image') . ', ' . $db->quoteName('additional_images'))
             ->from($db->quoteName('#__j2commerce_productimages'))
@@ -209,8 +209,8 @@ final class J2CommerceField extends FormField
         // Count additional images from JSON field
         if (!empty($row['additional_images'])) {
             $additionalImages = json_decode($row['additional_images'], true);
-            if (is_array($additionalImages)) {
-                $count += count($additionalImages);
+            if (\is_array($additionalImages)) {
+                $count += \count($additionalImages);
             }
         }
 
@@ -225,13 +225,13 @@ final class J2CommerceField extends FormField
         }
 
         // Handle both array and string formats
-        if (is_array($product->productfilter_ids)) {
-            return count(array_filter($product->productfilter_ids));
+        if (\is_array($product->productfilter_ids)) {
+            return \count(array_filter($product->productfilter_ids));
         }
 
         $filterIds = explode(',', $product->productfilter_ids);
 
-        return count(array_filter($filterIds));
+        return \count(array_filter($filterIds));
     }
 
     /** @since 6.0.0 */

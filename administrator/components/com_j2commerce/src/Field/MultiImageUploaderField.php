@@ -96,14 +96,14 @@ class MultiImageUploaderField extends FormField
             'com_j2commerce.vendor.uppy',
             'media/com_j2commerce/vendor/uppy/js/uppy.min.js',
             ['version' => 'auto'],
-            ['defer' => true]
+            ['defer'   => true]
         );
 
         $wa->registerAndUseScript(
             'com_j2commerce.multiimageuploader.js',
             'media/com_j2commerce/js/administrator/multiimageuploader.js',
             ['version' => 'auto'],
-            ['defer' => true, 'type' => 'module'],
+            ['defer'   => true, 'type' => 'module'],
             ['com_j2commerce.vendor.uppy']
         );
 

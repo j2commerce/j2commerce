@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  Plugin.J2Commerce.AppFlexivariable
@@ -49,10 +50,10 @@ class FlexivariableController extends BaseController
             return;
         }
 
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db    = Factory::getContainer()->get(DatabaseInterface::class);
         $input = $app->getInput();
 
-        $variantCombin = $input->get('variant_combin', [], 'array');
+        $variantCombin  = $input->get('variant_combin', [], 'array');
         $flexiProductId = $input->getInt('flexi_product_id', 0);
 
         $json = ['success' => false, 'message' => ''];
@@ -68,18 +69,18 @@ class FlexivariableController extends BaseController
             $productOptionvalueIds = [];
 
             foreach ($variantCombin as $variantKey => $variantValue) {
-                $productOptionvalue = new \stdClass();
-                $productOptionvalue->productoption_id = (int) $variantKey;
-                $productOptionvalue->optionvalue_id = (int) $variantValue;
-                $productOptionvalue->parent_optionvalue = '';
-                $productOptionvalue->product_optionvalue_price = 0;
-                $productOptionvalue->product_optionvalue_prefix = '+';
-                $productOptionvalue->product_optionvalue_weight = 0;
+                $productOptionvalue                                    = new \stdClass();
+                $productOptionvalue->productoption_id                  = (int) $variantKey;
+                $productOptionvalue->optionvalue_id                    = (int) $variantValue;
+                $productOptionvalue->parent_optionvalue                = '';
+                $productOptionvalue->product_optionvalue_price         = 0;
+                $productOptionvalue->product_optionvalue_prefix        = '+';
+                $productOptionvalue->product_optionvalue_weight        = 0;
                 $productOptionvalue->product_optionvalue_weight_prefix = '+';
-                $productOptionvalue->product_optionvalue_sku = '';
-                $productOptionvalue->product_optionvalue_default = 0;
-                $productOptionvalue->ordering = 0;
-                $productOptionvalue->product_optionvalue_attribs = '{}';
+                $productOptionvalue->product_optionvalue_sku           = '';
+                $productOptionvalue->product_optionvalue_default       = 0;
+                $productOptionvalue->ordering                          = 0;
+                $productOptionvalue->product_optionvalue_attribs       = '{}';
 
                 $db->insertObject('#__j2commerce_product_optionvalues', $productOptionvalue, 'j2commerce_product_optionvalue_id');
                 $productOptionvalueIds[] = $productOptionvalue->j2commerce_product_optionvalue_id;
@@ -87,21 +88,21 @@ class FlexivariableController extends BaseController
 
             if (!empty($productOptionvalueIds)) {
                 // Create variant
-                $variant = new \stdClass();
-                $variant->product_id = $flexiProductId;
-                $variant->is_master = 0;
-                $variant->shipping = 0;
-                $variant->pricing_calculator = 'standard';
+                $variant                       = new \stdClass();
+                $variant->product_id           = $flexiProductId;
+                $variant->is_master            = 0;
+                $variant->shipping             = 0;
+                $variant->pricing_calculator   = 'standard';
                 $variant->quantity_restriction = 0;
-                $variant->allow_backorder = 0;
-                $variant->isdefault_variant = 0;
-                $variant->sku = '';
+                $variant->allow_backorder      = 0;
+                $variant->isdefault_variant    = 0;
+                $variant->sku                  = '';
 
                 $db->insertObject('#__j2commerce_variants', $variant, 'j2commerce_variant_id');
 
                 // Update SKU with variant ID
                 $variantId = $variant->j2commerce_variant_id;
-                $newSku = 'FLEXI_' . $variantId;
+                $newSku    = 'FLEXI_' . $variantId;
 
                 $query = $db->getQuery(true)
                     ->update($db->quoteName('#__j2commerce_variants'))
@@ -114,24 +115,24 @@ class FlexivariableController extends BaseController
                 $db->execute();
 
                 // Create product quantity record
-                $productQuantity = new \stdClass();
-                $productQuantity->variant_id = $variantId;
-                $productQuantity->quantity = 0;
-                $productQuantity->on_hold = 0;
-                $productQuantity->sold = 0;
+                $productQuantity                     = new \stdClass();
+                $productQuantity->variant_id         = $variantId;
+                $productQuantity->quantity           = 0;
+                $productQuantity->on_hold            = 0;
+                $productQuantity->sold               = 0;
                 $productQuantity->product_attributes = '';
 
                 $db->insertObject('#__j2commerce_productquantities', $productQuantity, 'j2commerce_productquantity_id');
 
                 // Create product variant optionvalues record
-                $productVariantOptionValue = new \stdClass();
-                $productVariantOptionValue->variant_id = $variantId;
+                $productVariantOptionValue                          = new \stdClass();
+                $productVariantOptionValue->variant_id              = $variantId;
                 $productVariantOptionValue->product_optionvalue_ids = implode(',', $productOptionvalueIds);
 
                 $db->insertObject('#__j2commerce_product_variant_optionvalues', $productVariantOptionValue);
 
-                $json['success'] = true;
-                $json['html'] = Text::_('PLG_J2COMMERCE_APP_FLEXIVARIABLE_VARIANT_ADDED');
+                $json['success']    = true;
+                $json['html']       = Text::_('PLG_J2COMMERCE_APP_FLEXIVARIABLE_VARIANT_ADDED');
                 $json['variant_id'] = $variantId;
             }
         } catch (\Exception $e) {
@@ -178,7 +179,7 @@ class FlexivariableController extends BaseController
             return;
         }
 
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db        = Factory::getContainer()->get(DatabaseInterface::class);
         $productId = $app->getInput()->getInt('product_id', 0);
 
         $json = ['success' => false];
@@ -244,7 +245,7 @@ class FlexivariableController extends BaseController
 
             if (!empty($productOptionvalueIds)) {
                 // Delete product optionvalues - use direct IN clause since values are internal
-                $ids = array_map('intval', explode(',', $productOptionvalueIds));
+                $ids    = array_map('intval', explode(',', $productOptionvalueIds));
                 $idList = implode(',', $ids);
 
                 $query = $db->getQuery(true)

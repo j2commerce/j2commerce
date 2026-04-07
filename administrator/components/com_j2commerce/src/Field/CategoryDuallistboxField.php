@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Field;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Field\ListField;
@@ -39,7 +40,7 @@ class CategoryDuallistboxField extends ListField
                 ->select([
                     $db->quoteName('id', 'value'),
                     $db->quoteName('title', 'text'),
-                    $db->quoteName('level')
+                    $db->quoteName('level'),
                 ])
                 ->from($db->quoteName('#__categories'))
                 ->where($db->quoteName('extension') . ' = ' . $db->quote('com_content'))
@@ -51,7 +52,7 @@ class CategoryDuallistboxField extends ListField
 
             if ($categories) {
                 foreach ($categories as $category) {
-                    $indent = str_repeat('— ', max(0, (int) $category->level - 1));
+                    $indent    = str_repeat('— ', max(0, (int) $category->level - 1));
                     $options[] = HTMLHelper::_('select.option', $category->value, $indent . $category->text);
                 }
             }
@@ -71,18 +72,18 @@ class CategoryDuallistboxField extends ListField
         $wa->registerAndUseScript('com_j2commerce.vendor.dual-listbox', 'media/com_j2commerce/vendor/dual-listbox/js/dual-listbox.js', [], ['defer' => true]);
         $wa->registerAndUseStyle('com_j2commerce.vendor.dual-listbox.css', 'media/com_j2commerce/vendor/dual-listbox/css/dual-listbox.css');
 
-        $options = $this->getOptions();
+        $options        = $this->getOptions();
         $selectedValues = $this->processValue($this->value);
 
         $class = $this->element['class'] ? (string) $this->element['class'] : 'form-select';
-        $size = $this->element['size'] ? (int) $this->element['size'] : 10;
+        $size  = $this->element['size'] ? (int) $this->element['size'] : 10;
 
         $attributes = [
             'id="' . htmlspecialchars($this->id, ENT_COMPAT, 'UTF-8') . '"',
             'name="' . htmlspecialchars($this->name, ENT_COMPAT, 'UTF-8') . '[]"',
             'class="' . htmlspecialchars($class . ' category-duallistbox', ENT_COMPAT, 'UTF-8') . '"',
             'multiple="multiple"',
-            'size="' . $size . '"'
+            'size="' . $size . '"',
         ];
 
         if ((string) $this->element['disabled'] === 'true') {
@@ -98,15 +99,15 @@ class CategoryDuallistboxField extends ListField
             $attributes[] = 'aria-required="true"';
         }
 
-        $html = [];
+        $html   = [];
         $html[] = '<div class="dual-listbox-container" id="dual-listbox-container-' . $this->id . '">';
         $html[] = '<select ' . implode(' ', $attributes) . '>';
 
         foreach ($options as $option) {
-            $selected = in_array((string) $option->value, $selectedValues, true) ? ' selected="selected"' : '';
-            $html[] = '<option value="' . htmlspecialchars((string) $option->value, ENT_COMPAT, 'UTF-8') . '"' . $selected . '>';
-            $html[] = htmlspecialchars((string) $option->text, ENT_COMPAT, 'UTF-8');
-            $html[] = '</option>';
+            $selected = \in_array((string) $option->value, $selectedValues, true) ? ' selected="selected"' : '';
+            $html[]   = '<option value="' . htmlspecialchars((string) $option->value, ENT_COMPAT, 'UTF-8') . '"' . $selected . '>';
+            $html[]   = htmlspecialchars((string) $option->text, ENT_COMPAT, 'UTF-8');
+            $html[]   = '</option>';
         }
 
         $html[] = '</select>';
@@ -122,11 +123,11 @@ class CategoryDuallistboxField extends ListField
             return [];
         }
 
-        if (is_array($value)) {
+        if (\is_array($value)) {
             return array_filter($value);
         }
 
-        if (is_string($value)) {
+        if (\is_string($value)) {
             return array_filter(array_map('trim', explode(',', $value)));
         }
 
@@ -135,13 +136,13 @@ class CategoryDuallistboxField extends ListField
 
     protected function getInitScript(array $selected): string
     {
-        $selectedJson = json_encode($selected);
-        $availableLabel = Text::_('COM_J2COMMERCE_DUALLISTBOX_AVAILABLE');
-        $selectedLabel = Text::_('COM_J2COMMERCE_DUALLISTBOX_SELECTED');
-        $searchPlaceholder = Text::_('COM_J2COMMERCE_DUALLISTBOX_SEARCH');
-        $addButtonText = Text::_('COM_J2COMMERCE_DUALLISTBOX_BUTTON_ADD');
-        $addAllButtonText = Text::_('COM_J2COMMERCE_DUALLISTBOX_BUTTON_ADDALL');
-        $removeButtonText = Text::_('COM_J2COMMERCE_DUALLISTBOX_BUTTON_REMOVE');
+        $selectedJson        = json_encode($selected);
+        $availableLabel      = Text::_('COM_J2COMMERCE_DUALLISTBOX_AVAILABLE');
+        $selectedLabel       = Text::_('COM_J2COMMERCE_DUALLISTBOX_SELECTED');
+        $searchPlaceholder   = Text::_('COM_J2COMMERCE_DUALLISTBOX_SEARCH');
+        $addButtonText       = Text::_('COM_J2COMMERCE_DUALLISTBOX_BUTTON_ADD');
+        $addAllButtonText    = Text::_('COM_J2COMMERCE_DUALLISTBOX_BUTTON_ADDALL');
+        $removeButtonText    = Text::_('COM_J2COMMERCE_DUALLISTBOX_BUTTON_REMOVE');
         $removeAllButtonText = Text::_('COM_J2COMMERCE_DUALLISTBOX_BUTTON_REMOVEALL');
 
         return <<<JS

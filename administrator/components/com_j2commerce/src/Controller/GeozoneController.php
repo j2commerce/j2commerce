@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -98,10 +99,10 @@ class GeozoneController extends FormController
         // Check for request forgeries
         $this->checkToken();
 
-        $app   = $this->app;
-        $model = $this->getModel();
-        $table = $model->getTable();
-        $data  = $this->input->post->get('jform', [], 'array');
+        $app     = $this->app;
+        $model   = $this->getModel();
+        $table   = $model->getTable();
+        $data    = $this->input->post->get('jform', [], 'array');
         $context = "$this->option.edit.$this->context";
 
         // Capture geozonerules from raw input (outside jform namespace)
@@ -274,14 +275,14 @@ class GeozoneController extends FormController
         $app = Factory::getApplication();
 
         // Get country ID from request
-        $countryId = $app->getInput()->getInt('country_id', 0);
+        $countryId      = $app->getInput()->getInt('country_id', 0);
         $selectedZoneId = $app->getInput()->getInt('zone_id', 0);
 
         // Build zone options HTML
         $html = '<option value="0">' . Text::_('COM_J2COMMERCE_ALL_ZONES') . '</option>';
 
         if ($countryId > 0) {
-            $db = Factory::getContainer()->get('DatabaseDriver');
+            $db    = Factory::getContainer()->get('DatabaseDriver');
             $query = $db->getQuery(true);
 
             $query->select($db->quoteName(['j2commerce_zone_id', 'zone_name']))
@@ -327,11 +328,11 @@ class GeozoneController extends FormController
             return;
         }
 
-        $ruleId = $app->getInput()->getInt('rule_id', 0);
+        $ruleId   = $app->getInput()->getInt('rule_id', 0);
         $response = ['success' => false, 'message' => ''];
 
         if ($ruleId > 0) {
-            $db = Factory::getContainer()->get('DatabaseDriver');
+            $db    = Factory::getContainer()->get('DatabaseDriver');
             $query = $db->getQuery(true);
 
             $query->delete($db->quoteName('#__j2commerce_geozonerules'))

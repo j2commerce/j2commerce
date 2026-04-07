@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  mod_j2commerce_products
@@ -11,11 +12,11 @@ declare(strict_types=1);
 
 namespace J2Commerce\Module\Products\Site\Field;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Field\Modal\ProductMultiSelectField;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
-use J2Commerce\Component\J2commerce\Administrator\Field\Modal\ProductMultiSelectField;
 
 class ModuleproductaddField extends ProductMultiSelectField
 {
@@ -59,10 +60,10 @@ class ModuleproductaddField extends ProductMultiSelectField
     private function renderProductTable(array $products): string
     {
         $app = Factory::getApplication();
-        $wa = $app->getDocument()->getWebAssetManager();
+        $wa  = $app->getDocument()->getWebAssetManager();
         $wa->registerAndUseStyle('com_j2commerce.editview', 'media/com_j2commerce/css/administrator/editview.css');
         $fieldName = htmlspecialchars($this->name, ENT_QUOTES, 'UTF-8');
-        $count = \count($this->value);
+        $count     = \count($this->value);
 
         $html = '<div class="j2commerce-product-edit-form pt-3"><div class="my-2 d-flex align-items-center"><span class="badge text-bg-info me-2 px-2">'.$count.'</span><strong>' . Text::_('COM_J2COMMERCE_SELECTED_PRODUCTS') . '</strong></div>';
         $html .= '<table class="table table-sm"><thead><tr>'

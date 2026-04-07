@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -9,7 +10,7 @@
 
 namespace J2Commerce\Component\J2commerce\Administrator\Table;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -81,12 +82,12 @@ class EmailtemplateTable extends Table
         }
 
         // Trim the text fields
-        $this->email_type = trim($this->email_type);
-        $this->receiver_type = trim($this->receiver_type);
-        $this->subject = trim($this->subject);
+        $this->email_type     = trim($this->email_type);
+        $this->receiver_type  = trim($this->receiver_type);
+        $this->subject        = trim($this->subject);
         $this->orderstatus_id = trim($this->orderstatus_id);
-        $this->group_id = trim($this->group_id);
-        $this->paymentmethod = trim($this->paymentmethod);
+        $this->group_id       = trim($this->group_id);
+        $this->paymentmethod  = trim($this->paymentmethod);
 
         // Set default values if not provided
         if (!isset($this->enabled)) {
@@ -122,14 +123,14 @@ class EmailtemplateTable extends Table
 
         // Validate receiver type against allowed values
         $allowedReceiverTypes = ['customer', 'admin', '*'];
-        if (!in_array($this->receiver_type, $allowedReceiverTypes)) {
+        if (!\in_array($this->receiver_type, $allowedReceiverTypes)) {
             $this->setError(Text::_('COM_J2COMMERCE_ERROR_EMAILTEMPLATE_INVALID_RECEIVER_TYPE'));
             return false;
         }
 
         // Validate body_source against allowed values
         $allowedBodySources = ['editor', 'visual', 'file'];
-        if (!in_array($this->body_source, $allowedBodySources)) {
+        if (!\in_array($this->body_source, $allowedBodySources)) {
             $this->setError(Text::_('COM_J2COMMERCE_ERROR_EMAILTEMPLATE_INVALID_BODY_SOURCE'));
             return false;
         }

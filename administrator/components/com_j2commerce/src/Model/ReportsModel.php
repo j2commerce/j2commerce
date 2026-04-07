@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -9,7 +10,7 @@
 
 namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -41,7 +42,7 @@ class ReportsModel extends ListModel
                 'ordering', 'a.ordering',
                 'access', 'a.access',
                 'checked_out', 'a.checked_out',
-                'checked_out_time', 'a.checked_out_time'
+                'checked_out_time', 'a.checked_out_time',
             ];
         }
 
@@ -99,7 +100,7 @@ class ReportsModel extends ListModel
     protected function getListQuery()
     {
         // Create a new query object.
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         // Select the required fields from the table.
@@ -150,7 +151,7 @@ class ReportsModel extends ListModel
         }
 
         // Add the list ordering clause.
-        $orderCol = $this->getState('list.ordering', 'a.name');
+        $orderCol  = $this->getState('list.ordering', 'a.name');
         $orderDirn = $this->getState('list.direction', 'ASC');
 
         if ($orderCol && $orderDirn) {
@@ -172,7 +173,7 @@ class ReportsModel extends ListModel
         $items = parent::getItems();
 
         // Ensure we always return an array
-        if ($items === false || !is_array($items)) {
+        if ($items === false || !\is_array($items)) {
             $app = Factory::getApplication();
             $app->enqueueMessage(Text::_('COM_J2COMMERCE_REPORTS_NO_PLUGINS_FOUND'), 'warning');
             return [];
@@ -180,24 +181,24 @@ class ReportsModel extends ListModel
 
         // Add computed properties for display
         foreach ($items as $item) {
-            $pluginPath = JPATH_SITE . '/plugins/j2commerce/' . $item->element;
+            $pluginPath        = JPATH_SITE . '/plugins/j2commerce/' . $item->element;
             $item->files_exist = is_dir($pluginPath);
 
             // Get plugin manifest information if available
             if (!empty($item->manifest_cache)) {
                 $manifest = json_decode($item->manifest_cache);
-                if (is_object($manifest)) {
-                    $item->version = isset($manifest->version) ? $manifest->version : '';
-                    $item->author = isset($manifest->author) ? $manifest->author : '';
+                if (\is_object($manifest)) {
+                    $item->version     = isset($manifest->version) ? $manifest->version : '';
+                    $item->author      = isset($manifest->author) ? $manifest->author : '';
                     $item->description = isset($manifest->description) ? $manifest->description : '';
                 } else {
-                    $item->version = '';
-                    $item->author = '';
+                    $item->version     = '';
+                    $item->author      = '';
                     $item->description = '';
                 }
             } else {
-                $item->version = '';
-                $item->author = '';
+                $item->version     = '';
+                $item->author      = '';
                 $item->description = '';
             }
 

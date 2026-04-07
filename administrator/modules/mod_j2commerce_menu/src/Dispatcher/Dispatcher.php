@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  mod_j2commerce_menu
@@ -49,7 +50,7 @@ class Dispatcher extends AbstractModuleDispatcher
         $data = parent::getLayoutData();
 
         // MenuHelper is available after bootComponent in dispatch()
-        $data['menuItems'] = \J2Commerce\Component\J2commerce\Administrator\Helper\MenuHelper::getMenuItems();
+        $data['menuItems']   = \J2Commerce\Component\J2commerce\Administrator\Helper\MenuHelper::getMenuItems();
         $data['currentView'] = $this->getApplication()->getInput()->get('view', 'dashboard');
 
         return $data;

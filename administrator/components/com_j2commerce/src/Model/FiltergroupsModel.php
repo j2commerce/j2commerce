@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -9,7 +10,7 @@
 
 namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -37,7 +38,7 @@ class FiltergroupsModel extends ListModel
                 'j2commerce_filtergroup_id', 'a.j2commerce_filtergroup_id',
                 'group_name', 'a.group_name',
                 'ordering', 'a.ordering',
-                'enabled', 'a.enabled'
+                'enabled', 'a.enabled',
             ];
         }
 
@@ -95,7 +96,7 @@ class FiltergroupsModel extends ListModel
     protected function getListQuery()
     {
         // Create a new query object.
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         // Select the required fields from the table.
@@ -133,7 +134,7 @@ class FiltergroupsModel extends ListModel
         }
 
         // Add the list ordering clause.
-        $orderCol = $this->getState('list.ordering', 'a.group_name');
+        $orderCol  = $this->getState('list.ordering', 'a.group_name');
         $orderDirn = $this->getState('list.direction', 'ASC');
 
         if ($orderCol && $orderDirn) {
@@ -155,7 +156,7 @@ class FiltergroupsModel extends ListModel
         $items = parent::getItems();
 
         // Ensure we always return an array
-        if ($items === false || !is_array($items)) {
+        if ($items === false || !\is_array($items)) {
             // Log the error for debugging
             $app = Factory::getApplication();
             $app->enqueueMessage(Text::_('COM_J2COMMERCE_FILTERGROUPS_ERROR_RETRIEVING_DATA'), 'warning');

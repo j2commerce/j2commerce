@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -99,7 +100,7 @@ class QueuesController extends AdminController
             return false;
         }
 
-        $filters = $this->input->get('filter', [], 'array');
+        $filters   = $this->input->get('filter', [], 'array');
         $queueType = trim($filters['queue_type'] ?? '');
 
         if ($queueType === '') {
@@ -224,7 +225,7 @@ class QueuesController extends AdminController
         $db->setQuery($query)->execute();
 
         $completedStatus = 'completed';
-        $deleteQuery = $db->getQuery(true)
+        $deleteQuery     = $db->getQuery(true)
             ->delete($db->quoteName('#__j2commerce_queues'))
             ->where($db->quoteName('status') . ' = :status')
             ->bind(':status', $completedStatus);

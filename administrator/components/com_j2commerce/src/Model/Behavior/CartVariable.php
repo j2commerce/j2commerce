@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -55,7 +56,7 @@ class CartVariable
      */
     public function onBeforeAddCartItem(CartModel &$model, object $product, \stdClass &$json): void
     {
-        $app = Factory::getApplication();
+        $app    = Factory::getApplication();
         $values = $app->getInput()->getArray();
         $errors = [];
 
@@ -72,7 +73,7 @@ class CartVariable
             foreach ($product->product_options as $productOption) {
                 $optionId = $productOption->j2commerce_productoption_id ?? 0;
                 if (empty($options[$optionId])) {
-                    $optionName = Text::_($productOption->option_name ?? '');
+                    $optionName                           = Text::_($productOption->option_name ?? '');
                     $errors['error']['option'][$optionId] = Text::sprintf(
                         'COM_J2COMMERCE_ADDTOCART_PRODUCT_OPTION_REQUIRED',
                         $optionName
@@ -90,12 +91,12 @@ class CartVariable
             if ($variantId) {
                 /** @var VariantsModel $variantModel */
                 $variantModel = $this->mvcFactory->createModel('Variants', 'Administrator');
-                $variant = $variantModel->getItem($variantId);
+                $variant      = $variantModel->getItem($variantId);
 
                 if (!$variant || $variant->j2commerce_variant_id != $variantId
                     || $variant->product_id != $product->j2commerce_product_id) {
                     $errors['error']['general'] = Text::_('COM_J2COMMERCE_VARIANT_NOT_FOUND');
-                    $variant = null;
+                    $variant                    = null;
                 }
 
                 // Double-check via options (JS selection can be stale)
@@ -117,7 +118,7 @@ class CartVariable
         $cart = $model->getCart();
 
         if (empty($errors) && $variant && isset($cart->cart_type) && $cart->cart_type !== 'wishlist') {
-            $variantId = (int) ($variant->j2commerce_variant_id ?? 0);
+            $variantId    = (int) ($variant->j2commerce_variant_id ?? 0);
             $cartTotalQty = ProductHelper::getTotalCartQuantity($variantId);
 
             $quantityError = ProductHelper::validateQuantityRestriction(
@@ -148,17 +149,17 @@ class CartVariable
         if (empty($errors) && $variant) {
             $utilityHelper = J2CommerceHelper::utilities();
 
-            $item = new CMSObject();
-            $item->user_id       = Factory::getApplication()->getIdentity()->id;
-            $item->product_id    = (int) $product->j2commerce_product_id;
-            $item->variant_id    = (int) ($variant->j2commerce_variant_id ?? 0);
-            $item->product_qty   = $utilityHelper->stock_qty($quantity);
-            $item->product_type  = $product->product_type ?? 'variable';
+            $item                  = new CMSObject();
+            $item->user_id         = Factory::getApplication()->getIdentity()->id;
+            $item->product_id      = (int) $product->j2commerce_product_id;
+            $item->variant_id      = (int) ($variant->j2commerce_variant_id ?? 0);
+            $item->product_qty     = $utilityHelper->stock_qty($quantity);
+            $item->product_type    = $product->product_type ?? 'variable';
             $item->product_options = base64_encode(serialize($options));
-            $item->vendor_id     = isset($product->vendor_id) ? (int) $product->vendor_id : 0;
+            $item->vendor_id       = isset($product->vendor_id) ? (int) $product->vendor_id : 0;
 
             $pluginHelper = J2CommerceHelper::plugin();
-            $results = $pluginHelper->event('AfterCreateItemForAddToCart', [$item, $values]);
+            $results      = $pluginHelper->event('AfterCreateItemForAddToCart', [$item, $values]);
 
             foreach ($results as $result) {
                 if (\is_array($result)) {
@@ -172,7 +173,7 @@ class CartVariable
                 $item,
                 $values,
                 $product,
-                $product->product_options ?? []
+                $product->product_options ?? [],
             ]);
 
             foreach ($validationResults as $result) {
@@ -222,7 +223,7 @@ class CartVariable
         // Load variant data
         /** @var VariantsModel $variantModel */
         $variantModel = $this->mvcFactory->createModel('Variants', 'Administrator');
-        $variant = $variantModel->getItem((int) $item->variant_id);
+        $variant      = $variantModel->getItem((int) $item->variant_id);
 
         $optionPrice  = 0.0;
         $optionWeight = 0.0;
@@ -247,7 +248,7 @@ class CartVariable
                 }
 
                 // Price adjustment
-                $prefix = $productOptionValue->product_optionvalue_prefix ?? '+';
+                $prefix      = $productOptionValue->product_optionvalue_prefix ?? '+';
                 $priceAdjust = (float) ($productOptionValue->product_optionvalue_price ?? 0);
                 if ($prefix === '+') {
                     $optionPrice += $priceAdjust;
@@ -289,9 +290,9 @@ class CartVariable
         }
 
         // Transfer product-level properties needed by discount/app plugins
-        $item->product_source = $product->product_source ?? '';
+        $item->product_source    = $product->product_source ?? '';
         $item->product_source_id = (int) ($product->product_source_id ?? 0);
-        $item->product_params = $product->params instanceof \Joomla\Registry\Registry
+        $item->product_params    = $product->params instanceof \Joomla\Registry\Registry
             ? $product->params->toString()
             : ($product->params ?? '{}');
 
@@ -317,7 +318,7 @@ class CartVariable
         // Override with variant-specific image if present
         if ($variant) {
             $variantParams = new Registry($variant->params ?? '{}');
-            $mainImage = $variantParams->get('variant_main_image', '');
+            $mainImage     = $variantParams->get('variant_main_image', '');
             $isMainAsThumb = (int) $variantParams->get('is_main_as_thum', 0);
 
             if (!empty($mainImage)) {
@@ -330,7 +331,7 @@ class CartVariable
             $allowBackorders = (int) ($variant->allow_backorder ?? 0);
             if ($allowBackorders > 0) {
                 $variantQty = (int) ($variant->quantity ?? 0);
-                $cartQty = (int) ($item->product_qty ?? 1);
+                $cartQty    = (int) ($item->product_qty ?? 1);
                 if ($cartQty > $variantQty) {
                     $existingParams['back_order_item'] = 'COM_J2COMMERCE_CART_BACKORDER_ITEM';
                 }
@@ -340,7 +341,7 @@ class CartVariable
         $item->taxprofile_id   = (int) ($product->taxprofile_id ?? 0);
         $item->cartitem_params = json_encode($existingParams);
 
-        $variantWeight = (float) ($variant->weight ?? 0);
+        $variantWeight      = (float) ($variant->weight ?? 0);
         $item->weight       = $variantWeight;
         $item->weight_total = $variantWeight * (float) ($item->product_qty ?? 1);
 
@@ -351,8 +352,8 @@ class CartVariable
             $item->pricing = $productHelper->getPrice($variant, (int) ($item->product_qty ?? 1), $groupId);
         } else {
             $item->pricing = (object) [
-                'base_price'   => (float) ($item->variant_price ?? 0),
-                'price'        => (float) ($item->variant_price ?? 0),
+                'base_price'    => (float) ($item->variant_price ?? 0),
+                'price'         => (float) ($item->variant_price ?? 0),
                 'special_price' => null,
                 'is_sale_price' => false,
             ];
@@ -377,7 +378,7 @@ class CartVariable
 
         /** @var VariantsModel $variantModel */
         $variantModel = $this->mvcFactory->createModel('Variants', 'Administrator');
-        $variant = $variantModel->getItem((int) $cartitem->variant_id);
+        $variant      = $variantModel->getItem((int) $cartitem->variant_id);
 
         if (!$variant) {
             throw new \Exception(Text::_('COM_J2COMMERCE_VARIANT_NOT_FOUND'));

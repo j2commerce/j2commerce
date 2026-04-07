@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -66,10 +67,10 @@ final class QueueHelper
 
     public static function claimBatch(string $queueType, int $limit = 10, ?string $lockId = null): array
     {
-        $db     = self::db();
-        $lockId = $lockId ?? uniqid('queue_', true);
-        $now    = (new \DateTimeImmutable())->format('Y-m-d H:i:s');
-        $status = 'pending';
+        $db         = self::db();
+        $lockId     = $lockId ?? uniqid('queue_', true);
+        $now        = (new \DateTimeImmutable())->format('Y-m-d H:i:s');
+        $status     = 'pending';
         $processing = 'processing';
 
         $selectQuery = $db->getQuery(true)
@@ -118,8 +119,8 @@ final class QueueHelper
 
     public static function complete(int $queueId): void
     {
-        $db  = self::db();
-        $now = (new \DateTimeImmutable())->format('Y-m-d H:i:s');
+        $db     = self::db();
+        $now    = (new \DateTimeImmutable())->format('Y-m-d H:i:s');
         $status = 'completed';
 
         $db->setQuery(

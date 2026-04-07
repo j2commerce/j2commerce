@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Field;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
@@ -156,8 +157,8 @@ HTML;
      */
     private function generateQueueKey(): string
     {
-        $app = Factory::getApplication();
-        $siteName = $app->get('sitename', 'J2Commerce');
+        $app         = Factory::getApplication();
+        $siteName    = $app->get('sitename', 'J2Commerce');
         $queueString = $siteName . time() . bin2hex(random_bytes(8));
 
         return md5($queueString);

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -79,7 +80,7 @@ class CurrencyTable extends Table
             return false;
         }
 
-        if (strlen($this->currency_code) !== 3) {
+        if (\strlen($this->currency_code) !== 3) {
             $this->setError(Text::_('COM_J2COMMERCE_ERR_CURRENCY_CODE_LENGTH'));
             return false;
         }

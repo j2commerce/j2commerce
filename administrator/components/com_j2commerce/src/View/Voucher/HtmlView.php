@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -9,8 +10,9 @@
 
 namespace J2Commerce\Component\J2commerce\Administrator\View\Voucher;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Helper\ContentHelper;
@@ -18,7 +20,6 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\ToolbarHelper;
-use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 /**
  * Voucher View
@@ -67,10 +68,10 @@ class HtmlView extends BaseHtmlView
 
         $this->loadAdminAssets();
 
-        $model = $this->getModel();
+        $model       = $this->getModel();
         $this->state = $model->getState();
-        $this->item = $model->getItem();
-        $this->form = $model->getForm();
+        $this->item  = $model->getItem();
+        $this->form  = $model->getForm();
 
         // Get layout to determine what data to load
         $layout = Factory::getApplication()->getInput()->get('layout', 'edit');
@@ -81,7 +82,7 @@ class HtmlView extends BaseHtmlView
         }
 
         // Check for errors.
-        if (is_array($errors = $model->getErrors()) && \count($errors)) {
+        if (\is_array($errors = $model->getErrors()) && \count($errors)) {
             throw new GenericDataException(implode("\n", $errors), 500);
         }
 
@@ -108,8 +109,8 @@ class HtmlView extends BaseHtmlView
         $checkedOut = !(($this->item->checked_out ?? null) === null || ($this->item->checked_out ?? 0) == $user->id);
         $canDo      = ContentHelper::getActions('com_j2commerce', 'voucher', $this->item->j2commerce_voucher_id ?? 0);
 
-        $layout = Factory::getApplication()->getInput()->get('layout', 'history');
-        $isEditLayout = ($layout === 'edit');
+        $layout          = Factory::getApplication()->getInput()->get('layout', 'history');
+        $isEditLayout    = ($layout === 'edit');
         $isHistoryLayout = ($layout === 'history');
 
         // Get the toolbar object instance
@@ -132,7 +133,7 @@ class HtmlView extends BaseHtmlView
                 $toolbar->apply('voucher.apply');
 
                 $saveGroup = $toolbar->dropdownButton('save-group');
-                $childBar = $saveGroup->getChildToolbar();
+                $childBar  = $saveGroup->getChildToolbar();
                 $childBar->save('voucher.save');
                 $childBar->save2new('voucher.save2new');
             }
@@ -149,7 +150,7 @@ class HtmlView extends BaseHtmlView
                 }
 
                 $saveGroup = $toolbar->dropdownButton('save-group');
-                $childBar = $saveGroup->getChildToolbar();
+                $childBar  = $saveGroup->getChildToolbar();
 
                 if (!$checkedOut && $itemEditable) {
                     $childBar->save('voucher.save');

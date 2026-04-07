@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -9,7 +10,7 @@
 
 namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
@@ -20,7 +21,6 @@ use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Table\Table;
 use Joomla\Database\ParameterType;
 use Joomla\String\StringHelper;
-use RuntimeException;
 
 /**
  * Filtergroup Model
@@ -54,25 +54,25 @@ class FiltergroupModel extends AdminModel
      */
     protected function populateState()
     {
-        $app = Factory::getApplication();
+        $app   = Factory::getApplication();
         $input = $app->getInput();
 
         // Get the primary key from the request data
         $pk = $input->getInt('id');
 
         // Check if this is explicitly a new record request
-        $task = $input->get('task', '');
+        $task   = $input->get('task', '');
         $layout = $input->get('layout', '');
 
         // If no ID in input, check user state (for post-redirect scenarios)
         // But only if we're not explicitly in a "new" or "add" context
-        if (!$pk && !in_array($task, ['add', 'new']) && $layout !== 'edit') {
+        if (!$pk && !\in_array($task, ['add', 'new']) && $layout !== 'edit') {
             $context = 'com_j2commerce.edit.filtergroup';
-            $pk = (int) $app->getUserState($context . '.id');
+            $pk      = (int) $app->getUserState($context . '.id');
         }
 
         // For new records, ensure pk is 0
-        if (in_array($task, ['add', 'new']) || ($layout === 'edit' && !$pk)) {
+        if (\in_array($task, ['add', 'new']) || ($layout === 'edit' && !$pk)) {
             $pk = 0;
             // Clear any lingering user state for new records
             $context = 'com_j2commerce.edit.filtergroup';
@@ -143,7 +143,7 @@ class FiltergroupModel extends AdminModel
 
             // Prime some default values.
             if ($this->getState('filtergroup.id') == 0) {
-                $app = Factory::getApplication();
+                $app             = Factory::getApplication();
                 $data->published = $app->input->getInt('published', 1);
             }
         }
@@ -172,14 +172,14 @@ class FiltergroupModel extends AdminModel
         // Ensure we have a valid primary key
         if (!$pk || $pk <= 0) {
             // Return empty item for new records
-            $item = new \stdClass();
+            $item                            = new \stdClass();
             $item->j2commerce_filtergroup_id = 0;
-            $item->id = 0;
-            $item->group_name = '';
-            $item->ordering = 0;
-            $item->enabled = 1;
-            $item->published = 1;
-            $item->filters = [];
+            $item->id                        = 0;
+            $item->group_name                = '';
+            $item->ordering                  = 0;
+            $item->enabled                   = 1;
+            $item->published                 = 1;
+            $item->filters                   = [];
             return $item;
         }
 
@@ -196,7 +196,7 @@ class FiltergroupModel extends AdminModel
                     $item->published = $item->getEnabled();
                 }
                 // Try generic get method (common in Joomla objects)
-                elseif (method_exists($item, 'get') && is_callable([$item, 'get'])) {
+                elseif (method_exists($item, 'get') && \is_callable([$item, 'get'])) {
                     $item->published = $item->get('enabled');
                 }
                 // Use reflection as last resort for private properties
@@ -237,13 +237,13 @@ class FiltergroupModel extends AdminModel
             return [];
         }
 
-        $db = Factory::getContainer()->get('DatabaseDriver');
+        $db    = Factory::getContainer()->get('DatabaseDriver');
         $query = $db->getQuery(true)
             ->select([
                 $db->quoteName('j2commerce_filter_id'),
                 $db->quoteName('group_id'),
                 $db->quoteName('filter_name'),
-                $db->quoteName('ordering')
+                $db->quoteName('ordering'),
             ])
             ->from($db->quoteName('#__j2commerce_filters'))
             ->where($db->quoteName('group_id') . ' = :groupId')
@@ -254,9 +254,9 @@ class FiltergroupModel extends AdminModel
 
         try {
             $filters = $db->loadObjectList();
-            return is_array($filters) ? $filters : [];
+            return \is_array($filters) ? $filters : [];
         } catch (\Exception $e) {
-            throw new RuntimeException('Failed to load filters for group ' . $groupId . ': ' . $e->getMessage());
+            throw new \RuntimeException('Failed to load filters for group ' . $groupId . ': ' . $e->getMessage());
         }
     }
 
@@ -301,7 +301,7 @@ class FiltergroupModel extends AdminModel
 
         // Validate group_name is not empty
         if (empty(trim($data['group_name'] ?? ''))) {
-            throw new RuntimeException(Text::_('COM_J2COMMERCE_ERROR_FILTERGROUP_GROUP_NAME_REQUIRED'));
+            throw new \RuntimeException(Text::_('COM_J2COMMERCE_ERROR_FILTERGROUP_GROUP_NAME_REQUIRED'));
         }
 
         // Handle save2copy — generate unique group_name and force new record
@@ -311,7 +311,7 @@ class FiltergroupModel extends AdminModel
             $origTable->load($app->getInput()->getInt('id'));
 
             if ($data['group_name'] === $origTable->group_name) {
-                [$name] = $this->generateNewTitle(null, null, $data['group_name']);
+                [$name]             = $this->generateNewTitle(null, null, $data['group_name']);
                 $data['group_name'] = $name;
             }
 
@@ -350,7 +350,7 @@ class FiltergroupModel extends AdminModel
             // Method 3: Load the table and try to find the record by group_name (for new records)
             if (!$recordId && !empty($data['group_name'])) {
                 $table = $this->getTable();
-                $db = Factory::getContainer()->get('DatabaseDriver');
+                $db    = Factory::getContainer()->get('DatabaseDriver');
                 $query = $db->getQuery(true)
                     ->select($db->quoteName('j2commerce_filtergroup_id'))
                     ->from($db->quoteName('#__j2commerce_filtergroups'))
@@ -373,11 +373,11 @@ class FiltergroupModel extends AdminModel
                 // Save the filters data
                 try {
                     $this->saveFilters($recordId, $filtersData);
-                } catch (RuntimeException $e) {
-                    throw new RuntimeException('Failed to save filter group: ' . $e->getMessage());
+                } catch (\RuntimeException $e) {
+                    throw new \RuntimeException('Failed to save filter group: ' . $e->getMessage());
                 }
             } else {
-                throw new RuntimeException('Failed to determine the saved record ID');
+                throw new \RuntimeException('Failed to determine the saved record ID');
             }
 
             return true;
@@ -416,8 +416,8 @@ class FiltergroupModel extends AdminModel
      */
     public function reorder($pks, $delta = 0)
     {
-        $table = $this->getTable();
-        $pks = (array) $pks;
+        $table  = $this->getTable();
+        $pks    = (array) $pks;
         $result = true;
 
         $allowed = true;
@@ -437,10 +437,10 @@ class FiltergroupModel extends AdminModel
                 $where = [];
 
                 if (!$table->move($delta, $where)) {
-                    throw new RuntimeException($table->getError());
+                    throw new \RuntimeException($table->getError());
                 }
             } else {
-                throw new RuntimeException($table->getError());
+                throw new \RuntimeException($table->getError());
             }
         }
 
@@ -486,7 +486,7 @@ class FiltergroupModel extends AdminModel
             $db->execute();
 
             // Now insert the new filters with auto-ordering
-            if (!empty($filtersData) && is_array($filtersData)) {
+            if (!empty($filtersData) && \is_array($filtersData)) {
                 $orderingCounter = 1; // Start ordering from 1
 
                 foreach ($filtersData as $filterData) {
@@ -500,7 +500,7 @@ class FiltergroupModel extends AdminModel
                         ->columns([
                             $db->quoteName('group_id'),
                             $db->quoteName('filter_name'),
-                            $db->quoteName('ordering')
+                            $db->quoteName('ordering'),
                         ])
                         ->values(':groupId, :filterName, :ordering')
                         ->bind(':groupId', $groupId, ParameterType::INTEGER)
@@ -523,7 +523,7 @@ class FiltergroupModel extends AdminModel
         } catch (\Exception $e) {
             // Rollback the transaction on error
             $db->transactionRollback();
-            throw new RuntimeException('Failed to save filters for group ' . $groupId . ': ' . $e->getMessage());
+            throw new \RuntimeException('Failed to save filters for group ' . $groupId . ': ' . $e->getMessage());
         }
     }
 

@@ -79,7 +79,7 @@ class OrganizationSchemaBuilder
 
     public function buildLocalBusiness(?string $businessType = null): array
     {
-        $schema = $this->build();
+        $schema          = $this->build();
         $schema['@type'] = $businessType ?: 'LocalBusiness';
 
         $priceRange = $this->params->get('price_range', '');

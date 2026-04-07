@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -9,13 +10,12 @@
 
 namespace J2Commerce\Component\J2commerce\Administrator\View\Invoicetemplates;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\MenuHelper;
 use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Helper\ContentHelper;
-use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\MVC\View\GenericDataException;
@@ -90,19 +90,19 @@ class HtmlView extends BaseHtmlView
 
         $this->navbar = $this->getNavbar();
 
-        $model = $this->getModel();
-        $this->items = $model->getItems();
-        $this->pagination = $model->getPagination();
-        $this->state = $model->getState();
-        $this->filterForm = $model->getFilterForm();
+        $model               = $this->getModel();
+        $this->items         = $model->getItems();
+        $this->pagination    = $model->getPagination();
+        $this->state         = $model->getState();
+        $this->filterForm    = $model->getFilterForm();
         $this->activeFilters = $model->getActiveFilters();
 
-        if ((!is_array($this->items) || !\count($this->items)) && $this->isEmptyState = $this->get('IsEmptyState')) {
+        if ((!\is_array($this->items) || !\count($this->items)) && $this->isEmptyState = $this->get('IsEmptyState')) {
             $this->setLayout('emptystate');
         }
 
         // Check for errors.
-        if (is_array($errors = $this->get('Errors')) && \count($errors)) {
+        if (\is_array($errors = $this->get('Errors')) && \count($errors)) {
             throw new GenericDataException(implode("\n", $errors), 500);
         }
 
@@ -119,8 +119,8 @@ class HtmlView extends BaseHtmlView
     protected function getNavbar(): string
     {
         $displayData = [
-            'items' => MenuHelper::getMenuItems(),
-            'active' => MenuHelper::getActiveView()
+            'items'  => MenuHelper::getMenuItems(),
+            'active' => MenuHelper::getActiveView(),
         ];
 
         return LayoutHelper::render('navbar.default', $displayData, JPATH_COMPONENT_ADMINISTRATOR . '/layouts');
@@ -187,7 +187,7 @@ class HtmlView extends BaseHtmlView
             $toolbar->preferences('com_j2commerce');
         }
 
-        $toolbar->help('Invoice_Templates', true,'https://docs.j2commerce.com/design/invoice-template-pro-feature');
+        $toolbar->help('Invoice_Templates', true, 'https://docs.j2commerce.com/design/invoice-template-pro-feature');
     }
 
     /**
@@ -200,12 +200,12 @@ class HtmlView extends BaseHtmlView
     protected function getSortFields()
     {
         return [
-            'a.ordering' => Text::_('JGRID_HEADING_ORDERING'),
-            'a.enabled' => Text::_('JSTATUS'),
-            'a.title' => Text::_('COM_J2COMMERCE_INVOICETEMPLATE_TITLE'),
-            'a.invoice_type' => Text::_('COM_J2COMMERCE_INVOICETEMPLATE_TYPE'),
-            'a.language' => Text::_('JGRID_HEADING_LANGUAGE'),
-            'a.j2commerce_invoicetemplate_id' => Text::_('JGRID_HEADING_ID')
+            'a.ordering'                      => Text::_('JGRID_HEADING_ORDERING'),
+            'a.enabled'                       => Text::_('JSTATUS'),
+            'a.title'                         => Text::_('COM_J2COMMERCE_INVOICETEMPLATE_TITLE'),
+            'a.invoice_type'                  => Text::_('COM_J2COMMERCE_INVOICETEMPLATE_TYPE'),
+            'a.language'                      => Text::_('JGRID_HEADING_LANGUAGE'),
+            'a.j2commerce_invoicetemplate_id' => Text::_('JGRID_HEADING_ID'),
         ];
     }
 }

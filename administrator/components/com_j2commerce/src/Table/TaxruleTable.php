@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -80,7 +81,7 @@ class TaxruleTable extends Table
         }
 
         // Address must be either 'billing' or 'shipping'
-        if (!in_array($this->address, ['billing', 'shipping'])) {
+        if (!\in_array($this->address, ['billing', 'shipping'])) {
             $this->setError(Text::_('COM_J2COMMERCE_ERR_INVALID_ADDRESS_TYPE'));
 
             return false;

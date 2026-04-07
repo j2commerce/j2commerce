@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -88,12 +89,12 @@ class ProductService
     {
         if (!isset($this->behaviors[$productType])) {
             $this->behaviors[$productType] = match ($productType) {
-                'simple' => new Simple($this->mvcFactory),
-                'configurable' => new Configurable($this->mvcFactory),
-                'downloadable' => new Downloadable($this->mvcFactory),
+                'simple'        => new Simple($this->mvcFactory),
+                'configurable'  => new Configurable($this->mvcFactory),
+                'downloadable'  => new Downloadable($this->mvcFactory),
                 'flexivariable' => new Flexivariable($this->mvcFactory),
-                'variable' => new Variable($this->mvcFactory),
-                default => $this->getPluginBehavior($productType),
+                'variable'      => new Variable($this->mvcFactory),
+                default         => $this->getPluginBehavior($productType),
             };
         }
 
@@ -125,12 +126,12 @@ class ProductService
         }
 
         $productType = $data['product_type'] ?? 'simple';
-        $behavior = $this->getBehavior($productType);
+        $behavior    = $this->getBehavior($productType);
 
         // Extract param-type fields from flat form data into params
         // These fields are submitted as flat keys (e.g. jform[attribs][j2commerce][product_css_class])
         // but must be stored in the params JSON column, not as direct DB columns
-        $paramFields = ['product_css_class'];
+        $paramFields   = ['product_css_class'];
         $currentParams = $data['params'] ?? [];
 
         if (\is_string($currentParams)) {
@@ -202,7 +203,7 @@ class ProductService
         }
 
         // Create a wrapper that provides the getTable method the behavior expects
-        $modelWrapper = new class($productTable) {
+        $modelWrapper = new class ($productTable) {
             private ProductTable $table;
 
             public function __construct(ProductTable $table)
@@ -262,7 +263,7 @@ class ProductService
         }
 
         $productType = $productTable->product_type ?? 'simple';
-        $behavior = $this->getBehavior($productType);
+        $behavior    = $this->getBehavior($productType);
 
         // Create a ProductsModel and set the product ID in state
         /** @var ProductsModel $model */
@@ -318,7 +319,7 @@ class ProductService
 
     private function getPluginBehavior(string $productType): object
     {
-        $event = J2CommerceHelper::plugin()->event('GetProductBehavior', [$productType, $this->mvcFactory]);
+        $event   = J2CommerceHelper::plugin()->event('GetProductBehavior', [$productType, $this->mvcFactory]);
         $results = $event->getArgument('result', []);
 
         foreach ($results as $result) {

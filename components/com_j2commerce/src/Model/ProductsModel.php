@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -20,7 +21,6 @@ use Joomla\CMS\Language\Multilanguage;
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\Database\ParameterType;
 use Joomla\Database\QueryInterface;
-use Joomla\Registry\Registry;
 
 /**
  * Products list model for site frontend.
@@ -88,8 +88,8 @@ class ProductsModel extends ListModel
      */
     protected function populateState($ordering = 'a.ordering', $direction = 'asc'): void
     {
-        $app = Factory::getApplication();
-        $input = $app->getInput();
+        $app    = Factory::getApplication();
+        $input  = $app->getInput();
         $params = $app->getParams();
 
         // Set the parameters
@@ -132,30 +132,30 @@ class ProductsModel extends ListModel
         $this->setState('filter.subcategory_levels', (int) $subcategoryLevels);
 
         // Ordering from menu item params
-        $orderBy = $params->get('orderby_sec', 'order');
+        $orderBy        = $params->get('orderby_sec', 'order');
         $orderDirection = $params->get('list_order_direction', 'ASC');
-        $orderDate = match ($params->get('order_date', 'created')) {
+        $orderDate      = match ($params->get('order_date', 'created')) {
             'published' => 'publish_up',
-            default => $params->get('order_date', 'created'),
+            default     => $params->get('order_date', 'created'),
         };
 
         // Map ordering param to actual SQL ordering
         $orderMapping = match ($orderBy) {
-            'date' => 'a.' . $orderDate,
-            'title' => 'a.title',
-            'author' => 'a.created_by',
-            'hits' => 'a.hits',
-            'price' => 'v.price',
-            'popular' => 'p.hits',
-            'order' => 'a.ordering',
+            'date'      => 'a.' . $orderDate,
+            'title'     => 'a.title',
+            'author'    => 'a.created_by',
+            'hits'      => 'a.hits',
+            'price'     => 'v.price',
+            'popular'   => 'p.hits',
+            'order'     => 'a.ordering',
             'cat_order' => 'c.lft',
-            'featured' => 'a.featured',
-            default => 'a.ordering',
+            'featured'  => 'a.featured',
+            default     => 'a.ordering',
         };
 
         // Allow URL override of ordering
         // Support both standard Joomla params (filter_order) and SEF-friendly params (sort)
-        $listOrdering = $app->getInput()->get('filter_order', '', 'cmd');
+        $listOrdering  = $app->getInput()->get('filter_order', '', 'cmd');
         $listDirection = $app->getInput()->get('filter_order_Dir', '', 'cmd');
 
         // Check for SEF-friendly sort parameter (e.g., sort=name-asc, sort=price-desc)
@@ -185,9 +185,9 @@ class ProductsModel extends ListModel
             if (!empty($sortby)) {
                 // Parse "column DIRECTION" format (e.g., "a.title ASC")
                 if (preg_match('/^([a-z_.]+)\s+(ASC|DESC)$/i', $sortby, $matches)) {
-                    $listOrdering = $matches[1];
+                    $listOrdering  = $matches[1];
                     $listDirection = strtoupper($matches[2]);
-                } elseif (in_array($sortby, ['a.ordering', 'a.title', 'a.created', 'a.hits', 'v.price'])) {
+                } elseif (\in_array($sortby, ['a.ordering', 'a.title', 'a.created', 'a.hits', 'v.price'])) {
                     $listOrdering = $sortby;
                 }
             }
@@ -265,10 +265,10 @@ class ProductsModel extends ListModel
      */
     protected function getListQuery(): QueryInterface
     {
-        $db = $this->getDatabase();
-        $query = $db->getQuery(true);
+        $db     = $this->getDatabase();
+        $query  = $db->getQuery(true);
         $params = $this->getState('params');
-        $user = $this->getCurrentUser();
+        $user   = $this->getCurrentUser();
 
         // Select product fields
         $query->select(
@@ -423,7 +423,7 @@ class ProductsModel extends ListModel
         $productfilterIds = $this->getState('filter.productfilter_ids', []);
         if (!empty($productfilterIds)) {
             $sanitizedFilterIds = implode(',', array_map('intval', $productfilterIds));
-            $subQueryPf = $db->getQuery(true);
+            $subQueryPf         = $db->getQuery(true);
             $subQueryPf->select('DISTINCT ' . $db->quoteName('pf.product_id'))
                 ->from($db->quoteName('#__j2commerce_product_filters', 'pf'))
                 ->where($db->quoteName('pf.filter_id') . ' IN (' . $sanitizedFilterIds . ')');
@@ -432,7 +432,7 @@ class ProductsModel extends ListModel
 
         // Filter by price range (considers advanced/special pricing)
         $priceFrom = (float) $this->getState('filter.price_from', 0);
-        $priceTo = (float) $this->getState('filter.price_to', 0);
+        $priceTo   = (float) $this->getState('filter.price_to', 0);
         if ($priceFrom > 0 || $priceTo > 0) {
             $this->applyPriceRangeFilter($query, $db, $user, $priceFrom, $priceTo);
         }
@@ -469,7 +469,7 @@ class ProductsModel extends ListModel
             return [];
         }
 
-        $params = $this->getState('params');
+        $params        = $this->getState('params');
         $hydratedItems = [];
 
         foreach ($items as $item) {
@@ -483,7 +483,7 @@ class ProductsModel extends ListModel
             if ($product) {
                 // Merge list-level data with full product
                 $product->article_ordering = $item->ordering ?? 0;
-                $product->article_hits = $item->hits ?? 0;
+                $product->article_hits     = $item->hits ?? 0;
                 $product->article_featured = $item->featured ?? 0;
 
                 $hydratedItems[] = $product;
@@ -513,7 +513,7 @@ class ProductsModel extends ListModel
         }
 
         // Get the first category as parent
-        $categories = \Joomla\CMS\Categories\Categories::getInstance('Content');
+        $categories    = \Joomla\CMS\Categories\Categories::getInstance('Content');
         $this->_parent = $categories->get((int) reset($catids));
 
         return $this->_parent;
@@ -536,13 +536,13 @@ class ProductsModel extends ListModel
      */
     public function getFilters(array $items = []): array
     {
-        $params = $this->getState('params');
+        $params     = $this->getState('params');
         $filterMode = $params->get('list_filter_category_mode', 'selected');
 
         if ($filterMode === 'siblings') {
             // Show sibling categories of the current category
-            $catids = $this->getState('filter.catids', []);
-            $currentCatId = !empty($catids) ? (int) $catids[0] : 0;
+            $catids            = $this->getState('filter.catids', []);
+            $currentCatId      = !empty($catids) ? (int) $catids[0] : 0;
             $filterCategoryIds = $currentCatId ? $this->getSiblingCategoryIds($currentCatId) : [];
         } else {
             // Use manually selected categories from menu item settings
@@ -567,7 +567,7 @@ class ProductsModel extends ListModel
     protected function getSiblingCategoryIds(int $categoryId): array
     {
         $categories = \Joomla\CMS\Categories\Categories::getInstance('Content', ['access' => true]);
-        $node = $categories->get($categoryId);
+        $node       = $categories->get($categoryId);
 
         if (!$node) {
             return [$categoryId];
@@ -594,9 +594,9 @@ class ProductsModel extends ListModel
         float $priceFrom,
         float $priceTo
     ): void {
-        $now = Factory::getDate()->toSql();
+        $now        = Factory::getDate()->toSql();
         $userGroups = $user->getAuthorisedGroups();
-        $groupList = !empty($userGroups) ? implode(',', array_map('intval', $userGroups)) : '0';
+        $groupList  = !empty($userGroups) ? implode(',', array_map('intval', $userGroups)) : '0';
 
         // Subquery: min child variant price per product (variable, flexivariable, etc.)
         $vcSub = $db->getQuery(true)

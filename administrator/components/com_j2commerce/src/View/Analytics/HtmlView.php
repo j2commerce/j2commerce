@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -14,6 +15,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\View\Analytics;
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\MenuHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\AnalyticsModel;
 use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
@@ -24,37 +26,36 @@ use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Toolbar\ToolbarHelper;
-use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 class HtmlView extends BaseHtmlView
 {
     use AdminAssetsTrait;
 
-    public string $navbar = '';
-    public float $totalRevenue = 0.0;
-    public int $orderCount = 0;
-    public float $averageOrderValue = 0.0;
-    public int $itemsSold = 0;
-    public array $revenueByDay = [];
-    public array $ordersByDay = [];
-    public array $topProducts = [];
-    public array $statusDistribution = [];
-    public array $checkoutFunnel = [];
-    public array $pluginWidgets = [];
-    public array $liveUsers = [];
-    public string $fromDate = '';
-    public string $toDate = '';
-    public array $previousPeriod = [];
-    public string $currencySymbol = '';
-    public string $currencyPosition = 'pre';
-    public string $formattedRevenue = '';
-    public string $formattedAOV = '';
-    public array $sessionsAvgByHour = [];
-    public int $sessionsTotal = 0;
+    public string $navbar              = '';
+    public float $totalRevenue         = 0.0;
+    public int $orderCount             = 0;
+    public float $averageOrderValue    = 0.0;
+    public int $itemsSold              = 0;
+    public array $revenueByDay         = [];
+    public array $ordersByDay          = [];
+    public array $topProducts          = [];
+    public array $statusDistribution   = [];
+    public array $checkoutFunnel       = [];
+    public array $pluginWidgets        = [];
+    public array $liveUsers            = [];
+    public string $fromDate            = '';
+    public string $toDate              = '';
+    public array $previousPeriod       = [];
+    public string $currencySymbol      = '';
+    public string $currencyPosition    = 'pre';
+    public string $formattedRevenue    = '';
+    public string $formattedAOV        = '';
+    public array $sessionsAvgByHour    = [];
+    public int $sessionsTotal          = 0;
     public array $conversionsAvgByHour = [];
-    public int $conversionsTotal = 0;
-    public array $conversionBreakdown = [];
-    public array $deviceTypes = [];
+    public int $conversionsTotal       = 0;
+    public array $conversionBreakdown  = [];
+    public array $deviceTypes          = [];
 
     public function display($tpl = null): void
     {
@@ -131,24 +132,24 @@ class HtmlView extends BaseHtmlView
 
         // Pass data to JavaScript
         $this->getDocument()->addScriptOptions('com_j2commerce.analytics', [
-            'totalRevenue'       => $this->totalRevenue,
-            'orderCount'         => $this->orderCount,
-            'averageOrderValue'  => $this->averageOrderValue,
-            'itemsSold'          => $this->itemsSold,
-            'revenueByDay'       => $this->revenueByDay,
-            'ordersByDay'        => $this->ordersByDay,
-            'topProducts'        => $this->topProducts,
-            'statusDistribution' => $this->statusDistribution,
-            'checkoutFunnel'     => $this->checkoutFunnel,
-            'previousPeriod'     => $this->previousPeriod,
-            'from'               => $this->fromDate,
-            'to'                 => $this->toDate,
-            'ajaxUrl'            => 'index.php?option=com_j2commerce&task=analytics.getData&format=json',
-            'currencySymbol'     => $this->currencySymbol,
-            'currencyPosition'   => $this->currencyPosition,
-            'dateFormat'         => $dateFormat,
-            'formattedRevenue'   => $this->formattedRevenue,
-            'formattedAOV'       => $this->formattedAOV,
+            'totalRevenue'         => $this->totalRevenue,
+            'orderCount'           => $this->orderCount,
+            'averageOrderValue'    => $this->averageOrderValue,
+            'itemsSold'            => $this->itemsSold,
+            'revenueByDay'         => $this->revenueByDay,
+            'ordersByDay'          => $this->ordersByDay,
+            'topProducts'          => $this->topProducts,
+            'statusDistribution'   => $this->statusDistribution,
+            'checkoutFunnel'       => $this->checkoutFunnel,
+            'previousPeriod'       => $this->previousPeriod,
+            'from'                 => $this->fromDate,
+            'to'                   => $this->toDate,
+            'ajaxUrl'              => 'index.php?option=com_j2commerce&task=analytics.getData&format=json',
+            'currencySymbol'       => $this->currencySymbol,
+            'currencyPosition'     => $this->currencyPosition,
+            'dateFormat'           => $dateFormat,
+            'formattedRevenue'     => $this->formattedRevenue,
+            'formattedAOV'         => $this->formattedAOV,
             'sessionsAvgByHour'    => $this->sessionsAvgByHour,
             'sessionsTotal'        => $this->sessionsTotal,
             'conversionsAvgByHour' => $this->conversionsAvgByHour,

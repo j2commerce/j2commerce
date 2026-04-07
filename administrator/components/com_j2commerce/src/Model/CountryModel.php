@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -85,7 +86,7 @@ class CountryModel extends AdminModel
      */
     public function getForm($data = [], $loadData = true): Form|false
     {
-        $form = $this->loadForm('com_j2commerce.country','country',['control' => 'jform', 'load_data' => $loadData]);
+        $form = $this->loadForm('com_j2commerce.country', 'country', ['control' => 'jform', 'load_data' => $loadData]);
 
         if (empty($form)) {
             return false;

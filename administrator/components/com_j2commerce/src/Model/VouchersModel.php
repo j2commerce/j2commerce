@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -143,8 +144,8 @@ class VouchersModel extends ListModel
      */
     public function get_voucher(): string
     {
-        $app = Factory::getApplication();
-        $session = $app->getSession();
+        $app         = Factory::getApplication();
+        $session     = $app->getSession();
         $voucherCode = '';
 
         try {

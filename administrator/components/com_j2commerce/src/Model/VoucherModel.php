@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -13,7 +14,6 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 \defined('_JEXEC') or die;
 
-use Exception;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CartHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Component\ComponentHelper;
@@ -75,7 +75,7 @@ class VoucherModel extends AdminModel
     protected function populateState(): void
     {
         $app = Factory::getApplication();
-        $pk = $app->getInput()->getInt('id', 0);
+        $pk  = $app->getInput()->getInt('id', 0);
 
         $this->setState($this->getName() . '.id', $pk);
 
@@ -135,14 +135,14 @@ class VoucherModel extends AdminModel
         if (empty($data)) {
             $data = $this->getItem();
             if ((int) $this->getState($this->getName() . '.id') === 0) {
-                $data = is_array($data) ? $data : (array) $data;
+                $data = \is_array($data) ? $data : (array) $data;
 
                 $data['enabled']       = $app->getInput()->getInt('enabled', 1);
                 $data['voucher_code']  = $this->generateVoucherCode();
                 $data['voucher_value'] = '0';
                 $data['voucher_type']  = 'giftcard';
 
-                $now = Factory::getDate()->toSql();
+                $now                = Factory::getDate()->toSql();
                 $data['created_on'] = $now;
                 $data['created_by'] = Factory::getApplication()->getIdentity()->id;
             }
@@ -245,7 +245,7 @@ class VoucherModel extends AdminModel
 
         // Alter the voucher code for save as copy
         if ($app->getInput()->get('task') == 'save2copy') {
-            $origTable = clone $this->getTable();
+            $origTable  = clone $this->getTable();
             $originalId = (int) ($data['id'] ?? 0);
 
             if ($originalId > 0) {
@@ -359,7 +359,7 @@ class VoucherModel extends AdminModel
 
         // Access checks
         if (!$user->authorise('core.create', 'com_j2commerce')) {
-            throw new Exception(Text::_('JERROR_CORE_CREATE_NOT_PERMITTED'));
+            throw new \Exception(Text::_('JERROR_CORE_CREATE_NOT_PERMITTED'));
         }
 
         $table = $this->getTable();
@@ -368,14 +368,14 @@ class VoucherModel extends AdminModel
             if ($table->load($pk, true)) {
                 // Reset the id to create a new record
                 $table->j2commerce_voucher_id = 0;
-                $table->enabled = 0;
-                $table->voucher_code = $this->generateNewVoucherCode($table->voucher_code);
+                $table->enabled               = 0;
+                $table->voucher_code          = $this->generateNewVoucherCode($table->voucher_code);
 
                 if (!$table->check() || !$table->store()) {
-                    throw new Exception($table->getError());
+                    throw new \Exception($table->getError());
                 }
             } else {
-                throw new Exception($table->getError());
+                throw new \Exception($table->getError());
             }
         }
 
@@ -406,7 +406,7 @@ class VoucherModel extends AdminModel
 
         $mailer->setSender([
             Factory::getApplication()->get('mailfrom'),
-            Factory::getApplication()->get('fromname')
+            Factory::getApplication()->get('fromname'),
         ]);
         $mailer->setSubject($item->subject);
         $mailer->isHtml(true);
@@ -427,7 +427,7 @@ class VoucherModel extends AdminModel
      */
     public function sendVouchers(array $cids): bool
     {
-        $config = Factory::getApplication()->getConfig();
+        $config      = Factory::getApplication()->getConfig();
         $emailHelper = J2CommerceHelper::email();
 
         $mailfrom = $config->get('mailfrom');
@@ -476,7 +476,7 @@ class VoucherModel extends AdminModel
     protected function generateVoucherCode(int $length = 8): string
     {
         $characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-        $charactersLength = strlen($characters);
+        $charactersLength = \strlen($characters);
         $randomString     = '';
 
         for ($i = 0; $i < $length; $i++) {
@@ -536,9 +536,9 @@ class VoucherModel extends AdminModel
             return [];
         }
 
-        $params = $this->getState('params');
-        $db     = $this->getDatabase();
-        $query  = $db->getQuery(true);
+        $params       = $this->getState('params');
+        $db           = $this->getDatabase();
+        $query        = $db->getQuery(true);
         $discountType = 'voucher';
 
         $query->select($db->quoteName([
@@ -547,7 +547,7 @@ class VoucherModel extends AdminModel
             'o.user_email',
             'o.created_on',
             'o.invoice_number',
-            'o.invoice_prefix'
+            'o.invoice_prefix',
         ]));
 
         if ($params && $params->get('config_including_tax', 0)) {
@@ -698,7 +698,7 @@ class VoucherModel extends AdminModel
             $query = $db->getQuery(true);
 
             $emptyVoucher = '';
-            $cartId = (int) $cartTable->j2commerce_cart_id;
+            $cartId       = (int) $cartTable->j2commerce_cart_id;
 
             $query->update($db->quoteName('#__j2commerce_carts'))
                 ->set($db->quoteName('cart_voucher') . ' = :emptyVoucher')
@@ -730,9 +730,9 @@ class VoucherModel extends AdminModel
             $results = J2CommerceHelper::plugin()->eventWithArray('VoucherIsValid', [$this]);
 
             if (\in_array(false, $results, false)) {
-                throw new Exception(Text::_('COM_J2COMMERCE_VOUCHER_NOT_APPLICABLE'));
+                throw new \Exception(Text::_('COM_J2COMMERCE_VOUCHER_NOT_APPLICABLE'));
             }
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $this->setError($e->getMessage());
             Factory::getApplication()->enqueueMessage($e->getMessage(), 'warning');
             $this->removeVoucher();
@@ -764,9 +764,9 @@ class VoucherModel extends AdminModel
             $results = J2CommerceHelper::plugin()->eventWithArray('VoucherIsValid', [$this]);
 
             if (\in_array(false, $results, false)) {
-                throw new Exception(Text::_('COM_J2COMMERCE_VOUCHER_NOT_APPLICABLE'));
+                throw new \Exception(Text::_('COM_J2COMMERCE_VOUCHER_NOT_APPLICABLE'));
             }
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $this->setError($e->getMessage());
             Factory::getApplication()->enqueueMessage($e->getMessage(), 'warning');
             $this->removeVoucher();
@@ -782,7 +782,7 @@ class VoucherModel extends AdminModel
      *
      * @return  void
      *
-     * @throws  Exception  If vouchers are not enabled.
+     * @throws  \Exception  If vouchers are not enabled.
      *
      * @since   6.0.6
      */
@@ -791,7 +791,7 @@ class VoucherModel extends AdminModel
         $params = J2CommerceHelper::config();
 
         if ($params->get('enable_voucher', 0) == 0) {
-            throw new Exception(Text::_('COM_J2COMMERCE_VOUCHER_NOT_ENABLED'));
+            throw new \Exception(Text::_('COM_J2COMMERCE_VOUCHER_NOT_ENABLED'));
         }
     }
 
@@ -800,14 +800,14 @@ class VoucherModel extends AdminModel
      *
      * @return  void
      *
-     * @throws  Exception  If voucher does not exist.
+     * @throws  \Exception  If voucher does not exist.
      *
      * @since   6.0.6
      */
     private function validateExists(): void
     {
         if (!$this->voucher) {
-            throw new Exception(Text::_('COM_J2COMMERCE_VOUCHER_DOES_NOT_EXIST'));
+            throw new \Exception(Text::_('COM_J2COMMERCE_VOUCHER_DOES_NOT_EXIST'));
         }
     }
 
@@ -816,7 +816,7 @@ class VoucherModel extends AdminModel
      *
      * @return  void
      *
-     * @throws  Exception  If usage limit has been reached.
+     * @throws  \Exception  If usage limit has been reached.
      *
      * @since   6.0.6
      */
@@ -826,7 +826,7 @@ class VoucherModel extends AdminModel
         $amount = $this->voucher->voucher_value - ($total ?? 0);
 
         if ($amount <= 0) {
-            throw new Exception(Text::_('COM_J2COMMERCE_VOUCHER_USAGE_LIMIT_HAS_REACHED'));
+            throw new \Exception(Text::_('COM_J2COMMERCE_VOUCHER_USAGE_LIMIT_HAS_REACHED'));
         }
     }
 
@@ -837,7 +837,7 @@ class VoucherModel extends AdminModel
      *
      * @return  void
      *
-     * @throws  Exception  If usage limit has been reached.
+     * @throws  \Exception  If usage limit has been reached.
      *
      * @since   6.0.6
      */
@@ -848,7 +848,7 @@ class VoucherModel extends AdminModel
         $amount  = $this->voucher->voucher_value - ($total ?? 0);
 
         if ($amount <= 0) {
-            throw new Exception(Text::_('COM_J2COMMERCE_VOUCHER_USAGE_LIMIT_HAS_REACHED'));
+            throw new \Exception(Text::_('COM_J2COMMERCE_VOUCHER_USAGE_LIMIT_HAS_REACHED'));
         }
     }
 
@@ -857,7 +857,7 @@ class VoucherModel extends AdminModel
      *
      * @return  void
      *
-     * @throws  Exception  If voucher has expired or is not yet valid.
+     * @throws  \Exception  If voucher has expired or is not yet valid.
      *
      * @since   6.0.6
      */
@@ -875,7 +875,7 @@ class VoucherModel extends AdminModel
         $toValid   = ($this->voucher->valid_to == $nullDate || empty($this->voucher->valid_to) || $validTo >= $now);
 
         if (!$fromValid || !$toValid) {
-            throw new Exception(Text::_('COM_J2COMMERCE_VOUCHER_HAS_EXPIRED'));
+            throw new \Exception(Text::_('COM_J2COMMERCE_VOUCHER_HAS_EXPIRED'));
         }
     }
 

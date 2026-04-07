@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -14,7 +15,6 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Filter\OutputFilter;
 use Joomla\Database\DatabaseInterface;
-use Joomla\Database\ParameterType;
 
 // No direct access
 \defined('_JEXEC') or die;
@@ -351,7 +351,7 @@ class UtilitiesHelper
      */
     public static function cleanIntArray(array $array): array
     {
-        $db = self::getDatabase();
+        $db      = self::getDatabase();
         $results = [];
 
         foreach ($array as $id) {
@@ -380,7 +380,7 @@ class UtilitiesHelper
      */
     public static function getContext(string $prefix = ''): string
     {
-        $app = Factory::getApplication();
+        $app     = Factory::getApplication();
         $context = ['j2commerce'];
 
         // Determine client (site or admin)
@@ -392,8 +392,8 @@ class UtilitiesHelper
 
         // Add view and task
         $input = $app->getInput();
-        $view = $input->getCmd('view', '');
-        $task = $input->getCmd('task', '');
+        $view  = $input->getCmd('view', '');
+        $task  = $input->getCmd('task', '');
 
         if (!empty($view)) {
             $context[] = $view;
@@ -425,8 +425,8 @@ class UtilitiesHelper
     public static function getFormattedDate(bool $local = true, array $options = []): string
     {
         $config = Factory::getApplication()->getConfig();
-        $tz = $config->get('offset', 'UTC');
-        $date = Factory::getDate('now', $tz);
+        $tz     = $config->get('offset', 'UTC');
+        $date   = Factory::getDate('now', $tz);
 
         // Default to SQL formatted date
         $result = $date->toSql($local);
@@ -451,7 +451,7 @@ class UtilitiesHelper
      */
     public static function convertUtcToCurrent(string $date, string $format = 'Y-m-d H:i:s'): string
     {
-        $db = self::getDatabase();
+        $db       = self::getDatabase();
         $nullDate = $db->getNullDate();
 
         if (empty($date) || $date === $nullDate) {
@@ -459,7 +459,7 @@ class UtilitiesHelper
         }
 
         $config = Factory::getApplication()->getConfig();
-        $tz = $config->get('offset', 'UTC');
+        $tz     = $config->get('offset', 'UTC');
 
         $fromDate = Factory::getDate($date, 'UTC');
         $timezone = new \DateTimeZone($tz);
@@ -480,7 +480,7 @@ class UtilitiesHelper
      */
     public static function convertCurrentToUtc(string $date, string $format = 'Y-m-d H:i:s'): string
     {
-        $db = self::getDatabase();
+        $db       = self::getDatabase();
         $nullDate = $db->getNullDate();
 
         if (empty($date) || $date === $nullDate) {
@@ -488,7 +488,7 @@ class UtilitiesHelper
         }
 
         $config = Factory::getApplication()->getConfig();
-        $tz = $config->get('offset', 'UTC');
+        $tz     = $config->get('offset', 'UTC');
 
         $fromDate = Factory::getDate($date, $tz);
         $timezone = new \DateTimeZone('UTC');
@@ -518,7 +518,7 @@ class UtilitiesHelper
                 return 0;
             }
 
-            $menu = $app->getMenu();
+            $menu   = $app->getMenu();
             $active = $menu->getActive();
 
             return $active ? (int) $active->id : 0;
@@ -579,7 +579,7 @@ class UtilitiesHelper
 
         while (preg_match('/%[a-f0-9]{2}/i', $filtered, $match)) {
             $filtered = str_replace($match[0], '', $filtered);
-            $found = true;
+            $found    = true;
         }
 
         if ($found) {
@@ -666,7 +666,7 @@ class UtilitiesHelper
     public static function formatStockQuantity(float|int $qty): int
     {
         // Allow plugins to modify the quantity
-        $app = Factory::getApplication();
+        $app        = Factory::getApplication();
         $dispatcher = $app->getDispatcher();
 
         // Trigger the event
@@ -824,7 +824,7 @@ class UtilitiesHelper
      */
     public static function reset(): void
     {
-        self::$db = null;
+        self::$db             = null;
         self::$isCacheCleaned = false;
     }
 }

@@ -17,7 +17,7 @@ use Joomla\CMS\Factory;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Registry\Registry;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 abstract class AbstractSetupCheck implements SetupCheckInterface
 {

@@ -359,7 +359,7 @@ class OrganizationSchemaPrepareEvent extends AbstractSchemaEvent
      */
     public function addSocialProfile(string $url): void
     {
-        $profiles = $this->getSocialProfiles();
+        $profiles   = $this->getSocialProfiles();
         $profiles[] = $url;
         $this->setSocialProfiles($profiles);
     }

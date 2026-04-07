@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -13,9 +14,9 @@ namespace J2Commerce\Component\J2commerce\Administrator\Field;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\PhoneHelper;
 use Joomla\CMS\Form\Field\CheckboxesField;
 use Joomla\CMS\Language\Text;
-use J2Commerce\Component\J2commerce\Administrator\Helper\PhoneHelper;
 
 /**
  * Renders continent-grouped checkboxes for selecting allowed phone countries.
@@ -95,7 +96,7 @@ class PhoneCountriesField extends CheckboxesField
             $allContinents['Other'] = $other;
         }
 
-        $esc = static fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
+        $esc = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
 
         $searchLabel      = Text::_('COM_J2COMMERCE_PHONE_COUNTRIES_SEARCH');
         $toggleAllLabel   = Text::_('COM_J2COMMERCE_PHONE_COUNTRIES_SELECT_ALL');
@@ -125,7 +126,7 @@ class PhoneCountriesField extends CheckboxesField
         $checkIndex = 0;
 
         foreach ($allContinents as $continentName => $isoCodes) {
-            $validCodes = array_filter($isoCodes, static fn(string $iso) => isset($dialCodeMap[$iso]));
+            $validCodes = array_filter($isoCodes, static fn (string $iso) => isset($dialCodeMap[$iso]));
 
             if (empty($validCodes)) {
                 continue;

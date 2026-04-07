@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -15,7 +16,6 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
-use Joomla\Database\DatabaseQuery;
 use Joomla\Database\ParameterType;
 
 /**
@@ -43,7 +43,7 @@ class DashboardModel extends BaseDatabaseModel
      */
     public function getProductsCount(): int
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         $query->select('COUNT(*)')
@@ -59,7 +59,7 @@ class DashboardModel extends BaseDatabaseModel
      */
     public function getOrdersCount(): int
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         $query->select('COUNT(*)')
@@ -75,7 +75,7 @@ class DashboardModel extends BaseDatabaseModel
      */
     public function getCustomersCount(): int
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         $minUserId = 0;
@@ -101,7 +101,7 @@ class DashboardModel extends BaseDatabaseModel
      */
     public function getLiveUsers(): array
     {
-        $db = $this->getDatabase();
+        $db        = $this->getDatabase();
         $threshold = time() - 1800;
 
         // Count active frontend sessions (client_id=0) within the last 30 minutes.
@@ -144,7 +144,7 @@ class DashboardModel extends BaseDatabaseModel
 
     public function getRecentOrders(int $limit = 5): array
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         $query->select([
@@ -152,7 +152,7 @@ class DashboardModel extends BaseDatabaseModel
                 $db->quoteName('invoice_prefix'),
                 $db->quoteName('invoice_number'),
                 $db->quoteName('order_total'),
-                $db->quoteName('created_on')
+                $db->quoteName('created_on'),
             ])
              ->from($db->quoteName('#__j2commerce_orders'))
             ->order($db->quoteName('created_on') . ' DESC')

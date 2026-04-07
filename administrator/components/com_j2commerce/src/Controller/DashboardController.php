@@ -73,8 +73,8 @@ class DashboardController extends BaseController
             return;
         }
 
-        $from = $this->input->getString('from', '');
-        $to   = $this->input->getString('to', '');
+        $from        = $this->input->getString('from', '');
+        $to          = $this->input->getString('to', '');
         $datePattern = '/^\d{4}-\d{2}-\d{2}$/';
 
         $tz      = $this->app->getConfig()->get('offset', 'UTC');
@@ -101,17 +101,17 @@ class DashboardController extends BaseController
             $breakdown    = $analyticsModel->getConversionBreakdown($fromDate, $toDate);
 
             $data = [
-                'totalRevenue'      => $totalRevenue,
-                'orderCount'        => $analyticsModel->getOrderCount($fromDate, $toDate),
-                'conversionRate'    => (float) ($breakdown['overallRate'] ?? 0.0),
-                'totalSessions'     => (int) ($breakdown['totalSessions'] ?? 0),
-                'revenueByDay'      => $analyticsModel->getRevenueByDay($fromDate, $toDate),
-                'previousPeriod'    => $analyticsModel->getPreviousPeriodData($fromDate, $toDate),
-                'from'              => $from,
-                'to'                => $to,
-                'formattedRevenue'  => CurrencyHelper::format($totalRevenue),
-                'currencySymbol'    => CurrencyHelper::getSymbol(),
-                'currencyPosition'  => CurrencyHelper::getSymbolPosition(),
+                'totalRevenue'     => $totalRevenue,
+                'orderCount'       => $analyticsModel->getOrderCount($fromDate, $toDate),
+                'conversionRate'   => (float) ($breakdown['overallRate'] ?? 0.0),
+                'totalSessions'    => (int) ($breakdown['totalSessions'] ?? 0),
+                'revenueByDay'     => $analyticsModel->getRevenueByDay($fromDate, $toDate),
+                'previousPeriod'   => $analyticsModel->getPreviousPeriodData($fromDate, $toDate),
+                'from'             => $from,
+                'to'               => $to,
+                'formattedRevenue' => CurrencyHelper::format($totalRevenue),
+                'currencySymbol'   => CurrencyHelper::getSymbol(),
+                'currencyPosition' => CurrencyHelper::getSymbolPosition(),
             ];
 
             $this->app->setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -145,7 +145,7 @@ class DashboardController extends BaseController
         }
 
         try {
-            $db = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+            $db      = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
             $summary = (new SampleDataHelper($db))->load('standard');
             $this->app->setHeader('Content-Type', 'application/json; charset=utf-8');
             echo new JsonResponse($summary, Text::_('COM_J2COMMERCE_DASHBOARD_SAMPLEDATA_LOADED'));
@@ -178,7 +178,7 @@ class DashboardController extends BaseController
         }
 
         try {
-            $db = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+            $db      = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
             $summary = (new SampleDataHelper($db))->remove();
             $this->app->setHeader('Content-Type', 'application/json; charset=utf-8');
             echo new JsonResponse($summary, Text::_('COM_J2COMMERCE_DASHBOARD_SAMPLEDATA_REMOVED'));

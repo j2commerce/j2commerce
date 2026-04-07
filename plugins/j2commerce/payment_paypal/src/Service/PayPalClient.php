@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  plg_j2commerce_payment_paypal
@@ -17,7 +18,7 @@ use Joomla\CMS\Log\Log;
 final class PayPalClient
 {
     private ?string $accessToken = null;
-    private int $tokenExpiry = 0;
+    private int $tokenExpiry     = 0;
 
     public function __construct(
         private string $clientId,
@@ -55,7 +56,7 @@ final class PayPalClient
 
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $error = curl_error($ch);
+        $error    = curl_error($ch);
         curl_close($ch);
 
         if ($httpCode !== 200) {
@@ -85,7 +86,7 @@ final class PayPalClient
     public function request(string $method, string $endpoint, ?array $body = null, array $extraHeaders = [], bool $isRetry = false): array
     {
         $token = $this->getAccessToken();
-        $url = $this->getBaseUrl() . $endpoint;
+        $url   = $this->getBaseUrl() . $endpoint;
 
         $headers = [
             'Authorization: Bearer ' . $token,
@@ -112,7 +113,7 @@ final class PayPalClient
 
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $error = curl_error($ch);
+        $error    = curl_error($ch);
         curl_close($ch);
 
         $responseBody = json_decode($response, true) ?? [];
@@ -144,7 +145,7 @@ final class PayPalClient
     public function requestWithRetry(string $method, string $endpoint, ?array $body = null, array $extraHeaders = []): array
     {
         $requestId = bin2hex(random_bytes(16));
-        $headers = array_merge($extraHeaders, ['PayPal-Request-Id: ' . $requestId]);
+        $headers   = array_merge($extraHeaders, ['PayPal-Request-Id: ' . $requestId]);
 
         for ($attempt = 0; $attempt <= 3; $attempt++) {
             if ($attempt > 0) {
@@ -159,7 +160,7 @@ final class PayPalClient
                 return $result;
             }
 
-            if (!in_array($result['status'], [429, 500, 502, 503], true)) {
+            if (!\in_array($result['status'], [429, 500, 502, 503], true)) {
                 $this->_log("Non-retryable status {$result['status']}, aborting", 'WARNING');
                 break;
             }
@@ -174,7 +175,7 @@ final class PayPalClient
     {
         try {
             $session = Factory::getApplication()->getSession();
-            $cached = $session->get('paypal_token', null, 'j2commerce');
+            $cached  = $session->get('paypal_token', null, 'j2commerce');
 
             if ($cached && ($cached['expiry'] ?? 0) > time()) {
                 $this->accessToken = $cached['token'];
@@ -202,10 +203,10 @@ final class PayPalClient
     private function _log(string $message, string $type = 'INFO'): void
     {
         $priorities = [
-            'DEBUG' => Log::DEBUG,
-            'INFO'  => Log::INFO,
+            'DEBUG'   => Log::DEBUG,
+            'INFO'    => Log::INFO,
             'WARNING' => Log::WARNING,
-            'ERROR' => Log::ERROR,
+            'ERROR'   => Log::ERROR,
         ];
 
         Log::add(

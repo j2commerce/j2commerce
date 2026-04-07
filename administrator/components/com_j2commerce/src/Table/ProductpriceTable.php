@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -9,12 +10,10 @@
 
 namespace J2Commerce\Component\J2commerce\Administrator\Table;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
-use Joomla\CMS\Language\Text;
 use Joomla\CMS\Table\Table;
 use Joomla\Database\DatabaseDriver;
-use Joomla\Database\ParameterType;
 
 /**
  * Product Price Table
@@ -53,39 +52,39 @@ class ProductpriceTable extends Table
     {
         // Support for user_group
         if (isset($array['user_group'])) {
-            if (is_array($array['user_group'])) {
+            if (\is_array($array['user_group'])) {
                 $array['user_group'] = implode(',', $array['user_group']);
             }
         } else {
             if (strpos($array['user_group'], ',') != false) {
                 $array['user_group'] = explode(',', $array['user_group']);
-            } elseif (strlen($array['user_group']) == 0) {
+            } elseif (\strlen($array['user_group']) == 0) {
                 $array['user_group'] = '';
             }
         }
 
         // Support for brand_ids
         if (isset($array['brand_ids'])) {
-            if (is_array($array['brand_ids'])) {
+            if (\is_array($array['brand_ids'])) {
                 $array['brand_ids'] = implode(',', $array['brand_ids']);
             }
         } else {
             if (strpos($array['brand_ids'], ',') != false) {
                 $array['brand_ids'] = explode(',', $array['brand_ids']);
-            } elseif (strlen($array['brand_ids']) == 0) {
+            } elseif (\strlen($array['brand_ids']) == 0) {
                 $array['brand_ids'] = '';
             }
         }
 
         // Support for product_category
         if (isset($array['product_category'])) {
-            if (is_array($array['product_category'])) {
+            if (\is_array($array['product_category'])) {
                 $array['product_category'] = implode(',', $array['product_category']);
             }
         } else {
             if (strpos($array['product_category'], ',') != false) {
                 $array['product_category'] = explode(',', $array['product_category']);
-            } elseif (strlen($array['product_category']) == 0) {
+            } elseif (\strlen($array['product_category']) == 0) {
                 $array['product_category'] = '';
             }
         }

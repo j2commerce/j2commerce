@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -68,10 +69,10 @@ class OrderController extends FormController
     {
         $this->checkToken();
 
-        $orderId = $this->input->getInt('id', 0);
+        $orderId  = $this->input->getInt('id', 0);
         $statusId = $this->input->post->getInt('order_state_id', 0);
-        $notify = $this->input->post->getInt('notify_customer', 0) === 1;
-        $comment = $this->input->post->getString('status_comment', '');
+        $notify   = $this->input->post->getInt('notify_customer', 0) === 1;
+        $comment  = $this->input->post->getString('status_comment', '');
 
         try {
             if ($orderId < 1) {
@@ -110,7 +111,7 @@ class OrderController extends FormController
 
         $orderId = $this->input->getInt('id', 0);
         $comment = $this->input->post->getString('order_note', '');
-        $notify = $this->input->post->getInt('notify_customer', 0) === 1;
+        $notify  = $this->input->post->getInt('notify_customer', 0) === 1;
 
         try {
             if ($orderId < 1) {
@@ -151,7 +152,7 @@ class OrderController extends FormController
         }
 
         $orderId = $this->input->post->getInt('order_id', 0);
-        $note = $this->input->post->getString('customer_note', '');
+        $note    = $this->input->post->getString('customer_note', '');
 
         try {
             if ($orderId < 1) {
@@ -182,7 +183,7 @@ class OrderController extends FormController
             return;
         }
 
-        $orderId = $this->input->post->getInt('order_id', 0);
+        $orderId    = $this->input->post->getInt('order_id', 0);
         $trackingId = $this->input->post->getString('tracking_id', '');
 
         try {
@@ -214,9 +215,9 @@ class OrderController extends FormController
             return;
         }
 
-        $orderId = $this->input->post->getInt('order_id', 0);
+        $orderId  = $this->input->post->getInt('order_id', 0);
         $statusId = $this->input->post->getInt('order_state_id', 0);
-        $notify = $this->input->post->getInt('notify_customer', 0) === 1;
+        $notify   = $this->input->post->getInt('notify_customer', 0) === 1;
 
         try {
             if ($orderId < 1 || $statusId < 1) {
@@ -235,9 +236,9 @@ class OrderController extends FormController
             echo json_encode([
                 'success' => true,
                 'message' => Text::_('COM_J2COMMERCE_ORDER_STATUS_UPDATED'),
-                'data' => [
+                'data'    => [
                     'statusName' => Text::_($status->orderstatus_name ?? ''),
-                    'cssclass' => $status->orderstatus_cssclass ?? 'secondary',
+                    'cssclass'   => $status->orderstatus_cssclass ?? 'secondary',
                 ],
             ]);
         } catch (\Exception $e) {
@@ -305,7 +306,7 @@ class OrderController extends FormController
         }
 
         $orderId = $this->input->post->getInt('order_id', 0);
-        $note = trim($this->input->post->getString('admin_note', ''));
+        $note    = trim($this->input->post->getString('admin_note', ''));
 
         try {
             if ($orderId < 1) {
@@ -352,7 +353,7 @@ class OrderController extends FormController
                 throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
             }
 
-            $model = $this->getModel();
+            $model         = $this->getModel();
             $currentUserId = Factory::getApplication()->getIdentity()?->id ?? 0;
 
             if ($model->deleteAdminNote($historyId, $currentUserId)) {
@@ -378,9 +379,9 @@ class OrderController extends FormController
         }
 
         $orderId = $this->input->post->getInt('order_id', 0);
-        $page = max(1, $this->input->post->getInt('page', 1));
-        $limit = (int) $this->app->get('list_limit', 20);
-        $offset = ($page - 1) * $limit;
+        $page    = max(1, $this->input->post->getInt('page', 1));
+        $limit   = (int) $this->app->get('list_limit', 20);
+        $offset  = ($page - 1) * $limit;
 
         try {
             if ($orderId < 1) {
@@ -394,21 +395,21 @@ class OrderController extends FormController
                 throw new \Exception(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
             }
 
-            $result = $model->getOrderHistoryPaginated($order->order_id, $offset, $limit);
+            $result     = $model->getOrderHistoryPaginated($order->order_id, $offset, $limit);
             $totalPages = $result['total'] > 0 ? (int) ceil($result['total'] / $limit) : 1;
 
             $dateFormat = \Joomla\CMS\Component\ComponentHelper::getParams('com_j2commerce')
                 ->get('date_format', 'Y-m-d H:i:s');
 
-            $items = [];
+            $items        = [];
             $historyItems = $result['items'];
-            $firstKey = array_key_first($historyItems);
-            $lastKey = array_key_last($historyItems);
+            $firstKey     = array_key_first($historyItems);
+            $lastKey      = array_key_last($historyItems);
 
             foreach ($historyItems as $i => $history) {
                 $cssClass = $history->orderstatus_cssclass ?? 'badge text-bg-secondary';
                 $keywords = ['success', 'info', 'primary', 'warning', 'danger'];
-                $color = 'secondary';
+                $color    = 'secondary';
                 foreach ($keywords as $kw) {
                     if (str_contains($cssClass, $kw)) {
                         $color = $kw;
@@ -418,7 +419,7 @@ class OrderController extends FormController
 
                 $comment = $history->comment ?? '';
 
-                $params = json_decode($history->params ?? '{}', true) ?: [];
+                $params      = json_decode($history->params ?? '{}', true) ?: [];
                 $isAdminNote = ($params['type'] ?? '') === 'admin_note';
 
                 $items[] = [
@@ -483,7 +484,7 @@ class OrderController extends FormController
 
         $cid = $this->input->get('cid', [], 'array');
         $cid = array_map('intval', $cid);
-        $cid = array_filter($cid, fn(int $id) => $id > 0);
+        $cid = array_filter($cid, fn (int $id) => $id > 0);
 
         if (empty($cid)) {
             echo '<div class="alert alert-warning">' . Text::_('JGLOBAL_NO_ITEM_SELECTED') . '</div>';
@@ -491,11 +492,11 @@ class OrderController extends FormController
             return;
         }
 
-        $model = $this->getModel();
-        $helper = PackingSlipHelper::getInstance();
+        $model       = $this->getModel();
+        $helper      = PackingSlipHelper::getInstance();
         $emailHelper = EmailHelper::getInstance();
 
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db       = Factory::getContainer()->get(DatabaseInterface::class);
         $cssQuery = $db->getQuery(true)
             ->select($db->quoteName('custom_css'))
             ->from($db->quoteName('#__j2commerce_invoicetemplates'))
@@ -518,7 +519,7 @@ class OrderController extends FormController
 
             // Extract <style> blocks from each slip
             $packingSlipHtml = preg_replace('/<style\b[^>]*>.*?<\/style>/si', '', $packingSlipHtml);
-            $slipBodies[] = $packingSlipHtml;
+            $slipBodies[]    = $packingSlipHtml;
         }
 
         if (empty($slipBodies)) {
@@ -528,7 +529,7 @@ class OrderController extends FormController
         }
 
         // Get extracted styles from the first slip's template (they're all the same template)
-        $firstOrder = $model->getItem($cid[0]);
+        $firstOrder      = $model->getItem($cid[0]);
         $extractedStyles = '';
 
         if ($firstOrder && !empty($firstOrder->order_id)) {
@@ -577,11 +578,11 @@ class OrderController extends FormController
     /** Render a complete standalone HTML packing slip for a single order. */
     private function renderPackingSlipHtml(object $order): string
     {
-        $helper = PackingSlipHelper::getInstance();
+        $helper          = PackingSlipHelper::getInstance();
         $packingSlipHtml = $helper->getFormattedPackingSlip($order);
 
         $extractedStyles = '';
-        $bodyHtml = preg_replace_callback(
+        $bodyHtml        = preg_replace_callback(
             '/<style\b[^>]*>(.*?)<\/style>/si',
             function (array $m) use (&$extractedStyles): string {
                 $extractedStyles .= $m[1] . "\n";
@@ -590,7 +591,7 @@ class OrderController extends FormController
             $packingSlipHtml
         );
 
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db    = Factory::getContainer()->get(DatabaseInterface::class);
         $query = $db->getQuery(true)
             ->select($db->quoteName('custom_css'))
             ->from($db->quoteName('#__j2commerce_invoicetemplates'))
@@ -637,7 +638,7 @@ class OrderController extends FormController
 
     private function getStatusInfo(int $statusId): ?object
     {
-        $db = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $db    = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
         $query = $db->getQuery(true)
             ->select([
                 $db->quoteName('orderstatus_name'),
@@ -662,7 +663,7 @@ class OrderController extends FormController
             return;
         }
 
-        $orderId = $this->input->post->getInt('order_id', 0);
+        $orderId  = $this->input->post->getInt('order_id', 0);
         $orderRef = $this->input->post->getString('order_ref', '');
 
         try {

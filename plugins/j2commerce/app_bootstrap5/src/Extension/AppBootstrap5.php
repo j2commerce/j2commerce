@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  Plugin.J2Commerce.AppBootstrap5
@@ -9,14 +10,10 @@
 
 namespace J2Commerce\Plugin\J2Commerce\AppBootstrap5\Extension;
 
-
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Factory;
-use Joomla\CMS\HTML\HTMLHelper;
-use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\FileLayout;
 use Joomla\CMS\Plugin\CMSPlugin;
-use Joomla\CMS\Toolbar\ToolbarHelper;
 use Joomla\Database\DatabaseAwareTrait;
 use Joomla\Event\Event;
 use Joomla\Event\EventInterface;
@@ -70,14 +67,14 @@ final class AppBootstrap5 extends CMSPlugin implements SubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            'onJ2CommerceTemplateFolderList'      => 'onTemplateFolderList',
-            'onJ2CommerceViewProductListHtml'     => 'onViewProductListHtml',
-            'onJ2CommerceViewProductListTagHtml'  => 'onViewProductListTagHtml',
-            'onJ2CommerceViewProductHtml'         => 'onViewProductHtml',
-            'onJ2CommerceViewProductTagHtml'      => 'onViewProductTagHtml',
-            'onJ2CommerceViewCategoryListHtml'    => 'onViewCategoryListHtml',
-            'onJ2CommerceAfterAddCSS'             => 'onAfterAddCSS',
-            'onJ2CommerceAfterAddJS'              => 'onAfterAddJS',
+            'onJ2CommerceTemplateFolderList'     => 'onTemplateFolderList',
+            'onJ2CommerceViewProductListHtml'    => 'onViewProductListHtml',
+            'onJ2CommerceViewProductListTagHtml' => 'onViewProductListTagHtml',
+            'onJ2CommerceViewProductHtml'        => 'onViewProductHtml',
+            'onJ2CommerceViewProductTagHtml'     => 'onViewProductTagHtml',
+            'onJ2CommerceViewCategoryListHtml'   => 'onViewCategoryListHtml',
+            'onJ2CommerceAfterAddCSS'            => 'onAfterAddCSS',
+            'onJ2CommerceAfterAddJS'             => 'onAfterAddJS',
         ];
     }
 
@@ -149,8 +146,8 @@ final class AppBootstrap5 extends CMSPlugin implements SubscriberInterface
     public function onViewProductListHtml($event)
     {
         if ($event instanceof EventInterface || $event instanceof Event) {
-            $args = $event->getArguments();
-            $view = $args[1] ?? null;
+            $args  = $event->getArguments();
+            $view  = $args[1] ?? null;
             $model = $args[2] ?? null;
         } else {
             return;
@@ -162,7 +159,7 @@ final class AppBootstrap5 extends CMSPlugin implements SubscriberInterface
         }
 
         try {
-            $view = $this->setTemplatePath($view);
+            $view   = $this->setTemplatePath($view);
             $result = $view->loadTemplate();
 
             if ($result instanceof \Exception) {
@@ -190,8 +187,8 @@ final class AppBootstrap5 extends CMSPlugin implements SubscriberInterface
     public function onViewProductListTagHtml($event)
     {
         if ($event instanceof EventInterface || $event instanceof Event) {
-            $args = $event->getArguments();
-            $view = $args[1] ?? null;
+            $args  = $event->getArguments();
+            $view  = $args[1] ?? null;
             $model = $args[2] ?? null;
         } else {
             return;
@@ -207,7 +204,7 @@ final class AppBootstrap5 extends CMSPlugin implements SubscriberInterface
         $this->loadSiteAssets(true);
 
         try {
-            $view = $this->setTemplatePath($view, 'tag_bootstrap5');
+            $view   = $this->setTemplatePath($view, 'tag_bootstrap5');
             $result = $view->loadTemplate();
 
             if ($result instanceof \Exception) {
@@ -226,8 +223,8 @@ final class AppBootstrap5 extends CMSPlugin implements SubscriberInterface
     public function onViewCategoryListHtml($event)
     {
         if ($event instanceof EventInterface || $event instanceof Event) {
-            $args = $event->getArguments();
-            $view = $args[1] ?? null;
+            $args  = $event->getArguments();
+            $view  = $args[1] ?? null;
             $model = $args[2] ?? null;
         } else {
             return;
@@ -240,7 +237,7 @@ final class AppBootstrap5 extends CMSPlugin implements SubscriberInterface
         $this->loadSiteAssets();
 
         try {
-            $view = $this->setTemplatePath($view, 'categories_bootstrap5');
+            $view   = $this->setTemplatePath($view, 'categories_bootstrap5');
             $result = $view->loadTemplate();
 
             if ($result instanceof \Exception) {
@@ -266,8 +263,8 @@ final class AppBootstrap5 extends CMSPlugin implements SubscriberInterface
     public function onViewProductHtml($event)
     {
         if ($event instanceof EventInterface || $event instanceof Event) {
-            $args = $event->getArguments();
-            $view = $args[1] ?? null;
+            $args  = $event->getArguments();
+            $view  = $args[1] ?? null;
             $model = $args[2] ?? null;
         } else {
             return;
@@ -284,7 +281,7 @@ final class AppBootstrap5 extends CMSPlugin implements SubscriberInterface
         $view->setLayout('view');
 
         try {
-            $view = $this->setTemplatePath($view);
+            $view   = $this->setTemplatePath($view);
             $result = $view->loadTemplate();
 
             if ($result instanceof \Exception) {
@@ -312,8 +309,8 @@ final class AppBootstrap5 extends CMSPlugin implements SubscriberInterface
     public function onViewProductTagHtml($event)
     {
         if ($event instanceof EventInterface || $event instanceof Event) {
-            $args = $event->getArguments();
-            $view = $args[1] ?? null;
+            $args  = $event->getArguments();
+            $view  = $args[1] ?? null;
             $model = $args[2] ?? null;
         } else {
             return;
@@ -331,7 +328,7 @@ final class AppBootstrap5 extends CMSPlugin implements SubscriberInterface
         $view->setLayout('view');
 
         try {
-            $view = $this->setTemplatePath($view, 'tag_bootstrap5');
+            $view   = $this->setTemplatePath($view, 'tag_bootstrap5');
             $result = $view->loadTemplate();
 
             if ($result instanceof \Exception) {

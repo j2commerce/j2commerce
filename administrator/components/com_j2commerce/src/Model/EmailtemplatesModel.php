@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -9,12 +10,11 @@
 
 namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\Database\ParameterType;
-use RuntimeException;
 
 /**
  * Emailtemplates Model
@@ -43,7 +43,7 @@ class EmailtemplatesModel extends ListModel
                 'paymentmethod', 'a.paymentmethod',
                 'language', 'a.language',
                 'enabled', 'a.enabled',
-                'ordering', 'a.ordering'
+                'ordering', 'a.ordering',
             ];
         }
 
@@ -121,7 +121,7 @@ class EmailtemplatesModel extends ListModel
     protected function getListQuery()
     {
         // Create a new query object.
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         // Select the required fields from the table.
@@ -195,7 +195,7 @@ class EmailtemplatesModel extends ListModel
         }
 
         // Add the list ordering clause.
-        $orderCol = $this->getState('list.ordering', 'a.j2commerce_emailtemplate_id');
+        $orderCol  = $this->getState('list.ordering', 'a.j2commerce_emailtemplate_id');
         $orderDirn = $this->getState('list.direction', 'ASC');
 
         if ($orderCol && $orderDirn) {
@@ -217,7 +217,7 @@ class EmailtemplatesModel extends ListModel
         $items = parent::getItems();
 
         // Ensure we always return an array
-        if ($items === false || !is_array($items)) {
+        if ($items === false || !\is_array($items)) {
             // Log the error for debugging
             $app = Factory::getApplication();
             $app->enqueueMessage('Failed to retrieve email templates from database. Please check if the j2commerce_emailtemplates table exists.', 'warning');
@@ -271,9 +271,9 @@ class EmailtemplatesModel extends ListModel
      */
     public function publish(&$pks, $value = 1)
     {
-        $user = Factory::getApplication()->getIdentity();
+        $user  = Factory::getApplication()->getIdentity();
         $table = $this->getTable();
-        $pks = (array) $pks;
+        $pks   = (array) $pks;
 
         // Include the content plugins for the on save events.
         \Joomla\CMS\Plugin\PluginHelper::importPlugin('content');
@@ -291,7 +291,7 @@ class EmailtemplatesModel extends ListModel
 
         // Attempt to change the state of the records.
         if (!$table->publish($pks, $value, $user->get('id'))) {
-            throw new RuntimeException($table->getError());
+            throw new \RuntimeException($table->getError());
         }
 
         $context = $this->option . '.' . $this->name;
@@ -299,8 +299,8 @@ class EmailtemplatesModel extends ListModel
         // Trigger the content plugins for the enabled state change.
         $result = Factory::getApplication()->triggerEvent('onContentChangeState', [$context, $pks, $value]);
 
-        if (in_array(false, $result, true)) {
-            throw new RuntimeException($table->getError());
+        if (\in_array(false, $result, true)) {
+            throw new \RuntimeException($table->getError());
         }
 
         // Clear the component's cache
@@ -320,9 +320,9 @@ class EmailtemplatesModel extends ListModel
      */
     public function delete(&$pks)
     {
-        $user = Factory::getApplication()->getIdentity();
+        $user  = Factory::getApplication()->getIdentity();
         $table = $this->getTable();
-        $pks = (array) $pks;
+        $pks   = (array) $pks;
 
         // Include the content plugins for the on delete events.
         \Joomla\CMS\Plugin\PluginHelper::importPlugin('content');
@@ -347,21 +347,21 @@ class EmailtemplatesModel extends ListModel
         // Trigger the before delete event.
         $result = Factory::getApplication()->triggerEvent('onContentBeforeDelete', [$context, $table]);
 
-        if (in_array(false, $result, true)) {
-            throw new RuntimeException($table->getError());
+        if (\in_array(false, $result, true)) {
+            throw new \RuntimeException($table->getError());
         }
 
         // Attempt to delete the records.
         foreach ($pks as $pk) {
             if (!$table->delete($pk)) {
-                throw new RuntimeException($table->getError());
+                throw new \RuntimeException($table->getError());
             }
 
             // Trigger the after delete event.
             $result = Factory::getApplication()->triggerEvent('onContentAfterDelete', [$context, $table]);
 
-            if (in_array(false, $result, true)) {
-                throw new RuntimeException($table->getError());
+            if (\in_array(false, $result, true)) {
+                throw new \RuntimeException($table->getError());
             }
         }
 
@@ -382,9 +382,9 @@ class EmailtemplatesModel extends ListModel
      */
     public function checkin(&$pks = [])
     {
-        $user = Factory::getApplication()->getIdentity();
+        $user  = Factory::getApplication()->getIdentity();
         $table = $this->getTable();
-        $pks = (array) $pks;
+        $pks   = (array) $pks;
 
         // If there are no primary keys set then use the instance.
         if (empty($pks)) {
@@ -399,7 +399,7 @@ class EmailtemplatesModel extends ListModel
                 }
 
                 if (!$table->checkIn($pk)) {
-                    throw new RuntimeException($table->getError());
+                    throw new \RuntimeException($table->getError());
                 }
             }
         }

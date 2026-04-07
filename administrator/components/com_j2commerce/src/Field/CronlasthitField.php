@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Field;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Form\FormField;
@@ -48,25 +49,25 @@ class CronlasthitField extends FormField
         $cronHit = $this->getCronLastTrigger();
 
         // Build the display message
-        $note = '';
+        $note    = '';
         $success = false;
 
         if (empty($cronHit)) {
-            $note = Text::_('COM_J2COMMERCE_CRON_LAST_TRIGGER_NOT_FOUND');
+            $note  = Text::_('COM_J2COMMERCE_CRON_LAST_TRIGGER_NOT_FOUND');
             $class = 'alert-info';
         } elseif ($this->isJson($cronHit)) {
             $data = json_decode($cronHit);
 
-            $date = $data->date ?? '';
-            $url = $data->url ?? '';
-            $ip = $data->ip ?? '';
+            $date    = $data->date ?? '';
+            $url     = $data->url ?? '';
+            $ip      = $data->ip ?? '';
             $success = $data->success ?? false;
 
-            $note = Text::sprintf('COM_J2COMMERCE_CRON_LAST_TRIGGER_DETAILS', $date, $url, $ip);
+            $note  = Text::sprintf('COM_J2COMMERCE_CRON_LAST_TRIGGER_DETAILS', $date, $url, $ip);
             $class = 'alert-success';
         } else {
             // If it's not JSON, just display the raw value (could be a timestamp)
-            $note = htmlspecialchars($cronHit, ENT_QUOTES, 'UTF-8');
+            $note  = htmlspecialchars($cronHit, ENT_QUOTES, 'UTF-8');
             $class = 'alert-info';
         }
 

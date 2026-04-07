@@ -59,7 +59,7 @@ final class PaymentCash extends CMSPlugin implements SubscriberInterface
         parent::__construct($dispatcher, $config);
 
         $this->pluginDispatcher = $dispatcher;
-        $this->pluginConfig = $config;
+        $this->pluginConfig     = $config;
         $this->setDatabase($db);
     }
 
@@ -88,9 +88,9 @@ final class PaymentCash extends CMSPlugin implements SubscriberInterface
 
     public function onCalculateFees(Event $event): void
     {
-        $args = $event->getArguments();
+        $args    = $event->getArguments();
         $element = $args[0] ?? null;
-        $order = $args[1] ?? null;
+        $order   = $args[1] ?? null;
 
         if ($element !== $this->_name || $order === null) {
             return;
@@ -108,10 +108,10 @@ final class PaymentCash extends CMSPlugin implements SubscriberInterface
             return;
         }
 
-        $total = $order->order_subtotal + $order->order_shipping + $order->order_shipping_tax;
-        $surcharge = 0.0;
+        $total            = $order->order_subtotal + $order->order_shipping + $order->order_shipping_tax;
+        $surcharge        = 0.0;
         $surchargePercent = (float) $this->params->get('surcharge_percent', 0);
-        $surchargeFixed = (float) $this->params->get('surcharge_fixed', 0);
+        $surchargeFixed   = (float) $this->params->get('surcharge_fixed', 0);
 
         if ($surchargePercent > 0) {
             $surcharge += ($total * $surchargePercent) / 100;
@@ -122,18 +122,18 @@ final class PaymentCash extends CMSPlugin implements SubscriberInterface
         }
 
         if ($surcharge > 0) {
-            $name = $this->params->get('surcharge_name', Text::_('COM_J2COMMERCE_CART_SURCHARGE'));
+            $name       = $this->params->get('surcharge_name', Text::_('COM_J2COMMERCE_CART_SURCHARGE'));
             $taxClassId = $this->params->get('surcharge_tax_class_id', '');
-            $taxable = !empty($taxClassId) && (int) $taxClassId > 0;
+            $taxable    = !empty($taxClassId) && (int) $taxClassId > 0;
             $order->add_fee($name, round($surcharge, 2), $taxable, $taxClassId);
         }
     }
 
     public function onGetPaymentOptions(Event $event): void
     {
-        $args = $event->getArguments();
+        $args    = $event->getArguments();
         $element = $args[0] ?? null;
-        $order = $args[1] ?? null;
+        $order   = $args[1] ?? null;
 
         if ($element !== $this->_name || $order === null) {
             return;
@@ -142,7 +142,7 @@ final class PaymentCash extends CMSPlugin implements SubscriberInterface
         $found = true;
 
         $order->setAddress();
-        $address = $order->getBillingAddress();
+        $address   = $order->getBillingAddress();
         $geozoneId = (int) $this->params->get('geozone_id', 0);
 
         if ($geozoneId > 0) {
@@ -159,7 +159,7 @@ final class PaymentCash extends CMSPlugin implements SubscriberInterface
     /** Joomla 6 dispatcher discards return values — result must be set on the Event. */
     public function onGetPaymentPlugins(Event $event): void
     {
-        $result = $event->getArgument('result', []);
+        $result   = $event->getArgument('result', []);
         $result[] = [
             'element' => $this->_name,
             'name'    => Text::_($this->params->get('display_name', 'PLG_J2COMMERCE_PAYMENT_CASH')),
@@ -170,30 +170,30 @@ final class PaymentCash extends CMSPlugin implements SubscriberInterface
 
     public function onPrePayment(Event $event): void
     {
-        $args = $event->getArguments();
+        $args    = $event->getArguments();
         $element = $args[0] ?? '';
-        $data = $args[1] ?? [];
+        $data    = $args[1] ?? [];
 
         if ($element !== $this->_name) {
             return;
         }
 
-        $result = $event->getArgument('result', []);
+        $result   = $event->getArgument('result', []);
         $result[] = $this->prePayment($data);
         $event->setArgument('result', $result);
     }
 
     public function onPostPayment(Event $event): void
     {
-        $args = $event->getArguments();
+        $args    = $event->getArguments();
         $element = $args[0] ?? '';
-        $data = $args[1] ?? [];
+        $data    = $args[1] ?? [];
 
         if ($element !== $this->_name) {
             return;
         }
 
-        $result = $event->getArgument('result', []);
+        $result   = $event->getArgument('result', []);
         $result[] = $this->postPayment((object) $data);
         $event->setArgument('result', $result);
     }
@@ -201,7 +201,7 @@ final class PaymentCash extends CMSPlugin implements SubscriberInterface
     private function getPayment(): Payment
     {
         if ($this->payment === null) {
-            $this->payment = new Payment($this->pluginDispatcher, $this->pluginConfig);
+            $this->payment           = new Payment($this->pluginDispatcher, $this->pluginConfig);
             $this->payment->_element = $this->_name;
         }
 
@@ -227,11 +227,11 @@ final class PaymentCash extends CMSPlugin implements SubscriberInterface
 
     private function checkGeozone(int $geozoneId, array $address): bool
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         $countryId = (int) ($address['country_id'] ?? 0);
-        $zoneId = (int) ($address['zone_id'] ?? 0);
+        $zoneId    = (int) ($address['zone_id'] ?? 0);
 
         $query->select($db->quoteName('gz.j2commerce_geozone_id'))
             ->from($db->quoteName('#__j2commerce_geozones', 'gz'))
@@ -271,16 +271,16 @@ final class PaymentCash extends CMSPlugin implements SubscriberInterface
     {
         $this->ensureLanguageLoaded();
 
-        $vars = new \stdClass();
-        $vars->order_id = $data['order_id'];
-        $vars->orderpayment_id = $data['orderpayment_id'] ?? 0;
+        $vars                      = new \stdClass();
+        $vars->order_id            = $data['order_id'];
+        $vars->orderpayment_id     = $data['orderpayment_id'] ?? 0;
         $vars->orderpayment_amount = $data['orderpayment_amount'];
-        $vars->orderpayment_type = $this->_name;
+        $vars->orderpayment_type   = $this->_name;
 
-        $vars->display_name = Text::_($this->params->get('display_name', 'PLG_J2COMMERCE_PAYMENT_CASH'));
-        $vars->display_image = $this->params->get('display_image', '');
+        $vars->display_name         = Text::_($this->params->get('display_name', 'PLG_J2COMMERCE_PAYMENT_CASH'));
+        $vars->display_image        = $this->params->get('display_image', '');
         $vars->onbeforepayment_text = $this->params->get('onbeforepayment', '');
-        $vars->button_text = $this->params->get('button_text', Text::_('COM_J2COMMERCE_PLACE_ORDER'));
+        $vars->button_text          = $this->params->get('button_text', Text::_('COM_J2COMMERCE_PLACE_ORDER'));
 
         $order = $this->createOrderTable();
         $order->load(['order_id' => $vars->order_id]);
@@ -294,19 +294,19 @@ final class PaymentCash extends CMSPlugin implements SubscriberInterface
     {
         $this->ensureLanguageLoaded();
 
-        $app = Factory::getApplication();
+        $app     = Factory::getApplication();
         $paction = $app->getInput()->getString('paction');
 
         return match ($paction) {
             'display' => $this->postPaymentDisplay(),
             'process' => $this->postPaymentProcess(),
-            default => $this->postPaymentError(),
+            default   => $this->postPaymentError(),
         };
     }
 
     private function postPaymentDisplay(): string
     {
-        $vars = new \stdClass();
+        $vars                      = new \stdClass();
         $vars->onafterpayment_text = $this->params->get('onafterpayment', '');
 
         return $this->getLayout('postpayment', $vars) . $this->getBase()->_displayArticle();
@@ -323,7 +323,7 @@ final class PaymentCash extends CMSPlugin implements SubscriberInterface
 
     private function postPaymentError(): string
     {
-        $vars = new \stdClass();
+        $vars          = new \stdClass();
         $vars->message = $this->params->get('onerrorpayment', Text::_('PLG_J2COMMERCE_PAYMENT_CASH_ORDER_NOT_FOUND'));
 
         return $this->getLayout('message', $vars);
@@ -331,9 +331,9 @@ final class PaymentCash extends CMSPlugin implements SubscriberInterface
 
     private function processPayment(): array
     {
-        $app = Factory::getApplication();
+        $app     = Factory::getApplication();
         $orderId = $app->getInput()->getString('order_id');
-        $json = [];
+        $json    = [];
 
         $order = $this->createOrderTable();
 
@@ -350,7 +350,7 @@ final class PaymentCash extends CMSPlugin implements SubscriberInterface
         }
 
         // Set status and save in a single store() call
-        $orderStateId = (int) $this->params->get('payment_status', 4);
+        $orderStateId          = (int) $this->params->get('payment_status', 4);
         $order->order_state_id = $orderStateId;
 
         if (!$order->store()) {
@@ -366,7 +366,7 @@ final class PaymentCash extends CMSPlugin implements SubscriberInterface
             orderStateId: $orderStateId,
         );
 
-        $json['success'] = $this->params->get('onafterpayment', '');
+        $json['success']  = $this->params->get('onafterpayment', '');
         $json['redirect'] = $this->getPayment()->getReturnUrl();
 
         return $json;

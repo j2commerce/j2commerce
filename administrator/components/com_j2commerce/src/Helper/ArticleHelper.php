@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -152,7 +153,7 @@ class ArticleHelper
         $article->title = OutputFilter::ampReplace($article->title);
 
         // Combine introtext and fulltext
-        $text = trim($article->introtext ?? '');
+        $text     = trim($article->introtext ?? '');
         $fulltext = trim($article->fulltext ?? '');
 
         if (!empty($fulltext)) {
@@ -177,34 +178,32 @@ class ArticleHelper
 
         $allowClear     = true;
         $allowSelect    = true;
-        $languages = LanguageHelper::getContentLanguages(array(0, 1), false);
-        $app = $platform->application();
+        $languages      = LanguageHelper::getContentLanguages([0, 1], false);
+        $app            = $platform->application();
         // Load language
         Factory::getApplication()->getLanguage()->load('com_content', JPATH_ADMINISTRATOR);
 
         // The active article id field.
-        $value = (int) $value ?: '';
-        $id = isset($options['id']) && !empty($options['id']) ? $options['id']: $name;
-        $required = (int)isset($options['required']) && !empty($options['required']) ? $options['required']: false;
-        $modalId = 'Article_' . $id;
+        $value    = (int) $value ?: '';
+        $id       = isset($options['id']) && !empty($options['id']) ? $options['id'] : $name;
+        $required = (int)isset($options['required']) && !empty($options['required']) ? $options['required'] : false;
+        $modalId  = 'Article_' . $id;
 
         $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
         // Add the modal field script to the document head.
         $wa->useScript('field.modal-fields');
 
         // Script to proxy the select modal function to the modal-fields.js file.
-        if ($allowSelect)
-        {
+        if ($allowSelect) {
             static $scriptSelect = null;
 
-            if (is_null($scriptSelect))
-            {
-                $scriptSelect = array();
+            if (\is_null($scriptSelect)) {
+                $scriptSelect = [];
             }
 
-            if (!isset($scriptSelect[$id]))
-            {
-                $wa->addInlineScript("
+            if (!isset($scriptSelect[$id])) {
+                $wa->addInlineScript(
+                    "
 				window.jSelectJ2Article_" . $id . " = function (id, title, catid, object, url, language) {
 					window.processModalSelect('Article', '" . $id . "', id, title, catid, object, url, language);
 					document.body.classList.remove('modal-open');
@@ -221,9 +220,8 @@ class ArticleHelper
 
         // Setup variables for display.
         $linkArticles = 'index.php?option=com_content&amp;view=articles&amp;layout=modal&amp;tmpl=component&amp;' . Session::getFormToken() . '=1';
-        $urlSelect = $linkArticles . '&amp;function=jSelectJ2Article_' . $id;
-        if ($value)
-        {
+        $urlSelect    = $linkArticles . '&amp;function=jSelectJ2Article_' . $id;
+        if ($value) {
             $db    = Factory::getContainer()->get('DatabaseDriver');
             $query = $db->getQuery(true)
                 ->select($db->quoteName('title'))
@@ -232,12 +230,9 @@ class ArticleHelper
                 ->bind(':value', $value);
             $db->setQuery($query);
 
-            try
-            {
+            try {
                 $title = $db->loadResult();
-            }
-            catch (\RuntimeException $e)
-            {
+            } catch (\RuntimeException $e) {
                 Factory::getApplication()->enqueueMessage($e->getMessage(), 'error');
             }
         }
@@ -248,8 +243,7 @@ class ArticleHelper
         $html .= '<input class="form-control" id="' . $id . '_name" type="text" value="' . $title . '" readonly size="35">';
 
         // Select article button
-        if ($allowSelect)
-        {
+        if ($allowSelect) {
             $html .= '<button'
                 . ' class="btn btn-primary' . ($value ? ' hidden' : '') . '"'
                 . ' id="' . $id . '_select"'
@@ -260,8 +254,7 @@ class ArticleHelper
                 . '</button>';
         }
         // Clear article button
-        if ($allowClear)
-        {
+        if ($allowClear) {
             $html .= '<button'
                 . ' class="btn btn-secondary' . ($value ? '' : ' hidden') . '"'
                 . ' id="' . $id . '_clear"'
@@ -274,21 +267,20 @@ class ArticleHelper
         $html .= '</span>';
         $modalTitle    = Text::_('COM_CONTENT_SELECT_AN_ARTICLE');
         // Select article modal
-        if ($allowSelect)
-        {
+        if ($allowSelect) {
             $html .= \Joomla\CMS\HTML\HTMLHelper::_(
                 'bootstrap.renderModal',
                 'ModalSelect' . $modalId,
-                array(
-                    'title'       => $modalTitle,
-                    'url'         => $urlSelect,
-                    'height'      => '400px',
-                    'width'       => '800px',
-                    'bodyHeight'  => 70,
-                    'modalWidth'  => 80,
-                    'footer'      => '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">'
+                [
+                    'title'      => $modalTitle,
+                    'url'        => $urlSelect,
+                    'height'     => '400px',
+                    'width'      => '800px',
+                    'bodyHeight' => 70,
+                    'modalWidth' => 80,
+                    'footer'     => '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">'
                         . Text::_('JLIB_HTML_BEHAVIOR_CLOSE') . '</button>',
-                )
+                ]
             );
         }
 
@@ -318,7 +310,7 @@ class ArticleHelper
             return self::$articleCache[$id];
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select('*')
@@ -368,7 +360,7 @@ class ArticleHelper
             }
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select('*')
@@ -496,7 +488,7 @@ class ArticleHelper
             return [];
         }
 
-        $user = Factory::getApplication()->getIdentity();
+        $user   = Factory::getApplication()->getIdentity();
         $groups = implode(',', $user->getAuthorisedViewLevels());
 
         if (empty($currentTag)) {
@@ -519,7 +511,7 @@ class ArticleHelper
             }
 
             // Extract article ID from association
-            $arrId = explode(':', (string) $item->id);
+            $arrId   = explode(':', (string) $item->id);
             $assocId = (int) $arrId[0];
 
             if ($assocId < 1) {
@@ -527,7 +519,7 @@ class ArticleHelper
             }
 
             // Verify the associated article is accessible
-            $db = self::getDatabase();
+            $db    = self::getDatabase();
             $query = $db->getQuery(true)
                 ->select($db->quoteName('state'))
                 ->from($db->quoteName('#__content'))
@@ -581,12 +573,12 @@ class ArticleHelper
             return 0;
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $referenceTable = 'content';
         $referenceField = 'alias';
-        $published = 1;
+        $published      = 1;
 
         $query->select($db->quoteName('reference_id'))
             ->from($db->quoteName('#__falang_content'))
@@ -622,11 +614,11 @@ class ArticleHelper
         }
 
         // Get default site language
-        $params = ComponentHelper::getParams('com_languages');
-        $defaultLang = $params->get('site', 'en-GB');
+        $params        = ComponentHelper::getParams('com_languages');
+        $defaultLang   = $params->get('site', 'en-GB');
         $defaultLangId = self::getLanguageIdByTag($defaultLang);
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         // If requesting default language, get original_text; otherwise get translated value
@@ -638,7 +630,7 @@ class ArticleHelper
 
         $referenceTable = 'content';
         $referenceField = 'alias';
-        $published = 1;
+        $published      = 1;
 
         $query->from($db->quoteName('#__falang_content'))
             ->where($db->quoteName('reference_table') . ' = :refTable')
@@ -683,7 +675,7 @@ class ArticleHelper
             return 0;
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select($db->quoteName('lang_id'))
@@ -719,7 +711,7 @@ class ArticleHelper
             return self::$categoryCache[$id];
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select('*')
@@ -744,7 +736,7 @@ class ArticleHelper
      */
     public static function getContentCategories(): array
     {
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $extension = 'com_content';
@@ -778,8 +770,8 @@ class ArticleHelper
      */
     public static function clearCache(): void
     {
-        self::$articleCache = [];
+        self::$articleCache        = [];
         self::$articleByAliasCache = [];
-        self::$categoryCache = [];
+        self::$categoryCache       = [];
     }
 }

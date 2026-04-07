@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -80,7 +81,7 @@ class ModulesHelper
             return '';
         }
 
-        $app = Factory::getApplication();
+        $app      = Factory::getApplication();
         $document = $app->getDocument();
 
         // Only process for HTML documents
@@ -89,7 +90,7 @@ class ModulesHelper
         }
 
         $renderer = $document->loadRenderer('module');
-        $params = ['style' => $style];
+        $params   = ['style' => $style];
         $contents = '';
 
         $modules = ModuleHelper::getModules($position);
@@ -189,7 +190,7 @@ class ModulesHelper
             return '';
         }
 
-        $app = Factory::getApplication();
+        $app      = Factory::getApplication();
         $document = $app->getDocument();
 
         // Only process for HTML documents
@@ -209,7 +210,7 @@ class ModulesHelper
         }
 
         $renderer = $document->loadRenderer('module');
-        $params = ['style' => $style];
+        $params   = ['style' => $style];
 
         return $renderer->render($module, $params);
     }
@@ -251,7 +252,7 @@ class ModulesHelper
         }
 
         // The most reliable way is to query the database directly
-        $db = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $db    = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
         $query = $db->getQuery(true);
 
         $clientId = $app->isClient('administrator') ? 1 : 0;
@@ -290,17 +291,17 @@ class ModulesHelper
     public static function getJ2CommercePositions(): array
     {
         return [
-            'j2commerce-product-top'      => 'Above product details',
-            'j2commerce-product-bottom'   => 'Below product details',
-            'j2commerce-product-sidebar'  => 'Product page sidebar',
-            'j2commerce-cart-top'         => 'Above cart contents',
-            'j2commerce-cart-bottom'      => 'Below cart contents',
-            'j2commerce-checkout-top'     => 'Above checkout form',
-            'j2commerce-checkout-bottom'  => 'Below checkout form',
-            'j2commerce-category-top'     => 'Above category listing',
-            'j2commerce-category-bottom'  => 'Below category listing',
-            'j2commerce-order-top'        => 'Above order details',
-            'j2commerce-order-bottom'     => 'Below order details',
+            'j2commerce-product-top'     => 'Above product details',
+            'j2commerce-product-bottom'  => 'Below product details',
+            'j2commerce-product-sidebar' => 'Product page sidebar',
+            'j2commerce-cart-top'        => 'Above cart contents',
+            'j2commerce-cart-bottom'     => 'Below cart contents',
+            'j2commerce-checkout-top'    => 'Above checkout form',
+            'j2commerce-checkout-bottom' => 'Below checkout form',
+            'j2commerce-category-top'    => 'Above category listing',
+            'j2commerce-category-bottom' => 'Below category listing',
+            'j2commerce-order-top'       => 'Above order details',
+            'j2commerce-order-bottom'    => 'Below order details',
         ];
     }
 }

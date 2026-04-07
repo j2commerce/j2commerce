@@ -121,7 +121,7 @@ class StatsHelper
         $lastDayThisMonth = (int) $now->format('t');
 
         // Get last day of last month
-        $lastMonthDate    = new \DateTime(sprintf('%d-%02d-01', $lastMonthYear, $lastMonth));
+        $lastMonthDate    = new \DateTime(\sprintf('%d-%02d-01', $lastMonthYear, $lastMonth));
         $lastDayLastMonth = (int) $lastMonthDate->format('t');
 
         // Date strings for recent periods
@@ -130,38 +130,38 @@ class StatsHelper
         $weekAgo   = Factory::getDate('now -7 days', $tz)->format('Y-m-d');
 
         return [
-            'total'       => $this->getOrderStats($orderStatuses),
-            'lastYear'    => $this->getOrderStats(
+            'total'    => $this->getOrderStats($orderStatuses),
+            'lastYear' => $this->getOrderStats(
                 $orderStatuses,
-                sprintf('%d-01-01 00:00:00', $lastYear),
-                sprintf('%d-12-31 23:59:59', $lastYear)
+                \sprintf('%d-01-01 00:00:00', $lastYear),
+                \sprintf('%d-12-31 23:59:59', $lastYear)
             ),
-            'thisYear'    => $this->getOrderStats(
+            'thisYear' => $this->getOrderStats(
                 $orderStatuses,
-                sprintf('%d-01-01 00:00:00', $currentYear),
-                sprintf('%d-12-31 23:59:59', $currentYear)
+                \sprintf('%d-01-01 00:00:00', $currentYear),
+                \sprintf('%d-12-31 23:59:59', $currentYear)
             ),
-            'lastMonth'   => $this->getOrderStats(
+            'lastMonth' => $this->getOrderStats(
                 $orderStatuses,
-                sprintf('%d-%02d-01 00:00:00', $lastMonthYear, $lastMonth),
-                sprintf('%d-%02d-%02d 23:59:59', $lastMonthYear, $lastMonth, $lastDayLastMonth)
+                \sprintf('%d-%02d-01 00:00:00', $lastMonthYear, $lastMonth),
+                \sprintf('%d-%02d-%02d 23:59:59', $lastMonthYear, $lastMonth, $lastDayLastMonth)
             ),
-            'thisMonth'   => $this->getOrderStats(
+            'thisMonth' => $this->getOrderStats(
                 $orderStatuses,
-                sprintf('%d-%02d-01 00:00:00', $currentYear, $currentMonth),
-                sprintf('%d-%02d-%02d 23:59:59', $currentYear, $currentMonth, $lastDayThisMonth)
+                \sprintf('%d-%02d-01 00:00:00', $currentYear, $currentMonth),
+                \sprintf('%d-%02d-%02d 23:59:59', $currentYear, $currentMonth, $lastDayThisMonth)
             ),
-            'last7Days'   => $this->getOrderStats(
+            'last7Days' => $this->getOrderStats(
                 $orderStatuses,
                 $weekAgo . ' 00:00:00',
                 $today . ' 23:59:59'
             ),
-            'yesterday'   => $this->getOrderStats(
+            'yesterday' => $this->getOrderStats(
                 $orderStatuses,
                 $yesterday . ' 00:00:00',
                 $yesterday . ' 23:59:59'
             ),
-            'today'       => $this->getOrderStats(
+            'today' => $this->getOrderStats(
                 $orderStatuses,
                 $today . ' 00:00:00',
                 $today . ' 23:59:59'

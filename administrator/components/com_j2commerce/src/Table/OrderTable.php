@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -132,7 +133,7 @@ class OrderTable extends Table
      */
     public function store($updateNulls = false): bool
     {
-        $user = Factory::getApplication()->getIdentity();
+        $user  = Factory::getApplication()->getIdentity();
         $isNew = empty($this->j2commerce_order_id);
 
         if ($isNew) {
@@ -147,7 +148,7 @@ class OrderTable extends Table
         $oldStatusId = null;
 
         if (!$isNew) {
-            $db = $this->getDatabase();
+            $db    = $this->getDatabase();
             $query = $db->getQuery(true)
                 ->select($db->quoteName('order_state_id'))
                 ->from($db->quoteName('#__j2commerce_orders'))
@@ -241,8 +242,8 @@ class OrderTable extends Table
      */
     public function hasStatus(int|array $statusIds): bool
     {
-        if (is_array($statusIds)) {
-            return in_array((int) $this->order_state_id, $statusIds, true);
+        if (\is_array($statusIds)) {
+            return \in_array((int) $this->order_state_id, $statusIds, true);
         }
 
         return (int) $this->order_state_id === $statusIds;

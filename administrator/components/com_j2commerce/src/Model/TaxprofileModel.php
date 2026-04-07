@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -85,7 +86,7 @@ class TaxprofileModel extends AdminModel
      */
     public function getForm($data = [], $loadData = true): Form|false
     {
-        $form = $this->loadForm('com_j2commerce.taxprofile','taxprofile',['control' => 'jform', 'load_data' => $loadData]);
+        $form = $this->loadForm('com_j2commerce.taxprofile', 'taxprofile', ['control' => 'jform', 'load_data' => $loadData]);
 
         if (empty($form)) {
             return false;
@@ -160,7 +161,7 @@ class TaxprofileModel extends AdminModel
     public function save($data): bool
     {
         $app = Factory::getApplication();
-        $db = $this->getDatabase();
+        $db  = $this->getDatabase();
 
         // Extract taxrules before calling parent save
         $taxrules = $data['taxrules'] ?? [];
@@ -192,11 +193,11 @@ class TaxprofileModel extends AdminModel
                         continue;
                     }
 
-                    $ruleData = new \stdClass();
+                    $ruleData                = new \stdClass();
                     $ruleData->taxprofile_id = $taxprofileId;
-                    $ruleData->taxrate_id = (int) $rule['taxrate_id'];
-                    $ruleData->address = $rule['address'] ?? 'shipping';
-                    $ruleData->ordering = $ordering++;
+                    $ruleData->taxrate_id    = (int) $rule['taxrate_id'];
+                    $ruleData->address       = $rule['address'] ?? 'shipping';
+                    $ruleData->ordering      = $ordering++;
 
                     try {
                         $db->insertObject('#__j2commerce_taxrules', $ruleData);

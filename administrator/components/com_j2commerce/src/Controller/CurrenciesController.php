@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -18,8 +19,8 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\AdminController;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
-use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Plugin\PluginHelper;
+use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
 use Joomla\Database\DatabaseInterface;
@@ -111,7 +112,7 @@ class CurrenciesController extends AdminController
         PluginHelper::importPlugin('j2commerce');
 
         $dispatcher = $this->app->getDispatcher();
-        $event = new Event('onJ2CommerceUpdateCurrencies', []);
+        $event      = new Event('onJ2CommerceUpdateCurrencies', []);
         $dispatcher->dispatch('onJ2CommerceUpdateCurrencies', $event);
 
         $results = $event->getArgument('result', null);

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Field;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Form\FormField;
 use Joomla\CMS\HTML\HTMLHelper;
@@ -24,7 +25,7 @@ class CurrencymanagerField extends FormField
 
     protected function getInput(): string
     {
-        $modalId = 'currencyManagerModal';
+        $modalId  = 'currencyManagerModal';
         $basePath = rtrim(Uri::root(), '/') . '/administrator/';
         $modalUrl = $basePath . 'index.php?option=com_j2commerce&view=currencies&tmpl=component';
 

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -22,5 +23,4 @@ use Joomla\CMS\MVC\Model\BaseDatabaseModel;
  */
 class OrdershippingModel extends BaseDatabaseModel
 {
-
 }

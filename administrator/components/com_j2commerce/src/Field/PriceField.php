@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Field;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\FormField;
@@ -38,10 +39,10 @@ class PriceField extends FormField
         $helpId = htmlspecialchars($this->id, ENT_COMPAT, 'UTF-8') . '-desc';
         $wa->addInlineStyle('#' . $helpId . ' {display:none!important;}');
 
-        $title = (string) $this->element['label'];
+        $title       = (string) $this->element['label'];
         $description = $this->description;
-        $class = ' ' . $this->class;
-        $margin = $description ? '' : ' mb-0';
+        $class       = ' ' . $this->class;
+        $margin      = $description ? '' : ' mb-0';
 
         $html = '<div id="' . htmlspecialchars($this->id, ENT_COMPAT, 'UTF-8') . '" class="alert' . htmlspecialchars($class, ENT_COMPAT, 'UTF-8') . '">';
         $html .= '<h3 class="alert-heading h3' . $margin . '">' . Text::_($title) . '</h3>';

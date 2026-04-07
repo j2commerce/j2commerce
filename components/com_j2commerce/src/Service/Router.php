@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -90,7 +91,7 @@ class Router extends RouterView
         ?CategoryFactoryInterface $categoryFactory,
         DatabaseInterface $db
     ) {
-        $this->db = $db;
+        $this->db              = $db;
         $this->categoryFactory = $categoryFactory;
 
         $this->noIDs = true;
@@ -189,7 +190,7 @@ class Router extends RouterView
                     $menuItem = $this->findProductsMenuByCatid($catid);
 
                     if (!$menuItem) {
-                        $result = $this->findCategoriesMenuForCategory($catid);
+                        $result   = $this->findCategoriesMenuForCategory($catid);
                         $menuItem = $result ? $result['menu'] : null;
                     }
                 }
@@ -202,7 +203,7 @@ class Router extends RouterView
 
         // For products views with catid, find matching menu
         if (isset($query['view']) && $query['view'] === 'products' && isset($query['catid'])) {
-            $catid = (int) $query['catid'];
+            $catid    = (int) $query['catid'];
             $menuItem = $this->findProductsMenuByCatid($catid);
 
             if ($menuItem) {
@@ -224,7 +225,7 @@ class Router extends RouterView
         if (isset($query['view']) && $query['view'] === 'category' && isset($query['id'])) {
             $catid = (int) $query['id'];
 
-            $result = $this->findCategoriesMenuForCategory($catid);
+            $result         = $this->findCategoriesMenuForCategory($catid);
             $categoriesMenu = $result ? $result['menu'] : null;
 
             if ($categoriesMenu) {
@@ -240,16 +241,16 @@ class Router extends RouterView
 
         // For categoryalias view, rewrite to category view with correct Itemid
         if (($query['view'] ?? '') === 'categoryalias' && !empty($query['id'])) {
-            $catid = (int) $query['id'];
-            $result = $this->findCategoriesMenuForCategory($catid);
+            $catid          = (int) $query['id'];
+            $result         = $this->findCategoriesMenuForCategory($catid);
             $categoriesMenu = $result ? $result['menu'] : null;
 
             if ($categoriesMenu) {
-                $query['view'] = 'category';
+                $query['view']   = 'category';
                 $query['Itemid'] = $categoriesMenu->id;
             } else {
                 $query['view'] = 'category';
-                $menuItem = $this->findProductsMenuByCatid($catid);
+                $menuItem      = $this->findProductsMenuByCatid($catid);
 
                 if ($menuItem) {
                     $query['Itemid'] = $menuItem->id;
@@ -336,9 +337,9 @@ class Router extends RouterView
 
         // CASE 2: Product view - find matching menu with priority
         if (isset($query['view']) && $query['view'] === 'product' && isset($query['id'])) {
-            $productId = $query['id'];
+            $productId    = $query['id'];
             $productAlias = null;
-            $menuItem = null;
+            $menuItem     = null;
             $categoryPath = [];
 
             // Extract numeric ID and alias if format is "id:alias"
@@ -377,7 +378,7 @@ class Router extends RouterView
                 if (!$menuItem) {
                     $categoriesMenu = $this->findCategoriesMenuForCategory($catid);
                     if ($categoriesMenu) {
-                        $menuItem = $categoriesMenu['menu'];
+                        $menuItem     = $categoriesMenu['menu'];
                         $categoryPath = $categoriesMenu['path'];
                     }
                 }
@@ -593,7 +594,7 @@ class Router extends RouterView
             }
 
             // Get stored tag_ids and tag_match from menu query or link
-            $menuTagIds = [];
+            $menuTagIds   = [];
             $menuTagMatch = 'any';
 
             if (isset($menu->query['tag_ids'])) {
@@ -616,7 +617,7 @@ class Router extends RouterView
 
             // Compare tag_ids (order-independent) and tag_match
             $sortedQuery = $tagIds;
-            $sortedMenu = $menuTagIds;
+            $sortedMenu  = $menuTagIds;
             sort($sortedQuery);
             sort($sortedMenu);
 
@@ -676,7 +677,7 @@ class Router extends RouterView
 
             // Check if the menu's parent is in our category's path (or is root)
             // categoryPath includes the target category itself
-            $ancestorIds = array_column($categoryPath, 'id');
+            $ancestorIds  = array_column($categoryPath, 'id');
             $pathPosition = array_search($menuParentId, $ancestorIds);
 
             // Also check if menu is for root and category path starts at root
@@ -691,7 +692,7 @@ class Router extends RouterView
                 // Skip ancestors up to and including the menu's parent
                 $startIndex = ($pathPosition === -1) ? 0 : $pathPosition + 1;
 
-                for ($i = $startIndex; $i < count($categoryPath); $i++) {
+                for ($i = $startIndex; $i < \count($categoryPath); $i++) {
                     $pathSegments[] = $categoryPath[$i]['alias'];
                 }
 
@@ -724,7 +725,7 @@ class Router extends RouterView
 
         // Path is like "shop/chocolate" - we need to get the IDs
         $pathAliases = explode('/', $category['path']);
-        $ancestors = [];
+        $ancestors   = [];
 
         // Walk through path and lookup each ID
         $currentParent = 1; // Start from root
@@ -744,7 +745,7 @@ class Router extends RouterView
             $cat = $this->db->loadAssoc();
 
             if ($cat) {
-                $ancestors[] = $cat;
+                $ancestors[]   = $cat;
                 $currentParent = (int) $cat['id'];
             }
         }
@@ -768,7 +769,7 @@ class Router extends RouterView
                 $this->db->quoteName('id'),
                 $this->db->quoteName('alias'),
                 $this->db->quoteName('path'),
-                $this->db->quoteName('parent_id')
+                $this->db->quoteName('parent_id'),
             ])
             ->from($this->db->quoteName('#__categories'))
             ->where($this->db->quoteName('id') . ' = :id')
@@ -1002,7 +1003,7 @@ class Router extends RouterView
     public function getCategoriesSegment($id, $query): array
     {
         // Extract numeric ID if format is "id:alias"
-        $numericId = $id;
+        $numericId     = $id;
         $providedAlias = null;
 
         if (strpos((string) $id, ':') !== false) {
@@ -1032,10 +1033,10 @@ class Router extends RouterView
         if ($this->noIDs) {
             // Clean URLs: category-alias
             return [$numericId => $providedAlias ?: (string) $numericId];
-        } else {
-            // With IDs: 9:category-alias
-            return [$numericId => $numericId . ':' . ($providedAlias ?: (string) $numericId)];
         }
+        // With IDs: 9:category-alias
+        return [$numericId => $numericId . ':' . ($providedAlias ?: (string) $numericId)];
+
     }
 
     /**
@@ -1088,7 +1089,7 @@ class Router extends RouterView
     public function getProductSegment($id, $query): array
     {
         // Extract numeric ID and alias if format is "id:alias"
-        $numericId = $id;
+        $numericId     = $id;
         $providedAlias = null;
 
         if (strpos((string) $id, ':') !== false) {
@@ -1117,10 +1118,10 @@ class Router extends RouterView
         if ($this->noIDs) {
             // Clean URLs: product-alias
             return [(int) $numericId => $providedAlias ?: (string) $numericId];
-        } else {
-            // With IDs: 42:product-alias
-            return [(int) $numericId => $numericId . ':' . ($providedAlias ?: (string) $numericId)];
         }
+        // With IDs: 42:product-alias
+        return [(int) $numericId => $numericId . ':' . ($providedAlias ?: (string) $numericId)];
+
     }
 
     /**
@@ -1246,7 +1247,7 @@ class Router extends RouterView
      */
     public function parse(&$segments): array
     {
-        $vars = [];
+        $vars   = [];
         $active = $this->menu->getActive();
 
         // No segments - return empty (menu provides the query)
@@ -1255,9 +1256,9 @@ class Router extends RouterView
         }
 
         // Check if active menu is a products view with a specific catid
-        $menuView = $active->query['view'] ?? null;
+        $menuView  = $active->query['view'] ?? null;
         $menuCatid = isset($active->query['catid']) ? (int) $active->query['catid'] : null;
-        $menuId = isset($active->query['id']) ? (int) $active->query['id'] : null;
+        $menuId    = isset($active->query['id']) ? (int) $active->query['id'] : null;
 
         // CASE 1: Categories menu - segments are category aliases (possibly with product at end)
         if ($menuView === 'categories') {
@@ -1267,14 +1268,14 @@ class Router extends RouterView
 
             // Try to resolve each segment as a category
             $resolvedCategories = [];
-            $remainingSegments = $segments;
+            $remainingSegments  = $segments;
 
             foreach ($segments as $index => $segment) {
                 $catId = $this->getCategoryIdByAliasUnderParent($segment, $parentCatid);
 
                 if ($catId) {
                     $resolvedCategories[] = $catId;
-                    $parentCatid = $catId;
+                    $parentCatid          = $catId;
                     array_shift($remainingSegments);
                 } else {
                     // This segment is not a category - might be a product
@@ -1289,14 +1290,14 @@ class Router extends RouterView
                 // Check if there's a remaining segment that could be a product
                 if (!empty($remainingSegments)) {
                     $productSegment = array_shift($remainingSegments);
-                    $productId = $this->getProductIdByAliasInCategory($productSegment, $lastCatId);
+                    $productId      = $this->getProductIdByAliasInCategory($productSegment, $lastCatId);
 
                     if ($productId) {
                         // It's a product under this category
-                        $vars['view'] = 'product';
-                        $vars['id'] = $productId;
+                        $vars['view']  = 'product';
+                        $vars['id']    = $productId;
                         $vars['catid'] = $lastCatId;
-                        $segments = $remainingSegments;
+                        $segments      = $remainingSegments;
                         return $vars;
                     }
 
@@ -1305,21 +1306,21 @@ class Router extends RouterView
                 }
 
                 // Check if this category has a display mode override that needs the categories view
-                $catParams = $this->getCategoryParams($lastCatId);
+                $catParams      = $this->getCategoryParams($lastCatId);
                 $catDisplayMode = $catParams['subcategory_display_mode'] ?? '';
 
                 if ($catDisplayMode !== '' && $catDisplayMode !== 'products') {
                     // Route to categories view so display mode logic applies
                     $vars['view'] = 'categories';
-                    $vars['id'] = $lastCatId;
-                    $segments = $remainingSegments;
+                    $vars['id']   = $lastCatId;
+                    $segments     = $remainingSegments;
                     return $vars;
                 }
 
                 // Default: show products in this category
-                $vars['view'] = 'products';
+                $vars['view']  = 'products';
                 $vars['catid'] = $lastCatId;
-                $segments = $remainingSegments;
+                $segments      = $remainingSegments;
                 return $vars;
             }
 
@@ -1329,8 +1330,8 @@ class Router extends RouterView
 
                 if ($productId) {
                     $vars['view'] = 'product';
-                    $vars['id'] = $productId;
-                    $segments = [];
+                    $vars['id']   = $productId;
+                    $segments     = [];
                     return $vars;
                 }
             }
@@ -1343,8 +1344,8 @@ class Router extends RouterView
                 $productId = $this->getProductIdByAliasInCategory($segments[0], $menuCatid);
 
                 if ($productId) {
-                    $vars['view'] = 'product';
-                    $vars['id'] = $productId;
+                    $vars['view']  = 'product';
+                    $vars['id']    = $productId;
                     $vars['catid'] = $menuCatid;
                     array_shift($segments);
                     return $vars;
@@ -1355,7 +1356,7 @@ class Router extends RouterView
             if (\count($segments) >= 2) {
                 // Try to parse category path first
                 $lastSegment = array_pop($segments);
-                $catid = $menuCatid;
+                $catid       = $menuCatid;
 
                 // Walk through category segments
                 foreach ($segments as $segment) {
@@ -1369,10 +1370,10 @@ class Router extends RouterView
                 $productId = $this->getProductIdByAliasInCategory($lastSegment, $catid);
 
                 if ($productId) {
-                    $vars['view'] = 'product';
-                    $vars['id'] = $productId;
+                    $vars['view']  = 'product';
+                    $vars['id']    = $productId;
                     $vars['catid'] = $catid;
-                    $segments = []; // Clear all segments
+                    $segments      = []; // Clear all segments
                     return $vars;
                 }
 
@@ -1490,7 +1491,7 @@ class Router extends RouterView
                     }
                 }
 
-                $normalizedMenuId = ($menuId === null || $menuId <= 1) ? 1 : $menuId;
+                $normalizedMenuId   = ($menuId === null || $menuId <= 1) ? 1 : $menuId;
                 $normalizedParentId = ($parentId <= 1) ? 1 : $parentId;
 
                 if ($normalizedMenuId === $normalizedParentId) {

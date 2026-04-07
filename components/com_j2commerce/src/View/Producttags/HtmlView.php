@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -19,8 +20,6 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
-use Joomla\CMS\Pagination\Pagination;
-use Joomla\Registry\Registry;
 
 class HtmlView extends BaseHtmlView
 {
@@ -34,12 +33,12 @@ class HtmlView extends BaseHtmlView
     public $parent;
     public $product;
     public $product_link = '';
-    protected $columns = 3;
+    protected $columns   = 3;
     protected $user;
     public $filters;
     public $filter_catid;
     public $active_menu;
-    public array $tag_ids = [];
+    public array $tag_ids    = [];
     public string $tag_match = 'any';
 
     public function display($tpl = null): void
@@ -47,14 +46,14 @@ class HtmlView extends BaseHtmlView
         $app   = Factory::getApplication();
         $model = $this->getModel();
 
-        $this->params     = $app->getParams();
-        $this->state      = $model->getState();
-        $this->items      = $model->getItems();
-        $this->products   = $this->items;
-        $this->parent     = $model->getParent();
-        $this->pagination = $model->getPagination();
-        $this->user       = $this->getCurrentUser();
-        $this->filters    = $model->getFilters($this->items);
+        $this->params        = $app->getParams();
+        $this->state         = $model->getState();
+        $this->items         = $model->getItems();
+        $this->products      = $this->items;
+        $this->parent        = $model->getParent();
+        $this->pagination    = $model->getPagination();
+        $this->user          = $this->getCurrentUser();
+        $this->filters       = $model->getFilters($this->items);
         $this->active_menu   = $app->getMenu()->getActive();
         $this->filter_catid  = '';
         $this->tag_ids       = $model->getState('filter.tag_ids', []);

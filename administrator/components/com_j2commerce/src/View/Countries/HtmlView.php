@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -134,8 +135,8 @@ class HtmlView extends BaseHtmlView
     protected function getNavbar(): string
     {
         $displayData = [
-            'items' => MenuHelper::getMenuItems(),
-            'active' => MenuHelper::getActiveView()
+            'items'  => MenuHelper::getMenuItems(),
+            'active' => MenuHelper::getActiveView(),
         ];
 
         return LayoutHelper::render('navbar.default', $displayData, JPATH_COMPONENT_ADMINISTRATOR . '/layouts');
@@ -150,8 +151,8 @@ class HtmlView extends BaseHtmlView
      */
     protected function addToolbar(): void
     {
-        $canDo = ContentHelper::getActions('com_j2commerce');
-        $user  = Factory::getApplication()->getIdentity();
+        $canDo   = ContentHelper::getActions('com_j2commerce');
+        $user    = Factory::getApplication()->getIdentity();
         $toolbar = $this->getDocument()->getToolbar();
 
         ToolbarHelper::title(Text::_('COM_J2COMMERCE_COUNTRIES'), 'fa-solid fa-earth-americas');

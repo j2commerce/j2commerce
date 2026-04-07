@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -121,7 +122,7 @@ class InvoiceHelper
         $templateText = '';
 
         // Build language preference array
-        $jLang = Factory::getLanguage();
+        $jLang    = Factory::getLanguage();
         $userLang = $order->customer_language ?? '';
 
         // Try to get user's preferred language if not set on order
@@ -142,7 +143,7 @@ class InvoiceHelper
             $jLang->getTag(),
             $jLang->getDefault(),
             'en-GB',
-            '*'
+            '*',
         ];
 
         // Load all matching templates
@@ -170,11 +171,11 @@ class InvoiceHelper
                         'onJ2CommerceInvoiceFileTemplate',
                         new \Joomla\CMS\Event\GenericEvent('onJ2CommerceInvoiceFileTemplate', [
                             'template' => &$template,
-                            'order' => $order
+                            'order'    => $order,
                         ])
                     );
 
-                    $templateText = $template->body ?? '';
+                    $templateText   = $template->body ?? '';
                     $preferredScore = $langScore;
                 }
             }
@@ -202,11 +203,11 @@ class InvoiceHelper
      */
     public function getInvoiceTemplates(object $order): array
     {
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
-        $orderStateId = (string) ($order->order_state_id ?? '');
-        $paymentType = $order->orderpayment_type ?? '';
+        $orderStateId  = (string) ($order->order_state_id ?? '');
+        $paymentType   = $order->orderpayment_type ?? '';
         $customerGroup = $order->customer_group ?? '';
 
         $invoiceType = 'invoice';
@@ -260,7 +261,7 @@ class InvoiceHelper
             'onJ2CommerceAfterInvoiceQuery',
             new \Joomla\CMS\Event\GenericEvent('onJ2CommerceAfterInvoiceQuery', [
                 'query' => &$query,
-                'order' => $order
+                'order' => $order,
             ])
         );
 
@@ -289,7 +290,7 @@ class InvoiceHelper
      */
     public function getFormattedInvoice(object $order): string
     {
-        $text = $this->loadInvoiceTemplate($order);
+        $text     = $this->loadInvoiceTemplate($order);
         $template = EmailHelper::getInstance()->processTags($text, $order, []);
 
         return $template;
@@ -314,16 +315,16 @@ class InvoiceHelper
         $baseURL = ltrim($baseURL, '/');
 
         $imageSubs = [];
-        $imgIdx = 0;
+        $imgIdx    = 0;
 
         // Match all src attributes in the template
-        $pattern = '/(src)=\"([^"]*)\"/i';
+        $pattern         = '/(src)=\"([^"]*)\"/i';
         $numberOfMatches = preg_match_all($pattern, $templateText, $matches, PREG_OFFSET_CAPTURE);
 
         if ($numberOfMatches > 0) {
             $substitutions = $matches[2];
-            $lastPosition = 0;
-            $temp = '';
+            $lastPosition  = 0;
+            $temp          = '';
 
             foreach ($substitutions as &$entry) {
                 // Copy unchanged part
@@ -351,7 +352,7 @@ class InvoiceHelper
                         $temp .= $url;
                     } else {
                         // Valid image found, create CID substitution
-                        if (!array_key_exists($url, $imageSubs)) {
+                        if (!\array_key_exists($url, $imageSubs)) {
                             $imgIdx++;
                             $imageSubs[$url] = $imgIdx;
                         }
@@ -373,8 +374,8 @@ class InvoiceHelper
         }
 
         return [
-            'text' => $templateText,
-            'images' => $imageSubs
+            'text'   => $templateText,
+            'images' => $imageSubs,
         ];
     }
 
@@ -393,7 +394,7 @@ class InvoiceHelper
             return null;
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select('*')
@@ -417,7 +418,7 @@ class InvoiceHelper
      */
     public function getAllTemplates(string $language = ''): array
     {
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $invoiceType = 'invoice';

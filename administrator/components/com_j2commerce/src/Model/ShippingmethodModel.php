@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -9,7 +10,7 @@
 
 namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
@@ -74,8 +75,8 @@ class ShippingmethodModel extends AdminModel
             'com_j2commerce.shippingmethod',
             'shippingmethod',
             [
-                'control' => 'jform',
-                'load_data' => $loadData
+                'control'   => 'jform',
+                'load_data' => $loadData,
             ]
         );
 
@@ -124,7 +125,7 @@ class ShippingmethodModel extends AdminModel
             return parent::getItem($pk);
         }
 
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select('*')
             ->from($db->quoteName('#__extensions'))
@@ -139,15 +140,15 @@ class ShippingmethodModel extends AdminModel
             // Parse manifest cache for additional info
             if (!empty($item->manifest_cache)) {
                 $manifest = json_decode($item->manifest_cache);
-                if (is_object($manifest)) {
-                    $item->version = isset($manifest->version) ? $manifest->version : '';
-                    $item->author = isset($manifest->author) ? $manifest->author : '';
+                if (\is_object($manifest)) {
+                    $item->version     = isset($manifest->version) ? $manifest->version : '';
+                    $item->author      = isset($manifest->author) ? $manifest->author : '';
                     $item->description = isset($manifest->description) ? $manifest->description : '';
                 }
             }
 
             // Check if plugin files exist
-            $pluginPath = JPATH_SITE . '/plugins/j2commerce/' . $item->element;
+            $pluginPath        = JPATH_SITE . '/plugins/j2commerce/' . $item->element;
             $item->files_exist = is_dir($pluginPath);
         }
 
@@ -165,7 +166,7 @@ class ShippingmethodModel extends AdminModel
      */
     public function save($data)
     {
-        $pk = (!empty($data['extension_id'])) ? $data['extension_id'] : (int) $this->getState($this->getName() . '.id');
+        $pk    = (!empty($data['extension_id'])) ? $data['extension_id'] : (int) $this->getState($this->getName() . '.id');
         $isNew = true;
 
         // Get a row instance.
@@ -213,9 +214,9 @@ class ShippingmethodModel extends AdminModel
      */
     public function publish(&$pks, $value = 1)
     {
-        $user = Factory::getApplication()->getIdentity();
+        $user  = Factory::getApplication()->getIdentity();
         $table = $this->getTable();
-        $pks = (array) $pks;
+        $pks   = (array) $pks;
 
         // Access checks.
         foreach ($pks as $i => $pk) {
@@ -251,7 +252,7 @@ class ShippingmethodModel extends AdminModel
      */
     protected function getReorderConditions($table)
     {
-        $condition = [];
+        $condition   = [];
         $condition[] = 'type = ' . $this->_db->quote('plugin');
         $condition[] = 'folder = ' . $this->_db->quote('j2commerce');
 

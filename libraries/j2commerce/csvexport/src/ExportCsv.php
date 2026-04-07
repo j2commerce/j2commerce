@@ -1,16 +1,17 @@
 <?php
 
 namespace J2Commerce\Library\ExportCsv;
+
 class ExportCsv
 {
-    protected $export_path = '';
-    protected $headers = array();
-    protected $resulting_csv_values = array();
-    protected $delimiter = ",";
-    protected $enclosure = '"';
-    protected $escape_char = "\\";
+    protected $export_path          = '';
+    protected $headers              = [];
+    protected $resulting_csv_values = [];
+    protected $delimiter            = ",";
+    protected $enclosure            = '"';
+    protected $escape_char          = "\\";
 
-    public function __construct($export_file_path = '', $header = array())
+    public function __construct($export_file_path = '', $header = [])
     {
         $this->setCsvPath($export_file_path);
         $this->setHeader($header);
@@ -27,7 +28,7 @@ class ExportCsv
     /**
      * @param array $headers - csv header fields
      */
-    public function setHeader($headers = array())
+    public function setHeader($headers = [])
     {
         $this->headers = $headers;
     }
@@ -36,10 +37,10 @@ class ExportCsv
      * @param array $csv_values - csv values
      * @throws \Exception
      */
-    public function setCsvValues($csv_values = array())
+    public function setCsvValues($csv_values = [])
     {
         //validate csv value array
-        if (!is_array($csv_values)) {
+        if (!\is_array($csv_values)) {
             throw new \Exception('Array value only accepted');
         }
         if (empty($this->headers)) {
@@ -49,10 +50,10 @@ class ExportCsv
             throw new \Exception('Empty value not allowed');
         }
         foreach ($csv_values as $csv_value) {
-            $single_csv_record = array();
+            $single_csv_record = [];
             foreach ($this->headers as $header_key) {
                 if (isset($csv_value[$header_key])) {
-                    if (is_array($csv_value[$header_key])) {
+                    if (\is_array($csv_value[$header_key])) {
                         $csv_value[$header_key] = implode(',', $csv_value[$header_key]);
                     }
                     array_push($single_csv_record, $csv_value[$header_key]);

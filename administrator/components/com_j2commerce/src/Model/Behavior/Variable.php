@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -29,7 +30,6 @@ use Joomla\CMS\Event\AbstractEvent;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
-use Joomla\Database\DatabaseInterface;
 use Joomla\Registry\Registry;
 
 /**
@@ -92,7 +92,7 @@ class Variable
             $variantModel->setState('list.limit', $limit);
             $variantModel->setState('list.start', 0);
 
-            $record->variants = $variantModel->getItems();
+            $record->variants           = $variantModel->getItems();
             $record->variant_pagination = $variantModel->getPagination();
         } catch (\Exception $e) {
             $app->enqueueMessage($e->getMessage(), 'error');
@@ -102,7 +102,7 @@ class Variable
         // Load product options
         try {
             /** @var ProductOptionsModel $optionsModel */
-            $optionsModel = $this->mvcFactory->createModel('ProductOptions', 'Administrator');
+            $optionsModel            = $this->mvcFactory->createModel('ProductOptions', 'Administrator');
             $record->product_options = $optionsModel->getOptionsByProductId((int) $record->j2commerce_product_id);
         } catch (\Exception $e) {
             $app->enqueueMessage($e->getMessage(), 'error');
@@ -121,7 +121,7 @@ class Variable
             return;
         }
 
-        $app = Factory::getApplication();
+        $app           = Factory::getApplication();
         $utilityHelper = J2CommerceHelper::utilities();
 
         if (!isset($data['visibility'])) {
@@ -129,7 +129,7 @@ class Variable
         }
 
         $data['cross_sells'] = isset($data['cross_sells']) ? $utilityHelper->to_csv($data['cross_sells']) : '';
-        $data['up_sells'] = isset($data['up_sells']) ? $utilityHelper->to_csv($data['up_sells']) : '';
+        $data['up_sells']    = isset($data['up_sells']) ? $utilityHelper->to_csv($data['up_sells']) : '';
 
         if (isset($data['shippingmethods']) && !empty($data['shippingmethods'])) {
             $data['shippingmethods'] = implode(',', $data['shippingmethods']);
@@ -225,7 +225,7 @@ class Variable
         }
         $variant->load(['product_id' => $table->j2commerce_product_id, 'is_master' => 1]);
         $variant->bind($this->_rawData, ['j2commerce_variant_id', 'variable']);
-        $variant->is_master = 1;
+        $variant->is_master  = 1;
         $variant->product_id = $table->j2commerce_product_id;
         $variant->check();
         $variant->store();
@@ -322,7 +322,7 @@ class Variable
                 $quantityPkId  = 0;
 
                 if (isset($item->quantity) && (\is_object($item->quantity) || \is_array($item->quantity))) {
-                    $qObj = (object) $item->quantity;
+                    $qObj          = (object) $item->quantity;
                     $quantityValue = (int) ($qObj->quantity ?? 0);
                     $quantityPkId  = (int) ($qObj->j2commerce_productquantity_id ?? 0);
                 } else {
@@ -416,11 +416,11 @@ class Variable
             }
         }
 
-        $db = Factory::getContainer()->get('DatabaseDriver');
+        $db        = Factory::getContainer()->get('DatabaseDriver');
         $productId = (int) $table->j2commerce_product_id;
 
         $priceIndex = $this->mvcFactory->createTable('Productpriceindex', 'Administrator');
-        $values = (object) [
+        $values     = (object) [
             'product_id' => $productId,
             'min_price'  => $minPrice ?? 0,
             'max_price'  => $maxPrice ?? 0,
@@ -473,7 +473,7 @@ class Variable
      */
     public function onAfterGetProduct(AbstractEvent $event): void
     {
-        $model = $event->getArgument('subject');
+        $model   = $event->getArgument('subject');
         $product = $event->getArgument('product');
 
         if (!$product || !isset($product->product_type) || $product->product_type !== 'variable') {
@@ -481,7 +481,7 @@ class Variable
         }
 
         $productHelper = new ProductHelper();
-        $pluginHelper = J2CommerceHelper::plugin();
+        $pluginHelper  = J2CommerceHelper::plugin();
 
         $productHelper->getAddtocartAction($product);
         $productHelper->getCheckoutLink($product);
@@ -538,20 +538,20 @@ class Variable
         }
 
         $product->all_sold_out = $allSoldOut;
-        $product->options = [];
+        $product->options      = [];
 
         // Load product options for option-combination matching
         if ($product->has_options && $product->variants) {
             try {
                 /** @var ProductOptionsModel $optionsModel */
-                $optionsModel = $this->mvcFactory->createModel('ProductOptions', 'Administrator', ['ignore_request' => true]);
+                $optionsModel             = $this->mvcFactory->createModel('ProductOptions', 'Administrator', ['ignore_request' => true]);
                 $product->product_options = $optionsModel->getOptionsByProductId((int) $product->j2commerce_product_id);
-                $product->options = $productHelper->getProductOptions($product);
+                $product->options         = $productHelper->getProductOptions($product);
 
                 // Filter out variants with no option mapping (ghost variants)
                 $product->variants = array_values(array_filter(
                     $product->variants,
-                    static fn($v) => isset($v->variant_name_ids) && $v->variant_name_ids !== ''
+                    static fn ($v) => isset($v->variant_name_ids) && $v->variant_name_ids !== ''
                 ));
 
                 if (empty($product->variants)) {
@@ -589,8 +589,8 @@ class Variable
         // Process pricing for default variant
         $product->pricing = $productHelper->getPrice($product->variant, (int) $product->quantity);
 
-        $paramData = new Registry($product->variant->params);
-        $mainImage = $paramData->get('variant_main_image', '');
+        $paramData     = new Registry($product->variant->params);
+        $mainImage     = $paramData->get('variant_main_image', '');
         $isMainAsThumb = (int) $paramData->get('is_main_as_thum', 0);
 
         // Fall back to first variant_images entry when variant_main_image is not set
@@ -621,7 +621,7 @@ class Variable
         // Build variant JSON for frontend option-combination selection
         if ($product->has_options && $product->variants && !empty($variantIds)) {
             try {
-                $db = Factory::getContainer()->get('DatabaseDriver');
+                $db    = Factory::getContainer()->get('DatabaseDriver');
                 $query = $db->getQuery(true)
                     ->select([
                         $db->quoteName('variant_id'),
@@ -642,7 +642,7 @@ class Variable
 
                 // Pre-select default option values and build default_option_selections map
                 $defaultOptionValueIds = $variantCsvs[$product->variant->j2commerce_variant_id] ?? '';
-                $valueArray = $defaultOptionValueIds !== '' ? explode(',', $defaultOptionValueIds) : [];
+                $valueArray            = $defaultOptionValueIds !== '' ? explode(',', $defaultOptionValueIds) : [];
 
                 $product->default_option_selections = [];
 
@@ -650,7 +650,7 @@ class Variable
                     if (\in_array($option['type'], ['select', 'radio', 'color'], true)) {
                         foreach ($option['optionvalue'] as &$optionvalue) {
                             if (\in_array($optionvalue['product_optionvalue_id'], $valueArray)) {
-                                $optionvalue['product_optionvalue_default'] = 1;
+                                $optionvalue['product_optionvalue_default']                            = 1;
                                 $product->default_option_selections[(int) $option['productoption_id']] = $optionvalue['product_optionvalue_id'];
                             }
                         }
@@ -673,12 +673,12 @@ class Variable
             return [];
         }
 
-        $app = Factory::getApplication();
-        $input = $app->getInput();
-        $config = ComponentHelper::getParams('com_j2commerce');
+        $app           = Factory::getApplication();
+        $input         = $app->getInput();
+        $config        = ComponentHelper::getParams('com_j2commerce');
         $productHelper = new ProductHelper();
-        $imageHelper = J2CommerceHelper::image();
-        $pluginHelper = J2CommerceHelper::plugin();
+        $imageHelper   = J2CommerceHelper::image();
+        $pluginHelper  = J2CommerceHelper::plugin();
 
         $options = $input->get('product_option', [], 'ARRAY');
         $options = \is_array($options) ? array_filter($options) : [];
@@ -707,16 +707,16 @@ class Variable
         }
 
         $variant->availability = ProductHelper::checkStockStatus($variant, (int) $quantity) ? 1 : 0;
-        $variant->pricing = $productHelper->getPrice($variant, (int) $quantity);
+        $variant->pricing      = $productHelper->getPrice($variant, (int) $quantity);
 
         $pluginHelper->event('BeforeUpdateProductReturn', [&$config, $product]);
 
-        $return = [];
+        $return               = [];
         $return['variant_id'] = $variant->j2commerce_variant_id;
 
-        $paramData = new Registry($variant->params);
+        $paramData     = new Registry($variant->params);
         $isMainAsThumb = (int) $paramData->get('is_main_as_thum', 0);
-        $mainImage = $paramData->get('variant_main_image', '');
+        $mainImage     = $paramData->get('variant_main_image', '');
 
         // Variant gallery for Swiper image swap
         // Child variants may have empty params — fall back to master variant's images
@@ -724,7 +724,7 @@ class Variable
         if (empty($variantImages)) {
             $masterVariant = $this->mvcFactory->createTable('Variant', 'Administrator');
             $masterVariant->load(['product_id' => $product->j2commerce_product_id, 'is_master' => 1]);
-            $masterParams = new Registry($masterVariant->params ?? '{}');
+            $masterParams  = new Registry($masterVariant->params ?? '{}');
             $variantImages = $masterParams->get('variant_images', []);
             if (empty($mainImage)) {
                 $mainImage = $masterParams->get('variant_main_image', '');
@@ -743,7 +743,7 @@ class Variable
 
             $gallery = [];
             foreach ((array) $variantImages as $img) {
-                $img = (array) $img;
+                $img  = (array) $img;
                 $path = $img['path'] ?? '';
                 if (empty($path)) {
                     continue;
@@ -782,7 +782,7 @@ class Variable
 
         if ($productHelper->managingStock($variant)) {
             if ($variant->availability) {
-                $displayStock = $productHelper->displayStock($variant, $config);
+                $displayStock           = $productHelper->displayStock($variant, $config);
                 $return['stock_status'] = $displayStock ?: 'Available';
             } else {
                 $return['stock_status'] = Text::_('COM_J2COMMERCE_STOCK_OUT_OF_STOCK');
@@ -791,7 +791,7 @@ class Variable
             $return['stock_status'] = '';
         }
 
-        $return['pricing'] = [];
+        $return['pricing']               = [];
         $return['pricing']['base_price'] = J2CommerceHelper::currency()->format((float) $variant->pricing->base_price);
         $return['pricing']['price']      = J2CommerceHelper::currency()->format((float) $variant->pricing->price);
         $return['pricing']['original']   = [
@@ -799,7 +799,7 @@ class Variable
             'price'      => number_format((float) $variant->pricing->price, 5, '.', ''),
         ];
 
-        $return['pricing']['class'] = ($variant->pricing->base_price != $variant->pricing->price) ? 'show' : 'hide';
+        $return['pricing']['class']         = ($variant->pricing->base_price != $variant->pricing->price) ? 'show' : 'hide';
         $return['pricing']['discount_text'] = '';
 
         if (isset($variant->pricing->is_discount_pricing_available) && $variant->pricing->base_price > 0) {

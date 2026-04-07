@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -9,7 +10,7 @@
 
 namespace J2Commerce\Component\J2commerce\Administrator\Table;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -60,7 +61,7 @@ class FiltergroupTable extends Table
 
         // Verify that the group name is unique
         if ($this->group_name) {
-            $db = Factory::getContainer()->get('DatabaseDriver');
+            $db    = Factory::getContainer()->get('DatabaseDriver');
             $query = $db->getQuery(true)
                 ->select('COUNT(*)')
                 ->from($db->quoteName('#__j2commerce_filtergroups'))

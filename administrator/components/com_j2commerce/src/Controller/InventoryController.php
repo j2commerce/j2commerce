@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -9,7 +10,7 @@
 
 namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -60,14 +61,14 @@ class InventoryController extends AdminController
         $this->checkToken();
 
         try {
-            $app = Factory::getApplication();
+            $app   = Factory::getApplication();
             $input = $app->getInput();
 
             // Get the data from the request
-            $productId = $input->getInt('product_id', 0);
-            $variantId = $input->getInt('variant_id', 0);
-            $quantity = $input->getInt('quantity', 0);
-            $manageStock = $input->getInt('manage_stock', 0);
+            $productId    = $input->getInt('product_id', 0);
+            $variantId    = $input->getInt('variant_id', 0);
+            $quantity     = $input->getInt('quantity', 0);
+            $manageStock  = $input->getInt('manage_stock', 0);
             $availability = $input->getInt('availability', 0);
 
             // Validate required data
@@ -91,7 +92,7 @@ class InventoryController extends AdminController
             }
 
         } catch (\Exception $e) {
-            $app = Factory::getApplication();
+            $app     = Factory::getApplication();
             $message = Text::sprintf('COM_J2COMMERCE_INVENTORY_SAVE_FAILED', $e->getMessage());
             $app->enqueueMessage($message, 'error');
 

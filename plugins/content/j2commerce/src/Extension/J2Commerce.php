@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  plg_content_j2commerce
@@ -11,6 +12,10 @@ declare(strict_types=1);
 
 namespace J2Commerce\Plugin\Content\J2Commerce\Extension;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
+use J2Commerce\Component\J2commerce\Administrator\Service\ProductService;
+use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 use Joomla\CMS\Cache\CacheControllerFactoryInterface;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Event\Content\AfterDeleteEvent;
@@ -19,25 +24,20 @@ use Joomla\CMS\Event\Content\AfterSaveEvent;
 use Joomla\CMS\Event\Content\BeforeDisplayEvent;
 use Joomla\CMS\Event\Content\BeforeSaveEvent;
 use Joomla\CMS\Event\Content\ContentPrepareEvent;
-use Joomla\CMS\Event\Model\BeforeSaveEvent as ModelBeforeSaveEvent;
-use Joomla\CMS\Event\Model\AfterSaveEvent as ModelAfterSaveEvent;
 use Joomla\CMS\Event\Model\AfterDeleteEvent as ModelAfterDeleteEvent;
+use Joomla\CMS\Event\Model\AfterSaveEvent as ModelAfterSaveEvent;
+use Joomla\CMS\Event\Model\BeforeSaveEvent as ModelBeforeSaveEvent;
 use Joomla\CMS\Event\Model\PrepareFormEvent;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Plugin\CMSPlugin;
+use Joomla\CMS\Session\Session;
 use Joomla\Database\DatabaseAwareTrait;
 use Joomla\Database\ParameterType;
-use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
-use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
-use J2Commerce\Component\J2commerce\Administrator\Service\ProductService;
-use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
-use Joomla\CMS\Session\Session;
 use Joomla\Event\DispatcherInterface;
 use Joomla\Event\SubscriberInterface;
 use Joomla\Registry\Registry;
-use Psr\Log\LoggerInterface;
 
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
@@ -209,8 +209,8 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             return;
         }
 
-        $formName = $form->getName();
-        $option = $this->getApplication()->getInput()->get('option');
+        $formName  = $form->getName();
+        $option    = $this->getApplication()->getInput()->get('option');
         $extension = $this->getApplication()->getInput()->get('extension');
 
         // Handle article forms
@@ -276,9 +276,9 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
      */
     public function onContentAfterFieldset($event): string
     {
-        $context = $event->getArgument('context');
+        $context  = $event->getArgument('context');
         $fieldset = $event->getArgument('fieldset');
-        $data = $event->getArgument('data');
+        $data     = $event->getArgument('data');
 
         // Only for J2Commerce fieldset in com_content category forms
         if ($context !== 'com_categories.category' || $fieldset->name !== 'j2commerce') {
@@ -291,7 +291,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             return '';
         }
 
-        $category = is_object($data) ? $data : new \stdClass();
+        $category = \is_object($data) ? $data : new \stdClass();
 
         // Load the accordion template
         $layout = new \Joomla\CMS\Layout\FileLayout(
@@ -300,7 +300,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         );
 
         return $layout->render([
-            'category' => $category,
+            'category'    => $category,
             'form_prefix' => 'jform[attribs][j2commerce]',
         ]);
     }
@@ -753,9 +753,9 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
                 $html .= '<option value="">' . Text::_('PLG_CONTENT_J2COMMERCE_SELECT_OPTION') . '</option>';
                 foreach ($values as $value) {
                     $priceText = $this->formatOptionPrice($value);
-                    $html     .= '<option value="' . (int) $value->j2commerce_product_optionvalue_id . '">';
-                    $html     .= $this->escape($value->optionvalue_name) . $priceText;
-                    $html     .= '</option>';
+                    $html .= '<option value="' . (int) $value->j2commerce_product_optionvalue_id . '">';
+                    $html .= $this->escape($value->optionvalue_name) . $priceText;
+                    $html .= '</option>';
                 }
                 $html .= '</select>';
                 break;
@@ -763,24 +763,24 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             case 'radio':
                 foreach ($values as $value) {
                     $priceText = $this->formatOptionPrice($value);
-                    $html     .= '<div class="form-check">';
-                    $html     .= '<input type="radio" name="' . $fieldName . '" value="' . (int) $value->j2commerce_product_optionvalue_id . '" class="form-check-input" id="opt_' . (int) $value->j2commerce_product_optionvalue_id . '">';
-                    $html     .= '<label class="form-check-label" for="opt_' . (int) $value->j2commerce_product_optionvalue_id . '">';
-                    $html     .= $this->escape($value->optionvalue_name) . $priceText;
-                    $html     .= '</label>';
-                    $html     .= '</div>';
+                    $html .= '<div class="form-check">';
+                    $html .= '<input type="radio" name="' . $fieldName . '" value="' . (int) $value->j2commerce_product_optionvalue_id . '" class="form-check-input" id="opt_' . (int) $value->j2commerce_product_optionvalue_id . '">';
+                    $html .= '<label class="form-check-label" for="opt_' . (int) $value->j2commerce_product_optionvalue_id . '">';
+                    $html .= $this->escape($value->optionvalue_name) . $priceText;
+                    $html .= '</label>';
+                    $html .= '</div>';
                 }
                 break;
 
             case 'checkbox':
                 foreach ($values as $value) {
                     $priceText = $this->formatOptionPrice($value);
-                    $html     .= '<div class="form-check">';
-                    $html     .= '<input type="checkbox" name="' . $fieldName . '[]" value="' . (int) $value->j2commerce_product_optionvalue_id . '" class="form-check-input" id="opt_' . (int) $value->j2commerce_product_optionvalue_id . '">';
-                    $html     .= '<label class="form-check-label" for="opt_' . (int) $value->j2commerce_product_optionvalue_id . '">';
-                    $html     .= $this->escape($value->optionvalue_name) . $priceText;
-                    $html     .= '</label>';
-                    $html     .= '</div>';
+                    $html .= '<div class="form-check">';
+                    $html .= '<input type="checkbox" name="' . $fieldName . '[]" value="' . (int) $value->j2commerce_product_optionvalue_id . '" class="form-check-input" id="opt_' . (int) $value->j2commerce_product_optionvalue_id . '">';
+                    $html .= '<label class="form-check-label" for="opt_' . (int) $value->j2commerce_product_optionvalue_id . '">';
+                    $html .= $this->escape($value->optionvalue_name) . $priceText;
+                    $html .= '</label>';
+                    $html .= '</div>';
                 }
                 break;
         }
@@ -942,7 +942,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             }
 
             // Options are everything after the product ID
-            $options = array_slice($values, 1);
+            $options = \array_slice($values, 1);
             $html    = '<div class="com_j2commerce j2commerce-single-product j2commerce-shortcode j2commerce-shortcode-article">';
 
             foreach ($options as $option) {
@@ -961,7 +961,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
 
                 $layoutId    = self::SHORTCODE_LAYOUT_MAP[$option];
                 $displayData = $this->buildDisplayData($product, $option, $options);
-                $html       .= ProductLayoutService::renderLayout($layoutId, $displayData);
+                $html .= ProductLayoutService::renderLayout($layoutId, $displayData);
             }
 
             $html .= '</div>';
@@ -1039,7 +1039,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
     private function renderProductDetail(int $productId): string
     {
         try {
-            $app = $this->getApplication();
+            $app        = $this->getApplication();
             $mvcFactory = $app->bootComponent('com_j2commerce')->getMVCFactory();
 
             /** @var \J2Commerce\Component\J2commerce\Site\Model\ProductModel $model */
@@ -1068,7 +1068,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
 
             // Seed the view with the same properties Site\View\Product\HtmlView::display()
             // sets before dispatching the event. The subtemplate plugin reads these.
-            $params = $this->buildArticleParams();
+            $params      = $this->buildArticleParams();
             $subtemplate = trim((string) $this->params->get('shortcode_subtemplate', ''));
             if ($subtemplate !== '') {
                 // Strip the 'app_' prefix — subtemplate plugins expect short names
@@ -1081,7 +1081,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             // to the view class so we can write them without reflection overhead.
             $state    = $model->getState();
             $identity = $app->getIdentity();
-            $setter = \Closure::bind(
+            $setter   = \Closure::bind(
                 function ($item, $params, $state, $user) {
                     $this->item    = $item;
                     $this->product = $item;
@@ -1099,7 +1099,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             // J2CommerceHelper::plugin()->eventWithHtml() because it overwrites
             // the 'html' argument with the concat of 'result' entries after dispatch.
             \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2commerce');
-            $dispatcher = $app->getDispatcher();
+            $dispatcher  = $app->getDispatcher();
             $pluginEvent = new \J2Commerce\Component\J2commerce\Administrator\Event\PluginEvent(
                 'onJ2CommerceViewProductHtml',
                 [null, &$view, $model]

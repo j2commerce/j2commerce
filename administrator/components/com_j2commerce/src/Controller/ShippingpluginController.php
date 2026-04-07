@@ -105,7 +105,7 @@ class ShippingpluginController extends BaseController
     {
         $this->checkToken();
 
-        $plugin = $this->input->getCmd('plugin', '');
+        $plugin  = $this->input->getCmd('plugin', '');
         $listUrl = Route::_(
             'index.php?option=com_j2commerce&view=shippingplugin&plugin=' . $plugin . '&pluginview=methods',
             false

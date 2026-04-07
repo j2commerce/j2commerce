@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  plg_system_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Plugin\System\J2Commerce\Extension;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\SetupGuide\SetupGuideHelper;
@@ -30,7 +31,6 @@ use Joomla\CMS\User\UserFactoryInterface;
 use Joomla\CMS\User\UserHelper;
 use Joomla\Database\DatabaseAwareTrait;
 use Joomla\Database\ParameterType;
-use Joomla\Event\DispatcherInterface;
 use Joomla\Event\Event;
 use Joomla\Event\Priority;
 use Joomla\Event\SubscriberInterface;
@@ -96,17 +96,17 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            'onAfterInitialise'            => 'onAfterInitialise',
-            'onAfterRoute'                 => 'onAfterRoute',
-            'onAfterRender'                => 'onAfterRender',
-            'onContentPrepare'             => 'onContentPrepare',
-            'onUserLogin'                  => 'onUserLogin',
-            'onBeforeCompileHead'          => ['onBeforeCompileHead', Priority::LOW],
-            'onJ2CommerceAfterUpdateCart'  => 'onJ2CommerceAfterUpdateCart',
-            'onJ2CommerceBeforeGetPrice'   => 'onJ2CommerceBeforeGetPrice',
-            'onJ2CommerceCalculateFees'    => 'onJ2CommerceCalculateFees',
-            'onJ2CommerceProcessCron'      => 'onJ2CommerceProcessCron',
-            'onJ2CommerceGetDashboardMessages'      => 'onGetDashboardMessages',
+            'onAfterInitialise'                => 'onAfterInitialise',
+            'onAfterRoute'                     => 'onAfterRoute',
+            'onAfterRender'                    => 'onAfterRender',
+            'onContentPrepare'                 => 'onContentPrepare',
+            'onUserLogin'                      => 'onUserLogin',
+            'onBeforeCompileHead'              => ['onBeforeCompileHead', Priority::LOW],
+            'onJ2CommerceAfterUpdateCart'      => 'onJ2CommerceAfterUpdateCart',
+            'onJ2CommerceBeforeGetPrice'       => 'onJ2CommerceBeforeGetPrice',
+            'onJ2CommerceCalculateFees'        => 'onJ2CommerceCalculateFees',
+            'onJ2CommerceProcessCron'          => 'onJ2CommerceProcessCron',
+            'onJ2CommerceGetDashboardMessages' => 'onGetDashboardMessages',
         ];
     }
 
@@ -172,7 +172,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
 
         $extensions = json_decode((string) file_get_contents($registryFile), true);
 
-        if (empty($extensions) || !is_array($extensions)) {
+        if (empty($extensions) || !\is_array($extensions)) {
             return;
         }
 
@@ -262,8 +262,8 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             return;
         }
 
-        $body = $app->getBody();
-        $version = \constant(self::VERSION_CONSTANT);
+        $body          = $app->getBody();
+        $version       = \constant(self::VERSION_CONSTANT);
         $classAddition = 'j2c-' . str_replace('.', '-', $version);
 
         // When rendered inside tmpl=component (Fancybox quickview iframe), the Cassiopeia
@@ -301,9 +301,9 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             return;
         }
 
-        $body = $app->getBody();
+        $body   = $app->getBody();
         $hidden = '<input type="hidden" name="return" value="' . htmlspecialchars($return, ENT_QUOTES, 'UTF-8') . '">';
-        $body = str_replace('</form>', $hidden . '</form>', $body);
+        $body   = str_replace('</form>', $hidden . '</form>', $body);
         $app->setBody($body);
     }
 
@@ -326,7 +326,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
 
         $context = $event->getArgument(0, '');
         $article = $event->getArgument(1, null);
-        $params = $event->getArgument(2, null);
+        $params  = $event->getArgument(2, null);
 
         $app = $this->getApplication();
 
@@ -335,7 +335,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         }
 
         $dispatcher = $app->getDispatcher();
-        $j2Event = new Event(
+        $j2Event    = new Event(
             'onJ2CommerceContentPrepare',
             [
                 'context' => $context,
@@ -383,9 +383,9 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             return;
         }
 
-        $session = Factory::getApplication()->getSession();
+        $session      = Factory::getApplication()->getSession();
         $oldSessionId = $session->get('old_sessionid', '', self::SESSION_NAMESPACE);
-        $userId = (int) UserHelper::getUserId($user['username']);
+        $userId       = (int) UserHelper::getUserId($user['username']);
 
         if ($userId === 0) {
             return;
@@ -423,7 +423,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         }
 
         $pluginParams = new Registry($plugin->params ?? '{}');
-        $options = [
+        $options      = [
             'defaultgroup' => 'page',
             'browsercache' => $pluginParams->get('browsercache', false),
             'caching'      => false,
@@ -453,7 +453,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             return;
         }
 
-        $input = $app->getInput();
+        $input  = $app->getInput();
         $userId = $input->getInt('user_id', 0);
 
         if ($userId === 0) {
@@ -480,8 +480,8 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
 
         // Get user's group IDs
         $userFactory = Factory::getContainer()->get(UserFactoryInterface::class);
-        $user = $userFactory->loadUserById((int) $userId);
-        $groupIds = implode(',', Access::getGroupsByUser($user->id));
+        $user        = $userFactory->loadUserById((int) $userId);
+        $groupIds    = implode(',', Access::getGroupsByUser($user->id));
 
         // Set group ID on calculator if it has the method
         if (\is_object($calculator) && method_exists($calculator, 'setGroupId')) {
@@ -515,14 +515,14 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             return;
         }
 
-        $input = $app->getInput();
+        $input  = $app->getInput();
         $option = $input->get('option', '');
 
         if ($option !== self::COMPONENT_NAME) {
             return;
         }
 
-        $view = $input->get('view', '');
+        $view       = $input->get('view', '');
         $orderViews = ['orders', 'order'];
 
         if (!\in_array($view, $orderViews, true)) {
@@ -595,7 +595,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
                 return;
             }
 
-            $wa = $document->getWebAssetManager();
+            $wa      = $document->getWebAssetManager();
             $baseUrl = Uri::root();
 
             // Add J2Commerce URL variable for JavaScript AJAX calls
@@ -634,9 +634,9 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
 
         // Attempt to apply coupon via component model if available
         try {
-            $component = $app->bootComponent(self::COMPONENT_NAME);
+            $component  = $app->bootComponent(self::COMPONENT_NAME);
             $mvcFactory = $component->getMVCFactory();
-            $model = $mvcFactory->createModel('Coupons', 'Site', ['ignore_request' => true]);
+            $model      = $mvcFactory->createModel('Coupons', 'Site', ['ignore_request' => true]);
 
             if ($model !== null && method_exists($model, 'setCoupon')) {
                 $model->setCoupon($coupon);
@@ -684,7 +684,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             // Prevent duplicates
             $classes = preg_split('/\s+/', $existing, -1, PREG_SPLIT_NO_EMPTY);
 
-            if (!in_array($className, $classes, true)) {
+            if (!\in_array($className, $classes, true)) {
                 $classes[] = $className;
             }
 
@@ -775,14 +775,14 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             return false;
         }
 
-        $params = ComponentHelper::getParams(self::COMPONENT_NAME);
+        $params      = ComponentHelper::getParams(self::COMPONENT_NAME);
         $lastRunUnix = (int) $params->get(self::INVENTORY_TIMESTAMP_PARAM, 0);
 
         if ($lastRunUnix === 0) {
             return true;
         }
 
-        $dateInfo = getdate($lastRunUnix);
+        $dateInfo    = getdate($lastRunUnix);
         $nextRunUnix = mktime(0, 0, 0, $dateInfo['mon'], $dateInfo['mday'], $dateInfo['year']);
         $nextRunUnix += 24 * 3600; // Add 24 hours
 
@@ -820,9 +820,9 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
                 return;
             }
 
-            $component = $app->bootComponent(self::COMPONENT_NAME);
+            $component  = $app->bootComponent(self::COMPONENT_NAME);
             $mvcFactory = $component->getMVCFactory();
-            $model = $mvcFactory->createModel('Orders', 'Administrator', ['ignore_request' => true]);
+            $model      = $mvcFactory->createModel('Orders', 'Administrator', ['ignore_request' => true]);
 
             if ($model !== null && method_exists($model, 'cancelUnpaidOrders')) {
                 $model->cancelUnpaidOrders();
@@ -845,14 +845,14 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
     private function updateLastRunTimestamp(): void
     {
         $lastRun = time();
-        $params = ComponentHelper::getParams(self::COMPONENT_NAME);
+        $params  = ComponentHelper::getParams(self::COMPONENT_NAME);
         $params->set(self::INVENTORY_TIMESTAMP_PARAM, $lastRun);
 
-        $db = $this->getDatabase();
+        $db   = $this->getDatabase();
         $data = $params->toString();
 
         $element = self::COMPONENT_NAME;
-        $type = 'component';
+        $type    = 'component';
 
         $query = $db->getQuery(true)
             ->update($db->quoteName('#__extensions'))
@@ -887,7 +887,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             return;
         }
 
-        $db = $this->getDatabase();
+        $db      = $this->getDatabase();
         $orderId = $order->order_id;
 
         $query = $db->getQuery(true)
@@ -1015,7 +1015,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         $debugMode = (bool) $this->params->get('debug_mode', 0);
         $debugInfo = ['System EcommerceSchema: onBeforeCompileHead'];
 
-        $context = $this->getCurrentProductContext();
+        $context     = $this->getCurrentProductContext();
         $debugInfo[] = 'Context: type=' . ($context['type'] ?? 'null') . ', id=' . ($context['id'] ?? 'null');
 
         if ($context['type'] === null || $context['id'] === null) {
@@ -1047,13 +1047,13 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
 
         $product = null;
         if ($context['type'] === 'product') {
-            if($context['id'] > 0){
+            if ($context['id'] > 0) {
                 $product = $this->getProductById($context['id']);
             }
 
             $debugInfo[] = 'Product lookup by ID ' . $context['id'] . ': ' . ($product ? 'found' : 'not found');
         } elseif ($context['type'] === 'article') {
-            $product = $this->getProductByArticleId($context['id']);
+            $product     = $this->getProductByArticleId($context['id']);
             $debugInfo[] = 'Product lookup by article ID ' . $context['id'] . ': ' . ($product ? 'found product ' . $product->j2commerce_product_id : 'not found');
         }
 
@@ -1066,12 +1066,12 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         }
 
         // Build the product schema
-        $isVariable = $this->isVariableProduct($product);
-        $variants = $this->getProductVariants($product);
+        $isVariable  = $this->isVariableProduct($product);
+        $variants    = $this->getProductVariants($product);
         $debugInfo[] = 'Product type: ' . ($product->product_type ?? 'null') . ', isVariable: ' . ($isVariable ? 'true' : 'false') . ', variants: ' . \count($variants);
 
         $productSchema = $this->buildProductSchema($product);
-        $debugInfo[] = 'Built schema: ' . ($productSchema['@type'] ?? 'none');
+        $debugInfo[]   = 'Built schema: ' . ($productSchema['@type'] ?? 'none');
 
         if (empty($productSchema) || !isset($productSchema['@type'])) {
             if ($debugMode) {
@@ -1166,7 +1166,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         // Check custom tags for existing JSON-LD with Product
         if (!empty($headData['custom'])) {
             foreach ($headData['custom'] as $tag) {
-                if (is_string($tag) && strpos($tag, 'application/ld+json') !== false) {
+                if (\is_string($tag) && strpos($tag, 'application/ld+json') !== false) {
                     if (strpos($tag, '"@type":"Product"') !== false || strpos($tag, '"@type": "Product"') !== false) {
                         return true;
                     }
@@ -1194,7 +1194,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
 
         try {
             $productHelper = J2CommerceHelper::product();
-            if($productId > 0){
+            if ($productId > 0) {
                 $product = $productHelper->getFullProduct($productId);
 
                 if ($product && isset($product->j2commerce_product_id) && $product->j2commerce_product_id > 0) {
@@ -1258,8 +1258,8 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
     private function buildProductSchema(object $product): array
     {
         // Check if this is a variable product with multiple variants
-        $isVariable = $this->isVariableProduct($product);
-        $variants = $this->getProductVariants($product);
+        $isVariable   = $this->isVariableProduct($product);
+        $variants     = $this->getProductVariants($product);
         $variantCount = \count($variants);
 
         // Use Product with hasVariant for variable products with multiple variants
@@ -1305,7 +1305,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
 
         // MPN
         if (isset($product->variant->params)) {
-            $variantParams = is_string($product->variant->params)
+            $variantParams = \is_string($product->variant->params)
                 ? json_decode($product->variant->params, true)
                 : (array) $product->variant->params;
 
@@ -1323,7 +1323,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         $images = $this->getProductImages($product);
 
         if (!empty($images)) {
-            $schema['image'] = count($images) === 1 ? $images[0] : $images;
+            $schema['image'] = \count($images) === 1 ? $images[0] : $images;
         }
 
         // Brand
@@ -1364,7 +1364,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
      */
     private function buildVariableProductSchema(object $product, array $variants): array
     {
-        $productUrl = $this->getProductUrl($product);
+        $productUrl    = $this->getProductUrl($product);
         $masterVariant = $this->getMasterVariant($variants);
 
         $schema = [
@@ -1389,7 +1389,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
 
         // MPN from master variant
         if ($masterVariant && isset($masterVariant->params)) {
-            $variantParams = is_string($masterVariant->params)
+            $variantParams = \is_string($masterVariant->params)
                 ? json_decode($masterVariant->params, true)
                 : (array) $masterVariant->params;
 
@@ -1402,7 +1402,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         $images = $this->getProductImages($product);
 
         if (!empty($images)) {
-            $schema['image'] = count($images) === 1 ? $images[0] : $images;
+            $schema['image'] = \count($images) === 1 ? $images[0] : $images;
         }
 
         // Brand
@@ -1484,8 +1484,8 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
      */
     private function buildVariantSchema(object $product, object $variant, int $index): array
     {
-        $productUrl = $this->getProductUrl($product);
-        $variantName = $this->getVariantDisplayName($variant);
+        $productUrl        = $this->getProductUrl($product);
+        $variantName       = $this->getVariantDisplayName($variant);
         $variantProperties = $this->getVariantProperties($variant);
 
         // Build variant identifier for @id
@@ -1546,7 +1546,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
     private function getVariantImage(object $variant): ?string
     {
         if (isset($variant->params)) {
-            $variantParams = is_string($variant->params)
+            $variantParams = \is_string($variant->params)
                 ? json_decode($variant->params, true)
                 : (array) $variant->params;
 
@@ -1587,7 +1587,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
                 }
 
                 // Get option value details
-                $db = $this->getDatabase();
+                $db    = $this->getDatabase();
                 $query = $db->getQuery(true)
                     ->select([
                         $db->quoteName('o.option_unique_name'),
@@ -1680,7 +1680,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             $price = $variant->special_price;
         }
 
-        $offer['price'] = number_format((float) $price, 2, '.', '');
+        $offer['price']         = number_format((float) $price, 2, '.', '');
         $offer['priceCurrency'] = $this->getCurrencyCode();
 
         // Item Condition
@@ -1713,9 +1713,9 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
      */
     private function buildAggregateOfferSchema(array $variants): array
     {
-        $prices = [];
+        $prices         = [];
         $availabilities = [];
-        $offerCount = 0;
+        $offerCount     = 0;
 
         foreach ($variants as $variant) {
             // Skip master variant
@@ -1746,12 +1746,12 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
 
         // Price range
         if (!empty($prices)) {
-            $offer['lowPrice'] = number_format(min($prices), 2, '.', '');
+            $offer['lowPrice']  = number_format(min($prices), 2, '.', '');
             $offer['highPrice'] = number_format(max($prices), 2, '.', '');
         }
 
         $offer['priceCurrency'] = $this->getCurrencyCode();
-        $offer['offerCount'] = $offerCount;
+        $offer['offerCount']    = $offerCount;
 
         // Item Condition
         $offer['itemCondition'] = $this->getItemConditionUrl();
@@ -1930,7 +1930,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         $description = preg_replace('/\s+/', ' ', $description);
         $description = trim($description);
 
-        if (strlen($description) > 5000) {
+        if (\strlen($description) > 5000) {
             $description = substr($description, 0, 4997) . '...';
         }
 
@@ -1969,13 +1969,13 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         if (!empty($product->additional_images)) {
             $additionalImages = json_decode($product->additional_images, true);
 
-            if (is_array($additionalImages)) {
+            if (\is_array($additionalImages)) {
                 foreach ($additionalImages as $img) {
                     $imgPath = '';
 
-                    if (is_string($img) && !empty($img)) {
+                    if (\is_string($img) && !empty($img)) {
                         $imgPath = $img;
-                    } elseif (is_array($img) && !empty($img['image'])) {
+                    } elseif (\is_array($img) && !empty($img['image'])) {
                         $imgPath = $img['image'];
                     }
 
@@ -2011,7 +2011,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         $cleanedImage = HTMLHelper::_('cleanImageURL', $imagePath);
 
         // cleanImageURL returns an object with 'url' property
-        if (is_object($cleanedImage) && isset($cleanedImage->url)) {
+        if (\is_object($cleanedImage) && isset($cleanedImage->url)) {
             $url = $cleanedImage->url;
         } else {
             $url = $imagePath;
@@ -2137,7 +2137,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         }
 
         // Fallback: Try to get from product source object (article catid)
-        if (isset($product->source) && isset($product->source->catid)) {
+        if (isset($product->source, $product->source->catid)) {
             $catid = (int) $product->source->catid;
 
             if ($catid > 0) {
@@ -2163,7 +2163,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             return null;
         }
 
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select($db->quoteName('id'))
             ->from($db->quoteName('#__categories'))
@@ -2344,7 +2344,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
     private function getPriceValidUntil(): string
     {
         $priceValidOption = $this->params->get('price_valid_until', '1year');
-        $customDate = $this->params->get('price_valid_custom_date', '');
+        $customDate       = $this->params->get('price_valid_custom_date', '');
 
         $now = new \DateTime();
 
@@ -2383,7 +2383,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
      */
     private function getCurrencyCode(): string
     {
-        $params = ComponentHelper::getParams('com_j2commerce');
+        $params          = ComponentHelper::getParams('com_j2commerce');
         $defaultCurrency = $params->get('config_currency', 'USD');
 
         return $defaultCurrency;
@@ -2450,7 +2450,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
                 continue;
             }
 
-            if (is_array($value)) {
+            if (\is_array($value)) {
                 $value = $this->cleanSchema($value);
 
                 if (empty($value)) {

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,14 +12,13 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 
-use DVDoug\BoxPacker\Packer;
 use DVDoug\BoxPacker\PackedBox;
+use DVDoug\BoxPacker\Packer;
 use DVDoug\BoxPacker\Rotation;
 use J2Commerce\Component\J2commerce\Administrator\Helper\Shipping\PackedBoxResult;
 use J2Commerce\Component\J2commerce\Administrator\Helper\Shipping\PackingResult;
 use J2Commerce\Component\J2commerce\Administrator\Helper\Shipping\ShippableItem;
 use J2Commerce\Component\J2commerce\Administrator\Helper\Shipping\ShippingBox;
-use Joomla\CMS\Factory;
 use Joomla\CMS\Log\Log;
 use Joomla\Registry\Registry;
 
@@ -44,7 +44,7 @@ class ShipperHelper
         'lb' => 453.592,
     ];
 
-    private static ?int $mmUnitId = null;
+    private static ?int $mmUnitId   = null;
     private static ?int $gramUnitId = null;
 
     public static function packItems(array $boxes, array $items, array $options = []): PackingResult
@@ -71,11 +71,11 @@ class ShipperHelper
     {
         $raw = $params->get($fieldName, []);
 
-        if (is_string($raw)) {
+        if (\is_string($raw)) {
             $raw = json_decode($raw, true) ?: [];
         }
 
-        if (!is_array($raw)) {
+        if (!\is_array($raw)) {
             return [];
         }
 
@@ -129,17 +129,17 @@ class ShipperHelper
     public static function getPerItemPackages(array $items, array $options = []): PackingResult
     {
         $defaults = self::getDefaults($options);
-        $boxes = [];
+        $boxes    = [];
 
         foreach ($items as $item) {
-            $item = (object) $item;
-            $qty = self::getItemQty($item);
-            $weight = self::getItemWeight($item, $defaults['default_weight']);
-            $length = self::getItemDimension($item, 'length', $defaults['default_length']);
-            $width = self::getItemDimension($item, 'width', $defaults['default_width']);
-            $height = self::getItemDimension($item, 'height', $defaults['default_height']);
+            $item        = (object) $item;
+            $qty         = self::getItemQty($item);
+            $weight      = self::getItemWeight($item, $defaults['default_weight']);
+            $length      = self::getItemDimension($item, 'length', $defaults['default_length']);
+            $width       = self::getItemDimension($item, 'width', $defaults['default_width']);
+            $height      = self::getItemDimension($item, 'height', $defaults['default_height']);
             $description = self::getItemDescription($item);
-            $price = self::getItemPrice($item);
+            $price       = self::getItemPrice($item);
 
             for ($i = 0; $i < $qty; $i++) {
                 $boxes[] = new PackedBoxResult(
@@ -164,7 +164,7 @@ class ShipperHelper
     {
         $normalizedItems = [];
         foreach ($items as $item) {
-            $item = (array) $item;
+            $item              = (array) $item;
             $normalizedItems[] = (object) [
                 'product_name' => $item['description'] ?? 'Item',
                 'length'       => (float) ($item['length'] ?? 0),
@@ -189,8 +189,8 @@ class ShipperHelper
 
         $weightUnitId = (int) ($options['weight_unit_id'] ?? 1);
         $lengthUnitId = (int) ($options['length_unit_id'] ?? 1);
-        $defaults = self::getDefaults($options);
-        $rotation = self::resolveRotation($options['rotation'] ?? 'best_fit');
+        $defaults     = self::getDefaults($options);
+        $rotation     = self::resolveRotation($options['rotation'] ?? 'best_fit');
 
         $packer = new Packer();
         $packer->throwOnUnpackableItem(false);
@@ -216,7 +216,7 @@ class ShipperHelper
 
         foreach ($shippable as $item) {
             $item = (object) $item;
-            $qty = self::getItemQty($item);
+            $qty  = self::getItemQty($item);
             for ($i = 0; $i < $qty; $i++) {
                 $packer->addItem(new ShippableItem(
                     description: self::getItemDescription($item),
@@ -230,17 +230,17 @@ class ShipperHelper
             }
         }
 
-        $packedBoxes = $packer->pack();
+        $packedBoxes   = $packer->pack();
         $unpackedItems = $packer->getUnpackedItems();
 
         $resultBoxes = [];
         foreach ($packedBoxes as $packedBox) {
             /** @var PackedBox $packedBox */
-            $box = $packedBox->box;
-            $itemsList = [];
+            $box        = $packedBox->box;
+            $itemsList  = [];
             $itemCounts = [];
             foreach ($packedBox->items as $packedItem) {
-                $desc = $packedItem->item->getDescription();
+                $desc              = $packedItem->item->getDescription();
                 $itemCounts[$desc] = ($itemCounts[$desc] ?? 0) + 1;
             }
             foreach ($itemCounts as $desc => $count) {
@@ -263,7 +263,7 @@ class ShipperHelper
                 'itemWeight'        => round(self::fromGrams($packedBox->getItemWeight(), $weightUnitId), 2),
                 'boxWeight'         => round(self::fromGrams($box->getEmptyWeight(), $weightUnitId), 2),
                 'maxWeight'         => $box->getMaxWeight() === PHP_INT_MAX ? 0 : round(self::fromGrams($box->getMaxWeight(), $weightUnitId), 2),
-                'totalValue'        => array_sum(array_map(fn($pi) => $pi->item instanceof ShippableItem ? $pi->item->getValue() : 0.0, iterator_to_array($packedBox->items))),
+                'totalValue'        => array_sum(array_map(fn ($pi) => $pi->item instanceof ShippableItem ? $pi->item->getValue() : 0.0, iterator_to_array($packedBox->items))),
                 'volumeUtilisation' => $packedBox->getVolumeUtilisation(),
                 'items'             => $itemsList,
                 'visualisationUrl'  => $visUrl,
@@ -283,8 +283,8 @@ class ShipperHelper
 
         return [
             'success'   => true,
-            'boxCount'  => count($resultBoxes),
-            'itemCount' => array_sum(array_map(fn($b) => array_sum(array_column($b['items'], 'qty')), $resultBoxes)),
+            'boxCount'  => \count($resultBoxes),
+            'itemCount' => array_sum(array_map(fn ($b) => array_sum(array_column($b['items'], 'qty')), $resultBoxes)),
             'boxes'     => $resultBoxes,
             'unpacked'  => $unpackedResult,
             'method'    => 'box_packing',
@@ -299,8 +299,8 @@ class ShipperHelper
     {
         $weightUnitId = (int) ($options['weight_unit_id'] ?? 1);
         $lengthUnitId = (int) ($options['length_unit_id'] ?? 1);
-        $defaults = self::getDefaults($options);
-        $rotation = self::resolveRotation($options['rotation'] ?? 'best_fit');
+        $defaults     = self::getDefaults($options);
+        $rotation     = self::resolveRotation($options['rotation'] ?? 'best_fit');
 
         $packer = new Packer();
         $packer->throwOnUnpackableItem(false);
@@ -326,7 +326,7 @@ class ShipperHelper
 
         foreach ($items as $item) {
             $item = (object) $item;
-            $qty = self::getItemQty($item);
+            $qty  = self::getItemQty($item);
             for ($i = 0; $i < $qty; $i++) {
                 $packer->addItem(new ShippableItem(
                     description: self::getItemDescription($item),
@@ -340,16 +340,16 @@ class ShipperHelper
             }
         }
 
-        $packedBoxes = $packer->pack();
+        $packedBoxes   = $packer->pack();
         $unpackedItems = $packer->getUnpackedItems();
 
         $resultBoxes = [];
         foreach ($packedBoxes as $packedBox) {
-            $box = $packedBox->box;
-            $itemsList = [];
+            $box        = $packedBox->box;
+            $itemsList  = [];
             $itemCounts = [];
             foreach ($packedBox->items as $packedItem) {
-                $desc = $packedItem->item->getDescription();
+                $desc              = $packedItem->item->getDescription();
                 $itemCounts[$desc] = ($itemCounts[$desc] ?? 0) + 1;
             }
             foreach ($itemCounts as $desc => $count) {
@@ -407,7 +407,7 @@ class ShipperHelper
             return max(1, (int) round($converted));
         }
 
-        $unit = LengthHelper::getUnit($lengthUnitId);
+        $unit   = LengthHelper::getUnit($lengthUnitId);
         $factor = self::LENGTH_TO_MM[strtolower($unit)] ?? 25.4;
         return max(1, (int) round($value * $factor));
     }
@@ -419,7 +419,7 @@ class ShipperHelper
             return LengthHelper::convert((float) $valueMm, $mmId, $lengthUnitId);
         }
 
-        $unit = LengthHelper::getUnit($lengthUnitId);
+        $unit   = LengthHelper::getUnit($lengthUnitId);
         $factor = self::LENGTH_TO_MM[strtolower($unit)] ?? 25.4;
         return $factor > 0 ? (float) $valueMm / $factor : (float) $valueMm;
     }
@@ -436,7 +436,7 @@ class ShipperHelper
             return max(1, (int) round($converted));
         }
 
-        $unit = WeightHelper::getUnit($weightUnitId);
+        $unit   = WeightHelper::getUnit($weightUnitId);
         $factor = self::WEIGHT_TO_G[strtolower($unit)] ?? 453.592;
         return max(1, (int) round($value * $factor));
     }
@@ -448,7 +448,7 @@ class ShipperHelper
             return WeightHelper::convert((float) $valueG, $gId, $weightUnitId);
         }
 
-        $unit = WeightHelper::getUnit($weightUnitId);
+        $unit   = WeightHelper::getUnit($weightUnitId);
         $factor = self::WEIGHT_TO_G[strtolower($unit)] ?? 453.592;
         return $factor > 0 ? (float) $valueG / $factor : (float) $valueG;
     }
@@ -496,7 +496,7 @@ class ShipperHelper
             if (isset($item->shipping) && (int) $item->shipping === 0) {
                 return false;
             }
-            if (isset($item->cartitem) && is_object($item->cartitem) && isset($item->cartitem->shipping) && (int) $item->cartitem->shipping === 0) {
+            if (isset($item->cartitem) && \is_object($item->cartitem) && isset($item->cartitem->shipping) && (int) $item->cartitem->shipping === 0) {
                 return false;
             }
             return true;
@@ -589,7 +589,7 @@ class ShipperHelper
         return [
             'success'   => true,
             'boxCount'  => $result->getBoxCount(),
-            'itemCount' => array_sum(array_map(fn($b) => array_sum(array_column($b['items'], 'qty')), $boxes)),
+            'itemCount' => array_sum(array_map(fn ($b) => array_sum(array_column($b['items'], 'qty')), $boxes)),
             'boxes'     => $boxes,
             'unpacked'  => $result->unpacked,
             'method'    => $result->method,

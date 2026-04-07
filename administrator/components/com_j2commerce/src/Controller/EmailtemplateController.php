@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -9,11 +10,11 @@
 
 namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\EmailHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\MessageHelper;
-use Joomla\CMS\Application\CMSApplication;
+use Joomla\CMS\Event\GenericEvent;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\FormController;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
@@ -22,7 +23,6 @@ use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
 use Joomla\CMS\Versioning\VersionableControllerTrait;
 use Joomla\Database\DatabaseInterface;
-use Joomla\CMS\Event\GenericEvent;
 
 /**
  * Controller for a single email template
@@ -141,7 +141,7 @@ class EmailtemplateController extends FormController
     protected function allowEdit($data = [], $key = 'j2commerce_emailtemplate_id')
     {
         $recordId = (int) isset($data[$key]) ? $data[$key] : 0;
-        $user = $this->app->getIdentity();
+        $user     = $this->app->getIdentity();
 
         // Zero record (id:0), return component edit permission by calling parent
         if (!$recordId) {
@@ -182,7 +182,7 @@ class EmailtemplateController extends FormController
     protected function getRedirectToItemAppend($recordId = null, $urlVar = 'j2commerce_emailtemplate_id')
     {
         // Need to override the parent method completely.
-        $tmpl = $this->input->get('tmpl');
+        $tmpl   = $this->input->get('tmpl');
         $layout = $this->input->get('layout', 'edit', 'string');
         $append = '';
 
@@ -217,7 +217,7 @@ class EmailtemplateController extends FormController
      */
     protected function getRedirectToListAppend()
     {
-        $tmpl = $this->input->get('tmpl');
+        $tmpl   = $this->input->get('tmpl');
         $append = '';
 
         // Setup redirect info.
@@ -243,8 +243,8 @@ class EmailtemplateController extends FormController
     {
         Session::checkToken() or jexit(Text::_('JINVALID_TOKEN'));
 
-        $body = $this->input->post->getRaw('body', '');
-        $subject = $this->input->post->getString('subject', '');
+        $body      = $this->input->post->getRaw('body', '');
+        $subject   = $this->input->post->getString('subject', '');
         $customCss = $this->input->post->getRaw('custom_css', '');
 
         // Restore data-j2c-src placeholders back to src (editor injects these to prevent 404s)
@@ -259,14 +259,14 @@ class EmailtemplateController extends FormController
         );
 
         $emailHelper = EmailHelper::getInstance();
-        $order = $emailHelper->getSampleOrderData();
+        $order       = $emailHelper->getSampleOrderData();
 
-        $processedBody = $emailHelper->processTags($body, $order);
+        $processedBody    = $emailHelper->processTags($body, $order);
         $processedSubject = $emailHelper->processTags($subject, $order);
 
         // Build full HTML with custom CSS
         $headStyles = '';
-        $customCss = trim($customCss);
+        $customCss  = trim($customCss);
         if ($customCss !== '') {
             $headStyles = '<style type="text/css">' . $customCss . '</style>';
         }
@@ -288,8 +288,8 @@ class EmailtemplateController extends FormController
     {
         Session::checkToken() or jexit(Text::_('JINVALID_TOKEN'));
 
-        $body = $this->input->post->getRaw('body', '');
-        $subject = $this->input->post->getString('subject', '');
+        $body      = $this->input->post->getRaw('body', '');
+        $subject   = $this->input->post->getString('subject', '');
         $customCss = $this->input->post->getRaw('custom_css', '');
         $recipient = $this->input->post->getString('recipient', '');
 
@@ -305,14 +305,14 @@ class EmailtemplateController extends FormController
 
         try {
             $emailHelper = EmailHelper::getInstance();
-            $order = $emailHelper->getSampleOrderData();
+            $order       = $emailHelper->getSampleOrderData();
 
-            $processedBody = $emailHelper->processTags($body, $order);
+            $processedBody    = $emailHelper->processTags($body, $order);
             $processedSubject = $emailHelper->processTags($subject, $order);
 
             // Build full HTML
             $headStyles = '';
-            $customCss = trim($customCss);
+            $customCss  = trim($customCss);
             if ($customCss !== '') {
                 $headStyles = '<style type="text/css">' . $customCss . '</style>';
             }
@@ -329,7 +329,7 @@ class EmailtemplateController extends FormController
             $mailer->addRecipient($recipient);
             $mailer->setSubject('[TEST] ' . $processedSubject);
             $mailer->isHTML(true);
-            $mailer->CharSet = 'utf-8';
+            $mailer->CharSet  = 'utf-8';
             $mailer->Encoding = 'base64';
             $mailer->setBody($htmlBody);
 
@@ -353,7 +353,7 @@ class EmailtemplateController extends FormController
     {
         Session::checkToken('get') or Session::checkToken() or jexit(Text::_('JINVALID_TOKEN'));
 
-        $type = $this->input->getCmd('type', '');
+        $type   = $this->input->getCmd('type', '');
         $design = $this->input->getCmd('design', '');
 
         $json = ['success' => false, 'body' => ''];
@@ -369,7 +369,7 @@ class EmailtemplateController extends FormController
         // Allow plugins to serve their own template HTML
         PluginHelper::importPlugin('j2commerce');
         $templateResult = ['body' => null];
-        $event = new GenericEvent('onJ2CommerceGetEmailTemplates', [
+        $event          = new GenericEvent('onJ2CommerceGetEmailTemplates', [
             'type'   => $type,
             'design' => $design,
             'result' => &$templateResult,
@@ -396,7 +396,7 @@ class EmailtemplateController extends FormController
         }
 
         $json['success'] = true;
-        $json['body'] = file_get_contents($filePath);
+        $json['body']    = file_get_contents($filePath);
 
         header('Content-Type: application/json');
         echo json_encode($json);
@@ -461,10 +461,10 @@ class EmailtemplateController extends FormController
         $html = ob_get_clean();
 
         $json = [
-            'success'   => true,
-            'html'      => $html,
+            'success'    => true,
+            'html'       => $html,
             'shortcodes' => $shortcodeData,
-            'typeTags'  => $typeTags,
+            'typeTags'   => $typeTags,
         ];
 
         header('Content-Type: application/json');
@@ -491,14 +491,14 @@ class EmailtemplateController extends FormController
         // Check for request forgeries.
         $this->checkToken();
 
-        $app = $this->app;
-        $lang = $app->getLanguage();
-        $model = $this->getModel();
-        $table = $model->getTable();
-        $data = $this->input->post->get('jform', [], 'array');
+        $app     = $this->app;
+        $lang    = $app->getLanguage();
+        $model   = $this->getModel();
+        $table   = $model->getTable();
+        $data    = $this->input->post->get('jform', [], 'array');
         $checkin = property_exists($table, 'checked_out');
         $context = "$this->option.edit.$this->context";
-        $task = $this->getTask();
+        $task    = $this->getTask();
 
         // Determine the name of the primary key for the data.
         if (empty($key)) {
@@ -543,7 +543,8 @@ class EmailtemplateController extends FormController
                 $this->setRedirect(
                     Route::_(
                         'index.php?option=' . $this->option . '&view=' . $this->view_item
-                        . $this->getRedirectToItemAppend($recordId, $urlVar), false
+                        . $this->getRedirectToItemAppend($recordId, $urlVar),
+                        false
                     )
                 );
 
@@ -551,9 +552,9 @@ class EmailtemplateController extends FormController
             }
 
             // Reset the ID, the multilingual associations and then treat the request as for Apply.
-            $data[$key] = 0;
+            $data[$key]           = 0;
             $data['associations'] = [];
-            $task = 'apply';
+            $task                 = 'apply';
         }
 
         // Access check.
@@ -601,7 +602,8 @@ class EmailtemplateController extends FormController
             $this->setRedirect(
                 Route::_(
                     'index.php?option=' . $this->option . '&view=' . $this->view_item
-                    . $this->getRedirectToItemAppend($recordId, $urlVar), false
+                    . $this->getRedirectToItemAppend($recordId, $urlVar),
+                    false
                 )
             );
 
@@ -619,7 +621,8 @@ class EmailtemplateController extends FormController
             $this->setRedirect(
                 Route::_(
                     'index.php?option=' . $this->option . '&view=' . $this->view_item
-                    . $this->getRedirectToItemAppend($recordId, $urlVar), false
+                    . $this->getRedirectToItemAppend($recordId, $urlVar),
+                    false
                 )
             );
 
@@ -637,7 +640,8 @@ class EmailtemplateController extends FormController
             $this->setRedirect(
                 Route::_(
                     'index.php?option=' . $this->option . '&view=' . $this->view_item
-                    . $this->getRedirectToItemAppend($recordId, $urlVar), false
+                    . $this->getRedirectToItemAppend($recordId, $urlVar),
+                    false
                 )
             );
 

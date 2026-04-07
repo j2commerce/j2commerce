@@ -29,7 +29,7 @@ class ShippingController extends BaseController
             return;
         }
 
-        $testItems  = json_decode($this->input->post->getString('test_items', '[]'), true) ?: [];
+        $testItems   = json_decode($this->input->post->getString('test_items', '[]'), true) ?: [];
         $customBoxes = json_decode($this->input->post->getString('custom_boxes', '[]'), true) ?: [];
 
         if (empty($testItems)) {

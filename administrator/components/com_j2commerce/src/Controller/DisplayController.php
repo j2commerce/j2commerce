@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -29,7 +30,7 @@ class DisplayController extends BaseController
 
     /** Views where directory casing differs from model class. */
     private const MODEL_NAME_MAP = [
-        'productfiles'    => 'ProductFiles',
+        'productfiles' => 'ProductFiles',
     ];
 
     public function display($cachable = false, $urlparams = [])

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -131,7 +132,7 @@ class VariantsModel extends ListModel
      */
     protected function getListQuery()
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         // Select variant fields
@@ -277,7 +278,7 @@ class VariantsModel extends ListModel
             return '';
         }
 
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         // Get option values with their parent option names for "Any" handling
@@ -334,7 +335,7 @@ class VariantsModel extends ListModel
      */
     public function getDimensions(string $type, string $keyField, string $nameField): array
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         $table = '#__j2commerce_' . $type;
@@ -404,7 +405,7 @@ class VariantsModel extends ListModel
             return null;
         }
 
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $this->getListQuery();
         $query->where($db->quoteName('a.j2commerce_variant_id') . ' = :variantPk')
             ->bind(':variantPk', $variantId, ParameterType::INTEGER);

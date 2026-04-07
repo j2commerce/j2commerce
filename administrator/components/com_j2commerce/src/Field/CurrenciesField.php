@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Field;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Field\ListField;
@@ -38,7 +39,7 @@ class CurrenciesField extends ListField
             $query = $db->getQuery(true)
                 ->select([
                     $db->quoteName('currency_code', 'value'),
-                    'CONCAT(' . $db->quoteName('currency_title') . ', \' (\', ' . $db->quoteName('currency_code') . ', \')\') AS ' . $db->quoteName('text')
+                    'CONCAT(' . $db->quoteName('currency_title') . ', \' (\', ' . $db->quoteName('currency_code') . ', \')\') AS ' . $db->quoteName('text'),
                 ])
                 ->from($db->quoteName('#__j2commerce_currencies'))
                 ->where($db->quoteName('enabled') . ' = 1')

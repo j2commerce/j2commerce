@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Field;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Event\GenericEvent;
 use Joomla\CMS\Factory;
@@ -42,7 +43,7 @@ class ConfigSubtemplateField extends ListField
 
         $seen = [];
         foreach ($pluginFolders as $entry) {
-            $name = is_string($entry) ? $entry : ($entry['name'] ?? '');
+            $name = \is_string($entry) ? $entry : ($entry['name'] ?? '');
             if ($name === '' || isset($seen[$name])) {
                 continue;
             }
@@ -57,7 +58,7 @@ class ConfigSubtemplateField extends ListField
             $options[]   = HTMLHelper::_('select.option', $name, $label);
         }
 
-        $this->hasPluginOptions = count($seen) > 0;
+        $this->hasPluginOptions = \count($seen) > 0;
 
         return $options;
     }

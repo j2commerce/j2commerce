@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Site\View\Categories;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
@@ -105,12 +106,12 @@ class HtmlView extends BaseHtmlView
 
     public function display($tpl = null): void
     {
-        $app = Factory::getApplication();
+        $app   = Factory::getApplication();
         $model = $this->getModel();
 
-        $this->params = $app->getParams();
-        $this->items = $model->getItems();
-        $this->parent = $model->getParent();
+        $this->params   = $app->getParams();
+        $this->items    = $model->getItems();
+        $this->parent   = $model->getParent();
         $this->products = $model->getProducts();
 
         // Override menu item params with category-level params when set
@@ -177,14 +178,14 @@ class HtmlView extends BaseHtmlView
             }
         }
 
-        $this->columns = (int) $this->params->get('category_columns', 3);
+        $this->columns        = (int) $this->params->get('category_columns', 3);
         $this->productColumns = (int) $this->params->get('list_no_of_columns', 3);
-        $this->sublayout = $this->params->get('subtemplate', '');
-        $this->displayMode = $this->params->get('subcategory_display_mode', 'products');
+        $this->sublayout      = $this->params->get('subtemplate', '');
+        $this->displayMode    = $this->params->get('subcategory_display_mode', 'products');
 
         // Load trending products from ALL child categories combined
         if ($this->displayMode === 'categories_popular') {
-            $limit = (int) $this->params->get('popular_product_count', 12);
+            $limit    = (int) $this->params->get('popular_product_count', 12);
             $parentId = $this->parent ? (int) $this->parent->id : 0;
 
             if ($parentId) {
@@ -233,8 +234,8 @@ class HtmlView extends BaseHtmlView
         $app = Factory::getApplication();
 
         // Set page heading: use category title when viewing a child category, menu title at root
-        $menu = $app->getMenu()->getActive();
-        $menuParentId = $menu ? (int) ($menu->query['id'] ?? 0) : 0;
+        $menu            = $app->getMenu()->getActive();
+        $menuParentId    = $menu ? (int) ($menu->query['id'] ?? 0) : 0;
         $currentParentId = $this->parent ? (int) $this->parent->id : 0;
 
         if ($this->parent && $currentParentId !== $menuParentId) {
@@ -261,16 +262,16 @@ class HtmlView extends BaseHtmlView
 
         // Add breadcrumb items for ancestor categories between menu root and current parent
         if ($this->parent && $currentParentId !== $menuParentId) {
-            $pathway = $app->getPathway();
+            $pathway    = $app->getPathway();
             $activeMenu = $menu;
 
             // Build ancestor chain from current parent up to (but not including) the menu's root category
             $ancestors = [];
-            $node = $this->parent;
+            $node      = $this->parent;
 
             while ($node && (int) $node->id !== $menuParentId && (int) $node->id > 1) {
                 $ancestors[] = $node;
-                $node = $node->getParent();
+                $node        = $node->getParent();
             }
 
             // Add ancestors in top-down order
@@ -308,11 +309,11 @@ class HtmlView extends BaseHtmlView
     public function getColumnClass(): string
     {
         return match ($this->columns) {
-            1 => 'col-12',
-            2 => 'col-12 col-md-6',
-            3 => 'col-12 col-md-6 col-lg-4',
-            4 => 'col-12 col-md-6 col-lg-3',
-            6 => 'col-12 col-md-4 col-lg-2',
+            1       => 'col-12',
+            2       => 'col-12 col-md-6',
+            3       => 'col-12 col-md-6 col-lg-4',
+            4       => 'col-12 col-md-6 col-lg-3',
+            6       => 'col-12 col-md-4 col-lg-2',
             default => 'col-12 col-md-6 col-lg-4',
         };
     }
@@ -327,11 +328,11 @@ class HtmlView extends BaseHtmlView
     public function getProductColumnClass(): string
     {
         return match ($this->productColumns) {
-            1 => 'col-12',
-            2 => 'col-12 col-md-6',
-            3 => 'col-12 col-md-6 col-lg-4',
-            4 => 'col-12 col-md-6 col-lg-3',
-            6 => 'col-12 col-md-4 col-lg-2',
+            1       => 'col-12',
+            2       => 'col-12 col-md-6',
+            3       => 'col-12 col-md-6 col-lg-4',
+            4       => 'col-12 col-md-6 col-lg-3',
+            6       => 'col-12 col-md-4 col-lg-2',
             default => 'col-12 col-md-6 col-lg-4',
         };
     }
@@ -340,10 +341,10 @@ class HtmlView extends BaseHtmlView
     {
         $cols = (int) $this->params->get('popular_grid_columns', 4);
         return match ($cols) {
-            2 => 'col-12 col-md-6',
-            3 => 'col-12 col-md-6 col-lg-4',
-            4 => 'col-12 col-md-6 col-lg-3',
-            6 => 'col-12 col-md-4 col-lg-2',
+            2       => 'col-12 col-md-6',
+            3       => 'col-12 col-md-6 col-lg-4',
+            4       => 'col-12 col-md-6 col-lg-3',
+            6       => 'col-12 col-md-4 col-lg-2',
             default => 'col-12 col-md-6 col-lg-3',
         };
     }

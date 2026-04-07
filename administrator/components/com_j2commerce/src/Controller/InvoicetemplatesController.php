@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -9,7 +10,7 @@
 
 namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\AdminController;
@@ -60,9 +61,9 @@ class InvoicetemplatesController extends AdminController
         Session::checkToken() or jexit(Text::_('JINVALID_TOKEN'));
 
         // Get items to publish from the request.
-        $cid = $this->input->get('cid', [], 'array');
-        $data = ['publish' => 1, 'unpublish' => 0, 'archive' => 2, 'trash' => -2, 'report' => -3];
-        $task = $this->getTask();
+        $cid   = $this->input->get('cid', [], 'array');
+        $data  = ['publish' => 1, 'unpublish' => 0, 'archive' => 2, 'trash' => -2, 'report' => -3];
+        $task  = $this->getTask();
         $value = \Joomla\Utilities\ArrayHelper::getValue($data, $task, 0, 'int');
 
         if (empty($cid)) {
@@ -195,8 +196,8 @@ class InvoicetemplatesController extends AdminController
         // Check for request forgeries.
         Session::checkToken() or jexit(Text::_('JINVALID_TOKEN'));
 
-        $ids = $this->input->get('cid', [], 'post', 'array');
-        $model = $this->getModel();
+        $ids    = $this->input->get('cid', [], 'post', 'array');
+        $model  = $this->getModel();
         $return = $model->checkin($ids);
 
         if ($return === false) {
@@ -205,13 +206,13 @@ class InvoicetemplatesController extends AdminController
             $this->setRedirect(Route::_('index.php?option=' . $this->option . '&view=' . $this->view_list, false), $message, 'error');
 
             return false;
-        } else {
-            // Checkin succeeded.
-            $message = Text::plural($this->text_prefix . '_N_ITEMS_CHECKED_IN', \count($ids));
-            $this->setRedirect(Route::_('index.php?option=' . $this->option . '&view=' . $this->view_list, false), $message);
-
-            return true;
         }
+        // Checkin succeeded.
+        $message = Text::plural($this->text_prefix . '_N_ITEMS_CHECKED_IN', \count($ids));
+        $this->setRedirect(Route::_('index.php?option=' . $this->option . '&view=' . $this->view_list, false), $message);
+
+        return true;
+
     }
 
     /**
@@ -224,11 +225,11 @@ class InvoicetemplatesController extends AdminController
     public function saveOrderAjax()
     {
         // Get the input
-        $pks = $this->input->post->get('cid', [], 'array');
+        $pks   = $this->input->post->get('cid', [], 'array');
         $order = $this->input->post->get('order', [], 'array');
 
         // Sanitize the input
-        $pks = \Joomla\Utilities\ArrayHelper::toInteger($pks);
+        $pks   = \Joomla\Utilities\ArrayHelper::toInteger($pks);
         $order = \Joomla\Utilities\ArrayHelper::toInteger($order);
 
         // Get the model
@@ -260,7 +261,7 @@ class InvoicetemplatesController extends AdminController
         $ids = $this->input->get('cid', [], 'post', 'array');
         $inc = $this->getTask() === 'orderup' ? -1 : 1;
 
-        $model = $this->getModel();
+        $model  = $this->getModel();
         $return = $model->reorder($ids, $inc);
 
         if ($return === false) {
@@ -269,13 +270,13 @@ class InvoicetemplatesController extends AdminController
             $this->setRedirect(Route::_('index.php?option=' . $this->option . '&view=' . $this->view_list, false), $message, 'error');
 
             return false;
-        } else {
-            // Reorder succeeded.
-            $message = Text::_('JLIB_APPLICATION_SUCCESS_ITEM_REORDERED');
-            $this->setRedirect(Route::_('index.php?option=' . $this->option . '&view=' . $this->view_list, false), $message);
-
-            return true;
         }
+        // Reorder succeeded.
+        $message = Text::_('JLIB_APPLICATION_SUCCESS_ITEM_REORDERED');
+        $this->setRedirect(Route::_('index.php?option=' . $this->option . '&view=' . $this->view_list, false), $message);
+
+        return true;
+
     }
 
     /**

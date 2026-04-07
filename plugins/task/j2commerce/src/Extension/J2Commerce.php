@@ -272,7 +272,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         $db->setQuery($query)->execute();
 
         $completedStatus = 'completed';
-        $deleteQuery = $db->createQuery()
+        $deleteQuery     = $db->createQuery()
             ->delete($db->quoteName('#__j2commerce_queues'))
             ->where($db->quoteName('status') . ' = :status')
             ->bind(':status', $completedStatus);
@@ -354,7 +354,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
     {
         PluginHelper::importPlugin('j2commerce');
 
-        $dispatcher = Factory::getApplication()->getDispatcher();
+        $dispatcher  = Factory::getApplication()->getDispatcher();
         $updateEvent = new GenericEvent('onJ2CommerceUpdateCurrencies', []);
         $dispatcher->dispatch('onJ2CommerceUpdateCurrencies', $updateEvent);
 

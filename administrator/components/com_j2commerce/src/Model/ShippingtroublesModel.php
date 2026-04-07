@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -9,7 +10,7 @@
 
 namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Model\ListModel;
@@ -38,7 +39,7 @@ class ShippingtroublesModel extends ListModel
                 'product_sku', 'v.sku',
                 'weight', 'v.weight',
                 'shipping', 'v.shipping',
-                'shipping_status'
+                'shipping_status',
             ];
         }
 
@@ -99,7 +100,7 @@ class ShippingtroublesModel extends ListModel
      */
     protected function getListQuery()
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         // Select the required fields
@@ -114,7 +115,7 @@ class ShippingtroublesModel extends ListModel
             'v.weight',
             'v.length',
             'v.width',
-            'v.height'
+            'v.height',
         ])
         ->from($db->quoteName('#__j2commerce_products', 'p'))
         ->innerJoin($db->quoteName('#__content', 'c') . ' ON p.product_source_id = c.id')
@@ -158,7 +159,7 @@ class ShippingtroublesModel extends ListModel
         }
 
         // Add the list ordering clause.
-        $orderCol = $this->getState('list.ordering', 'p.product_source_id');
+        $orderCol  = $this->getState('list.ordering', 'p.product_source_id');
         $orderDirn = $this->getState('list.direction', 'ASC');
 
         if ($orderCol && $orderDirn) {
@@ -179,13 +180,13 @@ class ShippingtroublesModel extends ListModel
     {
         $items = parent::getItems();
 
-        if (!is_array($items)) {
+        if (!\is_array($items)) {
             return [];
         }
 
         // Analyze shipping configuration for each product
         foreach ($items as &$item) {
-            $issues = [];
+            $issues   = [];
             $warnings = [];
 
             // Check if shipping is enabled for the product
@@ -213,14 +214,14 @@ class ShippingtroublesModel extends ListModel
                 $item->shipping_status = 'success';
             }
 
-            $item->shipping_issues = $issues;
+            $item->shipping_issues   = $issues;
             $item->shipping_warnings = $warnings;
         }
 
         // Apply shipping status filter after analysis
         $shipping_status = $this->getState('filter.shipping_status');
         if (!empty($shipping_status)) {
-            $items = array_filter($items, function($item) use ($shipping_status) {
+            $items = array_filter($items, function ($item) use ($shipping_status) {
                 return $item->shipping_status === $shipping_status;
             });
             // Re-index array
@@ -238,7 +239,7 @@ class ShippingtroublesModel extends ListModel
      */
     public function getShippingMethodsDiagnostic()
     {
-        $db = $this->getDatabase();
+        $db          = $this->getDatabase();
         $diagnostics = [];
 
         // Check GeoZones
@@ -250,9 +251,9 @@ class ShippingtroublesModel extends ListModel
         $geozonesCount = (int) $db->loadResult();
 
         $diagnostics['geozones'] = [
-            'status' => $geozonesCount > 0 ? 'success' : 'warning',
-            'count' => $geozonesCount,
-            'message' => $geozonesCount > 0 ? 'COM_J2COMMERCE_SHIPPING_TROUBLESHOOTER_GEOZONES_OK' : 'COM_J2COMMERCE_SHIPPING_TROUBLESHOOTER_GEOZONES_MISSING'
+            'status'  => $geozonesCount > 0 ? 'success' : 'warning',
+            'count'   => $geozonesCount,
+            'message' => $geozonesCount > 0 ? 'COM_J2COMMERCE_SHIPPING_TROUBLESHOOTER_GEOZONES_OK' : 'COM_J2COMMERCE_SHIPPING_TROUBLESHOOTER_GEOZONES_MISSING',
         ];
 
         // Check Shipping Methods
@@ -264,9 +265,9 @@ class ShippingtroublesModel extends ListModel
         $shippingMethodsCount = (int) $db->loadResult();
 
         $diagnostics['shipping_methods'] = [
-            'status' => $shippingMethodsCount > 0 ? 'success' : 'error',
-            'count' => $shippingMethodsCount,
-            'message' => $shippingMethodsCount > 0 ? 'COM_J2COMMERCE_SHIPPING_TROUBLESHOOTER_METHODS_OK' : 'COM_J2COMMERCE_SHIPPING_TROUBLESHOOTER_METHODS_MISSING'
+            'status'  => $shippingMethodsCount > 0 ? 'success' : 'error',
+            'count'   => $shippingMethodsCount,
+            'message' => $shippingMethodsCount > 0 ? 'COM_J2COMMERCE_SHIPPING_TROUBLESHOOTER_METHODS_OK' : 'COM_J2COMMERCE_SHIPPING_TROUBLESHOOTER_METHODS_MISSING',
         ];
 
         // Check if shipping methods have rates configured
@@ -274,15 +275,15 @@ class ShippingtroublesModel extends ListModel
             // This would need to be adapted based on your actual shipping rates table structure
             // For now, we'll assume methods are configured if they exist and are enabled
             $diagnostics['shipping_rates'] = [
-                'status' => 'success',
-                'count' => $shippingMethodsCount,
-                'message' => 'COM_J2COMMERCE_SHIPPING_TROUBLESHOOTER_RATES_OK'
+                'status'  => 'success',
+                'count'   => $shippingMethodsCount,
+                'message' => 'COM_J2COMMERCE_SHIPPING_TROUBLESHOOTER_RATES_OK',
             ];
         } else {
             $diagnostics['shipping_rates'] = [
-                'status' => 'error',
-                'count' => 0,
-                'message' => 'COM_J2COMMERCE_SHIPPING_TROUBLESHOOTER_RATES_MISSING'
+                'status'  => 'error',
+                'count'   => 0,
+                'message' => 'COM_J2COMMERCE_SHIPPING_TROUBLESHOOTER_RATES_MISSING',
             ];
         }
 
@@ -298,11 +299,11 @@ class ShippingtroublesModel extends ListModel
      */
     public function getProductsShippingStatus()
     {
-        $db = $this->getDatabase();
+        $db  = $this->getDatabase();
         $app = Factory::getApplication();
 
         // Get pagination parameters
-        $limit = $app->getInput()->getUint('limit', $app->get('list_limit', 20));
+        $limit      = $app->getInput()->getUint('limit', $app->get('list_limit', 20));
         $limitstart = $app->getInput()->getUint('limitstart', 0);
 
         $query = $db->getQuery(true);
@@ -318,7 +319,7 @@ class ShippingtroublesModel extends ListModel
             'v.length',
             'v.width',
             'v.height',
-            '0 AS girth'
+            '0 AS girth',
         ])
         ->from($db->quoteName('#__j2commerce_products', 'p'))
         ->leftJoin($db->quoteName('#__j2commerce_variants', 'v') . ' ON p.j2commerce_product_id = v.product_id AND v.is_master = 1')
@@ -331,13 +332,13 @@ class ShippingtroublesModel extends ListModel
         try {
             $products = $db->loadObjectList();
 
-            if (!is_array($products)) {
+            if (!\is_array($products)) {
                 return [];
             }
 
             // Analyze shipping configuration for each product
             foreach ($products as &$product) {
-                $issues = [];
+                $issues   = [];
                 $warnings = [];
 
                 // Check if shipping is enabled for the product
@@ -365,7 +366,7 @@ class ShippingtroublesModel extends ListModel
                     $product->shipping_status = 'success';
                 }
 
-                $product->shipping_issues = $issues;
+                $product->shipping_issues   = $issues;
                 $product->shipping_warnings = $warnings;
             }
 
@@ -385,7 +386,7 @@ class ShippingtroublesModel extends ListModel
      */
     public function getProductsTotal()
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         $query->select('COUNT(DISTINCT p.j2commerce_product_id)')
@@ -412,10 +413,10 @@ class ShippingtroublesModel extends ListModel
      */
     public function getProductsPagination()
     {
-        $app = Factory::getApplication();
-        $limit = $app->getInput()->getUint('limit', $app->get('list_limit', 20));
+        $app        = Factory::getApplication();
+        $limit      = $app->getInput()->getUint('limit', $app->get('list_limit', 20));
         $limitstart = $app->getInput()->getUint('limitstart', 0);
-        $total = $this->getProductsTotal();
+        $total      = $this->getProductsTotal();
 
         return new Pagination($total, $limitstart, $limit, '', $app);
     }
@@ -429,7 +430,7 @@ class ShippingtroublesModel extends ListModel
      */
     public function getSummaryStats()
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $stats = [];
 
         try {
@@ -483,12 +484,12 @@ class ShippingtroublesModel extends ListModel
      */
     public function getProductsShippingStatistics()
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $stats = [
             'success' => 0,
             'warning' => 0,
-            'error' => 0,
-            'total' => 0
+            'error'   => 0,
+            'total'   => 0,
         ];
 
         try {
@@ -499,7 +500,7 @@ class ShippingtroublesModel extends ListModel
                 'v.weight',
                 'v.length',
                 'v.width',
-                'v.height'
+                'v.height',
             ])
             ->from($db->quoteName('#__j2commerce_products', 'p'))
             ->leftJoin($db->quoteName('#__j2commerce_variants', 'v') . ' ON p.j2commerce_product_id = v.product_id AND v.is_master = 1')
@@ -510,7 +511,7 @@ class ShippingtroublesModel extends ListModel
             $products = $db->loadObjectList();
 
             foreach ($products as $product) {
-                $issues = [];
+                $issues   = [];
                 $warnings = [];
 
                 // Check if shipping is enabled for the product
@@ -539,7 +540,7 @@ class ShippingtroublesModel extends ListModel
                 }
             }
 
-            $stats['total'] = count($products);
+            $stats['total'] = \count($products);
 
         } catch (\Exception $e) {
             Factory::getApplication()->enqueueMessage('Failed to retrieve products statistics: ' . $e->getMessage(), 'error');

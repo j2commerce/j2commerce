@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  Plugin.J2Commerce.ReportProducts
@@ -100,8 +101,8 @@ final class ReportProducts extends CMSPlugin implements SubscriberInterface
             'onJ2CommerceReportPluginAjax'   => 'onReportPluginAjax',
             'onJ2CommerceReportPluginExport' => 'onReportPluginExport',
             // Legacy events (backwards compatibility)
-            'onJ2CommerceGetReportView'      => 'onGetReportView',
-            'onJ2CommerceGetReportExported'  => 'onGetReportExported',
+            'onJ2CommerceGetReportView'     => 'onGetReportView',
+            'onJ2CommerceGetReportExported' => 'onGetReportExported',
         ];
     }
 
@@ -116,7 +117,7 @@ final class ReportProducts extends CMSPlugin implements SubscriberInterface
     public function onGetReportView(Event $event): void
     {
         $args = $event->getArguments();
-        $row = $args[0] ?? null;
+        $row  = $args[0] ?? null;
 
         if (!$this->isMe($row)) {
             return;
@@ -124,7 +125,7 @@ final class ReportProducts extends CMSPlugin implements SubscriberInterface
 
         $html = $this->renderReport();
 
-        $result = $event->getArgument('result', []);
+        $result   = $event->getArgument('result', []);
         $result[] = $html;
         $event->setArgument('result', $result);
     }
@@ -140,13 +141,13 @@ final class ReportProducts extends CMSPlugin implements SubscriberInterface
     public function onGetReportExported(Event $event): void
     {
         $args = $event->getArguments();
-        $row = $args[0] ?? null;
+        $row  = $args[0] ?? null;
 
         if (!$this->isMe($row)) {
             return;
         }
 
-        $result = $event->getArgument('result', []);
+        $result   = $event->getArgument('result', []);
         $result[] = $this->buildExportData();
         $event->setArgument('result', $result);
     }
@@ -208,7 +209,7 @@ final class ReportProducts extends CMSPlugin implements SubscriberInterface
         $event->setArgument('items', $items);
 
         // Build chart data + template variables
-        $vars = new \stdClass();
+        $vars             = new \stdClass();
         $vars->items      = $items;
         $vars->currency   = J2CommerceHelper::currency();
         $vars->listOrder  = $model->getState('list.ordering', 'total_final_price_with_tax');
@@ -236,7 +237,7 @@ final class ReportProducts extends CMSPlugin implements SubscriberInterface
 
         $html = $this->renderTemplate('report', $vars);
 
-        $result = $event->getArgument('result', []);
+        $result   = $event->getArgument('result', []);
         $result[] = $html;
         $event->setArgument('result', $result);
     }
@@ -294,7 +295,7 @@ final class ReportProducts extends CMSPlugin implements SubscriberInterface
             return;
         }
 
-        $result = $event->getArgument('result', []);
+        $result   = $event->getArgument('result', []);
         $result[] = $this->buildExportData();
         $event->setArgument('result', $result);
     }
@@ -333,11 +334,11 @@ final class ReportProducts extends CMSPlugin implements SubscriberInterface
         $totalTax        = 0.0;
 
         foreach ($items as $item) {
-            $qtyTotal        += (int) $item->total_qty;
-            $discountTotal   += (float) $item->total_item_discount + (float) $item->total_item_discount_tax;
+            $qtyTotal += (int) $item->total_qty;
+            $discountTotal += (float) $item->total_item_discount + (float) $item->total_item_discount_tax;
             $totalWithoutTax += (float) $item->total_final_price_without_tax;
-            $totalWithTax    += (float) $item->total_final_price_with_tax;
-            $totalTax        += (float) $item->total_item_tax;
+            $totalWithTax += (float) $item->total_final_price_with_tax;
+            $totalTax += (float) $item->total_item_tax;
 
             $csvRow                = new \stdClass();
             $csvRow->$name         = $item->orderitem_name . ', ' . Text::_('PLG_J2COMMERCE_REPORT_PRODUCTS_SKU') . ': ' . $item->orderitem_sku;
@@ -420,7 +421,7 @@ final class ReportProducts extends CMSPlugin implements SubscriberInterface
 
         $items = $model->getItems();
 
-        $vars = new \stdClass();
+        $vars           = new \stdClass();
         $vars->items    = $items;
         $vars->currency = J2CommerceHelper::currency();
         $vars->reportId = $app->getInput()->getInt('id', 0);

@@ -22,7 +22,6 @@ use Joomla\CMS\Schemaorg\SchemaorgPluginTrait;
 use Joomla\CMS\Schemaorg\SchemaorgPrepareDateTrait;
 use Joomla\CMS\Schemaorg\SchemaorgPrepareImageTrait;
 use Joomla\CMS\Uri\Uri;
-use Joomla\Event\Event;
 use Joomla\Event\Priority;
 use Joomla\Event\SubscriberInterface;
 use Joomla\Plugin\Schemaorg\Ecommerce\Event\BreadcrumbSchemaPrepareEvent;
@@ -103,7 +102,7 @@ final class Ecommerce extends CMSPlugin implements SubscriberInterface
             $graph = [];
         }
 
-        $context          = $this->getCurrentProductContext();
+        $context           = $this->getCurrentProductContext();
         $hasEcommerceEntry = false;
         $hasProductEntry   = false;
 

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Service;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Uri\Uri;
@@ -22,18 +23,18 @@ use Joomla\Registry\Registry;
 final class OverrideRegistry
 {
     // File groups
-    public const GROUP_LIST_LAYOUTS = 'list_layouts';
-    public const GROUP_TAG_LAYOUTS = 'tag_layouts';
+    public const GROUP_LIST_LAYOUTS         = 'list_layouts';
+    public const GROUP_TAG_LAYOUTS          = 'tag_layouts';
     public const GROUP_CATEGORIES_TEMPLATES = 'categories_templates';
-    public const GROUP_LIST_VIEW_TEMPLATES = 'list_view_templates';
-    public const GROUP_TAG_VIEW_TEMPLATES = 'tag_view_templates';
-    public const GROUP_PRODUCT_DETAIL = 'product_detail';
-    public const GROUP_OTHER = 'other';
+    public const GROUP_LIST_VIEW_TEMPLATES  = 'list_view_templates';
+    public const GROUP_TAG_VIEW_TEMPLATES   = 'tag_view_templates';
+    public const GROUP_PRODUCT_DETAIL       = 'product_detail';
+    public const GROUP_OTHER                = 'other';
 
     // View contexts
-    public const CONTEXT_SHARED = 'shared';
-    public const CONTEXT_LIST = 'list';
-    public const CONTEXT_TAG = 'tag';
+    public const CONTEXT_SHARED     = 'shared';
+    public const CONTEXT_LIST       = 'list';
+    public const CONTEXT_TAG        = 'tag';
     public const CONTEXT_CATEGORIES = 'categories';
 
     private static array $subtemplateCache = [];
@@ -51,31 +52,31 @@ final class OverrideRegistry
     {
         return [
             self::GROUP_LIST_LAYOUTS => [
-                'label' => 'COM_J2COMMERCE_OVERRIDE_GROUP_LIST_LAYOUTS',
+                'label'       => 'COM_J2COMMERCE_OVERRIDE_GROUP_LIST_LAYOUTS',
                 'description' => 'COM_J2COMMERCE_OVERRIDE_GROUP_LIST_LAYOUTS_DESC',
             ],
             self::GROUP_TAG_LAYOUTS => [
-                'label' => 'COM_J2COMMERCE_OVERRIDE_GROUP_TAG_LAYOUTS',
+                'label'       => 'COM_J2COMMERCE_OVERRIDE_GROUP_TAG_LAYOUTS',
                 'description' => 'COM_J2COMMERCE_OVERRIDE_GROUP_TAG_LAYOUTS_DESC',
             ],
             self::GROUP_CATEGORIES_TEMPLATES => [
-                'label' => 'COM_J2COMMERCE_OVERRIDE_GROUP_CATEGORIES',
+                'label'       => 'COM_J2COMMERCE_OVERRIDE_GROUP_CATEGORIES',
                 'description' => 'COM_J2COMMERCE_OVERRIDE_GROUP_CATEGORIES_DESC',
             ],
             self::GROUP_LIST_VIEW_TEMPLATES => [
-                'label' => 'COM_J2COMMERCE_OVERRIDE_GROUP_LIST_VIEW',
+                'label'       => 'COM_J2COMMERCE_OVERRIDE_GROUP_LIST_VIEW',
                 'description' => 'COM_J2COMMERCE_OVERRIDE_GROUP_LIST_VIEW_DESC',
             ],
             self::GROUP_TAG_VIEW_TEMPLATES => [
-                'label' => 'COM_J2COMMERCE_OVERRIDE_GROUP_TAG_VIEW',
+                'label'       => 'COM_J2COMMERCE_OVERRIDE_GROUP_TAG_VIEW',
                 'description' => 'COM_J2COMMERCE_OVERRIDE_GROUP_TAG_VIEW_DESC',
             ],
             self::GROUP_PRODUCT_DETAIL => [
-                'label' => 'COM_J2COMMERCE_OVERRIDE_GROUP_PRODUCT_DETAIL',
+                'label'       => 'COM_J2COMMERCE_OVERRIDE_GROUP_PRODUCT_DETAIL',
                 'description' => 'COM_J2COMMERCE_OVERRIDE_GROUP_PRODUCT_DETAIL_DESC',
             ],
             self::GROUP_OTHER => [
-                'label' => 'COM_J2COMMERCE_OVERRIDE_GROUP_OTHER',
+                'label'       => 'COM_J2COMMERCE_OVERRIDE_GROUP_OTHER',
                 'description' => 'COM_J2COMMERCE_OVERRIDE_GROUP_OTHER_DESC',
             ],
         ];
@@ -93,7 +94,7 @@ final class OverrideRegistry
             return [];
         }
 
-        $folders = Folder::folders($layoutsPath, '.', false, false);
+        $folders      = Folder::folders($layoutsPath, '.', false, false);
         $subtemplates = [];
 
         foreach ($folders as $folder) {
@@ -107,24 +108,24 @@ final class OverrideRegistry
                 continue;
             }
 
-            $layoutFiles = self::getLayoutFiles($folder);
-            $tmplFiles = self::getAllTmplFiles($folder);
-            $allFiles = array_merge($layoutFiles, $tmplFiles);
+            $layoutFiles  = self::getLayoutFiles($folder);
+            $tmplFiles    = self::getAllTmplFiles($folder);
+            $allFiles     = array_merge($layoutFiles, $tmplFiles);
             $groupedFiles = self::groupFilesByType($allFiles);
 
             $subtemplates[] = [
-                'element'        => $folder,
-                'name'           => $info['name'],
-                'description'    => $info['description'],
-                'version'        => $info['version'],
-                'imagePath'      => $info['imagePath'],
-                'enabled'        => $info['enabled'],
-                'fileCount'      => \count($allFiles),
-                'groupedFiles'   => $groupedFiles,
+                'element'      => $folder,
+                'name'         => $info['name'],
+                'description'  => $info['description'],
+                'version'      => $info['version'],
+                'imagePath'    => $info['imagePath'],
+                'enabled'      => $info['enabled'],
+                'fileCount'    => \count($allFiles),
+                'groupedFiles' => $groupedFiles,
             ];
         }
 
-        usort($subtemplates, static fn(array $a, array $b): int => strcasecmp($a['name'], $b['name']));
+        usort($subtemplates, static fn (array $a, array $b): int => strcasecmp($a['name'], $b['name']));
 
         self::$subtemplateCache = $subtemplates;
 
@@ -133,7 +134,7 @@ final class OverrideRegistry
 
     public static function getSubtemplateInfo(string $pluginElement): ?array
     {
-        $db = Factory::getContainer()->get('DatabaseDriver');
+        $db    = Factory::getContainer()->get('DatabaseDriver');
         $query = $db->getQuery(true)
             ->select($db->quoteName(['name', 'manifest_cache', 'enabled']))
             ->from($db->quoteName('#__extensions'))
@@ -148,7 +149,7 @@ final class OverrideRegistry
             return null;
         }
 
-        $manifest = new Registry($extension->manifest_cache);
+        $manifest  = new Registry($extension->manifest_cache);
         $imagePath = self::resolveImagePath($pluginElement);
 
         return [
@@ -173,8 +174,8 @@ final class OverrideRegistry
         if (!empty($templateOverridePath)) {
             $overridePath = Path::clean($templateOverridePath . '/' . $pluginElement);
             foreach ($files as &$file) {
-                $overrideFilePath = Path::clean($overridePath . '/' . $file['relativePath']);
-                $file['hasOverride'] = is_file($overrideFilePath);
+                $overrideFilePath     = Path::clean($overridePath . '/' . $file['relativePath']);
+                $file['hasOverride']  = is_file($overrideFilePath);
                 $file['overridePath'] = $overrideFilePath;
             }
         }
@@ -193,7 +194,7 @@ final class OverrideRegistry
             return [];
         }
 
-        $allFiles = [];
+        $allFiles    = [];
         $tmplFolders = self::getTmplFolders($pluginElement);
 
         foreach ($tmplFolders as $folderName => $context) {
@@ -213,8 +214,8 @@ final class OverrideRegistry
                     : Path::clean($templateOverridePath . '/' . $pluginElement . '/tmpl/' . $folderName);
 
                 foreach ($files as &$file) {
-                    $overrideFilePath = Path::clean($overridePath . '/' . $file['relativePath']);
-                    $file['hasOverride'] = is_file($overrideFilePath);
+                    $overrideFilePath     = Path::clean($overridePath . '/' . $file['relativePath']);
+                    $file['hasOverride']  = is_file($overrideFilePath);
                     $file['overridePath'] = $overrideFilePath;
                 }
             }
@@ -231,7 +232,7 @@ final class OverrideRegistry
     public static function getTmplFiles(string $pluginElement, string $templateOverridePath = ''): array
     {
         $tmplFolder = self::getPrimaryTmplFolder($pluginElement);
-        $basePath = Path::clean(JPATH_PLUGINS . '/j2commerce/' . $pluginElement . '/tmpl/' . $tmplFolder);
+        $basePath   = Path::clean(JPATH_PLUGINS . '/j2commerce/' . $pluginElement . '/tmpl/' . $tmplFolder);
 
         if (!is_dir($basePath)) {
             return [];
@@ -242,8 +243,8 @@ final class OverrideRegistry
         if (!empty($templateOverridePath)) {
             $overridePath = Path::clean($templateOverridePath . '/' . $pluginElement . '/tmpl/' . $tmplFolder);
             foreach ($files as &$file) {
-                $overrideFilePath = Path::clean($overridePath . '/' . $file['relativePath']);
-                $file['hasOverride'] = is_file($overrideFilePath);
+                $overrideFilePath     = Path::clean($overridePath . '/' . $file['relativePath']);
+                $file['hasOverride']  = is_file($overrideFilePath);
                 $file['overridePath'] = $overrideFilePath;
             }
         }
@@ -254,9 +255,9 @@ final class OverrideRegistry
     public static function countActiveOverrides(string $pluginElement, string $templateOverridePath, string $tmplOverridePath = ''): int
     {
         $layoutFiles = self::getLayoutFiles($pluginElement, $templateOverridePath);
-        $tmplFiles = self::getAllTmplFiles($pluginElement, $templateOverridePath, $tmplOverridePath);
-        $allFiles = array_merge($layoutFiles, $tmplFiles);
-        $count = 0;
+        $tmplFiles   = self::getAllTmplFiles($pluginElement, $templateOverridePath, $tmplOverridePath);
+        $allFiles    = array_merge($layoutFiles, $tmplFiles);
+        $count       = 0;
 
         foreach ($allFiles as $file) {
             if ($file['hasOverride'] ?? false) {
@@ -331,9 +332,9 @@ final class OverrideRegistry
                 'categories_uikit' => self::CONTEXT_CATEGORIES,
             ],
             default => [
-                str_replace('app_', '', $pluginElement)                       => self::CONTEXT_LIST,
-                'tag_' . str_replace('app_', '', $pluginElement)              => self::CONTEXT_TAG,
-                'categories_' . str_replace('app_', '', $pluginElement)       => self::CONTEXT_CATEGORIES,
+                str_replace('app_', '', $pluginElement)                 => self::CONTEXT_LIST,
+                'tag_' . str_replace('app_', '', $pluginElement)        => self::CONTEXT_TAG,
+                'categories_' . str_replace('app_', '', $pluginElement) => self::CONTEXT_CATEGORIES,
             ],
         };
     }
@@ -365,19 +366,19 @@ final class OverrideRegistry
     public static function groupFilesByType(array $files): array
     {
         $groups = [
-            self::GROUP_LIST_LAYOUTS        => [],
-            self::GROUP_TAG_LAYOUTS         => [],
+            self::GROUP_LIST_LAYOUTS         => [],
+            self::GROUP_TAG_LAYOUTS          => [],
             self::GROUP_CATEGORIES_TEMPLATES => [],
-            self::GROUP_LIST_VIEW_TEMPLATES => [],
-            self::GROUP_TAG_VIEW_TEMPLATES  => [],
-            self::GROUP_PRODUCT_DETAIL      => [],
-            self::GROUP_OTHER               => [],
+            self::GROUP_LIST_VIEW_TEMPLATES  => [],
+            self::GROUP_TAG_VIEW_TEMPLATES   => [],
+            self::GROUP_PRODUCT_DETAIL       => [],
+            self::GROUP_OTHER                => [],
         ];
 
         foreach ($files as $file) {
-            $filename = $file['filename'];
-            $type = $file['type'];
-            $context = $file['context'] ?? self::CONTEXT_SHARED;
+            $filename     = $file['filename'];
+            $type         = $file['type'];
+            $context      = $file['context'] ?? self::CONTEXT_SHARED;
             $relativePath = $file['relativePath'] ?? '';
 
             // Layout files (item_*) - separate by folder path (list/tag vs list/category)
@@ -416,11 +417,11 @@ final class OverrideRegistry
 
         // Sort files within each group
         foreach ($groups as &$groupFiles) {
-            usort($groupFiles, static fn(array $a, array $b): int => strcasecmp($a['filename'], $b['filename']));
+            usort($groupFiles, static fn (array $a, array $b): int => strcasecmp($a['filename'], $b['filename']));
         }
 
         // Remove empty groups
-        return array_filter($groups, static fn(array $groupFiles): bool => !empty($groupFiles));
+        return array_filter($groups, static fn (array $groupFiles): bool => !empty($groupFiles));
     }
 
     private static function scanFilesRecursive(
@@ -443,7 +444,7 @@ final class OverrideRegistry
                 continue;
             }
 
-            $fullPath = Path::clean($dir . '/' . $item);
+            $fullPath     = Path::clean($dir . '/' . $item);
             $relativePath = str_replace(Path::clean($basePath) . \DIRECTORY_SEPARATOR, '', Path::clean($fullPath));
             $relativePath = str_replace(\DIRECTORY_SEPARATOR, '/', $relativePath);
 
@@ -481,7 +482,7 @@ final class OverrideRegistry
     private static function resolveImagePath(string $pluginElement): string
     {
         $extensions = ['webp', 'png', 'jpg'];
-        $baseName = $pluginElement;
+        $baseName   = $pluginElement;
 
         // Check media folder first
         foreach ($extensions as $ext) {
@@ -511,9 +512,9 @@ final class OverrideRegistry
         return Uri::root(true) . '/media/com_j2commerce/images/default_app_j2commerce.webp';
     }
 
-    public const FILE_TYPE_DISPATCHER = 'dispatcher';
+    public const FILE_TYPE_DISPATCHER   = 'dispatcher';
     public const FILE_TYPE_BLOCK_LAYOUT = 'block-layout';
-    public const FILE_TYPE_OTHER = 'other';
+    public const FILE_TYPE_OTHER        = 'other';
 
     public static function classifyLayoutFile(string $sourcePath): string
     {

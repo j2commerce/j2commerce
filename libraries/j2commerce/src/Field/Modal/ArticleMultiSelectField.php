@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce Library
  * @subpackage  lib_j2commerce
@@ -9,14 +10,12 @@
 
 namespace J2Commerce\Library\J2Commerce\Field\Modal;
 
+use J2Commerce\Library\J2Commerce\Field\ModalMultiSelectField;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\LanguageHelper;
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\Layout\FileLayout;
 use Joomla\CMS\Session\Session;
 use Joomla\CMS\Uri\Uri;
-use Joomla\Database\ParameterType;
-use J2Commerce\Library\J2Commerce\Field\ModalMultiSelectField;
 
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
@@ -55,10 +54,10 @@ class ArticleMultiSelectField extends ModalMultiSelectField
     public function setup(\SimpleXMLElement $element, $value, $group = null)
     {
         // Handle comma-separated values for multiple articles
-        if ($value && is_string($value) && strpos($value, ',') !== false) {
+        if ($value && \is_string($value) && strpos($value, ',') !== false) {
             $values = explode(',', $value);
-            $value = array_map('intval', array_filter($values));
-        } elseif ($value && !is_array($value)) {
+            $value  = array_map('intval', array_filter($values));
+        } elseif ($value && !\is_array($value)) {
             $value = [(int) $value];
         }
 
@@ -87,19 +86,19 @@ class ArticleMultiSelectField extends ModalMultiSelectField
 
         if ($language) {
             $linkItems->setVar('forcedLanguage', $language);
-            $modalTitle = Text::_('LIB_J2COMMERCE_SELECT_ARTICLES') . ' &#8212; ' . $this->getTitle();
+            $modalTitle                            = Text::_('LIB_J2COMMERCE_SELECT_ARTICLES') . ' &#8212; ' . $this->getTitle();
             $this->dataAttributes['data-language'] = $language;
         } else {
             $modalTitle = Text::_('LIB_J2COMMERCE_ARTICLE_SELECT_MODAL_ADD_ARTICLES');
         }
 
-        $this->urls['select'] = (string) $linkItems;
+        $this->urls['select']        = (string) $linkItems;
         $this->modalTitles['select'] = $modalTitle;
-        $this->hint = $this->hint ?: Text::_('LIB_J2COMMERCE_SELECT_ARTICLES');
+        $this->hint                  = $this->hint ?: Text::_('LIB_J2COMMERCE_SELECT_ARTICLES');
 
-        $this->sql_title_table = '#__content';
+        $this->sql_title_table  = '#__content';
         $this->sql_title_column = 'title';
-        $this->sql_title_key = 'id';
+        $this->sql_title_key    = 'id';
 
         return $result;
     }
@@ -132,7 +131,7 @@ class ArticleMultiSelectField extends ModalMultiSelectField
         if (!empty($this->value)) {
             // Fetch article titles from the database
             $articles = $this->getValueTitles();
-            $html .= '<div class="my-2"><strong>' . Text::_('LIB_J2COMMERCE_SELECTED_ARTICLES') . ' (' . count($this->value) . '):</strong></div>';
+            $html .= '<div class="my-2"><strong>' . Text::_('LIB_J2COMMERCE_SELECTED_ARTICLES') . ' (' . \count($this->value) . '):</strong></div>';
             $html .= '<table class="table table-sm table-striped"><thead><tr><th class="w-10">' . Text::_('LIB_J2COMMERCE_ARTICLE_FIELD_ID') . '</th><th>' . Text::_('LIB_J2COMMERCE_ARTICLE_FIELD_NAME') . '</th><th class="text-end w-6"><button type="button" class="btn btn-sm btn-outline-danger" onclick="clearAllItems_' . $this->id . '()" title="' . Text::_('LIB_J2COMMERCE_ARTICLES_CLEAR_ALL') . '"><i class="icon-trash" aria-hidden="true"></i></button></th><th class="w-1"><span class="visually-hidden">' . Text::_('LIB_J2COMMERCE_REMOVE') . '</span></th></tr></thead><tbody>';
             foreach ($this->value as $index => $articleId) {
                 $articleTitle = isset($articles[$articleId]) ? htmlspecialchars($articles[$articleId]->title, ENT_QUOTES, 'UTF-8') : $articleId;
@@ -279,9 +278,9 @@ class ArticleMultiSelectField extends ModalMultiSelectField
      */
     protected function getLayoutData()
     {
-        $data             = parent::getLayoutData();
-        $data['language'] = (string) $this->element['language'];
-        $data['multiple'] = true;
+        $data                          = parent::getLayoutData();
+        $data['language']              = (string) $this->element['language'];
+        $data['multiple']              = true;
         $data['buttonIcons']['select'] = 'fa-solid fa-file-text';
 
         return $data;

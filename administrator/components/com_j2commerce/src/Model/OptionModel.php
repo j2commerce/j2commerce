@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -9,7 +10,7 @@
 
 namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
@@ -21,7 +22,6 @@ use Joomla\CMS\Table\Table;
 use Joomla\Database\ParameterType;
 use Joomla\Registry\Registry;
 use Joomla\String\StringHelper;
-use RuntimeException;
 
 /**
  * Option Model
@@ -55,25 +55,25 @@ class OptionModel extends AdminModel
      */
     protected function populateState()
     {
-        $app = Factory::getApplication();
+        $app   = Factory::getApplication();
         $input = $app->getInput();
 
         // Get the primary key from the request data
         $pk = $input->getInt('id');
 
         // Check if this is explicitly a new record request
-        $task = $input->get('task', '');
+        $task   = $input->get('task', '');
         $layout = $input->get('layout', '');
 
         // If no ID in input, check user state (for post-redirect scenarios)
         // But only if we're not explicitly in a "new" or "add" context
-        if (!$pk && !in_array($task, ['add', 'new']) && $layout !== 'edit') {
+        if (!$pk && !\in_array($task, ['add', 'new']) && $layout !== 'edit') {
             $context = 'com_j2commerce.edit.option';
-            $pk = (int) $app->getUserState($context . '.id');
+            $pk      = (int) $app->getUserState($context . '.id');
         }
 
         // For new records, ensure pk is 0
-        if (in_array($task, ['add', 'new']) || ($layout === 'edit' && !$pk)) {
+        if (\in_array($task, ['add', 'new']) || ($layout === 'edit' && !$pk)) {
             $pk = 0;
             // Clear any lingering user state for new records
             $context = 'com_j2commerce.edit.option';
@@ -137,10 +137,10 @@ class OptionModel extends AdminModel
 
             // Prime some default values.
             if ($this->getState('option.id') == 0) {
-                $app = Factory::getApplication();
+                $app             = Factory::getApplication();
                 $data->published = $app->input->getInt('published', 1);
-                $data->enabled = 1;
-                $data->ordering = 0;
+                $data->enabled   = 1;
+                $data->ordering  = 0;
             }
         }
 
@@ -168,18 +168,18 @@ class OptionModel extends AdminModel
         // Ensure we have a valid primary key
         if (!$pk || $pk <= 0) {
             // Return empty item for new records
-            $item = new \stdClass();
+            $item                       = new \stdClass();
             $item->j2commerce_option_id = 0;
-            $item->id = 0;
-            $item->enabled = 1;
-            $item->published = 1;
-            $item->type = '';
-            $item->option_unique_name = '';
-            $item->option_name = '';
-            $item->ordering = 0;
-            $item->option_params = '';
-            $item->optionvalues = [];
-            $item->optioncolorvalues = [];
+            $item->id                   = 0;
+            $item->enabled              = 1;
+            $item->published            = 1;
+            $item->type                 = '';
+            $item->option_unique_name   = '';
+            $item->option_name          = '';
+            $item->ordering             = 0;
+            $item->option_params        = '';
+            $item->optionvalues         = [];
+            $item->optioncolorvalues    = [];
             return $item;
         }
 
@@ -195,26 +195,26 @@ class OptionModel extends AdminModel
             }
 
             // Ensure all required fields have default values
-            $item->type = $item->type ?? '';
+            $item->type               = $item->type ?? '';
             $item->option_unique_name = $item->option_unique_name ?? '';
-            $item->option_name = $item->option_name ?? '';
-            $item->ordering = $item->ordering ?? 0;
-            $item->option_params = $item->option_params ?? '';
+            $item->option_name        = $item->option_name ?? '';
+            $item->ordering           = $item->ordering ?? 0;
+            $item->option_params      = $item->option_params ?? '';
 
             // Load option values based on the type
             if ($item->id > 0) {
-                if (in_array($item->type, ['select', 'radio', 'checkbox'])) {
-                    $item->optionvalues = $this->getOptionValues($item->id);
+                if (\in_array($item->type, ['select', 'radio', 'checkbox'])) {
+                    $item->optionvalues      = $this->getOptionValues($item->id);
                     $item->optioncolorvalues = [];
                 } elseif ($item->type === 'color') {
                     $item->optioncolorvalues = $this->getOptionColorValues($item->id);
-                    $item->optionvalues = [];
+                    $item->optionvalues      = [];
                 } else {
-                    $item->optionvalues = [];
+                    $item->optionvalues      = [];
                     $item->optioncolorvalues = [];
                 }
             } else {
-                $item->optionvalues = [];
+                $item->optionvalues      = [];
                 $item->optioncolorvalues = [];
             }
         }
@@ -267,7 +267,7 @@ class OptionModel extends AdminModel
             $origTable->load($app->getInput()->getInt('id'));
 
             if ($data['option_name'] === $origTable->option_name) {
-                [$name] = $this->generateNewTitle(null, null, $data['option_name']);
+                [$name]              = $this->generateNewTitle(null, null, $data['option_name']);
                 $data['option_name'] = $name;
             }
 
@@ -298,14 +298,14 @@ class OptionModel extends AdminModel
         PluginHelper::importPlugin('content');
 
         // Extract subform data before saving the main record
-        $optionValuesData = isset($data['optionvalues']) ? $data['optionvalues'] : [];
+        $optionValuesData      = isset($data['optionvalues']) ? $data['optionvalues'] : [];
         $optionColorValuesData = isset($data['optioncolorvalues']) ? $data['optioncolorvalues'] : [];
 
         // Process subform data if it's JSON
-        if (is_string($optionValuesData)) {
+        if (\is_string($optionValuesData)) {
             $optionValuesData = json_decode($optionValuesData, true) ?: [];
         }
-        if (is_string($optionColorValuesData)) {
+        if (\is_string($optionColorValuesData)) {
             $optionColorValuesData = json_decode($optionColorValuesData, true) ?: [];
         }
 
@@ -322,16 +322,16 @@ class OptionModel extends AdminModel
         }
 
         // Convert complex arrays to JSON for database storage
-        if (is_array($optionValuesData) && count($optionValuesData) > 0) {
-            $registry = new Registry($optionValuesData);
+        if (\is_array($optionValuesData) && \count($optionValuesData) > 0) {
+            $registry              = new Registry($optionValuesData);
             $data['option_values'] = $registry->toString();
         } else {
             $data['option_values'] = '';
         }
 
         // Remove subform fields from main data to avoid table column issues
-        unset($data['optionvalues']);
-        unset($data['optioncolorvalues']);
+        unset($data['optionvalues'], $data['optioncolorvalues']);
+
 
         if (parent::save($data)) {
             // parent::save() stores the ID in state — use it instead of creating a new empty Table
@@ -340,7 +340,7 @@ class OptionModel extends AdminModel
             if ($optionId > 0 && isset($data['type'])) {
                 if ($data['type'] === 'color') {
                     $this->saveOptionColorValues($optionId, $optionColorValuesData);
-                } elseif (in_array($data['type'], ['select', 'radio', 'checkbox'])) {
+                } elseif (\in_array($data['type'], ['select', 'radio', 'checkbox'])) {
                     $this->saveOptionValues($optionId, $optionValuesData);
                 }
             }
@@ -381,8 +381,8 @@ class OptionModel extends AdminModel
      */
     public function reorder($pks, $delta = 0)
     {
-        $table = $this->getTable();
-        $pks = (array) $pks;
+        $table  = $this->getTable();
+        $pks    = (array) $pks;
         $result = true;
 
         $allowed = true;
@@ -402,10 +402,10 @@ class OptionModel extends AdminModel
                 $where = [];
 
                 if (!$table->move($delta, $where)) {
-                    throw new RuntimeException($table->getError());
+                    throw new \RuntimeException($table->getError());
                 }
             } else {
-                throw new RuntimeException($table->getError());
+                throw new \RuntimeException($table->getError());
             }
         }
 
@@ -450,7 +450,7 @@ class OptionModel extends AdminModel
      */
     protected function validateUniqueAlias($alias, $id = 0)
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select('COUNT(*)')
             ->from($db->quoteName('#__j2commerce_options'))
@@ -483,20 +483,20 @@ class OptionModel extends AdminModel
     {
         // Common option types for ecommerce
         return [
-            'text' => Text::_('COM_J2COMMERCE_OPTION_TYPE_TEXT'),
+            'text'     => Text::_('COM_J2COMMERCE_OPTION_TYPE_TEXT'),
             'textarea' => Text::_('COM_J2COMMERCE_OPTION_TYPE_TEXTAREA'),
-            'select' => Text::_('COM_J2COMMERCE_OPTION_TYPE_SELECT'),
-            'radio' => Text::_('COM_J2COMMERCE_OPTION_TYPE_RADIO'),
+            'select'   => Text::_('COM_J2COMMERCE_OPTION_TYPE_SELECT'),
+            'radio'    => Text::_('COM_J2COMMERCE_OPTION_TYPE_RADIO'),
             'checkbox' => Text::_('COM_J2COMMERCE_OPTION_TYPE_CHECKBOX'),
-            'date' => Text::_('COM_J2COMMERCE_OPTION_TYPE_DATE'),
+            'date'     => Text::_('COM_J2COMMERCE_OPTION_TYPE_DATE'),
             'datetime' => Text::_('COM_J2COMMERCE_OPTION_TYPE_DATETIME'),
-            'time' => Text::_('COM_J2COMMERCE_OPTION_TYPE_TIME'),
-            'file' => Text::_('COM_J2COMMERCE_OPTION_TYPE_FILE'),
-            'image' => Text::_('COM_J2COMMERCE_OPTION_TYPE_IMAGE'),
-            'color' => Text::_('COM_J2COMMERCE_OPTION_TYPE_COLOR'),
-            'number' => Text::_('COM_J2COMMERCE_OPTION_TYPE_NUMBER'),
-            'email' => Text::_('COM_J2COMMERCE_OPTION_TYPE_EMAIL'),
-            'url' => Text::_('COM_J2COMMERCE_OPTION_TYPE_URL')
+            'time'     => Text::_('COM_J2COMMERCE_OPTION_TYPE_TIME'),
+            'file'     => Text::_('COM_J2COMMERCE_OPTION_TYPE_FILE'),
+            'image'    => Text::_('COM_J2COMMERCE_OPTION_TYPE_IMAGE'),
+            'color'    => Text::_('COM_J2COMMERCE_OPTION_TYPE_COLOR'),
+            'number'   => Text::_('COM_J2COMMERCE_OPTION_TYPE_NUMBER'),
+            'email'    => Text::_('COM_J2COMMERCE_OPTION_TYPE_EMAIL'),
+            'url'      => Text::_('COM_J2COMMERCE_OPTION_TYPE_URL'),
         ];
     }
 
@@ -511,14 +511,14 @@ class OptionModel extends AdminModel
      */
     protected function getOptionValues($optionId)
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select([
                 $db->quoteName('j2commerce_optionvalue_id'),
                 $db->quoteName('option_id'),
                 $db->quoteName('optionvalue_name'),
                 $db->quoteName('optionvalue_image'),
-                $db->quoteName('ordering')
+                $db->quoteName('ordering'),
             ])
             ->from($db->quoteName('#__j2commerce_optionvalues'))
             ->where($db->quoteName('option_id') . ' = :option_id')
@@ -535,10 +535,10 @@ class OptionModel extends AdminModel
             foreach ($values as $value) {
                 $formattedValues[] = [
                     'j2commerce_optionvalue_id' => $value['j2commerce_optionvalue_id'],
-                    'option_id' => $value['option_id'],
-                    'optionvalue_name' => $value['optionvalue_name'],
-                    'optionvalue_image' => $value['optionvalue_image'],
-                    'ordering' => $value['ordering']
+                    'option_id'                 => $value['option_id'],
+                    'optionvalue_name'          => $value['optionvalue_name'],
+                    'optionvalue_image'         => $value['optionvalue_image'],
+                    'ordering'                  => $value['ordering'],
                 ];
             }
 
@@ -563,14 +563,14 @@ class OptionModel extends AdminModel
      */
     protected function getOptionColorValues($optionId)
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select([
                 $db->quoteName('j2commerce_optionvalue_id'),
                 $db->quoteName('option_id'),
                 $db->quoteName('optionvalue_name'),
                 $db->quoteName('optionvalue_image'),
-                $db->quoteName('ordering')
+                $db->quoteName('ordering'),
             ])
             ->from($db->quoteName('#__j2commerce_optionvalues'))
             ->where($db->quoteName('option_id') . ' = :option_id')
@@ -587,10 +587,10 @@ class OptionModel extends AdminModel
             foreach ($values as $value) {
                 $formattedValues[] = [
                     'j2commerce_optionvalue_id' => $value['j2commerce_optionvalue_id'],
-                    'option_id' => $value['option_id'],
-                    'optionvalue_name' => $value['optionvalue_name'],
-                    'optionvalue_color' => $value['optionvalue_image'], // Use optionvalue_image column for color
-                    'ordering' => $value['ordering']
+                    'option_id'                 => $value['option_id'],
+                    'optionvalue_name'          => $value['optionvalue_name'],
+                    'optionvalue_color'         => $value['optionvalue_image'], // Use optionvalue_image column for color
+                    'ordering'                  => $value['ordering'],
                 ];
             }
 
@@ -616,7 +616,7 @@ class OptionModel extends AdminModel
      */
     protected function saveOptionValues($optionId, $valuesData)
     {
-        if (!$optionId || !is_array($valuesData)) {
+        if (!$optionId || !\is_array($valuesData)) {
             return true;
         }
 
@@ -715,7 +715,7 @@ class OptionModel extends AdminModel
      */
     protected function saveOptionColorValues($optionId, $valuesData)
     {
-        if (!$optionId || !is_array($valuesData)) {
+        if (!$optionId || !\is_array($valuesData)) {
             return true;
         }
 

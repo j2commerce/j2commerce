@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Site\View\Carts;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
@@ -21,7 +22,6 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Plugin\PluginHelper;
-use Joomla\CMS\Router\Route;
 use Joomla\Registry\Registry;
 
 /**
@@ -245,19 +245,19 @@ class HtmlView extends BaseHtmlView
         }
 
         // Get component and menu parameters
-        $this->params = J2CommerceHelper::config();
+        $this->params   = J2CommerceHelper::config();
         $this->currency = $model->getCurrency();
-        $this->store = $model->getStore();
+        $this->store    = $model->getStore();
 
         // Get menu item params
-        $menu = $app->getMenu();
-        $active = $menu->getActive();
+        $menu                 = $app->getMenu();
+        $active               = $menu->getActive();
         $this->menuItemParams = \is_object($active) ? $active->getParams() : new Registry('{}');
 
         // Get location state
         $this->country_id = (int) $model->getState('country_id');
-        $this->zone_id = (int) $model->getState('zone_id');
-        $this->postcode = (string) $model->getState('postcode');
+        $this->zone_id    = (int) $model->getState('zone_id');
+        $this->postcode   = (string) $model->getState('postcode');
 
         // Get cart items
         $items = $model->getItems();
@@ -276,14 +276,14 @@ class HtmlView extends BaseHtmlView
 
         // Trigger BeforeDisplayCart event
         $this->before_display_cart = '';
-        $beforeResults = J2CommerceHelper::plugin()->event('BeforeDisplayCart', [&$items]);
+        $beforeResults             = J2CommerceHelper::plugin()->event('BeforeDisplayCart', [&$items]);
         foreach ($beforeResults as $result) {
             $this->before_display_cart .= $result;
         }
 
         // Trigger DisplayCartItem event for each item
         $this->onDisplayCartItem = [];
-        $i = 0;
+        $i                       = 0;
         foreach ($items as $item) {
             ob_start();
             J2CommerceHelper::plugin()->event('DisplayCartItem', [$i, $item]);
@@ -323,14 +323,14 @@ class HtmlView extends BaseHtmlView
             }
 
             // Get order details
-            $this->taxes = $this->order->getOrderTaxrates();
+            $this->taxes    = $this->order->getOrderTaxrates();
             $this->shipping = $this->order->getOrderShippingRate();
-            $this->coupons = $this->order->getOrderCoupons();
+            $this->coupons  = $this->order->getOrderCoupons();
             $this->vouchers = $this->order->getOrderVouchers();
 
             // Trigger AfterDisplayCart event
             $this->after_display_cart = '';
-            $afterResults = J2CommerceHelper::plugin()->event('AfterDisplayCart', [$this->order]);
+            $afterResults             = J2CommerceHelper::plugin()->event('AfterDisplayCart', [$this->order]);
             foreach ($afterResults as $result) {
                 $this->after_display_cart .= $result;
             }
@@ -346,10 +346,10 @@ class HtmlView extends BaseHtmlView
 
         // Get shipping data
         $this->shipping_methods = $model->getShippingMethods();
-        $this->shipping_values = $model->getShippingValues();
+        $this->shipping_values  = $model->getShippingValues();
 
         // Get URLs
-        $this->checkout_url = $model->getCheckoutUrl();
+        $this->checkout_url          = $model->getCheckoutUrl();
         $this->continue_shopping_url = $model->getContinueShoppingUrl();
 
         // Trigger BeforeCartView event (allows plugins to modify view)

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -14,10 +15,10 @@ namespace J2Commerce\Component\J2commerce\Administrator\View\Order;
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
-use Joomla\CMS\Form\Form;
 use Joomla\CMS\Helper\ContentHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -26,7 +27,6 @@ use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use Joomla\Registry\Registry;
-use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 class HtmlView extends BaseHtmlView
 {
@@ -35,14 +35,14 @@ class HtmlView extends BaseHtmlView
     protected $form;
     protected $item;
     protected $state;
-    protected array $orderStatuses = [];
-    protected string $dateFormat = 'Y-m-d H:i:s';
-    protected int $customerDays = 0;
-    protected int $totalSales = 0;
+    protected array $orderStatuses   = [];
+    protected string $dateFormat     = 'Y-m-d H:i:s';
+    protected int $customerDays      = 0;
+    protected int $totalSales        = 0;
     protected string $currencySymbol = '';
-    protected string $currencyCode = '';
-    protected bool $hasPackingSlip = false;
-    protected ?Registry $params = null;
+    protected string $currencyCode   = '';
+    protected bool $hasPackingSlip   = false;
+    protected ?Registry $params      = null;
 
     public function display($tpl = null): void
     {
@@ -55,26 +55,26 @@ class HtmlView extends BaseHtmlView
         $model = $this->getModel();
         $model->setUseExceptions(true);
 
-        $this->form  = $model->getForm();
-        $this->item  = $model->getItem();
-        $this->state = $model->getState();
+        $this->form          = $model->getForm();
+        $this->item          = $model->getItem();
+        $this->state         = $model->getState();
         $this->orderStatuses = $this->getOrderStatuses();
-        $this->params = ComponentHelper::getParams('com_j2commerce');
+        $this->params        = ComponentHelper::getParams('com_j2commerce');
 
         $this->dateFormat = $this->params->get('date_format', 'Y-m-d H:i:s');
 
         // Currency formatting
-        $this->currencyCode = $this->item->currency_code ?? '';
+        $this->currencyCode   = $this->item->currency_code ?? '';
         $this->currencySymbol = CurrencyHelper::getSymbol($this->currencyCode) ?: $this->currencyCode;
 
         if (!empty($this->item->user_id) && (int) $this->item->user_id > 0) {
-            $firstOrder = $model->getFirstOrderDate((int) $this->item->user_id);
+            $firstOrder         = $model->getFirstOrderDate((int) $this->item->user_id);
             $this->customerDays = $firstOrder ? (new \DateTime())->diff(new \DateTime($firstOrder))->days : 0;
-            $this->totalSales = $model->getOrderCountByUser((int) $this->item->user_id);
+            $this->totalSales   = $model->getOrderCountByUser((int) $this->item->user_id);
         }
 
         // Check if any published packing slip template exists
-        $db = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $db      = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
         $psQuery = $db->getQuery(true)
             ->select('1')
             ->from($db->quoteName('#__j2commerce_invoicetemplates'))
@@ -198,7 +198,7 @@ class HtmlView extends BaseHtmlView
 
     protected function getOrderStatuses(): array
     {
-        $db = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $db    = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
         $query = $db->getQuery(true)
             ->select([
                 $db->quoteName('j2commerce_orderstatus_id', 'value'),

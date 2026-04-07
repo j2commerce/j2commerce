@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,15 +12,12 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Field;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
-use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Field\ListField;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
-use Joomla\Database\DatabaseInterface;
-use Joomla\Database\Exception\ExecutionFailureException;
 
 /**
  * ProductType field - provides a dropdown of product types.
@@ -61,10 +59,10 @@ class ProductTypeField extends ListField
     {
         // Define core product types with language string keys
         $types = [
-            'simple'        => Text::_('COM_J2COMMERCE_PRODUCT_TYPE_SIMPLE'),
-            'variable'      => Text::_('COM_J2COMMERCE_PRODUCT_TYPE_VARIABLE'),
-            'configurable'  => Text::_('COM_J2COMMERCE_PRODUCT_TYPE_CONFIGURABLE'),
-            'downloadable'  => Text::_('COM_J2COMMERCE_PRODUCT_TYPE_DOWNLOADABLE'),
+            'simple'       => Text::_('COM_J2COMMERCE_PRODUCT_TYPE_SIMPLE'),
+            'variable'     => Text::_('COM_J2COMMERCE_PRODUCT_TYPE_VARIABLE'),
+            'configurable' => Text::_('COM_J2COMMERCE_PRODUCT_TYPE_CONFIGURABLE'),
+            'downloadable' => Text::_('COM_J2COMMERCE_PRODUCT_TYPE_DOWNLOADABLE'),
         ];
 
         // Allow plugins to add product types via the onJ2CommerceGetProductTypes event

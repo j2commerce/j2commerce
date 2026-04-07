@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  mod_j2commerce_relatedproducts
@@ -9,7 +10,7 @@
 
 declare(strict_types=1);
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Module\RelatedProducts\Site\Helper\RelatedProductsHelper;
 

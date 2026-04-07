@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,17 +12,16 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
-use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Exception;
+use J2Commerce\Component\J2commerce\Administrator\Event\PluginEvent;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\Plugin\PluginHelper as JoomlaPluginHelper;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Event\Event;
-use J2Commerce\Component\J2commerce\Administrator\Event\PluginEvent;
 
 /**
  * Plugin Helper class for J2Commerce
@@ -74,9 +74,9 @@ class PluginHelper
     public function __construct($properties = null)
     {
         try {
-            $this->db = Factory::getContainer()->get(DatabaseInterface::class);
+            $this->db  = Factory::getContainer()->get(DatabaseInterface::class);
             $this->app = Factory::getApplication();
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             // Log error and continue with null instances
             if ($this->app !== null) {
                 $this->app->enqueueMessage(
@@ -163,7 +163,7 @@ class PluginHelper
             $data = $this->db->loadObjectList();
 
             return $data ?: [];
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             if ($this->app !== null) {
                 $this->app->enqueueMessage(
                     'Error retrieving plugins: ' . $e->getMessage(),
@@ -191,7 +191,7 @@ class PluginHelper
 
         try {
             $element = (string) $element;
-            $folder = strtolower((string) $folder);
+            $folder  = strtolower((string) $folder);
 
             $query = $this->db->getQuery(true)
                 ->select('*')
@@ -206,7 +206,7 @@ class PluginHelper
             $row = $this->db->loadObject();
 
             return $row ?: false;
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             if ($this->app !== null) {
                 $this->app->enqueueMessage(
                     'Error retrieving plugin: ' . $e->getMessage(),
@@ -237,16 +237,16 @@ class PluginHelper
 
         $results = $this->app->triggerEvent($event, $options);
 
-        if ((!count($results)) > 0) {
+        if ((!\count($results)) > 0) {
             return $text;
         }
 
         // Grab content based on method
         switch (strtolower((string) $method)) {
             case "vertical":
-                for ($i = 0, $iMax = count($results); $i < $iMax; $i++) {
-                    $result = $results[$i];
-                    $title = $result[1] ? Text::_($result[1]) : Text::_('Info');
+                for ($i = 0, $iMax = \count($results); $i < $iMax; $i++) {
+                    $result  = $results[$i];
+                    $title   = $result[1] ? Text::_($result[1]) : Text::_('Info');
                     $content = $result[0];
 
                     // Vertical display
@@ -274,11 +274,11 @@ class PluginHelper
     {
         $success = false;
 
-        if (!$element || !is_object($element)) {
+        if (!$element || !\is_object($element)) {
             return $success;
         }
 
-        if (!$eventName || !is_string($eventName)) {
+        if (!$eventName || !\is_string($eventName)) {
             return $success;
         }
 
@@ -292,10 +292,10 @@ class PluginHelper
 
             // Trigger the event to check if plugin responds
             $result = $this->app->triggerEvent($eventName, [$element]);
-            if (in_array(true, $result, true)) {
+            if (\in_array(true, $result, true)) {
                 $success = true;
             }
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             if ($this->app !== null) {
                 $this->app->enqueueMessage(
                     'Error checking plugin event: ' . $e->getMessage(),
@@ -330,7 +330,7 @@ class PluginHelper
             $this->db->execute();
 
             return true;
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             if ($this->app !== null) {
                 $this->app->enqueueMessage(
                     'Error enabling J2Commerce plugin: ' . $e->getMessage(),
@@ -390,7 +390,7 @@ class PluginHelper
         $this->importCatalogPlugins();
 
         // Get application and dispatcher
-        $app = Factory::getApplication();
+        $app        = Factory::getApplication();
         $dispatcher = $app->getDispatcher();
 
         // Build event name with prefix
@@ -426,10 +426,10 @@ class PluginHelper
         JoomlaPluginHelper::importPlugin('j2commerce');
         $this->importCatalogPlugins();
 
-        $app = Factory::getApplication();
+        $app        = Factory::getApplication();
         $dispatcher = $app->getDispatcher();
 
-        $eventName = $prefix . $event;
+        $eventName   = $prefix . $event;
         $eventObject = new PluginEvent($eventName, $args);
 
         // Dispatch the event
@@ -439,7 +439,7 @@ class PluginHelper
 
         $html = '';
         foreach ($results as $result) {
-            if (is_string($result)) {
+            if (\is_string($result)) {
                 $html .= $result;
             }
         }
@@ -485,7 +485,7 @@ class PluginHelper
         $result = $eventObject->getEventResult();
 
         // Ensure we return an array
-        if (!is_array($result)) {
+        if (!\is_array($result)) {
             return [];
         }
 
@@ -526,9 +526,9 @@ class PluginHelper
         JoomlaPluginHelper::importPlugin('j2commerce');
         $this->importCatalogPlugins();
 
-        $app = Factory::getApplication();
-        $dispatcher = $app->getDispatcher();
-        $eventName = $prefix . $event;
+        $app         = Factory::getApplication();
+        $dispatcher  = $app->getDispatcher();
+        $eventName   = $prefix . $event;
         $eventObject = new PluginEvent($eventName, $args);
         $dispatcher->dispatch($eventName, $eventObject);
 
@@ -536,7 +536,7 @@ class PluginHelper
 
         $apps = [];
         foreach ($results as $result) {
-            if (is_array($result) && isset($result['element'])) {
+            if (\is_array($result) && isset($result['element'])) {
                 $apps[] = $result;
             }
         }

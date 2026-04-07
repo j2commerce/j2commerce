@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -13,20 +14,17 @@ namespace J2Commerce\Component\J2commerce\Administrator\View\Orders;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\MenuHelper;
 use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
 use Joomla\CMS\Factory;
-use Joomla\CMS\Form\Form;
 use Joomla\CMS\Helper\ContentHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
-use Joomla\CMS\Pagination\Pagination;
 use Joomla\CMS\Toolbar\ToolbarHelper;
-use Joomla\Registry\Registry;
-use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 class HtmlView extends BaseHtmlView
 {
@@ -37,12 +35,12 @@ class HtmlView extends BaseHtmlView
     protected $state;
     public $filterForm;
     public $activeFilters = [];
-    protected $isModal = false;
+    protected $isModal    = false;
     private $isEmptyState = false;
     public string $navbar;
-    public array $orderStatuses = [];
+    public array $orderStatuses         = [];
     public bool $hasPackingSlipTemplate = false;
-    public bool $canDelete = false;
+    public bool $canDelete              = false;
 
     public function display($tpl = null): void
     {
@@ -56,14 +54,14 @@ class HtmlView extends BaseHtmlView
         $model = $this->getModel();
         $model->setUseExceptions(true);
 
-        $this->items         = $model->getItems();
-        $this->pagination    = $model->getPagination();
-        $this->state         = $model->getState();
-        $this->filterForm    = $model->getFilterForm();
-        $this->activeFilters = $model->getActiveFilters();
-        $this->orderStatuses = $this->loadOrderStatuses();
+        $this->items                  = $model->getItems();
+        $this->pagination             = $model->getPagination();
+        $this->state                  = $model->getState();
+        $this->filterForm             = $model->getFilterForm();
+        $this->activeFilters          = $model->getActiveFilters();
+        $this->orderStatuses          = $this->loadOrderStatuses();
         $this->hasPackingSlipTemplate = $this->hasPackingSlipTemplate();
-        $this->canDelete = $this->getCurrentUser()->authorise('core.delete', 'com_j2commerce');
+        $this->canDelete              = $this->getCurrentUser()->authorise('core.delete', 'com_j2commerce');
 
         if ((!\is_array($this->items) || !\count($this->items)) && $this->isEmptyState = $model->getIsEmptyState()) {
             $this->setLayout('emptystate');
@@ -106,8 +104,8 @@ class HtmlView extends BaseHtmlView
     protected function getNavbar(): string
     {
         $displayData = [
-            'items' => MenuHelper::getMenuItems(),
-            'active' => MenuHelper::getActiveView()
+            'items'  => MenuHelper::getMenuItems(),
+            'active' => MenuHelper::getActiveView(),
         ];
 
         return LayoutHelper::render('navbar.default', $displayData, JPATH_COMPONENT_ADMINISTRATOR . '/layouts');
@@ -115,8 +113,8 @@ class HtmlView extends BaseHtmlView
 
     protected function addToolbar(): void
     {
-        $canDo = ContentHelper::getActions('com_j2commerce', 'order');
-        $user  = $this->getCurrentUser();
+        $canDo   = ContentHelper::getActions('com_j2commerce', 'order');
+        $user    = $this->getCurrentUser();
         $toolbar = $this->getDocument()->getToolbar();
 
         ToolbarHelper::title(Text::_('COM_J2COMMERCE_ORDERS'), 'fa-solid fa-list-alt');
@@ -155,7 +153,7 @@ class HtmlView extends BaseHtmlView
 
     protected function loadOrderStatuses(): array
     {
-        $db = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $db    = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
         $query = $db->getQuery(true)
             ->select([
                 $db->quoteName('j2commerce_orderstatus_id'),
@@ -174,7 +172,7 @@ class HtmlView extends BaseHtmlView
     protected function loadPaymentPluginLanguages(): void
     {
         $lang = Factory::getApplication()->getLanguage();
-        $db = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $db   = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 
         $query = $db->getQuery(true)
             ->select($db->quoteName('element'))
@@ -195,7 +193,7 @@ class HtmlView extends BaseHtmlView
 
     private function hasPackingSlipTemplate(): bool
     {
-        $db = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $db    = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
         $query = $db->getQuery(true)
             ->select('1')
             ->from($db->quoteName('#__j2commerce_invoicetemplates'))

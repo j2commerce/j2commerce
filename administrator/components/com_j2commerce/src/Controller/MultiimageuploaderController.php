@@ -48,8 +48,8 @@ class MultiimageuploaderController extends BaseController
         }
 
         $componentParams = ComponentHelper::getParams('com_j2commerce');
-        $directory  = $this->sanitizePath($input->getString('path', 'images'));
-        $uploadPath = JPATH_ROOT . '/' . $directory;
+        $directory       = $this->sanitizePath($input->getString('path', 'images'));
+        $uploadPath      = JPATH_ROOT . '/' . $directory;
 
         if (!is_dir($uploadPath)) {
             Folder::create($uploadPath);
@@ -622,10 +622,10 @@ class MultiimageuploaderController extends BaseController
         }
 
         if (is_file($thumbPath)) {
-            $thumbRelative         = $directory . '/thumbs/' . $webpBaseName;
-            $result['thumb_path']  = $thumbRelative;
-            $result['thumb_url']   = $siteRoot . $thumbRelative;
-            $thumbInfo             = @getimagesize($thumbPath);
+            $thumbRelative          = $directory . '/thumbs/' . $webpBaseName;
+            $result['thumb_path']   = $thumbRelative;
+            $result['thumb_url']    = $siteRoot . $thumbRelative;
+            $thumbInfo              = @getimagesize($thumbPath);
             $result['thumb_width']  = $thumbInfo ? $thumbInfo[0] : $thumbWidth;
             $result['thumb_height'] = $thumbInfo ? $thumbInfo[1] : $thumbHeight;
         }
@@ -651,10 +651,10 @@ class MultiimageuploaderController extends BaseController
         }
 
         if (is_file($tinyPath)) {
-            $tinyRelative         = $directory . '/tiny/' . $webpBaseName;
-            $result['tiny_path']  = $tinyRelative;
-            $result['tiny_url']   = $siteRoot . $tinyRelative;
-            $tinyInfo             = @getimagesize($tinyPath);
+            $tinyRelative          = $directory . '/tiny/' . $webpBaseName;
+            $result['tiny_path']   = $tinyRelative;
+            $result['tiny_url']    = $siteRoot . $tinyRelative;
+            $tinyInfo              = @getimagesize($tinyPath);
             $result['tiny_width']  = $tinyInfo ? $tinyInfo[0] : $tinyWidth;
             $result['tiny_height'] = $tinyInfo ? $tinyInfo[1] : $tinyHeight;
         }
@@ -692,7 +692,7 @@ class MultiimageuploaderController extends BaseController
             return $filePath;
         }
 
-        $dir     = \dirname($filePath);
+        $dir      = \dirname($filePath);
         $webpPath = $dir . '/' . File::stripExt(basename($filePath)) . '.webp';
 
         if ($keepOriginal && $extension !== 'webp') {

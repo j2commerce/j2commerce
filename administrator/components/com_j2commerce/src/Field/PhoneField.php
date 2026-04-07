@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -13,8 +14,8 @@ namespace J2Commerce\Component\J2commerce\Administrator\Field;
 
 \defined('_JEXEC') or die;
 
-use Joomla\CMS\Form\FormField;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
+use Joomla\CMS\Form\FormField;
 
 /**
  * Admin form field that renders the same telephone widget used on the frontend
@@ -41,7 +42,7 @@ class PhoneField extends FormField
     {
         $mode = (string) ($this->element['mode'] ?? 'all');
 
-        $allowedIso2 = null;
+        $allowedIso2   = null;
         $countriesAttr = (string) ($this->element['countries'] ?? '');
         if ($countriesAttr !== '') {
             $allowedIso2 = array_values(array_filter(array_map('trim', explode(',', $countriesAttr))));

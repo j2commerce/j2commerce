@@ -29,7 +29,7 @@ return new class () implements ServiceProviderInterface {
             PluginInterface::class,
             function (Container $container) {
                 $dispatcher = $container->get(DispatcherInterface::class);
-                $plugin = PluginHelper::getPlugin('j2commerce', 'payment_banktransfer');
+                $plugin     = PluginHelper::getPlugin('j2commerce', 'payment_banktransfer');
 
                 return new PaymentBanktransfer(
                     $dispatcher,

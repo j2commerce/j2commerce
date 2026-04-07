@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Field;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Field\ListField;
@@ -105,11 +106,11 @@ class ZoneField extends ListField
         $options = parent::getOptions();
 
         try {
-            $db = Factory::getContainer()->get(DatabaseInterface::class);
+            $db    = Factory::getContainer()->get(DatabaseInterface::class);
             $query = $db->getQuery(true)
                 ->select([
                     $db->quoteName('j2commerce_zone_id', 'value'),
-                    $db->quoteName('zone_name', 'text')
+                    $db->quoteName('zone_name', 'text'),
                 ])
                 ->from($db->quoteName('#__j2commerce_zones'))
                 ->where($db->quoteName('enabled') . ' = 1')
@@ -155,16 +156,16 @@ class ZoneField extends ListField
     {
         // Determine the form control prefix for field IDs
         $formControl = $this->formControl ?: 'jform';
-        $group = $this->group ? $this->group . '_' : '';
+        $group       = $this->group ? $this->group . '_' : '';
 
         // Build the field IDs
         // For config forms, the ID format is: jform_fieldname
         // For edit forms with groups, it might be: jform_group_fieldname
         $countryFieldId = $formControl . '_' . $group . $this->countryField;
-        $zoneFieldId = $this->id;
+        $zoneFieldId    = $this->id;
 
         // Get language strings (JS-safe via htmlspecialchars)
-        $loadingText = htmlspecialchars(Text::_('COM_J2COMMERCE_LOADING'), ENT_QUOTES, 'UTF-8');
+        $loadingText    = htmlspecialchars(Text::_('COM_J2COMMERCE_LOADING'), ENT_QUOTES, 'UTF-8');
         $selectZoneText = htmlspecialchars(Text::sprintf('COM_J2COMMERCE_SELECT_PLACEHOLDER', Text::_('COM_J2COMMERCE_ZONE')), ENT_QUOTES, 'UTF-8');
 
         $script = <<<JS

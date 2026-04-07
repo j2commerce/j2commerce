@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -17,15 +18,12 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\CountryModel;
 use J2Commerce\Component\J2commerce\Administrator\Model\ZoneModel;
 use Joomla\CMS\Factory;
-use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\FileLayout;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Session\Session;
-use Joomla\CMS\Utility\Utility;
-use Joomla\Input\Input;
 use Joomla\Filesystem\File;
 use Joomla\Filesystem\Path;
 
@@ -36,14 +34,13 @@ use Joomla\Filesystem\Path;
  */
 class Base extends CMSPlugin
 {
-
     /**
      * @var $_element  string  Should always correspond with the plugin's filename,
      *                         forcing it to be unique
      */
-    var $_element = '';
+    public $_element = '';
 
-    var $_row = '';
+    public $_row = '';
 
     /**
      * Checks to make sure that this plugin is the one being triggered by the extension
@@ -52,16 +49,16 @@ class Base extends CMSPlugin
      * @return bool Parameter value
      * @since 5.0
      */
-    function _isMe($row)
+    public function _isMe($row)
     {
         $element = $this->_element;
 
         $success = false;
-        if (is_object($row) && !empty($row->element) && $row->element == $element) {
+        if (\is_object($row) && !empty($row->element) && $row->element == $element) {
             $success = true;
         }
 
-        if (is_string($row) && $row == $element) {
+        if (\is_string($row) && $row == $element) {
             $success = true;
         }
 
@@ -79,11 +76,11 @@ class Base extends CMSPlugin
      *
      * @return string   HTML to display
      */
-    function _renderForm($data)
+    public function _renderForm($data)
     {
-        $vars = new \stdClass();
+        $vars   = new \stdClass();
         $layout = 'form';
-        $path = PluginHelper::getLayoutPath($this->_type, $this->_element);
+        $path   = PluginHelper::getLayoutPath($this->_type, $this->_element);
 
         $fileLayout = new FileLayout($layout, $path);
 
@@ -96,11 +93,11 @@ class Base extends CMSPlugin
      * @param array
      * @return string   HTML to display
      */
-    function _renderView($options)
+    public function _renderView($options)
     {
-        $vars = new \stdClass();
+        $vars   = new \stdClass();
         $layout = 'view';
-        $path = PluginHelper::getLayoutPath($this->_type, $this->_element);
+        $path   = PluginHelper::getLayoutPath($this->_type, $this->_element);
 
         return (new FileLayout($layout, $path))->render($vars);
 
@@ -113,13 +110,13 @@ class Base extends CMSPlugin
      * @return string
      * @access protected
      */
-    function _renderMessage($message = '')
+    public function _renderMessage($message = '')
     {
-        $vars = new \stdClass();
+        $vars          = new \stdClass();
         $vars->message = $message;
 
         $layout = 'message';
-        $path = PluginHelper::getLayoutPath($this->_type, $this->_element);
+        $path   = PluginHelper::getLayoutPath($this->_type, $this->_element);
 
         return (new FileLayout($layout, $path))->render($vars);
 
@@ -135,7 +132,7 @@ class Base extends CMSPlugin
      * @return string
      * @access protected
      */
-    function _getLayout($layout, $vars = false, $plugin = '', $group = 'j2commerce')
+    public function _getLayout($layout, $vars = false, $plugin = '', $group = 'j2commerce')
     {
 
         if (empty($plugin)) {
@@ -162,19 +159,19 @@ class Base extends CMSPlugin
      * @access protected
      * @throws Exception
      */
-    function _getLayoutPath($plugin, $group, $layout = 'default', $vars = false)
+    public function _getLayoutPath($plugin, $group, $layout = 'default', $vars = false)
     {
         $app = Factory::getApplication();
         // get the template and default paths for the layout
         $templatePath = JPATH_SITE . '/templates/' . $app->getTemplate() . '/html/plg_' . $group . '_' . $plugin . '/' . $layout . '.php';
-        $defaultPath = JPATH_SITE . '/plugins/' . $group . '/' . $plugin . '/' . $plugin . '/tmpl/' . $layout . '.php';
+        $defaultPath  = JPATH_SITE . '/plugins/' . $group . '/' . $plugin . '/' . $plugin . '/tmpl/' . $layout . '.php';
 
         // if the site template has a layout override, use it
         if (file_exists($templatePath)) {
             return $templatePath;
-        } else {
-            return $defaultPath;
         }
+        return $defaultPath;
+
     }
 
     /**
@@ -184,9 +181,9 @@ class Base extends CMSPlugin
      * @return string
      */
 
-    function _displayArticle()
+    public function _displayArticle()
     {
-        $html = '';
+        $html       = '';
         $article_id = (int)$this->params->get('articleid');
         if ($article_id && is_numeric($article_id)) {
             $html = J2CommerceHelper::article()->display($article_id);
@@ -203,7 +200,7 @@ class Base extends CMSPlugin
      * @param string $method
      * @return boolean
      */
-    function _checkToken($suffix = '', $method = 'post')
+    public function _checkToken($suffix = '', $method = 'post')
     {
         $token = Session::getFormToken();
         $token .= "." . strtolower($suffix);
@@ -223,7 +220,7 @@ class Base extends CMSPlugin
      * @param string $suffix
      * @return string HTML
      */
-    function _getToken($suffix = '')
+    public function _getToken($suffix = '')
     {
         $token = Session::getFormToken();
         $token .= "." . strtolower($suffix);
@@ -239,9 +236,9 @@ class Base extends CMSPlugin
      *
      * @return string
      */
-    function _getTokenSuffix($method = 'post')
+    public function _getTokenSuffix($method = 'post')
     {
-        $app = J2CommerceHelper::platform()->application();
+        $app    = J2CommerceHelper::platform()->application();
         $suffix = $app->input->get('tokenSuffix', '');
         if (!$this->_checkToken($suffix, $method)) {
             // what to do if there isn't this suffix's token in the request?
@@ -271,7 +268,7 @@ class Base extends CMSPlugin
      */
     public function clean_title($text)
     {
-        $text = str_replace(array('"', "'"), '', $text);
+        $text = str_replace(['"', "'"], '', $text);
         return $text;
     }
 
@@ -282,10 +279,10 @@ class Base extends CMSPlugin
      * @access protected
      * @throws Exception
      */
-    function _getAdmins()
+    public function _getAdmins()
     {
         try {
-            $db = Factory::getContainer()->get('DatabaseDriver');
+            $db    = Factory::getContainer()->get('DatabaseDriver');
             $query = $db->getQuery(true);
 
             $query->select('u.name, u.email');
@@ -306,20 +303,20 @@ class Base extends CMSPlugin
 
 
 
-    function _log($text, $type = 'info')
+    public function _log($text, $type = 'info')
     {
         if ($this->_isLog) {
             // Initialize logger if not already done
             Log::addLogger(
-                array(
-                    'text_file' => $this->_element . '.log.php',
-                    'text_entry_format' => '{DATETIME} {PRIORITY} {MESSAGE}'
-                ),
+                [
+                    'text_file'         => $this->_element . '.log.php',
+                    'text_entry_format' => '{DATETIME} {PRIORITY} {MESSAGE}',
+                ],
                 Log::ALL,
-                array($this->_element)
+                [$this->_element]
             );
 
-            if (is_array($text) || is_object($text)) {
+            if (\is_array($text) || \is_object($text)) {
                 $text = json_encode($text);
             }
 

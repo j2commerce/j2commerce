@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -14,7 +15,6 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 // phpcs:enable PSR1.Files.SideEffects
 
 use Joomla\CMS\MVC\Controller\BaseController;
-
 
 /**
  * Order Shipping Controller
@@ -32,4 +32,3 @@ class OrdershippingController extends BaseController
      */
     protected $default_view = 'ordershipping';
 }
-

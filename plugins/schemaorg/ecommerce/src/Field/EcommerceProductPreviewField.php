@@ -15,7 +15,6 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\FormField;
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\Uri\Uri;
 use Joomla\Plugin\Schemaorg\Ecommerce\Helper\J2CommerceSchemaHelper;
 
 // phpcs:disable PSR1.Files.SideEffects
@@ -106,7 +105,7 @@ class EcommerceProductPreviewField extends FormField
 
         // Try to get from input
         $app = Factory::getApplication();
-        $id = $app->getInput()->getInt('id', 0);
+        $id  = $app->getInput()->getInt('id', 0);
 
         return $id > 0 ? $id : null;
     }
@@ -147,14 +146,14 @@ class EcommerceProductPreviewField extends FormField
 
 
         // Get product data
-        $productName = $helper->getProductName($product);
-        $images = $helper->getAllProductImages($product);
-        $imageUrl = !empty($images) ? $images[0] : '';
+        $productName           = $helper->getProductName($product);
+        $images                = $helper->getAllProductImages($product);
+        $imageUrl              = !empty($images) ? $images[0] : '';
         $additionalImagesCount = \count($images) > 1 ? \count($images) - 1 : 0;
 
         // Check if this is a variable product
-        $isVariable = $helper->isVariableProduct($product);
-        $variantCount = 0;
+        $isVariable     = $helper->isVariableProduct($product);
+        $variantCount   = 0;
         $defaultVariant = null;
 
         if ($isVariable && isset($product->variants) && \is_array($product->variants)) {
@@ -174,14 +173,14 @@ class EcommerceProductPreviewField extends FormField
         $displayVariant = $defaultVariant ?? ($product->variant ?? null);
 
         // Price and currency (from default or master variant)
-        $price = $displayVariant ? $helper->getProductPrice($displayVariant) : 0;
-        $currency = $helper->getCurrencyCode();
+        $price          = $displayVariant ? $helper->getProductPrice($displayVariant) : 0;
+        $currency       = $helper->getCurrencyCode();
         $formattedPrice = '$' . number_format($price, 2);
 
         // Availability
-        $availability = $displayVariant ? $helper->mapAvailability($displayVariant) : 'https://schema.org/InStock';
+        $availability      = $displayVariant ? $helper->mapAvailability($displayVariant) : 'https://schema.org/InStock';
         $availabilityLabel = $this->getAvailabilityLabel($availability);
-        $stockClass = $this->getStockClass($availability);
+        $stockClass        = $this->getStockClass($availability);
 
         // SKU
         $sku = $displayVariant->sku ?? '';
@@ -229,7 +228,7 @@ class EcommerceProductPreviewField extends FormField
         $html[] = '            <div class="image-section">';
         $html[] = '                <div class="image-frame">';
         if (!empty($imageUrl)) {
-            $html[] = ImageHelper::getInstance()->getProductImage($imageUrl,height: 160,width: 160,class: 'object-fit-cover img-fluid',alt: htmlspecialchars($productName, ENT_QUOTES, 'UTF-8'));
+            $html[] = ImageHelper::getInstance()->getProductImage($imageUrl, height: 160, width: 160, class: 'object-fit-cover img-fluid', alt: htmlspecialchars($productName, ENT_QUOTES, 'UTF-8'));
         } else {
             $html[] = '                    <div class="no-image"><i class="icon-image"></i></div>';
         }
@@ -342,7 +341,7 @@ class EcommerceProductPreviewField extends FormField
     private function renderVariantsTable(array $variants, J2CommerceSchemaHelper $helper): string
     {
         $currency = $helper->getCurrencyCode();
-        $html = [];
+        $html     = [];
 
         $html[] = '            <div class="variants-section">';
         $html[] = '                <h6>';
@@ -377,13 +376,13 @@ class EcommerceProductPreviewField extends FormField
             }
 
             // Format variant name using J2Commerce helper for readable option names
-            $variantName = $this->formatVariantName($variant);
-            $variantSku = $variant->sku ?? '';
-            $variantPrice = '$' . number_format((float) ($variant->price ?? 0), 2);
-            $variantGtin = $variant->upc ?? '';
+            $variantName         = $this->formatVariantName($variant);
+            $variantSku          = $variant->sku ?? '';
+            $variantPrice        = '$' . number_format((float) ($variant->price ?? 0), 2);
+            $variantGtin         = $variant->upc ?? '';
             $variantAvailability = $helper->mapAvailability($variant);
-            $variantStatus = $this->getAvailabilityLabel($variantAvailability);
-            $variantStatusClass = $this->getStockClass($variantAvailability);
+            $variantStatus       = $this->getAvailabilityLabel($variantAvailability);
+            $variantStatusClass  = $this->getStockClass($variantAvailability);
 
             $html[] = '                        <tr>';
             $html[] = '                            <td>' . $variantName . '</td>';
@@ -424,7 +423,7 @@ class EcommerceProductPreviewField extends FormField
                 if ($productHelper && method_exists($productHelper, 'getVariantNamesByCSV')) {
                     // variant_name contains CSV of product_optionvalue_ids (e.g., "1,5,12")
                     $optionValueIds = $variant->variant_name ?? '';
-                    $variantNames = $productHelper->getVariantNamesByCSV($optionValueIds);
+                    $variantNames   = $productHelper->getVariantNamesByCSV($optionValueIds);
 
                     if (!empty($variantNames)) {
                         // Split by comma (the method returns comma-separated names)
@@ -467,10 +466,10 @@ class EcommerceProductPreviewField extends FormField
     private function getAvailabilityLabel(string $availability): string
     {
         $labels = [
-            'https://schema.org/InStock'     => Text::_('PLG_SCHEMAORG_ECOMMERCE_INSTOCK'),
-            'https://schema.org/OutOfStock'  => Text::_('PLG_SCHEMAORG_ECOMMERCE_OUTOFSTOCK'),
-            'https://schema.org/PreOrder'    => Text::_('PLG_SCHEMAORG_ECOMMERCE_PREORDER'),
-            'https://schema.org/BackOrder'   => Text::_('PLG_SCHEMAORG_ECOMMERCE_BACKORDER'),
+            'https://schema.org/InStock'      => Text::_('PLG_SCHEMAORG_ECOMMERCE_INSTOCK'),
+            'https://schema.org/OutOfStock'   => Text::_('PLG_SCHEMAORG_ECOMMERCE_OUTOFSTOCK'),
+            'https://schema.org/PreOrder'     => Text::_('PLG_SCHEMAORG_ECOMMERCE_PREORDER'),
+            'https://schema.org/BackOrder'    => Text::_('PLG_SCHEMAORG_ECOMMERCE_BACKORDER'),
             'https://schema.org/Discontinued' => Text::_('PLG_SCHEMAORG_ECOMMERCE_DISCONTINUED'),
         ];
 
@@ -489,10 +488,10 @@ class EcommerceProductPreviewField extends FormField
     private function getStockClass(string $availability): string
     {
         $classes = [
-            'https://schema.org/InStock'     => 'in-stock',
-            'https://schema.org/OutOfStock'  => 'out-of-stock',
-            'https://schema.org/PreOrder'    => 'pre-order',
-            'https://schema.org/BackOrder'   => 'back-order',
+            'https://schema.org/InStock'      => 'in-stock',
+            'https://schema.org/OutOfStock'   => 'out-of-stock',
+            'https://schema.org/PreOrder'     => 'pre-order',
+            'https://schema.org/BackOrder'    => 'back-order',
             'https://schema.org/Discontinued' => 'discontinued',
         ];
 

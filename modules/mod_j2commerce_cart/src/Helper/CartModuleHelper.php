@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Module\Cart\Site\Helper;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 /**
  * Helper class for the cart module.

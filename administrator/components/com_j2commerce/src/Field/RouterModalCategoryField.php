@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,11 +12,11 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Field;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
+use Joomla\CMS\Factory;
 use Joomla\CMS\Form\FormField;
 use Joomla\CMS\Form\FormHelper;
-use Joomla\CMS\Factory;
 use Joomla\CMS\User\CurrentUserInterface;
 use Joomla\Database\DatabaseAwareInterface;
 use Joomla\Database\DatabaseInterface;
@@ -42,7 +43,7 @@ class RouterModalCategoryField extends FormField
 
     protected function createModalCategoryField(\SimpleXMLElement $element, $value, ?string $group): ?FormField
     {
-        if (is_array($value)) {
+        if (\is_array($value)) {
             $value = !empty($value) ? (string) reset($value) : '';
         }
 
@@ -57,16 +58,16 @@ class RouterModalCategoryField extends FormField
             }
         }
 
-        $modalXml = new \SimpleXMLElement('<field />');
-        $modalXml['name'] = (string) $element['name'];
-        $modalXml['type'] = 'modal_category';
-        $modalXml['label'] = (string) ($element['label'] ?? 'JGLOBAL_CHOOSE_CATEGORY_LABEL');
+        $modalXml              = new \SimpleXMLElement('<field />');
+        $modalXml['name']      = (string) $element['name'];
+        $modalXml['type']      = 'modal_category';
+        $modalXml['label']     = (string) ($element['label'] ?? 'JGLOBAL_CHOOSE_CATEGORY_LABEL');
         $modalXml['extension'] = (string) ($element['extension'] ?? 'com_content');
-        $modalXml['required'] = (string) ($element['required'] ?? 'false');
-        $modalXml['select'] = 'true';
-        $modalXml['new'] = 'true';
-        $modalXml['edit'] = 'true';
-        $modalXml['clear'] = 'true';
+        $modalXml['required']  = (string) ($element['required'] ?? 'false');
+        $modalXml['select']    = 'true';
+        $modalXml['new']       = 'true';
+        $modalXml['edit']      = 'true';
+        $modalXml['clear']     = 'true';
 
         $field = new $className();
 
@@ -112,7 +113,7 @@ class RouterModalCategoryField extends FormField
 
     public function __get($name)
     {
-        if ($this->delegateField && in_array($name, ['input', 'label'])) {
+        if ($this->delegateField && \in_array($name, ['input', 'label'])) {
             return $this->delegateField->__get($name);
         }
 

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -149,26 +150,26 @@ class HtmlView extends BaseHtmlView
      */
     public function display($tpl = null): void
     {
-        $app = Factory::getApplication();
+        $app   = Factory::getApplication();
         $model = $this->getModel();
 
         // Get menu item parameters
         $this->params = $app->getParams();
 
         // Load data from model
-        $this->state = $model->getState();
-        $this->items = $model->getItems();
-        $this->products = $this->items; // Alias for template plugin compatibility
-        $this->parent = $model->getParent();
+        $this->state      = $model->getState();
+        $this->items      = $model->getItems();
+        $this->products   = $this->items; // Alias for template plugin compatibility
+        $this->parent     = $model->getParent();
         $this->pagination = $model->getPagination();
-        $this->user = $this->getCurrentUser();
+        $this->user       = $this->getCurrentUser();
 
         // Load filter data for sidebar
         $this->filters = $model->getFilters($this->items);
 
         // Get the active menu item and current category filter
-        $this->active_menu = $app->getMenu()->getActive();
-        $catids = $this->state->get('filter.catids', []);
+        $this->active_menu  = $app->getMenu()->getActive();
+        $catids             = $this->state->get('filter.catids', []);
         $this->filter_catid = !empty($catids) ? reset($catids) : '';
 
         // Check for errors
@@ -177,7 +178,7 @@ class HtmlView extends BaseHtmlView
         }
 
         // Get display settings from params
-        $this->columns = (int) $this->params->get('list_no_of_columns', 3);
+        $this->columns   = (int) $this->params->get('list_no_of_columns', 3);
         $this->sublayout = $this->params->get('subtemplate', '');
 
         // Dispatch event to allow template plugins to render the view
@@ -226,9 +227,9 @@ class HtmlView extends BaseHtmlView
      */
     protected function _prepareDocument(): void
     {
-        $app = Factory::getApplication();
+        $app     = Factory::getApplication();
         $pathway = $app->getPathway();
-        $menu = $app->getMenu()->getActive();
+        $menu    = $app->getMenu()->getActive();
 
         // Set page heading from menu item or default
         if ($menu) {
@@ -243,7 +244,7 @@ class HtmlView extends BaseHtmlView
         // Add breadcrumb for category if we're filtering by category
         // Note: Model uses 'filter.catids' (plural array), extract first category
         $catids = $this->state->get('filter.catids', []);
-        $catid = !empty($catids) ? (int) reset($catids) : 0;
+        $catid  = !empty($catids) ? (int) reset($catids) : 0;
 
         // Fallback: check input directly if state doesn't have catid
         // This handles edge cases where the router sets catid but state wasn't populated
@@ -270,7 +271,7 @@ class HtmlView extends BaseHtmlView
             // Only add breadcrumb if menu doesn't already point to this category
             if ($catid != $menuCategoryId) {
                 $categories = \Joomla\CMS\Categories\Categories::getInstance('Content');
-                $category = $categories->get($catid);
+                $category   = $categories->get($catid);
 
                 if ($category) {
                     // Build path from current category up to menu's category
@@ -280,7 +281,7 @@ class HtmlView extends BaseHtmlView
                     while ($current !== null && $current->id != $menuCategoryId && $current->id !== 'root' && $current->id > 1) {
                         $path[] = [
                             'title' => $current->title,
-                            'id' => (int) $current->id,
+                            'id'    => (int) $current->id,
                         ];
                         $current = $current->getParent();
                     }
@@ -292,7 +293,7 @@ class HtmlView extends BaseHtmlView
                     $pathCount = \count($path);
                     foreach ($path as $index => $item) {
                         $isLast = ($index === $pathCount - 1);
-                        $link = $isLast ? '' : Route::_(RouteHelper::getCategoryRouteInContext($item['id'], $menu));
+                        $link   = $isLast ? '' : Route::_(RouteHelper::getCategoryRouteInContext($item['id'], $menu));
                         $pathway->addItem($item['title'], $link);
                     }
                 }
@@ -343,11 +344,11 @@ class HtmlView extends BaseHtmlView
     public function getColumnClass(): string
     {
         return match ($this->columns) {
-            1 => 'col-12',
-            2 => 'col-12 col-md-6',
-            3 => 'col-12 col-md-6 col-lg-4',
-            4 => 'col-12 col-md-6 col-lg-3',
-            6 => 'col-12 col-md-4 col-lg-2',
+            1       => 'col-12',
+            2       => 'col-12 col-md-6',
+            3       => 'col-12 col-md-6 col-lg-4',
+            4       => 'col-12 col-md-6 col-lg-3',
+            6       => 'col-12 col-md-4 col-lg-2',
             default => 'col-12 col-md-6 col-lg-4',
         };
     }

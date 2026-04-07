@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Model\ListModel;
@@ -43,7 +44,7 @@ class CartItemsModel extends ListModel
                 'product_type', 'a.product_type',
                 'product_qty', 'a.product_qty',
                 'product_name', 'c.product_name',
-                'product_options', 'a.product_options'
+                'product_options', 'a.product_options',
             ];
         }
 
@@ -76,8 +77,8 @@ class CartItemsModel extends ListModel
         $product_type = $this->getUserStateFromRequest($this->context . '.filter.product_type', 'filter_product_type', '');
         $this->setState('filter.product_type', $product_type);
 
-       /* $vendor_id = $this->getUserStateFromRequest($this->context . '.filter.vendor_id', 'filter_vendor_id', '');
-        $this->setState('filter.vendor_id', $vendor_id);*/
+        /* $vendor_id = $this->getUserStateFromRequest($this->context . '.filter.vendor_id', 'filter_vendor_id', '');
+         $this->setState('filter.vendor_id', $vendor_id);*/
 
         // List state information.
         parent::populateState($ordering, $direction);
@@ -114,7 +115,7 @@ class CartItemsModel extends ListModel
     protected function getListQuery(): DatabaseQuery
     {
         // Create a new query object.
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         // Select the required columns from the cartitems table.
@@ -132,7 +133,7 @@ class CartItemsModel extends ListModel
         $query->select([
             'p.product_type AS product_type_name',
             'p.vendor_id    AS product_vendor_id',
-            'c.title        AS product_name'
+            'c.title        AS product_name',
         ])
             ->join(
                 'LEFT',
@@ -199,7 +200,7 @@ class CartItemsModel extends ListModel
         }
 
         // Add the list ordering clause.
-        $orderCol = $this->getState('list.ordering', 'a.j2commerce_cartitem_id');
+        $orderCol  = $this->getState('list.ordering', 'a.j2commerce_cartitem_id');
         $orderDirn = $this->getState('list.direction', 'DESC');
 
         if ($orderCol && $orderDirn) {
@@ -221,7 +222,7 @@ class CartItemsModel extends ListModel
         $items = parent::getItems();
 
         // Ensure we always return an array
-        if ($items === false || !is_array($items)) {
+        if ($items === false || !\is_array($items)) {
             // Log the error for debugging
             $app = Factory::getApplication();
             $app->enqueueMessage('Failed to retrieve cart items from database. Please check if the j2commerce_cartitems table exists.', 'warning');
@@ -270,7 +271,7 @@ class CartItemsModel extends ListModel
                 return $json_decoded ?: [];
             }
 
-            return is_array($unserialized) ? $unserialized : [];
+            return \is_array($unserialized) ? $unserialized : [];
         } catch (\Exception $e) {
             // Log the error and return empty array
             $app = Factory::getApplication();
@@ -293,7 +294,7 @@ class CartItemsModel extends ListModel
             return null;
         }
 
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         $query->select('c.j2commerce_cart_id, c.user_id, c.session_id, c.cart_type, c.created_on')
@@ -321,7 +322,7 @@ class CartItemsModel extends ListModel
      */
     public function getProductTypeOptions()
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         $query->select('DISTINCT product_type AS value, product_type AS text')

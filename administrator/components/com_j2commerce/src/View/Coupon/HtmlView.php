@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -13,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\View\Coupon;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
@@ -22,7 +24,6 @@ use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\Toolbar;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use Joomla\Registry\Registry;
-use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 /**
  * Coupon edit view class.
@@ -110,8 +111,8 @@ class HtmlView extends BaseHtmlView
         $checkedOut = !(($this->item->checked_out ?? null) === null || ($this->item->checked_out ?? 0) == $user->id);
         $toolbar    = $this->getDocument()->getToolbar();
 
-        $layout = Factory::getApplication()->getInput()->get('layout', 'history');
-        $isEditLayout = ($layout === 'edit');
+        $layout          = Factory::getApplication()->getInput()->get('layout', 'history');
+        $isEditLayout    = ($layout === 'edit');
         $isHistoryLayout = ($layout === 'history');
 
         if ($isNew) {
@@ -131,7 +132,7 @@ class HtmlView extends BaseHtmlView
                 $toolbar->apply('coupon.apply');
 
                 $saveGroup = $toolbar->dropdownButton('save-group');
-                $childBar = $saveGroup->getChildToolbar();
+                $childBar  = $saveGroup->getChildToolbar();
                 $childBar->save('coupon.save');
                 $childBar->save2new('coupon.save2new');
             }
@@ -141,8 +142,8 @@ class HtmlView extends BaseHtmlView
             if ($isEditLayout) {
                 // Since it's an existing record, check the edit permissions, or fall back to edit own if the owner.
                 $itemEditable = $canDo->get('core.edit') || ($canDo->get(
-                            'core.edit.own'
-                        ) && $this->item->created_by == $user->id);
+                    'core.edit.own'
+                ) && $this->item->created_by == $user->id);
 
                 // Can't save the record if it's checked out and editable
                 if (!$checkedOut && $itemEditable) {

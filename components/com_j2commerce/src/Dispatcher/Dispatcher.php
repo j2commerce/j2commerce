@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Site\Dispatcher;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Dispatcher\ComponentDispatcher;
@@ -38,7 +39,7 @@ class Dispatcher extends ComponentDispatcher
      */
     public function dispatch(): void
     {
-        $app = Factory::getApplication();
+        $app   = Factory::getApplication();
         $input = $app->getInput();
 
         // Skip asset loading for AJAX requests (ajax=1 parameter or JSON format)

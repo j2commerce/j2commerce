@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -19,11 +20,11 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Helper\ContentHelper;
-use Joomla\Registry\Registry;
+use Joomla\CMS\HTML\Helpers\Sidebar;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\FileLayout;
-use Joomla\CMS\HTML\Helpers\Sidebar;
 use Joomla\CMS\Uri\Uri;
+use Joomla\Registry\Registry;
 
 /**
  * J2Commerce helper.
@@ -796,7 +797,7 @@ class J2CommerceHelper extends ContentHelper
     public static function isPro()
     {
         // Check if J2COMMERCE_PRO constant is defined and set to true
-        $isPro = defined('J2COMMERCE_PRO') ? J2COMMERCE_PRO : false;
+        $isPro = \defined('J2COMMERCE_PRO') ? J2COMMERCE_PRO : false;
         return (bool) $isPro;
     }
 
@@ -815,9 +816,9 @@ class J2CommerceHelper extends ContentHelper
      */
     public static function buildHelpLink($url, $content = 'app')
     {
-        $source = self::isPro() ? 'pro' : 'free';
+        $source   = self::isPro() ? 'pro' : 'free';
         $utmQuery = '?utm_source=' . $source . '&utm_medium=component&utm_campaign=inline&utm_content=' . $content;
-        $domain = 'https://docs.j2commerce.com/j2commerce';
+        $domain   = 'https://docs.j2commerce.com/j2commerce';
 
         return $domain . '/' . ltrim($url, '/') . $utmQuery;
     }
@@ -837,9 +838,9 @@ class J2CommerceHelper extends ContentHelper
      */
     public static function buildSiteLink($url, $content = 'app')
     {
-        $source = self::isPro() ? 'pro' : 'free';
+        $source   = self::isPro() ? 'pro' : 'free';
         $utmQuery = '?utm_source=' . $source . '&utm_medium=component&utm_campaign=inline&utm_content=' . $content;
-        $domain = 'https://www.j2commerce.com';
+        $domain   = 'https://www.j2commerce.com';
 
         return $domain . '/' . ltrim($url, '/') . $utmQuery;
     }
@@ -926,7 +927,7 @@ class J2CommerceHelper extends ContentHelper
     protected static function prepareVariantFormData(object $variant, string $formName, bool $isParams): array
     {
         if ($isParams) {
-            $params = $variant->params ?? '{}';
+            $params   = $variant->params ?? '{}';
             $registry = new Registry($params);
 
             return [

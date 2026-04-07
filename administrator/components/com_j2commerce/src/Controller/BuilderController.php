@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -21,7 +22,6 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Session\Session;
-use Joomla\Database\ParameterType;
 use Joomla\Filesystem\Folder;
 use Joomla\Filesystem\Path;
 
@@ -71,7 +71,7 @@ final class BuilderController extends BaseController
             return;
         }
 
-        $db = Factory::getContainer()->get('DatabaseDriver');
+        $db             = Factory::getContainer()->get('DatabaseDriver');
         $previewService = new BlockPreviewService($db);
         $displayData    = $previewService->getDisplayData($productId);
 
@@ -138,13 +138,13 @@ final class BuilderController extends BaseController
     {
         $this->validateRequest();
 
-        $input = $this->app->getInput();
+        $input     = $this->app->getInput();
         $slug      = $input->getString('slug', '');
         $productId = $input->getInt('product_id', 0);
         $settings  = $input->get('settings', [], 'array');
         $editMode  = $input->getBool('edit_mode', true);
 
-        $db = Factory::getContainer()->get('DatabaseDriver');
+        $db            = Factory::getContainer()->get('DatabaseDriver');
         $renderService = new BlockRenderService($db);
 
         $html = $renderService->renderBlock($slug, $settings, $productId, $editMode);
@@ -166,7 +166,7 @@ final class BuilderController extends BaseController
             return;
         }
 
-        $db = Factory::getContainer()->get('DatabaseDriver');
+        $db            = Factory::getContainer()->get('DatabaseDriver');
         $renderService = new BlockRenderService($db);
 
         $rendered = $renderService->renderAllBlocks($blocks, $productId, $editMode);
@@ -192,7 +192,7 @@ final class BuilderController extends BaseController
         // Validate block_order is an array of strings
         $blockOrder = array_values(array_filter(
             array_map('strval', $blockOrder),
-            fn(string $slug): bool => (bool) preg_match('/^[a-z0-9-]+$/', $slug)
+            fn (string $slug): bool => (bool) preg_match('/^[a-z0-9-]+$/', $slug)
         ));
 
         if (empty($blockOrder)) {
@@ -247,7 +247,7 @@ final class BuilderController extends BaseController
         }
 
         // Resolve override path and read the current override content
-        $overridePath = $this->resolveOverridePath($pluginElement, $fileId);
+        $overridePath    = $this->resolveOverridePath($pluginElement, $fileId);
         $overrideContent = '';
 
         if ($overridePath !== null && is_file($overridePath)) {
@@ -255,7 +255,7 @@ final class BuilderController extends BaseController
         }
 
         // Also read the original source file for reference
-        $sourcePath = OverrideRegistry::getSourcePath($pluginElement, $fileId);
+        $sourcePath    = OverrideRegistry::getSourcePath($pluginElement, $fileId);
         $sourceContent = is_file($sourcePath) ? (file_get_contents($sourcePath) ?: '') : '';
 
         // Classify the file — dispatchers cannot be edited visually
@@ -307,7 +307,7 @@ final class BuilderController extends BaseController
         $this->validateRequest();
 
         $presetsDir = JPATH_ADMINISTRATOR . '/components/com_j2commerce/src/Builder/presets';
-        $presets = [];
+        $presets    = [];
 
         if (is_dir($presetsDir)) {
             foreach (glob($presetsDir . '/*.json') as $file) {
@@ -321,11 +321,11 @@ final class BuilderController extends BaseController
                     continue;
                 }
                 $data = json_decode($json, true);
-                if (!is_array($data)) {
+                if (!\is_array($data)) {
                     continue;
                 }
                 $data['id'] = $id;
-                $presets[] = $data;
+                $presets[]  = $data;
             }
         }
 
@@ -361,7 +361,7 @@ final class BuilderController extends BaseController
 
         $data = json_decode($json, true);
 
-        if (!is_array($data)) {
+        if (!\is_array($data)) {
             $this->sendJson(null, 'Invalid preset data', true);
             return;
         }
@@ -413,7 +413,7 @@ final class BuilderController extends BaseController
             return null;
         }
 
-        $template = $this->getActiveSiteTemplate();
+        $template             = $this->getActiveSiteTemplate();
         $templateOverridePath = Path::clean(
             JPATH_ROOT . '/templates/' . $template . '/html/layouts/com_j2commerce/' . $pluginElement
         );
@@ -455,7 +455,7 @@ final class BuilderController extends BaseController
         }
 
         // Create the directory tree if needed
-        $overrideDir = dirname($overrideFile);
+        $overrideDir = \dirname($overrideFile);
 
         if (!is_dir($overrideDir) && !Folder::create($overrideDir)) {
             return null;
@@ -489,7 +489,7 @@ final class BuilderController extends BaseController
         }
 
         // Get the active SITE template (not admin) — same approach as OverridesModel
-        $template = $this->getActiveSiteTemplate();
+        $template             = $this->getActiveSiteTemplate();
         $templateOverridePath = Path::clean(
             JPATH_ROOT . '/templates/' . $template . '/html/layouts/com_j2commerce/' . $pluginElement
         );
@@ -543,7 +543,7 @@ final class BuilderController extends BaseController
 
     private function getActiveSiteTemplate(): string
     {
-        $db = Factory::getContainer()->get('DatabaseDriver');
+        $db    = Factory::getContainer()->get('DatabaseDriver');
         $query = $db->getQuery(true)
             ->select($db->quoteName('template'))
             ->from($db->quoteName('#__template_styles'))

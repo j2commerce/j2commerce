@@ -1,10 +1,10 @@
 <?php
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
-use Joomla\CMS\Component\ComponentHelper;
-use Joomla\CMS\Language\Text;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
+use Joomla\CMS\Component\ComponentHelper;
+use Joomla\CMS\Language\Text;
 
 extract($displayData);
 
@@ -17,7 +17,7 @@ if (!($showStock ?? true)) {
 }
 
 $variant = $product->variant ?? null;
-if (!$variant || !is_object($variant)) {
+if (!$variant || !\is_object($variant)) {
     return;
 }
 

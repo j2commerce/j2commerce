@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -218,7 +219,7 @@ class PhoneHelper
     ];
 
     private const CONTINENT_MAP = [
-        'Africa'   => [
+        'Africa' => [
             'DZ','AO','BJ','BW','BF','BI','CM','CV','CF','TD','KM','CD','CG','CI','DJ','EG',
             'GQ','ER','ET','GA','GM','GH','GN','GW','KE','LS','LR','LY','MG','MW','ML','MR',
             'MU','MA','MZ','NA','NE','NG','RW','SN','SC','SL','SO','ZA','SD','TZ','TG','TN',
@@ -229,17 +230,17 @@ class PhoneHelper
             'EC','SV','GD','GT','GU','GY','HT','HN','JM','MX','KN','KY','LC','MP','MS','NI',
             'PA','PY','PE','PR','SX','TC','TT','US','UY','VE','VC','VG','VI',
         ],
-        'Asia'     => [
+        'Asia' => [
             'AF','AM','AZ','BH','BD','BT','BN','KH','CN','GE','HK','IN','ID','IR','IQ','IL',
             'JP','JO','KZ','KR','KW','KG','LA','LB','MO','MY','MV','MN','MM','NP','OM','PK',
             'PH','QA','SA','SG','LK','SY','TW','TJ','TH','TM','AE','UZ','VN','YE',
         ],
-        'Europe'   => [
+        'Europe' => [
             'AL','AD','AT','BY','BE','BA','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GI',
             'GL','GR','HU','IS','IE','IT','LV','LI','LT','LU','MT','MD','MC','ME','MK','NL',
             'NO','PL','PT','RO','RU','RS','SK','SI','ES','SE','CH','TR','UA','GB',
         ],
-        'Oceania'  => [
+        'Oceania' => [
             'AU','FJ','KI','MH','FM','NR','NZ','PW','PG','WS','SB','TO','TV','VU',
         ],
     ];
@@ -323,7 +324,7 @@ class PhoneHelper
             return [
                 'iso2'     => $preferredIso,
                 'code'     => $preferredCode,
-                'national' => substr($digits, strlen($preferredCode)),
+                'national' => substr($digits, \strlen($preferredCode)),
             ];
         }
 
@@ -389,7 +390,7 @@ class PhoneHelper
         $iso2 = strtoupper($iso2);
         $flag = '';
         for ($i = 0; $i < 2; $i++) {
-            $flag .= mb_chr(0x1F1E6 + ord($iso2[$i]) - ord('A'));
+            $flag .= mb_chr(0x1F1E6 + \ord($iso2[$i]) - \ord('A'));
         }
         return $flag;
     }

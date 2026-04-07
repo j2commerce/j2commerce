@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\CliCommands;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\SampleDataHelper;
 use Joomla\CMS\Factory;
@@ -56,8 +56,8 @@ class LoadSampleDataCommand extends AbstractCommand
 
         $profile = strtolower((string) ($input->getOption('profile') ?? 'standard'));
 
-        if (!in_array($profile, self::ALLOWED_PROFILES, true)) {
-            $io->error(sprintf('Invalid profile "%s". Allowed values: %s', $profile, implode(', ', self::ALLOWED_PROFILES)));
+        if (!\in_array($profile, self::ALLOWED_PROFILES, true)) {
+            $io->error(\sprintf('Invalid profile "%s". Allowed values: %s', $profile, implode(', ', self::ALLOWED_PROFILES)));
             return 1;
         }
 
@@ -87,7 +87,7 @@ class LoadSampleDataCommand extends AbstractCommand
         }
 
         // Collect numeric override options
-        $overrides = [];
+        $overrides   = [];
         $overrideMap = [
             'categories' => 'categories',
             'products'   => 'simple',
@@ -104,11 +104,11 @@ class LoadSampleDataCommand extends AbstractCommand
             }
         }
 
-        $io->section(sprintf('Loading sample data (profile: %s)...', $profile));
+        $io->section(\sprintf('Loading sample data (profile: %s)...', $profile));
 
         if (!empty($overrides)) {
             $io->text('Applying overrides: ' . implode(', ', array_map(
-                fn($k, $v) => "$k=$v",
+                fn ($k, $v) => "$k=$v",
                 array_keys($overrides),
                 $overrides
             )));
@@ -121,7 +121,7 @@ class LoadSampleDataCommand extends AbstractCommand
             return 2;
         }
 
-        $io->success(sprintf('Sample data loaded successfully (profile: %s).', $profile));
+        $io->success(\sprintf('Sample data loaded successfully (profile: %s).', $profile));
         $this->printSummary($io, $result);
 
         return 0;
@@ -155,7 +155,7 @@ class LoadSampleDataCommand extends AbstractCommand
         $rows = [];
 
         foreach ($result as $key => $value) {
-            if (in_array($key, $skip, true) || !is_numeric($value)) {
+            if (\in_array($key, $skip, true) || !is_numeric($value)) {
                 continue;
             }
             $rows[] = [ucwords(str_replace('_', ' ', $key)), (string) $value];

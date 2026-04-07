@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Site\Controller;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use J2Commerce\Component\J2commerce\Administrator\Service\ProductService;
@@ -22,7 +23,7 @@ class ProductController extends BaseController
 {
     public function update(): void
     {
-        $app = Factory::getApplication();
+        $app       = Factory::getApplication();
         $productId = $app->getInput()->getInt('product_id', 0);
 
         header('Content-Type: application/json; charset=utf-8');
@@ -41,7 +42,7 @@ class ProductController extends BaseController
             return;
         }
 
-        $service = new ProductService();
+        $service  = new ProductService();
         $behavior = $service->getBehavior($product->product_type);
 
         $model = $app->bootComponent('com_j2commerce')

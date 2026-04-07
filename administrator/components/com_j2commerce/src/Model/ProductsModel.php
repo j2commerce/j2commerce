@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -13,7 +14,6 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 \defined('_JEXEC') or die;
 
-use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\Database\ParameterType;
 
@@ -151,7 +151,7 @@ class ProductsModel extends ListModel
      */
     protected function getListQuery()
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         // Select fields from the products table
@@ -248,7 +248,7 @@ class ProductsModel extends ListModel
                 'v.sku',
                 'v.price',
                 'v.shipping',
-                'v.j2commerce_variant_id'
+                'v.j2commerce_variant_id',
             ]))
             ->join('LEFT', $db->quoteName('#__j2commerce_variants', 'v') . ' ON ' .
                 $db->quoteName('v.j2commerce_variant_id') . ' = (' . $variantSubQuery . ')');

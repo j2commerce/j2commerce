@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -14,7 +15,6 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
-use Joomla\CMS\Language\Text;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
 
@@ -172,7 +172,7 @@ class CartHelper
         }
 
         foreach ($items as $item) {
-            if (isset($item->taxes) && isset($item->taxes->taxtotal)) {
+            if (isset($item->taxes, $item->taxes->taxtotal)) {
                 $taxTotal += (float) $item->taxes->taxtotal;
             }
         }
@@ -315,7 +315,7 @@ class CartHelper
      */
     public function resetCart(string $guestSessionId, int $userId): void
     {
-        $db = self::getDatabase();
+        $db           = self::getDatabase();
         $newSessionId = Factory::getApplication()->getSession()->getId();
 
         // Load guest cart (user_id=0 only — avoid picking up a logged-in user's cart)
@@ -326,7 +326,7 @@ class CartHelper
         }
 
         $guestCartId = (int) $guestCart->j2commerce_cart_id;
-        $userCart = $this->loadCartByUserId($userId, 'cart');
+        $userCart    = $this->loadCartByUserId($userId, 'cart');
 
         if (!$userCart) {
             // No existing user cart — just claim the guest cart
@@ -424,7 +424,7 @@ class CartHelper
      */
     public function updateCartitemEntry(object $currentCart, object $existingCart): bool
     {
-        $db = self::getDatabase();
+        $db         = self::getDatabase();
         $srcCartId  = (int) $currentCart->j2commerce_cart_id;
         $destCartId = (int) $existingCart->j2commerce_cart_id;
 
@@ -438,7 +438,7 @@ class CartHelper
         foreach ($items as $item) {
             // Check if item already exists in destination cart
             $productOptions = $item->product_options ?? '';
-            $existingItem = $this->findCartItem(
+            $existingItem   = $this->findCartItem(
                 $destCartId,
                 (int) $item->product_id,
                 (int) $item->variant_id,
@@ -450,7 +450,7 @@ class CartHelper
             if ($existingItem) {
                 // Item exists in destination: merge quantity, then delete source item
                 $existingItemId = (int) $existingItem->j2commerce_cartitem_id;
-                $newQty = (float) $existingItem->product_qty + (float) $item->product_qty;
+                $newQty         = (float) $existingItem->product_qty + (float) $item->product_qty;
 
                 $query = $db->getQuery(true)
                     ->update($db->quoteName('#__j2commerce_cartitems'))
@@ -492,7 +492,7 @@ class CartHelper
      */
     public function deleteCartItem(int $cartitemId): bool
     {
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->delete($db->quoteName('#__j2commerce_cartitems'))
@@ -522,7 +522,7 @@ class CartHelper
      */
     public function updateSession(int $userId, string $sessionId): bool
     {
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->update($db->quoteName('#__j2commerce_carts'))
@@ -553,7 +553,7 @@ class CartHelper
      */
     public function deleteSessionCartItems(string $sessionId): bool
     {
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->delete($db->quoteName('#__j2commerce_carts'))
@@ -649,7 +649,7 @@ class CartHelper
      */
     private function loadCartBySession(string $sessionId, string $cartType = 'cart', bool $guestOnly = false): ?object
     {
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select('*')
@@ -680,7 +680,7 @@ class CartHelper
      */
     private function loadCartByUserId(int $userId, string $cartType = 'cart'): ?object
     {
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select('*')
@@ -706,7 +706,7 @@ class CartHelper
      */
     private function getCartItems(int $cartId): array
     {
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select('*')
@@ -733,7 +733,7 @@ class CartHelper
      */
     private function findCartItem(int $cartId, int $productId, int $variantId, string $productOptions = ''): ?object
     {
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select('*')
@@ -765,11 +765,11 @@ class CartHelper
      */
     public static function getCartItemCount(): int
     {
-        $app = Factory::getApplication();
-        $user = $app->getIdentity();
+        $app     = Factory::getApplication();
+        $user    = $app->getIdentity();
         $session = $app->getSession();
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select('SUM(' . $db->quoteName('ci.product_qty') . ') AS item_count')
@@ -838,10 +838,10 @@ class CartHelper
      */
     public function getCart(int $cartId = 0, bool $needCreateCart = true): ?object
     {
-        $app = Factory::getApplication();
-        $user = $app->getIdentity();
+        $app     = Factory::getApplication();
+        $user    = $app->getIdentity();
         $session = $app->getSession();
-        $db = self::getDatabase();
+        $db      = self::getDatabase();
 
         // If cart ID is provided, load specific cart
         if ($cartId > 0) {
@@ -860,7 +860,7 @@ class CartHelper
         }
 
         $cartType = 'cart';
-        $cart = null;
+        $cart     = null;
 
         // Try to load cart by user ID if logged in
         if ($user && $user->id > 0) {
@@ -878,7 +878,7 @@ class CartHelper
                         // Update session cart to be associated with user
                         $updateUserId = $user->id;
                         $updateCartId = (int) $sessionCart->j2commerce_cart_id;
-                        $updateQuery = $db->getQuery(true)
+                        $updateQuery  = $db->getQuery(true)
                             ->update($db->quoteName('#__j2commerce_carts'))
                             ->set($db->quoteName('user_id') . ' = :userId')
                             ->where($db->quoteName('j2commerce_cart_id') . ' = :cartId')
@@ -889,7 +889,7 @@ class CartHelper
                         $db->execute();
 
                         $sessionCart->user_id = $user->id;
-                        $cart = $sessionCart;
+                        $cart                 = $sessionCart;
                     }
                 }
             }
@@ -968,9 +968,9 @@ class CartHelper
 
         // Update the cart's session_id to match current session
         if (!empty($sessionId) && $cart->session_id !== $sessionId) {
-            $modifiedOn = Factory::getDate()->toSql();
+            $modifiedOn       = Factory::getDate()->toSql();
             $cookieCartIdBind = (int) $cart->j2commerce_cart_id;
-            $updateQuery = $db->getQuery(true)
+            $updateQuery      = $db->getQuery(true)
                 ->update($db->quoteName('#__j2commerce_carts'))
                 ->set($db->quoteName('session_id') . ' = :sessionId')
                 ->set($db->quoteName('modified_on') . ' = :modifiedOn')
@@ -1017,9 +1017,9 @@ class CartHelper
 
         // Set cookie for 30 days
         $expires = time() + (30 * 24 * 60 * 60);
-        $path = $app->get('cookie_path', '/');
-        $domain = $app->get('cookie_domain', '');
-        $secure = $app->isHttpsForced();
+        $path    = $app->get('cookie_path', '/');
+        $domain  = $app->get('cookie_domain', '');
+        $secure  = $app->isHttpsForced();
 
         setcookie('j2commerce_cart_id', (string) $cartId, $expires, $path, $domain, $secure, true);
     }
@@ -1033,8 +1033,8 @@ class CartHelper
      */
     public function clearCartCookie(): void
     {
-        $app = Factory::getApplication();
-        $path = $app->get('cookie_path', '/');
+        $app    = Factory::getApplication();
+        $path   = $app->get('cookie_path', '/');
         $domain = $app->get('cookie_domain', '');
 
         setcookie('j2commerce_cart_id', '', time() - 3600, $path, $domain, false, true);
@@ -1049,17 +1049,17 @@ class CartHelper
      */
     private function createCart(): ?object
     {
-        $app = Factory::getApplication();
-        $user = $app->getIdentity();
+        $app     = Factory::getApplication();
+        $user    = $app->getIdentity();
         $session = $app->getSession();
-        $db = self::getDatabase();
+        $db      = self::getDatabase();
 
-        $userId = ($user && $user->id > 0) ? $user->id : 0;
+        $userId    = ($user && $user->id > 0) ? $user->id : 0;
         $sessionId = $session->getId();
-        $now = Factory::getDate()->toSql();
-        $ip = $app->getInput()->server->get('REMOTE_ADDR', '', 'string');
-        $browser = $app->getInput()->server->get('HTTP_USER_AGENT', '', 'string');
-        $cartType = 'cart';
+        $now       = Factory::getDate()->toSql();
+        $ip        = $app->getInput()->server->get('REMOTE_ADDR', '', 'string');
+        $browser   = $app->getInput()->server->get('HTTP_USER_AGENT', '', 'string');
+        $cartType  = 'cart';
 
         $columns = [
             'user_id',

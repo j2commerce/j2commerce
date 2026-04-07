@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -72,10 +73,10 @@ class CartSimple
      */
     public function onBeforeAddCartItem(CartModel &$model, object $product, \stdClass &$json): void
     {
-        $app = Factory::getApplication();
+        $app           = Factory::getApplication();
         $productHelper = new ProductHelper();
-        $values = $app->getInput()->getArray();
-        $errors = [];
+        $values        = $app->getInput()->getArray();
+        $errors        = [];
 
         // Get and validate quantity
         $quantity = $app->getInput()->getFloat('product_qty', 1);
@@ -94,7 +95,7 @@ class CartSimple
 
                 // Check if required option is empty
                 if (!empty($productOption->required) && empty($options[$optionId])) {
-                    $optionName = Text::_($productOption->option_name ?? '');
+                    $optionName                           = Text::_($productOption->option_name ?? '');
                     $errors['error']['option'][$optionId] = Text::sprintf(
                         'COM_J2COMMERCE_ADDTOCART_PRODUCT_OPTION_REQUIRED',
                         $optionName
@@ -156,8 +157,8 @@ class CartSimple
             $utilityHelper = J2CommerceHelper::utilities();
 
             // Create cart item object
-            $item = new CMSObject();
-            $item->user_id = Factory::getApplication()->getIdentity()->id;
+            $item             = new CMSObject();
+            $item->user_id    = Factory::getApplication()->getIdentity()->id;
             $item->product_id = (int) $product->j2commerce_product_id;
             // Get variant_id: prefer ->variant (master), fallback to first element of ->variants array
             $variantId = 0;
@@ -165,17 +166,17 @@ class CartSimple
                 $variantId = (int) $product->variant->j2commerce_variant_id;
             } elseif (!empty($product->variants) && \is_array($product->variants)) {
                 $firstVariant = reset($product->variants);
-                $variantId = (int) ($firstVariant->j2commerce_variant_id ?? 0);
+                $variantId    = (int) ($firstVariant->j2commerce_variant_id ?? 0);
             }
-            $item->variant_id = $variantId;
-            $item->product_qty = (int) $quantity;
+            $item->variant_id      = $variantId;
+            $item->product_qty     = (int) $quantity;
             $item->product_options = base64_encode(serialize($options));
-            $item->product_type = $product->product_type ?? 'simple';
-            $item->vendor_id = isset($product->vendor_id) ? (int) $product->vendor_id : 0;
+            $item->product_type    = $product->product_type ?? 'simple';
+            $item->vendor_id       = isset($product->vendor_id) ? (int) $product->vendor_id : 0;
 
             // Trigger plugin event for custom item modifications
             $pluginHelper = J2CommerceHelper::plugin();
-            $results = $pluginHelper->event('AfterCreateItemForAddToCart', [$item, $values]);
+            $results      = $pluginHelper->event('AfterCreateItemForAddToCart', [$item, $values]);
 
             foreach ($results as $result) {
                 if (\is_array($result)) {
@@ -190,7 +191,7 @@ class CartSimple
                 $item,
                 $values,
                 $product,
-                $product->product_options ?? []
+                $product->product_options ?? [],
             ]);
 
             foreach ($validationResults as $result) {
@@ -254,9 +255,9 @@ class CartSimple
         }
 
         // Transfer product-level properties needed by discount/app plugins
-        $item->product_source = $product->product_source ?? '';
+        $item->product_source    = $product->product_source ?? '';
         $item->product_source_id = (int) ($product->product_source_id ?? 0);
-        $item->product_params = $product->params instanceof \Joomla\Registry\Registry
+        $item->product_params    = $product->params instanceof \Joomla\Registry\Registry
             ? $product->params->toString()
             : ($product->params ?? '{}');
 
@@ -267,13 +268,13 @@ class CartSimple
         );
 
         // Set item properties (preserve existing values if product doesn't have them)
-        $item->product_name = $product->product_name ?? $item->product_name ?? '';
+        $item->product_name     = $product->product_name ?? $item->product_name ?? '';
         $item->product_view_url = $product->product_view_url ?? $item->product_view_url ?? '';
-        $item->options = $productOptionData['option_data'] ?? [];
-        $item->option_price = $productOptionData['option_price'] ?? 0.0;
+        $item->options          = $productOptionData['option_data'] ?? [];
+        $item->option_price     = $productOptionData['option_price'] ?? 0.0;
 
         // Build cartitem_params with thumb_image and other data for template display
-        $utilityHelper = J2CommerceHelper::utilities();
+        $utilityHelper  = J2CommerceHelper::utilities();
         $existingParams = [];
         if (!empty($item->cartitem_params)) {
             $existingParams = (array) json_decode($item->cartitem_params, true);
@@ -298,7 +299,7 @@ class CartSimple
             $allowBackorders = (int) ($variant->allow_backorder ?? 0);
             if ($allowBackorders > 0) {
                 $variantQty = (int) ($variant->quantity ?? 0);
-                $cartQty = (int) ($item->product_qty ?? 1);
+                $cartQty    = (int) ($item->product_qty ?? 1);
                 if ($cartQty > $variantQty) {
                     $existingParams['back_order_item'] = 'COM_J2COMMERCE_CART_BACKORDER_ITEM';
                 }
@@ -310,9 +311,9 @@ class CartSimple
         $item->cartitem_params = json_encode($existingParams);
 
         // Calculate weight
-        $baseWeight = (float) ($item->weight ?? 0);
-        $optionWeight = (float) ($productOptionData['option_weight'] ?? 0);
-        $item->weight = $baseWeight + $optionWeight;
+        $baseWeight         = (float) ($item->weight ?? 0);
+        $optionWeight       = (float) ($productOptionData['option_weight'] ?? 0);
+        $item->weight       = $baseWeight + $optionWeight;
         $item->weight_total = $item->weight * (float) ($item->product_qty ?? 1);
 
         // Get group ID for pricing
@@ -327,8 +328,8 @@ class CartSimple
         } else {
             // Fallback: create pricing object from cart item's variant_price
             $item->pricing = (object) [
-                'base_price' => (float) ($item->variant_price ?? 0),
-                'price' => (float) ($item->variant_price ?? 0),
+                'base_price'    => (float) ($item->variant_price ?? 0),
+                'price'         => (float) ($item->variant_price ?? 0),
                 'special_price' => null,
                 'is_sale_price' => false,
             ];
@@ -359,12 +360,12 @@ class CartSimple
         }
 
         $productHelper = new ProductHelper();
-        $errors = [];
+        $errors        = [];
 
         // Load variant data
         /** @var VariantsModel $variantModel */
         $variantModel = $this->mvcFactory->createModel('Variants', 'Administrator');
-        $variant = $variantModel->getItem((int) $cartitem->variant_id);
+        $variant      = $variantModel->getItem((int) $cartitem->variant_id);
 
         if (!$variant) {
             throw new \Exception(Text::_('COM_J2COMMERCE_VARIANT_NOT_FOUND'));
@@ -376,7 +377,7 @@ class CartSimple
         );
 
         // Calculate quantity difference (new total vs current)
-        $currentQty = (float) ($cartitem->product_qty ?? 0);
+        $currentQty    = (float) ($cartitem->product_qty ?? 0);
         $differenceQty = $quantity - $currentQty;
 
         // Validate minimum/maximum quantity restrictions
@@ -418,13 +419,13 @@ class CartSimple
      */
     protected function validateOptionRules($optionValue, object $productOption, array &$errors): void
     {
-        $optionId = $productOption->j2commerce_productoption_id ?? 0;
+        $optionId   = $productOption->j2commerce_productoption_id ?? 0;
         $optionType = $productOption->type ?? '';
         $optionName = Text::_($productOption->option_name ?? '');
 
         // Text/Textarea validation
         if (\in_array($optionType, ['text', 'textarea'])) {
-            $value = \is_string($optionValue) ? trim($optionValue) : '';
+            $value  = \is_string($optionValue) ? trim($optionValue) : '';
             $length = \strlen($value);
 
             // Check minimum length

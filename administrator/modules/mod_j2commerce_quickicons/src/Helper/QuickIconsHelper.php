@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Module\J2commerceQuickicons\Administrator\Helper;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
@@ -47,11 +47,11 @@ class QuickIconsHelper
 
         if ($params->get('show_orders', 1)) {
             $buttons[] = [
-                'image'   => 'fa-solid fa-list-alt',
-                'link'    => Route::_('index.php?option=com_j2commerce&view=orders'),
-                'name'    => 'COM_J2COMMERCE_ORDERS',
-                'access'  => ['j2commerce.vieworders', 'com_j2commerce'],
-                'group'   => 'MOD_J2COMMERCE_QUICKICONS_GROUP',
+                'image'  => 'fa-solid fa-list-alt',
+                'link'   => Route::_('index.php?option=com_j2commerce&view=orders'),
+                'name'   => 'COM_J2COMMERCE_ORDERS',
+                'access' => ['j2commerce.vieworders', 'com_j2commerce'],
+                'group'  => 'MOD_J2COMMERCE_QUICKICONS_GROUP',
             ];
         }
 

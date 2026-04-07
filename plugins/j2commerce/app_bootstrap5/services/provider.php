@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  Plugin.J2Commerce.AppBootstrap5
@@ -7,7 +8,7 @@
  * @license     GNU General Public License version 2 or later
  */
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Plugin\J2Commerce\AppBootstrap5\Extension\AppBootstrap5;
 use Joomla\CMS\Extension\PluginInterface;
@@ -17,7 +18,7 @@ use Joomla\DI\Container;
 use Joomla\DI\ServiceProviderInterface;
 use Joomla\Event\DispatcherInterface;
 
-return new class implements ServiceProviderInterface {
+return new class () implements ServiceProviderInterface {
     /**
      * Registers the service provider with a DI container.
      *

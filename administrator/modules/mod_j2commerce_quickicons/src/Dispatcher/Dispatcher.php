@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Module\J2commerceQuickicons\Administrator\Dispatcher;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Dispatcher\AbstractModuleDispatcher;
 use Joomla\CMS\Factory;

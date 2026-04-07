@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  Plugin.Console.J2Commerce
@@ -9,7 +10,7 @@
 
 namespace J2Commerce\Plugin\Console\J2Commerce\Command;
 
-defined('_JEXEC') || die;
+\defined('_JEXEC') || die;
 
 use Joomla\Application\ApplicationInterface;
 use Joomla\CMS\MVC\Factory\MVCFactoryAwareTrait;
@@ -19,54 +20,49 @@ use Joomla\Database\DatabaseAwareTrait;
 
 class CommandFactory implements CommandFactoryInterface, DatabaseAwareInterface
 {
-	use MVCFactoryAwareTrait;
-	use DatabaseAwareTrait;
+    use MVCFactoryAwareTrait;
+    use DatabaseAwareTrait;
 
-	private ApplicationInterface $app;
+    private ApplicationInterface $app;
 
-	public function setApplication(ApplicationInterface $app)
-	{
-		$this->app = $app;
-	}
+    public function setApplication(ApplicationInterface $app)
+    {
+        $this->app = $app;
+    }
 
-	public function getCLICommand(string $commandName): AbstractCommand
-	{
-		$classFQN = 'J2Commerce\\Component\\J2commerce\\Administrator\\CliCommands\\' . ucfirst($commandName);
+    public function getCLICommand(string $commandName): AbstractCommand
+    {
+        $classFQN = 'J2Commerce\\Component\\J2commerce\\Administrator\\CliCommands\\' . ucfirst($commandName);
 
-		if (!class_exists($classFQN))
-		{
-			throw new \RuntimeException(sprintf('Unknown J2Commerce CLI command class \'%s\'.', $commandName));
-		}
+        if (!class_exists($classFQN)) {
+            throw new \RuntimeException(\sprintf('Unknown J2Commerce CLI command class \'%s\'.', $commandName));
+        }
 
-		$classParents = class_parents($classFQN);
+        $classParents = class_parents($classFQN);
 
-		if (!in_array(AbstractCommand::class, $classParents))
-		{
-			throw new \RuntimeException(sprintf('Invalid J2Commerce CLI command object \'%s\'.', $commandName));
-		}
+        if (!\in_array(AbstractCommand::class, $classParents)) {
+            throw new \RuntimeException(\sprintf('Invalid J2Commerce CLI command object \'%s\'.', $commandName));
+        }
 
-		$o = new $classFQN;
+        $o = new $classFQN();
 
-		if (method_exists($classFQN, 'setMVCFactory'))
-		{
-			$o->setMVCFactory($this->getMVCFactory());
-		}
+        if (method_exists($classFQN, 'setMVCFactory')) {
+            $o->setMVCFactory($this->getMVCFactory());
+        }
 
-		if ($o instanceof DatabaseAwareInterface)
-		{
-			$o->setDatabase($this->getDatabase());
-		}
+        if ($o instanceof DatabaseAwareInterface) {
+            $o->setDatabase($this->getDatabase());
+        }
 
-		if (method_exists($o, 'setApplication'))
-		{
-			$o->setApplication($this->getApplication());
-		}
+        if (method_exists($o, 'setApplication')) {
+            $o->setApplication($this->getApplication());
+        }
 
-		return $o;
-	}
+        return $o;
+    }
 
-	private function getApplication(): ApplicationInterface
-	{
-		return $this->app;
-	}
+    private function getApplication(): ApplicationInterface
+    {
+        return $this->app;
+    }
 }

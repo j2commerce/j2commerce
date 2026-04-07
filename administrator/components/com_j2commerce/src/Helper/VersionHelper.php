@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,11 +12,9 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 
-use Joomla\CMS\Factory;
 use Joomla\CMS\Date\Date;
-use Joomla\CMS\Installer\Installer;
+use Joomla\CMS\Factory;
 use Joomla\Database\DatabaseInterface;
-use Joomla\Database\ParameterType;
 
 // No direct access
 \defined('_JEXEC') or die;
@@ -155,7 +154,7 @@ class VersionHelper
         self::loadVersionDefines();
 
         $version = self::getVersion();
-        $extra = \defined('J2COMMERCE_EXTRA_VERSION') ? J2COMMERCE_EXTRA_VERSION : '';
+        $extra   = \defined('J2COMMERCE_EXTRA_VERSION') ? J2COMMERCE_EXTRA_VERSION : '';
 
         if (!empty($extra)) {
             return $version . ' ' . $extra;

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -101,7 +102,7 @@ class CustomfieldsController extends AdminController
         $db = Factory::getContainer()->get(DatabaseInterface::class);
 
         // Core display areas — map to direct DB columns
-        $coreAreas = ['billing', 'shipping', 'payment', 'register', 'guest', 'guest_shipping'];
+        $coreAreas   = ['billing', 'shipping', 'payment', 'register', 'guest', 'guest_shipping'];
         $coreUpdates = [];
 
         foreach ($coreAreas as $area) {
@@ -112,7 +113,7 @@ class CustomfieldsController extends AdminController
         }
 
         // Plugin display areas — stored in field_display JSON
-        $pluginAreas = CustomFieldHelper::getRegisteredAreas();
+        $pluginAreas   = CustomFieldHelper::getRegisteredAreas();
         $pluginUpdates = [];
 
         foreach ($pluginAreas as $area) {

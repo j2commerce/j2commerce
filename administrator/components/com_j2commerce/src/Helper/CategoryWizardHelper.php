@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Application\ApplicationHelper;
 use Joomla\CMS\Factory;
@@ -36,7 +36,7 @@ final class CategoryWizardHelper
         $alias = self::uniqueAlias(ApplicationHelper::stringURLSafe($title), 'categories', $db);
         $now   = date('Y-m-d H:i:s');
 
-        $table = Table::getInstance('Category');
+        $table                   = Table::getInstance('Category');
         $table->extension        = 'com_content';
         $table->title            = $title;
         $table->alias            = $alias;
@@ -169,7 +169,7 @@ final class CategoryWizardHelper
     public static function createProduct(int $articleId, string $productType, DatabaseInterface $db): int
     {
         $now        = date('Y-m-d H:i:s');
-        $hasOptions = in_array($productType, ['simple', 'variable'], true) ? 0 : 0;
+        $hasOptions = \in_array($productType, ['simple', 'variable'], true) ? 0 : 0;
 
         $product                    = new \stdClass();
         $product->visibility        = 1;
@@ -204,39 +204,39 @@ final class CategoryWizardHelper
         // Create master variant
         $shipping = $productType === 'downloadable' ? 0 : 1;
 
-        $variant                     = new \stdClass();
-        $variant->product_id         = $productId;
-        $variant->is_master          = 1;
-        $variant->sku                = 'PROD-' . str_pad((string) $productId, 4, '0', STR_PAD_LEFT);
-        $variant->upc                = '';
-        $variant->price              = '0.00000';
-        $variant->pricing_calculator = 'standard';
-        $variant->shipping           = $shipping;
-        $variant->params             = '{}';
-        $variant->length             = '0.00000';
-        $variant->width              = '0.00000';
-        $variant->height             = '0.00000';
-        $variant->length_class_id    = 0;
-        $variant->weight             = '0.00000';
-        $variant->weight_class_id    = 0;
-        $variant->created_on         = $now;
-        $variant->created_by         = 0;
-        $variant->modified_on        = $now;
-        $variant->modified_by        = 0;
-        $variant->manage_stock       = 0;
-        $variant->quantity_restriction = 0;
-        $variant->min_out_qty        = null;
-        $variant->use_store_config_min_out_qty = 1;
-        $variant->min_sale_qty       = null;
+        $variant                                = new \stdClass();
+        $variant->product_id                    = $productId;
+        $variant->is_master                     = 1;
+        $variant->sku                           = 'PROD-' . str_pad((string) $productId, 4, '0', STR_PAD_LEFT);
+        $variant->upc                           = '';
+        $variant->price                         = '0.00000';
+        $variant->pricing_calculator            = 'standard';
+        $variant->shipping                      = $shipping;
+        $variant->params                        = '{}';
+        $variant->length                        = '0.00000';
+        $variant->width                         = '0.00000';
+        $variant->height                        = '0.00000';
+        $variant->length_class_id               = 0;
+        $variant->weight                        = '0.00000';
+        $variant->weight_class_id               = 0;
+        $variant->created_on                    = $now;
+        $variant->created_by                    = 0;
+        $variant->modified_on                   = $now;
+        $variant->modified_by                   = 0;
+        $variant->manage_stock                  = 0;
+        $variant->quantity_restriction          = 0;
+        $variant->min_out_qty                   = null;
+        $variant->use_store_config_min_out_qty  = 1;
+        $variant->min_sale_qty                  = null;
         $variant->use_store_config_min_sale_qty = 1;
-        $variant->max_sale_qty       = null;
+        $variant->max_sale_qty                  = null;
         $variant->use_store_config_max_sale_qty = 1;
-        $variant->notify_qty         = null;
-        $variant->use_store_config_notify_qty = 1;
-        $variant->availability       = 1;
-        $variant->sold               = '0.0000';
-        $variant->allow_backorder    = 0;
-        $variant->isdefault_variant  = 1;
+        $variant->notify_qty                    = null;
+        $variant->use_store_config_notify_qty   = 1;
+        $variant->availability                  = 1;
+        $variant->sold                          = '0.0000';
+        $variant->allow_backorder               = 0;
+        $variant->isdefault_variant             = 1;
 
         $db->insertObject('#__j2commerce_variants', $variant);
 
@@ -286,13 +286,13 @@ final class CategoryWizardHelper
             $db->getQuery(true)->select('COUNT(*)')->from($db->quoteName('#__j2commerce_options'))
         )->loadResult();
 
-        $opt                    = new \stdClass();
-        $opt->type              = 'select';
+        $opt                     = new \stdClass();
+        $opt->type               = 'select';
         $opt->option_unique_name = $uniqueName;
-        $opt->option_name       = $optionName;
-        $opt->ordering          = $count + 1;
-        $opt->enabled           = 1;
-        $opt->option_params     = '{}';
+        $opt->option_name        = $optionName;
+        $opt->ordering           = $count + 1;
+        $opt->enabled            = 1;
+        $opt->option_params      = '{}';
 
         $db->insertObject('#__j2commerce_options', $opt);
         $optionId = (int) $db->insertid();
@@ -380,7 +380,7 @@ final class CategoryWizardHelper
     ): int {
         // Find or create the j2commerce menu type
         $menutype = 'j2commerce';
-        $query = $db->getQuery(true)
+        $query    = $db->getQuery(true)
             ->select($db->quoteName('id'))
             ->from($db->quoteName('#__menu_types'))
             ->where($db->quoteName('menutype') . ' = :menutype')
@@ -401,7 +401,7 @@ final class CategoryWizardHelper
         $element    = 'com_j2commerce';
         $typeStr    = 'component';
         $clientId   = 1;
-        $query = $db->getQuery(true)
+        $query      = $db->getQuery(true)
             ->select($db->quoteName('extension_id'))
             ->from($db->quoteName('#__extensions'))
             ->where($db->quoteName('element') . ' = :element')
@@ -460,7 +460,7 @@ final class CategoryWizardHelper
         $template = 'yootheme';
         $clientId = 0;
         $home     = 1;
-        $query = $db->getQuery(true)
+        $query    = $db->getQuery(true)
             ->select('COUNT(*)')
             ->from($db->quoteName('#__template_styles'))
             ->where($db->quoteName('template') . ' = :template')
@@ -486,7 +486,7 @@ final class CategoryWizardHelper
         $type    = 'plugin';
         $folder  = 'j2commerce';
         $element = 'app_uikit';
-        $query = $db->getQuery(true)
+        $query   = $db->getQuery(true)
             ->select($db->quoteName('enabled'))
             ->from($db->quoteName('#__extensions'))
             ->where($db->quoteName('type') . ' = :type')
@@ -562,8 +562,8 @@ final class CategoryWizardHelper
 
     private static function uniqueMenuAlias(string $base, DatabaseInterface $db): string
     {
-        $alias  = $base ?: 'shop';
-        $suffix = 2;
+        $alias   = $base ?: 'shop';
+        $suffix  = 2;
         $current = $alias;
 
         while (true) {
@@ -586,8 +586,8 @@ final class CategoryWizardHelper
 
     private static function uniqueOptionUniqueName(string $base, DatabaseInterface $db): string
     {
-        $name   = $base ?: 'option';
-        $suffix = 2;
+        $name    = $base ?: 'option';
+        $suffix  = 2;
         $current = $name;
 
         while (true) {

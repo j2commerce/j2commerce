@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -9,7 +10,7 @@
 
 namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\MessageHelper;
 use Joomla\CMS\Factory;
@@ -161,13 +162,13 @@ class EmailtemplateModel extends AdminModel
      */
     public function save($data)
     {
-        $app = Factory::getApplication();
+        $app   = Factory::getApplication();
         $input = $app->getInput();
 
         // Initialise variables;
         $table = $this->getTable();
-        $key = $table->getKeyName();
-        $pk = (!empty($data[$key])) ? $data[$key] : (int) $this->getState($this->getName() . '.id');
+        $key   = $table->getKeyName();
+        $pk    = (!empty($data[$key])) ? $data[$key] : (int) $this->getState($this->getName() . '.id');
         $isNew = true;
 
         // Include the plugins for the save events.
@@ -199,7 +200,7 @@ class EmailtemplateModel extends AdminModel
             // Trigger the before save event.
             $result = $app->triggerEvent($this->event_before_save, [$this->option . '.' . $this->name, $table, $isNew]);
 
-            if (in_array(false, $result, true)) {
+            if (\in_array(false, $result, true)) {
                 $this->setError($table->getError());
                 return false;
             }
@@ -306,13 +307,13 @@ class EmailtemplateModel extends AdminModel
 
         // Set ordering to the last item if not set
         if (empty($table->ordering)) {
-            $db = $this->getDatabase();
+            $db    = $this->getDatabase();
             $query = $db->getQuery(true)
                 ->select('MAX(ordering)')
                 ->from($db->quoteName('#__j2commerce_emailtemplates'));
             $db->setQuery($query);
 
-            $max = $db->loadResult();
+            $max             = $db->loadResult();
             $table->ordering = (int) $max + 1;
         }
 
@@ -334,7 +335,7 @@ class EmailtemplateModel extends AdminModel
         }
 
         // Process shortcodes in the body if using editor or visual
-        if (in_array($table->body_source, ['editor', 'visual'], true) && !empty($table->body)) {
+        if (\in_array($table->body_source, ['editor', 'visual'], true) && !empty($table->body)) {
             $table->body = $this->processShortcodes($table->body);
         }
     }
@@ -367,9 +368,9 @@ class EmailtemplateModel extends AdminModel
      */
     public function publish(&$pks, $value = 1)
     {
-        $user = Factory::getApplication()->getIdentity();
+        $user  = Factory::getApplication()->getIdentity();
         $table = $this->getTable();
-        $pks = (array) $pks;
+        $pks   = (array) $pks;
 
         // Access checks.
         foreach ($pks as $i => $pk) {
@@ -402,9 +403,9 @@ class EmailtemplateModel extends AdminModel
      */
     public function delete(&$pks)
     {
-        $user = Factory::getApplication()->getIdentity();
+        $user  = Factory::getApplication()->getIdentity();
         $table = $this->getTable();
-        $pks = (array) $pks;
+        $pks   = (array) $pks;
 
         // Access checks.
         foreach ($pks as $i => $pk) {
@@ -452,21 +453,21 @@ class EmailtemplateModel extends AdminModel
 
         // Basic shortcode set for email templates
         return [
-            '{order_id}' => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_ORDER_ID'),
-            '{order_date}' => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_ORDER_DATE'),
-            '{customer_name}' => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_CUSTOMER_NAME'),
-            '{customer_email}' => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_CUSTOMER_EMAIL'),
-            '{order_total}' => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_ORDER_TOTAL'),
-            '{order_items}' => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_ORDER_ITEMS'),
-            '{billing_address}' => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_BILLING_ADDRESS'),
+            '{order_id}'         => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_ORDER_ID'),
+            '{order_date}'       => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_ORDER_DATE'),
+            '{customer_name}'    => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_CUSTOMER_NAME'),
+            '{customer_email}'   => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_CUSTOMER_EMAIL'),
+            '{order_total}'      => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_ORDER_TOTAL'),
+            '{order_items}'      => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_ORDER_ITEMS'),
+            '{billing_address}'  => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_BILLING_ADDRESS'),
             '{shipping_address}' => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_SHIPPING_ADDRESS'),
-            '{payment_method}' => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_PAYMENT_METHOD'),
-            '{shipping_method}' => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_SHIPPING_METHOD'),
-            '{store_name}' => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_STORE_NAME'),
-            '{store_url}' => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_STORE_URL'),
-            '{site_name}' => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_SITE_NAME'),
-            '{current_date}' => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_CURRENT_DATE'),
-            '{current_time}' => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_CURRENT_TIME'),
+            '{payment_method}'   => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_PAYMENT_METHOD'),
+            '{shipping_method}'  => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_SHIPPING_METHOD'),
+            '{store_name}'       => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_STORE_NAME'),
+            '{store_url}'        => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_STORE_URL'),
+            '{site_name}'        => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_SITE_NAME'),
+            '{current_date}'     => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_CURRENT_DATE'),
+            '{current_time}'     => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_CURRENT_TIME'),
         ];
     }
 
@@ -483,8 +484,8 @@ class EmailtemplateModel extends AdminModel
     {
         return [
             'customer' => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_RECEIVER_CUSTOMER'),
-            'admin' => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_RECEIVER_ADMIN'),
-            '*' => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_RECEIVER_BOTH'),
+            'admin'    => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_RECEIVER_ADMIN'),
+            '*'        => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_RECEIVER_BOTH'),
         ];
     }
 }

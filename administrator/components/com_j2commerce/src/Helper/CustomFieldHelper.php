@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -20,7 +21,6 @@ use Joomla\CMS\Session\Session;
 use Joomla\CMS\Uri\Uri;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
-use J2Commerce\Component\J2commerce\Administrator\Helper\PhoneHelper;
 
 class CustomFieldHelper
 {
@@ -115,7 +115,7 @@ class CustomFieldHelper
             $areaFields[]         = $field;
         }
 
-        usort($areaFields, static fn($a, $b) => $a->area_ordering <=> $b->area_ordering);
+        usort($areaFields, static fn ($a, $b) => $a->area_ordering <=> $b->area_ordering);
 
         return $areaFields;
     }
@@ -162,29 +162,29 @@ class CustomFieldHelper
             }
         }
 
-        $namekey = htmlspecialchars($field->field_namekey, ENT_QUOTES, 'UTF-8');
-        $label = htmlspecialchars(Text::_($field->field_name), ENT_QUOTES, 'UTF-8');
-        $required = (int) $field->field_required;
-        $default = $field->field_default ?? '';
+        $namekey    = htmlspecialchars($field->field_namekey, ENT_QUOTES, 'UTF-8');
+        $label      = htmlspecialchars(Text::_($field->field_name), ENT_QUOTES, 'UTF-8');
+        $required   = (int) $field->field_required;
+        $default    = $field->field_default ?? '';
         $fieldValue = $value ?: $default;
-        $id = htmlspecialchars($attrs['id'] ?? $field->field_namekey, ENT_QUOTES, 'UTF-8');
+        $id         = htmlspecialchars($attrs['id'] ?? $field->field_namekey, ENT_QUOTES, 'UTF-8');
         $extraClass = $attrs['class'] ?? '';
 
         // Config-driven rendering options
-        $config = J2CommerceHelper::config();
+        $config            = J2CommerceHelper::config();
         $requiredIndicator = $attrs['requiredIndicator'] ?? $config->get('checkout_required_indicator', 'asterisk');
-        $fieldStyle = $attrs['fieldStyle'] ?? $config->get('checkout_field_style', 'normal');
-        $isFloating = ($fieldStyle === 'floating');
+        $fieldStyle        = $attrs['fieldStyle'] ?? $config->get('checkout_field_style', 'normal');
+        $isFloating        = ($fieldStyle === 'floating');
 
         // Placeholder and autocomplete attributes (stored as language string keys)
-        $placeholderRaw = $field->field_placeholder ?? '';
-        $placeholderAttr = $placeholderRaw !== '' ? ' placeholder="' . htmlspecialchars(Text::_($placeholderRaw), ENT_QUOTES, 'UTF-8') . '"' : '';
-        $autocompleteRaw = $field->field_autocomplete ?? '';
+        $placeholderRaw   = $field->field_placeholder ?? '';
+        $placeholderAttr  = $placeholderRaw !== '' ? ' placeholder="' . htmlspecialchars(Text::_($placeholderRaw), ENT_QUOTES, 'UTF-8') . '"' : '';
+        $autocompleteRaw  = $field->field_autocomplete ?? '';
         $autocompleteAttr = $autocompleteRaw !== '' ? ' autocomplete="' . htmlspecialchars($autocompleteRaw, ENT_QUOTES, 'UTF-8') . '"' : '';
 
         // Column width: use field_width if set, otherwise auto-detect
-        $fieldWidth = trim($field->field_width ?? '');
-        $colClass = $fieldWidth !== '' ? $fieldWidth : self::getColClass($namekey, $fieldType);
+        $fieldWidth   = trim($field->field_width ?? '');
+        $colClass     = $fieldWidth !== '' ? $fieldWidth : self::getColClass($namekey, $fieldType);
         $requiredAttr = $required ? ' required' : '';
 
         // Required indicator in label
@@ -218,8 +218,15 @@ class CustomFieldHelper
 
             case 'telephone':
                 $html .= self::renderTelephoneField(
-                    $field, $fieldValue, $id, $namekey, $requiredAttr,
-                    $labelHtml, $isFloating, $extraClass, $autocompleteAttr
+                    $field,
+                    $fieldValue,
+                    $id,
+                    $namekey,
+                    $requiredAttr,
+                    $labelHtml,
+                    $isFloating,
+                    $extraClass,
+                    $autocompleteAttr
                 );
                 break;
 
@@ -249,7 +256,7 @@ class CustomFieldHelper
                 $options = self::parseOptions($field->field_value ?? '');
                 $html .= '<div class="form-normal"><label class="form-label">' . $labelHtml . '</label>';
                 foreach ($options as $i => $opt) {
-                    $optId = $id . '_' . $i;
+                    $optId   = $id . '_' . $i;
                     $checked = ($fieldValue === $opt['value']) ? ' checked' : '';
                     $html .= '<div class="form-check">'
                         . '<input type="radio" name="' . $namekey . '" id="' . $optId . '" class="form-check-input" value="' . htmlspecialchars($opt['value'], ENT_QUOTES, 'UTF-8') . '"' . $checked . $requiredAttr . '>'
@@ -320,8 +327,14 @@ class CustomFieldHelper
 
             case 'multiuploader':
                 $html .= self::renderMultiuploaderField(
-                    $field, $fieldValue, $id, $namekey, $requiredAttr,
-                    $labelHtml, $colClass, $extraClass
+                    $field,
+                    $fieldValue,
+                    $id,
+                    $namekey,
+                    $requiredAttr,
+                    $labelHtml,
+                    $colClass,
+                    $extraClass
                 );
                 break;
 
@@ -372,7 +385,7 @@ class CustomFieldHelper
 
         // Legacy format: newline-separated value=name pairs
         $options = [];
-        $lines = explode("\n", $optionsStr);
+        $lines   = explode("\n", $optionsStr);
 
         foreach ($lines as $line) {
             $line = trim($line);
@@ -427,7 +440,7 @@ class CustomFieldHelper
                 }
 
                 $lengths = PhoneHelper::getNationalLengths($iso);
-                $len     = strlen($national);
+                $len     = \strlen($national);
                 if ($len < $lengths['min'] || $len > $lengths['max']) {
                     $errors[$namekey] = Text::sprintf(
                         'COM_J2COMMERCE_ERR_PHONE_LENGTH',
@@ -605,7 +618,7 @@ class CustomFieldHelper
                 . '<span class="j2c-phone-code">+' . $singleCode . '</span>'
                 . '</span>';
 
-            $maxLen = (int) $singleCountry['max'];
+            $maxLen        = (int) $singleCountry['max'];
             $nationalInput = '<input type="tel" class="form-control j2c-phone-national" '
                 . 'value="' . $escapedNat . '" '
                 . 'inputmode="numeric" pattern="[0-9]*" '
@@ -776,8 +789,8 @@ class CustomFieldHelper
 
         // For single-country, pre-assemble the E.164 value if national number entered
         if ($isSingleCountry) {
-            $singleEntry = $countries[0];
-            $maxLen      = (int) $singleEntry['max'];
+            $singleEntry   = $countries[0];
+            $maxLen        = (int) $singleEntry['max'];
             $nationalInput = '<input type="tel" class="form-control j2c-phone-national" '
                 . 'value="' . $escapedNat . '" '
                 . 'inputmode="numeric" pattern="[0-9]*" '
@@ -797,7 +810,7 @@ class CustomFieldHelper
         }
 
         $groupAttrs = ' data-field-id="' . $id . '" data-default-iso="' . $escapedIso . '" data-countries="' . $countriesJson . '"';
-        $cls = 'j2c-telephone-field input-group' . ($extraClass ? ' ' . $extraClass : '');
+        $cls        = 'j2c-telephone-field input-group' . ($extraClass ? ' ' . $extraClass : '');
 
         if ($isSingleCountry) {
             $groupAttrs .= ' data-single-country="1"';
@@ -887,7 +900,7 @@ class CustomFieldHelper
             }
         }
 
-        $maxFiles     = (int) ($options['upload_max_files'] ?? 5);
+        $maxFiles      = (int) ($options['upload_max_files'] ?? 5);
         $maxFileSizeMB = (float) ($options['upload_max_file_size'] ?? 0);
         if ($maxFileSizeMB <= 0) {
             $maxFileSizeMB = 10.0; // Default 10 MB when not set or zero
@@ -897,7 +910,7 @@ class CustomFieldHelper
         $directory    = trim($options['upload_directory'] ?? 'images/checkout-uploads');
 
         // Build the upload endpoint URL
-        $token    = Session::getFormToken();
+        $token     = Session::getFormToken();
         $uploadUrl = Uri::root() . 'index.php?option=com_j2commerce&task=checkoutuploader.upload&format=json&' . $token . '=1';
 
         // Register frontend language strings for JS
@@ -967,7 +980,7 @@ class CustomFieldHelper
         string $label,
         bool $isFloating = false
     ): string {
-        $name = ($field->field_namekey === 'country_id') ? 'country_id' : 'zone_id';
+        $name        = ($field->field_namekey === 'country_id') ? 'country_id' : 'zone_id';
         $entityLabel = ($name === 'country_id') ? Text::_('COM_J2COMMERCE_COUNTRY') : Text::_('COM_J2COMMERCE_ZONE');
         $placeholder = Text::sprintf('COM_J2COMMERCE_SELECT_PLACEHOLDER', $entityLabel);
 
@@ -1122,7 +1135,7 @@ class CustomFieldHelper
      */
     public static function getFieldByNamekey(string $namekey): ?object
     {
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db    = Factory::getContainer()->get(DatabaseInterface::class);
         $query = $db->getQuery(true);
 
         $query->select('*')

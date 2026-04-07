@@ -10,6 +10,7 @@
 
 namespace Joomla\Plugin\Schemaorg\Ecommerce\Schema;
 
+use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Uri\Uri;
@@ -17,7 +18,6 @@ use Joomla\Database\DatabaseInterface;
 use Joomla\Event\DispatcherInterface;
 use Joomla\Plugin\Schemaorg\Ecommerce\Event\BreadcrumbSchemaPrepareEvent;
 use Joomla\Plugin\Schemaorg\Ecommerce\Helper\J2CommerceSchemaHelper;
-use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
@@ -88,7 +88,7 @@ class BreadcrumbSchemaBuilder
      */
     public function buildForProduct(object $product, ?int $articleId = null): array
     {
-        $items = [];
+        $items    = [];
         $position = 1;
 
         // Always start with Home
@@ -120,8 +120,8 @@ class BreadcrumbSchemaBuilder
 
         // Add the product itself as the final item
         $productName = $this->helper->getProductName($product);
-        $productUrl = $this->helper->getProductUrl($product);
-        $items[] = $this->createListItem($productName, $productUrl, $position);
+        $productUrl  = $this->helper->getProductUrl($product);
+        $items[]     = $this->createListItem($productName, $productUrl, $position);
 
         $schema = [
             '@type'           => 'BreadcrumbList',
@@ -143,7 +143,7 @@ class BreadcrumbSchemaBuilder
      */
     public function buildForCategory(int $categoryId): array
     {
-        $items = [];
+        $items    = [];
         $position = 1;
 
         // Always start with Home
@@ -180,11 +180,11 @@ class BreadcrumbSchemaBuilder
      */
     public function buildFromPathway(): array
     {
-        $app = Factory::getApplication();
-        $pathway = $app->getPathway();
+        $app          = Factory::getApplication();
+        $pathway      = $app->getPathway();
         $pathwayItems = $pathway->getPathway();
 
-        $items = [];
+        $items    = [];
         $position = 1;
 
         // Add Home

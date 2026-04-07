@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -25,9 +26,9 @@ use J2Commerce\Component\J2commerce\Administrator\SetupGuide\SetupGuideHelper;
 use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
+use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
-use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 
@@ -35,29 +36,29 @@ class HtmlView extends BaseHtmlView
 {
     use AdminAssetsTrait;
 
-    public string $navbar = '';
-    public int $productsCount = 0;
-    public int $ordersCount = 0;
+    public string $navbar      = '';
+    public int $productsCount  = 0;
+    public int $ordersCount    = 0;
     public int $customersCount = 0;
     public array $recentOrders = [];
-    public array $liveUsers = [];
+    public array $liveUsers    = [];
 
     // Analytics KPIs (date-filtered)
-    public float $totalRevenue = 0.0;
-    public int $orderCount = 0;
-    public float $conversionRate = 0.0;
-    public int $totalSessions = 0;
-    public array $revenueByDay = [];
-    public array $previousPeriod = [];
-    public string $fromDate = '';
-    public string $toDate = '';
-    public string $currencySymbol = '';
+    public float $totalRevenue      = 0.0;
+    public int $orderCount          = 0;
+    public float $conversionRate    = 0.0;
+    public int $totalSessions       = 0;
+    public array $revenueByDay      = [];
+    public array $previousPeriod    = [];
+    public string $fromDate         = '';
+    public string $toDate           = '';
+    public string $currencySymbol   = '';
     public string $currencyPosition = 'pre';
     public string $formattedRevenue = '';
 
     // Sales tabs (all-time)
     public array $monthlySales = [];
-    public array $yearlySales = [];
+    public array $yearlySales  = [];
 
     // Plugin tab injection (uitab format) — main = col-md-8, side = col-md-4
     public string $dashboardMainTabHtml = '';
@@ -73,7 +74,7 @@ class HtmlView extends BaseHtmlView
     public bool $showOnboarding = false;
 
     // Sample data state
-    public bool $hasProducts = false;
+    public bool $hasProducts   = false;
     public bool $hasSampleData = false;
 
     public function display($tpl = null): void
@@ -112,13 +113,13 @@ class HtmlView extends BaseHtmlView
         $this->liveUsers      = $model->getLiveUsers();
 
         // Sample data state
-        $db = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $db                = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
         $productCheckQuery = $db->getQuery(true)
             ->select('1')
             ->from($db->quoteName('#__j2commerce_products'))
             ->where($db->quoteName('enabled') . ' = 1');
         $db->setQuery($productCheckQuery, 0, 1);
-        $this->hasProducts  = (bool) $db->loadResult();
+        $this->hasProducts   = (bool) $db->loadResult();
         $this->hasSampleData = (new SampleDataHelper($db))->isLoaded();
 
         // All-time sales data for tabs
@@ -135,7 +136,7 @@ class HtmlView extends BaseHtmlView
             $this->revenueByDay   = $analyticsModel->getRevenueByDay($fromDateTime, $toDateTime);
             $this->previousPeriod = $analyticsModel->getPreviousPeriodData($fromDateTime, $toDateTime);
 
-            $breakdown = $analyticsModel->getConversionBreakdown($fromDateTime, $toDateTime);
+            $breakdown            = $analyticsModel->getConversionBreakdown($fromDateTime, $toDateTime);
             $this->conversionRate = (float) ($breakdown['overallRate'] ?? 0.0);
             $this->totalSessions  = (int) ($breakdown['totalSessions'] ?? 0);
         }
@@ -150,32 +151,32 @@ class HtmlView extends BaseHtmlView
 
         // Pass data to JavaScript
         $this->getDocument()->addScriptOptions('com_j2commerce.dashboard', [
-            'totalRevenue'      => $this->totalRevenue,
-            'orderCount'        => $this->orderCount,
-            'conversionRate'    => $this->conversionRate,
-            'totalSessions'     => $this->totalSessions,
-            'revenueByDay'      => $this->revenueByDay,
-            'previousPeriod'    => $this->previousPeriod,
-            'monthlySales'      => $this->monthlySales,
-            'yearlySales'       => $this->yearlySales,
-            'from'              => $this->fromDate,
-            'to'                => $this->toDate,
-            'ajaxUrl'           => 'index.php?option=com_j2commerce&task=dashboard.getData&format=json',
-            'currencySymbol'    => $this->currencySymbol,
-            'currencyPosition'  => $this->currencyPosition,
-            'dateFormat'        => $dateFormat,
-            'formattedRevenue'  => $this->formattedRevenue,
-            'storeTimezone'     => $tz,
+            'totalRevenue'     => $this->totalRevenue,
+            'orderCount'       => $this->orderCount,
+            'conversionRate'   => $this->conversionRate,
+            'totalSessions'    => $this->totalSessions,
+            'revenueByDay'     => $this->revenueByDay,
+            'previousPeriod'   => $this->previousPeriod,
+            'monthlySales'     => $this->monthlySales,
+            'yearlySales'      => $this->yearlySales,
+            'from'             => $this->fromDate,
+            'to'               => $this->toDate,
+            'ajaxUrl'          => 'index.php?option=com_j2commerce&task=dashboard.getData&format=json',
+            'currencySymbol'   => $this->currencySymbol,
+            'currencyPosition' => $this->currencyPosition,
+            'dateFormat'       => $dateFormat,
+            'formattedRevenue' => $this->formattedRevenue,
+            'storeTimezone'    => $tz,
         ]);
 
         // Plugin tab injection — plugins output uitab.addTab/endTab blocks
-        $eventData = [$this->monthlySales, $this->yearlySales, $this->revenueByDay];
+        $eventData                  = [$this->monthlySales, $this->yearlySales, $this->revenueByDay];
         $this->dashboardMainTabHtml = J2CommerceHelper::plugin()->eventWithHtml('DashboardMainTabContent', $eventData)->getArgument('html', '');
         $this->dashboardSideTabHtml = J2CommerceHelper::plugin()->eventWithHtml('DashboardSideTabContent', $eventData)->getArgument('html', '');
 
         // Collect plugin quick icons
         $quickIconEvent = J2CommerceHelper::plugin()->event('GetQuickIcons', ['context' => 'j2commerce_dashboard']);
-        $rawIcons = $quickIconEvent->getArgument('result', []);
+        $rawIcons       = $quickIconEvent->getArgument('result', []);
 
         $this->pluginQuickIcons = [];
 
@@ -189,13 +190,13 @@ class HtmlView extends BaseHtmlView
             $this->getDocument()->addScriptOptions('com_j2commerce.quickicons', [
                 'ajaxIcons' => array_filter(
                     array_column($this->pluginQuickIcons, 'ajaxUrl', 'id'),
-                    fn($url) => !empty($url)
+                    fn ($url) => !empty($url)
                 ),
             ]);
         }
 
         // Collect dashboard messages from plugins (independent of quick icons)
-        $msgEvent = J2CommerceHelper::plugin()->event('GetDashboardMessages', ['context' => 'j2commerce_dashboard']);
+        $msgEvent    = J2CommerceHelper::plugin()->event('GetDashboardMessages', ['context' => 'j2commerce_dashboard']);
         $rawMessages = $msgEvent->getArgument('result', []);
 
         $this->dashboardMessages = [];
@@ -206,7 +207,7 @@ class HtmlView extends BaseHtmlView
             }
         }
 
-        usort($this->dashboardMessages, fn($a, $b) => ($a['priority'] ?? 500) <=> ($b['priority'] ?? 500));
+        usort($this->dashboardMessages, fn ($a, $b) => ($a['priority'] ?? 500) <=> ($b['priority'] ?? 500));
 
         if (!empty($this->dashboardMessages)) {
             $wa->registerAndUseScript('com_j2commerce.vendor.swiper', 'media/com_j2commerce/vendor/swiper/js/swiper-bundle.min.js', [], ['defer' => true]);
@@ -427,7 +428,7 @@ JS);
             $mappedCountries = [223, 222, 38, 13, 101, 14, 21, 33, 53, 55, 56, 57, 67, 72, 73, 81, 84, 97, 103, 105, 117, 123, 124, 132, 150, 170, 171, 175, 189, 190, 195, 203];
 
             foreach ($mappedCountries as $cid) {
-                $def = OnboardingHelper::getCountryDefaults($cid);
+                $def                   = OnboardingHelper::getCountryDefaults($cid);
                 $countryDefaults[$cid] = [
                     'currency'    => $def['currency'],
                     'weight_id'   => $def['weight_id'],
@@ -437,7 +438,7 @@ JS);
                 ];
             }
 
-            $resumeStep = OnboardingHelper::getResumeStep();
+            $resumeStep  = OnboardingHelper::getResumeStep();
             $savedZoneId = (int) ConfigHelper::get('zone_id', 0);
 
             $this->getDocument()->addScriptOptions('com_j2commerce.onboarding', [

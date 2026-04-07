@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  Plugin.J2Commerce.AppCurrencyupdater
@@ -15,12 +16,12 @@ namespace J2Commerce\Plugin\J2Commerce\AppCurrencyupdater\Extension;
 
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
-use Joomla\Http\HttpFactory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\Database\DatabaseAwareTrait;
 use Joomla\Event\Event;
 use Joomla\Event\SubscriberInterface;
+use Joomla\Http\HttpFactory;
 
 final class AppCurrencyupdater extends CMSPlugin implements SubscriberInterface
 {
@@ -125,8 +126,8 @@ final class AppCurrencyupdater extends CMSPlugin implements SubscriberInterface
             return;
         }
 
-        $db = $this->getDatabase();
-        $now = Factory::getDate()->toSql();
+        $db    = $this->getDatabase();
+        $now   = Factory::getDate()->toSql();
         $codes = array_keys($rates);
 
         $caseLines = [];
@@ -134,7 +135,7 @@ final class AppCurrencyupdater extends CMSPlugin implements SubscriberInterface
             $caseLines[] = 'WHEN ' . $db->quote($code) . ' THEN ' . $db->quote((string) $value);
         }
 
-        $inList = implode(',', array_map(fn(string $code) => $db->quote($code), $codes));
+        $inList = implode(',', array_map(fn (string $code) => $db->quote($code), $codes));
 
         $query = $db->getQuery(true)
             ->update($db->quoteName('#__j2commerce_currencies'))
@@ -152,7 +153,7 @@ final class AppCurrencyupdater extends CMSPlugin implements SubscriberInterface
 
     private function getEnabledCurrencyCodes(string $baseCurrency): array
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select($db->quoteName('currency_code'))
             ->from($db->quoteName('#__j2commerce_currencies'))
@@ -170,7 +171,7 @@ final class AppCurrencyupdater extends CMSPlugin implements SubscriberInterface
         return match ($apiType) {
             'exchangerate_api'  => $this->fetchBulkFromExchangerateApi($baseCurrency, $targetCodes),
             'currencyapi'       => $this->fetchBulkFromCurrencyApi($baseCurrency, $targetCodes),
-            'openexchangerates'   => $this->fetchBulkFromOpenExchangeRates($baseCurrency, $targetCodes),
+            'openexchangerates' => $this->fetchBulkFromOpenExchangeRates($baseCurrency, $targetCodes),
             'exchangerate_host' => $this->fetchRatesFromEndpoint(
                 "https://api.exchangerate.host/latest?base={$baseCurrency}&symbols=" . implode(',', $targetCodes),
                 'ExchangeRate.host',
@@ -183,13 +184,13 @@ final class AppCurrencyupdater extends CMSPlugin implements SubscriberInterface
     private function fetchBulkFromFrankfurter(string $base, array $codes): array
     {
         $source = 'Frankfurter';
-        $url = "https://api.frankfurter.dev/v1/latest?from={$base}&to=" . implode(',', $codes);
+        $url    = "https://api.frankfurter.dev/v1/latest?from={$base}&to=" . implode(',', $codes);
 
         try {
-            $http = $this->createHttp();
-            $response = $http->get($url, [], 30);
+            $http       = $this->createHttp();
+            $response   = $http->get($url, [], 30);
             $statusCode = $response->getStatusCode();
-            $body = (string) $response->getBody();
+            $body       = (string) $response->getBody();
 
             // Bulk request succeeded — parse and report any missing currencies
             if ($statusCode === 200) {
@@ -235,11 +236,11 @@ final class AppCurrencyupdater extends CMSPlugin implements SubscriberInterface
                 }
 
                 // Multiple currencies — retry individually to salvage supported ones
-                $rates = [];
+                $rates       = [];
                 $unsupported = [];
 
                 foreach ($codes as $code) {
-                    $singleUrl = "https://api.frankfurter.dev/v1/latest?from={$base}&to={$code}";
+                    $singleUrl      = "https://api.frankfurter.dev/v1/latest?from={$base}&to={$code}";
                     $singleResponse = $http->get($singleUrl, [], 30);
 
                     if ($singleResponse->getStatusCode() === 200) {
@@ -278,10 +279,10 @@ final class AppCurrencyupdater extends CMSPlugin implements SubscriberInterface
     private function fetchRatesFromEndpoint(string $url, string $source, string $errorProperty = 'message'): array
     {
         try {
-            $http = $this->createHttp();
-            $response = $http->get($url, [], 30);
+            $http       = $this->createHttp();
+            $response   = $http->get($url, [], 30);
             $statusCode = $response->getStatusCode();
-            $body = (string) $response->getBody();
+            $body       = (string) $response->getBody();
 
             if ($statusCode !== 200) {
                 $this->surfaceError($source, "HTTP {$statusCode}: " . substr($body, 0, 200));
@@ -320,10 +321,10 @@ final class AppCurrencyupdater extends CMSPlugin implements SubscriberInterface
         $url = "https://v6.exchangerate-api.com/v6/{$apiKey}/latest/{$base}";
 
         try {
-            $http = $this->createHttp();
-            $response = $http->get($url, [], 30);
+            $http       = $this->createHttp();
+            $response   = $http->get($url, [], 30);
             $statusCode = $response->getStatusCode();
-            $body = (string) $response->getBody();
+            $body       = (string) $response->getBody();
 
             if ($statusCode !== 200) {
                 $this->surfaceError('ExchangeRate-API', "HTTP {$statusCode}: " . substr($body, 0, 200));
@@ -362,14 +363,14 @@ final class AppCurrencyupdater extends CMSPlugin implements SubscriberInterface
         }
 
         $symbols = implode(',', $codes);
-        $url = "https://api.currencyapi.com/v3/latest?base_currency={$base}&currencies={$symbols}";
+        $url     = "https://api.currencyapi.com/v3/latest?base_currency={$base}&currencies={$symbols}";
         $headers = ['apikey' => $apiKey];
 
         try {
-            $http = $this->createHttp();
-            $response = $http->get($url, $headers, 30);
+            $http       = $this->createHttp();
+            $response   = $http->get($url, $headers, 30);
             $statusCode = $response->getStatusCode();
-            $body = (string) $response->getBody();
+            $body       = (string) $response->getBody();
 
             if ($statusCode !== 200) {
                 $this->surfaceError('CurrencyAPI', "HTTP {$statusCode}: " . substr($body, 0, 200));
@@ -410,7 +411,7 @@ final class AppCurrencyupdater extends CMSPlugin implements SubscriberInterface
 
         // Always fetch USD-based rates (free plan only supports USD base)
         // Then mathematically rebase to store currency if needed
-        $allCodes = $codes;
+        $allCodes    = $codes;
         $needsRebase = strtoupper($base) !== 'USD';
 
         if ($needsRebase && !\in_array($base, $allCodes, true)) {
@@ -418,7 +419,7 @@ final class AppCurrencyupdater extends CMSPlugin implements SubscriberInterface
         }
 
         $symbols = implode(',', $allCodes);
-        $url = "https://openexchangerates.org/api/latest.json?app_id={$appId}&symbols={$symbols}&prettyprint=0";
+        $url     = "https://openexchangerates.org/api/latest.json?app_id={$appId}&symbols={$symbols}&prettyprint=0";
 
         try {
             $http     = $this->createHttp();
@@ -428,7 +429,7 @@ final class AppCurrencyupdater extends CMSPlugin implements SubscriberInterface
 
             if ($status !== 200) {
                 $decoded = json_decode($body, false);
-                $msg = $decoded->description ?? ("HTTP {$status}: " . substr($body, 0, 200));
+                $msg     = $decoded->description ?? ("HTTP {$status}: " . substr($body, 0, 200));
                 $this->surfaceError($source, (string) $msg);
                 return [];
             }

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,8 +12,9 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\View\Report;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\MenuHelper;
 use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
 use Joomla\CMS\Factory;
@@ -20,7 +22,6 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\ToolbarHelper;
-use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 /**
  * View class for displaying a single report plugin's content.
@@ -56,10 +57,10 @@ class HtmlView extends BaseHtmlView
         $this->loadAdminAssets();
 
         $app = Factory::getApplication();
-        $id = $app->getInput()->getInt('id', 0);
+        $id  = $app->getInput()->getInt('id', 0);
 
         // Load the report plugin row
-        $model = $this->getModel();
+        $model      = $this->getModel();
         $this->item = $model->getItem($id);
 
         if (!$this->item || empty($this->item->element)) {
@@ -85,8 +86,8 @@ class HtmlView extends BaseHtmlView
     protected function getNavbar(): string
     {
         $displayData = [
-            'items' => MenuHelper::getMenuItems(),
-            'active' => MenuHelper::getActiveView()
+            'items'  => MenuHelper::getMenuItems(),
+            'active' => MenuHelper::getActiveView(),
         ];
 
         return LayoutHelper::render('navbar.default', $displayData, JPATH_COMPONENT_ADMINISTRATOR . '/layouts');

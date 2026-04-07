@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -14,7 +15,6 @@ namespace J2Commerce\Component\J2commerce\Administrator\Service;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
-use Joomla\CMS\Language\Text;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\Database\DatabaseInterface;
 
@@ -93,21 +93,21 @@ class EmailTypeRegistry
     protected function registerCoreTypes(): void
     {
         $this->types['transactional'] = [
-            'type'           => 'transactional',
-            'label'          => 'COM_J2COMMERCE_EMAILTYPE_TRANSACTIONAL',
-            'description'    => 'COM_J2COMMERCE_EMAILTYPE_TRANSACTIONAL_DESC',
-            'icon'           => 'fa-solid fa-envelope',
-            'contexts'       => [
+            'type'        => 'transactional',
+            'label'       => 'COM_J2COMMERCE_EMAILTYPE_TRANSACTIONAL',
+            'description' => 'COM_J2COMMERCE_EMAILTYPE_TRANSACTIONAL_DESC',
+            'icon'        => 'fa-solid fa-envelope',
+            'contexts'    => [
                 'order_confirmed'  => 'COM_J2COMMERCE_EMAILTYPE_CONTEXT_ORDER_CONFIRMED',
                 'order_cancelled'  => 'COM_J2COMMERCE_EMAILTYPE_CONTEXT_ORDER_CANCELLED',
                 'order_shipped'    => 'COM_J2COMMERCE_EMAILTYPE_CONTEXT_ORDER_SHIPPED',
                 'order_refunded'   => 'COM_J2COMMERCE_EMAILTYPE_CONTEXT_ORDER_REFUNDED',
                 'payment_received' => 'COM_J2COMMERCE_EMAILTYPE_CONTEXT_PAYMENT_RECEIVED',
             ],
-            'tags'           => $this->getCoreTags(),
+            'tags'            => $this->getCoreTags(),
             'default_subject' => 'COM_J2COMMERCE_EMAILTEMPLATE_SUBJECT_DEFAULT',
-            'default_body'   => 'COM_J2COMMERCE_EMAILTEMPLATE_BODY_DEFAULT',
-            'receiver_types' => ['customer', 'admin', '*'],
+            'default_body'    => 'COM_J2COMMERCE_EMAILTEMPLATE_BODY_DEFAULT',
+            'receiver_types'  => ['customer', 'admin', '*'],
         ];
     }
 
@@ -660,7 +660,7 @@ class EmailTypeRegistry
      */
     public function getGroupedTagsForType(string $emailType): array
     {
-        $tags = $this->getTagsForType($emailType);
+        $tags    = $this->getTagsForType($emailType);
         $grouped = [];
 
         foreach ($tags as $tagName => $tagConfig) {

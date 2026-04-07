@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -16,7 +17,6 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CartHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
-use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
@@ -102,9 +102,9 @@ class CartModel extends BaseDatabaseModel
      */
     public function addCartItem(): array|object
     {
-        $app = Factory::getApplication();
+        $app    = Factory::getApplication();
         $errors = [];
-        $json = new CMSObject();
+        $json   = new CMSObject();
 
         // Check product ID
         $productId = $app->getInput()->getInt('product_id', 0);
@@ -180,12 +180,12 @@ class CartModel extends BaseDatabaseModel
             return false;
         }
 
-        $db = $this->db;
+        $db  = $this->db;
         $app = Factory::getApplication();
 
         // Prepare search keys
-        $cartId = (int) $cart->j2commerce_cart_id;
-        $variantId = (int) $item->variant_id;
+        $cartId         = (int) $cart->j2commerce_cart_id;
+        $variantId      = (int) $item->variant_id;
         $productOptions = $item->product_options ?? '';
 
         // Check if item already exists in cart
@@ -243,10 +243,10 @@ class CartModel extends BaseDatabaseModel
             $this->triggerAfterAddCartItem($existingItem);
         } else {
             // Insert new cart item
-            $productId = (int) $item->product_id;
-            $vendorId = (int) ($item->vendor_id ?? 0);
+            $productId   = (int) $item->product_id;
+            $vendorId    = (int) ($item->vendor_id ?? 0);
             $productType = $item->product_type ?? 'simple';
-            $productQty = (float) $item->product_qty;
+            $productQty  = (float) $item->product_qty;
 
             $insertQuery = $db->getQuery(true)
                 ->insert($db->quoteName('#__j2commerce_cartitems'))
@@ -258,7 +258,7 @@ class CartModel extends BaseDatabaseModel
                     'product_type',
                     'cartitem_params',
                     'product_qty',
-                    'product_options'
+                    'product_options',
                 ]))
                 ->values(':cartId, :productId, :variantId, :vendorId, :productType, :params, :qty, :options')
                 ->bind(':cartId', $cartId, ParameterType::INTEGER)
@@ -277,12 +277,12 @@ class CartModel extends BaseDatabaseModel
             }
 
             // Get inserted item for event
-            $newItemId = $db->insertid();
-            $newItem = new \stdClass();
+            $newItemId                       = $db->insertid();
+            $newItem                         = new \stdClass();
             $newItem->j2commerce_cartitem_id = $newItemId;
-            $newItem->cart_id = $cartId;
-            $newItem->product_id = $productId;
-            $newItem->variant_id = $variantId;
+            $newItem->cart_id                = $cartId;
+            $newItem->product_id             = $productId;
+            $newItem->variant_id             = $variantId;
 
             $this->triggerAfterAddCartItem($newItem);
         }
@@ -401,10 +401,10 @@ class CartModel extends BaseDatabaseModel
      */
     public function update(): array
     {
-        $app = Factory::getApplication();
-        $post = $app->getInput()->getArray(['quantities' => 'ARRAY']);
+        $app    = Factory::getApplication();
+        $post   = $app->getInput()->getArray(['quantities' => 'ARRAY']);
         $cartId = $this->getCartId();
-        $json = [];
+        $json   = [];
 
         if (!isset($post['quantities']) || !\is_array($post['quantities'])) {
             return $json;
@@ -414,7 +414,7 @@ class CartModel extends BaseDatabaseModel
 
         foreach ($post['quantities'] as $cartitemId => $quantity) {
             $cartitemId = (int) $cartitemId;
-            $quantity = (float) $quantity;
+            $quantity   = (float) $quantity;
 
             // Load cart item
             $query = $db->getQuery(true)
@@ -468,7 +468,7 @@ class CartModel extends BaseDatabaseModel
      */
     public function deleteItem(): bool
     {
-        $app = Factory::getApplication();
+        $app        = Factory::getApplication();
         $cartitemId = $app->getInput()->getInt('cartitem_id', 0);
 
         if (!$cartitemId) {
@@ -516,10 +516,10 @@ class CartModel extends BaseDatabaseModel
         $db = $this->db;
 
         // Create item object for event
-        $item = new CMSObject();
-        $item->product_id = $cartitem->product_id;
-        $item->variant_id = $cartitem->variant_id;
-        $item->product_options = $cartitem->product_options ?? '';
+        $item                         = new CMSObject();
+        $item->product_id             = $cartitem->product_id;
+        $item->variant_id             = $cartitem->variant_id;
+        $item->product_options        = $cartitem->product_options ?? '';
         $item->j2commerce_cartitem_id = $cartitemId;
 
         // Delete the item
@@ -586,7 +586,7 @@ class CartModel extends BaseDatabaseModel
      */
     public function validate_files(array $files = []): array
     {
-        $app = Factory::getApplication();
+        $app  = Factory::getApplication();
         $json = [];
 
         if (\count($files) < 1) {
@@ -601,8 +601,8 @@ class CartModel extends BaseDatabaseModel
             J2CommerceHelper::plugin()->event('AfterValidateFiles', [&$json, &$uploadResult]);
 
             if (empty($json)) {
-                $db = $this->db;
-                $now = Factory::getDate()->toSql();
+                $db   = $this->db;
+                $now  = Factory::getDate()->toSql();
                 $user = Factory::getApplication()->getIdentity();
 
                 // Insert upload record
@@ -615,7 +615,7 @@ class CartModel extends BaseDatabaseModel
                         'mime_type',
                         'created_by',
                         'created_on',
-                        'enabled'
+                        'enabled',
                     ]))
                     ->values(':origName, :mangledName, :savedName, :mime, :createdBy, :createdOn, 1')
                     ->bind(':origName', $uploadResult['original_name'])
@@ -635,8 +635,8 @@ class CartModel extends BaseDatabaseModel
         }
 
         if (empty($json['error'])) {
-            $json['name'] = $uploadResult['original_name'];
-            $json['code'] = $uploadResult['mangled_name'];
+            $json['name']    = $uploadResult['original_name'];
+            $json['code']    = $uploadResult['mangled_name'];
             $json['success'] = Text::_('COM_J2COMMERCE_UPLOAD_SUCCESSFUL');
         }
 
@@ -664,12 +664,12 @@ class CartModel extends BaseDatabaseModel
             $mediaHelper = new \Joomla\CMS\Helper\MediaHelper();
 
             if (!$mediaHelper->canUpload($file)) {
-                $app = Factory::getApplication();
+                $app    = Factory::getApplication();
                 $errors = $app->getMessageQueue();
 
                 if (\count($errors)) {
                     $error = array_pop($errors);
-                    $err = $error['message'];
+                    $err   = $error['message'];
                 } else {
                     $err = '';
                 }
@@ -693,7 +693,7 @@ class CartModel extends BaseDatabaseModel
 
         // Generate mangled name
         $serverkey = Factory::getApplication()->get('secret', '');
-        $sig = $file['name'] . microtime() . $serverkey;
+        $sig       = $file['name'] . microtime() . $serverkey;
 
         if (\function_exists('sha256')) {
             $mangledname = hash('sha256', $sig);
@@ -715,7 +715,7 @@ class CartModel extends BaseDatabaseModel
 
         // Sanitize filename
         $filename = basename(preg_replace('/[^a-zA-Z0-9\.\-\s+]/', '', html_entity_decode($file['name'], ENT_QUOTES, 'UTF-8')));
-        $name = $filename . '.' . md5(mt_rand());
+        $name     = $filename . '.' . md5(mt_rand());
         $filepath = $uploadFolder . '/' . $name;
 
         if (file_exists($filepath)) {
@@ -734,7 +734,7 @@ class CartModel extends BaseDatabaseModel
             $mime = mime_content_type($filepath);
         } elseif (\function_exists('finfo_open')) {
             $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            $mime = finfo_file($finfo, $filepath);
+            $mime  = finfo_file($finfo, $filepath);
         } else {
             $mime = 'application/octet-stream';
         }
@@ -743,7 +743,7 @@ class CartModel extends BaseDatabaseModel
             'original_name' => $file['name'],
             'mangled_name'  => $mangledname,
             'saved_name'    => $name,
-            'mime_type'     => $mime
+            'mime_type'     => $mime,
         ];
     }
 
@@ -789,9 +789,9 @@ class CartModel extends BaseDatabaseModel
     public function getContinueShoppingUrl(): object
     {
         $params = J2CommerceHelper::config();
-        $type = $params->get('config_continue_shopping_page', 'previous');
+        $type   = $params->get('config_continue_shopping_page', 'previous');
 
-        $item = new CMSObject();
+        $item       = new CMSObject();
         $item->type = $type;
 
         switch ($type) {
@@ -799,17 +799,17 @@ class CartModel extends BaseDatabaseModel
                 $menuItemid = $params->get('continue_shopping_page_menu', '');
 
                 if (empty($menuItemid)) {
-                    $item->url = '';
+                    $item->url  = '';
                     $item->type = 'previous';
                 } else {
-                    $app = Factory::getApplication();
-                    $menu = $app->getMenu('site');
+                    $app      = Factory::getApplication();
+                    $menu     = $app->getMenu('site');
                     $menuItem = $menu->getItem($menuItemid);
 
                     if (\is_object($menuItem)) {
                         $item->url = Route::_($menuItem->link . '&Itemid=' . $menuItem->id, false);
                     } else {
-                        $item->url = '';
+                        $item->url  = '';
                         $item->type = 'previous';
                     }
                 }
@@ -819,7 +819,7 @@ class CartModel extends BaseDatabaseModel
                 $customUrl = $params->get('config_continue_shopping_page_url', '');
 
                 if (empty($customUrl)) {
-                    $item->url = '';
+                    $item->url  = '';
                     $item->type = 'previous';
                 } else {
                     $item->url = $customUrl;
@@ -847,23 +847,23 @@ class CartModel extends BaseDatabaseModel
     public function getEmptyCartRedirectUrl(): ?string
     {
         $params = J2CommerceHelper::config();
-        $type = $params->get('config_cart_empty_redirect', 'cart');
-        $url = '';
+        $type   = $params->get('config_cart_empty_redirect', 'cart');
+        $url    = '';
 
         switch ($type) {
             case 'homepage':
-                $app = Factory::getApplication();
-                $menu = $app->getMenu('site');
+                $app     = Factory::getApplication();
+                $menu    = $app->getMenu('site');
                 $default = $menu->getDefault($app->getLanguage()->getTag());
-                $url = $default ? Route::_($default->link . '&Itemid=' . $default->id, false) : Route::_('index.php', false);
+                $url     = $default ? Route::_($default->link . '&Itemid=' . $default->id, false) : Route::_('index.php', false);
                 break;
 
             case 'menu':
                 $menuItemid = $params->get('continue_cart_redirect_menu', '');
 
                 if (!empty($menuItemid)) {
-                    $app = Factory::getApplication();
-                    $menu = $app->getMenu('site');
+                    $app      = Factory::getApplication();
+                    $menu     = $app->getMenu('site');
                     $menuItem = $menu->getItem($menuItemid);
 
                     if (\is_object($menuItem)) {

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -34,7 +35,7 @@ class MyprofileController extends BaseController
 {
     public function display($cachable = false, $urlparams = []): static
     {
-        $user = $this->app->getIdentity();
+        $user    = $this->app->getIdentity();
         $session = $this->app->getSession();
 
         $guestToken = $session->get('guest_order_token', '', 'j2commerce');
@@ -70,10 +71,10 @@ class MyprofileController extends BaseController
             return;
         }
 
-        $formData = $this->collectFormData();
+        $formData  = $this->collectFormData();
         $addressId = $this->input->getInt('address_id', 0);
-        $type = $this->input->getString('type', 'billing');
-        $area = ($type === 'shipping') ? 'shipping' : 'billing';
+        $type      = $this->input->getString('type', 'billing');
+        $area      = ($type === 'shipping') ? 'shipping' : 'billing';
 
         $fields = CustomFieldHelper::getFieldsByArea($area);
         $errors = CustomFieldHelper::validateFields($fields, $formData);
@@ -81,17 +82,17 @@ class MyprofileController extends BaseController
         if ($errors) {
             $this->jsonResponse([
                 'success' => false,
-                'errors' => $errors,
+                'errors'  => $errors,
                 'message' => Text::_('COM_J2COMMERCE_MYPROFILE_VALIDATION_FAILED'),
             ]);
 
             return;
         }
 
-        $addressData = CustomFieldHelper::collectAddressData($fields, $formData);
+        $addressData            = CustomFieldHelper::collectAddressData($fields, $formData);
         $addressData['user_id'] = (int) $user->id;
-        $addressData['type'] = $type;
-        $addressData['email'] = $formData['email'] ?? $user->email;
+        $addressData['type']    = $type;
+        $addressData['email']   = $formData['email'] ?? $user->email;
 
         $addressTable = $this->getMvcFactory()->createTable('Address', 'Administrator');
 
@@ -122,10 +123,10 @@ class MyprofileController extends BaseController
         $profileUrl = Route::_('index.php?option=com_j2commerce&view=myprofile', false);
 
         $this->jsonResponse([
-            'success' => true,
-            'message' => Text::_('COM_J2COMMERCE_MYPROFILE_ADDRESS_SAVED'),
+            'success'    => true,
+            'message'    => Text::_('COM_J2COMMERCE_MYPROFILE_ADDRESS_SAVED'),
             'address_id' => (int) $addressTable->j2commerce_address_id,
-            'redirect' => $profileUrl,
+            'redirect'   => $profileUrl,
         ]);
     }
 
@@ -190,7 +191,7 @@ class MyprofileController extends BaseController
             return;
         }
 
-        $email = trim($this->input->getString('email', ''));
+        $email      = trim($this->input->getString('email', ''));
         $orderToken = trim($this->input->getString('order_token', ''));
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -200,9 +201,9 @@ class MyprofileController extends BaseController
             return;
         }
 
-        $db = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $db        = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
         $orderType = 'normal';
-        $query = $db->getQuery(true)
+        $query     = $db->getQuery(true)
             ->select($db->quoteName('j2commerce_order_id'))
             ->from($db->quoteName('#__j2commerce_orders'))
             ->where($db->quoteName('token') . ' = :token')
@@ -230,8 +231,8 @@ class MyprofileController extends BaseController
 
     public function download(): void
     {
-        $token = $this->input->getString('token', '');
-        $fileId = $this->input->getInt('fid', 0);
+        $token       = $this->input->getString('token', '');
+        $fileId      = $this->input->getInt('fid', 0);
         $redirectUrl = Route::_('index.php?option=com_j2commerce&view=myprofile', false);
 
         if (empty($token) || $fileId <= 0) {
@@ -287,9 +288,9 @@ class MyprofileController extends BaseController
         }
 
         // Load download record for this order + product
-        $orderId = $order->order_id;
+        $orderId   = $order->order_id;
         $productId = (int) $productFile->product_id;
-        $query = $db->getQuery(true)
+        $query     = $db->getQuery(true)
             ->select('*')
             ->from($db->quoteName('#__j2commerce_orderdownloads'))
             ->where($db->quoteName('order_id') . ' = :orderId')
@@ -352,7 +353,7 @@ class MyprofileController extends BaseController
 
         // Increment download count on orderdownload + productfile
         $downloadId = (int) $download->j2commerce_orderdownload_id;
-        $newCount = (int) $download->limit_count + 1;
+        $newCount   = (int) $download->limit_count + 1;
 
         $updateQuery = $db->getQuery(true)
             ->update($db->quoteName('#__j2commerce_orderdownloads'))
@@ -363,8 +364,8 @@ class MyprofileController extends BaseController
         $db->setQuery($updateQuery);
         $db->execute();
 
-        $newTotal = (int) $productFile->download_total + 1;
-        $pfId = (int) $productFile->j2commerce_productfile_id;
+        $newTotal        = (int) $productFile->download_total + 1;
+        $pfId            = (int) $productFile->j2commerce_productfile_id;
         $updateFileQuery = $db->getQuery(true)
             ->update($db->quoteName('#__j2commerce_productfiles'))
             ->set($db->quoteName('download_total') . ' = :newTotal')
@@ -377,8 +378,8 @@ class MyprofileController extends BaseController
         // Stream file
         $displayName = $productFile->product_file_display_name ?: basename($realPath);
         $displayName = str_replace(['"', "\r", "\n"], '', $displayName);
-        $fileSize = filesize($realPath);
-        $mimeType = mime_content_type($realPath) ?: 'application/octet-stream';
+        $fileSize    = filesize($realPath);
+        $mimeType    = mime_content_type($realPath) ?: 'application/octet-stream';
 
         $this->app->clearHeaders();
         $this->app->setHeader('Content-Type', $mimeType);
@@ -437,8 +438,8 @@ class MyprofileController extends BaseController
                     $item->currency_code ?? '',
                     (float) ($item->currency_value ?? 1)
                 ),
-                'view_url'  => Route::_('index.php?option=com_j2commerce&view=myprofile&layout=order&order_id=' . urlencode($item->order_id)),
-                'print_url' => Route::_('index.php?option=com_j2commerce&view=myprofile&layout=order&order_id=' . urlencode($item->order_id) . '&tmpl=component'),
+                'view_url'           => Route::_('index.php?option=com_j2commerce&view=myprofile&layout=order&order_id=' . urlencode($item->order_id)),
+                'print_url'          => Route::_('index.php?option=com_j2commerce&view=myprofile&layout=order&order_id=' . urlencode($item->order_id) . '&tmpl=component'),
                 'after_display_html' => $afterDisplayHtml,
             ];
         }
@@ -482,8 +483,8 @@ class MyprofileController extends BaseController
         $rows = [];
 
         foreach ($data['downloads'] as $dl) {
-            $notGranted = empty($dl->access_granted) || $dl->access_granted === $nullDate;
-            $expired = false;
+            $notGranted   = empty($dl->access_granted) || $dl->access_granted === $nullDate;
+            $expired      = false;
             $limitReached = false;
 
             if (!$notGranted && $dl->access_expires !== $nullDate && strtotime($dl->access_expires) < time()) {
@@ -500,7 +501,7 @@ class MyprofileController extends BaseController
                 $limitReached = true;
             }
 
-            $remaining = $downloadLimit > 0 ? max(0, $downloadLimit - $limitCount) : -1;
+            $remaining   = $downloadLimit > 0 ? max(0, $downloadLimit - $limitCount) : -1;
             $canDownload = !$notGranted && !$expired && !$limitReached && !empty($dl->product_file_save_name);
 
             // Determine status badge
@@ -514,15 +515,15 @@ class MyprofileController extends BaseController
             }
 
             $rows[] = [
-                'order_id'            => $dl->order_id,
-                'file_name'           => $dl->product_file_display_name ?? '',
-                'access_granted'      => $notGranted ? false : true,
-                'access_expires'      => $notGranted ? '' : ($dl->access_expires === $nullDate ? '' : HTMLHelper::_('date', $dl->access_expires, $dateFormat)),
-                'never_expires'       => !$notGranted && $dl->access_expires === $nullDate,
-                'remaining'           => $remaining,
-                'can_download'        => $canDownload,
-                'status'              => $statusBadge,
-                'download_url'        => $canDownload ? Route::_('index.php?option=com_j2commerce&task=myprofile.download&token=' . urlencode($dl->order_id) . '&fid=' . (int) $dl->j2commerce_productfile_id) : '',
+                'order_id'       => $dl->order_id,
+                'file_name'      => $dl->product_file_display_name ?? '',
+                'access_granted' => $notGranted ? false : true,
+                'access_expires' => $notGranted ? '' : ($dl->access_expires === $nullDate ? '' : HTMLHelper::_('date', $dl->access_expires, $dateFormat)),
+                'never_expires'  => !$notGranted && $dl->access_expires === $nullDate,
+                'remaining'      => $remaining,
+                'can_download'   => $canDownload,
+                'status'         => $statusBadge,
+                'download_url'   => $canDownload ? Route::_('index.php?option=com_j2commerce&task=myprofile.download&token=' . urlencode($dl->order_id) . '&fid=' . (int) $dl->j2commerce_productfile_id) : '',
             ];
         }
 
@@ -631,8 +632,8 @@ class MyprofileController extends BaseController
         }
 
         // Validate access
-        $user = $this->app->getIdentity();
-        $session = $this->app->getSession();
+        $user       = $this->app->getIdentity();
+        $session    = $this->app->getSession();
         $guestToken = $session->get('guest_order_token', '', 'j2commerce');
         $guestEmail = $session->get('guest_order_email', '', 'j2commerce');
 
@@ -690,19 +691,19 @@ class MyprofileController extends BaseController
             return;
         }
 
-        $cartId = (int) $cart->j2commerce_cart_id;
+        $cartId     = (int) $cart->j2commerce_cart_id;
         $addedCount = 0;
-        $errors = [];
+        $errors     = [];
 
         foreach ($orderItems as $item) {
             // Skip non-product items (like shipping, handling fees)
-            if (!in_array($item->orderitem_type, ['normal', 'variable', 'flexivariable'])) {
+            if (!\in_array($item->orderitem_type, ['normal', 'variable', 'flexivariable'])) {
                 continue;
             }
 
             $productId = (int) $item->product_id;
             $variantId = (int) $item->variant_id;
-            $quantity = (float) $item->orderitem_quantity;
+            $quantity  = (float) $item->orderitem_quantity;
 
             // Validate product exists and is enabled
             $productQuery = $db->getQuery(true)
@@ -722,11 +723,11 @@ class MyprofileController extends BaseController
             }
 
             // Prepare item for cart
-            $cartItem = new \stdClass();
-            $cartItem->cart_id = $cartId;
-            $cartItem->product_id = $productId;
-            $cartItem->variant_id = $variantId;
-            $cartItem->product_qty = $quantity;
+            $cartItem                  = new \stdClass();
+            $cartItem->cart_id         = $cartId;
+            $cartItem->product_id      = $productId;
+            $cartItem->variant_id      = $variantId;
+            $cartItem->product_qty     = $quantity;
             $cartItem->product_options = $item->orderitem_attributes;
 
             // Add to cart
@@ -742,7 +743,7 @@ class MyprofileController extends BaseController
         // Determine redirect based on plugin params
         // Check URL param first (set by the plugin), default to cart
         $redirectView = $this->input->getString('redirect', 'carts');
-        $itemId = $this->input->getInt('Itemid', 0);
+        $itemId       = $this->input->getInt('Itemid', 0);
 
         $urlParams = 'index.php?option=com_j2commerce';
 
@@ -761,7 +762,7 @@ class MyprofileController extends BaseController
 
         // Set message
         if ($addedCount > 0) {
-           // $this->app->enqueueMessage(Text::sprintf('COM_J2COMMERCE_REORDER_SUCCESS', $addedCount), 'message');
+            // $this->app->enqueueMessage(Text::sprintf('COM_J2COMMERCE_REORDER_SUCCESS', $addedCount), 'message');
         }
 
         if (!empty($errors)) {
@@ -800,7 +801,7 @@ class MyprofileController extends BaseController
     {
         PluginHelper::importPlugin('j2commerce');
         $dispatcher = $this->app->getDispatcher();
-        $event = new \Joomla\Event\Event($eventName, $args);
+        $event      = new \Joomla\Event\Event($eventName, $args);
         $dispatcher->dispatch($eventName, $event);
 
         return implode("\n", array_filter($event->getArgument('result', [])));
@@ -814,7 +815,7 @@ class MyprofileController extends BaseController
             return true;
         }
 
-        $session = $this->app->getSession();
+        $session    = $this->app->getSession();
         $guestToken = $session->get('guest_order_token', '', 'j2commerce');
         $guestEmail = $session->get('guest_order_email', '', 'j2commerce');
 
@@ -829,7 +830,7 @@ class MyprofileController extends BaseController
 
     private function collectFormData(): array
     {
-        $data = [];
+        $data     = [];
         $postData = $this->input->post->getArray();
 
         foreach ($postData as $key => $value) {
@@ -840,7 +841,7 @@ class MyprofileController extends BaseController
             } elseif (\is_array($value)) {
                 // Handle checkbox/multi-select fields (e.g. CustomFieldHelper checkbox type)
                 $data[$key] = implode(',', array_map(
-                    fn($v) => preg_replace('/[^\w\s\-.,@]/', '', (string) $v),
+                    fn ($v) => preg_replace('/[^\w\s\-.,@]/', '', (string) $v),
                     $value
                 ));
             }

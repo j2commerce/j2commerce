@@ -1,16 +1,16 @@
 <?php
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 extract($displayData);
 
-$settings      = $settings ?? [];
-$showSpecial   = $settings['show_special'] ?? true;
-$showTaxInfo   = $settings['show_tax_info'] ?? false;
-$cssClass      = $settings['css_class'] ?? 'j2commerce-product-price';
-$format        = $settings['format'] ?? 'standard';
-$showSaleBadge = $settings['show_sale_badge'] ?? true;
+$settings       = $settings ?? [];
+$showSpecial    = $settings['show_special'] ?? true;
+$showTaxInfo    = $settings['show_tax_info'] ?? false;
+$cssClass       = $settings['css_class'] ?? 'j2commerce-product-price';
+$format         = $settings['format'] ?? 'standard';
+$showSaleBadge  = $settings['show_sale_badge'] ?? true;
 $salePriceClass = match ($format) {
     'large'   => 'sale-price lh-1 fs-3 fw-semibold',
     'compact' => 'sale-price lh-1 fs-6 fw-semibold',

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,38 +12,13 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
-// phpcs:enable PSR1.Files.SideEffects
-
-use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
-use J2Commerce\Component\J2commerce\Administrator\Model\ManufacturersModel;
-use J2Commerce\Component\J2commerce\Administrator\Model\ProductFiltersModel;
-use J2Commerce\Component\J2commerce\Administrator\Model\ProductOptionsModel;
-use J2Commerce\Component\J2commerce\Administrator\Model\ProductPriceModel;
-use J2Commerce\Component\J2commerce\Administrator\Model\ProductsModel;
-use J2Commerce\Component\J2commerce\Administrator\Model\VariantModel;
-use J2Commerce\Component\J2commerce\Administrator\Model\Trait\BehaviorTrait;
-use Joomla\CMS\Application\ApplicationHelper;
-use Joomla\CMS\Event\GenericEvent;
+// phpcs:enable PSR1.Files.SideEffectsuse J2Commerce\Component\J2commerce\Administrator\Model\Trait\BehaviorTrait;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
-use Joomla\CMS\HTML\Helpers\User;
-use Joomla\CMS\HTML\HTMLHelper;
-use Joomla\CMS\Language\Text;
-use Joomla\CMS\Layout\FileLayout;
-use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\CMS\MVC\Model\AdminModel;
-use Joomla\CMS\Pagination\Pagination;
-use Joomla\CMS\Plugin\PluginHelper;
-use Joomla\CMS\Router\Route;
 use Joomla\CMS\Table\Table;
-use Joomla\CMS\Uri\Uri;
-use Joomla\Component\Content\Site\Helper\RouteHelper;
 use Joomla\Database\DatabaseDriver;
-use Joomla\Database\ParameterType;
-use Joomla\Filesystem\Folder;
-use Joomla\Filesystem\Path;
-use Joomla\Registry\Registry;
 
 /**
  * Product Model
@@ -60,7 +36,8 @@ class ProductFilesModel extends AdminModel
      *
      * @since  6.0.0
      */
-    public function __construct($config = [], ?MVCFactoryInterface $factory = null)   {
+    public function __construct($config = [], ?MVCFactoryInterface $factory = null)
+    {
         parent::__construct($config, $factory);
     }
 
@@ -114,7 +91,7 @@ class ProductFilesModel extends AdminModel
     protected function loadFormData()
     {
         // Check the session for previously entered form data.
-        $app = Factory::getApplication();
+        $app  = Factory::getApplication();
         $data = $app->getUserState('com_j2commerce.edit.productfiles.data', []);
 
         if (empty($data)) {
@@ -166,7 +143,7 @@ class ProductFilesModel extends AdminModel
     public function getList($productid)
     {
 
-        $db = Factory::getContainer()->get('DatabaseDriver');
+        $db    = Factory::getContainer()->get('DatabaseDriver');
         $query = $db->getQuery(true);
         $query->select('*')->from("#__j2commerce_productfiles");
         $query->where('product_id !=' .$db->q($productid));

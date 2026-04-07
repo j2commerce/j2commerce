@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -13,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\View\Advancedpricing;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\MenuHelper;
 use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
 use Joomla\CMS\Helper\ContentHelper;
@@ -23,7 +25,6 @@ use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Session\Session;
 use Joomla\CMS\Toolbar\ToolbarHelper;
-use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 class HtmlView extends BaseHtmlView
 {
@@ -44,7 +45,7 @@ class HtmlView extends BaseHtmlView
         $this->loadAdminAssets();
         $this->navbar = $this->getNavbar();
 
-        $model = $this->getModel();
+        $model               = $this->getModel();
         $this->items         = $model->getItems();
         $this->pagination    = $model->getPagination();
         $this->state         = $model->getState();

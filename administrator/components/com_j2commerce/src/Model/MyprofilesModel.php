@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -40,11 +41,11 @@ class MyprofilesModel extends ListModel
     public function getAddressesByUser(?int $userId = null): array
     {
         if ($userId === null) {
-            $user = Factory::getApplication()->getIdentity();
+            $user   = Factory::getApplication()->getIdentity();
             $userId = (int) $user->id;
         }
 
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         // Select all address fields
@@ -148,7 +149,7 @@ class MyprofilesModel extends ListModel
      */
     protected function findAddressByOrderInfo(object $orderInfo, string $email, string $type): ?object
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         $query->select($db->quoteName([
@@ -174,7 +175,7 @@ class MyprofilesModel extends ListModel
         $query->from($db->quoteName('#__j2commerce_addresses', 'a'));
 
         // Scope to current user to prevent IDOR
-        $user = Factory::getApplication()->getIdentity();
+        $user          = Factory::getApplication()->getIdentity();
         $currentUserId = (int) $user->id;
 
         if ($currentUserId > 0) {
@@ -260,10 +261,10 @@ class MyprofilesModel extends ListModel
      */
     protected function getListQuery(): QueryInterface
     {
-        $user = Factory::getApplication()->getIdentity();
+        $user   = Factory::getApplication()->getIdentity();
         $userId = (int) $user->id;
 
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         $query->select(

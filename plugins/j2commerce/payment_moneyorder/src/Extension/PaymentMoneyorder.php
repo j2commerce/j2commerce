@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  Plugin.J2Commerce.PaymentMoneyorder
@@ -18,9 +19,7 @@ use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\PluginLayoutTr
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Language;
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\Layout\FileLayout;
 use Joomla\CMS\Plugin\CMSPlugin;
-use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Session\Session;
 use Joomla\Database\DatabaseAwareTrait;
 use Joomla\Database\DatabaseInterface;
@@ -76,9 +75,9 @@ final class PaymentMoneyorder extends CMSPlugin implements SubscriberInterface
         $this->setDatabase($db);
 
         $this->language->load('com_j2commerce', JPATH_ADMINISTRATOR);
-        $this->payment = new Payment($dispatcher, $config);
+        $this->payment           = new Payment($dispatcher, $config);
         $this->payment->_element = $this->_name;
-        $this->base = new Base($dispatcher, $config);
+        $this->base              = new Base($dispatcher, $config);
     }
 
     public static function getSubscribedEvents(): array
@@ -99,7 +98,7 @@ final class PaymentMoneyorder extends CMSPlugin implements SubscriberInterface
             return;
         }
 
-        $args = $event->getArguments();
+        $args    = $event->getArguments();
         $element = $args[0] ?? null;
 
         if ($element !== $this->_name) {
@@ -115,9 +114,9 @@ final class PaymentMoneyorder extends CMSPlugin implements SubscriberInterface
             return;
         }
 
-        $args = $event->getArguments();
+        $args    = $event->getArguments();
         $element = $args[0] ?? null;
-        $order = $args[1] ?? null;
+        $order   = $args[1] ?? null;
 
         if ($element !== $this->_name || $order === null) {
             return;
@@ -136,10 +135,10 @@ final class PaymentMoneyorder extends CMSPlugin implements SubscriberInterface
             return;
         }
 
-        $total = $order->order_subtotal + $order->order_shipping + $order->order_shipping_tax;
-        $surcharge = 0.0;
+        $total            = $order->order_subtotal + $order->order_shipping + $order->order_shipping_tax;
+        $surcharge        = 0.0;
         $surchargePercent = (float) $this->params->get('surcharge_percent', 0);
-        $surchargeFixed = (float) $this->params->get('surcharge_fixed', 0);
+        $surchargeFixed   = (float) $this->params->get('surcharge_fixed', 0);
 
         if ($surchargePercent > 0 || $surchargeFixed > 0) {
             if ($surchargePercent > 0) {
@@ -150,9 +149,9 @@ final class PaymentMoneyorder extends CMSPlugin implements SubscriberInterface
                 $surcharge += $surchargeFixed;
             }
 
-            $name = $this->params->get('surcharge_name', Text::_('COM_J2COMMERCE_CART_SURCHARGE'));
+            $name       = $this->params->get('surcharge_name', Text::_('COM_J2COMMERCE_CART_SURCHARGE'));
             $taxClassId = $this->params->get('surcharge_tax_class_id', '');
-            $taxable = !empty($taxClassId) && (int) $taxClassId > 0;
+            $taxable    = !empty($taxClassId) && (int) $taxClassId > 0;
 
             if ($surcharge > 0) {
                 $order->add_fee($name, round($surcharge, 2), $taxable, $taxClassId);
@@ -166,9 +165,9 @@ final class PaymentMoneyorder extends CMSPlugin implements SubscriberInterface
             return;
         }
 
-        $args = $event->getArguments();
+        $args    = $event->getArguments();
         $element = $args[0] ?? null;
-        $order = $args[1] ?? null;
+        $order   = $args[1] ?? null;
 
         if ($element !== $this->_name || $order === null) {
             return;
@@ -177,7 +176,7 @@ final class PaymentMoneyorder extends CMSPlugin implements SubscriberInterface
         $found = true;
 
         $order->setAddress();
-        $address = $order->getBillingAddress();
+        $address   = $order->getBillingAddress();
         $geozoneId = (int) $this->params->get('geozone_id', 0);
 
         if ($geozoneId > 0) {
@@ -194,7 +193,7 @@ final class PaymentMoneyorder extends CMSPlugin implements SubscriberInterface
      */
     public function onGetPaymentPlugins(Event $event): void
     {
-        $result = $event->getArgument('result', []);
+        $result   = $event->getArgument('result', []);
         $result[] = [
             'element' => $this->_name,
             'name'    => Text::_($this->params->get('display_name', 'PLG_J2COMMERCE_PAYMENT_MONEYORDER')),
@@ -208,15 +207,15 @@ final class PaymentMoneyorder extends CMSPlugin implements SubscriberInterface
      */
     public function onPrePayment(Event $event): void
     {
-        $args = $event->getArguments();
+        $args    = $event->getArguments();
         $element = $args[0] ?? '';
-        $data = $args[1] ?? [];
+        $data    = $args[1] ?? [];
 
         if ($element !== $this->_name) {
             return;
         }
 
-        $result = $event->getArgument('result', []);
+        $result   = $event->getArgument('result', []);
         $result[] = $this->_prePayment($data);
         $event->setArgument('result', $result);
     }
@@ -226,15 +225,15 @@ final class PaymentMoneyorder extends CMSPlugin implements SubscriberInterface
      */
     public function onPostPayment(Event $event): void
     {
-        $args = $event->getArguments();
+        $args    = $event->getArguments();
         $element = $args[0] ?? '';
-        $data = $args[1] ?? [];
+        $data    = $args[1] ?? [];
 
         if ($element !== $this->_name) {
             return;
         }
 
-        $result = $event->getArgument('result', []);
+        $result   = $event->getArgument('result', []);
         $result[] = $this->_postPayment((object) $data);
         $event->setArgument('result', $result);
     }
@@ -256,11 +255,11 @@ final class PaymentMoneyorder extends CMSPlugin implements SubscriberInterface
 
     private function checkGeozone(int $geozoneId, array $address): bool
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         $countryId = (int) ($address['country_id'] ?? 0);
-        $zoneId = (int) ($address['zone_id'] ?? 0);
+        $zoneId    = (int) ($address['zone_id'] ?? 0);
 
         $query->select($db->quoteName('gz.j2commerce_geozone_id'))
             ->from($db->quoteName('#__j2commerce_geozones', 'gz'))
@@ -285,16 +284,16 @@ final class PaymentMoneyorder extends CMSPlugin implements SubscriberInterface
     {
         $vars = new \stdClass();
 
-        $vars->order_id = $data['order_id'];
-        $vars->orderpayment_id = $data['orderpayment_id'] ?? 0;
+        $vars->order_id            = $data['order_id'];
+        $vars->orderpayment_id     = $data['orderpayment_id'] ?? 0;
         $vars->orderpayment_amount = $data['orderpayment_amount'];
-        $vars->orderpayment_type = $this->_name;
+        $vars->orderpayment_type   = $this->_name;
 
-        $vars->display_name = Text::_($this->params->get('display_name', 'PLG_J2COMMERCE_PAYMENT_MONEYORDER'));
-        $vars->display_image = $this->params->get('display_image', '');
-        $vars->onbeforepayment_text = $this->params->get('onbeforepayment', '');
+        $vars->display_name           = Text::_($this->params->get('display_name', 'PLG_J2COMMERCE_PAYMENT_MONEYORDER'));
+        $vars->display_image          = $this->params->get('display_image', '');
+        $vars->onbeforepayment_text   = $this->params->get('onbeforepayment', '');
         $vars->moneyorder_information = $this->params->get('moneyorder_information', '');
-        $vars->button_text = $this->params->get('button_text', Text::_('COM_J2COMMERCE_PLACE_ORDER'));
+        $vars->button_text            = $this->params->get('button_text', Text::_('COM_J2COMMERCE_PLACE_ORDER'));
 
         // Load order via Table using the order_id string column (not the integer PK)
         $order = Factory::getApplication()
@@ -310,15 +309,15 @@ final class PaymentMoneyorder extends CMSPlugin implements SubscriberInterface
 
     public function _postPayment(object $data): string
     {
-        $app = Factory::getApplication();
-        $vars = new \stdClass();
+        $app     = Factory::getApplication();
+        $vars    = new \stdClass();
         $paction = $app->input->getString('paction');
-        $html = '';
+        $html    = '';
 
         switch ($paction) {
             case 'display':
                 $vars->onafterpayment_text = Text::_($this->params->get('onafterpayment', ''));
-                $html = $this->_getLayout('postpayment', $vars);
+                $html                      = $this->_getLayout('postpayment', $vars);
                 $html .= $this->base->_displayArticle();
                 break;
 
@@ -331,7 +330,7 @@ final class PaymentMoneyorder extends CMSPlugin implements SubscriberInterface
 
             default:
                 $vars->message = Text::_($this->params->get('onerrorpayment', ''));
-                $html = $this->_getLayout('message', $vars);
+                $html          = $this->_getLayout('message', $vars);
                 break;
         }
 
@@ -340,9 +339,9 @@ final class PaymentMoneyorder extends CMSPlugin implements SubscriberInterface
 
     public function _process(object $data): array
     {
-        $app = Factory::getApplication();
+        $app     = Factory::getApplication();
         $orderId = $app->input->getString('order_id');
-        $json = [];
+        $json    = [];
 
         // Load order via Table using the order_id string column (not the integer PK)
         $order = Factory::getApplication()
@@ -362,7 +361,7 @@ final class PaymentMoneyorder extends CMSPlugin implements SubscriberInterface
 
         $moneyorderInformation = $this->params->get('moneyorder_information', '');
 
-        if (strlen($moneyorderInformation) > 5) {
+        if (\strlen($moneyorderInformation) > 5) {
             $html = '<br>';
             $html .= '<strong>' . Text::_('PLG_J2COMMERCE_PAYMENT_MONEYORDER_INSTRUCTIONS') . '</strong>';
             $html .= '<br>';
@@ -390,7 +389,7 @@ final class PaymentMoneyorder extends CMSPlugin implements SubscriberInterface
                 orderStateId: (int) $order->order_state_id,
             );
 
-            $json['success'] = Text::_($this->params->get('onafterpayment', ''));
+            $json['success']  = Text::_($this->params->get('onafterpayment', ''));
             $json['redirect'] = $this->payment->getReturnUrl();
         } else {
             $json['error'] = $order->getError();
@@ -401,7 +400,7 @@ final class PaymentMoneyorder extends CMSPlugin implements SubscriberInterface
 
     public function _renderForm(array $data): string
     {
-        $vars = new \stdClass();
+        $vars                   = new \stdClass();
         $vars->onselection_text = $this->params->get('onselection', '');
         return $this->_getLayout('form', $vars);
     }

@@ -51,15 +51,15 @@ final class J2commerce extends ActionLogPlugin implements SubscriberInterface
             'onJ2CommerceAfterUpdateCartQuantity' => 'onAfterUpdateCartQuantity',
             'onJ2CommerceAfterClearCart'          => 'onAfterClearCart',
             // Checkout funnel events
-            'onJ2CommerceCheckoutStart'           => 'onCheckoutStart',
-            'onJ2CommerceCheckoutLogin'           => 'onCheckoutLogin',
-            'onJ2CommerceCheckoutBillingComplete' => 'onCheckoutBillingComplete',
+            'onJ2CommerceCheckoutStart'            => 'onCheckoutStart',
+            'onJ2CommerceCheckoutLogin'            => 'onCheckoutLogin',
+            'onJ2CommerceCheckoutBillingComplete'  => 'onCheckoutBillingComplete',
             'onJ2CommerceCheckoutShippingComplete' => 'onCheckoutShippingComplete',
-            'onJ2CommerceGetPaymentPlugins'       => 'onGetPaymentPlugins',
-            'onJ2CommerceAfterOrderValidate'      => 'onAfterOrderValidate',
-            'onJ2CommerceAfterPayment'            => 'onAfterPayment',
+            'onJ2CommerceGetPaymentPlugins'        => 'onGetPaymentPlugins',
+            'onJ2CommerceAfterOrderValidate'       => 'onAfterOrderValidate',
+            'onJ2CommerceAfterPayment'             => 'onAfterPayment',
             // Order admin events
-            'onJ2CommerceAfterOrderStatusChange'  => 'onAfterOrderStatusChange',
+            'onJ2CommerceAfterOrderStatusChange' => 'onAfterOrderStatusChange',
         ];
     }
 
@@ -249,12 +249,12 @@ final class J2commerce extends ActionLogPlugin implements SubscriberInterface
             return;
         }
 
-        $orderId     = $orderTable->order_id ?? '';
+        $orderId      = $orderTable->order_id ?? '';
         $orderStateId = (int) ($orderTable->order_state_id ?? 0);
-        $statusName  = $this->getOrderStatusName($orderStateId);
+        $statusName   = $this->getOrderStatusName($orderStateId);
 
         // Determine priority based on order state
-        $failedStates = [3, 6]; // Failed, Cancelled
+        $failedStates  = [3, 6]; // Failed, Cancelled
         $warningStates = [5];   // New
         $successStates = [1, 2, 7]; // Confirmed, Processed, Shipped
 

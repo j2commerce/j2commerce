@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -16,8 +17,6 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\FormController;
-use Joomla\CMS\Response\JsonResponse;
-use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
 use Joomla\Database\ParameterType;
 
@@ -124,8 +123,8 @@ class ProductpriceController extends FormController
 
         // Preserve variant_id and layout for modal view
         $variantId = $this->input->getInt('variant_id', 0);
-        $tmpl = $this->input->get('tmpl', '');
-        $layout = $this->input->get('layout', '');
+        $tmpl      = $this->input->get('tmpl', '');
+        $layout    = $this->input->get('layout', '');
 
         if ($variantId) {
             $append .= '&variant_id=' . $variantId;
@@ -179,12 +178,12 @@ class ProductpriceController extends FormController
             return;
         }
 
-        $app = Factory::getApplication();
+        $app  = Factory::getApplication();
         $data = $this->input->get('jform', [], 'array');
 
         // Validate required fields
         $variantId = (int) ($data['variant_id'] ?? 0);
-        $price = (float) ($data['price'] ?? 0);
+        $price     = (float) ($data['price'] ?? 0);
 
         if (!$variantId) {
             $this->sendJsonResponse(false, Text::_('COM_J2COMMERCE_ERROR_INVALID_VARIANT'));
@@ -195,13 +194,13 @@ class ProductpriceController extends FormController
         $db = Factory::getContainer()->get('DatabaseDriver');
 
         $insertData = (object) [
-            'variant_id' => $variantId,
-            'quantity_from' => !empty($data['quantity_from']) ? (float) $data['quantity_from'] : null,
-            'quantity_to' => !empty($data['quantity_to']) ? (float) $data['quantity_to'] : null,
-            'date_from' => $this->convertDateToMysql($data['date_from'] ?? ''),
-            'date_to' => $this->convertDateToMysql($data['date_to'] ?? ''),
+            'variant_id'        => $variantId,
+            'quantity_from'     => !empty($data['quantity_from']) ? (float) $data['quantity_from'] : null,
+            'quantity_to'       => !empty($data['quantity_to']) ? (float) $data['quantity_to'] : null,
+            'date_from'         => $this->convertDateToMysql($data['date_from'] ?? ''),
+            'date_to'           => $this->convertDateToMysql($data['date_to'] ?? ''),
             'customer_group_id' => !empty($data['customer_group_id']) ? (int) $data['customer_group_id'] : null,
-            'price' => $price,
+            'price'             => $price,
         ];
 
         try {
@@ -229,7 +228,7 @@ class ProductpriceController extends FormController
             return;
         }
 
-        $app = Factory::getApplication();
+        $app    = Factory::getApplication();
         $prices = $this->input->get('jform', [], 'array')['prices'] ?? [];
 
         if (empty($prices)) {
@@ -237,8 +236,8 @@ class ProductpriceController extends FormController
             return;
         }
 
-        $db = Factory::getContainer()->get('DatabaseDriver');
-        $saved = 0;
+        $db     = Factory::getContainer()->get('DatabaseDriver');
+        $saved  = 0;
         $errors = [];
 
         foreach ($prices as $priceId => $priceData) {
@@ -265,12 +264,12 @@ class ProductpriceController extends FormController
             // Prepare update data
             $updateData = (object) [
                 'j2commerce_productprice_id' => $priceId,
-                'quantity_from' => isset($priceData['quantity_from']) ? (float) $priceData['quantity_from'] : null,
-                'quantity_to' => isset($priceData['quantity_to']) ? (float) $priceData['quantity_to'] : null,
-                'date_from' => $this->convertDateToMysql($priceData['date_from'] ?? ''),
-                'date_to' => $this->convertDateToMysql($priceData['date_to'] ?? ''),
-                'customer_group_id' => isset($priceData['customer_group_id']) ? (int) $priceData['customer_group_id'] : null,
-                'price' => isset($priceData['price']) ? (float) $priceData['price'] : 0,
+                'quantity_from'              => isset($priceData['quantity_from']) ? (float) $priceData['quantity_from'] : null,
+                'quantity_to'                => isset($priceData['quantity_to']) ? (float) $priceData['quantity_to'] : null,
+                'date_from'                  => $this->convertDateToMysql($priceData['date_from'] ?? ''),
+                'date_to'                    => $this->convertDateToMysql($priceData['date_to'] ?? ''),
+                'customer_group_id'          => isset($priceData['customer_group_id']) ? (int) $priceData['customer_group_id'] : null,
+                'price'                      => isset($priceData['price']) ? (float) $priceData['price'] : 0,
             ];
 
             try {
@@ -390,7 +389,7 @@ class ProductpriceController extends FormController
         $response = [
             'success' => $success,
             'message' => $message,
-            'data' => $data,
+            'data'    => $data,
         ];
 
         $app->setHeader('Content-Type', 'application/json; charset=utf-8');

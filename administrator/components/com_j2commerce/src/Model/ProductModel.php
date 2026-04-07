@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -13,11 +14,11 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\MVC\Model\AdminModel;
-use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 
 /**
  * Product item model class.
@@ -124,21 +125,21 @@ class ProductModel extends AdminModel
             }
 
             // Explicitly set hydrated properties (overwrite base if needed)
-            $item->manufacturer = $fullProduct->manufacturer ?? '';
-            $item->product_name = $fullProduct->product_name ?? '';
-            $item->product_short_desc = $fullProduct->product_short_desc ?? '';
-            $item->product_long_desc = $fullProduct->product_long_desc ?? '';
-            $item->source = $fullProduct->source ?? null;
-            $item->main_image = $fullProduct->main_image ?? '';
-            $item->main_image_alt = $fullProduct->main_image_alt ?? '';
-            $item->thumb_image = $fullProduct->thumb_image ?? '';
-            $item->thumb_image_alt = $fullProduct->thumb_image_alt ?? '';
-            $item->additional_images = $fullProduct->additional_images ?? '';
+            $item->manufacturer          = $fullProduct->manufacturer ?? '';
+            $item->product_name          = $fullProduct->product_name ?? '';
+            $item->product_short_desc    = $fullProduct->product_short_desc ?? '';
+            $item->product_long_desc     = $fullProduct->product_long_desc ?? '';
+            $item->source                = $fullProduct->source ?? null;
+            $item->main_image            = $fullProduct->main_image ?? '';
+            $item->main_image_alt        = $fullProduct->main_image_alt ?? '';
+            $item->thumb_image           = $fullProduct->thumb_image ?? '';
+            $item->thumb_image_alt       = $fullProduct->thumb_image_alt ?? '';
+            $item->additional_images     = $fullProduct->additional_images ?? '';
             $item->additional_images_alt = $fullProduct->additional_images_alt ?? '';
-            $item->variants = $fullProduct->variants ?? [];
-            $item->product_options = $fullProduct->product_options ?? [];
-            $item->product_edit_url = $fullProduct->product_edit_url ?? '';
-            $item->product_view_url = $fullProduct->product_view_url ?? '';
+            $item->variants              = $fullProduct->variants ?? [];
+            $item->product_options       = $fullProduct->product_options ?? [];
+            $item->product_edit_url      = $fullProduct->product_edit_url ?? '';
+            $item->product_view_url      = $fullProduct->product_view_url ?? '';
         }
 
         // Ensure JSON fields are encoded as strings for form binding

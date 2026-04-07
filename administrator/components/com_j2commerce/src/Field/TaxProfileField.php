@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Field;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Field\ListField;
@@ -41,7 +42,7 @@ class TaxProfileField extends ListField
             $query = $db->getQuery(true)
                 ->select([
                     $db->quoteName('j2commerce_taxprofile_id', 'value'),
-                    $db->quoteName('taxprofile_name', 'text')
+                    $db->quoteName('taxprofile_name', 'text'),
                 ])
                 ->from($db->quoteName('#__j2commerce_taxprofiles'))
                 ->where($db->quoteName('enabled') . ' = 1')

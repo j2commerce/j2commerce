@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -27,15 +28,43 @@ class ShippingBox implements Box
         private readonly int $innerLength,
         private readonly int $innerDepth,
         private readonly int $maxWeight,
-    ) {}
+    ) {
+    }
 
-    public function getReference(): string { return $this->reference; }
-    public function getOuterWidth(): int { return $this->outerWidth; }
-    public function getOuterLength(): int { return $this->outerLength; }
-    public function getOuterDepth(): int { return $this->outerDepth; }
-    public function getEmptyWeight(): int { return $this->emptyWeight; }
-    public function getInnerWidth(): int { return $this->innerWidth; }
-    public function getInnerLength(): int { return $this->innerLength; }
-    public function getInnerDepth(): int { return $this->innerDepth; }
-    public function getMaxWeight(): int { return $this->maxWeight; }
+    public function getReference(): string
+    {
+        return $this->reference;
+    }
+    public function getOuterWidth(): int
+    {
+        return $this->outerWidth;
+    }
+    public function getOuterLength(): int
+    {
+        return $this->outerLength;
+    }
+    public function getOuterDepth(): int
+    {
+        return $this->outerDepth;
+    }
+    public function getEmptyWeight(): int
+    {
+        return $this->emptyWeight;
+    }
+    public function getInnerWidth(): int
+    {
+        return $this->innerWidth;
+    }
+    public function getInnerLength(): int
+    {
+        return $this->innerLength;
+    }
+    public function getInnerDepth(): int
+    {
+        return $this->innerDepth;
+    }
+    public function getMaxWeight(): int
+    {
+        return $this->maxWeight;
+    }
 }

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Field;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Form\FormField;
 use Joomla\CMS\HTML\HTMLHelper;
@@ -82,13 +83,13 @@ class VariantAdvancedPricingField extends FormField
             'bootstrap.renderModal',
             $modalId,
             [
-                'url'         => $modalUrl,
-                'title'       => Text::_('COM_J2COMMERCE_PRODUCT_ADDITIONAL_PRICING'),
-                'height'      => '100%',
-                'width'       => '100%',
-                'modalWidth'  => '95%',
-                'bodyHeight'  => '95%',
-                'footer'      => '<button type="button" class="btn btn-primary" data-bs-dismiss="modal" aria-hidden="true">'
+                'url'        => $modalUrl,
+                'title'      => Text::_('COM_J2COMMERCE_PRODUCT_ADDITIONAL_PRICING'),
+                'height'     => '100%',
+                'width'      => '100%',
+                'modalWidth' => '95%',
+                'bodyHeight' => '95%',
+                'footer'     => '<button type="button" class="btn btn-primary" data-bs-dismiss="modal" aria-hidden="true">'
                     . Text::_('JLIB_HTML_BEHAVIOR_CLOSE') . '</button>',
             ]
         );

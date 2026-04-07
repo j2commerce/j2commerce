@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\SetupGuide;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 interface SetupCheckInterface
 {

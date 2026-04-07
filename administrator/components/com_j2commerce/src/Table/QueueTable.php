@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -53,11 +54,11 @@ class QueueTable extends Table
             $this->item_type = 'order';
         }
 
-        if (is_array($this->queue_data) || is_object($this->queue_data)) {
+        if (\is_array($this->queue_data) || \is_object($this->queue_data)) {
             $this->queue_data = json_encode($this->queue_data);
         }
 
-        if (is_array($this->params) || is_object($this->params)) {
+        if (\is_array($this->params) || \is_object($this->params)) {
             $this->params = json_encode($this->params);
         }
 

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -109,12 +110,12 @@ class ProductimageTable extends Table
         $fragment = '';
         if (str_contains($value, '#')) {
             [$value, $fragment] = explode('#', $value, 2);
-            $fragment = '#' . $fragment;
+            $fragment           = '#' . $fragment;
         }
 
         // Remove all occurrences of the base URL prefix
         while (str_starts_with($value, $root)) {
-            $value = substr($value, strlen($root));
+            $value = substr($value, \strlen($root));
         }
 
         return $value . $fragment;

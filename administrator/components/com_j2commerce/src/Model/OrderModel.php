@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -13,18 +14,17 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 \defined('_JEXEC') or die;
 
-use Exception;
-use Joomla\CMS\Component\ComponentHelper;
-use Joomla\CMS\Factory;
-use Joomla\CMS\Form\Form;
-use Joomla\CMS\Language\Text;
-use Joomla\CMS\MVC\Model\AdminModel;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\DownloadHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\EmailHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderItemAttributeHelper;
+use Joomla\CMS\Component\ComponentHelper;
+use Joomla\CMS\Factory;
+use Joomla\CMS\Form\Form;
+use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\Mail\Mail;
+use Joomla\CMS\MVC\Model\AdminModel;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Table\Table;
 use Joomla\Database\ParameterType;
@@ -153,7 +153,7 @@ class OrderModel extends AdminModel
 
     protected function loadFormData(): mixed
     {
-        $app = Factory::getApplication();
+        $app  = Factory::getApplication();
         $data = $app->getUserState('com_j2commerce.edit.order.data', []);
 
         if (empty($data)) {
@@ -195,13 +195,13 @@ class OrderModel extends AdminModel
         }
 
         // Add order status info
-        $item->orderstatus_name = '';
+        $item->orderstatus_name     = '';
         $item->orderstatus_cssclass = '';
 
         if (!empty($item->order_state_id)) {
             $status = $this->getOrderStatus((int) $item->order_state_id);
             if ($status) {
-                $item->orderstatus_name = $status->orderstatus_name;
+                $item->orderstatus_name     = $status->orderstatus_name;
                 $item->orderstatus_cssclass = $status->orderstatus_cssclass;
             }
         }
@@ -210,14 +210,14 @@ class OrderModel extends AdminModel
         $item->invoice = $this->getInvoiceNumber($item);
 
         // Load related data
-        $orderId = $item->order_id;
-        $item->orderitems = $this->getOrderItems($orderId);
-        $item->orderinfo = $this->getOrderInfo($orderId);
-        $item->ordertaxes = $this->getOrderTaxes($orderId);
-        $item->ordershipping = $this->getOrderShipping($orderId);
+        $orderId              = $item->order_id;
+        $item->orderitems     = $this->getOrderItems($orderId);
+        $item->orderinfo      = $this->getOrderInfo($orderId);
+        $item->ordertaxes     = $this->getOrderTaxes($orderId);
+        $item->ordershipping  = $this->getOrderShipping($orderId);
         $item->orderdiscounts = $this->getOrderDiscounts($orderId);
-        $item->orderfees = $this->getOrderFees($orderId);
-        $item->orderhistory = $this->getOrderHistory($orderId);
+        $item->orderfees      = $this->getOrderFees($orderId);
+        $item->orderhistory   = $this->getOrderHistory($orderId);
 
         return $item;
     }
@@ -230,7 +230,7 @@ class OrderModel extends AdminModel
         static $statuses = [];
 
         if (!isset($statuses[$statusId])) {
-            $db = $this->getDatabase();
+            $db    = $this->getDatabase();
             $query = $db->getQuery(true)
                 ->select([
                     $db->quoteName('orderstatus_name'),
@@ -260,7 +260,7 @@ class OrderModel extends AdminModel
             return [];
         }
 
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select('*')
             ->from($db->quoteName('#__j2commerce_orderitems'))
@@ -296,7 +296,7 @@ class OrderModel extends AdminModel
             return null;
         }
 
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select('*')
             ->from($db->quoteName('#__j2commerce_orderinfos'))
@@ -315,7 +315,7 @@ class OrderModel extends AdminModel
             if (!empty($info->$field)) {
                 try {
                     $info->{$field . '_parsed'} = new Registry(stripslashes($info->$field));
-                } catch (Exception $e) {
+                } catch (\Exception $e) {
                     $info->{$field . '_parsed'} = new Registry();
                 }
             }
@@ -337,7 +337,7 @@ class OrderModel extends AdminModel
             return [];
         }
 
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select('*')
             ->from($db->quoteName('#__j2commerce_ordertaxes'))
@@ -363,7 +363,7 @@ class OrderModel extends AdminModel
             return null;
         }
 
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select('*')
             ->from($db->quoteName('#__j2commerce_ordershippings'))
@@ -389,7 +389,7 @@ class OrderModel extends AdminModel
             return [];
         }
 
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select('*')
             ->from($db->quoteName('#__j2commerce_orderdiscounts'))
@@ -413,7 +413,7 @@ class OrderModel extends AdminModel
             return [];
         }
 
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select('*')
             ->from($db->quoteName('#__j2commerce_orderfees'))
@@ -439,7 +439,7 @@ class OrderModel extends AdminModel
             return [];
         }
 
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select([
                 $db->quoteName('oh') . '.*',
@@ -527,7 +527,7 @@ class OrderModel extends AdminModel
         $params = ComponentHelper::getParams('com_j2commerce');
         $prefix = $params->get('invoice_prefix', 'INV-');
 
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select('MAX(' . $db->quoteName('invoice_number') . ')')
             ->from($db->quoteName('#__j2commerce_orders'))
@@ -555,9 +555,9 @@ class OrderModel extends AdminModel
      */
     public function updateOrderStatus(int $orderId, int $newStatusId, bool $notify = false, string $comment = ''): bool
     {
-        $db = $this->getDatabase();
-        $now = Factory::getDate()->toSql();
-        $user = Factory::getApplication()->getIdentity();
+        $db     = $this->getDatabase();
+        $now    = Factory::getDate()->toSql();
+        $user   = Factory::getApplication()->getIdentity();
         $userId = $user ? $user->id : 0;
 
         // Get order's order_id (varchar)
@@ -617,8 +617,8 @@ class OrderModel extends AdminModel
         $historyComment = $comment;
 
         if (empty($historyComment)) {
-            $oldStatus = $this->getOrderStatus($oldStatusId);
-            $oldName = Text::_($oldStatus->orderstatus_name ?? '') ?: '#' . $oldStatusId;
+            $oldStatus      = $this->getOrderStatus($oldStatusId);
+            $oldName        = Text::_($oldStatus->orderstatus_name ?? '') ?: '#' . $oldStatusId;
             $historyComment = Text::sprintf('COM_J2COMMERCE_ORDER_HISTORY_STATUS_CHANGED', $oldName, Text::_($status->orderstatus_name));
         }
 
@@ -659,11 +659,11 @@ class OrderModel extends AdminModel
      */
     public function addOrderHistory(string $orderId, int $statusId, bool $notify = false, string $comment = ''): bool
     {
-        $db = $this->getDatabase();
-        $now = Factory::getDate()->toSql();
-        $user = Factory::getApplication()->getIdentity();
-        $userId = $user ? $user->id : 0;
-        $notifyInt = $notify ? 1 : 0;
+        $db          = $this->getDatabase();
+        $now         = Factory::getDate()->toSql();
+        $user        = Factory::getApplication()->getIdentity();
+        $userId      = $user ? $user->id : 0;
+        $notifyInt   = $notify ? 1 : 0;
         $emptyParams = '{}';
 
         $query = $db->getQuery(true)
@@ -694,12 +694,12 @@ class OrderModel extends AdminModel
     /** Insert an internal admin note into order history (never notifies customer). */
     public function addAdminNote(string $orderId, int $statusId, string $comment, string $type = 'admin_note'): bool
     {
-        $db = $this->getDatabase();
-        $now = Factory::getDate()->toSql();
-        $user = Factory::getApplication()->getIdentity();
-        $userId = $user ? $user->id : 0;
+        $db        = $this->getDatabase();
+        $now       = Factory::getDate()->toSql();
+        $user      = Factory::getApplication()->getIdentity();
+        $userId    = $user ? $user->id : 0;
         $notifyInt = 0;
-        $params = json_encode(['type' => $type]);
+        $params    = json_encode(['type' => $type]);
 
         $query = $db->getQuery(true)
             ->insert($db->quoteName('#__j2commerce_orderhistories'))
@@ -755,7 +755,7 @@ class OrderModel extends AdminModel
      */
     public function hasStatus(int $orderId, int|array $statusIds): bool
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select($db->quoteName('order_state_id'))
             ->from($db->quoteName('#__j2commerce_orders'))
@@ -765,8 +765,8 @@ class OrderModel extends AdminModel
         $db->setQuery($query);
         $currentStatus = (int) $db->loadResult();
 
-        if (is_array($statusIds)) {
-            return in_array($currentStatus, $statusIds);
+        if (\is_array($statusIds)) {
+            return \in_array($currentStatus, $statusIds);
         }
 
         return $currentStatus === $statusIds;
@@ -785,7 +785,7 @@ class OrderModel extends AdminModel
             return 0;
         }
 
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select('SUM(CAST(' . $db->quoteName('orderitem_quantity') . ' AS UNSIGNED))')
             ->from($db->quoteName('#__j2commerce_orderitems'))
@@ -806,7 +806,7 @@ class OrderModel extends AdminModel
      */
     public function isShippable(int $orderId): bool
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select($db->quoteName('is_shippable'))
             ->from($db->quoteName('#__j2commerce_orders'))
@@ -831,7 +831,7 @@ class OrderModel extends AdminModel
             return null;
         }
 
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select($db->quoteName('j2commerce_order_id'))
             ->from($db->quoteName('#__j2commerce_orders'))
@@ -862,7 +862,7 @@ class OrderModel extends AdminModel
             return [];
         }
 
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select([
                 $db->quoteName('a') . '.*',
@@ -897,7 +897,7 @@ class OrderModel extends AdminModel
             return null;
         }
 
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select('MIN(' . $db->quoteName('created_on') . ')')
             ->from($db->quoteName('#__j2commerce_orders'))
@@ -916,9 +916,9 @@ class OrderModel extends AdminModel
             return 0;
         }
 
-        $db = $this->getDatabase();
+        $db              = $this->getDatabase();
         $excludeStatuses = [5, 6];
-        $query = $db->getQuery(true)
+        $query           = $db->getQuery(true)
             ->select('COUNT(*)')
             ->from($db->quoteName('#__j2commerce_orders'))
             ->where($db->quoteName('user_id') . ' = :userId')
@@ -933,9 +933,9 @@ class OrderModel extends AdminModel
 
     public function saveCustomerNote(int $orderId, string $note): bool
     {
-        $db = $this->getDatabase();
-        $now = Factory::getDate()->toSql();
-        $user = Factory::getApplication()->getIdentity();
+        $db     = $this->getDatabase();
+        $now    = Factory::getDate()->toSql();
+        $user   = Factory::getApplication()->getIdentity();
         $userId = $user ? $user->id : 0;
 
         $query = $db->getQuery(true)
@@ -956,7 +956,7 @@ class OrderModel extends AdminModel
 
     public function saveTrackingNumber(int $orderId, string $trackingId): bool
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select($db->quoteName('order_id'))
             ->from($db->quoteName('#__j2commerce_orders'))
@@ -991,7 +991,7 @@ class OrderModel extends AdminModel
 
         if (empty($table->j2commerce_order_id)) {
             // New order
-            $table->created_on = $now;
+            $table->created_on  = $now;
             $table->modified_on = $now;
 
             // Generate order_id if not set
@@ -1031,7 +1031,7 @@ class OrderModel extends AdminModel
         }
 
         // Load full order record by order_id (varchar)
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select('*')
             ->from($db->quoteName('#__j2commerce_orders'))
@@ -1064,9 +1064,9 @@ class OrderModel extends AdminModel
                     $app->getDispatcher()->dispatch(
                         'onJ2CommerceBeforeOrderNotification',
                         new \Joomla\Event\Event('onJ2CommerceBeforeOrderNotification', [
-                            'order' => $order,
+                            'order'  => $order,
                             'mailer' => $template->mailer,
-                            'type' => 'customer',
+                            'type'   => 'customer',
                         ])
                     );
 
@@ -1083,7 +1083,7 @@ class OrderModel extends AdminModel
                         $result['sent']++;
                     }
                 } catch (\Throwable $e) {
-                    $errorMsg = Text::sprintf('COM_J2COMMERCE_EMAIL_SEND_FAILED', $e->getMessage());
+                    $errorMsg           = Text::sprintf('COM_J2COMMERCE_EMAIL_SEND_FAILED', $e->getMessage());
                     $result['errors'][] = $errorMsg;
                     $this->addOrderHistory($orderId, (int) $order->order_state_id, false, $errorMsg);
                     $emailHelper->logEmailSend($orderId, 'customer', $template->mailer->Subject ?? '', [], false, $e->getMessage());
@@ -1105,7 +1105,7 @@ class OrderModel extends AdminModel
                     $app->getDispatcher()->dispatch(
                         'onJ2CommerceBeforeOrderNotificationAdmin',
                         new \Joomla\Event\Event('onJ2CommerceBeforeOrderNotificationAdmin', [
-                            'order' => $order,
+                            'order'  => $order,
                             'mailer' => $template->mailer,
                         ])
                     );
@@ -1123,7 +1123,7 @@ class OrderModel extends AdminModel
                         $result['sent']++;
                     }
                 } catch (\Throwable $e) {
-                    $errorMsg = Text::sprintf('COM_J2COMMERCE_EMAIL_SEND_FAILED', $e->getMessage());
+                    $errorMsg           = Text::sprintf('COM_J2COMMERCE_EMAIL_SEND_FAILED', $e->getMessage());
                     $result['errors'][] = $errorMsg;
                     $emailHelper->logEmailSend($orderId, 'admin', $template->mailer->Subject ?? '', [], false, $e->getMessage());
                     Log::add('Admin order email send failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');

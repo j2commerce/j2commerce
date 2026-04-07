@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  plg_j2commerce_payment_paypal
@@ -23,14 +24,15 @@ final class PayPalWebhooks
         private PayPalClient $client,
         private string $webhookId,
         private DatabaseInterface $db
-    ) {}
+    ) {
+    }
 
     public function verifySignature(string $rawBody): bool
     {
         $headers = [];
         foreach ($_SERVER as $key => $value) {
             if (str_starts_with($key, 'HTTP_PAYPAL_')) {
-                $headerName = str_replace('_', '-', substr($key, 5));
+                $headerName           = str_replace('_', '-', substr($key, 5));
                 $headers[$headerName] = $value;
             }
         }
@@ -74,7 +76,7 @@ final class PayPalWebhooks
                 'PAYMENT.CAPTURE.REVERSED'  => $this->handleCaptureReversed($event, $params),
                 'CUSTOMER.DISPUTE.CREATED'  => $this->handleDisputeCreated($event, $params),
                 'CUSTOMER.DISPUTE.RESOLVED' => $this->handleDisputeResolved($event, $params),
-                default => ['status' => 200, 'message' => 'Event type not handled'],
+                default                     => ['status' => 200, 'message' => 'Event type not handled'],
             };
 
             return $result;
@@ -103,8 +105,8 @@ final class PayPalWebhooks
      */
     private function handleCaptureCompleted(array $event, Registry $params): array
     {
-        $resource = $event['resource'] ?? [];
-        $customId = $resource['custom_id'] ?? '';
+        $resource  = $event['resource'] ?? [];
+        $customId  = $resource['custom_id'] ?? '';
         $captureId = $resource['id'] ?? '';
 
         if (!$customId) {
@@ -124,12 +126,12 @@ final class PayPalWebhooks
             Text::sprintf('COM_J2COMMERCE_PAYPAL_PAYMENT_COMPLETED', $captureId)
         );
 
-        $order->transaction_id = $captureId;
-        $order->transaction_status = 'COMPLETED';
-        $transactionDetails = json_decode($order->transaction_details ?? '{}', true);
-        $transactionDetails['webhook_event_id'] = $event['id'] ?? '';
+        $order->transaction_id                      = $captureId;
+        $order->transaction_status                  = 'COMPLETED';
+        $transactionDetails                         = json_decode($order->transaction_details ?? '{}', true);
+        $transactionDetails['webhook_event_id']     = $event['id'] ?? '';
         $transactionDetails['capture_completed_at'] = date('Y-m-d H:i:s');
-        $order->transaction_details = json_encode($transactionDetails);
+        $order->transaction_details                 = json_encode($transactionDetails);
         $order->store();
 
         return ['status' => 200, 'message' => 'Capture completed'];
@@ -257,7 +259,7 @@ final class PayPalWebhooks
      */
     private function handleDisputeCreated(array $event, Registry $params): array
     {
-        $resource = $event['resource'] ?? [];
+        $resource  = $event['resource'] ?? [];
         $disputeId = $resource['dispute_id'] ?? '';
 
         Factory::getApplication()->getLogger()->warning(
@@ -274,7 +276,7 @@ final class PayPalWebhooks
      */
     private function handleDisputeResolved(array $event, Registry $params): array
     {
-        $resource = $event['resource'] ?? [];
+        $resource  = $event['resource'] ?? [];
         $disputeId = $resource['dispute_id'] ?? '';
 
         Factory::getApplication()->getLogger()->info(

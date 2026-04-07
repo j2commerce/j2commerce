@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  plg_j2commerce_payment_paypal
@@ -13,7 +14,9 @@ namespace J2Commerce\Plugin\J2Commerce\PaymentPaypal\Service;
 
 final class PayPalOrders
 {
-    public function __construct(private PayPalClient $client) {}
+    public function __construct(private PayPalClient $client)
+    {
+    }
 
     /**
      * @param array<string, mixed> $orderData
@@ -22,13 +25,13 @@ final class PayPalOrders
     public function createOrder(array $orderData): array
     {
         $currencyCode = $orderData['currency_code'];
-        $total = (float) $orderData['total'];
-        $breakdown = $this->buildAmountBreakdown($orderData, $currencyCode);
+        $total        = (float) $orderData['total'];
+        $breakdown    = $this->buildAmountBreakdown($orderData, $currencyCode);
 
         $this->validateBreakdown($breakdown, $total);
 
         $body = [
-            'intent' => 'CAPTURE',
+            'intent'         => 'CAPTURE',
             'purchase_units' => [[
                 'reference_id' => $orderData['order_id'] ?? '',
                 'custom_id'    => (string) ($orderData['j2commerce_order_id'] ?? ''),
@@ -78,7 +81,7 @@ final class PayPalOrders
 
         foreach ($items as $item) {
             $name = $item['name'] ?? 'Item';
-            if (strlen($name) > 127) {
+            if (\strlen($name) > 127) {
                 $name = substr($name, 0, 124) . '...';
             }
 
@@ -125,12 +128,12 @@ final class PayPalOrders
     private function validateBreakdown(array $breakdown, float $total): void
     {
         $itemTotal = (float) ($breakdown['item_total']['value'] ?? 0);
-        $shipping = (float) ($breakdown['shipping']['value'] ?? 0);
-        $tax = (float) ($breakdown['tax_total']['value'] ?? 0);
-        $discount = (float) ($breakdown['discount']['value'] ?? 0);
+        $shipping  = (float) ($breakdown['shipping']['value'] ?? 0);
+        $tax       = (float) ($breakdown['tax_total']['value'] ?? 0);
+        $discount  = (float) ($breakdown['discount']['value'] ?? 0);
 
         $calculatedTotal = $itemTotal + $shipping + $tax - $discount;
-        $difference = abs($calculatedTotal - $total);
+        $difference      = abs($calculatedTotal - $total);
 
         if ($difference > 0.01) {
             throw new \RuntimeException(

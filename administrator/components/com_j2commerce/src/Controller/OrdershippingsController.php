@@ -1,4 +1,5 @@
 <?php
+
 /**
 * @package     J2Commerce
 * @subpackage  com_j2commerce
@@ -31,13 +32,13 @@ class OrdershippingsController extends AdminController
     */
     public function getModel($name = 'Ordershippings', $prefix = '', $config = ['ignore_request' => true])
     {
-    $modelName = '\\J2Commerce\\Component\\J2commerce\\Administrator\\Model\\' . $name . 'Model';
+        $modelName = '\\J2Commerce\\Component\\J2commerce\\Administrator\\Model\\' . $name . 'Model';
 
-    if (class_exists($modelName)) {
-        $model = new $modelName($config);
-        return $model;
-    }
+        if (class_exists($modelName)) {
+            $model = new $modelName($config);
+            return $model;
+        }
 
-    return parent::getModel($name, $prefix, $config);
+        return parent::getModel($name, $prefix, $config);
     }
 }

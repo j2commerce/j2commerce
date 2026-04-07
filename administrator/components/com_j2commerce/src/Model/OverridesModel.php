@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Builder\Service\BlockPreviewService;
 use J2Commerce\Component\J2commerce\Administrator\Service\OverrideRegistry;
@@ -27,18 +28,18 @@ class OverridesModel extends BaseDatabaseModel
 {
     public function getSubtemplates(): array
     {
-        $subtemplates = OverrideRegistry::getInstalledSubtemplates();
-        $subtemplates = array_filter($subtemplates, static fn(array $sub): bool => $sub['enabled']);
+        $subtemplates       = OverrideRegistry::getInstalledSubtemplates();
+        $subtemplates       = array_filter($subtemplates, static fn (array $sub): bool => $sub['enabled']);
         $layoutOverridePath = $this->getBaseTemplateOverridePath();
-        $tmplOverridePath = $this->getTmplBaseOverridePath();
+        $tmplOverridePath   = $this->getTmplBaseOverridePath();
 
         foreach ($subtemplates as &$subtemplate) {
             $layoutFiles = OverrideRegistry::getLayoutFiles($subtemplate['element'], $layoutOverridePath);
-            $tmplFiles = OverrideRegistry::getAllTmplFiles($subtemplate['element'], $layoutOverridePath, $tmplOverridePath);
+            $tmplFiles   = OverrideRegistry::getAllTmplFiles($subtemplate['element'], $layoutOverridePath, $tmplOverridePath);
 
-            $allFiles = array_merge($layoutFiles, $tmplFiles);
-            $subtemplate['groupedFiles'] = OverrideRegistry::groupFilesByType($allFiles);
-            $subtemplate['layoutCount'] = \count($allFiles);
+            $allFiles                           = array_merge($layoutFiles, $tmplFiles);
+            $subtemplate['groupedFiles']        = OverrideRegistry::groupFilesByType($allFiles);
+            $subtemplate['layoutCount']         = \count($allFiles);
             $subtemplate['activeOverrideCount'] = OverrideRegistry::countActiveOverrides($subtemplate['element'], $layoutOverridePath, $tmplOverridePath);
         }
 
@@ -54,7 +55,7 @@ class OverridesModel extends BaseDatabaseModel
 
     public function createOverride(string $pluginElement, string $encodedFile): bool
     {
-        $decoded = base64_decode($encodedFile);
+        $decoded                            = base64_decode($encodedFile);
         [$type, $tmplFolder, $relativePath] = $this->parseFileId($decoded);
 
         if (empty($relativePath) || empty($pluginElement)) {
@@ -70,7 +71,7 @@ class OverridesModel extends BaseDatabaseModel
         }
 
         $overridePath = Path::clean($this->getTemplateOverridePath($pluginElement, $type, $tmplFolder) . '/' . $relativePath);
-        $overrideDir = \dirname($overridePath);
+        $overrideDir  = \dirname($overridePath);
 
         if (!is_dir($overrideDir) && !Folder::create($overrideDir)) {
             $this->setError(Text::_('COM_J2COMMERCE_ERR_OVERRIDE_DIR_CREATE'));
@@ -92,7 +93,7 @@ class OverridesModel extends BaseDatabaseModel
 
     public function revertOverride(string $pluginElement, string $encodedFile): bool
     {
-        $decoded = base64_decode($encodedFile);
+        $decoded                            = base64_decode($encodedFile);
         [$type, $tmplFolder, $relativePath] = $this->parseFileId($decoded);
 
         if (empty($relativePath) || empty($pluginElement)) {
@@ -112,7 +113,7 @@ class OverridesModel extends BaseDatabaseModel
 
     public function getSource(string $pluginElement, string $encodedFile): ?\stdClass
     {
-        $decoded = base64_decode($encodedFile);
+        $decoded                            = base64_decode($encodedFile);
         [$type, $tmplFolder, $relativePath] = $this->parseFileId($decoded);
 
         if (empty($relativePath) || empty($pluginElement)) {
@@ -125,29 +126,29 @@ class OverridesModel extends BaseDatabaseModel
             return null;
         }
 
-        $layoutBase = Path::clean($this->getBaseTemplateOverridePath());
-        $tmplBase = Path::clean($this->getTmplBaseOverridePath());
+        $layoutBase    = Path::clean($this->getBaseTemplateOverridePath());
+        $tmplBase      = Path::clean($this->getTmplBaseOverridePath());
         $cleanOverride = Path::clean($overridePath);
 
         if (strpos($cleanOverride, $layoutBase) !== 0 && strpos($cleanOverride, $tmplBase) !== 0) {
             return null;
         }
 
-        $item = new \stdClass();
+        $item                = new \stdClass();
         $item->pluginElement = $pluginElement;
-        $item->fileId = $encodedFile;
-        $item->fileType = $type;
-        $item->tmplFolder = $tmplFolder;
-        $item->filename = $relativePath;
+        $item->fileId        = $encodedFile;
+        $item->fileType      = $type;
+        $item->tmplFolder    = $tmplFolder;
+        $item->filename      = $relativePath;
         $item->builderFileId = $relativePath;
-        $item->filePath = $overridePath;
-        $item->source = file_get_contents($overridePath);
-        $item->label = basename($relativePath);
+        $item->filePath      = $overridePath;
+        $item->source        = file_get_contents($overridePath);
+        $item->label         = basename($relativePath);
 
         $sourcePath = OverrideRegistry::getSourcePath($pluginElement, $relativePath, $type, $tmplFolder);
         if (is_file($sourcePath)) {
             $item->coreFile = $sourcePath;
-            $item->core = file_get_contents($sourcePath);
+            $item->core     = file_get_contents($sourcePath);
         }
 
         return $item;
@@ -155,7 +156,7 @@ class OverridesModel extends BaseDatabaseModel
 
     public function saveSource(string $pluginElement, string $encodedFile, string $source): bool
     {
-        $decoded = base64_decode($encodedFile);
+        $decoded                            = base64_decode($encodedFile);
         [$type, $tmplFolder, $relativePath] = $this->parseFileId($decoded);
 
         if (empty($relativePath) || empty($pluginElement)) {
@@ -170,8 +171,8 @@ class OverridesModel extends BaseDatabaseModel
             return false;
         }
 
-        $layoutBase = Path::clean($this->getBaseTemplateOverridePath());
-        $tmplBase = Path::clean($this->getTmplBaseOverridePath());
+        $layoutBase    = Path::clean($this->getBaseTemplateOverridePath());
+        $tmplBase      = Path::clean($this->getTmplBaseOverridePath());
         $cleanOverride = Path::clean($overridePath);
 
         if (strpos($cleanOverride, $layoutBase) !== 0 && strpos($cleanOverride, $tmplBase) !== 0) {
@@ -207,8 +208,8 @@ class OverridesModel extends BaseDatabaseModel
 
         // Try layout base first, then tmpl base
         $layoutBase = $this->getBaseTemplateOverridePath();
-        $tmplBase = $this->getTmplBaseOverridePath();
-        $fullPath = Path::clean($layoutBase . '/' . $relativePath);
+        $tmplBase   = $this->getTmplBaseOverridePath();
+        $fullPath   = Path::clean($layoutBase . '/' . $relativePath);
 
         if (!is_file($fullPath)) {
             $fullPath = Path::clean($tmplBase . '/' . $relativePath);
@@ -227,37 +228,37 @@ class OverridesModel extends BaseDatabaseModel
         $relativePath = str_replace('\\', '/', $relativePath);
 
         // Extract plugin element from path (first folder after base path)
-        $pathParts = explode('/', $relativePath);
+        $pathParts     = explode('/', $relativePath);
         $pluginElement = $pathParts[0] ?? '';
 
         // Detect file type from path structure
-        $isTmpl = isset($pathParts[1]) && $pathParts[1] === 'tmpl';
-        $fileType = $isTmpl ? 'tmpl' : 'layouts';
+        $isTmpl     = isset($pathParts[1]) && $pathParts[1] === 'tmpl';
+        $fileType   = $isTmpl ? 'tmpl' : 'layouts';
         $tmplFolder = ($isTmpl && isset($pathParts[2])) ? $pathParts[2] : '';
 
         // Strip plugin element prefix so filename matches builder select values
         // relativePath = "app_bootstrap5/list/category/item.php"
         // filename should be "list/category/item.php" (without plugin element prefix)
-        $filenameWithoutPlugin = implode('/', array_slice($pathParts, 1));
+        $filenameWithoutPlugin = implode('/', \array_slice($pathParts, 1));
 
-        $item = new \stdClass();
+        $item                = new \stdClass();
         $item->pluginElement = $pluginElement;
-        $item->fileId = $encodedFile;
-        $item->fileType = $fileType;
-        $item->tmplFolder = $tmplFolder;
-        $item->filename = $relativePath;
+        $item->fileId        = $encodedFile;
+        $item->fileType      = $fileType;
+        $item->tmplFolder    = $tmplFolder;
+        $item->filename      = $relativePath;
         $item->builderFileId = $filenameWithoutPlugin;
-        $item->filePath = $fullPath;
-        $item->source = file_get_contents($fullPath);
-        $item->label = basename($relativePath);
+        $item->filePath      = $fullPath;
+        $item->source        = file_get_contents($fullPath);
+        $item->label         = basename($relativePath);
 
         // Try to find the core source file
-        if (!empty($pluginElement) && count($pathParts) > 1) {
-            $subPath = implode('/', array_slice($pathParts, 1));
+        if (!empty($pluginElement) && \count($pathParts) > 1) {
+            $subPath    = implode('/', \array_slice($pathParts, 1));
             $sourcePath = OverrideRegistry::getSourcePath($pluginElement, $subPath);
             if (is_file($sourcePath)) {
                 $item->coreFile = $sourcePath;
-                $item->core = file_get_contents($sourcePath);
+                $item->core     = file_get_contents($sourcePath);
             }
         }
 
@@ -269,8 +270,8 @@ class OverridesModel extends BaseDatabaseModel
         $relativePath = base64_decode($encodedFile);
 
         $layoutBase = $this->getBaseTemplateOverridePath();
-        $tmplBase = $this->getTmplBaseOverridePath();
-        $fullPath = Path::clean($layoutBase . '/' . $relativePath);
+        $tmplBase   = $this->getTmplBaseOverridePath();
+        $fullPath   = Path::clean($layoutBase . '/' . $relativePath);
 
         if (!is_file($fullPath)) {
             $fullPath = Path::clean($tmplBase . '/' . $relativePath);
@@ -364,14 +365,14 @@ class OverridesModel extends BaseDatabaseModel
         $service = new BlockPreviewService($db);
 
         return array_map(
-            static fn(object $row): array => ['id' => (int) $row->id, 'title' => (string) $row->name],
+            static fn (object $row): array => ['id' => (int) $row->id, 'title' => (string) $row->name],
             $service->getPreviewProducts()
         );
     }
 
     public function getActiveTemplate(): string
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select($db->quoteName('template'))
             ->from($db->quoteName('#__template_styles'))
@@ -385,14 +386,14 @@ class OverridesModel extends BaseDatabaseModel
     private function buildDirectoryTree(string $dir, string $basePath, string $relativeDirPath = ''): array
     {
         $result = [];
-        $items = scandir($dir);
+        $items  = scandir($dir);
 
         foreach ($items as $item) {
             if ($item === '.' || $item === '..') {
                 continue;
             }
 
-            $fullPath = $dir . \DIRECTORY_SEPARATOR . $item;
+            $fullPath         = $dir . \DIRECTORY_SEPARATOR . $item;
             $itemRelativePath = $relativeDirPath !== '' ? $relativeDirPath . '/' . $item : $item;
 
             if (is_dir($fullPath)) {
@@ -407,7 +408,7 @@ class OverridesModel extends BaseDatabaseModel
                 }
             } elseif (pathinfo($item, PATHINFO_EXTENSION) === 'php') {
                 $relativePath = str_replace(Path::clean($basePath) . \DIRECTORY_SEPARATOR, '', Path::clean($fullPath));
-                $result[] = [
+                $result[]     = [
                     'type' => 'file',
                     'name' => $item,
                     'id'   => base64_encode($relativePath),

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  plg_j2commerce_app_diagnostics
@@ -6,8 +7,6 @@
  * @copyright   (C)2024-2026 J2Commerce, LLC <https://www.j2commerce.com>
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
-
-
 
 namespace J2Commerce\Plugin\J2Commerce\AppDiagnostics\Extension;
 
@@ -18,7 +17,6 @@ use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Version;
 use Joomla\Database\DatabaseAwareTrait;
-use Joomla\Database\ParameterType;
 use Joomla\Event\SubscriberInterface;
 
 // phpcs:disable PSR1.Files.SideEffects
@@ -55,30 +53,30 @@ final class AppDiagnostics extends CMSPlugin implements SubscriberInterface
     public function getInfo(): array
     {
         $version = new Version();
-        $db = $this->getDatabase();
-        $config = $this->getApplication()->getConfig();
+        $db      = $this->getDatabase();
+        $config  = $this->getApplication()->getConfig();
 
-        $server = $_SERVER['SERVER_SOFTWARE'] ?? getenv('SERVER_SOFTWARE') ?: '';
-        $caching = $config->get('caching');
+        $server      = $_SERVER['SERVER_SOFTWARE'] ?? getenv('SERVER_SOFTWARE') ?: '';
+        $caching     = $config->get('caching');
         $cachePlugin = PluginHelper::isEnabled('system', 'cache');
 
         return [
-            'php'              => php_uname(),
-            'dbversion'        => $db->getVersion(),
-            'dbcollation'      => $db->getCollation(),
-            'phpversion'       => phpversion(),
-            'server'           => $server,
-            'sapi_name'        => php_sapi_name(),
-            'version'          => $version->getLongVersion(),
-            'useragent'        => $_SERVER['HTTP_USER_AGENT'] ?? '',
-            'j2c_version'      => $this->getJ2CommerceVersion(),
-            'is_pro'           => J2CommerceHelper::isPro(),
-            'curl'             => \function_exists('curl_version') ? Text::_('JENABLED') : Text::_('JDISABLED'),
-            'json'             => \function_exists('json_encode') ? Text::_('JENABLED') : Text::_('JDISABLED'),
-            'error_reporting'  => $config->get('error_reporting'),
-            'caching'          => $caching ? Text::_('JENABLED') : Text::_('JDISABLED'),
+            'php'               => php_uname(),
+            'dbversion'         => $db->getVersion(),
+            'dbcollation'       => $db->getCollation(),
+            'phpversion'        => phpversion(),
+            'server'            => $server,
+            'sapi_name'         => php_sapi_name(),
+            'version'           => $version->getLongVersion(),
+            'useragent'         => $_SERVER['HTTP_USER_AGENT'] ?? '',
+            'j2c_version'       => $this->getJ2CommerceVersion(),
+            'is_pro'            => J2CommerceHelper::isPro(),
+            'curl'              => \function_exists('curl_version') ? Text::_('JENABLED') : Text::_('JDISABLED'),
+            'json'              => \function_exists('json_encode') ? Text::_('JENABLED') : Text::_('JDISABLED'),
+            'error_reporting'   => $config->get('error_reporting'),
+            'caching'           => $caching ? Text::_('JENABLED') : Text::_('JDISABLED'),
             'plg_cache_enabled' => $cachePlugin ? Text::_('JENABLED') : Text::_('JDISABLED'),
-            'memory_limit'     => ini_get('memory_limit'),
+            'memory_limit'      => \ini_get('memory_limit'),
         ];
     }
 
@@ -91,7 +89,7 @@ final class AppDiagnostics extends CMSPlugin implements SubscriberInterface
      */
     public function getJ2CommerceVersion(): string
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select($db->quoteName('manifest_cache'))
             ->from($db->quoteName('#__extensions'))
@@ -137,16 +135,16 @@ final class AppDiagnostics extends CMSPlugin implements SubscriberInterface
      */
     public function clearOutdatedCartData(): void
     {
-        $app = $this->getApplication();
+        $app       = $this->getApplication();
         $clearTime = $app->getInput()->getInt('clear_time', 0);
 
         if ($clearTime <= 0) {
-            $j2params = J2CommerceHelper::config();
-            $daysOld = $j2params->get('clear_outdated_cart_data_term', 90);
+            $j2params  = J2CommerceHelper::config();
+            $daysOld   = $j2params->get('clear_outdated_cart_data_term', 90);
             $clearTime = $daysOld * 1440; // Convert to minutes
         }
 
-        $tz = $app->get('offset');
+        $tz         = $app->get('offset');
         $cutoffDate = Factory::getDate('now -' . $clearTime . ' minutes', $tz)->toSql(true);
 
         $db = $this->getDatabase();

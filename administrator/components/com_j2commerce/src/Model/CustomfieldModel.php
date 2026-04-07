@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -113,7 +114,7 @@ class CustomfieldModel extends AdminModel
                 $key   = htmlspecialchars($area['key'], ENT_QUOTES, 'UTF-8');
                 $label = htmlspecialchars($area['label'], ENT_QUOTES, 'UTF-8');
                 $desc  = htmlspecialchars($area['description'] ?? '', ENT_QUOTES, 'UTF-8');
-                $xml  .= '<field name="plugin_area_' . $key . '" type="radio"'
+                $xml .= '<field name="plugin_area_' . $key . '" type="radio"'
                        . ' label="' . $label . '"'
                        . ' description="' . $desc . '"'
                        . ' layout="joomla.form.field.radio.switcher"'
@@ -293,7 +294,7 @@ class CustomfieldModel extends AdminModel
 
         if ($task === 'customfield.save2copy' && !empty($data['field_namekey'])) {
             $data['j2commerce_customfield_id'] = 0;
-            $data['field_namekey'] = $this->generateUniqueNamekey($data['field_namekey']);
+            $data['field_namekey']             = $this->generateUniqueNamekey($data['field_namekey']);
         }
 
         // Consolidate zone dropdown values into field_default
@@ -338,7 +339,7 @@ class CustomfieldModel extends AdminModel
                 if (\is_array($raw) && isset($raw[0]) && \is_array($raw[0])) {
                     $raw = $raw[0];
                 }
-                $phoneCountries = \is_array($raw) ? array_values($raw) : [];
+                $phoneCountries                      = \is_array($raw) ? array_values($raw) : [];
                 $fieldOptionsData['phone_countries'] = $phoneCountries;
             } else {
                 unset($fieldOptionsData['phone_countries']);
@@ -346,10 +347,10 @@ class CustomfieldModel extends AdminModel
         }
 
         if ($data['field_type'] === 'multiuploader') {
-            $fieldOptionsData['upload_max_files'] = (int) ($data['upload_max_files'] ?? 5);
+            $fieldOptionsData['upload_max_files']     = (int) ($data['upload_max_files'] ?? 5);
             $fieldOptionsData['upload_max_file_size'] = (float) ($data['upload_max_file_size'] ?? 10);
             $fieldOptionsData['upload_allowed_types'] = trim($data['upload_allowed_types'] ?? '');
-            $fieldOptionsData['upload_directory'] = trim($data['upload_directory'] ?? 'images/checkout-uploads');
+            $fieldOptionsData['upload_directory']     = trim($data['upload_directory'] ?? 'images/checkout-uploads');
         }
 
         if (!empty($fieldOptionsData)) {
@@ -358,7 +359,7 @@ class CustomfieldModel extends AdminModel
 
         // Remove virtual fields before save
         unset($data['field_zonetype'], $data['phone_all_countries'], $data['phone_country_mode'], $data['phone_countries'],
-              $data['upload_max_files'], $data['upload_max_file_size'], $data['upload_allowed_types'], $data['upload_directory']);
+            $data['upload_max_files'], $data['upload_max_file_size'], $data['upload_allowed_types'], $data['upload_directory']);
 
         // Encode field_value subform data to JSON for dropdown/radio/checkbox options
         if (\in_array($data['field_type'], ['singledropdown', 'radio', 'checkbox'], true)) {
@@ -471,7 +472,7 @@ class CustomfieldModel extends AdminModel
             'unlock', 'unsigned', 'update', 'usage', 'use', 'using', 'utc_date',
             'utc_time', 'utc_timestamp', 'values', 'varbinary', 'varchar', 'varcharacter',
             'varying', 'virtual', 'when', 'where', 'while', 'window', 'with', 'write',
-            'xor', 'year_month', 'zerofill'
+            'xor', 'year_month', 'zerofill',
         ];
 
         if (\in_array(strtolower($fieldNamekey), $reservedWords, true)) {
@@ -507,9 +508,9 @@ class CustomfieldModel extends AdminModel
 
     protected function generateUniqueNamekey(string $baseKey): string
     {
-        $db = $this->getDatabase();
+        $db        = $this->getDatabase();
         $candidate = $baseKey . '_copy';
-        $i = 1;
+        $i         = 1;
 
         while (true) {
             $query = $db->getQuery(true)

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  Plugin.J2Commerce.ShippingStandard
@@ -85,10 +86,10 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            'onJ2CommerceGetShippingRates'       => 'onGetShippingRates',
-            'onJ2CommerceShippingPluginView'      => 'onShippingPluginView',
-            'onJ2CommerceShippingPluginTask'      => 'onShippingPluginTask',
-            'onJ2CommerceShippingPluginAjax'      => 'onShippingPluginAjax',
+            'onJ2CommerceGetShippingRates'   => 'onGetShippingRates',
+            'onJ2CommerceShippingPluginView' => 'onShippingPluginView',
+            'onJ2CommerceShippingPluginTask' => 'onShippingPluginTask',
+            'onJ2CommerceShippingPluginAjax' => 'onShippingPluginAjax',
         ];
     }
 
@@ -132,9 +133,9 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
         $result = $event->getArgument('result', []);
 
         foreach ($methods as $method) {
-            $methodId = (int) $method->j2commerce_shippingmethod_id;
+            $methodId   = (int) $method->j2commerce_shippingmethod_id;
             $methodType = (int) $method->shipping_method_type;
-            $params = new Registry($method->params ?? '');
+            $params     = new Registry($method->params ?? '');
 
             // Calculate total for this method
             $rateData = $this->getTotal($methodId, $methodType, $geozones, $order, $method);
@@ -156,17 +157,17 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
 
             $total = $rateData->price + $rateData->handling + $taxAmount;
 
-            $selectText = $params->get('shipping_select_text', '');
+            $selectText  = $params->get('shipping_select_text', '');
             $displayName = !empty($selectText) ? $selectText : $method->shipping_method_name;
 
             $result[] = [
-                'element'  => $this->_name,
-                'name'     => $displayName,
-                'code'     => (string) $methodId,
-                'price'    => $rateData->price + $rateData->handling,
-                'tax'      => $taxAmount,
-                'extra'    => 0,
-                'total'    => $total,
+                'element' => $this->_name,
+                'name'    => $displayName,
+                'code'    => (string) $methodId,
+                'price'   => $rateData->price + $rateData->handling,
+                'tax'     => $taxAmount,
+                'extra'   => 0,
+                'total'   => $total,
             ];
         }
 
@@ -182,8 +183,8 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
      */
     private function loadEnabledMethods(float $subtotal): array
     {
-        $db    = $this->getDatabase();
-        $query = $db->getQuery(true);
+        $db        = $this->getDatabase();
+        $query     = $db->getQuery(true);
         $published = 1;
 
         $query->select('*')
@@ -222,13 +223,13 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
      */
     private function getShippingGeozones(): array
     {
-        $session = Factory::getApplication()->getSession();
+        $session   = Factory::getApplication()->getSession();
         $addressId = (int) $session->get('shipping_address_id', 0, 'j2commerce');
 
         // Also check for guest shipping data in session
         $guestShipping = $session->get('guest_shipping', [], 'j2commerce');
-        $countryId = 0;
-        $zoneId = 0;
+        $countryId     = 0;
+        $zoneId        = 0;
 
         if ($addressId > 0) {
             // Load address from DB
@@ -245,18 +246,18 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
 
             if ($address) {
                 $countryId = (int) ($address->country_id ?? 0);
-                $zoneId = (int) ($address->zone_id ?? 0);
+                $zoneId    = (int) ($address->zone_id ?? 0);
             }
         } elseif (!empty($guestShipping) && \is_array($guestShipping)) {
             // Guest checkout — address data stored in session
             $countryId = (int) ($guestShipping['country_id'] ?? 0);
-            $zoneId = (int) ($guestShipping['zone_id'] ?? 0);
+            $zoneId    = (int) ($guestShipping['zone_id'] ?? 0);
         }
 
         // Estimate flow — address stored as flat session keys by estimateAjax()
         if ($countryId === 0) {
             $countryId = (int) $session->get('shipping_country_id', 0, 'j2commerce');
-            $zoneId = (int) $session->get('shipping_zone_id', 0, 'j2commerce');
+            $zoneId    = (int) $session->get('shipping_zone_id', 0, 'j2commerce');
         }
 
         if ($countryId === 0) {
@@ -302,8 +303,8 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
      */
     private function getAllGeozoneIds(): array
     {
-        $db    = $this->getDatabase();
-        $query = $db->getQuery(true);
+        $db      = $this->getDatabase();
+        $query   = $db->getQuery(true);
         $enabled = 1;
 
         $query->select($db->quoteName('j2commerce_geozone_id'))
@@ -445,7 +446,7 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
         object $order,
         object $method
     ): ?object {
-        $params = new Registry($method->params ?? '');
+        $params       = new Registry($method->params ?? '');
         $priceBasedOn = (int) $params->get('shipping_price_based_on', 0);
 
         // 0 = before tax, 1 = after tax, 2 = after discount
@@ -456,7 +457,7 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
                 continue;
             }
 
-            $qty = (int) ($item->product_qty ?? $item->orderitem_quantity ?? 1);
+            $qty          = (int) ($item->product_qty ?? $item->orderitem_quantity ?? 1);
             $itemSubtotal = (float) ($item->product_subtotal ?? 0);
 
             if ($priceBasedOn === 1) {
@@ -506,9 +507,9 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
      */
     private function calculatePerItemFlat(int $methodId, array $geozones, array $items): ?object
     {
-        $totalPrice = 0.0;
+        $totalPrice    = 0.0;
         $totalHandling = 0.0;
-        $hasRate = false;
+        $hasRate       = false;
 
         foreach ($items as $item) {
             if (!$this->isShippable($item)) {
@@ -548,16 +549,16 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
      */
     private function calculatePerItemWeight(int $methodId, array $geozones, array $items): ?object
     {
-        $totalPrice = 0.0;
+        $totalPrice    = 0.0;
         $totalHandling = 0.0;
-        $hasRate = false;
+        $hasRate       = false;
 
         foreach ($items as $item) {
             if (!$this->isShippable($item)) {
                 continue;
             }
 
-            $qty = (int) ($item->product_qty ?? $item->orderitem_quantity ?? 1);
+            $qty    = (int) ($item->product_qty ?? $item->orderitem_quantity ?? 1);
             $weight = (float) ($item->weight ?? $item->orderitem_weight ?? 0);
 
             foreach ($geozones as $geozoneId) {
@@ -605,7 +606,7 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
             } else {
                 // Fallback: calculate from unit weight * quantity
                 $weight = (float) ($item->weight ?? $item->orderitem_weight ?? 0);
-                $qty = (int) ($item->product_qty ?? $item->orderitem_quantity ?? 1);
+                $qty    = (int) ($item->product_qty ?? $item->orderitem_quantity ?? 1);
                 $totalWeight += $weight * $qty;
             }
         }
@@ -642,16 +643,16 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
      */
     private function calculatePerItemPercentage(int $methodId, array $geozones, array $items): ?object
     {
-        $totalPrice = 0.0;
+        $totalPrice    = 0.0;
         $totalHandling = 0.0;
-        $hasRate = false;
+        $hasRate       = false;
 
         foreach ($items as $item) {
             if (!$this->isShippable($item)) {
                 continue;
             }
 
-            $qty = (int) ($item->product_qty ?? $item->orderitem_quantity ?? 1);
+            $qty          = (int) ($item->product_qty ?? $item->orderitem_quantity ?? 1);
             $itemSubtotal = (float) ($item->product_subtotal ?? 0);
 
             // Use item subtotal as the range filter value for price-based percentage
@@ -776,7 +777,7 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
             $placeholders = [];
 
             foreach ($geozones as $idx => $gzId) {
-                $paramName = ':gzId' . $idx;
+                $paramName      = ':gzId' . $idx;
                 $placeholders[] = $paramName;
                 $query->bind($paramName, $geozones[$idx], ParameterType::INTEGER);
             }
@@ -816,7 +817,7 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
         }
 
         // Check nested cartitem
-        if (isset($item->cartitem) && isset($item->cartitem->shipping)) {
+        if (isset($item->cartitem, $item->cartitem->shipping)) {
             return (bool) $item->cartitem->shipping;
         }
 
@@ -985,7 +986,7 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
         $pagination = new Pagination($total, $limitstart, $limit);
 
         // Load filter form from plugin forms directory
-        $filterForm = null;
+        $filterForm     = null;
         $filterFormPath = JPATH_PLUGINS . '/j2commerce/shipping_standard/forms/filter_shippingmethods.xml';
 
         if (file_exists($filterFormPath)) {
@@ -1041,7 +1042,7 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
             'state'         => $state,
         ]);
 
-        $result = $event->getArgument('result', []);
+        $result   = $event->getArgument('result', []);
         $result[] = $html;
         $event->setArgument('result', $result);
     }
@@ -1053,7 +1054,9 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
     {
         $isNew = ($id === 0);
 
-        $event->setArgument('title', $isNew
+        $event->setArgument(
+            'title',
+            $isNew
             ? Text::_('PLG_J2COMMERCE_SHIPPING_STANDARD_NEW_METHOD')
             : Text::_('COM_J2COMMERCE_TOOLBAR_EDIT')
         );
@@ -1117,13 +1120,13 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
 
         // Render template
         $html = $this->renderTemplate('method', [
-            'item'      => $item,
-            'form'      => $form,
-            'geozones'  => $geozones,
-            'isNew'     => $isNew,
+            'item'     => $item,
+            'form'     => $form,
+            'geozones' => $geozones,
+            'isNew'    => $isNew,
         ]);
 
-        $result = $event->getArgument('result', []);
+        $result   = $event->getArgument('result', []);
         $result[] = $html;
         $event->setArgument('result', $result);
     }
@@ -1243,11 +1246,11 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
 
         match ($task) {
             'save', 'apply' => $this->handleSave($event, $task),
-            'delete'        => $this->handleDelete($event),
-            'publish'       => $this->handlePublish($event, 1),
-            'unpublish'     => $this->handlePublish($event, 0),
-            'cancel'        => $this->handleCancel($event),
-            default         => null,
+            'delete'    => $this->handleDelete($event),
+            'publish'   => $this->handlePublish($event, 1),
+            'unpublish' => $this->handlePublish($event, 0),
+            'cancel'    => $this->handleCancel($event),
+            default     => null,
         };
     }
 
@@ -1261,7 +1264,7 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
 
         // Extract params fields from jform data and encode as JSON
         $paramsFields = ['shipping_select_text', 'shipping_price_based_on'];
-        $params = [];
+        $params       = [];
 
         foreach ($paramsFields as $field) {
             if (isset($data[$field])) {

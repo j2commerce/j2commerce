@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  Plugin.J2Commerce.AppFlexivariable
@@ -9,7 +10,7 @@
 
 declare(strict_types=1);
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Plugin\J2Commerce\AppFlexivariable\Extension\AppFlexivariable;
 use Joomla\CMS\Extension\PluginInterface;
@@ -19,7 +20,7 @@ use Joomla\DI\Container;
 use Joomla\DI\ServiceProviderInterface;
 use Joomla\Event\DispatcherInterface;
 
-return new class implements ServiceProviderInterface {
+return new class () implements ServiceProviderInterface {
     public function register(Container $container): void
     {
         $container->set(

@@ -18,74 +18,74 @@ final class TokenRegistry
 {
     private static array $tokens = [
         'PRODUCT_NAME' => [
-            'label' => 'Product Name',
-            'php' => '<?php echo htmlspecialchars($product->product_name ?? \'\', ENT_QUOTES, \'UTF-8\'); ?>',
+            'label'         => 'Product Name',
+            'php'           => '<?php echo htmlspecialchars($product->product_name ?? \'\', ENT_QUOTES, \'UTF-8\'); ?>',
             'preview_field' => 'product_name',
         ],
         'PRODUCT_SKU' => [
-            'label' => 'SKU',
-            'php' => '<?php echo htmlspecialchars($product->product_sku ?? \'\', ENT_QUOTES, \'UTF-8\'); ?>',
+            'label'         => 'SKU',
+            'php'           => '<?php echo htmlspecialchars($product->product_sku ?? \'\', ENT_QUOTES, \'UTF-8\'); ?>',
             'preview_field' => 'product_sku',
         ],
         'PRODUCT_LINK' => [
-            'label' => 'Product URL',
-            'php' => '<?php echo htmlspecialchars($productLink, ENT_QUOTES, \'UTF-8\'); ?>',
+            'label'         => 'Product URL',
+            'php'           => '<?php echo htmlspecialchars($productLink, ENT_QUOTES, \'UTF-8\'); ?>',
             'preview_field' => 'productLink',
         ],
         'PRODUCT_PRICE' => [
-            'label' => 'Price (formatted)',
-            'php' => '<?php echo J2Commerce\\Component\\J2commerce\\Site\\Helper\\CurrencyHelper::format($variant->price ?? 0); ?>',
+            'label'         => 'Price (formatted)',
+            'php'           => '<?php echo J2Commerce\\Component\\J2commerce\\Site\\Helper\\CurrencyHelper::format($variant->price ?? 0); ?>',
             'preview_field' => 'price',
         ],
         'PRODUCT_SPECIAL_PRICE' => [
-            'label' => 'Special Price (formatted)',
-            'php' => '<?php echo J2Commerce\\Component\\J2commerce\\Site\\Helper\\CurrencyHelper::format($variant->special_price ?? 0); ?>',
+            'label'         => 'Special Price (formatted)',
+            'php'           => '<?php echo J2Commerce\\Component\\J2commerce\\Site\\Helper\\CurrencyHelper::format($variant->special_price ?? 0); ?>',
             'preview_field' => 'special_price',
         ],
         'PRODUCT_IMAGE_URL' => [
-            'label' => 'Main Image URL',
-            'php' => '<?php echo htmlspecialchars(J2Commerce\\Component\\J2commerce\\Site\\Helper\\ImageHelper::getImageUrl($product->main_image ?? \'\'), ENT_QUOTES, \'UTF-8\'); ?>',
+            'label'         => 'Main Image URL',
+            'php'           => '<?php echo htmlspecialchars(J2Commerce\\Component\\J2commerce\\Site\\Helper\\ImageHelper::getImageUrl($product->main_image ?? \'\'), ENT_QUOTES, \'UTF-8\'); ?>',
             'preview_field' => 'main_image',
         ],
         'PRODUCT_IMAGE_ALT' => [
-            'label' => 'Main Image Alt Text',
-            'php' => '<?php echo htmlspecialchars($product->product_name ?? \'\', ENT_QUOTES, \'UTF-8\'); ?>',
+            'label'         => 'Main Image Alt Text',
+            'php'           => '<?php echo htmlspecialchars($product->product_name ?? \'\', ENT_QUOTES, \'UTF-8\'); ?>',
             'preview_field' => 'product_name',
         ],
         'STOCK_STATUS' => [
-            'label' => 'Stock Status Text',
-            'php' => '<?php echo htmlspecialchars($stockStatus ?? \'\', ENT_QUOTES, \'UTF-8\'); ?>',
+            'label'         => 'Stock Status Text',
+            'php'           => '<?php echo htmlspecialchars($stockStatus ?? \'\', ENT_QUOTES, \'UTF-8\'); ?>',
             'preview_field' => 'stockStatus',
         ],
         'STOCK_QUANTITY' => [
-            'label' => 'Stock Quantity',
-            'php' => '<?php echo (int) ($variant->quantity ?? 0); ?>',
+            'label'         => 'Stock Quantity',
+            'php'           => '<?php echo (int) ($variant->quantity ?? 0); ?>',
             'preview_field' => 'quantity',
         ],
         // Sub-layout specific tokens
         'PRODUCT_PRICE_FORMATTED' => [
-            'label' => 'Price (full formatted)',
-            'php' => '<?php echo $productHelper->displayPrice((float) ($pricing->price ?? 0), $product, $params); ?>',
+            'label'         => 'Price (full formatted)',
+            'php'           => '<?php echo $productHelper->displayPrice((float) ($pricing->price ?? 0), $product, $params); ?>',
             'preview_field' => 'price',
         ],
         'PRODUCT_BASE_PRICE' => [
-            'label' => 'Base Price (before discount)',
-            'php' => '<?php echo $productHelper->displayPrice((float) ($pricing->base_price ?? 0), $product, $params); ?>',
+            'label'         => 'Base Price (before discount)',
+            'php'           => '<?php echo $productHelper->displayPrice((float) ($pricing->base_price ?? 0), $product, $params); ?>',
             'preview_field' => 'base_price',
         ],
         'PRODUCT_TAX_TEXT' => [
-            'label' => 'Tax Info Text',
-            'php' => '<?php echo $productHelper->get_tax_text(); ?>',
+            'label'         => 'Tax Info Text',
+            'php'           => '<?php echo $productHelper->get_tax_text(); ?>',
             'preview_field' => 'tax_text',
         ],
         'CART_FORM_ACTION' => [
-            'label' => 'Cart Form Action URL',
-            'php' => '<?php echo htmlspecialchars($product->cart_form_action ?? \'\', ENT_QUOTES, \'UTF-8\'); ?>',
+            'label'         => 'Cart Form Action URL',
+            'php'           => '<?php echo htmlspecialchars($product->cart_form_action ?? \'\', ENT_QUOTES, \'UTF-8\'); ?>',
             'preview_field' => 'cart_form_action',
         ],
         'STOCK_BADGE_HTML' => [
-            'label' => 'Stock Status Badge (HTML)',
-            'php' => '<?php echo $stockBadgeHtml ?? \'\'; ?>',
+            'label'         => 'Stock Status Badge (HTML)',
+            'php'           => '<?php echo $stockBadgeHtml ?? \'\'; ?>',
             'preview_field' => 'stockStatus',
         ],
     ];
@@ -107,7 +107,7 @@ final class TokenRegistry
     public function getSubLayoutTokens(string $subLayoutId): array
     {
         $tokenNames = self::$subLayoutTokenMap[$subLayoutId] ?? array_keys(self::$tokens);
-        $result = [];
+        $result     = [];
 
         foreach ($tokenNames as $name) {
             if (isset(self::$tokens[$name])) {
@@ -144,7 +144,7 @@ final class TokenRegistry
             '/<j2c-token\s+data-j2c-token="([A-Z_]+)"[^>]*>.*?<\/j2c-token>/s',
             function (array $matches): string {
                 $tokenName = $matches[1];
-                $php = $this->getPhpForToken($tokenName);
+                $php       = $this->getPhpForToken($tokenName);
                 return $php ?? $matches[0]; // Keep original if unknown token
             },
             $html
@@ -159,7 +159,7 @@ final class TokenRegistry
             '/<j2c-token\s+data-token="([A-Z_]+)"[^>]*>.*?<\/j2c-token>/s',
             function (array $matches): string {
                 $tokenName = $matches[1];
-                $php = $this->getPhpForToken($tokenName);
+                $php       = $this->getPhpForToken($tokenName);
                 return $php ?? $matches[0];
             },
             $html

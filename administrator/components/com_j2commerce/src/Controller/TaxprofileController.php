@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -98,10 +99,10 @@ class TaxprofileController extends FormController
         // Check for request forgeries
         $this->checkToken();
 
-        $app   = $this->app;
-        $model = $this->getModel();
-        $table = $model->getTable();
-        $data  = $this->input->post->get('jform', [], 'array');
+        $app     = $this->app;
+        $model   = $this->getModel();
+        $table   = $model->getTable();
+        $data    = $this->input->post->get('jform', [], 'array');
         $context = "$this->option.edit.$this->context";
 
         // Capture taxrules from raw input (outside jform namespace)
@@ -273,7 +274,7 @@ class TaxprofileController extends FormController
     public function getTaxData(): void
     {
         $app = Factory::getApplication();
-        $db = Factory::getContainer()->get('DatabaseDriver');
+        $db  = Factory::getContainer()->get('DatabaseDriver');
 
         try {
             // Get enabled tax rates
@@ -298,7 +299,7 @@ class TaxprofileController extends FormController
             // Pass data directly - JsonResponse wraps it in {success: true, data: ...}
             echo new JsonResponse([
                 'taxrates' => $taxrates,
-                'geozones' => $geozones
+                'geozones' => $geozones,
             ]);
 
         } catch (\Exception $e) {
@@ -332,7 +333,7 @@ class TaxprofileController extends FormController
         $ruleId = $app->getInput()->getInt('rule_id', 0);
 
         if ($ruleId > 0) {
-            $db = Factory::getContainer()->get('DatabaseDriver');
+            $db    = Factory::getContainer()->get('DatabaseDriver');
             $query = $db->getQuery(true);
 
             $query->delete($db->quoteName('#__j2commerce_taxrules'))

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -177,7 +178,7 @@ class ViewHelper
     public static function resetPaths(): void
     {
         self::$templatePath = '';
-        self::$defaultPath = '';
+        self::$defaultPath  = '';
     }
 
     // =========================================================================
@@ -243,7 +244,7 @@ class ViewHelper
 
         // Build potential paths
         $templatePath = self::getTemplateOverridePath();
-        $defaultPath = self::getDefaultViewPath();
+        $defaultPath  = self::getDefaultViewPath();
 
         // Check template override path first
         if (!empty($templatePath)) {
@@ -309,7 +310,7 @@ class ViewHelper
         // Determine client_id (0 = site, 1 = admin)
         $clientId = ($client === 'admin') ? 1 : 0;
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select($db->quoteName('template'))
@@ -433,7 +434,7 @@ class ViewHelper
         string $client = 'site'
     ): void {
         $overridePath = self::buildTemplateOverridePath($component, $view, $template, $client);
-        $defaultPath = self::buildDefaultViewPath($component, $view, $client);
+        $defaultPath  = self::buildDefaultViewPath($component, $view, $client);
 
         if (!empty($overridePath)) {
             self::setTemplateOverridePath($overridePath);
@@ -519,12 +520,12 @@ class ViewHelper
 
         // Determine base paths
         if ($client === 'admin') {
-            $moduleBasePath = JPATH_ADMINISTRATOR . '/modules/' . $moduleName;
+            $moduleBasePath   = JPATH_ADMINISTRATOR . '/modules/' . $moduleName;
             $templateBasePath = !empty($template)
                 ? JPATH_ADMINISTRATOR . '/templates/' . $template . '/html/' . $moduleName
                 : '';
         } else {
-            $moduleBasePath = JPATH_SITE . '/modules/' . $moduleName;
+            $moduleBasePath   = JPATH_SITE . '/modules/' . $moduleName;
             $templateBasePath = !empty($template)
                 ? JPATH_SITE . '/templates/' . $template . '/html/' . $moduleName
                 : '';

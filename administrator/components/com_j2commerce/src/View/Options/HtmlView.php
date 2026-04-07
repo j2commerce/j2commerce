@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -9,20 +10,19 @@
 
 namespace J2Commerce\Component\J2commerce\Administrator\View\Options;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\MenuHelper;
 use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Helper\ContentHelper;
-use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\Toolbar;
 use Joomla\CMS\Toolbar\ToolbarHelper;
-use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 /**
  * Options View
@@ -95,19 +95,19 @@ class HtmlView extends BaseHtmlView
 
         $this->navbar = $this->getNavbar();
 
-        $model = $this->getModel();
-        $this->items = $model->getItems();
-        $this->pagination = $model->getPagination();
-        $this->state = $model->getState();
-        $this->filterForm = $model->getFilterForm();
+        $model               = $this->getModel();
+        $this->items         = $model->getItems();
+        $this->pagination    = $model->getPagination();
+        $this->state         = $model->getState();
+        $this->filterForm    = $model->getFilterForm();
         $this->activeFilters = $model->getActiveFilters();
 
-        if ((!is_array($this->items) || !\count($this->items)) && $this->isEmptyState = $model->getIsEmptyState()) {
+        if ((!\is_array($this->items) || !\count($this->items)) && $this->isEmptyState = $model->getIsEmptyState()) {
             $this->setLayout('emptystate');
         }
 
         // Check for errors.
-        if (is_array($errors = $model->getErrors()) && \count($errors)) {
+        if (\is_array($errors = $model->getErrors()) && \count($errors)) {
             throw new GenericDataException(implode("\n", $errors), 500);
         }
 
@@ -124,8 +124,8 @@ class HtmlView extends BaseHtmlView
     protected function getNavbar(): string
     {
         $displayData = [
-            'items' => MenuHelper::getMenuItems(),
-            'active' => MenuHelper::getActiveView()
+            'items'  => MenuHelper::getMenuItems(),
+            'active' => MenuHelper::getActiveView(),
         ];
 
         return LayoutHelper::render('navbar.default', $displayData, JPATH_COMPONENT_ADMINISTRATOR . '/layouts');

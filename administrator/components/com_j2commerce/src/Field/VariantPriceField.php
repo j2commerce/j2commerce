@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Field;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use Joomla\CMS\Form\FormField;
@@ -52,7 +53,7 @@ class VariantPriceField extends FormField
         $value    = number_format((float) ($this->value ?? 0), $decimals, '.', '');
 
         // Build attributes
-        $attributes = [];
+        $attributes   = [];
         $attributes[] = 'type="text"';
         $attributes[] = 'name="' . htmlspecialchars($this->name, ENT_COMPAT, 'UTF-8') . '"';
         $attributes[] = 'id="' . htmlspecialchars($this->id, ENT_COMPAT, 'UTF-8') . '"';

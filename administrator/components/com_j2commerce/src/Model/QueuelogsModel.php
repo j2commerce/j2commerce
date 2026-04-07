@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -14,7 +15,6 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\MVC\Model\ListModel;
-use Joomla\Database\ParameterType;
 use Joomla\Database\QueryInterface;
 
 class QueuelogsModel extends ListModel

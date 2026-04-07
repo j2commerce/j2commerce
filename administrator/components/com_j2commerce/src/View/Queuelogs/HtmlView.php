@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -33,7 +34,7 @@ class HtmlView extends BaseHtmlView
     protected Registry $state;
     public ?Form $filterForm;
     public array $activeFilters = [];
-    private bool $isEmptyState = false;
+    private bool $isEmptyState  = false;
 
     public function display($tpl = null): void
     {

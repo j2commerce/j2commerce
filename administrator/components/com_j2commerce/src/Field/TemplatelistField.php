@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Field;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Event\GenericEvent;
 use Joomla\CMS\Factory;
@@ -47,13 +48,13 @@ class TemplatelistField extends ListField
         // Normalize plugin results to associative arrays with context info
         $subtemplates = [];
         foreach ($pluginFolders as $entry) {
-            if (is_string($entry)) {
+            if (\is_string($entry)) {
                 // Backward compat: bare string = all contexts
                 $name = $entry;
                 if (!isset($subtemplates[$name])) {
                     $subtemplates[$name] = ['name' => $name, 'contexts' => []];
                 }
-            } elseif (is_array($entry) && isset($entry['name'])) {
+            } elseif (\is_array($entry) && isset($entry['name'])) {
                 $name = $entry['name'];
                 if (isset($subtemplates[$name])) {
                     $subtemplates[$name]['contexts'] = array_unique(array_merge(
@@ -89,7 +90,7 @@ class TemplatelistField extends ListField
         if ($viewContext !== '') {
             $subtemplates = array_filter(
                 $subtemplates,
-                static fn(array $entry): bool => empty($entry['contexts']) || in_array($viewContext, $entry['contexts'], true)
+                static fn (array $entry): bool => empty($entry['contexts']) || \in_array($viewContext, $entry['contexts'], true)
             );
         }
 
@@ -101,19 +102,19 @@ class TemplatelistField extends ListField
                 // Only show categories_* templates
                 $subtemplates = array_filter(
                     $subtemplates,
-                    static fn(array $entry): bool => str_starts_with($entry['name'], 'categories_')
+                    static fn (array $entry): bool => str_starts_with($entry['name'], 'categories_')
                 );
             } elseif ($viewContext === 'producttags') {
                 // Only show tag_* templates
                 $subtemplates = array_filter(
                     $subtemplates,
-                    static fn(array $entry): bool => str_starts_with($entry['name'], 'tag_')
+                    static fn (array $entry): bool => str_starts_with($entry['name'], 'tag_')
                 );
             } elseif ($viewContext === 'products') {
                 // Filter out categories_* and tag_* folders (not product list subtemplates)
                 $subtemplates = array_filter(
                     $subtemplates,
-                    static fn(array $entry): bool => !str_starts_with($entry['name'], 'categories_') && !str_starts_with($entry['name'], 'tag_')
+                    static fn (array $entry): bool => !str_starts_with($entry['name'], 'categories_') && !str_starts_with($entry['name'], 'tag_')
                 );
             }
         }
@@ -125,9 +126,9 @@ class TemplatelistField extends ListField
             $label = $name;
             if ($stripPrefix) {
                 if ($viewContext === 'categories' && str_starts_with($name, 'categories_')) {
-                    $label = substr($name, strlen('categories_'));
+                    $label = substr($name, \strlen('categories_'));
                 } elseif ($viewContext === 'producttags' && str_starts_with($name, 'tag_')) {
-                    $label = substr($name, strlen('tag_'));
+                    $label = substr($name, \strlen('tag_'));
                 }
             }
             $options[] = HTMLHelper::_('select.option', $name, $label);

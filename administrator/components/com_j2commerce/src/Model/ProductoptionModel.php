@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -142,14 +143,14 @@ class ProductoptionModel extends AdminModel
 
         if (!$pk) {
             // Return empty item for new records
-            $item = new \stdClass();
+            $item                              = new \stdClass();
             $item->j2commerce_productoption_id = 0;
-            $item->option_id = 0;
-            $item->parent_id = 0;
-            $item->product_id = 0;
-            $item->ordering = 0;
-            $item->required = 0;
-            $item->is_variant = 0;
+            $item->option_id                   = 0;
+            $item->parent_id                   = 0;
+            $item->product_id                  = 0;
+            $item->ordering                    = 0;
+            $item->required                    = 0;
+            $item->is_variant                  = 0;
             return $item;
         }
 
@@ -178,7 +179,7 @@ class ProductoptionModel extends AdminModel
             return $item;
         }
 
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select($db->quoteName([
                 'option_unique_name',
@@ -196,9 +197,9 @@ class ProductoptionModel extends AdminModel
             $optionDetails = $db->loadObject();
             if ($optionDetails) {
                 $item->option_unique_name = $optionDetails->option_unique_name;
-                $item->option_name = $optionDetails->option_name;
-                $item->type = $optionDetails->type;
-                $item->option_params = $optionDetails->option_params;
+                $item->option_name        = $optionDetails->option_name;
+                $item->type               = $optionDetails->type;
+                $item->option_params      = $optionDetails->option_params;
             }
         } catch (\Exception $e) {
             // Silently fail - option details are supplementary

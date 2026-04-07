@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
+use J2Commerce\Plugin\Actionlog\J2commerce\Extension\J2commerce;
 use Joomla\CMS\Extension\PluginInterface;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Plugin\PluginHelper;
@@ -11,7 +12,6 @@ use Joomla\CMS\User\UserFactoryInterface;
 use Joomla\Database\DatabaseInterface;
 use Joomla\DI\Container;
 use Joomla\DI\ServiceProviderInterface;
-use J2Commerce\Plugin\Actionlog\J2commerce\Extension\J2commerce;
 
 return new class () implements ServiceProviderInterface {
     public function register(Container $container): void

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -66,7 +67,7 @@ class CartGuidedbuilder
 
             foreach ($steps as $step) {
                 if ((int) $step->required && empty($selections[$step->step_number])) {
-                    $label = $step->step_label ?: ($step->option_name ?? 'Step ' . $step->step_number);
+                    $label                                         = $step->step_label ?: ($step->option_name ?? 'Step ' . $step->step_number);
                     $errors['error']['step_' . $step->step_number] = Text::sprintf(
                         'PLG_J2COMMERCE_APP_GUIDEDBUILDER_ERR_STEP_REQUIRED',
                         $label
@@ -93,7 +94,7 @@ class CartGuidedbuilder
                 }
 
                 // Load step labels from DB for cart display
-                $stepData = $this->getStepsForProduct((int) $product->j2commerce_product_id);
+                $stepData   = $this->getStepsForProduct((int) $product->j2commerce_product_id);
                 $stepLabels = [];
                 foreach ($stepData as $s) {
                     $stepLabels[(int) $s->step_number] = $s->step_label ?: ($s->option_name ?? 'Step ' . $s->step_number);
@@ -294,7 +295,7 @@ class CartGuidedbuilder
             }
 
             if (!ProductHelper::checkStockStatus($product->variants, (int) ($cartTotalQty + $quantity))) {
-                $variantQty = (int) ($product->variants->quantity ?? 0);
+                $variantQty               = (int) ($product->variants->quantity ?? 0);
                 $errors['error']['stock'] = $variantQty > 0
                     ? Text::sprintf('COM_J2COMMERCE_LOW_STOCK_WITH_QUANTITY', $variantQty)
                     : Text::_('COM_J2COMMERCE_STOCK_OUT_OF_STOCK');
@@ -397,8 +398,8 @@ class CartGuidedbuilder
 
             // Accumulate option price modifiers
             $optionPrice += match ($pricePrefix) {
-                '+' => $price,
-                '-' => -$price,
+                '+'     => $price,
+                '-'     => -$price,
                 default => 0,
             };
         }

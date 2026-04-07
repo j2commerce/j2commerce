@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -73,10 +74,10 @@ class CartDownloadable
      */
     public function onBeforeAddCartItem(CartModel &$model, object $product, \stdClass &$json): void
     {
-        $app = Factory::getApplication();
+        $app           = Factory::getApplication();
         $productHelper = new ProductHelper();
-        $values = $app->getInput()->getArray();
-        $errors = [];
+        $values        = $app->getInput()->getArray();
+        $errors        = [];
 
         // Get and validate quantity
         $quantity = $app->getInput()->getFloat('product_qty', 1);
@@ -95,7 +96,7 @@ class CartDownloadable
 
                 // Check if required option is empty
                 if (!empty($productOption->required) && empty($options[$optionId])) {
-                    $optionName = Text::_($productOption->option_name ?? '');
+                    $optionName                           = Text::_($productOption->option_name ?? '');
                     $errors['error']['option'][$optionId] = Text::sprintf(
                         'COM_J2COMMERCE_ADDTOCART_PRODUCT_OPTION_REQUIRED',
                         $optionName
@@ -149,18 +150,18 @@ class CartDownloadable
             $utilityHelper = J2CommerceHelper::utilities();
 
             // Create cart item object
-            $item = new CMSObject();
-            $item->user_id = Factory::getApplication()->getIdentity()->id;
-            $item->product_id = (int) $product->j2commerce_product_id;
-            $item->variant_id = (int) ($product->variants->j2commerce_variant_id ?? 0);
-            $item->product_qty = $utilityHelper->stock_qty($quantity);
+            $item                  = new CMSObject();
+            $item->user_id         = Factory::getApplication()->getIdentity()->id;
+            $item->product_id      = (int) $product->j2commerce_product_id;
+            $item->variant_id      = (int) ($product->variants->j2commerce_variant_id ?? 0);
+            $item->product_qty     = $utilityHelper->stock_qty($quantity);
             $item->product_options = base64_encode(serialize($options));
-            $item->product_type = $product->product_type ?? 'downloadable';
-            $item->vendor_id = isset($product->vendor_id) ? (int) $product->vendor_id : 0;
+            $item->product_type    = $product->product_type ?? 'downloadable';
+            $item->vendor_id       = isset($product->vendor_id) ? (int) $product->vendor_id : 0;
 
             // Trigger plugin event for custom item modifications
             $pluginHelper = J2CommerceHelper::plugin();
-            $results = $pluginHelper->event('AfterCreateItemForAddToCart', [$item, $values]);
+            $results      = $pluginHelper->event('AfterCreateItemForAddToCart', [$item, $values]);
 
             foreach ($results as $result) {
                 if (\is_array($result)) {
@@ -175,7 +176,7 @@ class CartDownloadable
                 $item,
                 $values,
                 $product,
-                $product->product_options ?? []
+                $product->product_options ?? [],
             ]);
 
             foreach ($validationResults as $result) {
@@ -239,9 +240,9 @@ class CartDownloadable
         }
 
         // Transfer product-level properties needed by discount/app plugins
-        $item->product_source = $product->product_source ?? '';
+        $item->product_source    = $product->product_source ?? '';
         $item->product_source_id = (int) ($product->product_source_id ?? 0);
-        $item->product_params = $product->params instanceof \Joomla\Registry\Registry
+        $item->product_params    = $product->params instanceof \Joomla\Registry\Registry
             ? $product->params->toString()
             : ($product->params ?? '{}');
 
@@ -252,10 +253,10 @@ class CartDownloadable
         );
 
         // Set item properties (preserve existing values if product doesn't have them)
-        $item->product_name = $product->product_name ?? $item->product_name ?? '';
+        $item->product_name     = $product->product_name ?? $item->product_name ?? '';
         $item->product_view_url = $product->product_view_url ?? $item->product_view_url ?? '';
-        $item->options = $productOptionData['option_data'] ?? [];
-        $item->option_price = $productOptionData['option_price'] ?? 0.0;
+        $item->options          = $productOptionData['option_data'] ?? [];
+        $item->option_price     = $productOptionData['option_price'] ?? 0.0;
 
         // Build cartitem_params with thumb_image for template display
         $existingParams = [];
@@ -280,7 +281,7 @@ class CartDownloadable
             $allowBackorders = (int) ($variant->allow_backorder ?? 0);
             if ($allowBackorders > 0) {
                 $variantQty = (int) ($variant->quantity ?? 0);
-                $cartQty = (int) ($item->product_qty ?? 1);
+                $cartQty    = (int) ($item->product_qty ?? 1);
                 if ($cartQty > $variantQty) {
                     $existingParams['back_order_item'] = 'COM_J2COMMERCE_CART_BACKORDER_ITEM';
                 }
@@ -291,9 +292,9 @@ class CartDownloadable
         $item->cartitem_params = json_encode($existingParams);
 
         // Calculate weight (downloadable products typically have no weight but support it for consistency)
-        $baseWeight = (float) ($item->weight ?? 0);
-        $optionWeight = (float) ($productOptionData['option_weight'] ?? 0);
-        $item->weight = $baseWeight + $optionWeight;
+        $baseWeight         = (float) ($item->weight ?? 0);
+        $optionWeight       = (float) ($productOptionData['option_weight'] ?? 0);
+        $item->weight       = $baseWeight + $optionWeight;
         $item->weight_total = $item->weight * (float) ($item->product_qty ?? 1);
 
         // Get group ID for pricing
@@ -307,8 +308,8 @@ class CartDownloadable
             $item->pricing = $productHelper->getPrice($variant, (int) ($item->product_qty ?? 1), $groupId);
         } else {
             $item->pricing = (object) [
-                'base_price' => (float) ($item->variant_price ?? 0),
-                'price' => (float) ($item->variant_price ?? 0),
+                'base_price'    => (float) ($item->variant_price ?? 0),
+                'price'         => (float) ($item->variant_price ?? 0),
                 'special_price' => null,
                 'is_sale_price' => false,
             ];
@@ -343,7 +344,7 @@ class CartDownloadable
         // Load variant data
         /** @var VariantsModel $variantModel */
         $variantModel = $this->mvcFactory->createModel('Variants', 'Administrator');
-        $variant = $variantModel->getItem((int) $cartitem->variant_id);
+        $variant      = $variantModel->getItem((int) $cartitem->variant_id);
 
         if (!$variant) {
             throw new \Exception(Text::_('COM_J2COMMERCE_VARIANT_NOT_FOUND'));
@@ -355,7 +356,7 @@ class CartDownloadable
         );
 
         // Calculate quantity difference (new total vs current)
-        $currentQty = (float) ($cartitem->product_qty ?? 0);
+        $currentQty    = (float) ($cartitem->product_qty ?? 0);
         $differenceQty = $quantity - $currentQty;
 
         // Validate minimum/maximum quantity restrictions
@@ -397,13 +398,13 @@ class CartDownloadable
      */
     protected function validateOptionRules($optionValue, object $productOption, array &$errors): void
     {
-        $optionId = $productOption->j2commerce_productoption_id ?? 0;
+        $optionId   = $productOption->j2commerce_productoption_id ?? 0;
         $optionType = $productOption->type ?? '';
         $optionName = Text::_($productOption->option_name ?? '');
 
         // Text/Textarea validation
         if (\in_array($optionType, ['text', 'textarea'])) {
-            $value = \is_string($optionValue) ? trim($optionValue) : '';
+            $value  = \is_string($optionValue) ? trim($optionValue) : '';
             $length = \strlen($value);
 
             // Check minimum length

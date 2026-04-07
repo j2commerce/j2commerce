@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Site\Model;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderItemAttributeHelper;
 use Joomla\CMS\Component\ComponentHelper;
@@ -106,13 +107,13 @@ class MyprofileModel extends BaseDatabaseModel
                 ? array_map('intval', $limitStatuses)
                 : array_map('intval', explode(',', (string) $limitStatuses));
 
-            $statusIds = array_filter($statusIds, fn($v) => $v > 0);
+            $statusIds = array_filter($statusIds, fn ($v) => $v > 0);
 
             if (\count($statusIds) > 0) {
                 $placeholders = [];
 
                 foreach ($statusIds as $i => $id) {
-                    $placeholder = ':orderStatus' . $i;
+                    $placeholder    = ':orderStatus' . $i;
                     $placeholders[] = $placeholder;
                     $query->bind($placeholder, $statusIds[$i], ParameterType::INTEGER);
                 }
@@ -277,7 +278,7 @@ class MyprofileModel extends BaseDatabaseModel
 
     public function getOrderFees(string $orderId): array
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select($db->quoteName(['name', 'amount', 'tax', 'fee_type']))
             ->from($db->quoteName('#__j2commerce_orderfees'))
@@ -361,13 +362,13 @@ class MyprofileModel extends BaseDatabaseModel
                 ? array_map('intval', $limitStatuses)
                 : array_map('intval', explode(',', (string) $limitStatuses));
 
-            $statusIds = array_filter($statusIds, fn($v) => $v > 0);
+            $statusIds = array_filter($statusIds, fn ($v) => $v > 0);
 
             if (\count($statusIds) > 0) {
                 $placeholders = [];
 
                 foreach ($statusIds as $i => $id) {
-                    $placeholder = ':dlStatus' . $i;
+                    $placeholder    = ':dlStatus' . $i;
                     $placeholders[] = $placeholder;
                     $query->bind($placeholder, $statusIds[$i], ParameterType::INTEGER);
                 }

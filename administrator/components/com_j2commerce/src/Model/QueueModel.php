@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -187,7 +188,7 @@ class QueueModel extends AdminModel
         $queueData = [
             'queue_type'   => $queueType,
             'relation_id'  => $relationId,
-            'queue_data'   => is_array($data) || is_object($data) ? json_encode($data) : (string) $data,
+            'queue_data'   => \is_array($data) || \is_object($data) ? json_encode($data) : (string) $data,
             'params'       => !empty($params) ? json_encode($params) : '',
             'priority'     => $priority,
             'status'       => 'pending',

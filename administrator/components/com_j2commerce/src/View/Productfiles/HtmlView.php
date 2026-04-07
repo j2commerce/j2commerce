@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -9,7 +10,7 @@
 
 namespace J2Commerce\Component\J2commerce\Administrator\View\Productfiles;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\MenuHelper;
@@ -18,9 +19,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Helper\ContentHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
-use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
-use Joomla\CMS\Router\Route;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 
 /**
@@ -92,23 +91,23 @@ class HtmlView extends BaseHtmlView
 
         $this->loadAdminAssets();
 
-        $app = Factory::getApplication();
+        $app              = Factory::getApplication();
         $this->product_id = $app->input->getInt('product_id', 0);
 
         $this->navbar = $this->getNavbar();
 
-        $this->items = $this->get('Items');
+        $this->items      = $this->get('Items');
         $this->pagination = $this->get('Pagination');
-        $this->state = $this->get('State');
+        $this->state      = $this->get('State');
 
 
 
         $this->row = J2CommerceHelper::article()->getArticle($this->product_id);
 
-        $model = $this->getModel();
+        $model       = $this->getModel();
         $this->files = method_exists($model, 'getFiles') ? $model->getFiles() : [];
 
-        if (count($errors = $this->get('Errors'))) {
+        if (\count($errors = $this->get('Errors'))) {
             $app->enqueueMessage(implode("\n", $errors), 'error');
             return;
         }
@@ -126,8 +125,8 @@ class HtmlView extends BaseHtmlView
     protected function getNavbar(): string
     {
         $displayData = [
-            'items' => MenuHelper::getMenuItems(),
-            'active' => MenuHelper::getActiveView()
+            'items'  => MenuHelper::getMenuItems(),
+            'active' => MenuHelper::getActiveView(),
         ];
 
         return LayoutHelper::render('navbar.default', $displayData, JPATH_COMPONENT_ADMINISTRATOR . '/layouts');

@@ -16,7 +16,7 @@ use J2Commerce\Component\J2commerce\Administrator\SetupGuide\AbstractSetupCheck;
 use J2Commerce\Component\J2commerce\Administrator\SetupGuide\SetupCheckResult;
 use Joomla\CMS\Language\Text;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 class AdminEmailCheck extends AbstractSetupCheck
 {

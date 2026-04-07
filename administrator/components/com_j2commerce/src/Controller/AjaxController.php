@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -43,14 +44,14 @@ class AjaxController extends BaseController
         $app = Factory::getApplication();
 
         // Get country ID from request
-        $countryId = $app->getInput()->getInt('country_id', 0);
+        $countryId      = $app->getInput()->getInt('country_id', 0);
         $selectedZoneId = $app->getInput()->getInt('zone_id', 0);
 
         // Build zone options HTML
         $html = '<option value="">' . Text::sprintf('COM_J2COMMERCE_SELECT_PLACEHOLDER', Text::_('COM_J2COMMERCE_ZONE')) . '</option>';
 
         if ($countryId > 0) {
-            $db = Factory::getContainer()->get('DatabaseDriver');
+            $db    = Factory::getContainer()->get('DatabaseDriver');
             $query = $db->getQuery(true);
 
             $query->select($db->quoteName(['j2commerce_zone_id', 'zone_name']))
@@ -97,7 +98,7 @@ class AjaxController extends BaseController
         // Build country options HTML
         $html = '<option value="">' . Text::sprintf('COM_J2COMMERCE_SELECT_PLACEHOLDER', Text::_('COM_J2COMMERCE_COUNTRY')) . '</option>';
 
-        $db = Factory::getContainer()->get('DatabaseDriver');
+        $db    = Factory::getContainer()->get('DatabaseDriver');
         $query = $db->getQuery(true);
 
         $query->select($db->quoteName(['j2commerce_country_id', 'country_name']))
@@ -144,9 +145,9 @@ class AjaxController extends BaseController
 
         try {
             // Generate new queue key
-            $siteName = $app->get('sitename', 'J2Commerce');
+            $siteName    = $app->get('sitename', 'J2Commerce');
             $queueString = $siteName . time() . bin2hex(random_bytes(8));
-            $queueKey = md5($queueString);
+            $queueKey    = md5($queueString);
 
             // Save to component params
             $db = Factory::getContainer()->get('DatabaseDriver');

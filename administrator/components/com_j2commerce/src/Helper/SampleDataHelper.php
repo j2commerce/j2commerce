@@ -12,12 +12,11 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Table\Table;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
-
 
 /**
  * Generates and removes sample data for a J2Commerce store.
@@ -31,51 +30,51 @@ final class SampleDataHelper
 
     private const PROFILES = [
         'minimal' => [
-            'categories'    => 3,
-            'simple'        => 5,
-            'variable'      => 2,
-            'configurable'  => 0,
-            'flexivariable' => 0,
-            'downloadable'  => 0,
-            'customers'     => 5,
-            'orders'        => 10,
-            'options'       => 2,
-            'manufacturers' => 2,
-            'vendors'       => 2,
-            'coupons'       => 2,
-            'vouchers'      => 2,
+            'categories'      => 3,
+            'simple'          => 5,
+            'variable'        => 2,
+            'configurable'    => 0,
+            'flexivariable'   => 0,
+            'downloadable'    => 0,
+            'customers'       => 5,
+            'orders'          => 10,
+            'options'         => 2,
+            'manufacturers'   => 2,
+            'vendors'         => 2,
+            'coupons'         => 2,
+            'vouchers'        => 2,
             'date_range_days' => 30,
         ],
         'standard' => [
-            'categories'    => 5,
-            'simple'        => 10,
-            'variable'      => 5,
-            'configurable'  => 3,
-            'flexivariable' => 2,
-            'downloadable'  => 2,
-            'customers'     => 20,
-            'orders'        => 50,
-            'options'       => 5,
-            'manufacturers' => 5,
-            'vendors'       => 3,
-            'coupons'       => 5,
-            'vouchers'      => 3,
+            'categories'      => 5,
+            'simple'          => 10,
+            'variable'        => 5,
+            'configurable'    => 3,
+            'flexivariable'   => 2,
+            'downloadable'    => 2,
+            'customers'       => 20,
+            'orders'          => 50,
+            'options'         => 5,
+            'manufacturers'   => 5,
+            'vendors'         => 3,
+            'coupons'         => 5,
+            'vouchers'        => 3,
             'date_range_days' => 90,
         ],
         'full' => [
-            'categories'    => 10,
-            'simple'        => 40,
-            'variable'      => 25,
-            'configurable'  => 15,
-            'flexivariable' => 10,
-            'downloadable'  => 10,
-            'customers'     => 100,
-            'orders'        => 500,
-            'options'       => 10,
-            'manufacturers' => 15,
-            'vendors'       => 8,
-            'coupons'       => 15,
-            'vouchers'      => 5,
+            'categories'      => 10,
+            'simple'          => 40,
+            'variable'        => 25,
+            'configurable'    => 15,
+            'flexivariable'   => 10,
+            'downloadable'    => 10,
+            'customers'       => 100,
+            'orders'          => 500,
+            'options'         => 10,
+            'manufacturers'   => 15,
+            'vendors'         => 8,
+            'coupons'         => 15,
+            'vouchers'        => 5,
             'date_range_days' => 365,
         ],
     ];
@@ -279,7 +278,9 @@ final class SampleDataHelper
         ['name' => 'Weight', 'type' => 'radio', 'values' => ['Light', 'Medium', 'Heavy']],
     ];
 
-    public function __construct(private DatabaseInterface $db) {}
+    public function __construct(private DatabaseInterface $db)
+    {
+    }
 
     public function isLoaded(): bool
     {
@@ -304,21 +305,21 @@ final class SampleDataHelper
         $summary  = [];
 
         // 1. Create categories
-        $rootCatId = $this->getOrCreateJ2CommerceRootCategory($now);
-        $catIds    = $this->createCategories((int) $cfg['categories'], $rootCatId, $now);
-        $summary['categories'] = count($catIds);
+        $rootCatId             = $this->getOrCreateJ2CommerceRootCategory($now);
+        $catIds                = $this->createCategories((int) $cfg['categories'], $rootCatId, $now);
+        $summary['categories'] = \count($catIds);
 
         // 2. Create manufacturers
-        $mfgIds  = $this->createManufacturers((int) $cfg['manufacturers'], $now);
-        $summary['manufacturers'] = count($mfgIds);
+        $mfgIds                   = $this->createManufacturers((int) $cfg['manufacturers'], $now);
+        $summary['manufacturers'] = \count($mfgIds);
 
         // 2b. Create vendors
-        $vendorIds = $this->createVendors((int) ($cfg['vendors'] ?? 0), $now);
-        $summary['vendors'] = count($vendorIds);
+        $vendorIds          = $this->createVendors((int) ($cfg['vendors'] ?? 0), $now);
+        $summary['vendors'] = \count($vendorIds);
 
         // 3. Create options
-        $optionIds = $this->createOptions((int) $cfg['options']);
-        $summary['options'] = count($optionIds);
+        $optionIds          = $this->createOptions((int) $cfg['options']);
+        $summary['options'] = \count($optionIds);
 
         // 3b. Ensure the store has basic tax, shipping, and payment configured (before product creation)
         $storeSetup = $this->ensureStoreSetup($this->db);
@@ -335,55 +336,55 @@ final class SampleDataHelper
         // 4. Create products
         $productIds = [];
 
-        $simpleIds = $this->createSimpleProducts((int) $cfg['simple'], $catIds, $mfgIds, $now, 'simple', $taxProfileId, $defaultStageId, $vendorIds);
-        $productIds = array_merge($productIds, $simpleIds);
-        $summary['products_simple'] = count($simpleIds);
+        $simpleIds                  = $this->createSimpleProducts((int) $cfg['simple'], $catIds, $mfgIds, $now, 'simple', $taxProfileId, $defaultStageId, $vendorIds);
+        $productIds                 = array_merge($productIds, $simpleIds);
+        $summary['products_simple'] = \count($simpleIds);
 
-        $varIds = $this->createVariableProducts((int) $cfg['variable'], $catIds, $mfgIds, $optionIds, $now, $taxProfileId, $defaultStageId, $vendorIds);
-        $productIds = array_merge($productIds, $varIds);
-        $summary['products_variable'] = count($varIds);
+        $varIds                       = $this->createVariableProducts((int) $cfg['variable'], $catIds, $mfgIds, $optionIds, $now, $taxProfileId, $defaultStageId, $vendorIds);
+        $productIds                   = array_merge($productIds, $varIds);
+        $summary['products_variable'] = \count($varIds);
 
         if (!empty($cfg['configurable'])) {
-            $cfgIds = $this->createSimpleProducts((int) $cfg['configurable'], $catIds, $mfgIds, $now, 'configurable', $taxProfileId, $defaultStageId, $vendorIds);
-            $productIds = array_merge($productIds, $cfgIds);
-            $summary['products_configurable'] = count($cfgIds);
+            $cfgIds                           = $this->createSimpleProducts((int) $cfg['configurable'], $catIds, $mfgIds, $now, 'configurable', $taxProfileId, $defaultStageId, $vendorIds);
+            $productIds                       = array_merge($productIds, $cfgIds);
+            $summary['products_configurable'] = \count($cfgIds);
         }
 
         if (!empty($cfg['flexivariable'])) {
-            $flexiIds = $this->createSimpleProducts((int) $cfg['flexivariable'], $catIds, $mfgIds, $now, 'flexivariable', $taxProfileId, $defaultStageId, $vendorIds);
-            $productIds = array_merge($productIds, $flexiIds);
-            $summary['products_flexivariable'] = count($flexiIds);
+            $flexiIds                          = $this->createSimpleProducts((int) $cfg['flexivariable'], $catIds, $mfgIds, $now, 'flexivariable', $taxProfileId, $defaultStageId, $vendorIds);
+            $productIds                        = array_merge($productIds, $flexiIds);
+            $summary['products_flexivariable'] = \count($flexiIds);
         }
 
         if (!empty($cfg['downloadable'])) {
-            $dlIds = $this->createSimpleProducts((int) $cfg['downloadable'], $catIds, $mfgIds, $now, 'downloadable', $taxProfileId, $defaultStageId, $vendorIds);
-            $productIds = array_merge($productIds, $dlIds);
-            $summary['products_downloadable'] = count($dlIds);
+            $dlIds                            = $this->createSimpleProducts((int) $cfg['downloadable'], $catIds, $mfgIds, $now, 'downloadable', $taxProfileId, $defaultStageId, $vendorIds);
+            $productIds                       = array_merge($productIds, $dlIds);
+            $summary['products_downloadable'] = \count($dlIds);
         }
 
         // 4b. Create product images
-        $imageCount = $this->createProductImages($productIds, $catIds);
+        $imageCount                = $this->createProductImages($productIds, $catIds);
         $summary['product_images'] = $imageCount;
 
         // 5. Create customers
-        $customerIds = $this->createCustomers((int) $cfg['customers'], $now);
-        $summary['customers'] = count($customerIds);
+        $customerIds          = $this->createCustomers((int) $cfg['customers'], $now);
+        $summary['customers'] = \count($customerIds);
 
         // 6. Create orders
-        $orderCount = $this->createOrders((int) $cfg['orders'], $customerIds, $productIds, (int) $cfg['date_range_days']);
+        $orderCount        = $this->createOrders((int) $cfg['orders'], $customerIds, $productIds, (int) $cfg['date_range_days']);
         $summary['orders'] = $orderCount;
 
         // 7. Create coupons
-        $couponCount = $this->createCoupons((int) $cfg['coupons'], $now);
+        $couponCount        = $this->createCoupons((int) $cfg['coupons'], $now);
         $summary['coupons'] = $couponCount;
 
         // 7b. Create vouchers
-        $voucherCount = $this->createVouchers((int) ($cfg['vouchers'] ?? 0), $now);
+        $voucherCount        = $this->createVouchers((int) ($cfg['vouchers'] ?? 0), $now);
         $summary['vouchers'] = $voucherCount;
 
         // 8. Create advanced pricing for full profile
         if ($profile === 'full' && !empty($productIds)) {
-            $advancedPricingCount = $this->createAdvancedPricing($productIds, $this->db);
+            $advancedPricingCount        = $this->createAdvancedPricing($productIds, $this->db);
             $summary['advanced_pricing'] = $advancedPricingCount;
         }
 
@@ -502,7 +503,7 @@ final class SampleDataHelper
             }
 
             $emailPattern = '%.sample@j2commerce.example';
-            $userQuery = $db->getQuery(true)
+            $userQuery    = $db->getQuery(true)
                 ->select('id')
                 ->from($db->quoteName('#__users'))
                 ->where($db->quoteName('email') . ' LIKE :emailPattern')
@@ -658,7 +659,7 @@ final class SampleDataHelper
 
         // Remove sample manufacturer addresses (company LIKE '[SAMPLE]%')
         $sampleCompany = '[SAMPLE]%';
-        $addrQuery = $db->getQuery(true)
+        $addrQuery     = $db->getQuery(true)
             ->select('j2commerce_address_id')
             ->from($db->quoteName('#__j2commerce_addresses'))
             ->where($db->quoteName('company') . ' LIKE :company')
@@ -732,7 +733,7 @@ final class SampleDataHelper
         $db = $this->db;
 
         // Check if a "Shop" category tagged as sample data already exists
-        $ext = 'com_content';
+        $ext   = 'com_content';
         $query = $db->getQuery(true)
             ->select('id')
             ->from($db->quoteName('#__categories'))
@@ -752,7 +753,7 @@ final class SampleDataHelper
         }
 
         // Create "Shop" as a sibling of "Uncategorised" under the global root (id=1)
-        $table = Table::getInstance('Category');
+        $table                   = Table::getInstance('Category');
         $table->extension        = 'com_content';
         $table->title            = 'Shop';
         $table->alias            = $this->uniqueAlias('shop', 'categories');
@@ -783,30 +784,30 @@ final class SampleDataHelper
     private function createCategories(int $count, int $parentId, string $now): array
     {
         $catIds = [];
-        $groups = array_slice(self::CATEGORY_GROUPS, 0, $count);
+        $groups = \array_slice(self::CATEGORY_GROUPS, 0, $count);
 
         foreach ($groups as $group) {
             $alias = $this->uniqueAlias($group['alias'], 'categories');
 
-            $table = Table::getInstance('Category');
-            $table->extension   = 'com_content';
-            $table->title       = $group['name'];
-            $table->alias       = $alias;
-            $table->published   = 1;
-            $table->access      = 1;
-            $table->language    = '*';
-            $table->description = '';
-            $table->note        = '';
-            $table->metadesc    = '';
-            $table->metakey     = self::SAMPLE_TAG;
-            $table->metadata    = '';
-            $table->params      = '{}';
+            $table                   = Table::getInstance('Category');
+            $table->extension        = 'com_content';
+            $table->title            = $group['name'];
+            $table->alias            = $alias;
+            $table->published        = 1;
+            $table->access           = 1;
+            $table->language         = '*';
+            $table->description      = '';
+            $table->note             = '';
+            $table->metadesc         = '';
+            $table->metakey          = self::SAMPLE_TAG;
+            $table->metadata         = '';
+            $table->params           = '{}';
             $table->created_time     = $now;
             $table->modified_time    = $now;
             $table->created_user_id  = 0;
             $table->modified_user_id = 0;
-            $table->hits        = 0;
-            $table->version     = 1;
+            $table->hits             = 0;
+            $table->version          = 1;
             $table->setLocation($parentId, 'last-child');
 
             if (!$table->check() || !$table->store()) {
@@ -827,12 +828,12 @@ final class SampleDataHelper
     {
         $db     = $this->db;
         $mfgIds = [];
-        $names  = array_slice(self::MANUFACTURER_NAMES, 0, $count);
+        $names  = \array_slice(self::MANUFACTURER_NAMES, 0, $count);
 
         foreach ($names as $i => $mfgName) {
             // Create an address record for the manufacturer (required FK)
-            $addr          = new \stdClass();
-            $addr->user_id = 0;
+            $addr              = new \stdClass();
+            $addr->user_id     = 0;
             $addr->first_name  = $mfgName;
             $addr->last_name   = 'HQ';
             $addr->email       = strtolower(str_replace(' ', '', $mfgName)) . '@example.com';
@@ -855,10 +856,10 @@ final class SampleDataHelper
                 continue;
             }
 
-            $mfg             = new \stdClass();
-            $mfg->address_id = $addrId;
-            $mfg->enabled    = 1;
-            $mfg->ordering   = $i + 1;
+            $mfg                = new \stdClass();
+            $mfg->address_id    = $addrId;
+            $mfg->enabled       = 1;
+            $mfg->ordering      = $i + 1;
             $mfg->brand_desc_id = 0;
 
             $db->insertObject('#__j2commerce_manufacturers', $mfg);
@@ -880,7 +881,7 @@ final class SampleDataHelper
 
         $db        = $this->db;
         $vendorIds = [];
-        $names     = array_slice(self::VENDOR_NAMES, 0, $count);
+        $names     = \array_slice(self::VENDOR_NAMES, 0, $count);
 
         foreach ($names as $i => $vendorName) {
             // Create a Joomla user for the vendor (unique user_id required)
@@ -898,8 +899,8 @@ final class SampleDataHelper
                 continue;
             }
 
-            $addr          = new \stdClass();
-            $addr->user_id = $userId;
+            $addr              = new \stdClass();
+            $addr->user_id     = $userId;
             $addr->first_name  = $vendorName;
             $addr->last_name   = '';
             $addr->email       = $email;
@@ -922,11 +923,11 @@ final class SampleDataHelper
                 continue;
             }
 
-            $vendor                    = new \stdClass();
+            $vendor                     = new \stdClass();
             $vendor->j2commerce_user_id = $userId;
-            $vendor->address_id        = $addrId;
-            $vendor->enabled           = 1;
-            $vendor->ordering          = $i + 1;
+            $vendor->address_id         = $addrId;
+            $vendor->enabled            = 1;
+            $vendor->ordering           = $i + 1;
 
             $db->insertObject('#__j2commerce_vendors', $vendor);
             $vendorId = (int) $db->insertid();
@@ -943,16 +944,16 @@ final class SampleDataHelper
     {
         $db        = $this->db;
         $optionIds = [];
-        $options   = array_slice(self::OPTIONS_DATA, 0, $count);
+        $options   = \array_slice(self::OPTIONS_DATA, 0, $count);
 
         foreach ($options as $i => $optData) {
-            $opt                   = new \stdClass();
-            $opt->type             = $optData['type'];
+            $opt                     = new \stdClass();
+            $opt->type               = $optData['type'];
             $opt->option_unique_name = 'sample_' . strtolower(str_replace(' ', '_', $optData['name']));
-            $opt->option_name      = $optData['name'];
-            $opt->ordering         = $i + 1;
-            $opt->enabled          = 1;
-            $opt->option_params    = '{}';
+            $opt->option_name        = $optData['name'];
+            $opt->ordering           = $i + 1;
+            $opt->enabled            = 1;
+            $opt->option_params      = '{}';
 
             $db->insertObject('#__j2commerce_options', $opt);
             $optionId = (int) $db->insertid();
@@ -985,55 +986,55 @@ final class SampleDataHelper
 
         $db         = $this->db;
         $productIds = [];
-        $catCount   = count($catIds);
-        $mfgCount   = count($mfgIds);
+        $catCount   = \count($catIds);
+        $mfgCount   = \count($mfgIds);
 
         $namePool = $this->buildNamePool();
 
         for ($i = 0; $i < $count; $i++) {
-            $catEntry   = $catIds[$i % $catCount];
-            $catId      = $catEntry['id'];
-            $catKey     = $catEntry['key'];
-            $mfgId      = $mfgCount > 0 ? $mfgIds[$i % $mfgCount] : 0;
-            $price      = round(mt_rand(999, 49999) / 100, 2);
-            $productName = $namePool[$catKey][$i % count($namePool[$catKey] ?: ['Product ' . ($i + 1)])];
+            $catEntry    = $catIds[$i % $catCount];
+            $catId       = $catEntry['id'];
+            $catKey      = $catEntry['key'];
+            $mfgId       = $mfgCount > 0 ? $mfgIds[$i % $mfgCount] : 0;
+            $price       = round(mt_rand(999, 49999) / 100, 2);
+            $productName = $namePool[$catKey][$i % \count($namePool[$catKey] ?: ['Product ' . ($i + 1)])];
 
             // Append a sequence if needed for uniqueness
-            $seqTag = ' #' . ($i + 1);
+            $seqTag     = ' #' . ($i + 1);
             $uniqueName = $productName . $seqTag;
 
             // Create Joomla content article as the product source
-            $alias   = $this->uniqueAlias(strtolower(preg_replace('/[^a-z0-9]+/i', '-', $uniqueName)), 'content');
-            $article = new \stdClass();
-            $descTemplates = self::DESCRIPTIONS[$catKey] ?? self::DESCRIPTIONS['electronics'];
-            $article->title       = $uniqueName;
-            $article->alias       = $alias;
-            $article->introtext   = sprintf($descTemplates['introtext'], htmlspecialchars($uniqueName));
-            $article->fulltext    = sprintf($descTemplates['fulltext'], htmlspecialchars($uniqueName));
-            $article->state       = 1;
-            $article->catid       = $catId;
-            $article->created     = $now;
-            $article->created_by  = 0;
+            $alias                     = $this->uniqueAlias(strtolower(preg_replace('/[^a-z0-9]+/i', '-', $uniqueName)), 'content');
+            $article                   = new \stdClass();
+            $descTemplates             = self::DESCRIPTIONS[$catKey] ?? self::DESCRIPTIONS['electronics'];
+            $article->title            = $uniqueName;
+            $article->alias            = $alias;
+            $article->introtext        = \sprintf($descTemplates['introtext'], htmlspecialchars($uniqueName));
+            $article->fulltext         = \sprintf($descTemplates['fulltext'], htmlspecialchars($uniqueName));
+            $article->state            = 1;
+            $article->catid            = $catId;
+            $article->created          = $now;
+            $article->created_by       = 0;
             $article->created_by_alias = '';
-            $article->modified    = $now;
-            $article->modified_by = 0;
-            $article->images      = '{}';
-            $article->urls        = '{}';
-            $article->attribs     = '{}';
-            $article->version     = 1;
-            $article->ordering    = $i;
-            $article->metakey     = self::SAMPLE_TAG;
-            $article->metadesc    = '';
-            $article->access      = 1;
-            $article->hits        = 0;
-            $article->metadata    = '{}';
-            $article->featured    = 0;
-            $article->language    = '*';
-            $article->note        = '';
-            $article->asset_id    = 0;
-            $article->publish_up  = null;
-            $article->publish_down = null;
-            $article->checked_out = null;
+            $article->modified         = $now;
+            $article->modified_by      = 0;
+            $article->images           = '{}';
+            $article->urls             = '{}';
+            $article->attribs          = '{}';
+            $article->version          = 1;
+            $article->ordering         = $i;
+            $article->metakey          = self::SAMPLE_TAG;
+            $article->metadesc         = '';
+            $article->access           = 1;
+            $article->hits             = 0;
+            $article->metadata         = '{}';
+            $article->featured         = 0;
+            $article->language         = '*';
+            $article->note             = '';
+            $article->asset_id         = 0;
+            $article->publish_up       = null;
+            $article->publish_down     = null;
+            $article->checked_out      = null;
             $article->checked_out_time = null;
 
             $db->insertObject('#__content', $article);
@@ -1050,35 +1051,35 @@ final class SampleDataHelper
 
             // Create J2Commerce product record
             $prefix = match ($type) {
-                'variable'       => 'VAR',
-                'configurable'   => 'CFG',
-                'flexivariable'  => 'FLX',
-                'downloadable'   => 'DLD',
-                default          => 'SMPL',
+                'variable'      => 'VAR',
+                'configurable'  => 'CFG',
+                'flexivariable' => 'FLX',
+                'downloadable'  => 'DLD',
+                default         => 'SMPL',
             };
 
-            $product                   = new \stdClass();
-            $product->visibility       = 1;
-            $product->product_source   = 'com_content';
+            $product                    = new \stdClass();
+            $product->visibility        = 1;
+            $product->product_source    = 'com_content';
             $product->product_source_id = $articleId;
-            $product->product_type     = $type;
-            $product->main_tag         = '';
-            $product->taxprofile_id    = $taxProfileId;
-            $product->manufacturer_id  = $mfgId;
-            $product->vendor_id        = !empty($vendorIds) ? $vendorIds[array_rand($vendorIds)] : 0;
-            $product->has_options      = 0;
-            $product->addtocart_text   = '';
-            $product->enabled          = 1;
-            $product->plugins          = '';
-            $product->params           = '{}';
-            $product->created_on       = $now;
-            $product->created_by       = 0;
-            $product->modified_on      = $now;
-            $product->modified_by      = 0;
-            $product->up_sells         = '';
-            $product->cross_sells      = '';
+            $product->product_type      = $type;
+            $product->main_tag          = '';
+            $product->taxprofile_id     = $taxProfileId;
+            $product->manufacturer_id   = $mfgId;
+            $product->vendor_id         = !empty($vendorIds) ? $vendorIds[array_rand($vendorIds)] : 0;
+            $product->has_options       = 0;
+            $product->addtocart_text    = '';
+            $product->enabled           = 1;
+            $product->plugins           = '';
+            $product->params            = '{}';
+            $product->created_on        = $now;
+            $product->created_by        = 0;
+            $product->modified_on       = $now;
+            $product->modified_by       = 0;
+            $product->up_sells          = '';
+            $product->cross_sells       = '';
             $product->productfilter_ids = '';
-            $product->hits             = 0;
+            $product->hits              = 0;
 
             $db->insertObject('#__j2commerce_products', $product);
             $productId = (int) $db->insertid();
@@ -1094,12 +1095,12 @@ final class SampleDataHelper
             $variantId = (int) $db->insertid();
 
             if ($variantId > 0) {
-                $qty              = new \stdClass();
+                $qty                     = new \stdClass();
                 $qty->product_attributes = '[]';
-                $qty->variant_id  = $variantId;
-                $qty->quantity    = mt_rand(0, 200);
-                $qty->on_hold     = 0;
-                $qty->sold        = 0;
+                $qty->variant_id         = $variantId;
+                $qty->quantity           = mt_rand(0, 200);
+                $qty->on_hold            = 0;
+                $qty->sold               = 0;
                 $db->insertObject('#__j2commerce_productquantities', $qty);
             }
 
@@ -1115,12 +1116,12 @@ final class SampleDataHelper
             return [];
         }
 
-        $db       = $this->db;
+        $db         = $this->db;
         $hasOptions = !empty($optionIds);
 
         // Pick the first available option for variant generation; fall back to generic labels
         $variantOption    = $hasOptions ? $optionIds[0] : null;
-        $variantSuffixes  = $hasOptions ? array_slice($variantOption['values'], 0, 5) : ['Variant A', 'Variant B', 'Variant C'];
+        $variantSuffixes  = $hasOptions ? \array_slice($variantOption['values'], 0, 5) : ['Variant A', 'Variant B', 'Variant C'];
 
         // Load optionvalue IDs for the chosen option so we can build linkage rows
         $optionValueIdMap = [];
@@ -1137,8 +1138,8 @@ final class SampleDataHelper
         }
 
         $productIds = [];
-        $catCount   = count($catIds);
-        $mfgCount   = count($mfgIds);
+        $catCount   = \count($catIds);
+        $mfgCount   = \count($mfgIds);
         $namePool   = $this->buildNamePool();
         $offset     = 1000;
 
@@ -1149,39 +1150,39 @@ final class SampleDataHelper
             $mfgId       = $mfgCount > 0 ? $mfgIds[$i % $mfgCount] : 0;
             $basePrice   = round(mt_rand(999, 29999) / 100, 2);
             $names       = $namePool[$catKey];
-            $productName = $names[($i + $offset) % count($names)] . ' (Variable) #' . ($i + 1);
+            $productName = $names[($i + $offset) % \count($names)] . ' (Variable) #' . ($i + 1);
 
-            $alias   = $this->uniqueAlias(strtolower(preg_replace('/[^a-z0-9]+/i', '-', $productName)), 'content');
-            $article = new \stdClass();
-            $descTemplates = self::DESCRIPTIONS[$catKey] ?? self::DESCRIPTIONS['electronics'];
-            $article->title       = $productName;
-            $article->alias       = $alias;
-            $article->introtext   = sprintf($descTemplates['introtext'], htmlspecialchars($productName));
-            $article->fulltext    = sprintf($descTemplates['fulltext'], htmlspecialchars($productName));
-            $article->state       = 1;
-            $article->catid       = $catId;
-            $article->created     = $now;
-            $article->created_by  = 0;
+            $alias                     = $this->uniqueAlias(strtolower(preg_replace('/[^a-z0-9]+/i', '-', $productName)), 'content');
+            $article                   = new \stdClass();
+            $descTemplates             = self::DESCRIPTIONS[$catKey] ?? self::DESCRIPTIONS['electronics'];
+            $article->title            = $productName;
+            $article->alias            = $alias;
+            $article->introtext        = \sprintf($descTemplates['introtext'], htmlspecialchars($productName));
+            $article->fulltext         = \sprintf($descTemplates['fulltext'], htmlspecialchars($productName));
+            $article->state            = 1;
+            $article->catid            = $catId;
+            $article->created          = $now;
+            $article->created_by       = 0;
             $article->created_by_alias = '';
-            $article->modified    = $now;
-            $article->modified_by = 0;
-            $article->images      = '{}';
-            $article->urls        = '{}';
-            $article->attribs     = '{}';
-            $article->version     = 1;
-            $article->ordering    = $i;
-            $article->metakey     = self::SAMPLE_TAG;
-            $article->metadesc    = '';
-            $article->access      = 1;
-            $article->hits        = 0;
-            $article->metadata    = '{}';
-            $article->featured    = 0;
-            $article->language    = '*';
-            $article->note        = '';
-            $article->asset_id    = 0;
-            $article->publish_up  = null;
-            $article->publish_down = null;
-            $article->checked_out = null;
+            $article->modified         = $now;
+            $article->modified_by      = 0;
+            $article->images           = '{}';
+            $article->urls             = '{}';
+            $article->attribs          = '{}';
+            $article->version          = 1;
+            $article->ordering         = $i;
+            $article->metakey          = self::SAMPLE_TAG;
+            $article->metadesc         = '';
+            $article->access           = 1;
+            $article->hits             = 0;
+            $article->metadata         = '{}';
+            $article->featured         = 0;
+            $article->language         = '*';
+            $article->note             = '';
+            $article->asset_id         = 0;
+            $article->publish_up       = null;
+            $article->publish_down     = null;
+            $article->checked_out      = null;
             $article->checked_out_time = null;
 
             $db->insertObject('#__content', $article);
@@ -1268,12 +1269,12 @@ final class SampleDataHelper
             $masterVariantId = (int) $db->insertid();
 
             if ($masterVariantId > 0) {
-                $qty = new \stdClass();
+                $qty                     = new \stdClass();
                 $qty->product_attributes = '[]';
-                $qty->variant_id = $masterVariantId;
-                $qty->quantity   = 0;
-                $qty->on_hold    = 0;
-                $qty->sold       = 0;
+                $qty->variant_id         = $masterVariantId;
+                $qty->quantity           = 0;
+                $qty->on_hold            = 0;
+                $qty->sold               = 0;
                 $db->insertObject('#__j2commerce_productquantities', $qty);
             }
 
@@ -1289,12 +1290,12 @@ final class SampleDataHelper
                     continue;
                 }
 
-                $qty = new \stdClass();
+                $qty                     = new \stdClass();
                 $qty->product_attributes = '[]';
-                $qty->variant_id = $childVarId;
-                $qty->quantity   = mt_rand(5, 100);
-                $qty->on_hold    = 0;
-                $qty->sold       = 0;
+                $qty->variant_id         = $childVarId;
+                $qty->quantity           = mt_rand(5, 100);
+                $qty->on_hold            = 0;
+                $qty->sold               = 0;
                 $db->insertObject('#__j2commerce_productquantities', $qty);
 
                 // Link variant to its product_optionvalue
@@ -1321,11 +1322,11 @@ final class SampleDataHelper
         $firstNames  = self::FIRST_NAMES;
         $lastNames   = self::LAST_NAMES;
         $addrData    = self::ADDRESS_DATA;
-        $addrCount   = count($addrData);
+        $addrCount   = \count($addrData);
 
         for ($i = 0; $i < $count; $i++) {
-            $firstName = $firstNames[$i % count($firstNames)];
-            $lastName  = $lastNames[$i % count($lastNames)];
+            $firstName = $firstNames[$i % \count($firstNames)];
+            $lastName  = $lastNames[$i % \count($lastNames)];
             $email     = strtolower($firstName . '.' . $lastName . $i . '.sample@j2commerce.example');
             $username  = strtolower($firstName . $lastName . $i);
 
@@ -1365,8 +1366,8 @@ final class SampleDataHelper
             }
 
             // Add to Registered group (id=2)
-            $map          = new \stdClass();
-            $map->user_id = $userId;
+            $map           = new \stdClass();
+            $map->user_id  = $userId;
             $map->group_id = 2;
             $db->insertObject('#__user_usergroup_map', $map);
 
@@ -1462,10 +1463,10 @@ final class SampleDataHelper
 
         $db          = $this->db;
         $created     = 0;
-        $custCount   = count($customerIds);
-        $prodCount   = count($productIds);
+        $custCount   = \count($customerIds);
+        $prodCount   = \count($productIds);
         $addrData    = self::ADDRESS_DATA;
-        $addrCount   = count($addrData);
+        $addrCount   = \count($addrData);
 
         // Build weighted status distribution
         $statusPool = [];
@@ -1478,8 +1479,8 @@ final class SampleDataHelper
         $now = time();
 
         for ($i = 0; $i < $count; $i++) {
-            $customer  = $customerIds[$i % $custCount];
-            $statusId  = $statusPool[$i % count($statusPool)];
+            $customer   = $customerIds[$i % $custCount];
+            $statusId   = $statusPool[$i % \count($statusPool)];
             $statusName = self::STATUS_NAMES[$statusId] ?? 'Pending';
 
             // Spread creation dates realistically
@@ -1493,9 +1494,9 @@ final class SampleDataHelper
             $subtotal   = 0.0;
 
             for ($j = 0; $j < $itemCount; $j++) {
-                $prod     = $productIds[($i * 7 + $j) % $prodCount];
-                $qty      = mt_rand(1, 3);
-                $price    = (float) ($prod['price'] ?? mt_rand(999, 9999) / 100);
+                $prod      = $productIds[($i * 7 + $j) % $prodCount];
+                $qty       = mt_rand(1, 3);
+                $price     = (float) ($prod['price'] ?? mt_rand(999, 9999) / 100);
                 $lineTotal = round($price * $qty, 5);
                 $subtotal += $lineTotal;
 
@@ -1518,7 +1519,7 @@ final class SampleDataHelper
             $addrEntry  = $addrData[$i % $addrCount];
 
             // Use a temporary order_id; will be replaced after insert with time() . PK
-            $tempOrderId = (string) strtotime($createdOn);
+            $tempOrderId   = (string) strtotime($createdOn);
             $invoicePrefix = J2CommerceHelper::config()->get('invoice_prefix', 'INV-');
 
             $order                         = new \stdClass();
@@ -1571,7 +1572,7 @@ final class SampleDataHelper
             $pk = (int) $order->j2commerce_order_id;
 
             // Generate real order_id: timestamp + PK (matches CartOrder / OrderTable pattern)
-            $orderId = (string) (strtotime($createdOn) . $pk);
+            $orderId    = (string) (strtotime($createdOn) . $pk);
             $orderToken = md5($orderId . bin2hex(random_bytes(8)));
 
             $updateOrder = $db->getQuery(true)
@@ -1585,90 +1586,90 @@ final class SampleDataHelper
             $db->setQuery($updateOrder)->execute();
 
             // Create order info
-            $info                     = new \stdClass();
-            $info->order_id           = $orderId;
-            $info->billing_first_name = $customer['first_name'];
-            $info->billing_last_name  = $customer['last_name'];
-            $info->billing_phone_1    = $this->randomPhone();
-            $info->billing_address_1  = mt_rand(1, 9999) . ' Main St';
-            $info->billing_address_2  = '';
-            $info->billing_city       = $addrEntry['city'];
-            $info->billing_zone_name  = $addrEntry['zone_name'];
-            $info->billing_country_name = $addrEntry['country_name'];
-            $info->billing_zone_id    = $addrEntry['zone_id'];
-            $info->billing_country_id = $addrEntry['country_id'];
-            $info->billing_zip        = $addrEntry['zip'];
-            $info->billing_company    = '';
-            $info->billing_middle_name = '';
-            $info->billing_phone_2    = '';
-            $info->billing_fax        = '';
-            $info->billing_tax_number = '';
-            $info->shipping_first_name = $customer['first_name'];
-            $info->shipping_last_name  = $customer['last_name'];
-            $info->shipping_address_1  = $info->billing_address_1;
-            $info->shipping_address_2  = '';
-            $info->shipping_city       = $addrEntry['city'];
-            $info->shipping_zone_name  = $addrEntry['zone_name'];
+            $info                        = new \stdClass();
+            $info->order_id              = $orderId;
+            $info->billing_first_name    = $customer['first_name'];
+            $info->billing_last_name     = $customer['last_name'];
+            $info->billing_phone_1       = $this->randomPhone();
+            $info->billing_address_1     = mt_rand(1, 9999) . ' Main St';
+            $info->billing_address_2     = '';
+            $info->billing_city          = $addrEntry['city'];
+            $info->billing_zone_name     = $addrEntry['zone_name'];
+            $info->billing_country_name  = $addrEntry['country_name'];
+            $info->billing_zone_id       = $addrEntry['zone_id'];
+            $info->billing_country_id    = $addrEntry['country_id'];
+            $info->billing_zip           = $addrEntry['zip'];
+            $info->billing_company       = '';
+            $info->billing_middle_name   = '';
+            $info->billing_phone_2       = '';
+            $info->billing_fax           = '';
+            $info->billing_tax_number    = '';
+            $info->shipping_first_name   = $customer['first_name'];
+            $info->shipping_last_name    = $customer['last_name'];
+            $info->shipping_address_1    = $info->billing_address_1;
+            $info->shipping_address_2    = '';
+            $info->shipping_city         = $addrEntry['city'];
+            $info->shipping_zone_name    = $addrEntry['zone_name'];
             $info->shipping_country_name = $addrEntry['country_name'];
-            $info->shipping_zone_id    = $addrEntry['zone_id'];
-            $info->shipping_country_id = $addrEntry['country_id'];
-            $info->shipping_zip        = $addrEntry['zip'];
-            $info->shipping_middle_name = '';
-            $info->shipping_phone_1    = $info->billing_phone_1;
-            $info->shipping_phone_2    = '';
-            $info->shipping_fax        = '';
-            $info->shipping_company    = '';
-            $info->shipping_id         = '';
-            $info->shipping_tax_number = '';
-            $info->all_billing         = json_encode(['first_name' => $customer['first_name'], 'last_name' => $customer['last_name']]);
-            $info->all_shipping        = json_encode(['first_name' => $customer['first_name'], 'last_name' => $customer['last_name']]);
-            $info->all_payment         = '{}';
+            $info->shipping_zone_id      = $addrEntry['zone_id'];
+            $info->shipping_country_id   = $addrEntry['country_id'];
+            $info->shipping_zip          = $addrEntry['zip'];
+            $info->shipping_middle_name  = '';
+            $info->shipping_phone_1      = $info->billing_phone_1;
+            $info->shipping_phone_2      = '';
+            $info->shipping_fax          = '';
+            $info->shipping_company      = '';
+            $info->shipping_id           = '';
+            $info->shipping_tax_number   = '';
+            $info->all_billing           = json_encode(['first_name' => $customer['first_name'], 'last_name' => $customer['last_name']]);
+            $info->all_shipping          = json_encode(['first_name' => $customer['first_name'], 'last_name' => $customer['last_name']]);
+            $info->all_payment           = '{}';
 
             $db->insertObject('#__j2commerce_orderinfos', $info);
 
             // Create order items
             foreach ($orderItems as $k => $item) {
-                $oi                                  = new \stdClass();
-                $oi->order_id                        = $orderId;
-                $oi->orderitem_type                  = 'normal';
-                $oi->cart_id                         = $order->cart_id;
-                $oi->cartitem_id                     = $k + 1;
-                $oi->product_id                      = $item['product_id'];
-                $oi->product_type                    = $item['product_type'] ?? 'simple';
-                $oi->variant_id                      = $item['variant_id'];
-                $oi->vendor_id                       = 0;
-                $oi->orderitem_sku                   = $item['sku'];
-                $oi->orderitem_name                  = $item['name'];
-                $oi->orderitem_attributes            = '[]';
-                $oi->orderitem_quantity              = (string) $item['qty'];
-                $oi->orderitem_taxprofile_id         = 0;
-                $oi->orderitem_per_item_tax          = round($item['price'] * 0.0825, 5);
-                $oi->orderitem_tax                   = round($item['price'] * $item['qty'] * 0.0825, 5);
-                $oi->orderitem_discount              = 0.0;
-                $oi->orderitem_discount_tax          = 0.0;
-                $oi->orderitem_price                 = $item['price'];
-                $oi->orderitem_option_price          = 0.0;
-                $oi->orderitem_finalprice            = $item['line_total'];
-                $oi->orderitem_finalprice_with_tax   = round($item['line_total'] * 1.0825, 5);
+                $oi                                   = new \stdClass();
+                $oi->order_id                         = $orderId;
+                $oi->orderitem_type                   = 'normal';
+                $oi->cart_id                          = $order->cart_id;
+                $oi->cartitem_id                      = $k + 1;
+                $oi->product_id                       = $item['product_id'];
+                $oi->product_type                     = $item['product_type'] ?? 'simple';
+                $oi->variant_id                       = $item['variant_id'];
+                $oi->vendor_id                        = 0;
+                $oi->orderitem_sku                    = $item['sku'];
+                $oi->orderitem_name                   = $item['name'];
+                $oi->orderitem_attributes             = '[]';
+                $oi->orderitem_quantity               = (string) $item['qty'];
+                $oi->orderitem_taxprofile_id          = 0;
+                $oi->orderitem_per_item_tax           = round($item['price'] * 0.0825, 5);
+                $oi->orderitem_tax                    = round($item['price'] * $item['qty'] * 0.0825, 5);
+                $oi->orderitem_discount               = 0.0;
+                $oi->orderitem_discount_tax           = 0.0;
+                $oi->orderitem_price                  = $item['price'];
+                $oi->orderitem_option_price           = 0.0;
+                $oi->orderitem_finalprice             = $item['line_total'];
+                $oi->orderitem_finalprice_with_tax    = round($item['line_total'] * 1.0825, 5);
                 $oi->orderitem_finalprice_without_tax = $item['line_total'];
-                $oi->orderitem_params                = '{}';
-                $oi->created_on                      = $createdOn;
-                $oi->created_by                      = $customer['id'];
-                $oi->orderitem_weight                = '0';
-                $oi->orderitem_weight_total          = '0';
+                $oi->orderitem_params                 = '{}';
+                $oi->created_on                       = $createdOn;
+                $oi->created_by                       = $customer['id'];
+                $oi->orderitem_weight                 = '0';
+                $oi->orderitem_weight_total           = '0';
 
                 $db->insertObject('#__j2commerce_orderitems', $oi);
             }
 
             // Create order history entry
-            $hist                 = new \stdClass();
-            $hist->order_id       = $orderId;
-            $hist->order_state_id = $statusId;
+            $hist                  = new \stdClass();
+            $hist->order_id        = $orderId;
+            $hist->order_state_id  = $statusId;
             $hist->notify_customer = 0;
-            $hist->comment        = 'Order created via sample data generator.';
-            $hist->created_on     = $createdOn;
-            $hist->created_by     = 0;
-            $hist->params         = '{}';
+            $hist->comment         = 'Order created via sample data generator.';
+            $hist->created_on      = $createdOn;
+            $hist->created_by      = 0;
+            $hist->params          = '{}';
 
             $db->insertObject('#__j2commerce_orderhistories', $hist);
 
@@ -1681,12 +1682,12 @@ final class SampleDataHelper
     private function createCoupons(int $count, string $now): int
     {
         $db      = $this->db;
-        $data    = array_slice(self::COUPONS_DATA, 0, $count);
+        $data    = \array_slice(self::COUPONS_DATA, 0, $count);
         $created = 0;
 
         foreach ($data as $i => $couponData) {
             // Check if code already exists
-            $code = $couponData['code'];
+            $code       = $couponData['code'];
             $checkQuery = $db->getQuery(true)
                 ->select('j2commerce_coupon_id')
                 ->from($db->quoteName('#__j2commerce_coupons'))
@@ -1698,26 +1699,26 @@ final class SampleDataHelper
                 continue; // skip existing
             }
 
-            $coupon              = new \stdClass();
-            $coupon->coupon_name = '[SAMPLE] ' . $couponData['name'];
-            $coupon->coupon_code = $couponData['code'];
-            $coupon->enabled     = 1;
-            $coupon->ordering    = $i + 1;
-            $coupon->value       = $couponData['value'];
-            $coupon->value_type  = $couponData['value_type'];
-            $coupon->max_value   = '';
-            $coupon->free_shipping = $couponData['free_shipping'];
-            $coupon->max_uses    = 1000;
-            $coupon->logged      = 0;
+            $coupon                    = new \stdClass();
+            $coupon->coupon_name       = '[SAMPLE] ' . $couponData['name'];
+            $coupon->coupon_code       = $couponData['code'];
+            $coupon->enabled           = 1;
+            $coupon->ordering          = $i + 1;
+            $coupon->value             = $couponData['value'];
+            $coupon->value_type        = $couponData['value_type'];
+            $coupon->max_value         = '';
+            $coupon->free_shipping     = $couponData['free_shipping'];
+            $coupon->max_uses          = 1000;
+            $coupon->logged            = 0;
             $coupon->max_customer_uses = 0;
-            $coupon->valid_from  = null;
-            $coupon->valid_to    = null;
-            $coupon->product_category = '';
-            $coupon->products    = '';
-            $coupon->min_subtotal = $couponData['min_subtotal'];
-            $coupon->users       = '';
-            $coupon->mycategory  = '';
-            $coupon->brand_ids   = '';
+            $coupon->valid_from        = null;
+            $coupon->valid_to          = null;
+            $coupon->product_category  = '';
+            $coupon->products          = '';
+            $coupon->min_subtotal      = $couponData['min_subtotal'];
+            $coupon->users             = '';
+            $coupon->mycategory        = '';
+            $coupon->brand_ids         = '';
 
             $db->insertObject('#__j2commerce_coupons', $coupon);
             $created++;
@@ -1733,14 +1734,14 @@ final class SampleDataHelper
         }
 
         $db      = $this->db;
-        $data    = array_slice(self::VOUCHERS_DATA, 0, $count);
+        $data    = \array_slice(self::VOUCHERS_DATA, 0, $count);
         $created = 0;
 
         $validFrom = date('Y-m-d H:i:s');
         $validTo   = date('Y-m-d H:i:s', strtotime('+1 year'));
 
         foreach ($data as $i => $voucherData) {
-            $code = $voucherData['code'];
+            $code       = $voucherData['code'];
             $checkQuery = $db->getQuery(true)
                 ->select('j2commerce_voucher_id')
                 ->from($db->quoteName('#__j2commerce_vouchers'))
@@ -1805,27 +1806,27 @@ final class SampleDataHelper
             }
 
             // Determine category from rotation
-            $catCount = count($catIds);
+            $catCount = \count($catIds);
             $catEntry = $catCount > 0 ? $catIds[$index % $catCount] : null;
-            $catKey   = $catEntry['key'] ?? $categories[$index % count($categories)];
+            $catKey   = $catEntry['key'] ?? $categories[$index % \count($categories)];
 
             $imageNum  = ($index % $imageCount) + 1;
             $imagePath = $imageBase . '/' . $catKey . '/' . $imageNum . '.svg';
 
-            $img                          = new \stdClass();
-            $img->product_id              = $productId;
-            $img->main_image              = $imagePath;
-            $img->main_image_alt          = '';
-            $img->thumb_image             = $imagePath;
-            $img->thumb_image_alt         = '';
-            $img->tiny_image              = $imagePath;
-            $img->tiny_image_alt          = '';
-            $img->additional_images       = null;
-            $img->additional_images_alt   = null;
-            $img->additional_thumb_images = null;
+            $img                              = new \stdClass();
+            $img->product_id                  = $productId;
+            $img->main_image                  = $imagePath;
+            $img->main_image_alt              = '';
+            $img->thumb_image                 = $imagePath;
+            $img->thumb_image_alt             = '';
+            $img->tiny_image                  = $imagePath;
+            $img->tiny_image_alt              = '';
+            $img->additional_images           = null;
+            $img->additional_images_alt       = null;
+            $img->additional_thumb_images     = null;
             $img->additional_thumb_images_alt = null;
-            $img->additional_tiny_images  = null;
-            $img->additional_tiny_images_alt = null;
+            $img->additional_tiny_images      = null;
+            $img->additional_tiny_images_alt  = null;
 
             $db->insertObject('#__j2commerce_productimages', $img);
 
@@ -1847,7 +1848,7 @@ final class SampleDataHelper
      */
     private function getDefaultTaxProfileId(): int
     {
-        $db = $this->db;
+        $db    = $this->db;
         $query = $db->getQuery(true)
             ->select($db->quoteName('j2commerce_taxprofile_id'))
             ->from($db->quoteName('#__j2commerce_taxprofiles'))
@@ -1861,7 +1862,7 @@ final class SampleDataHelper
 
     private function getDefaultWorkflowStageId(): int
     {
-        $db = $this->db;
+        $db    = $this->db;
         $query = $db->getQuery(true)
             ->select($db->quoteName('ws.id'))
             ->from($db->quoteName('#__workflow_stages', 'ws'))
@@ -1879,7 +1880,7 @@ final class SampleDataHelper
         $db = $this->db;
 
         try {
-            $assoc = new \stdClass();
+            $assoc            = new \stdClass();
             $assoc->item_id   = $articleId;
             $assoc->stage_id  = $stageId;
             $assoc->extension = 'com_content.article';
@@ -1969,17 +1970,17 @@ final class SampleDataHelper
         }
 
         $created  = 0;
-        $total    = count($productIds);
+        $total    = \count($productIds);
 
         // Pick 5 products (or fewer if not enough exist)
         $pickCount = min(5, $total);
         $indices   = array_rand($productIds, $pickCount);
 
-        if (!is_array($indices)) {
+        if (!\is_array($indices)) {
             $indices = [$indices];
         }
 
-        $selected = array_map(fn($i) => $productIds[$i], $indices);
+        $selected = array_map(fn ($i) => $productIds[$i], $indices);
 
         $now      = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
         $dateFrom = $now->modify('-30 days')->format('Y-m-d H:i:s');
@@ -1997,15 +1998,15 @@ final class SampleDataHelper
                 // Sale / special price: 20% off, active now
                 $salePrice = round($basePrice * 0.80, 5);
 
-                $row                  = new \stdClass();
-                $row->variant_id      = $variantId;
-                $row->quantity_from   = null;
-                $row->quantity_to     = null;
-                $row->date_from       = $dateFrom;
-                $row->date_to         = $dateTo;
+                $row                    = new \stdClass();
+                $row->variant_id        = $variantId;
+                $row->quantity_from     = null;
+                $row->quantity_to       = null;
+                $row->date_from         = $dateFrom;
+                $row->date_to           = $dateTo;
                 $row->customer_group_id = null;
-                $row->price           = number_format($salePrice, 5, '.', '');
-                $row->params          = null;
+                $row->price             = number_format($salePrice, 5, '.', '');
+                $row->params            = null;
 
                 $db->insertObject('#__j2commerce_product_prices', $row);
                 $created++;
@@ -2024,15 +2025,15 @@ final class SampleDataHelper
                         ? number_format($tier['qty_to'], 5, '.', '')
                         : null;
 
-                    $row                  = new \stdClass();
-                    $row->variant_id      = $variantId;
-                    $row->quantity_from   = $qtyFrom;
-                    $row->quantity_to     = $qtyTo;
-                    $row->date_from       = null;
-                    $row->date_to         = null;
+                    $row                    = new \stdClass();
+                    $row->variant_id        = $variantId;
+                    $row->quantity_from     = $qtyFrom;
+                    $row->quantity_to       = $qtyTo;
+                    $row->date_from         = null;
+                    $row->date_to           = null;
                     $row->customer_group_id = null;
-                    $row->price           = number_format($tierPrice, 5, '.', '');
-                    $row->params          = null;
+                    $row->price             = number_format($tierPrice, 5, '.', '');
+                    $row->params            = null;
 
                     $db->insertObject('#__j2commerce_product_prices', $row);
                     $created++;
@@ -2049,39 +2050,39 @@ final class SampleDataHelper
 
     private function buildVariantObject(int $productId, string $sku, float $price, string $now, bool $isMaster): \stdClass
     {
-        $v                         = new \stdClass();
-        $v->product_id             = $productId;
-        $v->is_master              = $isMaster ? 1 : 0;
-        $v->sku                    = $sku;
-        $v->upc                    = '';
-        $v->price                  = $price;
-        $v->pricing_calculator     = 'standardprice';
-        $v->shipping               = 1;
-        $v->params                 = '{}';
-        $v->length                 = 0.0;
-        $v->width                  = 0.0;
-        $v->height                 = 0.0;
-        $v->length_class_id        = 0;
-        $v->weight                 = 0.0;
-        $v->weight_class_id        = 0;
-        $v->created_on             = $now;
-        $v->created_by             = 0;
-        $v->modified_on            = $now;
-        $v->modified_by            = 0;
-        $v->manage_stock           = 1;
-        $v->quantity_restriction   = 0;
-        $v->min_out_qty            = 0.0;
+        $v                                = new \stdClass();
+        $v->product_id                    = $productId;
+        $v->is_master                     = $isMaster ? 1 : 0;
+        $v->sku                           = $sku;
+        $v->upc                           = '';
+        $v->price                         = $price;
+        $v->pricing_calculator            = 'standardprice';
+        $v->shipping                      = 1;
+        $v->params                        = '{}';
+        $v->length                        = 0.0;
+        $v->width                         = 0.0;
+        $v->height                        = 0.0;
+        $v->length_class_id               = 0;
+        $v->weight                        = 0.0;
+        $v->weight_class_id               = 0;
+        $v->created_on                    = $now;
+        $v->created_by                    = 0;
+        $v->modified_on                   = $now;
+        $v->modified_by                   = 0;
+        $v->manage_stock                  = 1;
+        $v->quantity_restriction          = 0;
+        $v->min_out_qty                   = 0.0;
         $v->use_store_config_min_out_qty  = 1;
-        $v->min_sale_qty           = 0.0;
+        $v->min_sale_qty                  = 0.0;
         $v->use_store_config_min_sale_qty = 1;
-        $v->max_sale_qty           = 0.0;
+        $v->max_sale_qty                  = 0.0;
         $v->use_store_config_max_sale_qty = 1;
-        $v->notify_qty             = 0.0;
+        $v->notify_qty                    = 0.0;
         $v->use_store_config_notify_qty   = 1;
-        $v->availability           = 0;
-        $v->sold                   = 0.0;
-        $v->allow_backorder        = 0;
-        $v->isdefault_variant      = $isMaster ? 1 : 0;
+        $v->availability                  = 0;
+        $v->sold                          = 0.0;
+        $v->allow_backorder               = 0;
+        $v->isdefault_variant             = $isMaster ? 1 : 0;
 
         return $v;
     }
@@ -2133,6 +2134,6 @@ final class SampleDataHelper
 
     private function randomPhone(): string
     {
-        return sprintf('+1-%d-%d-%d', mt_rand(200, 999), mt_rand(200, 999), mt_rand(1000, 9999));
+        return \sprintf('+1-%d-%d-%d', mt_rand(200, 999), mt_rand(200, 999), mt_rand(1000, 9999));
     }
 }

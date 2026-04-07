@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -74,14 +75,14 @@ class VendorController extends FormController
         $app = Factory::getApplication();
 
         // Get country ID from request
-        $countryId = $app->getInput()->getInt('country_id', 0);
+        $countryId      = $app->getInput()->getInt('country_id', 0);
         $selectedZoneId = $app->getInput()->getInt('zone_id', 0);
 
         // Build zone options HTML
         $html = '<option value="">' . Text::sprintf('COM_J2COMMERCE_SELECT_PLACEHOLDER', Text::_('COM_J2COMMERCE_ZONE')) . '</option>';
 
         if ($countryId > 0) {
-            $db = Factory::getContainer()->get('DatabaseDriver');
+            $db    = Factory::getContainer()->get('DatabaseDriver');
             $query = $db->getQuery(true);
 
             $query->select($db->quoteName(['j2commerce_zone_id', 'zone_name']))

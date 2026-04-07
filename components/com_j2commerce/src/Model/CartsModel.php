@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Site\Model;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHelper;
@@ -19,7 +20,6 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\CartModel;
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
-use Joomla\Registry\Registry;
 
 /**
  * Carts Model for site frontend (shopping cart view)
@@ -72,7 +72,7 @@ class CartsModel extends BaseDatabaseModel
      */
     protected function populateState(): void
     {
-        $app = Factory::getApplication();
+        $app     = Factory::getApplication();
         $session = $app->getSession();
 
         // Load the parameters
@@ -81,8 +81,8 @@ class CartsModel extends BaseDatabaseModel
 
         // Get country/zone from input or session
         $countryId = $app->getInput()->getInt('country_id', 0);
-        $zoneId = $app->getInput()->getInt('zone_id', 0);
-        $postcode = $app->getInput()->getAlnum('postcode', '');
+        $zoneId    = $app->getInput()->getInt('zone_id', 0);
+        $postcode  = $app->getInput()->getAlnum('postcode', '');
 
         // Get store profile for defaults
         $store = J2CommerceHelper::storeProfile();
@@ -161,7 +161,7 @@ class CartsModel extends BaseDatabaseModel
     public function getItems(bool $force = false): array
     {
         if ($this->_items === null || $force) {
-            $app = Factory::getApplication();
+            $app        = Factory::getApplication();
             $mvcFactory = $app->bootComponent('com_j2commerce')->getMVCFactory();
 
             // Initialize coupon via native CouponModel
@@ -311,7 +311,7 @@ class CartsModel extends BaseDatabaseModel
      */
     public function validateShippingSelection(): void
     {
-        $session = Factory::getApplication()->getSession();
+        $session         = Factory::getApplication()->getSession();
         $shippingMethods = $session->get('shipping_methods', [], 'j2commerce');
         $shippingValues  = $session->get('shipping_values', [], 'j2commerce');
 
@@ -329,7 +329,7 @@ class CartsModel extends BaseDatabaseModel
 
         // Check if the current selection matches any available method
         $selectedName = $shippingValues['shipping_name'] ?? '';
-        $found = false;
+        $found        = false;
 
         foreach ($shippingMethods as $method) {
             if (($method['name'] ?? '') === $selectedName) {

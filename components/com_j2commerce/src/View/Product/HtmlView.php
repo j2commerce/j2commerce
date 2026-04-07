@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Site\View\Product;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
@@ -176,10 +177,10 @@ class HtmlView extends BaseHtmlView
      */
     protected function _prepareDocument(): void
     {
-        $app = Factory::getApplication();
+        $app      = Factory::getApplication();
         $document = $this->getDocument();
-        $pathway = $app->getPathway();
-        $menu = $app->getMenu()->getActive();
+        $pathway  = $app->getPathway();
+        $menu     = $app->getMenu()->getActive();
 
         // Handle print view - prevent indexing
         if ($this->print) {
@@ -215,7 +216,7 @@ class HtmlView extends BaseHtmlView
             if ($catid) {
                 // Build category path using Joomla's Categories API
                 $categories = \Joomla\CMS\Categories\Categories::getInstance('Content');
-                $category = $categories->get($catid);
+                $category   = $categories->get($catid);
 
                 // Determine which category to stop at based on menu
                 $menuCategoryId = 0;
@@ -233,7 +234,7 @@ class HtmlView extends BaseHtmlView
                 while ($category !== null && $category->id != $menuCategoryId && $category->id !== 'root' && $category->id > 1) {
                     $path[] = [
                         'title' => $category->title,
-                        'link' => Route::_(RouteHelper::getCategoryRouteInContext((int) $category->id, $menu))
+                        'link'  => Route::_(RouteHelper::getCategoryRouteInContext((int) $category->id, $menu)),
                     ];
                     $category = $category->getParent();
                 }
@@ -245,7 +246,7 @@ class HtmlView extends BaseHtmlView
             // Add product as final breadcrumb (no link - current page)
             $path[] = [
                 'title' => $this->item->product_name ?? 'Product',
-                'link' => ''
+                'link'  => '',
             ];
 
             // Add all path items to pathway

@@ -1,5 +1,5 @@
 <?php
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
@@ -35,22 +35,22 @@ if (empty($image)) {
 
     <?php
     $imgStyle = '';
-    if ($maxHeight !== 'auto' && $maxHeight !== '') {
-        $imgStyle .= 'max-height:' . htmlspecialchars($maxHeight, ENT_QUOTES, 'UTF-8') . ';';
+if ($maxHeight !== 'auto' && $maxHeight !== '') {
+    $imgStyle .= 'max-height:' . htmlspecialchars($maxHeight, ENT_QUOTES, 'UTF-8') . ';';
+}
+if ($objectFit !== 'cover') {
+    $imgStyle .= 'object-fit:' . htmlspecialchars($objectFit, ENT_QUOTES, 'UTF-8') . ';';
+}
+$imgClass = 'j2commerce-img-responsive img-fluid';
+if ($aspectRatio !== 'auto') {
+    $ratioMap   = ['1:1' => '1x1', '4:3' => '4x3', '16:9' => '16x9', '3:4' => '3x4'];
+    $ratioClass = $ratioMap[$aspectRatio] ?? '';
+    if ($ratioClass) {
+        $imgClass .= ' ratio ratio-' . $ratioClass;
     }
-    if ($objectFit !== 'cover') {
-        $imgStyle .= 'object-fit:' . htmlspecialchars($objectFit, ENT_QUOTES, 'UTF-8') . ';';
-    }
-    $imgClass = 'j2commerce-img-responsive img-fluid';
-    if ($aspectRatio !== 'auto') {
-        $ratioMap = ['1:1' => '1x1', '4:3' => '4x3', '16:9' => '16x9', '3:4' => '3x4'];
-        $ratioClass = $ratioMap[$aspectRatio] ?? '';
-        if ($ratioClass) {
-            $imgClass .= ' ratio ratio-' . $ratioClass;
-        }
-    }
-    echo ImageHelper::getProductImage($image, $imageWidth, 'html', $imageWidth, $imgClass, $imageAlt, $imgStyle ? ' style="' . $imgStyle . '"' : '');
-    ?>
+}
+echo ImageHelper::getProductImage($image, $imageWidth, 'html', $imageWidth, $imgClass, $imageAlt, $imgStyle ? ' style="' . $imgStyle . '"' : '');
+?>
 
     <?php if ($linkEnabled && !empty($productLink)): ?>
         </a>

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -43,14 +44,14 @@ class AjaxController extends BaseController
     {
         $app = Factory::getApplication();
 
-        $countryId = $app->getInput()->getInt('country_id', 0);
+        $countryId      = $app->getInput()->getInt('country_id', 0);
         $selectedZoneId = $app->getInput()->getInt('zone_id', 0);
 
         $html = '<option value="">' . Text::sprintf('COM_J2COMMERCE_SELECT_PLACEHOLDER', Text::_('COM_J2COMMERCE_ZONE')) . '</option>';
 
         if ($countryId > 0) {
             try {
-                $db = Factory::getContainer()->get(DatabaseInterface::class);
+                $db    = Factory::getContainer()->get(DatabaseInterface::class);
                 $query = $db->getQuery(true);
 
                 $query->select($db->quoteName(['j2commerce_zone_id', 'zone_name']))
@@ -99,7 +100,7 @@ class AjaxController extends BaseController
         $html = '<option value="">' . Text::sprintf('COM_J2COMMERCE_SELECT_PLACEHOLDER', Text::_('COM_J2COMMERCE_COUNTRY')) . '</option>';
 
         try {
-            $db = Factory::getContainer()->get(DatabaseInterface::class);
+            $db    = Factory::getContainer()->get(DatabaseInterface::class);
             $query = $db->getQuery(true);
 
             $query->select($db->quoteName(['j2commerce_country_id', 'country_name']))
@@ -141,7 +142,7 @@ class AjaxController extends BaseController
         $app = Factory::getApplication();
 
         $countryCode = $app->getInput()->getString('country_code', '');
-        $stateName = $app->getInput()->getString('state_name', '');
+        $stateName   = $app->getInput()->getString('state_name', '');
 
         $result = ['country_id' => 0, 'zone_id' => 0];
 
@@ -223,7 +224,7 @@ class AjaxController extends BaseController
         }
 
         // Tier 2: zone_code abbreviation match
-        $code = strtoupper($stateName);
+        $code  = strtoupper($stateName);
         $query = $db->getQuery(true)
             ->select($db->quoteName('j2commerce_zone_id'))
             ->from($db->quoteName('#__j2commerce_zones'))
@@ -241,7 +242,7 @@ class AjaxController extends BaseController
 
         // Tier 3: LIKE partial match
         $likePattern = '%' . $db->escape($stateName, true) . '%';
-        $query = $db->getQuery(true)
+        $query       = $db->getQuery(true)
             ->select($db->quoteName('j2commerce_zone_id'))
             ->from($db->quoteName('#__j2commerce_zones'))
             ->where($db->quoteName('country_id') . ' = :countryId')

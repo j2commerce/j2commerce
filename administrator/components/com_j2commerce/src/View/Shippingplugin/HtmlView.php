@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\View\Shippingplugin;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\MenuHelper;
 use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
 use Joomla\CMS\Factory;
@@ -23,7 +24,6 @@ use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use Joomla\Event\Event;
-use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 /**
  * Generic container view for shipping plugin admin pages.
@@ -108,7 +108,7 @@ class HtmlView extends BaseHtmlView
         $app->getDispatcher()->dispatch('onJ2CommerceShippingPluginView', $event);
 
         // Collect rendered HTML from plugin
-        $results = $event->getArgument('result', []);
+        $results          = $event->getArgument('result', []);
         $this->pluginHtml = implode('', array_filter($results, 'is_string'));
 
         // Set page title from plugin

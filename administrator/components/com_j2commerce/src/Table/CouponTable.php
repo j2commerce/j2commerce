@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -133,7 +134,7 @@ class CouponTable extends Table
         $this->coupon_code = strtoupper(trim($this->coupon_code));
 
         // Check for duplicate coupon code
-        $db = $this->getDbo();
+        $db    = $this->getDbo();
         $query = $db->getQuery(true)
             ->select($db->quoteName('j2commerce_coupon_id'))
             ->from($db->quoteName('#__j2commerce_coupons'))
@@ -294,7 +295,7 @@ class CouponTable extends Table
         foreach ($rows as $row) {
             if ($row[1] >= 0) {
                 // Only reorder if the ordering value is not negative
-                $pk = (int) $row[0];
+                $pk    = (int) $row[0];
                 $query = $this->_db->getQuery(true)
                     ->update($this->_tbl)
                     ->set($this->_db->quoteName('ordering') . ' = :ordering')
@@ -344,7 +345,7 @@ class CouponTable extends Table
         }
 
         // Swap ordering values
-        $pk = (int) $row[$k];
+        $pk    = (int) $row[$k];
         $query = $this->_db->getQuery(true)
             ->update($this->_tbl)
             ->set($this->_db->quoteName('ordering') . ' = :old_ordering')
@@ -355,9 +356,9 @@ class CouponTable extends Table
         $this->_db->setQuery($query);
         $this->_db->execute();
 
-        $thisPk = (int) $this->$k;
+        $thisPk      = (int) $this->$k;
         $rowOrdering = (int) $row['ordering'];
-        $query = $this->_db->getQuery(true)
+        $query       = $this->_db->getQuery(true)
             ->update($this->_tbl)
             ->set($this->_db->quoteName('ordering') . ' = :new_ordering')
             ->where($this->_tbl_key . ' = :pk')
@@ -405,7 +406,7 @@ class CouponTable extends Table
         }
 
         // Swap ordering values
-        $pk = (int) $row[$k];
+        $pk    = (int) $row[$k];
         $query = $this->_db->getQuery(true)
             ->update($this->_tbl)
             ->set($this->_db->quoteName('ordering') . ' = :old_ordering')
@@ -416,9 +417,9 @@ class CouponTable extends Table
         $this->_db->setQuery($query);
         $this->_db->execute();
 
-        $thisPk = (int) $this->$k;
+        $thisPk      = (int) $this->$k;
         $rowOrdering = (int) $row['ordering'];
-        $query = $this->_db->getQuery(true)
+        $query       = $this->_db->getQuery(true)
             ->update($this->_tbl)
             ->set($this->_db->quoteName('ordering') . ' = :new_ordering')
             ->where($this->_tbl_key . ' = :pk')

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\ValueObject\PaymentMethodData;
 
@@ -62,12 +63,12 @@ class PaymentMethodsHelper
         $results = $event->getArgument('result', []);
 
         foreach ($results as $pluginResult) {
-            if (!is_array($pluginResult)) {
+            if (!\is_array($pluginResult)) {
                 continue;
             }
 
             foreach ($pluginResult as $methodData) {
-                if (!is_array($methodData)) {
+                if (!\is_array($methodData)) {
                     continue;
                 }
 

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\ValueObject;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 /**
  * Value object representing a saved payment method from any provider
@@ -32,7 +33,8 @@ final class PaymentMethodData
         public readonly bool $isDefault = false,
         public readonly array $actions = ['delete'],
         public readonly array $metadata = []
-    ) {}
+    ) {
+    }
 
     /**
      * Create from array data
@@ -92,7 +94,7 @@ final class PaymentMethodData
 
         $yearShort = $this->expYear % 100;
 
-        return sprintf('%02d/%02d', $this->expMonth, $yearShort);
+        return \sprintf('%02d/%02d', $this->expMonth, $yearShort);
     }
 
     /**
@@ -103,7 +105,7 @@ final class PaymentMethodData
      */
     public function canSetDefault(): bool
     {
-        return in_array('set_default', $this->actions, true);
+        return \in_array('set_default', $this->actions, true);
     }
 
     /**
@@ -114,7 +116,7 @@ final class PaymentMethodData
      */
     public function canDelete(): bool
     {
-        return in_array('delete', $this->actions, true);
+        return \in_array('delete', $this->actions, true);
     }
 
     /**

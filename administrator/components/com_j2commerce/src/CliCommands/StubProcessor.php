@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\CliCommands;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 class StubProcessor
 {
@@ -54,7 +55,7 @@ class StubProcessor
                 '/\{\{#if\s+(\w+)\}\}((?:(?!\{\{#if\b).)*?)\{\{else\}\}((?:(?!\{\{#if\b).)*?)\{\{\/if\}\}/s',
                 function (array $m) {
                     $conditionKey = $m[1];
-                    $placeholder = '{{' . $conditionKey . '}}';
+                    $placeholder  = '{{' . $conditionKey . '}}';
 
                     return isset($this->replacements[$placeholder]) && !empty($this->replacements[$placeholder])
                         ? $m[2]
@@ -68,7 +69,7 @@ class StubProcessor
                 '/\{\{#if\s+(\w+)\}\}((?:(?!\{\{#if\b).)*?)\{\{\/if\}\}/s',
                 function (array $m) {
                     $conditionKey = $m[1];
-                    $placeholder = '{{' . $conditionKey . '}}';
+                    $placeholder  = '{{' . $conditionKey . '}}';
 
                     return isset($this->replacements[$placeholder]) && !empty($this->replacements[$placeholder])
                         ? $m[2]
@@ -90,7 +91,7 @@ class StubProcessor
         $path = JPATH_ADMINISTRATOR . '/components/com_j2commerce/stubs/' . $type . '/' . $file . '.stub';
 
         if (!file_exists($path)) {
-            throw new \RuntimeException(sprintf('Stub file not found: %s', $path));
+            throw new \RuntimeException(\sprintf('Stub file not found: %s', $path));
         }
 
         return file_get_contents($path);

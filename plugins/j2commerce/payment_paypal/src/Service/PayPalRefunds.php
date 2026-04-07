@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  plg_j2commerce_payment_paypal
@@ -13,7 +14,9 @@ namespace J2Commerce\Plugin\J2Commerce\PaymentPaypal\Service;
 
 final class PayPalRefunds
 {
-    public function __construct(private PayPalClient $client) {}
+    public function __construct(private PayPalClient $client)
+    {
+    }
 
     /**
      * @return array{status: int, body: array<string, mixed>}

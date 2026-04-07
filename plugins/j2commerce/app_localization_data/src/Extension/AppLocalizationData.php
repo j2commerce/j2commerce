@@ -69,7 +69,7 @@ final class AppLocalizationData extends CMSPlugin implements SubscriberInterface
 
         $result = match ($task) {
             'insertTableValues' => $this->insertTableValues(),
-            default => [
+            default             => [
                 'success' => false,
                 'message' => Text::_('PLG_J2COMMERCE_APP_LOCALIZATION_DATA_ERR_INVALID_TASK'),
             ],

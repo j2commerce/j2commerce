@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -15,7 +16,6 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 
 use Joomla\CMS\Application\SiteApplication;
 use Joomla\CMS\Factory;
-use Joomla\CMS\Language\LanguageHelper;
 use Joomla\CMS\Language\Multilanguage;
 use Joomla\CMS\Menu\AbstractMenu;
 use Joomla\CMS\Menu\MenuItem;
@@ -174,7 +174,7 @@ class RouterHelper
      */
     public static function findMenu(array $qoptions = [], ?array $params = null): ?MenuItem
     {
-        $menu = self::getMenu();
+        $menu       = self::getMenu();
         $activeMenu = $menu->getActive();
 
         // First check the active menu item (fastest shortcut)
@@ -256,7 +256,7 @@ class RouterHelper
     private static function checkMenuLanguage(MenuItem $menuItem, array $qoptions): bool
     {
         $requestedLang = $qoptions['lang'] ?? self::getLanguageTag();
-        $menuLang = $menuItem->language ?? '*';
+        $menuLang      = $menuItem->language ?? '*';
 
         // Menu language matches requested language
         if ($requestedLang === $menuLang) {
@@ -286,7 +286,7 @@ class RouterHelper
      */
     public static function findMenuOrders(array $qoptions): ?int
     {
-        $menu = self::getMenu();
+        $menu   = self::getMenu();
         $menuId = null;
 
         foreach ($menu->getMenu() as $item) {
@@ -389,7 +389,7 @@ class RouterHelper
     private static function checkCartMenuLanguage(MenuItem $menuItem, array $qoptions): bool
     {
         $currentLang = self::getLanguageTag();
-        $menuLang = $menuItem->language ?? '*';
+        $menuLang    = $menuItem->language ?? '*';
 
         // Explicit language in options
         if (isset($qoptions['lang']) && $qoptions['lang'] === $menuLang) {
@@ -493,10 +493,10 @@ class RouterHelper
      */
     public static function findProductMenu(array $qoptions): ?MenuItem
     {
-        $menu = self::getMenu();
+        $menu         = self::getMenu();
         $allMenuItems = $menu->getMenu();
-        $foundMenu = null;
-        $otherTasks = ['compare', 'wishlist'];
+        $foundMenu    = null;
+        $otherTasks   = ['compare', 'wishlist'];
 
         // Check if specific Itemid was provided
         if (!empty($qoptions['Itemid'])) {
@@ -564,10 +564,10 @@ class RouterHelper
         }
 
         $requestedLang = $qoptions['lang'] ?? $currentLang;
-        $categoryId = self::getProductCategory((int) $qoptions['id'], $requestedLang);
+        $categoryId    = self::getProductCategory((int) $qoptions['id'], $requestedLang);
 
         // Get categories from menu query
-        $menuQuery = $menuItem->query ?? [];
+        $menuQuery      = $menuItem->query ?? [];
         $menuCategories = $menuQuery['catid'] ?? [];
 
         if (!\is_array($menuCategories)) {
@@ -633,10 +633,10 @@ class RouterHelper
         }
 
         $requestedLang = $qoptions['lang'] ?? $currentLang;
-        $productTags = self::getProductTags((int) $qoptions['id'], $requestedLang);
+        $productTags   = self::getProductTags((int) $qoptions['id'], $requestedLang);
 
         $menuQuery = $menuItem->query ?? [];
-        $menuTag = $menuQuery['tag'] ?? '';
+        $menuTag   = $menuQuery['tag'] ?? '';
 
         if (\in_array($menuTag, $productTags, true)) {
             $menuLang = $menuItem->language ?? '*';
@@ -670,7 +670,7 @@ class RouterHelper
             return $cache[$productId];
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true)
             ->select('*')
             ->from($db->quoteName('#__j2commerce_products'))
@@ -768,7 +768,7 @@ class RouterHelper
             return [];
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true)
             ->select($db->quoteName('t.alias'))
             ->from($db->quoteName('#__contentitem_tag_map', 'ctm'))
@@ -804,7 +804,7 @@ class RouterHelper
             return '';
         }
 
-        $db = self::getDatabase();
+        $db        = self::getDatabase();
         $articleId = (int) ($product->product_source_id ?? 0);
 
         $query = $db->getQuery(true)
@@ -848,7 +848,7 @@ class RouterHelper
             return $cache[$articleId];
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true)
             ->select('*')
             ->from($db->quoteName('#__content'))
@@ -890,7 +890,7 @@ class RouterHelper
             }
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true)
             ->select('*')
             ->from($db->quoteName('#__content'))
@@ -982,7 +982,7 @@ class RouterHelper
         }
 
         $articleId = (int) ($product->product_source_id ?? 0);
-        $article = self::getArticle($articleId);
+        $article   = self::getArticle($articleId);
 
         if (!$article) {
             return '';
@@ -1058,7 +1058,7 @@ class RouterHelper
      */
     private static function getProductIdBySource(string $source, int $sourceId): int|false
     {
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true)
             ->select($db->quoteName('j2commerce_product_id'))
             ->from($db->quoteName('#__j2commerce_products'))
@@ -1092,7 +1092,7 @@ class RouterHelper
             return 0;
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true)
             ->select($db->quoteName('lang_id'))
             ->from($db->quoteName('#__languages'))
@@ -1119,7 +1119,7 @@ class RouterHelper
             return '';
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true)
             ->select($db->quoteName('alias'))
             ->from($db->quoteName('#__tags'))
@@ -1146,7 +1146,7 @@ class RouterHelper
             return 0;
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true)
             ->select($db->quoteName('id'))
             ->from($db->quoteName('#__tags'))

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -9,7 +10,7 @@
 
 namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Model\ListModel;
@@ -39,7 +40,7 @@ class OptionsModel extends ListModel
                 'option_name', 'a.option_name',
                 'ordering', 'a.ordering',
                 'enabled', 'a.enabled',
-                'option_params', 'a.option_params'
+                'option_params', 'a.option_params',
             ];
         }
 
@@ -101,7 +102,7 @@ class OptionsModel extends ListModel
     protected function getListQuery()
     {
         // Create a new query object.
-        $db = Factory::getContainer()->get('DatabaseDriver');
+        $db    = Factory::getContainer()->get('DatabaseDriver');
         $query = $db->getQuery(true);
 
         // Select the required fields from the table.
@@ -152,7 +153,7 @@ class OptionsModel extends ListModel
         }
 
         // Add the list ordering clause.
-        $orderCol = $this->getState('list.ordering', 'a.ordering');
+        $orderCol  = $this->getState('list.ordering', 'a.ordering');
         $orderDirn = $this->getState('list.direction', 'ASC');
 
         if ($orderCol && $orderDirn) {
@@ -174,7 +175,7 @@ class OptionsModel extends ListModel
         $items = parent::getItems();
 
         // Ensure we always return an array
-        if ($items === false || !is_array($items)) {
+        if ($items === false || !\is_array($items)) {
             // Log the error for debugging
             $app = Factory::getApplication();
             $app->enqueueMessage('Failed to retrieve options from database. Please check if the j2commerce_options table exists.', 'warning');
@@ -220,7 +221,7 @@ class OptionsModel extends ListModel
      */
     public function getOptionTypes()
     {
-        $db = Factory::getContainer()->get('DatabaseDriver');
+        $db    = Factory::getContainer()->get('DatabaseDriver');
         $query = $db->getQuery(true);
 
         $query->select('DISTINCT ' . $db->quoteName('type'))

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -58,13 +59,13 @@ class BoxPackerField extends FormField
 
         $boxes = [];
         if (!empty($this->value)) {
-            $decoded = is_string($this->value) ? json_decode($this->value, true) : (array) $this->value;
-            $boxes = is_array($decoded) ? $decoded : [];
+            $decoded = \is_string($this->value) ? json_decode($this->value, true) : (array) $this->value;
+            $boxes   = \is_array($decoded) ? $decoded : [];
         }
 
         $fieldName = $this->name;
-        $fieldId = htmlspecialchars($this->id, ENT_COMPAT, 'UTF-8');
-        $token = Session::getFormToken();
+        $fieldId   = htmlspecialchars($this->id, ENT_COMPAT, 'UTF-8');
+        $token     = Session::getFormToken();
 
         $html = '<div class="j2commerce-boxpacker-field" id="' . $fieldId . '_container" data-field-name="' . htmlspecialchars($fieldName, ENT_COMPAT, 'UTF-8') . '" data-token="' . $token . '">';
 
@@ -152,13 +153,13 @@ class BoxPackerField extends FormField
     private static function renderBoxRow(int $index, array $box): string
     {
         $fields = ['name', 'outer_length', 'outer_width', 'outer_height', 'inner_length', 'inner_width', 'inner_height', 'box_weight', 'max_weight'];
-        $row = '<tr data-row-index="' . $index . '">';
+        $row    = '<tr data-row-index="' . $index . '">';
 
         foreach ($fields as $field) {
-            $val = htmlspecialchars((string) ($box[$field] ?? ''), ENT_COMPAT, 'UTF-8');
+            $val  = htmlspecialchars((string) ($box[$field] ?? ''), ENT_COMPAT, 'UTF-8');
             $type = $field === 'name' ? 'text' : 'number';
             $step = $field === 'name' ? '' : ' step="0.1" min="0"';
-            $cls = 'form-control form-control-sm';
+            $cls  = 'form-control form-control-sm';
             $row .= '<td><input type="' . $type . '" class="' . $cls . '" data-box-field="' . $field . '" value="' . $val . '"' . $step . '></td>';
         }
 

@@ -31,7 +31,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
 
     public function onBeforeApiRoute(BeforeApiRouteEvent $event): void
     {
-        $router = $event->getRouter();
+        $router    = $event->getRouter();
         $component = ['component' => 'com_j2commerce'];
 
         // Products — public GET, authenticated write

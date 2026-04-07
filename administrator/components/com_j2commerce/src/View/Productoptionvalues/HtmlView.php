@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -15,13 +16,13 @@ namespace J2Commerce\Component\J2commerce\Administrator\View\Productoptionvalues
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\Database\ParameterType;
-use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 /**
  * Product Option Values View
@@ -108,9 +109,9 @@ class HtmlView extends BaseHtmlView
         $this->loadAdminAssets();
 
         $app = Factory::getApplication();
-        $db = Factory::getContainer()->get('DatabaseDriver');
+        $db  = Factory::getContainer()->get('DatabaseDriver');
 
-        $this->productId = $app->getInput()->getInt('product_id', 0);
+        $this->productId       = $app->getInput()->getInt('product_id', 0);
         $this->productOptionId = $app->getInput()->getInt('productoption_id', 0);
 
         if (!$this->productId || !$this->productOptionId) {
@@ -119,7 +120,7 @@ class HtmlView extends BaseHtmlView
         }
 
         // Get product using MVC factory
-        $mvcFactory = $app->bootComponent('com_j2commerce')->getMVCFactory();
+        $mvcFactory   = $app->bootComponent('com_j2commerce')->getMVCFactory();
         $productModel = $mvcFactory->createModel('Product', 'Administrator', ['ignore_request' => true]);
 
         if (!$productModel) {
@@ -167,7 +168,7 @@ class HtmlView extends BaseHtmlView
         // Get all available option values for this option (from master option)
         // Note: bind() requires a variable reference, can't use object property directly
         $optionId = (int) $this->productOption->option_id;
-        $query = $db->getQuery(true);
+        $query    = $db->getQuery(true);
         $query->select([
                 $db->quoteName('j2commerce_optionvalue_id'),
                 $db->quoteName('optionvalue_name'),

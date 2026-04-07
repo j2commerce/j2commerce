@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  Plugin.J2Commerce.ReportItemised
@@ -9,18 +10,17 @@
 
 declare(strict_types=1);
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
+use J2Commerce\Plugin\J2Commerce\ReportItemised\Extension\ReportItemised;
 use Joomla\CMS\Extension\PluginInterface;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\DI\Container;
 use Joomla\DI\ServiceProviderInterface;
 use Joomla\Event\DispatcherInterface;
-use J2Commerce\Plugin\J2Commerce\ReportItemised\Extension\ReportItemised;
 
-return new class implements ServiceProviderInterface
-{
+return new class () implements ServiceProviderInterface {
     public function register(Container $container): void
     {
         $container->set(

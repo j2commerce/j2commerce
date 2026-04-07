@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  mod_j2commerce_relatedproducts
@@ -11,15 +12,15 @@ declare(strict_types=1);
 
 namespace J2Commerce\Module\RelatedProducts\Site\Helper;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\CartHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
 use Joomla\Registry\Registry;
-use J2Commerce\Component\J2commerce\Administrator\Helper\CartHelper;
-use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 
 class RelatedProductsHelper
 {
@@ -30,8 +31,8 @@ class RelatedProductsHelper
         }
 
         $relationType = $params->get('relation_type', 'cross_sells');
-        $count = (int) $params->get('count', 4);
-        $ordering = $params->get('list_ordering', 'random');
+        $count        = (int) $params->get('count', 4);
+        $ordering     = $params->get('list_ordering', 'random');
 
         $cartProductIds = $this->getCartProductIds();
 
@@ -54,14 +55,14 @@ class RelatedProductsHelper
 
     public static function getRelatedHtmlAjax(): string
     {
-        $app = Factory::getApplication();
+        $app      = Factory::getApplication();
         $moduleId = $app->getInput()->getInt('module_id', 0);
 
         if ($moduleId <= 0) {
             return '';
         }
 
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db    = Factory::getContainer()->get(DatabaseInterface::class);
         $query = $db->getQuery(true)
             ->select('*')
             ->from($db->quoteName('#__modules'))
@@ -76,7 +77,7 @@ class RelatedProductsHelper
             return '';
         }
 
-        $renderer = $app->getDocument()->loadRenderer('module');
+        $renderer       = $app->getDocument()->loadRenderer('module');
         $module->params = $module->params ?: '{}';
 
         return $renderer->render($module);
@@ -86,15 +87,15 @@ class RelatedProductsHelper
     {
         try {
             $cartHelper = CartHelper::getInstance();
-            $cart = $cartHelper->getCart(0, false);
+            $cart       = $cartHelper->getCart(0, false);
 
             if (!$cart) {
                 return [];
             }
 
             $cartId = (int) $cart->j2commerce_cart_id;
-            $db = $this->getDb();
-            $query = $db->getQuery(true);
+            $db     = $this->getDb();
+            $query  = $db->getQuery(true);
 
             $query->select('DISTINCT ' . $db->quoteName('product_id'))
                 ->from($db->quoteName('#__j2commerce_cartitems'))
@@ -115,7 +116,7 @@ class RelatedProductsHelper
             return [];
         }
 
-        $db = $this->getDb();
+        $db    = $this->getDb();
         $query = $db->getQuery(true);
 
         $columns = match ($relationType) {
@@ -127,10 +128,10 @@ class RelatedProductsHelper
         $query->select(array_map([$db, 'quoteName'], $columns))
             ->from($db->quoteName('#__j2commerce_products'));
 
-        $bindValues = [];
+        $bindValues   = [];
         $placeholders = [];
         foreach ($cartProductIds as $i => $productId) {
-            $key = ':pid' . $i;
+            $key            = ':pid' . $i;
             $bindValues[$i] = $productId;
             $query->bind($key, $bindValues[$i], ParameterType::INTEGER);
             $placeholders[] = $key;
@@ -172,7 +173,7 @@ class RelatedProductsHelper
             return [];
         }
 
-        $db = $this->getDb();
+        $db    = $this->getDb();
         $query = $db->getQuery(true);
 
         $query->select([
@@ -190,10 +191,10 @@ class RelatedProductsHelper
             ->where($db->quoteName('p.visibility') . ' = 1')
             ->where($db->quoteName('c.state') . ' = 1');
 
-        $bindValues = [];
+        $bindValues   = [];
         $placeholders = [];
         foreach ($ids as $i => $id) {
-            $key = ':rid' . $i;
+            $key            = ':rid' . $i;
             $bindValues[$i] = $id;
             $query->bind($key, $bindValues[$i], ParameterType::INTEGER);
             $placeholders[] = $key;
@@ -220,7 +221,7 @@ class RelatedProductsHelper
             return [];
         }
 
-        $db = $this->getDb();
+        $db    = $this->getDb();
         $query = $db->getQuery(true);
 
         $query->select($db->quoteName('a.j2commerce_product_id'))

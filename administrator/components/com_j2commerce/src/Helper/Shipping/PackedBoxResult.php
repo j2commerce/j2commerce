@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -27,5 +28,6 @@ class PackedBoxResult
         public readonly float $volumeUtilisation,
         public readonly array $items = [],
         public readonly string $visualisationUrl = '',
-    ) {}
+    ) {
+    }
 }

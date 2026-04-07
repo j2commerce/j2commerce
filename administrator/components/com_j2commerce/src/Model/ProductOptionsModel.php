@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -108,7 +109,7 @@ class ProductOptionsModel extends ListModel
      */
     protected function getListQuery(): DatabaseQuery
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         // Select required fields from product_options
@@ -195,7 +196,7 @@ class ProductOptionsModel extends ListModel
      */
     public function getOptionsByProductId(int $productId): array
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         $query->select(
@@ -316,7 +317,7 @@ class ProductOptionsModel extends ListModel
         }
 
         // Map to track old option value IDs to new ones
-        $optionValueMap = [];
+        $optionValueMap         = [];
         $importedOptionValueIds = [];
 
         try {
@@ -326,11 +327,11 @@ class ProductOptionsModel extends ListModel
             foreach ($sourceOptions as $sourceOption) {
                 // Insert the new product option
                 $newOption = (object) [
-                    'option_id' => $sourceOption->option_id,
-                    'parent_id' => $sourceOption->parent_id,
+                    'option_id'  => $sourceOption->option_id,
+                    'parent_id'  => $sourceOption->parent_id,
                     'product_id' => $destProductId,
-                    'ordering' => $sourceOption->ordering,
-                    'required' => $sourceOption->required,
+                    'ordering'   => $sourceOption->ordering,
+                    'required'   => $sourceOption->required,
                     'is_variant' => $sourceOption->is_variant,
                 ];
 
@@ -353,17 +354,17 @@ class ProductOptionsModel extends ListModel
 
                         // Insert new option value
                         $newValue = (object) [
-                            'productoption_id' => $newProductoptionId,
-                            'optionvalue_id' => $sourceValue->optionvalue_id,
-                            'parent_optionvalue' => $sourceValue->parent_optionvalue,
-                            'product_optionvalue_price' => $sourceValue->product_optionvalue_price,
-                            'product_optionvalue_prefix' => $sourceValue->product_optionvalue_prefix,
-                            'product_optionvalue_weight' => $sourceValue->product_optionvalue_weight,
+                            'productoption_id'                  => $newProductoptionId,
+                            'optionvalue_id'                    => $sourceValue->optionvalue_id,
+                            'parent_optionvalue'                => $sourceValue->parent_optionvalue,
+                            'product_optionvalue_price'         => $sourceValue->product_optionvalue_price,
+                            'product_optionvalue_prefix'        => $sourceValue->product_optionvalue_prefix,
+                            'product_optionvalue_weight'        => $sourceValue->product_optionvalue_weight,
                             'product_optionvalue_weight_prefix' => $sourceValue->product_optionvalue_weight_prefix,
-                            'product_optionvalue_sku' => $sourceValue->product_optionvalue_sku,
-                            'product_optionvalue_default' => $sourceValue->product_optionvalue_default,
-                            'ordering' => $sourceValue->ordering,
-                            'product_optionvalue_attribs' => $sourceValue->product_optionvalue_attribs,
+                            'product_optionvalue_sku'           => $sourceValue->product_optionvalue_sku,
+                            'product_optionvalue_default'       => $sourceValue->product_optionvalue_default,
+                            'ordering'                          => $sourceValue->ordering,
+                            'product_optionvalue_attribs'       => $sourceValue->product_optionvalue_attribs,
                         ];
 
                         $db->insertObject('#__j2commerce_product_optionvalues', $newValue, 'j2commerce_product_optionvalue_id');
@@ -371,7 +372,7 @@ class ProductOptionsModel extends ListModel
 
                         // Track the mapping
                         $optionValueMap[$oldValueId] = $newValueId;
-                        $importedOptionValueIds[] = $newValueId;
+                        $importedOptionValueIds[]    = $newValueId;
                     }
                 }
             }
@@ -421,7 +422,7 @@ class ProductOptionsModel extends ListModel
 
             if (!empty($parentOptionvalue)) {
                 $parentValues = explode(',', $parentOptionvalue);
-                $newValues = [];
+                $newValues    = [];
 
                 foreach ($parentValues as $oldValue) {
                     $oldValue = trim($oldValue);

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  Plugin.J2Commerce.PaymentPaypal
@@ -23,7 +24,6 @@ use J2Commerce\Plugin\J2Commerce\PaymentPaypal\Service\PayPalWebhooks;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Language;
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\Layout\FileLayout;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\Router\Route;
@@ -84,9 +84,9 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
         $this->setDatabase($db);
 
         $this->language->load('com_j2commerce', JPATH_ADMINISTRATOR);
-        $this->payment = new Payment($dispatcher, $config);
+        $this->payment           = new Payment($dispatcher, $config);
         $this->payment->_element = $this->_name;
-        $this->base = new Base($dispatcher, $config);
+        $this->base              = new Base($dispatcher, $config);
     }
 
     private function log(string $message, int $priority = Log::DEBUG): void
@@ -133,7 +133,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             return;
         }
 
-        $args = $event->getArguments();
+        $args    = $event->getArguments();
         $element = $args[0] ?? null;
 
         if ($element !== $this->_name) {
@@ -149,9 +149,9 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             return;
         }
 
-        $args = $event->getArguments();
+        $args    = $event->getArguments();
         $element = $args[0] ?? null;
-        $order = $args[1] ?? null;
+        $order   = $args[1] ?? null;
 
         if ($element !== $this->_name || $order === null) {
             return;
@@ -169,10 +169,10 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             return;
         }
 
-        $total = $order->order_subtotal + $order->order_shipping + $order->order_shipping_tax;
-        $surcharge = 0.0;
+        $total            = $order->order_subtotal + $order->order_shipping + $order->order_shipping_tax;
+        $surcharge        = 0.0;
         $surchargePercent = (float) $this->params->get('surcharge_percent', 0);
-        $surchargeFixed = (float) $this->params->get('surcharge_fixed', 0);
+        $surchargeFixed   = (float) $this->params->get('surcharge_fixed', 0);
 
         if ($surchargePercent > 0 || $surchargeFixed > 0) {
             if ($surchargePercent > 0) {
@@ -183,9 +183,9 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 $surcharge += $surchargeFixed;
             }
 
-            $name = $this->params->get('surcharge_name', Text::_('COM_J2COMMERCE_CART_SURCHARGE'));
+            $name       = $this->params->get('surcharge_name', Text::_('COM_J2COMMERCE_CART_SURCHARGE'));
             $taxClassId = $this->params->get('surcharge_tax_class_id', '');
-            $taxable = !empty($taxClassId) && (int) $taxClassId > 0;
+            $taxable    = !empty($taxClassId) && (int) $taxClassId > 0;
 
             if ($surcharge > 0) {
                 $order->add_fee($name, round($surcharge, 2), $taxable, $taxClassId);
@@ -199,9 +199,9 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             return;
         }
 
-        $args = $event->getArguments();
+        $args    = $event->getArguments();
         $element = $args[0] ?? null;
-        $order = $args[1] ?? null;
+        $order   = $args[1] ?? null;
 
         if ($element !== $this->_name || $order === null) {
             return;
@@ -214,7 +214,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
         if ($geozoneId > 0) {
             $order->setAddress();
             $address = $order->getBillingAddress();
-            $found = $this->checkGeozone($geozoneId, $address);
+            $found   = $this->checkGeozone($geozoneId, $address);
         }
 
         if ($found) {
@@ -226,7 +226,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
 
     public function onGetPaymentPlugins(Event $event): void
     {
-        $result = $event->getArgument('result', []);
+        $result   = $event->getArgument('result', []);
         $result[] = [
             'element' => $this->_name,
             'name'    => Text::_($this->params->get('display_name', 'PLG_J2COMMERCE_PAYMENT_PAYPAL')),
@@ -255,37 +255,37 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
 
     public function onPrePayment(Event $event): void
     {
-        $args = $event->getArguments();
+        $args    = $event->getArguments();
         $element = $args[0] ?? '';
-        $data = $args[1] ?? [];
+        $data    = $args[1] ?? [];
 
         if ($element !== $this->_name) {
             return;
         }
 
-        $result = $event->getArgument('result', []);
+        $result   = $event->getArgument('result', []);
         $result[] = $this->_prePayment($data);
         $event->setArgument('result', $result);
     }
 
     public function onPostPayment(Event $event): void
     {
-        $args = $event->getArguments();
+        $args    = $event->getArguments();
         $element = $args[0] ?? '';
-        $data = $args[1] ?? [];
+        $data    = $args[1] ?? [];
 
         if ($element !== $this->_name) {
             return;
         }
 
-        $result = $event->getArgument('result', []);
+        $result   = $event->getArgument('result', []);
         $result[] = $this->_postPayment((object) $data);
         $event->setArgument('result', $result);
     }
 
     public function onProcessWebhook(Event $event): void
     {
-        $args = $event->getArguments();
+        $args    = $event->getArguments();
         $element = $args[0] ?? '';
 
         if ($element !== $this->_name) {
@@ -328,10 +328,10 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
 
     public function onRefundPayment(Event $event): void
     {
-        $args = $event->getArguments();
+        $args    = $event->getArguments();
         $element = $args[0] ?? '';
         $orderId = $args[1] ?? 0;
-        $amount = $args[2] ?? null;
+        $amount  = $args[2] ?? null;
 
         if ($element !== $this->_name) {
             return;
@@ -358,18 +358,18 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             $currency = $this->getCurrency($orderTable);
 
             $refunds = $this->getPayPalRefunds();
-            $result = $refunds->refundCapture($captureId, $amount, $currency);
+            $result  = $refunds->refundCapture($captureId, $amount, $currency);
 
             if ($result['status'] >= 200 && $result['status'] < 300) {
-                $refundId = $result['body']['id'] ?? '';
+                $refundId        = $result['body']['id'] ?? '';
                 $refundedStateId = (int) $this->params->get('refunded_state_id', 7);
 
-                $orderTable->order_state_id = $refundedStateId;
-                $transactionDetails = json_decode($orderTable->transaction_details ?? '{}', true);
-                $transactionDetails['refund_id'] = $refundId;
-                $transactionDetails['refunded_at'] = date('Y-m-d H:i:s');
+                $orderTable->order_state_id          = $refundedStateId;
+                $transactionDetails                  = json_decode($orderTable->transaction_details ?? '{}', true);
+                $transactionDetails['refund_id']     = $refundId;
+                $transactionDetails['refunded_at']   = date('Y-m-d H:i:s');
                 $transactionDetails['refund_amount'] = $amount;
-                $orderTable->transaction_details = json_encode($transactionDetails);
+                $orderTable->transaction_details     = json_encode($transactionDetails);
                 $orderTable->store();
 
                 OrderHistoryHelper::add(
@@ -404,7 +404,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
 
     public function onAfterSubscriptionCanceled(Event $event): void
     {
-        $args = $event->getArguments();
+        $args    = $event->getArguments();
         $element = $args[0] ?? '';
 
         if ($element !== $this->_name) {
@@ -416,9 +416,9 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
 
     public function onPaymentCreateOrder(Event $event): void
     {
-        $args = $event->getArguments();
+        $args    = $event->getArguments();
         $element = $args[0] ?? '';
-        $data = $args[1] ?? [];
+        $data    = $args[1] ?? [];
 
         if ($element !== $this->_name) {
             return;
@@ -432,16 +432,16 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
 
     public function onPaymentCaptureOrder(Event $event): void
     {
-        $args = $event->getArguments();
+        $args    = $event->getArguments();
         $element = $args[0] ?? '';
-        $data = $args[1] ?? [];
+        $data    = $args[1] ?? [];
 
         if ($element !== $this->_name) {
             return;
         }
 
         $paypalOrderId = $data['paypal_order_id'] ?? '';
-        $orderId = $data['order_id'] ?? '';
+        $orderId       = $data['order_id'] ?? '';
 
         $result = $this->capturePayPalOrder($paypalOrderId, $orderId);
         $event->setArgument('result', $result);
@@ -453,13 +453,13 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
 
         $vars = new \stdClass();
 
-        $vars->order_id = $data['order_id'];
-        $vars->orderpayment_id = $data['orderpayment_id'] ?? 0;
+        $vars->order_id            = $data['order_id'];
+        $vars->orderpayment_id     = $data['orderpayment_id'] ?? 0;
         $vars->orderpayment_amount = $data['orderpayment_amount'];
-        $vars->orderpayment_type = $this->_name;
+        $vars->orderpayment_type   = $this->_name;
 
-        $vars->display_name = Text::_($this->params->get('display_name', 'PLG_J2COMMERCE_PAYMENT_PAYPAL'));
-        $vars->display_image = $this->params->get('display_image', '');
+        $vars->display_name         = Text::_($this->params->get('display_name', 'PLG_J2COMMERCE_PAYMENT_PAYPAL'));
+        $vars->display_image        = $this->params->get('display_image', '');
         $vars->onbeforepayment_text = $this->params->get('onbeforepayment', '');
 
         $order = Factory::getApplication()
@@ -468,8 +468,8 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             ->createTable('Order', 'Administrator');
         $order->load(['order_id' => $vars->order_id]);
 
-        $sandbox = (int) $this->params->get('sandbox', 0);
-        $vars->sandbox = (bool) $sandbox;
+        $sandbox         = (int) $this->params->get('sandbox', 0);
+        $vars->sandbox   = (bool) $sandbox;
         $vars->client_id = $sandbox
             ? $this->params->get('sandbox_client_id', '')
             : $this->params->get('client_id', '');
@@ -485,7 +485,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             false
         );
         $vars->csrf_token = Session::getFormToken();
-        $vars->debug = (int) $this->params->get('debug', 0);
+        $vars->debug      = (int) $this->params->get('debug', 0);
 
         $this->log('_prePayment: Prepared vars - order_id: ' . $vars->order_id . ', currency: ' . $vars->currency_code . ', amount: ' . $vars->orderpayment_amount);
 
@@ -494,30 +494,30 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
 
     public function _postPayment(object $data): string
     {
-        $app = Factory::getApplication();
-        $vars = new \stdClass();
+        $app     = Factory::getApplication();
+        $vars    = new \stdClass();
         $paction = $app->input->getString('paction');
-        $html = '';
+        $html    = '';
 
         $this->log('_postPayment: Processing payment response with paction: ' . $paction);
 
         switch ($paction) {
             case 'display':
                 $vars->onafterpayment_text = Text::_($this->params->get('onafterpayment', ''));
-                $html = $this->_getLayout('postpayment', $vars);
+                $html                      = $this->_getLayout('postpayment', $vars);
                 $html .= $this->base->_displayArticle();
                 $this->log('_postPayment: Displaying success message');
                 break;
 
             case 'cancel':
                 $vars->message = Text::_($this->params->get('oncancelpayment', 'PLG_J2COMMERCE_PAYMENT_PAYPAL_CANCELLED'));
-                $html = $this->_getLayout('message', $vars);
+                $html          = $this->_getLayout('message', $vars);
                 $this->log('_postPayment: Payment cancelled by user');
                 break;
 
             default:
                 $vars->message = Text::_($this->params->get('onerrorpayment', 'PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED'));
-                $html = $this->_getLayout('message', $vars);
+                $html          = $this->_getLayout('message', $vars);
                 $this->log('_postPayment: Payment error - paction: ' . $paction, Log::ERROR);
                 break;
         }
@@ -557,7 +557,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 ];
             }
 
-            $db = $this->getDatabase();
+            $db    = $this->getDatabase();
             $query = $db->getQuery(true);
 
             $query->select('*')
@@ -568,12 +568,12 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             $db->setQuery($query);
             $orderItems = $db->loadObjectList();
 
-            $items = [];
+            $items     = [];
             $itemTotal = 0.0;
 
             foreach ($orderItems as $item) {
                 $unitAmount = (float) $item->orderitem_price;
-                $quantity = (int) $item->orderitem_quantity;
+                $quantity   = (int) $item->orderitem_quantity;
 
                 $items[] = [
                     'name'        => $item->orderitem_name,
@@ -586,9 +586,9 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             }
 
             $shipping = (float) $orderTable->order_shipping + (float) $orderTable->order_shipping_tax;
-            $tax = (float) $orderTable->order_tax;
+            $tax      = (float) $orderTable->order_tax;
             $discount = (float) $orderTable->order_discount;
-            $total = (float) $orderTable->order_total;
+            $total    = (float) $orderTable->order_total;
 
             $orderData = [
                 'order_id'            => $orderId,
@@ -603,7 +603,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 'items'               => $items,
             ];
 
-            $this->log('createPayPalOrder: Sending order data to PayPal API - order_id: ' . $orderId . ', total: ' . $total . ' ' . $currency . ', items: ' . count($items));
+            $this->log('createPayPalOrder: Sending order data to PayPal API - order_id: ' . $orderId . ', total: ' . $total . ' ' . $currency . ', items: ' . \count($items));
 
             $orders = $this->getPayPalOrders();
             $result = $orders->createOrder($orderData);
@@ -613,10 +613,10 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             if ($result['status'] >= 200 && $result['status'] < 300) {
                 $paypalOrderId = $result['body']['id'] ?? '';
 
-                $transactionDetails = json_decode($orderTable->transaction_details ?? '{}', true);
+                $transactionDetails                    = json_decode($orderTable->transaction_details ?? '{}', true);
                 $transactionDetails['paypal_order_id'] = $paypalOrderId;
-                $transactionDetails['created_at'] = date('Y-m-d H:i:s');
-                $orderTable->transaction_details = json_encode($transactionDetails);
+                $transactionDetails['created_at']      = date('Y-m-d H:i:s');
+                $orderTable->transaction_details       = json_encode($transactionDetails);
                 $orderTable->store();
 
                 $this->log('createPayPalOrder: Success - paypal_order_id: ' . $paypalOrderId);
@@ -624,8 +624,8 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             }
 
             $errorMessage = $result['body']['message'] ?? 'PayPal order creation failed';
-            $details = $result['body']['details'] ?? [];
-            $detailStr = !empty($details) ? ' Details: ' . json_encode($details) : '';
+            $details      = $result['body']['details'] ?? [];
+            $detailStr    = !empty($details) ? ' Details: ' . json_encode($details) : '';
             $this->log("createPayPalOrder: Failed (HTTP {$result['status']}) - $errorMessage$detailStr", Log::ERROR);
 
             return ['success' => false, 'error' => $errorMessage];
@@ -673,22 +673,22 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                     return ['success' => false, 'error' => 'No capture data in response'];
                 }
 
-                $captureId = $capture['id'] ?? '';
+                $captureId     = $capture['id'] ?? '';
                 $captureStatus = $capture['status'] ?? '';
 
                 $this->log('capturePayPalOrder: Capture successful - capture_id: ' . $captureId . ', status: ' . $captureStatus);
 
-                $orderStateId = (int) $this->params->get('payment_status', 4);
-                $orderTable->order_state_id = $orderStateId;
-                $orderTable->transaction_id = $captureId;
+                $orderStateId                   = (int) $this->params->get('payment_status', 4);
+                $orderTable->order_state_id     = $orderStateId;
+                $orderTable->transaction_id     = $captureId;
                 $orderTable->transaction_status = $captureStatus;
 
-                $transactionDetails = json_decode($orderTable->transaction_details ?? '{}', true);
-                $transactionDetails['capture_id'] = $captureId;
-                $transactionDetails['capture_status'] = $captureStatus;
-                $transactionDetails['captured_at'] = date('Y-m-d H:i:s');
+                $transactionDetails                     = json_decode($orderTable->transaction_details ?? '{}', true);
+                $transactionDetails['capture_id']       = $captureId;
+                $transactionDetails['capture_status']   = $captureStatus;
+                $transactionDetails['captured_at']      = date('Y-m-d H:i:s');
                 $transactionDetails['capture_response'] = $result['body'];
-                $orderTable->transaction_details = json_encode($transactionDetails);
+                $orderTable->transaction_details        = json_encode($transactionDetails);
 
                 if ($orderTable->store()) {
                     OrderHistoryHelper::add(
@@ -733,7 +733,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
     private function getPayPalClient(): PayPalClient
     {
         if (!$this->paypalClient) {
-            $sandbox = (bool) $this->params->get('sandbox', 0);
+            $sandbox  = (bool) $this->params->get('sandbox', 0);
             $clientId = $sandbox
                 ? $this->params->get('sandbox_client_id', '')
                 : $this->params->get('client_id', '');
@@ -759,7 +759,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
     private function getPayPalWebhooks(): PayPalWebhooks
     {
         if (!$this->paypalWebhooks) {
-            $webhookId = $this->params->get('webhook_id', '');
+            $webhookId            = $this->params->get('webhook_id', '');
             $this->paypalWebhooks = new PayPalWebhooks(
                 $this->getPayPalClient(),
                 $webhookId,
@@ -781,11 +781,11 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
 
     private function checkGeozone(int $geozoneId, array $address): bool
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         $countryId = (int) ($address['country_id'] ?? 0);
-        $zoneId = (int) ($address['zone_id'] ?? 0);
+        $zoneId    = (int) ($address['zone_id'] ?? 0);
 
         $query->select($db->quoteName('gz.j2commerce_geozone_id'))
             ->from($db->quoteName('#__j2commerce_geozones', 'gz'))
@@ -877,7 +877,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             'type'        => 'warning',
             'icon'        => 'fa-brands fa-paypal',
             'dismissible' => 'session',
-            'link'  => Route::_('index.php?option=com_plugins&task=plugin.edit&layout=edit&extension_id=' . (int) $this->getExtensionId()),
+            'link'        => Route::_('index.php?option=com_plugins&task=plugin.edit&layout=edit&extension_id=' . (int) $this->getExtensionId()),
             'linkText'    => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_CONFIGURE'),
             'priority'    => 100,
         ];

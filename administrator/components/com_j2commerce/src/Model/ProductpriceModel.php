@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -115,21 +116,21 @@ class ProductpriceModel extends AdminModel
 
             // Prime some default values for new records
             if (empty($data->j2commerce_productprice_id)) {
-                $app = Factory::getApplication();
+                $app              = Factory::getApplication();
                 $data->variant_id = $app->getInput()->getInt('variant_id', 0);
 
                 // Set default dates
-                $now = Factory::getDate()->toSql();
+                $now             = Factory::getDate()->toSql();
                 $data->date_from = $now;
 
                 // Set valid_to to one year from now
-                $future = Factory::getDate('+1 year')->toSql();
+                $future        = Factory::getDate('+1 year')->toSql();
                 $data->date_to = $future;
 
-                $data->quantity_from = 0;
-                $data->quantity_to = 0;
+                $data->quantity_from     = 0;
+                $data->quantity_to       = 0;
                 $data->customer_group_id = 0;
-                $data->price = 0.00;
+                $data->price             = 0.00;
             }
         }
 

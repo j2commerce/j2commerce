@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -17,7 +18,6 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model\Behavior;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\PluginHelper;
-
 use Joomla\CMS\Event\AbstractEvent;
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
@@ -118,7 +118,7 @@ class DefaultBehavior
 
     public function onAfterGetProduct(AbstractEvent $event): void
     {
-        $model = $event->getArgument('subject');
+        $model   = $event->getArgument('subject');
         $product = $event->getArgument('product');
 
         // Import catalog plugins

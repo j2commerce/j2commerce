@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -9,7 +10,7 @@
 
 namespace J2Commerce\Component\J2commerce\Administrator\Table;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -84,11 +85,11 @@ class InvoicetemplateTable extends Table
         }
 
         // Trim the title and other text fields
-        $this->title = trim($this->title);
-        $this->invoice_type = trim($this->invoice_type);
+        $this->title          = trim($this->title);
+        $this->invoice_type   = trim($this->invoice_type);
         $this->orderstatus_id = trim($this->orderstatus_id);
-        $this->group_id = trim($this->group_id);
-        $this->paymentmethod = trim($this->paymentmethod);
+        $this->group_id       = trim($this->group_id);
+        $this->paymentmethod  = trim($this->paymentmethod);
 
         // Set default values if not provided
         if (!isset($this->enabled)) {
@@ -106,7 +107,7 @@ class InvoicetemplateTable extends Table
 
         // Validate invoice type — built-in types always allowed, plugin types must match safe pattern
         $builtInTypes = ['invoice', 'receipt', 'packingslip'];
-        if (!in_array($this->invoice_type, $builtInTypes) && !preg_match('/^[a-z][a-z0-9_]{1,49}$/', $this->invoice_type)) {
+        if (!\in_array($this->invoice_type, $builtInTypes) && !preg_match('/^[a-z][a-z0-9_]{1,49}$/', $this->invoice_type)) {
             $this->setError(Text::_('COM_J2COMMERCE_ERROR_INVOICETEMPLATE_INVALID_TYPE'));
             return false;
         }

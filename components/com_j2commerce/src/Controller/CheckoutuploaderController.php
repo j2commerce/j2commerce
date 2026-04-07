@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Site\Controller;
 
-use Joomla\CMS\Factory;
 use Joomla\CMS\Helper\MediaHelper;
 use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\CMS\Session\Session;

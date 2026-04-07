@@ -33,7 +33,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\Event\Event;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 class SetupGuideHelper
 {
@@ -60,7 +60,7 @@ class SetupGuideHelper
     /** @return SetupCheckInterface[] */
     public static function getChecks(): array
     {
-        $checks = array_map(fn(string $class) => new $class(), self::$builtinChecks);
+        $checks = array_map(fn (string $class) => new $class(), self::$builtinChecks);
 
         try {
             $event = new Event('onJ2CommerceGetSetupChecks', ['checks' => $checks]);
@@ -120,7 +120,7 @@ class SetupGuideHelper
             }
         }
 
-        usort($groups, fn(array $a, array $b) => $a['order'] <=> $b['order']);
+        usort($groups, fn (array $a, array $b) => $a['order'] <=> $b['order']);
 
         return [
             'groups'   => array_values($groups),
@@ -145,7 +145,7 @@ class SetupGuideHelper
     {
         $checks = self::getChecks();
         $passed = 0;
-        $total  = count($checks);
+        $total  = \count($checks);
 
         foreach ($checks as $check) {
             $result = $check->check();
@@ -172,14 +172,14 @@ class SetupGuideHelper
     public static function getGroupLabel(string $groupId): string
     {
         return match ($groupId) {
-            'store_identity'       => 'COM_J2COMMERCE_SETUP_GUIDE_GROUP_STORE_IDENTITY',
-            'system_requirements'  => 'COM_J2COMMERCE_SETUP_GUIDE_GROUP_SYSTEM_REQUIREMENTS',
-            'storefront_pages'     => 'COM_J2COMMERCE_SETUP_GUIDE_GROUP_STOREFRONT_PAGES',
-            'catalog'              => 'COM_J2COMMERCE_SETUP_GUIDE_GROUP_CATALOG',
-            'payments_shipping'    => 'COM_J2COMMERCE_SETUP_GUIDE_GROUP_PAYMENTS_SHIPPING',
-            'tax'                  => 'COM_J2COMMERCE_SETUP_GUIDE_GROUP_TAX',
-            'localization'         => 'COM_J2COMMERCE_SETUP_GUIDE_GROUP_LOCALIZATION',
-            default                => $groupId,
+            'store_identity'      => 'COM_J2COMMERCE_SETUP_GUIDE_GROUP_STORE_IDENTITY',
+            'system_requirements' => 'COM_J2COMMERCE_SETUP_GUIDE_GROUP_SYSTEM_REQUIREMENTS',
+            'storefront_pages'    => 'COM_J2COMMERCE_SETUP_GUIDE_GROUP_STOREFRONT_PAGES',
+            'catalog'             => 'COM_J2COMMERCE_SETUP_GUIDE_GROUP_CATALOG',
+            'payments_shipping'   => 'COM_J2COMMERCE_SETUP_GUIDE_GROUP_PAYMENTS_SHIPPING',
+            'tax'                 => 'COM_J2COMMERCE_SETUP_GUIDE_GROUP_TAX',
+            'localization'        => 'COM_J2COMMERCE_SETUP_GUIDE_GROUP_LOCALIZATION',
+            default               => $groupId,
         };
     }
 

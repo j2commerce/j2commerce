@@ -12,10 +12,9 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
-use Joomla\CMS\Language\Text;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
 
@@ -38,15 +37,15 @@ final class OrderHistoryHelper
         }
 
         try {
-            $db = Factory::getContainer()->get(DatabaseInterface::class);
+            $db  = Factory::getContainer()->get(DatabaseInterface::class);
             $now = Factory::getDate()->toSql();
 
             if ($createdBy === 0) {
-                $user = Factory::getApplication()->getIdentity();
+                $user      = Factory::getApplication()->getIdentity();
                 $createdBy = $user?->id ?? 0;
             }
 
-            $notifyInt = $notifyCustomer ? 1 : 0;
+            $notifyInt   = $notifyCustomer ? 1 : 0;
             $emptyParams = '{}';
 
             $query = $db->getQuery(true)
@@ -80,7 +79,7 @@ final class OrderHistoryHelper
     private static function getCurrentStateId(string $orderId): int
     {
         try {
-            $db = Factory::getContainer()->get(DatabaseInterface::class);
+            $db    = Factory::getContainer()->get(DatabaseInterface::class);
             $query = $db->getQuery(true)
                 ->select($db->quoteName('order_state_id'))
                 ->from($db->quoteName('#__j2commerce_orders'))

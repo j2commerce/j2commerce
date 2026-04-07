@@ -21,10 +21,10 @@ use Joomla\CMS\Language\Text;
 class CheckoutStepsHelper
 {
     private const POSITION_ORDER = [
-        'after_billing'   => 10,
-        'after_shipping'  => 20,
-        'before_payment'  => 30,
-        'before_confirm'  => 40,
+        'after_billing'  => 10,
+        'after_shipping' => 20,
+        'before_payment' => 30,
+        'before_confirm' => 40,
     ];
 
     public static function getSteps(array $context = []): array

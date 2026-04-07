@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -26,13 +27,35 @@ class ShippableItem implements Item
         private readonly int $weight,
         private readonly Rotation $rotation,
         private readonly float $value = 0.0,
-    ) {}
+    ) {
+    }
 
-    public function getDescription(): string { return $this->description; }
-    public function getWidth(): int { return $this->width; }
-    public function getLength(): int { return $this->length; }
-    public function getDepth(): int { return $this->depth; }
-    public function getWeight(): int { return $this->weight; }
-    public function getAllowedRotation(): Rotation { return $this->rotation; }
-    public function getValue(): float { return $this->value; }
+    public function getDescription(): string
+    {
+        return $this->description;
+    }
+    public function getWidth(): int
+    {
+        return $this->width;
+    }
+    public function getLength(): int
+    {
+        return $this->length;
+    }
+    public function getDepth(): int
+    {
+        return $this->depth;
+    }
+    public function getWeight(): int
+    {
+        return $this->weight;
+    }
+    public function getAllowedRotation(): Rotation
+    {
+        return $this->rotation;
+    }
+    public function getValue(): float
+    {
+        return $this->value;
+    }
 }

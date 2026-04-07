@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  mod_j2commerce_products
@@ -11,15 +12,15 @@ declare(strict_types=1);
 
 namespace J2Commerce\Module\Products\Site\Dispatcher;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Dispatcher\AbstractModuleDispatcher;
 use Joomla\CMS\Helper\HelperFactoryAwareInterface;
 use Joomla\CMS\Helper\HelperFactoryAwareTrait;
 use Joomla\Registry\Registry;
-use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
-use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 
 class Dispatcher extends AbstractModuleDispatcher implements HelperFactoryAwareInterface
 {
@@ -81,7 +82,7 @@ class Dispatcher extends AbstractModuleDispatcher implements HelperFactoryAwareI
 
         // Fetch products — use original module params for query, layoutParams for rendering
         try {
-            $helper = $this->getHelperFactory()->getHelper('ProductsHelper');
+            $helper           = $this->getHelperFactory()->getHelper('ProductsHelper');
             $data['products'] = $helper->getProducts($moduleParams);
         } catch (\Throwable) {
             $data['products'] = [];

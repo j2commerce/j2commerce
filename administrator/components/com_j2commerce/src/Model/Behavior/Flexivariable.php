@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -22,7 +23,6 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\WeightHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\OptionvaluesModel;
 use J2Commerce\Component\J2commerce\Administrator\Model\ProductOptionsModel;
-use J2Commerce\Component\J2commerce\Administrator\Model\ProductoptionvaluesModel;
 use J2Commerce\Component\J2commerce\Administrator\Model\VariantsModel;
 use J2Commerce\Component\J2commerce\Administrator\Table\ProductTable;
 use J2Commerce\Component\J2commerce\Administrator\Table\VariantTable;
@@ -32,7 +32,6 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\CMS\Plugin\PluginHelper;
-use Joomla\Database\ParameterType;
 use Joomla\Registry\Registry;
 
 /**
@@ -85,7 +84,7 @@ class Flexivariable
 
             // Load child variants with pagination
             $config = Factory::getApplication()->getConfig();
-            $limit = $config->get('list_limit', 20);
+            $limit  = $config->get('list_limit', 20);
 
             // Set variant filters AFTER populateState() has been triggered above
             $variantModel->setState('filter.product_id', $record->j2commerce_product_id);
@@ -93,7 +92,7 @@ class Flexivariable
             $variantModel->setState('list.limit', $limit);
             $variantModel->setState('list.start', 0);
 
-            $record->variants = $variantModel->getItems();
+            $record->variants           = $variantModel->getItems();
             $record->variant_pagination = $variantModel->getPagination();
         } catch (\Exception $e) {
             $app->enqueueMessage($e->getMessage(), 'error');
@@ -124,8 +123,8 @@ class Flexivariable
             $record->product_options = [];
         }
 
-        $registry = new Registry($record->params);
-        $record->params = $registry;
+        $registry           = new Registry($record->params);
+        $record->params     = $registry;
         $record->app_detail = $this->getAppDetails();
     }
 
@@ -134,7 +133,7 @@ class Flexivariable
      */
     public function getAppDetails(): ?object
     {
-        $db = Factory::getContainer()->get('DatabaseDriver');
+        $db    = Factory::getContainer()->get('DatabaseDriver');
         $query = $db->getQuery(true);
         $query->select('*')
             ->from($db->quoteName('#__extensions'))
@@ -158,7 +157,7 @@ class Flexivariable
             return;
         }
 
-        $app = Factory::getApplication();
+        $app           = Factory::getApplication();
         $utilityHelper = J2CommerceHelper::utilities();
 
         if (!isset($data['visibility'])) {
@@ -167,7 +166,7 @@ class Flexivariable
 
         // Process cross sells and up sells
         $data['cross_sells'] = isset($data['cross_sells']) ? $utilityHelper->to_csv($data['cross_sells']) : '';
-        $data['up_sells'] = isset($data['up_sells']) ? $utilityHelper->to_csv($data['up_sells']) : '';
+        $data['up_sells']    = isset($data['up_sells']) ? $utilityHelper->to_csv($data['up_sells']) : '';
 
         if (isset($data['shippingmethods']) && !empty($data['shippingmethods'])) {
             $data['shippingmethods'] = implode(',', $data['shippingmethods']);
@@ -272,7 +271,7 @@ class Flexivariable
             $variant->load(['product_id' => $table->j2commerce_product_id, 'is_master' => 1]);
         }
         $variant->bind($this->_rawData);
-        $variant->is_master = 1;
+        $variant->is_master  = 1;
         $variant->product_id = $table->j2commerce_product_id;
         $variant->check();
         $variant->store();
@@ -340,7 +339,7 @@ class Flexivariable
                     'tiny_image', 'tiny_image_alt', 'additional_images', 'additional_images_alt',
                     'additional_thumb_images', 'additional_thumb_images_alt',
                     'additional_tiny_images', 'additional_tiny_images_alt', 'variant_images', 'is_main_as_thum'];
-                $itemArray = \is_array($item) ? $item : (array) $item;
+                $itemArray    = \is_array($item) ? $item : (array) $item;
                 $nonImageKeys = array_diff(array_keys($itemArray), $imageOnlyFields);
                 if (empty($nonImageKeys)) {
                     continue;
@@ -353,7 +352,7 @@ class Flexivariable
                 // but doesn't include it as a form field. Without this, VariantTable::save()
                 // cannot find the existing record and INSERTs a duplicate instead of UPDATing.
                 $item->j2commerce_variant_id = (int) $variantKey;
-                $item->is_master = 0;
+                $item->is_master             = 0;
 
                 // Cast integer fields
                 $intFields = ['taxprofile_id', 'manufacturer_id', 'vendor_id', 'isdefault_variant', 'length_class_id', 'weight_class_id'];
@@ -370,7 +369,7 @@ class Flexivariable
                 // Process store config checkboxes (XML checkbox value="1", absent when unchecked)
                 $item->use_store_config_max_sale_qty = !empty($item->use_store_config_max_sale_qty) ? 1 : 0;
                 $item->use_store_config_min_sale_qty = !empty($item->use_store_config_min_sale_qty) ? 1 : 0;
-                $item->use_store_config_notify_qty = !empty($item->use_store_config_notify_qty) ? 1 : 0;
+                $item->use_store_config_notify_qty   = !empty($item->use_store_config_notify_qty) ? 1 : 0;
 
                 // Build variant params: collect image data from top-level properties into params
                 $variantParams = [];
@@ -405,7 +404,7 @@ class Flexivariable
 
                 if (isset($item->quantity) && (\is_object($item->quantity) || \is_array($item->quantity))) {
                     // Legacy nested format: quantity[quantity], quantity[j2commerce_productquantity_id]
-                    $qObj = (object) $item->quantity;
+                    $qObj          = (object) $item->quantity;
                     $quantityValue = (int) ($qObj->quantity ?? 0);
                     $quantityPkId  = (int) ($qObj->j2commerce_productquantity_id ?? 0);
                 } else {
@@ -422,7 +421,7 @@ class Flexivariable
                     throw new \RuntimeException('Unable to create Variant table instance for child variant.');
                 }
                 $variantChild->is_master = 0;
-                $item->product_id = $table->j2commerce_product_id;
+                $item->product_id        = $table->j2commerce_product_id;
 
                 $quantityData = (object) [
                     'j2commerce_productquantity_id' => $quantityPkId,
@@ -503,14 +502,14 @@ class Flexivariable
             }
         }
 
-        $db = Factory::getContainer()->get('DatabaseDriver');
+        $db        = Factory::getContainer()->get('DatabaseDriver');
         $productId = (int) $table->j2commerce_product_id;
 
         $priceIndex = $this->mvcFactory->createTable('Productpriceindex', 'Administrator');
-        $values = (object) [
+        $values     = (object) [
             'product_id' => $productId,
-            'min_price' => $minPrice ?? 0,
-            'max_price' => $maxPrice ?? 0,
+            'min_price'  => $minPrice ?? 0,
+            'max_price'  => $maxPrice ?? 0,
         ];
 
         if ($priceIndex->load($productId)) {
@@ -572,7 +571,7 @@ class Flexivariable
     public function onAfterGetProduct(AbstractEvent $event): void
     {
         // Model is optional - may be null when called from ProductHelper::getFullProduct()
-        $model = $event->getArgument('subject');
+        $model   = $event->getArgument('subject');
         $product = $event->getArgument('product');
 
         // Product is required
@@ -581,7 +580,7 @@ class Flexivariable
         }
 
         $productHelper = new ProductHelper();
-        $pluginHelper = J2CommerceHelper::plugin();
+        $pluginHelper  = J2CommerceHelper::plugin();
 
         // Set product links
         $productHelper->getAddtocartAction($product);
@@ -606,7 +605,7 @@ class Flexivariable
             $variantModel->setState('filter.is_master', 0);
             $variantModel->setState('list.limit', 0);
 
-            $product->variants = $variantModel->getItems();
+            $product->variants           = $variantModel->getItems();
             $product->variant_pagination = $variantModel->getPagination();
         } catch (\Exception $e) {
             // Only set error on model if model is available
@@ -636,8 +635,8 @@ class Flexivariable
         $product->max_price = $maxPrice !== null ? (float) $maxPrice : null;
 
         // Set show_price_range flag from plugin params
-        $plugin = PluginHelper::getPlugin('j2commerce', 'app_flexivariable');
-        $pluginParams = new Registry($plugin->params ?? '{}');
+        $plugin                    = PluginHelper::getPlugin('j2commerce', 'app_flexivariable');
+        $pluginParams              = new Registry($plugin->params ?? '{}');
         $product->show_price_range = (int) $pluginParams->get('show_price_range', 0);
 
         $product->options = [];
@@ -653,7 +652,7 @@ class Flexivariable
                 if (!empty($product->product_options)) {
                     foreach ($product->product_options as &$productOption) {
                         /** @var OptionvaluesModel $optionValuesModel */
-                        $optionValuesModel = $this->mvcFactory->createModel('Optionvalues', 'Administrator');
+                        $optionValuesModel            = $this->mvcFactory->createModel('Optionvalues', 'Administrator');
                         $productOption->option_values = $optionValuesModel->getValuesByOptionId((int) $productOption->option_id);
 
                         $productOptionValuesModel = $this->mvcFactory->createModel('Productoptionvalues', 'Administrator');
@@ -676,7 +675,7 @@ class Flexivariable
                 // fall back to variant_name for backward compatibility
                 $availableOptionValues = [];
                 foreach ($product->variants as $pVariant) {
-                    $variantCsv = $pVariant->variant_name_ids ?? $pVariant->variant_name ?? '';
+                    $variantCsv       = $pVariant->variant_name_ids ?? $pVariant->variant_name ?? '';
                     $variantNameParts = explode(',', $variantCsv);
                     if (!empty($variantNameParts) && \is_array($variantNameParts)) {
                         foreach ($variantNameParts as $proOptionValue) {
@@ -701,12 +700,12 @@ class Flexivariable
                     // If this productoption has "Any" (*) available, keep all optionvalues but deduplicate
                     if (isset($availableOptionValues[$prodOptionId]) && \in_array('*', $availableOptionValues[$prodOptionId])) {
                         if (!empty($pOption['optionvalue'])) {
-                            $seenIds = [];
+                            $seenIds     = [];
                             $dedupValues = [];
                             foreach ($pOption['optionvalue'] as $ov) {
                                 $ovId = $ov['optionvalue_id'];
                                 if (!isset($seenIds[$ovId])) {
-                                    $dedupValues[] = $ov;
+                                    $dedupValues[]  = $ov;
                                     $seenIds[$ovId] = true;
                                 }
                             }
@@ -718,11 +717,11 @@ class Flexivariable
                     // Filter to only available values and deduplicate by optionvalue_id
                     if (isset($availableOptionValues[$prodOptionId]) && !empty($pOption['optionvalue'])) {
                         $filteredOptionValues = [];
-                        $seenOptionValueIds = [];
+                        $seenOptionValueIds   = [];
                         foreach ($pOption['optionvalue'] as $optionValueData) {
                             $ovId = $optionValueData['optionvalue_id'];
                             if (\in_array($ovId, $availableOptionValues[$prodOptionId]) && !isset($seenOptionValueIds[$ovId])) {
-                                $filteredOptionValues[] = $optionValueData;
+                                $filteredOptionValues[]    = $optionValueData;
                                 $seenOptionValueIds[$ovId] = true;
                             }
                         }
@@ -736,7 +735,7 @@ class Flexivariable
             }
         }
 
-        $registry = new Registry($product->params);
+        $registry        = new Registry($product->params);
         $product->params = $registry;
 
         // Get variant IDs and process default variant
@@ -745,7 +744,7 @@ class Flexivariable
             $variantIds[] = $oneVariant->j2commerce_variant_id;
         }
 
-        $defaultVariant = $this->getDefaultVariant($product->variants);
+        $defaultVariant    = $this->getDefaultVariant($product->variants);
         $product->quantity = 1;
 
         if (isset($defaultVariant->j2commerce_variant_id) && !empty($defaultVariant->j2commerce_variant_id)) {
@@ -757,8 +756,8 @@ class Flexivariable
 
             $product->pricing = $productHelper->getPrice($product->variant, $product->quantity);
 
-            $paramData = new Registry($product->variant->params);
-            $mainImage = $paramData->get('variant_main_image', '');
+            $paramData     = new Registry($product->variant->params);
+            $mainImage     = $paramData->get('variant_main_image', '');
             $isMainAsThumb = (int) $paramData->get('is_main_as_thum', 0);
 
             // Fall back to first variant_images entry when variant_main_image is not set
@@ -815,7 +814,7 @@ class Flexivariable
         // Build variant JSON for frontend JavaScript
         if ($product->has_options && $product->variants && !empty($variantIds)) {
             try {
-                $db = Factory::getContainer()->get('DatabaseDriver');
+                $db    = Factory::getContainer()->get('DatabaseDriver');
                 $query = $db->getQuery(true)
                     ->select([
                         $db->quoteName('variant_id'),
@@ -863,12 +862,12 @@ class Flexivariable
             return [];
         }
 
-        $app = Factory::getApplication();
-        $input = $app->getInput();
-        $config = ComponentHelper::getParams('com_j2commerce');
+        $app           = Factory::getApplication();
+        $input         = $app->getInput();
+        $config        = ComponentHelper::getParams('com_j2commerce');
         $productHelper = new ProductHelper();
-        $imageHelper = J2CommerceHelper::image();
-        $pluginHelper = J2CommerceHelper::plugin();
+        $imageHelper   = J2CommerceHelper::image();
+        $pluginHelper  = J2CommerceHelper::plugin();
 
         $options = $input->get('product_option', [], 'ARRAY');
 
@@ -902,7 +901,7 @@ class Flexivariable
                 continue;
             }
             $productOptionValues = explode(',', $csvIds);
-            $status = [];
+            $status              = [];
             foreach ($productOptionValues as $proOptionValue) {
                 $proOptionValue = (int) trim($proOptionValue);
                 if ($proOptionValue <= 0) {
@@ -957,12 +956,12 @@ class Flexivariable
         $pluginHelper->event('BeforeUpdateProductReturn', [&$config, $product]);
 
         // Build return data
-        $return = [];
+        $return               = [];
         $return['variant_id'] = $variant->j2commerce_variant_id;
 
-        $paramData = new Registry($variant->params);
+        $paramData     = new Registry($variant->params);
         $isMainAsThumb = (int) $paramData->get('is_main_as_thum', 0);
-        $mainImage = $paramData->get('variant_main_image', '');
+        $mainImage     = $paramData->get('variant_main_image', '');
 
         // Variant gallery for Swiper image swap
         $variantImages = $paramData->get('variant_images', []);
@@ -976,7 +975,7 @@ class Flexivariable
 
             $gallery = [];
             foreach ((array) $variantImages as $img) {
-                $img = (array) $img;
+                $img  = (array) $img;
                 $path = $img['path'] ?? '';
                 if (empty($path)) {
                     continue;
@@ -1002,20 +1001,20 @@ class Flexivariable
 
         $thumbImage = ($isMainAsThumb && !empty($mainImage)) ? $mainImage : '';
 
-        $return['thumb_image'] = !empty($thumbImage) ? $imageHelper->getImageUrl($thumbImage) : $imageHelper->getImageUrl($product->thumb_image);
-        $return['main_image'] = !empty($mainImage) ? $imageHelper->getImageUrl($mainImage) : $imageHelper->getImageUrl($product->main_image);
+        $return['thumb_image']     = !empty($thumbImage) ? $imageHelper->getImageUrl($thumbImage) : $imageHelper->getImageUrl($product->thumb_image);
+        $return['main_image']      = !empty($mainImage) ? $imageHelper->getImageUrl($mainImage) : $imageHelper->getImageUrl($product->main_image);
         $return['is_main_as_thum'] = $isMainAsThumb;
 
-        $return['sku'] = $variant->sku;
-        $return['quantity'] = (float) $quantity;
-        $return['price'] = $variant->price;
-        $return['availability'] = $variant->availability;
-        $return['manage_stock'] = $variant->manage_stock;
+        $return['sku']             = $variant->sku;
+        $return['quantity']        = (float) $quantity;
+        $return['price']           = $variant->price;
+        $return['availability']    = $variant->availability;
+        $return['manage_stock']    = $variant->manage_stock;
         $return['allow_backorder'] = $variant->allow_backorder;
 
         if ($productHelper->managingStock($variant)) {
             if ($variant->availability) {
-                $displayStock = $productHelper->displayStock($variant, $config);
+                $displayStock           = $productHelper->displayStock($variant, $config);
                 $return['stock_status'] = $displayStock ?: 'Available';
             } else {
                 $return['stock_status'] = Text::_('COM_J2COMMERCE_STOCK_OUT_OF_STOCK');
@@ -1024,14 +1023,14 @@ class Flexivariable
             $return['stock_status'] = '';
         }
 
-        $return['pricing'] = [];
-        $return['pricing']['base_price'] = J2CommerceHelper::currency()->format((float) $variant->pricing->base_price);
-        $return['pricing']['price'] = J2CommerceHelper::currency()->format((float) $variant->pricing->price);
-        $return['pricing']['original'] = [];
+        $return['pricing']                           = [];
+        $return['pricing']['base_price']             = J2CommerceHelper::currency()->format((float) $variant->pricing->base_price);
+        $return['pricing']['price']                  = J2CommerceHelper::currency()->format((float) $variant->pricing->price);
+        $return['pricing']['original']               = [];
         $return['pricing']['original']['base_price'] = number_format((float) $variant->pricing->base_price, 5, '.', '');
-        $return['pricing']['original']['price'] = number_format((float) $variant->pricing->price, 5, '.', '');
+        $return['pricing']['original']['price']      = number_format((float) $variant->pricing->price, 5, '.', '');
 
-        $return['pricing']['class'] = ($variant->pricing->base_price != $variant->pricing->price) ? 'show' : 'hide';
+        $return['pricing']['class']         = ($variant->pricing->base_price != $variant->pricing->price) ? 'show' : 'hide';
         $return['pricing']['discount_text'] = '';
 
         if (isset($variant->pricing->is_discount_pricing_available) && $variant->pricing->base_price > 0) {
@@ -1044,21 +1043,21 @@ class Flexivariable
         $return['afterDisplayPrice'] = '';
 
         // Dimensions - use helper methods to ensure proper float casting and configurable decimal places
-        $return['dimensions'] = LengthHelper::formatDimensions($variant->length, $variant->width, $variant->height, $variant->length_title);
-        $return['weight'] = WeightHelper::formatValue($variant->weight, $variant->weight_title);
-        $return['length'] = LengthHelper::formatValue($variant->length, $variant->length_title);
-        $return['width'] = LengthHelper::formatValue($variant->width, $variant->length_title);
-        $return['height'] = LengthHelper::formatValue($variant->height, $variant->length_title);
-        $return['weight_raw'] = (float) $variant->weight;
-        $return['length_raw'] = (float) $variant->length;
-        $return['width_raw'] = (float) $variant->width;
-        $return['height_raw'] = (float) $variant->height;
+        $return['dimensions']      = LengthHelper::formatDimensions($variant->length, $variant->width, $variant->height, $variant->length_title);
+        $return['weight']          = WeightHelper::formatValue($variant->weight, $variant->weight_title);
+        $return['length']          = LengthHelper::formatValue($variant->length, $variant->length_title);
+        $return['width']           = LengthHelper::formatValue($variant->width, $variant->length_title);
+        $return['height']          = LengthHelper::formatValue($variant->height, $variant->length_title);
+        $return['weight_raw']      = (float) $variant->weight;
+        $return['length_raw']      = (float) $variant->length;
+        $return['width_raw']       = (float) $variant->width;
+        $return['height_raw']      = (float) $variant->height;
         $return['dimensions_unit'] = $variant->length_title;
-        $return['length_title'] = $variant->length_title . ((float) $variant->length > 1 ? ($variant->length_title === 'Inch' ? 'es' : 's') : '');
-        $return['width_title'] = $variant->length_title . ((float) $variant->width > 1 ? ($variant->length_title === 'Inch' ? 'es' : 's') : '');
-        $return['height_title'] = $variant->length_title . ((float) $variant->height > 1 ? ($variant->length_title === 'Inch' ? 'es' : 's') : '');
-        $return['weight_unit'] = $variant->weight_unit;
-        $return['weight_title'] = $variant->weight_title . ((float) $variant->weight > 1 ? 's' : '');
+        $return['length_title']    = $variant->length_title . ((float) $variant->length > 1 ? ($variant->length_title === 'Inch' ? 'es' : 's') : '');
+        $return['width_title']     = $variant->length_title . ((float) $variant->width > 1 ? ($variant->length_title === 'Inch' ? 'es' : 's') : '');
+        $return['height_title']    = $variant->length_title . ((float) $variant->height > 1 ? ($variant->length_title === 'Inch' ? 'es' : 's') : '');
+        $return['weight_unit']     = $variant->weight_unit;
+        $return['weight_title']    = $variant->weight_title . ((float) $variant->weight > 1 ? 's' : '');
 
         $pluginHelper->event('AfterUpdateProductReturn', [&$return, $product, $config]);
 

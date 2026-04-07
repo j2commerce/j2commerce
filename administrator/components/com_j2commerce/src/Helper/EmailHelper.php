@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -14,8 +15,8 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Filesystem\File;
-use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Filesystem\Path;
+use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Language;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Mail\Mail;
@@ -24,7 +25,6 @@ use Joomla\CMS\Uri\Uri;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
 use Joomla\Registry\Registry;
-use J2Commerce\Component\J2commerce\Administrator\Service\EmailTypeRegistry;
 
 // No direct access
 \defined('_JEXEC') or die;
@@ -133,22 +133,22 @@ class EmailHelper
         // Fallback sample data when no orders exist
         return (object) [
             'j2commerce_order_id' => 0,
-            'order_id' => 'J2C-1001',
-            'user_id' => 0,
-            'user_email' => 'customer@example.com',
-            'order_state_id' => 1,
-            'order_total' => 149.99,
-            'order_subtotal' => 129.99,
-            'order_tax' => 10.00,
-            'order_shipping' => 10.00,
-            'order_discount' => 0.00,
-            'currency_code' => 'USD',
-            'currency_value' => 1.00,
-            'customer_note' => 'Please gift wrap this order.',
-            'token' => 'sample-token-12345',
-            'created_on' => date('Y-m-d H:i:s'),
-            'orderpayment_type' => 'Credit Card',
-            'order_params' => '{}',
+            'order_id'            => 'J2C-1001',
+            'user_id'             => 0,
+            'user_email'          => 'customer@example.com',
+            'order_state_id'      => 1,
+            'order_total'         => 149.99,
+            'order_subtotal'      => 129.99,
+            'order_tax'           => 10.00,
+            'order_shipping'      => 10.00,
+            'order_discount'      => 0.00,
+            'currency_code'       => 'USD',
+            'currency_value'      => 1.00,
+            'customer_note'       => 'Please gift wrap this order.',
+            'token'               => 'sample-token-12345',
+            'created_on'          => date('Y-m-d H:i:s'),
+            'orderpayment_type'   => 'Credit Card',
+            'order_params'        => '{}',
         ];
     }
 
@@ -220,19 +220,19 @@ class EmailHelper
      */
     protected function filterByLanguage(object $order, array $mailTemplates): array
     {
-        $filteredTemplates = [];
+        $filteredTemplates    = [];
         $defaultTemplateGroup = [];
-        $allLangTemplates = [];
-        $params = ComponentHelper::getParams('com_j2commerce');
+        $allLangTemplates     = [];
+        $params               = ComponentHelper::getParams('com_j2commerce');
 
         // Look for desired languages
-        $jLang = Factory::getLanguage();
-        $userLang = $order->customer_language ?? '*';
+        $jLang     = Factory::getLanguage();
+        $userLang  = $order->customer_language ?? '*';
         $languages = [
             $userLang,
             $jLang->getTag(),
             $jLang->getDefault(),
-            'en-GB'
+            'en-GB',
         ];
 
         if (\count($mailTemplates)) {
@@ -252,27 +252,27 @@ class EmailHelper
                     continue;
                 }
 
-                $langScore = (5 - $langPos);
-                $template->lang_score = $langScore;
+                $langScore                       = (5 - $langPos);
+                $template->lang_score            = $langScore;
                 $filteredTemplates[$langScore][] = $template;
             }
         } else {
             // No templates found, use standard template
             $standardTemplate = (object) [
                 'j2commerce_emailtemplate_id' => 0,
-                'email_type' => '',
-                'receiver_type' => '*',
-                'orderstatus_id' => '*',
-                'group_id' => '',
-                'paymentmethod' => '*',
-                'subject' => Text::_('COM_J2COMMERCE_ORDER_EMAIL_TEMPLATE_STANDARD_SUBJECT'),
-                'body' => Text::_('COM_J2COMMERCE_ORDER_EMAIL_TEMPLATE_STANDARD_BODY'),
-                'body_source' => 'html',
-                'body_source_file' => '',
-                'language' => '*',
-                'enabled' => 1,
-                'ordering' => 1,
-                'lang_score' => 1
+                'email_type'                  => '',
+                'receiver_type'               => '*',
+                'orderstatus_id'              => '*',
+                'group_id'                    => '',
+                'paymentmethod'               => '*',
+                'subject'                     => Text::_('COM_J2COMMERCE_ORDER_EMAIL_TEMPLATE_STANDARD_SUBJECT'),
+                'body'                        => Text::_('COM_J2COMMERCE_ORDER_EMAIL_TEMPLATE_STANDARD_BODY'),
+                'body_source'                 => 'html',
+                'body_source_file'            => '',
+                'language'                    => '*',
+                'enabled'                     => 1,
+                'ordering'                    => 1,
+                'lang_score'                  => 1,
             ];
 
             if ($params->get('send_default_email_template', 1) == 1) {
@@ -326,17 +326,17 @@ class EmailHelper
         $extras = [];
 
         if (isset($template->body_source) && $template->body_source === 'file') {
-            $templateText = $this->getTemplateFromFile($template, $order);
+            $templateText         = $this->getTemplateFromFile($template, $order);
             $this->isTemplateFile = true;
         } else {
             $templateText = $template->body ?? '';
         }
 
         $templateText = $this->processTags($templateText, $order, $extras, $receiverType);
-        $subject = $this->processTags($template->subject ?? '', $order, $extras, $receiverType);
+        $subject      = $this->processTags($template->subject ?? '', $order, $extras, $receiverType);
 
-        $baseURL = str_replace('/administrator', '', Uri::base());
-        $baseURL = ltrim($baseURL, '/');
+        $baseURL  = str_replace('/administrator', '', Uri::base());
+        $baseURL  = ltrim($baseURL, '/');
         $imageUrl = str_replace(Uri::base(true), '', Uri::base());
 
         $isHTML = true;
@@ -351,7 +351,7 @@ class EmailHelper
         $mailer->setSender([$mailfrom, $fromname]);
 
         // Set encoding information
-        $mailer->CharSet = 'utf-8';
+        $mailer->CharSet  = 'utf-8';
         $mailer->Encoding = 'base64';
 
         $mailer->setSubject($subject);
@@ -360,7 +360,7 @@ class EmailHelper
         $templateText = $this->processInlineImagesInternal($templateText, $mailer, $imageUrl);
 
         $htmlExtra = '';
-        $lang = Factory::getLanguage();
+        $lang      = Factory::getLanguage();
 
         if ($lang->isRTL()) {
             $htmlExtra = ' dir="rtl"';
@@ -368,7 +368,7 @@ class EmailHelper
 
         // Inject custom CSS into <head>
         $headStyles = '';
-        $customCss = trim($template->custom_css ?? '');
+        $customCss  = trim($template->custom_css ?? '');
         if ($customCss !== '') {
             $headStyles = '<style type="text/css">' . $customCss . '</style>';
         }
@@ -399,23 +399,23 @@ class EmailHelper
      */
     public function processTags(string $text, object $order, array $extras = [], string $receiverType = '*'): string
     {
-        $params = ComponentHelper::getParams('com_j2commerce');
-        $config = Factory::getApplication()->getConfig();
+        $params   = ComponentHelper::getParams('com_j2commerce');
+        $config   = Factory::getApplication()->getConfig();
         $sitename = $config->get('sitename');
 
         // Site URL
-        $baseURL = Uri::base();
+        $baseURL    = Uri::base();
         $subpathURL = Uri::base(true);
-        $baseURL = str_replace('/administrator', '', $baseURL);
+        $baseURL    = str_replace('/administrator', '', $baseURL);
         $subpathURL = str_replace('/administrator', '', $subpathURL);
 
         // Invoice URL — links to myprofile order view (no token; unauthenticated users get login redirect)
-        $orderId = $order->order_id ?? '';
+        $orderId           = $order->order_id ?? '';
         $defaultInvoiceUrl = Route::_('index.php?option=com_j2commerce&view=myprofile&task=orderView&order_id=' . urlencode((string) $orderId), false);
-        $url = str_replace('&amp;', '&', $defaultInvoiceUrl);
-        $url = str_replace('/administrator', '', $url);
-        $url = ltrim($url, '/');
-        $subpathURL = ltrim($subpathURL, '/');
+        $url               = str_replace('&amp;', '&', $defaultInvoiceUrl);
+        $url               = str_replace('/administrator', '', $url);
+        $url               = ltrim($url, '/');
+        $subpathURL        = ltrim($subpathURL, '/');
 
         if (substr($url, 0, \strlen($subpathURL) + 1) === "$subpathURL/") {
             $url = substr($url, \strlen($subpathURL) + 1);
@@ -424,17 +424,17 @@ class EmailHelper
         $invoiceURL = rtrim($baseURL, '/') . '/' . ltrim($url, '/');
 
         // Order date
-        $tz = $config->get('offset');
+        $tz   = $config->get('offset');
         $date = Factory::getDate($order->created_on ?? 'now');
         $date->setTimezone(new \DateTimeZone($tz));
         $dateFormat = $params->get('date_format', Text::_('DATE_FORMAT_LC1'));
-        $orderDate = $date->format($dateFormat, true);
+        $orderDate  = $date->format($dateFormat, true);
 
         // Get order info
-        $orderInfo = $this->getOrderInfo($order);
-        $shipping = $this->getOrderShipping($order);
+        $orderInfo   = $this->getOrderInfo($order);
+        $shipping    = $this->getOrderShipping($order);
         $orderCoupon = $this->getOrderCoupons($order);
-        $status = $this->getOrderStatus((int) ($order->order_state_id ?? 0));
+        $status      = $this->getOrderStatus((int) ($order->order_state_id ?? 0));
 
         $couponCode = '';
         if (!empty($orderCoupon)) {
@@ -448,10 +448,10 @@ class EmailHelper
         $items = $this->loadItemsTemplate($order, $receiverType);
 
         // Get country/zone names
-        $billingCountryName = $this->getCountryName((int) ($orderInfo->billing_country_id ?? 0));
+        $billingCountryName  = $this->getCountryName((int) ($orderInfo->billing_country_id ?? 0));
         $shippingCountryName = $this->getCountryName((int) ($orderInfo->shipping_country_id ?? 0));
-        $billingZoneName = $this->getZoneName((int) ($orderInfo->billing_zone_id ?? 0));
-        $shippingZoneName = $this->getZoneName((int) ($orderInfo->shipping_zone_id ?? 0));
+        $billingZoneName     = $this->getZoneName((int) ($orderInfo->billing_zone_id ?? 0));
+        $shippingZoneName    = $this->getZoneName((int) ($orderInfo->shipping_zone_id ?? 0));
 
         // Get bank transfer info if present
         $bankTransferInfo = '';
@@ -473,63 +473,63 @@ class EmailHelper
         );
 
         $tags = [
-            "\\n" => "\n",
-            '[SITENAME]' => $sitename,
-            '[SITEURL]' => $baseURL,
-            '[INVOICE_URL]' => $invoiceURL,
-            '[ORDERID]' => $order->order_id ?? '',
-            '[INVOICENO]' => $invoiceNumber,
-            '[ORDERDATE]' => $orderDate,
-            '[ORDERSTATUS]' => $language->_($status->orderstatus_name ?? ''),
-            '[ORDERAMOUNT]' => $formattedTotal,
-            '[CUSTOMER_NAME]' => ($orderInfo->billing_first_name ?? '') . ' ' . ($orderInfo->billing_last_name ?? ''),
-            '[BILLING_FIRSTNAME]' => $orderInfo->billing_first_name ?? '',
-            '[BILLING_LASTNAME]' => $orderInfo->billing_last_name ?? '',
-            '[BILLING_EMAIL]' => $order->user_email ?? '',
-            '[BILLING_ADDRESS_1]' => $orderInfo->billing_address_1 ?? '',
-            '[BILLING_ADDRESS_2]' => $orderInfo->billing_address_2 ?? '',
-            '[BILLING_CITY]' => $orderInfo->billing_city ?? '',
-            '[BILLING_ZIP]' => $orderInfo->billing_zip ?? '',
-            '[BILLING_COUNTRY]' => $language->_($billingCountryName),
-            '[BILLING_STATE]' => $language->_($billingZoneName),
-            '[BILLING_COMPANY]' => $orderInfo->billing_company ?? '',
-            '[BILLING_VATID]' => $orderInfo->billing_tax_number ?? '',
-            '[BILLING_PHONE]' => $orderInfo->billing_phone_1 ?? '',
-            '[BILLING_MOBILE]' => $orderInfo->billing_phone_2 ?? '',
-            '[SHIPPING_FIRSTNAME]' => $orderInfo->shipping_first_name ?? '',
-            '[SHIPPING_LASTNAME]' => $orderInfo->shipping_last_name ?? '',
-            '[SHIPPING_ADDRESS_1]' => $orderInfo->shipping_address_1 ?? '',
-            '[SHIPPING_ADDRESS_2]' => $orderInfo->shipping_address_2 ?? '',
-            '[SHIPPING_CITY]' => $orderInfo->shipping_city ?? '',
-            '[SHIPPING_ZIP]' => $orderInfo->shipping_zip ?? '',
-            '[SHIPPING_COUNTRY]' => $language->_($shippingCountryName),
-            '[SHIPPING_STATE]' => $language->_($shippingZoneName),
-            '[SHIPPING_COMPANY]' => $orderInfo->shipping_company ?? '',
-            '[SHIPPING_VATID]' => $orderInfo->shipping_tax_number ?? '',
-            '[SHIPPING_PHONE]' => $orderInfo->shipping_phone_1 ?? '',
-            '[SHIPPING_MOBILE]' => $orderInfo->shipping_phone_2 ?? '',
-            '[SHIPPING_METHOD]' => $language->_($shipping->ordershipping_name ?? ''),
-            '[SHIPPING_TYPE]' => $language->_($shipping->ordershipping_name ?? ''),
-            '[SHIPPING_TRACKING_ID]' => $shipping->ordershipping_tracking_id ?? '',
-            '[CUSTOMER_NOTE]' => nl2br($order->customer_note ?? ''),
-            '[PAYMENT_TYPE]' => $this->getPaymentMethodTitle($order->orderpayment_type ?? '', $language),
-            '[ORDER_TOKEN]' => $order->token ?? '',
-            '[TOKEN]' => $order->token ?? '',
-            '[COUPON_CODE]' => $couponCode,
+            "\\n"                         => "\n",
+            '[SITENAME]'                  => $sitename,
+            '[SITEURL]'                   => $baseURL,
+            '[INVOICE_URL]'               => $invoiceURL,
+            '[ORDERID]'                   => $order->order_id ?? '',
+            '[INVOICENO]'                 => $invoiceNumber,
+            '[ORDERDATE]'                 => $orderDate,
+            '[ORDERSTATUS]'               => $language->_($status->orderstatus_name ?? ''),
+            '[ORDERAMOUNT]'               => $formattedTotal,
+            '[CUSTOMER_NAME]'             => ($orderInfo->billing_first_name ?? '') . ' ' . ($orderInfo->billing_last_name ?? ''),
+            '[BILLING_FIRSTNAME]'         => $orderInfo->billing_first_name ?? '',
+            '[BILLING_LASTNAME]'          => $orderInfo->billing_last_name ?? '',
+            '[BILLING_EMAIL]'             => $order->user_email ?? '',
+            '[BILLING_ADDRESS_1]'         => $orderInfo->billing_address_1 ?? '',
+            '[BILLING_ADDRESS_2]'         => $orderInfo->billing_address_2 ?? '',
+            '[BILLING_CITY]'              => $orderInfo->billing_city ?? '',
+            '[BILLING_ZIP]'               => $orderInfo->billing_zip ?? '',
+            '[BILLING_COUNTRY]'           => $language->_($billingCountryName),
+            '[BILLING_STATE]'             => $language->_($billingZoneName),
+            '[BILLING_COMPANY]'           => $orderInfo->billing_company ?? '',
+            '[BILLING_VATID]'             => $orderInfo->billing_tax_number ?? '',
+            '[BILLING_PHONE]'             => $orderInfo->billing_phone_1 ?? '',
+            '[BILLING_MOBILE]'            => $orderInfo->billing_phone_2 ?? '',
+            '[SHIPPING_FIRSTNAME]'        => $orderInfo->shipping_first_name ?? '',
+            '[SHIPPING_LASTNAME]'         => $orderInfo->shipping_last_name ?? '',
+            '[SHIPPING_ADDRESS_1]'        => $orderInfo->shipping_address_1 ?? '',
+            '[SHIPPING_ADDRESS_2]'        => $orderInfo->shipping_address_2 ?? '',
+            '[SHIPPING_CITY]'             => $orderInfo->shipping_city ?? '',
+            '[SHIPPING_ZIP]'              => $orderInfo->shipping_zip ?? '',
+            '[SHIPPING_COUNTRY]'          => $language->_($shippingCountryName),
+            '[SHIPPING_STATE]'            => $language->_($shippingZoneName),
+            '[SHIPPING_COMPANY]'          => $orderInfo->shipping_company ?? '',
+            '[SHIPPING_VATID]'            => $orderInfo->shipping_tax_number ?? '',
+            '[SHIPPING_PHONE]'            => $orderInfo->shipping_phone_1 ?? '',
+            '[SHIPPING_MOBILE]'           => $orderInfo->shipping_phone_2 ?? '',
+            '[SHIPPING_METHOD]'           => $language->_($shipping->ordershipping_name ?? ''),
+            '[SHIPPING_TYPE]'             => $language->_($shipping->ordershipping_name ?? ''),
+            '[SHIPPING_TRACKING_ID]'      => $shipping->ordershipping_tracking_id ?? '',
+            '[CUSTOMER_NOTE]'             => nl2br($order->customer_note ?? ''),
+            '[PAYMENT_TYPE]'              => $this->getPaymentMethodTitle($order->orderpayment_type ?? '', $language),
+            '[ORDER_TOKEN]'               => $order->token ?? '',
+            '[TOKEN]'                     => $order->token ?? '',
+            '[COUPON_CODE]'               => $couponCode,
             '[BANK_TRANSFER_INFORMATION]' => $bankTransferInfo,
-            '[SHIPPING_TOTAL_WEIGHT]' => $this->getTotalShippingWeight($order),
-            '[SHIPPING_AMOUNT]' => ((float) ($order->order_shipping ?? 0)) > 0 ? CurrencyHelper::format((float) $order->order_shipping, $order->currency_code ?? '', (float) ($order->currency_value ?? 1)) : '',
-            '[DISCOUNT_AMOUNT]' => ((float) ($order->order_discount ?? 0)) > 0 ? CurrencyHelper::format((float) $order->order_discount, $order->currency_code ?? '', (float) ($order->currency_value ?? 1)) : '',
-            '[TAX_AMOUNT]' => ((float) ($order->order_tax ?? 0)) > 0 ? CurrencyHelper::format((float) $order->order_tax, $order->currency_code ?? '', (float) ($order->currency_value ?? 1)) : '',
-            '[SUBTOTAL]' => CurrencyHelper::format((float) ($order->order_subtotal ?? 0), $order->currency_code ?? '', (float) ($order->currency_value ?? 1)),
-            '[CURRENT_YEAR]' => date('Y'),
-            '[ITEMS]' => $items,
-            '[PACKING_ITEMS]' => $this->loadPackingItemsTemplate($order),
+            '[SHIPPING_TOTAL_WEIGHT]'     => $this->getTotalShippingWeight($order),
+            '[SHIPPING_AMOUNT]'           => ((float) ($order->order_shipping ?? 0)) > 0 ? CurrencyHelper::format((float) $order->order_shipping, $order->currency_code ?? '', (float) ($order->currency_value ?? 1)) : '',
+            '[DISCOUNT_AMOUNT]'           => ((float) ($order->order_discount ?? 0)) > 0 ? CurrencyHelper::format((float) $order->order_discount, $order->currency_code ?? '', (float) ($order->currency_value ?? 1)) : '',
+            '[TAX_AMOUNT]'                => ((float) ($order->order_tax ?? 0)) > 0 ? CurrencyHelper::format((float) $order->order_tax, $order->currency_code ?? '', (float) ($order->currency_value ?? 1)) : '',
+            '[SUBTOTAL]'                  => CurrencyHelper::format((float) ($order->order_subtotal ?? 0), $order->currency_code ?? '', (float) ($order->currency_value ?? 1)),
+            '[CURRENT_YEAR]'              => date('Y'),
+            '[ITEMS]'                     => $items,
+            '[PACKING_ITEMS]'             => $this->loadPackingItemsTemplate($order),
         ];
 
         // Get customer user groups
         if (isset($order->user_id) && $order->user_id > 0) {
-            $groupNames = $this->getUserGroupNames((int) $order->user_id);
+            $groupNames                = $this->getUserGroupNames((int) $order->user_id);
             $tags['[CUSTOMER_GROUPS]'] = trim(implode(',', $groupNames), ',');
         }
 
@@ -542,22 +542,22 @@ class EmailHelper
                 $logoUrl = rtrim($baseURL, '/') . '/' . ltrim($logoUrl, '/');
             }
         }
-        $tags['[STORE_LOGO_URL]'] = $logoUrl;
-        $tags['[LOGO_MAX_HEIGHT]'] = (string) (int) $params->get('email_logo_max_height', 60);
-        $tags['[ACCENT_COLOR]'] = $params->get('email_accent_color', '#2563EB');
-        $tags['[HEADER_BG_COLOR]'] = $params->get('email_header_bg', '#FFFFFF');
-        $tags['[EMAIL_BG_COLOR]'] = $params->get('email_bg_color', '#F8FAFC');
-        $tags['[TEXT_COLOR]'] = $params->get('email_text_color', '#334155');
-        $tags['[FOOTER_TEXT]'] = $params->get('email_footer_text', '');
-        $tags['[SOCIAL_FACEBOOK]'] = $params->get('email_social_facebook', '');
+        $tags['[STORE_LOGO_URL]']   = $logoUrl;
+        $tags['[LOGO_MAX_HEIGHT]']  = (string) (int) $params->get('email_logo_max_height', 60);
+        $tags['[ACCENT_COLOR]']     = $params->get('email_accent_color', '#2563EB');
+        $tags['[HEADER_BG_COLOR]']  = $params->get('email_header_bg', '#FFFFFF');
+        $tags['[EMAIL_BG_COLOR]']   = $params->get('email_bg_color', '#F8FAFC');
+        $tags['[TEXT_COLOR]']       = $params->get('email_text_color', '#334155');
+        $tags['[FOOTER_TEXT]']      = $params->get('email_footer_text', '');
+        $tags['[SOCIAL_FACEBOOK]']  = $params->get('email_social_facebook', '');
         $tags['[SOCIAL_INSTAGRAM]'] = $params->get('email_social_instagram', '');
-        $tags['[SOCIAL_TWITTER]'] = $params->get('email_social_twitter', '');
+        $tags['[SOCIAL_TWITTER]']   = $params->get('email_social_twitter', '');
 
         // Lowercase aliases for brand shortcodes (TinyMCE/GrapesJS may lowercase them)
-        $tags['[accent_color]'] = $tags['[ACCENT_COLOR]'];
+        $tags['[accent_color]']    = $tags['[ACCENT_COLOR]'];
         $tags['[header_bg_color]'] = $tags['[HEADER_BG_COLOR]'];
-        $tags['[email_bg_color]'] = $tags['[EMAIL_BG_COLOR]'];
-        $tags['[text_color]'] = $tags['[TEXT_COLOR]'];
+        $tags['[email_bg_color]']  = $tags['[EMAIL_BG_COLOR]'];
+        $tags['[text_color]']      = $tags['[TEXT_COLOR]'];
 
         // Tax line items with profile names (from ordertaxes table)
         $tags['[TAX_LINES]'] = $this->buildTaxLines($order);
@@ -610,9 +610,9 @@ class EmailHelper
         Factory::getApplication()->getDispatcher()->dispatch(
             'onJ2CommerceAfterProcessTags',
             new \Joomla\CMS\Event\GenericEvent('onJ2CommerceAfterProcessTags', [
-                'text' => &$text,
+                'text'  => &$text,
                 'order' => $order,
-                'tags' => $tags
+                'tags'  => $tags,
             ])
         );
 
@@ -691,9 +691,9 @@ class EmailHelper
             '/\[ITEMS_LOOP\](.*?)\[\/ITEMS_LOOP\]/s',
             function (array $m) use ($order, $baseURL): string {
                 $template = $m[1];
-                $db = self::getDatabase();
-                $orderId = $order->order_id ?? '';
-                $query = $db->getQuery(true)
+                $db       = self::getDatabase();
+                $orderId  = $order->order_id ?? '';
+                $query    = $db->getQuery(true)
                     ->select('*')
                     ->from($db->quoteName('#__j2commerce_orderitems'))
                     ->where($db->quoteName('order_id') . ' = :order_id')
@@ -705,9 +705,9 @@ class EmailHelper
                     return '';
                 }
 
-                $currencyCode = $order->currency_code ?? '';
+                $currencyCode  = $order->currency_code ?? '';
                 $currencyValue = (float) ($order->currency_value ?? 1);
-                $result = '';
+                $result        = '';
 
                 foreach ($items as $item) {
                     $optionText = $this->decodeOrderItemAttributes($item->orderitem_attributes ?? '');
@@ -794,15 +794,15 @@ class EmailHelper
             return $text;
         }
 
-        $idx = \count($stack) - 1;
+        $idx          = \count($stack) - 1;
         $outerTrStart = $stack[$idx];
-        $openCount = \count($stack) - $idx; // nesting depth from chosen <tr> inward
+        $openCount    = \count($stack) - $idx; // nesting depth from chosen <tr> inward
 
         // Walk forward from [ITEM_NAME] to find the matching </tr> for the outermost <tr>
         $after = substr($text, $itemPos);
         preg_match_all('/<(\/?)tr\b[^>]*>/i', $after, $matches, PREG_OFFSET_CAPTURE);
 
-        $depth = $openCount;
+        $depth      = $openCount;
         $outerTrEnd = null;
         foreach ($matches[0] as $i => $match) {
             if ($matches[1][$i][0] !== '/') {
@@ -843,7 +843,7 @@ class EmailHelper
             return '';
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true)
             ->select([$db->quoteName('ordertax_title'), $db->quoteName('ordertax_percent'), $db->quoteName('ordertax_amount')])
             ->from($db->quoteName('#__j2commerce_ordertaxes'))
@@ -855,18 +855,18 @@ class EmailHelper
             return '';
         }
 
-        $currencyCode = $order->currency_code ?? '';
+        $currencyCode  = $order->currency_code ?? '';
         $currencyValue = (float) ($order->currency_value ?? 1);
-        $rows = '';
+        $rows          = '';
 
         foreach ($taxes as $tax) {
             if ((float) $tax->ordertax_amount <= 0) {
                 continue;
             }
-            $title = htmlspecialchars($tax->ordertax_title);
+            $title   = htmlspecialchars($tax->ordertax_title);
             $percent = (float) $tax->ordertax_percent;
-            $amount = CurrencyHelper::format((float) $tax->ordertax_amount, $currencyCode, $currencyValue);
-            $label = $title . ($percent > 0 ? ' (' . rtrim(rtrim(number_format($percent, 2), '0'), '.') . '%)' : '');
+            $amount  = CurrencyHelper::format((float) $tax->ordertax_amount, $currencyCode, $currencyValue);
+            $label   = $title . ($percent > 0 ? ' (' . rtrim(rtrim(number_format($percent, 2), '0'), '.') . '%)' : '');
             $rows .= '<tr>'
                 . '<td style="padding: 6px 20px; font-size: 13px; color: #6b7280;">' . $label . '</td>'
                 . '<td style="padding: 6px 20px; font-size: 13px; color: #6b7280; text-align: right;">' . $amount . '</td>'
@@ -887,7 +887,7 @@ class EmailHelper
             return '';
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true)
             ->select([$db->quoteName('thumb_image'), $db->quoteName('main_image')])
             ->from($db->quoteName('#__j2commerce_productimages'))
@@ -938,13 +938,13 @@ class EmailHelper
             $shortcode = '[HOOK:' . $position . ']';
             if (str_contains($text, $shortcode)) {
                 $event = new \Joomla\CMS\Event\GenericEvent($eventName, [
-                    'order' => $order,
+                    'order'        => $order,
                     'receiverType' => $receiverType,
-                    'result' => '',
+                    'result'       => '',
                 ]);
                 $dispatcher->dispatch($eventName, $event);
                 $hookHtml = $event->getArgument('result') ?: '';
-                $text = str_replace($shortcode, $hookHtml, $text);
+                $text     = str_replace($shortcode, $hookHtml, $text);
             }
         }
 
@@ -963,11 +963,11 @@ class EmailHelper
      */
     public function getEmailTemplates(object $order, string $receiverType = '*'): array
     {
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
-        $orderStateId = (int) ($order->order_state_id ?? 0);
-        $paymentType = $order->orderpayment_type ?? '';
+        $orderStateId  = (int) ($order->order_state_id ?? 0);
+        $paymentType   = $order->orderpayment_type ?? '';
         $customerGroup = $order->customer_group ?? '';
 
         $query->select('*')
@@ -1059,8 +1059,8 @@ class EmailHelper
      */
     private function initMailer(): Mail
     {
-        $config = Factory::getApplication()->getConfig();
-        $mailer = $this->getMailer();
+        $config   = Factory::getApplication()->getConfig();
+        $mailer   = $this->getMailer();
         $mailfrom = $config->get('mailfrom');
         $fromname = $config->get('fromname');
         $mailer->setSender([$mailfrom, $fromname]);
@@ -1090,9 +1090,9 @@ class EmailHelper
         // Load language overrides
         $this->loadLanguageOverrides($order);
 
-        $extras = [];
+        $extras       = [];
         $templateText = $this->processTags($templateText, $order, $extras);
-        $subject = $this->processTags($subject, $order, $extras);
+        $subject      = $this->processTags($subject, $order, $extras);
 
         $baseURL = str_replace('/administrator', '', Uri::base());
         $baseURL = ltrim($baseURL, '/');
@@ -1105,7 +1105,7 @@ class EmailHelper
         $templateText = $this->processInlineImagesInternal($templateText, $mailer, $baseURL);
 
         $htmlExtra = '';
-        $lang = Factory::getLanguage();
+        $lang      = Factory::getLanguage();
 
         if ($lang->isRTL()) {
             $htmlExtra = ' dir="rtl"';
@@ -1134,19 +1134,19 @@ class EmailHelper
     protected function loadEmailTemplate(object $order): array
     {
         $templateText = '';
-        $subject = '';
+        $subject      = '';
         $loadLanguage = null;
-        $isHTML = false;
+        $isHTML       = false;
 
         // Look for desired languages
-        $jLang = Factory::getLanguage();
-        $userLang = $order->customer_language ?? '';
+        $jLang     = Factory::getLanguage();
+        $userLang  = $order->customer_language ?? '';
         $languages = [
             $userLang,
             $jLang->getTag(),
             $jLang->getDefault(),
             'en-GB',
-            '*'
+            '*',
         ];
 
         $allTemplates = $this->getEmailTemplates($order);
@@ -1164,27 +1164,27 @@ class EmailHelper
                 }
 
                 $langScore = (5 - $langPos);
-                $score = $langScore;
+                $score     = $langScore;
 
                 if ($score > $preferredScore) {
                     $loadLanguage = $myLang;
-                    $subject = $template->subject ?? '';
+                    $subject      = $template->subject ?? '';
 
                     if (isset($template->body_source) && $template->body_source === 'file') {
-                        $templateText = $this->getTemplateFromFile($template, $order);
+                        $templateText         = $this->getTemplateFromFile($template, $order);
                         $this->isTemplateFile = true;
                     } else {
                         $templateText = $template->body ?? '';
                     }
 
                     $preferredScore = $score;
-                    $isHTML = true;
+                    $isHTML         = true;
                 }
             }
         } else {
-            $isHTML = true;
+            $isHTML       = true;
             $templateText = Text::_('COM_J2COMMERCE_ORDER_EMAIL_TEMPLATE_STANDARD_BODY');
-            $subject = Text::_('COM_J2COMMERCE_ORDER_EMAIL_TEMPLATE_STANDARD_SUBJECT');
+            $subject      = Text::_('COM_J2COMMERCE_ORDER_EMAIL_TEMPLATE_STANDARD_SUBJECT');
         }
 
         return [$isHTML, $subject, $templateText, $loadLanguage];
@@ -1262,7 +1262,7 @@ class EmailHelper
     public function loadLanguageOverrides(object $order): void
     {
         $extension = 'com_j2commerce';
-        $jlang = Factory::getLanguage();
+        $jlang     = Factory::getLanguage();
 
         // English (default fallback)
         $jlang->load($extension, JPATH_ADMINISTRATOR, 'en-GB', true);
@@ -1333,16 +1333,16 @@ class EmailHelper
         string $errorMessage = ''
     ): void {
         try {
-            $db = Factory::getContainer()->get(DatabaseInterface::class);
-            $log = new \stdClass();
-            $log->order_id = $orderId;
+            $db                 = Factory::getContainer()->get(DatabaseInterface::class);
+            $log                = new \stdClass();
+            $log->order_id      = $orderId;
             $log->receiver_type = $receiverType;
-            $log->subject = mb_substr($subject, 0, 255);
-            $log->recipients = implode(', ', $recipients);
-            $log->success = $success ? 1 : 0;
+            $log->subject       = mb_substr($subject, 0, 255);
+            $log->recipients    = implode(', ', $recipients);
+            $log->success       = $success ? 1 : 0;
             $log->error_message = $errorMessage;
-            $log->sent_on = Factory::getDate()->toSql();
-            $log->sent_by = Factory::getApplication()->getIdentity()?->id ?? 0;
+            $log->sent_on       = Factory::getDate()->toSql();
+            $log->sent_by       = Factory::getApplication()->getIdentity()?->id ?? 0;
 
             $db->insertObject('#__j2commerce_email_log', $log);
         } catch (\Throwable $e) {
@@ -1381,15 +1381,15 @@ class EmailHelper
      */
     protected function processInlineImagesInternal(string $templateText, Mail &$mailer, string $baseURL): string
     {
-        $pattern = '/(src)=\"([^"]*)\"/i';
+        $pattern         = '/(src)=\"([^"]*)\"/i';
         $numberOfMatches = preg_match_all($pattern, $templateText, $matches, PREG_OFFSET_CAPTURE);
 
         if ($numberOfMatches > 0) {
             $substitutions = $matches[2];
-            $lastPosition = 0;
-            $temp = '';
-            $imgIdx = 0;
-            $imageSubs = [];
+            $lastPosition  = 0;
+            $temp          = '';
+            $imgIdx        = 0;
+            $imageSubs     = [];
 
             foreach ($substitutions as &$entry) {
                 // Copy unchanged part
@@ -1415,7 +1415,7 @@ class EmailHelper
                         $temp .= $url;
                     } else {
                         // Image found, substitute
-                        if (!array_key_exists($url, $imageSubs)) {
+                        if (!\array_key_exists($url, $imageSubs)) {
                             $imgIdx++;
                             $mailer->AddEmbeddedImage($url, 'img' . $imgIdx, basename($url));
                             $imageSubs[$url] = $imgIdx;
@@ -1453,14 +1453,14 @@ class EmailHelper
         $html = preg_replace('# +#', ' ', $html);
         $html = str_replace(["\n", "\r", "\t"], '', $html);
 
-        $removeScript = "#< *script(?:(?!< */ *script *>).)*< */ *script *>#isU";
-        $removeStyle = "#< *style(?:(?!< */ *style *>).)*< */ *style *>#isU";
-        $removeStrikeTags = '#< *strike(?:(?!< */ *strike *>).)*< */ *strike *>#iU';
+        $removeScript           = "#< *script(?:(?!< */ *script *>).)*< */ *script *>#isU";
+        $removeStyle            = "#< *style(?:(?!< */ *style *>).)*< */ *style *>#isU";
+        $removeStrikeTags       = '#< *strike(?:(?!< */ *strike *>).)*< */ *strike *>#iU';
         $replaceByTwoReturnChar = '#< *(h1|h2)[^>]*>#Ui';
-        $replaceByStars = '#< *li[^>]*>#Ui';
-        $replaceByReturnChar1 = '#< */ *(li|td|tr|div|p)[^>]*> *< *(li|td|tr|div|p)[^>]*>#Ui';
-        $replaceByReturnChar = '#< */? *(br|p|h1|h2|h3|li|ul|h4|h5|h6|tr|td|div)[^>]*>#Ui';
-        $replaceLinks = '/< *a[^>]*href *= *"([^"]*)"[^>]*>(.*)< *\/ *a *>/Uis';
+        $replaceByStars         = '#< *li[^>]*>#Ui';
+        $replaceByReturnChar1   = '#< */ *(li|td|tr|div|p)[^>]*> *< *(li|td|tr|div|p)[^>]*>#Ui';
+        $replaceByReturnChar    = '#< */? *(br|p|h1|h2|h3|li|ul|h4|h5|h6|tr|td|div)[^>]*>#Ui';
+        $replaceLinks           = '/< *a[^>]*href *= *"([^"]*)"[^>]*>(.*)< *\/ *a *>/Uis';
 
         $text = preg_replace(
             [
@@ -1471,7 +1471,7 @@ class EmailHelper
                 $replaceByStars,
                 $replaceByReturnChar1,
                 $replaceByReturnChar,
-                $replaceLinks
+                $replaceLinks,
             ],
             ['', '', '', "\n\n", "\n* ", "\n", "\n", '${2} ( ${1} )'],
             $html
@@ -1500,10 +1500,10 @@ class EmailHelper
     protected function processCustomFields(object $row, string $type, string $text, Language $language): string
     {
         $field = match ($type) {
-            'billing' => 'all_billing',
+            'billing'  => 'all_billing',
             'shipping' => 'all_shipping',
-            'payment' => 'all_payment',
-            default => ''
+            'payment'  => 'all_payment',
+            default    => ''
         };
 
         if (empty($field)) {
@@ -1541,15 +1541,15 @@ class EmailHelper
             'onJ2CommerceBeforeReplaceCustomFields',
             new \Joomla\CMS\Event\GenericEvent('onJ2CommerceBeforeReplaceCustomFields', [
                 'fields' => &$fields,
-                'text' => &$text,
-                'type' => $type
+                'text'   => &$text,
+                'type'   => $type,
             ])
         );
 
         if (!empty($fields)) {
             foreach ($fields as $namekey => $fieldData) {
                 $string = '';
-                $value = $fieldData['value'] ?? '';
+                $value  = $fieldData['value'] ?? '';
 
                 if (\is_array($value)) {
                     foreach ($value as $val) {
@@ -1586,8 +1586,8 @@ class EmailHelper
                 }
 
                 $formattedValue = $language->_($fieldData['label'] ?? '') . ' : ' . $string;
-                $tagValue = '[CUSTOM_' . strtoupper($type) . '_FIELD:' . strtoupper($namekey) . ']';
-                $text = str_replace($tagValue, $formattedValue, $text);
+                $tagValue       = '[CUSTOM_' . strtoupper($type) . '_FIELD:' . strtoupper($namekey) . ']';
+                $text           = str_replace($tagValue, $formattedValue, $text);
             }
         }
 
@@ -1641,7 +1641,7 @@ class EmailHelper
      */
     protected function getOrderInfo(object $order): object
     {
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $orderId = $order->order_id ?? '';
@@ -1667,7 +1667,7 @@ class EmailHelper
      */
     protected function getOrderShipping(object $order): object
     {
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $orderId = $order->order_id ?? '';
@@ -1693,10 +1693,10 @@ class EmailHelper
      */
     protected function getOrderCoupons(object $order): array
     {
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
-        $orderId = $order->order_id ?? '';
+        $orderId      = $order->order_id ?? '';
         $discountType = 'coupon';
 
         $query->select('*')
@@ -1722,7 +1722,7 @@ class EmailHelper
      */
     protected function getOrderStatus(int $orderStatusId): object
     {
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select('*')
@@ -1750,7 +1750,7 @@ class EmailHelper
             return '';
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select($db->quoteName('country_name'))
@@ -1778,7 +1778,7 @@ class EmailHelper
             return '';
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select($db->quoteName('zone_name'))
@@ -1802,7 +1802,7 @@ class EmailHelper
      */
     public function getCountryById(int $countryId): object
     {
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select('*')
@@ -1826,7 +1826,7 @@ class EmailHelper
      */
     public function getZoneById(int $zoneId): object
     {
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select('*')
@@ -1847,16 +1847,16 @@ class EmailHelper
         }
 
         // Try language string: PLG_J2COMMERCE_{ELEMENT}_TITLE (e.g. PLG_J2COMMERCE_PAYMENT_CASH_TITLE)
-        $langKey = 'PLG_J2COMMERCE_' . strtoupper($element) . '_TITLE';
+        $langKey    = 'PLG_J2COMMERCE_' . strtoupper($element) . '_TITLE';
         $translated = $language->_($langKey);
         if ($translated !== $langKey) {
             return $translated;
         }
 
         // Fall back to the extension name field from the database
-        $db = self::getDatabase();
+        $db     = self::getDatabase();
         $folder = 'j2commerce';
-        $query = $db->getQuery(true)
+        $query  = $db->getQuery(true)
             ->select($db->quoteName('name'))
             ->from($db->quoteName('#__extensions'))
             ->where($db->quoteName('type') . ' = ' . $db->quote('plugin'))
@@ -1890,7 +1890,7 @@ class EmailHelper
      */
     protected function getUserGroupNames(int $userId): array
     {
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select($db->quoteName('g.title'))
@@ -1940,7 +1940,7 @@ class EmailHelper
      */
     protected function getTotalShippingWeight(object $order): string
     {
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $orderId = $order->order_id ?? '';
@@ -1973,8 +1973,8 @@ class EmailHelper
             return Factory::getLanguage();
         }
 
-        $conf = Factory::getApplication()->getConfig();
-        $debug = $conf->get('debug_lang');
+        $conf     = Factory::getApplication()->getConfig();
+        $debug    = $conf->get('debug_lang');
         $language = Language::getInstance($customerLanguage, $debug);
         $language->load('com_j2commerce');
 
@@ -2046,7 +2046,7 @@ class EmailHelper
 
     protected function loadItemsTemplate(object $order, string $receiverType = '*'): string
     {
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $orderId = $order->order_id ?? '';
@@ -2063,8 +2063,8 @@ class EmailHelper
             return '';
         }
 
-        $baseURL = str_replace('/administrator', '', Uri::base());
-        $currencyCode = $order->currency_code ?? '';
+        $baseURL       = str_replace('/administrator', '', Uri::base());
+        $currencyCode  = $order->currency_code ?? '';
         $currencyValue = (float) ($order->currency_value ?? 1);
 
         $html = '<table style="width:100%; border-collapse:collapse;">';
@@ -2162,7 +2162,7 @@ class EmailHelper
         static $registry = null;
 
         if ($registry === null) {
-            $db = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+            $db       = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
             $registry = new \J2Commerce\Component\J2commerce\Administrator\Service\EmailTypeRegistry($db);
         }
 
@@ -2182,7 +2182,7 @@ class EmailHelper
      */
     public static function getTemplateByType(string $emailType, string $context = '', string $language = ''): ?object
     {
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db    = Factory::getContainer()->get(DatabaseInterface::class);
         $query = $db->getQuery(true);
 
         $query->select('*')
@@ -2231,12 +2231,12 @@ class EmailHelper
         // First, process core transactional tags if applicable
         if ($emailType === 'transactional' && isset($data->order_id)) {
             $instance = self::getInstance();
-            $body = $instance->processTags($body, $data);
+            $body     = $instance->processTags($body, $data);
         }
 
         // Dispatch event for plugin-specific tag processing
         try {
-            $app = Factory::getApplication();
+            $app   = Factory::getApplication();
             $event = new \Joomla\Event\Event('onJ2CommerceProcessEmailTags', [
                 'emailType' => $emailType,
                 'context'   => $context,

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  Plugin.J2Commerce.ShippingFree
@@ -68,7 +69,7 @@ final class ShippingFree extends CMSPlugin implements SubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            'onJ2CommerceGetShippingRates'   => 'onGetShippingRates',
+            'onJ2CommerceGetShippingRates'    => 'onGetShippingRates',
             'onJ2CommerceFilterShippingRates' => 'onFilterShippingRates',
         ];
     }
@@ -353,12 +354,12 @@ final class ShippingFree extends CMSPlugin implements SubscriberInterface
             return (float) ($order->order_subtotal ?? 0);
         }
 
-        $products = $order->getItems();
-        $subtotal = 0.0;
+        $products           = $order->getItems();
+        $subtotal           = 0.0;
         $hasShippingProduct = false;
 
         foreach ($products as $product) {
-            $cartitem = $product->cartitem ?? $product;
+            $cartitem   = $product->cartitem ?? $product;
             $isShipping = $cartitem->shipping ?? false;
 
             if ($isShipping) {

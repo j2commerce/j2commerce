@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,15 +12,12 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
-use Exception;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Event\GenericEvent;
 use Joomla\CMS\Factory;
-use Joomla\CMS\Language\Text;
 use Joomla\CMS\Plugin\PluginHelper;
-use Joomla\CMS\Uri\Uri;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
 use Joomla\Event\DispatcherInterface;
@@ -97,11 +95,11 @@ class StrapperHelper
      * @since 6.0.0
      */
     public const CONTEXT_PRODUCT_DETAIL = 'product_detail';
-    public const CONTEXT_PRODUCT_LIST = 'product_list';
-    public const CONTEXT_CART = 'cart';
-    public const CONTEXT_CHECKOUT = 'checkout';
-    public const CONTEXT_MYPROFILE = 'myprofile';
-    public const CONTEXT_DEFAULT = 'default';
+    public const CONTEXT_PRODUCT_LIST   = 'product_list';
+    public const CONTEXT_CART           = 'cart';
+    public const CONTEXT_CHECKOUT       = 'checkout';
+    public const CONTEXT_MYPROFILE      = 'myprofile';
+    public const CONTEXT_DEFAULT        = 'default';
 
     /**
      * Constructor
@@ -112,11 +110,11 @@ class StrapperHelper
     public function __construct($properties = null)
     {
         try {
-            $this->db = Factory::getContainer()->get(DatabaseInterface::class);
-            $this->app = Factory::getApplication();
-            $this->wa = $this->app->getDocument()->getWebAssetManager();
+            $this->db     = Factory::getContainer()->get(DatabaseInterface::class);
+            $this->app    = Factory::getApplication();
+            $this->wa     = $this->app->getDocument()->getWebAssetManager();
             $this->params = ComponentHelper::getParams('com_j2commerce');
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             // Log error and continue with null instances
             if ($this->app !== null) {
                 $this->app->enqueueMessage(
@@ -180,7 +178,7 @@ class StrapperHelper
         }
 
         try {
-            $input = $this->app->getInput();
+            $input  = $this->app->getInput();
             $option = $input->getCmd('option', '');
 
             // Only apply context detection for J2Commerce component
@@ -188,8 +186,8 @@ class StrapperHelper
                 return self::CONTEXT_DEFAULT;
             }
 
-            $view = $input->getCmd('view', '');
-            $task = $input->getCmd('task', '');
+            $view   = $input->getCmd('view', '');
+            $task   = $input->getCmd('task', '');
             $layout = $input->getCmd('layout', '');
 
             // Detect view context
@@ -201,7 +199,7 @@ class StrapperHelper
                 'myprofile', 'orders', 'order', 'addresses', 'address' => self::CONTEXT_MYPROFILE,
                 default => self::CONTEXT_DEFAULT,
             };
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return self::CONTEXT_DEFAULT;
         }
     }
@@ -276,7 +274,7 @@ class StrapperHelper
             // Trigger after JS event for plugins using Joomla 6 dispatcher
             $this->triggerPluginEvent('AfterAddJS');
 
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $this->logError('Error in addJS: ' . $e->getMessage());
         }
     }
@@ -307,7 +305,7 @@ class StrapperHelper
             // Trigger after CSS event for plugins using Joomla 6 dispatcher
             $this->triggerPluginEvent('AfterAddCSS');
 
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $this->logError('Error in addCSS: ' . $e->getMessage());
         }
     }
@@ -354,7 +352,7 @@ class StrapperHelper
         if (!isset($this->templateCache[$cacheKey])) {
             try {
                 $clientId = 0;
-                $home = 1;
+                $home     = 1;
 
                 $query = $this->db->getQuery(true)
                     ->select($this->db->quoteName('template'))
@@ -366,7 +364,7 @@ class StrapperHelper
 
                 $this->db->setQuery($query);
                 $this->templateCache[$cacheKey] = $this->db->loadResult() ?: '';
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 $this->logError('Error getting default template: ' . $e->getMessage());
                 $this->templateCache[$cacheKey] = '';
             }
@@ -396,9 +394,9 @@ class StrapperHelper
             return number_format($filesize / 1048576, 2) . " Mb";
         } elseif ($filesize >= 1024) {
             return number_format($filesize / 1024, 2) . " Kb";
-        } else {
-            return $filesize . " bytes";
         }
+        return $filesize . " bytes";
+
     }
 
     /**
@@ -423,7 +421,7 @@ class StrapperHelper
             $wa->registerAndUseScript('com_j2commerce.vendor.chartjs', 'media/com_j2commerce/vendor/chartjs/js/chart.umd.min.js', [], ['defer' => true]);
             $wa->registerAndUseScript('com_j2commerce.admin.modal-products', 'media/com_j2commerce/js/administrator/modal-products.js', [], ['defer' => true]);
 
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $this->logError('Error loading admin scripts: ' . $e->getMessage());
         }
     }
@@ -443,7 +441,7 @@ class StrapperHelper
     protected function loadFrontendScripts(?string $forceContext = null): void
     {
         try {
-            $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
+            $wa      = Factory::getApplication()->getDocument()->getWebAssetManager();
             $context = $forceContext ?? $this->getViewContext();
 
             $wa->registerAndUseScript('com_j2commerce.site', 'media/com_j2commerce/js/site/j2commerce.js', [], ['defer' => true]);
@@ -452,13 +450,13 @@ class StrapperHelper
             // Load context-specific scripts
             match ($context) {
                 self::CONTEXT_PRODUCT_DETAIL => $this->loadProductDetailScripts($wa),
-                self::CONTEXT_PRODUCT_LIST => $this->loadProductListScripts($wa),
-                self::CONTEXT_CART => $this->loadCartScripts($wa),
-                self::CONTEXT_CHECKOUT => $this->loadCheckoutScripts($wa),
-                default => null,
+                self::CONTEXT_PRODUCT_LIST   => $this->loadProductListScripts($wa),
+                self::CONTEXT_CART           => $this->loadCartScripts($wa),
+                self::CONTEXT_CHECKOUT       => $this->loadCheckoutScripts($wa),
+                default                      => null,
             };
 
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $this->logError('Error loading frontend scripts: ' . $e->getMessage());
         }
     }
@@ -558,7 +556,7 @@ class StrapperHelper
             $wa->registerAndUseStyle('com_j2commerce.editview', 'media/com_j2commerce/css/administrator/editview.css');
             $wa->registerAndUseStyle('com_j2commerce.admin.css', 'media/com_j2commerce/css/administrator/j2commerce_admin.css');
 
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $this->logError('Error loading admin CSS: ' . $e->getMessage());
         }
     }
@@ -577,8 +575,8 @@ class StrapperHelper
     protected function loadFrontendCSS(?string $forceContext = null): void
     {
         try {
-            $app = Factory::getApplication();
-            $wa = $app->getDocument()->getWebAssetManager();
+            $app     = Factory::getApplication();
+            $wa      = $app->getDocument()->getWebAssetManager();
             $context = $forceContext ?? $this->getViewContext();
 
             // Only load CSS for HTML documents
@@ -596,13 +594,13 @@ class StrapperHelper
             // Load context-specific styles
             match ($context) {
                 self::CONTEXT_PRODUCT_DETAIL => $this->loadProductDetailCSS($wa),
-                self::CONTEXT_PRODUCT_LIST => $this->loadProductListCSS($wa),
-                self::CONTEXT_CART => $this->loadCartCSS($wa),
-                self::CONTEXT_CHECKOUT => $this->loadCheckoutCSS($wa),
-                default => null,
+                self::CONTEXT_PRODUCT_LIST   => $this->loadProductListCSS($wa),
+                self::CONTEXT_CART           => $this->loadCartCSS($wa),
+                self::CONTEXT_CHECKOUT       => $this->loadCheckoutCSS($wa),
+                default                      => null,
             };
 
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $this->logError('Error loading frontend CSS: ' . $e->getMessage());
         }
     }
@@ -738,7 +736,7 @@ class StrapperHelper
             // Dispatch the event
             $dispatcher->dispatch($eventName, $eventObject);
 
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $this->logError('Error triggering plugin event ' . $event . ': ' . $e->getMessage());
         }
     }
@@ -761,7 +759,7 @@ class StrapperHelper
                 \Joomla\CMS\Log\Log::ERROR,
                 'com_j2commerce'
             );
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             // Fallback to error message if logging fails
             if ($this->app !== null) {
                 $this->app->enqueueMessage($message, 'error');
@@ -832,10 +830,8 @@ class StrapperHelper
             // Load core CSS (handles template overrides)
             $this->loadCoreCSS($wa);
 
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $this->logError('Error loading core assets: ' . $e->getMessage());
         }
     }
 }
-
-

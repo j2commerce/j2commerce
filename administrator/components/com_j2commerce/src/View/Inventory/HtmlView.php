@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -9,14 +10,13 @@
 
 namespace J2Commerce\Component\J2commerce\Administrator\View\Inventory;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\MenuHelper;
 use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
-use Joomla\CMS\HTML\Helpers\Sidebar;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\MVC\View\GenericDataException;
@@ -94,11 +94,11 @@ class HtmlView extends BaseHtmlView
 
         $this->navbar = $this->getNavbar();
 
-        $model = $this->getModel();
-        $this->items = $model->getItems();
-        $this->pagination = $model->getPagination();
-        $this->state = $model->getState();
-        $this->filterForm = $model->getFilterForm();
+        $model               = $this->getModel();
+        $this->items         = $model->getItems();
+        $this->pagination    = $model->getPagination();
+        $this->state         = $model->getState();
+        $this->filterForm    = $model->getFilterForm();
         $this->activeFilters = $model->getActiveFilters();
 
         if (!\count($this->items) && $this->isEmptyState = $this->get('IsEmptyState')) {
@@ -147,8 +147,8 @@ class HtmlView extends BaseHtmlView
     protected function getNavbar(): string
     {
         $displayData = [
-            'items' => MenuHelper::getMenuItems(),
-            'active' => MenuHelper::getActiveView()
+            'items'  => MenuHelper::getMenuItems(),
+            'active' => MenuHelper::getActiveView(),
         ];
 
         return LayoutHelper::render('navbar.default', $displayData, JPATH_COMPONENT_ADMINISTRATOR . '/layouts');
@@ -163,7 +163,7 @@ class HtmlView extends BaseHtmlView
     protected function addToolbar(): void
     {
         $canDo = J2CommerceHelper::getActions('com_j2commerce');
-        $app = Factory::getApplication();
+        $app   = Factory::getApplication();
 
         // Get the toolbar object instance
         $toolbar = $app->getDocument()->getToolbar();
@@ -201,11 +201,11 @@ class HtmlView extends BaseHtmlView
     {
         return [
             'p.j2commerce_product_id' => Text::_('COM_J2COMMERCE_INVENTORY_PRODUCT_ID'),
-            'a.title' => Text::_('COM_J2COMMERCE_INVENTORY_PRODUCT_NAME'),
-            'v.sku' => Text::_('COM_J2COMMERCE_INVENTORY_SKU'),
-            'pq.quantity' => Text::_('COM_J2COMMERCE_INVENTORY_QUANTITY'),
-            'v.manage_stock' => Text::_('COM_J2COMMERCE_INVENTORY_MANAGE_STOCK'),
-            'v.availability' => Text::_('COM_J2COMMERCE_INVENTORY_STOCK_STATUS'),
+            'a.title'                 => Text::_('COM_J2COMMERCE_INVENTORY_PRODUCT_NAME'),
+            'v.sku'                   => Text::_('COM_J2COMMERCE_INVENTORY_SKU'),
+            'pq.quantity'             => Text::_('COM_J2COMMERCE_INVENTORY_QUANTITY'),
+            'v.manage_stock'          => Text::_('COM_J2COMMERCE_INVENTORY_MANAGE_STOCK'),
+            'v.availability'          => Text::_('COM_J2COMMERCE_INVENTORY_STOCK_STATUS'),
         ];
     }
 }

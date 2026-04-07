@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -9,7 +10,7 @@
 
 namespace J2Commerce\Component\J2commerce\Administrator\View\Apps;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\MenuHelper;
 use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
@@ -43,22 +44,22 @@ class HtmlView extends BaseHtmlView
         $this->loadAdminAssets();
         $this->loadAppPluginLanguages();
 
-        $this->navbar = $this->getNavbar();
+        $this->navbar   = $this->getNavbar();
         $this->appCards = $this->getAppCards();
 
-        $model = $this->getModel();
-        $this->items = $model->getItems();
-        $this->pagination = $model->getPagination();
-        $this->state = $model->getState();
-        $this->filterForm = $model->getFilterForm();
+        $model               = $this->getModel();
+        $this->items         = $model->getItems();
+        $this->pagination    = $model->getPagination();
+        $this->state         = $model->getState();
+        $this->filterForm    = $model->getFilterForm();
         $this->activeFilters = $model->getActiveFilters();
 
-        if ((!is_array($this->items) || !\count($this->items)) && $this->isEmptyState = $model->getIsEmptyState()) {
+        if ((!\is_array($this->items) || !\count($this->items)) && $this->isEmptyState = $model->getIsEmptyState()) {
             $this->setLayout('emptystate');
         }
 
         // Check for errors.
-        if (is_array($errors = $model->getErrors()) && \count($errors)) {
+        if (\is_array($errors = $model->getErrors()) && \count($errors)) {
             throw new GenericDataException(implode("\n", $errors), 500);
         }
 
@@ -77,8 +78,8 @@ class HtmlView extends BaseHtmlView
     protected function getNavbar(): string
     {
         $displayData = [
-            'items' => MenuHelper::getMenuItems(),
-            'active' => MenuHelper::getActiveView()
+            'items'  => MenuHelper::getMenuItems(),
+            'active' => MenuHelper::getActiveView(),
         ];
 
         return LayoutHelper::render('navbar.default', $displayData, JPATH_COMPONENT_ADMINISTRATOR . '/layouts');
@@ -132,7 +133,7 @@ class HtmlView extends BaseHtmlView
     protected function loadAppPluginLanguages(): void
     {
         $lang = Factory::getApplication()->getLanguage();
-        $db = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $db   = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 
         // Load native j2commerce app plugin languages
         $query = $db->getQuery(true)
@@ -149,7 +150,7 @@ class HtmlView extends BaseHtmlView
         }
 
         // Load external plugin languages
-        $model = $this->getModel();
+        $model       = $this->getModel();
         $externalIds = $model->getRegisteredExternalAppIds();
 
         if (!empty($externalIds)) {

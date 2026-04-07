@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Application\CMSApplication;
 use Joomla\CMS\Factory;
@@ -19,14 +20,10 @@ use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Router\Route;
-use Joomla\CMS\Session\Session;
 use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\WebAsset\WebAssetManager;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Registry\Registry;
-use Joomla\Utilities\ArrayHelper;
-use RuntimeException;
-use stdClass;
 
 /**
  * J2Commerce Platform Helper Class
@@ -78,8 +75,8 @@ class PlatformHelper
      */
     private function __construct()
     {
-        $this->app = Factory::getApplication();
-        $this->db = Factory::getContainer()->get(DatabaseInterface::class);
+        $this->app             = Factory::getApplication();
+        $this->db              = Factory::getContainer()->get(DatabaseInterface::class);
         $this->webAssetManager = Factory::getApplication()->getDocument()->getWebAssetManager();
     }
 
@@ -171,7 +168,7 @@ class PlatformHelper
                 continue;
             }
 
-            if ($recurse && is_object($value)) {
+            if ($recurse && \is_object($value)) {
                 $result[$key] = $this->fromObject($value, $recurse, $regex);
             } else {
                 $result[$key] = $value;
@@ -195,7 +192,7 @@ class PlatformHelper
         $object = new $class();
 
         foreach ($array as $key => $value) {
-            if ($recursive && is_array($value)) {
+            if ($recursive && \is_array($value)) {
                 $object->$key = $this->toObject($value, $class, $recursive);
             } else {
                 $object->$key = $value;
@@ -220,7 +217,7 @@ class PlatformHelper
         $pairs = [];
 
         foreach ($array as $key => $value) {
-            if (is_array($value)) {
+            if (\is_array($value)) {
                 $value = $this->toString($value, $innerGlue, $outerGlue, $keepOuterKey);
             }
 
@@ -265,7 +262,7 @@ class PlatformHelper
             case 'string':
                 return (string) $value;
             case 'array':
-                return is_array($value) ? $value : [$value];
+                return \is_array($value) ? $value : [$value];
             default:
                 return $value;
         }
@@ -319,7 +316,7 @@ class PlatformHelper
             return false;
         }
 
-        $db = $this->db;
+        $db    = $this->db;
         $query = $db->getQuery(true)
             ->select('COUNT(*)')
             ->from($db->quoteName('#__modules'))
@@ -354,7 +351,7 @@ class PlatformHelper
 
             // Use the asset
             $this->webAssetManager->useScript($asset);
-        } catch (RuntimeException $e) {
+        } catch (\RuntimeException $e) {
             // Fallback to HTMLHelper for compatibility
             HTMLHelper::_('script', $uri, $options, $attributes);
         }
@@ -383,7 +380,7 @@ class PlatformHelper
 
             // Use the asset
             $this->webAssetManager->useStyle($asset);
-        } catch (RuntimeException $e) {
+        } catch (\RuntimeException $e) {
             // Fallback to HTMLHelper for compatibility
             HTMLHelper::_('stylesheet', $uri, $options, $attributes);
         }
@@ -405,7 +402,7 @@ class PlatformHelper
     {
         try {
             $this->webAssetManager->addInlineScript($content, $options, $attributes, $dependencies);
-        } catch (RuntimeException $e) {
+        } catch (\RuntimeException $e) {
             // Fallback: add to document directly
             $doc = Factory::getApplication()->getDocument();
             $doc->addScriptDeclaration($content);
@@ -428,7 +425,7 @@ class PlatformHelper
     {
         try {
             $this->webAssetManager->addInlineStyle($content, $options, $attributes, $dependencies);
-        } catch (RuntimeException $e) {
+        } catch (\RuntimeException $e) {
             // Fallback: add to document directly
             $doc = Factory::getApplication()->getDocument();
             $doc->addStyleDeclaration($content);
@@ -443,12 +440,12 @@ class PlatformHelper
      * @param int    $code    Error code
      * @param string $message Error message
      * @return void
-     * @throws RuntimeException
+     * @throws \RuntimeException
      * @since 6.0.0
      */
     public function raiseError(int $code, string $message): void
     {
-        throw new RuntimeException($message, $code);
+        throw new \RuntimeException($message, $code);
     }
 
     /**
@@ -464,11 +461,11 @@ class PlatformHelper
     {
         $defaultParams = [
             'option' => 'com_j2commerce',
-            'view' => 'myprofile'
+            'view'   => 'myprofile',
         ];
 
         $urlParams = array_merge($defaultParams, $params);
-        $url = 'index.php?' . http_build_query($urlParams);
+        $url       = 'index.php?' . http_build_query($urlParams);
 
         if (!$no_sef) {
             $url = $this->routeUrl($url, $is_xml);
@@ -488,11 +485,11 @@ class PlatformHelper
     {
         $defaultParams = [
             'option' => 'com_j2commerce',
-            'view' => 'checkout'
+            'view'   => 'checkout',
         ];
 
         $urlParams = array_merge($defaultParams, $params);
-        $url = 'index.php?' . http_build_query($urlParams);
+        $url       = 'index.php?' . http_build_query($urlParams);
 
         return $this->routeUrl($url);
     }
@@ -508,7 +505,7 @@ class PlatformHelper
     {
         $defaultParams = [
             'option' => 'com_j2commerce',
-            'view' => 'confirmation',
+            'view'   => 'confirmation',
         ];
 
         // Include order_id from user state if not already provided
@@ -521,7 +518,7 @@ class PlatformHelper
         }
 
         $urlParams = array_merge($defaultParams, $params);
-        $url = 'index.php?' . http_build_query($urlParams);
+        $url       = 'index.php?' . http_build_query($urlParams);
 
         // xhtml=false: URL is used in JSON for JS redirects, not in HTML attributes
         return $this->routeUrl($url, false);
@@ -538,7 +535,7 @@ class PlatformHelper
     {
         $defaultParams = [
             'option' => 'com_j2commerce',
-            'view' => 'carts'
+            'view'   => 'carts',
         ];
 
         // If task is provided without controller prefix, add 'carts.' prefix
@@ -548,7 +545,7 @@ class PlatformHelper
         }
 
         $urlParams = array_merge($defaultParams, $params);
-        $url = 'index.php?' . http_build_query($urlParams);
+        $url       = 'index.php?' . http_build_query($urlParams);
 
         return $this->routeUrl($url);
     }
@@ -588,11 +585,11 @@ class PlatformHelper
 
         $defaultParams = [
             'option' => 'com_j2commerce',
-            'view' => $view
+            'view'   => $view,
         ];
 
         $urlParams = array_merge($defaultParams, $params);
-        $url = 'index.php?' . http_build_query($urlParams);
+        $url       = 'index.php?' . http_build_query($urlParams);
 
         return $this->routeUrl($url);
     }
@@ -677,7 +674,7 @@ class PlatformHelper
      */
     public function getMenuLinks(): array
     {
-        $db = $this->db;
+        $db    = $this->db;
         $query = $db->getQuery(true)
             ->select(['id', 'title', 'alias', 'link', 'type'])
             ->from($db->quoteName('#__menu'))
@@ -711,7 +708,7 @@ class PlatformHelper
 
         // Trigger the event
         $dispatcher = Factory::getApplication()->getDispatcher();
-        $results = $dispatcher->trigger($event_name, $args);
+        $results    = $dispatcher->trigger($event_name, $args);
 
         return $results ?: [];
     }

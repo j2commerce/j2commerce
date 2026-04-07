@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -9,7 +10,7 @@
 
 namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\MVC\Controller\FormController;
 
@@ -48,7 +49,7 @@ class MetafieldsController extends FormController
      */
     protected function postSaveHook(\Joomla\CMS\MVC\Model\BaseDatabaseModel $model, $validData = [])
     {
-        $app = $this->app;
+        $app  = $this->app;
         $task = $app->input->get('task');
 
         if ($task === 'save') {

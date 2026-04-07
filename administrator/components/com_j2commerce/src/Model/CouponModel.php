@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -14,7 +15,6 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
-use Exception;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
@@ -234,7 +234,7 @@ class CouponModel extends AdminModel
         static $couponsets = [];
 
         if (!isset($couponsets[$this->code])) {
-            $coupon = $this->getCouponByCode($this->code);
+            $coupon                  = $this->getCouponByCode($this->code);
             $couponsets[$this->code] = $coupon;
         }
 
@@ -258,7 +258,7 @@ class CouponModel extends AdminModel
      */
     protected function getCouponFromCart(): string
     {
-        $app = Factory::getApplication();
+        $app     = Factory::getApplication();
         $session = $app->getSession();
 
         try {
@@ -324,7 +324,7 @@ class CouponModel extends AdminModel
             try {
                 // Treat the submitted value as user-local time and store as UTC
                 $table->valid_from  = Factory::getDate($table->valid_from, $offset)->toSql();
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 $table->valid_from  = null;
             }
         }
@@ -335,7 +335,7 @@ class CouponModel extends AdminModel
             try {
                 // Treat the submitted value as user-local time and store as UTC
                 $table->valid_to  = Factory::getDate($table->valid_to, $offset)->toSql();
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 $table->valid_to  = null;
             }
         }
@@ -375,10 +375,10 @@ class CouponModel extends AdminModel
 
         // Handle checkbox fields
         $data['free_shipping'] = isset($data['free_shipping']) ? (int) $data['free_shipping'] : 0;
-        $data['logged'] = isset($data['logged']) ? (int) $data['logged'] : 0;
+        $data['logged']        = isset($data['logged']) ? (int) $data['logged'] : 0;
 
         // Handle integer fields
-        $data['max_uses'] = isset($data['max_uses']) ? (int) $data['max_uses'] : 0;
+        $data['max_uses']          = isset($data['max_uses']) ? (int) $data['max_uses'] : 0;
         $data['max_customer_uses'] = isset($data['max_customer_uses']) ? (int) $data['max_customer_uses'] : 0;
 
         // Handle date fields
@@ -390,7 +390,7 @@ class CouponModel extends AdminModel
             $data['valid_to'] = null;
         }
 
-        if( isset($data['valid_from']) && ($data['valid_from'] !== null) && isset($data['valid_to']) && ($data['valid_to'] !== null) && ($data['valid_from'] >= $data['valid_to'] )) {
+        if (isset($data['valid_from']) && ($data['valid_from'] !== null) && isset($data['valid_to']) && ($data['valid_to'] !== null) && ($data['valid_from'] >= $data['valid_to'])) {
             $this->setError(Text::_("COM_J2COMMERCE_COUPON_VALID_FROM_DATE_GREATER_THAN_VALID_TO_DATE"));
             return false;
         }
@@ -410,7 +410,7 @@ class CouponModel extends AdminModel
             $origTable->load($app->getInput()->getInt('id'));
 
             if ($data['coupon_name'] === $origTable->coupon_name) {
-                [$name] = $this->generateNewTitle(null, null, $data['coupon_name']);
+                [$name]              = $this->generateNewTitle(null, null, $data['coupon_name']);
                 $data['coupon_name'] = $name;
             }
 
@@ -455,7 +455,7 @@ class CouponModel extends AdminModel
         $user = $this->getCurrentUser();
 
         if (!$user->authorise('core.create', 'com_j2commerce')) {
-            throw new Exception(Text::_('JERROR_CORE_CREATE_NOT_PERMITTED'));
+            throw new \Exception(Text::_('JERROR_CORE_CREATE_NOT_PERMITTED'));
         }
 
         $table = $this->getTable();
@@ -463,18 +463,18 @@ class CouponModel extends AdminModel
         foreach ($pks as $pk) {
             if ($table->load($pk, true)) {
                 $table->j2commerce_coupon_id = 0;
-                $table->enabled = 0;
+                $table->enabled              = 0;
 
-                [$name] = $this->generateNewTitle(null, null, $table->coupon_name);
+                [$name]             = $this->generateNewTitle(null, null, $table->coupon_name);
                 $table->coupon_name = $name;
 
                 $table->coupon_code = $this->generateNewCouponCode($table->coupon_code);
 
                 if (!$table->check() || !$table->store()) {
-                    throw new Exception($table->getError());
+                    throw new \Exception($table->getError());
                 }
             } else {
-                throw new Exception($table->getError());
+                throw new \Exception($table->getError());
             }
         }
 
@@ -516,9 +516,9 @@ class CouponModel extends AdminModel
      */
     protected function generateNewCouponCode(string $couponCode): string
     {
-        $table = $this->getTable();
+        $table   = $this->getTable();
         $newCode = $couponCode;
-        $i = 1;
+        $i       = 1;
 
         while ($table->load(['coupon_code' => $newCode])) {
             $newCode = $couponCode . '_' . $i;
@@ -551,7 +551,7 @@ class CouponModel extends AdminModel
             return [];
         }
 
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         $query->select([
@@ -595,7 +595,7 @@ class CouponModel extends AdminModel
         static $history = [];
 
         if (!isset($history[$couponId][$userId])) {
-            $db = $this->getDatabase();
+            $db    = $this->getDatabase();
             $query = $db->getQuery(true);
 
             $query->select('COUNT(*) AS total')
@@ -657,9 +657,9 @@ class CouponModel extends AdminModel
             $results = J2CommerceHelper::plugin()->eventWithArray('CouponIsValid', [$this, $order]);
 
             if (\in_array(false, $results, true)) {
-                throw new Exception(Text::_('COM_J2COMMERCE_COUPON_NOT_APPLICABLE'));
+                throw new \Exception(Text::_('COM_J2COMMERCE_COUPON_NOT_APPLICABLE'));
             }
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $this->setError($e->getMessage());
             Factory::getApplication()->enqueueMessage($e->getMessage(), 'warning');
             $this->removeCoupon();
@@ -690,9 +690,9 @@ class CouponModel extends AdminModel
 
             $results = J2CommerceHelper::plugin()->eventWithArray('CouponIsValid', [$this, $order]);
             if (\in_array(false, $results, true)) {
-                throw new Exception(Text::_('COM_J2COMMERCE_COUPON_NOT_APPLICABLE'));
+                throw new \Exception(Text::_('COM_J2COMMERCE_COUPON_NOT_APPLICABLE'));
             }
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $this->setError($e->getMessage());
             Factory::getApplication()->enqueueMessage($e->getMessage(), 'warning');
             $this->removeCoupon();
@@ -730,10 +730,10 @@ class CouponModel extends AdminModel
             return false;
         }
 
-        $valid = false;
-        $couponProducts = $this->getSelectedProducts();
+        $valid            = false;
+        $couponProducts   = $this->getSelectedProducts();
         $couponCategories = [];
-        $brands = [];
+        $brands           = [];
 
         if (!empty($this->coupon->product_category)) {
             $couponCategories = explode(',', $this->coupon->product_category);
@@ -757,7 +757,7 @@ class CouponModel extends AdminModel
 
         // Check categories
         if (\count($couponCategories) > 0 && isset($product->product_source) && $product->product_source === 'com_content') {
-            $db = $this->getDatabase();
+            $db    = $this->getDatabase();
             $query = $db->getQuery(true);
             $query->select('catid')
                 ->from($db->quoteName('#__content'))
@@ -787,7 +787,7 @@ class CouponModel extends AdminModel
      *
      * @return  void
      *
-     * @throws  Exception
+     * @throws  \Exception
      * @since   6.0.6
      */
     private function validateEnabled(): void
@@ -795,7 +795,7 @@ class CouponModel extends AdminModel
         $params = ComponentHelper::getParams('com_j2commerce');
 
         if ($params->get('enable_coupon', 0) == 0) {
-            throw new Exception(Text::_('COM_J2COMMERCE_COUPON_NOT_EXIST'));
+            throw new \Exception(Text::_('COM_J2COMMERCE_COUPON_NOT_EXIST'));
         }
     }
 
@@ -804,13 +804,13 @@ class CouponModel extends AdminModel
      *
      * @return  void
      *
-     * @throws  Exception
+     * @throws  \Exception
      * @since   6.0.6
      */
     private function validateExists(): void
     {
         if (!$this->coupon) {
-            throw new Exception(Text::_('COM_J2COMMERCE_COUPON_NOT_EXIST'));
+            throw new \Exception(Text::_('COM_J2COMMERCE_COUPON_NOT_EXIST'));
         }
     }
 
@@ -819,7 +819,7 @@ class CouponModel extends AdminModel
      *
      * @return  void
      *
-     * @throws  Exception
+     * @throws  \Exception
      * @since   6.0.6
      */
     private function validateUsageLimit(): void
@@ -827,7 +827,7 @@ class CouponModel extends AdminModel
         $total = $this->getCouponHistory($this->coupon->j2commerce_coupon_id);
 
         if ($this->coupon->max_uses > 0 && ($total >= $this->coupon->max_uses)) {
-            throw new Exception(Text::_('COM_J2COMMERCE_COUPON_USAGE_LIMIT_REACHED'));
+            throw new \Exception(Text::_('COM_J2COMMERCE_COUPON_USAGE_LIMIT_REACHED'));
         }
     }
 
@@ -836,7 +836,7 @@ class CouponModel extends AdminModel
      *
      * @return  void
      *
-     * @throws  Exception
+     * @throws  \Exception
      * @since   6.0.6
      */
     private function validateUserLogged(): void
@@ -844,7 +844,7 @@ class CouponModel extends AdminModel
         $user = Factory::getApplication()->getIdentity();
 
         if ($this->coupon->logged && !$user->id) {
-            throw new Exception(Text::_('COM_J2COMMERCE_COUPON_LOGIN_REQUIRED'));
+            throw new \Exception(Text::_('COM_J2COMMERCE_COUPON_LOGIN_REQUIRED'));
         }
     }
 
@@ -853,7 +853,7 @@ class CouponModel extends AdminModel
      *
      * @return  void
      *
-     * @throws  Exception
+     * @throws  \Exception
      * @since   6.0.6
      */
     private function validateUsers(): void
@@ -862,13 +862,13 @@ class CouponModel extends AdminModel
 
         if (!empty($this->coupon->users)) {
             if ($user->id <= 0) {
-                throw new Exception(Text::_('COM_J2COMMERCE_COUPON_NOT_APPLICABLE'));
+                throw new \Exception(Text::_('COM_J2COMMERCE_COUPON_NOT_APPLICABLE'));
             }
 
             $users = explode(',', $this->coupon->users);
 
             if (\count($users) && !\in_array($user->id, $users)) {
-                throw new Exception(Text::_('COM_J2COMMERCE_COUPON_NOT_APPLICABLE'));
+                throw new \Exception(Text::_('COM_J2COMMERCE_COUPON_NOT_APPLICABLE'));
             }
         }
     }
@@ -878,7 +878,7 @@ class CouponModel extends AdminModel
      *
      * @return  void
      *
-     * @throws  Exception
+     * @throws  \Exception
      * @since   6.0.6
      */
     private function validateUserGroup(): void
@@ -889,7 +889,7 @@ class CouponModel extends AdminModel
             $allowedGroups = explode(',', $this->coupon->user_group);
 
             if (!\count(array_intersect($allowedGroups, $user->groups))) {
-                throw new Exception(Text::_('COM_J2COMMERCE_COUPON_NOT_APPLICABLE'));
+                throw new \Exception(Text::_('COM_J2COMMERCE_COUPON_NOT_APPLICABLE'));
             }
         }
     }
@@ -899,7 +899,7 @@ class CouponModel extends AdminModel
      *
      * @return  void
      *
-     * @throws  Exception
+     * @throws  \Exception
      * @since   6.0.6
      */
     private function validateUserUsageLimit(): void
@@ -910,7 +910,7 @@ class CouponModel extends AdminModel
             $customerTotal = $this->getCouponHistory($this->coupon->j2commerce_coupon_id, (string) $user->id);
 
             if ($this->coupon->max_customer_uses > 0 && ($customerTotal >= $this->coupon->max_customer_uses)) {
-                throw new Exception(Text::_('COM_J2COMMERCE_COUPON_USER_USAGE_LIMIT_REACHED'));
+                throw new \Exception(Text::_('COM_J2COMMERCE_COUPON_USER_USAGE_LIMIT_REACHED'));
             }
         }
     }
@@ -920,12 +920,12 @@ class CouponModel extends AdminModel
      *
      * @return  void
      *
-     * @throws  Exception
+     * @throws  \Exception
      * @since   6.0.6
      */
     private function validateExpiryDate(): void
     {
-        $db = $this->getDatabase();
+        $db       = $this->getDatabase();
         $nullDate = $db->getNullDate();
 
         // Dates are stored in UTC (converted on save via USER_UTC logic).
@@ -933,13 +933,13 @@ class CouponModel extends AdminModel
         $now = Factory::getDate('now')->toSql();
 
         $validFrom = $this->coupon->valid_from;
-        $validTo = $this->coupon->valid_to;
+        $validTo   = $this->coupon->valid_to;
 
         $isValidFrom = (empty($validFrom) || $validFrom === $nullDate || Factory::getDate($validFrom)->toSql() <= $now);
-        $isValidTo = (empty($validTo) || $validTo === $nullDate || Factory::getDate($validTo)->toSql() >= $now);
+        $isValidTo   = (empty($validTo) || $validTo === $nullDate || Factory::getDate($validTo)->toSql() >= $now);
 
         if (!$isValidFrom || !$isValidTo) {
-            throw new Exception(Text::_('COM_J2COMMERCE_COUPON_HAS_EXPIRED'));
+            throw new \Exception(Text::_('COM_J2COMMERCE_COUPON_HAS_EXPIRED'));
         }
     }
 
@@ -950,7 +950,7 @@ class CouponModel extends AdminModel
      *
      * @return  void
      *
-     * @throws  Exception
+     * @throws  \Exception
      * @since   6.0.6
      */
     private function validateMinimumAmount(object $order): void
@@ -959,7 +959,7 @@ class CouponModel extends AdminModel
             $subtotal = $order->order_subtotal ?? $order->subtotal ?? 0;
 
             if ((float) $this->coupon->min_subtotal > (float) $subtotal) {
-                throw new Exception(Text::sprintf('COM_J2COMMERCE_COUPON_MINIMUM_NOT_MET', $this->coupon->min_subtotal));
+                throw new \Exception(Text::sprintf('COM_J2COMMERCE_COUPON_MINIMUM_NOT_MET', $this->coupon->min_subtotal));
             }
         }
     }
@@ -969,12 +969,12 @@ class CouponModel extends AdminModel
      *
      * @return  void
      *
-     * @throws  Exception
+     * @throws  \Exception
      * @since   6.0.6
      */
     private function validateProductIds(): void
     {
-        $couponProducts = $this->getSelectedProducts();
+        $couponProducts   = $this->getSelectedProducts();
         $couponCategories = [];
 
         if (!empty($this->coupon->product_category)) {
@@ -987,8 +987,8 @@ class CouponModel extends AdminModel
         }
 
         $validForCart = false;
-        $app = Factory::getApplication();
-        $db = $this->getDatabase();
+        $app          = Factory::getApplication();
+        $db           = $this->getDatabase();
 
         try {
             /** @var CartModel $cartModel */
@@ -1006,7 +1006,7 @@ class CouponModel extends AdminModel
                 // Check product categories
                 if (\count($couponCategories) > 0) {
                     foreach ($cartItems as $cartItem) {
-                        $query = $db->getQuery(true);
+                        $query     = $db->getQuery(true);
                         $productId = (int) $cartItem->product_id;
                         $query->select($db->quoteName('c.catid'))
                             ->from($db->quoteName('#__j2commerce_products', 'p'))
@@ -1048,7 +1048,7 @@ class CouponModel extends AdminModel
                 }
 
                 if (!$validForCart) {
-                    throw new Exception(Text::_('COM_J2COMMERCE_COUPON_NOT_VALID_FOR_PRODUCT'));
+                    throw new \Exception(Text::_('COM_J2COMMERCE_COUPON_NOT_VALID_FOR_PRODUCT'));
                 }
             }
         } catch (\Exception $e) {
@@ -1066,15 +1066,15 @@ class CouponModel extends AdminModel
      *
      * @return  void
      *
-     * @throws  Exception  If coupon is not valid for any order products.
+     * @throws  \Exception  If coupon is not valid for any order products.
      *
      * @since   6.0.6
      */
     private function validateAdminProductIds(object $order): void
     {
-        $couponProducts = $this->getSelectedProducts();
+        $couponProducts   = $this->getSelectedProducts();
         $couponCategories = [];
-        $validForCart = false;
+        $validForCart     = false;
 
         if (!empty($this->coupon->product_category)) {
             $couponCategories = explode(',', $this->coupon->product_category);
@@ -1114,10 +1114,10 @@ class CouponModel extends AdminModel
                     if ($productModel) {
                         $productModel->setState('filter.product_id', $orderItem->product_id);
                         $products = $productModel->getItems();
-                        $product = $products[0] ?? null;
+                        $product  = $products[0] ?? null;
 
                         if ($product && $product->product_source === 'com_content') {
-                            $query = $db->getQuery(true);
+                            $query    = $db->getQuery(true);
                             $sourceId = (int) $product->product_source_id;
                             $query->select('catid')
                                 ->from($db->quoteName('#__content'))
@@ -1164,7 +1164,7 @@ class CouponModel extends AdminModel
         }
 
         if (!$validForCart) {
-            throw new Exception(Text::_('COM_J2COMMERCE_COUPON_NOT_VALID_FOR_PRODUCT'));
+            throw new \Exception(Text::_('COM_J2COMMERCE_COUPON_NOT_VALID_FOR_PRODUCT'));
         }
     }
 
@@ -1197,7 +1197,7 @@ class CouponModel extends AdminModel
      */
     public function getCouponByCode(string $code): ?object
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         $query->select('*')
@@ -1266,7 +1266,7 @@ class CouponModel extends AdminModel
      */
     public function getDiscountAmount(float $discountingAmount, ?object $cartItem, object $order, bool $single = true): float
     {
-        $discount = 0.0;
+        $discount    = 0.0;
         $cartItemQty = $cartItem === null ? 1 : ($cartItem->orderitem_quantity ?? 1);
 
         if ($this->isType(['percentage_product', 'percentage_cart'])) {
@@ -1274,8 +1274,8 @@ class CouponModel extends AdminModel
             $discount = $this->coupon->value * ($discountingAmount / 100);
         } elseif ($this->isType('fixed_cart') && $cartItem !== null && isset($order->subtotal_ex_tax) && $order->subtotal_ex_tax > 0) {
             // Fixed cart discount - proportionally distributed
-            $params = ComponentHelper::getParams('com_j2commerce');
-            $actualPrice = ($cartItem->orderitem_price ?? 0) + ($cartItem->orderitem_option_price ?? 0);
+            $params           = ComponentHelper::getParams('com_j2commerce');
+            $actualPrice      = ($cartItem->orderitem_price ?? 0) + ($cartItem->orderitem_option_price ?? 0);
             $priceForDiscount = $actualPrice * $cartItemQty;
 
             if ($params->get('config_including_tax', 0)) {
@@ -1299,7 +1299,7 @@ class CouponModel extends AdminModel
             if ($this->limit_usage_to_x_items === '' || $this->limit_usage_to_x_items == 0) {
                 $limitUsageQty = $cartItemQty;
             } else {
-                $limitUsageQty = min((int) $this->limit_usage_to_x_items, $cartItemQty);
+                $limitUsageQty                = min((int) $this->limit_usage_to_x_items, $cartItemQty);
                 $this->limit_usage_to_x_items = (string) max(0, (int) $this->limit_usage_to_x_items - $limitUsageQty);
             }
 
@@ -1376,7 +1376,7 @@ class CouponModel extends AdminModel
      */
     public function hasCoupon(): bool
     {
-        $app = Factory::getApplication();
+        $app     = Factory::getApplication();
         $session = $app->getSession();
 
         try {
@@ -1416,7 +1416,7 @@ class CouponModel extends AdminModel
      */
     public function setCoupon(string $couponCode = ''): void
     {
-        $app = Factory::getApplication();
+        $app     = Factory::getApplication();
         $session = $app->getSession();
 
         // Set in session
@@ -1433,8 +1433,8 @@ class CouponModel extends AdminModel
                 $cart = $cartModel->getCart(0, false);
 
                 if (isset($cart->j2commerce_cart_id) && !empty($cart->j2commerce_cart_id)) {
-                    $db = $this->getDatabase();
-                    $query = $db->getQuery(true);
+                    $db     = $this->getDatabase();
+                    $query  = $db->getQuery(true);
                     $cartId = (int) $cart->j2commerce_cart_id;
 
                     $query->update($db->quoteName('#__j2commerce_carts'))
@@ -1480,10 +1480,10 @@ class CouponModel extends AdminModel
                 $cart = $cartModel->getCart(0, false);
 
                 if (isset($cart->j2commerce_cart_id) && !empty($cart->j2commerce_cart_id)) {
-                    $db = $this->getDatabase();
-                    $query = $db->getQuery(true);
+                    $db          = $this->getDatabase();
+                    $query       = $db->getQuery(true);
                     $emptyCoupon = '';
-                    $cartId = (int) $cart->j2commerce_cart_id;
+                    $cartId      = (int) $cart->j2commerce_cart_id;
 
                     $query->update($db->quoteName('#__j2commerce_carts'))
                         ->set($db->quoteName('cart_coupon') . ' = :coupon')

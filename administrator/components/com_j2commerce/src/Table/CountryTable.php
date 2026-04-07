@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -79,7 +80,7 @@ class CountryTable extends Table
             return false;
         }
 
-        if (strlen($this->country_isocode_2) !== 2) {
+        if (\strlen($this->country_isocode_2) !== 2) {
             $this->setError(Text::_('COM_J2COMMERCE_ERR_ISOCODE_2_LENGTH'));
 
             return false;
@@ -92,7 +93,7 @@ class CountryTable extends Table
             return false;
         }
 
-        if (strlen($this->country_isocode_3) !== 3) {
+        if (\strlen($this->country_isocode_3) !== 3) {
             $this->setError(Text::_('COM_J2COMMERCE_ERR_ISOCODE_3_LENGTH'));
 
             return false;

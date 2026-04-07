@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -264,21 +265,21 @@ class CartOrder
 
         foreach ($cartItems as $item) {
             // Map cart item properties to order item properties
-            $item->cartitem_id = $item->j2commerce_cartitem_id ?? 0;
-            $item->orderitem_name = $item->product_name ?? '';
-            $item->orderitem_sku = $item->sku ?? '';
-            $item->orderitem_quantity = $item->product_qty ?? 1;
-            $item->orderitem_params = $item->cartitem_params ?? '{}';
-            $item->orderitem_price = $item->pricing->price ?? $item->variant_price ?? 0;
-            $item->orderitem_option_price = $item->option_price ?? 0;
-            $item->orderitem_tax = $item->taxes->taxtotal ?? 0;
+            $item->cartitem_id             = $item->j2commerce_cartitem_id ?? 0;
+            $item->orderitem_name          = $item->product_name ?? '';
+            $item->orderitem_sku           = $item->sku ?? '';
+            $item->orderitem_quantity      = $item->product_qty ?? 1;
+            $item->orderitem_params        = $item->cartitem_params ?? '{}';
+            $item->orderitem_price         = $item->pricing->price ?? $item->variant_price ?? 0;
+            $item->orderitem_option_price  = $item->option_price ?? 0;
+            $item->orderitem_tax           = $item->taxes->taxtotal ?? 0;
             $item->orderitem_taxprofile_id = $item->taxprofile_id ?? 0;
 
             // Calculate product subtotal if not already set
             if (!isset($item->product_subtotal)) {
-                $basePrice = (float) ($item->pricing->price ?? $item->variant_price ?? 0);
-                $optionPrice = (float) ($item->option_price ?? 0);
-                $quantity = (float) ($item->product_qty ?? 1);
+                $basePrice              = (float) ($item->pricing->price ?? $item->variant_price ?? 0);
+                $optionPrice            = (float) ($item->option_price ?? 0);
+                $quantity               = (float) ($item->product_qty ?? 1);
                 $item->product_subtotal = ($basePrice + $optionPrice) * $quantity;
             }
 
@@ -370,7 +371,7 @@ class CartOrder
             // Get variant for stock check
             if (!empty($item->variant_id)) {
                 $variantId = (int) $item->variant_id;
-                $quantity = (int) ($item->product_qty ?? 1);
+                $quantity  = (int) ($item->product_qty ?? 1);
 
                 // Load variant object for stock check using Table directly
                 try {
@@ -385,7 +386,7 @@ class CartOrder
 
                         // Check if stock management is enabled
                         $manageStock = ProductHelper::managingStock($variant);
-                        $stock = ProductHelper::getStockQuantity($variantId);
+                        $stock       = ProductHelper::getStockQuantity($variantId);
 
                         if ($manageStock && $stock < $quantity) {
                             $item->stock_error = Text::sprintf(
@@ -421,7 +422,7 @@ class CartOrder
         $customerGeozones = $this->getCustomerGeozones();
 
         foreach ($this->items as $item) {
-            $pricing = $item->pricing ?? null;
+            $pricing  = $item->pricing ?? null;
             $quantity = (float) ($item->product_qty ?? 1);
 
             // Initialize discount tracking on item
@@ -458,7 +459,7 @@ class CartOrder
                         $taxTotal += $itemTax;
 
                         // Store per-item tax for line item display
-                        $item->orderitem_tax = $itemTax;
+                        $item->orderitem_tax         = $itemTax;
                         $item->orderitem_tax_percent = (float) $taxInfo->tax_percent;
 
                         $rateKey = $taxInfo->taxrate_name . '_' . $taxInfo->j2commerce_taxrate_id;
@@ -475,11 +476,11 @@ class CartOrder
 
                         $taxRates[$rateKey]->tax_amount += $itemTax;
                     } else {
-                        $item->orderitem_tax = 0.0;
+                        $item->orderitem_tax         = 0.0;
                         $item->orderitem_tax_percent = 0.0;
                     }
                 } else {
-                    $item->orderitem_tax = 0.0;
+                    $item->orderitem_tax         = 0.0;
                     $item->orderitem_tax_percent = 0.0;
                 }
             } else {
@@ -494,15 +495,15 @@ class CartOrder
                 ]);
 
                 $subtotal += $itemPrice * $quantity;
-                $item->orderitem_tax = 0.0;
+                $item->orderitem_tax         = 0.0;
                 $item->orderitem_tax_percent = 0.0;
             }
         }
 
         $this->order_subtotal = $subtotal;
-        $this->order_tax = $taxTotal;
-        $this->taxRates = array_values($taxRates);
-        $this->order_total = $subtotal + $taxTotal;
+        $this->order_tax      = $taxTotal;
+        $this->taxRates       = array_values($taxRates);
+        $this->order_total    = $subtotal + $taxTotal;
     }
 
     /**
@@ -532,7 +533,7 @@ class CartOrder
 
         // Net taxable amount after all discounts (floored at zero)
         $netTaxable = max(0.0, $this->order_subtotal - $totalDiscount);
-        $ratio = $netTaxable / $this->order_subtotal;
+        $ratio      = $netTaxable / $this->order_subtotal;
 
         // Scale each tax rate entry proportionally
         $oldTaxTotal = $this->order_tax;
@@ -544,7 +545,7 @@ class CartOrder
         }
 
         // Adjust order tax and total by the difference
-        $taxReduction = $oldTaxTotal - $newTaxTotal;
+        $taxReduction    = $oldTaxTotal - $newTaxTotal;
         $this->order_tax = $newTaxTotal;
 
         // Subtract both the discount amount AND the tax reduction from total
@@ -556,15 +557,15 @@ class CartOrder
 
     private function getCustomerGeozones(): array
     {
-        $session = Factory::getApplication()->getSession();
+        $session   = Factory::getApplication()->getSession();
         $countryId = 0;
-        $zoneId = 0;
+        $zoneId    = 0;
 
         // Priority 1: saved shipping address
         $addressId = (int) $session->get('shipping_address_id', 0, 'j2commerce');
 
         if ($addressId > 0) {
-            $db = Factory::getContainer()->get(DatabaseInterface::class);
+            $db    = Factory::getContainer()->get(DatabaseInterface::class);
             $query = $db->getQuery(true)
                 ->select([$db->quoteName('country_id'), $db->quoteName('zone_id')])
                 ->from($db->quoteName('#__j2commerce_addresses'))
@@ -576,7 +577,7 @@ class CartOrder
 
             if ($address) {
                 $countryId = (int) ($address->country_id ?? 0);
-                $zoneId = (int) ($address->zone_id ?? 0);
+                $zoneId    = (int) ($address->zone_id ?? 0);
             }
         }
 
@@ -586,14 +587,14 @@ class CartOrder
 
             if (!empty($guestShipping) && \is_array($guestShipping)) {
                 $countryId = (int) ($guestShipping['country_id'] ?? 0);
-                $zoneId = (int) ($guestShipping['zone_id'] ?? 0);
+                $zoneId    = (int) ($guestShipping['zone_id'] ?? 0);
             }
         }
 
         // Priority 3: estimate flow flat session keys
         if ($countryId === 0) {
             $countryId = (int) $session->get('shipping_country_id', 0, 'j2commerce');
-            $zoneId = (int) $session->get('shipping_zone_id', 0, 'j2commerce');
+            $zoneId    = (int) $session->get('shipping_zone_id', 0, 'j2commerce');
         }
 
         if ($countryId === 0) {
@@ -601,7 +602,7 @@ class CartOrder
         }
 
         // Query geozonerules for matching geozones
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db    = Factory::getContainer()->get(DatabaseInterface::class);
         $query = $db->getQuery(true)
             ->select('DISTINCT ' . $db->quoteName('geozone_id'))
             ->from($db->quoteName('#__j2commerce_geozonerules'))
@@ -624,7 +625,7 @@ class CartOrder
             return null;
         }
 
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db    = Factory::getContainer()->get(DatabaseInterface::class);
         $query = $db->getQuery(true)
             ->select([
                 $db->quoteName('rt.j2commerce_taxrate_id'),
@@ -634,10 +635,16 @@ class CartOrder
                 $db->quoteName('tp.taxprofile_name'),
             ])
             ->from($db->quoteName('#__j2commerce_taxrules', 'tr'))
-            ->join('INNER', $db->quoteName('#__j2commerce_taxrates', 'rt'),
-                $db->quoteName('rt.j2commerce_taxrate_id') . ' = ' . $db->quoteName('tr.taxrate_id'))
-            ->join('INNER', $db->quoteName('#__j2commerce_taxprofiles', 'tp'),
-                $db->quoteName('tp.j2commerce_taxprofile_id') . ' = ' . $db->quoteName('tr.taxprofile_id'))
+            ->join(
+                'INNER',
+                $db->quoteName('#__j2commerce_taxrates', 'rt'),
+                $db->quoteName('rt.j2commerce_taxrate_id') . ' = ' . $db->quoteName('tr.taxrate_id')
+            )
+            ->join(
+                'INNER',
+                $db->quoteName('#__j2commerce_taxprofiles', 'tp'),
+                $db->quoteName('tp.j2commerce_taxprofile_id') . ' = ' . $db->quoteName('tr.taxprofile_id')
+            )
             ->where($db->quoteName('tr.taxprofile_id') . ' = :profileId')
             ->whereIn($db->quoteName('rt.geozone_id'), array_map('intval', $geozoneIds))
             ->bind(':profileId', $taxprofileId, ParameterType::INTEGER)
@@ -677,7 +684,7 @@ class CartOrder
             return 0;
         }
 
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db    = Factory::getContainer()->get(DatabaseInterface::class);
         $query = $db->getQuery(true)
             ->select($db->quoteName('tax_class_id'))
             ->from($db->quoteName('#__j2commerce_shippingmethods'))
@@ -720,7 +727,7 @@ class CartOrder
      */
     protected function loadCoupons(): void
     {
-        $session = Factory::getApplication()->getSession();
+        $session    = Factory::getApplication()->getSession();
         $couponCode = $session->get('coupon', '', 'j2commerce');
 
         if (!empty($couponCode)) {
@@ -750,7 +757,7 @@ class CartOrder
                             return;
                         }
 
-                        $discount = $this->calculateCouponDiscount($coupon);
+                        $discount        = $this->calculateCouponDiscount($coupon);
                         $this->coupons[] = (object) [
                             'coupon_code' => $couponCode,
                             'coupon_id'   => $coupon->j2commerce_coupon_id ?? 0,
@@ -779,7 +786,7 @@ class CartOrder
      */
     protected function calculateCouponDiscount(object $coupon): float
     {
-        $discountType = $coupon->value_type ?? 'percentage';
+        $discountType  = $coupon->value_type ?? 'percentage';
         $discountValue = (float) ($coupon->value ?? 0);
 
         // percentage, percentage_cart, percentage_product are all percentage-based
@@ -800,7 +807,7 @@ class CartOrder
      */
     protected function loadVouchers(): void
     {
-        $session = Factory::getApplication()->getSession();
+        $session     = Factory::getApplication()->getSession();
         $voucherCode = $session->get('voucher', '', 'j2commerce');
 
         if (!empty($voucherCode)) {
@@ -822,15 +829,15 @@ class CartOrder
                             return;
                         }
 
-                        $balance = (float) ($voucher->balance ?? 0);
+                        $balance  = (float) ($voucher->balance ?? 0);
                         $discount = min($balance, $this->order_total);
 
                         $this->vouchers[] = (object) [
                             'voucher_code' => $voucherCode,
-                            'voucher_id' => $voucher->j2commerce_voucher_id ?? 0,
-                            'discount' => $discount,
+                            'voucher_id'   => $voucher->j2commerce_voucher_id ?? 0,
+                            'discount'     => $discount,
                             'voucher_name' => $voucher->voucher_name ?? $voucherCode,
-                            'balance' => $balance,
+                            'balance'      => $balance,
                         ];
                         $this->order_discount += $discount;
                         $this->order_total -= $discount;
@@ -851,12 +858,12 @@ class CartOrder
      */
     protected function loadShipping(): void
     {
-        $session = Factory::getApplication()->getSession();
+        $session        = Factory::getApplication()->getSession();
         $shippingValues = $session->get('shipping_values', [], 'j2commerce');
 
         if (!empty($shippingValues)) {
             $shippingPrice = (float) ($shippingValues['shipping_price'] ?? 0);
-            $shippingTax = (float) ($shippingValues['shipping_tax'] ?? 0);
+            $shippingTax   = (float) ($shippingValues['shipping_tax'] ?? 0);
             $shippingExtra = (float) ($shippingValues['shipping_extra'] ?? 0);
 
             $this->shippingRate = (object) [
@@ -869,7 +876,7 @@ class CartOrder
                 'ordershipping_tax_class_id' => (int) ($shippingValues['shipping_tax_class_id'] ?? 0),
             ];
 
-            $this->order_shipping = $shippingPrice + $shippingExtra;
+            $this->order_shipping     = $shippingPrice + $shippingExtra;
             $this->order_shipping_tax = $shippingTax;
             $this->order_total += $this->order_shipping + $this->order_shipping_tax;
         }
@@ -881,7 +888,7 @@ class CartOrder
     public static function addFee(string $key, float $amount, string $label, float $tax = 0.0): void
     {
         $session = Factory::getApplication()->getSession();
-        $fees = $session->get('order_fees', [], 'j2commerce');
+        $fees    = $session->get('order_fees', [], 'j2commerce');
 
         $fees[$key] = [
             'name'   => $label,
@@ -899,7 +906,7 @@ class CartOrder
     public static function removeFee(string $key): void
     {
         $session = Factory::getApplication()->getSession();
-        $fees = $session->get('order_fees', [], 'j2commerce');
+        $fees    = $session->get('order_fees', [], 'j2commerce');
 
         unset($fees[$key]);
 
@@ -946,9 +953,9 @@ class CartOrder
         if (!empty($item->options) && \is_array($item->options)) {
             foreach ($item->options as $option) {
                 $attributes[] = (object) [
-                    'orderitemattribute_name' => $option['name'] ?? '',
+                    'orderitemattribute_name'  => $option['name'] ?? '',
                     'orderitemattribute_value' => $option['option_value'] ?? $option['value'] ?? '',
-                    'orderitemattribute_type' => $option['type'] ?? 'select',
+                    'orderitemattribute_type'  => $option['type'] ?? 'select',
                     'orderitemattribute_price' => $option['price'] ?? 0,
                 ];
             }
@@ -1033,9 +1040,9 @@ class CartOrder
             }
 
             $attributes[] = (object) [
-                'orderitemattribute_name' => $optionName,
+                'orderitemattribute_name'  => $optionName,
                 'orderitemattribute_value' => $displayValue,
-                'orderitemattribute_type' => $optionType,
+                'orderitemattribute_type'  => $optionType,
                 'orderitemattribute_price' => 0,
             ];
         }
@@ -1063,8 +1070,11 @@ class CartOrder
         $query = $db->getQuery(true)
             ->select($db->quoteName('ov.optionvalue_name'))
             ->from($db->quoteName('#__j2commerce_product_optionvalues', 'pov'))
-            ->join('LEFT', $db->quoteName('#__j2commerce_optionvalues', 'ov'),
-                $db->quoteName('pov.optionvalue_id') . ' = ' . $db->quoteName('ov.j2commerce_optionvalue_id'))
+            ->join(
+                'LEFT',
+                $db->quoteName('#__j2commerce_optionvalues', 'ov'),
+                $db->quoteName('pov.optionvalue_id') . ' = ' . $db->quoteName('ov.j2commerce_optionvalue_id')
+            )
             ->where($db->quoteName('pov.j2commerce_product_optionvalue_id') . ' = :valueId')
             ->bind(':valueId', $valueId, ParameterType::INTEGER);
 
@@ -1096,14 +1106,14 @@ class CartOrder
 
         // Add option price
         $optionPrice = (float) ($item->option_price ?? $item->orderitem_option_price ?? 0);
-        $unitPrice = $basePrice + $optionPrice;
+        $unitPrice   = $basePrice + $optionPrice;
 
         // Add tax when displayMode requests tax-inclusive display
         if ($displayMode == 1) {
             $taxProfileId = (int) ($item->taxprofile_id ?? $item->orderitem_taxprofile_id ?? 0);
             if ($taxProfileId > 0) {
                 $productHelper = new ProductHelper();
-                $unitPrice = $productHelper->get_price_including_tax($unitPrice, $taxProfileId);
+                $unitPrice     = $productHelper->get_price_including_tax($unitPrice, $taxProfileId);
             }
         }
 
@@ -1123,7 +1133,7 @@ class CartOrder
     public function get_formatted_lineitem_total(object $item, int $displayMode = 0): float
     {
         $unitPrice = $this->get_formatted_lineitem_price($item, $displayMode);
-        $quantity = (float) ($item->product_qty ?? $item->orderitem_quantity ?? 1);
+        $quantity  = (float) ($item->product_qty ?? $item->orderitem_quantity ?? 1);
 
         return $unitPrice * $quantity;
     }
@@ -1143,7 +1153,7 @@ class CartOrder
      */
     public function get_lineitem_discount_info(object $item, int $displayMode = 0): ?object
     {
-        $discount = (float) ($item->orderitem_discount ?? 0);
+        $discount    = (float) ($item->orderitem_discount ?? 0);
         $discountTax = (float) ($item->orderitem_discount_tax ?? 0);
 
         if ($discount <= 0) {
@@ -1151,7 +1161,7 @@ class CartOrder
         }
 
         $unitPrice = $this->get_formatted_lineitem_price($item, $displayMode);
-        $quantity = (float) ($item->product_qty ?? $item->orderitem_quantity ?? 1);
+        $quantity  = (float) ($item->product_qty ?? $item->orderitem_quantity ?? 1);
 
         $originalTotal = $unitPrice * $quantity;
 
@@ -1167,10 +1177,10 @@ class CartOrder
         }
 
         return (object) [
-            'original_price' => $originalTotal,
+            'original_price'  => $originalTotal,
             'discount_amount' => $discount,
-            'discount_tax' => $discountTax,
-            'final_price' => max(0.0, $discountedTotal),
+            'discount_tax'    => $discountTax,
+            'final_price'     => max(0.0, $discountedTotal),
         ];
     }
 
@@ -1188,17 +1198,17 @@ class CartOrder
         $fees = [];
 
         // Load fees from session if any plugins have set them
-        $session = Factory::getApplication()->getSession();
+        $session     = Factory::getApplication()->getSession();
         $sessionFees = $session->get('order_fees', [], 'j2commerce');
 
         if (!empty($sessionFees) && \is_array($sessionFees)) {
             foreach ($sessionFees as $fee) {
                 $fees[] = (object) [
-                    'name' => $fee['name'] ?? 'Fee',
-                    'amount' => (float) ($fee['amount'] ?? 0),
-                    'tax' => (float) ($fee['tax'] ?? 0),
+                    'name'          => $fee['name'] ?? 'Fee',
+                    'amount'        => (float) ($fee['amount'] ?? 0),
+                    'tax'           => (float) ($fee['tax'] ?? 0),
                     'taxprofile_id' => (int) ($fee['taxprofile_id'] ?? 0),
-                    'plugin' => $fee['plugin'] ?? '',
+                    'plugin'        => $fee['plugin'] ?? '',
                 ];
             }
         }
@@ -1219,7 +1229,7 @@ class CartOrder
     public function get_formatted_fees(object $fee, int $displayMode = 0): float
     {
         $amount = (float) ($fee->amount ?? 0);
-        $tax = (float) ($fee->tax ?? 0);
+        $tax    = (float) ($fee->tax ?? 0);
 
         if ($displayMode == 1) {
             // Include tax in the fee display
@@ -1245,9 +1255,9 @@ class CartOrder
         // Add coupons as discounts
         foreach ($this->coupons as $coupon) {
             $discounts[] = (object) [
-                'discount_type' => 'coupon',
-                'discount_code' => $coupon->coupon_code ?? '',
-                'discount_title' => $coupon->coupon_name ?? $coupon->coupon_code ?? '',
+                'discount_type'   => 'coupon',
+                'discount_code'   => $coupon->coupon_code ?? '',
+                'discount_title'  => $coupon->coupon_name ?? $coupon->coupon_code ?? '',
                 'discount_amount' => (float) ($coupon->discount ?? 0),
             ];
         }
@@ -1255,9 +1265,9 @@ class CartOrder
         // Add vouchers as discounts
         foreach ($this->vouchers as $voucher) {
             $discounts[] = (object) [
-                'discount_type' => 'voucher',
-                'discount_code' => $voucher->voucher_code ?? '',
-                'discount_title' => $voucher->voucher_name ?? $voucher->voucher_code ?? '',
+                'discount_type'   => 'voucher',
+                'discount_code'   => $voucher->voucher_code ?? '',
+                'discount_title'  => $voucher->voucher_name ?? $voucher->voucher_code ?? '',
                 'discount_amount' => (float) ($voucher->discount ?? 0),
             ];
         }
@@ -1268,9 +1278,9 @@ class CartOrder
                 ?? Text::_('COM_J2COMMERCE_CART_BULK_DISCOUNT');
 
             $discounts[] = (object) [
-                'discount_type' => 'cart_discount',
-                'discount_code' => 'bulk_discount',
-                'discount_title' => $bulkDiscountTitle,
+                'discount_type'   => 'cart_discount',
+                'discount_code'   => 'bulk_discount',
+                'discount_title'  => $bulkDiscountTitle,
                 'discount_amount' => $this->discount_cart,
             ];
         }
@@ -1293,15 +1303,15 @@ class CartOrder
      */
     public function saveOrder(): self
     {
-        $app = Factory::getApplication();
+        $app     = Factory::getApplication();
         $session = $app->getSession();
-        $user = $app->getIdentity();
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $user    = $app->getIdentity();
+        $db      = Factory::getContainer()->get(DatabaseInterface::class);
 
         $mvcFactory = $app->bootComponent('com_j2commerce')->getMVCFactory();
 
         // Gather user info
-        $userId = ($user && $user->id) ? (int) $user->id : 0;
+        $userId    = ($user && $user->id) ? (int) $user->id : 0;
         $userEmail = '';
 
         if ($userId > 0) {
@@ -1330,28 +1340,28 @@ class CartOrder
         // Last resort: use Joomla user email for logged-in users whose identity was resolved late
         if (empty($userEmail) && $userId > 0) {
             $userFactory = Factory::getContainer()->get(\Joomla\CMS\User\UserFactoryInterface::class);
-            $loadedUser = $userFactory->loadUserById($userId);
-            $userEmail = $loadedUser->email ?? '';
+            $loadedUser  = $userFactory->loadUserById($userId);
+            $userEmail   = $loadedUser->email ?? '';
         }
 
-        $this->user_id = $userId;
-        $this->user_email = $userEmail;
+        $this->user_id       = $userId;
+        $this->user_email    = $userEmail;
         $this->customer_note = $session->get('customer_note', '', 'j2commerce');
 
         // Get cart ID
-        $cartHelper = CartHelper::getInstance();
-        $cart = $cartHelper->getCart();
+        $cartHelper    = CartHelper::getInstance();
+        $cart          = $cartHelper->getCart();
         $this->cart_id = (int) ($cart->j2commerce_cart_id ?? 0);
 
         // Currency info
-        $currency = J2CommerceHelper::currency();
-        $currencyCode = $currency->getCode();
-        $currencyId = (int) $currency->getId();
+        $currency      = J2CommerceHelper::currency();
+        $currencyCode  = $currency->getCode();
+        $currencyId    = (int) $currency->getId();
         $currencyValue = (float) $currency->getValue();
 
         // Config
-        $params = J2CommerceHelper::config();
-        $invoicePrefix = $params->get('invoice_prefix', 'INV-');
+        $params         = J2CommerceHelper::config();
+        $invoicePrefix  = $params->get('invoice_prefix', 'INV-');
         $isIncludingTax = (int) $params->get('config_including_tax', 0);
 
         // Determine if order is shippable
@@ -1367,30 +1377,30 @@ class CartOrder
         $orderTable = $mvcFactory->createTable('Order', 'Administrator');
 
         $orderData = [
-            'user_id'            => $userId,
-            'user_email'         => $userEmail,
-            'cart_id'            => $this->cart_id,
-            'order_total'        => $this->order_total,
-            'order_subtotal'     => $this->order_subtotal,
+            'user_id'               => $userId,
+            'user_email'            => $userEmail,
+            'cart_id'               => $this->cart_id,
+            'order_total'           => $this->order_total,
+            'order_subtotal'        => $this->order_subtotal,
             'order_subtotal_ex_tax' => $this->order_subtotal,
-            'order_tax'          => $this->order_tax,
-            'order_shipping'     => $this->order_shipping,
-            'order_shipping_tax' => $this->order_shipping_tax,
-            'order_discount'     => $this->order_discount,
-            'order_surcharge'    => $this->order_surcharge,
-            'orderpayment_type'  => $this->orderpayment_type,
-            'currency_id'        => $currencyId,
-            'currency_code'      => $currencyCode,
-            'currency_value'     => $currencyValue,
-            'invoice_prefix'     => $invoicePrefix,
-            'is_shippable'       => $isShippable,
-            'is_including_tax'   => $isIncludingTax,
-            'customer_note'      => $this->customer_note,
-            'customer_language'  => $app->getLanguage()->getTag(),
-            'ip_address'         => $app->input->server->getString('REMOTE_ADDR', ''),
-            'order_state_id'     => 5, // Incomplete
-            'created_by'         => $userId,
-            'modified_by'        => $userId,
+            'order_tax'             => $this->order_tax,
+            'order_shipping'        => $this->order_shipping,
+            'order_shipping_tax'    => $this->order_shipping_tax,
+            'order_discount'        => $this->order_discount,
+            'order_surcharge'       => $this->order_surcharge,
+            'orderpayment_type'     => $this->orderpayment_type,
+            'currency_id'           => $currencyId,
+            'currency_code'         => $currencyCode,
+            'currency_value'        => $currencyValue,
+            'invoice_prefix'        => $invoicePrefix,
+            'is_shippable'          => $isShippable,
+            'is_including_tax'      => $isIncludingTax,
+            'customer_note'         => $this->customer_note,
+            'customer_language'     => $app->getLanguage()->getTag(),
+            'ip_address'            => $app->input->server->getString('REMOTE_ADDR', ''),
+            'order_state_id'        => 5, // Incomplete
+            'created_by'            => $userId,
+            'modified_by'           => $userId,
         ];
 
         if (!$orderTable->bind($orderData) || !$orderTable->check() || !$orderTable->store()) {
@@ -1403,7 +1413,7 @@ class CartOrder
         // First store() gets the auto-increment PK, then we generate
         // order_id = time() . PK and token, then store() again.
         $orderTable->order_id = $orderTable->generateOrderId();
-        $orderTable->token = $orderTable->generateToken();
+        $orderTable->token    = $orderTable->generateToken();
 
         if (!$orderTable->store()) {
             throw new \RuntimeException(
@@ -1412,9 +1422,9 @@ class CartOrder
         }
 
         // Set the generated values on this object
-        $this->order_id = $orderTable->order_id;
+        $this->order_id            = $orderTable->order_id;
         $this->j2commerce_order_id = (int) $orderTable->j2commerce_order_id;
-        $this->token = $orderTable->token;
+        $this->token               = $orderTable->token;
 
         $orderId = $this->order_id;
 
@@ -1469,13 +1479,13 @@ class CartOrder
         $now = Factory::getDate()->toSql();
 
         foreach ($this->items as $item) {
-            $pricing = $item->pricing ?? null;
-            $quantity = (int) ($item->product_qty ?? 1);
-            $basePrice = (float) ($pricing->price ?? $item->variant_price ?? 0);
-            $optionPrice = (float) ($item->option_price ?? 0);
-            $perItemTax = (float) ($pricing->tax ?? 0);
-            $itemTax = $perItemTax * $quantity;
-            $finalPrice = ($basePrice + $optionPrice) * $quantity;
+            $pricing           = $item->pricing ?? null;
+            $quantity          = (int) ($item->product_qty ?? 1);
+            $basePrice         = (float) ($pricing->price ?? $item->variant_price ?? 0);
+            $optionPrice       = (float) ($item->option_price ?? 0);
+            $perItemTax        = (float) ($pricing->tax ?? 0);
+            $itemTax           = $perItemTax * $quantity;
+            $finalPrice        = ($basePrice + $optionPrice) * $quantity;
             $finalPriceWithTax = $finalPrice + $itemTax;
 
             // Serialize item attributes for storage
@@ -1560,7 +1570,7 @@ class CartOrder
         object $mvcFactory,
         int $userId
     ): void {
-        $billing = $this->loadAddressData('billing', $session, $mvcFactory, $userId);
+        $billing  = $this->loadAddressData('billing', $session, $mvcFactory, $userId);
         $shipping = $this->loadAddressData('shipping', $session, $mvcFactory, $userId);
 
         $columns = [
@@ -1640,7 +1650,7 @@ class CartOrder
      */
     protected function loadAddressData(string $type, object $session, object $mvcFactory, int $userId): array
     {
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db   = Factory::getContainer()->get(DatabaseInterface::class);
         $data = [];
 
         $addressId = (int) $session->get($type . '_address_id', 0, 'j2commerce');
@@ -1670,7 +1680,7 @@ class CartOrder
         } else {
             // Guest checkout — use session data
             $sessionKey = ($type === 'shipping') ? 'guest_shipping' : 'guest';
-            $guestData = $session->get($sessionKey, [], 'j2commerce');
+            $guestData  = $session->get($sessionKey, [], 'j2commerce');
 
             if (!empty($guestData)) {
                 $data = [
@@ -1694,7 +1704,7 @@ class CartOrder
 
         // Resolve country and zone names
         $countryId = (int) ($data['country_id'] ?? 0);
-        $zoneId = (int) ($data['zone_id'] ?? 0);
+        $zoneId    = (int) ($data['zone_id'] ?? 0);
 
         if ($countryId > 0) {
             $query = $db->getQuery(true)
@@ -1874,11 +1884,11 @@ class CartOrder
                 continue;
             }
 
-            $name = $fee->name ?? '';
-            $tax = (float) ($fee->tax ?? 0);
+            $name         = $fee->name ?? '';
+            $tax          = (float) ($fee->tax ?? 0);
             $taxProfileId = (int) ($fee->taxprofile_id ?? 0);
-            $taxable = $tax > 0 ? 1 : 0;
-            $feeType = $fee->plugin ?? '';
+            $taxable      = $tax > 0 ? 1 : 0;
+            $feeType      = $fee->plugin ?? '';
 
             $query = $db->getQuery(true)
                 ->insert($db->quoteName('#__j2commerce_orderfees'))
@@ -1914,9 +1924,9 @@ class CartOrder
      */
     public function get_formatted_order_totals(): array
     {
-        $totals = [];
-        $currency = J2CommerceHelper::currency();
-        $params = J2CommerceHelper::config();
+        $totals     = [];
+        $currency   = J2CommerceHelper::currency();
+        $params     = J2CommerceHelper::config();
         $combineTax = (int) $params->get('combine_tax_calculations', 1);
 
         // Subtotal (before tax) - use keyed index so plugins can target it
@@ -1951,7 +1961,7 @@ class CartOrder
         if (!empty($fees)) {
             $checkoutPriceDisplay = (int) $params->get('checkout_price_display_options', 0);
             foreach ($fees as $fee) {
-                $feeKey = 'fee_' . preg_replace('/[^a-z0-9_]/', '_', strtolower($fee->name ?? 'custom'));
+                $feeKey          = 'fee_' . preg_replace('/[^a-z0-9_]/', '_', strtolower($fee->name ?? 'custom'));
                 $totals[$feeKey] = [
                     'label' => Text::_($fee->name),
                     'value' => $currency->format($this->get_formatted_fees($fee, $checkoutPriceDisplay)),
@@ -1973,17 +1983,17 @@ class CartOrder
             foreach ($discounts as $discount) {
                 $discountAmount = (float) ($discount->discount_amount ?? 0);
                 if ($discountAmount > 0) {
-                    $link = '';
-                    $discountType = $discount->discount_type ?? '';
+                    $link          = '';
+                    $discountType  = $discount->discount_type ?? '';
                     $discountTitle = $discount->discount_title ?? $discount->discount_code ?? '';
 
                     if ($discountType === 'coupon') {
                         $label = $discountTitle;
-                        $link = '<a class="j2commerce-remove j2commerce-remove-coupon remove-icon text-danger ms-2 text-decoration-none" href="#" data-id=" '
+                        $link  = '<a class="j2commerce-remove j2commerce-remove-coupon remove-icon text-danger ms-2 text-decoration-none" href="#" data-id=" '
                             . 'href="javascript:void(0)" title="' . Text::_('COM_J2COMMERCE_REMOVE_COUPON') . '">x</a>';
                     } elseif ($discountType === 'voucher') {
                         $label = $discountTitle;
-                        $link = '<a class="j2commerce-remove j2commerce-remove-voucher remove-icon text-danger ms-2 text-decoration-none" '
+                        $link  = '<a class="j2commerce-remove j2commerce-remove-voucher remove-icon text-danger ms-2 text-decoration-none" '
                             . 'href="javascript:void(0)" title="' . Text::_('COM_J2COMMERCE_REMOVE_VOUCHER') . '">x</a>';
                     } else {
                         $label = $discountTitle;
@@ -1996,7 +2006,7 @@ class CartOrder
                     // Allow plugins to add content after discount amount
                     $value .= J2CommerceHelper::plugin()->eventWithHtml('AfterDisplayDiscountAmount', [$this, $discount]);
 
-                    $discountKey = $discountType . '_' . preg_replace('/[^a-z0-9_]/', '_', strtolower($discount->discount_code ?? 'discount'));
+                    $discountKey          = $discountType . '_' . preg_replace('/[^a-z0-9_]/', '_', strtolower($discount->discount_code ?? 'discount'));
                     $totals[$discountKey] = [
                         'label' => $label,
                         'link'  => $link,
@@ -2073,7 +2083,7 @@ class CartOrder
                         $label = Text::sprintf('COM_J2COMMERCE_CART_TAX_EXCLUDED_TITLE', Text::_($taxTitle), $taxPercent . '%');
                     }
 
-                    $taxKey = 'tax_' . preg_replace('/[^a-z0-9_]/', '_', strtolower($taxTitle)) . '_' . $key;
+                    $taxKey          = 'tax_' . preg_replace('/[^a-z0-9_]/', '_', strtolower($taxTitle)) . '_' . $key;
                     $totals[$taxKey] = [
                         'label' => $label,
                         'value' => $currency->format($taxAmount),
@@ -2117,7 +2127,7 @@ class CartOrder
     public function increase_coupon_discount_amount(string $code, float $amount, float $tax = 0.0): void
     {
         if (!isset($this->coupon_discount_amounts[$code])) {
-            $this->coupon_discount_amounts[$code] = 0.0;
+            $this->coupon_discount_amounts[$code]     = 0.0;
             $this->coupon_discount_tax_amounts[$code] = 0.0;
         }
 
@@ -2180,9 +2190,9 @@ class CartOrder
     public function addOrderDiscounts(object $discount): void
     {
         // Track by discount code
-        $code = $discount->discount_code ?? 'unknown';
+        $code   = $discount->discount_code ?? 'unknown';
         $amount = (float) ($discount->discount_amount ?? 0);
-        $tax = (float) ($discount->discount_tax ?? 0);
+        $tax    = (float) ($discount->discount_tax ?? 0);
 
         $this->increase_coupon_discount_amount($code, $amount, $tax);
 

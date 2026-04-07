@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -18,7 +19,6 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use Joomla\CMS\Application\CMSApplication;
 use Joomla\CMS\Application\CMSWebApplicationInterface;
 use Joomla\CMS\Factory;
-use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\FileLayout;
 use Joomla\CMS\MVC\Controller\AdminController;
@@ -160,10 +160,10 @@ class ProductsController extends AdminController
     public function searchproductfilters(): void
     {
         $app = Factory::getApplication();
-        $q = $app->getInput()->post->getString('q', '');
+        $q   = $app->getInput()->post->getString('q', '');
 
         // Get database and search for filters
-        $db = Factory::getContainer()->get('DatabaseDriver');
+        $db    = Factory::getContainer()->get('DatabaseDriver');
         $query = $db->getQuery(true);
 
         $query->select([
@@ -214,14 +214,14 @@ class ProductsController extends AdminController
             return;
         }
 
-        $filterId = $app->getInput()->post->getInt('filter_id', 0);
+        $filterId  = $app->getInput()->post->getInt('filter_id', 0);
         $productId = $app->getInput()->post->getInt('product_id', 0);
 
         $success = false;
-        $msg = Text::_('COM_J2COMMERCE_PRODUCT_FILTER_DELETE_ERROR');
+        $msg     = Text::_('COM_J2COMMERCE_PRODUCT_FILTER_DELETE_ERROR');
 
         if ($filterId && $productId) {
-            $db = Factory::getContainer()->get('DatabaseDriver');
+            $db    = Factory::getContainer()->get('DatabaseDriver');
             $query = $db->getQuery(true);
 
             $query->delete($db->quoteName('#__j2commerce_product_filters'))
@@ -238,7 +238,7 @@ class ProductsController extends AdminController
 
                 if ($affected > 0) {
                     $success = true;
-                    $msg = Text::_('COM_J2COMMERCE_PRODUCT_FILTER_DELETE_SUCCESSFUL');
+                    $msg     = Text::_('COM_J2COMMERCE_PRODUCT_FILTER_DELETE_SUCCESSFUL');
                 }
             } catch (\Exception $e) {
                 $msg = $e->getMessage();
@@ -247,7 +247,7 @@ class ProductsController extends AdminController
 
         echo json_encode([
             'success' => $success,
-            'msg' => $msg,
+            'msg'     => $msg,
         ]);
 
         $app->close();
@@ -262,10 +262,10 @@ class ProductsController extends AdminController
      */
     public function getProductFilterListAjax(): void
     {
-        $app = Factory::getApplication();
-        $productId = $app->getInput()->post->getInt('product_id', 0);
+        $app        = Factory::getApplication();
+        $productId  = $app->getInput()->post->getInt('product_id', 0);
         $limitstart = $app->getInput()->post->getInt('limitstart', 0);
-        $limit = $app->getInput()->post->getInt('limit', 20);
+        $limit      = $app->getInput()->post->getInt('limit', 20);
         $formPrefix = $app->getInput()->post->getString('form_prefix', '[attribs][j2commerce]');
 
         $html = '';
@@ -273,11 +273,11 @@ class ProductsController extends AdminController
         if ($productId) {
             // Get product with filters using ProductHelper
             $productModel = $this->getModel('Product');
-            $product = $productModel->getItem($productId);
+            $product      = $productModel->getItem($productId);
 
             if ($product) {
                 // Get paginated product filters
-                $db = Factory::getContainer()->get('DatabaseDriver');
+                $db    = Factory::getContainer()->get('DatabaseDriver');
                 $query = $db->getQuery(true);
 
                 $query->select([
@@ -305,11 +305,11 @@ class ProductsController extends AdminController
 
                 // Create the product object for the layout
                 $product->product_filters = $filters;
-                $product->form_prefix = $formPrefix;
+                $product->form_prefix     = $formPrefix;
 
                 // Render using the layout
                 $layout = new FileLayout('form_ajax_avfilter', JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product');
-                $html = $layout->render(['product' => $product]);
+                $html   = $layout->render(['product' => $product]);
             }
         }
 
@@ -329,14 +329,14 @@ class ProductsController extends AdminController
      */
     public function getRelatedProducts(): void
     {
-        $app = Factory::getApplication();
-        $q = $app->getInput()->post->getString('q', '');
+        $app       = Factory::getApplication();
+        $q         = $app->getInput()->post->getString('q', '');
         $productId = $app->getInput()->post->getInt('product_id', 0);
 
         $products = [];
 
         if (!empty($q)) {
-            $db = Factory::getContainer()->get('DatabaseDriver');
+            $db    = Factory::getContainer()->get('DatabaseDriver');
             $query = $db->getQuery(true);
 
             // Search for products by article title (product_name) or SKU
@@ -460,7 +460,7 @@ class ProductsController extends AdminController
         $this->checkToken();
 
         $productId = $app->getInput()->post->getInt('product_id', 0);
-        $newType = $app->getInput()->post->getString('product_type', '');
+        $newType   = $app->getInput()->post->getString('product_type', '');
 
         $json = ['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_CHANGE_PRODUCT_TYPE')];
 
@@ -472,7 +472,7 @@ class ProductsController extends AdminController
         }
 
         // Get the current product
-        $db = Factory::getContainer()->get('DatabaseDriver');
+        $db    = Factory::getContainer()->get('DatabaseDriver');
         $query = $db->getQuery(true);
         $query->select('*')
             ->from($db->quoteName('#__j2commerce_products'))
@@ -546,7 +546,7 @@ class ProductsController extends AdminController
             $this->app->getLogger()->warning(Text::_($this->text_prefix . '_NO_ITEM_SELECTED'), ['category' => 'jerror']);
         } else {
             // Get the article IDs for the selected products
-            $db = Factory::getContainer()->get('DatabaseDriver');
+            $db    = Factory::getContainer()->get('DatabaseDriver');
             $query = $db->getQuery(true);
 
             $query->select($db->quoteName('product_source_id'))
@@ -561,7 +561,7 @@ class ProductsController extends AdminController
 
             if (!empty($articleIds)) {
                 // Update the content table directly
-                $user = $this->app->getIdentity();
+                $user      = $this->app->getIdentity();
                 $canChange = $user->authorise('core.edit.state', 'com_content');
 
                 if ($canChange) {
@@ -638,7 +638,7 @@ class ProductsController extends AdminController
         }
 
         // Get the article IDs for the selected products
-        $db = Factory::getContainer()->get('DatabaseDriver');
+        $db    = Factory::getContainer()->get('DatabaseDriver');
         $query = $db->getQuery(true);
 
         $query->select($db->quoteName('product_source_id'))
@@ -661,8 +661,8 @@ class ProductsController extends AdminController
         }
 
         // Check in the content articles using direct database update
-        $user = $this->app->getIdentity();
-        $userId = $user->id;
+        $user             = $this->app->getIdentity();
+        $userId           = $user->id;
         $canManageCheckin = $user->authorise('core.manage', 'com_checkin');
 
         // Get articles that are currently checked out and can be checked in by this user
@@ -725,14 +725,14 @@ class ProductsController extends AdminController
     public function setproductoptionvalues(): void
     {
         $app = Factory::getApplication();
-        $db = Factory::getContainer()->get('DatabaseDriver');
+        $db  = Factory::getContainer()->get('DatabaseDriver');
 
-        $productId = $app->getInput()->getInt('product_id', 0);
+        $productId       = $app->getInput()->getInt('product_id', 0);
         $productOptionId = $app->getInput()->getInt('productoption_id', 0);
 
         // Get product
         $productModel = $this->getModel('Product');
-        $product = $productModel->getItem($productId);
+        $product      = $productModel->getItem($productId);
 
         if (!$product) {
             echo Text::_('COM_J2COMMERCE_PRODUCT_NOT_FOUND');
@@ -773,7 +773,7 @@ class ProductsController extends AdminController
         // Get all available option values for this option
         // Note: bind() requires a variable reference, can't use object property directly
         $optionId = (int) $productOption->option_id;
-        $query = $db->getQuery(true);
+        $query    = $db->getQuery(true);
         $query->select([
                 $db->quoteName('j2commerce_optionvalue_id'),
                 $db->quoteName('optionvalue_name'),
@@ -816,19 +816,19 @@ class ProductsController extends AdminController
         $productOptionValues = $db->loadObjectList() ?: [];
 
         // Get parent option values if applicable
-       $parentOptionValues = $this->resolveParentOptionValues($productOption);
+        $parentOptionValues = $this->resolveParentOptionValues($productOption);
 
         // Render the modal layout
         $layout = new FileLayout('productoptionvalues', JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product');
         echo $layout->render([
-            'product'               => $product,
-            'product_option'        => $productOption,
-            'product_id'            => $productId,
-            'productoption_id'      => $productOptionId,
-            'option_values'         => $optionValues,
-            'product_optionvalues'  => $productOptionValues,
-            'parent_optionvalues'   => $parentOptionValues,
-            'prefix'                => 'jform[poption_value]',
+            'product'              => $product,
+            'product_option'       => $productOption,
+            'product_id'           => $productId,
+            'productoption_id'     => $productOptionId,
+            'option_values'        => $optionValues,
+            'product_optionvalues' => $productOptionValues,
+            'parent_optionvalues'  => $parentOptionValues,
+            'prefix'               => 'jform[poption_value]',
         ]);
 
         // Stop execution to prevent default display from rendering
@@ -847,17 +847,17 @@ class ProductsController extends AdminController
         $this->checkToken();
 
         $app = Factory::getApplication();
-        $db = Factory::getContainer()->get('DatabaseDriver');
+        $db  = Factory::getContainer()->get('DatabaseDriver');
 
-        $productId = $app->getInput()->getInt('product_id', 0);
-        $productOptionId = $app->getInput()->getInt('productoption_id', 0);
-        $optionValueId = $app->getInput()->getInt('optionvalue_id', 0);
-        $price = $app->getInput()->getFloat('product_optionvalue_price', 0.0);
-        $pricePrefix = $app->getInput()->getString('product_optionvalue_prefix', '+');
-        $weight = $app->getInput()->getFloat('product_optionvalue_weight', 0.0);
-        $weightPrefix = $app->getInput()->getString('product_optionvalue_weight_prefix', '+');
-        $ordering = $app->getInput()->getInt('ordering', 0);
-        $attribs = $app->getInput()->getString('product_optionvalue_attribs', '');
+        $productId         = $app->getInput()->getInt('product_id', 0);
+        $productOptionId   = $app->getInput()->getInt('productoption_id', 0);
+        $optionValueId     = $app->getInput()->getInt('optionvalue_id', 0);
+        $price             = $app->getInput()->getFloat('product_optionvalue_price', 0.0);
+        $pricePrefix       = $app->getInput()->getString('product_optionvalue_prefix', '+');
+        $weight            = $app->getInput()->getFloat('product_optionvalue_weight', 0.0);
+        $weightPrefix      = $app->getInput()->getString('product_optionvalue_weight_prefix', '+');
+        $ordering          = $app->getInput()->getInt('ordering', 0);
+        $attribs           = $app->getInput()->getString('product_optionvalue_attribs', '');
         $parentOptionValue = $app->getInput()->get('parent_optionvalue', [], 'array');
 
         // Check if option is a variant option (no price modifier)
@@ -878,7 +878,7 @@ class ProductsController extends AdminController
         // Insert the new product option value
         $parentValue = !empty($parentOptionValue) ? implode(',', $parentOptionValue) : '';
         $emptyString = '';
-        $zero = 0;
+        $zero        = 0;
 
         $columns = [
             'productoption_id',
@@ -914,10 +914,10 @@ class ProductsController extends AdminController
 
         try {
             $db->execute();
-            $msg = Text::_('COM_J2COMMERCE_PRODUCT_OPTION_VALUE_CREATED');
+            $msg     = Text::_('COM_J2COMMERCE_PRODUCT_OPTION_VALUE_CREATED');
             $msgType = 'message';
         } catch (\Exception $e) {
-            $msg = $e->getMessage();
+            $msg     = $e->getMessage();
             $msgType = 'error';
         }
 
@@ -939,13 +939,13 @@ class ProductsController extends AdminController
         $this->checkToken();
 
         $app = Factory::getApplication();
-        $db = Factory::getContainer()->get('DatabaseDriver');
+        $db  = Factory::getContainer()->get('DatabaseDriver');
 
-        $productId = $app->getInput()->getInt('product_id', 0);
+        $productId       = $app->getInput()->getInt('product_id', 0);
         $productOptionId = $app->getInput()->getInt('productoption_id', 0);
-        $poptionValues = $app->getInput()->get('jform', [], 'array');
+        $poptionValues   = $app->getInput()->get('jform', [], 'array');
 
-        if (isset($poptionValues['poption_value']) && is_array($poptionValues['poption_value'])) {
+        if (isset($poptionValues['poption_value']) && \is_array($poptionValues['poption_value'])) {
             foreach ($poptionValues['poption_value'] as $povId => $data) {
                 $povId = (int) $povId;
                 if ($povId <= 0) {
@@ -954,12 +954,12 @@ class ProductsController extends AdminController
 
                 // Prepare data
                 $optionValueId = isset($data['optionvalue_id']) ? (int) $data['optionvalue_id'] : 0;
-                $price = isset($data['product_optionvalue_price']) ? (float) $data['product_optionvalue_price'] : 0.0;
-                $pricePrefix = isset($data['product_optionvalue_prefix']) ? $data['product_optionvalue_prefix'] : '+';
-                $weight = isset($data['product_optionvalue_weight']) ? (float) $data['product_optionvalue_weight'] : 0.0;
-                $weightPrefix = isset($data['product_optionvalue_weight_prefix']) ? $data['product_optionvalue_weight_prefix'] : '+';
-                $ordering = isset($data['ordering']) ? (int) $data['ordering'] : 0;
-                $parentValue = isset($data['parent_optionvalue']) && is_array($data['parent_optionvalue'])
+                $price         = isset($data['product_optionvalue_price']) ? (float) $data['product_optionvalue_price'] : 0.0;
+                $pricePrefix   = isset($data['product_optionvalue_prefix']) ? $data['product_optionvalue_prefix'] : '+';
+                $weight        = isset($data['product_optionvalue_weight']) ? (float) $data['product_optionvalue_weight'] : 0.0;
+                $weightPrefix  = isset($data['product_optionvalue_weight_prefix']) ? $data['product_optionvalue_weight_prefix'] : '+';
+                $ordering      = isset($data['ordering']) ? (int) $data['ordering'] : 0;
+                $parentValue   = isset($data['parent_optionvalue']) && \is_array($data['parent_optionvalue'])
                     ? implode(',', $data['parent_optionvalue'])
                     : '';
                 $attribs = isset($data['product_optionvalue_attribs']) ? $data['product_optionvalue_attribs'] : '';
@@ -1008,11 +1008,11 @@ class ProductsController extends AdminController
         $this->checkToken('request');
 
         $app = Factory::getApplication();
-        $db = Factory::getContainer()->get('DatabaseDriver');
+        $db  = Factory::getContainer()->get('DatabaseDriver');
 
-        $productId = $app->getInput()->getInt('product_id', 0);
+        $productId       = $app->getInput()->getInt('product_id', 0);
         $productOptionId = $app->getInput()->getInt('productoption_id', 0);
-        $cid = $app->getInput()->get('cid', [], 'array');
+        $cid             = $app->getInput()->get('cid', [], 'array');
 
         $cid = ArrayHelper::toInteger($cid);
         $cid = array_filter($cid);
@@ -1026,14 +1026,14 @@ class ProductsController extends AdminController
 
             try {
                 $db->execute();
-                $msg = Text::plural('COM_J2COMMERCE_N_ITEMS_DELETED', count($cid));
+                $msg     = Text::plural('COM_J2COMMERCE_N_ITEMS_DELETED', \count($cid));
                 $msgType = 'message';
             } catch (\Exception $e) {
-                $msg = $e->getMessage();
+                $msg     = $e->getMessage();
                 $msgType = 'error';
             }
         } else {
-            $msg = Text::_('COM_J2COMMERCE_NO_ITEM_SELECTED');
+            $msg     = Text::_('COM_J2COMMERCE_NO_ITEM_SELECTED');
             $msgType = 'warning';
         }
 
@@ -1055,9 +1055,9 @@ class ProductsController extends AdminController
         $this->checkToken('request');
 
         $app = Factory::getApplication();
-        $db = Factory::getContainer()->get('DatabaseDriver');
+        $db  = Factory::getContainer()->get('DatabaseDriver');
 
-        $productId = $app->getInput()->getInt('product_id', 0);
+        $productId       = $app->getInput()->getInt('product_id', 0);
         $productOptionId = $app->getInput()->getInt('productoption_id', 0);
 
         // Get the option_id from the product option
@@ -1104,10 +1104,10 @@ class ProductsController extends AdminController
                 }
 
                 // Insert new product option value
-                $empty = '';
-                $zero = 0.0;
+                $empty   = '';
+                $zero    = 0.0;
                 $zeroInt = 0;
-                $plus = '+';
+                $plus    = '+';
 
                 $columns = [
                     'productoption_id',
@@ -1163,9 +1163,9 @@ class ProductsController extends AdminController
     public function getProductOptionValuesAjax(): void
     {
         $app = Factory::getApplication();
-        $db = Factory::getContainer()->get('DatabaseDriver');
+        $db  = Factory::getContainer()->get('DatabaseDriver');
 
-        $productId = $app->getInput()->getInt('product_id', 0);
+        $productId       = $app->getInput()->getInt('product_id', 0);
         $productOptionId = $app->getInput()->getInt('productoption_id', 0);
 
         $response = ['success' => false, 'html' => '', 'message' => ''];
@@ -1179,7 +1179,7 @@ class ProductsController extends AdminController
 
         // Get product
         $productModel = $this->getModel('Product');
-        $product = $productModel->getItem($productId);
+        $product      = $productModel->getItem($productId);
 
         if (!$product) {
             $response['message'] = Text::_('COM_J2COMMERCE_PRODUCT_NOT_FOUND');
@@ -1224,7 +1224,7 @@ class ProductsController extends AdminController
         // Get all available option values for this option
         // Note: bind() requires a variable reference, can't use object property directly
         $optionId = (int) $productOption->option_id;
-        $query = $db->getQuery(true);
+        $query    = $db->getQuery(true);
         $query->select([
                 $db->quoteName('j2commerce_optionvalue_id'),
                 $db->quoteName('optionvalue_name'),
@@ -1271,19 +1271,19 @@ class ProductsController extends AdminController
 
         // Render the AJAX modal layout
         $layout = new FileLayout('form_ajax_optionvalues', JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product');
-        $html = $layout->render([
-            'product'               => $product,
-            'product_option'        => $productOption,
-            'product_id'            => $productId,
-            'productoption_id'      => $productOptionId,
-            'option_values'         => $optionValues,
-            'product_optionvalues'  => $productOptionValues,
-            'parent_optionvalues'   => $parentOptionValues,
-            'prefix'                => 'jform[poption_value]',
+        $html   = $layout->render([
+            'product'              => $product,
+            'product_option'       => $productOption,
+            'product_id'           => $productId,
+            'productoption_id'     => $productOptionId,
+            'option_values'        => $optionValues,
+            'product_optionvalues' => $productOptionValues,
+            'parent_optionvalues'  => $parentOptionValues,
+            'prefix'               => 'jform[poption_value]',
         ]);
 
-        $response['success'] = true;
-        $response['html'] = $html;
+        $response['success']    = true;
+        $response['html']       = $html;
         $response['optionName'] = $productOption->option_name ?? '';
 
         echo json_encode($response);
@@ -1302,17 +1302,17 @@ class ProductsController extends AdminController
         $this->checkToken('request');
 
         $app = Factory::getApplication();
-        $db = Factory::getContainer()->get('DatabaseDriver');
+        $db  = Factory::getContainer()->get('DatabaseDriver');
 
-        $productId = $app->getInput()->getInt('product_id', 0);
-        $productOptionId = $app->getInput()->getInt('productoption_id', 0);
-        $optionValueId = $app->getInput()->getInt('optionvalue_id', 0);
-        $price = $app->getInput()->getFloat('product_optionvalue_price', 0.0);
-        $pricePrefix = $app->getInput()->getString('product_optionvalue_prefix', '+');
-        $weight = $app->getInput()->getFloat('product_optionvalue_weight', 0.0);
-        $weightPrefix = $app->getInput()->getString('product_optionvalue_weight_prefix', '+');
-        $ordering = $app->getInput()->getInt('ordering', 0);
-        $attribs = $app->getInput()->getString('product_optionvalue_attribs', '');
+        $productId         = $app->getInput()->getInt('product_id', 0);
+        $productOptionId   = $app->getInput()->getInt('productoption_id', 0);
+        $optionValueId     = $app->getInput()->getInt('optionvalue_id', 0);
+        $price             = $app->getInput()->getFloat('product_optionvalue_price', 0.0);
+        $pricePrefix       = $app->getInput()->getString('product_optionvalue_prefix', '+');
+        $weight            = $app->getInput()->getFloat('product_optionvalue_weight', 0.0);
+        $weightPrefix      = $app->getInput()->getString('product_optionvalue_weight_prefix', '+');
+        $ordering          = $app->getInput()->getInt('ordering', 0);
+        $attribs           = $app->getInput()->getString('product_optionvalue_attribs', '');
         $parentOptionValue = $app->getInput()->get('parent_optionvalue', [], 'array');
 
         $response = ['success' => false, 'message' => ''];
@@ -1335,7 +1335,7 @@ class ProductsController extends AdminController
         // Insert the new product option value
         $parentValue = !empty($parentOptionValue) ? implode(',', $parentOptionValue) : '';
         $emptyString = '';
-        $zero = 0;
+        $zero        = 0;
 
         $columns = [
             'productoption_id',
@@ -1393,14 +1393,14 @@ class ProductsController extends AdminController
         $this->checkToken('request');
 
         $app = Factory::getApplication();
-        $db = Factory::getContainer()->get('DatabaseDriver');
+        $db  = Factory::getContainer()->get('DatabaseDriver');
 
         $poptionValues = $app->getInput()->get('jform', [], 'array');
 
         $response = ['success' => false, 'message' => ''];
 
         try {
-            if (isset($poptionValues['poption_value']) && is_array($poptionValues['poption_value'])) {
+            if (isset($poptionValues['poption_value']) && \is_array($poptionValues['poption_value'])) {
                 foreach ($poptionValues['poption_value'] as $povId => $data) {
                     $povId = (int) $povId;
                     if ($povId <= 0) {
@@ -1409,12 +1409,12 @@ class ProductsController extends AdminController
 
                     // Prepare data
                     $optionValueId = isset($data['optionvalue_id']) ? (int) $data['optionvalue_id'] : 0;
-                    $price = isset($data['product_optionvalue_price']) ? (float) $data['product_optionvalue_price'] : 0.0;
-                    $pricePrefix = isset($data['product_optionvalue_prefix']) ? $data['product_optionvalue_prefix'] : '+';
-                    $weight = isset($data['product_optionvalue_weight']) ? (float) $data['product_optionvalue_weight'] : 0.0;
-                    $weightPrefix = isset($data['product_optionvalue_weight_prefix']) ? $data['product_optionvalue_weight_prefix'] : '+';
-                    $ordering = isset($data['ordering']) ? (int) $data['ordering'] : 0;
-                    $parentValue = isset($data['parent_optionvalue']) && is_array($data['parent_optionvalue'])
+                    $price         = isset($data['product_optionvalue_price']) ? (float) $data['product_optionvalue_price'] : 0.0;
+                    $pricePrefix   = isset($data['product_optionvalue_prefix']) ? $data['product_optionvalue_prefix'] : '+';
+                    $weight        = isset($data['product_optionvalue_weight']) ? (float) $data['product_optionvalue_weight'] : 0.0;
+                    $weightPrefix  = isset($data['product_optionvalue_weight_prefix']) ? $data['product_optionvalue_weight_prefix'] : '+';
+                    $ordering      = isset($data['ordering']) ? (int) $data['ordering'] : 0;
+                    $parentValue   = isset($data['parent_optionvalue']) && \is_array($data['parent_optionvalue'])
                         ? implode(',', $data['parent_optionvalue'])
                         : '';
                     $attribs = isset($data['product_optionvalue_attribs']) ? $data['product_optionvalue_attribs'] : '';
@@ -1467,7 +1467,7 @@ class ProductsController extends AdminController
         $this->checkToken('request');
 
         $app = Factory::getApplication();
-        $db = Factory::getContainer()->get('DatabaseDriver');
+        $db  = Factory::getContainer()->get('DatabaseDriver');
 
         $povId = $app->getInput()->getInt('pov_id', 0);
 
@@ -1508,13 +1508,13 @@ class ProductsController extends AdminController
         $this->checkToken('request');
 
         $app = Factory::getApplication();
-        $db = Factory::getContainer()->get('DatabaseDriver');
+        $db  = Factory::getContainer()->get('DatabaseDriver');
 
-        $productId = $app->getInput()->getInt('product_id', 0);
+        $productId       = $app->getInput()->getInt('product_id', 0);
         $productOptionId = $app->getInput()->getInt('productoption_id', 0);
-        $cid = $app->getInput()->get('cid', [], 'array');
+        $cid             = $app->getInput()->get('cid', [], 'array');
 
-        $cid = ArrayHelper::toInteger($cid);
+        $cid   = ArrayHelper::toInteger($cid);
         $povId = !empty($cid) ? (int) $cid[0] : 0;
 
         if ($povId && $productOptionId) {
@@ -1565,11 +1565,11 @@ class ProductsController extends AdminController
         $app = Factory::getApplication();
 
         $response = [
-            'success' => false,
-            'message' => '',
+            'success'    => false,
+            'message'    => '',
             'variant_id' => 0,
-            'html' => '',
-            'total' => 0,
+            'html'       => '',
+            'total'      => 0,
         ];
 
         // CSRF token check - return JSON error instead of redirect
@@ -1584,12 +1584,12 @@ class ProductsController extends AdminController
 
         // Use raw input to preserve numeric values, then sanitize manually
         // The 'array' filter can sometimes have issues with numeric values
-        $rawInput = $app->getInput()->post->getArray();
+        $rawInput      = $app->getInput()->post->getArray();
         $variantCombin = isset($rawInput['variant_combin']) && \is_array($rawInput['variant_combin'])
             ? $rawInput['variant_combin']
             : [];
 
-        $productId = $app->getInput()->getInt('flexi_product_id', 0);
+        $productId  = $app->getInput()->getInt('flexi_product_id', 0);
         $formPrefix = $app->getInput()->getString('form_prefix', 'jform[attribs][j2commerce]');
 
         if (empty($variantCombin) || empty($productId)) {
@@ -1606,17 +1606,17 @@ class ProductsController extends AdminController
             foreach ($variantCombin as $variantKey => $variantValue) {
                 $productOptionvalue = new \stdClass();
                 // Sanitize keys and values as integers
-                $productOptionvalue->productoption_id = (int) $variantKey;
-                $productOptionvalue->optionvalue_id = (int) $variantValue;
-                $productOptionvalue->parent_optionvalue = '';
-                $productOptionvalue->product_optionvalue_price = 0;
-                $productOptionvalue->product_optionvalue_prefix = '+';
-                $productOptionvalue->product_optionvalue_weight = 0;
+                $productOptionvalue->productoption_id                  = (int) $variantKey;
+                $productOptionvalue->optionvalue_id                    = (int) $variantValue;
+                $productOptionvalue->parent_optionvalue                = '';
+                $productOptionvalue->product_optionvalue_price         = 0;
+                $productOptionvalue->product_optionvalue_prefix        = '+';
+                $productOptionvalue->product_optionvalue_weight        = 0;
                 $productOptionvalue->product_optionvalue_weight_prefix = '+';
-                $productOptionvalue->product_optionvalue_sku = '';
-                $productOptionvalue->product_optionvalue_default = 0;
-                $productOptionvalue->ordering = 0;
-                $productOptionvalue->product_optionvalue_attribs = '{}';
+                $productOptionvalue->product_optionvalue_sku           = '';
+                $productOptionvalue->product_optionvalue_default       = 0;
+                $productOptionvalue->ordering                          = 0;
+                $productOptionvalue->product_optionvalue_attribs       = '{}';
 
                 $db->insertObject('#__j2commerce_product_optionvalues', $productOptionvalue, 'j2commerce_product_optionvalue_id');
                 $productOptionvalueIds[] = $productOptionvalue->j2commerce_product_optionvalue_id;
@@ -1628,49 +1628,49 @@ class ProductsController extends AdminController
                 $defaultLengthClassId = ConfigHelper::getDefaultLengthClassId();
 
                 // Get current timestamp and user
-                $date = Factory::getDate()->toSql();
-                $user = $app->getIdentity();
+                $date   = Factory::getDate()->toSql();
+                $user   = $app->getIdentity();
                 $userId = $user ? $user->id : 0;
 
                 // Create variant record with all fields properly defaulted
-                $variant = new \stdClass();
+                $variant             = new \stdClass();
                 $variant->product_id = $productId;
-                $variant->is_master = 0;
+                $variant->is_master  = 0;
 
                 // Varchar fields - empty strings (not null)
-                $variant->sku = '';
-                $variant->upc = '';
-                $variant->params = '{"variant_main_image":""}';
+                $variant->sku                = '';
+                $variant->upc                = '';
+                $variant->params             = '{"variant_main_image":""}';
                 $variant->pricing_calculator = 'standard';
 
                 // Decimal fields - "0.00000" (not null)
-                $variant->price = '0.00000';
-                $variant->length = '0.00000';
-                $variant->width = '0.00000';
-                $variant->height = '0.00000';
-                $variant->weight = '0.00000';
+                $variant->price        = '0.00000';
+                $variant->length       = '0.00000';
+                $variant->width        = '0.00000';
+                $variant->height       = '0.00000';
+                $variant->weight       = '0.00000';
                 $variant->min_sale_qty = '0.00000';
                 $variant->max_sale_qty = '0.00000';
-                $variant->notify_qty = '0.00000';
+                $variant->notify_qty   = '0.00000';
 
                 // Integer fields with defaults from config
                 $variant->length_class_id = $defaultLengthClassId;
                 $variant->weight_class_id = $defaultWeightClassId;
 
                 // Integer boolean fields - 0 (not null)
-                $variant->shipping = 0;
-                $variant->manage_stock = 0;
-                $variant->quantity_restriction = 0;
+                $variant->shipping                      = 0;
+                $variant->manage_stock                  = 0;
+                $variant->quantity_restriction          = 0;
                 $variant->use_store_config_min_sale_qty = 0;
                 $variant->use_store_config_max_sale_qty = 0;
-                $variant->use_store_config_notify_qty = 0;
-                $variant->availability = 0;
-                $variant->allow_backorder = 0;
-                $variant->isdefault_variant = 0;
+                $variant->use_store_config_notify_qty   = 0;
+                $variant->availability                  = 0;
+                $variant->allow_backorder               = 0;
+                $variant->isdefault_variant             = 0;
 
                 // Timestamp fields
-                $variant->created_on = $date;
-                $variant->created_by = $userId;
+                $variant->created_on  = $date;
+                $variant->created_by  = $userId;
                 $variant->modified_on = $date;
                 $variant->modified_by = $userId;
 
@@ -1678,7 +1678,7 @@ class ProductsController extends AdminController
 
                 // Update SKU with variant ID (Flexi_[id] format)
                 $variantId = $variant->j2commerce_variant_id;
-                $newSku = 'Flexi_' . $variantId;
+                $newSku    = 'Flexi_' . $variantId;
 
                 $query = $db->getQuery(true)
                     ->update($db->quoteName('#__j2commerce_variants'))
@@ -1691,18 +1691,18 @@ class ProductsController extends AdminController
                 $db->execute();
 
                 // Create product quantity record
-                $productQuantity = new \stdClass();
-                $productQuantity->variant_id = $variantId;
-                $productQuantity->quantity = 0;
-                $productQuantity->on_hold = 0;
-                $productQuantity->sold = 0;
+                $productQuantity                     = new \stdClass();
+                $productQuantity->variant_id         = $variantId;
+                $productQuantity->quantity           = 0;
+                $productQuantity->on_hold            = 0;
+                $productQuantity->sold               = 0;
                 $productQuantity->product_attributes = '';
 
                 $db->insertObject('#__j2commerce_productquantities', $productQuantity, 'j2commerce_productquantity_id');
 
                 // Create product variant optionvalues mapping
-                $productVariantOptionValue = new \stdClass();
-                $productVariantOptionValue->variant_id = $variantId;
+                $productVariantOptionValue                          = new \stdClass();
+                $productVariantOptionValue->variant_id              = $variantId;
                 $productVariantOptionValue->product_optionvalue_ids = implode(',', $productOptionvalueIds);
 
                 $db->insertObject('#__j2commerce_product_variant_optionvalues', $productVariantOptionValue);
@@ -1719,11 +1719,11 @@ class ProductsController extends AdminController
                 $db->setQuery($query);
                 $total = (int) $db->loadResult();
 
-                $response['success'] = true;
-                $response['message'] = Text::_('COM_J2COMMERCE_VARIANT_ADDED');
+                $response['success']    = true;
+                $response['message']    = Text::_('COM_J2COMMERCE_VARIANT_ADDED');
                 $response['variant_id'] = $variantId;
-                $response['html'] = ''; // JS reloads full list via loadVariantList()
-                $response['total'] = $total;
+                $response['html']       = ''; // JS reloads full list via loadVariantList()
+                $response['total']      = $total;
             }
         } catch (\Exception $e) {
             $response['message'] = $e->getMessage();
@@ -1747,7 +1747,7 @@ class ProductsController extends AdminController
         $response = [
             'success' => false,
             'message' => '',
-            'total' => 0,
+            'total'   => 0,
         ];
 
         // CSRF token check - return JSON error instead of redirect
@@ -1767,7 +1767,7 @@ class ProductsController extends AdminController
 
             // Get remaining total
             if ($productId > 0) {
-                $db = Factory::getContainer()->get('DatabaseDriver');
+                $db    = Factory::getContainer()->get('DatabaseDriver');
                 $query = $db->getQuery(true)
                     ->select('COUNT(*)')
                     ->from($db->quoteName('#__j2commerce_variants'))
@@ -1798,8 +1798,8 @@ class ProductsController extends AdminController
         $app = Factory::getApplication();
 
         $response = [
-            'success' => false,
-            'message' => '',
+            'success'       => false,
+            'message'       => '',
             'deleted_count' => 0,
         ];
 
@@ -1811,7 +1811,7 @@ class ProductsController extends AdminController
             return;
         }
 
-        $db = Factory::getContainer()->get('DatabaseDriver');
+        $db        = Factory::getContainer()->get('DatabaseDriver');
         $productId = $app->getInput()->getInt('product_id', 0);
 
         if ($productId > 0) {
@@ -1833,8 +1833,8 @@ class ProductsController extends AdminController
                 }
             }
 
-            $response['success'] = true;
-            $response['message'] = Text::plural('COM_J2COMMERCE_N_VARIANTS_DELETED', $deletedCount);
+            $response['success']       = true;
+            $response['message']       = Text::plural('COM_J2COMMERCE_N_VARIANTS_DELETED', $deletedCount);
             $response['deleted_count'] = $deletedCount;
         } else {
             $response['message'] = Text::_('COM_J2COMMERCE_INVALID_PRODUCT');
@@ -1856,10 +1856,10 @@ class ProductsController extends AdminController
         $app = Factory::getApplication();
 
         $response = [
-            'success' => false,
-            'message' => '',
+            'success'       => false,
+            'message'       => '',
             'deleted_count' => 0,
-            'total' => 0,
+            'total'         => 0,
         ];
 
         // CSRF token check - return JSON error instead of redirect
@@ -1871,7 +1871,7 @@ class ProductsController extends AdminController
         }
 
         $variantIds = $app->getInput()->get('variant_ids', [], 'array');
-        $productId = $app->getInput()->getInt('product_id', 0);
+        $productId  = $app->getInput()->getInt('product_id', 0);
 
         $variantIds = ArrayHelper::toInteger($variantIds);
         $variantIds = array_filter($variantIds);
@@ -1884,13 +1884,13 @@ class ProductsController extends AdminController
                 }
             }
 
-            $response['success'] = true;
-            $response['message'] = Text::plural('COM_J2COMMERCE_N_VARIANTS_DELETED', $deletedCount);
+            $response['success']       = true;
+            $response['message']       = Text::plural('COM_J2COMMERCE_N_VARIANTS_DELETED', $deletedCount);
             $response['deleted_count'] = $deletedCount;
 
             // Get remaining total
             if ($productId > 0) {
-                $db = Factory::getContainer()->get('DatabaseDriver');
+                $db    = Factory::getContainer()->get('DatabaseDriver');
                 $query = $db->getQuery(true)
                     ->select('COUNT(*)')
                     ->from($db->quoteName('#__j2commerce_variants'))
@@ -1957,12 +1957,12 @@ class ProductsController extends AdminController
                 $values = [];
                 foreach ($trait->values as $value) {
                     $values[] = [
-                        'option_id'                => $trait->option_id,
-                        'product_optionvalue_id'   => $value->j2commerce_product_optionvalue_id,
-                        'optionvalue_name'         => $value->optionvalue_name ?? '',
-                        'sku_suffix'               => $value->product_optionvalue_sku ?? '',
-                        'price_prefix'             => $value->product_optionvalue_prefix ?? '+',
-                        'price'                    => $value->product_optionvalue_price ?? 0,
+                        'option_id'              => $trait->option_id,
+                        'product_optionvalue_id' => $value->j2commerce_product_optionvalue_id,
+                        'optionvalue_name'       => $value->optionvalue_name ?? '',
+                        'sku_suffix'             => $value->product_optionvalue_sku ?? '',
+                        'price_prefix'           => $value->product_optionvalue_prefix ?? '+',
+                        'price'                  => $value->product_optionvalue_price ?? 0,
                     ];
                 }
                 $optionArrays[] = $values;
@@ -1976,11 +1976,11 @@ class ProductsController extends AdminController
             return;
         }
 
-        $combinations = ProductHelper::getCombinations($optionArrays);
-        $masterVariant = ProductHelper::getMasterVariant($productId);
-        $baseSku   = $masterVariant->sku ?? 'PROD-' . $productId;
-        $basePrice = (float) ($masterVariant->price ?? 0);
-        $date = \Joomla\CMS\Factory::getDate()->toSql();
+        $combinations         = ProductHelper::getCombinations($optionArrays);
+        $masterVariant        = ProductHelper::getMasterVariant($productId);
+        $baseSku              = $masterVariant->sku ?? 'PROD-' . $productId;
+        $basePrice            = (float) ($masterVariant->price ?? 0);
+        $date                 = \Joomla\CMS\Factory::getDate()->toSql();
         $defaultWeightClassId = ConfigHelper::getDefaultWeightClassId();
         $defaultLengthClassId = ConfigHelper::getDefaultLengthClassId();
 
@@ -2019,9 +2019,9 @@ class ProductsController extends AdminController
         $skippedCount = 0;
 
         foreach ($combinations as $combination) {
-            $skuParts = [];
+            $skuParts        = [];
             $priceAdjustment = 0.0;
-            $povIds = [];
+            $povIds          = [];
 
             foreach ($combination as $optionValue) {
                 if (!empty($optionValue['sku_suffix'])) {
@@ -2035,7 +2035,7 @@ class ProductsController extends AdminController
             }
 
             // Skip combinations with missing/invalid option value IDs
-            $povIds = array_filter($povIds, static fn(int $id): bool => $id > 0);
+            $povIds = array_filter($povIds, static fn (int $id): bool => $id > 0);
 
             if (empty($povIds)) {
                 continue;
@@ -2066,7 +2066,7 @@ class ProductsController extends AdminController
                 'weight'                        => 0,
                 'weight_class_id'               => $defaultWeightClassId,
                 'manage_stock'                  => 0,
-                'quantity_restriction'           => 0,
+                'quantity_restriction'          => 0,
                 'min_out_qty'                   => 0,
                 'use_store_config_min_out_qty'  => 1,
                 'min_sale_qty'                  => 0,
@@ -2201,12 +2201,12 @@ class ProductsController extends AdminController
                 $values = [];
                 foreach ($trait->values as $value) {
                     $values[] = [
-                        'option_id'                => $trait->option_id,
-                        'product_optionvalue_id'   => $value->j2commerce_product_optionvalue_id,
-                        'optionvalue_name'         => $value->optionvalue_name ?? '',
-                        'sku_suffix'               => $value->product_optionvalue_sku ?? '',
-                        'price_prefix'             => $value->product_optionvalue_prefix ?? '+',
-                        'price'                    => $value->product_optionvalue_price ?? 0,
+                        'option_id'              => $trait->option_id,
+                        'product_optionvalue_id' => $value->j2commerce_product_optionvalue_id,
+                        'optionvalue_name'       => $value->optionvalue_name ?? '',
+                        'sku_suffix'             => $value->product_optionvalue_sku ?? '',
+                        'price_prefix'           => $value->product_optionvalue_prefix ?? '+',
+                        'price'                  => $value->product_optionvalue_price ?? 0,
                     ];
                 }
                 $optionArrays[] = $values;
@@ -2221,20 +2221,20 @@ class ProductsController extends AdminController
             return;
         }
 
-        $combinations = ProductHelper::getCombinations($optionArrays);
-        $masterVariant = ProductHelper::getMasterVariant($productId);
-        $baseSku   = $masterVariant->sku ?? 'PROD-' . $productId;
-        $basePrice = (float) ($masterVariant->price ?? 0);
-        $date = \Joomla\CMS\Factory::getDate()->toSql();
+        $combinations         = ProductHelper::getCombinations($optionArrays);
+        $masterVariant        = ProductHelper::getMasterVariant($productId);
+        $baseSku              = $masterVariant->sku ?? 'PROD-' . $productId;
+        $basePrice            = (float) ($masterVariant->price ?? 0);
+        $date                 = \Joomla\CMS\Factory::getDate()->toSql();
         $defaultWeightClassId = ConfigHelper::getDefaultWeightClassId();
         $defaultLengthClassId = ConfigHelper::getDefaultLengthClassId();
 
         $createdCount = 0;
 
         foreach ($combinations as $combination) {
-            $skuParts = [];
+            $skuParts        = [];
             $priceAdjustment = 0.0;
-            $povIds = [];
+            $povIds          = [];
 
             foreach ($combination as $optionValue) {
                 if (!empty($optionValue['sku_suffix'])) {
@@ -2248,14 +2248,14 @@ class ProductsController extends AdminController
             }
 
             // Skip combinations with missing/invalid option value IDs
-            $povIds = array_filter($povIds, static fn(int $id): bool => $id > 0);
+            $povIds = array_filter($povIds, static fn (int $id): bool => $id > 0);
 
             if (empty($povIds)) {
                 continue;
             }
 
             sort($povIds);
-            $povIdsCsv = implode(',', $povIds);
+            $povIdsCsv  = implode(',', $povIds);
             $variantSku = $baseSku . (!empty($skuParts) ? '-' . implode('-', $skuParts) : '-V' . ($createdCount + 1));
 
             $variantData = (object) [
@@ -2272,7 +2272,7 @@ class ProductsController extends AdminController
                 'weight'                        => 0,
                 'weight_class_id'               => $defaultWeightClassId,
                 'manage_stock'                  => 0,
-                'quantity_restriction'           => 0,
+                'quantity_restriction'          => 0,
                 'min_out_qty'                   => 0,
                 'use_store_config_min_out_qty'  => 1,
                 'min_sale_qty'                  => 0,
@@ -2334,11 +2334,11 @@ class ProductsController extends AdminController
     public function getVariantListAjax(): void
     {
         $app = Factory::getApplication();
-        $db = Factory::getContainer()->get('DatabaseDriver');
+        $db  = Factory::getContainer()->get('DatabaseDriver');
 
-        $productId = $app->getInput()->getInt('product_id', 0);
+        $productId  = $app->getInput()->getInt('product_id', 0);
         $limitstart = $app->getInput()->getInt('limitstart', 0);
-        $limit = $app->getInput()->getInt('limit', 20);
+        $limit      = $app->getInput()->getInt('limit', 20);
         $formPrefix = $app->getInput()->getString('form_prefix', 'jform[attribs][j2commerce]');
 
         $response = ['html' => '', 'total' => 0];
@@ -2411,19 +2411,19 @@ class ProductsController extends AdminController
 
                 // Use the layout specified by the caller (variable vs flexivariable product type)
                 $allowedLayouts = ['form_ajax_avoptions', 'form_ajax_flexivariableoptions'];
-                $variantLayout = $app->getInput()->getCmd('variant_layout', 'form_ajax_avoptions');
-                if (!in_array($variantLayout, $allowedLayouts, true)) {
+                $variantLayout  = $app->getInput()->getCmd('variant_layout', 'form_ajax_avoptions');
+                if (!\in_array($variantLayout, $allowedLayouts, true)) {
                     $variantLayout = 'form_ajax_avoptions';
                 }
 
-                $layout = new FileLayout($variantLayout, JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product');
+                $layout           = new FileLayout($variantLayout, JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product');
                 $response['html'] = $layout->render([
-                    'product' => $product,
-                    'variant_list' => $variants,
+                    'product'            => $product,
+                    'variant_list'       => $variants,
                     'variant_pagination' => null,
-                    'weights' => $product->weights,
-                    'lengths' => $product->lengths,
-                    'form_prefix' => $formPrefix,
+                    'weights'            => $product->weights,
+                    'lengths'            => $product->lengths,
+                    'form_prefix'        => $formPrefix,
                 ]);
 
                 // Get total count
@@ -2579,8 +2579,8 @@ class ProductsController extends AdminController
         $app = Factory::getApplication();
 
         $response = [
-            'success' => false,
-            'message' => '',
+            'success'    => false,
+            'message'    => '',
             'variant_id' => 0,
         ];
 
@@ -2592,7 +2592,7 @@ class ProductsController extends AdminController
             return;
         }
 
-        $db = Factory::getContainer()->get('DatabaseDriver');
+        $db        = Factory::getContainer()->get('DatabaseDriver');
         $variantId = $app->getInput()->getInt('variant_id', 0);
         $productId = $app->getInput()->getInt('product_id', 0);
 
@@ -2624,8 +2624,8 @@ class ProductsController extends AdminController
             $db->setQuery($query);
             $db->execute();
 
-            $response['success'] = true;
-            $response['message'] = Text::_('COM_J2COMMERCE_VARIANT_SET_DEFAULT_SUCCESS');
+            $response['success']    = true;
+            $response['message']    = Text::_('COM_J2COMMERCE_VARIANT_SET_DEFAULT_SUCCESS');
             $response['variant_id'] = $variantId;
         } catch (\Exception $e) {
             $response['message'] = $e->getMessage();
@@ -2649,8 +2649,8 @@ class ProductsController extends AdminController
         $app = Factory::getApplication();
 
         $response = [
-            'success' => false,
-            'message' => '',
+            'success'    => false,
+            'message'    => '',
             'variant_id' => 0,
         ];
 
@@ -2662,7 +2662,7 @@ class ProductsController extends AdminController
             return;
         }
 
-        $db = Factory::getContainer()->get('DatabaseDriver');
+        $db        = Factory::getContainer()->get('DatabaseDriver');
         $variantId = $app->getInput()->getInt('variant_id', 0);
 
         if ($variantId <= 0) {
@@ -2683,8 +2683,8 @@ class ProductsController extends AdminController
             $db->setQuery($query);
             $db->execute();
 
-            $response['success'] = true;
-            $response['message'] = Text::_('COM_J2COMMERCE_VARIANT_UNSET_DEFAULT_SUCCESS');
+            $response['success']    = true;
+            $response['message']    = Text::_('COM_J2COMMERCE_VARIANT_UNSET_DEFAULT_SUCCESS');
             $response['variant_id'] = $variantId;
         } catch (\Exception $e) {
             $response['message'] = $e->getMessage();
@@ -2841,14 +2841,14 @@ class ProductsController extends AdminController
                     ->whereIn($db->quoteName('pov.j2commerce_product_optionvalue_id'), $ids);
 
                 $db->setQuery($query);
-                $names = $db->loadColumn();
+                $names       = $db->loadColumn();
                 $variantName = implode(',', $names);
             }
         }
 
         $variant->variant_name = $variantName;
-        $variant->params = $variant->params ?? '{}';
-        $variant->product_id = $productId;
+        $variant->params       = $variant->params ?? '{}';
+        $variant->product_id   = $productId;
 
         // Get product for layout using ProductHelper
         $product = ProductHelper::getFullProduct($productId);
@@ -2861,10 +2861,10 @@ class ProductsController extends AdminController
         $layout = new FileLayout('form_ajax_flexivariableoptions_item', JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product');
 
         return $layout->render([
-            'product' => $product,
-            'variant' => $variant,
-            'weights' => $product->weights,
-            'lengths' => $product->lengths,
+            'product'     => $product,
+            'variant'     => $variant,
+            'weights'     => $product->weights,
+            'lengths'     => $product->lengths,
             'form_prefix' => $formPrefix,
         ]);
     }
@@ -2878,8 +2878,8 @@ class ProductsController extends AdminController
 
         $parentOptionId  = (int) $productOption->parent_id;
         $parentProductId = (int) $productOption->product_id;
-        $db    = Factory::getContainer()->get('DatabaseDriver');
-        $query = $db->getQuery(true)
+        $db              = Factory::getContainer()->get('DatabaseDriver');
+        $query           = $db->getQuery(true)
             ->select($db->quoteName('j2commerce_productoption_id'))
             ->from($db->quoteName('#__j2commerce_product_options'))
             ->where($db->quoteName('option_id') . ' = :parentOptId')
@@ -2956,7 +2956,7 @@ class ProductsController extends AdminController
         $nextOrdering = (int) $db->loadResult();
 
         // Insert
-        $poTable = $this->factory->createTable('Productoption', 'Administrator');
+        $poTable             = $this->factory->createTable('Productoption', 'Administrator');
         $poTable->option_id  = $optionId;
         $poTable->product_id = $productId;
         $poTable->ordering   = $nextOrdering;
@@ -2982,13 +2982,13 @@ class ProductsController extends AdminController
         $db->setQuery($query);
         $optionMeta = $db->loadObject();
 
-        $response['success']        = true;
-        $response['productoption_id'] = $poTable->j2commerce_productoption_id;
-        $response['option_name']    = $optionMeta->option_name ?? '';
+        $response['success']            = true;
+        $response['productoption_id']   = $poTable->j2commerce_productoption_id;
+        $response['option_name']        = $optionMeta->option_name ?? '';
         $response['option_unique_name'] = $optionMeta->option_unique_name ?? '';
-        $response['option_type']    = $optionMeta->type ?? '';
-        $response['ordering']       = $nextOrdering;
-        $response['product_id']     = $productId;
+        $response['option_type']        = $optionMeta->type ?? '';
+        $response['ordering']           = $nextOrdering;
+        $response['product_id']         = $productId;
 
         echo json_encode($response);
         $app->close();
@@ -3065,8 +3065,8 @@ class ProductsController extends AdminController
         $app = Factory::getApplication();
 
         $response = [
-            'success' => false,
-            'message' => '',
+            'success'                => false,
+            'message'                => '',
             'variant_add_block_html' => '',
         ];
 
@@ -3121,7 +3121,7 @@ class ProductsController extends AdminController
                 $db->setQuery($query);
 
                 if ((int) $db->loadResult() === 0) {
-                    $record = new \stdClass();
+                    $record             = new \stdClass();
                     $record->product_id = $productId;
                     $record->option_id  = $optionId;
                     $record->parent_id  = 0;
@@ -3143,7 +3143,7 @@ class ProductsController extends AdminController
 
         // Load ALL product options (DB-saved) with their option values
         /** @var \J2Commerce\Component\J2commerce\Administrator\Model\ProductOptionsModel $optionsModel */
-        $optionsModel = $this->factory->createModel('ProductOptions', 'Administrator', ['ignore_request' => true]);
+        $optionsModel   = $this->factory->createModel('ProductOptions', 'Administrator', ['ignore_request' => true]);
         $productOptions = $optionsModel->getOptionsByProductId($productId);
 
         /** @var \J2Commerce\Component\J2commerce\Administrator\Model\OptionvaluesModel $valuesModel */
@@ -3179,10 +3179,10 @@ class ProductsController extends AdminController
         $optionsHtml = '';
 
         foreach ($productOptions as $po) {
-            $poId = (int) $po->j2commerce_productoption_id;
-            $optName = htmlspecialchars($po->option_name ?? '', ENT_QUOTES, 'UTF-8');
-            $optUnique = htmlspecialchars($po->option_unique_name ?? '', ENT_QUOTES, 'UTF-8');
-            $optType = htmlspecialchars($po->option_type ?? '', ENT_QUOTES, 'UTF-8');
+            $poId        = (int) $po->j2commerce_productoption_id;
+            $optName     = htmlspecialchars($po->option_name ?? '', ENT_QUOTES, 'UTF-8');
+            $optUnique   = htmlspecialchars($po->option_unique_name ?? '', ENT_QUOTES, 'UTF-8');
+            $optType     = htmlspecialchars($po->option_type ?? '', ENT_QUOTES, 'UTF-8');
             $optOrdering = (int) ($po->ordering ?? 0);
 
             $optionsHtml .= '<tr id="pao_flexivar_option_' . $poId . '">';
@@ -3203,10 +3203,10 @@ class ProductsController extends AdminController
             $optionsHtml .= '</tr>';
         }
 
-        $response['success'] = true;
-        $response['message'] = Text::_('COM_J2COMMERCE_OPTIONS_SAVED_VARIANTS_READY');
+        $response['success']                = true;
+        $response['message']                = Text::_('COM_J2COMMERCE_OPTIONS_SAVED_VARIANTS_READY');
         $response['variant_add_block_html'] = $html;
-        $response['options_table_html'] = $optionsHtml;
+        $response['options_table_html']     = $optionsHtml;
 
         echo json_encode($response);
         $app->close();

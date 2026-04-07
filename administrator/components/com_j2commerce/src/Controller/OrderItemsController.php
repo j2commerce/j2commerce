@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -9,7 +10,7 @@
 
 namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\MVC\Controller\FormController;
 use Joomla\CMS\Router\Route;
@@ -78,7 +79,7 @@ class OrderItemsController extends FormController
     protected function allowEdit($data = [], $key = 'id')
     {
         $recordId = (int) isset($data[$key]) ? $data[$key] : 0;
-        $user = $this->app->getIdentity();
+        $user     = $this->app->getIdentity();
 
         // Check general edit permission first.
         if ($user->authorise('core.edit', $this->option . '.order.' . $recordId)) {
@@ -123,7 +124,7 @@ class OrderItemsController extends FormController
      */
     protected function getRedirectToItemAppend($recordId = null, $urlVar = 'id')
     {
-        $tmpl = $this->input->get('tmpl');
+        $tmpl   = $this->input->get('tmpl');
         $layout = $this->input->get('layout', 'edit', 'string');
         $append = '';
 
@@ -152,7 +153,7 @@ class OrderItemsController extends FormController
      */
     protected function getRedirectToListAppend()
     {
-        $tmpl = $this->input->get('tmpl');
+        $tmpl   = $this->input->get('tmpl');
         $append = '';
 
         // Setup redirect info.
@@ -222,11 +223,11 @@ class OrderItemsController extends FormController
         // Check for request forgeries
         $this->checkToken();
 
-        $user = $this->app->getIdentity();
-        $id = $this->input->getInt('id');
-        $status = $this->input->getInt('status');
+        $user    = $this->app->getIdentity();
+        $id      = $this->input->getInt('id');
+        $status  = $this->input->getInt('status');
         $comment = $this->input->getString('comment', '');
-        $notify = $this->input->getBool('notify', false);
+        $notify  = $this->input->getBool('notify', false);
 
         // Access checks.
         if (!$user->authorise('core.edit.state', 'com_j2commerce.order.' . $id)) {

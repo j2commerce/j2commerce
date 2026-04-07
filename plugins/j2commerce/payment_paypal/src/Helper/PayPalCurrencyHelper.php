@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  plg_j2commerce_payment_paypal
@@ -24,7 +25,7 @@ final class PayPalCurrencyHelper
 
     public static function isValid(string $currencyCode): bool
     {
-        return in_array(strtoupper($currencyCode), self::ACCEPTED_CURRENCIES, true);
+        return \in_array(strtoupper($currencyCode), self::ACCEPTED_CURRENCIES, true);
     }
 
     /**

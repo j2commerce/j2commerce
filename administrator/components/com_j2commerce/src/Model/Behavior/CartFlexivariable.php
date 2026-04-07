@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -19,7 +20,6 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\CartModel;
 use J2Commerce\Component\J2commerce\Administrator\Model\VariantsModel;
-use J2Commerce\Component\J2commerce\Administrator\Table\ProductoptionvalueTable;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
@@ -108,7 +108,7 @@ class CartFlexivariable
 
         foreach ($variants as $checkVariant) {
             $variantPovIds = explode(',', $checkVariant->variant_name_ids ?? $checkVariant->variant_name ?? '');
-            $matchStatus = [];
+            $matchStatus   = [];
 
             foreach ($variantPovIds as $variantPovId) {
                 $variantPovId = (int) trim($variantPovId);
@@ -120,7 +120,7 @@ class CartFlexivariable
                 $povTable->load($variantPovId);
 
                 $productOptionId = (int) ($povTable->productoption_id ?? 0);
-                $variantOvId = (int) ($povTable->optionvalue_id ?? 0);
+                $variantOvId     = (int) ($povTable->optionvalue_id ?? 0);
 
                 $optionStatus = false;
 
@@ -161,7 +161,7 @@ class CartFlexivariable
      */
     public function onBeforeAddCartItem(CartModel &$model, object $product, \stdClass &$json): void
     {
-        $app = Factory::getApplication();
+        $app    = Factory::getApplication();
         $values = $app->getInput()->getArray();
         $errors = [];
 
@@ -182,7 +182,7 @@ class CartFlexivariable
 
                 // Check if option is empty
                 if (empty($options[$optionId])) {
-                    $optionName = Text::_($productOption->option_name ?? '');
+                    $optionName                           = Text::_($productOption->option_name ?? '');
                     $errors['error']['option'][$optionId] = Text::sprintf(
                         'COM_J2COMMERCE_ADDTOCART_PRODUCT_OPTION_REQUIRED',
                         $optionName
@@ -191,7 +191,7 @@ class CartFlexivariable
 
                 // Check if wildcard (*) was selected - not allowed for add to cart
                 if (isset($options[$optionId]) && $options[$optionId] === '*') {
-                    $optionName = Text::_($productOption->option_name ?? '');
+                    $optionName                           = Text::_($productOption->option_name ?? '');
                     $errors['error']['option'][$optionId] = Text::sprintf(
                         'COM_J2COMMERCE_ADDTOCART_PRODUCT_OPTION_REQUIRED',
                         $optionName
@@ -250,18 +250,18 @@ class CartFlexivariable
             $utilityHelper = J2CommerceHelper::utilities();
 
             // Create cart item object
-            $item = new CMSObject();
-            $item->user_id = Factory::getApplication()->getIdentity()->id;
-            $item->product_id = (int) $product->j2commerce_product_id;
-            $item->variant_id = (int) ($variant->j2commerce_variant_id ?? 0);
-            $item->product_qty = $utilityHelper->stock_qty($quantity);
+            $item                  = new CMSObject();
+            $item->user_id         = Factory::getApplication()->getIdentity()->id;
+            $item->product_id      = (int) $product->j2commerce_product_id;
+            $item->variant_id      = (int) ($variant->j2commerce_variant_id ?? 0);
+            $item->product_qty     = $utilityHelper->stock_qty($quantity);
             $item->product_options = base64_encode(serialize($options));
-            $item->product_type = $product->product_type ?? 'flexivariable';
-            $item->vendor_id = isset($product->vendor_id) ? (int) $product->vendor_id : 0;
+            $item->product_type    = $product->product_type ?? 'flexivariable';
+            $item->vendor_id       = isset($product->vendor_id) ? (int) $product->vendor_id : 0;
 
             // Trigger plugin event for custom item modifications
             $pluginHelper = J2CommerceHelper::plugin();
-            $results = $pluginHelper->event('AfterCreateItemForAddToCart', [$item, $values]);
+            $results      = $pluginHelper->event('AfterCreateItemForAddToCart', [$item, $values]);
 
             foreach ($results as $result) {
                 if (\is_array($result)) {
@@ -276,7 +276,7 @@ class CartFlexivariable
                 $item,
                 $values,
                 $product,
-                $product->product_options ?? []
+                $product->product_options ?? [],
             ]);
 
             foreach ($validationResults as $result) {
@@ -323,7 +323,7 @@ class CartFlexivariable
         $cacheKey = $productOptionId . '_' . $productOptionValueId;
 
         if (!isset(self::$optionValueCache[$cacheKey])) {
-            $db = Factory::getContainer()->get(DatabaseInterface::class);
+            $db    = Factory::getContainer()->get(DatabaseInterface::class);
             $query = $db->getQuery(true);
 
             // Direct lookup by product_optionvalue_id (form now submits this ID)
@@ -393,16 +393,16 @@ class CartFlexivariable
         // Load variant data
         /** @var VariantsModel $variantModel */
         $variantModel = $this->mvcFactory->createModel('Variants', 'Administrator');
-        $variant = $variantModel->getItem((int) $item->variant_id);
+        $variant      = $variantModel->getItem((int) $item->variant_id);
 
-        $optionPrice = 0.0;
+        $optionPrice  = 0.0;
         $optionWeight = 0.0;
-        $optionData = [];
+        $optionData   = [];
 
         // Process each selected option
         foreach ($options as $productOptionId => $optionValue) {
             $productOptionId = (int) $productOptionId;
-            $optionValueInt = (int) $optionValue;
+            $optionValueInt  = (int) $optionValue;
 
             // Get product option configuration
             $productOption = ProductHelper::getCartProductOptions($productOptionId, (int) $item->product_id);
@@ -419,7 +419,7 @@ class CartFlexivariable
             }
 
             // Calculate option price adjustment
-            $prefix = $productOptionValue->product_optionvalue_prefix ?? '+';
+            $prefix      = $productOptionValue->product_optionvalue_prefix ?? '+';
             $priceAdjust = (float) ($productOptionValue->product_optionvalue_price ?? 0);
 
             if ($prefix === '+') {
@@ -440,18 +440,18 @@ class CartFlexivariable
 
             // Build option data array
             $optionData[] = [
-                'product_option_id' => $productOptionId,
+                'product_option_id'      => $productOptionId,
                 'product_optionvalue_id' => $optionValueInt,
-                'option_id' => $productOption->option_id ?? 0,
-                'optionvalue_id' => $productOptionValue->optionvalue_id ?? 0,
-                'name' => $productOption->option_name ?? '',
-                'option_value' => $productOptionValue->optionvalue_name ?? '',
-                'type' => $productOption->type ?? '',
-                'price' => $priceAdjust,
-                'price_prefix' => $prefix,
-                'weight' => $weightAdjust,
-                'option_sku' => $productOptionValue->product_optionvalue_sku ?? '',
-                'weight_prefix' => $weightPrefix
+                'option_id'              => $productOption->option_id ?? 0,
+                'optionvalue_id'         => $productOptionValue->optionvalue_id ?? 0,
+                'name'                   => $productOption->option_name ?? '',
+                'option_value'           => $productOptionValue->optionvalue_name ?? '',
+                'type'                   => $productOption->type ?? '',
+                'price'                  => $priceAdjust,
+                'price_prefix'           => $prefix,
+                'weight'                 => $weightAdjust,
+                'option_sku'             => $productOptionValue->product_optionvalue_sku ?? '',
+                'weight_prefix'          => $weightPrefix,
             ];
         }
 
@@ -463,17 +463,17 @@ class CartFlexivariable
         }
 
         // Transfer product-level properties needed by discount/app plugins
-        $item->product_source = $product->product_source ?? '';
+        $item->product_source    = $product->product_source ?? '';
         $item->product_source_id = (int) ($product->product_source_id ?? 0);
-        $item->product_params = $product->params instanceof \Joomla\Registry\Registry
+        $item->product_params    = $product->params instanceof \Joomla\Registry\Registry
             ? $product->params->toString()
             : ($product->params ?? '{}');
 
         // Set item properties from full product
-        $item->product_name = $product->product_name ?? $item->product_name ?? '';
+        $item->product_name     = $product->product_name ?? $item->product_name ?? '';
         $item->product_view_url = $product->product_view_url ?? $item->product_view_url ?? '';
-        $item->options = $optionData;
-        $item->option_price = 0.0; // Option price already included in variant price for flexivariable
+        $item->options          = $optionData;
+        $item->option_price     = 0.0; // Option price already included in variant price for flexivariable
 
         // Build cartitem_params with thumb_image (same pattern as CartSimple)
         $existingParams = [];
@@ -492,7 +492,7 @@ class CartFlexivariable
         // Handle variant-specific images (override product image if variant has one)
         if ($variant) {
             $variantParams = new Registry($variant->params ?? '{}');
-            $mainImage = $variantParams->get('variant_main_image', '');
+            $mainImage     = $variantParams->get('variant_main_image', '');
             $isMainAsThumb = (int) $variantParams->get('is_main_as_thum', 0);
 
             // Fall back to first variant_images entry when variant_main_image is not set
@@ -521,19 +521,19 @@ class CartFlexivariable
             $allowBackorders = (int) ($variant->allow_backorder ?? 0);
             if ($allowBackorders > 0) {
                 $variantQty = (int) ($variant->quantity ?? 0);
-                $cartQty = (int) ($item->product_qty ?? 1);
+                $cartQty    = (int) ($item->product_qty ?? 1);
                 if ($cartQty > $variantQty) {
                     $existingParams['back_order_item'] = 'COM_J2COMMERCE_CART_BACKORDER_ITEM';
                 }
             }
         }
 
-        $item->taxprofile_id = (int) ($product->taxprofile_id ?? 0);
+        $item->taxprofile_id   = (int) ($product->taxprofile_id ?? 0);
         $item->cartitem_params = json_encode($existingParams);
 
         // Calculate weight from variant
-        $variantWeight = (float) ($variant->weight ?? 0);
-        $item->weight = $variantWeight;
+        $variantWeight      = (float) ($variant->weight ?? 0);
+        $item->weight       = $variantWeight;
         $item->weight_total = $variantWeight * (float) ($item->product_qty ?? 1);
 
         // Get group ID for pricing
@@ -547,8 +547,8 @@ class CartFlexivariable
             $item->pricing = $productHelper->getPrice($variant, (int) ($item->product_qty ?? 1), $groupId);
         } else {
             $item->pricing = (object) [
-                'base_price' => (float) ($item->variant_price ?? 0),
-                'price' => (float) ($item->variant_price ?? 0),
+                'base_price'    => (float) ($item->variant_price ?? 0),
+                'price'         => (float) ($item->variant_price ?? 0),
                 'special_price' => null,
                 'is_sale_price' => false,
             ];
@@ -583,7 +583,7 @@ class CartFlexivariable
         // Load variant data
         /** @var VariantsModel $variantModel */
         $variantModel = $this->mvcFactory->createModel('Variants', 'Administrator');
-        $variant = $variantModel->getItem((int) $cartitem->variant_id);
+        $variant      = $variantModel->getItem((int) $cartitem->variant_id);
 
         if (!$variant) {
             throw new \Exception(Text::_('COM_J2COMMERCE_VARIANT_NOT_FOUND'));
@@ -595,7 +595,7 @@ class CartFlexivariable
         );
 
         // Calculate quantity difference (new total vs current)
-        $currentQty = (float) ($cartitem->product_qty ?? 0);
+        $currentQty    = (float) ($cartitem->product_qty ?? 0);
         $differenceQty = $quantity - $currentQty;
 
         // Validate minimum/maximum quantity restrictions

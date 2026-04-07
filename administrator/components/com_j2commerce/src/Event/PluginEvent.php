@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -9,7 +10,7 @@
 
 namespace J2Commerce\Component\J2commerce\Administrator\Event;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Event\AbstractImmutableEvent;
 
@@ -167,7 +168,7 @@ class PluginEvent extends AbstractImmutableEvent
         }
 
         // Append to result an array
-        if (is_array($this->arguments['result'])) {
+        if (\is_array($this->arguments['result'])) {
             $this->arguments['result'][] = $value;
         }
     }

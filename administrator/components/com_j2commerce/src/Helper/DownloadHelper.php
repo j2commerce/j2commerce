@@ -52,7 +52,7 @@ final class DownloadHelper
             return;
         }
 
-        $now = Factory::getDate()->toSql();
+        $now      = Factory::getDate()->toSql();
         $nullDate = $db->getNullDate();
 
         foreach ($productIds as $productId) {
@@ -74,7 +74,7 @@ final class DownloadHelper
             }
 
             $columns = ['order_id', 'product_id', 'user_email', 'user_id', 'limit_count', 'access_granted', 'access_expires'];
-            $values = [
+            $values  = [
                 $db->quote($orderId),
                 $productId,
                 $db->quote($userEmail),
@@ -104,7 +104,7 @@ final class DownloadHelper
             return;
         }
 
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db       = Factory::getContainer()->get(DatabaseInterface::class);
         $nullDate = $db->getNullDate();
 
         // Load download records that haven't been granted yet
@@ -126,14 +126,14 @@ final class DownloadHelper
             return;
         }
 
-        $now = Factory::getDate();
+        $now    = Factory::getDate();
         $nowSql = $now->toSql();
 
         foreach ($downloads as $download) {
             $accessExpires = $nullDate;
 
             // Load product params to get download_expiry (days)
-            $productId = (int) $download->product_id;
+            $productId  = (int) $download->product_id;
             $paramQuery = $db->getQuery(true)
                 ->select($db->quoteName('params'))
                 ->from($db->quoteName('#__j2commerce_products'))
@@ -144,7 +144,7 @@ final class DownloadHelper
             $rawParams = $db->loadResult();
 
             if (!empty($rawParams)) {
-                $registry = new Registry($rawParams);
+                $registry   = new Registry($rawParams);
                 $expiryDays = (int) $registry->get('download_expiry', 0);
 
                 if ($expiryDays > 0) {
@@ -152,7 +152,7 @@ final class DownloadHelper
                 }
             }
 
-            $downloadId = (int) $download->j2commerce_orderdownload_id;
+            $downloadId  = (int) $download->j2commerce_orderdownload_id;
             $updateQuery = $db->getQuery(true)
                 ->update($db->quoteName('#__j2commerce_orderdownloads'))
                 ->set($db->quoteName('access_granted') . ' = :granted')
@@ -181,7 +181,7 @@ final class DownloadHelper
             return;
         }
 
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db   = Factory::getContainer()->get(DatabaseInterface::class);
         $zero = 0;
 
         $query = $db->getQuery(true)
@@ -209,7 +209,7 @@ final class DownloadHelper
             return;
         }
 
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db       = Factory::getContainer()->get(DatabaseInterface::class);
         $nullDate = $db->getNullDate();
 
         // Reset access_granted to null so grantDownloads() will re-process them

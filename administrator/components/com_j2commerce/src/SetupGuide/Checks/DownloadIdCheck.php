@@ -16,7 +16,7 @@ use J2Commerce\Component\J2commerce\Administrator\SetupGuide\AbstractSetupCheck;
 use J2Commerce\Component\J2commerce\Administrator\SetupGuide\SetupCheckResult;
 use Joomla\CMS\Language\Text;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 class DownloadIdCheck extends AbstractSetupCheck
 {
@@ -106,8 +106,8 @@ class DownloadIdCheck extends AbstractSetupCheck
 
     private function maskValue(string $value): string
     {
-        if (strlen($value) <= 6) {
-            return str_repeat('*', strlen($value));
+        if (\strlen($value) <= 6) {
+            return str_repeat('*', \strlen($value));
         }
 
         return substr($value, 0, 3) . '...' . substr($value, -3);

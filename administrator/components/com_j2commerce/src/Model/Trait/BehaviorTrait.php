@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -10,11 +11,7 @@
 namespace J2Commerce\Component\J2commerce\Administrator\Model\Trait;
 
 use Joomla\CMS\Event\AbstractEvent;
-use Joomla\CMS\Factory;
 use Joomla\Database\DatabaseQuery;
-use Joomla\CMS\Table\Table;
-use Joomla\Event\DispatcherInterface;
-use Joomla\Event\Dispatcher;
 
 /**
  * Model Behavior Trait
@@ -37,7 +34,7 @@ trait BehaviorTrait
 
         $event = AbstractEvent::create('onBeforeSave', [
             'subject' => $this,
-            'data'    => &$data
+            'data'    => &$data,
         ]);
 
         $dispatcher->dispatch('onBeforeSave', $event);
@@ -55,7 +52,7 @@ trait BehaviorTrait
         $dispatcher = $this->getDispatcher();
 
         $event = AbstractEvent::create('onAfterSave', [
-            'subject' => $this
+            'subject' => $this,
         ]);
 
         $dispatcher->dispatch('onAfterSave', $event);
@@ -71,7 +68,7 @@ trait BehaviorTrait
         $dispatcher = $this->getDispatcher();
 
         $event = AbstractEvent::create('onBeforeDelete', [
-            'subject' => $this
+            'subject' => $this,
         ]);
 
         $dispatcher->dispatch('onBeforeDelete', $event);
@@ -89,7 +86,7 @@ trait BehaviorTrait
         $dispatcher = $this->getDispatcher();
 
         $event = AbstractEvent::create('onAfterDelete', [
-            'subject' => $this
+            'subject' => $this,
         ]);
 
         $dispatcher->dispatch('onAfterDelete', $event);
@@ -108,7 +105,7 @@ trait BehaviorTrait
 
         $event = AbstractEvent::create('onBeforeBuildQuery', [
             'subject' => $this,
-            'query'   => &$query
+            'query'   => &$query,
         ]);
 
         $dispatcher->dispatch('onBeforeBuildQuery', $event);
@@ -127,7 +124,7 @@ trait BehaviorTrait
 
         $event = AbstractEvent::create('onAfterBuildQuery', [
             'subject' => $this,
-            'query'   => &$query
+            'query'   => &$query,
         ]);
 
         $dispatcher->dispatch('onAfterBuildQuery', $event);
@@ -146,7 +143,7 @@ trait BehaviorTrait
 
         $event = AbstractEvent::create('onAfterGetItem', [
             'subject' => $this,
-            'item'    => &$item
+            'item'    => &$item,
         ]);
 
         $dispatcher->dispatch('onAfterGetItem', $event);

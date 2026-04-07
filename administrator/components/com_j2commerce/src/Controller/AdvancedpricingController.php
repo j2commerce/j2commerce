@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -44,17 +45,17 @@ class AdvancedpricingController extends AdminController
             return;
         }
 
-        $db = Factory::getContainer()->get('DatabaseDriver');
+        $db      = Factory::getContainer()->get('DatabaseDriver');
         $updated = 0;
 
         try {
-            $batchGroupId = $this->input->post->getString('batch_customer_group_id', '');
+            $batchGroupId  = $this->input->post->getString('batch_customer_group_id', '');
             $batchDateFrom = $this->input->post->getString('batch_date_from', '');
-            $batchDateTo = $this->input->post->getString('batch_date_to', '');
+            $batchDateTo   = $this->input->post->getString('batch_date_to', '');
 
             if ($batchGroupId !== '') {
                 $groupId = (int) $batchGroupId;
-                $query = $db->getQuery(true)
+                $query   = $db->getQuery(true)
                     ->update($db->quoteName('#__j2commerce_product_prices'))
                     ->set($db->quoteName('customer_group_id') . ' = :groupId')
                     ->bind(':groupId', $groupId, ParameterType::INTEGER)
@@ -67,7 +68,7 @@ class AdvancedpricingController extends AdminController
 
             if ($batchDateFrom !== '') {
                 $dateFrom = Factory::getDate($batchDateFrom)->toSql();
-                $query = $db->getQuery(true)
+                $query    = $db->getQuery(true)
                     ->update($db->quoteName('#__j2commerce_product_prices'))
                     ->set($db->quoteName('date_from') . ' = :dateFrom')
                     ->bind(':dateFrom', $dateFrom)
@@ -80,7 +81,7 @@ class AdvancedpricingController extends AdminController
 
             if ($batchDateTo !== '') {
                 $dateTo = Factory::getDate($batchDateTo)->toSql();
-                $query = $db->getQuery(true)
+                $query  = $db->getQuery(true)
                     ->update($db->quoteName('#__j2commerce_product_prices'))
                     ->set($db->quoteName('date_to') . ' = :dateTo')
                     ->bind(':dateTo', $dateTo)
@@ -141,7 +142,7 @@ class AdvancedpricingController extends AdminController
         }
 
         $priceId = $this->input->post->getInt('productprice_id', 0);
-        $price = $this->input->post->getFloat('price', 0.0);
+        $price   = $this->input->post->getFloat('price', 0.0);
 
         if ($priceId <= 0) {
             $this->sendJsonResponse(false, Text::_('COM_J2COMMERCE_ERROR_INVALID_PRICE_ID'));

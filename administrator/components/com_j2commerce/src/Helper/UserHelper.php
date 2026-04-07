@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -88,7 +89,7 @@ class UserHelper
      */
     public static function addCustomer(array $data): int|false
     {
-        $db = self::getDatabase();
+        $db   = self::getDatabase();
         $user = Factory::getApplication()->getIdentity();
 
         $address = new \stdClass();
@@ -106,7 +107,7 @@ class UserHelper
         }
 
         $address->user_id = ($user && $user->id) ? (int) $user->id : 0;
-        $address->type = 'billing';
+        $address->type    = 'billing';
 
         try {
             $db->insertObject('#__j2commerce_addresses', $address, 'j2commerce_address_id');
@@ -133,7 +134,7 @@ class UserHelper
 
         $db = self::getDatabase();
 
-        $address = new \stdClass();
+        $address                        = new \stdClass();
         $address->j2commerce_address_id = $addressId;
 
         $allowedFields = [
@@ -170,9 +171,9 @@ class UserHelper
             return null;
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
-        $id = $addressId;
+        $id    = $addressId;
 
         $query->select('*')
             ->from($db->quoteName('#__j2commerce_addresses'))
@@ -196,9 +197,9 @@ class UserHelper
             return [];
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
-        $id = $userId;
+        $id    = $userId;
 
         $query->select('*')
             ->from($db->quoteName('#__j2commerce_addresses'))
@@ -233,9 +234,9 @@ class UserHelper
             return false;
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
-        $name = $username;
+        $name  = $username;
 
         $query->select('COUNT(*)')
             ->from($db->quoteName('#__users'))
@@ -260,8 +261,8 @@ class UserHelper
             return null;
         }
 
-        $db = self::getDatabase();
-        $query = $db->getQuery(true);
+        $db         = self::getDatabase();
+        $query      = $db->getQuery(true);
         $emailValue = $email;
 
         $query->select('*')
@@ -287,8 +288,8 @@ class UserHelper
             return null;
         }
 
-        $db = self::getDatabase();
-        $query = $db->getQuery(true);
+        $db         = self::getDatabase();
+        $query      = $db->getQuery(true);
         $emailValue = $email;
 
         $query->select('*')
@@ -313,20 +314,20 @@ class UserHelper
      */
     public static function createNewUser(array $details, bool $sendMail = true): ?User
     {
-        $user = new User();
+        $user   = new User();
         $config = ComponentHelper::getParams('com_users');
 
         $defaultUserGroup = $config->get('new_usertype', 2);
-        $hashedPassword = JoomlaUserHelper::hashPassword($details['password'] ?? '');
-        $name = !empty($details['name']) ? $details['name'] : ($details['email'] ?? '');
+        $hashedPassword   = JoomlaUserHelper::hashPassword($details['password'] ?? '');
+        $name             = !empty($details['name']) ? $details['name'] : ($details['email'] ?? '');
 
         // Set user properties using direct property assignment (Joomla 6)
-        $user->id = 0;
-        $user->name = $name;
+        $user->id       = 0;
+        $user->name     = $name;
         $user->username = $details['email'] ?? '';
         $user->password = $hashedPassword;
-        $user->email = $details['email'] ?? '';
-        $user->groups = [$defaultUserGroup];
+        $user->email    = $details['email'] ?? '';
+        $user->groups   = [$defaultUserGroup];
 
         $autoregister = $details['autoregister'] ?? $config->get('autoregister', 1);
 
@@ -366,19 +367,19 @@ class UserHelper
      */
     public static function sendRegistrationEmail(User $user, array $details, int $useractivation = 0): bool
     {
-        $app = Factory::getApplication();
-        $config = $app->getConfig();
+        $app         = Factory::getApplication();
+        $config      = $app->getConfig();
         $usersConfig = ComponentHelper::getParams('com_users');
 
-        $name = $user->name ?: $user->email;
-        $email = $user->email;
+        $name       = $user->name ?: $user->email;
+        $email      = $user->email;
         $activation = $user->activation;
-        $password = $details['password2'] ?? $details['password'] ?? '';
+        $password   = $details['password2'] ?? $details['password'] ?? '';
 
         $sitename = $config->get('sitename');
         $mailfrom = $config->get('mailfrom');
         $fromname = $config->get('fromname');
-        $siteURL = Uri::base();
+        $siteURL  = Uri::base();
 
         $subject = Text::sprintf('COM_J2COMMERCE_ACCOUNT_DETAILS', $name, $sitename);
         $subject = html_entity_decode($subject, ENT_QUOTES, 'UTF-8');
@@ -387,7 +388,7 @@ class UserHelper
 
         if ($useractivation === 1) {
             $activationLink = $siteURL . 'index.php?option=com_users&task=registration.activate&token=' . $activation;
-            $message = Text::sprintf(
+            $message        = Text::sprintf(
                 'COM_J2COMMERCE_SEND_MSG_ACTIVATE',
                 $name,
                 $sitename,
@@ -458,7 +459,7 @@ class UserHelper
      */
     public static function logout(string $return = ''): bool
     {
-        $app = Factory::getApplication();
+        $app     = Factory::getApplication();
         $success = $app->logout();
 
         // Security: prevent open redirect
@@ -509,7 +510,7 @@ class UserHelper
             $query = $db->getQuery(true)
                 ->select([
                     $db->quoteName('id', 'value'),
-                    $db->quoteName('title', 'text')
+                    $db->quoteName('title', 'text'),
                 ])
                 ->from($db->quoteName('#__usergroups'))
                 ->order($db->quoteName('title') . ' ASC');
@@ -538,19 +539,19 @@ class UserHelper
         array &$errors,
         bool $useJoomlaRules = true
     ): bool {
-        $isValid = true;
-        $minimumLength = 4;
-        $minimumIntegers = 0;
-        $minimumSymbols = 0;
+        $isValid          = true;
+        $minimumLength    = 4;
+        $minimumIntegers  = 0;
+        $minimumSymbols   = 0;
         $minimumUppercase = 0;
 
         if ($useJoomlaRules) {
             $params = ComponentHelper::getParams('com_users');
 
             if ($params) {
-                $paramLength = $params->get('minimum_length');
-                $paramIntegers = $params->get('minimum_integers');
-                $paramSymbols = $params->get('minimum_symbols');
+                $paramLength    = $params->get('minimum_length');
+                $paramIntegers  = $params->get('minimum_integers');
+                $paramSymbols   = $params->get('minimum_symbols');
                 $paramUppercase = $params->get('minimum_uppercase');
 
                 if (!empty($paramLength)) {
@@ -575,29 +576,29 @@ class UserHelper
 
         if (empty($password)) {
             $errors['password'] = Text::_('COM_J2COMMERCE_PASSWORD_REQUIRED');
-            $isValid = false;
+            $isValid            = false;
         }
 
         if (empty($confirmPassword)) {
             $errors['confirm'] = Text::_('COM_J2COMMERCE_PASSWORD_REQUIRED');
-            $isValid = false;
+            $isValid           = false;
         }
 
         if ($password !== $confirmPassword) {
             $errors['confirm'] = Text::_('COM_J2COMMERCE_PASSWORDS_DOESTNOT_MATCH');
-            $isValid = false;
+            $isValid           = false;
         }
 
         if ($valueLength > 4096) {
             $errors['password'] = Text::_('COM_J2COMMERCE_PASSWORD_TOO_LONG');
-            $isValid = false;
+            $isValid            = false;
         }
 
         $valueTrim = trim($password);
 
         if (\strlen($valueTrim) !== $valueLength) {
             $errors['password'] = Text::_('COM_J2COMMERCE_SPACES_IN_PASSWORD');
-            $isValid = false;
+            $isValid            = false;
         }
 
         if ($minimumIntegers > 0) {
@@ -605,7 +606,7 @@ class UserHelper
 
             if ($nInts < $minimumIntegers) {
                 $errors['password'] = Text::plural('COM_J2COMMERCE_NOT_ENOUGH_INTEGERS_N', $minimumIntegers);
-                $isValid = false;
+                $isValid            = false;
             }
         }
 
@@ -614,7 +615,7 @@ class UserHelper
 
             if ($nSymbols < $minimumSymbols) {
                 $errors['password'] = Text::plural('COM_J2COMMERCE_NOT_ENOUGH_SYMBOLS_N', $minimumSymbols);
-                $isValid = false;
+                $isValid            = false;
             }
         }
 
@@ -623,13 +624,13 @@ class UserHelper
 
             if ($nUppercase < $minimumUppercase) {
                 $errors['password'] = Text::plural('COM_J2COMMERCE_NOT_ENOUGH_UPPERCASE_LETTERS_N', $minimumUppercase);
-                $isValid = false;
+                $isValid            = false;
             }
         }
 
         if ($minimumLength > 0 && \strlen($password) < $minimumLength) {
             $errors['password'] = Text::plural('COM_J2COMMERCE_PASSWORD_TOO_SHORT_N', $minimumLength);
-            $isValid = false;
+            $isValid            = false;
         }
 
         return $isValid;
@@ -652,7 +653,7 @@ class UserHelper
             return [];
         }
 
-        $user = self::getUserFactory()->loadUserById($userId);
+        $user       = self::getUserFactory()->loadUserById($userId);
         $userGroups = $user->getAuthorisedGroups();
         $groupNames = [];
 
@@ -668,7 +669,7 @@ class UserHelper
                 continue;
             }
 
-            $id = (int) $groupId;
+            $id    = (int) $groupId;
             $query = $db->getQuery(true)
                 ->select($db->quoteName('title'))
                 ->from($db->quoteName('#__usergroups'))
@@ -710,7 +711,7 @@ class UserHelper
      */
     public static function getUserGroups(): array
     {
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
         $query->select($db->quoteName(['id', 'title', 'parent_id']))
@@ -779,8 +780,8 @@ class UserHelper
             return null;
         }
 
-        $db = self::getDatabase();
-        $query = $db->getQuery(true);
+        $db         = self::getDatabase();
+        $query      = $db->getQuery(true);
         $emailValue = $email;
 
         $query->select($db->quoteName('id'))
@@ -810,7 +811,7 @@ class UserHelper
     public static function savePrivacyConsent(bool $consentGiven = false): bool
     {
         if (!$consentGiven) {
-            $app = Factory::getApplication();
+            $app          = Factory::getApplication();
             $consentGiven = (bool) $app->getInput()->post->getInt('privacyconsent', 0);
         }
 
@@ -824,20 +825,20 @@ class UserHelper
             return false;
         }
 
-        $db = self::getDatabase();
+        $db     = self::getDatabase();
         $userId = (int) $user->id;
 
-        $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+        $ip        = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
         $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
 
-        $consent = new \stdClass();
+        $consent          = new \stdClass();
         $consent->user_id = $userId;
-        $consent->state = 1;
+        $consent->state   = 1;
         $consent->created = Factory::getDate()->toSql();
         $consent->subject = 'PLG_SYSTEM_PRIVACYCONSENT_SUBJECT';
-        $consent->body = Text::sprintf('PLG_SYSTEM_PRIVACYCONSENT_BODY', $ip, $userAgent);
-        $consent->remind = 0;
-        $consent->token = '';
+        $consent->body    = Text::sprintf('PLG_SYSTEM_PRIVACYCONSENT_BODY', $ip, $userAgent);
+        $consent->remind  = 0;
+        $consent->token   = '';
 
         try {
             $db->insertObject('#__privacy_consents', $consent);
@@ -867,12 +868,12 @@ class UserHelper
 
         try {
             $message = [
-                'action' => 'consent',
-                'id' => $user->id,
-                'title' => $user->name,
-                'itemlink' => 'index.php?option=com_users&task=user.edit&id=' . $user->id,
-                'userid' => $user->id,
-                'username' => $user->username,
+                'action'      => 'consent',
+                'id'          => $user->id,
+                'title'       => $user->name,
+                'itemlink'    => 'index.php?option=com_users&task=user.edit&id=' . $user->id,
+                'userid'      => $user->id,
+                'username'    => $user->username,
                 'accountlink' => 'index.php?option=com_users&task=user.edit&id=' . $user->id,
             ];
 
@@ -904,9 +905,9 @@ class UserHelper
             return false;
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
-        $id = $userId;
+        $id    = $userId;
         $state = 1;
 
         $query->select('COUNT(*)')
@@ -932,9 +933,9 @@ class UserHelper
             return null;
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true);
-        $id = $userId;
+        $id    = $userId;
         $state = 1;
 
         $query->select('*')

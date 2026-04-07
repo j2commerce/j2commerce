@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -14,20 +15,11 @@ namespace J2Commerce\Component\J2commerce\Administrator\Library\Plugins;
 // phpcs:enable PSR1.Files.SideEffects
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
-use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\Base;
-use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
-use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\FileLayout;
-use Joomla\CMS\Log\Log;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\Plugin\PluginHelper;
-use Joomla\CMS\Session\Session;
-use Joomla\CMS\Utility\Utility;
-use Joomla\Input\Input;
-use Joomla\Filesystem\File;
-use Joomla\Filesystem\Path;
 
 class Payment extends CMSPlugin
 {
@@ -35,13 +27,13 @@ class Payment extends CMSPlugin
      * @var $_element  string  Should always correspond with the plugin's filename,
      *                         forcing it to be unique
      */
-    var $_element = '';
+    public $_element = '';
 
-    var $_j2version = '';
+    public $_j2version = '';
 
-    var $_base = '';
+    public $_base = '';
 
-    function __construct($subject, $config = [])
+    public function __construct($subject, $config = [])
     {
         parent::__construct($subject, $config);
 
@@ -56,7 +48,7 @@ class Payment extends CMSPlugin
      * @param $order     object order table object
      * @return string   HTML to display. Normally an empty one.
      */
-    function _beforePayment($order)
+    public function _beforePayment($order)
     {
         // Before the payment
         $html = '';
@@ -75,13 +67,13 @@ class Payment extends CMSPlugin
      * @param $data     array       form post data
      * @return string   HTML to display
      */
-    function _prePayment($data)
+    public function _prePayment($data)
     {
         // Process the payment
 
-        $vars = new \stdClass();
+        $vars          = new \stdClass();
         $vars->message = "Preprocessing successful. Double-check your entries.  Then, to complete your order, click Complete Order!";
-        $path = PluginHelper::getLayoutPath($this->_type, $this->_element);
+        $path          = PluginHelper::getLayoutPath($this->_type, $this->_element);
         return (new FileLayout('prepayment', $path))->render($vars);
     }
 
@@ -94,37 +86,37 @@ class Payment extends CMSPlugin
      * @return string   HTML to display
      * @throws Exception
      */
-    function _postPayment($data)
+    public function _postPayment($data)
     {
         // Process the payment
-        $app = J2CommerceHelper::platform()->application();
+        $app     = J2CommerceHelper::platform()->application();
         $paction = $app->input->getString('paction', '');
-        $base = new Base();
-        $vars = new \stdClass();
+        $base    = new Base();
+        $vars    = new \stdClass();
 
         switch ($paction) {
             case "display":
                 $vars->message = Text::_($this->params->get('onafterpayment', ''));
-                $path = PluginHelper::getLayoutPath($this->_type, $this->_element);
-                $html = (new FileLayout('message', $path))->render($vars);
+                $path          = PluginHelper::getLayoutPath($this->_type, $this->_element);
+                $html          = (new FileLayout('message', $path))->render($vars);
                 $html .= $base->_displayArticle();
                 break;
             case "process":
                 $vars->message = $this->_process();
-                $path = PluginHelper::getLayoutPath($this->_type, $this->_element);
-                $html = (new FileLayout('message', $path))->render($vars);
+                $path          = PluginHelper::getLayoutPath($this->_type, $this->_element);
+                $html          = (new FileLayout('message', $path))->render($vars);
                 echo $html;
                 $app->close();
                 break;
             case "cancel":
                 $vars->message = Text::_($this->params->get('oncancelpayment', ''));
-                $path = PluginHelper::getLayoutPath($this->_type, $this->_element);
-                $html = (new FileLayout('message', $path))->render($vars);
+                $path          = PluginHelper::getLayoutPath($this->_type, $this->_element);
+                $html          = (new FileLayout('message', $path))->render($vars);
                 break;
             default:
                 $vars->message = Text::_($this->params->get('onerrorpayment', ''));
-                $path = PluginHelper::getLayoutPath($this->_type, $this->_element);
-                $html = (new FileLayout('message', $path))->render($vars);
+                $path          = PluginHelper::getLayoutPath($this->_type, $this->_element);
+                $html          = (new FileLayout('message', $path))->render($vars);
                 break;
         }
 
@@ -138,7 +130,7 @@ class Payment extends CMSPlugin
      * @param $orderPayment     object       a valid TableOrderPayment object
      * @return string   HTML to display
      */
-    function _renderView($orderPayment)
+    public function _renderView($orderPayment)
     {
         // Load the payment from _orderpayments and render its html
         $vars = new \stdClass();
@@ -153,12 +145,12 @@ class Payment extends CMSPlugin
      * @param $data     array       form post data for pre-populating form
      * @return string   HTML to display
      */
-    function _renderForm($data)
+    public function _renderForm($data)
     {
-        $vars = new \stdClass();
+        $vars                   = new \stdClass();
         $vars->onselection_text = $this->params->get('onselection', '');
-        $path = PluginHelper::getLayoutPath($this->_type, $this->_element);
-        $html = (new FileLayout('form', $path))->render($vars);
+        $path                   = PluginHelper::getLayoutPath($this->_type, $this->_element);
+        $html                   = (new FileLayout('form', $path))->render($vars);
         return $html;
     }
 
@@ -171,10 +163,10 @@ class Payment extends CMSPlugin
      * @param $submitted_values     array   post data
      * @return stdClass
      */
-    function _verifyForm($submitted_values)
+    public function _verifyForm($submitted_values)
     {
-        $vars = new \stdClass();
-        $vars->error = false;
+        $vars          = new \stdClass();
+        $vars->error   = false;
         $vars->message = '';
         return $vars;
     }
@@ -188,43 +180,43 @@ class Payment extends CMSPlugin
             $query = $db->getQuery(true);
             $query->select($db->quoteName('manifest_cache'))->from($db->quoteName('#__extensions'))->where($db->quoteName('element') . ' = ' . $db->quote('com_j2commerce'));
             $db->setQuery($query);
-            $manifest_cache = $db->loadResult();
-            $registry = J2CommerceHelper::platform()->getRegistry($manifest_cache);
+            $manifest_cache   = $db->loadResult();
+            $registry         = J2CommerceHelper::platform()->getRegistry($manifest_cache);
             $this->_j2version = $registry->get('version');
         }
 
         return $this->_j2version;
     }
 
-    function getCurrency($order, $convert = false)
+    public function getCurrency($order, $convert = false)
     {
-        $results = array();
-        $currency_code = $order->currency_code;
+        $results        = [];
+        $currency_code  = $order->currency_code;
         $currency_value = $order->currency_value;
 
-        $results['currency_code'] = $currency_code;
+        $results['currency_code']  = $currency_code;
         $results['currency_value'] = $currency_value;
-        $results['convert'] = $convert;
+        $results['convert']        = $convert;
 
         return $results;
     }
 
     public function generateHash($order)
     {
-        $secret_key = J2CommerceHelper::config()->get('queue_key', '');
-        $status = $this->params->get('payment_status', 4);
-        $session = J2CommerceHelper::platform()->application()->getSession();
-        $session_id = $session->getId();
+        $secret_key  = J2CommerceHelper::config()->get('queue_key', '');
+        $status      = $this->params->get('payment_status', 4);
+        $session     = J2CommerceHelper::platform()->application()->getSession();
+        $session_id  = $session->getId();
         $hash_string = $order->order_id . $secret_key . $order->orderpayment_type . $secret_key . $status . $secret_key . $order->user_email . $secret_key . $session_id . $secret_key;
         return md5($hash_string);
     }
 
     public function validateHash($order)
     {
-        $app = J2CommerceHelper::platform()->application();
-        $hash = $app->input->getString('hash', '');
+        $app            = J2CommerceHelper::platform()->application();
+        $hash           = $app->input->getString('hash', '');
         $generator_hash = $this->generateHash($order);
-        $status = true;
+        $status         = true;
         if ($hash != $generator_hash) {
             $status = false;
         }
@@ -237,12 +229,12 @@ class Payment extends CMSPlugin
     public function getReturnUrl()
     {
         $platform = J2CommerceHelper::platform();
-        $url = $platform->getThankyouPageUrl(array('orderpayment_type' => $this->_element, 'paction' => 'display'));
+        $url      = $platform->getThankyouPageUrl(['orderpayment_type' => $this->_element, 'paction' => 'display']);
 
         return $url;
     }
 
-    function _getFormattedTransactionDetails( $data )
+    public function _getFormattedTransactionDetails($data)
     {
         return json_encode($data);
     }

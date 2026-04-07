@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\Database\DatabaseInterface;
@@ -38,7 +39,7 @@ class CategoryHelper
             return self::$cache[$categoryId];
         }
 
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db    = Factory::getContainer()->get(DatabaseInterface::class);
         $query = $db->getQuery(true)
             ->select($db->quoteName('params'))
             ->from($db->quoteName('#__categories'))
@@ -64,7 +65,7 @@ class CategoryHelper
 
         // Build the use_global key for this setting group
         $useGlobalKey = self::getUseGlobalKey($key);
-        $useGlobal = $params->get($useGlobalKey, 1);
+        $useGlobal    = $params->get($useGlobalKey, 1);
 
         if ($useGlobal) {
             return J2CommerceHelper::config()->get($key, $default);
@@ -88,7 +89,7 @@ class CategoryHelper
      */
     public static function isUsingGlobal(int $categoryId, string $group): bool
     {
-        $params = self::getParams($categoryId);
+        $params       = self::getParams($categoryId);
         $useGlobalKey = $group . '_use_global';
 
         return (bool) $params->get($useGlobalKey, 1);
@@ -130,7 +131,7 @@ class CategoryHelper
      */
     public static function getCoreCategoryFormData(object $category, string $formPrefix): array
     {
-        $params = new Registry($category->params ?? '{}');
+        $params   = new Registry($category->params ?? '{}');
         $settings = self::extractJ2CommerceParams($params);
 
         return [
@@ -195,7 +196,7 @@ class CategoryHelper
         $settings = [];
         foreach ($params->toArray() as $key => $value) {
             // Include known J2Commerce category setting keys
-            if (in_array($key, self::getKnownSettingKeys(), true)) {
+            if (\in_array($key, self::getKnownSettingKeys(), true)) {
                 $settings[$key] = $value;
             }
         }

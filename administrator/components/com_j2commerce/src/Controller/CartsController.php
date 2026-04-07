@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -21,7 +22,6 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\AdminController;
 use Joomla\Database\DatabaseInterface;
-use Joomla\Database\ParameterType;
 
 /**
  * Carts list controller class.
@@ -127,7 +127,7 @@ class CartsController extends AdminController
         UtilitiesHelper::sendNoCacheHeaders();
         UtilitiesHelper::clearCache();
 
-        $id = $this->input->getInt('oid', 0);
+        $id         = $this->input->getInt('oid', 0);
         $postCoupon = $this->input->getString('coupon', '');
 
         if (!empty($postCoupon)) {
@@ -140,8 +140,8 @@ class CartsController extends AdminController
             }
         }
 
-        $url = 'index.php?option=com_j2commerce&view=orders&task=saveAdminOrder&layout=summary&oid=' . $id;
-        $json['success'] = 1;
+        $url              = 'index.php?option=com_j2commerce&view=orders&task=saveAdminOrder&layout=summary&oid=' . $id;
+        $json['success']  = 1;
         $json['redirect'] = $url;
 
         echo json_encode($json);
@@ -164,7 +164,7 @@ class CartsController extends AdminController
         UtilitiesHelper::sendNoCacheHeaders();
         UtilitiesHelper::clearCache();
 
-        $id = $this->input->getInt('oid', 0);
+        $id      = $this->input->getInt('oid', 0);
         $orderId = $this->input->getString('order_id', '');
 
         // Remove coupon from session via native model
@@ -180,8 +180,8 @@ class CartsController extends AdminController
             $this->removeOrderDiscount($orderId, 'coupon');
         }
 
-        $url = 'index.php?option=com_j2commerce&view=orders&task=saveAdminOrder&layout=summary&oid=' . $id;
-        $json['success'] = 1;
+        $url              = 'index.php?option=com_j2commerce&view=orders&task=saveAdminOrder&layout=summary&oid=' . $id;
+        $json['success']  = 1;
         $json['redirect'] = $url;
 
         echo json_encode($json);
@@ -214,11 +214,11 @@ class CartsController extends AdminController
             }
         }
 
-        $id = $this->input->getInt('oid', 0);
+        $id  = $this->input->getInt('oid', 0);
         $url = 'index.php?option=com_j2commerce&view=orders&task=saveAdminOrder&layout=summary&oid=' . $id;
 
-        $json = [];
-        $json['success'] = 1;
+        $json             = [];
+        $json['success']  = 1;
         $json['redirect'] = $url;
 
         echo json_encode($json);
@@ -247,7 +247,7 @@ class CartsController extends AdminController
             $voucherModel->removeVoucher();
         }
 
-        $id = $this->input->getInt('oid', 0);
+        $id      = $this->input->getInt('oid', 0);
         $orderId = $this->input->getString('order_id', '');
 
         // Remove voucher discount from order via direct query
@@ -257,9 +257,9 @@ class CartsController extends AdminController
 
         $url = 'index.php?option=com_j2commerce&view=orders&task=saveAdminOrder&layout=summary&oid=' . $id;
 
-        $json = [];
+        $json             = [];
         $json['redirect'] = $url;
-        $json['success'] = 1;
+        $json['success']  = 1;
 
         echo json_encode($json);
         $this->app->close();
@@ -300,7 +300,7 @@ class CartsController extends AdminController
             $json['error'] = $e->getMessage();
         }
 
-        $id = $this->input->getInt('oid', 0);
+        $id  = $this->input->getInt('oid', 0);
         $url = 'index.php?option=com_j2commerce&view=orders&task=saveAdminOrder&layout=items&next_layout=items&oid=' . $id;
 
         echo json_encode($json);

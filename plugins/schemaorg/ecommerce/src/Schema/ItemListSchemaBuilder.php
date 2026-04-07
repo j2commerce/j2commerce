@@ -10,7 +10,6 @@
 
 namespace Joomla\Plugin\Schemaorg\Ecommerce\Schema;
 
-use Joomla\CMS\Uri\Uri;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Event\DispatcherInterface;
 use Joomla\Plugin\Schemaorg\Ecommerce\Event\ItemListSchemaPrepareEvent;
@@ -108,7 +107,7 @@ class ItemListSchemaBuilder
         ];
 
         // Build list items
-        $items = [];
+        $items    = [];
         $position = (($page - 1) * $limit) + 1;
 
         foreach ($products as $product) {
@@ -117,7 +116,7 @@ class ItemListSchemaBuilder
 
         if (!empty($items)) {
             $schema['itemListElement'] = $items;
-            $schema['numberOfItems'] = \count($items);
+            $schema['numberOfItems']   = \count($items);
         }
 
         // Clean empty values
@@ -141,8 +140,8 @@ class ItemListSchemaBuilder
     public function buildFromProducts(array $products, string $name = 'Products', string $description = ''): array
     {
         $schema = [
-            '@type'       => 'ItemList',
-            'name'        => $name,
+            '@type' => 'ItemList',
+            'name'  => $name,
         ];
 
         if (!empty($description)) {
@@ -150,7 +149,7 @@ class ItemListSchemaBuilder
         }
 
         // Build list items
-        $items = [];
+        $items    = [];
         $position = 1;
 
         foreach ($products as $product) {
@@ -159,7 +158,7 @@ class ItemListSchemaBuilder
 
         if (!empty($items)) {
             $schema['itemListElement'] = $items;
-            $schema['numberOfItems'] = \count($items);
+            $schema['numberOfItems']   = \count($items);
         }
 
         return $this->cleanSchemaData($schema);
@@ -185,7 +184,7 @@ class ItemListSchemaBuilder
         ];
 
         // Build list items
-        $items = [];
+        $items    = [];
         $position = 1;
 
         foreach ($products as $product) {

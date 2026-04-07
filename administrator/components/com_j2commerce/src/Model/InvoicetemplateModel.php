@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -9,7 +10,7 @@
 
 namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\MessageHelper;
 use Joomla\CMS\Factory;
@@ -148,13 +149,13 @@ class InvoicetemplateModel extends AdminModel
      */
     public function save($data)
     {
-        $app = Factory::getApplication();
+        $app   = Factory::getApplication();
         $input = $app->getInput();
 
         // Initialise variables;
         $table = $this->getTable();
-        $key = $table->getKeyName();
-        $pk = (!empty($data[$key])) ? $data[$key] : (int) $this->getState($this->getName() . '.id');
+        $key   = $table->getKeyName();
+        $pk    = (!empty($data[$key])) ? $data[$key] : (int) $this->getState($this->getName() . '.id');
         $isNew = true;
 
         // Include the plugins for the save events.
@@ -186,7 +187,7 @@ class InvoicetemplateModel extends AdminModel
             // Trigger the before save event.
             $result = $app->triggerEvent($this->event_before_save, [$this->option . '.' . $this->name, $table, $isNew]);
 
-            if (in_array(false, $result, true)) {
+            if (\in_array(false, $result, true)) {
                 $this->setError($table->getError());
                 return false;
             }
@@ -291,13 +292,13 @@ class InvoicetemplateModel extends AdminModel
 
         // Set ordering to the last item if not set
         if (empty($table->ordering)) {
-            $db = $this->getDatabase();
+            $db    = $this->getDatabase();
             $query = $db->getQuery(true)
                 ->select('MAX(ordering)')
                 ->from($db->quoteName('#__j2commerce_invoicetemplates'));
             $db->setQuery($query);
 
-            $max = $db->loadResult();
+            $max             = $db->loadResult();
             $table->ordering = (int) $max + 1;
         }
 
@@ -322,9 +323,9 @@ class InvoicetemplateModel extends AdminModel
      */
     public function publish(&$pks, $value = 1)
     {
-        $user = Factory::getApplication()->getIdentity();
+        $user  = Factory::getApplication()->getIdentity();
         $table = $this->getTable();
-        $pks = (array) $pks;
+        $pks   = (array) $pks;
 
         // Access checks.
         foreach ($pks as $i => $pk) {
@@ -357,9 +358,9 @@ class InvoicetemplateModel extends AdminModel
      */
     public function delete(&$pks)
     {
-        $user = Factory::getApplication()->getIdentity();
+        $user  = Factory::getApplication()->getIdentity();
         $table = $this->getTable();
-        $pks = (array) $pks;
+        $pks   = (array) $pks;
 
         // Access checks.
         foreach ($pks as $i => $pk) {

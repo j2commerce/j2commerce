@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -9,8 +10,9 @@
 
 namespace J2Commerce\Component\J2commerce\Administrator\View\Filtergroup;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Helper\ContentHelper;
@@ -18,7 +20,6 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\ToolbarHelper;
-use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 /**
  * Filtergroup View
@@ -68,13 +69,13 @@ class HtmlView extends BaseHtmlView
 
         $this->loadAdminAssets();
 
-        $model = $this->getModel();
-        $this->item = $model->getItem();
+        $model       = $this->getModel();
+        $this->item  = $model->getItem();
         $this->state = $model->getState();
-        $this->form = $model->getForm();
+        $this->form  = $model->getForm();
 
         // Check for errors.
-        if (is_array($errors = $model->getErrors()) && \count($errors)) {
+        if (\is_array($errors = $model->getErrors()) && \count($errors)) {
             throw new GenericDataException(implode("\n", $errors), 500);
         }
 

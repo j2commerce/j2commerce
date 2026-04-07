@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -15,7 +16,6 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
-use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\Database\ParameterType;
 use Joomla\Database\QueryInterface;
@@ -76,17 +76,29 @@ class AdvancedpricingModel extends ListModel
 
         $query->from($db->quoteName('#__j2commerce_product_prices', 'pp'));
 
-        $query->join('LEFT', $db->quoteName('#__j2commerce_variants', 'v'),
-            $db->quoteName('pp.variant_id') . ' = ' . $db->quoteName('v.j2commerce_variant_id'));
+        $query->join(
+            'LEFT',
+            $db->quoteName('#__j2commerce_variants', 'v'),
+            $db->quoteName('pp.variant_id') . ' = ' . $db->quoteName('v.j2commerce_variant_id')
+        );
 
-        $query->join('LEFT', $db->quoteName('#__j2commerce_products', 'p'),
-            $db->quoteName('v.product_id') . ' = ' . $db->quoteName('p.j2commerce_product_id'));
+        $query->join(
+            'LEFT',
+            $db->quoteName('#__j2commerce_products', 'p'),
+            $db->quoteName('v.product_id') . ' = ' . $db->quoteName('p.j2commerce_product_id')
+        );
 
-        $query->join('LEFT', $db->quoteName('#__content', 'c'),
-            $db->quoteName('p.product_source_id') . ' = ' . $db->quoteName('c.id'));
+        $query->join(
+            'LEFT',
+            $db->quoteName('#__content', 'c'),
+            $db->quoteName('p.product_source_id') . ' = ' . $db->quoteName('c.id')
+        );
 
-        $query->join('LEFT', $db->quoteName('#__usergroups', 'ug'),
-            $db->quoteName('pp.customer_group_id') . ' = ' . $db->quoteName('ug.id'));
+        $query->join(
+            'LEFT',
+            $db->quoteName('#__usergroups', 'ug'),
+            $db->quoteName('pp.customer_group_id') . ' = ' . $db->quoteName('ug.id')
+        );
 
         // Filter by search (product name or SKU)
         $search = $this->getState('filter.search');

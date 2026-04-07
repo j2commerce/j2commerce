@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -13,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\View\Products;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\MenuHelper;
 use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
 use Joomla\CMS\Factory;
@@ -24,7 +26,6 @@ use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use Joomla\CMS\Uri\Uri;
-use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 /**
  * Products list view class.
@@ -98,9 +99,9 @@ class HtmlView extends BaseHtmlView
         }
 
         $this->loadAdminAssets();
-        $app = Factory::getApplication();
+        $app    = Factory::getApplication();
         $layout = $app->getInput()->getCmd('layout', 'default');
-        $tmpl = $app->getInput()->getCmd('tmpl', '');
+        $tmpl   = $app->getInput()->getCmd('tmpl', '');
 
         // Only add navbar for non-modal views
         if ($layout !== 'modal' && $tmpl !== 'component') {
@@ -115,7 +116,7 @@ class HtmlView extends BaseHtmlView
         $this->filterForm    = $model->getFilterForm();
         $this->activeFilters = $model->getActiveFilters();
 
-        if ((!is_array($this->items) || !\count($this->items)) && $this->isEmptyState = $model->getIsEmptyState()) {
+        if ((!\is_array($this->items) || !\count($this->items)) && $this->isEmptyState = $model->getIsEmptyState()) {
             $this->setLayout('emptystate');
         }
 
@@ -132,8 +133,8 @@ class HtmlView extends BaseHtmlView
     protected function getNavbar(): string
     {
         $displayData = [
-            'items' => MenuHelper::getMenuItems(),
-            'active' => MenuHelper::getActiveView()
+            'items'  => MenuHelper::getMenuItems(),
+            'active' => MenuHelper::getActiveView(),
         ];
 
         return LayoutHelper::render('navbar.default', $displayData, JPATH_COMPONENT_ADMINISTRATOR . '/layouts');
@@ -148,7 +149,7 @@ class HtmlView extends BaseHtmlView
      */
     protected function addToolbar(): void
     {
-        $canDo = ContentHelper::getActions('com_j2commerce');
+        $canDo   = ContentHelper::getActions('com_j2commerce');
         $toolbar = $this->getDocument()->getToolbar();
 
         ToolbarHelper::title(Text::_('COM_J2COMMERCE_PRODUCTS'), 'fa-solid fa-tags');
@@ -156,7 +157,7 @@ class HtmlView extends BaseHtmlView
         if ($canDo->get('core.create')) {
             // Redirect to com_content article creation since J2Commerce products are attached to articles
             // Include return URL so user comes back to J2Commerce products list after saving/canceling
-            $return = urlencode(base64_encode((string) Uri::getInstance()));
+            $return        = urlencode(base64_encode((string) Uri::getInstance()));
             $newArticleUrl = Route::_('index.php?option=com_content&view=article&layout=edit&return=' . $return, false);
             $toolbar->linkButton('new', 'JTOOLBAR_NEW')
                 ->url($newArticleUrl)

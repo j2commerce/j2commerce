@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -15,7 +16,6 @@ namespace J2Commerce\Component\J2commerce\Administrator\View\Queues;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\MenuHelper;
 use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
-use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Helper\ContentHelper;
 use Joomla\CMS\Language\Text;
@@ -34,7 +34,7 @@ class HtmlView extends BaseHtmlView
     protected Registry $state;
     public ?Form $filterForm;
     public array $activeFilters = [];
-    private bool $isEmptyState = false;
+    private bool $isEmptyState  = false;
 
     public function display($tpl = null): void
     {

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -9,7 +10,7 @@
 
 namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -108,7 +109,7 @@ class ReportsController extends AdminController
 
         // Load the report plugin row
         $model = $this->getModel('Report', 'Administrator');
-        $row = $model->getItem($id);
+        $row   = $model->getItem($id);
 
         if (!$row || empty($row->element)) {
             $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=reports', false));
@@ -131,7 +132,7 @@ class ReportsController extends AdminController
             return;
         }
 
-        $items = $results[0];
+        $items       = $results[0];
         $csvFilename = 'report_' . $row->element . '_' . date('Y-m-d') . '_' . time() . '.csv';
 
         // Set headers for CSV download
@@ -148,7 +149,7 @@ class ReportsController extends AdminController
         if (!empty($items)) {
             // Header row from object keys
             $firstItem = reset($items);
-            $keys = array_keys((array) $firstItem);
+            $keys      = array_keys((array) $firstItem);
             fputcsv($output, $keys);
 
             // Data rows
@@ -156,9 +157,9 @@ class ReportsController extends AdminController
                 $row = [];
                 foreach ($keys as $key) {
                     $value = $item->$key ?? '';
-                    if (is_array($value)) {
+                    if (\is_array($value)) {
                         $value = 'Array';
-                    } elseif (is_object($value)) {
+                    } elseif (\is_object($value)) {
                         $value = 'Object';
                     }
                     $row[] = $value;
@@ -198,7 +199,7 @@ class ReportsController extends AdminController
             // Checkin the items.
             try {
                 $model->checkin($cid);
-                $this->setMessage(Text::plural('COM_J2COMMERCE_N_ITEMS_CHECKED_IN', count($cid)));
+                $this->setMessage(Text::plural('COM_J2COMMERCE_N_ITEMS_CHECKED_IN', \count($cid)));
             } catch (\Exception $e) {
                 $this->setMessage($e->getMessage(), 'error');
             }

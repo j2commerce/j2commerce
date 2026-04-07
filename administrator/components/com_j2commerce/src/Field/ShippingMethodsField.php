@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -11,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Field;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Field\ListField;
@@ -71,9 +72,9 @@ class ShippingMethodsField extends ListField
             ];
 
             if ($plugins) {
-                $lang = Factory::getApplication()->getLanguage();
+                $lang               = Factory::getApplication()->getLanguage();
                 $hasSubMethodPlugin = false;
-                $subMethodsLoaded = false;
+                $subMethodsLoaded   = false;
 
                 foreach ($plugins as $plugin) {
                     if (\in_array($plugin->value, $pluginsWithSubMethods, true)) {
@@ -92,7 +93,7 @@ class ShippingMethodsField extends ListField
                         ->where($db->quoteName('published') . ' = 1');
 
                     $db->setQuery($subQuery);
-                    $subMethods = $db->loadColumn() ?: [];
+                    $subMethods       = $db->loadColumn() ?: [];
                     $subMethodsLoaded = true;
                 }
 

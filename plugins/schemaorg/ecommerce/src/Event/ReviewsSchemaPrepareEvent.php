@@ -168,7 +168,7 @@ class ReviewsSchemaPrepareEvent extends AbstractSchemaEvent
      */
     public function addReview(array $review): void
     {
-        $reviews = $this->getReviews();
+        $reviews   = $this->getReviews();
         $reviews[] = $review;
         $this->setReviews($reviews);
     }

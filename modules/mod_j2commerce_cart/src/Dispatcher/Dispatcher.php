@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Module\Cart\Site\Dispatcher;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHelper;
@@ -85,7 +85,7 @@ class Dispatcher extends AbstractModuleDispatcher
             $formattedTotal = CurrencyHelper::format($total);
 
             // Build URLs — use menu item params if set, fallback to RouteHelper
-            $cartMenuItemId    = (int) $params->get('cart_menu_item', 0);
+            $cartMenuItemId     = (int) $params->get('cart_menu_item', 0);
             $checkoutMenuItemId = (int) $params->get('checkout_menu_item', 0);
 
             if ($cartMenuItemId > 0) {

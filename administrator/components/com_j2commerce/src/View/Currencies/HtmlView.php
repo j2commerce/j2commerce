@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -20,7 +21,6 @@ use Joomla\CMS\Form\Form;
 use Joomla\CMS\Helper\ContentHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
-use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Pagination\Pagination;
 use Joomla\CMS\Plugin\PluginHelper;
@@ -133,8 +133,8 @@ class HtmlView extends BaseHtmlView
     protected function getNavbar(): string
     {
         $displayData = [
-            'items' => MenuHelper::getMenuItems(),
-            'active' => MenuHelper::getActiveView()
+            'items'  => MenuHelper::getMenuItems(),
+            'active' => MenuHelper::getActiveView(),
         ];
 
         return LayoutHelper::render('navbar.default', $displayData, JPATH_COMPONENT_ADMINISTRATOR . '/layouts');
@@ -149,8 +149,8 @@ class HtmlView extends BaseHtmlView
      */
     protected function addToolbar(): void
     {
-        $canDo = ContentHelper::getActions('com_j2commerce');
-        $user  = Factory::getApplication()->getIdentity();
+        $canDo   = ContentHelper::getActions('com_j2commerce');
+        $user    = Factory::getApplication()->getIdentity();
         $toolbar = $this->getDocument()->getToolbar();
 
         ToolbarHelper::title(Text::_('COM_J2COMMERCE_CURRENCIES'), 'fas fa-solid fa-dollar fa-dollar-sign');
@@ -184,7 +184,7 @@ class HtmlView extends BaseHtmlView
         }
 
         if ($canDo->get('core.manage') && PluginHelper::isEnabled('j2commerce', 'app_currencyupdater')) {
-            $db = Factory::getContainer()->get('DatabaseDriver');
+            $db             = Factory::getContainer()->get('DatabaseDriver');
             $publishedCount = (int) $db->setQuery(
                 $db->getQuery(true)
                     ->select('COUNT(*)')

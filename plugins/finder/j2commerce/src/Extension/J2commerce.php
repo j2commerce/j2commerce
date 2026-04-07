@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  plg_finder_j2commerce
@@ -15,7 +16,6 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Event\Finder as FinderEvent;
-use Joomla\CMS\Factory;
 use Joomla\CMS\Router\SiteRouter;
 use Joomla\CMS\Uri\Uri;
 use Joomla\Component\Content\Site\Helper\RouteHelper as ContentRouteHelper;
@@ -214,7 +214,7 @@ final class J2commerce extends Adapter implements SubscriberInterface
 
         // Use RouteHelper for consistent URL matching with indexed items
         // This ensures we match the same URL format stored during index()
-        $url = RouteHelper::getProductRoute((int) $id);
+        $url  = RouteHelper::getProductRoute((int) $id);
         $item = $db->quote($url);
 
         $query = $db->getQuery(true)
@@ -392,8 +392,8 @@ final class J2commerce extends Adapter implements SubscriberInterface
         // Extract arguments from the event
         // Event is triggered with: triggerEvent('onFinderIndexAfterIndex', [$item, $linkId])
         $arguments = $event->getArguments();
-        $item = $arguments[0] ?? null;
-        $linkId = (int) ($arguments[1] ?? 0);
+        $item      = $arguments[0] ?? null;
+        $linkId    = (int) ($arguments[1] ?? 0);
 
         if (!$item instanceof Result) {
             return;
@@ -440,7 +440,7 @@ final class J2commerce extends Adapter implements SubscriberInterface
         }
 
         // Initialize the item parameters
-        $registry = new Registry($item->params);
+        $registry     = new Registry($item->params);
         $item->params = clone ComponentHelper::getParams('com_j2commerce', true);
         $item->params->merge($registry);
 
@@ -448,21 +448,21 @@ final class J2commerce extends Adapter implements SubscriberInterface
 
         // Trigger the onContentPrepare event
         $item->summary = Helper::prepareContent($item->summary, $item->params, $item);
-        $item->body = Helper::prepareContent($item->body, $item->params, $item);
+        $item->body    = Helper::prepareContent($item->body, $item->params, $item);
 
         // Determine URL based on redirect setting
         $redirectTo = $this->params->get('redirect_to', 'j2commerce');
 
         if ($redirectTo === 'article') {
             // Redirect to the article view
-            $item->url = $this->getUrl($item->id, 'com_content', 'article');
+            $item->url   = $this->getUrl($item->id, 'com_content', 'article');
             $item->route = ContentRouteHelper::getArticleRoute($item->slug, $item->catid, $item->language);
         } else {
             // Redirect to J2Commerce product view using RouteHelper
             // This generates canonical URLs similar to Joomla article routing
-            $productId = (int) ($item->j2commerce_product_id ?? 0);
-            $productAlias = $item->alias ?? null;
-            $productCatid = isset($item->catid) ? (int) $item->catid : null;
+            $productId       = (int) ($item->j2commerce_product_id ?? 0);
+            $productAlias    = $item->alias ?? null;
+            $productCatid    = isset($item->catid) ? (int) $item->catid : null;
             $productLanguage = ($item->language !== '*') ? $item->language : null;
 
             if ($productId > 0) {
@@ -486,7 +486,7 @@ final class J2commerce extends Adapter implements SubscriberInterface
                 }
             } else {
                 // Fallback to article route if no product ID
-                $item->url = $this->getUrl($item->id, 'com_content', 'article');
+                $item->url   = $this->getUrl($item->id, 'com_content', 'article');
                 $item->route = ContentRouteHelper::getArticleRoute($item->slug, $item->catid, $item->language);
             }
         }
@@ -572,7 +572,7 @@ final class J2commerce extends Adapter implements SubscriberInterface
      */
     protected function getProductVariantData(int $productId): array
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         $query->select($db->quoteName(['sku', 'upc']))
@@ -614,9 +614,9 @@ final class J2commerce extends Adapter implements SubscriberInterface
     {
         try {
             $router = SiteRouter::getInstance('site');
-            $uri = $router->build($url);
-            $route = $uri->toString(['path', 'query', 'fragment']);
-            $route = str_replace(Uri::base(true) . '/', '', $route);
+            $uri    = $router->build($url);
+            $route  = $uri->toString(['path', 'query', 'fragment']);
+            $route  = str_replace(Uri::base(true) . '/', '', $route);
 
             return $route;
         } catch (\Exception $e) {
@@ -751,13 +751,13 @@ final class J2commerce extends Adapter implements SubscriberInterface
         $query->select($db->quoteName('p') . '.*');
 
         // Handle the alias CASE WHEN portion of the query
-        $a_id = $query->castAs('CHAR', 'a.id');
+        $a_id                 = $query->castAs('CHAR', 'a.id');
         $case_when_item_alias = ' CASE WHEN ' . $query->charLength('a.alias', '!=', '0');
         $case_when_item_alias .= ' THEN ' . $query->concatenate([$a_id, 'a.alias'], ':');
         $case_when_item_alias .= ' ELSE ' . $a_id . ' END as slug';
         $query->select($case_when_item_alias);
 
-        $c_id = $query->castAs('CHAR', 'c.id');
+        $c_id                     = $query->castAs('CHAR', 'c.id');
         $case_when_category_alias = ' CASE WHEN ' . $query->charLength('c.alias', '!=', '0');
         $case_when_category_alias .= ' THEN ' . $query->concatenate([$c_id, 'c.alias'], ':');
         $case_when_category_alias .= ' ELSE ' . $c_id . ' END as catslug';

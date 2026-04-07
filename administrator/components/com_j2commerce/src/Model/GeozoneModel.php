@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -123,7 +124,7 @@ class GeozoneModel extends AdminModel
 
         if ($item && $item->j2commerce_geozone_id) {
             // Load geozonerules for this geozone
-            $db = $this->getDatabase();
+            $db    = $this->getDatabase();
             $query = $db->getQuery(true);
 
             $query->select($db->quoteName([
@@ -146,8 +147,8 @@ class GeozoneModel extends AdminModel
                 foreach ($rules as $rule) {
                     $item->geozonerules[] = [
                         'j2commerce_geozonerule_id' => $rule->j2commerce_geozonerule_id,
-                        'country_id' => $rule->country_id,
-                        'zone_id' => $rule->zone_id,
+                        'country_id'                => $rule->country_id,
+                        'zone_id'                   => $rule->zone_id,
                     ];
                 }
             }
@@ -239,7 +240,7 @@ class GeozoneModel extends AdminModel
 
                 // Cast values to int for strict type binding
                 $countryId = (int) $rule['country_id'];
-                $zoneId = (int) ($rule['zone_id'] ?? 0);
+                $zoneId    = (int) ($rule['zone_id'] ?? 0);
 
                 $query = $db->getQuery(true);
                 $query->insert($db->quoteName('#__j2commerce_geozonerules'))

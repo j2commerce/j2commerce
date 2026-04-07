@@ -79,7 +79,7 @@ abstract class BaseReportModel extends ListModel
      */
     public function setFormPath(string $path): void
     {
-        if (!in_array($path, $this->formPaths, true)) {
+        if (!\in_array($path, $this->formPaths, true)) {
             $this->formPaths[] = $path;
         }
     }

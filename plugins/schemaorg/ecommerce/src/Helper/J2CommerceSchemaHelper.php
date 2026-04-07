@@ -10,15 +10,14 @@
 
 namespace Joomla\Plugin\Schemaorg\Ecommerce\Helper;
 
-use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Uri\Uri;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
-use Joomla\Registry\Registry;
 
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
@@ -183,7 +182,7 @@ class J2CommerceSchemaHelper
 
         try {
             $productHelper = J2CommerceHelper::product();
-            $product = $productHelper->getFullProduct($productId);
+            $product       = $productHelper->getFullProduct($productId);
 
 
             if (!$product || !isset($product->j2commerce_product_id)) {
@@ -473,9 +472,9 @@ class J2CommerceSchemaHelper
      */
     public function mapAvailability(object $variant): string
     {
-        $manageStock = (int) ($variant->manage_stock ?? 0);
-        $availability = (int) ($variant->availability ?? 0);
-        $quantity = (int) ($variant->quantity ?? 0);
+        $manageStock    = (int) ($variant->manage_stock ?? 0);
+        $availability   = (int) ($variant->availability ?? 0);
+        $quantity       = (int) ($variant->quantity ?? 0);
         $allowBackorder = (int) ($variant->allow_backorder ?? 0);
 
         // If not managing stock, always in stock
@@ -530,8 +529,8 @@ class J2CommerceSchemaHelper
         if ($this->isJ2CommerceAvailable() && isset($product->j2commerce_product_id)) {
             try {
                 $productId = (int) $product->j2commerce_product_id;
-                $alias = $product->alias ?? null;
-                $catid = (int) ($product->catid ?? 0) ?: null;
+                $alias     = $product->alias ?? null;
+                $catid     = (int) ($product->catid ?? 0) ?: null;
 
                 $url = Route::_(RouteHelper::getProductRoute($productId, $alias, $catid));
 

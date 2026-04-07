@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -39,7 +40,7 @@ class AddressesModel extends ListModel
     public function getAddressesByUser(?int $userId = null): array
     {
         if ($userId === null) {
-            $user = Factory::getApplication()->getIdentity();
+            $user   = Factory::getApplication()->getIdentity();
             $userId = (int) $user->id;
         }
 
@@ -47,7 +48,7 @@ class AddressesModel extends ListModel
             return [];
         }
 
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         $query->select($db->quoteName([
@@ -78,7 +79,7 @@ class AddressesModel extends ListModel
 
     protected function getListQuery(): QueryInterface
     {
-        $db = $this->getDatabase();
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         $query->select($db->quoteName([

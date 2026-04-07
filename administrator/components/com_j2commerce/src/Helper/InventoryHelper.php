@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -13,8 +14,6 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 
 \defined('_JEXEC') or die;
 
-use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
-use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\Database\DatabaseInterface;
@@ -157,7 +156,7 @@ class InventoryHelper
             return 0;
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true)
             ->select($db->quoteName('quantity'))
             ->from($db->quoteName('#__j2commerce_productquantities'))
@@ -184,7 +183,7 @@ class InventoryHelper
             return null;
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true)
             ->select($db->quoteName([
                 'j2commerce_productquantity_id',
@@ -192,7 +191,7 @@ class InventoryHelper
                 'quantity',
                 'on_hold',
                 'sold',
-                'product_attributes'
+                'product_attributes',
             ]))
             ->from($db->quoteName('#__j2commerce_productquantities'))
             ->where($db->quoteName('variant_id') . ' = :variantId')
@@ -242,7 +241,7 @@ class InventoryHelper
             return 0;
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true)
             ->select($db->quoteName('on_hold'))
             ->from($db->quoteName('#__j2commerce_productquantities'))
@@ -269,7 +268,7 @@ class InventoryHelper
             return 0;
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true)
             ->select($db->quoteName('sold'))
             ->from($db->quoteName('#__j2commerce_productquantities'))
@@ -398,7 +397,7 @@ class InventoryHelper
      */
     public static function isLowStock(object $variant): bool
     {
-        $quantity = (int) ($variant->quantity ?? 0);
+        $quantity  = (int) ($variant->quantity ?? 0);
         $notifyQty = (int) ($variant->notify_qty ?? 0);
 
         // If no notification threshold set, never considered "low"
@@ -432,7 +431,7 @@ class InventoryHelper
         // TODO: Get from J2Commerce StoreHelper when available
         $storeMinSaleQty = $storeConfig?->get('store_min_sale_qty', 1.0) ?? 1.0;
         $storeMaxSaleQty = $storeConfig?->get('store_max_sale_qty', 0.0) ?? 0.0;
-        $storeNotifyQty = $storeConfig?->get('store_notify_qty', 5.0) ?? 5.0;
+        $storeNotifyQty  = $storeConfig?->get('store_notify_qty', 5.0) ?? 5.0;
 
         // Apply min sale quantity from store config
         if (!empty($variant->use_store_config_min_sale_qty) && $variant->use_store_config_min_sale_qty > 0) {
@@ -472,8 +471,8 @@ class InventoryHelper
         }
 
         $quantityTotal = $cartTotalQty + $addToQty;
-        $min = (float) ($variant->min_sale_qty ?? 0);
-        $max = (float) ($variant->max_sale_qty ?? 0);
+        $min           = (float) ($variant->min_sale_qty ?? 0);
+        $max           = (float) ($variant->max_sale_qty ?? 0);
 
         // Check maximum first (more common restriction)
         if ($max > 0 && $quantityTotal > $max) {
@@ -551,7 +550,7 @@ class InventoryHelper
             return 0;
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true)
             ->select('SUM(' . $db->quoteName('product_qty') . ') AS total_qty')
             ->from($db->quoteName('#__j2commerce_cartitems'))
@@ -588,10 +587,10 @@ class InventoryHelper
             return true;
         }
 
-        $variantId = (int) ($variant->j2commerce_variant_id ?? 0);
+        $variantId      = (int) ($variant->j2commerce_variant_id ?? 0);
         $currentCartQty = self::getCartQuantity($variantId, $cartId);
-        $totalQty = $currentCartQty + $addQty;
-        $availableQty = (int) ($variant->quantity ?? 0);
+        $totalQty       = $currentCartQty + $addQty;
+        $availableQty   = (int) ($variant->quantity ?? 0);
 
         return $totalQty <= $availableQty;
     }
@@ -618,8 +617,8 @@ class InventoryHelper
     public static function getStockDisplayText(object $variant, Registry $params): string
     {
         $displayFormat = $params->get('stock_display_format', 'always_show');
-        $quantity = (int) ($variant->quantity ?? 0);
-        $notifyQty = (int) ($variant->notify_qty ?? 0);
+        $quantity      = (int) ($variant->quantity ?? 0);
+        $notifyQty     = (int) ($variant->notify_qty ?? 0);
 
         switch ($displayFormat) {
             case 'always_show':
@@ -709,7 +708,7 @@ class InventoryHelper
 
         $class = self::getStockStatusClass($variant);
 
-        return sprintf(
+        return \sprintf(
             '<span class="badge %s">%s</span>',
             htmlspecialchars($class, ENT_QUOTES, 'UTF-8'),
             htmlspecialchars($text, ENT_QUOTES, 'UTF-8')
@@ -735,7 +734,7 @@ class InventoryHelper
             return 0;
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true)
             ->select('SUM(' . $db->quoteName('pq.quantity') . ') AS total_stock')
             ->from($db->quoteName('#__j2commerce_productquantities', 'pq'))
@@ -765,13 +764,13 @@ class InventoryHelper
     {
         if ($productId < 1) {
             return [
-                'total_stock' => 0,
-                'variants_in_stock' => 0,
+                'total_stock'           => 0,
+                'variants_in_stock'     => 0,
                 'variants_out_of_stock' => 0,
             ];
         }
 
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true)
             ->select([
                 'SUM(' . $db->quoteName('pq.quantity') . ') AS total_stock',
@@ -791,8 +790,8 @@ class InventoryHelper
         $result = $db->loadObject();
 
         return [
-            'total_stock' => (int) ($result->total_stock ?? 0),
-            'variants_in_stock' => (int) ($result->in_stock ?? 0),
+            'total_stock'           => (int) ($result->total_stock ?? 0),
+            'variants_in_stock'     => (int) ($result->in_stock ?? 0),
             'variants_out_of_stock' => (int) ($result->out_of_stock ?? 0),
         ];
     }
@@ -828,7 +827,7 @@ class InventoryHelper
      */
     public static function getLowStockVariants(?int $limit = null): array
     {
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true)
             ->select($db->quoteName([
                 'v.j2commerce_variant_id',
@@ -869,7 +868,7 @@ class InventoryHelper
      */
     public static function getOutOfStockVariants(?int $limit = null): array
     {
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true)
             ->select($db->quoteName([
                 'v.j2commerce_variant_id',
@@ -906,7 +905,7 @@ class InventoryHelper
      */
     public static function getLowStockCount(): int
     {
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true)
             ->select('COUNT(*)')
             ->from($db->quoteName('#__j2commerce_variants', 'v'))
@@ -934,7 +933,7 @@ class InventoryHelper
      */
     public static function getOutOfStockCount(): int
     {
-        $db = self::getDatabase();
+        $db    = self::getDatabase();
         $query = $db->getQuery(true)
             ->select('COUNT(*)')
             ->from($db->quoteName('#__j2commerce_variants', 'v'))
@@ -994,8 +993,8 @@ class InventoryHelper
 
             J2CommerceHelper::plugin()->event('BeforeStockReduction', [$orderId, &$item]);
 
-            $qty = (int) $item->orderitem_quantity;
-            $oldStock = self::getStockQuantity((int) $item->variant_id);
+            $qty            = (int) $item->orderitem_quantity;
+            $oldStock       = self::getStockQuantity((int) $item->variant_id);
             $allowBackorder = self::isBackorderAllowed($variant);
             $wasAlreadyZero = ($oldStock <= 0 && $allowBackorder);
 
@@ -1062,7 +1061,7 @@ class InventoryHelper
 
             J2CommerceHelper::plugin()->event('BeforeStockRestore', [$orderId, &$item]);
 
-            $qty = (int) $item->orderitem_quantity;
+            $qty      = (int) $item->orderitem_quantity;
             $oldStock = self::getStockQuantity((int) $item->variant_id);
 
             $newStock = self::adjustVariantStock((int) $item->variant_id, $qty, false);

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -13,15 +14,14 @@ namespace J2Commerce\Component\J2commerce\Administrator\View\Productprice;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Helper\ContentHelper;
 use Joomla\CMS\Helper\UserGroupsHelper;
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\ToolbarHelper;
-use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 /**
  * Product Price View
@@ -74,7 +74,7 @@ class HtmlView extends BaseHtmlView
 
         $this->loadAdminAssets();
 
-        $app = Factory::getApplication();
+        $app              = Factory::getApplication();
         $this->variant_id = $app->input->getInt('variant_id', 0);
 
         if (!$this->variant_id) {
@@ -84,7 +84,7 @@ class HtmlView extends BaseHtmlView
 
         // Get the model explicitly using MVC factory
         $mvcFactory = $app->bootComponent('com_j2commerce')->getMVCFactory();
-        $model = $mvcFactory->createModel('Productprice', 'Administrator', ['ignore_request' => true]);
+        $model      = $mvcFactory->createModel('Productprice', 'Administrator', ['ignore_request' => true]);
 
         if (!$model) {
             throw new \RuntimeException('Unable to load Productprice model');

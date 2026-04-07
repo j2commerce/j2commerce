@@ -16,7 +16,7 @@ use J2Commerce\Component\J2commerce\Administrator\SetupGuide\AbstractSetupCheck;
 use J2Commerce\Component\J2commerce\Administrator\SetupGuide\SetupCheckResult;
 use Joomla\CMS\Language\Text;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 class StoreLogoCheck extends AbstractSetupCheck
 {
@@ -54,7 +54,7 @@ class StoreLogoCheck extends AbstractSetupCheck
         if (\is_string($logo) && $logo !== '') {
             $hasLogo = true;
         } elseif (\is_object($logo) || \is_array($logo)) {
-            $obj = (object) $logo;
+            $obj     = (object) $logo;
             $hasLogo = !empty($obj->imagefile);
         }
 

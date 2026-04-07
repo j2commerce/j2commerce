@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -13,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\View\Shippingtroubles;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\MenuHelper;
 use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
 use Joomla\CMS\Factory;
@@ -21,7 +23,6 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\ToolbarHelper;
-use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 /**
  * Shipping Troubles View
@@ -121,7 +122,7 @@ class HtmlView extends BaseHtmlView
 
         $this->navbar = $this->getNavbar();
 
-        $app = Factory::getApplication();
+        $app   = Factory::getApplication();
         $input = $app->getInput();
 
         // Get the current step from the URL
@@ -133,27 +134,27 @@ class HtmlView extends BaseHtmlView
         switch ($this->step) {
             case 'shipping':
                 $this->diagnostics = $model->getShippingMethodsDiagnostic();
-                $tpl = 'shipping';
+                $tpl               = 'shipping';
                 break;
 
             case 'products':
                 // Use the new ListModel methods
-                $this->items = $model->getItems();
-                $this->pagination = $model->getPagination();
-                $this->state = $model->getState();
-                $this->filterForm = $model->getFilterForm();
+                $this->items         = $model->getItems();
+                $this->pagination    = $model->getPagination();
+                $this->state         = $model->getState();
+                $this->filterForm    = $model->getFilterForm();
                 $this->activeFilters = $model->getActiveFilters();
                 $this->productsStats = $model->getProductsShippingStatistics();
 
                 // Keep backward compatibility
                 $this->products = $this->items;
-                $tpl = 'shipping_product';
+                $tpl            = 'shipping_product';
                 break;
 
             default:
                 // Welcome step - load summary stats
                 $this->summaryStats = $model->getSummaryStats();
-                $tpl = null; // Will use default.php
+                $tpl                = null; // Will use default.php
                 break;
         }
 
@@ -170,8 +171,8 @@ class HtmlView extends BaseHtmlView
     protected function getNavbar(): string
     {
         $displayData = [
-            'items' => MenuHelper::getMenuItems(),
-            'active' => MenuHelper::getActiveView()
+            'items'  => MenuHelper::getMenuItems(),
+            'active' => MenuHelper::getActiveView(),
         ];
 
         return LayoutHelper::render('navbar.default', $displayData, JPATH_COMPONENT_ADMINISTRATOR . '/layouts');

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -18,7 +19,6 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Helper\ContentHelper;
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\Toolbar;
 use Joomla\CMS\Toolbar\ToolbarHelper;
@@ -92,9 +92,9 @@ class HtmlView extends BaseHtmlView
     {
         Factory::getApplication()->getInput()->set('hidemainmenu', true);
 
-        $isNew = ($this->item->j2commerce_taxrule_id == 0);
-        $canDo = ContentHelper::getActions('com_j2commerce');
-        $user  = Factory::getApplication()->getIdentity();
+        $isNew   = ($this->item->j2commerce_taxrule_id == 0);
+        $canDo   = ContentHelper::getActions('com_j2commerce');
+        $user    = Factory::getApplication()->getIdentity();
         $toolbar = $this->getDocument()->getToolbar();
 
         $title = $isNew ? Text::_('COM_J2COMMERCE_TOOLBAR_NEW').' '.Text::_('COM_J2COMMERCE_TAXRULE') : Text::_('COM_J2COMMERCE_TOOLBAR_EDIT').' '.Text::_('COM_J2COMMERCE_TAXRULE');

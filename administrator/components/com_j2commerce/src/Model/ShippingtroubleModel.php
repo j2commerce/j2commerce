@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package     J2Commerce
  * @subpackage  com_j2commerce
@@ -9,7 +10,7 @@
 
 namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
@@ -59,7 +60,7 @@ class ShippingtroubleModel extends BaseDatabaseModel
      */
     protected function getDiagnosticGeozones()
     {
-        $db = $this->getDatabase();
+        $db   = $this->getDatabase();
         $data = ['items' => [], 'summary' => []];
 
         try {
@@ -70,7 +71,7 @@ class ShippingtroubleModel extends BaseDatabaseModel
                     'g.geozone_name',
                     'g.geozone_code',
                     'g.enabled',
-                    'COUNT(gr.j2commerce_geozonerule_id) as rule_count'
+                    'COUNT(gr.j2commerce_geozonerule_id) as rule_count',
                 ])
                 ->from($db->quoteName('#__j2commerce_geozones', 'g'))
                 ->leftJoin(
@@ -84,7 +85,7 @@ class ShippingtroubleModel extends BaseDatabaseModel
             $data['items'] = $db->loadObjectList() ?: [];
 
             // Summary statistics
-            $enabledCount = 0;
+            $enabledCount   = 0;
             $withRulesCount = 0;
 
             foreach ($data['items'] as $item) {
@@ -97,10 +98,10 @@ class ShippingtroubleModel extends BaseDatabaseModel
             }
 
             $data['summary'] = [
-                'total' => count($data['items']),
-                'enabled' => $enabledCount,
+                'total'      => \count($data['items']),
+                'enabled'    => $enabledCount,
                 'with_rules' => $withRulesCount,
-                'status' => $enabledCount > 0 && $withRulesCount > 0 ? 'success' : 'warning'
+                'status'     => $enabledCount > 0 && $withRulesCount > 0 ? 'success' : 'warning',
             ];
 
         } catch (\Exception $e) {
@@ -119,7 +120,7 @@ class ShippingtroubleModel extends BaseDatabaseModel
      */
     protected function getDiagnosticMethods()
     {
-        $db = $this->getDatabase();
+        $db   = $this->getDatabase();
         $data = ['items' => [], 'summary' => []];
 
         try {
@@ -130,7 +131,7 @@ class ShippingtroubleModel extends BaseDatabaseModel
                     'sm.shipping_method_name',
                     'sm.shipping_method_type',
                     'sm.enabled',
-                    'sm.params'
+                    'sm.params',
                 ])
                 ->from($db->quoteName('#__j2commerce_shippingmethods', 'sm'))
                 ->order($db->quoteName('sm.shipping_method_name'));
@@ -147,9 +148,9 @@ class ShippingtroubleModel extends BaseDatabaseModel
             }
 
             $data['summary'] = [
-                'total' => count($data['items']),
+                'total'   => \count($data['items']),
                 'enabled' => $enabledCount,
-                'status' => $enabledCount > 0 ? 'success' : 'error'
+                'status'  => $enabledCount > 0 ? 'success' : 'error',
             ];
 
         } catch (\Exception $e) {
@@ -171,13 +172,13 @@ class ShippingtroubleModel extends BaseDatabaseModel
         // This would need to be implemented based on your actual shipping rates structure
         // For now, return basic information
         return [
-            'items' => [],
+            'items'   => [],
             'summary' => [
-                'total' => 0,
+                'total'      => 0,
                 'configured' => 0,
-                'status' => 'info',
-                'message' => 'COM_J2COMMERCE_SHIPPING_TROUBLESHOOTER_RATES_CHECK_METHODS'
-            ]
+                'status'     => 'info',
+                'message'    => 'COM_J2COMMERCE_SHIPPING_TROUBLESHOOTER_RATES_CHECK_METHODS',
+            ],
         ];
     }
 
@@ -190,7 +191,7 @@ class ShippingtroubleModel extends BaseDatabaseModel
      */
     protected function getDiagnosticProducts()
     {
-        $db = $this->getDatabase();
+        $db   = $this->getDatabase();
         $data = ['items' => [], 'summary' => []];
 
         try {
@@ -205,7 +206,7 @@ class ShippingtroubleModel extends BaseDatabaseModel
                     'p.weight',
                     'p.length',
                     'p.width',
-                    'p.height'
+                    'p.height',
                 ])
                 ->from($db->quoteName('#__j2commerce_products', 'p'))
                 ->where($db->quoteName('p.enabled') . ' = 1')
@@ -216,8 +217,8 @@ class ShippingtroubleModel extends BaseDatabaseModel
             $products = $db->loadObjectList() ?: [];
 
             // Analyze each product
-            $withShipping = 0;
-            $withWeight = 0;
+            $withShipping   = 0;
+            $withWeight     = 0;
             $withDimensions = 0;
 
             foreach ($products as $product) {
@@ -232,13 +233,13 @@ class ShippingtroubleModel extends BaseDatabaseModel
                 }
             }
 
-            $data['items'] = $products;
+            $data['items']   = $products;
             $data['summary'] = [
-                'total' => count($products),
-                'with_shipping' => $withShipping,
-                'with_weight' => $withWeight,
+                'total'           => \count($products),
+                'with_shipping'   => $withShipping,
+                'with_weight'     => $withWeight,
                 'with_dimensions' => $withDimensions,
-                'status' => $withShipping > 0 ? 'success' : 'warning'
+                'status'          => $withShipping > 0 ? 'success' : 'warning',
             ];
 
         } catch (\Exception $e) {
@@ -259,8 +260,8 @@ class ShippingtroubleModel extends BaseDatabaseModel
     {
         return [
             'geozones' => $this->getDiagnosticGeozones()['summary'],
-            'methods' => $this->getDiagnosticMethods()['summary'],
-            'products' => $this->getDiagnosticProducts()['summary']
+            'methods'  => $this->getDiagnosticMethods()['summary'],
+            'products' => $this->getDiagnosticProducts()['summary'],
         ];
     }
 }
