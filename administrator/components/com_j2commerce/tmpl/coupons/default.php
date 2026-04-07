@@ -70,13 +70,13 @@ if ($saveOrder && !empty($this->items)) {
                                 <th scope="col">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_COUPON_NAME', 'a.coupon_name', $listDirn, $listOrder); ?>
                                 </th>
-                                <th scope="col" class="w-10 d-none d-md-table-cell">
+                                <th scope="col" class="w-10">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_COUPON_CODE', 'a.coupon_code', $listDirn, $listOrder); ?>
                                 </th>
                                 <th scope="col" class="w-7 d-none d-md-table-cell">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_VALUE', 'a.value', $listDirn, $listOrder); ?>
                                 </th>
-                                <th scope="col" class="w-8 d-none d-md-table-cell">
+                                <th scope="col" class="w-8 d-none d-lg-table-cell">
                                     <?php echo Text::_('COM_J2COMMERCE_HEADING_VALUE_TYPE'); ?>
                                 </th>
                                 <th scope="col" class="w-5 d-none d-md-table-cell text-center">
@@ -130,13 +130,13 @@ if ($saveOrder && !empty($this->items)) {
                                         <?php echo $this->escape($item->coupon_name); ?>
                                     <?php endif; ?>
                                 </th>
-                                <td class="d-none d-md-table-cell">
+                                <td>
                                     <code><?php echo $this->escape($item->coupon_code); ?></code>
                                 </td>
                                 <td class="d-none d-md-table-cell">
                                     <small><?php echo $item->value_display; ?></small>
                                 </td>
-                                <td class="d-none d-md-table-cell">
+                                <td class="d-none d-lg-table-cell">
                                     <small>
                                         <?php if ($item->value_type === 'percentage') : ?>
                                             <?php echo Text::_('COM_J2COMMERCE_VALUE_TYPE_PERCENTAGE'); ?>

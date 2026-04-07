@@ -25,7 +25,8 @@ use Joomla\CMS\Uri\Uri;
 
 $wa = $this->getDocument()->getWebAssetManager();
 $wa->useScript('table.columns')
-    ->useScript('multiselect');
+    ->useScript('multiselect')
+    ->useScript('table.columns');
 
 $listOrder = $this->escape($this->state->get('list.ordering'));
 $listDirn  = $this->escape($this->state->get('list.direction'));
@@ -74,7 +75,7 @@ $canChangeState = $user->authorise('core.edit.state', 'com_content');
                                 <th scope="col" class="w-1 text-center">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'JSTATUS', 'c.state', $listDirn, $listOrder); ?>
                                 </th>
-                                <th scope="col" class="w-5 text-center d-none d-md-table-cell">
+                                <th scope="col" class="w-5 text-center d-none d-lg-table-cell">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_PRODUCT_ID', 'a.j2commerce_product_id', $listDirn, $listOrder); ?>
                                 </th>
                                 <th scope="col">
@@ -83,16 +84,16 @@ $canChangeState = $user->authorise('core.edit.state', 'com_content');
                                 <th scope="col" class="w-10 d-none d-md-table-cell">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_SKU', 'v.sku', $listDirn, $listOrder); ?>
                                 </th>
-                                <th scope="col" class="w-10 d-none d-md-table-cell">
+                                <th scope="col" class="w-10 d-none d-lg-table-cell">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_PRODUCT_TYPE', 'a.product_type', $listDirn, $listOrder); ?>
                                 </th>
                                 <th scope="col" class="w-10 d-none d-md-table-cell">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_PRICE', 'v.price', $listDirn, $listOrder); ?>
                                 </th>
-                                <th scope="col" class="w-5 text-center d-none d-md-table-cell">
+                                <th scope="col" class="w-5 text-center d-none d-lg-table-cell">
                                     <?php echo Text::_('COM_J2COMMERCE_HEADING_SHIPPING'); ?>
                                 </th>
-                                <th scope="col" class="w-5 text-center d-none d-md-table-cell">
+                                <th scope="col" class="w-5 text-center d-none d-lg-table-cell">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_VISIBILITY', 'a.visibility', $listDirn, $listOrder); ?>
                                 </th>
                                 <th scope="col" class="w-5 d-none d-md-table-cell text-center">
@@ -134,7 +135,7 @@ $canChangeState = $user->authorise('core.edit.state', 'com_content');
                                     echo (new PublishedButton())->render((int) $item->article_state, $i, $options, (string) $item->article_state);
                                     ?>
                                 </td>
-                                <td class="text-center d-none d-md-table-cell">
+                                <td class="text-center d-none d-lg-table-cell">
                                     <?php echo (int) $item->j2commerce_product_id; ?>
                                 </td>
                                 <th scope="row">
@@ -167,20 +168,20 @@ $canChangeState = $user->authorise('core.edit.state', 'com_content');
                                 <td class="d-none d-md-table-cell">
                                     <?php echo $this->escape($item->sku ?: '-'); ?>
                                 </td>
-                                <td class="d-none d-md-table-cell">
+                                <td class="d-none d-lg-table-cell">
                                     <?php echo $this->escape($productTypeLabel); ?>
                                 </td>
                                 <td class="d-none d-md-table-cell">
                                     <?php echo CurrencyHelper::format((float) ($item->price ?? 0)); ?>
                                 </td>
-                                <td class="text-center d-none d-md-table-cell">
+                                <td class="text-center d-none d-lg-table-cell">
                                     <?php if ($item->shipping) : ?>
                                         <span class="badge text-bg-success"><?php echo Text::_('COM_J2COMMERCE_ENABLED'); ?></span>
                                     <?php else : ?>
                                         <span class="badge text-bg-danger"><?php echo Text::_('COM_J2COMMERCE_DISABLED'); ?></span>
                                     <?php endif; ?>
                                 </td>
-                                <td class="text-center d-none d-md-table-cell">
+                                <td class="text-center d-none d-lg-table-cell">
                                     <?php if ($item->visibility) : ?>
                                         <span class="badge text-bg-success"><?php echo Text::_('JYES'); ?></span>
                                     <?php else : ?>

@@ -82,7 +82,7 @@ $dateFormat = ComponentHelper::getParams('com_j2commerce')->get('date_format', '
                                     <?php echo Text::_('COM_J2COMMERCE_HEADING_ACTIONS'); ?>
                                 </th>
                                 <?php endif; ?>
-                                <th scope="col" class="w-3 d-none d-md-table-cell">
+                                <th scope="col" class="w-3 d-none d-lg-table-cell">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'JGRID_HEADING_ID', 'a.j2commerce_order_id', $listDirn, $listOrder); ?>
                                 </th>
                             </tr>
@@ -176,7 +176,7 @@ $dateFormat = ComponentHelper::getParams('com_j2commerce')->get('date_format', '
                                     </div>
                                 </td>
                                 <?php endif; ?>
-                                <td class="d-none d-md-table-cell">
+                                <td class="d-none d-lg-table-cell">
                                     <?php echo (int) $item->j2commerce_order_id; ?>
                                 </td>
                             </tr>

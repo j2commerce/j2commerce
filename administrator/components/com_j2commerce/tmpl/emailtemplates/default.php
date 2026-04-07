@@ -81,9 +81,11 @@ $isMultilang = Multilanguage::isEnabled();
                                 <th scope="col" class="title">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_EMAILTEMPLATE_SUBJECT', 'a.subject', $listDirn, $listOrder); ?>
                                 </th>
+                                <?php if ($isMultilang) : ?>
                                 <th scope="col" class="w-10 d-none d-lg-table-cell">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'JGRID_HEADING_LANGUAGE', 'a.language', $listDirn, $listOrder); ?>
                                 </th>
+                                <?php endif; ?>
                                 <th scope="col" class="w-10 d-none d-lg-table-cell">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_EMAILTEMPLATE_ORDERSTATUS', 'a.orderstatus_id', $listDirn, $listOrder); ?>
                                 </th>
@@ -93,7 +95,6 @@ $isMultilang = Multilanguage::isEnabled();
                                 <th scope="col" class="w-10 d-none d-lg-table-cell">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_EMAILTEMPLATE_EMAIL_TYPE', 'a.email_type', $listDirn, $listOrder); ?>
                                 </th>
-
                                 <th scope="col" class="w-3 d-none d-lg-table-cell">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'JGRID_HEADING_ID', 'a.j2commerce_emailtemplate_id', $listDirn, $listOrder); ?>
                                 </th>
@@ -176,6 +177,7 @@ $isMultilang = Multilanguage::isEnabled();
                                             <?php endif; ?>
                                         </div>
                                     </th>
+                                    <?php if ($isMultilang) : ?>
                                     <td class="d-none d-lg-table-cell">
                                         <?php if ($item->language === '*') : ?>
                                             <?php echo Text::_('JALL'); ?>
@@ -183,6 +185,7 @@ $isMultilang = Multilanguage::isEnabled();
                                             <?php echo $item->language; ?>
                                         <?php endif; ?>
                                     </td>
+                                    <?php endif; ?>
                                     <td class="d-none d-lg-table-cell">
                                         <?php if ($item->orderstatus_id === '*') : ?>
                                             <?php echo Text::_('JALL'); ?>
@@ -200,15 +203,6 @@ $isMultilang = Multilanguage::isEnabled();
                                     <td class="d-none d-lg-table-cell">
                                         <?php echo $this->escape($item->email_type); ?>
                                     </td>
-                                    <?php if ($isMultilang) : ?>
-                                    <td class="d-none d-lg-table-cell">
-                                        <?php if ($item->language === '*') : ?>
-                                            <?php echo Text::_('JALL'); ?>
-                                        <?php else : ?>
-                                            <?php echo $item->language; ?>
-                                        <?php endif; ?>
-                                    </td>
-                                    <?php endif; ?>
                                     <td class="d-none d-lg-table-cell">
                                         <?php echo (int) $item->j2commerce_emailtemplate_id; ?>
                                     </td>

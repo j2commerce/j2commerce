@@ -241,7 +241,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                 <td class="w-1 text-center">
                                     <?php echo HTMLHelper::_('grid.checkall'); ?>
                                 </td>
-                                <th scope="col" class="w-10">
+                                <th scope="col" class="w-10 d-none d-lg-table-cell">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_INVENTORY_PRODUCT_ID', 'p.j2commerce_product_id', $listDirn, $listOrder); ?>
                                 </th>
                                 <th scope="col" class="w-20">
@@ -289,7 +289,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                 <td class="text-center">
                                     <?php echo HTMLHelper::_('grid.id', $i, $item->j2commerce_product_id, false, 'cid', 'cb', $item->product_name); ?>
                                 </td>
-                                <td>
+                                <td class="d-none d-lg-table-cell">
                                     <?php echo $this->escape($item->j2commerce_product_id); ?>
                                 </td>
                                 <th scope="row" class="j2commerce-inventory-product has-context">

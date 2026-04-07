@@ -75,7 +75,7 @@ if ($saveOrder && !empty($this->items)) {
                                 <th scope="col" class="d-none d-md-table-cell">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_OPTION_UNIQUE_NAME', 'a.option_unique_name', $listDirn, $listOrder); ?>
                                 </th>
-                                <th scope="col" class="d-none d-md-table-cell">
+                                <th scope="col">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_OPTION_TYPE', 'a.type', $listDirn, $listOrder); ?>
                                 </th>
                                 <th scope="col" style="width:5%" class="d-none d-md-table-cell">
@@ -132,7 +132,7 @@ if ($saveOrder && !empty($this->items)) {
                                 <td class="d-none d-md-table-cell">
                                     <span class="small text-muted"><?php echo $this->escape($item->option_unique_name); ?></span>
                                 </td>
-                                <td class="d-none d-md-table-cell">
+                                <td>
                                     <?php
                                     $typeLabels = [
                                         'text' => 'COM_J2COMMERCE_OPTION_TYPE_TEXT',

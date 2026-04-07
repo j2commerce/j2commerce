@@ -73,7 +73,7 @@ if ($saveOrder && !empty($this->items)) {
                                 <th scope="col" class="w-10 d-none d-md-table-cell">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_VALUE', 'a.voucher_value', $listDirn, $listOrder); ?>
                                 </th>
-                                <th scope="col" class="w-15 d-none d-md-table-cell">
+                                <th scope="col" class="w-15">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_EMAIL_TO', 'a.email_to', $listDirn, $listOrder); ?>
                                 </th>
                                 <th scope="col" class="w-10 d-none d-lg-table-cell">
@@ -122,7 +122,7 @@ if ($saveOrder && !empty($this->items)) {
                                 <td class="d-none d-md-table-cell">
                                     <?php echo number_format((float) $item->voucher_value, 2); ?>
                                 </td>
-                                <td class="d-none d-md-table-cell">
+                                <td class="text-break">
                                     <?php echo $this->escape($item->email_to); ?>
                                 </td>
                                 <td class="d-none d-lg-table-cell">
