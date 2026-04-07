@@ -28,11 +28,10 @@ $hasOptions = !empty($product->options) ||
     in_array($product->product_type ?? 'simple', ['variable', 'flexivariable', 'configurable', 'advancedvariable']);
 
 $cartType = (int) $params->get('list_show_cart', 1);
-$btnClass = $params->get('addtocart_button_class', 'btn btn-primary') ?? 'btn btn-primary';
-$chooseBtnClass = $params->get('choosebtn_class', 'btn btn-success') ?? 'btn btn-success';
+$btnClass = $params->get('addtocart_button_class', 'btn btn-primary');
+$chooseBtnClass = $params->get('choosebtn_class', 'btn btn-success');
 $productId = (int) $product->j2commerce_product_id;
 $productType = htmlspecialchars($product->product_type ?? 'simple', ENT_QUOTES, 'UTF-8');
-$esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
 
 $show = $productHelper->validateVariableProduct($product);
 
@@ -50,13 +49,13 @@ $afterCart = J2CommerceHelper::plugin()->eventWithHtml(
     <?php echo $beforeCart; ?>
 
     <?php if ($hasOptions || $cartType == 2 || $cartType == 3): ?>
-        <a href="<?php echo $esc($productLink ?? ''); ?>" class="<?php echo $esc($chooseBtnClass); ?>">
+        <a href="<?php echo htmlspecialchars($productLink ?? '', ENT_QUOTES, 'UTF-8'); ?>" class="<?php echo $chooseBtnClass; ?>">
             <?php echo Text::_('COM_J2COMMERCE_CART_CHOOSE_OPTIONS'); ?>
         </a>
     <?php elseif ($show): ?>
         <form action="<?php echo htmlspecialchars($product->cart_form_action ?? '', ENT_QUOTES, 'UTF-8'); ?>"
               method="post"
-              class="j2commerce-addtocart-form"
+              class="j2commerce-addtocart-form mt-auto"
               id="j2commerce-addtocart-form-<?php echo $productId; ?>"
               data-product_id="<?php echo $productId; ?>"
               data-product_type="<?php echo $productType; ?>">
@@ -76,11 +75,11 @@ $afterCart = J2CommerceHelper::plugin()->eventWithHtml(
                 <input type="hidden" name="product_id" value="<?php echo $productId; ?>" />
 
                 <button type="submit"
-                        class="j2commerce-cart-button <?php echo $esc($btnClass ?? 'btn btn-primary'); ?>"
+                        class="j2commerce-cart-button <?php echo $btnClass; ?>"
                         data-cart-action-always="<?php echo Text::_('COM_J2COMMERCE_ADDING_TO_CART'); ?>"
-                        data-cart-action-done="<?php echo $esc($cartText ?? ''); ?>"
+                        data-cart-action-done="<?php echo htmlspecialchars($cartText ?? '', ENT_QUOTES, 'UTF-8'); ?>"
                         data-cart-action-timeout="1000">
-                    <?php echo $esc($cartText ?? ''); ?>
+                    <?php echo htmlspecialchars($cartText ?? '', ENT_QUOTES, 'UTF-8'); ?>
                 </button>
             </div>
 

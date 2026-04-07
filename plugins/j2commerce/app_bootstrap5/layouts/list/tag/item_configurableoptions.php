@@ -17,14 +17,13 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 extract($displayData);
 
 $productHelper = J2CommerceHelper::product();
-$esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
-$chooseBtnClass = $esc($params->get('choosebtn_class', 'btn btn-success') ?? 'btn btn-success');
+$chooseBtnClass = $params->get('choosebtn_class', 'btn btn-success');
 
 // Configurable products always redirect to product page for option selection in list view
 ?>
 <div class="j2commerce-configurable-options">
     <?php if ($showCart && $productHelper->canShowCart($params)): ?>
-        <a href="<?php echo $esc($productLink ?? ''); ?>" class="<?php echo $chooseBtnClass; ?>">
+        <a href="<?php echo htmlspecialchars($productLink ?? '', ENT_QUOTES, 'UTF-8'); ?>" class="<?php echo $chooseBtnClass; ?>">
             <?php echo Text::_('COM_J2COMMERCE_CART_CHOOSE_OPTIONS'); ?>
         </a>
     <?php endif; ?>
