@@ -45,6 +45,6 @@ class ConfirmationPageCheck extends AbstractMenuItemCheck
 
     protected function getMenuTitle(): string
     {
-        return 'Order Confirmation';
+        return Text::_('COM_J2COMMERCE_SETUP_GUIDE_MENU_TITLE_CONFIRMATION');
     }
 }

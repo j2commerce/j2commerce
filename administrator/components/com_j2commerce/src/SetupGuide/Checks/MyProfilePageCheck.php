@@ -45,6 +45,6 @@ class MyProfilePageCheck extends AbstractMenuItemCheck
 
     protected function getMenuTitle(): string
     {
-        return 'My Account';
+        return Text::_('COM_J2COMMERCE_SETUP_GUIDE_MENU_TITLE_MYPROFILE');
     }
 }

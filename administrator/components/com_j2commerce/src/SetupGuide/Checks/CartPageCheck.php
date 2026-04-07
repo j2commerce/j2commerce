@@ -45,6 +45,6 @@ class CartPageCheck extends AbstractMenuItemCheck
 
     protected function getMenuTitle(): string
     {
-        return 'Shopping Cart';
+        return Text::_('COM_J2COMMERCE_SETUP_GUIDE_MENU_TITLE_CART');
     }
 }

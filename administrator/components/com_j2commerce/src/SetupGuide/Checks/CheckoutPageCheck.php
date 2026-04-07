@@ -45,6 +45,6 @@ class CheckoutPageCheck extends AbstractMenuItemCheck
 
     protected function getMenuTitle(): string
     {
-        return 'Checkout';
+        return Text::_('COM_J2COMMERCE_SETUP_GUIDE_MENU_TITLE_CHECKOUT');
     }
 }
