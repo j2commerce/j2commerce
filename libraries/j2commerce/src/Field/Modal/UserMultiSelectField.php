@@ -132,13 +132,13 @@ class UserMultiSelectField extends ModalMultiSelectField
             // Fetch user titles from the database
             $users = $this->getValueTitles();
             $html .= '<div class="my-2"><strong>' . Text::_('LIB_J2COMMERCE_SELECTED_USERS') . ' (' . \count($this->value) . '):</strong></div>';
-            $html .= '<table class="table table-sm table-striped"><thead><tr><th class="w-10">' . Text::_('LIB_J2COMMERCE_USER_FIELD_ID') . '</th><th>' . Text::_('LIB_J2COMMERCE_USER_FIELD_NAME') . '</th><th class="text-end w-6"><button type="button" class="btn btn-sm btn-outline-danger" onclick="clearAllItems_' . $this->id . '()" title="' . Text::_('LIB_J2COMMERCE_USERS_CLEAR_ALL') . '"><i class="icon-trash" aria-hidden="true"></i></button></th><th class="w-1"><span class="visually-hidden">' . Text::_('LIB_J2COMMERCE_REMOVE') . '</span></th></tr></thead><tbody>';
+            $html .= '<table class="table table-sm table-striped"><thead><tr><th class="w-10">' . Text::_('LIB_J2COMMERCE_USER_FIELD_ID') . '</th><th>' . Text::_('LIB_J2COMMERCE_USER_FIELD_NAME') . '</th><th class="text-end w-6"><button type="button" class="btn btn-sm btn-outline-danger" onclick="clearAllItems_' . $this->id . '()" title="' . Text::_('LIB_J2COMMERCE_USERS_CLEAR_ALL') . '"><span class="icon-trash" aria-hidden="true"></span></button></th><th class="w-1"><span class="visually-hidden">' . Text::_('LIB_J2COMMERCE_REMOVE') . '</span></th></tr></thead><tbody>';
             foreach ($this->value as $index => $userId) {
                 $userName = isset($users[$userId]) ? htmlspecialchars($users[$userId]->name, ENT_QUOTES, 'UTF-8') : $userId;
                 $html .= '<tr>';
                 $html .= '<td class="fw-bold">' . $userId . '</td>';
                 $html .= '<td>' . $userName . '</td>';
-                $html .= '<td class="text-end"><button type="button" class="btn btn-sm btn-danger" onclick="removeItem_' . $this->id . '(' . $userId . ')" title="' . Text::_('LIB_J2COMMERCE_USER_CLEAR') . '"><i class="icon-trash" aria-hidden="true"></i></button></td>';
+                $html .= '<td class="text-end"><button type="button" class="btn btn-sm btn-danger" onclick="removeItem_' . $this->id . '(' . $userId . ')" title="' . Text::_('LIB_J2COMMERCE_USER_CLEAR') . '"><span class="icon-trash" aria-hidden="true"></span></button></td>';
                 $html .= '<td class="w-1"><input type="hidden" name="jform[request][user_ids][' . $index . ']" value="' . $userId . '" id="' . $this->id . '_hidden_' . $index . '" data-title="' . $userName . '"></td>';
                 $html .= '</tr>';
             }
@@ -214,7 +214,7 @@ class UserMultiSelectField extends ModalMultiSelectField
                                           '<button type=\"button\" class=\"btn btn-sm btn-outline-danger\" ' +
                                                   'onclick=\"clearAllItems_{$this->id}()\" ' +
                                                   'title=\"' + Joomla.Text._('LIB_J2COMMERCE_USERS_CLEAR_ALL') + '\">' +
-                                              '<i class=\"icon-trash\" aria-hidden=\"true\"></i>' +
+                                              '<span class=\"icon-trash\" aria-hidden=\"true\"></span>' +
                                           '</button>' +
                                       '</th>' +
                                       '<th class=\"w-1\"><span class=\"visually-hidden\">' + Joomla.Text._('LIB_J2COMMERCE_REMOVE') + '</span></th>'
@@ -246,7 +246,7 @@ class UserMultiSelectField extends ModalMultiSelectField
                                               '<button type=\"button\" class=\"btn btn-sm btn-danger\" ' +
                                                       'onclick=\"removeItem_{$this->id}(' + item.id + ')\" ' +
                                                       'title=\"' + Joomla.Text._('LIB_J2COMMERCE_USER_CLEAR') + '\">' +
-                                                  '<i class=\"icon-trash\" aria-hidden=\"true\"></i>' +
+                                                  '<span class=\"icon-trash\" aria-hidden=\"true\"></span>' +
                                               '</button>' +
                                           '</td>';
 

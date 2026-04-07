@@ -140,7 +140,7 @@ class ModuleproductaddField extends ProductMultiSelectField
                                           '<button type="button" class="btn btn-sm btn-outline-danger" ' +
                                                   'onclick="clearAllItems_{$this->id}()" ' +
                                                   'title="' + Joomla.Text._('COM_J2COMMERCE_PRODUCTS_CLEAR_ALL') + '">' +
-                                              '<i class="icon-trash" aria-hidden="true"></i>' +
+                                              '<span class="icon-trash" aria-hidden="true"></span>' +
                                           '</button>' +
                                       '</th>' +
                                       '<th class="w-1"><span class="visually-hidden">' + Joomla.Text._('COM_J2COMMERCE_REMOVE') + '</span></th>'

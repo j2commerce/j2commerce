@@ -256,7 +256,7 @@ $conSpan = 0;
                                 <td>
                                     <?php $deleteUrl = Route::_('index.php?option=com_j2commerce&view=products&task=deleteProductOptionvalues&product_id=' . $productId . '&productoption_id=' . $poptionvalue->productoption_id . '&cid[]=' . $poptionvalue->j2commerce_product_optionvalue_id, false); ?>
                                     <a class="btn btn-danger" href="<?php echo $deleteUrl; ?>">
-                                        <i class="icon icon-trash"></i>
+                                        <span class="icon icon-trash" aria-hidden="true"></span>
                                     </a>
                                 </td>
                             </tr>

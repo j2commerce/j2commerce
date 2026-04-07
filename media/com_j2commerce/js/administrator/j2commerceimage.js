@@ -198,7 +198,7 @@
             if (addFilesEl) {
                 const inner = addFilesEl.querySelector('.uppy-Dashboard-AddFiles-title');
                 if (inner) {
-                    inner.innerHTML = `<span class="uppymedia-uppy-btn"><i class="fa-solid fa-images" aria-hidden="true"></i> ${this.escapeHtml(this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_ADD_PRODUCT_IMAGES'))}</span>`
+                    inner.innerHTML = `<span class="uppymedia-uppy-btn"><span class="fa-solid fa-images" aria-hidden="true"></span> ${this.escapeHtml(this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_ADD_PRODUCT_IMAGES'))}</span>`
                         + `<p class="uppymedia-uppy-hint">${this.escapeHtml(this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_DRAG_DROP_NOTE'))}</p>`;
                 }
                 // Wire browse button to Uppy's hidden file input
@@ -354,7 +354,7 @@
                 <div class="j2commerce-image-thumb ${previewStyle === 'contain' ? 'preview-contain' : ''}" data-path="${this.escapeHtml(path)}">
                     <img src="${this.escapeHtml(this.resolveImageUrl(path))}" alt="" loading="lazy">
                     ${isEditable ? `<button type="button" class="j2commerce-image-remove" aria-label="${this.getText('JACTION_DELETE')}">
-                        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                        <span class="fa-solid fa-xmark" aria-hidden="true"></span>
                     </button>` : ''}
                 </div>
             `).join('');
@@ -466,7 +466,7 @@
                 const folderEl = document.createElement('div');
                 folderEl.className = 'uppymedia-browser-folder';
                 folderEl.innerHTML = `
-                    <i class="fa-solid fa-folder-open" aria-hidden="true"></i>
+                    <span class="fa-solid fa-folder-open" aria-hidden="true"></span>
                     <span class="uppymedia-folder-name">${this.escapeHtml(folderName)}</span>
                 `;
 

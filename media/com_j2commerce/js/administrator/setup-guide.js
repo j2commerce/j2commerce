@@ -432,7 +432,7 @@ class SetupGuide {
                 const iconClass = iconMap[statusClass] || iconMap.fail;
 
                 html += `<div class="setup-check-item" data-setup-check="${this.escHtml(check.id)}">
-                    <i class="${iconClass} setup-check-icon" aria-hidden="true"></i>
+                    <span class="${iconClass} setup-check-icon" aria-hidden="true"></span>
                     <span class="setup-check-label flex-grow-1">${this.escHtml(check.label)}</span>`;
 
                 if (check.actions.length > 0 && check.status !== 'pass' && !check.dismissed) {

@@ -157,7 +157,7 @@ $wa->addInlineScript($submitButtonJs);
                                         aria-controls="productDetailsCollapse"
                                         id="viewDetailsBtn">
                                     <?php echo Text::_('COM_J2COMMERCE_VIEW_DETAILS'); ?>
-                                    <i class="fa-solid fa-chevron-down ms-1 view-details-chevron"></i>
+                                    <span class="fa-solid fa-chevron-down ms-1 view-details-chevron" aria-hidden="true"></span>
                                 </button>
                             </div>
                         </div>
@@ -388,7 +388,7 @@ $wa->addInlineScript($submitButtonJs);
                                 </select>
                             </div>
                             <div id="j2commerceProductTypeWarning" class="alert alert-danger d-none">
-                                <i class="icon-warning" aria-hidden="true"></i>
+                                <span class="icon-warning" aria-hidden="true"></span>
                                 <strong><?php echo Text::_('COM_J2COMMERCE_WARNING'); ?></strong>
                                 <p class="mb-0 mt-2"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_TYPE_CHANGE_WARNING'); ?></p>
                             </div>

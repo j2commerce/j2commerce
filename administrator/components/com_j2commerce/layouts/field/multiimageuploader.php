@@ -51,7 +51,7 @@ $totalImages = $hasImages ? count($value) : 0;
     <div class="uppymedia-bulk-bar">
         <span class="uppymedia-bulk-count"></span>
         <button type="button" class="btn btn-danger btn-sm uppymedia-bulk-remove">
-            <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
+            <span class="fa-solid fa-trash-can" aria-hidden="true"></span>
             <?php echo Text::_('COM_J2COMMERCE_MULTIIMAGEUPLOADER_REMOVE_SELECTED'); ?>
         </button>
     </div>
@@ -71,12 +71,12 @@ $totalImages = $hasImages ? count($value) : 0;
                     <div class="uppymedia-move-arrows">
                         <?php if ($index > 0): ?>
                         <button type="button" class="uppymedia-move-btn" data-action="move-left" data-index="<?php echo $index; ?>" title="<?php echo Text::_('COM_J2COMMERCE_MULTIIMAGEUPLOADER_MOVE_LEFT'); ?>">
-                            <i class="fa-solid fa-chevron-left"></i>
+                            <span class="fa-solid fa-chevron-left" aria-hidden="true"></span>
                         </button>
                         <?php endif; ?>
                         <?php if ($index < $totalImages - 1): ?>
                         <button type="button" class="uppymedia-move-btn" data-action="move-right" data-index="<?php echo $index; ?>" title="<?php echo Text::_('COM_J2COMMERCE_MULTIIMAGEUPLOADER_MOVE_RIGHT'); ?>">
-                            <i class="fa-solid fa-chevron-right"></i>
+                            <span class="fa-solid fa-chevron-right" aria-hidden="true"></span>
                         </button>
                         <?php endif; ?>
                     </div>
@@ -106,7 +106,7 @@ $totalImages = $hasImages ? count($value) : 0;
     <div class="uppymedia-empty-state" data-bs-toggle="modal" data-bs-target="#<?php echo $modalId; ?>" role="button">
         <div class="uppymedia-empty-inner">
             <span class="btn btn-primary">
-                <i class="fa-solid fa-images" aria-hidden="true"></i>
+                <span class="fa-solid fa-images" aria-hidden="true"></span>
                 <?php echo Text::_('COM_J2COMMERCE_MULTIIMAGEUPLOADER_ADD_PRODUCT_IMAGES'); ?>
             </span>
         </div>
@@ -115,7 +115,7 @@ $totalImages = $hasImages ? count($value) : 0;
 
     <div class="d-flex align-items-center gap-3">
         <button type="button" class="btn btn-primary uppymedia-add-btn" data-bs-toggle="modal" data-bs-target="#<?php echo $modalId; ?>">
-            <i class="fa-solid fa-images" aria-hidden="true"></i>
+            <span class="fa-solid fa-images" aria-hidden="true"></span>
             <?php echo Text::_('COM_J2COMMERCE_MULTIIMAGEUPLOADER_ADD_MEDIA'); ?>
         </button>
         <div class="form-check d-none">
@@ -154,7 +154,7 @@ $totalImages = $hasImages ? count($value) : 0;
                                         </option>
                                     </select>
                                     <button type="button" class="btn btn-outline-secondary uppymedia-create-folder" title="<?php echo Text::_('COM_J2COMMERCE_MULTIIMAGEUPLOADER_NEW_FOLDER'); ?>">
-                                        <i class="fa-solid fa-folder-plus" aria-hidden="true"></i>
+                                        <span class="fa-solid fa-folder-plus" aria-hidden="true"></span>
                                     </button>
                                 </div>
                                 <div class="uppymedia-filter-bar">

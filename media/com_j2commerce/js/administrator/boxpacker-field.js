@@ -56,7 +56,7 @@ function initBoxPackerField(container) {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'btn btn-sm btn-danger btn-remove-box';
-        btn.innerHTML = '<i class="fa-solid fa-times"></i>';
+        btn.innerHTML = '<span class="fa-solid fa-times"></span>';
         tdBtn.appendChild(btn);
         tr.appendChild(tdBtn);
 
@@ -130,7 +130,7 @@ function initBoxPackerField(container) {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'btn btn-sm btn-danger btn-remove-box';
-        btn.innerHTML = '<i class="fa-solid fa-times"></i>';
+        btn.innerHTML = '<span class="fa-solid fa-times"></span>';
         tdBtn.appendChild(btn);
         tr.appendChild(tdBtn);
 

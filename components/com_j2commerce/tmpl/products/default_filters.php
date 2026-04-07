@@ -96,7 +96,7 @@ HTMLHelper::_('bootstrap.collapse');
 </style>
 
 <button class="btn btn-outline-dark w-100 d-md-none mb-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#j2commerceFilterOffcanvas">
-    <i class="icon-equalizer me-2"></i><?php echo Text::_('COM_J2COMMERCE_FILTER_AND_SORT'); ?>
+    <span class="icon-equalizer me-2" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_FILTER_AND_SORT'); ?>
 </button>
 
 <div class="offcanvas-md offcanvas-start" tabindex="-1" id="j2commerceFilterOffcanvas">

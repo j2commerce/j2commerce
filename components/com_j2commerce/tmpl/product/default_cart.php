@@ -60,7 +60,7 @@ if($is_out_of_stock){
         <input type="hidden" id="j2commerce_product_id" name="product_id" value="<?php echo $this->item->j2commerce_product_id;?>" />
 
         <button data-cart-action-always="<?php echo Text::_('COM_J2COMMERCE_ADDING_TO_CART'); ?>" data-cart-action-done="<?php echo $cart_text; ?>" data-cart-action-timeout="1000" value="<?php echo $cart_text; ?>" type="submit" class="j2commerce-cart-button j2commerce-cart-button rounded-1 btn btn-lg w-100 animate-slide-end order-sm-2 order-md-4 order-lg-2 d-flex align-items-center justify-content-center <?php echo $this->params->get('addtocart_button_class', 'btn-primary');?>"<?php echo $disabled;?>>
-            <i class="si-shopping-cart fs-4 animate-target ms-n1 me-2"></i><span class="fs-6 text-capitalize"><?php echo $cart_text; ?></span>
+            <span class="si-shopping-cart fs-4 animate-target ms-n1 me-2" aria-hidden="true"></span><span class="fs-6 text-capitalize"><?php echo $cart_text; ?></span>
         </button>
 
         <div class="order-5 AfterAddToCartButton">
@@ -69,7 +69,7 @@ if($is_out_of_stock){
     </div>
 <?php else: ?>
     <button class="j2commerce-cart-button j2commerce_button_no_stock rounded-1 btn btn-lg w-100 order-sm-2 order-md-4 order-lg-2 d-flex align-items-center justify-content-center btn btn-primary mb-4 mt-4" disabled>
-        <i class="si-shopping-cart fs-4 ms-n1 me-2"></i><span class="fs-6 text-capitalize"><?php echo Text::_('COM_J2COMMERCE_STOCK_OUT_OF_STOCK'); ?></span>
+        <span class="si-shopping-cart fs-4 ms-n1 me-2" aria-hidden="true"></span><span class="fs-6 text-capitalize"><?php echo Text::_('COM_J2COMMERCE_STOCK_OUT_OF_STOCK'); ?></span>
     </button>
     <div class="order-5 AfterAddToCartButton">
         <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterAddToCartButton', [$this->item, J2CommerceHelper::utilities()->getContext('view_cart')])->getArgument('html');?>

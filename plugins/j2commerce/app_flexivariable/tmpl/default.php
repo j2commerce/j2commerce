@@ -48,15 +48,15 @@ HTMLHelper::_('bootstrap.tab');
                         <h4><?php echo Text::_('PLG_J2COMMERCE_APP_FLEXIVARIABLE_FEATURES'); ?></h4>
                         <ul class="list-group">
                             <li class="list-group-item">
-                                <i class="icon-checkmark text-success"></i>
+                                <span class="icon-checkmark text-success" aria-hidden="true"></span>
                                 <?php echo Text::_('PLG_J2COMMERCE_APP_FLEXIVARIABLE_FEATURE_1'); ?>
                             </li>
                             <li class="list-group-item">
-                                <i class="icon-checkmark text-success"></i>
+                                <span class="icon-checkmark text-success" aria-hidden="true"></span>
                                 <?php echo Text::_('PLG_J2COMMERCE_APP_FLEXIVARIABLE_FEATURE_2'); ?>
                             </li>
                             <li class="list-group-item">
-                                <i class="icon-checkmark text-success"></i>
+                                <span class="icon-checkmark text-success" aria-hidden="true"></span>
                                 <?php echo Text::_('PLG_J2COMMERCE_APP_FLEXIVARIABLE_FEATURE_3'); ?>
                             </li>
                         </ul>

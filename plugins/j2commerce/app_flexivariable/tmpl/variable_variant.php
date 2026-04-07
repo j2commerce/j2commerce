@@ -173,16 +173,16 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <div class="btn-group" role="group">
                                         <?php if (!empty($variant->isdefault_variant)): ?>
                                             <button type="button" class="btn btn-outline-secondary btn-sm" onclick="J2CommerceFlexivariable.setDefault(<?php echo (int) $variantId; ?>, 'unsetDefault', <?php echo (int) $variant->product_id; ?>)">
-                                                <i class="icon-star"></i> <?php echo Text::_('COM_J2COMMERCE_UNSET_DEFAULT'); ?>
+                                                <span class="icon-star" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_UNSET_DEFAULT'); ?>
                                             </button>
                                         <?php else: ?>
                                             <button type="button" class="btn btn-outline-primary btn-sm" onclick="J2CommerceFlexivariable.setDefault(<?php echo (int) $variantId; ?>, 'setDefault', <?php echo (int) $variant->product_id; ?>)">
-                                                <i class="icon-star-empty"></i> <?php echo Text::_('COM_J2COMMERCE_SET_DEFAULT'); ?>
+                                                <span class="icon-star-empty" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_SET_DEFAULT'); ?>
                                             </button>
                                         <?php endif; ?>
 
                                         <button type="button" class="btn btn-danger btn-sm" onclick="J2CommerceFlexivariable.deleteVariant(<?php echo (int) $variantId; ?>)">
-                                            <i class="icon-trash"></i> <?php echo Text::_('JACTION_DELETE'); ?>
+                                            <span class="icon-trash" aria-hidden="true"></span> <?php echo Text::_('JACTION_DELETE'); ?>
                                         </button>
                                     </div>
                                 </div>

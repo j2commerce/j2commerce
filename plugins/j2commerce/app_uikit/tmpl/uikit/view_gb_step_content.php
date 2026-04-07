@@ -25,7 +25,7 @@ $optionValues = $optionValues ?? [];
 
     <div class="gb-step-header uk-margin-bottom">
         <?php if (!empty($step->step_icon)) : ?>
-        <i class="<?php echo htmlspecialchars($step->step_icon, ENT_QUOTES, 'UTF-8'); ?> uk-margin-small-right"></i>
+        <span class="<?php echo htmlspecialchars($step->step_icon, ENT_QUOTES, 'UTF-8'); ?> uk-margin-small-right" aria-hidden="true"></span>
         <?php endif; ?>
 
         <h4 class="uk-display-inline"><?php echo htmlspecialchars($step->step_label ?? '', ENT_QUOTES, 'UTF-8'); ?></h4>

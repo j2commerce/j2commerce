@@ -61,12 +61,12 @@ $file = $this->source->fileId ?? '';
                 <?php if ($isBuilderEditable) : ?>
                     <button type="button" class="btn btn-outline-primary btn-sm" id="btn-open-visual-builder"
                             data-builder-file="<?php echo $this->escape($builderFileValue); ?>">
-                        <i class="fa-solid fa-wand-magic-sparkles me-1"></i>
+                        <span class="fa-solid fa-wand-magic-sparkles me-1" aria-hidden="true"></span>
                         <?php echo Text::_('COM_J2COMMERCE_OVERRIDE_OPEN_VISUAL_BUILDER'); ?>
                     </button>
                 <?php elseif ($isLayoutFile && $fileClassification === OverrideRegistry::FILE_TYPE_DISPATCHER) : ?>
                     <span class="badge bg-secondary">
-                        <i class="fa-solid fa-code-branch me-1"></i>
+                        <span class="fa-solid fa-code-branch me-1" aria-hidden="true"></span>
                         <?php echo Text::_('COM_J2COMMERCE_OVERRIDE_DISPATCHER_FILE_HINT'); ?>
                     </span>
                 <?php endif; ?>

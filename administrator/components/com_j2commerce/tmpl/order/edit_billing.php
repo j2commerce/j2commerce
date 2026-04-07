@@ -66,13 +66,13 @@ $orderInfo = $item->orderinfo ?? null;
         ?>
         <div class="card mt-2">
             <div class="card-header py-2">
-                <strong><i class="fa-solid fa-file-arrow-up"></i> <?php echo Text::_('COM_J2COMMERCE_ORDER_UPLOADED_FILES'); ?></strong>
+                <strong><span class="fa-solid fa-file-arrow-up" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_ORDER_UPLOADED_FILES'); ?></strong>
             </div>
             <div class="card-body py-2">
                 <ul class="list-unstyled mb-0">
                     <?php foreach ($files as $file) : ?>
                     <li class="d-flex align-items-center gap-2 py-1">
-                        <i class="fa-solid fa-file"></i>
+                        <span class="fa-solid fa-file" aria-hidden="true"></span>
                         <a href="<?php echo \Joomla\CMS\Uri\Uri::root() . $this->escape($file['path'] ?? ''); ?>" target="_blank" rel="noopener">
                             <?php echo $this->escape($file['name'] ?? basename($file['path'] ?? '')); ?>
                         </a>

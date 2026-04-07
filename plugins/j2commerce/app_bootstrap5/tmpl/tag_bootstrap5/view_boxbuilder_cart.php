@@ -70,7 +70,7 @@ $disabled = $is_out_of_stock ? ' disabled' : '';
                 id="boxbuilder-action-btn-<?php echo $productId; ?>"
                 <?php echo $disabled; ?>
                 disabled>
-            <i class="si-shopping-cart fs-4 animate-target ms-n1 me-2"></i>
+            <span class="si-shopping-cart fs-4 animate-target ms-n1 me-2" aria-hidden="true"></span>
             <span class="fs-6 text-capitalize boxbuilder-btn-text"><?php echo $cart_text; ?></span>
         </button>
 

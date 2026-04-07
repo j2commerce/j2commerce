@@ -24,7 +24,7 @@ use Joomla\CMS\Router\Route;
                 <div class="col-md-6 text-center">
 
                     <div class="mb-4">
-                        <i class="fa-solid fa-magnifying-glass fa-3x text-muted"></i>
+                        <span class="fa-solid fa-magnifying-glass fa-3x text-muted" aria-hidden="true"></span>
                     </div>
 
                     <h2><?php echo Text::_('COM_J2COMMERCE_CONFIRMATION_ENTER_TOKEN'); ?></h2>
@@ -45,16 +45,16 @@ use Joomla\CMS\Router\Route;
                         </div>
 
                         <button type="submit" class="btn btn-primary btn-lg w-100">
-                            <i class="fa-solid fa-eye me-2"></i><?php echo Text::_('COM_J2COMMERCE_CONFIRMATION_TOKEN_SUBMIT'); ?>
+                            <span class="fa-solid fa-eye me-2" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_CONFIRMATION_TOKEN_SUBMIT'); ?>
                         </button>
                     </form>
 
                     <div class="d-flex justify-content-center gap-3">
                         <a href="<?php echo Route::_('index.php?option=com_j2commerce&view=myprofile'); ?>" class="btn btn-outline-secondary">
-                            <i class="fa-solid fa-clock-rotate-left me-1"></i><?php echo Text::_('COM_J2COMMERCE_CONFIRMATION_VIEW_ALL_ORDERS'); ?>
+                            <span class="fa-solid fa-clock-rotate-left me-1" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_CONFIRMATION_VIEW_ALL_ORDERS'); ?>
                         </a>
                         <a href="<?php echo Route::_('index.php?option=com_j2commerce&view=products'); ?>" class="btn btn-outline-secondary">
-                            <i class="fa-solid fa-bag-shopping me-1"></i><?php echo Text::_('COM_J2COMMERCE_CONFIRMATION_CONTINUE_SHOPPING'); ?>
+                            <span class="fa-solid fa-bag-shopping me-1" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_CONFIRMATION_CONTINUE_SHOPPING'); ?>
                         </a>
                     </div>
 

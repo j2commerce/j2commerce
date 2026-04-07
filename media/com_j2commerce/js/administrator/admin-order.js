@@ -449,7 +449,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="col${col1}"></div>
                         <div class="col"></div>
                     </div>
-                    <h5 class="m-2"><i class="${escHtml(icon)}"></i></h5>
+                    <h5 class="m-2"><span class="${escHtml(icon)}"></span></h5>
                     <div class="row h-50">
                         <div class="col${col2}"></div>
                         <div class="col"></div>

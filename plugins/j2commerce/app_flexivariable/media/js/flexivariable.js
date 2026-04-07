@@ -304,7 +304,7 @@ const J2CommerceFlexivariable = {
                 Joomla.renderMessages({ error: [data.message || 'Failed to delete variant'] });
                 if (deleteButton) {
                     deleteButton.disabled = false;
-                    deleteButton.innerHTML = '<i class="icon-trash"></i> ' + (Joomla.Text._('JACTION_DELETE') || 'Delete');
+                    deleteButton.innerHTML = '<span class="icon-trash" aria-hidden="true"></span> ' + (Joomla.Text._('JACTION_DELETE') || 'Delete');
                 }
             }
         } catch (error) {
@@ -312,7 +312,7 @@ const J2CommerceFlexivariable = {
             Joomla.renderMessages({ error: ['An error occurred while deleting the variant'] });
             if (deleteButton) {
                 deleteButton.disabled = false;
-                deleteButton.innerHTML = '<i class="icon-trash"></i> ' + (Joomla.Text._('JACTION_DELETE') || 'Delete');
+                deleteButton.innerHTML = '<span class="icon-trash" aria-hidden="true"></span> ' + (Joomla.Text._('JACTION_DELETE') || 'Delete');
             }
         }
     },

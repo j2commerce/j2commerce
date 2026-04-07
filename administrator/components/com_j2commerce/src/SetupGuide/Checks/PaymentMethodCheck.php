@@ -113,7 +113,7 @@ class PaymentMethodCheck extends AbstractSetupCheck
                 $title = Text::_($plugin->name);
 
                 $html .= '<li class="py-1 small">'
-                    . '<i class="fa-regular fa-circle-check text-success me-1" aria-hidden="true"></i>'
+                    . '<span class="fa-regular fa-circle-check text-success me-1" aria-hidden="true"></span>'
                     . htmlspecialchars($title)
                     . '</li>';
             }

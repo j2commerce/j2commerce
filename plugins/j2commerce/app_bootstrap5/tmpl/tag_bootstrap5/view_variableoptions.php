@@ -231,7 +231,7 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
                             id="product-option-<?php echo $option['productoption_id']; ?>"
                             data-loading-text="<?php echo $esc(Text::_('COM_J2COMMERCE_LOADING')); ?>"
                             class="btn btn-outline-secondary btn-sm">
-                        <i class="fa fa-upload"></i> <?php echo Text::_('COM_J2COMMERCE_PRODUCT_OPTION_CHOOSE_FILE'); ?>
+                        <span class="fa fa-upload" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_PRODUCT_OPTION_CHOOSE_FILE'); ?>
                     </button>
                     <input type="hidden"
                            name="product_option[<?php echo $option['productoption_id']; ?>]"

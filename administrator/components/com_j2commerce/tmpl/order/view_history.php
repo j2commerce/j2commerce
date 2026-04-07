@@ -104,7 +104,7 @@ $currentUserId = (int) (Factory::getApplication()->getIdentity()?->id ?? 0);
                             <div class="col"></div>
                         </div>
                         <h5 class="m-2">
-                            <i class="<?php echo $this->escape($icon); ?>"></i>
+                            <span class="<?php echo $this->escape($icon); ?>" aria-hidden="true"></span>
                         </h5>
                         <div class="row h-50">
                             <div class="col<?php echo $col2; ?>"></div>
