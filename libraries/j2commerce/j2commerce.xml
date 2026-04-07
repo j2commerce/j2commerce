@@ -13,10 +13,12 @@
 	<namespace path="src">J2Commerce\Library\J2Commerce</namespace>
     <scriptfile>script.php</scriptfile>
     <files>
+        <folder>csvexport</folder>
         <folder>layouts</folder>
-		<folder>src</folder>
-		<filename>README.md</filename>
-	</files>
+        <folder>src</folder>
+        <folder>vendor</folder>
+        <filename>README.md</filename>
+    </files>
     <languages folder="language">
         <language tag="en-US">en-US/lib_j2commerce.ini</language>
         <language tag="en-US">en-US/lib_j2commerce.sys.ini</language>
