@@ -7,7 +7,7 @@
             inputmode="search"
             label="COM_J2COMMERCE_FILTER_SEARCH_LABEL"
             description="COM_J2COMMERCE_FILTER_ORDERS_SEARCH_DESC"
-            hint="JSEARCH_FILTER"
+            hint="COM_J2COMMERCE_FILTER_SEARCH_ORDERS_LABEL"
         />
 
         <!-- Column-matched filters (in column order: Order, Date, Customer, Total, Payment, Status) -->

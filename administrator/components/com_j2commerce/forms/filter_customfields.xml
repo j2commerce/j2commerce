@@ -5,8 +5,8 @@
             name="search"
             type="text"
             label="COM_J2COMMERCE_FILTER_SEARCH_LABEL"
-            description="COM_J2COMMERCE_FILTER_SEARCH_DESC"
-            hint="JSEARCH_FILTER"
+            description="COM_J2COMMERCE_FILTER_SEARCH_CUSTOMFIELDS_DESC"
+            hint="COM_J2COMMERCE_FILTER_SEARCH_CUSTOMFIELDS_LABEL"
             inputmode="search"
         />
 

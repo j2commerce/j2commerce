@@ -4,8 +4,9 @@
         <field
             name="search"
             type="text"
-            label="JSEARCH_FILTER"
-            hint="JSEARCH_FILTER"
+            label="COM_J2COMMERCE_FILTER_SEARCH_LABEL"
+            description="COM_J2COMMERCE_FILTER_SEARCH_ADVANCEDPRICING_DESC"
+            hint="COM_J2COMMERCE_FILTER_SEARCH_ADVANCEDPRICING_LABEL"
             inputmode="search"
         />
         <field
