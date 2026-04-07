@@ -109,11 +109,11 @@
             <option value="a.language ASC">COM_J2COMMERCE_INVOICETEMPLATE_LANGUAGE_ASC</option>
             <option value="a.language DESC">COM_J2COMMERCE_INVOICETEMPLATE_LANGUAGE_DESC_SORT</option>
             <option value="a.orderstatus_id ASC">COM_J2COMMERCE_INVOICETEMPLATE_ORDER_STATUS_ASC</option>
-            <option value="a.orderstatus_id DESC">COM_J2COMMERCE_INVOICETEMPLATE_ORDER_STATUS_DESC</option>
+            <option value="a.orderstatus_id DESC">COM_J2COMMERCE_INVOICETEMPLATE_ORDER_STATUS_DESC_SORT</option>
             <option value="a.group_id ASC">COM_J2COMMERCE_INVOICETEMPLATE_GROUP_ASC</option>
-            <option value="a.group_id DESC">COM_J2COMMERCE_INVOICETEMPLATE_GROUP_DESC</option>
+            <option value="a.group_id DESC">COM_J2COMMERCE_INVOICETEMPLATE_GROUP_DESC_SORT</option>
             <option value="a.paymentmethod ASC">COM_J2COMMERCE_INVOICETEMPLATE_PAYMENT_METHOD_ASC</option>
-            <option value="a.paymentmethod DESC">COM_J2COMMERCE_INVOICETEMPLATE_PAYMENT_METHOD_DESC</option>
+            <option value="a.paymentmethod DESC">COM_J2COMMERCE_INVOICETEMPLATE_PAYMENT_METHOD_DESC_SORT</option>
             <option value="a.j2commerce_invoicetemplate_id ASC">COM_J2COMMERCE_HEADING_ID_ASC</option>
             <option value="a.j2commerce_invoicetemplate_id DESC">COM_J2COMMERCE_HEADING_ID_DESC</option>
         </field>
