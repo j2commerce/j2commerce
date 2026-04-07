@@ -30,8 +30,8 @@ $hasOptions = !empty($product->options) ||
 $cartType = (int) $params->get('list_show_cart', 1);
 $btnClass = $params->get('addtocart_button_class', 'btn btn-primary');
 $chooseBtnClass = $params->get('choosebtn_class', 'btn btn-success');
-$productId = $product->j2commerce_product_id;
-$productType = $product->product_type;
+$productId = (int) $product->j2commerce_product_id;
+$productType = htmlspecialchars($product->product_type ?? '', ENT_QUOTES, 'UTF-8');
 
 $show = $productHelper->validateVariableProduct($product);
 
@@ -56,8 +56,8 @@ $afterCart = J2CommerceHelper::plugin()->eventWithHtml('AfterAddToCartButton',[$
         <div class="j2commerce-cart-buttons d-flex align-items-center">
             <div class="input-group">
                 <?php echo $productHelper->displayQuantity('com_j2commerce.productlist', $product, $params, ['class' => 'form-control qty-input','show_buttons' => false]); ?>
-                <button type="submit" class="j2commerce-cart-button flex-fill <?php echo $btnClass; ?>" data-cart-action-always="<?php echo Text::_('COM_J2COMMERCE_ADDING_TO_CART'); ?>" data-cart-action-done="<?php echo $cartText; ?>" data-cart-action-timeout="1000">
-                    <?php echo $cartText; ?>
+                <button type="submit" class="j2commerce-cart-button flex-fill <?php echo $btnClass; ?>" data-cart-action-always="<?php echo Text::_('COM_J2COMMERCE_ADDING_TO_CART'); ?>" data-cart-action-done="<?php echo htmlspecialchars($cartText ?? '', ENT_QUOTES, 'UTF-8'); ?>" data-cart-action-timeout="1000">
+                    <?php echo htmlspecialchars($cartText ?? '', ENT_QUOTES, 'UTF-8'); ?>
                 </button>
             </div>
 

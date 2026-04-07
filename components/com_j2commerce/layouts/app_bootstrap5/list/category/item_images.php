@@ -45,7 +45,7 @@ if (empty($image)) {
 }
 
 $productName = htmlspecialchars($product->product_name ?? '', ENT_QUOTES, 'UTF-8');
-$imageAlt = htmlspecialchars($imageAlt, ENT_QUOTES, 'UTF-8');
+$imageAlt = htmlspecialchars($imageAlt ?? '', ENT_QUOTES, 'UTF-8');
 
 $basePrice = $product->pricing->base_price ?? 0;
 $salePrice = $product->pricing->price ?? 0;
@@ -59,7 +59,7 @@ $salePrice = $product->pricing->price ?? 0;
         <?php endif; ?>
     <?php endif; ?>
     <?php if ($linkImage): ?>
-        <a href="<?php echo htmlspecialchars($productLink, ENT_QUOTES, 'UTF-8'); ?>">
+        <a href="<?php echo htmlspecialchars($productLink ?? '', ENT_QUOTES, 'UTF-8'); ?>">
     <?php endif; ?>
     <?php echo ImageHelper::getProductImage($image, $image_width, 'html', $image_width, 'j2commerce-img-responsive img-fluid', $imageAlt);?>
 

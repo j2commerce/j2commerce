@@ -26,7 +26,9 @@ $cartType = (int) $params->get('list_show_cart', 1);
 $addtocartText = $product->addtocart_text ?? '';
 $cartText = $addtocartText ?? Text::_('COM_J2COMMERCE_VIEW_PRODUCT_DETAILS');
 ?>
-<div class="j2commerce-product-item j2commerce-product-<?php echo $productId; ?> j2commerce-type-<?php echo $productType; ?> <?php echo $cssClass; ?> d-flex flex-column" data-product-id="<?php echo $productId; ?>" data-product-type="<?php echo $productType;?>">
+<div class="j2commerce-product-item j2commerce-product-<?php echo $productId; ?> j2commerce-type-<?php echo $productType; ?> <?php echo $cssClass; ?> d-flex flex-column h-100"
+     data-product-id="<?php echo $productId; ?>"
+     data-product-type="<?php echo $productType;?>">
 
     <?php echo $beforeHtml; ?>
 
@@ -50,7 +52,7 @@ $cartText = $addtocartText ?? Text::_('COM_J2COMMERCE_VIEW_PRODUCT_DETAILS');
         <?php echo ProductLayoutService::renderLayout('list.category.item_description', $displayData); ?>
     <?php endif; ?>
 
-    <div class="j2commerce-price-sku-container d-flex align-items-center justify-content-between">
+    <div class="j2commerce-price-sku-container d-flex flex-wrap align-items-center justify-content-between">
         <?php if ($showPrice): ?>
             <?php echo ProductLayoutService::renderLayout('list.category.item_price', $displayData); ?>
         <?php endif; ?>
@@ -62,7 +64,7 @@ $cartText = $addtocartText ?? Text::_('COM_J2COMMERCE_VIEW_PRODUCT_DETAILS');
     <?php if ($showCart): ?>
         <form action="<?php echo htmlspecialchars($product->cart_form_action ?? '', ENT_QUOTES, 'UTF-8'); ?>"
               method="post"
-              class="j2commerce-addtocart-form mt-2"
+              class="j2commerce-addtocart-form mt-auto"
               id="j2commerce-addtocart-form-<?php echo $productId; ?>"
               data-product_id="<?php echo $productId; ?>"
               data-product_type="<?php echo $productType; ?>"
