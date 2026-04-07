@@ -29,12 +29,12 @@ if (empty($filters)) {
     <?php foreach ($filters as $filter): ?>
         <div class="j2commerce-filter-group">
             <h5><?php echo htmlspecialchars($filter->title ?? '', ENT_QUOTES, 'UTF-8'); ?></h5>
-            <ul class="j2commerce-filter-options list-unstyled">
+            <ul class="j2commerce-filter-options uk-list">
                 <?php foreach ($filter->options ?? [] as $option): ?>
                     <li>
-                        <label class="form-check">
+                        <label>
                             <input type="checkbox"
-                                   class="form-check-input j2commerce-filter-option"
+                                   class="uk-checkbox j2commerce-filter-option"
                                    name="filter[<?php echo $filter->id ?? ''; ?>][]"
                                    value="<?php echo htmlspecialchars($option->value ?? '', ENT_QUOTES, 'UTF-8'); ?>"
                                    <?php echo !empty($option->selected) ? 'checked' : ''; ?> />

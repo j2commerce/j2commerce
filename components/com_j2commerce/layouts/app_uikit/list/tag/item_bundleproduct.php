@@ -19,13 +19,17 @@ extract($displayData);
 
 $productId = $product->j2commerce_product_id;
 $cssClass = $product->params->get('product_css_class', '') ?? '';
+$productType = htmlspecialchars($product->product_type ?? '', ENT_QUOTES, 'UTF-8');
 $beforeHtml = J2CommerceHelper::plugin()->eventWithHtml('BeforeProductListItemDisplay',[$product, $context, &$displayData])->getArgument('html', '');
 $afterHtml = J2CommerceHelper::plugin()->eventWithHtml('AfterProductListItemDisplay',[$product, $context, &$displayData])->getArgument('html', '');
 $cartType = (int) $params->get('list_show_cart', 1);
 $addtocartText = $product->addtocart_text ?? '';
 $cartText = $addtocartText ?? Text::_('COM_J2COMMERCE_VIEW_PRODUCT_DETAILS');
 ?>
-<div class="j2commerce-product-item j2commerce-product-<?php echo $productId; ?> j2commerce-type-<?php echo $product->product_type; ?> <?php echo $cssClass; ?> uk-flex uk-flex-column" data-product-id="<?php echo $productId; ?>" data-product-type="<?php echo $product->product_type;?>" data-equal-height="itemContainer">
+<div class="j2commerce-product-item j2commerce-product-<?php echo $productId; ?> j2commerce-type-<?php echo $productType;?> <?php echo $cssClass; ?> uk-flex uk-flex-column uk-height-1-1"
+     data-product-id="<?php echo $productId; ?>"
+     data-product-type="<?php echo $productType;?>"
+     data-equal-height="itemContainer">
 
     <?php echo $beforeHtml; ?>
 
@@ -49,7 +53,7 @@ $cartText = $addtocartText ?? Text::_('COM_J2COMMERCE_VIEW_PRODUCT_DETAILS');
         <?php echo ProductLayoutService::renderLayout('list.category.item_description', $displayData); ?>
     <?php endif; ?>
 
-    <div class="j2commerce-price-sku-container uk-flex uk-flex-middle uk-flex-between">
+    <div class="j2commerce-price-sku-container uk-flex uk-flex-wrap uk-flex-middle uk-flex-between">
         <?php if ($showPrice): ?>
             <?php echo ProductLayoutService::renderLayout('list.category.item_price', $displayData); ?>
         <?php endif; ?>
@@ -61,7 +65,7 @@ $cartText = $addtocartText ?? Text::_('COM_J2COMMERCE_VIEW_PRODUCT_DETAILS');
     <?php if ($showCart): ?>
         <form action="<?php echo htmlspecialchars($product->cart_form_action ?? '', ENT_QUOTES, 'UTF-8'); ?>"
               method="post"
-              class="j2commerce-addtocart-form uk-margin-small-top"
+              class="j2commerce-addtocart-form uk-margin-auto-top"
               id="j2commerce-addtocart-form-<?php echo $productId; ?>"
               data-product_id="<?php echo $productId; ?>"
               data-product_type="<?php echo $product->product_type; ?>"

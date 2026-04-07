@@ -42,7 +42,7 @@ echo $images;
 <?php if ($this->params->get('catalog_mode', 0) == 0): ?>
     <form action="<?php echo $this->product->cart_form_action; ?>"
           method="post"
-          class="j2commerce-addtocart-form"
+          class="j2commerce-addtocart-form uk-margin-auto-top"
           id="j2commerce-addtocart-form-<?php echo $this->product->j2commerce_product_id; ?>"
           name="j2commerce-addtocart-form-<?php echo $this->product->j2commerce_product_id; ?>"
           data-product_id="<?php echo $this->product->j2commerce_product_id; ?>"

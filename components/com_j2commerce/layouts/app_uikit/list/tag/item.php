@@ -34,7 +34,7 @@ $event = J2CommerceHelper::plugin()->event('GetProductTypeLayouts', [&$layoutMap
 
 if (!isset($layoutMap[$productType])) {
     if (Factory::getApplication()->getIdentity()->authorise('core.manage', 'com_j2commerce')) {
-        echo '<div class="alert alert-warning">' . Text::sprintf('COM_J2COMMERCE_ERR_UNKNOWN_PRODUCT_TYPE_LAYOUT', $this->escape($productType)) . '</div>';
+        echo '<div class="uk-alert uk-alert-warning" uk-alert>' . Text::sprintf('COM_J2COMMERCE_ERR_UNKNOWN_PRODUCT_TYPE_LAYOUT', $this->escape($productType)) . '</div>';
     }
 
     return;

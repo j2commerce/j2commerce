@@ -28,8 +28,8 @@ $hasOptions = !empty($product->options) ||
     in_array($product->product_type ?? 'simple', ['variable', 'flexivariable', 'configurable', 'advancedvariable']);
 
 $cartType = (int) $params->get('list_show_cart', 1);
-$btnClass = $params->get('addtocart_button_class', 'btn btn-primary');
-$chooseBtnClass = $params->get('choosebtn_class', 'btn btn-success');
+$btnClass = $params->get('addtocart_button_class', 'uk-button uk-button-primary');
+$chooseBtnClass = $params->get('choosebtn_class', 'uk-button uk-button-primary');
 $productId = $product->j2commerce_product_id;
 $productType = $product->product_type ?? 'simple';
 
@@ -55,13 +55,13 @@ $afterCart = J2CommerceHelper::plugin()->eventWithHtml(
     <?php elseif ($show): ?>
         <form action="<?php echo htmlspecialchars($product->cart_form_action ?? '', ENT_QUOTES, 'UTF-8'); ?>"
               method="post"
-              class="j2commerce-addtocart-form"
+              class="j2commerce-addtocart-form uk-margin-auto-top"
               id="j2commerce-addtocart-form-<?php echo $productId; ?>"
               data-product_id="<?php echo $productId; ?>"
               data-product_type="<?php echo $productType; ?>">
 
             <div class="cart-action-complete" style="display:none;">
-                <p class="text-success">
+                <p class="uk-text-success">
                     <?php echo Text::_('COM_J2COMMERCE_ITEM_ADDED_TO_CART'); ?>
                     <a href="<?php echo htmlspecialchars($product->checkout_link ?? '', ENT_QUOTES, 'UTF-8'); ?>" class="j2commerce-checkout-link">
                         <?php echo Text::_('COM_J2COMMERCE_CHECKOUT'); ?>
@@ -70,7 +70,7 @@ $afterCart = J2CommerceHelper::plugin()->eventWithHtml(
             </div>
 
             <div id="add-to-cart-<?php echo $productId; ?>" class="j2commerce-add-to-cart">
-                <?php echo $productHelper->displayQuantity('com_j2commerce.productlist', $product, $params, ['class' => 'input-mini form-control']); ?>
+                <?php echo $productHelper->displayQuantity('com_j2commerce.productlist', $product, $params, ['class' => 'input-mini uk-input']); ?>
 
                 <input type="hidden" name="product_id" value="<?php echo $productId; ?>" />
 
@@ -93,7 +93,7 @@ $afterCart = J2CommerceHelper::plugin()->eventWithHtml(
             <div class="j2commerce-notifications"></div>
         </form>
     <?php else: ?>
-        <button type="button" class="j2commerce_button_no_stock btn btn-warning" disabled>
+        <button type="button" class="j2commerce_button_no_stock uk-button uk-button-default" disabled>
             <?php echo Text::_('COM_J2COMMERCE_OUT_OF_STOCK'); ?>
         </button>
     <?php endif; ?>

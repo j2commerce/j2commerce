@@ -17,7 +17,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 extract($displayData);
 
 $productHelper = J2CommerceHelper::product();
-$chooseBtnClass = $params->get('choosebtn_class', 'btn btn-success');
+$chooseBtnClass = $params->get('choosebtn_class', 'uk-button uk-button-primary');
 
 // Configurable products always redirect to product page for option selection in list view
 ?>

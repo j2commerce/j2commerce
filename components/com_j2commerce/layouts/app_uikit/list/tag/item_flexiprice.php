@@ -33,7 +33,7 @@ $showRange = !empty($product->show_price_range) && $hasRange;
 ?>
 <div class="j2commerce-product-price j2commerce-flexiprice">
     <?php if ($showRange): ?>
-        <span class="price-range text-muted small">
+        <span class="price-range uk-text-muted uk-text-small">
             <?php echo $currency->format($minPrice); ?> - <?php echo $currency->format($maxPrice); ?>
         </span>
     <?php endif; ?>
