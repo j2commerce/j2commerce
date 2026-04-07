@@ -79,11 +79,8 @@
         >
             <option value="">COM_J2COMMERCE_SELECT_TEMPLATE_TYPE</option>
             <option value="invoice">COM_J2COMMERCE_INVOICETEMPLATE_TYPE_INVOICE</option>
-            <option value="quote">COM_J2COMMERCE_INVOICETEMPLATE_TYPE_QUOTE</option>
-            <option value="receipt">COM_J2COMMERCE_INVOICETEMPLATE_TYPE_RECEIPT</option>
-            <option value="credit_note">COM_J2COMMERCE_INVOICETEMPLATE_TYPE_CREDIT_NOTE</option>
-            <option value="proforma">COM_J2COMMERCE_INVOICETEMPLATE_TYPE_PROFORMA</option>
             <option value="packingslip">COM_J2COMMERCE_INVOICETEMPLATE_TYPE_PACKINGSLIP</option>
+            <option value="receipt">COM_J2COMMERCE_INVOICETEMPLATE_TYPE_RECEIPT</option>
         </field>
     </fields>
 
