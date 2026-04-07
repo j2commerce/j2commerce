@@ -121,7 +121,7 @@ $cross_image_width = $this->params->get('item_product_cross_image_width', 100);
 
                                 <?php if( J2CommerceHelper::product()->canShowCart($this->params) ): ?>
                                     <form action="<?php echo $cross_sell_product->cart_form_action; ?>"
-                                          method="post" class="j2commerce-addtocart-form"
+                                          method="post" class="j2commerce-addtocart-form mt-auto"
                                           id="j2commerce-addtocart-form-<?php echo $cross_sell_product->j2commerce_product_id; ?>"
                                           name="j2commerce-addtocart-form-<?php echo $cross_sell_product->j2commerce_product_id; ?>"
                                           data-product_id="<?php echo $cross_sell_product->j2commerce_product_id; ?>"
