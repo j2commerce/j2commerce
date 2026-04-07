@@ -638,7 +638,7 @@
 					type="text"
 					label="COM_J2COMMERCE_PRODUCT_LIST_IMAGE_WIDTH"
 					description="COM_J2COMMERCE_PRODUCT_IMAGE_WIDTH_DESC"
-					default="120"
+					default="350"
 					filter="integer"
 					showon="list_show_image:1"
 				/>
@@ -1111,7 +1111,7 @@
 				type="text"
 				label="COM_J2COMMERCE_PRODUCT_MAIN_IMAGE_WIDTH_LABEL"
 				description="COM_J2COMMERCE_PRODUCT_IMAGE_WIDTH_DESC"
-				default="200"
+				default="800"
 				filter="integer"
 				showon="item_show_product_main_image:1"
 			/>
@@ -1167,7 +1167,7 @@
 				type="text"
 				label="COM_J2COMMERCE_PRODUCT_UPSELL_IMAGE_WIDTH_LABEL"
 				description="COM_J2COMMERCE_PRODUCT_IMAGE_WIDTH_DESC"
-				default="100"
+				default="350"
 				filter="integer"
 				showon="item_show_product_upsells:1"
 			/>
@@ -1189,7 +1189,7 @@
 				type="text"
 				label="COM_J2COMMERCE_PRODUCT_CROSS_IMAGE_WIDTH_LABEL"
 				description="COM_J2COMMERCE_PRODUCT_IMAGE_WIDTH_DESC"
-				default="100"
+				default="350"
 				filter="integer"
 				showon="item_show_product_cross_sells:1"
 			/>

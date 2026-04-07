@@ -331,7 +331,7 @@
 					type="text"
 					label="COM_J2COMMERCE_PRODUCT_LIST_IMAGE_WIDTH"
 					description="COM_J2COMMERCE_PRODUCT_IMAGE_WIDTH_DESC"
-					default="120"
+					default="350"
 					showon="list_show_image:1"
 				/>
 
