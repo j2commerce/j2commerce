@@ -1,25 +1,25 @@
-.j2commerce.checkout :focus {
+#j2commerce-checkout :focus {
     box-shadow: none;
     outline: 2px solid var(--bs-primary, #0d6efd);
     outline-offset: 2px;
 }
-.j2commerce.checkout :focus:not(:focus-visible) {
+#j2commerce-checkout :focus:not(:focus-visible) {
     outline: none;
 }
-.j2commerce.checkout .j2commerce-customfield input:focus {
+#j2commerce-checkout .j2commerce-customfield input:focus {
     border-color: var(--bs-primary, #0d6efd);
 }
-.j2commerce.checkout .btn-checkout-step:focus-visible {
+#j2commerce-checkout .btn-checkout-step:focus-visible {
     outline: 3px solid var(--bs-primary, #0d6efd);
     outline-offset: 2px;
     box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
 }
-.j2commerce.checkout .form-normal label {
+#j2commerce-checkout .form-normal label {
     margin-bottom: 2px;
     font-weight: 500;
     font-size: 0.9rem;
 }
-.j2commerce.checkout .checkout-heading {
+#j2commerce-checkout .checkout-heading {
     padding: 10px 15px;
     background: #f5f5f5;
     border:none;
@@ -28,7 +28,7 @@
     font-size: 1.1em;
     cursor: default;
 }
-.j2commerce.checkout .checkout-heading a {
+#j2commerce-checkout .checkout-heading a {
     float: inline-end;
     cursor: pointer;
     color: var(--bs-primary, #0d6efd);
@@ -36,12 +36,12 @@
     font-weight: normal;
     font-size: 0.9em;
 }
-.j2commerce.checkout .checkout-heading a:focus-visible {
+#j2commerce-checkout .checkout-heading a:focus-visible {
     outline: 2px solid var(--bs-primary, #0d6efd);
     outline-offset: 2px;
     border-radius: 2px;
 }
-.j2commerce.checkout .checkout-content {
+#j2commerce-checkout .checkout-content {
     display: none;
     padding: 15px;
     border: none;
@@ -49,14 +49,14 @@
     margin-bottom: 10px;
     overflow: hidden;
 }
-.j2commerce.checkout .checkout-content.active {
+#j2commerce-checkout .checkout-content.active {
     display: block;
 }
-.j2commerce.checkout .j2error {
+#j2commerce-checkout .j2error {
     color: #dc3545;
     font-size: 0.875em;
 }
-.j2commerce.checkout .j2-invalid {
+#j2commerce-checkout .j2-invalid {
     border-color: #dc3545 !important;
     padding-inline-end: calc(1.5em + 0.75rem);
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23dc3545' viewBox='0 0 16 16'%3E%3Cpath d='M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M8 4a.905.905 0 0 0-.9.995l.35 3.507a.553.553 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 4m.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2'/%3E%3C/svg%3E");
@@ -64,33 +64,34 @@
     background-position: right calc(0.375em + 0.1875rem) center;
     background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
 }
-.j2commerce.checkout select.j2-invalid {
+#j2commerce-checkout select.j2-invalid {
     background-position: right calc(0.375em + 1.5rem) center;
 }
-.j2commerce.checkout .wait {
+#j2commerce-checkout .wait {
     display: inline-block;
     margin-inline-start: 5px;
 }
-.j2commerce.checkout .wait .spinner-border {
+#j2commerce-checkout .wait .spinner-border {
     width: 1em;
     height: 1em;
     border-width: 2px;
 }
-.j2commerce.checkout .j2commerce-cart-button, .j2commerce.checkout .btn-checkout-step {
+#j2commerce-checkout .j2commerce-cart-button,
+#j2commerce-checkout .btn-checkout-step {
     width: 100%;
 }
-.j2commerce.checkout .checkout-sidebar-item {
+#j2commerce-checkout .checkout-sidebar-item {
     background:transparent;
 }
-.j2commerce.checkout .bg-light {
+#j2commerce-checkout .bg-light {
     background: #f5f5f5 !important;
 }
-.j2commerce.checkout .shipping-method-item,
-.j2commerce.checkout .payment-method-item {
+#j2commerce-checkout .shipping-method-item,
+#j2commerce-checkout .payment-method-item {
     cursor: pointer;
 }
-.j2commerce.checkout .checkout-voucher-form .form-control:focus,
-.j2commerce.checkout .checkout-coupon-form .form-control:focus {
+#j2commerce-checkout .checkout-voucher-form .form-control:focus,
+#j2commerce-checkout .checkout-coupon-form .form-control:focus {
     box-shadow: none;
     border-color: var(--bs-primary, #0d6efd);
 }
@@ -116,11 +117,11 @@
     border-radius: 50%;
     animation: j2c-spin 0.8s linear infinite;
 }
-.j2commerce.checkout .j2commerce-save-card-container {
+#j2commerce-checkout .j2commerce-save-card-container {
     background: #f5f5f5;
     padding: .5rem;
 }
-.j2commerce.checkout .j2commerce-save-card-container label {
+#j2commerce-checkout .j2commerce-save-card-container label {
     font-size: 90%;
     font-weight: 500;
     position: relative;
@@ -148,7 +149,7 @@
     animation: j2c-spin 0.8s linear infinite;
     z-index: 10;
 }
-.j2commerce.checkout .btn-secondary {
+.j2commerce .btn-secondary {
     --btn-color: #333d4c;
     --btn-bg: #eef1f6;
     --btn-border-color: var(--btn-bg);
@@ -162,7 +163,7 @@
     --btn-disabled-bg: var(--btn-bg);
     --btn-disabled-border-color:var(--btn-bg);
 }
-.j2commerce.checkout .btn-outline-secondary {
+.j2commerce .btn-outline-secondary {
     --btn-color: #6d757e;
     --btn-border-color: #6d757e;
     --btn-hover-color: #fff;
@@ -186,7 +187,7 @@
     transition: transform 0.2s ease;
 }
 /* Skip link */
-.j2commerce .j2commerce-skip-link {
+.j2commerce-skip-link {
     position:absolute;
     top:-40px;
     left:0;
@@ -196,44 +197,44 @@
     z-index:1000;
     transition:top 0.3s;
 }
-.j2commerce .j2commerce-skip-link:focus {
+.j2commerce-skip-link:focus {
     top:0;
 }
 /* Fieldset reset for radio groups */
-.j2commerce.checkout fieldset {
+#j2commerce-checkout fieldset {
     border:0;
     padding:0;
     margin:0;
     min-width:0;
 }
 /* Loading state for checkout content */
-.j2commerce.checkout .checkout-content[aria-busy="true"] {
+#j2commerce-checkout .checkout-content[aria-busy="true"] {
     opacity:0.6;
     pointer-events:none;
     position:relative;
 }
-.j2commerce.checkout .shipping-method-image {
+#j2commerce-checkout .shipping-method-image {
     height:36px;
 }
-.j2commerce.checkout .shipping-method-display {
+#j2commerce-checkout .shipping-method-display {
     line-height:1;
 }
-.j2commerce.checkout .payment-methods-group .checkout-payment-icons .payment-plugin-image {
+#j2commerce-checkout .payment-methods-group .checkout-payment-icons .payment-plugin-image {
     height:36px;
 }
 @media (prefers-color-scheme: dark){
-    .j2commerce.checkout .payment-methods-group .checkout-payment-icons .dark-mode.payment-plugin-image {
+    #j2commerce-checkout .payment-methods-group .checkout-payment-icons .dark-mode.payment-plugin-image {
         display:block;
     }
-    .j2commerce.checkout .payment-methods-group .checkout-payment-icons .light-mode.payment-plugin-image {
+    #j2commerce-checkout .payment-methods-group .checkout-payment-icons .light-mode.payment-plugin-image {
         display:none;
     }
 }
 @media (prefers-color-scheme: light){
-    .j2commerce.checkout .payment-methods-group .checkout-payment-icons .dark-mode.payment-plugin-image, #paymentIcons .payment-icon.dark-mode {
+    #j2commerce-checkout .payment-methods-group .checkout-payment-icons .dark-mode.payment-plugin-image, #paymentIcons .payment-icon.dark-mode {
         display:none;
     }
-    .j2commerce.checkout .payment-methods-group .checkout-payment-icons .light-mode.payment-plugin-image, #paymentIcons .payment-icon.light-mode {
+    #j2commerce-checkout .payment-methods-group .checkout-payment-icons .light-mode.payment-plugin-image, #paymentIcons .payment-icon.light-mode {
         display:block;
     }
 }
