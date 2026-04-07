@@ -11,7 +11,7 @@
 
         <field
             name="enabled"
-            type="status"
+            type="pluginstatus"
             label="JOPTION_SELECT_PUBLISHED"
             optionsFilter="*,0,1"
             onchange="this.form.submit();"

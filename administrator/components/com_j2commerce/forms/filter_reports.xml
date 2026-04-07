@@ -11,7 +11,7 @@
 
         <field
             name="enabled"
-            type="status"
+            type="pluginstatus"
             label="JSTATUS"
             description="JFIELD_ENABLED_DESC"
             onchange="this.form.submit();"
