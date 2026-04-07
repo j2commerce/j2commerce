@@ -201,7 +201,7 @@
 
                 <field
                     name="geozone_id"
-                    type="geozone"
+                    type="GeoZone"
                     default=""
                     label="COM_J2COMMERCE_GEOZONE_RESTRICTION"
                     description="COM_J2COMMERCE_GEOZONE_RESTRICTION_DESC"

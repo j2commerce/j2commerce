@@ -31,7 +31,7 @@
 
         <field
             name="geozone_id"
-            type="geozone"
+            type="GeoZone"
             label="COM_J2COMMERCE_FIELD_GEOZONE"
             description="COM_J2COMMERCE_FIELD_GEOZONE_DESC"
             required="true"
