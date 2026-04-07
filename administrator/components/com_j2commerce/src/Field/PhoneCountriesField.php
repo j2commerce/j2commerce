@@ -55,11 +55,17 @@ class PhoneCountriesField extends CheckboxesField
         $name         = $this->name;
         $id           = $this->id;
 
-        // Build name map from DB-enabled countries
-        $countries = PhoneHelper::getCountryListForDropdown();
-        $nameMap   = [];
-        foreach ($countries as $c) {
-            $nameMap[$c['iso2']] = $c['name'];
+        // Build name map from ALL countries in the DB (not just enabled) so that
+        // every country in the picker shows its full name and is searchable by name.
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true)
+            ->select($db->quoteName(['country_name', 'country_isocode_2']))
+            ->from($db->quoteName('#__j2commerce_countries'))
+            ->order($db->quoteName('country_name') . ' ASC');
+        $db->setQuery($query);
+        $nameMap = [];
+        foreach ($db->loadObjectList() as $row) {
+            $nameMap[$row->country_isocode_2] = $row->country_name;
         }
 
         // Build ISO2 → dial code map
@@ -153,7 +159,8 @@ class PhoneCountriesField extends CheckboxesField
 
                 $html .= '<div class="form-check j2c-phone-country-item" '
                     . 'data-name="' . $esc(strtolower($countryName)) . '" '
-                    . 'data-code="' . $esc($dialCode) . '">'
+                    . 'data-code="' . $esc($dialCode) . '" '
+                    . 'data-iso="' . $esc(strtolower($iso2)) . '">'
                     . '<input type="checkbox" class="form-check-input j2c-phone-country-check" '
                     . 'name="' . $esc($name) . '" '
                     . 'id="' . $esc($optId) . '" '
@@ -195,7 +202,7 @@ class PhoneCountriesField extends CheckboxesField
             picker.querySelectorAll('.j2c-phone-continent').forEach(function(cont) {
                 let anyVisible = false;
                 cont.querySelectorAll('.j2c-phone-country-item').forEach(function(item) {
-                    const match = !q || item.dataset.name.indexOf(q) !== -1 || item.dataset.code.indexOf(q) !== -1;
+                    const match = !q || item.dataset.name.indexOf(q) !== -1 || item.dataset.code.indexOf(q) !== -1 || item.dataset.iso.indexOf(q) !== -1;
                     item.style.display = match ? '' : 'none';
                     if (match) anyVisible = true;
                 });
