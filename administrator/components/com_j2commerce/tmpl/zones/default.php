@@ -71,10 +71,9 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
                         <tbody>
                         <?php foreach ($this->items as $i => $item) : ?>
                             <?php
-                            // Decode HTML entities from legacy data, then escape for safe output
-                            $zoneName = $this->escape(html_entity_decode($item->zone_name ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8'));
-                            $zoneCode = $this->escape(html_entity_decode($item->zone_code ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8'));
-                            $countryName = $this->escape(html_entity_decode($item->country_name ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+                            $zoneName = $this->escape($item->zone_name ?? '');
+                            $zoneCode = $this->escape($item->zone_code ?? '');
+                            $countryName = $this->escape($item->country_name ?? '');
                             ?>
                             <tr class="row<?php echo $i % 2; ?>">
                                 <td class="text-center">
