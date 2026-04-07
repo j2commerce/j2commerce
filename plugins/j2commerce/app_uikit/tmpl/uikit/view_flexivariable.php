@@ -71,7 +71,7 @@ if ($this->params->get('item_show_product_stock', 1) && J2CommerceHelper::produc
 
             <?php if (J2CommerceHelper::product()->canShowCart($this->params)) : ?>
                 <form action="<?php echo $this->escape($this->product->cart_form_action); ?>"
-                      method="post" class="j2commerce-addtocart-form uk-margin-large-bottom uk-margin-auto-top"
+                      method="post" class="j2commerce-addtocart-form uk-margin-large-bottom"
                       id="j2commerce-addtocart-form-<?php echo $this->product->j2commerce_product_id; ?>"
                       name="j2commerce-addtocart-form-<?php echo $this->product->j2commerce_product_id; ?>"
                       data-product_id="<?php echo $this->product->j2commerce_product_id; ?>"

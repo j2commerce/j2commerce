@@ -82,7 +82,7 @@ $product_helper = J2CommerceHelper::product();
 
             <?php if ($product_helper->canShowCart($this->params)) : ?>
                 <form action="<?php echo $this->product->cart_form_action; ?>"
-                      method="post" class="j2commerce-addtocart-form uk-width-1-1 uk-display-block uk-margin-auto-top"
+                      method="post" class="j2commerce-addtocart-form uk-width-1-1 uk-display-block"
                       id="j2commerce-addtocart-form-<?php echo $this->product->j2commerce_product_id; ?>"
                       name="j2commerce-addtocart-form-<?php echo $this->product->j2commerce_product_id; ?>"
                       data-product_id="<?php echo $this->product->j2commerce_product_id; ?>"

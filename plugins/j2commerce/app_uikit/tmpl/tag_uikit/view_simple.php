@@ -65,7 +65,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
             <?php if (J2CommerceHelper::product()->canShowCart($this->params)) : ?>
                 <form action="<?php echo $this->escape($this->product->cart_form_action); ?>"
-                      method="post" class="j2commerce-addtocart-form uk-margin-medium-bottom uk-margin-auto-top"
+                      method="post" class="j2commerce-addtocart-form uk-margin-medium-bottom"
                       id="j2commerce-addtocart-form-<?php echo (int) $this->product->j2commerce_product_id; ?>"
                       name="j2commerce-addtocart-form-<?php echo (int) $this->product->j2commerce_product_id; ?>"
                       data-product_id="<?php echo (int) $this->product->j2commerce_product_id; ?>"
