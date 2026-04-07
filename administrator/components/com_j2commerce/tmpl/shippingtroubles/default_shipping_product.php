@@ -182,6 +182,9 @@ function getProductStatusBadge($status) {
                     <table class="table" id="productList">
                         <thead>
                             <tr>
+                                <th scope="col" class="w-1 text-center">
+                                    <?php echo HTMLHelper::_('searchtools.sort', 'JGRID_HEADING_ID', 'p.j2commerce_product_id', $listDirn, $listOrder); ?>
+                                </th>
                                 <th scope="col">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_PRODUCT_NAME', 'p.product_source_id', $listDirn, $listOrder); ?>
                                 </th>
@@ -201,9 +204,12 @@ function getProductStatusBadge($status) {
                         </thead>
                         <tbody>
                             <?php foreach ($products as $product):
-                                $contentEditLink = Route::_('index.php?option=com_content&task=article.edit&id=' . (int) $product->product_source_id);
+                                $contentEditLink = Route::_('index.php?option=com_content&task=article.edit&id=' . (int) $product->product_source_id) . '#attrib-j2commerce';
                                 ?>
                                 <tr>
+                                    <td class="text-center">
+                                        <?php echo (int) $product->j2commerce_product_id; ?>
+                                    </td>
                                     <td>
                                         <strong><?php echo $this->escape($product->product_name); ?></strong>
                                         <?php if (!empty($product->shipping_issues) || !empty($product->shipping_warnings)): ?>
@@ -258,7 +264,8 @@ function getProductStatusBadge($status) {
                                     <td class="text-center">
                                         <a href="<?php echo $contentEditLink; ?>"
                                            class="btn btn-sm btn-link"
-                                           title="<?php echo Text::_('JACTION_EDIT'); ?>">
+                                           title="<?php echo Text::_('JACTION_EDIT'); ?>"
+                                           onclick="sessionStorage.setItem('j2ctab', 'shippingTab')">
                                             <span class="fa-solid fa-edit" aria-hidden="true"></span>
                                         </a>
                                     </td>

@@ -457,7 +457,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (typeof customElements !== 'undefined' && customElements.whenDefined) {
         customElements.whenDefined('joomla-tab').then(function() {
-            setTimeout(function() { initNestedTabs(false); }, 50);
+            setTimeout(function() {
+                initNestedTabs(false);
+
+                // Deep-link to a specific sub-tab via sessionStorage
+                var targetTab = sessionStorage.getItem('j2ctab');
+                if (targetTab) {
+                    sessionStorage.removeItem('j2ctab');
+                    var tabEl = document.getElementById(targetTab);
+                    if (tabEl) {
+                        var joomlaTab = tabEl.closest('joomla-tab');
+                        if (joomlaTab && typeof joomlaTab.activateTab === 'function') {
+                            joomlaTab.activateTab(tabEl);
+                        }
+                    }
+                }
+            }, 50);
         });
     }
 

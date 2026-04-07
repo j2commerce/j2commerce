@@ -109,6 +109,7 @@ class ShippingtroublesModel extends ListModel
             'v.sku AS product_sku',
             'p.enabled',
             'p.product_source_id',
+            'p.product_type',
             'v.shipping',
             'v.weight',
             'v.length',
@@ -123,6 +124,9 @@ class ShippingtroublesModel extends ListModel
 
         // Exclude products where product_type contains "variable" AND is_master = 1
         $query->where('NOT (' . $db->quoteName('p.product_type') . ' LIKE ' . $db->quote('%variable%') . ' AND ' . $db->quoteName('v.is_master') . ' = 1)');
+
+        // Exclude downloadable products — they cannot be shipped
+        $query->where($db->quoteName('p.product_type') . ' != ' . $db->quote('downloadable'));
 
         // Filter by search in product name or SKU
         $search = $this->getState('filter.search');
@@ -499,7 +503,8 @@ class ShippingtroublesModel extends ListModel
             ])
             ->from($db->quoteName('#__j2commerce_products', 'p'))
             ->leftJoin($db->quoteName('#__j2commerce_variants', 'v') . ' ON p.j2commerce_product_id = v.product_id AND v.is_master = 1')
-            ->where($db->quoteName('p.enabled') . ' = 1');
+            ->where($db->quoteName('p.enabled') . ' = 1')
+            ->where($db->quoteName('p.product_type') . ' != ' . $db->quote('downloadable'));
 
             $db->setQuery($query);
             $products = $db->loadObjectList();
