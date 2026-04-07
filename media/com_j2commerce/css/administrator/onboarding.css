@@ -180,6 +180,14 @@
     padding: 1rem 2rem;
 }
 
+/* ---- Focus styling (a11y) ---- */
+.j2c-onboarding-footer .btn:focus-visible,
+.j2c-step .btn:focus-visible,
+.j2c-step a.btn:focus-visible {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: 2px;
+}
+
 /* ---- Shipping rate table (onboarding) ---- */
 .j2c-onboarding-body .ob-rates-table th,
 .j2c-onboarding-body .ob-rates-table td {
