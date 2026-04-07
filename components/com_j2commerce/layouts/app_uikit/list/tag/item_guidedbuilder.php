@@ -75,9 +75,9 @@ $cartText   = !empty($product->addtocart_text) ? $product->addtocart_text : Text
     </div>
 
     <?php if ($showCart): ?>
-        <a href="<?php echo $productLink; ?>" class="uk-button uk-button-default uk-margin-auto-top">
+        <a href="<?php echo htmlspecialchars($productLink ?? '', ENT_QUOTES, 'UTF-8'); ?>" class="uk-button uk-button-default uk-margin-auto-top">
             <span class="fa-solid fa-wand-magic-sparkles uk-margin-small-right" aria-hidden="true"></span>
-            <?php echo $cartText; ?>
+            <?php echo htmlspecialchars($cartText ?? '', ENT_QUOTES, 'UTF-8'); ?>
         </a>
     <?php endif; ?>
 

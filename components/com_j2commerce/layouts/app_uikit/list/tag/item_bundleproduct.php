@@ -79,7 +79,7 @@ $cartText = $addtocartText ?? Text::_('COM_J2COMMERCE_VIEW_PRODUCT_DETAILS');
                     <?php echo htmlspecialchars($cartText, ENT_QUOTES, 'UTF-8'); ?>
                 </a>
             <?php elseif (($cartType == 2 && !empty($product->options)) || $cartType == 3) : ?>
-                <a href="<?php echo $productLink; ?>" class="uk-button uk-button-default">
+                <a href="<?php echo htmlspecialchars($productLink ?? '', ENT_QUOTES, 'UTF-8'); ?>" class="uk-button uk-button-default uk-width-1-1">
                     <?php echo Text::_('COM_J2COMMERCE_VIEW_PRODUCT_DETAILS'); ?>
                 </a>
             <?php else : ?>
