@@ -44,7 +44,7 @@ $currentSefPath = Uri::getInstance()->getPath();
 $csrfTokenName = Session::getFormToken();
 $app->getDocument()->addScriptOptions('csrf.token', $csrfTokenName);
 
-$hasFilterGroups = (!empty($this->filters['manufacturers']) && $this->params->get('list_show_manfacturer_filter', 1))
+$hasFilterGroups = (!empty($this->filters['manufacturers']) && $this->params->get('list_show_manufacturer_filter', 1))
     || (!empty($this->filters['vendors']) && $this->params->get('list_show_vendor_filter', 1))
     || (!empty($this->filters['productfilters']) && $this->params->get('list_show_product_filter', 1));
 
@@ -184,7 +184,7 @@ $filtersCollapsed = ((int) $this->params->get('list_filter_category_toggle', 1) 
                     <?php endforeach; ?>
                 <?php endif; ?>
 
-                <?php if ($this->params->get('list_show_manfacturer_filter', 1) && !empty($this->filters['manufacturers']) && count($this->filters['manufacturers'])) : ?>
+                <?php if ($this->params->get('list_show_manufacturer_filter', 1) && !empty($this->filters['manufacturers']) && count($this->filters['manufacturers'])) : ?>
                     <li<?php echo $filtersCollapsed ? '' : ' class="uk-open"'; ?>>
                         <a class="uk-accordion-title" href="#">
                             <?php echo Text::_('COM_J2COMMERCE_FILTER_BY_BRAND'); ?>
@@ -347,7 +347,7 @@ $filtersCollapsed = ((int) $this->params->get('list_filter_category_toggle', 1) 
                 <?php endforeach; ?>
             <?php endif; ?>
 
-            <?php if ($this->params->get('list_show_manfacturer_filter', 1) && !empty($this->filters['manufacturers']) && count($this->filters['manufacturers'])) : ?>
+            <?php if ($this->params->get('list_show_manufacturer_filter', 1) && !empty($this->filters['manufacturers']) && count($this->filters['manufacturers'])) : ?>
                 <li<?php echo $filtersCollapsed ? '' : ' class="uk-open"'; ?>>
                     <a class="uk-accordion-title" href="#">
                         <?php echo Text::_('COM_J2COMMERCE_FILTER_BY_BRAND'); ?>

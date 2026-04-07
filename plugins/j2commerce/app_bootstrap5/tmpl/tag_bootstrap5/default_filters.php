@@ -44,7 +44,7 @@ $currentSefPath = Uri::getInstance()->getPath();
 $csrfTokenName = Session::getFormToken();
 $app->getDocument()->addScriptOptions('csrf.token', $csrfTokenName);
 
-$hasFilterGroups = (!empty($this->filters['manufacturers']) && $this->params->get('list_show_manfacturer_filter', 1))
+$hasFilterGroups = (!empty($this->filters['manufacturers']) && $this->params->get('list_show_manufacturer_filter', 1))
     || (!empty($this->filters['vendors']) && $this->params->get('list_show_vendor_filter', 1))
     || (!empty($this->filters['productfilters']) && $this->params->get('list_show_product_filter', 1));
 
@@ -206,7 +206,7 @@ HTMLHelper::_('bootstrap.collapse');
                     <?php endforeach; ?>
                 <?php endif; ?>
 
-                <?php if ($this->params->get('list_show_manfacturer_filter', 1) && !empty($this->filters['manufacturers']) && count($this->filters['manufacturers'])) : ?>
+                <?php if ($this->params->get('list_show_manufacturer_filter', 1) && !empty($this->filters['manufacturers']) && count($this->filters['manufacturers'])) : ?>
                     <div class="accordion-item border-0 border-bottom">
                         <h3 class="accordion-header">
                             <button class="accordion-button fw-semibold<?php echo $filtersCollapsed ? ' collapsed' : ''; ?>" type="button" data-bs-toggle="collapse" data-bs-target="#filterBrand">

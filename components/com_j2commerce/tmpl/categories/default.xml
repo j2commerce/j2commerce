@@ -905,7 +905,7 @@
 				</field>
 
 				<field
-					name="list_show_manfacturer_filter"
+					name="list_show_manufacturer_filter"
 					type="radio"
 					label="COM_J2COMMERCE_PRODUCT_LIST_FILTER_MANUFACTURER"
 					default="1"
@@ -923,7 +923,7 @@
 					label="COM_J2COMMERCE_PRODUCT_LIST_FILTER_MANUFACTURER_LIST_TYPE"
 					description="COM_J2COMMERCE_PRODUCT_LIST_FILTER_MANUFACTURER_LIST_TYPE_DESC"
 					default="selected"
-					showon="list_show_manfacturer_filter:1[AND]list_show_filter:1"
+					showon="list_show_manufacturer_filter:1[AND]list_show_filter:1"
 				>
 					<option value="selected">COM_J2COMMERCE_FILTER_SELECTED_ONLY</option>
 					<option value="all">COM_J2COMMERCE_FILTER_SHOW_ALL</option>
