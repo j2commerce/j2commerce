@@ -65,6 +65,10 @@ class ImageProcessorHelper
         int $height
     ): bool {
         try {
+            if (strtolower(pathinfo($sourcePath, PATHINFO_EXTENSION)) === 'svg') {
+                return copy($sourcePath, $thumbPath);
+            }
+
             $image = new Image($sourcePath);
 
             $originalWidth  = $image->getWidth();
@@ -91,6 +95,10 @@ class ImageProcessorHelper
     /** Resize and convert main image to WebP. Returns WebP data or false on failure. */
     public function processMainImage(string $sourcePath, int $maxDimension, bool $maintainRatio): string|false
     {
+        if (strtolower(pathinfo($sourcePath, PATHINFO_EXTENSION)) === 'svg') {
+            return file_get_contents($sourcePath);
+        }
+
         if (!\function_exists('imagewebp') || $maxDimension < 1) {
             return false;
         }
@@ -163,6 +171,10 @@ class ImageProcessorHelper
 
     public function validateImage(string $data): bool
     {
+        if (str_starts_with(trim($data), '<svg')) {
+            return true;
+        }
+
         $imageInfo = @getimagesizefromstring($data);
 
         if ($imageInfo === false) {
