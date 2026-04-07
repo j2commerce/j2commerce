@@ -36,7 +36,8 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
             <span class="required">*</span>
             <?php endif; ?>
             <b><?php echo $esc(Text::_($option['option_name'])); ?>:</b><br>
-            <select name="product_option[<?php echo (int) $option['productoption_id']; ?>]" class="uk-select"
+            <select name="product_option[<?php echo (int) $option['productoption_id']; ?>]"
+                class="uk-select"
                 onchange="doAjaxFilter(this.options[this.selectedIndex].value, <?php echo (int) $product_id; ?>, <?php echo (int) $option['productoption_id']; ?>, '#child-option-<?php echo (int) $option['productoption_id']; ?>');">
                 <option value=""><?php echo Text::_('COM_J2COMMERCE_ADDTOCART_SELECT'); ?></option>
                 <?php foreach ($option['optionvalue'] as $option_value) : ?>
@@ -122,7 +123,12 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
                 <div class="j2commerce-color-options uk-flex uk-flex-wrap" style="gap: 0.5rem;" data-binded-label="#child-colorOption<?php echo (int) $option['productoption_id']; ?>">
                     <?php foreach ($option['optionvalue'] as $option_value) : ?>
                         <?php $checked = !empty($option_value['product_optionvalue_default']) ? 'checked="checked"' : ''; ?>
-                        <input <?php echo $checked; ?> type="radio" name="product_option[<?php echo (int) $option['productoption_id']; ?>]" value="<?php echo (int) $option_value['product_optionvalue_id']; ?>" id="child-option-value-<?php echo (int) $option_value['product_optionvalue_id']; ?>" class="uk-hidden" onchange="doAjaxFilter(this.value, <?php echo (int) $product_id; ?>, <?php echo (int) $option['productoption_id']; ?>, '#child-option-<?php echo (int) $option['productoption_id']; ?>');" />
+                        <input <?php echo $checked; ?> type="radio"
+                            name="product_option[<?php echo (int) $option['productoption_id']; ?>]"
+                            value="<?php echo (int) $option_value['product_optionvalue_id']; ?>"
+                            id="child-option-value-<?php echo (int) $option_value['product_optionvalue_id']; ?>"
+                            class="uk-hidden"
+                            onchange="doAjaxFilter(this.value, <?php echo (int) $product_id; ?>, <?php echo (int) $option['productoption_id']; ?>, '#child-option-<?php echo (int) $option['productoption_id']; ?>');" />
 
                         <label for="child-option-value-<?php echo (int) $option_value['product_optionvalue_id']; ?>" class="btn-color" title="<?php echo $esc(Text::_($option_value['optionvalue_name'])); ?>" data-label="<?php echo $esc(Text::_($option_value['optionvalue_name'])); ?>" style="color:<?php echo $esc($option_value['optionvalue_image']); ?>;">
                             <span class="uk-hidden"><?php echo $esc(Text::_($option_value['optionvalue_name'])); ?></span>
