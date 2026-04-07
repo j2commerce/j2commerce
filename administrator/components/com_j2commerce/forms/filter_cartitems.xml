@@ -6,7 +6,7 @@
             type="text"
             label="COM_J2COMMERCE_FILTER_SEARCH_CARTITEMS_LABEL"
             description="COM_J2COMMERCE_FILTER_SEARCH_CARTITEMS_DESC"
-            hint="JSEARCH_FILTER"
+            hint="COM_J2COMMERCE_FILTER_SEARCH_CARTITEMS_LABEL"
         />
 
         <field
