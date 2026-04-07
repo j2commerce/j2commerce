@@ -51,7 +51,7 @@ $cartType = (int) $params->get('list_show_cart', 1);
         <?php echo ProductLayoutService::renderLayout('list.category.item_description', $displayData); ?>
     <?php endif; ?>
 
-    <div class="j2commerce-price-sku-container uk-flex uk-flex-wrap uk-flex-middle uk-flex-between">
+    <div class="j2commerce-price-sku-container uk-flex uk-flex-wrap uk-flex-middle uk-flex-between<?php echo ($showCart && $cartType == 1) ? '' : ' uk-margin-bottom' ?>">
         <?php if ($showPrice): ?>
             <?php echo ProductLayoutService::renderLayout('list.category.item_flexiprice', $displayData); ?>
         <?php endif; ?>
@@ -66,7 +66,7 @@ $cartType = (int) $params->get('list_show_cart', 1);
               class="j2commerce-addtocart-form uk-margin-auto-top"
               id="j2commerce-addtocart-form-<?php echo $productId; ?>"
               data-product_id="<?php echo $productId; ?>"
-              data-product_type="variable"
+              data-product_type="<?php echo $productType; ?>"
               data-product_variants="<?php echo htmlspecialchars($product->variant_json ?? '{}', ENT_QUOTES, 'UTF-8'); ?>"
               enctype="multipart/form-data"
               >
@@ -75,7 +75,7 @@ $cartType = (int) $params->get('list_show_cart', 1);
                 <?php echo ProductLayoutService::renderLayout('list.category.item_variableoptions', $displayData); ?>
                 <?php echo ProductLayoutService::renderLayout('list.category.item_cart', $displayData); ?>
             <?php elseif (($cartType == 2 && !empty($product->options)) || $cartType == 3) : ?>
-                <a href="<?php echo $productLink; ?>" class="uk-button uk-button-default">
+                <a href="<?php echo htmlspecialchars($productLink ?? '', ENT_QUOTES, 'UTF-8'); ?>" class="uk-button uk-button-default uk-width-1-1">
                     <?php echo Text::_('COM_J2COMMERCE_VIEW_PRODUCT_DETAILS'); ?>
                 </a>
             <?php else : ?>
