@@ -12,7 +12,9 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
-// phpcs:enable PSR1.Files.SideEffectsuse J2Commerce\Component\J2commerce\Administrator\Model\Trait\BehaviorTrait;
+// phpcs:enable PSR1.Files.SideEffects
+
+use J2Commerce\Component\J2commerce\Administrator\Model\Trait\BehaviorTrait;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
