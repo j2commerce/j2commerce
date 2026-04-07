@@ -390,7 +390,8 @@
 					type="text"
 					label="COM_J2COMMERCE_PRODUCT_LIST_IMAGE_WIDTH"
 					description="COM_J2COMMERCE_PRODUCT_IMAGE_WIDTH_DESC"
-					default="120"
+					default="350"
+					filter="integer"
 					showon="list_show_image:1"
 				/>
 
@@ -546,17 +547,15 @@
 				</field>
 
 				<field
-					name="list_show_filter_category_all"
-					type="radio"
-					label="COM_J2COMMERCE_PRODUCT_LIST_FILTER_CATEGORY_ALL"
-					description="COM_J2COMMERCE_PRODUCT_LIST_FILTER_CATEGORY_ALL_DESC"
-					default="1"
-					layout="joomla.form.field.radio.switcher"
-					filter="integer"
+					name="list_filter_category_mode"
+					type="list"
+					label="COM_J2COMMERCE_FILTER_CATEGORY_MODE"
+					description="COM_J2COMMERCE_FILTER_CATEGORY_MODE_DESC"
+					default="selected"
 					showon="list_show_filter_category:1[AND]list_show_filter:1"
 				>
-					<option value="0">JHIDE</option>
-					<option value="1">JSHOW</option>
+					<option value="selected">COM_J2COMMERCE_FILTER_CATEGORY_MODE_SELECTED</option>
+					<option value="siblings">COM_J2COMMERCE_FILTER_CATEGORY_MODE_SIBLINGS</option>
 				</field>
 
 				<field
@@ -568,7 +567,7 @@
 					multiple="true"
 					default=""
 					layout="joomla.form.field.list-fancy-select"
-					showon="list_show_filter_category:1[AND]list_show_filter:1"
+					showon="list_show_filter_category:1[AND]list_show_filter:1[AND]list_filter_category_mode:selected"
 				/>
 
 				<field
@@ -589,6 +588,7 @@
 					type="text"
 					label="COM_J2COMMERCE_PRODUCT_LIST_FILTER_PRICE_MAX"
 					default="1000"
+					filter="integer"
 					showon="list_show_filter_price:1[AND]list_show_filter:1"
 				/>
 
@@ -864,6 +864,9 @@
 				type="text"
 				label="COM_J2COMMERCE_PRODUCT_MAIN_IMAGE_WIDTH_LABEL"
 				description="COM_J2COMMERCE_PRODUCT_IMAGE_WIDTH_DESC"
+				default="800"
+				filter="integer"
+				showon="item_show_product_main_image:1"
 			/>
 
 			<field
@@ -871,6 +874,9 @@
 				type="text"
 				label="COM_J2COMMERCE_PRODUCT_ADDITIONAL_IMAGE_WIDTH_LABEL"
 				description="COM_J2COMMERCE_PRODUCT_IMAGE_WIDTH_DESC"
+				default="100"
+				filter="integer"
+				showon="item_show_product_additional_image:1"
 			/>
 
 			<field
@@ -914,6 +920,8 @@
 				type="text"
 				label="COM_J2COMMERCE_PRODUCT_UPSELL_IMAGE_WIDTH_LABEL"
 				description="COM_J2COMMERCE_PRODUCT_IMAGE_WIDTH_DESC"
+				default="350"
+				filter="integer"
 				showon="item_show_product_upsells:1"
 			/>
 
@@ -934,6 +942,8 @@
 				type="text"
 				label="COM_J2COMMERCE_PRODUCT_CROSS_IMAGE_WIDTH_LABEL"
 				description="COM_J2COMMERCE_PRODUCT_IMAGE_WIDTH_DESC"
+				default="350"
+				filter="integer"
 				showon="item_show_product_cross_sells:1"
 			/>
 
@@ -943,6 +953,8 @@
 				label="COM_J2COMMERCE_PRODUCT_RELATED_COLUMNS_LABEL"
 				description="COM_J2COMMERCE_PRODUCT_RELATED_COLUMNS_DESC"
 				default="3"
+				filter="integer"
+				showon="item_show_product_upsells:1[OR]item_show_product_cross_sells:1"
 			/>
 
 			<field
