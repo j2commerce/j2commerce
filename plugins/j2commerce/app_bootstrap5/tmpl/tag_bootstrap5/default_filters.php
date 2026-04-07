@@ -57,13 +57,13 @@ HTMLHelper::_('bootstrap.collapse');
 <div id="j2commerce-product-loading" class="j2commerce-loading-overlay" style="display:none;"></div>
 
 <style>
-    .filter-accordion :focus {box-shadow:none;}
     .filter-accordion label {cursor:pointer;}
     .filter-accordion .accordion-button {padding: .75rem 0; }
     .filter-accordion .accordion-button:not(.collapsed) { background: transparent; box-shadow: none; }
-    .filter-accordion .accordion-button::after { content: '\2212'; background-image: none; font-size: 1.25rem; line-height: 1; width: auto; height: auto; flex-shrink: 0; transition: none; transform: none; }
+    .filter-accordion .accordion-button::after { content: '\2212'; background-image: none; font-size: .875rem; line-height: 1; width: 1.25rem; height: 1.25rem; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--bs-border-color, #dee2e6); border-radius: 50%; transition: none; transform: none; }
     .filter-accordion .accordion-button.collapsed::after { content: '+'; }
-    .filter-accordion .accordion-button:focus, .filter-accordion .accordion-button:active {box-shadow:none;}
+    .filter-accordion .accordion-button:focus-visible { outline: 2px solid var(--bs-primary, #0d6efd); outline-offset: 2px; box-shadow: none; }
+    .filter-accordion .accordion-button:focus:not(:focus-visible) { box-shadow: none; }
     .filter-accordion .accordion-body { padding: .5rem 0 .75rem; }
     .filter-chip .btn-close { font-size: .5rem; }
 
