@@ -31,7 +31,7 @@ $quickviewUrl = Route::_(
        class="uk-button uk-button-default uk-button-small j2commerce-quickview-btn"
        data-src="<?php echo $quickviewUrl; ?>"
        href="javascript:;">
-        <i class="fa fa-eye" aria-hidden="true"></i>
+        <span class="fa fa-eye" aria-hidden="true"></span>
         <?php echo Text::_('COM_J2COMMERCE_PRODUCT_QUICKVIEW'); ?>
     </a>
 </div>

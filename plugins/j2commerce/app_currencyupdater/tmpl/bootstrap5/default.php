@@ -73,7 +73,7 @@ $currencyapiKey  = $displayData->params?->get('currencyapi_key', '') ?? '';
                 <div id="frankfurter_div" class="row mb-4">
                     <div class="col-lg-6">
                         <div class="alert alert-success">
-                            <h5><i class="fa-solid fa-check"></i> <?php echo Text::_('PLG_J2COMMERCE_APP_CURRENCYUPDATER_FRANKFURTER'); ?></h5>
+                            <h5><span class="fa-solid fa-check" aria-hidden="true"></span> <?php echo Text::_('PLG_J2COMMERCE_APP_CURRENCYUPDATER_FRANKFURTER'); ?></h5>
                             <p><?php echo Text::_('PLG_J2COMMERCE_APP_CURRENCYUPDATER_FRANKFURTER_DESC'); ?></p>
                         </div>
                     </div>
@@ -82,7 +82,7 @@ $currencyapiKey  = $displayData->params?->get('currencyapi_key', '') ?? '';
                 <div id="exchangerate_host_div" class="row mb-4" style="display: none;">
                     <div class="col-lg-6">
                         <div class="alert alert-success">
-                            <h5><i class="fa-solid fa-check"></i> <?php echo Text::_('PLG_J2COMMERCE_APP_CURRENCYUPDATER_EXCHANGERATE_HOST'); ?></h5>
+                            <h5><span class="fa-solid fa-check" aria-hidden="true"></span> <?php echo Text::_('PLG_J2COMMERCE_APP_CURRENCYUPDATER_EXCHANGERATE_HOST'); ?></h5>
                             <p><?php echo Text::_('PLG_J2COMMERCE_APP_CURRENCYUPDATER_EXCHANGERATE_HOST_DESC'); ?></p>
                         </div>
                     </div>
@@ -109,7 +109,7 @@ $currencyapiKey  = $displayData->params?->get('currencyapi_key', '') ?? '';
                             <p><?php echo Text::_('PLG_J2COMMERCE_APP_CURRENCYUPDATER_EXCHANGERATE_API_DESC'); ?></p>
                             <p>
                                 <a href="https://app.exchangerate-api.com/keys" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary">
-                                    <i class="fa-solid fa-arrow-up-right-from-square"></i> <?php echo Text::_('PLG_J2COMMERCE_APP_CURRENCYUPDATER_GET_API_KEY'); ?>
+                                    <span class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></span> <?php echo Text::_('PLG_J2COMMERCE_APP_CURRENCYUPDATER_GET_API_KEY'); ?>
                                 </a>
                             </p>
                         </div>
@@ -137,7 +137,7 @@ $currencyapiKey  = $displayData->params?->get('currencyapi_key', '') ?? '';
                             <p><?php echo Text::_('PLG_J2COMMERCE_APP_CURRENCYUPDATER_CURRENCYAPI_DESC'); ?></p>
                             <p>
                                 <a href="https://app.currencyapi.com/api-keys" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary">
-                                    <i class="fa-solid fa-arrow-up-right-from-square"></i> <?php echo Text::_('PLG_J2COMMERCE_APP_CURRENCYUPDATER_GET_API_KEY'); ?>
+                                    <span class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></span> <?php echo Text::_('PLG_J2COMMERCE_APP_CURRENCYUPDATER_GET_API_KEY'); ?>
                                 </a>
                             </p>
                         </div>

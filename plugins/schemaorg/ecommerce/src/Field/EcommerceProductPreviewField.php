@@ -230,12 +230,12 @@ class EcommerceProductPreviewField extends FormField
         if (!empty($imageUrl)) {
             $html[] = ImageHelper::getInstance()->getProductImage($imageUrl, height: 160, width: 160, class: 'object-fit-cover img-fluid', alt: htmlspecialchars($productName, ENT_QUOTES, 'UTF-8'));
         } else {
-            $html[] = '                    <div class="no-image"><i class="icon-image"></i></div>';
+            $html[] = '                    <div class="no-image"><span class="icon-image" aria-hidden="true"></span></div>';
         }
         $html[] = '                </div>';
         if ($additionalImagesCount > 0) {
             $html[] = '                <div class="image-meta">';
-            $html[] = '                    <i class="icon-images"></i>';
+            $html[] = '                    <span class="icon-images" aria-hidden="true"></span>';
             $html[] = '                    ' . Text::sprintf('PLG_SCHEMAORG_ECOMMERCE_PREVIEW_ADDITIONAL_IMAGES', $additionalImagesCount);
             $html[] = '                </div>';
         }
@@ -317,7 +317,7 @@ class EcommerceProductPreviewField extends FormField
 
         // Notice bar
         $html[] = '            <div class="notice-bar">';
-        $html[] = '                <i class="icon-info-circle"></i>';
+        $html[] = '                <span class="icon-info-circle" aria-hidden="true"></span>';
         $html[] = '                <span>' . Text::_('PLG_SCHEMAORG_ECOMMERCE_PREVIEW_OVERRIDE_NOTE') . '</span>';
         $html[] = '            </div>';
 

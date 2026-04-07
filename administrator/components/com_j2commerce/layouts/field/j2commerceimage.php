@@ -70,7 +70,7 @@ if ($multiple) {
                 <img src="<?php echo htmlspecialchars($thumbUrl, ENT_QUOTES, 'UTF-8'); ?>" alt="" loading="lazy" class="">
                 <?php if (!$disabled && !$readonly) : ?>
                 <button type="button" class="j2commerce-image-remove" aria-label="<?php echo Text::_('JACTION_DELETE'); ?>">
-                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                    <span class="fa-solid fa-xmark" aria-hidden="true"></span>
                 </button>
                 <?php endif; ?>
             </div>
@@ -79,7 +79,7 @@ if ($multiple) {
 
     <?php if (!$disabled && !$readonly) : ?>
     <button type="button" class="btn btn-sm btn-outline-secondary j2commerce-image-choose-btn">
-        <i class="fa-solid fa-image" aria-hidden="true"></i>
+        <span class="fa-solid fa-image" aria-hidden="true"></span>
         <?php echo Text::_($multiple ? 'COM_J2COMMERCE_IMAGE_CHOOSE_MULTIPLE' : 'COM_J2COMMERCE_IMAGE_CHOOSE'); ?>
     </button>
 
@@ -111,7 +111,7 @@ if ($multiple) {
                                     </select>
                                     <button type="button" class="btn btn-outline-secondary uppymedia-create-folder"
                                             title="<?php echo Text::_('COM_J2COMMERCE_MULTIIMAGEUPLOADER_NEW_FOLDER'); ?>">
-                                        <i class="fa-solid fa-folder-plus" aria-hidden="true"></i>
+                                        <span class="fa-solid fa-folder-plus" aria-hidden="true"></span>
                                     </button>
                                 </div>
                                 <div class="uppymedia-filter-bar">

@@ -140,7 +140,7 @@ $panelId = 'j2commerce-cart-detail-' . $moduleId;
                                 <?php if ($showRemove) : ?>
                                     <a class="text-danger ms-2" title="<?php echo Text::_('JACTION_DELETE'); ?>"
                                        href="<?php echo htmlspecialchars(Route::_(RouteHelper::getRemoveFromCartRoute((int) ($item->cart_item_id ?? $item->cartitem_id ?? 0))), ENT_QUOTES, 'UTF-8'); ?>">
-                                        <i class="bi bi-x-circle" aria-hidden="true"></i>
+                                        <span class="bi bi-x-circle" aria-hidden="true"></span>
                                     </a>
                                 <?php endif; ?>
                             </div>

@@ -18,7 +18,7 @@ $imgStyle    = 'height:' . htmlspecialchars($maxHeight, ENT_QUOTES, 'UTF-8') . '
 
     <div class="d-flex align-items-center justify-content-center bg-light" style="<?php echo $imgStyle; ?>">
         <j2c-token data-j2c-token="PRODUCT_IMAGE">
-            <i class="fa-solid fa-image fa-3x text-muted"></i>
+            <span class="fa-solid fa-image fa-3x text-muted"></span>
         </j2c-token>
     </div>
 

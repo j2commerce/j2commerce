@@ -79,9 +79,9 @@ class BoxPackerField extends FormField
         $html .= '<strong>' . Text::_('COM_J2COMMERCE_BOXPACKER_BOX_NAME') . '</strong>';
         $html .= '<div class="btn-group">';
         if ($showCommonBoxes) {
-            $html .= '<button type="button" class="btn btn-sm btn-outline-primary btn-load-common-boxes"><i class="fa-solid fa-boxes-stacked"></i> ' . Text::_('COM_J2COMMERCE_BOXPACKER_LOAD_COMMON_BOXES') . '</button>';
+            $html .= '<button type="button" class="btn btn-sm btn-outline-primary btn-load-common-boxes"><span class="fa-solid fa-boxes-stacked" aria-hidden="true"></span> ' . Text::_('COM_J2COMMERCE_BOXPACKER_LOAD_COMMON_BOXES') . '</button>';
         }
-        $html .= '<button type="button" class="btn btn-sm btn-success btn-add-box"><i class="fa-solid fa-plus"></i> ' . Text::_('COM_J2COMMERCE_BOXPACKER_ADD_BOX') . '</button>';
+        $html .= '<button type="button" class="btn btn-sm btn-success btn-add-box"><span class="fa-solid fa-plus" aria-hidden="true"></span> ' . Text::_('COM_J2COMMERCE_BOXPACKER_ADD_BOX') . '</button>';
         $html .= '</div>';
         $html .= '</div>';
 
@@ -120,7 +120,7 @@ class BoxPackerField extends FormField
         // Sample items table
         $html .= '<div class="d-flex justify-content-between align-items-center mb-2">';
         $html .= '<strong>' . Text::_('COM_J2COMMERCE_BOXPACKER_PREVIEW_SAMPLE_ITEMS') . '</strong>';
-        $html .= '<button type="button" class="btn btn-sm btn-outline-primary btn-add-test-item"><i class="fa-solid fa-plus"></i> ' . Text::_('COM_J2COMMERCE_BOXPACKER_PREVIEW_ADD_ITEM') . '</button>';
+        $html .= '<button type="button" class="btn btn-sm btn-outline-primary btn-add-test-item"><span class="fa-solid fa-plus" aria-hidden="true"></span> ' . Text::_('COM_J2COMMERCE_BOXPACKER_PREVIEW_ADD_ITEM') . '</button>';
         $html .= '</div>';
 
         $html .= '<div class="table-responsive">';
@@ -138,7 +138,7 @@ class BoxPackerField extends FormField
         $html .= '</table></div>';
 
         $html .= '<button type="button" class="btn btn-primary btn-preview-packing mb-3">';
-        $html .= '<i class="fa-solid fa-box-open"></i> ' . Text::_('COM_J2COMMERCE_BOXPACKER_PREVIEW_RUN');
+        $html .= '<span class="fa-solid fa-box-open" aria-hidden="true"></span> ' . Text::_('COM_J2COMMERCE_BOXPACKER_PREVIEW_RUN');
         $html .= '</button>';
 
         // Results container (populated by JS)
@@ -163,7 +163,7 @@ class BoxPackerField extends FormField
             $row .= '<td><input type="' . $type . '" class="' . $cls . '" data-box-field="' . $field . '" value="' . $val . '"' . $step . '></td>';
         }
 
-        $row .= '<td><button type="button" class="btn btn-sm btn-danger btn-remove-box" title="' . Text::_('COM_J2COMMERCE_BOXPACKER_REMOVE_BOX') . '"><i class="fa-solid fa-times"></i></button></td>';
+        $row .= '<td><button type="button" class="btn btn-sm btn-danger btn-remove-box" title="' . Text::_('COM_J2COMMERCE_BOXPACKER_REMOVE_BOX') . '"><span class="fa-solid fa-times" aria-hidden="true"></span></button></td>';
         $row .= '</tr>';
 
         return $row;

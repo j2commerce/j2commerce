@@ -15,7 +15,7 @@ if (!($showQuickview ?? false)) {
 ?>
 <div class="<?php echo htmlspecialchars($cssClass, ENT_QUOTES, 'UTF-8'); ?>">
     <button type="button" class="btn btn-sm btn-light j2commerce-quickview-btn" data-product-id="<?php echo $productId; ?>">
-        <i class="fa-solid fa-eye me-1"></i>
+        <span class="fa-solid fa-eye me-1" aria-hidden="true"></span>
         <?php echo Text::_('COM_J2COMMERCE_QUICK_VIEW'); ?>
     </button>
 </div>

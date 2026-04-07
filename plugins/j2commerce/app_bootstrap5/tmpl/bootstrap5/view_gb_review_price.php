@@ -25,7 +25,7 @@ echo J2CommerceHelper::plugin()->eventWithHtml('BeforeRenderingProductPrice', [$
 ?>
 <div class="gb-review-price-card">
     <div class="gb-review-price-header">
-        <i class="fa-solid fa-receipt" aria-hidden="true"></i>
+        <span class="fa-solid fa-receipt" aria-hidden="true"></span>
         <?php echo Text::_('PLG_J2COMMERCE_APP_GUIDEDBUILDER_PRICE_BREAKDOWN'); ?>
     </div>
 

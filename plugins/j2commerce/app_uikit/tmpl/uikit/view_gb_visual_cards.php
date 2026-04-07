@@ -44,7 +44,7 @@ $colClass     = 'uk-width-1-' . $colCount . '@m';
             </div>
             <?php elseif (!empty($val->card_icon)) : ?>
             <div class="gb-card-image uk-text-center uk-padding-small">
-                <i class="<?php echo htmlspecialchars($val->card_icon, ENT_QUOTES, 'UTF-8'); ?> fa-3x"></i>
+                <span class="<?php echo htmlspecialchars($val->card_icon, ENT_QUOTES, 'UTF-8'); ?> fa-3x" aria-hidden="true"></span>
             </div>
             <?php endif; ?>
 
@@ -77,7 +77,7 @@ $colClass     = 'uk-width-1-' . $colCount . '@m';
                 </div>
                 <?php endif; ?>
 
-                <div class="gb-card-check"><i class="fa-solid fa-circle-check"></i></div>
+                <div class="gb-card-check"><span class="fa-solid fa-circle-check" aria-hidden="true"></span></div>
             </div>
 
         </div>

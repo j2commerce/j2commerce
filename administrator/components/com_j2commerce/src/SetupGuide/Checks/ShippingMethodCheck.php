@@ -118,7 +118,7 @@ class ShippingMethodCheck extends AbstractSetupCheck
                 $editUrl = 'index.php?option=com_plugins&task=plugin.edit&extension_id=' . (int) $plugin->extension_id;
 
                 $html .= '<li class="py-1 small">'
-                    . '<i class="fa-regular fa-circle-check text-success me-1" aria-hidden="true"></i>'
+                    . '<span class="fa-regular fa-circle-check text-success me-1" aria-hidden="true"></span>'
                     . '<a href="' . $editUrl . '">' . htmlspecialchars($title) . '</a>'
                     . '</li>';
             }

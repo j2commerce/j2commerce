@@ -97,7 +97,7 @@ if ($info) {
     <div class="j2commerce-confirmation">
         <?php if ($this->showingRecent) : ?>
         <div class="alert alert-info d-flex justify-content-between align-items-center mb-3">
-            <span><i class="fa-solid fa-circle-info me-2"></i><?php echo Text::_('COM_J2COMMERCE_CONFIRMATION_SHOWING_RECENT'); ?></span>
+            <span><span class="fa-solid fa-circle-info me-2" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_CONFIRMATION_SHOWING_RECENT'); ?></span>
             <a href="<?php echo Route::_('index.php?option=com_j2commerce&view=myprofile'); ?>" class="btn btn-sm btn-outline-primary">
                 <?php echo Text::_('COM_J2COMMERCE_CONFIRMATION_VIEW_ALL_ORDERS'); ?>
             </a>

@@ -91,7 +91,7 @@ class SubtemplateField extends ListField
                 . 'this.parentNode.querySelectorAll(\'.card\').forEach(function(c){c.classList.remove(\'border-primary\',\'bg-light\');c.classList.add(\'border-secondary-subtle\');});'
                 . 'this.classList.add(\'border-primary\',\'bg-light\');this.classList.remove(\'border-secondary-subtle\');">'
                 . '<div class="card-body p-2 d-flex align-items-center justify-content-center" style="min-height:90px;">'
-                . '<i class="fa-solid fa-wand-magic-sparkles fa-2x text-muted"></i>'
+                . '<span class="fa-solid fa-wand-magic-sparkles fa-2x text-muted" aria-hidden="true"></span>'
                 . '</div>'
                 . '<div class="card-body p-2">'
                 . '<small class="fw-semibold lh-1 d-block">' . $autoLabel . '</small>'

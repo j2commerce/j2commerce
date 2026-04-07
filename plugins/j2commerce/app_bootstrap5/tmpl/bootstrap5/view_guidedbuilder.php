@@ -144,7 +144,7 @@ $jsConfig = [
                 <button class="gb-progress-btn" type="button"<?php echo $i > 0 ? ' disabled' : ''; ?> aria-current="<?php echo $i === 0 ? 'step' : 'false'; ?>">
                     <span class="gb-step-number" aria-hidden="true">
                         <?php if ($step->step_icon) : ?>
-                        <i class="<?php echo htmlspecialchars($step->step_icon, ENT_QUOTES, 'UTF-8'); ?>"></i>
+                        <span class="<?php echo htmlspecialchars($step->step_icon, ENT_QUOTES, 'UTF-8'); ?>" aria-hidden="true"></span>
                         <?php else : ?>
                         <?php echo $i + 1; ?>
                         <?php endif; ?>
@@ -156,7 +156,7 @@ $jsConfig = [
             <li class="gb-progress-step" aria-label="<?php echo Text::_('PLG_J2COMMERCE_APP_GUIDEDBUILDER_REVIEW'); ?>">
                 <button class="gb-progress-btn" type="button" disabled aria-current="false">
                     <span class="gb-step-number" aria-hidden="true">
-                        <i class="fa-solid fa-check-double"></i>
+                        <span class="fa-solid fa-check-double" aria-hidden="true"></span>
                     </span>
                     <span class="gb-step-label"><?php echo Text::_('PLG_J2COMMERCE_APP_GUIDEDBUILDER_REVIEW'); ?></span>
                 </button>
@@ -214,13 +214,13 @@ $jsConfig = [
 
             <div class="gb-navigation d-flex gap-2 mt-4">
                 <button type="button" class="btn btn-outline-secondary gb-btn-back" style="display:none;">
-                    <i class="fa-solid fa-arrow-left"></i> <?php echo Text::_('PLG_J2COMMERCE_APP_GUIDEDBUILDER_BACK'); ?>
+                    <span class="fa-solid fa-arrow-left" aria-hidden="true"></span> <?php echo Text::_('PLG_J2COMMERCE_APP_GUIDEDBUILDER_BACK'); ?>
                 </button>
                 <button type="button" class="btn btn-primary gb-btn-next flex-grow-1">
-                    <?php echo Text::_('JNEXT'); ?> <i class="fa-solid fa-arrow-right"></i>
+                    <?php echo Text::_('JNEXT'); ?> <span class="fa-solid fa-arrow-right" aria-hidden="true"></span>
                 </button>
                 <button type="button" class="btn btn-success gb-btn-add-to-cart flex-grow-1" style="display:none;">
-                    <i class="fa-solid fa-cart-plus"></i> <?php echo Text::_('COM_J2COMMERCE_ADD_TO_CART'); ?>
+                    <span class="fa-solid fa-cart-plus" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_ADD_TO_CART'); ?>
                 </button>
             </div>
         </div>

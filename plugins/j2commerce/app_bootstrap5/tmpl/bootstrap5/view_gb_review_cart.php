@@ -65,7 +65,7 @@ echo J2CommerceHelper::plugin()->eventWithHtml('BeforeAddToCartButton', [$this->
                 data-cart-action-always="<?php echo Text::_('PLG_J2COMMERCE_APP_GUIDEDBUILDER_ADDING_TO_CART'); ?>"
                 data-cart-action-done="<?php echo $cartText; ?>"
                 data-cart-action-timeout="1000"<?php echo $disabledAttr; ?>>
-            <i class="fa-solid fa-cart-plus" aria-hidden="true"></i>
+            <span class="fa-solid fa-cart-plus" aria-hidden="true"></span>
             <span class="gb-review-cart-price ms-2"><?php echo $cartText; ?></span>
         </button>
     </div>

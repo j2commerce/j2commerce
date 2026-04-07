@@ -150,7 +150,7 @@ $jsConfig = [
                 <div class="gb-progress-step<?php echo $i === 0 ? ' is-active' : ''; ?>">
                     <div class="gb-step-bubble">
                         <?php if ($step->step_icon) : ?>
-                        <i class="<?php echo htmlspecialchars($step->step_icon, ENT_QUOTES, 'UTF-8'); ?>"></i>
+                        <span class="<?php echo htmlspecialchars($step->step_icon, ENT_QUOTES, 'UTF-8'); ?>" aria-hidden="true"></span>
                         <?php else : ?>
                         <?php echo $i + 1; ?>
                         <?php endif; ?>

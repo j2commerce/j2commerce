@@ -43,7 +43,7 @@ $colClass     = 'col-md-' . (int) floor(12 / max(1, min(4, $columns)));
             </div>
             <?php elseif (!empty($val->card_icon)) : ?>
             <div class="gb-card-image text-center p-3">
-                <i class="<?php echo htmlspecialchars($val->card_icon, ENT_QUOTES, 'UTF-8'); ?> fa-3x"></i>
+                <span class="<?php echo htmlspecialchars($val->card_icon, ENT_QUOTES, 'UTF-8'); ?> fa-3x" aria-hidden="true"></span>
             </div>
             <?php endif; ?>
 
@@ -76,7 +76,7 @@ $colClass     = 'col-md-' . (int) floor(12 / max(1, min(4, $columns)));
                 </div>
                 <?php endif; ?>
 
-                <div class="gb-card-check"><i class="fa-solid fa-circle-check"></i></div>
+                <div class="gb-card-check"><span class="fa-solid fa-circle-check" aria-hidden="true"></span></div>
             </div>
 
         </div>

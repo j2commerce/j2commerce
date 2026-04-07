@@ -127,10 +127,10 @@ class TimezoneCheck extends AbstractSetupCheck
 
         // Match/mismatch indicator (hidden by default, shown by JS)
         $html .= '<div id="j2c-tz-match" class="alert alert-success small py-2 d-none">'
-            . '<i class="fa-solid fa-circle-check me-1"></i><span class="j2c-tz-msg"></span>'
+            . '<span class="fa-solid fa-circle-check me-1"></span><span class="j2c-tz-msg"></span>'
             . '</div>'
             . '<div id="j2c-tz-mismatch" class="alert alert-warning small py-2 d-none">'
-            . '<i class="fa-solid fa-triangle-exclamation me-1"></i><span class="j2c-tz-msg"></span>'
+            . '<span class="fa-solid fa-triangle-exclamation me-1"></span><span class="j2c-tz-msg"></span>'
             . '</div>';
 
         $html .= '</div>'; // close #j2c-tz-clocks
@@ -138,7 +138,7 @@ class TimezoneCheck extends AbstractSetupCheck
         // "Confirm Timezone" button — uses the dismiss endpoint to mark as confirmed
         if (!$this->isTimezoneConfirmed()) {
             $html .= '<button type="button" class="btn btn-success w-100 mt-2" data-setup-dismiss="timezone">'
-                . '<i class="fa-solid fa-circle-check me-1"></i>'
+                . '<span class="fa-solid fa-circle-check me-1"></span>'
                 . Text::_('COM_J2COMMERCE_SETUP_GUIDE_CHECK_TIMEZONE_CONFIRM')
                 . '</button>';
         }

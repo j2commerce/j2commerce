@@ -77,7 +77,7 @@ $wa->registerAndUseScript(
                             class="btn btn-outline-danger ms-2"
                             style="display: none;"
                             title="<?php echo Text::_('LIB_J2COMMERCE_ARTICLE_SELECT_MODAL_CLEAR_ALL_ARTICLES_LABEL'); ?>">
-                        <i class="icon-trash" aria-hidden="true"></i> <?php echo Text::_('LIB_J2COMMERCE_ITEM_SELECT_MODAL_SELECTION_CLEAR_LABEL'); ?>
+                        <span class="icon-trash" aria-hidden="true"></i> <?php echo Text::_('LIB_J2COMMERCE_ITEM_SELECT_MODAL_SELECTION_CLEAR_LABEL'); ?>
                     </button>
                     <button type="button"
                             id="done-btn"

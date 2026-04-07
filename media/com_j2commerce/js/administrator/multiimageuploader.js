@@ -223,7 +223,7 @@
                 addFilesEl.dataset.j2customized = '1';
                 const inner = addFilesEl.querySelector('.uppy-Dashboard-AddFiles-title');
                 if (inner) {
-                    inner.innerHTML = `<span class="uppymedia-uppy-btn"><i class="fa-solid fa-images" aria-hidden="true"></i> ${this.escapeHtml(this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_ADD_PRODUCT_IMAGES'))}</span>`
+                    inner.innerHTML = `<span class="uppymedia-uppy-btn"><span class="fa-solid fa-images" aria-hidden="true"></span> ${this.escapeHtml(this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_ADD_PRODUCT_IMAGES'))}</span>`
                         + `<p class="uppymedia-uppy-hint">${this.escapeHtml(this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_DRAG_DROP_NOTE'))}</p>`;
                 }
                 const browseSpan = addFilesEl.querySelector('.uppymedia-uppy-btn');
@@ -487,9 +487,9 @@
                 folderEl.className = 'uppymedia-browser-folder';
                 folderEl.innerHTML = `
                     <button type="button" class="uppymedia-folder-delete" title="${this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_DELETE_FOLDER')}">
-                        <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
+                        <span class="fa-solid fa-trash-can" aria-hidden="true"></span>
                     </button>
-                    <i class="fa-solid fa-folder-open" aria-hidden="true"></i>
+                    <span class="fa-solid fa-folder-open" aria-hidden="true"></span>
                     <span class="uppymedia-folder-name">${this.escapeHtml(folderName)}</span>
                 `;
 
@@ -568,13 +568,13 @@
             const isImage = this.isImageFile(file.name);
             const mediaHtml = isImage
                 ? `<img src="${this.escapeHtml(file.thumb_url || file.url)}" alt="${this.escapeHtml(file.name)}" loading="lazy">`
-                : `<div class="uppymedia-file-icon"><i class="fa-solid ${this.getFileIcon(file.name)}"></i></div>`;
+                : `<div class="uppymedia-file-icon"><span class="fa-solid ${this.getFileIcon(file.name)}" aria-hidden="true"></span></div>`;
 
             imageEl.innerHTML = `
                 ${mediaHtml}
                 <div class="uppymedia-check"></div>
                 <button type="button" class="uppymedia-browser-delete" title="${this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_DELETE_FROM_SERVER')}">
-                    <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
+                    <span class="fa-solid fa-trash-can" aria-hidden="true"></span>
                 </button>
                 <div class="uppymedia-browser-name">${this.escapeHtml(file.name)}</div>
             `;
@@ -1008,11 +1008,11 @@
                 const isImage = this.isImageFile(file.name);
                 let mediaHtml;
                 if (isFileMode) {
-                    mediaHtml = `<div class="uppymedia-file-icon"><i class="fa-solid ${this.getFileIcon(file.name)}"></i></div>`;
+                    mediaHtml = `<div class="uppymedia-file-icon"><span class="fa-solid ${this.getFileIcon(file.name)}" aria-hidden="true"></span></div>`;
                 } else if (isImage) {
                     mediaHtml = `<img src="${this.escapeHtml(file.thumb_url || file.url)}" alt="${this.escapeHtml(file.alt_text || '')}">`;
                 } else {
-                    mediaHtml = `<div class="uppymedia-file-icon"><i class="fa-solid ${this.getFileIcon(file.name)}"></i></div>`;
+                    mediaHtml = `<div class="uppymedia-file-icon"><span class="fa-solid ${this.getFileIcon(file.name)}" aria-hidden="true"></span></div>`;
                 }
                 const altHtml = isFileMode ? '' : `
                     <input type="text" class="form-control form-control-sm mt-0"
@@ -1028,8 +1028,8 @@
                         <span class="uppymedia-checkmark"></span>
                     </label>
                     ${total > 1 ? `<div class="uppymedia-move-arrows">
-                        ${index > 0 ? `<button type="button" class="uppymedia-move-btn" data-action="move-left" data-index="${index}" title="${this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_MOVE_LEFT')}"><i class="fa-solid fa-chevron-left"></i></button>` : ''}
-                        ${index < total - 1 ? `<button type="button" class="uppymedia-move-btn" data-action="move-right" data-index="${index}" title="${this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_MOVE_RIGHT')}"><i class="fa-solid fa-chevron-right"></i></button>` : ''}
+                        ${index > 0 ? `<button type="button" class="uppymedia-move-btn" data-action="move-left" data-index="${index}" title="${this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_MOVE_LEFT')}"><span class="fa-solid fa-chevron-left" aria-hidden="true"></span></button>` : ''}
+                        ${index < total - 1 ? `<button type="button" class="uppymedia-move-btn" data-action="move-right" data-index="${index}" title="${this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_MOVE_RIGHT')}"><span class="fa-solid fa-chevron-right" aria-hidden="true"></span></button>` : ''}
                     </div>` : ''}
                     ${isFileMode ? `<div class="uppymedia-file-name">${this.escapeHtml(file.name)}</div>` : ''}
                     ${altHtml}
