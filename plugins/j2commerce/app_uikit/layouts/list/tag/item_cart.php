@@ -77,9 +77,9 @@ $afterCart = J2CommerceHelper::plugin()->eventWithHtml(
                 <button type="submit"
                         class="j2commerce-cart-button <?php echo $btnClass; ?>"
                         data-cart-action-always="<?php echo Text::_('COM_J2COMMERCE_ADDING_TO_CART'); ?>"
-                        data-cart-action-done="<?php echo $cartText; ?>"
+                        data-cart-action-done="<?php echo htmlspecialchars($cartText ?? '', ENT_QUOTES, 'UTF-8'); ?>"
                         data-cart-action-timeout="1000">
-                    <?php echo $cartText; ?>
+                    <?php echo htmlspecialchars($cartText ?? '', ENT_QUOTES, 'UTF-8'); ?>
                 </button>
             </div>
 
