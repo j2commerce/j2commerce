@@ -40,6 +40,17 @@
     box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.2);
 }
 
+/* Keyboard focus ring on card when hidden radio receives focus */
+.j2c-wizard-card:focus-within {
+    border-color: var(--bs-primary, #0d6efd);
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Remove focus ring when radio loses focus (mouse click selects differently) */
+.j2c-wizard-card input[type="radio"]:focus:not(:focus-visible) + .j2c-wizard-card-body {
+    box-shadow: none;
+}
+
 .j2c-wizard-card-body {
     padding: 0.875rem 1rem;
 }

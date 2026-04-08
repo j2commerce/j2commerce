@@ -90,7 +90,7 @@ $sefRewrite = (bool) $app->get('sef_rewrite', false);
                 </div>
 
                 <!-- Step 2a: Single product name -->
-                <div class="j2c-wizard-step d-none" data-step="2a">
+                <div class="j2c-wizard-step d-none" inert data-step="2a">
                     <h5 class="mb-4"><?php echo Text::_('COM_J2COMMERCE_WIZARD_PRODUCT_NAME'); ?></h5>
                     <div class="mb-3">
                         <input type="text" class="form-control form-control-lg" id="j2c-product-name"
@@ -101,7 +101,7 @@ $sefRewrite = (bool) $app->get('sef_rewrite', false);
                 </div>
 
                 <!-- Step 3a: Product type -->
-                <div class="j2c-wizard-step d-none" data-step="3a">
+                <div class="j2c-wizard-step d-none" inert data-step="3a">
                     <h5 class="mb-4"><?php echo Text::_('COM_J2COMMERCE_WIZARD_PRODUCT_TYPE'); ?></h5>
                     <div class="row g-3">
                         <div class="col-12">
@@ -150,7 +150,7 @@ $sefRewrite = (bool) $app->get('sef_rewrite', false);
                 </div>
 
                 <!-- Step 3b: Define option titles -->
-                <div class="j2c-wizard-step d-none" data-step="3b">
+                <div class="j2c-wizard-step d-none" inert data-step="3b">
                     <h5 class="mb-4"><?php echo Text::_('COM_J2COMMERCE_WIZARD_OPTIONS_TITLE'); ?></h5>
                     <div id="j2c-option-titles-list">
                         <div class="j2c-option-title-row mb-3 d-flex gap-2 align-items-center">
@@ -166,7 +166,7 @@ $sefRewrite = (bool) $app->get('sef_rewrite', false);
                 </div>
 
                 <!-- Step 3c: Add option values -->
-                <div class="j2c-wizard-step d-none" data-step="3c">
+                <div class="j2c-wizard-step d-none" inert data-step="3c">
                     <h5 class="mb-4"><?php echo Text::_('COM_J2COMMERCE_WIZARD_OPTION_VALUES_TITLE'); ?></h5>
                     <div id="j2c-option-values-container">
                         <!-- Populated dynamically by JS based on option titles -->
@@ -174,7 +174,7 @@ $sefRewrite = (bool) $app->get('sef_rewrite', false);
                 </div>
 
                 <!-- Step 2b: Category count (multi) -->
-                <div class="j2c-wizard-step d-none" data-step="2b">
+                <div class="j2c-wizard-step d-none" inert data-step="2b">
                     <h5 class="mb-4"><?php echo Text::_('COM_J2COMMERCE_WIZARD_CATEGORY_COUNT'); ?></h5>
                     <div class="row g-3">
                         <div class="col-12 col-md-6">
@@ -214,7 +214,7 @@ $sefRewrite = (bool) $app->get('sef_rewrite', false);
                 </div>
 
                 <!-- Step: Category source (existing vs new) -->
-                <div class="j2c-wizard-step d-none" data-step="category-source">
+                <div class="j2c-wizard-step d-none" inert data-step="category-source">
                     <h5 class="mb-4"><?php echo Text::_('COM_J2COMMERCE_WIZARD_CATEGORY_SOURCE_TITLE'); ?></h5>
                     <div class="row g-3">
                         <div class="col-12">
@@ -249,7 +249,7 @@ $sefRewrite = (bool) $app->get('sef_rewrite', false);
                 </div>
 
                 <!-- Step: Select existing categories (fancy-select) -->
-                <div class="j2c-wizard-step d-none" data-step="category-select">
+                <div class="j2c-wizard-step d-none" inert data-step="category-select">
                     <h5 class="mb-4"><?php echo Text::_('COM_J2COMMERCE_WIZARD_CATEGORY_SELECT_TITLE'); ?></h5>
                     <p class="text-muted"><?php echo Text::_('COM_J2COMMERCE_WIZARD_CATEGORY_SELECT_DESC'); ?></p>
                     <div id="j2c-category-select-container">
@@ -258,7 +258,7 @@ $sefRewrite = (bool) $app->get('sef_rewrite', false);
                 </div>
 
                 <!-- Step 3b-multi: Display settings (>1 category) -->
-                <div class="j2c-wizard-step d-none" data-step="3b-multi">
+                <div class="j2c-wizard-step d-none" inert data-step="3b-multi">
                     <h5 class="mb-4"><?php echo Text::_('COM_J2COMMERCE_WIZARD_DISPLAY_SETTINGS'); ?></h5>
                     <div class="row g-3">
                         <div class="col-12">
@@ -283,7 +283,7 @@ $sefRewrite = (bool) $app->get('sef_rewrite', false);
                 </div>
 
                 <!-- Step: Category naming -->
-                <div class="j2c-wizard-step d-none" data-step="category-naming">
+                <div class="j2c-wizard-step d-none" inert data-step="category-naming">
                     <h5 class="mb-4 j2c-cat-naming-title"><?php echo Text::_('COM_J2COMMERCE_WIZARD_CATEGORY_NAME'); ?></h5>
                     <div id="j2c-category-names-container">
                         <!-- Populated by JS based on category count selection -->
@@ -295,7 +295,7 @@ $sefRewrite = (bool) $app->get('sef_rewrite', false);
                 </div>
 
                 <!-- Step: Template detection (shown only if YOOtheme + UIkit available) -->
-                <div class="j2c-wizard-step d-none" data-step="template">
+                <div class="j2c-wizard-step d-none" inert data-step="template">
                     <div class="alert alert-info">
                         <span class="fa-solid fa-circle-info me-2" aria-hidden="true"></span>
                         <?php echo Text::_('COM_J2COMMERCE_WIZARD_TEMPLATE_YOOTHEME'); ?>
@@ -322,7 +322,7 @@ $sefRewrite = (bool) $app->get('sef_rewrite', false);
                 </div>
 
                 <!-- Step: Confirmation -->
-                <div class="j2c-wizard-step d-none" data-step="confirm">
+                <div class="j2c-wizard-step d-none" inert data-step="confirm">
                     <h6 class="mb-3"><?php echo Text::_('COM_J2COMMERCE_WIZARD_CONFIRM_TITLE'); ?></h6>
                     <ul class="list-unstyled" id="j2c-wizard-summary">
                         <!-- Populated by JS -->
@@ -330,7 +330,7 @@ $sefRewrite = (bool) $app->get('sef_rewrite', false);
                 </div>
 
                 <!-- Step: Success -->
-                <div class="j2c-wizard-step d-none" data-step="success">
+                <div class="j2c-wizard-step d-none" inert data-step="success">
                     <div class="text-center py-3">
                         <span class="fa-solid fa-circle-check fa-4x text-success mb-3 d-block" aria-hidden="true"></span>
                         <h4><?php echo Text::_('COM_J2COMMERCE_WIZARD_SUCCESS_TITLE'); ?></h4>

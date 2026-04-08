@@ -191,11 +191,13 @@ class CategoryWizard {
     showStep(stepKey) {
         this.el.querySelectorAll('.j2c-wizard-step').forEach((el) => {
             el.classList.add('d-none');
+            el.setAttribute('inert', '');
         });
 
         const stepEl = this.el.querySelector(`[data-step="${stepKey}"]`);
         if (stepEl) {
             stepEl.classList.remove('d-none');
+            stepEl.removeAttribute('inert');
         }
 
         this.currentStepKey = stepKey;
