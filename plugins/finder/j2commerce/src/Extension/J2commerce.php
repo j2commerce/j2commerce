@@ -413,10 +413,13 @@ final class J2commerce extends Adapter implements SubscriberInterface
         }
 
         // Check if this article has an associated J2Commerce product
-        if ($this->hasJ2CommerceProduct($articleId) && $this->indexer !== null) {
-            // Remove this article link from the index - it was just indexed by plg_finder_content
-            // but we want only the J2Commerce product to appear in search results
-            $this->indexer->remove($linkId);
+        if ($this->hasJ2CommerceProduct($articleId)) {
+            // Remove link data without triggering Taxonomy::removeOrphanNodes().
+            // Indexer::remove() rebuilds the nested set (lft/rgt) which deletes/
+            // renumbers taxonomy nodes while other plugins are still indexing,
+            // causing MapTable::_getNode() failures. Orphan taxonomy nodes are
+            // harmless and get cleaned up on the next full purge/reindex.
+            $this->removeFinderLink($linkId);
         }
     }
 
@@ -890,7 +893,7 @@ final class J2commerce extends Adapter implements SubscriberInterface
         // Build the URL that plg_finder_content would use for this article
         $articleUrl = 'index.php?option=com_content&view=article&id=' . $articleId;
 
-        // Find and remove the article from the finder links table
+        // Find link IDs for this article URL
         $query = $db->getQuery(true)
             ->select($db->quoteName('link_id'))
             ->from($db->quoteName('#__finder_links'))
@@ -900,11 +903,73 @@ final class J2commerce extends Adapter implements SubscriberInterface
         $db->setQuery($query);
         $linkIds = $db->loadColumn();
 
-        if (!empty($linkIds)) {
-            foreach ($linkIds as $linkId) {
-                $this->indexer->remove((int) $linkId);
-            }
+        // Remove each link without taxonomy rebuild to avoid _getNode() failures
+        foreach ($linkIds as $linkId) {
+            $this->removeFinderLink((int) $linkId);
         }
+    }
+
+    /**
+     * Remove a finder link without triggering taxonomy orphan cleanup.
+     *
+     * Performs the same data cleanup as Indexer::remove() but skips
+     * Taxonomy::removeOrphanNodes() which rebuilds the nested set and
+     * breaks other finder plugins still indexing in the same batch.
+     *
+     * @param   int  $linkId  The finder link ID to remove.
+     *
+     * @return  void
+     *
+     * @since   6.1.8
+     */
+    protected function removeFinderLink(int $linkId): void
+    {
+        $db = $this->getDatabase();
+
+        // Update term link counts
+        $query = $db->getQuery(true)
+            ->update($db->quoteName('#__finder_terms', 't'))
+            ->join(
+                'INNER',
+                $db->quoteName('#__finder_links_terms', 'm'),
+                $db->quoteName('m.term_id') . ' = ' . $db->quoteName('t.term_id')
+            )
+            ->set($db->quoteName('t.links') . ' = ' . $db->quoteName('t.links') . ' - 1')
+            ->where($db->quoteName('m.link_id') . ' = :linkId1')
+            ->bind(':linkId1', $linkId, ParameterType::INTEGER);
+        $db->setQuery($query);
+        $db->execute();
+
+        // Remove term mappings
+        $query = $db->getQuery(true)
+            ->delete($db->quoteName('#__finder_links_terms'))
+            ->where($db->quoteName('link_id') . ' = :linkId2')
+            ->bind(':linkId2', $linkId, ParameterType::INTEGER);
+        $db->setQuery($query);
+        $db->execute();
+
+        // Delete orphaned terms
+        $query = $db->getQuery(true)
+            ->delete($db->quoteName('#__finder_terms'))
+            ->where($db->quoteName('links') . ' <= 0');
+        $db->setQuery($query);
+        $db->execute();
+
+        // Remove taxonomy mappings for this link
+        $query = $db->getQuery(true)
+            ->delete($db->quoteName('#__finder_taxonomy_map'))
+            ->where($db->quoteName('link_id') . ' = :linkId3')
+            ->bind(':linkId3', $linkId, ParameterType::INTEGER);
+        $db->setQuery($query);
+        $db->execute();
+
+        // Delete the link itself
+        $query = $db->getQuery(true)
+            ->delete($db->quoteName('#__finder_links'))
+            ->where($db->quoteName('link_id') . ' = :linkId4')
+            ->bind(':linkId4', $linkId, ParameterType::INTEGER);
+        $db->setQuery($query);
+        $db->execute();
     }
 
     /**
