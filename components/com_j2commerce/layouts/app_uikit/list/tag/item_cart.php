@@ -31,7 +31,7 @@ $cartType = (int) $params->get('list_show_cart', 1);
 $btnClass = $params->get('addtocart_button_class', 'uk-button uk-button-primary');
 $chooseBtnClass = $params->get('choosebtn_class', 'uk-button uk-button-primary');
 $productId = $product->j2commerce_product_id;
-$productType = $product->product_type ?? 'simple';
+$productType = htmlspecialchars($product->product_type ?? 'simple', ENT_QUOTES, 'UTF-8');
 
 $show = $productHelper->validateVariableProduct($product);
 
@@ -77,9 +77,9 @@ $afterCart = J2CommerceHelper::plugin()->eventWithHtml(
                 <button type="submit"
                         class="j2commerce-cart-button <?php echo $btnClass; ?>"
                         data-cart-action-always="<?php echo Text::_('COM_J2COMMERCE_ADDING_TO_CART'); ?>"
-                        data-cart-action-done="<?php echo $cartText; ?>"
+                        data-cart-action-done="<?php echo htmlspecialchars($cartText ?? '', ENT_QUOTES, 'UTF-8'); ?>"
                         data-cart-action-timeout="1000">
-                    <?php echo $cartText; ?>
+                    <?php echo htmlspecialchars($cartText ?? '', ENT_QUOTES, 'UTF-8'); ?>
                 </button>
             </div>
 

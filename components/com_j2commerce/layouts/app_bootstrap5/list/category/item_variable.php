@@ -65,7 +65,7 @@ $cartType = (int) $params->get('list_show_cart', 1);
               class="j2commerce-addtocart-form mt-auto"
               id="j2commerce-addtocart-form-<?php echo $productId; ?>"
               data-product_id="<?php echo $productId; ?>"
-              data-product_type="variable"
+              data-product_type="<?php echo $productType; ?>"
               data-product_variants="<?php echo htmlspecialchars($product->variant_json ?? '{}', ENT_QUOTES, 'UTF-8'); ?>"
               enctype="multipart/form-data"
               >
