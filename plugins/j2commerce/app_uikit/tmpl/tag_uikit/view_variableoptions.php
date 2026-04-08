@@ -79,17 +79,19 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
                 </label>
                 <div class="j2commerce-radio-options uk-flex uk-flex-wrap" style="gap:.5rem;" data-binded-label="#radioOption<?php echo $option['productoption_id']; ?>">
                     <?php foreach ($option['optionvalue'] as $optionValue) : ?>
-                        <input type="radio"
-                               name="product_option[<?php echo $option['productoption_id']; ?>]"
-                               value="<?php echo $optionValue['product_optionvalue_id']; ?>"
-                               id="option-value-<?php echo $optionValue['product_optionvalue_id']; ?>"
-                               class="uk-radio uk-hidden"
-                               onclick="doAjaxPrice(<?php echo $productId; ?>, 'option-<?php echo $option['productoption_id']; ?>')"
-                               <?php echo ($defaultOptionValueId == $optionValue['product_optionvalue_id']) ? 'checked' : ''; ?>
-                               autocomplete="off"
-                               data-product-id="<?php echo $productId; ?>"
-                               data-option-id="<?php echo $option['productoption_id']; ?>"
-                               <?php echo $optionValue['product_optionvalue_attribs'] ?? ''; ?> />
+                        <input
+                            type="radio"
+                            name="product_option[<?php echo $option['productoption_id']; ?>]"
+                            value="<?php echo $optionValue['product_optionvalue_id']; ?>"
+                            id="option-value-<?php echo $optionValue['product_optionvalue_id']; ?>"
+                            class="uk-radio uk-hidden"
+                            onclick="doAjaxPrice(<?php echo $productId; ?>, 'option-<?php echo $option['productoption_id']; ?>')"
+                            <?php echo ($defaultOptionValueId == $optionValue['product_optionvalue_id']) ? 'checked' : ''; ?>
+                            autocomplete="off"
+                            data-product-id="<?php echo $productId; ?>"
+                            data-option-id="<?php echo $option['productoption_id']; ?>"
+                            <?php echo $optionValue['product_optionvalue_attribs'] ?? ''; ?>
+                        />
 
                         <?php if ($showOptionImages && !empty($optionValue['optionvalue_image'])) : ?>
                             <label class="btn-image uk-display-inline-block" for="option-value-<?php echo $optionValue['product_optionvalue_id']; ?>" data-label="<?php echo $esc(Text::_($optionValue['optionvalue_name'])); ?>">
@@ -123,15 +125,17 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
                 </label>
                 <div class="j2commerce-color-options uk-flex uk-flex-wrap" style="gap:.5rem;" data-binded-label="#colorOption<?php echo (int) $option['productoption_id']; ?>">
                     <?php foreach ($option['optionvalue'] as $optionValue) : ?>
-                        <input type="radio"
-                               name="product_option[<?php echo (int) $option['productoption_id']; ?>]"
-                               value="<?php echo (int) $optionValue['product_optionvalue_id']; ?>"
-                               id="option-value-<?php echo (int) $optionValue['product_optionvalue_id']; ?>"
-                               class="uk-radio uk-hidden"
-                               autocomplete="off"
-                               onclick="doAjaxPrice(<?php echo $productId; ?>, 'option-<?php echo (int) $option['productoption_id']; ?>')"
-                               <?php echo ($defaultOptionValueId == $optionValue['product_optionvalue_id']) ? 'checked' : ''; ?>
-                               <?php echo $optionValue['product_optionvalue_attribs'] ?? ''; ?> />
+                        <input
+                            type="radio"
+                            name="product_option[<?php echo (int) $option['productoption_id']; ?>]"
+                            value="<?php echo (int) $optionValue['product_optionvalue_id']; ?>"
+                            id="option-value-<?php echo (int) $optionValue['product_optionvalue_id']; ?>"
+                            class="uk-radio uk-hidden"
+                            autocomplete="off"
+                            onclick="doAjaxPrice(<?php echo $productId; ?>, 'option-<?php echo (int) $option['productoption_id']; ?>')"
+                            <?php echo ($defaultOptionValueId == $optionValue['product_optionvalue_id']) ? 'checked' : ''; ?>
+                            <?php echo $optionValue['product_optionvalue_attribs'] ?? ''; ?>
+                        />
                         <label for="option-value-<?php echo (int) $optionValue['product_optionvalue_id']; ?>" class="btn-color" title="<?php echo $esc(Text::_($optionValue['optionvalue_name'])); ?>" data-label="<?php echo $esc(Text::_($optionValue['optionvalue_name'])); ?>" style="color:<?php echo $esc($optionValue['optionvalue_image']); ?>;">
                             <span class="uk-invisible"><?php echo $esc(Text::_($optionValue['optionvalue_name'])); ?></span>
                         </label>

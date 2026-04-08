@@ -82,16 +82,18 @@ $optionsSummary = $productHelper::getOptionsSummary($options);
                         <?php foreach ($option['optionvalue'] as $ov) : ?>
                             <?php $ovId = (int) $ov['product_optionvalue_id']; ?>
                             <?php $optionValueInputId = 'option-value-' . $productId . '-' . $optionId . '-' . $ovId; ?>
-                            <input type="radio"
-                                   name="product_option[<?php echo $optionId; ?>]"
-                                   value="<?php echo $ovId; ?>"
-                                   id="<?php echo $optionValueInputId; ?>"
-                                   class="btn-check"
-                                   onclick="doAjaxPrice(<?php echo $productId; ?>, 'option-<?php echo $optionId; ?>')"
-                                   <?php echo ($defaultOptionValueId == $ovId) ? 'checked' : ''; ?>
-                                   autocomplete="off"
-                                   data-product-id="<?php echo $productId; ?>"
-                                   data-option-id="<?php echo $optionId; ?>" />
+                            <input
+                                type="radio"
+                                name="product_option[<?php echo $optionId; ?>]"
+                                value="<?php echo $ovId; ?>"
+                                id="<?php echo $optionValueInputId; ?>"
+                                class="btn-check"
+                                onclick="doAjaxPrice(<?php echo $productId; ?>, 'option-<?php echo $optionId; ?>')"
+                                <?php echo ($defaultOptionValueId == $ovId) ? 'checked' : ''; ?>
+                                autocomplete="off"
+                                data-product-id="<?php echo $productId; ?>"
+                                data-option-id="<?php echo $optionId; ?>"
+                            />
 
                             <?php if ($showOptionImages && !empty($ov['optionvalue_image'])) : ?>
                                 <label class="btn btn-image p-0 form-check-label" for="<?php echo $optionValueInputId; ?>" data-label="<?php echo $esc(Text::_($ov['optionvalue_name'])); ?>">
