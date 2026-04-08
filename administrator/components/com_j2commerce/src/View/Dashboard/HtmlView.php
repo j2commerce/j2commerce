@@ -359,6 +359,10 @@ JS);
         Text::script('COM_J2COMMERCE_WIZARD_ERR_SELECT_CATEGORIES');
         Text::script('COM_J2COMMERCE_ERR_GENERIC');
 
+        // Joomla core strings for Choices.js select in the category wizard
+        Text::script('JGLOBAL_TYPE_OR_SELECT_SOME_OPTIONS');
+        Text::script('JGLOBAL_SELECT_NO_RESULTS_MATCH');
+
         if (!SetupGuideHelper::isComplete()) {
             HTMLHelper::_('bootstrap.offcanvas', '#j2commerce-setup-guide');
             $wa->registerAndUseScript('com_j2commerce.setup-guide', 'media/com_j2commerce/js/administrator/setup-guide.js', [], ['defer' => true]);
