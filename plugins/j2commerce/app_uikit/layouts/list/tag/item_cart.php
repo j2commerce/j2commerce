@@ -31,7 +31,7 @@ $cartType = (int) $params->get('list_show_cart', 1);
 $btnClass = $params->get('addtocart_button_class', 'uk-button uk-button-primary');
 $chooseBtnClass = $params->get('choosebtn_class', 'uk-button uk-button-primary');
 $productId = $product->j2commerce_product_id;
-$productType = $product->product_type ?? 'simple';
+$productType = htmlspecialchars($product->product_type ?? 'simple', ENT_QUOTES, 'UTF-8');
 
 $show = $productHelper->validateVariableProduct($product);
 
