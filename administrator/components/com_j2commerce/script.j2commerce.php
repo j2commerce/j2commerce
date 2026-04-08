@@ -160,7 +160,37 @@ class Com_J2commerceInstallerScript extends InstallerScript
             @unlink($cacheFile);
         }
 
+        // Ensure plg_finder_j2commerce runs after all other finder plugins
+        // so purgeLinkedArticlesFromIndex() catches articles indexed in the same batch
+        $this->setFinderPluginOrdering();
+
         $this->debugLog("=== POSTFLIGHT END ===");
+    }
+
+    // ── Finder plugin ordering ─────────────────────────────────────────────────
+
+    /**
+     * Set plg_finder_j2commerce ordering to 99 so it runs after all other
+     * finder plugins. This ensures purgeLinkedArticlesFromIndex() catches
+     * content articles indexed in the same batch request.
+     */
+    private function setFinderPluginOrdering(): void
+    {
+        try {
+            $db = Factory::getContainer()->get(DatabaseInterface::class);
+
+            $query = $db->getQuery(true)
+                ->update($db->quoteName('#__extensions'))
+                ->set($db->quoteName('ordering') . ' = 99')
+                ->where($db->quoteName('type') . ' = ' . $db->quote('plugin'))
+                ->where($db->quoteName('folder') . ' = ' . $db->quote('finder'))
+                ->where($db->quoteName('element') . ' = ' . $db->quote('j2commerce'));
+
+            $db->setQuery($query);
+            $db->execute();
+        } catch (\Throwable $e) {
+            $this->debugLog('setFinderPluginOrdering failed: ' . $e->getMessage());
+        }
     }
 
     // ── Default component params on fresh install ──────────────────────────────

@@ -115,7 +115,6 @@ final class J2commerce extends Adapter implements SubscriberInterface
             'onFinderAfterDelete'         => 'onFinderAfterDelete',
             'onFinderBeforeSave'          => 'onFinderBeforeSave',
             'onFinderAfterSave'           => 'onFinderAfterSave',
-            'onFinderIndexAfterIndex'     => 'onFinderIndexAfterIndex',
         ]);
     }
 
@@ -369,54 +368,77 @@ final class J2commerce extends Adapter implements SubscriberInterface
     }
 
     /**
-     * Method called after an item has been indexed by Smart Search.
+     * Method to index a batch of content items.
      *
-     * This is triggered for ALL items indexed, not just J2Commerce items.
-     * We use this to detect when plg_finder_content indexes an article
-     * that has an associated J2Commerce product, and remove the duplicate
-     * article entry from the index.
+     * After each batch, removes any com_content article entries from
+     * the finder index when they have an associated J2Commerce product.
+     * This prevents duplicate search results (article AND product).
      *
-     * @param   \Joomla\Event\Event  $event  The event object containing item and linkId.
-     *
-     * @return  void
+     * @return  boolean  True on success.
      *
      * @since   6.0.0
      */
-    public function onFinderIndexAfterIndex(\Joomla\Event\Event $event): void
+    public function onBuildIndex()
     {
-        // Only process if exclusion is enabled
-        if (!$this->params->get('exclude_linked_articles', 1)) {
-            return;
+        // Purge BEFORE parent so it runs on every batch request, even after
+        // J2Commerce items are fully indexed (parent returns early at offset==total).
+        // This catches articles indexed by plg_finder_content in any prior batch.
+        if ($this->params->get('exclude_linked_articles', 1)) {
+            $this->purgeLinkedArticlesFromIndex();
         }
 
-        // Extract arguments from the event
-        // Event is triggered with: triggerEvent('onFinderIndexAfterIndex', [$item, $linkId])
-        $arguments = $event->getArguments();
-        $item      = $arguments[0] ?? null;
-        $linkId    = (int) ($arguments[1] ?? 0);
+        return parent::onBuildIndex();
+    }
 
-        if (!$item instanceof Result) {
-            return;
-        }
+    /**
+     * Remove all com_content article entries from the finder index
+     * when they have an associated enabled J2Commerce product.
+     *
+     * Uses a direct DELETE rather than Indexer::remove() to avoid
+     * Taxonomy::removeOrphanNodes() which rebuilds the nested set
+     * and breaks other plugins still indexing in the same batch.
+     * Orphaned terms and taxonomy maps are cleaned up by the
+     * Indexer::optimize() step that runs after all batches complete.
+     *
+     * @return  void
+     *
+     * @since   6.1.8
+     */
+    protected function purgeLinkedArticlesFromIndex(): void
+    {
+        try {
+            $db = $this->getDatabase();
 
-        // Check if this is a com_content article (indexed by plg_finder_content)
-        // The context is set by plg_finder_content when indexing articles
-        if (!isset($item->context) || $item->context !== 'com_content.article') {
-            return;
-        }
+            // Get all article IDs linked to enabled J2Commerce products
+            $subQuery = $db->getQuery(true)
+                ->select($db->quoteName('product_source_id'))
+                ->from($db->quoteName('#__j2commerce_products'))
+                ->where($db->quoteName('product_source') . ' = ' . $db->quote('com_content'))
+                ->where($db->quoteName('enabled') . ' = 1');
 
-        // Get the article ID from the item
-        $articleId = (int) ($item->id ?? 0);
+            $db->setQuery($subQuery);
+            $articleIds = $db->loadColumn();
 
-        if ($articleId <= 0) {
-            return;
-        }
+            if (empty($articleIds)) {
+                return;
+            }
 
-        // Check if this article has an associated J2Commerce product
-        if ($this->hasJ2CommerceProduct($articleId) && $this->indexer !== null) {
-            // Remove this article link from the index - it was just indexed by plg_finder_content
-            // but we want only the J2Commerce product to appear in search results
-            $this->indexer->remove($linkId);
+            // Build the content URLs that plg_finder_content would use
+            $urls = [];
+
+            foreach ($articleIds as $id) {
+                $urls[] = 'index.php?option=com_content&view=article&id=' . (int) $id;
+            }
+
+            // Delete these links from the finder index
+            $query = $db->getQuery(true)
+                ->delete($db->quoteName('#__finder_links'))
+                ->whereIn($db->quoteName('url'), $urls, ParameterType::STRING);
+
+            $db->setQuery($query);
+            $db->execute();
+        } catch (\Throwable $e) {
+            // Silently ignore — don't break the indexing process
         }
     }
 
@@ -890,21 +912,14 @@ final class J2commerce extends Adapter implements SubscriberInterface
         // Build the URL that plg_finder_content would use for this article
         $articleUrl = 'index.php?option=com_content&view=article&id=' . $articleId;
 
-        // Find and remove the article from the finder links table
+        // Delete directly — orphaned terms/maps are cleaned up by optimize()
         $query = $db->getQuery(true)
-            ->select($db->quoteName('link_id'))
-            ->from($db->quoteName('#__finder_links'))
+            ->delete($db->quoteName('#__finder_links'))
             ->where($db->quoteName('url') . ' = :url')
             ->bind(':url', $articleUrl);
 
         $db->setQuery($query);
-        $linkIds = $db->loadColumn();
-
-        if (!empty($linkIds)) {
-            foreach ($linkIds as $linkId) {
-                $this->indexer->remove((int) $linkId);
-            }
-        }
+        $db->execute();
     }
 
     /**
