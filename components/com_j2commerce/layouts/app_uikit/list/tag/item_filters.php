@@ -31,9 +31,11 @@ if (empty($filters)) {
             <h5><?php echo htmlspecialchars($filter->title ?? '', ENT_QUOTES, 'UTF-8'); ?></h5>
             <ul class="j2commerce-filter-options uk-list">
                 <?php foreach ($filter->options ?? [] as $option): ?>
+                    <?php $checkboxId = 'filter-option-' . ($filter->id ?? '0') . '-' . md5((string) ($option->value ?? '')); ?>
                     <li>
-                        <label>
+                        <label for="<?php echo $checkboxId; ?>">
                             <input type="checkbox"
+                                   id="<?php echo $checkboxId; ?>"
                                    class="uk-checkbox j2commerce-filter-option"
                                    name="filter[<?php echo $filter->id ?? ''; ?>][]"
                                    value="<?php echo htmlspecialchars($option->value ?? '', ENT_QUOTES, 'UTF-8'); ?>"

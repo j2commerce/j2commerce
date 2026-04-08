@@ -34,14 +34,15 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
         <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeDisplaySingleProductOption', [$product, &$option])->getArgument('html', ''); ?>
 
         <?php if ($option['type'] === 'select') : ?>
+            <?php $selectInputId = 'product-option-' . $productId . '-' . $optionId; ?>
             <div id="option-<?php echo $optionId; ?>" class="option mb-3">
-                <label class="form-label fw-bold">
+                <label class="form-label fw-bold" for="<?php echo $selectInputId; ?>">
                     <?php echo $esc(Text::_($option['option_name'])); ?>
                     <?php if ($option['required']) : ?>
                         <span class="text-danger">*</span>
                     <?php endif; ?>
                 </label>
-                <select name="product_option[<?php echo $optionId; ?>]"
+                <select id="<?php echo $selectInputId; ?>" name="product_option[<?php echo $optionId; ?>]"
                         class="form-select"
                         onchange="doFlexiAjaxPrice(<?php echo $productId; ?>, '#option-<?php echo $optionId; ?>')">
                     <option value="*"><?php echo $esc(Text::_('COM_J2COMMERCE_CHOOSE')); ?></option>
@@ -57,7 +58,7 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
 
         <?php if ($option['type'] === 'radio') : ?>
             <div id="option-<?php echo $optionId; ?>" class="option mb-3">
-                <div class="fw-bold mb-1">
+                <div class="form-label fw-bold mb-1">
                     <?php echo $esc(Text::_($option['option_name'])); ?>
                     <?php if ($option['required']) : ?>
                         <span class="text-danger">*</span>
@@ -65,16 +66,17 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
                 </div>
                 <?php foreach ($option['optionvalue'] as $ov) : ?>
                     <?php $ovId = (int) $ov['product_optionvalue_id']; ?>
+                    <?php $optionValueInputId = 'option-value-' . $productId . '-' . $optionId . '-' . $ovId; ?>
                     <div class="form-check">
                         <input type="radio"
                                name="product_option[<?php echo $optionId; ?>]"
                                value="<?php echo $ovId; ?>"
-                               id="option-value-<?php echo $ovId; ?>"
+                               id="<?php echo $optionValueInputId; ?>"
                                class="form-check-input"
                                autocomplete="off"
                                onclick="doFlexiAjaxPrice(<?php echo $productId; ?>, '#option-<?php echo $optionId; ?>')"
                                <?php echo ($defaultOptionValueId == $ovId) ? ' checked' : ''; ?> />
-                        <label class="form-check-label" for="option-value-<?php echo $ovId; ?>">
+                        <label class="form-check-label" for="<?php echo $optionValueInputId; ?>">
                             <?php if ($showOptionImages && !empty($ov['optionvalue_image'])) : ?>
                                 <img class="optionvalue-image me-1"
                                      src="<?php echo Uri::root(true) . '/' . $esc($ov['optionvalue_image']); ?>"

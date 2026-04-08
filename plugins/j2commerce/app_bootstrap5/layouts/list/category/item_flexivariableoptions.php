@@ -44,14 +44,15 @@ $optionsSummary = $productHelper::getOptionsSummary($options);
             <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeDisplaySingleProductOption', [$product, &$option])->getArgument('html', ''); ?>
 
             <?php if ($option['type'] === 'select') : ?>
+                <?php $selectInputId = 'product-option-' . $productId . '-' . $optionId; ?>
                 <div id="option-<?php echo $optionId; ?>" class="option mb-3">
-                    <label class="form-label fw-semibold pb-1 mb-1">
+                    <label class="form-label fw-semibold pb-1 mb-1" for="<?php echo $selectInputId; ?>">
                         <?php echo $esc(Text::_($option['option_name'])); ?>
                         <?php if ($option['required']) : ?>
                             <span class="text-danger">*</span>
                         <?php endif; ?>
                     </label>
-                    <select name="product_option[<?php echo $optionId; ?>]" class="form-select" data-product-id="<?php echo $productId; ?>" data-option-id="<?php echo $optionId; ?>" onchange="doFlexiAjaxPrice(<?php echo $productId; ?>, '#option-<?php echo $optionId; ?>')">
+                    <select id="<?php echo $selectInputId; ?>" name="product_option[<?php echo $optionId; ?>]" class="form-select" data-product-id="<?php echo $productId; ?>" data-option-id="<?php echo $optionId; ?>" onchange="doFlexiAjaxPrice(<?php echo $productId; ?>, '#option-<?php echo $optionId; ?>')">
                         <option value="*"><?php echo $esc(Text::_('COM_J2COMMERCE_CHOOSE')); ?></option>
                         <?php foreach ($option['optionvalue'] as $ov) : ?>
                             <?php $ovId = (int) $ov['product_optionvalue_id']; ?>
@@ -65,20 +66,21 @@ $optionsSummary = $productHelper::getOptionsSummary($options);
 
             <?php if ($option['type'] === 'radio') : ?>
                 <div id="option-<?php echo $optionId; ?>" class="option mb-3">
-                    <label class="form-label fw-semibold pb-1 mb-1">
+                    <div class="form-label fw-semibold pb-1 mb-1">
                         <?php echo $esc(Text::_($option['option_name'])); ?>:
                         <?php if ($option['required']) : ?>
                             <span class="text-danger">*</span>
                         <?php endif; ?>
                         <span class="fw-normal fs-sm ms-1" id="radioOption<?php echo $optionId; ?>"></span>
-                    </label>
+                    </div>
                     <div class="j2commerce-radio-options d-flex flex-wrap gap-2" data-binded-label="#radioOption<?php echo $optionId; ?>">
                         <?php foreach ($option['optionvalue'] as $ov) : ?>
                             <?php $ovId = (int) $ov['product_optionvalue_id']; ?>
+                            <?php $optionValueInputId = 'option-value-' . $productId . '-' . $optionId . '-' . $ovId; ?>
                             <input type="radio"
                                    name="product_option[<?php echo $optionId; ?>]"
                                    value="<?php echo $ovId; ?>"
-                                   id="option-value-<?php echo $ovId; ?>"
+                                   id="<?php echo $optionValueInputId; ?>"
                                    class="btn-check"
                                    onclick="doFlexiAjaxPrice(<?php echo $productId; ?>, '#option-<?php echo $optionId; ?>')"
                                    <?php echo ($defaultOptionValueId == $ovId) ? 'checked' : ''; ?>
@@ -87,12 +89,12 @@ $optionsSummary = $productHelper::getOptionsSummary($options);
                                    data-option-id="<?php echo $optionId; ?>" />
 
                             <?php if ($showOptionImages && !empty($ov['optionvalue_image'])) { ?>
-                                <label class="btn btn-image p-0 form-check-label" for="option-value-<?php echo $ovId; ?>" data-label="<?php echo $esc(Text::_($ov['optionvalue_name'])); ?>">
+                                <label class="btn btn-image p-0 form-check-label" for="<?php echo $optionValueInputId; ?>" data-label="<?php echo $esc(Text::_($ov['optionvalue_name'])); ?>">
                                     <img class="optionvalue-image me-1" src="<?php echo Uri::root(true) . '/' . $esc($ov['optionvalue_image']); ?>" alt="<?php echo $esc(Text::_($ov['optionvalue_name'])); ?>" width="48" style="width:48px;" />
                                     <span class="visually-hidden"><?php echo $esc(Text::_($ov['optionvalue_name'])); ?></span>
                                 </label>
                             <?php } else { ?>
-                                <label class="btn btn-sm btn-outline-secondary form-check-label fs-xs" for="option-value-<?php echo $ovId; ?>" data-label="<?php echo $esc(Text::_($ov['optionvalue_name'])); ?>">
+                                <label class="btn btn-sm btn-outline-secondary form-check-label fs-xs" for="<?php echo $optionValueInputId; ?>" data-label="<?php echo $esc(Text::_($ov['optionvalue_name'])); ?>">
                                     <?php echo $esc(Text::_($ov['optionvalue_name'])); ?>
                                 </label>
                             <?php } ?>
@@ -103,21 +105,22 @@ $optionsSummary = $productHelper::getOptionsSummary($options);
             <?php endif; ?>
             <?php if ($option['type'] === 'color') : ?>
                 <div id="option-<?php echo $optionId; ?>" class="option mb-3">
-                    <label class="form-label fw-semibold pb-1 mb-1">
+                    <div class="form-label fw-semibold pb-1 mb-1">
                         <?php echo $esc(Text::_($option['option_name'])); ?>:
                         <?php if ($option['required']) : ?>
                             <span class="text-danger">*</span>
                         <?php endif; ?>
                         <span class="fw-normal fs-sm ms-1" id="colorOption<?php echo $optionId; ?>"></span>
-                    </label>
+                    </div>
                     <div class="j2commerce-color-options d-flex flex-wrap gap-2" data-binded-label="#colorOption<?php echo $optionId; ?>">
                         <?php foreach ($option['optionvalue'] as $ov) : ?>
                             <?php $ovId = (int) $ov['product_optionvalue_id']; ?>
+                            <?php $optionValueInputId = 'option-value-' . $productId . '-' . $optionId . '-' . $ovId; ?>
                             <input
                                 type="radio"
                                 name="product_option[<?php echo $optionId; ?>]"
                                 value="<?php echo $ovId; ?>"
-                                id="option-value-<?php echo $ovId; ?>"
+                                id="<?php echo $optionValueInputId; ?>"
                                 class="btn-check"
                                 autocomplete="off"
                                 onclick="doFlexiAjaxPrice(<?php echo $productId; ?>, '#option-<?php echo $optionId; ?>')"
@@ -125,7 +128,7 @@ $optionsSummary = $productHelper::getOptionsSummary($options);
                                 data-option-id="<?php echo $optionId; ?>"
                                 <?php echo ($defaultOptionValueId == $ovId) ? 'checked' : ''; ?>
                             />
-                            <label for="option-value-<?php echo $ovId; ?>" class="btn btn-color fs-xl" data-label="<?php echo $esc(Text::_($ov['optionvalue_name'])); ?>" style="color:<?php echo $esc($ov['optionvalue_image']); ?>;">
+                            <label for="<?php echo $optionValueInputId; ?>" class="btn btn-color fs-xl" data-label="<?php echo $esc(Text::_($ov['optionvalue_name'])); ?>" style="color:<?php echo $esc($ov['optionvalue_image']); ?>;">
                                 <span class="visually-hidden"><?php echo $esc(Text::_($ov['optionvalue_name'])); ?></span>
                             </label>
                         <?php endforeach; ?>
