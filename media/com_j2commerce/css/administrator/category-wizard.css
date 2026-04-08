@@ -82,3 +82,13 @@
 #j2c-wizard-success-details .btn {
     justify-content: flex-start;
 }
+
+/* ---- Focus styling (a11y) ---- */
+.j2c-onboarding-footer .btn:focus-visible,
+.j2c-step .btn:focus-visible,
+.j2c-step a.btn:focus-visible,
+.j2c-step button:focus-visible {
+    outline: 2px solid var(--bs-primary, var(--primary, #0d6efd)) !important;
+    outline-offset: 2px !important;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+}
