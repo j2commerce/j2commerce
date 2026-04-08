@@ -50,7 +50,7 @@ $cartType = (int) $params->get('list_show_cart', 1);
         <?php echo ProductLayoutService::renderLayout('list.category.item_description', $displayData); ?>
     <?php endif; ?>
 
-    <div class="j2commerce-price-sku-container d-flex flex-wrap align-items-center justify-content-between<?php echo ($showCart && $cartType == 1) ? '' : ' mb-4' ?>">
+    <div class="j2commerce-price-sku-container d-flex flex-wrap align-items-center justify-content-between gap-1<?php echo ($showCart && $cartType == 1) ? '' : ' mb-4' ?>">
         <?php if ($showPrice): ?>
             <?php echo ProductLayoutService::renderLayout('list.category.item_flexiprice', $displayData); ?>
         <?php endif; ?>

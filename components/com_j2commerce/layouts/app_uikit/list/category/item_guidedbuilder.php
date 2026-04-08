@@ -53,13 +53,13 @@ $cartText   = !empty($product->addtocart_text) ? $product->addtocart_text : Text
         <?php echo ProductLayoutService::renderLayout('list.category.item_description', $displayData); ?>
     <?php endif; ?>
 
-    <div class="j2commerce-price-sku-container uk-flex uk-flex-wrap uk-flex-middle uk-flex-between">
+    <div class="j2commerce-price-sku-container uk-flex uk-flex-wrap uk-flex-middle uk-flex-between" style="gap: .25rem">
         <?php if ($showPrice && !empty($product->pricing->is_from_price)): ?>
             <?php
             $productHelper = J2CommerceHelper::product();
             if ($productHelper->canShowprice($params)):
             ?>
-            <div class="j2commerce-product-price-container uk-flex uk-flex-middle" style="gap:0.25rem">
+            <div class="j2commerce-product-price-container uk-flex uk-flex-middle" style="gap: .25rem">
                 <span class="uk-text-muted uk-text-small"><?php echo Text::_('COM_J2COMMERCE_FROM'); ?></span>
                 <div class="sale-price uk-text-lead uk-text-bold">
                     <?php echo $productHelper->displayPrice((float) ($product->pricing->price ?? 0), $product, $params); ?>

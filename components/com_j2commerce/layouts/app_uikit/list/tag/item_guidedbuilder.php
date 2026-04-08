@@ -53,7 +53,7 @@ $cartText   = !empty($product->addtocart_text) ? $product->addtocart_text : Text
         <?php echo ProductLayoutService::renderLayout('list.category.item_description', $displayData); ?>
     <?php endif; ?>
 
-    <div class="j2commerce-price-sku-container uk-flex uk-flex-wrap uk-flex-middle uk-flex-between">
+    <div class="j2commerce-price-sku-container uk-flex uk-flex-wrap uk-flex-middle uk-flex-between" style="gap: .25rem">
         <?php if ($showPrice && !empty($product->pricing->is_from_price)): ?>
             <?php
             $productHelper = J2CommerceHelper::product();

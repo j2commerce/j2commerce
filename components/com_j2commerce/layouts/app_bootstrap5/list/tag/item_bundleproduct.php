@@ -53,7 +53,7 @@ $cartText = $addtocartText ?? Text::_('COM_J2COMMERCE_VIEW_PRODUCT_DETAILS');
         <?php echo ProductLayoutService::renderLayout('list.tag.item_description', $displayData); ?>
     <?php endif; ?>
 
-    <div class="j2commerce-price-sku-container d-flex flex-wrap align-items-center justify-content-between">
+    <div class="j2commerce-price-sku-container d-flex flex-wrap align-items-center justify-content-between gap-1">
         <?php if ($showPrice): ?>
             <?php echo ProductLayoutService::renderLayout('list.tag.item_price', $displayData); ?>
         <?php endif; ?>

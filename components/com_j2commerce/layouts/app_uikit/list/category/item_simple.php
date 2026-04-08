@@ -52,7 +52,7 @@ $cartType = (int) $params->get('list_show_cart', 1);
         <?php echo ProductLayoutService::renderLayout('list.category.item_description', $displayData); ?>
     <?php endif; ?>
 
-    <div class="j2commerce-price-sku-container uk-flex uk-flex-wrap uk-flex-middle uk-flex-between uk-margin-bottom">
+    <div class="j2commerce-price-sku-container uk-flex uk-flex-wrap uk-flex-middle uk-flex-between uk-margin-bottom" style="gap: .25rem">
         <?php if ($showPrice): ?>
             <?php echo ProductLayoutService::renderLayout('list.category.item_price', $displayData); ?>
         <?php endif; ?>
