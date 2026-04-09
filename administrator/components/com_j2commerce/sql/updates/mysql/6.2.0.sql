@@ -1,0 +1,2 @@
+-- No schema changes for 6.2.0
+-- Subsequent files will be formatted as 6.2.0-YYYY-MM-DD.sql for any future updates in this version
