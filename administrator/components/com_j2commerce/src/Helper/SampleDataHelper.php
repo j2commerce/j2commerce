@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 
 \defined('_JEXEC') or die;
 
+use Joomla\CMS\Factory;
 use Joomla\CMS\Table\Table;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
@@ -278,6 +279,8 @@ final class SampleDataHelper
         ['name' => 'Weight', 'type' => 'radio', 'values' => ['Light', 'Medium', 'Heavy']],
     ];
 
+    private int $userId = 0;
+
     public function __construct(private DatabaseInterface $db)
     {
     }
@@ -299,6 +302,8 @@ final class SampleDataHelper
     public function load(string $profile = 'standard', array $overrides = []): array
     {
         $cfg = array_merge(self::PROFILES[$profile] ?? self::PROFILES['standard'], $overrides);
+
+        $this->userId = (int) Factory::getApplication()->getIdentity()->id;
 
         $now      = date('Y-m-d H:i:s');
         $today    = time();
@@ -777,8 +782,8 @@ final class SampleDataHelper
         $table->params           = '{}';
         $table->created_time     = $now;
         $table->modified_time    = $now;
-        $table->created_user_id  = 0;
-        $table->modified_user_id = 0;
+        $table->created_user_id  = $this->userId;
+        $table->modified_user_id = $this->userId;
         $table->hits             = 0;
         $table->version          = 1;
         $table->setLocation(1, 'last-child');
@@ -813,8 +818,8 @@ final class SampleDataHelper
             $table->params           = '{}';
             $table->created_time     = $now;
             $table->modified_time    = $now;
-            $table->created_user_id  = 0;
-            $table->modified_user_id = 0;
+            $table->created_user_id  = $this->userId;
+            $table->modified_user_id = $this->userId;
             $table->hits             = 0;
             $table->version          = 1;
             $table->setLocation($parentId, 'last-child');
@@ -1023,10 +1028,10 @@ final class SampleDataHelper
             $article->state            = 1;
             $article->catid            = $catId;
             $article->created          = $now;
-            $article->created_by       = 0;
+            $article->created_by       = $this->userId;
             $article->created_by_alias = '';
             $article->modified         = $now;
-            $article->modified_by      = 0;
+            $article->modified_by      = $this->userId;
             $article->images           = '{}';
             $article->urls             = '{}';
             $article->attribs          = '{}';
@@ -1082,9 +1087,9 @@ final class SampleDataHelper
             $product->plugins           = '';
             $product->params            = '{}';
             $product->created_on        = $now;
-            $product->created_by        = 0;
+            $product->created_by        = $this->userId;
             $product->modified_on       = $now;
-            $product->modified_by       = 0;
+            $product->modified_by       = $this->userId;
             $product->up_sells          = '';
             $product->cross_sells       = '';
             $product->productfilter_ids = '';
@@ -1171,10 +1176,10 @@ final class SampleDataHelper
             $article->state            = 1;
             $article->catid            = $catId;
             $article->created          = $now;
-            $article->created_by       = 0;
+            $article->created_by       = $this->userId;
             $article->created_by_alias = '';
             $article->modified         = $now;
-            $article->modified_by      = 0;
+            $article->modified_by      = $this->userId;
             $article->images           = '{}';
             $article->urls             = '{}';
             $article->attribs          = '{}';
@@ -1221,9 +1226,9 @@ final class SampleDataHelper
             $product->plugins           = '';
             $product->params            = '{}';
             $product->created_on        = $now;
-            $product->created_by        = 0;
+            $product->created_by        = $this->userId;
             $product->modified_on       = $now;
-            $product->modified_by       = 0;
+            $product->modified_by       = $this->userId;
             $product->up_sells          = '';
             $product->cross_sells       = '';
             $product->productfilter_ids = '';
@@ -1677,7 +1682,7 @@ final class SampleDataHelper
             $hist->notify_customer = 0;
             $hist->comment         = 'Order created via sample data generator.';
             $hist->created_on      = $createdOn;
-            $hist->created_by      = 0;
+            $hist->created_by      = $this->userId;
             $hist->params          = '{}';
 
             $db->insertObject('#__j2commerce_orderhistories', $hist);
@@ -1777,9 +1782,9 @@ final class SampleDataHelper
             $voucher->enabled       = 1;
             $voucher->access        = 1;
             $voucher->created_on    = $now;
-            $voucher->created_by    = 0;
+            $voucher->created_by    = $this->userId;
             $voucher->modified_on   = $now;
-            $voucher->modified_by   = 0;
+            $voucher->modified_by   = $this->userId;
 
             $db->insertObject('#__j2commerce_vouchers', $voucher);
             $created++;
@@ -2075,9 +2080,9 @@ final class SampleDataHelper
         $v->weight                        = 0.0;
         $v->weight_class_id               = 0;
         $v->created_on                    = $now;
-        $v->created_by                    = 0;
+        $v->created_by                    = $this->userId;
         $v->modified_on                   = $now;
-        $v->modified_by                   = 0;
+        $v->modified_by                   = $this->userId;
         $v->manage_stock                  = 1;
         $v->quantity_restriction          = 0;
         $v->min_out_qty                   = 0.0;
