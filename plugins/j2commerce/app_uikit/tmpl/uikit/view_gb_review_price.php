@@ -21,7 +21,7 @@ $total       = (float) ($this->total ?? 0);
 $steps       = $this->steps ?? [];
 $selections  = $this->selections ?? [];
 
-echo J2CommerceHelper::plugin()->eventWithHtml('BeforeRenderingProductPrice', [$this->product]);
+echo J2CommerceHelper::plugin()->eventWithHtml('BeforeRenderingProductPrice', [$this->product, $this->context]);
 ?>
 <div class="gb-review-price-card">
     <div class="gb-review-price-header">
@@ -76,4 +76,4 @@ echo J2CommerceHelper::plugin()->eventWithHtml('BeforeRenderingProductPrice', [$
     </div>
 </div>
 
-<?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterRenderingProductPrice', [$this->product]); ?>
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterRenderingProductPrice', [$this->product, $this->context]); ?>

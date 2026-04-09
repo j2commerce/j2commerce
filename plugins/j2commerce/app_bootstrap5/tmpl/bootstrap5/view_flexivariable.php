@@ -50,7 +50,7 @@ if ($this->params->get('item_show_product_stock', 1) && J2CommerceHelper::produc
                 <?php endif; ?>
             </div>
 
-            <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductStock', [$this->product])->getArgument('html', ''); ?>
+            <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductStock', [$this->product, $this->context])->getArgument('html', ''); ?>
 
             <div class="stock-brand-container align-items-center row mb-4">
                 <?php if ($this->params->get('item_show_product_stock', 1) && J2CommerceHelper::product()->managing_stock($this->product->variant)) : ?>
@@ -63,7 +63,7 @@ if ($this->params->get('item_show_product_stock', 1) && J2CommerceHelper::produc
                 </div>
             </div>
 
-            <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductDescription', [$this->product])->getArgument('html', ''); ?>
+            <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductDescription', [$this->product, $this->context])->getArgument('html', ''); ?>
 
             <?php if($this->params->get('item_show_sdesc')):?>
                 <?php echo $this->loadTemplate('sdesc'); ?>
@@ -87,15 +87,15 @@ if ($this->params->get('item_show_product_stock', 1) && J2CommerceHelper::produc
 
                     <?php echo $this->loadTemplate('flexivariableoptions'); ?>
 
-                    <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductOptions', [$this->product])->getArgument('html', ''); ?>
+                    <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductOptions', [$this->product, $this->context])->getArgument('html', ''); ?>
 
-                    <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductCart', [$this->product])->getArgument('html', ''); ?>
+                    <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductCart', [$this->product, $this->context])->getArgument('html', ''); ?>
 
                     <?php echo $this->loadTemplate('cart'); ?>
 
                     <input type="hidden" name="variant_id" value="<?php echo isset($this->product->variant->j2commerce_variant_id) ? $this->product->variant->j2commerce_variant_id : ''; ?>" />
 
-                    <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductCart', [$this->product])->getArgument('html', ''); ?>
+                    <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductCart', [$this->product, $this->context])->getArgument('html', ''); ?>
                 </form>
             <?php endif; ?>
 
@@ -117,20 +117,20 @@ if ($this->params->get('item_show_product_stock', 1) && J2CommerceHelper::produc
         <?php echo $this->product->source->event->afterDisplayContent; ?>
     <?php endif; ?>
 </div>
-<?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductUpsells', [$this->product])->getArgument('html', ''); ?>
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductUpsells', [$this->product, $this->context])->getArgument('html', ''); ?>
 
 <?php if ($this->params->get('item_show_product_upsells', 0) && !empty($this->product->up_sells)) : ?>
     <?php echo $this->loadTemplate('upsells'); ?>
 <?php endif; ?>
 
-<?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductUpsells', [$this->product])->getArgument('html', ''); ?>
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductUpsells', [$this->product, $this->context])->getArgument('html', ''); ?>
 
-<?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductCrosssells', [$this->product])->getArgument('html', ''); ?>
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductCrosssells', [$this->product, $this->context])->getArgument('html', ''); ?>
 
 <?php if ($this->params->get('item_show_product_cross_sells', 0) && !empty($this->product->cross_sells)) : ?>
     <?php echo $this->loadTemplate('crosssells'); ?>
 <?php endif; ?>
 
-<?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductCrosssells', [$this->product])->getArgument('html', ''); ?>
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductCrosssells', [$this->product, $this->context])->getArgument('html', ''); ?>
 
-<?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductDetail', [$this->product])->getArgument('html', ''); ?>
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductDetail', [$this->product, $this->context])->getArgument('html', ''); ?>

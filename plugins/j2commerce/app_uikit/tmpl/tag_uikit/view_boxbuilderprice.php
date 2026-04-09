@@ -18,7 +18,7 @@ $boxbuilderproducts     = (array) $this->product->params->get('boxbuilderproduct
 $totalBoxBuilderPrice   = J2CommerceHelper::getBoxBuilderProductTotal($boxbuilderproducts);
 ?>
 
-<?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeRenderingProductPrice', [$this->product]); ?>
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeRenderingProductPrice', [$this->product, $this->context]); ?>
 
 <div class="product-price-container uk-flex uk-flex-middle uk-margin-remove uk-margin-right">
     <span class="sale-price uk-text-large uk-text-bold">
@@ -38,4 +38,4 @@ $totalBoxBuilderPrice   = J2CommerceHelper::getBoxBuilderProductTotal($boxbuilde
     <?php endif; ?>
 </div>
 
-<?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterRenderingProductPrice', [$this->product]); ?>
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterRenderingProductPrice', [$this->product, $this->context]); ?>

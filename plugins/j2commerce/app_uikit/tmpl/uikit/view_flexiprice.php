@@ -22,7 +22,7 @@ $product_helper = J2CommerceHelper::product();
 
 
 ?>
-<?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeRenderingProductPrice', [$this->product])->getArgument('html', ''); ?>
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeRenderingProductPrice', [$this->product, $this->context])->getArgument('html', ''); ?>
 
 <?php if ($this->params->get('item_show_product_base_price', 1) || $this->params->get('item_show_product_special_price', 1)) : ?>
     <div class="j2commerce-product-price-container uk-margin-small-bottom">
@@ -53,4 +53,4 @@ $product_helper = J2CommerceHelper::product();
     </div>
 <?php endif; ?>
 
-<?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterRenderingProductPrice', [$this->product])->getArgument('html', ''); ?>
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterRenderingProductPrice', [$this->product, $this->context])->getArgument('html', ''); ?>

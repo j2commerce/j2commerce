@@ -26,7 +26,7 @@ $cart_text = !empty($this->product->addtocart_text)
 $show = J2CommerceHelper::product()->validateVariableProduct($this->product);
 $productId = (int) $this->product->j2commerce_product_id;
 ?>
-<?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeAddToCartButton', [$this->product, J2CommerceHelper::utilities()->getContext('view_cart')])->getArgument('html', ''); ?>
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeAddToCartButton', [$this->product, $this->context])->getArgument('html', ''); ?>
 
 <?php if ($show) : ?>
     <div class="cart-action-complete" style="display:none;">
@@ -63,7 +63,7 @@ $productId = (int) $this->product->j2commerce_product_id;
     <button type="button" class="j2commerce_button_no_stock btn btn-warning"><?php echo Text::_('COM_J2COMMERCE_OUT_OF_STOCK'); ?></button>
 <?php endif; ?>
 
-<?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterAddToCartButton', [$this->product, J2CommerceHelper::utilities()->getContext('view_cart')])->getArgument('html', ''); ?>
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterAddToCartButton', [$this->product, $this->context])->getArgument('html', ''); ?>
 
 <input type="hidden" name="option" value="com_j2commerce" />
 <input type="hidden" name="view" value="carts" />

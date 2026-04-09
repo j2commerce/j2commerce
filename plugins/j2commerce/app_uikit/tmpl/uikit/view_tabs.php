@@ -33,7 +33,7 @@ $set_specification_active = !$hasDescription;
             <li<?php echo $set_specification_active ? ' class="uk-active"' : ''; ?>><a href="#"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_SPECIFICATIONS'); ?></a></li>
         <?php endif; ?>
 
-        <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterRenderingTabLink', [$this->product])->getArgument('html', ''); ?>
+        <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterRenderingTabLink', [$this->product, $this->context])->getArgument('html', ''); ?>
     </ul>
 
     <ul class="uk-switcher uk-margin">
@@ -49,6 +49,6 @@ $set_specification_active = !$hasDescription;
             </li>
         <?php endif; ?>
 
-        <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterRenderingTabContent', [$this->product])->getArgument('html', ''); ?>
+        <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterRenderingTabContent', [$this->product, $this->context])->getArgument('html', ''); ?>
     </ul>
 </div>

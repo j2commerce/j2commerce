@@ -66,7 +66,7 @@ $show_stock = $this->params->get('item_show_product_stock', 1)
                 <?php echo $this->product->source->event->beforeDisplayContent; ?>
             <?php endif; ?>
 
-            <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterRenderingBundleProductPrice', [$this->product])->getArgument('html', ''); ?>
+            <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterRenderingBundleProductPrice', [$this->product, $this->context])->getArgument('html', ''); ?>
 
             <?php if (J2CommerceHelper::product()->canShowCart($this->params)) : ?>
                 <form action="<?php echo $this->escape($this->product->cart_form_action); ?>"
@@ -101,7 +101,7 @@ $show_stock = $this->params->get('item_show_product_stock', 1)
     <?php endif; ?>
 </div>
 
-<?php echo J2CommerceHelper::plugin()->eventWithHtml('DisplayBundleDetails', [$this->product])->getArgument('html', ''); ?>
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('DisplayBundleDetails', [$this->product, $this->context])->getArgument('html', ''); ?>
 
 <?php if ($this->params->get('item_show_product_upsells', 0) && !empty($this->product->up_sells)) : ?>
     <?php echo $this->loadTemplate('upsells'); ?>

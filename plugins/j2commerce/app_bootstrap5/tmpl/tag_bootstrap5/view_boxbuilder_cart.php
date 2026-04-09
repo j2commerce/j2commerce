@@ -40,7 +40,7 @@ $is_available = $this->product->variant->availability ?? 0;
 $is_out_of_stock = $manageStock && ($is_available == 0);
 $disabled = $is_out_of_stock ? ' disabled' : '';
 ?>
-<?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeAddToCartButton', [$this->product, J2CommerceHelper::utilities()->getContext('view_cart')]); ?>
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeAddToCartButton', [$this->product, $this->context]); ?>
 
 <?php if (J2CommerceHelper::product()->validateVariableProduct($this->product)): ?>
     <div class="cart-action-complete d-none" style="display:none;">
@@ -74,11 +74,11 @@ $disabled = $is_out_of_stock ? ' disabled' : '';
             <span class="fs-6 text-capitalize boxbuilder-btn-text"><?php echo $cart_text; ?></span>
         </button>
 
-        <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterAddToCartButton', [$this->product, J2CommerceHelper::utilities()->getContext('view_cart')]); ?>
+        <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterAddToCartButton', [$this->product, $this->context]); ?>
     </div>
 <?php else: ?>
     <div class="order-5 AfterAddToCartButton">
-        <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterAddToCartButton', [$this->product, J2CommerceHelper::utilities()->getContext('view_cart')]); ?>
+        <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterAddToCartButton', [$this->product, $this->context]); ?>
     </div>
 <?php endif; ?>
 
@@ -109,10 +109,10 @@ $disabled = $is_out_of_stock ? ' disabled' : '';
 
 <div id="AfterProductCartGrid">
     <div class="d-flex flex-wrap gap-3 gap-xl-4">
-        <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductCartGrid', [$this->product, J2CommerceHelper::utilities()->getContext('view_cart')]); ?>
+        <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductCartGrid', [$this->product, $this->context]); ?>
     </div>
 </div>
 
 <div id="AfterProductCart" class="py-3">
-    <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductCart', [$this->product, J2CommerceHelper::utilities()->getContext('view_cart')]); ?>
+    <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductCart', [$this->product, $this->context]); ?>
 </div>

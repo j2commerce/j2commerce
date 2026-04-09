@@ -22,7 +22,7 @@ $totalBoxBuilderPrice = BoxbuilderproductHelper::getBoxBuilderProductTotal($boxb
 $productHelper        = J2CommerceHelper::product();
 ?>
 
-<?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeRenderingProductPrice', [$this->product]); ?>
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeRenderingProductPrice', [$this->product, $this->context]); ?>
 
 <div class="product-price-container fs-2 mb-0 me-3 fw-bold d-flex align-items-center">
     <span class="sale-price">
@@ -43,4 +43,4 @@ $productHelper        = J2CommerceHelper::product();
     <?php endif; ?>
 </div>
 
-<?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterRenderingProductPrice', [$this->product]); ?>
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterRenderingProductPrice', [$this->product, $this->context]); ?>

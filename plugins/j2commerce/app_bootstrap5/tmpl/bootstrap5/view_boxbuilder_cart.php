@@ -40,7 +40,7 @@ $is_available = $this->product->variant->availability ?? 0;
 $is_out_of_stock = $manageStock && ($is_available == 0);
 $disabled = $is_out_of_stock ? ' disabled' : '';
 ?>
-<?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeAddToCartButton', [$this->product, J2CommerceHelper::utilities()->getContext('view_cart')]); ?>
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeAddToCartButton', [$this->product, $this->context]); ?>
 
 <?php if (J2CommerceHelper::product()->validateVariableProduct($this->product)): ?>
     <div class="cart-action-complete d-none" style="display:none;">
@@ -75,13 +75,13 @@ $disabled = $is_out_of_stock ? ' disabled' : '';
                 <span class="fs-6 text-capitalize boxbuilder-btn-text"><?php echo $cart_text; ?></span>
             </button>
         </div>
-        <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterAddToCartButton', [$this->product, J2CommerceHelper::utilities()->getContext('view_cart')]); ?>
+        <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterAddToCartButton', [$this->product, $this->context]); ?>
     </div>
 <?php else: ?>
     <button type="button" class="j2commerce_button_no_stock btn btn-warning"><?php echo Text::_('COM_J2COMMERCE_OUT_OF_STOCK'); ?></button>
 <?php endif; ?>
 
-<?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterAddToCartButton', [$this->product, J2CommerceHelper::utilities()->getContext('view_cart')])->getArgument('html', ''); ?>
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterAddToCartButton', [$this->product, $this->context])->getArgument('html', ''); ?>
 
 <?php if ($display_mobile_stickybar): ?>
     <div class="boxbuilder-floating-bar d-lg-none" id="boxbuilder-floating-bar-<?php echo $productId; ?>">

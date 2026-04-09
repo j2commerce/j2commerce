@@ -147,7 +147,7 @@ if (!empty($boxbuilderProducts)) {
 </section>
 
 <?php if ($this->params->get('item_use_tabs', 1)): ?>
-    <?php echo J2CommerceHelper::plugin()->eventWithHtml('DisplayBoxBuilderDetails', [$this->product]); ?>
+    <?php echo J2CommerceHelper::plugin()->eventWithHtml('DisplayBoxBuilderDetails', [$this->product, $this->context]); ?>
 <?php endif; ?>
 
 <?php if ($this->params->get('item_use_tabs', 1)): ?>
@@ -166,4 +166,4 @@ if (!empty($boxbuilderProducts)) {
     <?php echo $this->product->source->event->afterDisplayContent; ?>
 <?php endif; ?>
 
-<?php echo J2CommerceHelper::plugin()->eventWithHtml('afterDisplayProductPage', [$this->product]); ?>
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('afterDisplayProductPage', [$this->product, $this->context]); ?>

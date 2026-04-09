@@ -37,7 +37,7 @@ $isAvailable    = (int) ($this->product->variant->availability ?? 0);
 $isOutOfStock   = $manageStock && ($isAvailable === 0);
 $disabledAttr   = $isOutOfStock ? ' disabled' : '';
 
-echo J2CommerceHelper::plugin()->eventWithHtml('BeforeAddToCartButton', [$this->product, J2CommerceHelper::utilities()->getContext('view_cart')]);
+echo J2CommerceHelper::plugin()->eventWithHtml('BeforeAddToCartButton', [$this->product, $this->context]);
 ?>
 <?php if (J2CommerceHelper::product()->validateVariableProduct($this->product)): ?>
 <div class="gb-review-cart-section">
@@ -75,7 +75,7 @@ echo J2CommerceHelper::plugin()->eventWithHtml('BeforeAddToCartButton', [$this->
 <button type="button" class="btn btn-warning"><?php echo Text::_('COM_J2COMMERCE_OUT_OF_STOCK'); ?></button>
 <?php endif; ?>
 
-<?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterAddToCartButton', [$this->product, J2CommerceHelper::utilities()->getContext('view_cart')]); ?>
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterAddToCartButton', [$this->product, $this->context]); ?>
 
 <input type="hidden" name="option" value="com_j2commerce" />
 <input type="hidden" name="view" value="carts" />

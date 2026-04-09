@@ -40,7 +40,7 @@ $set_specification_active = !$hasDescription;
             </li>
         <?php endif; ?>
 
-        <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterRenderingTabLink', [$this->product])->getArgument('html', ''); ?>
+        <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterRenderingTabLink', [$this->product, $this->context])->getArgument('html', ''); ?>
     </ul>
 
     <div class="tab-content border-0 rounded-0 box-shadow-none px-1">
@@ -56,7 +56,7 @@ $set_specification_active = !$hasDescription;
             </div>
         <?php endif; ?>
 
-        <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterRenderingTabContent', [$this->product])->getArgument('html', ''); ?>
+        <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterRenderingTabContent', [$this->product, $this->context])->getArgument('html', ''); ?>
     </div>
 </div>
 

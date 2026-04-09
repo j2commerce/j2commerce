@@ -149,7 +149,7 @@ if (!empty($boxbuilderProducts)) {
 </section>
 
 <?php if ($this->params->get('item_use_tabs', 1)): ?>
-    <?php echo J2CommerceHelper::plugin()->eventWithHtml('DisplayBoxBuilderDetails', [$this->product]); ?>
+    <?php echo J2CommerceHelper::plugin()->eventWithHtml('DisplayBoxBuilderDetails', [$this->product, $this->context]); ?>
 <?php endif; ?>
 
 
@@ -157,21 +157,21 @@ if (!empty($boxbuilderProducts)) {
     <?php echo $this->product->source->event->afterDisplayContent; ?>
 <?php endif; ?>
 
-<?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductUpsells', [$this->product])->getArgument('html', ''); ?>
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductUpsells', [$this->product, $this->context])->getArgument('html', ''); ?>
 
 <?php if ($this->params->get('item_show_product_upsells', 0) && !empty($this->product->up_sells)) : ?>
     <?php echo $this->loadTemplate('upsells'); ?>
 <?php endif; ?>
 
-<?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductUpsells', [$this->product])->getArgument('html', ''); ?>
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductUpsells', [$this->product, $this->context])->getArgument('html', ''); ?>
 
-<?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductCrosssells', [$this->product])->getArgument('html', ''); ?>
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductCrosssells', [$this->product, $this->context])->getArgument('html', ''); ?>
 
 <?php if ($this->params->get('item_show_product_cross_sells', 0) && !empty($this->product->cross_sells)) : ?>
     <?php echo $this->loadTemplate('crosssells'); ?>
 <?php endif; ?>
 
-<?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductCrosssells', [$this->product])->getArgument('html', ''); ?>
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductCrosssells', [$this->product, $this->context])->getArgument('html', ''); ?>
 
-<?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductDetail', [$this->product])->getArgument('html', ''); ?>
-<?php echo J2CommerceHelper::plugin()->eventWithHtml('afterDisplayProductPage', [$this->product]); ?>
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductDetail', [$this->product, $this->context])->getArgument('html', ''); ?>
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('afterDisplayProductPage', [$this->product, $this->context]); ?>

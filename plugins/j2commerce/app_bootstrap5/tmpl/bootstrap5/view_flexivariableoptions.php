@@ -31,7 +31,7 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
     <?php foreach ($options as $option) : ?>
         <?php $optionId = (int) $option['productoption_id']; ?>
         <?php $defaultOptionValueId = $this->product->default_option_selections[$option['productoption_id']] ?? ''; ?>
-        <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeDisplaySingleProductOption', [$this->product, &$option])->getArgument('html', ''); ?>
+        <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeDisplaySingleProductOption', [$this->product, &$option, $this->context])->getArgument('html', ''); ?>
 
         <?php if ($option['type'] === 'select') : ?>
             <div id="option-<?php echo $optionId; ?>" class="option mb-3">
@@ -122,6 +122,6 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
             </div>
         <?php endif; ?>
 
-        <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterDisplaySingleProductOption', [$this->product, $option])->getArgument('html', ''); ?>
+        <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterDisplaySingleProductOption', [$this->product, $option, $this->context])->getArgument('html', ''); ?>
     <?php endforeach; ?>
 </div>

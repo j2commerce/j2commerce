@@ -12,7 +12,7 @@ defined('_JEXEC') or die;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 ?>
 <div class="boxbuilder-general">
-    <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductTitle', [$this->product, J2CommerceHelper::utilities()->getContext('title')]); ?>
+    <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductTitle', [$this->product, $this->context]); ?>
 
     <?php if ($this->params->get('item_show_title', 1)): ?>
         <h<?php echo $this->params->get('item_title_headertag', '2'); ?> class="product-title font-j2commerce text-capitalize mb-3">
@@ -20,7 +20,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
         </h<?php echo $this->params->get('item_title_headertag', '2'); ?>>
     <?php endif; ?>
 
-    <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductTitle', [$this->product, J2CommerceHelper::utilities()->getContext('title')]); ?>
+    <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductTitle', [$this->product, $this->context]); ?>
 
     <?php if (isset($this->product->source->event->afterDisplayTitle)): ?>
         <?php echo $this->product->source->event->afterDisplayTitle; ?>

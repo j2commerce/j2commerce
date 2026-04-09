@@ -61,5 +61,5 @@ $set_specification_active = !$hasDescription;
             </div>
         </li>
     <?php endif; ?>
-    <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterRenderingTab', [$this->product]); ?>
+    <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterRenderingTab', [$this->product, $this->context]); ?>
 </ul>

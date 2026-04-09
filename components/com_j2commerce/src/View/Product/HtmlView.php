@@ -86,6 +86,15 @@ class HtmlView extends BaseHtmlView
     protected $user = null;
 
     /**
+     * The rendering context string (e.g. "j2commerce.site.products.detail")
+     *
+     * @var    string
+     *
+     * @since  6.0.0
+     */
+    public string $context = '';
+
+    /**
      * The page class suffix
      *
      * @var    string
@@ -123,6 +132,7 @@ class HtmlView extends BaseHtmlView
         $this->state     = $model->getState();
         $this->user      = $user;
         $this->sublayout = $app->getParams()->get('subtemplate', '');
+        $this->context   = J2CommerceHelper::utilities()->getContext('.detail');
 
         // Prepare document metadata (title, description, etc.) FIRST
         // This must happen before plugin output or template rendering

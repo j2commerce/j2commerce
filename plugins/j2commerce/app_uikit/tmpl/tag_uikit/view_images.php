@@ -87,7 +87,7 @@ $galleryId = 'product-gallery-' . $productId;
 $mainId    = 'product-gallery-main-' . $productId;
 $thumbsId  = 'product-gallery-thumbs-' . $productId;
 ?>
-<?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeRenderingProductDetailImage', [$this->product])->getArgument('html', ''); ?>
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeRenderingProductDetailImage', [$this->product, $this->context])->getArgument('html', ''); ?>
 
 <div class="product-gallery uk-position-relative" id="<?php echo $galleryId; ?>">
     <?php if ($this->params->get('item_show_discount_percentage', 1)
@@ -135,7 +135,7 @@ $thumbsId  = 'product-gallery-thumbs-' . $productId;
     </div>
 </div>
 
-<?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterRenderingProductDetailImage', [$this->product])->getArgument('html', ''); ?>
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterRenderingProductDetailImage', [$this->product, $this->context])->getArgument('html', ''); ?>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {

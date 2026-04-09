@@ -29,7 +29,7 @@ $ajax_url = Route::_('index.php', false);
 <div class="options">
     <?php foreach ($options as $option) : ?>
 
-        <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeDisplaySingleProductOption', [$this->product, &$option])->getArgument('html', ''); ?>
+        <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeDisplaySingleProductOption', [$this->product, &$option, $this->context])->getArgument('html', ''); ?>
 
         <?php if ($option['type'] == 'select') : ?>
         <div id="option-<?php echo $option['productoption_id']; ?>" class="option uk-margin-small-bottom">
@@ -220,7 +220,7 @@ $ajax_url = Route::_('index.php', false);
             </div>
         <?php endif; ?>
 
-        <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterDisplaySingleProductOption', [$this->product, $option])->getArgument('html', ''); ?>
+        <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterDisplaySingleProductOption', [$this->product, $option, $this->context])->getArgument('html', ''); ?>
 
     <?php endforeach; ?>
 </div>
