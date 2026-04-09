@@ -153,9 +153,9 @@ class ReportpluginController extends BaseController
         // Set headers for CSV download
         $app->setHeader('Content-Type', 'text/csv; charset=utf-8');
         $app->setHeader('Content-Disposition', 'attachment; filename="' . $csvFilename . '"');
-        $app->setHeader('Pragma', 'public');
+        $app->setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+        $app->setHeader('Pragma', 'no-cache');
         $app->setHeader('Expires', '0');
-        $app->setHeader('Cache-Control', 'must-revalidate, post-check=0, pre-check=0');
         $app->sendHeaders();
 
         // Output CSV
