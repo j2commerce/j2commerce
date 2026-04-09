@@ -156,7 +156,9 @@ $dateFormat = ComponentHelper::getParams('com_j2commerce')->get('date_format', '
                                                     title="<?php echo Text::_('COM_J2COMMERCE_SAVE_STATUS'); ?>">
                                                 <?php echo Text::_('JAPPLY'); ?>
                                             </button>
-                                            <a href="<?php echo $orderViewUrl; ?>" class="btn btn-sm btn-link" title="<?php echo Text::_('COM_J2COMMERCE_VIEW'); ?>">
+                                            <a href="<?php echo $orderViewUrl; ?>" class="btn btn-sm btn-link"
+                                               aria-label="<?php echo Text::sprintf('COM_J2COMMERCE_VIEW_ORDER_X', $this->escape($item->order_id)); ?>"
+                                               title="<?php echo Text::sprintf('COM_J2COMMERCE_VIEW_ORDER_X', $this->escape($item->order_id)); ?>">
                                                 <span class="icon-eye" aria-hidden="true"></span>
                                             </a>
                                             <?php // TODO: Re-enable edit link in a future release when order editing is fully implemented ?>

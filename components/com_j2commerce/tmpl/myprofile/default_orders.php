@@ -64,7 +64,9 @@ $limit      = isset($this->pagination) ? $this->pagination->limit : 20;
                         </td>
                         <td class="text-center text-nowrap">
                             <a href="<?php echo $orderViewUrl; ?>"
-                               class="btn btn-sm btn-soft-info" title="<?php echo Text::_('COM_J2COMMERCE_ORDER_VIEW'); ?>">
+                               class="btn btn-sm btn-soft-info"
+                               aria-label="<?php echo Text::sprintf('COM_J2COMMERCE_ORDER_VIEW_X', $this->escape($item->order_id)); ?>"
+                               title="<?php echo Text::sprintf('COM_J2COMMERCE_ORDER_VIEW_X', $this->escape($item->order_id)); ?>">
                                 <span class="icon-eye" aria-hidden="true"></span>
                             </a>
                             <button type="button" class="btn btn-sm btn-soft-info j2commerce-order-print" data-url="<?php echo Route::_('index.php?option=com_j2commerce&view=myprofile&layout=order&order_id=' . urlencode($item->order_id) . '&tmpl=component'); ?>" title="<?php echo Text::_('COM_J2COMMERCE_ORDER_PRINT'); ?>">
