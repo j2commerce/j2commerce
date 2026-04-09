@@ -1397,7 +1397,12 @@ class CheckoutController extends BaseController
             $orderTable->load(['order_id' => $orderId]);
         }
 
-        if (isset($orderTable->order_id) && !empty($orderTable->order_id)) {
+        // The paction=display call is the confirmation page after an AJAX
+        // payment (paction=process) already sent emails and dispatched
+        // AfterPayment.  Only fire these for the initial payment path.
+        $paction = $this->input->getString('paction', '');
+
+        if (isset($orderTable->order_id) && !empty($orderTable->order_id) && $paction !== 'display') {
             $results = J2CommerceHelper::plugin()->eventWithArray('AfterPayment', [$orderTable]);
 
             foreach ($results as $result) {
@@ -1411,8 +1416,6 @@ class CheckoutController extends BaseController
         // Clear cart only after confirmed success. When paction=process and
         // the plugin did NOT redirect, payment likely failed — preserve cart.
         // Cart is cleared on the subsequent paction=display call instead.
-        $paction = $this->input->getString('paction', '');
-
         if ($paction !== 'process') {
             $this->clearCartAndSession($orderId, $session);
         }
