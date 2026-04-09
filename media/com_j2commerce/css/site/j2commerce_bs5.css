@@ -277,9 +277,6 @@
     color: var(--product-color-text-light);
 }
 
-.j2commerce-product-item .j2commerce-product-title {
-    min-height:40px;
-}
 
 .j2commerce .btn-secondary {
     --btn-color: #333d4c;
