@@ -559,6 +559,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 break;
             }
+            case 'close-onboarding': {
+                e.preventDefault();
+                modalInstance.hide();
+                break;
+            }
             case 'dismiss-onboarding': {
                 const confirmed = window.confirm(Joomla.Text._('COM_J2COMMERCE_ONBOARDING_DISMISS_CONFIRM'));
                 if (!confirmed) return;

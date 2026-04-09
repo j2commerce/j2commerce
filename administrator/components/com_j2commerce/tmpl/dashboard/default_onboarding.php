@@ -727,10 +727,10 @@ $e = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
               </a>
             </div>
             <div class="col-md-3">
-              <a href="index.php?option=com_j2commerce&view=dashboard" class="btn btn-outline-primary w-100 shadow-none" data-action="close-onboarding">
+              <button type="button" class="btn btn-outline-primary w-100 shadow-none" data-action="close-onboarding">
                 <span class="fa-solid fa-gauge-high me-1" aria-hidden="true"></span>
                 <?php echo Text::_('COM_J2COMMERCE_ONBOARDING_READY_DASHBOARD'); ?>
-              </a>
+              </button>
             </div>
             <div class="col-md-3">
               <a href="index.php?option=com_config&view=component&component=com_j2commerce" class="btn btn-outline-secondary w-100 shadow-none">
