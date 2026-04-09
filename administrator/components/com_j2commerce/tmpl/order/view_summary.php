@@ -39,6 +39,12 @@ $fees      = $item->orderfees ?? [];
         <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeAdminOrderSummery', array(&$order,&$items))->getArgument('html', ''); ?>
         <div class="table-responsive">
             <table class="table order-summary-table mb-0 bg-transparent">
+                <thead class="visually-hidden">
+                    <tr>
+                        <th scope="col"><?php echo Text::_('COM_J2COMMERCE_ITEM'); ?></th>
+                        <th scope="col"><?php echo Text::_('COM_J2COMMERCE_AMOUNT'); ?></th>
+                    </tr>
+                </thead>
                 <tbody>
                     <tr>
                         <td><?php echo Text::_('COM_J2COMMERCE_SUBTOTAL'); ?></td>
