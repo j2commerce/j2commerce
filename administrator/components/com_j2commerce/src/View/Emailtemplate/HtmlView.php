@@ -63,7 +63,7 @@ class HtmlView extends BaseHtmlView
             $bodySourceField = $this->form->getField('body_source');
             if ($bodySourceField) {
                 $element = $bodySourceField->__get('element');
-                foreach ($element->children() as $option) {
+                foreach ($element ? $element->children() : [] as $option) {
                     if ((string) $option['value'] === 'file') {
                         $dom = dom_import_simplexml($option);
                         $dom->parentNode->removeChild($dom);
