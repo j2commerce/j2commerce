@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -344,7 +345,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (fieldWidth) {
-            html += '<div class="mt-2"><span class="badge text-bg-secondary">' + esc(fieldWidth) + '</span></div>';
+            html += '<div class="mt-2"><span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-secondary'); ?>">' + esc(fieldWidth) + '</span></div>';
         }
         preview.innerHTML = html;
     }

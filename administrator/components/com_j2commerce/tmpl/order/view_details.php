@@ -13,6 +13,7 @@ defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\Registry\Registry;
@@ -133,7 +134,7 @@ if ($hasDetails) {
                                                 default                            => 'text-bg-dark',
                                             };
                                             ?>
-                                            <span class="d-inline-block badge <?php echo $statusClass; ?>"><?php echo $this->escape($item->transaction_status); ?></span>
+                                            <span class="d-inline-block <?php echo J2htmlHelper::badgeClass('badge ' . $statusClass); ?>"><?php echo $this->escape($item->transaction_status); ?></span>
                                         </div>
                                     <?php endif; ?>
                                 </div>

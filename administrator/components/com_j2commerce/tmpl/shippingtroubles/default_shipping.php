@@ -10,6 +10,7 @@
 defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -48,7 +49,7 @@ function getStatusBadge($status, $message = '') {
             $icon = 'fa-question-circle';
     }
 
-    return '<span class="badge ' . $badgeClass . '"><span class="fa-solid ' . $icon . ' me-1" aria-hidden="true"></span>' . Text::_($message) . '</span>';
+    return '<span class="' . J2htmlHelper::badgeClass('badge ' . $badgeClass) . '"><span class="fa-solid ' . $icon . ' me-1" aria-hidden="true"></span>' . Text::_($message) . '</span>';
 }
 
 

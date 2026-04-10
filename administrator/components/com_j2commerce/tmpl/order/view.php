@@ -13,6 +13,7 @@ defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
@@ -49,7 +50,7 @@ if (empty($customerName)) {
                     <div class="j2-title-top d-flex align-items-center mb-1">
                         <h2 class="h3 mb-0 order-id">#<?php echo $this->escape($item->invoice); ?></h2>
                         <div class="ms-2 fw-normal fs-5">(<b><?php echo $this->escape($item->order_id); ?></b>)</div>
-                        <div class="<?php echo $this->escape($item->orderstatus_cssclass ?? 'badge text-bg-secondary'); ?> ms-2" id="orderStatusBadge">
+                        <div class="<?php echo $this->escape(J2htmlHelper::badgeClass($item->orderstatus_cssclass ?? 'badge text-bg-secondary')); ?> ms-2" id="orderStatusBadge">
                             <?php echo Text::_($item->orderstatus_name ?? 'Unknown'); ?>
                         </div>
                     </div>

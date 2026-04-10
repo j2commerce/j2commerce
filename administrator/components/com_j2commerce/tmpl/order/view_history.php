@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -32,7 +33,7 @@ $currentUserId = (int) (Factory::getApplication()->getIdentity()?->id ?? 0);
     <div class="card-header d-flex justify-content-between align-items-center px-0">
         <h4 class="card-title mb-0"><?php echo Text::_('COM_J2COMMERCE_ORDER_HISTORY'); ?></h4>
         <?php if ($totalItems > 0) : ?>
-            <span class="badge text-bg-secondary"><?php echo $totalItems; ?></span>
+            <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-secondary'); ?>"><?php echo $totalItems; ?></span>
         <?php endif; ?>
     </div>
 
@@ -126,7 +127,7 @@ $currentUserId = (int) (Factory::getApplication()->getIdentity()?->id ?? 0);
                                 </div>
                                 <?php if (!empty($history->order_state_id)) : ?>
                                     <h4 class="card-title small mb-1">
-                                        <span class="badge rounded-2 px-2 text-bg-<?php echo $this->escape($foundColor); ?>">
+                                        <span class="<?php echo J2htmlHelper::badgeClass('badge rounded-2 px-2 text-bg-' . $this->escape($foundColor)); ?>">
                                             <?php echo $this->escape(Text::_($history->orderstatus_name ?? 'Unknown')); ?>
                                         </span>
                                     </h4>

@@ -14,12 +14,38 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 
 \defined('_JEXEC') or die;
 
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\Database\ParameterType;
 
 class J2htmlHelper
 {
+    /**
+     * Cached badge style preference ('atum' or 'j2commerce').
+     */
+    private static ?string $badgeStyle = null;
+
+    /**
+     * Transforms a badge CSS class string to match the configured
+     * badge style. When set to "atum" the helper strips the `text-`
+     * prefix from `text-bg-*` classes, leaving plain `bg-*`. When set
+     * to "j2commerce" the classes are returned unchanged.
+     */
+    public static function badgeClass(string $classes): string
+    {
+        if (self::$badgeStyle === null) {
+            $params           = ComponentHelper::getParams('com_j2commerce');
+            self::$badgeStyle = (string) $params->get('badge_style', 'atum');
+        }
+
+        if (self::$badgeStyle === 'atum') {
+            return preg_replace('/\btext-bg-/', 'bg-', $classes);
+        }
+
+        return $classes;
+    }
+
     public static function getOrderStatusHtml(int $id): string
     {
         if ($id <= 0) {
@@ -45,6 +71,8 @@ class J2htmlHelper
         if ($cssClass === 'badge-important') {
             $cssClass = 'badge text-bg-dark';
         }
+
+        $cssClass = self::badgeClass($cssClass);
 
         return '<span class="' . htmlspecialchars($cssClass, ENT_QUOTES, 'UTF-8') . '">'
             . Text::_($item->orderstatus_name) . '</span>';

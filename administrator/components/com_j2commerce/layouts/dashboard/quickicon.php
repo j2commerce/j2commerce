@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Language\Text;
 
 $id      = empty($displayData['id']) ? '' : (' id="' . $displayData['id'] . '"');
@@ -62,7 +63,7 @@ if (isset($displayData['linkadd'])) : ?>
                     <div class="quickicon-name d-flex align-items-end" <?php echo isset($displayData['ajaxurl']) ? ' aria-hidden="true"' : ''; ?>>
                         <?php echo Text::_($displayData['name']); ?>
                         <?php if (!empty($displayData['badge'])) : ?>
-                            <span class="badge text-bg-<?php echo $this->escape($displayData['class'] ?? 'secondary'); ?> ms-2"><?php echo $this->escape($displayData['badge']); ?></span>
+                            <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-' . $this->escape($displayData['class'] ?? 'secondary')); ?> ms-2"><?php echo $this->escape($displayData['badge']); ?></span>
                         <?php endif; ?>
                     </div>
                 <?php endif; ?>
@@ -71,7 +72,7 @@ if (isset($displayData['linkadd'])) : ?>
                     <div class="quickicon-name d-flex align-items-center">
                         <?php echo $text; ?>
                         <?php if (!empty($displayData['badge'])) : ?>
-                            <span class="badge text-bg-<?php echo $this->escape($displayData['class'] ?? 'secondary'); ?> ms-2"><?php echo $this->escape($displayData['badge']); ?></span>
+                            <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-' . $this->escape($displayData['class'] ?? 'secondary')); ?> ms-2"><?php echo $this->escape($displayData['badge']); ?></span>
                         <?php endif; ?>
                     </div>
                 <?php endif; ?>

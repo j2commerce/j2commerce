@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
@@ -90,7 +91,7 @@ $statusBadges = [
                         <tbody>
                         <?php foreach ($this->items as $i => $item) : ?>
                             <?php
-                            $badgeClass = $statusBadges[$item->status] ?? 'bg-secondary';
+                            $badgeClass = J2htmlHelper::badgeClass($statusBadges[$item->status] ?? 'bg-secondary');
                             $durationMs = (int) $item->duration_ms;
                             $duration   = $durationMs >= 1000
                                 ? number_format($durationMs / 1000, 1) . 's'
@@ -121,38 +122,38 @@ $statusBadges = [
                                 </td>
                                 <td class="d-none d-md-table-cell">
                                     <?php if ($successCount > 0) : ?>
-                                        <a href="#" class="badge text-bg-success text-decoration-none js-queuelog-details"
+                                        <a href="#" class="<?php echo J2htmlHelper::badgeClass('badge text-bg-success'); ?> text-decoration-none js-queuelog-details"
                                            data-details="<?php echo $this->escape($detailsJson); ?>"
                                            data-filter="completed"
                                            data-title="<?php echo $this->escape(Text::sprintf('COM_J2COMMERCE_QUEUE_LOG_SUCCESSFUL_ITEMS', $successCount)); ?>">
                                             <?php echo $successCount; ?>
                                         </a>
                                     <?php else : ?>
-                                        <span class="badge text-bg-light">0</span>
+                                        <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-light'); ?>">0</span>
                                     <?php endif; ?>
                                 </td>
                                 <td class="d-none d-md-table-cell">
                                     <?php if ($failedCount > 0) : ?>
-                                        <a href="#" class="badge text-bg-danger text-decoration-none js-queuelog-details"
+                                        <a href="#" class="<?php echo J2htmlHelper::badgeClass('badge text-bg-danger'); ?> text-decoration-none js-queuelog-details"
                                            data-details="<?php echo $this->escape($detailsJson); ?>"
                                            data-filter="failed"
                                            data-title="<?php echo $this->escape(Text::sprintf('COM_J2COMMERCE_QUEUE_LOG_FAILED_ITEMS', $failedCount)); ?>">
                                             <?php echo $failedCount; ?>
                                         </a>
                                     <?php else : ?>
-                                        <span class="badge text-bg-light">0</span>
+                                        <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-light'); ?>">0</span>
                                     <?php endif; ?>
                                 </td>
                                 <td class="d-none d-lg-table-cell">
                                     <?php if ($skippedCount > 0) : ?>
-                                        <a href="#" class="badge text-bg-warning text-decoration-none js-queuelog-details"
+                                        <a href="#" class="<?php echo J2htmlHelper::badgeClass('badge text-bg-warning'); ?> text-decoration-none js-queuelog-details"
                                            data-details="<?php echo $this->escape($detailsJson); ?>"
                                            data-filter="skipped"
                                            data-title="<?php echo $this->escape(Text::sprintf('COM_J2COMMERCE_QUEUE_LOG_SKIPPED_ITEMS', $skippedCount)); ?>">
                                             <?php echo $skippedCount; ?>
                                         </a>
                                     <?php else : ?>
-                                        <span class="badge text-bg-light">0</span>
+                                        <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-light'); ?>">0</span>
                                     <?php endif; ?>
                                 </td>
                                 <td class="d-none d-md-table-cell">
@@ -249,7 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 html += '<td>' + esc(item.id) + '</td>';
                 html += '<td>' + esc(item.item_type) + '</td>';
                 html += '<td>' + esc(item.relation_id) + '</td>';
-                html += '<td><span class="badge ' + (item.status === 'completed' ? 'text-bg-success' : item.status === 'failed' ? 'text-bg-danger' : 'text-bg-warning') + '">' + esc(statusMap[item.status] || item.status) + '</span></td>';
+                html += '<td><span class="badge ' + (item.status === 'completed' ? '<?php echo J2htmlHelper::badgeClass('text-bg-success'); ?>' : item.status === 'failed' ? '<?php echo J2htmlHelper::badgeClass('text-bg-danger'); ?>' : '<?php echo J2htmlHelper::badgeClass('text-bg-warning'); ?>') + '">' + esc(statusMap[item.status] || item.status) + '</span></td>';
                 if (showError) {
                     html += '<td><small class="text-danger">' + esc(item.error || '&mdash;') + '</small></td>';
                 }

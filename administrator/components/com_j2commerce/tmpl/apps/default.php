@@ -9,6 +9,7 @@
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Button\PublishedButton;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -171,7 +172,7 @@ $return = rawurlencode($encodedReturn);
                                                     <span class="text-dark"><?php echo $item->display_name; ?></span>
                                                 <?php endif; ?>
                                                 <?php if ($item->folder !== 'j2commerce'): ?>
-                                                    <span class="badge text-bg-info ms-1"><?php echo $this->escape($item->folder); ?></span>
+                                                    <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-info'); ?> ms-1"><?php echo $this->escape($item->folder); ?></span>
                                                 <?php endif; ?>
                                             </div>
                                             <div class="small d-none d-md-block"><?php echo $desc; ?></div>

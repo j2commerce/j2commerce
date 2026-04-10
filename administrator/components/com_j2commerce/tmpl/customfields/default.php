@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
@@ -118,9 +119,9 @@ if ($saveOrder && !empty($this->items)) {
                                 </td>
                                 <td class="text-center d-none d-md-table-cell">
                                     <?php if ($item->field_required == 1) : ?>
-                                        <span class="badge text-bg-success"><?php echo Text::_('COM_J2COMMERCE_REQUIRED'); ?></span>
+                                        <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-success'); ?>"><?php echo Text::_('COM_J2COMMERCE_REQUIRED'); ?></span>
                                     <?php else : ?>
-                                        <span class="badge text-bg-danger"><?php echo Text::_('COM_J2COMMERCE_NOT_REQUIRED'); ?></span>
+                                        <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-danger'); ?>"><?php echo Text::_('COM_J2COMMERCE_NOT_REQUIRED'); ?></span>
                                     <?php endif; ?>
                                 </td>
                                 <td>
@@ -128,11 +129,11 @@ if ($saveOrder && !empty($this->items)) {
                                 </td>
                                 <td class="text-center d-none d-md-table-cell">
                                     <?php if ($item->field_core == 1) : ?>
-                                        <span class="badge text-bg-success">
+                                        <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-success'); ?>">
                                             <?php echo Text::_('COM_J2COMMERCE_CORE_FIELD_YES'); ?>
                                         </span>
                                     <?php else : ?>
-                                        <span class="badge text-bg-secondary">
+                                        <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-secondary'); ?>">
                                             <?php echo Text::_('COM_J2COMMERCE_CORE_FIELD_NO'); ?>
                                         </span>
                                     <?php endif; ?>

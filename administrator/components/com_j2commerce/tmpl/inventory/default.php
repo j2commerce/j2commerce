@@ -10,6 +10,7 @@
 defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -412,7 +413,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                                     <div class="col-md-3">
                                                         <strong>
                                                             <?php if ($variant->is_master) : ?>
-                                                                <span class="badge text-bg-success me-1"><?php echo Text::_('COM_J2COMMERCE_MASTER'); ?></span>
+                                                                <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-success'); ?> me-1"><?php echo Text::_('COM_J2COMMERCE_MASTER'); ?></span>
                                                             <?php endif; ?>
                                                             <?php echo Text::_('COM_J2COMMERCE_VARIANT'); ?> #<?php echo $variant->j2commerce_variant_id; ?>
                                                         </strong>

@@ -10,6 +10,7 @@
 defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -61,7 +62,7 @@ function getProductStatusBadge($status) {
             $text = 'COM_J2COMMERCE_SHIPPING_TROUBLESHOOTER_STATUS_UNKNOWN';
     }
 
-    return '<span class="badge ' . $badgeClass . '"><span class="fa-solid ' . $icon . ' me-1" aria-hidden="true"></span>' . Text::_($text) . '</span>';
+    return '<span class="' . J2htmlHelper::badgeClass('badge ' . $badgeClass) . '"><span class="fa-solid ' . $icon . ' me-1" aria-hidden="true"></span>' . Text::_($text) . '</span>';
 }
 ?>
 <?php echo $this->navbar;?>
@@ -248,9 +249,9 @@ function getProductStatusBadge($status) {
                                     </td>
                                     <td class="text-center d-none d-lg-table-cell">
                                         <?php if (!empty($product->weight) && $product->weight > 0): ?>
-                                            <span class="badge text-bg-success"><?php echo number_format($product->weight, 2); ?></span>
+                                            <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-success'); ?>"><?php echo number_format($product->weight, 2); ?></span>
                                         <?php else: ?>
-                                            <span class="badge text-bg-purple">N/A</span>
+                                            <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-purple'); ?>">N/A</span>
                                         <?php endif; ?>
                                     </td>
                                     <td class="text-center d-none d-lg-table-cell">
@@ -258,11 +259,11 @@ function getProductStatusBadge($status) {
                                         $hasDimensions = !empty($product->length) && !empty($product->width) && !empty($product->height);
                                         ?>
                                         <?php if ($hasDimensions): ?>
-                                            <span class="badge text-bg-success">
+                                            <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-success'); ?>">
                                                 <?php echo $product->length . '×' . $product->width . '×' . $product->height; ?>
                                             </span>
                                         <?php else: ?>
-                                            <span class="badge text-bg-purple">N/A</span>
+                                            <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-purple'); ?>">N/A</span>
                                         <?php endif; ?>
                                     </td>
                                     <td class="text-center">

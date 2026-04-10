@@ -14,6 +14,8 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
+
 extract($displayData);
 
 $productName = htmlspecialchars($product->product_name ?? 'Product', ENT_QUOTES, 'UTF-8');
@@ -24,7 +26,7 @@ $showDiscountPercentage = true;
 <j2c-conditional data-condition="$showImage">
     <div class="j2commerce-product-image position-relative border mb-3">
         <j2c-conditional data-condition="$showDiscountPercentage && $basePrice > 0">
-            <span class="discount-percentage badge text-bg-info position-absolute top-0 start-0 mt-2 ms-2 mt-lg-3 ms-lg-3">
+            <span class="discount-percentage <?php echo J2htmlHelper::badgeClass('badge text-bg-info'); ?> position-absolute top-0 start-0 mt-2 ms-2 mt-lg-3 ms-lg-3">
                 <?php
                 $discount = ($basePrice > 0) ? (1 - ($salePrice / $basePrice)) * 100 : 0;
                 echo ($discount > 0) ? round($discount) . '% Off' : '';

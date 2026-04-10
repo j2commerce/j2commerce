@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Helper\ModuleHelper;
 use Joomla\CMS\HTML\HTMLHelper;
@@ -231,7 +232,7 @@ $changeHtml = function (array $change): string {
                                         <div class="progress-bar" role="progressbar" style="width:<?php echo $stage['rate']; ?>%;background-color:rgba(54,162,235,<?php echo $stage['opacity']; ?>)" aria-valuenow="<?php echo $stage['rate']; ?>" aria-valuemin="0" aria-valuemax="100"><?php echo $stage['rate']; ?>%</div>
                                     </div>
                                 </div>
-                                <span class="badge text-bg-info"><?php echo (int) $stage['count']; ?></span>
+                                <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-info'); ?>"><?php echo (int) $stage['count']; ?></span>
                             </div>
                         <?php endforeach; ?>
                     </div>
@@ -254,7 +255,7 @@ $changeHtml = function (array $change): string {
             <div class="card h-100" id="j2commerce-sessions-widget">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h2 class="mb-0 fs-4"><span class="fa-solid fa-chart-line me-2 text-info" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_ANALYTICS_SESSIONS_BY_TIME'); ?></h2>
-                    <span class="badge text-bg-<?php echo $this->sessionsTotal > 0 ? 'success' : 'warning'; ?>" id="badge-sessions-total"><?php echo $this->sessionsTotal; ?></span>
+                    <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-' . ($this->sessionsTotal > 0 ? 'success' : 'warning')); ?>" id="badge-sessions-total"><?php echo $this->sessionsTotal; ?></span>
                 </div>
                 <div class="card-body">
                     <div style="height:200px"><canvas id="chart-sessions"></canvas></div>
@@ -265,7 +266,7 @@ $changeHtml = function (array $change): string {
             <div class="card h-100" id="j2commerce-conversions-widget">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h2 class="mb-0 fs-4"><span class="fa-solid fa-chart-area me-2 text-info" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_ANALYTICS_CONVERSIONS_BY_TIME'); ?></h2>
-                    <span class="badge text-bg-<?php echo $this->conversionsTotal > 0 ? 'success' : 'warning'; ?>" id="badge-conversions-total"><?php echo $this->conversionsTotal; ?></span>
+                    <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-' . ($this->conversionsTotal > 0 ? 'success' : 'warning')); ?>" id="badge-conversions-total"><?php echo $this->conversionsTotal; ?></span>
                 </div>
                 <div class="card-body">
                     <div style="height:200px"><canvas id="chart-conversions"></canvas></div>

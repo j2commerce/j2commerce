@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
@@ -147,9 +148,9 @@ if ($saveOrder && !empty($this->items)) {
                                 </td>
                                 <td class="d-none d-md-table-cell text-center">
                                     <?php if ($item->is_expired) : ?>
-                                        <span class="badge text-bg-danger"><?php echo Text::_('COM_J2COMMERCE_COUPON_EXPIRED'); ?></span>
+                                        <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-danger'); ?>"><?php echo Text::_('COM_J2COMMERCE_COUPON_EXPIRED'); ?></span>
                                     <?php else : ?>
-                                        <span class="badge text-bg-success"><?php echo Text::_('COM_J2COMMERCE_COUPON_ACTIVE'); ?></span>
+                                        <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-success'); ?>"><?php echo Text::_('COM_J2COMMERCE_COUPON_ACTIVE'); ?></span>
                                     <?php endif; ?>
                                 </td>
                                 <td class="d-none d-lg-table-cell">

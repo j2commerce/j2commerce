@@ -15,6 +15,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Application\CMSApplication;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -184,7 +185,7 @@ class OrdersController extends AdminController
                 'message' => Text::sprintf('COM_J2COMMERCE_ORDER_STATUS_UPDATED_TO', Text::_($statusInfo->orderstatus_name ?? '')),
                 'data'    => [
                     'statusName' => Text::_($statusInfo->orderstatus_name ?? ''),
-                    'cssclass'   => $statusInfo->orderstatus_cssclass ?? 'badge text-bg-secondary',
+                    'cssclass'   => J2htmlHelper::badgeClass($statusInfo->orderstatus_cssclass ?? 'badge text-bg-secondary'),
                 ],
             ];
         } catch (\Exception $e) {

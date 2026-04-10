@@ -12,6 +12,7 @@ declare(strict_types=1);
 defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -133,7 +134,7 @@ $dateFormat = ComponentHelper::getParams('com_j2commerce')->get('date_format', '
                                     <small><?php echo $this->escape(strip_tags($paymentDisplay)); ?></small>
                                 </td>
                                 <td class="text-center">
-                                    <span class="order-status-badge <?php echo $this->escape($item->orderstatus_cssclass ?? 'badge text-bg-secondary'); ?>">
+                                    <span class="order-status-badge <?php echo $this->escape(J2htmlHelper::badgeClass($item->orderstatus_cssclass ?? 'badge text-bg-secondary')); ?>">
                                         <?php echo Text::_($item->orderstatus_name ?? 'COM_J2COMMERCE_UNKNOWN'); ?>
                                     </span>
                                 </td>

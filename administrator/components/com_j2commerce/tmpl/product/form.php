@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use J2Commerce\Component\J2commerce\Administrator\Field\ProductTypeField;
 use J2Commerce\Component\J2commerce\Administrator\View\Product\HtmlView;
 use Joomla\CMS\Factory;
@@ -204,9 +205,9 @@ $wa->addInlineScript($submitButtonJs);
                                     <span class="data-key"><?php echo Text::_('COM_J2COMMERCE_MANAGE_INVENTORY'); ?></span>
                                     <span class="data-val">
                                         <?php if($variantStats['manage_inventory_yes'] > 0){
-                                            echo '<span class="badge text-bg-success">'.Text::_('JYES').'</span>';
+                                            echo '<span class="'.J2htmlHelper::badgeClass('badge text-bg-success').'">'.Text::_('JYES').'</span>';
                                         } else {
-                                            echo '<span class="badge text-bg-danger">'.Text::_('JNO').'</span>';
+                                            echo '<span class="'.J2htmlHelper::badgeClass('badge text-bg-danger').'">'.Text::_('JNO').'</span>';
                                         }
                                         ?>
                                     </span>
@@ -219,9 +220,9 @@ $wa->addInlineScript($submitButtonJs);
                                     <span class="data-key"><?php echo Text::_('COM_J2COMMERCE_SHIPPING'); ?></span>
                                     <span class="data-val">
                                         <?php if($variantStats['shipping_enabled'] > 0){
-                                            echo '<span class="badge text-bg-success">'.Text::_('JYES').'</span>';
+                                            echo '<span class="'.J2htmlHelper::badgeClass('badge text-bg-success').'">'.Text::_('JYES').'</span>';
                                         } else {
-                                            echo '<span class="badge text-bg-danger">'.Text::_('JNO').'</span>';
+                                            echo '<span class="'.J2htmlHelper::badgeClass('badge text-bg-danger').'">'.Text::_('JNO').'</span>';
                                         }
                                         ?>
                                     </span>
@@ -234,9 +235,9 @@ $wa->addInlineScript($submitButtonJs);
                                     <span class="data-key"><?php echo Text::_('COM_J2COMMERCE_RELATIONS'); ?></span>
                                     <span class="data-val">
                                         <?php if($hasRelations){
-                                            echo '<span class="badge text-bg-success">'.Text::_('JYES').'</span>';
+                                            echo '<span class="'.J2htmlHelper::badgeClass('badge text-bg-success').'">'.Text::_('JYES').'</span>';
                                         } else {
-                                            echo '<span class="badge text-bg-danger">'.Text::_('JNO').'</span>';
+                                            echo '<span class="'.J2htmlHelper::badgeClass('badge text-bg-danger').'">'.Text::_('JNO').'</span>';
                                         }
                                         ?>
                                     </span>

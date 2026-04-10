@@ -84,6 +84,17 @@
         />
 
         <field
+            name="badge_style"
+            type="list"
+            label="COM_J2COMMERCE_CONFIG_BADGE_STYLE"
+            description="COM_J2COMMERCE_CONFIG_BADGE_STYLE_DESC"
+            default="atum"
+        >
+            <option value="atum">COM_J2COMMERCE_CONFIG_BADGE_STYLE_ATUM</option>
+            <option value="j2commerce">COM_J2COMMERCE_CONFIG_BADGE_STYLE_J2COMMERCE</option>
+        </field>
+
+        <field
             name="spacer_store_1"
             type="spacer"
             hr="true"

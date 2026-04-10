@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\User\UserFactoryInterface;
@@ -30,21 +31,21 @@ $userFactory = Factory::getContainer()->get(UserFactoryInterface::class);
 <div class="card j2commerce-liveusers-widget" id="j2commerce-liveusers">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h2 class="mb-0 fs-4"><span class="fa-solid fa-users me-2 text-info" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_LIVE_USERS'); ?></h2>
-        <span class="badge text-bg-success"><?php echo $total; ?></span>
+        <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-success'); ?>"><?php echo $total; ?></span>
     </div>
     <div class="card-body">
         <?php if ($total > 0) : ?>
         <div class="row">
             <div class="col-2 stats-sidebar">
-                <div class="report-stat-box p-2 text-bg-success mb-2 text-center">
+                <div class="report-stat-box p-2 <?php echo J2htmlHelper::badgeClass('text-bg-success'); ?> mb-2 text-center">
                     <div class="fs-2 fw-bold j2commerce-liveusers-total"><?php echo $total; ?></div>
                     <div class="report-stat-title small"><?php echo Text::_('COM_J2COMMERCE_LIVE_USERS_TOTAL'); ?></div>
                 </div>
-                <div class="report-stat-box p-2 text-bg-info mb-2 text-center">
+                <div class="report-stat-box p-2 <?php echo J2htmlHelper::badgeClass('text-bg-info'); ?> mb-2 text-center">
                     <div class="fs-2 fw-bold j2commerce-liveusers-registered"><?php echo $registered; ?></div>
                     <div class="report-stat-title small"><?php echo Text::_('COM_J2COMMERCE_LIVE_USERS_REGISTERED'); ?></div>
                 </div>
-                <div class="report-stat-box p-2 text-bg-warning text-center">
+                <div class="report-stat-box p-2 <?php echo J2htmlHelper::badgeClass('text-bg-warning'); ?> text-center">
                     <div class="fs-2 fw-bold j2commerce-liveusers-guests"><?php echo $guests; ?></div>
                     <div class="report-stat-title small"><?php echo Text::_('COM_J2COMMERCE_LIVE_USERS_GUESTS'); ?></div>
                 </div>

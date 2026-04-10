@@ -12,6 +12,7 @@ declare(strict_types=1);
 defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 
@@ -88,13 +89,13 @@ if ($orderInfo) {
                 </div>
                 <div class="col-3 stats-sidebar">
                     <?php if ($this->customerDays > 0) : ?>
-                        <div class="report-stat-box p-2 text-bg-success mb-2 text-center">
+                        <div class="report-stat-box p-2 <?php echo J2htmlHelper::badgeClass('text-bg-success'); ?> mb-2 text-center">
                             <div class="fs-2 fw-bold j2commerce-customer-age"><?php echo $this->customerDays;?></div>
                             <div class="report-stat-title small"><?php echo Text::_('COM_J2COMMERCE_CUSTOMER_AGE');?></div>
                         </div>
                     <?php endif; ?>
                     <?php if ($this->totalSales > 0) : ?>
-                        <div class="report-stat-box p-2 text-bg-info mb-2 text-center">
+                        <div class="report-stat-box p-2 <?php echo J2htmlHelper::badgeClass('text-bg-info'); ?> mb-2 text-center">
                             <div class="fs-2 fw-bold j2commerce-customer-orders"><?php echo $this->totalSales;?></div>
                             <div class="report-stat-title small"><?php echo Text::_('COM_J2COMMERCE_CUSTOMER_ORDERS');?></div>
                         </div>

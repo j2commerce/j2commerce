@@ -15,6 +15,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use J2Commerce\Component\J2commerce\Administrator\Service\OverrideRegistry;
 
 /** @var \J2Commerce\Component\J2commerce\Administrator\View\Overrides\HtmlView $this */
@@ -82,7 +83,7 @@ $wa->addInlineStyle($style);
                                 <div class="flex-grow-1">
                                     <div class="d-flex align-items-center gap-2 mb-2">
                                         <span class="fw-semibold"><?php echo Text::_($subtemplate['name']); ?></span>
-                                        <span class="badge text-bg-secondary">
+                                        <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-secondary'); ?>">
                                             <?php echo Text::plural('COM_J2COMMERCE_OVERRIDE_FILES_COUNT', $layoutCount); ?>
                                         </span>
                                     </div>
@@ -92,7 +93,7 @@ $wa->addInlineStyle($style);
                                 </div>
                                 <div class="d-flex align-items-center gap-2 me-3">
                                     <?php if ($activeCount > 0) : ?>
-                                        <span class="badge text-bg-success">
+                                        <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-success'); ?>">
                                             <span class="icon-check me-1" aria-hidden="true"></span>
                                             <?php echo Text::plural('COM_J2COMMERCE_OVERRIDE_N_ACTIVE', $activeCount); ?>
                                         </span>
@@ -125,11 +126,11 @@ $wa->addInlineStyle($style);
                                                                 <h5 class="card-title mb-0">
                                                                     <?php echo $this->escape($file['displayName'] ?? $file['filename']); ?>
                                                                     <?php if (($file['context'] ?? '') === 'tag') : ?>
-                                                                        <span class="ms-1 badge text-bg-purple">Tag</span>
+                                                                        <span class="ms-1 <?php echo J2htmlHelper::badgeClass('badge text-bg-purple'); ?>">Tag</span>
                                                                     <?php endif; ?>
                                                                 </h5>
                                                                 <?php if ($file['hasOverride'] ?? false) : ?>
-                                                                    <span class="badge text-bg-success ms-2 flex-shrink-0">
+                                                                    <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-success'); ?> ms-2 flex-shrink-0">
                                                                         <span class="icon-check" aria-hidden="true"></span>
                                                                         <?php echo Text::_('COM_J2COMMERCE_OVERRIDE_ACTIVE'); ?>
                                                                     </span>

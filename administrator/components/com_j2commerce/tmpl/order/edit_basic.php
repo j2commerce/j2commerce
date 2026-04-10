@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 
@@ -53,7 +54,7 @@ $item = $this->item;
         <div class="mb-3">
             <label class="form-label"><?php echo Text::_('COM_J2COMMERCE_FIELD_ORDER_STATUS'); ?></label>
             <div>
-                <span class="<?php echo $this->escape($item->orderstatus_cssclass ?? 'badge text-bg-secondary'); ?>">
+                <span class="<?php echo $this->escape(J2htmlHelper::badgeClass($item->orderstatus_cssclass ?? 'badge text-bg-secondary')); ?>">
                     <?php echo Text::_($item->orderstatus_name ?? 'Unknown'); ?>
                 </span>
             </div>

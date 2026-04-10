@@ -12,6 +12,7 @@ defined('_JEXEC') or die;
 use J2Commerce\Component\J2commerce\Administrator\Field\ProductTypeField;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Button\PublishedButton;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
@@ -244,9 +245,9 @@ $canChangeState = $user->authorise('core.edit.state', 'com_content');
                         </td>
                         <td class="text-center d-none d-md-table-cell">
                             <?php if ($item->shipping) : ?>
-                                <span class="badge text-bg-success"><?php echo Text::_('COM_J2COMMERCE_ENABLED'); ?></span>
+                                <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-success'); ?>"><?php echo Text::_('COM_J2COMMERCE_ENABLED'); ?></span>
                             <?php else : ?>
-                                <span class="badge text-bg-danger"><?php echo Text::_('COM_J2COMMERCE_DISABLED'); ?></span>
+                                <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-danger'); ?>"><?php echo Text::_('COM_J2COMMERCE_DISABLED'); ?></span>
                             <?php endif; ?>
                         </td>
                         <td class="text-center d-none d-md-table-cell">

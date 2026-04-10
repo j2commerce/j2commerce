@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
@@ -92,7 +93,7 @@ $statusBadges = [
                         </thead>
                         <tbody>
                         <?php foreach ($this->items as $i => $item) : ?>
-                            <?php $badgeClass = $statusBadges[$item->status] ?? 'bg-secondary'; ?>
+                            <?php $badgeClass = J2htmlHelper::badgeClass($statusBadges[$item->status] ?? 'bg-secondary'); ?>
                             <tr class="row<?php echo $i % 2; ?>">
                                 <td class="text-center">
                                     <?php echo HTMLHelper::_('grid.id', $i, $item->j2commerce_queue_id, false, 'cid', 'cb', $item->relation_id); ?>
