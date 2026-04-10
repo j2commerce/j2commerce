@@ -17,6 +17,7 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\Table\Table;
 use Joomla\Database\DatabaseDriver;
 use Joomla\Database\ParameterType;
+use Joomla\Filesystem\Path;
 
 /**
  * Emailtemplate Table class.
@@ -137,7 +138,20 @@ class EmailtemplateTable extends Table
 
         // If using file source, validate that file exists (if provided)
         if ($this->body_source === 'file' && !empty($this->body_source_file)) {
-            $filePath = JPATH_ROOT . '/' . ltrim($this->body_source_file, '/');
+            $sourceFile = $this->body_source_file;
+
+            if (str_starts_with($sourceFile, 'plg:')) {
+                // Plugin-prefixed path: resolve to plugin tmpl/email directory
+                $rest                  = substr($sourceFile, 4);
+                [$pluginRef, $relPath] = array_pad(explode(':', $rest, 2), 2, '');
+                [$group, $name]        = array_pad(explode('.', $pluginRef, 2), 2, '');
+                $filePath              = Path::clean(
+                    JPATH_PLUGINS . '/' . $group . '/' . $name . '/tmpl/email/' . $relPath
+                );
+            } else {
+                $filePath = JPATH_ROOT . '/' . ltrim($sourceFile, '/');
+            }
+
             if (!file_exists($filePath)) {
                 $this->setError(Text::_('COM_J2COMMERCE_ERROR_EMAILTEMPLATE_FILE_NOT_FOUND'));
                 return false;

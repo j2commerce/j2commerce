@@ -1211,9 +1211,27 @@ class EmailHelper
         }
 
         $fileName = $template->body_source_file;
-        $filePath = Path::clean(
-            JPATH_ADMINISTRATOR . '/components/com_j2commerce/views/emailtemplate/tpls/' . $fileName
-        );
+
+        // Plugin-prefixed path: "plg:<group>.<name>:<relative/path.html>"
+        // Resolves to: JPATH_PLUGINS/<group>/<name>/tmpl/email/<relative/path.html>
+        if (str_starts_with($fileName, 'plg:')) {
+            $rest                  = substr($fileName, 4);
+            [$pluginRef, $relPath] = array_pad(explode(':', $rest, 2), 2, '');
+            [$group, $name]        = array_pad(explode('.', $pluginRef, 2), 2, '');
+
+            if ($group === '' || $name === '' || $relPath === '') {
+                return $template->body ?? '';
+            }
+
+            $filePath = Path::clean(
+                JPATH_PLUGINS . '/' . $group . '/' . $name . '/tmpl/email/' . $relPath
+            );
+        } else {
+            // Standard path: resolves under component layouts/templates/email/
+            $filePath = Path::clean(
+                JPATH_ADMINISTRATOR . '/components/com_j2commerce/layouts/templates/email/' . $fileName
+            );
+        }
 
         if (!file_exists($filePath)) {
             return $template->body ?? '';
