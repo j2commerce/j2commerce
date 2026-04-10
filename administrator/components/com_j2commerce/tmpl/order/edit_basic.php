@@ -61,7 +61,7 @@ $item = $this->item;
 
         <div class="mb-3">
             <label for="customer_note" class="form-label"><?php echo Text::_('COM_J2COMMERCE_CUSTOMER_NOTE'); ?></label>
-            <textarea class="form-control" name="jform[customer_note]" id="customer_note" rows="4"><?php echo $this->escape($item->customer_note ?? ''); ?></textarea>
+            <textarea class="form-control" name="jform[customer_note]" id="customer_note" rows="4" readonly><?php echo $this->escape($item->customer_note ?? ''); ?></textarea>
         </div>
     </div>
 </div>

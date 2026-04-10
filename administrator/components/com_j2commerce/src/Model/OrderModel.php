@@ -931,29 +931,6 @@ class OrderModel extends AdminModel
         return (int) $db->loadResult();
     }
 
-    public function saveCustomerNote(int $orderId, string $note): bool
-    {
-        $db     = $this->getDatabase();
-        $now    = Factory::getDate()->toSql();
-        $user   = Factory::getApplication()->getIdentity();
-        $userId = $user ? $user->id : 0;
-
-        $query = $db->getQuery(true)
-            ->update($db->quoteName('#__j2commerce_orders'))
-            ->set($db->quoteName('customer_note') . ' = :note')
-            ->set($db->quoteName('modified_on') . ' = :now')
-            ->set($db->quoteName('modified_by') . ' = :userId')
-            ->where($db->quoteName('j2commerce_order_id') . ' = :orderId')
-            ->bind(':note', $note)
-            ->bind(':now', $now)
-            ->bind(':userId', $userId, ParameterType::INTEGER)
-            ->bind(':orderId', $orderId, ParameterType::INTEGER);
-
-        $db->setQuery($query);
-
-        return $db->execute();
-    }
-
     public function saveTrackingNumber(int $orderId, string $trackingId): bool
     {
         $db    = $this->getDatabase();

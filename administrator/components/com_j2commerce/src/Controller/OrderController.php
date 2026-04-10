@@ -141,38 +141,6 @@ class OrderController extends FormController
         $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=order&layout=edit&id=' . $orderId, false));
     }
 
-    public function ajaxSaveNote(): void
-    {
-        header('Content-Type: application/json; charset=utf-8');
-
-        if (!$this->validateAjaxToken()) {
-            echo json_encode(['success' => false, 'message' => Text::_('JINVALID_TOKEN')]);
-            $this->app->close();
-            return;
-        }
-
-        $orderId = $this->input->post->getInt('order_id', 0);
-        $note    = $this->input->post->getString('customer_note', '');
-
-        try {
-            if ($orderId < 1) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
-            }
-
-            $model = $this->getModel();
-
-            if ($model->saveCustomerNote($orderId, $note)) {
-                echo json_encode(['success' => true, 'message' => Text::_('COM_J2COMMERCE_CUSTOMER_NOTE_SAVED')]);
-            } else {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_SAVING_NOTE'));
-            }
-        } catch (\Exception $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
-        }
-
-        $this->app->close();
-    }
-
     public function ajaxSaveTracking(): void
     {
         header('Content-Type: application/json; charset=utf-8');
