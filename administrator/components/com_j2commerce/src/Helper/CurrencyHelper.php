@@ -153,9 +153,11 @@ class CurrencyHelper
             self::setCurrencyInternal($requestedCurrency);
         } elseif ($session->has('j2commerce_currency') && self::has($session->get('j2commerce_currency', ''))) {
             $sessionCurrency = $session->get('j2commerce_currency', '');
+            $userSet         = (bool) $session->get('j2commerce_currency_user_set', false);
 
-            // If the config default changed, update session to match
-            if ($sessionCurrency !== $defaultCurrency && self::has($defaultCurrency)) {
+            if ($userSet) {
+                self::$currentCode = $sessionCurrency;
+            } elseif ($sessionCurrency !== $defaultCurrency && self::has($defaultCurrency)) {
                 self::setCurrencyInternal($defaultCurrency);
             } else {
                 self::$currentCode = $sessionCurrency;
@@ -244,6 +246,8 @@ class CurrencyHelper
         if ($session->get('j2commerce_currency', '') !== $currencyCode) {
             $session->set('j2commerce_currency', $currencyCode);
         }
+
+        $session->set('j2commerce_currency_user_set', true);
     }
 
     /**
