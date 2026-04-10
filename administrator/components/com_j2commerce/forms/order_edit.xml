@@ -8,7 +8,7 @@
         <field name="customer_language" type="contentlanguage" label="COM_J2COMMERCE_FIELD_CUSTOMER_LANGUAGE">
             <option value="">JALL</option>
         </field>
-        <field name="customer_note" type="textarea" label="COM_J2COMMERCE_FIELD_CUSTOMER_NOTE" rows="4" />
+        <field name="customer_note" type="textarea" label="COM_J2COMMERCE_FIELD_CUSTOMER_NOTE" rows="4" readonly="true" />
     </fieldset>
 
     <fieldset name="shipping_details" label="COM_J2COMMERCE_TAB_PAYMENT_SHIPPING">

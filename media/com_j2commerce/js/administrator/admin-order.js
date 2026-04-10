@@ -95,34 +95,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // === Save Customer Note ===
-    const saveNoteBtn = document.getElementById('saveNoteBtn');
-    if (saveNoteBtn) {
-        saveNoteBtn.addEventListener('click', async () => {
-            const noteField = document.getElementById('customerNote');
-            if (!noteField) return;
-
-            saveNoteBtn.classList.add('j2c-saving');
-
-            try {
-                const result = await postAjax('ajaxSaveNote', {
-                    customer_note: noteField.value,
-                });
-
-                if (result.success) {
-                    showMessage('message', result.message);
-                    flashSuccess(noteField.closest('.card'));
-                } else {
-                    showMessage('error', result.message || 'Error saving note');
-                }
-            } catch (err) {
-                showMessage('error', 'Network error');
-            } finally {
-                saveNoteBtn.classList.remove('j2c-saving');
-            }
-        });
-    }
-
     // === Tracking Number Inline Edit ===
     const editTrackingBtn = document.getElementById('editTrackingBtn');
     const saveTrackingBtn = document.getElementById('saveTrackingBtn');

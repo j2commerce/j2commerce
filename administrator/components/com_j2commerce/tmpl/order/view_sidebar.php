@@ -46,14 +46,11 @@ if ($orderInfo) {
 <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterAdminOrderButtons', array($item))->getArgument('html', ''); ?>
 <?php // === Customer Note === ?>
 <div class="customer-note-card card mb-3">
-    <div class="card-header d-flex justify-content-between align-items-center">
+    <div class="card-header">
         <h5 class="card-title mb-0"><?php echo Text::_('COM_J2COMMERCE_CUSTOMER_NOTE'); ?></h5>
-        <button type="button" class="btn btn-sm btn-primary" id="saveNoteBtn">
-            <?php echo Text::_('JAPPLY'); ?>
-        </button>
     </div>
     <div class="card-body">
-        <textarea class="form-control" id="customerNote" rows="2" placeholder="<?php echo Text::_('COM_J2COMMERCE_CUSTOMER_NOTE'); ?>..."><?php echo $this->escape($item->customer_note ?? ''); ?></textarea>
+        <textarea class="form-control" id="customerNote" rows="2" readonly><?php echo $this->escape($item->customer_note ?? ''); ?></textarea>
     </div>
 </div>
 <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterAdminOrderNote', array($item))->getArgument('html', ''); ?>
