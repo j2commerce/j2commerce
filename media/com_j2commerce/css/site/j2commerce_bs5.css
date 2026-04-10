@@ -160,12 +160,6 @@
     text-align:center;
 }
 
-.j2commerce-cart-buttons input[type="number"]::-webkit-outer-spin-button,
-.j2commerce-cart-buttons input[type="number"]::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
-
 .j2commerce-configurable-button.btn[data-bs-toggle="collapse"] .fa-chevron-down {
     transition: transform .25s ease;
 }
