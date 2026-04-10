@@ -2,7 +2,7 @@
 <extension type="component" method="upgrade">
     <name>J2Commerce</name>
     <author>J2Commerce, LLC</author>
-    <creationDate>2026-01</creationDate>
+    <creationDate>2026-04</creationDate>
     <copyright>(C)2024–2026 J2Commerce, LLC. All rights reserved.</copyright>
     <authorEmail>support@j2commerce.com</authorEmail>
     <authorUrl>https://www.j2commerce.com</authorUrl>
@@ -66,6 +66,7 @@
         <files folder="administrator/components/com_j2commerce">
             <filename>access.xml</filename>
             <filename>config.xml</filename>
+            <filename>version.php</filename>
             <folder>forms</folder>
             <folder>language</folder>
             <folder>layouts</folder>
