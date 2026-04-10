@@ -276,6 +276,12 @@
     background-color:var(--warning);
 }
 
+.j2commerce-cart-buttons .qty-input {
+    max-width: 60px;
+    padding: .6rem;
+    text-align:center;
+}
+
 .j2commerce-add-to-cart .product-add-to-cart-group .j2commerce-qty-input {
     width: 2.75rem;
     height: 2.75rem;
