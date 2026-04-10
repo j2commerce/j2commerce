@@ -181,7 +181,7 @@
 #j2commerce-product-detail-tab.nav.nav-tabs .nav-link.active,
 #j2commerceProfileTabs .nav-link.active {
     background: transparent;
-    font-weight:700;
+    font-weight: 700;
 }
 
 @media (width >= 768px) {
