@@ -68,12 +68,15 @@
     <config>
         <fields name="params">
             <fieldset name="basic" label="PLG_J2COMMERCE_APP_CURRENCYUPDATER_SETTINGS">
-                <field name="layout_style" type="SubtemplateFolder"
-                       tmpl_path="plugins/j2commerce/app_currencyupdater/tmpl"
-                       label="PLG_J2COMMERCE_APP_CURRENCYUPDATER_LAYOUT_STYLE"
-                       description="PLG_J2COMMERCE_APP_CURRENCYUPDATER_LAYOUT_STYLE_DESC"
-                       addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field"
-                       default="bootstrap5" />
+                <field
+                    name="layout_style"
+                    type="SubtemplateFolder"
+                    tmpl_path="plugins/j2commerce/app_currencyupdater/tmpl"
+                    label="PLG_J2COMMERCE_APP_CURRENCYUPDATER_LAYOUT_STYLE"
+                    description="PLG_J2COMMERCE_APP_CURRENCYUPDATER_LAYOUT_STYLE_DESC"
+                    addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field"
+                    default="bootstrap5"
+                    />
 
                 <field
                     name="currency_converter_api_type"
@@ -101,6 +104,13 @@
                     label="PLG_J2COMMERCE_APP_CURRENCYUPDATER_CURRENCYAPI_KEY"
                     description="PLG_J2COMMERCE_APP_CURRENCYUPDATER_CURRENCYAPI_KEY_DESC"
                     showon="currency_converter_api_type:currencyapi"
+                />
+                <field
+                    name="openexchangerates_note"
+                    type="note"
+                    label="PLG_J2COMMERCE_APP_CURRENCYUPDATER_OPENEXCHANGERATES_NOTE"
+                    class="alert alert-info w-100 my-3"
+                    showon="currency_converter_api_type:openexchangerates"
                 />
                 <field
                     name="openexchangerates_app_id"
