@@ -141,7 +141,7 @@ $checkoutPriceDisplay = $this->params->get('checkout_price_display_options', 0);
                                     <button type="button" class="btn btn-sm btn-link j2commerce-qty-minus border-0 border-end-1" aria-label="<?php echo Text::_('COM_J2COMMERCE_DECREASE_QUANTITY'); ?>" <?php if ($currentQty <= $minQty): ?>disabled<?php endif; ?>>
                                         <span class="icon-minus" aria-hidden="true"></span>
                                     </button>
-                                    <input type="number" name="qty[<?php echo $cartitemId; ?>]" value="<?php echo $currentQty; ?>" min="<?php echo $minQty; ?>" <?php if ($maxQty > 0): ?>max="<?php echo $maxQty; ?>"<?php endif; ?> step="1" class="form-control form-control-sm text-center j2commerce-qty-input border-0" style="width: 50px;max-width:50px;" aria-label="<?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_QUANTITY'); ?>" />
+                                    <input type="text" name="qty[<?php echo $cartitemId; ?>]" value="<?php echo $currentQty; ?>" min="<?php echo $minQty; ?>" <?php if ($maxQty > 0): ?>max="<?php echo $maxQty; ?>"<?php endif; ?> step="1" pattern="[0-9]*" inputmode="numeric" class="form-control form-control-sm text-center j2commerce-qty-input border-0" style="width: 50px; max-width: 50px;" aria-label="<?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_QUANTITY'); ?>" />
                                     <button type="button" class="btn btn-sm btn-link j2commerce-qty-plus border-0" aria-label="<?php echo Text::_('COM_J2COMMERCE_INCREASE_QUANTITY'); ?>" <?php if ($maxQty > 0 && $currentQty >= $maxQty): ?>disabled<?php endif; ?>>
                                         <span class="icon-plus" aria-hidden="true"></span>
                                     </button>
@@ -186,25 +186,3 @@ $checkoutPriceDisplay = $this->params->get('checkout_price_display_options', 0);
         </tbody>
     </table>
 </div>
-
-<style>
-.j2commerce-qty-controls.j2commerce-loading {
-    opacity: 0.6;
-    pointer-events: none;
-}
-
-.j2commerce-qty-controls .btn {
-    padding: 0.25rem 0.5rem;
-    line-height: 1;
-}
-
-.j2commerce-qty-controls .j2commerce-qty-input {
-    -moz-appearance: textfield;
-}
-
-.j2commerce-qty-controls .j2commerce-qty-input::-webkit-outer-spin-button,
-.j2commerce-qty-controls .j2commerce-qty-input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
-</style>
