@@ -61,6 +61,12 @@
         <fields name="params">
             <fieldset name="basic">
                 <field
+                    name="multi_currency_note"
+                    type="note"
+                    label="MOD_J2COMMERCE_CURRENCY_MULTI_NOTE"
+                    class="alert alert-info"
+                />
+                <field
                     name="background_color"
                     type="color"
                     default="#FFFFFF"
