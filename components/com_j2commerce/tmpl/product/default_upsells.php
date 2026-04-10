@@ -7,94 +7,58 @@
  * @license     GNU General Public License version 3 or later; see LICENSE.txt
  */
 
-defined('_JEXEC') or die;
+// phpcs:disable PSR1.Files.SideEffects
+\defined('_JEXEC') or die;
+// phpcs:enable PSR1.Files.SideEffects
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
-use Joomla\CMS\Factory;
-use Joomla\CMS\HTML\HTMLHelper;
+use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\Uri\Uri;
 
-$columns = $this->params->get('item_related_product_columns', 3);
-$total = count($this->up_sells);
-$counter = 0;
-$upsell_image_width = $this->params->get('item_product_upsell_image_width', 100);
+$columns  = $this->params->get('item_related_product_columns', 3);
+$total    = count($this->up_sells);
+$counter  = 0;
+$itemId   = isset($this->active_menu->id) ? (int) $this->active_menu->id : 0;
 ?>
-<div class="row product-upsells-container">
-	<div class="col-sm-12">
-		<h3><?php echo Text::_('COM_J2COMMERCE_RELATED_PRODUCTS_UPSELLS'); ?></h3>
-        <?php foreach ($this->up_sells as $upsell_product) : ?>
-            <?php
-                $upsell_product->product_link = J2CommerceHelper::platform()->getProductUrl(['task' => 'view', 'id' => $upsell_product->j2commerce_product_id]);
-                if (!empty($upsell_product->addtocart_text)) {
-                    $cart_text = Text::_($upsell_product->addtocart_text);
-                } else {
-                    $cart_text = Text::_('COM_J2COMMERCE_ADD_TO_CART');
-                }
-                $upsell_product_name = $this->escape($upsell_product->product_name);
-            ?>
 
-            <?php $rowcount = ((int) $counter % (int) $columns) + 1; ?>
-            <?php if ($rowcount == 1) : ?>
-                <?php $row = $counter / $columns; ?>
-                <div class="upsell-product-row <?php echo 'row-'.$row; ?> row">
-            <?php endif;?>
+<div class="product-upsells">
+    <div class="section__title--box text-start mb-5 mb-xl-7">
+        <h2 class="text-uppercase ls-1 mb-4 fs-1"><span class="umarex-underline"><?php echo Text::_('COM_J2COMMERCE_RELATED_PRODUCTS_UPSELLS'); ?></span></h2>
+    </div>
 
-            <?php $upsell_css = $upsell_product->params->get('product_css_class',''); ?>
-            <div class="col-sm-<?php echo round((12 / $columns));?> upsell-product product-<?php echo $upsell_product->j2commerce_product_id;?><?php echo isset($upsell_css) ? ' ' . $upsell_css : ''; ?>">
-                <span class="upsell-product-image">
-                    <?php
-                        $thumb_image = '';
-                        if(isset($upsell_product->thumb_image) && $upsell_product->thumb_image){
-                            $thumb_image =$platform->getImagePath($upsell_product->thumb_image);
-                        }
-                    ?>
-                    <?php if(isset($thumb_image) &&  !empty($thumb_image)):?>
-                        <a href="<?php echo $upsell_product->product_link; ?>">
-                            <img title="<?php echo $upsell_product_name ;?>"
-                                alt="<?php echo $upsell_product_name ;?>"
-                                class="j2commerce-product-thumb-image-<?php echo $upsell_product->j2commerce_product_id; ?>"
-                                src="<?php echo $thumb_image;?>"
-                                width="<?php echo intval($upsell_image_width);?>"
-                            />
-                        </a>
-                    <?php endif; ?>
-                </span>
-                <h3 class="upsell-product-title">
-                    <a href="<?php echo $upsell_product->product_link; ?>">
-                        <?php echo $upsell_product_name; ?>
-                    </a>
-                </h3>
+    <div class="position-relative mx-md-1">
+        <button type="button" class="upsells-prev btn btn-prev btn-icon btn-outline-secondary bg-body rounded-circle position-absolute top-50 start-0 z-2 translate-middle-y ms-n1 d-none d-sm-flex justify-content-center align-items-center" aria-label="Prev">
+            <span class="si-chevron-left fs-4 text-center"></span>
+        </button>
+        <button type="button" class="upsells-next btn btn-next btn-icon btn-outline-secondary bg-body rounded-circle position-absolute top-50 end-0 z-2 translate-middle-y me-n1 d-none d-sm-flex justify-content-center align-items-center" aria-label="Next">
+            <span class="si-chevron-right fs-4 text-center"></span>
+        </button>
 
-                <?php if (J2CommerceHelper::product()->canShowprice($this->params)) : ?>
-                    <?php
-                        $this->singleton_product = $upsell_product;
-                        $this->singleton_params = $this->params;
-                        echo $this->loadAnyTemplate('site:com_j2commerce/products/price'); // TODO
-                    ?>
-                <?php endif; ?>
+        <div class="swiper py-4" data-swiper='{"slidesPerView": 1,"spaceBetween": 24,"loop": true,"navigation": {"prevEl": ".upsells-prev","nextEl": ".upsells-next"},"breakpoints": {"768": {"slidesPerView": 2}}}'>
+            <div class="swiper-wrapper">
+                <?php foreach ($this->up_sells as $upsell_product) :
+                    $upsell_product->product_link = J2CommerceHelper::platform()->getProductUrl(['task' => 'view', 'id' => $upsell_product->j2commerce_product_id]);
+                ?>
+                    <div class="swiper-slide">
+                        <?php echo ProductLayoutService::renderProductItem(
+                            $upsell_product,
+                            $this->params,
+                            ProductLayoutService::CONTEXT_UPSELL,
+                            $itemId
+                        ); ?>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
 
-                <?php if (J2CommerceHelper::product()->canShowCart($this->params)) : ?>
-                    <?php $upsell_option = isset($upsell_product->options) && is_array($upsell_product->options) ? count($upsell_product->options) : 0; ?>
-                    <?php if ($upsell_option || $upsell_product->product_type == 'variable') : ?>
-                        <a class="<?php echo $this->params->get('choosebtn_class', 'btn btn-success'); ?>"
-                            href="<?php echo $upsell_product->product_link; ?>">
-                            <?php echo Text::_('COM_J2COMMERCE_CART_CHOOSE_OPTIONS'); ?>
-                        </a>
-                    <?php else: ?>
-                        <?php
-                            $this->singleton_product = $upsell_product;
-                            $this->singleton_params = $this->params;
-                            $this->singleton_cartext = $this->escape($cart_text);
-                            echo $this->loadAnyTemplate('site:com_j2commerce/products/cart'); // TODO
-                        ?>
-                    <?php endif; ?>
-                <?php endif; ?>
-                </div>
-            <?php $counter++; ?>
-            <?php if (($rowcount == $columns) || ($counter == $total)) : ?>
-                </div>
-            <?php endif; ?>
-        <?php endforeach;?>
-	</div>
+        <!-- External slider prev/next buttons visible on screens < 500px wide (sm breakpoint) -->
+        <div class="d-flex justify-content-center gap-2 mt-n2 mb-3 pb-1 d-sm-none">
+            <button type="button" class="upsells-prev btn btn-prev btn-icon btn-outline-secondary bg-body rounded-circle me-1" aria-label="Prev">
+                <span class="si-chevron-left fs-3"></span>
+            </button>
+            <button type="button" class="upsells-next btn btn-next btn-icon btn-outline-secondary bg-body rounded-circle" aria-label="Next">
+                <span class="si-chevron-right fs-3"></span>
+            </button>
+        </div>
+    </div>
 </div>
