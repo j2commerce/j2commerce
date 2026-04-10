@@ -69,7 +69,7 @@ if ($hasDetails) {
 ?>
 <div class="card mb-4">
     <div class="card-header">
-        <h5 class="card-title mb-0"><?php echo Text::_('COM_J2COMMERCE_ORDER_DETAILS'); ?></h5>
+        <h2 class="card-title mb-0 fs-5"><?php echo Text::_('COM_J2COMMERCE_ORDER_DETAILS'); ?></h2>
     </div>
     <div class="card-body">
         <div class="j2c-detail-card-payment j2c-detail-card d-flex justify-content-between align-items-center p-3 mb-3">
@@ -107,9 +107,9 @@ if ($hasDetails) {
                 <div class="modal-dialog modal-lg modal-dialog-scrollable">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title" id="transactionDetailsModalLabel">
+                            <h3 class="modal-title fs-5" id="transactionDetailsModalLabel">
                                 <?php echo Text::_('COM_J2COMMERCE_TRANSACTION_DETAILS'); ?>
-                            </h5>
+                            </h3>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"
                                     aria-label="<?php echo Text::_('JCLOSE'); ?>"></button>
                         </div>

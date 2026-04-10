@@ -150,7 +150,7 @@ $layoutPath = JPATH_ADMINISTRATOR . '/components/com_j2commerce/layouts';
     </fieldset>
 
     <div class="alert alert-info mt-3">
-        <h4 class="alert-heading"><?php echo Text::_('COM_J2COMMERCE_QUICK_HELP'); ?></h4>
+        <h2 class="alert-heading fs-4"><?php echo Text::_('COM_J2COMMERCE_QUICK_HELP'); ?></h2>
         <p class="mb-1"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_FILES_HELP_TEXT'); ?></p>
         <ul class="mb-0">
             <li><?php echo Text::_('COM_J2COMMERCE_PRODUCT_FILES_HELP_DOWNLOAD_LIMIT'); ?></li>

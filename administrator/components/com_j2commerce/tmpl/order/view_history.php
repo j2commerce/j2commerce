@@ -31,7 +31,7 @@ $currentUserId = (int) (Factory::getApplication()->getIdentity()?->id ?? 0);
 ?>
 <div class="card order-history-card mb-4 border-0 shadow-none bg-transparent" id="j2c-order-history-card">
     <div class="card-header d-flex justify-content-between align-items-center px-0">
-        <h4 class="card-title mb-0"><?php echo Text::_('COM_J2COMMERCE_ORDER_HISTORY'); ?></h4>
+        <h2 class="card-title mb-0 fs-4"><?php echo Text::_('COM_J2COMMERCE_ORDER_HISTORY'); ?></h2>
         <?php if ($totalItems > 0) : ?>
             <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-secondary'); ?>"><?php echo $totalItems; ?></span>
         <?php endif; ?>
@@ -39,7 +39,7 @@ $currentUserId = (int) (Factory::getApplication()->getIdentity()?->id ?? 0);
 
     <div class="admin-note-card card mb-3 mx-0 mt-3">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="card-title mb-0"><?php echo Text::_('COM_J2COMMERCE_ORDER_NOTE'); ?></h5>
+            <h3 class="card-title mb-0 fs-5"><?php echo Text::_('COM_J2COMMERCE_ORDER_NOTE'); ?></h3>
             <button type="button" class="btn btn-sm btn-primary" id="addAdminNoteBtn">
                 <span class="icon-plus" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_ADD_NOTE'); ?>
             </button>
@@ -126,11 +126,11 @@ $currentUserId = (int) (Factory::getApplication()->getIdentity()?->id ?? 0);
                                     <?php endif; ?>
                                 </div>
                                 <?php if (!empty($history->order_state_id)) : ?>
-                                    <h4 class="card-title small mb-1">
+                                    <h3 class="card-title small mb-1 fs-4">
                                         <span class="<?php echo J2htmlHelper::badgeClass('badge rounded-2 px-2 text-bg-' . $this->escape($foundColor)); ?>">
                                             <?php echo $this->escape(Text::_($history->orderstatus_name ?? 'Unknown')); ?>
                                         </span>
-                                    </h4>
+                                    </h3>
                                 <?php endif; ?>
                                 <?php if (!empty($comment)) : ?>
                                     <p class="card-text text-body-secondary small mb-0"><?php echo $this->escape($comment); ?></p>

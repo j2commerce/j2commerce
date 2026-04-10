@@ -55,7 +55,7 @@ $wa->addInlineStyle($style, [], []);
     <!-- Add New Option Value Section -->
     <div class="card box-shadow-none mb-3">
         <div class="card-header">
-            <h6 class="mb-0"><?php echo Text::_('COM_J2COMMERCE_PAO_ADD_NEW_OPTION'); ?></h6>
+            <h3 class="mb-0 fs-6"><?php echo Text::_('COM_J2COMMERCE_PAO_ADD_NEW_OPTION'); ?></h3>
         </div>
         <div class="card-body">
             <div class="table-responsive">
@@ -157,7 +157,7 @@ $wa->addInlineStyle($style, [], []);
     <!-- Current Option Values Section -->
     <div class="card box-shadow-none">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <h6 class="mb-0"><?php echo Text::_('COM_J2COMMERCE_PAO_CURRENT_OPTIONS'); ?></h6>
+            <h3 class="mb-0 fs-6"><?php echo Text::_('COM_J2COMMERCE_PAO_CURRENT_OPTIONS'); ?></h3>
             <button class="btn btn-success btn-sm" type="button" id="j2commerce-save-optionvalues-btn">
                 <?php echo Text::_('COM_J2COMMERCE_SAVE_CHANGES'); ?>
             </button>

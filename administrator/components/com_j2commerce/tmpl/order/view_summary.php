@@ -33,7 +33,7 @@ $fees      = $item->orderfees ?? [];
 ?>
 <div class="card mb-4 order-card order-summary-card">
     <div class="card-header">
-        <h4 class="card-title mb-0"><?php echo Text::_('COM_J2COMMERCE_ORDER_SUMMARY'); ?></h4>
+        <h2 class="card-title mb-0 fs-4"><?php echo Text::_('COM_J2COMMERCE_ORDER_SUMMARY'); ?></h2>
     </div>
     <div class="card-body">
         <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeAdminOrderSummery', array(&$order,&$items))->getArgument('html', ''); ?>

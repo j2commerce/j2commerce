@@ -246,7 +246,7 @@ $wa->addInlineScript($submitButtonJs);
                         </div>
                         <div class="description-area">
                             <div class="d-flex align-items-center justify-content-between">
-                                <h6><?php echo Text::_('COM_J2COMMERCE_PLUGIN_SHORTCODE');?></h6>
+                                <h2 class="fs-6"><?php echo Text::_('COM_J2COMMERCE_PLUGIN_SHORTCODE');?></h2>
                                 <button type="button" class="btn btn-sm btn-soft-dark fw-medium" id="j2commerceToggleShortcodes" data-bs-toggle="collapse" data-bs-target="#collapseShortcodes" aria-expanded="false" aria-controls="collapseShortcodes">
                                     <?php echo Text::_('COM_J2COMMERCE_VIEW_ADDITIONAL_SHORTCODES'); ?>
                                 </button>
@@ -370,7 +370,7 @@ $wa->addInlineScript($submitButtonJs);
             <div class="modal-dialog modal-dialog-centered modal-lg">
                 <div class="modal-content">
                     <div class="modal-header border-0">
-                        <h5 class="modal-title fs-3 fw-bold" id="changeProductTypeModalLabel"><?php echo Text::_('COM_J2COMMERCE_CHANGE_PRODUCT_TYPE'); ?></h5>
+                        <h3 class="modal-title fs-3 fw-bold" id="changeProductTypeModalLabel"><?php echo Text::_('COM_J2COMMERCE_CHANGE_PRODUCT_TYPE'); ?></h3>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?php echo Text::_('JCLOSE'); ?>"></button>
                     </div>
                     <div class="modal-body">

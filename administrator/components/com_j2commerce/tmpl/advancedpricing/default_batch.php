@@ -26,7 +26,7 @@ $userGroups = $db->loadObjectList();
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="collapseModalLabel"><?php echo Text::_('COM_J2COMMERCE_BATCH_TITLE'); ?></h5>
+                <h2 class="modal-title fs-5" id="collapseModalLabel"><?php echo Text::_('COM_J2COMMERCE_BATCH_TITLE'); ?></h2>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?php echo Text::_('JCLOSE'); ?>"></button>
             </div>
             <div class="modal-body px-4 pt-4 pb-2">

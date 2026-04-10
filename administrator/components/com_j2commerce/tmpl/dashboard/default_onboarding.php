@@ -136,7 +136,7 @@ $e = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
 
       <!-- Header -->
       <div class="modal-header border-0 p-3">
-        <h5 class="modal-title" id="j2commerceOnboardingLabel"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_WIZARD_TITLE'); ?></h5>
+        <h2 class="modal-title fs-5" id="j2commerceOnboardingLabel"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_WIZARD_TITLE'); ?></h2>
         <button type="button" class="btn-close" data-action="dismiss-onboarding"
                 aria-label="<?php echo Text::_('JCLOSE'); ?>"></button>
       </div>
@@ -185,7 +185,7 @@ $e = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
         <!-- ============ STEP 1: Store Info ============ -->
         <div class="j2c-step" data-step="1" <?php echo $resumeStep !== 1 ? 'hidden' : ''; ?>>
           <div class="j2c-step-icon"><span class="fa-solid fa-location-dot" aria-hidden="true"></span></div>
-          <h4 class="j2c-step-title"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_STEP1_TITLE'); ?></h4>
+          <h3 class="j2c-step-title fs-4"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_STEP1_TITLE'); ?></h3>
           <p class="j2c-step-desc"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_STEP1_DESC'); ?></p>
           <hr>
           <div class="row g-3">
@@ -299,7 +299,7 @@ $e = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
         <!-- ============ STEP 2: Currency & Measurements ============ -->
         <div class="j2c-step" data-step="2" <?php echo $resumeStep !== 2 ? 'hidden' : ''; ?>>
           <div class="j2c-step-icon"><span class="fa-solid fa-coins" aria-hidden="true"></span></div>
-          <h4 class="j2c-step-title"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_STEP2_TITLE'); ?></h4>
+          <h3 class="j2c-step-title fs-4"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_STEP2_TITLE'); ?></h3>
           <p class="j2c-step-desc"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_STEP2_DESC'); ?></p>
           <div class="alert alert-info small d-none" id="ob-currency-defaults-preview"></div>
           <hr>
@@ -350,7 +350,7 @@ $e = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
         <!-- ============ STEP 3: Tax ============ -->
         <div class="j2c-step" data-step="3" <?php echo $resumeStep !== 3 ? 'hidden' : ''; ?>>
           <div class="j2c-step-icon"><span class="fa-solid fa-receipt" aria-hidden="true"></span></div>
-          <h4 class="j2c-step-title"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_STEP3_TITLE'); ?></h4>
+          <h3 class="j2c-step-title fs-4"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_STEP3_TITLE'); ?></h3>
           <p class="j2c-step-desc"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_STEP3_DESC'); ?></p>
           <hr>
           <div class="row g-3">
@@ -383,7 +383,7 @@ $e = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
         <!-- ============ STEP 4: Product Type ============ -->
         <div class="j2c-step" data-step="4" <?php echo $resumeStep !== 4 ? 'hidden' : ''; ?>>
           <div class="j2c-step-icon"><span class="fa-solid fa-boxes-stacked" aria-hidden="true"></span></div>
-          <h4 class="j2c-step-title"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_STEP4_TITLE'); ?></h4>
+          <h3 class="j2c-step-title fs-4"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_STEP4_TITLE'); ?></h3>
           <p class="j2c-step-desc"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_STEP4_DESC'); ?></p>
           <hr>
           <div class="row g-3 mb-3">
@@ -576,7 +576,7 @@ $e = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
         <!-- ============ STEP 5: Payment ============ -->
         <div class="j2c-step" data-step="5" <?php echo $resumeStep !== 5 ? 'hidden' : ''; ?>>
           <div class="j2c-step-icon"><span class="fa-solid fa-credit-card" aria-hidden="true"></span></div>
-          <h4 class="j2c-step-title"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_STEP5_TITLE'); ?></h4>
+          <h3 class="j2c-step-title fs-4"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_STEP5_TITLE'); ?></h3>
           <p class="j2c-step-desc"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_STEP5_DESC'); ?></p>
           <hr>
 
@@ -690,7 +690,7 @@ $e = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
         <!-- ============ STEP 6: Ready! ============ -->
         <div class="j2c-step" data-step="6" <?php echo $resumeStep !== 6 ? 'hidden' : ''; ?>>
           <div class="j2c-step-icon j2c-celebration-icon"><span class="fa-solid fa-circle-check text-primary" aria-hidden="true"></span></div>
-          <h4 class="j2c-step-title"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_STEP6_TITLE'); ?></h4>
+          <h3 class="j2c-step-title fs-4"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_STEP6_TITLE'); ?></h3>
           <p class="j2c-step-desc"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_STEP6_DESC'); ?></p>
           <hr>
 

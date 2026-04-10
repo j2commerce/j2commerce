@@ -94,7 +94,7 @@ $currency = $item->currency_code ?? 'USD';
 
         <hr>
 
-        <h5><?php echo Text::_('COM_J2COMMERCE_ADD_PRODUCTS'); ?></h5>
+        <h2 class="fs-5"><?php echo Text::_('COM_J2COMMERCE_ADD_PRODUCTS'); ?></h2>
         <div class="row">
             <div class="col-md-6">
                 <div class="input-group">

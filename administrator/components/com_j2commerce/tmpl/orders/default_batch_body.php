@@ -19,7 +19,7 @@ use Joomla\CMS\Language\Text;
 <div class="p-3">
     <!-- Change Status Section -->
     <div class="mb-4">
-        <h5 class="fw-bold"><?php echo Text::_('COM_J2COMMERCE_CHANGE_ORDER_STATUS'); ?></h5>
+        <h2 class="fw-bold fs-5"><?php echo Text::_('COM_J2COMMERCE_CHANGE_ORDER_STATUS'); ?></h2>
         <div class="mb-2">
             <select name="order_state_id" id="batch_order_state_id" class="form-select">
                 <option value=""><?php echo Text::_('COM_J2COMMERCE_SELECT_ORDER_STATUS'); ?></option>
@@ -49,7 +49,7 @@ use Joomla\CMS\Language\Text;
     <?php if ($this->hasPackingSlipTemplate) : ?>
     <!-- Print Packing Slips Section -->
     <div class="mb-4">
-        <h5 class="fw-bold"><?php echo Text::_('COM_J2COMMERCE_PRINT_PACKING_SLIPS'); ?></h5>
+        <h2 class="fw-bold fs-5"><?php echo Text::_('COM_J2COMMERCE_PRINT_PACKING_SLIPS'); ?></h2>
         <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.j2cPrintPackingSlips();">
             <span class="icon-print" aria-hidden="true"></span>
             <?php echo Text::_('COM_J2COMMERCE_PRINT_PACKING_SLIPS'); ?>
@@ -60,7 +60,7 @@ use Joomla\CMS\Language\Text;
     <?php if ($this->canDelete) : ?>
     <!-- Delete Section -->
     <div class="mb-2">
-        <h5 class="fw-bold text-danger"><?php echo Text::_('COM_J2COMMERCE_DELETE_SELECTED_ORDERS'); ?></h5>
+        <h2 class="fw-bold text-danger fs-5"><?php echo Text::_('COM_J2COMMERCE_DELETE_SELECTED_ORDERS'); ?></h2>
         <p class="text-muted small"><?php echo Text::_('COM_J2COMMERCE_DELETE_ORDERS_WARNING'); ?></p>
         <joomla-toolbar-button task="orders.delete">
             <button type="button" class="btn btn-danger btn-sm"

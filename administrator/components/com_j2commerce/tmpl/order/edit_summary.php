@@ -23,7 +23,7 @@ $currency = $item->currency_code ?? 'USD';
     <div class="col-lg-8">
         <?php // Item summary table (readonly) ?>
         <?php if (!empty($orderItems)) : ?>
-        <h5><?php echo Text::_('COM_J2COMMERCE_ORDER_ITEMS'); ?></h5>
+        <h2 class="fs-5"><?php echo Text::_('COM_J2COMMERCE_ORDER_ITEMS'); ?></h2>
         <table class="table table-sm table-striped mb-4">
             <thead>
                 <tr>
@@ -67,7 +67,7 @@ $currency = $item->currency_code ?? 'USD';
         </div>
 
         <?php // Cart Totals ?>
-        <h5><?php echo Text::_('COM_J2COMMERCE_CART_TOTALS'); ?></h5>
+        <h2 class="fs-5"><?php echo Text::_('COM_J2COMMERCE_CART_TOTALS'); ?></h2>
         <table class="table table-sm j2c-summary-table mb-4">
             <tbody>
                 <tr>
@@ -106,7 +106,7 @@ $currency = $item->currency_code ?? 'USD';
         </table>
 
         <?php // Add Fee section ?>
-        <h5><?php echo Text::_('COM_J2COMMERCE_ADD_FEE'); ?></h5>
+        <h2 class="fs-5"><?php echo Text::_('COM_J2COMMERCE_ADD_FEE'); ?></h2>
         <div class="row mb-3">
             <div class="col-md-4">
                 <input type="text" class="form-control" name="fee_name" id="feeName"

@@ -123,12 +123,12 @@ $wa->addInlineStyle($style);
                                                     <div class="card layout-card rounded-1 h-100 border-2 <?php echo ($file['hasOverride'] ?? false) ? 'border-success' : ''; ?>">
                                                         <div class="card-body d-flex flex-column">
                                                             <div class="d-flex align-items-start justify-content-between mb-2">
-                                                                <h5 class="card-title mb-0">
+                                                                <h3 class="card-title mb-0 fs-5">
                                                                     <?php echo $this->escape($file['displayName'] ?? $file['filename']); ?>
                                                                     <?php if (($file['context'] ?? '') === 'tag') : ?>
                                                                         <span class="ms-1 <?php echo J2htmlHelper::badgeClass('badge text-bg-purple'); ?>">Tag</span>
                                                                     <?php endif; ?>
-                                                                </h5>
+                                                                </h3>
                                                                 <?php if ($file['hasOverride'] ?? false) : ?>
                                                                     <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-success'); ?> ms-2 flex-shrink-0">
                                                                         <span class="icon-check" aria-hidden="true"></span>

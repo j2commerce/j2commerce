@@ -206,7 +206,7 @@ $base_path = JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product';
     <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductImagesForm', array($this, $item, $formPrefix))->getArgument('html', ''); ?>
 
     <div class="alert alert-info mt-3">
-        <h4 class="alert-heading"><?php echo Text::_('COM_J2COMMERCE_QUICK_HELP'); ?></h4>
+        <h2 class="alert-heading fs-4"><?php echo Text::_('COM_J2COMMERCE_QUICK_HELP'); ?></h2>
         <p class="mb-1"><?php echo Text::_('COM_J2COMMERCE_FEATURE_AVAILABLE_IN_PRODUCT_LAYOUTS_AND_ARTICLES'); ?></p>
         <?php
         $db = Factory::getContainer()->get('DatabaseDriver');
