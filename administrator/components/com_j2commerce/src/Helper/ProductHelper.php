@@ -3699,10 +3699,15 @@ class ProductHelper
         $showButtons = $options['show_buttons'] ?? true;
 
         // Build the input element
-        $input  = '<input type="number"';
+        $inputType = $showButtons && !$isCart ? 'text' : 'number';
+        $input  = '<input type="' . $inputType . '"';
         $input .= ' name="' . htmlspecialchars($inputName, ENT_QUOTES, 'UTF-8') . '"';
         $input .= ' value="' . $defaultQty . '"';
         $input .= ' min="' . $minVal . '"';
+        if ($showButtons && !$isCart) {
+            $input .= ' pattern="[0-9]*"';
+            $input .= ' inputmode="numeric"';
+        }
         if ($maxQty > 0) {
             $input .= ' max="' . $maxQty . '"';
         }
