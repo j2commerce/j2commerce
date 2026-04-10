@@ -167,8 +167,12 @@ $selectZoneJs = htmlspecialchars(Text::sprintf('COM_J2COMMERCE_SELECT_PLACEHOLDE
                         <span class="fw-bold fs-5 j2commerce-sidecart-toggle-total"><?php echo $grandTotal; ?></span>
                     </button>
 
-                    <div class="bg-light rounded p-3 p-lg-4">
-                        <?php echo $this->loadTemplate('sidecart'); ?>
+                    <div class="j2commerce-checkout-sidecart">
+                        <div class="collapse d-lg-block" id="checkoutSidecartCollapse">
+                            <div class="sticky-lg-top" style="top: 1rem;" id="checkout-sidecart-content">
+                                <?php echo $this->loadTemplate('sidecart'); ?>
+                            </div>
+                        </div>
                     </div>
 
                     <?php echo J2CommerceHelper::modules()->loadposition('j2commerce-checkout-sidecart-bottom'); ?>
@@ -1271,7 +1275,10 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(function(data) {
                 if (data.success && data.html) {
                     var container = document.getElementById('checkout-sidecart-content');
-                    if (container) container.innerHTML = data.html;
+                    if (container) {
+                        var parsed = new DOMParser().parseFromString(data.html, 'text/html');
+                        container.replaceChildren.apply(container, Array.from(parsed.body.childNodes));
+                    }
                     updateMobileTotal();
                 }
             })

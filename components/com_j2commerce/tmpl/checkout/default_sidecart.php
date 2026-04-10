@@ -55,10 +55,7 @@ $totals = ($this->order && method_exists($this->order, 'get_formatted_order_tota
 $grandTotalValue = $totals['grandtotal']['value'] ?? '';
 
 ?>
-<div class="j2commerce-checkout-sidecart">
-
-    <div class="collapse d-lg-block" id="checkoutSidecartCollapse">
-        <div class="sticky-lg-top" style="top: 1rem;" id="checkout-sidecart-content">
+<div class="bg-light rounded p-3 p-lg-4">
 
             <?php if (!empty($this->items)): ?>
             <div class="checkout-sidebar-items list-group list-group-flush mb-3">
@@ -161,6 +158,4 @@ $grandTotalValue = $totals['grandtotal']['value'] ?? '';
             </div>
             <?php endif; ?>
 
-        </div>
-    </div>
 </div>
