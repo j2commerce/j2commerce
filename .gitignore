@@ -148,6 +148,9 @@ language/
 !administrator/components/com_j2commerce/language/**
 !components/com_j2commerce/language/
 !components/com_j2commerce/language/**
+# Re-allow language dirs inside J2Commerce library
+!libraries/j2commerce/language/
+!libraries/j2commerce/language/**
 # Re-allow language dirs inside core J2Commerce plugins
 !plugins/j2commerce/*/language/
 !plugins/j2commerce/*/language/**
