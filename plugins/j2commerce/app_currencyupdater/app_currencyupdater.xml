@@ -68,12 +68,15 @@
     <config>
         <fields name="params">
             <fieldset name="basic" label="PLG_J2COMMERCE_APP_CURRENCYUPDATER_SETTINGS">
-                <field name="layout_style" type="SubtemplateFolder"
-                       tmpl_path="plugins/j2commerce/app_currencyupdater/tmpl"
-                       label="PLG_J2COMMERCE_APP_CURRENCYUPDATER_LAYOUT_STYLE"
-                       description="PLG_J2COMMERCE_APP_CURRENCYUPDATER_LAYOUT_STYLE_DESC"
-                       addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field"
-                       default="bootstrap5" />
+                <field
+                    name="layout_style"
+                    type="SubtemplateFolder"
+                    tmpl_path="plugins/j2commerce/app_currencyupdater/tmpl"
+                    label="PLG_J2COMMERCE_APP_CURRENCYUPDATER_LAYOUT_STYLE"
+                    description="PLG_J2COMMERCE_APP_CURRENCYUPDATER_LAYOUT_STYLE_DESC"
+                    addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field"
+                    default="bootstrap5"
+                    />
 
                 <field
                     name="currency_converter_api_type"
