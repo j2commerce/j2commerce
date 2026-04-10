@@ -20,10 +20,10 @@ use Joomla\CMS\Language\Text;
                 aria-label="<?php echo Text::_('COM_J2COMMERCE_SETUP_GUIDE_BACK'); ?>">
             <span class="icon-chevron-left" aria-hidden="true"></span>
         </button>
-        <h5 class="offcanvas-title d-flex align-items-center gap-2" id="j2commerce-setup-guide-label">
+        <h2 class="offcanvas-title d-flex align-items-center gap-2 fs-5" id="j2commerce-setup-guide-label">
             <span class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></span>
             <?php echo Text::_('COM_J2COMMERCE_SETUP_GUIDE'); ?>
-        </h5>
+        </h2>
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="<?php echo Text::_('JCLOSE'); ?>"></button>
     </div>
     <div class="offcanvas-body p-0">

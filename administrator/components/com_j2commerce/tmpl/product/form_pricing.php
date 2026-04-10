@@ -109,7 +109,7 @@ $link = $base_path . '/index.php?option=com_j2commerce&view=productprice&layout=
 
 
     <div class="alert alert-info">
-        <h4><?php echo Text::_('COM_J2COMMERCE_QUICK_HELP'); ?></h4>
+        <h2 class="fs-4"><?php echo Text::_('COM_J2COMMERCE_QUICK_HELP'); ?></h2>
         <?php echo Text::_('COM_J2COMMERCE_PRODUCT_PRICE_HELP_TEXT'); ?>
     </div>
 

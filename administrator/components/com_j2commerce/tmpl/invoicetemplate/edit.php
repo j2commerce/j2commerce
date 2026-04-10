@@ -254,7 +254,7 @@ document.addEventListener("DOMContentLoaded", function() {
                             + \'<div class="card h-100 template-card" role="button" data-template-type="\' + preset.type + \'" data-template-design="\' + preset.design + \'">\'
                             + \'<div class="card-body text-center p-3">\'
                             + \'<span class="icon-print d-block mb-2" style="font-size:2rem;color:var(--gjs-text-muted,#6c757d);" aria-hidden="true"></span>\'
-                            + \'<h6 class="card-title mb-1">\' + preset.label + \'</h6>\'
+                            + \'<h3 class="card-title mb-1 fs-6">\' + preset.label + \'</h3>\'
                             + \'<small class="text-muted">\' + type.charAt(0).toUpperCase() + type.slice(1).replace("_", " ") + \'</small>\'
                             + \'</div></div></div>\';
                     });
@@ -396,7 +396,7 @@ $tmpl   = $input->get('tmpl', '', 'cmd') === 'component' ? '&tmpl=component' : '
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="loadTemplateModalLabel"><?php echo Text::_('COM_J2COMMERCE_INVOICETEMPLATE_LOAD_TEMPLATE'); ?></h5>
+                    <h2 class="modal-title fs-5" id="loadTemplateModalLabel"><?php echo Text::_('COM_J2COMMERCE_INVOICETEMPLATE_LOAD_TEMPLATE'); ?></h2>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?php echo Text::_('JCLOSE'); ?>"></button>
                 </div>
                 <div class="modal-body p-3">

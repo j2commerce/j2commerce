@@ -24,10 +24,10 @@ J2CommerceHelper::strapper()->addCSS();
     <div class="col-md-12">
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title">
+                <h2 class="card-title fs-3">
                     <?php echo Text::_('COM_J2COMMERCE_COUPON_HISTORY'); ?>:
                     <span class="badge bg-primary"><?php echo htmlspecialchars($this->item->coupon_code, ENT_QUOTES, 'UTF-8'); ?></span>
-                </h3>
+                </h2>
             </div>
             <div class="card-body">
                 <?php if (!empty($this->orders) && count($this->orders) > 0) : ?>

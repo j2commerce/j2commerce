@@ -38,13 +38,13 @@ $noChange = Text::_('COM_J2COMMERCE_BATCH_NOCHANGE');
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="collapseModalLabel"><?php echo Text::_('COM_J2COMMERCE_BATCH_DISPLAY_TITLE'); ?></h5>
+                <h2 class="modal-title fs-5" id="collapseModalLabel"><?php echo Text::_('COM_J2COMMERCE_BATCH_DISPLAY_TITLE'); ?></h2>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?php echo Text::_('JCLOSE'); ?>"></button>
             </div>
             <div class="modal-body px-4 pt-4 pb-2">
                 <p class="text-muted small mb-3"><?php echo Text::_('COM_J2COMMERCE_BATCH_DISPLAY_DESC'); ?></p>
 
-                <h6 class="fw-bold mb-2"><?php echo Text::_('COM_J2COMMERCE_BATCH_DISPLAY_CORE_HEADING'); ?></h6>
+                <h3 class="fw-bold mb-2 fs-6"><?php echo Text::_('COM_J2COMMERCE_BATCH_DISPLAY_CORE_HEADING'); ?></h3>
                 <div class="row">
                     <?php foreach ($coreAreas as $areaKey => $labelKey) : ?>
                         <?php $safeKey = htmlspecialchars($areaKey, ENT_QUOTES, 'UTF-8'); ?>
@@ -65,7 +65,7 @@ $noChange = Text::_('COM_J2COMMERCE_BATCH_NOCHANGE');
 
                 <?php if (!empty($pluginAreas)) : ?>
                     <hr class="my-3">
-                    <h6 class="fw-bold mb-2"><?php echo Text::_('COM_J2COMMERCE_BATCH_DISPLAY_PLUGIN_HEADING'); ?></h6>
+                    <h3 class="fw-bold mb-2 fs-6"><?php echo Text::_('COM_J2COMMERCE_BATCH_DISPLAY_PLUGIN_HEADING'); ?></h3>
                     <div class="row">
                         <?php foreach ($pluginAreas as $area) : ?>
                             <?php

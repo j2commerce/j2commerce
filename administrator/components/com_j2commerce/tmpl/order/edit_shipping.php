@@ -19,7 +19,7 @@ $orderInfo = $item->orderinfo ?? null;
 ?>
 <div class="row">
     <div class="col-lg-8">
-        <h4><?php echo Text::_('COM_J2COMMERCE_TAB_SHIPPING_ADDRESS'); ?></h4>
+        <h2 class="fs-4"><?php echo Text::_('COM_J2COMMERCE_TAB_SHIPPING_ADDRESS'); ?></h2>
 
         <?php if ($orderInfo && $item->is_shippable) : ?>
         <div class="card">

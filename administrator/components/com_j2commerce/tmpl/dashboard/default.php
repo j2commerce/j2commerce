@@ -79,7 +79,7 @@ $doc->getWebAssetManager()->registerAndUseScript(
     <div class="card mb-4">
         <div class="card-body text-center py-5">
             <span class="fa-solid fa-box-open fa-3x text-muted d-block mb-3" aria-hidden="true"></span>
-            <h5><?php echo Text::_('COM_J2COMMERCE_DASHBOARD_EMPTY_STORE_TITLE'); ?></h5>
+            <h2 class="fs-5"><?php echo Text::_('COM_J2COMMERCE_DASHBOARD_EMPTY_STORE_TITLE'); ?></h2>
             <p class="text-muted"><?php echo Text::_('COM_J2COMMERCE_DASHBOARD_EMPTY_STORE_DESC'); ?></p>
             <button type="button" class="btn btn-primary" id="j2c-load-sampledata">
                 <span class="fa-solid fa-database me-1" aria-hidden="true"></span>

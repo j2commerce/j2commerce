@@ -25,7 +25,7 @@ $currencyCode = $item->currency_code ?? '';
 <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeAdminOrderItems', array($item))->getArgument('html', ''); ?>
 <div class="order-items-card card mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <h4 class="card-title mb-0"><?php echo Text::_('COM_J2COMMERCE_ORDER_ITEMS'); ?></h4>
+        <h2 class="card-title mb-0 fs-4"><?php echo Text::_('COM_J2COMMERCE_ORDER_ITEMS'); ?></h2>
     </div>
     <div class="card-body">
         <?php if (!empty($orderItems)) : ?>
@@ -49,7 +49,7 @@ $currencyCode = $item->currency_code ?? '';
                                                 </div>
                                             <?php endif; ?>
                                             <div class="cart-product-info">
-                                                <h5 class="cart-product-name mb-1"><?php echo $this->escape($orderItem->orderitem_name); ?></h5>
+                                                <h3 class="cart-product-name mb-1 fs-5"><?php echo $this->escape($orderItem->orderitem_name); ?></h3>
                                                 <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterDisplayLineItemTitle', array($orderItem, $item, $this->params))->getArgument('html', ''); ?>
                                                 <div class="small d-flex align-items-center">
                                                     <div class="item-option item-option-name"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_SKU');?>:</div>

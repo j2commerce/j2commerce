@@ -136,7 +136,7 @@ $csrfToken  = Session::getFormToken();
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="variableOptionValuesModalLabel"><?php echo Text::_('COM_J2COMMERCE_OPTION_SET_VALUES'); ?></h5>
+                <h2 class="modal-title fs-5" id="variableOptionValuesModalLabel"><?php echo Text::_('COM_J2COMMERCE_OPTION_SET_VALUES'); ?></h2>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?php echo Text::_('JCLOSE'); ?>"></button>
             </div>
             <div class="modal-body" id="j2commerceVariableOptionValuesModalBody" style="max-height: 70vh; overflow-y: auto;">

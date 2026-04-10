@@ -45,10 +45,10 @@ $tmpl    = Factory::getApplication()->input->get('tmpl', '', 'cmd') === 'compone
                     <?php echo $this->form->renderField('published'); ?>
 
                     <div class="alert alert-info">
-                        <h6><?php echo Text::_('COM_J2COMMERCE_OPTION_HELP_TITLE'); ?></h6>
+                        <h2 class="fs-6"><?php echo Text::_('COM_J2COMMERCE_OPTION_HELP_TITLE'); ?></h2>
                         <p class="small"><?php echo Text::_('COM_J2COMMERCE_OPTION_HELP_TEXT'); ?></p>
                         <hr>
-                        <h6><?php echo Text::_('COM_J2COMMERCE_OPTION_UNIQUE_NAME_HELP'); ?></h6>
+                        <h3 class="fs-6"><?php echo Text::_('COM_J2COMMERCE_OPTION_UNIQUE_NAME_HELP'); ?></h3>
                         <p class="small"><?php echo Text::_('COM_J2COMMERCE_OPTION_UNIQUE_NAME_HELP_TEXT'); ?></p>
                     </div>
                 </fieldset>
@@ -58,7 +58,7 @@ $tmpl    = Factory::getApplication()->input->get('tmpl', '', 'cmd') === 'compone
                         <legend><?php echo Text::_('COM_J2COMMERCE_OPTION_CONFIGURATION'); ?></legend>
                         <?php echo $this->form->renderField('option_params'); ?>
                         <div class="alert alert-info">
-                            <h5><?php echo Text::_('COM_J2COMMERCE_OPTION_PARAMS_EXAMPLES'); ?></h5>
+                            <h2 class="fs-5"><?php echo Text::_('COM_J2COMMERCE_OPTION_PARAMS_EXAMPLES'); ?></h2>
                             <code>{"placeholder": "Enter text here", "maxlength": 100, "required": true}</code>
                         </div>
                     </fieldset>

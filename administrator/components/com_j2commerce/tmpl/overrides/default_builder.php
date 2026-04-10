@@ -124,7 +124,7 @@ $token = Session::getFormToken();
                         <div class="d-flex align-items-center justify-content-center h-100 align-self-stretch" id="builder-placeholder">
                             <div class="text-center builder-placeholder-content">
                                 <span class="fa-solid fa-wand-magic-sparkles text-warning fa-3x mb-3" aria-hidden="true"></span>
-                                <h4 class="mt-3"><?php echo Text::_('COM_J2COMMERCE_BUILDER_PLACEHOLDER_TITLE'); ?></h4>
+                                <h2 class="mt-3 fs-4"><?php echo Text::_('COM_J2COMMERCE_BUILDER_PLACEHOLDER_TITLE'); ?></h2>
                                 <p class="text-muted"><?php echo Text::_('COM_J2COMMERCE_BUILDER_PLACEHOLDER_TEXT'); ?></p>
                             </div>
                         </div>
@@ -140,9 +140,9 @@ $token = Session::getFormToken();
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="builderTemplatesModalLabel">
+                <h2 class="modal-title fs-5" id="builderTemplatesModalLabel">
                     <span class="fa-solid fa-layer-group me-2 text-warning" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_BUILDER_TEMPLATES_TITLE'); ?>
-                </h5>
+                </h2>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">

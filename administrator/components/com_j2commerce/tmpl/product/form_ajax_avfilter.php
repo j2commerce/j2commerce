@@ -52,7 +52,7 @@ $productFilters = (new ProductfiltersModel)->getFiltersByProduct($item->j2commer
         <?php if(isset($productFilters) && count($productFilters)): ?>
             <?php foreach($productFilters as $group_id=>$filters):?>
                 <tr>
-                    <td colspan="2"><h4 class="mb-0"><?php echo Text::_($this->escape($filters['group_name'])); ?></h4></td>
+                    <td colspan="2"><h2 class="mb-0 fs-4"><?php echo Text::_($this->escape($filters['group_name'])); ?></h2></td>
                 </tr>
                 <?php foreach($filters['filters'] as $filter):
                     ?>

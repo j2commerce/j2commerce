@@ -19,7 +19,7 @@ $orderShipping = $item->ordershipping ?? null;
 ?>
 <div class="row">
     <div class="col-lg-6">
-        <h4><?php echo Text::_('COM_J2COMMERCE_ENTER_SHIPPING_DETAILS'); ?></h4>
+        <h2 class="fs-4"><?php echo Text::_('COM_J2COMMERCE_ENTER_SHIPPING_DETAILS'); ?></h2>
         <div class="mb-3">
             <label for="ordershipping_name" class="form-label"><?php echo Text::_('COM_J2COMMERCE_FIELD_SHIPPING_METHOD'); ?></label>
             <input type="text" class="form-control" name="jform[ordershipping_name]" id="ordershipping_name"
@@ -41,7 +41,7 @@ $orderShipping = $item->ordershipping ?? null;
         </div>
     </div>
     <div class="col-lg-6">
-        <h4><?php echo Text::_('COM_J2COMMERCE_SELECT_PAYMENT_METHOD'); ?></h4>
+        <h2 class="fs-4"><?php echo Text::_('COM_J2COMMERCE_SELECT_PAYMENT_METHOD'); ?></h2>
         <div class="mb-3">
             <div class="card">
                 <div class="card-body">
