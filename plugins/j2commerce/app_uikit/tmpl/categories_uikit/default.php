@@ -77,9 +77,9 @@ $childWidth = match ($category_columns) {
                                 </div>
                                 <?php endif; ?>
                                 <div class="uk-card-body">
-                                    <h3 class="uk-card-title uk-text-truncate">
+                                    <h2 class="uk-card-title uk-text-truncate uk-h3">
                                         <a href="<?php echo $categoryUrl; ?>" class="uk-link-reset"><?php echo $this->escape($category->title); ?></a>
-                                    </h3>
+                                    </h2>
                                     <?php if ($params->get('show_product_count', 1)) : ?>
                                     <span class="uk-badge">
                                         <?php echo Text::plural('COM_J2COMMERCE_N_PRODUCTS', $category->product_count); ?>
@@ -143,9 +143,9 @@ $childWidth = match ($category_columns) {
                                 </div>
                                 <?php endif; ?>
                                 <div class="uk-card-body">
-                                    <h3 class="uk-card-title uk-text-truncate">
+                                    <h2 class="uk-card-title uk-text-truncate uk-h3">
                                         <a href="<?php echo $categoryUrl; ?>" class="uk-link-reset"><?php echo $this->escape($category->title); ?></a>
-                                    </h3>
+                                    </h2>
                                     <?php if ($params->get('show_product_count', 1)) : ?>
                                     <span class="uk-badge">
                                         <?php echo Text::plural('COM_J2COMMERCE_N_PRODUCTS', $category->product_count); ?>
@@ -192,9 +192,9 @@ $childWidth = match ($category_columns) {
                                 </div>
                                 <?php endif; ?>
                                 <div class="uk-card-body">
-                                    <h3 class="uk-card-title uk-text-truncate">
+                                    <h2 class="uk-card-title uk-text-truncate uk-h3">
                                         <a href="<?php echo $categoryUrl; ?>" class="uk-link-reset"><?php echo $this->escape($category->title); ?></a>
-                                    </h3>
+                                    </h2>
                                     <?php if ($params->get('show_product_count', 1)) : ?>
                                     <span class="uk-badge">
                                         <?php echo Text::plural('COM_J2COMMERCE_N_PRODUCTS', $category->product_count); ?>

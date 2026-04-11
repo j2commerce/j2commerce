@@ -80,10 +80,10 @@ $colsMd = match ($category_columns) {
                                         </div>
                                     </a>
                                     <?php endif; ?>
-                                    <h3 class="j2commerce-category-title d-flex w-100 pb-2 mb-1">
+                                    <h2 class="j2commerce-category-title d-flex w-100 pb-2 mb-1 fs-3">
                                         <a class="animate-underline animate-target d-inline text-truncate"
                                            href="<?php echo $categoryUrl; ?>"><?php echo $this->escape($category->title); ?></a>
-                                    </h3>
+                                    </h2>
                                     <?php if ($params->get('show_product_count', 1)) : ?>
                                     <span class="badge bg-secondary">
                                         <?php echo Text::plural('COM_J2COMMERCE_N_PRODUCTS', $category->product_count); ?>
@@ -148,10 +148,10 @@ $colsMd = match ($category_columns) {
                                         </div>
                                     </a>
                                     <?php endif; ?>
-                                    <h3 class="j2commerce-category-title d-flex w-100 pb-2 mb-1">
+                                    <h2 class="j2commerce-category-title d-flex w-100 pb-2 mb-1 fs-3">
                                         <a class="animate-underline animate-target d-inline text-truncate"
                                            href="<?php echo $categoryUrl; ?>"><?php echo $this->escape($category->title); ?></a>
-                                    </h3>
+                                    </h2>
                                     <?php if ($params->get('show_product_count', 1)) : ?>
                                     <span class="badge bg-secondary">
                                         <?php echo Text::plural('COM_J2COMMERCE_N_PRODUCTS', $category->product_count); ?>
@@ -200,10 +200,10 @@ $colsMd = match ($category_columns) {
                                         </div>
                                     </a>
                                     <?php endif; ?>
-                                    <h3 class="j2commerce-category-title d-flex w-100 pb-2 mb-1">
+                                    <h2 class="j2commerce-category-title d-flex w-100 pb-2 mb-1 fs-3">
                                         <a class="animate-underline animate-target d-inline text-truncate"
                                            href="<?php echo $categoryUrl; ?>"><?php echo $this->escape($category->title); ?></a>
-                                    </h3>
+                                    </h2>
                                     <?php if ($params->get('show_product_count', 1)) : ?>
                                     <span class="badge bg-secondary">
                                         <?php echo Text::plural('COM_J2COMMERCE_N_PRODUCTS', $category->product_count); ?>
