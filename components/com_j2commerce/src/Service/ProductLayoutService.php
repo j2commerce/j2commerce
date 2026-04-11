@@ -163,6 +163,17 @@ final class ProductLayoutService
             }
         }
 
+        // Allow third-party product-type plugins to register additional layout search paths.
+        // Subscribers receive &$paths by reference plus the active $pluginElement and $layoutId,
+        // and should append any plugin-owned directories to $paths. Appended paths have the
+        // lowest search priority (can be overridden by template overrides, component layouts,
+        // and the active core subtemplate plugin's own layouts).
+        J2CommerceHelper::plugin()->event('RegisterLayoutPaths', [
+            &$paths,
+            $pluginElement,
+            $layoutId,
+        ]);
+
         if (!empty($paths)) {
             $layout->setIncludePaths($paths);
         }
