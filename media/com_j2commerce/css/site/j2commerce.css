@@ -287,6 +287,16 @@
     height: 2.75rem;
 }
 
+.j2commerce-qty-controls.j2commerce-loading {
+    opacity: .6;
+    pointer-events: none;
+}
+
+.j2commerce-qty-controls .btn {
+    padding: .25rem .5rem;
+    line-height: 1;
+}
+
 /* Count Input (quantity +/- buttons) */
 .j2commerce .count-input {
     display: inline-flex;
