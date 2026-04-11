@@ -1083,44 +1083,4 @@ class ConfigHelper
     {
         return (string) self::get('downloadid', '');
     }
-
-    // =========================================================================
-    // CHECKOUT LAYOUT SETTINGS
-    // =========================================================================
-
-    /**
-     * Get the billing address layout HTML
-     *
-     * @return  string  HTML layout
-     *
-     * @since   6.0.0
-     */
-    public static function getBillingLayout(): string
-    {
-        return (string) self::get('store_billing_layout', '');
-    }
-
-    /**
-     * Get the shipping address layout HTML
-     *
-     * @return  string  HTML layout
-     *
-     * @since   6.0.0
-     */
-    public static function getShippingLayout(): string
-    {
-        return (string) self::get('store_shipping_layout', '');
-    }
-
-    /**
-     * Get the payment section layout HTML
-     *
-     * @return  string  HTML layout
-     *
-     * @since   6.0.0
-     */
-    public static function getPaymentLayout(): string
-    {
-        return (string) self::get('store_payment_layout', '');
-    }
 }

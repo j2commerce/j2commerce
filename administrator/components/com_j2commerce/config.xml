@@ -1161,45 +1161,6 @@
                 <option value="floating">COM_J2COMMERCE_CONFIG_FIELD_STYLE_FLOATING</option>
             </field>
 
-            <field
-                name="populate_button"
-                type="Button"
-                label="COM_J2COMMERCE_CONFIG_PREPOPULATE_CHECKOUT_LAYOUT"
-                description="COM_J2COMMERCE_CONFIG_PREPOPULATE_CHECKOUT_LAYOUT_DESC"
-                onclick="Joomla.submitbutton(\'populatedata\');"
-                hiddenLabel="true"
-                class="btn btn-primary"
-            />
-
-            <field
-                name="store_billing_layout"
-                type="textarea"
-                label="COM_J2COMMERCE_CONFIG_BILLING_LAYOUT"
-                description="COM_J2COMMERCE_CONFIG_BILLING_LAYOUT_DESC"
-                rows="10"
-                filter="safehtml"
-                class="w-100"
-            />
-
-            <field
-                name="store_shipping_layout"
-                type="textarea"
-                label="COM_J2COMMERCE_CONFIG_SHIPPING_LAYOUT"
-                description="COM_J2COMMERCE_CONFIG_SHIPPING_LAYOUT_DESC"
-                rows="10"
-                filter="safehtml"
-                class="w-100"
-            />
-
-            <field
-                name="store_payment_layout"
-                type="textarea"
-                label="COM_J2COMMERCE_CONFIG_PAYMENT_LAYOUT"
-                description="COM_J2COMMERCE_CONFIG_PAYMENT_LAYOUT_DESC"
-                rows="10"
-                filter="safehtml"
-                class="w-100"
-            />
         </fieldset>
     </fieldset>
 
