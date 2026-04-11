@@ -26,7 +26,7 @@ use Joomla\CMS\Router\Route;
         <div class="col-md-4">
             <div class="card text-center">
                 <div class="card-body">
-                    <h5 class="card-title"><?php echo Text::_('COM_J2COMMERCE_DASHBOARD_PRODUCTS'); ?></h5>
+                    <h2 class="card-title fs-5"><?php echo Text::_('COM_J2COMMERCE_DASHBOARD_PRODUCTS'); ?></h2>
                     <p class="card-text">
                         <span class="badge bg-primary fs-3"><?php echo (int) $this->productsCount; ?></span>
                     </p>
@@ -40,7 +40,7 @@ use Joomla\CMS\Router\Route;
         <div class="col-md-4">
             <div class="card text-center">
                 <div class="card-body">
-                    <h5 class="card-title"><?php echo Text::_('COM_J2COMMERCE_DASHBOARD_ORDERS'); ?></h5>
+                    <h2 class="card-title fs-5"><?php echo Text::_('COM_J2COMMERCE_DASHBOARD_ORDERS'); ?></h2>
                     <p class="card-text">
                         <span class="badge bg-success fs-3"><?php echo (int) $this->ordersCount; ?></span>
                     </p>
@@ -54,7 +54,7 @@ use Joomla\CMS\Router\Route;
         <div class="col-md-4">
             <div class="card text-center">
                 <div class="card-body">
-                    <h5 class="card-title"><?php echo Text::_('COM_J2COMMERCE_DASHBOARD_CUSTOMERS'); ?></h5>
+                    <h2 class="card-title fs-5"><?php echo Text::_('COM_J2COMMERCE_DASHBOARD_CUSTOMERS'); ?></h2>
                     <p class="card-text">
                         <span class="badge bg-info fs-3"><?php echo (int) $this->customersCount; ?></span>
                     </p>
@@ -70,11 +70,11 @@ use Joomla\CMS\Router\Route;
         <div class="col-lg-12">
             <div class="card">
                 <div class="card-header">
-                    <h3><?php echo Text::_('COM_J2COMMERCE_MIGRATION_STATUS'); ?></h3>
+                    <h2><?php echo Text::_('COM_J2COMMERCE_MIGRATION_STATUS'); ?></h2>
                 </div>
                 <div class="card-body">
                     <div class="alert alert-info">
-                        <h4><?php echo Text::_('COM_J2COMMERCE_MIGRATION_WELCOME'); ?></h4>
+                        <h3><?php echo Text::_('COM_J2COMMERCE_MIGRATION_WELCOME'); ?></h3>
                         <p><?php echo Text::_('COM_J2COMMERCE_MIGRATION_DESC'); ?></p>
                         <a href="<?php echo Route::_('index.php?option=com_j2commerce&view=migration'); ?>" class="btn btn-warning">
                             <?php echo Text::_('COM_J2COMMERCE_START_MIGRATION'); ?>

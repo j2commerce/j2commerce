@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="row">
                                 <!-- General Settings -->
                                 <div class="col-md-4">
-                                    <h5><?php echo Text::_('COM_J2COMMERCE_GENERAL'); ?></h5>
+                                    <h3 class="fs-5"><?php echo Text::_('COM_J2COMMERCE_GENERAL'); ?></h3>
 
                                     <input type="hidden" name="<?php echo $prefix; ?>[j2commerce_variant_id]" value="<?php echo (int) $variantId; ?>">
 
@@ -105,7 +105,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                                 <!-- Shipping Settings -->
                                 <div class="col-md-4">
-                                    <h5><?php echo Text::_('COM_J2COMMERCE_SHIPPING'); ?></h5>
+                                    <h3 class="fs-5"><?php echo Text::_('COM_J2COMMERCE_SHIPPING'); ?></h3>
 
                                     <div class="mb-3">
                                         <label class="form-label"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_ENABLE_SHIPPING'); ?></label>
@@ -132,7 +132,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                                 <!-- Inventory Settings -->
                                 <div class="col-md-4">
-                                    <h5><?php echo Text::_('COM_J2COMMERCE_INVENTORY'); ?></h5>
+                                    <h3 class="fs-5"><?php echo Text::_('COM_J2COMMERCE_INVENTORY'); ?></h3>
 
                                     <div class="mb-3">
                                         <label class="form-label"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_MANAGE_STOCK'); ?></label>

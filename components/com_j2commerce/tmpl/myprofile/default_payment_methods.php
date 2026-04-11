@@ -24,7 +24,7 @@ $csrfToken = Session::getFormToken();
 ?>
 
 <div class="j2commerce-payment-methods" data-csrf-token="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
-    <h4 class="mb-4"><?php echo Text::_('COM_J2COMMERCE_PAYMENT_METHODS_TITLE'); ?></h4>
+    <h2 class="mb-4 fs-4"><?php echo Text::_('COM_J2COMMERCE_PAYMENT_METHODS_TITLE'); ?></h2>
 
     <?php if (empty($groupedMethods)) : ?>
         <div class="alert alert-info" role="alert">
@@ -56,13 +56,13 @@ $csrfToken = Session::getFormToken();
                                                 </div>
                                             <?php endif;?>
                                             <div>
-                                                <h6 class="mb-0"><?php echo htmlspecialchars(ucfirst($method->brand), ENT_QUOTES, 'UTF-8'); ?> <?php if($lastFour): echo Text::sprintf('COM_J2COMMERCE_PAYMENT_METHODS_ENDING_IN',$lastFour); endif;?>
+                                                <h3 class="mb-0 fs-6"><?php echo htmlspecialchars(ucfirst($method->brand), ENT_QUOTES, 'UTF-8'); ?> <?php if($lastFour): echo Text::sprintf('COM_J2COMMERCE_PAYMENT_METHODS_ENDING_IN',$lastFour); endif;?>
                                                 <?php if ($method->isDefault) : ?>
                                                     <span class="badge text-bg-info ms-2">
                                                         <?php echo Text::_('COM_J2COMMERCE_PAYMENT_METHODS_DEFAULT'); ?>
                                                     </span>
                                                 <?php endif; ?>
-                                                </h6>
+                                                </h3>
                                                 <?php if ($method->getFormattedExpiry()) : ?>
                                                     <small class="d-block">
                                                         <?php echo Text::sprintf('COM_J2COMMERCE_PAYMENT_METHODS_EXPIRES', $method->getFormattedExpiry()); ?>
