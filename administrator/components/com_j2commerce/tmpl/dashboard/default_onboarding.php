@@ -703,7 +703,7 @@ $e = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
           <div id="ob-sampledata-prompt" class="d-none">
             <div class="alert alert-info text-center mb-0">
               <p class="mb-2"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_SAMPLEDATA_PROMPT'); ?></p>
-              <button type="button" class="btn btn-outline-primary btn-sm me-2" data-action="load-sampledata">
+              <button type="button" class="btn btn-primary btn-sm me-2" data-action="load-sampledata">
                 <span class="fa-solid fa-database me-1" aria-hidden="true"></span>
                 <?php echo Text::_('COM_J2COMMERCE_ONBOARDING_SAMPLEDATA_LOAD'); ?>
               </button>
@@ -727,7 +727,7 @@ $e = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
               </a>
             </div>
             <div class="col-md-3">
-              <button type="button" class="btn btn-outline-primary w-100 shadow-none" data-action="close-onboarding">
+              <button type="button" class="btn btn-primary w-100 shadow-none" data-action="close-onboarding">
                 <span class="fa-solid fa-gauge-high me-1" aria-hidden="true"></span>
                 <?php echo Text::_('COM_J2COMMERCE_ONBOARDING_READY_DASHBOARD'); ?>
               </button>
