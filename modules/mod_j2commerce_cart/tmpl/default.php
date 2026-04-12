@@ -48,7 +48,6 @@ $ajaxUrl        = (string) ($ajaxUrl ?? '');
 $isAjax         = !empty($isAjax ?? false);
 $items          = $items ?? [];
 $order          = $order ?? null;
-$linkType       = $params->get('link_type', 'link');
 $title          = $params->get('cart_module_title', '');
 $moduleClassSfx = htmlspecialchars($params->get('moduleclass_sfx', ''), ENT_QUOTES, 'UTF-8');
 
@@ -219,38 +218,21 @@ try {
 
     <!-- Footer buttons (only when cart has items) -->
     <?php if ($productCount > 0 && ($showCheckout || $showViewCart)) : ?>
+        <?php $viewCartClass = ($showCheckout && $showViewCart) ? 'btn btn-link' : 'btn btn-success'; ?>
         <div class="j2commerce-minicart-button d-grid gap-2 mt-2">
             <?php if ($showCheckout) : ?>
                 <a class="btn btn-success"
-                   href="<?php echo htmlspecialchars($checkoutUrl, ENT_QUOTES, 'UTF-8'); ?>">
+                   href="<?php echo htmlspecialchars($checkoutUrl, ENT_QUOTES, 'UTF-8'); ?>"
+                   role="button"
+                   aria-label="<?php echo htmlspecialchars(Text::_('MOD_J2COMMERCE_CART_CHECKOUT'), ENT_QUOTES, 'UTF-8'); ?>">
                     <?php echo Text::_('MOD_J2COMMERCE_CART_CHECKOUT'); ?>
                 </a>
             <?php endif; ?>
             <?php if ($showViewCart) : ?>
-                <?php if ($linkType === 'link') : ?>
-                    <a class="j2commerce-view-cart-link text-center"
-                       href="<?php echo htmlspecialchars($cartUrl, ENT_QUOTES, 'UTF-8'); ?>">
-                        <?php echo Text::_('MOD_J2COMMERCE_CART_VIEW_CART'); ?>
-                    </a>
-                <?php else : ?>
-                    <a class="btn btn-outline-secondary"
-                       href="<?php echo htmlspecialchars($cartUrl, ENT_QUOTES, 'UTF-8'); ?>">
-                        <?php echo Text::_('MOD_J2COMMERCE_CART_VIEW_CART'); ?>
-                    </a>
-                <?php endif; ?>
-            <?php endif; ?>
-        </div>
-    <?php elseif ($productCount > 0) : ?>
-        <!-- Fallback: show View Cart if no button params configured but cart has items -->
-        <div class="j2commerce-minicart-button mt-2">
-            <?php if ($linkType === 'link') : ?>
-                <a class="j2commerce-view-cart-link"
-                   href="<?php echo htmlspecialchars($cartUrl, ENT_QUOTES, 'UTF-8'); ?>">
-                    <?php echo Text::_('MOD_J2COMMERCE_CART_VIEW_CART'); ?>
-                </a>
-            <?php else : ?>
-                <a class="btn btn-primary j2commerce-view-cart-btn"
-                   href="<?php echo htmlspecialchars($cartUrl, ENT_QUOTES, 'UTF-8'); ?>">
+                <a class="<?php echo $viewCartClass; ?>"
+                   href="<?php echo htmlspecialchars($cartUrl, ENT_QUOTES, 'UTF-8'); ?>"
+                   role="button"
+                   aria-label="<?php echo htmlspecialchars(Text::_('MOD_J2COMMERCE_CART_VIEW_CART'), ENT_QUOTES, 'UTF-8'); ?>">
                     <?php echo Text::_('MOD_J2COMMERCE_CART_VIEW_CART'); ?>
                 </a>
             <?php endif; ?>
