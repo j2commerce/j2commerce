@@ -17,11 +17,13 @@ use Joomla\CMS\Language\Text;
 /** @var \J2Commerce\Component\J2commerce\Site\View\Product\HtmlView $this */
 
 ?>
-<?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeRenderingProductPrice', [$this->product, $this->context])->getArgument('html', ''); ?>
+
 
 <?php if ($this->params->get('item_show_product_base_price', 1) || $this->params->get('item_show_product_special_price', 1)) : ?>
     <div class="j2commerce-product-price-container mb-3">
         <div class="d-flex align-items-center">
+            <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeRenderingProductPrice', [$this->product, $this->context])->getArgument('html', ''); ?>
+
             <?php if ($this->params->get('item_show_product_special_price', 1)) : ?>
                 <div class="sale-price lh-1 fs-3 fw-normal">
                     <?php if (isset($this->product->pricing->price)) {
@@ -38,6 +40,7 @@ use Joomla\CMS\Language\Text;
                     <?php echo $base_price; ?>
                 </del>
             <?php endif; ?>
+            <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterRenderingProductPrice', [$this->product, $this->context])->getArgument('html', ''); ?>
         </div>
         <?php if ($this->params->get('display_price_with_tax_info', 0)) : ?>
             <div class="tax-text d-block text-body-tertiary small mt-1">
@@ -47,6 +50,6 @@ use Joomla\CMS\Language\Text;
     </div>
 <?php endif; ?>
 
-<?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterRenderingProductPrice', [$this->product, $this->context])->getArgument('html', ''); ?>
+
 
 

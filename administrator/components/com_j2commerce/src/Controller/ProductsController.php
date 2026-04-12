@@ -15,6 +15,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use Joomla\CMS\Application\CMSApplication;
 use Joomla\CMS\Application\CMSWebApplicationInterface;
@@ -2410,7 +2411,14 @@ class ProductsController extends AdminController
                 $product->lengths = $this->getLengthsList();
 
                 // Use the layout specified by the caller (variable vs flexivariable product type)
+                // Third-party plugins can register additional layouts via onJ2CommerceGetAllowedVariantLayouts
                 $allowedLayouts = ['form_ajax_avoptions', 'form_ajax_flexivariableoptions'];
+
+                $layoutEvent    = J2CommerceHelper::plugin()->event('GetAllowedVariantLayouts', [
+                    'layouts' => $allowedLayouts,
+                ]);
+                $allowedLayouts = $layoutEvent->getArgument('layouts', $allowedLayouts);
+
                 $variantLayout  = $app->getInput()->getCmd('variant_layout', 'form_ajax_avoptions');
                 if (!\in_array($variantLayout, $allowedLayouts, true)) {
                     $variantLayout = 'form_ajax_avoptions';
@@ -2730,32 +2738,8 @@ class ProductsController extends AdminController
             $db->setQuery($query);
             $db->execute();
 
-            // Get product optionvalue IDs
-            $query = $db->getQuery(true)
-                ->select($db->quoteName('product_optionvalue_ids'))
-                ->from($db->quoteName('#__j2commerce_product_variant_optionvalues'))
-                ->where($db->quoteName('variant_id') . ' = :variantId')
-                ->bind(':variantId', $variantId, ParameterType::INTEGER);
-
-            $db->setQuery($query);
-            $productOptionvalueIds = $db->loadResult();
-
-            if (!empty($productOptionvalueIds)) {
-                // Delete product optionvalues
-                $ids = array_map('intval', explode(',', $productOptionvalueIds));
-                $ids = array_filter($ids);
-
-                if (!empty($ids)) {
-                    $query = $db->getQuery(true)
-                        ->delete($db->quoteName('#__j2commerce_product_optionvalues'))
-                        ->whereIn($db->quoteName('j2commerce_product_optionvalue_id'), $ids);
-
-                    $db->setQuery($query);
-                    $db->execute();
-                }
-            }
-
-            // Delete variant optionvalues mapping
+            // Delete variant-to-optionvalue mapping (NOT the product_optionvalues
+            // themselves — those are product-level configuration shared across variants)
             $query = $db->getQuery(true)
                 ->delete($db->quoteName('#__j2commerce_product_variant_optionvalues'))
                 ->where($db->quoteName('variant_id') . ' = :variantId')

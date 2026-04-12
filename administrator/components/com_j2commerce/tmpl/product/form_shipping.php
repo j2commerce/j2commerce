@@ -96,7 +96,7 @@ $defaultWeightClassId = empty($item->variant->weight_class_id)
                     <label id="j2commerce-product-shipping-radio-group-lbl" for="j2commerce-product-shipping-radio-group"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_ENABLE_SHIPPING');?></label>
                 </div>
                 <div class="controls">
-                    <?php echo LayoutHelper::render('joomla.form.field.radio.switcher', ['name'  => $formPrefix.'[shipping]','id'    => 'j2commerce-product-shipping-radio-group','value' => $item->variant->shipping,'options' => [(object) ['value' => 0, 'text' => Text::_('JNO')],(object) ['value' => 1, 'text' => Text::_('JYES')]]] + $switcherDefaults);?>
+                    <?php echo LayoutHelper::render('joomla.form.field.radio.switcher', ['name'  => $formPrefix.'[shipping]','id'    => 'j2commerce-product-shipping-radio-group','value' => $item->variant->shipping ?? 0,'options' => [(object) ['value' => 0, 'text' => Text::_('JNO')],(object) ['value' => 1, 'text' => Text::_('JYES')]]] + $switcherDefaults);?>
                 </div>
             </div>
 

@@ -44,7 +44,7 @@ $checkboxDefaults = ['disabled' => false, 'required' => false, 'autofocus' => fa
                     <label id="j2commerce-product-manage_stock-radio-group-lbl" for="j2commerce-product-manage_stock-radio-group"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_MANAGE_STOCK');?></label>
                 </div>
                 <div class="controls">
-                    <?php echo LayoutHelper::render('joomla.form.field.radio.switcher', ['name'  => $formPrefix.'[manage_stock]','id'    => 'j2commerce-product-manage_stock-radio-group','value' => $item->variant->manage_stock,'options' => [(object) ['value' => 0, 'text' => Text::_('JNO')],(object) ['value' => 1, 'text' => Text::_('JYES')]]] + $switcherDefaults);?>
+                    <?php echo LayoutHelper::render('joomla.form.field.radio.switcher', ['name'  => $formPrefix.'[manage_stock]','id'    => 'j2commerce-product-manage_stock-radio-group','value' => $item->variant->manage_stock ?? 0,'options' => [(object) ['value' => 0, 'text' => Text::_('JNO')],(object) ['value' => 1, 'text' => Text::_('JYES')]]] + $switcherDefaults);?>
                 </div>
             </div>
 
@@ -53,7 +53,7 @@ $checkboxDefaults = ['disabled' => false, 'required' => false, 'autofocus' => fa
                     <label id="j2commerce-product-quantity_text-group-lbl" for="j2commerce-product-quantity_text-group"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_QUANTITY');?></label>
                 </div>
                 <div class="controls">
-                    <input type="hidden" name="<?php echo $formPrefix;?>[quantity][j2commerce_productquantity_id]" class="input" value="<?php echo $item->variant->j2commerce_productquantity_id;?>">
+                    <input type="hidden" name="<?php echo $formPrefix;?>[quantity][j2commerce_productquantity_id]" class="input" value="<?php echo $item->variant->j2commerce_productquantity_id ?? 0;?>">
                     <?php echo LayoutHelper::render('joomla.form.field.text', ['name'  => $formPrefix.'[quantity][quantity]','id'    => 'j2commerce-product-quantity_text-group','value' => $item->variant->quantity ?? '','class' => 'form-control',] + $textFieldDefaults);?>
                 </div>
             </div>
@@ -63,7 +63,7 @@ $checkboxDefaults = ['disabled' => false, 'required' => false, 'autofocus' => fa
                     <label id="j2commerce-product-allow_backorder-select-group-lbl" for="j2commerce-product-allow_backorder-select-group"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_ALLOW_BACKORDERS');?></label>
                 </div>
                 <div class="controls">
-                    <?php echo LayoutHelper::render('joomla.form.field.list-fancy-select', ['name'  => $formPrefix.'[allow_backorder]','id'    => 'j2commerce-product-allow_backorder-select-group','value' => $item->variant->allow_backorder,'options' => [(object) ['value' => 0, 'text' => Text::_('COM_J2COMMERCE_NO_ALLOW')],(object) ['value' => 1, 'text' => Text::_('COM_J2COMMERCE_ALLOW')],(object) ['value' => 2, 'text' => Text::_('COM_J2COMMERCE_ALLOW_BUT_NOTIFY')]]] + $fancySelectDefaults);?>
+                    <?php echo LayoutHelper::render('joomla.form.field.list-fancy-select', ['name'  => $formPrefix.'[allow_backorder]','id'    => 'j2commerce-product-allow_backorder-select-group','value' => $item->variant->allow_backorder ?? 0,'options' => [(object) ['value' => 0, 'text' => Text::_('COM_J2COMMERCE_NO_ALLOW')],(object) ['value' => 1, 'text' => Text::_('COM_J2COMMERCE_ALLOW')],(object) ['value' => 2, 'text' => Text::_('COM_J2COMMERCE_ALLOW_BUT_NOTIFY')]]] + $fancySelectDefaults);?>
                 </div>
             </div>
 
@@ -72,7 +72,7 @@ $checkboxDefaults = ['disabled' => false, 'required' => false, 'autofocus' => fa
                     <label id="j2commerce-product-stock-status-select-group-lbl" for="j2commerce-product-stock-status-select-group"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_STOCK_STATUS');?></label>
                 </div>
                 <div class="controls">
-                    <?php echo LayoutHelper::render('joomla.form.field.list-fancy-select', ['name'  => $formPrefix.'[availability]','id'    => 'j2commerce-product-stock-status-select-group','value' => $item->variant->availability,'options' => [(object) ['value' => 0, 'text' => Text::_('COM_J2COMMERCE_STOCK_OUT_OF_STOCK')],(object) ['value' => 1, 'text' => Text::_('COM_J2COMMERCE_STOCK_IN_STOCK')]]] + $fancySelectDefaults);?>
+                    <?php echo LayoutHelper::render('joomla.form.field.list-fancy-select', ['name'  => $formPrefix.'[availability]','id'    => 'j2commerce-product-stock-status-select-group','value' => $item->variant->availability ?? 1,'options' => [(object) ['value' => 0, 'text' => Text::_('COM_J2COMMERCE_STOCK_OUT_OF_STOCK')],(object) ['value' => 1, 'text' => Text::_('COM_J2COMMERCE_STOCK_IN_STOCK')]]] + $fancySelectDefaults);?>
                 </div>
             </div>
 
@@ -88,7 +88,7 @@ $checkboxDefaults = ['disabled' => false, 'required' => false, 'autofocus' => fa
                         </div>
                         <div class="col-12">
                             <div class="qty_restriction">
-                                <?php echo LayoutHelper::render('joomla.form.field.checkbox', ['name'  => $formPrefix.'[use_store_config_notify_qty]','id'    => 'use_store_config_notify_qty','value' => $item->variant->use_store_config_notify_qty,'class' => 'storeconfig','checked' => (isset($item->variant->use_store_config_notify_qty) && $item->variant->use_store_config_notify_qty) ? 'checked' : ''] + $checkboxDefaults);?>
+                                <?php echo LayoutHelper::render('joomla.form.field.checkbox', ['name'  => $formPrefix.'[use_store_config_notify_qty]','id'    => 'use_store_config_notify_qty','value' => $item->variant->use_store_config_notify_qty ?? 0,'class' => 'storeconfig','checked' => (isset($item->variant->use_store_config_notify_qty) && $item->variant->use_store_config_notify_qty) ? 'checked' : ''] + $checkboxDefaults);?>
                                 <label for="use_store_config_notify_qty" class="lh-1 position-relative" style="top:-2px;"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_USE_STORE_CONFIGURATION'); ?></label>
                             </div>
                         </div>
@@ -101,7 +101,7 @@ $checkboxDefaults = ['disabled' => false, 'required' => false, 'autofocus' => fa
                     <label id="j2commerce-product-quantity_restriction-radio-group-lbl" for="j2commerce-product-quantity_restriction-radio-group"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_QUANTITY_RESTRICTION');?></label>
                 </div>
                 <div class="controls">
-                    <?php echo LayoutHelper::render('joomla.form.field.radio.switcher', ['name'  => $formPrefix.'[quantity_restriction]','id'    => 'j2commerce-product-quantity_restriction-radio-group','value' => $item->variant->quantity_restriction,'options' => [(object) ['value' => 0, 'text' => Text::_('JNO')],(object) ['value' => 1, 'text' => Text::_('JYES')]]] + $switcherDefaults);?>
+                    <?php echo LayoutHelper::render('joomla.form.field.radio.switcher', ['name'  => $formPrefix.'[quantity_restriction]','id'    => 'j2commerce-product-quantity_restriction-radio-group','value' => $item->variant->quantity_restriction ?? 0,'options' => [(object) ['value' => 0, 'text' => Text::_('JNO')],(object) ['value' => 1, 'text' => Text::_('JYES')]]] + $switcherDefaults);?>
                 </div>
             </div>
 
@@ -116,7 +116,7 @@ $checkboxDefaults = ['disabled' => false, 'required' => false, 'autofocus' => fa
                         </div>
                         <div class="col-12">
                             <div class="qty_restriction">
-                                <?php echo LayoutHelper::render('joomla.form.field.checkbox', ['name'  => $formPrefix.'[use_store_config_max_sale_qty]','id'    => 'use_store_config_max_sale_qty','value' => $item->variant->use_store_config_max_sale_qty,'class' => 'storeconfig','checked' => (isset($item->variant->use_store_config_max_sale_qty) && $item->variant->use_store_config_max_sale_qty) ? 'checked' : ''] + $checkboxDefaults);?>
+                                <?php echo LayoutHelper::render('joomla.form.field.checkbox', ['name'  => $formPrefix.'[use_store_config_max_sale_qty]','id'    => 'use_store_config_max_sale_qty','value' => $item->variant->use_store_config_max_sale_qty ?? 0,'class' => 'storeconfig','checked' => (isset($item->variant->use_store_config_max_sale_qty) && $item->variant->use_store_config_max_sale_qty) ? 'checked' : ''] + $checkboxDefaults);?>
                                 <label for="use_store_config_max_sale_qty" class="lh-1 position-relative" style="top:-2px;"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_USE_STORE_CONFIGURATION'); ?></label>
                             </div>
                         </div>
@@ -135,7 +135,7 @@ $checkboxDefaults = ['disabled' => false, 'required' => false, 'autofocus' => fa
                         </div>
                         <div class="col-12">
                             <div class="qty_restriction">
-                                <?php echo LayoutHelper::render('joomla.form.field.checkbox', ['name'  => $formPrefix.'[use_store_config_min_sale_qty]','id'    => 'use_store_config_min_sale_qty','value' => $item->variant->use_store_config_min_sale_qty,'class' => 'storeconfig','checked' => (isset($item->variant->use_store_config_min_sale_qty) && $item->variant->use_store_config_min_sale_qty) ? 'checked' : ''] + $checkboxDefaults);?>
+                                <?php echo LayoutHelper::render('joomla.form.field.checkbox', ['name'  => $formPrefix.'[use_store_config_min_sale_qty]','id'    => 'use_store_config_min_sale_qty','value' => $item->variant->use_store_config_min_sale_qty ?? 0,'class' => 'storeconfig','checked' => (isset($item->variant->use_store_config_min_sale_qty) && $item->variant->use_store_config_min_sale_qty) ? 'checked' : ''] + $checkboxDefaults);?>
                                 <label for="use_store_config_min_sale_qty" class="lh-1 position-relative" style="top:-2px;"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_USE_STORE_CONFIGURATION'); ?></label>
                             </div>
                         </div>
