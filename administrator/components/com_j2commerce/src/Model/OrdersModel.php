@@ -384,6 +384,7 @@ class OrdersModel extends ListModel
                     ->bind(':searchEmail', $search);
             } else {
                 $searchLike = '%' . $search . '%';
+                $searchQuoted = $db->quote($searchLike);
                 $query->where(
                     '(' .
                     $db->quoteName('a.order_id') . ' LIKE :search1 OR ' .
@@ -400,9 +401,9 @@ class OrdersModel extends ListModel
                     ' ON ' . $db->quoteName('oitem.variant_id') . ' = ' . $db->quoteName('v.j2commerce_variant_id') .
                     ' WHERE ' . $db->quoteName('oitem.order_id') . ' = ' . $db->quoteName('a.order_id') .
                     ' AND (' .
-                        $db->quoteName('oitem.orderitem_name') . ' LIKE :search9 OR ' .
-                        $db->quoteName('oitem.orderitem_sku') . ' LIKE :search10 OR ' .
-                        $db->quoteName('v.upc') . ' LIKE :search11' .
+                        $db->quoteName('oitem.orderitem_name') . ' LIKE ' . $searchQuoted . ' OR ' .
+                        $db->quoteName('oitem.orderitem_sku') . ' LIKE ' . $searchQuoted . ' OR ' .
+                        $db->quoteName('v.upc') . ' LIKE ' . $searchQuoted .
                     '))' .
                     ')'
                 )
@@ -413,10 +414,7 @@ class OrdersModel extends ListModel
                     ->bind(':search5', $searchLike)
                     ->bind(':search6', $searchLike)
                     ->bind(':search7', $searchLike)
-                    ->bind(':search8', $searchLike)
-                    ->bind(':search9', $searchLike)
-                    ->bind(':search10', $searchLike)
-                    ->bind(':search11', $searchLike);
+                    ->bind(':search8', $searchLike);
             }
         }
     }
