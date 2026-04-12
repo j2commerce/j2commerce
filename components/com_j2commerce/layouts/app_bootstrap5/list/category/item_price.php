@@ -41,9 +41,11 @@ $afterHtml = J2CommerceHelper::plugin()->eventWithHtml('AfterRenderingProductPri
 $basePrice = $pricing->base_price ?? 0;
 $salePrice = $pricing->price ?? 0;
 ?>
-<?php echo $beforeHtml; ?>
+
 
 <div class="j2commerce-product-price-container d-flex align-items-center gap-1">
+    <?php echo $beforeHtml; ?>
+
     <?php if ($showSpecialPrice && isset($pricing->price)): ?>
         <div class="sale-price lh-1 fs-5 fw-semibold">
             <?php echo $productHelper->displayPrice((float) $salePrice, $product, $params); ?>
@@ -56,6 +58,8 @@ $salePrice = $pricing->price ?? 0;
         </del>
     <?php endif; ?>
 
+    <?php echo $afterHtml; ?>
+
     <?php if ($showTaxInfo): ?>
         <div class="tax-text">
             <small class="fw-normal text-body-tertiary"><?php echo $productHelper->get_tax_text(); ?></small>
@@ -63,6 +67,6 @@ $salePrice = $pricing->price ?? 0;
     <?php endif; ?>
 </div>
 
-<?php echo $afterHtml; ?>
+
 
 

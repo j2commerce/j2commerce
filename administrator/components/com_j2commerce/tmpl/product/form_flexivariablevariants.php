@@ -255,7 +255,7 @@ $formPrefix = $displayData['form_prefix'];
                     accordion.innerHTML = data.html;
                     self.setupCheckboxHandlers();
                     initConfigToggles();
-                    document.dispatchEvent(new CustomEvent('joomla:updated'));
+                    try { document.dispatchEvent(new CustomEvent('joomla:updated')); } catch (e) { /* showon.js may throw when AJAX-injected fields reference missing controls */ }
                 }
                 if (typeof data.total !== 'undefined') {
                     self.updateVariantCount(data.total);

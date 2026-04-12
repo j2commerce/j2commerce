@@ -46,47 +46,45 @@ $csrfToken   = Session::getFormToken();
 
         <?php if ($hasOptions) : ?>
 
-            <?php if ($hasVariants) : ?>
-                <div class="d-flex justify-content-start align-items-center mb-3">
-                    <div class="form-check pt-0 me-2">
-                        <input class="form-check-input" type="checkbox" value="" id="toggleAllCheckboxes">
-                    </div>
-                    <button type="button" class="btn btn-soft-danger btn-sm me-2" id="deleteCheckedVariants"
-                            data-bs-toggle="tooltip" title="<?php echo Text::_('COM_J2COMMERCE_PRODUCT_VARIANTS_DELETE_CHECKED'); ?>"
-                            disabled>
-                        <span class="fas fa-solid fa-trash" aria-hidden="true"></span>
-                    </button>
-                    <button type="button" id="j2commerce-regenerate-variants"
-                            class="btn btn-sm btn-soft-info me-2"
-                            data-product-id="<?php echo (int) $item->j2commerce_product_id; ?>">
-                        <span class="fas fa-solid fa-recycle me-2" aria-hidden="true"></span>
-                        <?php echo Text::_('COM_J2COMMERCE_REGENERATE_VARIANTS'); ?>
-                    </button>
-                    <button type="button" id="j2commerce-delete-all-variants"
-                            class="btn btn-sm btn-soft-danger"
-                            data-product-id="<?php echo (int) $item->j2commerce_product_id; ?>">
-                        <span class="fas fa-solid fa-trash me-2" aria-hidden="true"></span>
-                        <?php echo Text::_('COM_J2COMMERCE_DELETE_ALL_VARIANTS'); ?>
-                    </button>
-                    <button type="button" id="openAll-panel" class="btn btn-soft-dark btn-sm ms-auto"
-                            onclick="setExpandAll();"
-                            data-bs-toggle="tooltip" title="<?php echo Text::_('COM_J2COMMERCE_OPEN_ALL'); ?>">
-                        <span class="fas fa-solid fa-chevron-down" aria-hidden="true"></span>
-                    </button>
-                    <button type="button" id="closeAll-panel" class="btn btn-soft-dark btn-sm ms-2"
-                            onclick="setCloseAll();"
-                            data-bs-toggle="tooltip" title="<?php echo Text::_('COM_J2COMMERCE_CLOSE_ALL'); ?>">
-                        <span class="fas fa-solid fa-chevron-up" aria-hidden="true"></span>
-                    </button>
+            <div class="<?php echo $hasVariants ? 'd-flex' : 'd-none'; ?> justify-content-start align-items-center mb-3" id="j2commerce-variant-toolbar">
+                <div class="form-check pt-0 me-2">
+                    <input class="form-check-input" type="checkbox" value="" id="toggleAllCheckboxes">
                 </div>
-            <?php else : ?>
-                <button type="button" id="j2commerce-generate-variants"
-                        class="btn btn-soft-success mb-3"
-                        data-product-id="<?php echo (int) $item->j2commerce_product_id; ?>">
-                    <span class="fas fa-solid fa-magic me-2" aria-hidden="true"></span>
-                    <?php echo Text::_('COM_J2COMMERCE_GENERATE_VARIANTS'); ?>
+                <button type="button" class="btn btn-soft-danger btn-sm me-2" id="deleteCheckedVariants"
+                        data-bs-toggle="tooltip" title="<?php echo Text::_('COM_J2COMMERCE_PRODUCT_VARIANTS_DELETE_CHECKED'); ?>"
+                        disabled>
+                    <span class="fas fa-solid fa-trash" aria-hidden="true"></span>
                 </button>
-            <?php endif; ?>
+                <button type="button" id="j2commerce-regenerate-variants"
+                        class="btn btn-sm btn-soft-info me-2"
+                        data-product-id="<?php echo (int) $item->j2commerce_product_id; ?>">
+                    <span class="fas fa-solid fa-recycle me-2" aria-hidden="true"></span>
+                    <?php echo Text::_('COM_J2COMMERCE_REGENERATE_VARIANTS'); ?>
+                </button>
+                <button type="button" id="j2commerce-delete-all-variants"
+                        class="btn btn-sm btn-soft-danger"
+                        data-product-id="<?php echo (int) $item->j2commerce_product_id; ?>">
+                    <span class="fas fa-solid fa-trash me-2" aria-hidden="true"></span>
+                    <?php echo Text::_('COM_J2COMMERCE_DELETE_ALL_VARIANTS'); ?>
+                </button>
+                <button type="button" id="openAll-panel" class="btn btn-soft-dark btn-sm ms-auto"
+                        onclick="setExpandAll();"
+                        data-bs-toggle="tooltip" title="<?php echo Text::_('COM_J2COMMERCE_OPEN_ALL'); ?>">
+                    <span class="fas fa-solid fa-chevron-down" aria-hidden="true"></span>
+                </button>
+                <button type="button" id="closeAll-panel" class="btn btn-soft-dark btn-sm ms-2"
+                        onclick="setCloseAll();"
+                        data-bs-toggle="tooltip" title="<?php echo Text::_('COM_J2COMMERCE_CLOSE_ALL'); ?>">
+                    <span class="fas fa-solid fa-chevron-up" aria-hidden="true"></span>
+                </button>
+            </div>
+            <button type="button" id="j2commerce-generate-variants"
+                    class="btn btn-soft-success mb-5"
+                    data-product-id="<?php echo (int) $item->j2commerce_product_id; ?>"
+                    style="<?php echo $hasVariants ? 'display:none' : ''; ?>">
+                <span class="fas fa-solid fa-magic me-2" aria-hidden="true"></span>
+                <?php echo Text::_('COM_J2COMMERCE_GENERATE_VARIANTS'); ?>
+            </button>
 
         <?php endif; ?>
 
@@ -277,6 +275,9 @@ $csrfToken   = Session::getFormToken();
                     variantItem.style.transition = 'opacity 0.3s ease-out';
                     variantItem.style.opacity = '0';
                     setTimeout(function() {
+                        if (typeof J2CommerceVariableVariants !== 'undefined') {
+                            J2CommerceVariableVariants.cleanupVariantSyncInputs(variantId);
+                        }
                         variantItem.remove();
 
                         if (typeof result.total !== 'undefined' && typeof J2CommerceVariableVariants !== 'undefined') {
@@ -355,15 +356,17 @@ $csrfToken   = Session::getFormToken();
         },
 
         updateToolbarVisibility: function (total) {
-            var toolbar = document.querySelector('#j2commerce-delete-all-variants');
-            if (toolbar) {
-                toolbar.style.display = total > 0 ? '' : 'none';
+            var toolbarWrapper = document.getElementById('j2commerce-variant-toolbar');
+            if (toolbarWrapper) {
+                if (total > 0) {
+                    toolbarWrapper.classList.remove('d-none');
+                    toolbarWrapper.classList.add('d-flex');
+                } else {
+                    toolbarWrapper.classList.remove('d-flex');
+                    toolbarWrapper.classList.add('d-none');
+                }
             }
-            var regenBtn = document.querySelector('#j2commerce-regenerate-variants');
-            if (regenBtn) {
-                regenBtn.style.display = total > 0 ? '' : 'none';
-            }
-            var genBtn = document.querySelector('#j2commerce-generate-variants');
+            var genBtn = document.getElementById('j2commerce-generate-variants');
             if (genBtn) {
                 genBtn.style.display = total === 0 ? '' : 'none';
             }
@@ -443,7 +446,7 @@ $csrfToken   = Session::getFormToken();
                         accordion.innerHTML = data.html;
                         self.setupCheckboxHandlers();
                         initVariantItemHandlers();
-                        document.dispatchEvent(new CustomEvent('joomla:updated'));
+                        try { document.dispatchEvent(new CustomEvent('joomla:updated')); } catch (e) { /* showon.js may throw when AJAX-injected fields reference missing controls */ }
                     }
                     if (typeof data.total !== 'undefined') {
                         self.updateVariantCount(data.total);
@@ -479,12 +482,13 @@ $csrfToken   = Session::getFormToken();
                         self.loadVariantList(0);
                     } else {
                         self.showMessage(data.message || '<?php echo Text::_('COM_J2COMMERCE_ERROR_GENERATING_VARIANTS'); ?>', 'error');
-                        self.setButtonLoading(btn, false);
                     }
                 })
                 .catch(function (error) {
                     console.error('Error generating variants:', error);
                     self.showMessage('<?php echo Text::_('COM_J2COMMERCE_ERROR_GENERATING_VARIANTS'); ?>', 'error');
+                })
+                .finally(function () {
                     self.setButtonLoading(btn, false);
                 });
         },
@@ -543,6 +547,7 @@ $csrfToken   = Session::getFormToken();
                 .then(function (response) { return response.json(); })
                 .then(function (data) {
                     if (data.success) {
+                        self.cleanupAllVariantSyncInputs();
                         var accordion = document.getElementById('accordion');
                         if (accordion) {
                             accordion.innerHTML = '<div class="alert alert-info"><?php echo Text::_('COM_J2COMMERCE_NO_VARIANTS'); ?></div>';
@@ -648,6 +653,28 @@ $csrfToken   = Session::getFormToken();
             if (deleteBtn) {
                 deleteBtn.disabled = !anyChecked;
             }
+        },
+
+        cleanupVariantSyncInputs: function(variantId) {
+            var form = document.querySelector('form[name="adminForm"]');
+            if (!form) return;
+            var prefix = this.config.formPrefix + '[variable][' + variantId + ']';
+            form.querySelectorAll('.uppymedia-sync-input').forEach(function(input) {
+                if (input.name && input.name.indexOf(prefix) === 0) {
+                    input.remove();
+                }
+            });
+        },
+
+        cleanupAllVariantSyncInputs: function() {
+            var form = document.querySelector('form[name="adminForm"]');
+            if (!form) return;
+            var prefix = this.config.formPrefix + '[variable]';
+            form.querySelectorAll('.uppymedia-sync-input').forEach(function(input) {
+                if (input.name && input.name.indexOf(prefix) === 0) {
+                    input.remove();
+                }
+            });
         },
 
         init: function () {
