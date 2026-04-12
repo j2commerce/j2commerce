@@ -383,7 +383,7 @@ class OrdersModel extends ListModel
                 $query->where($db->quoteName('a.user_email') . ' = :searchEmail')
                     ->bind(':searchEmail', $search);
             } else {
-                $searchLike = '%' . $search . '%';
+                $searchLike   = '%' . $search . '%';
                 $searchQuoted = $db->quote($searchLike);
                 $query->where(
                     '(' .
