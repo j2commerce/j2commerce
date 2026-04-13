@@ -73,6 +73,7 @@
             <folder>services</folder>
             <folder>sql</folder>
             <folder>src</folder>
+            <folder>stubs</folder>
             <folder>tmpl</folder>
         </files>
 
