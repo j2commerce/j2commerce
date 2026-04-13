@@ -74,8 +74,15 @@ class CheckoutController extends BaseController
 
     protected function jsonResponse(array $json): void
     {
-        header('Content-Type: application/json; charset=utf-8');
-        header('Cache-Control: no-store, no-cache, must-revalidate');
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
+        if (!headers_sent()) {
+            header('Content-Type: application/json; charset=utf-8');
+            header('Cache-Control: no-store, no-cache, must-revalidate');
+        }
+
         echo json_encode($json);
         $this->app->close();
     }
