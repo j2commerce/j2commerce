@@ -42,41 +42,41 @@ final class J2commerce extends ActionLogPlugin implements SubscriberInterface
 
     private const ADMIN_CONTEXT_MAP = [
         // Products
-        'com_j2commerce.product'         => ['log_admin_products', 'PRODUCT'],
-        'com_j2commerce.productprice'    => ['log_admin_products', 'PRODUCT_PRICE'],
-        'com_j2commerce.productoption'   => ['log_admin_products', 'PRODUCT_OPTION'],
+        'com_j2commerce.product'       => ['log_admin_products', 'PRODUCT'],
+        'com_j2commerce.productprice'  => ['log_admin_products', 'PRODUCT_PRICE'],
+        'com_j2commerce.productoption' => ['log_admin_products', 'PRODUCT_OPTION'],
         // Orders
-        'com_j2commerce.order'           => ['log_admin_orders', 'ORDER'],
-        'com_j2commerce.orderitem'       => ['log_admin_orders', 'ORDER_ITEM'],
+        'com_j2commerce.order'     => ['log_admin_orders', 'ORDER'],
+        'com_j2commerce.orderitem' => ['log_admin_orders', 'ORDER_ITEM'],
         // Coupons & Vouchers
-        'com_j2commerce.coupon'          => ['log_admin_coupons', 'COUPON'],
-        'com_j2commerce.voucher'         => ['log_admin_coupons', 'VOUCHER'],
+        'com_j2commerce.coupon'  => ['log_admin_coupons', 'COUPON'],
+        'com_j2commerce.voucher' => ['log_admin_coupons', 'VOUCHER'],
         // Tax
-        'com_j2commerce.taxprofile'      => ['log_admin_tax', 'TAX_PROFILE'],
-        'com_j2commerce.taxrate'         => ['log_admin_tax', 'TAX_RATE'],
-        'com_j2commerce.taxrule'         => ['log_admin_tax', 'TAX_RULE'],
-        'com_j2commerce.geozone'         => ['log_admin_tax', 'GEO_ZONE'],
+        'com_j2commerce.taxprofile' => ['log_admin_tax', 'TAX_PROFILE'],
+        'com_j2commerce.taxrate'    => ['log_admin_tax', 'TAX_RATE'],
+        'com_j2commerce.taxrule'    => ['log_admin_tax', 'TAX_RULE'],
+        'com_j2commerce.geozone'    => ['log_admin_tax', 'GEO_ZONE'],
         // Shipping
-        'com_j2commerce.shippingmethod'  => ['log_admin_shipping', 'SHIPPING_METHOD'],
+        'com_j2commerce.shippingmethod' => ['log_admin_shipping', 'SHIPPING_METHOD'],
         // Payment
-        'com_j2commerce.paymentmethod'   => ['log_admin_payment', 'PAYMENT_METHOD'],
+        'com_j2commerce.paymentmethod' => ['log_admin_payment', 'PAYMENT_METHOD'],
         // Customers
-        'com_j2commerce.customer'        => ['log_admin_customers', 'CUSTOMER'],
+        'com_j2commerce.customer' => ['log_admin_customers', 'CUSTOMER'],
         // Configuration
         'com_j2commerce.currency'        => ['log_admin_configuration', 'CURRENCY'],
         'com_j2commerce.emailtemplate'   => ['log_admin_configuration', 'EMAIL_TEMPLATE'],
         'com_j2commerce.invoicetemplate' => ['log_admin_configuration', 'INVOICE_TEMPLATE'],
         'com_j2commerce.orderstatus'     => ['log_admin_configuration', 'ORDER_STATUS'],
         // Catalog
-        'com_j2commerce.option'          => ['log_admin_catalog', 'OPTION'],
-        'com_j2commerce.filtergroup'     => ['log_admin_catalog', 'FILTER_GROUP'],
-        'com_j2commerce.manufacturer'    => ['log_admin_catalog', 'MANUFACTURER'],
-        'com_j2commerce.length'          => ['log_admin_catalog', 'LENGTH_UNIT'],
-        'com_j2commerce.weight'          => ['log_admin_catalog', 'WEIGHT_UNIT'],
-        'com_j2commerce.country'         => ['log_admin_catalog', 'COUNTRY'],
-        'com_j2commerce.zone'            => ['log_admin_catalog', 'ZONE'],
-        'com_j2commerce.customfield'     => ['log_admin_catalog', 'CUSTOM_FIELD'],
-        'com_j2commerce.vendor'          => ['log_admin_catalog', 'VENDOR'],
+        'com_j2commerce.option'       => ['log_admin_catalog', 'OPTION'],
+        'com_j2commerce.filtergroup'  => ['log_admin_catalog', 'FILTER_GROUP'],
+        'com_j2commerce.manufacturer' => ['log_admin_catalog', 'MANUFACTURER'],
+        'com_j2commerce.length'       => ['log_admin_catalog', 'LENGTH_UNIT'],
+        'com_j2commerce.weight'       => ['log_admin_catalog', 'WEIGHT_UNIT'],
+        'com_j2commerce.country'      => ['log_admin_catalog', 'COUNTRY'],
+        'com_j2commerce.zone'         => ['log_admin_catalog', 'ZONE'],
+        'com_j2commerce.customfield'  => ['log_admin_catalog', 'CUSTOM_FIELD'],
+        'com_j2commerce.vendor'       => ['log_admin_catalog', 'VENDOR'],
     ];
 
     private static bool $paymentSectionLogged = false;
@@ -380,10 +380,10 @@ final class J2commerce extends ActionLogPlugin implements SubscriberInterface
             return;
         }
 
-        $item  = $event->getArgument('subject', new \stdClass());
-        $isNew = (bool) $event->getArgument('isNew', false);
-        $title = $this->getAdminItemTitle($item);
-        $id    = $this->getAdminItemId($item);
+        $item   = $event->getArgument('subject', new \stdClass());
+        $isNew  = (bool) $event->getArgument('isNew', false);
+        $title  = $this->getAdminItemTitle($item);
+        $id     = $this->getAdminItemId($item);
         $entity = substr($context, strrpos($context, '.') + 1);
 
         $langKey = $isNew
