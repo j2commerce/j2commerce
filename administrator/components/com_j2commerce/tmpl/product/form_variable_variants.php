@@ -313,6 +313,7 @@ $csrfToken   = Session::getFormToken();
     var J2CommerceVariableVariants = {
         config: {
             totalVariants: <?php echo $item->variant_pagination->total ?? 0; ?>,
+            currentPage: 1,
             limit: <?php echo (int) $limit; ?>,
             productId: <?php echo (int) $item->j2commerce_product_id; ?>,
             formPrefix: '<?php echo $formPrefix; ?>',
@@ -347,7 +348,11 @@ $csrfToken   = Session::getFormToken();
 
         updateVariantCount: function (total) {
             this.config.totalVariants = total;
-            var countDisplay = document.querySelector('.pagination__wrapper .text-end');
+            var numPages = Math.max(1, Math.ceil(total / this.config.limit));
+            if (this.config.currentPage > numPages) {
+                this.config.currentPage = numPages;
+            }
+            var countDisplay = document.querySelector('.j2commerce-variant-pagination .text-end');
             if (countDisplay) {
                 countDisplay.textContent = total + ' <?php echo Text::_('COM_J2COMMERCE_PRODUCT_TAB_VARIANTS'); ?>';
             }
@@ -376,20 +381,20 @@ $csrfToken   = Session::getFormToken();
             var accordion = document.getElementById('accordion');
             if (!accordion) return;
 
-            var paginationWrapper = document.querySelector('.pagination__wrapper');
+            var paginationWrapper = accordion.parentNode.querySelector('.j2commerce-variant-pagination');
             if (!paginationWrapper) {
                 paginationWrapper = document.createElement('nav');
-                paginationWrapper.className = 'pagination__wrapper';
+                paginationWrapper.className = 'pagination__wrapper j2commerce-variant-pagination';
                 paginationWrapper.setAttribute('aria-label', '<?php echo Text::_('JLIB_HTML_PAGINATION'); ?>');
                 paginationWrapper.innerHTML = '<div class="text-end">' + this.config.totalVariants + ' <?php echo Text::_('COM_J2COMMERCE_PRODUCT_TAB_VARIANTS'); ?></div>'
-                    + '<div id="nav" class="text-center mt-0 mx-0"><ul class="pagination pagination-toolbar pagination-list text-center mt-0 mx-0"></ul></div>';
+                    + '<div class="j2commerce-variant-nav text-center mt-0 mx-0"><ul class="pagination pagination-toolbar pagination-list text-center mt-0 mx-0"></ul></div>';
                 accordion.parentNode.insertBefore(paginationWrapper, accordion.nextSibling);
             }
             this.rebuildPagination();
         },
 
         rebuildPagination: function () {
-            var paginationList = document.querySelector('#nav .pagination-list');
+            var paginationList = document.querySelector('.j2commerce-variant-pagination .pagination-list');
             if (!paginationList) return;
 
             paginationList.innerHTML = '';
@@ -398,26 +403,23 @@ $csrfToken   = Session::getFormToken();
 
             var self = this;
             for (var i = 0; i < numPages; i++) {
+                var pageNum   = i + 1;
                 var limitstart = i * this.config.limit;
-                var listItem = document.createElement('li');
-                listItem.className = 'page-item' + (i === 0 ? ' active' : '');
+                var listItem  = document.createElement('li');
+                listItem.className = 'page-item' + (pageNum === this.config.currentPage ? ' active' : '');
 
                 var link = document.createElement('a');
                 link.className = 'page-link';
                 link.href = 'javascript:void(0);';
                 link.setAttribute('data-limitstart', limitstart);
                 link.setAttribute('data-page', i);
-                link.textContent = i + 1;
-                link.onclick = (function (ls, li) {
+                link.textContent = pageNum;
+                link.onclick = (function (ls) {
                     return function (e) {
                         e.preventDefault();
                         self.loadVariantList(ls);
-                        document.querySelectorAll('#nav .pagination-list li').forEach(function (item) {
-                            item.classList.remove('active');
-                        });
-                        li.classList.add('active');
                     };
-                })(limitstart, listItem);
+                })(limitstart);
 
                 listItem.appendChild(link);
                 paginationList.appendChild(listItem);
@@ -428,6 +430,8 @@ $csrfToken   = Session::getFormToken();
             limitstart = limitstart || 0;
             var accordion = document.getElementById('accordion');
             if (!accordion) return;
+
+            this.config.currentPage = Math.floor(limitstart / this.config.limit) + 1;
 
             var self = this;
             var formData = new FormData();
