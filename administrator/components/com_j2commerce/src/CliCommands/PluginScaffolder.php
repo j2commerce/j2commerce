@@ -58,7 +58,9 @@ class PluginScaffolder
     {
         $name        = $this->name;
         $className   = $this->toPascalCase($name);
-        $displayName = $this->toDisplayName($name);
+        $displayName = !empty($this->options['display_name']) && \is_string($this->options['display_name'])
+            ? $this->options['display_name']
+            : $this->toDisplayName($name);
         $element     = $this->type . '_' . $name;
         $namespace   = 'J2Commerce\\Plugin\\J2Commerce\\' . ucfirst($this->type) . $className;
 
@@ -76,8 +78,11 @@ class PluginScaffolder
             'month'        => date('F'),
         ]);
 
-        // Set conditional flags
+        // Set conditional flags (skip non-boolean keys already handled above)
         foreach ($this->options as $key => $value) {
+            if ($key === 'display_name') {
+                continue;
+            }
             $this->processor->setReplacement($key, $value ? '1' : '');
         }
     }
