@@ -299,7 +299,7 @@ foreach ($variantList as $variant) :
                                     <div class="alert alert-warning d-flex align-items-center" role="alert">
                                         <span class="fa-solid fa-exclamation-triangle flex-shrink-0 me-2" aria-hidden="true"></span>
                                         <div>
-                                            <?php echo Text::sprintf('COM_J2COMMERCE_PRODUCT_INVENTORY_WARNING', Route::_('index.php?option=com_j2commerce&view=configuration')); ?>
+                                            <?php echo Text::sprintf('COM_J2COMMERCE_PRODUCT_INVENTORY_WARNING', Route::_('index.php?option=com_config&view=component&component=com_j2commerce')); ?>
                                         </div>
                                     </div>
                                 <?php endif; ?>
