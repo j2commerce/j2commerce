@@ -1,10 +1,13 @@
 <?php
 /**
  * @package     J2Commerce
- * @subpackage  Layout
+ * @subpackage  com_j2commerce
  *
  * Layout variables:
  * @var array $displayData Array containing menu items and active page
+ *
+ * @copyright   (C)2024-2026 J2Commerce, LLC <https://www.j2commerce.com>
+ * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
 defined('_JEXEC') or die;
