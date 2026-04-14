@@ -8,7 +8,7 @@
     <authorEmail>support@j2commerce.com</authorEmail>
     <authorUrl>https://www.j2commerce.com</authorUrl>
     <copyright>(C)2024-2026 J2Commerce, LLC. All rights reserved.</copyright>
-    <license>GNU General Public License version 3 or later</license>
+    <license>GNU General Public License version 2 or later</license>
     <description>LIB_J2COMMERCE_DESCRIPTION</description>
 	<namespace path="src">J2Commerce\Library\J2Commerce</namespace>
     <scriptfile>script.php</scriptfile>
