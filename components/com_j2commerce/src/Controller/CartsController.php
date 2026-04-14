@@ -22,6 +22,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\CartModel;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Helper\ModuleHelper;
 use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Router\Route;
@@ -775,7 +776,6 @@ class CartsController extends BaseController
         $this->startAjaxBuffer();
 
         $db       = Factory::getContainer()->get('DatabaseDriver');
-        $document = $this->app->getDocument();
         $language = $this->app->getLanguage()->getTag();
 
         $query = $db->getQuery(true);
@@ -800,15 +800,14 @@ class CartsController extends BaseController
             $modules = $db->loadObjectList();
         }
 
-        $renderer = $document->loadRenderer('module');
-        $json     = [];
+        $json = [];
 
         if (\count($modules) < 1) {
             $json['response'] = ' ';
         } else {
             foreach ($modules as $module) {
                 $this->app->setUserState('mod_j2commerce_mini_cart.isAjax', '1');
-                $json['response'][$module->id] = $renderer->render($module);
+                $json['response'][$module->id] = ModuleHelper::renderModule($module, ['style' => 'none']);
             }
         }
 
