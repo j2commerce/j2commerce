@@ -186,10 +186,14 @@ try {
         <span class="j2commerce-cart-empty"><?php echo Text::_('MOD_J2COMMERCE_CART_EMPTY'); ?></span>
     <?php endif; ?>
 
-    <?php if ($productCount > 0 && ($showCheckout || $showViewCart)) : ?>
-        <?php $viewCartClass = ($showCheckout && $showViewCart) ? 'btn btn-link' : 'btn btn-success'; ?>
+    <?php
+        $showCheckoutBtn = $showCheckout && !empty($checkoutUrl);
+        $showViewCartBtn = $showViewCart && !empty($cartUrl);
+    ?>
+    <?php if ($productCount > 0 && ($showCheckoutBtn || $showViewCartBtn)) : ?>
+        <?php $viewCartClass = ($showCheckoutBtn && $showViewCartBtn) ? 'btn btn-link' : 'btn btn-success'; ?>
         <div class="j2commerce-minicart-button d-grid gap-2 mt-2">
-            <?php if ($showCheckout) : ?>
+            <?php if ($showCheckoutBtn) : ?>
                 <a class="btn btn-success"
                    href="<?php echo htmlspecialchars($checkoutUrl, ENT_QUOTES, 'UTF-8'); ?>"
                    role="button"
@@ -197,7 +201,7 @@ try {
                     <?php echo Text::_('MOD_J2COMMERCE_CART_CHECKOUT'); ?>
                 </a>
             <?php endif; ?>
-            <?php if ($showViewCart) : ?>
+            <?php if ($showViewCartBtn) : ?>
                 <a class="<?php echo $viewCartClass; ?>"
                    href="<?php echo htmlspecialchars($cartUrl, ENT_QUOTES, 'UTF-8'); ?>"
                    role="button"

@@ -174,14 +174,18 @@ $panelId = 'j2commerce-cart-detail-' . $moduleId;
                 <?php endforeach; ?>
             </ul>
 
-            <?php if ($showCheckout || $showViewCart) : ?>
+            <?php
+                $showCheckoutBtn = $showCheckout && !empty($checkoutUrl);
+                $showViewCartBtn = $showViewCart && !empty($cartUrl);
+            ?>
+            <?php if ($showCheckoutBtn || $showViewCartBtn) : ?>
             <div class="uk-card-footer">
-                <?php if ($showCheckout) : ?>
+                <?php if ($showCheckoutBtn) : ?>
                     <a class="uk-button uk-button-primary uk-width-1-1" href="<?php echo htmlspecialchars($checkoutUrl, ENT_QUOTES, 'UTF-8'); ?>">
                         <?php echo Text::_('MOD_J2COMMERCE_CART_CHECKOUT'); ?>
                     </a>
                 <?php endif; ?>
-                <?php if ($showViewCart) : ?>
+                <?php if ($showViewCartBtn) : ?>
                     <a class="uk-button uk-button-default uk-width-1-1 uk-margin-small-top" href="<?php echo htmlspecialchars($cartUrl, ENT_QUOTES, 'UTF-8'); ?>">
                         <?php echo Text::_('MOD_J2COMMERCE_CART_VIEW_CART'); ?>
                     </a>

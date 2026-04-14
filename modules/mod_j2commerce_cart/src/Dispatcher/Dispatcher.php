@@ -16,7 +16,6 @@ namespace J2Commerce\Module\Cart\Site\Dispatcher;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHelper;
-use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use Joomla\CMS\Dispatcher\AbstractModuleDispatcher;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Router\Route;
@@ -104,24 +103,12 @@ class Dispatcher extends AbstractModuleDispatcher
             $cartMenuItemId     = (int) $params->get('cart_menu_item', 0);
             $checkoutMenuItemId = (int) $params->get('checkout_menu_item', 0);
 
-            if ($cartMenuItemId < 1) {
-                $cartMenuItemId = $this->findMenuItemId('index.php?option=com_j2commerce&view=carts');
-            }
-
             if ($cartMenuItemId > 0) {
                 $cartUrl = Route::_('index.php?option=com_j2commerce&view=carts&Itemid=' . $cartMenuItemId);
-            } else {
-                $cartUrl = Route::_(RouteHelper::getCartRoute());
-            }
-
-            if ($checkoutMenuItemId < 1) {
-                $checkoutMenuItemId = $this->findMenuItemId('index.php?option=com_j2commerce&view=checkout');
             }
 
             if ($checkoutMenuItemId > 0) {
                 $checkoutUrl = Route::_('index.php?option=com_j2commerce&view=checkout&Itemid=' . $checkoutMenuItemId);
-            } else {
-                $checkoutUrl = Route::_(RouteHelper::getCheckoutRoute());
             }
 
             $ajaxUrl = Route::_('index.php?option=com_j2commerce&task=carts.ajaxmini&format=raw', false);

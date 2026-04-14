@@ -35,7 +35,7 @@ if (!empty($customCss)) {
 
 <?php if (!$hide) : ?>
     <div class="j2commerce-minicart">
-        <?php if ($productCount > 0) : ?>
+        <?php if ($productCount > 0 && !empty($cartUrl)) : ?>
             <a class="j2commerce-minicart-link position-relative d-inline-block"
                href="<?php echo htmlspecialchars($cartUrl, ENT_QUOTES, 'UTF-8'); ?>"
                aria-label="<?php echo htmlspecialchars(\Joomla\CMS\Language\Text::_('MOD_J2COMMERCE_CART_VIEW_CART'), ENT_QUOTES, 'UTF-8'); ?>">
@@ -45,6 +45,13 @@ if (!empty($customCss)) {
                     <span class="visually-hidden"><?php echo \Joomla\CMS\Language\Text::_('MOD_J2COMMERCE_CART_VIEW_CART'); ?></span>
                 </span>
             </a>
+        <?php elseif ($productCount > 0) : ?>
+            <span class="j2commerce-minicart-link position-relative d-inline-block">
+                <span class="<?php echo $iconClass; ?>" aria-hidden="true"></span>
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger j2commerce-cart-badge">
+                    <?php echo $productCount; ?>
+                </span>
+            </span>
         <?php else : ?>
             <span class="j2commerce-minicart-link position-relative d-inline-block">
                 <span class="<?php echo $iconClass; ?>" aria-hidden="true"></span>
