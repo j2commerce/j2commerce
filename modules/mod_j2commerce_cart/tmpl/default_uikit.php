@@ -186,15 +186,19 @@ try {
         <span class="j2commerce-cart-empty"><?php echo Text::_('MOD_J2COMMERCE_CART_EMPTY'); ?></span>
     <?php endif; ?>
 
-    <?php if ($productCount > 0 && ($showCheckout || $showViewCart)) : ?>
+    <?php
+        $showCheckoutBtn = $showCheckout && !empty($checkoutUrl);
+        $showViewCartBtn = $showViewCart && !empty($cartUrl);
+    ?>
+    <?php if ($productCount > 0 && ($showCheckoutBtn || $showViewCartBtn)) : ?>
         <div class="j2commerce-minicart-button uk-margin-small-top">
-            <?php if ($showCheckout) : ?>
+            <?php if ($showCheckoutBtn) : ?>
                 <a class="uk-button uk-button-primary uk-width-1-1"
                    href="<?php echo htmlspecialchars($checkoutUrl, ENT_QUOTES, 'UTF-8'); ?>">
                     <?php echo Text::_('MOD_J2COMMERCE_CART_CHECKOUT'); ?>
                 </a>
             <?php endif; ?>
-            <?php if ($showViewCart) : ?>
+            <?php if ($showViewCartBtn) : ?>
                 <?php if ($linkType === 'link') : ?>
                     <a class="j2commerce-view-cart-link uk-display-block uk-text-center uk-margin-small-top"
                        href="<?php echo htmlspecialchars($cartUrl, ENT_QUOTES, 'UTF-8'); ?>">
@@ -208,7 +212,7 @@ try {
                 <?php endif; ?>
             <?php endif; ?>
         </div>
-    <?php elseif ($productCount > 0) : ?>
+    <?php elseif ($productCount > 0 && !empty($cartUrl)) : ?>
         <div class="j2commerce-minicart-button uk-margin-small-top">
             <?php if ($linkType === 'link') : ?>
                 <a class="j2commerce-view-cart-link"

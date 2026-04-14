@@ -101,7 +101,9 @@
                     description="MOD_J2COMMERCE_CART_MENU_ITEM_DESC"
                     class="form-select"
                     default=""
-                />
+                    >
+                    <option value="">MOD_J2COMMERCE_CART_SELECT_MENU_ITEM</option>
+                </field>
                 <field
                     name="checkout_menu_item"
                     type="menuitem"
@@ -110,7 +112,9 @@
                     class="form-select"
                     default=""
                     showon="layout:_:default,_:detailcartonhover"
-                />
+                    >
+                    <option value="">MOD_J2COMMERCE_CART_SELECT_MENU_ITEM</option>
+                </field>
                 <field
                     name="check_empty"
                     type="radio"
