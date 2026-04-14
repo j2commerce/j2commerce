@@ -5,7 +5,7 @@
  * @subpackage  lib_j2commerce
  *
  * @copyright   (C)2024-2025 J2Commerce, LLC <https://www.j2commerce.com>
- * @license     GNU General Public License version 3 or later; see LICENSE.txt
+ * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
 namespace J2Commerce\Library\J2Commerce\Field;
