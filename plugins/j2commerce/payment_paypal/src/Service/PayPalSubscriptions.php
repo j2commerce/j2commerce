@@ -14,7 +14,6 @@ namespace J2Commerce\Plugin\J2Commerce\PaymentPaypal\Service;
 
 \defined('_JEXEC') or die;
 
-use Joomla\CMS\Log\Log;
 
 /**
  * PayPal Billing v1 / Catalogs v1 / Subscriptions v1 wrapper.
@@ -85,10 +84,10 @@ final class PayPalSubscriptions
 
         $period       = strtoupper((string) ($subscription->period ?? 'MONTH'));
         $intervalUnit = match ($period) {
-            'DAY', 'D'    => 'DAY',
-            'WEEK', 'W'   => 'WEEK',
-            'YEAR', 'Y'   => 'YEAR',
-            default       => 'MONTH',
+            'DAY', 'D' => 'DAY',
+            'WEEK', 'W' => 'WEEK',
+            'YEAR', 'Y' => 'YEAR',
+            default => 'MONTH',
         };
 
         $intervalCount = max(1, (int) ($subscription->period_units ?? 1));
@@ -112,19 +111,19 @@ final class PayPalSubscriptions
             : ($sitename . ' — ' . $productName);
 
         $body = [
-            'product_id'   => $productId,
-            'name'         => substr($planName, 0, 127),
-            'description'  => 'J2Commerce subscription #' . (int) ($subscription->id ?? 0),
-            'status'       => 'ACTIVE',
+            'product_id'     => $productId,
+            'name'           => substr($planName, 0, 127),
+            'description'    => 'J2Commerce subscription #' . (int) ($subscription->id ?? 0),
+            'status'         => 'ACTIVE',
             'billing_cycles' => [
                 [
                     'frequency' => [
                         'interval_unit'  => $intervalUnit,
                         'interval_count' => $intervalCount,
                     ],
-                    'tenure_type'  => 'REGULAR',
-                    'sequence'     => 1,
-                    'total_cycles' => $totalCycles,
+                    'tenure_type'    => 'REGULAR',
+                    'sequence'       => 1,
+                    'total_cycles'   => $totalCycles,
                     'pricing_scheme' => [
                         'fixed_price' => [
                             'value'         => $renewalAmount,
@@ -174,7 +173,7 @@ final class PayPalSubscriptions
         }
 
         $body = [
-            'plan_id' => $planId,
+            'plan_id'    => $planId,
             'subscriber' => [
                 'name' => [
                     'given_name' => $given,
@@ -183,13 +182,13 @@ final class PayPalSubscriptions
                 'email_address' => $email,
             ],
             'application_context' => [
-                'brand_name'         => substr((string) $context['brand_name'], 0, 127),
-                'locale'             => 'en-US',
+                'brand_name'          => substr((string) $context['brand_name'], 0, 127),
+                'locale'              => 'en-US',
                 'shipping_preference' => 'NO_SHIPPING',
-                'user_action'        => 'SUBSCRIBE_NOW',
-                'payment_method'     => [
-                    'payer_selected'              => 'PAYPAL',
-                    'payee_preferred'             => 'IMMEDIATE_PAYMENT_REQUIRED',
+                'user_action'         => 'SUBSCRIBE_NOW',
+                'payment_method'      => [
+                    'payer_selected'  => 'PAYPAL',
+                    'payee_preferred' => 'IMMEDIATE_PAYMENT_REQUIRED',
                 ],
                 'return_url' => (string) $context['return_url'],
                 'cancel_url' => (string) $context['cancel_url'],
@@ -276,9 +275,9 @@ final class PayPalSubscriptions
         $currency = strtoupper((string) ($order->currency_code ?? 'USD'));
         $amount   = $this->formatAmount((float) ($subscription->renewal_amount ?? $order->order_total ?? 0), $currency);
         $body     = [
-            'note'                => 'J2Commerce renewal — Order #' . ($order->order_id ?? ''),
-            'capture_type'        => 'OUTSTANDING_BALANCE',
-            'amount' => [
+            'note'         => 'J2Commerce renewal — Order #' . ($order->order_id ?? ''),
+            'capture_type' => 'OUTSTANDING_BALANCE',
+            'amount'       => [
                 'value'         => $amount,
                 'currency_code' => $currency,
             ],
@@ -374,8 +373,8 @@ final class PayPalSubscriptions
         );
 
         return [
-            'status'   => (int) ($response['status'] ?? 0),
-            'body'     => $response['body'] ?? [],
+            'status' => (int) ($response['status'] ?? 0),
+            'body'   => $response['body'] ?? [],
         ];
     }
 }
