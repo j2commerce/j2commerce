@@ -256,14 +256,24 @@ function getProductStatusBadge($status) {
                                     </td>
                                     <td class="text-center d-none d-lg-table-cell">
                                         <?php
-                                        $hasDimensions = !empty($product->length) && !empty($product->width) && !empty($product->height);
+                                        $dL = (float) $product->length;
+                                        $dW = (float) $product->width;
+                                        $dH = (float) $product->height;
+                                        $hasL = $dL > 0;
+                                        $hasW = $dW > 0;
+                                        $hasH = $dH > 0;
+                                        $dimCount = (int) $hasL + (int) $hasW + (int) $hasH;
                                         ?>
-                                        <?php if ($hasDimensions): ?>
+                                        <?php if ($dimCount === 0): ?>
+                                            <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-purple'); ?>">N/A</span>
+                                        <?php elseif ($dimCount === 3): ?>
                                             <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-success'); ?>">
-                                                <?php echo $product->length . '×' . $product->width . '×' . $product->height; ?>
+                                                <?php echo number_format($dL, 2) . '×' . number_format($dW, 2) . '×' . number_format($dH, 2); ?>
                                             </span>
                                         <?php else: ?>
-                                            <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-purple'); ?>">N/A</span>
+                                            <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-warning'); ?>">
+                                                <?php echo ($hasL ? number_format($dL, 2) : 'N/A') . '×' . ($hasW ? number_format($dW, 2) : 'N/A') . '×' . ($hasH ? number_format($dH, 2) : 'N/A'); ?>
+                                            </span>
                                         <?php endif; ?>
                                     </td>
                                     <td class="text-center">

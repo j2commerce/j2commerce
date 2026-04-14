@@ -194,15 +194,27 @@ class ShippingtroublesModel extends ListModel
                 $issues[] = 'COM_J2COMMERCE_SHIPPING_TROUBLESHOOTER_PRODUCT_SHIPPING_DISABLED';
             }
 
-            // Check weight configuration
-            if (empty($item->weight) || $item->weight <= 0) {
-                $warnings[] = 'COM_J2COMMERCE_SHIPPING_TROUBLESHOOTER_PRODUCT_NO_WEIGHT';
-            }
+            $hasWeight = (float) $item->weight > 0;
+            $hasLength = (float) $item->length > 0;
+            $hasWidth  = (float) $item->width > 0;
+            $hasHeight = (float) $item->height > 0;
 
-            // Check dimensions
-            $hasDimensions = !empty($item->length) && !empty($item->width) && !empty($item->height);
-            if (!$hasDimensions) {
-                $warnings[] = 'COM_J2COMMERCE_SHIPPING_TROUBLESHOOTER_PRODUCT_NO_DIMENSIONS';
+            $dimensionCount = (int) $hasLength + (int) $hasWidth + (int) $hasHeight;
+            $allDimensions  = $dimensionCount === 3;
+            $someDimensions = $dimensionCount > 0;
+
+            if (!$hasWeight && !$someDimensions) {
+                $warnings[] = 'COM_J2COMMERCE_SHIPPING_TROUBLESHOOTER_PRODUCT_NO_WEIGHT_OR_DIMENSIONS';
+            } else {
+                if (!$hasWeight) {
+                    $warnings[] = 'COM_J2COMMERCE_SHIPPING_TROUBLESHOOTER_PRODUCT_NO_WEIGHT';
+                }
+
+                if (!$allDimensions) {
+                    $warnings[] = $someDimensions
+                        ? 'COM_J2COMMERCE_SHIPPING_TROUBLESHOOTER_PRODUCT_PARTIAL_DIMENSIONS'
+                        : 'COM_J2COMMERCE_SHIPPING_TROUBLESHOOTER_PRODUCT_NO_DIMENSIONS';
+                }
             }
 
             // Determine overall status
