@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <extension type="library" method="upgrade">
-    <name>J2Commerce Library</name>
+    <name>LIB_J2COMMERCE</name>
     <libraryname>j2commerce</libraryname>
     <version>6.2.0</version>
     <creationDate>2025-09-24</creationDate>
