@@ -325,8 +325,8 @@ class ProductsModel extends ListModel
                 $query->where($db->quoteName('a.j2commerce_product_id') . ' = :searchId')
                     ->bind(':searchId', $searchId, ParameterType::INTEGER);
             } elseif (stripos($search, 'sku:') === 0) {
-                $searchSku = '%' . substr($search, 4) . '%';
-                $query->where($db->quoteName('v.sku') . ' LIKE :searchSku')
+                $searchSku = trim(substr($search, 4));
+                $query->where($db->quoteName('v.sku') . ' = :searchSku')
                     ->bind(':searchSku', $searchSku);
             } else {
                 $search = '%' . trim($search) . '%';

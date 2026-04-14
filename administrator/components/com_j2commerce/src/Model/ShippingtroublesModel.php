@@ -137,9 +137,9 @@ class ShippingtroublesModel extends ListModel
                 $query->where($db->quoteName('p.j2commerce_product_id') . ' = :id')
                     ->bind(':id', $search, ParameterType::INTEGER);
             } elseif (stripos($search, 'sku:') === 0) {
-                $search = '%' . str_replace(' ', '%', $db->escape(trim(substr($search, 4)), true)) . '%';
-                $query->where($db->quoteName('v.sku') . ' LIKE :sku')
-                    ->bind(':sku', $search);
+                $searchSku = trim(substr($search, 4));
+                $query->where($db->quoteName('v.sku') . ' = :sku')
+                    ->bind(':sku', $searchSku);
             } else {
                 $search = '%' . str_replace(' ', '%', $db->escape(trim($search), true)) . '%';
                 $query->where(
