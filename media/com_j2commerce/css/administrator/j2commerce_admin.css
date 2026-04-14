@@ -229,7 +229,8 @@ html[data-bs-theme="dark"] body.com_j2commerce {
         background-color: var(--btn-primary-bg-hvr);
         border: var(--btn-primary-border-hvr);
     }
-    .variants-container {background-color: rgba(255, 255, 255, 0.1);border: none;}
+    .variants-container, .bg-white {background-color: rgba(255, 255, 255, 0.1)!important;border: none;}
+    .quick-icons .quickicon a.alert-success .quickicon-info .quickicon-icon {color: var(--success) !important;}
 }
 
 .j2commerce-social-share a[target="_blank"]:before {display:none;}
