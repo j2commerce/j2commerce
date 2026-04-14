@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <extension type="library" method="upgrade">
-    <name>J2Commerce Library</name>
+    <name>LIB_J2COMMERCE</name>
     <libraryname>j2commerce</libraryname>
     <version>6.2.0</version>
     <creationDate>2025-09-24</creationDate>
@@ -9,7 +9,7 @@
     <authorUrl>https://www.j2commerce.com</authorUrl>
     <copyright>(C)2024-2025 J2Commerce, LLC. All rights reserved.</copyright>
     <license>GNU General Public License version 3 or later</license>
-    <description>J2Commerce shared library providing reusable multi-select form fields and components</description>
+    <description>LIB_J2COMMERCE_DESCRIPTION</description>
 	<namespace path="src">J2Commerce\Library\J2Commerce</namespace>
     <scriptfile>script.php</scriptfile>
     <files>
