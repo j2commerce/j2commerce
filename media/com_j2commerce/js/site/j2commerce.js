@@ -234,35 +234,6 @@ const J2Commerce = {
         }
     },
 
-    /**
-     * Update mini cart module via AJAX
-     */
-    async doMiniCart() {
-        if (!this.baseUrl) this.baseUrl = this.getBaseUrl();
-        const url = `${this.baseUrl}index.php?option=com_j2commerce&view=carts&task=ajaxmini`;
-
-        try {
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Cache-Control': 'no-cache',
-                    'Content-Type': 'application/json; charset=utf-8'
-                }
-            });
-            const json = await response.json();
-
-            if (json?.response) {
-                Object.entries(json.response).forEach(([key, value]) => {
-                    document.querySelectorAll(`.j2commerce-cart-module-${key}`).forEach(el => {
-                        el.textContent = value;
-                    });
-                });
-            }
-        } catch (error) {
-            console.error('Mini cart error:', error);
-        }
-    },
-
     // =========================================================================
     // AJAX TASK EXECUTION
     // =========================================================================
@@ -1231,10 +1202,6 @@ const J2Commerce = {
 // =========================================================================
 // GLOBAL FUNCTIONS (Backwards Compatibility)
 // =========================================================================
-
-function doMiniCart() {
-    J2Commerce.doMiniCart();
-}
 
 
 function getCategoryFilterToggle() {
