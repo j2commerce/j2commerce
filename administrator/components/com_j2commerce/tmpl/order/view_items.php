@@ -36,7 +36,7 @@ $currencyCode = $item->currency_code ?? '';
                     $orderItemImage = $orderItemParams->thumb_image ?? '';
                 }
                 ?>
-                <div class="border mb-4 rounded-3 px-4 py-3 text-subdued bg-white">
+                <div class="border mb-4 rounded-3 px-4 py-3 text-subdued">
                     <div class="row align-items-lg-start">
                         <div class="col-lg-9">
                             <div class="row justify-content-lg-between align-items-lg-start">
