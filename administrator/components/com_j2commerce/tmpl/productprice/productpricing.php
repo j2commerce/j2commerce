@@ -34,6 +34,8 @@ $currencyDecimals = CurrencyHelper::getDecimalPlace();
 // Initialize tooltips
 HTMLHelper::_('bootstrap.tooltip', '[data-bs-toggle="tooltip"]', ['placement' => 'top']);
 
+Text::script('COM_J2COMMERCE_CONFIRM_DELETE');
+
 // Get Web Asset Manager
 $wa = $app->getDocument()->getWebAssetManager();
 $wa->useScript('form.validate')
