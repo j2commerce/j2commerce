@@ -521,8 +521,8 @@ class OrderController extends FormController
             . '<style>'
             . 'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;margin:0;padding:20px;color:#333;background:#f8fafc;-webkit-print-color-adjust:exact;print-color-adjust:exact;}'
             . 'table{border-collapse:collapse;border-spacing:0;}img{max-width:100%;height:auto;border:0;}'
-            . '.no-print{margin-bottom:20px;text-align:center;}'
-            . '.no-print button{padding:10px 24px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:14px;}'
+            . '.no-print{margin-bottom:20px;display:flex;gap:8px;justify-content:center;align-items:center;}'
+            . '.no-print button{padding:10px 24px;border:1px solid #d1d5db;border-radius:6px;background:#fff;color:#333;cursor:pointer;font-size:14px;font-family:inherit;line-height:1.5;-webkit-appearance:none;appearance:none;}'
             . '.no-print button:hover{background:#f3f4f6;}'
             . $extractedStyles
             . ($customCss !== '' ? $customCss : '')
@@ -531,8 +531,8 @@ class OrderController extends FormController
             . '</head><body>'
             . '<div class="no-print">'
             . '<button onclick="window.print()">' . Text::_('COM_J2COMMERCE_PRINT') . '</button>'
-            . '<button onclick="window.close()" style="margin-left:8px;">' . Text::_('JCLOSE') . '</button>'
-            . '<span style="margin-left:16px;color:#6b7280;font-size:14px;">' . Text::sprintf('COM_J2COMMERCE_PRINT_PACKING_SLIPS_COUNT', \count($slipBodies)) . '</span>'
+            . '<button onclick="window.close()">' . Text::_('JCLOSE') . '</button>'
+            . '<span style="color:#6b7280;font-size:14px;">' . Text::sprintf('COM_J2COMMERCE_PRINT_PACKING_SLIPS_COUNT', \count($slipBodies)) . '</span>'
             . '</div>'
             . $body
             . '<script>window.onload=function(){window.print();};</script>'
@@ -576,8 +576,8 @@ class OrderController extends FormController
             . '<style>'
             . 'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;margin:0;padding:20px;color:#333;background:#f8fafc;-webkit-print-color-adjust:exact;print-color-adjust:exact;}'
             . 'table{border-collapse:collapse;border-spacing:0;}img{max-width:100%;height:auto;border:0;}'
-            . '.no-print{margin-bottom:20px;text-align:center;}'
-            . '.no-print button{padding:10px 24px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:14px;}'
+            . '.no-print{margin-bottom:20px;display:flex;gap:8px;justify-content:center;}'
+            . '.no-print button{padding:10px 24px;border:1px solid #d1d5db;border-radius:6px;background:#fff;color:#333;cursor:pointer;font-size:14px;font-family:inherit;line-height:1.5;-webkit-appearance:none;appearance:none;}'
             . '.no-print button:hover{background:#f3f4f6;}'
             . $extractedStyles
             . ($customCss !== '' ? $customCss : '')
@@ -586,7 +586,7 @@ class OrderController extends FormController
             . '</head><body>'
             . '<div class="no-print">'
             . '<button onclick="window.print()">' . Text::_('COM_J2COMMERCE_PRINT') . '</button>'
-            . '<button onclick="window.close()" style="margin-left:8px;">' . Text::_('JCLOSE') . '</button>'
+            . '<button onclick="window.close()">' . Text::_('JCLOSE') . '</button>'
             . '</div>'
             . $bodyHtml
             . '<script>window.onload=function(){window.print();};</script>'

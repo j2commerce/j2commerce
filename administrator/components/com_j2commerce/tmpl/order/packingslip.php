@@ -72,14 +72,19 @@ $customCss = trim((string) $db->loadResult());
         img { max-width: 100%; height: auto; border: 0; }
 
         /* Print button bar */
-        .no-print { margin-bottom: 20px; text-align: center; }
+        .no-print { margin-bottom: 20px; display: flex; gap: 8px; justify-content: center; }
         .no-print button {
             padding: 10px 24px;
             border: 1px solid #d1d5db;
             border-radius: 6px;
             background: #fff;
+            color: #333;
             cursor: pointer;
             font-size: 14px;
+            font-family: inherit;
+            line-height: 1.5;
+            -webkit-appearance: none;
+            appearance: none;
         }
         .no-print button:hover { background: #f3f4f6; }
 
@@ -101,7 +106,7 @@ $customCss = trim((string) $db->loadResult());
 <body>
     <div class="no-print">
         <button onclick="window.print()"><?php echo Text::_('COM_J2COMMERCE_PRINT'); ?></button>
-        <button onclick="window.close()" style="margin-left: 8px;"><?php echo Text::_('JCLOSE'); ?></button>
+        <button onclick="window.close()"><?php echo Text::_('JCLOSE'); ?></button>
     </div>
     <?php echo $bodyHtml; ?>
     <script>window.onload = function() { window.print(); };</script>
