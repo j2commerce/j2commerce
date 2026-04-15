@@ -249,11 +249,57 @@ administrator/components/com_j2commerce/src/Model/Behavior/Boxbuilderproduct.php
 administrator/components/com_j2commerce/src/Model/Behavior/CartBoxbuilderproduct.php
 administrator/components/com_j2commerce/src/Model/Behavior/CartBundleproduct.php
 administrator/components/com_j2commerce/src/Model/Behavior/Guidedbuilder.php
+administrator/components/com_j2commerce/src/Model/Behavior/CartGuidedbuilder.php
+administrator/components/com_j2commerce/src/Model/Behavior/Subscriptionproduct.php
+administrator/components/com_j2commerce/src/Model/Behavior/CartSubscriptionproduct.php
+administrator/components/com_j2commerce/src/Model/Behavior/Variablesubscriptionproduct.php
+administrator/components/com_j2commerce/src/Model/Behavior/CartVariablesubscriptionproduct.php
 # Non-core admin templates (inserted by 3rd-party plugins)
 administrator/components/com_j2commerce/tmpl/product/form_guidedbuilder.php
+administrator/components/com_j2commerce/tmpl/product/form_ajax_avfilter.php
+administrator/components/com_j2commerce/tmpl/product/form_ajax_avoptions.php
+administrator/components/com_j2commerce/tmpl/product/form_boxbuilderproduct.php
+administrator/components/com_j2commerce/tmpl/product/form_bundleproduct.php
+administrator/components/com_j2commerce/tmpl/product/form_subscriptionpricing.php
+administrator/components/com_j2commerce/tmpl/product/form_subscriptionproduct.php
+administrator/components/com_j2commerce/tmpl/product/form_variablesubscriptionproduct.php
+administrator/components/com_j2commerce/tmpl/product/form_variablesubscriptionproduct_general.php
+administrator/components/com_j2commerce/tmpl/product/form_variablesubscriptionproduct_options.php
+administrator/components/com_j2commerce/tmpl/product/form_variablesubscriptionproduct_variants.php
+administrator/components/com_j2commerce/tmpl/product/form_ajax_variablesubscriptionproduct_options.php
 # Non-core site layouts (inserted by 3rd-party plugins)
 components/com_j2commerce/layouts/app_bootstrap5/list/category/item_guidedbuilder.php
+components/com_j2commerce/layouts/app_bootstrap5/list/category/item_boxbuilder.php
+components/com_j2commerce/layouts/app_bootstrap5/list/category/item_boxbuilderproduct.php
+components/com_j2commerce/layouts/app_bootstrap5/list/category/item_bundle.php
+components/com_j2commerce/layouts/app_bootstrap5/list/category/item_bundleproduct.php
+components/com_j2commerce/layouts/app_bootstrap5/list/category/item_signupfee.php
+components/com_j2commerce/layouts/app_bootstrap5/list/category/item_subscription.php
+components/com_j2commerce/layouts/app_bootstrap5/list/category/item_subscriptionproduct.php
+components/com_j2commerce/layouts/app_bootstrap5/list/category/item_variablesubscriptionproduct.php
+components/com_j2commerce/layouts/app_bootstrap5/list/category/item_variablesubscriptionproductoptions.php
 components/com_j2commerce/layouts/app_bootstrap5/list/tag/item_guidedbuilder.php
+components/com_j2commerce/layouts/app_bootstrap5/list/tag/item_advancedvariable.php
+components/com_j2commerce/layouts/app_bootstrap5/list/tag/item_advancedvariableoptions.php
+components/com_j2commerce/layouts/app_bootstrap5/list/tag/item_boxbuilderproduct.php
+components/com_j2commerce/layouts/app_bootstrap5/list/tag/item_bundle.php
+components/com_j2commerce/layouts/app_bootstrap5/list/tag/item_bundleoptions.php
+components/com_j2commerce/layouts/app_bootstrap5/list/tag/item_bundleproduct.php
+components/com_j2commerce/layouts/app_bootstrap5/list/tag/item_signupfee.php
+components/com_j2commerce/layouts/app_bootstrap5/list/tag/item_subscription.php
+components/com_j2commerce/layouts/app_bootstrap5/list/tag/item_subscriptionproduct.php
+components/com_j2commerce/layouts/app_bootstrap5/list/tag/item_variablesubscriptionproduct.php
+components/com_j2commerce/layouts/app_bootstrap5/list/tag/item_variablesubscriptionproductoptions.php
+components/com_j2commerce/layouts/app_uikit/list/category/item_signupfee.php
+components/com_j2commerce/layouts/app_uikit/list/category/item_subscription.php
+components/com_j2commerce/layouts/app_uikit/list/category/item_subscriptionproduct.php
+components/com_j2commerce/layouts/app_uikit/list/category/item_variablesubscriptionproduct.php
+components/com_j2commerce/layouts/app_uikit/list/category/item_variablesubscriptionproductoptions.php
+components/com_j2commerce/layouts/app_uikit/list/tag/item_signupfee.php
+components/com_j2commerce/layouts/app_uikit/list/tag/item_subscription.php
+components/com_j2commerce/layouts/app_uikit/list/tag/item_subscriptionproduct.php
+components/com_j2commerce/layouts/app_uikit/list/tag/item_variablesubscriptionproduct.php
+components/com_j2commerce/layouts/app_uikit/list/tag/item_variablesubscriptionproductoptions.php
 # Non-core site templates (created by plugins on install — do NOT whitelist)
 components/com_j2commerce/tmpl/vendorapply/
 # Non-core app_bootstrap5 view templates (inserted by 3rd-party plugins)
@@ -294,6 +340,11 @@ plugins/j2commerce/app_bootstrap5/tmpl/bootstrap5/view_msb_progress.php
 plugins/j2commerce/app_bootstrap5/tmpl/bootstrap5/view_msb_review.php
 plugins/j2commerce/app_bootstrap5/tmpl/bootstrap5/view_advancedvariable.php
 plugins/j2commerce/app_bootstrap5/tmpl/bootstrap5/view_advancedvariableoptions.php
+plugins/j2commerce/app_bootstrap5/tmpl/bootstrap5/view_signupfee.php
+plugins/j2commerce/app_bootstrap5/tmpl/bootstrap5/view_subscription.php
+plugins/j2commerce/app_bootstrap5/tmpl/bootstrap5/view_subscriptionproduct.php
+plugins/j2commerce/app_bootstrap5/tmpl/bootstrap5/view_variablesubscriptionproduct.php
+plugins/j2commerce/app_bootstrap5/tmpl/bootstrap5/view_variablesubscriptionproductoptions.php
 # Non-core app_bootstrap5 tag view templates (inserted by 3rd-party plugins)
 plugins/j2commerce/app_bootstrap5/tmpl/tag_bootstrap5/view_boxbuilder.php
 plugins/j2commerce/app_bootstrap5/tmpl/tag_bootstrap5/view_boxbuilder_cart.php
@@ -332,6 +383,11 @@ plugins/j2commerce/app_bootstrap5/tmpl/tag_bootstrap5/view_msb_progress.php
 plugins/j2commerce/app_bootstrap5/tmpl/tag_bootstrap5/view_msb_review.php
 plugins/j2commerce/app_bootstrap5/tmpl/tag_bootstrap5/view_advancedvariable.php
 plugins/j2commerce/app_bootstrap5/tmpl/tag_bootstrap5/view_advancedvariableoptions.php
+plugins/j2commerce/app_bootstrap5/tmpl/tag_bootstrap5/view_signupfee.php
+plugins/j2commerce/app_bootstrap5/tmpl/tag_bootstrap5/view_subscription.php
+plugins/j2commerce/app_bootstrap5/tmpl/tag_bootstrap5/view_subscriptionproduct.php
+plugins/j2commerce/app_bootstrap5/tmpl/tag_bootstrap5/view_variablesubscriptionproduct.php
+plugins/j2commerce/app_bootstrap5/tmpl/tag_bootstrap5/view_variablesubscriptionproductoptions.php
 # Non-core app_uikit view templates (inserted by 3rd-party plugins)
 plugins/j2commerce/app_uikit/tmpl/uikit/view_boxbuilder.php
 plugins/j2commerce/app_uikit/tmpl/uikit/view_boxbuilder_cart.php
@@ -366,6 +422,11 @@ plugins/j2commerce/app_uikit/tmpl/uikit/view_gb_visual_cards.php
 plugins/j2commerce/app_uikit/tmpl/uikit/view_guidedbuilder.php
 plugins/j2commerce/app_uikit/tmpl/uikit/view_advancedvariable.php
 plugins/j2commerce/app_uikit/tmpl/uikit/view_advancedvariableoptions.php
+plugins/j2commerce/app_uikit/tmpl/uikit/view_signupfee.php
+plugins/j2commerce/app_uikit/tmpl/uikit/view_subscription.php
+plugins/j2commerce/app_uikit/tmpl/uikit/view_subscriptionproduct.php
+plugins/j2commerce/app_uikit/tmpl/uikit/view_variablesubscriptionproduct.php
+plugins/j2commerce/app_uikit/tmpl/uikit/view_variablesubscriptionproductoptions.php
 # Non-core app_uikit tag view templates (inserted by 3rd-party plugins)
 plugins/j2commerce/app_uikit/tmpl/tag_uikit/view_boxbuilder.php
 plugins/j2commerce/app_uikit/tmpl/tag_uikit/view_boxbuilder_cart.php
@@ -400,3 +461,10 @@ plugins/j2commerce/app_uikit/tmpl/tag_uikit/view_gb_visual_cards.php
 plugins/j2commerce/app_uikit/tmpl/tag_uikit/view_guidedbuilder.php
 plugins/j2commerce/app_uikit/tmpl/tag_uikit/view_advancedvariable.php
 plugins/j2commerce/app_uikit/tmpl/tag_uikit/view_advancedvariableoptions.php
+plugins/j2commerce/app_uikit/tmpl/tag_uikit/view_signupfee.php
+plugins/j2commerce/app_uikit/tmpl/tag_uikit/view_subscription.php
+plugins/j2commerce/app_uikit/tmpl/tag_uikit/view_subscriptionproduct.php
+plugins/j2commerce/app_uikit/tmpl/tag_uikit/view_variablesubscriptionproduct.php
+plugins/j2commerce/app_uikit/tmpl/tag_uikit/view_variablesubscriptionproductoptions.php
+# Added by code-review-graph
+.code-review-graph/
