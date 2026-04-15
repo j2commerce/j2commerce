@@ -14,6 +14,7 @@ namespace J2Commerce\Plugin\J2Commerce\ReportItemised\Model;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderItemAttributeHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\BaseReportModel;
 use Joomla\Database\ParameterType;
 use Joomla\Database\QueryInterface;
@@ -258,16 +259,6 @@ class ReportitemisedModel extends BaseReportModel
         return $total;
     }
 
-    /**
-     * Override getItems to attach order item attributes to each row.
-     *
-     * The J2Commerce version loaded orderitemattributes in a sub-query per item.
-     * We batch-load them here for efficiency.
-     *
-     * @return  array
-     *
-     * @since   6.0.0
-     */
     public function getItems(): array
     {
         $items = parent::getItems();
@@ -276,43 +267,11 @@ class ReportitemisedModel extends BaseReportModel
             return [];
         }
 
-        // Collect all orderitem IDs for batch attribute loading
-        $orderitemIds = [];
-
         foreach ($items as $item) {
-            $orderitemIds[] = (int) $item->j2commerce_orderitem_id;
-        }
-
-        if (empty($orderitemIds)) {
-            return $items;
-        }
-
-        // Batch-load attributes for all items in a single query
-        $db    = $this->getDatabase();
-        $query = $db->getQuery(true);
-
-        $query->select([
-                $db->quoteName('oia.orderitem_id'),
-                $db->quoteName('oia.orderitemattribute_name'),
-                $db->quoteName('oia.orderitemattribute_value'),
-            ])
-            ->from($db->quoteName('#__j2commerce_orderitemattributes', 'oia'))
-            ->whereIn($db->quoteName('oia.orderitem_id'), $orderitemIds)
-            ->order($db->quoteName('oia.orderitem_id'));
-
-        $db->setQuery($query);
-        $allAttributes = $db->loadObjectList();
-
-        // Index attributes by orderitem_id
-        $attrMap = [];
-
-        foreach ($allAttributes as $attr) {
-            $attrMap[(int) $attr->orderitem_id][] = $attr;
-        }
-
-        // Attach attributes to items
-        foreach ($items as $item) {
-            $item->attributes = $attrMap[(int) $item->j2commerce_orderitem_id] ?? [];
+            $item->attributes = OrderItemAttributeHelper::parseRawAttributes(
+                $item->orderitem_attributes ?? '',
+                (int) $item->product_id
+            );
         }
 
         return $items;
