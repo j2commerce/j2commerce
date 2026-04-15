@@ -227,9 +227,9 @@ html[data-bs-theme="dark"] {
     .dual-listbox .dual-listbox__title {
         background: #1a1a1a;
         color: #e0e0e0;
-        border-left-color: #1a1a1a;
-        border-right-color: #1a1a1a;
-        border-top-color: #1a1a1a;
+        border-inline-start-color: #1a1a1a;
+        border-inline-end-color: #1a1a1a;
+        border-block-start-color: #1a1a1a;
     }
 
     .dual-listbox .dual-listbox__item.dual-listbox__item--selected {
