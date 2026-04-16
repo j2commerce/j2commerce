@@ -222,3 +222,18 @@ html[data-bs-theme="dark"] #fieldset-schema {
     .variant-item .accordion-header .icon-featured,
     .variant-item .accordion-header .fa-star {color: #a78bfa;}
 }
+
+html[data-bs-theme="dark"] {
+    .dual-listbox .dual-listbox__title {
+        background: #1a1a1a;
+        color: #e0e0e0;
+        border-inline-start-color: #1a1a1a;
+        border-inline-end-color: #1a1a1a;
+        border-block-start-color: #1a1a1a;
+    }
+
+    .dual-listbox .dual-listbox__item.dual-listbox__item--selected {
+        background-color: #fff;
+        color: var(--header-logo-bg);
+    }
+}

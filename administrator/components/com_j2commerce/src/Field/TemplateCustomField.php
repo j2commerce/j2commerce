@@ -45,7 +45,7 @@ class TemplateCustomField extends FormField
 
         $html[] = '<div class="table-responsive">';
         $html[] = '<table class="table">';
-        $html[] = '<thead class="table-light">';
+        $html[] = '<thead>';
         $html[] = '<tr>';
         $html[] = '<th scope="col">' . Text::_('COM_J2COMMERCE_TEMPLATE_CUSTOM_FIELD_SHORTCODE') . '</th>';
         $html[] = '<th scope="col">' . Text::_('COM_J2COMMERCE_TEMPLATE_CUSTOM_FIELD_DESCRIPTION') . '</th>';
@@ -80,7 +80,7 @@ class TemplateCustomField extends FormField
 
         $html[] = '<div class="table-responsive">';
         $html[] = '<table class="table table-striped table-hover">';
-        $html[] = '<thead class="table-light">';
+        $html[] = '<thead>';
         $html[] = '<tr>';
         $html[] = '<th scope="col">' . Text::_('COM_J2COMMERCE_TEMPLATE_CUSTOM_FIELD_SHORTCODE') . '</th>';
         $html[] = '<th scope="col">' . Text::_('COM_J2COMMERCE_TEMPLATE_CUSTOM_FIELD_DESCRIPTION') . '</th>';
@@ -115,7 +115,7 @@ class TemplateCustomField extends FormField
 
         $html[] = '<div class="table-responsive">';
         $html[] = '<table class="table">';
-        $html[] = '<thead class="table-light">';
+        $html[] = '<thead>';
         $html[] = '<tr>';
         $html[] = '<th scope="col">' . Text::_('COM_J2COMMERCE_TEMPLATE_CUSTOM_FIELD_SHORTCODE') . '</th>';
         $html[] = '<th scope="col">' . Text::_('COM_J2COMMERCE_TEMPLATE_CUSTOM_FIELD_DESCRIPTION') . '</th>';
