@@ -78,7 +78,7 @@
                     type="text"
                     label="COM_J2COMMERCE_PLUGIN_DISPLAY_NAME"
                     description="COM_J2COMMERCE_PLUGIN_DISPLAY_NAME_DESC"
-                    default="PLG_J2COMMERCE_PAYMENT_PAYPAL"
+                    default="PLG_J2COMMERCE_PAYMENT_PAYPAL_DEFAULT"
                 />
                 <field
                     name="display_image"
