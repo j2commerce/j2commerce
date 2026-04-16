@@ -125,9 +125,6 @@ $wa->addInlineStyle($style);
                                                             <div class="d-flex align-items-start justify-content-between mb-2">
                                                                 <h3 class="card-title mb-0 fs-5">
                                                                     <?php echo $this->escape($file['displayName'] ?? $file['filename']); ?>
-                                                                    <?php if (($file['context'] ?? '') === 'tag') : ?>
-                                                                        <span class="ms-1 <?php echo J2htmlHelper::badgeClass('badge text-bg-purple'); ?>">Tag</span>
-                                                                    <?php endif; ?>
                                                                 </h3>
                                                                 <?php if ($file['hasOverride'] ?? false) : ?>
                                                                     <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-success'); ?> ms-2 flex-shrink-0">
