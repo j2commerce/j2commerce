@@ -18,7 +18,7 @@ use Joomla\CMS\Language\Text;
 
 ?>
 <?php if ($this->params->get('item_show_product_manufacturer_name', 1) && !empty($this->product->manufacturer)) : ?>
-    <span class="manufacturer-brand">
+    <div class="manufacturer-brand">
         <?php echo Text::_('COM_J2COMMERCE_PRODUCT_MANUFACTURER_NAME'); ?>:
         <?php if (isset($this->product->brand_desc_id) && !empty($this->product->brand_desc_id)) : ?>
             <?php $url = J2CommerceHelper::article()->getArticleLink($this->product->brand_desc_id); ?>
@@ -26,5 +26,5 @@ use Joomla\CMS\Language\Text;
         <?php else : ?>
             <?php echo $this->escape($this->product->manufacturer); ?>
         <?php endif; ?>
-    </span>
+    </div>
 <?php endif; ?>
