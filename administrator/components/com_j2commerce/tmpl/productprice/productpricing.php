@@ -61,9 +61,22 @@ document.addEventListener('DOMContentLoaded', function() {
         variantId: {$variantId},
 
         init: function() {
+            this.renderPendingFlash();
             this.bindCreateButton();
             this.bindSaveAllButton();
             this.bindRemoveButtons();
+        },
+
+        renderPendingFlash: function() {
+            const raw = sessionStorage.getItem('j2commerce.productprice.flash');
+            if (!raw) return;
+            sessionStorage.removeItem('j2commerce.productprice.flash');
+            try {
+                const flash = JSON.parse(raw);
+                if (flash && flash.type && flash.text) {
+                    Joomla.renderMessages({[flash.type]: [flash.text]});
+                }
+            } catch (e) {}
         },
 
         bindCreateButton: function() {
@@ -114,7 +127,10 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 this.hideLoading();
                 if (data.success) {
-                    Joomla.renderMessages({success: [data.message || 'Price created successfully']});
+                    sessionStorage.setItem('j2commerce.productprice.flash', JSON.stringify({
+                        type: 'success',
+                        text: data.message || 'Price created successfully'
+                    }));
                     location.reload();
                 } else {
                     Joomla.renderMessages({error: [data.message || 'Error creating price']});
