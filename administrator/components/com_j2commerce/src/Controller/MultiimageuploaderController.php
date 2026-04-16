@@ -682,7 +682,7 @@ class MultiimageuploaderController extends BaseController
         $allowlist = $fileMode === 1 ? self::FILE_ALLOWLIST : self::IMAGE_ALLOWLIST;
 
         if (!\in_array($extension, $allowlist, true)) {
-            return sprintf("File extension '.%s' is not allowed here", $extension);
+            return \sprintf("File extension '.%s' is not allowed here", $extension);
         }
 
         $tmpName = (string) ($file['tmp_name'] ?? '');
@@ -698,7 +698,7 @@ class MultiimageuploaderController extends BaseController
                 @finfo_close($finfo);
 
                 if ($mime !== '' && \in_array(strtolower($mime), self::DANGEROUS_MIME_TYPES, true)) {
-                    return sprintf("File content type '%s' is not allowed", $mime);
+                    return \sprintf("File content type '%s' is not allowed", $mime);
                 }
             }
         }

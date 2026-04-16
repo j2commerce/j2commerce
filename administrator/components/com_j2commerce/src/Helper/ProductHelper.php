@@ -3700,7 +3700,7 @@ class ProductHelper
 
         // Build the input element
         $inputType = $showButtons && !$isCart ? 'text' : 'number';
-        $input  = '<input type="' . $inputType . '"';
+        $input     = '<input type="' . $inputType . '"';
         $input .= ' name="' . htmlspecialchars($inputName, ENT_QUOTES, 'UTF-8') . '"';
         $input .= ' value="' . $defaultQty . '"';
         $input .= ' min="' . $minVal . '"';
