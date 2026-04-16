@@ -27,6 +27,70 @@ use Joomla\Filesystem\Folder;
 
 class MultiimageuploaderController extends BaseController
 {
+    /**
+     * Extensions that must NEVER be accepted by this uploader — checked against
+     * every dotted segment of the filename to catch `evil.php.jpg` style attacks.
+     */
+    private const BLOCKLIST_EXTENSIONS = [
+        'php', 'phtml', 'phar', 'php3', 'php4', 'php5', 'php6', 'php7', 'php8',
+        'pht', 'phps', 'inc', 'phpt',
+        'exe', 'bat', 'cmd', 'com', 'scr', 'msi', 'msp', 'hta', 'cpl',
+        'jar', 'apk', 'ipa', 'appimage', 'deb', 'rpm', 'pkg', 'dmg',
+        'vbs', 'vbe', 'js', 'mjs', 'jse', 'wsf', 'wsh',
+        'ps1', 'psm1', 'psc1', 'sh', 'bash', 'zsh', 'ksh',
+        'cgi', 'pl', 'py', 'rb', 'lua',
+        'jsp', 'jspx', 'asp', 'aspx', 'aspq', 'cer', 'asa', 'ashx',
+        'htaccess', 'htpasswd', 'user.ini', 'webconfig',
+        'shtml', 'svg', 'xml', 'xhtml', 'html', 'htm', 'xht', 'swf',
+    ];
+
+    /** Extensions allowed in image-upload mode. */
+    public const IMAGE_ALLOWLIST = [
+        'jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'bmp', 'ico',
+    ];
+
+    /** Extensions allowed in downloadable-file mode (audio, video, docs, archives, fonts, 3D, etc.). */
+    public const FILE_ALLOWLIST = [
+        // Audio
+        'mp3', 'wav', 'flac', 'aac', 'm4a', 'm4b', 'ogg', 'oga', 'opus', 'aiff', 'aif', 'wma', 'mid', 'midi',
+        // Video
+        'mp4', 'm4v', 'mov', 'mkv', 'webm', 'avi', 'wmv', 'mpg', 'mpeg', 'ogv', '3gp',
+        // Raster images
+        'jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'bmp', 'tif', 'tiff',
+        // Graphic/design source files
+        'psd', 'ai', 'eps', 'indd', 'afdesign', 'afphoto', 'afpub', 'procreate', 'sketch', 'xd', 'fig',
+        // 3D / CAD
+        'stl', 'obj', 'fbx', 'blend', 'gltf', 'glb', '3ds', 'dae', 'ply', 'dwg', 'dxf', 'skp',
+        // Fonts
+        'ttf', 'otf', 'woff', 'woff2', 'eot',
+        // E-books
+        'pdf', 'epub', 'mobi', 'azw', 'azw3',
+        // Documents
+        'txt', 'rtf', 'md', 'doc', 'docx', 'odt', 'pages',
+        // Office
+        'xls', 'xlsx', 'ppt', 'pptx', 'ods', 'odp', 'odg', 'csv', 'numbers', 'key',
+        // Archives
+        'zip', '7z', 'rar', 'tar', 'gz', 'bz2', 'xz', 'tgz',
+        // LUTs / presets
+        'cube', '3dl', 'xmp', 'dcp', 'lrtemplate', 'lrcat', 'preset',
+        // Subtitles
+        'srt', 'vtt', 'ass', 'ssa',
+    ];
+
+    /** MIME content-types that must never be accepted regardless of extension. */
+    private const DANGEROUS_MIME_TYPES = [
+        'application/x-php', 'application/x-httpd-php', 'application/x-httpd-php-source',
+        'text/x-php', 'text/x-phtml',
+        'application/x-dosexec', 'application/x-msdownload', 'application/x-executable',
+        'application/x-mach-binary', 'application/x-sharedlib',
+        'application/x-msdos-program', 'application/x-ms-shortcut',
+        'application/x-shellscript', 'application/x-sh', 'application/x-bash',
+        'application/x-perl', 'application/x-python', 'application/x-ruby',
+        'application/javascript', 'application/x-javascript', 'text/javascript',
+        'text/html', 'application/xhtml+xml', 'image/svg+xml',
+        'application/java-archive', 'application/x-java-applet',
+    ];
+
     /** Default task — handle file upload. */
     public function upload(): void
     {
@@ -34,11 +98,17 @@ class MultiimageuploaderController extends BaseController
             return;
         }
 
-        $input = $this->app->getInput();
-        $file  = $input->files->get('file', [], 'array');
+        $input    = $this->app->getInput();
+        $file     = $input->files->get('file', [], 'array');
+        $fileMode = (int) $input->getInt('fileMode', 0);
 
         if (empty($file['name'])) {
             $this->sendJson(false, 'No file uploaded');
+            return;
+        }
+
+        if (($error = $this->validateUploadedFile($file, $fileMode)) !== null) {
+            $this->sendJson(false, $error);
             return;
         }
 
@@ -497,6 +567,11 @@ class MultiimageuploaderController extends BaseController
             return;
         }
 
+        if (($error = $this->validateUploadedFile($file, 1)) !== null) {
+            $this->sendJson(false, $error);
+            return;
+        }
+
         if (!(new MediaHelper())->canUpload($file)) {
             $this->sendJson(false, 'File type not allowed');
             return;
@@ -570,6 +645,66 @@ class MultiimageuploaderController extends BaseController
     // -------------------------------------------------------------------------
     // Private helpers
     // -------------------------------------------------------------------------
+
+    /**
+     * Enforce filetype safety — hard blocklist of executables and a per-mode allowlist.
+     *
+     * @param  array<string, mixed>  $file      PHP upload tuple (name, tmp_name, size, type, error)
+     * @param  int                   $fileMode  0 = images, 1 = downloadable files
+     *
+     * @return  string|null  Error message when rejected, null when accepted.
+     */
+    private function validateUploadedFile(array $file, int $fileMode): ?string
+    {
+        $name = (string) ($file['name'] ?? '');
+
+        if ($name === '' || $name !== File::makeSafe($name)) {
+            return 'Invalid filename';
+        }
+
+        if (str_contains($name, "\0")) {
+            return 'Invalid filename';
+        }
+
+        $parts = array_map('strtolower', array_filter(explode('.', $name), static fn ($p) => $p !== ''));
+
+        if (\count($parts) < 2) {
+            return 'File type not allowed';
+        }
+
+        foreach ($parts as $part) {
+            if (\in_array($part, self::BLOCKLIST_EXTENSIONS, true)) {
+                return 'File type not allowed for security reasons';
+            }
+        }
+
+        $extension = (string) end($parts);
+        $allowlist = $fileMode === 1 ? self::FILE_ALLOWLIST : self::IMAGE_ALLOWLIST;
+
+        if (!\in_array($extension, $allowlist, true)) {
+            return sprintf("File extension '.%s' is not allowed here", $extension);
+        }
+
+        $tmpName = (string) ($file['tmp_name'] ?? '');
+
+        if ($tmpName === '' || !is_file($tmpName)) {
+            return 'Upload failed';
+        }
+
+        if (\function_exists('finfo_open')) {
+            $finfo = @finfo_open(FILEINFO_MIME_TYPE);
+            if ($finfo !== false) {
+                $mime = (string) @finfo_file($finfo, $tmpName);
+                @finfo_close($finfo);
+
+                if ($mime !== '' && \in_array(strtolower($mime), self::DANGEROUS_MIME_TYPES, true)) {
+                    return sprintf("File content type '%s' is not allowed", $mime);
+                }
+            }
+        }
+
+        return null;
+    }
 
     /** Validate CSRF token and user authentication. Returns false and sends error response on failure. */
     private function authorize(): bool

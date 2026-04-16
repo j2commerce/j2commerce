@@ -201,6 +201,7 @@
                 },
                 meta: {
                     path: this.currentFolder,
+                    fileMode: this.options.fileMode ? '1' : '0',
                 },
             });
 
@@ -223,7 +224,11 @@
                 addFilesEl.dataset.j2customized = '1';
                 const inner = addFilesEl.querySelector('.uppy-Dashboard-AddFiles-title');
                 if (inner) {
-                    inner.innerHTML = `<span class="uppymedia-uppy-btn"><span class="fa-solid fa-images" aria-hidden="true"></span> ${this.escapeHtml(this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_ADD_PRODUCT_IMAGES'))}</span>`
+                    const addLabelKey = this.options.fileMode
+                        ? 'COM_J2COMMERCE_MULTIIMAGEUPLOADER_ADD_PRODUCT_FILES'
+                        : 'COM_J2COMMERCE_MULTIIMAGEUPLOADER_ADD_PRODUCT_IMAGES';
+                    const iconClass = this.options.fileMode ? 'fa-solid fa-file-arrow-down' : 'fa-solid fa-images';
+                    inner.innerHTML = `<span class="uppymedia-uppy-btn"><span class="${iconClass}" aria-hidden="true"></span> ${this.escapeHtml(this.getText(addLabelKey))}</span>`
                         + `<p class="uppymedia-uppy-hint">${this.escapeHtml(this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_DRAG_DROP_NOTE'))}</p>`;
                 }
                 const browseSpan = addFilesEl.querySelector('.uppymedia-uppy-btn');
@@ -273,7 +278,7 @@
                 endpoint = endpoint + separator + encodeURIComponent(this.csrfToken) + '=1';
             }
 
-            const allowedMeta = ['path', 'altText', 'autoThumbnail'];
+            const allowedMeta = ['path', 'altText', 'autoThumbnail', 'fileMode'];
             if (this.csrfToken) {
                 allowedMeta.push(this.csrfToken);
             }

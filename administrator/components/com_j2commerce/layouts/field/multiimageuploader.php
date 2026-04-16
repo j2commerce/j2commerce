@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Controller\MultiimageuploaderController;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Language\Text;
 
@@ -95,27 +96,45 @@ $totalImages = $hasImages ? count($value) : 0;
 
     <?php if (!$disabled && !$readonly): ?>
     <?php
-    $mediaParams      = ComponentHelper::getParams('com_media');
-    $imageExtensions  = $mediaParams->get('image_extensions', 'bmp,gif,jpg,png,jpeg,webp,avif');
-    $extList          = array_map('strtoupper', array_unique(array_map('trim', explode(',', $imageExtensions))));
-    if (\in_array('JPG', $extList) && \in_array('JPEG', $extList)) {
-        $extList = array_values(array_diff($extList, ['JPEG']));
+    $isFileMode = !empty($options['fileMode']);
+
+    if ($isFileMode) {
+        $fileExtensions  = MultiimageuploaderController::FILE_ALLOWLIST;
+        $extList         = array_values(array_unique(array_map('strtoupper', $fileExtensions)));
+        sort($extList);
+        if (\in_array('JPG', $extList, true) && \in_array('JPEG', $extList, true)) {
+            $extList = array_values(array_diff($extList, ['JPEG']));
+        }
+        $acceptedFormats = implode(', ', $extList);
+        $hintFormat      = 'COM_J2COMMERCE_MULTIIMAGEUPLOADER_ACCEPTED_FILE_FORMATS';
+        $addLabelKey     = 'COM_J2COMMERCE_MULTIIMAGEUPLOADER_ADD_PRODUCT_FILES';
+        $iconClass       = 'fa-solid fa-file-arrow-down';
+    } else {
+        $mediaParams     = ComponentHelper::getParams('com_media');
+        $imageExtensions = $mediaParams->get('image_extensions', 'bmp,gif,jpg,png,jpeg,webp,avif');
+        $extList         = array_map('strtoupper', array_unique(array_map('trim', explode(',', $imageExtensions))));
+        if (\in_array('JPG', $extList) && \in_array('JPEG', $extList)) {
+            $extList = array_values(array_diff($extList, ['JPEG']));
+        }
+        $acceptedFormats = implode(', ', $extList);
+        $hintFormat      = 'COM_J2COMMERCE_MULTIIMAGEUPLOADER_ACCEPTED_FORMATS';
+        $addLabelKey     = 'COM_J2COMMERCE_MULTIIMAGEUPLOADER_ADD_PRODUCT_IMAGES';
+        $iconClass       = 'fa-solid fa-images';
     }
-    $acceptedFormats = implode(', ', $extList);
     ?>
     <div class="uppymedia-empty-state" data-bs-toggle="modal" data-bs-target="#<?php echo $modalId; ?>" role="button">
         <div class="uppymedia-empty-inner">
             <span class="btn btn-primary">
-                <span class="fa-solid fa-images" aria-hidden="true"></span>
-                <?php echo Text::_('COM_J2COMMERCE_MULTIIMAGEUPLOADER_ADD_PRODUCT_IMAGES'); ?>
+                <span class="<?php echo $iconClass; ?>" aria-hidden="true"></span>
+                <?php echo Text::_($addLabelKey); ?>
             </span>
         </div>
-        <p class="uppymedia-empty-hint"><?php echo Text::sprintf('COM_J2COMMERCE_MULTIIMAGEUPLOADER_ACCEPTED_FORMATS', $acceptedFormats); ?></p>
+        <p class="uppymedia-empty-hint"><?php echo Text::sprintf($hintFormat, $acceptedFormats); ?></p>
     </div>
 
     <div class="d-flex align-items-center gap-3">
         <button type="button" class="btn btn-primary uppymedia-add-btn" data-bs-toggle="modal" data-bs-target="#<?php echo $modalId; ?>">
-            <span class="fa-solid fa-images" aria-hidden="true"></span>
+            <span class="<?php echo $iconClass; ?>" aria-hidden="true"></span>
             <?php echo Text::_('COM_J2COMMERCE_MULTIIMAGEUPLOADER_ADD_MEDIA'); ?>
         </button>
         <div class="form-check d-none">

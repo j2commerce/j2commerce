@@ -92,7 +92,25 @@ $layoutPath = JPATH_ADMINISTRATOR . '/components/com_j2commerce/layouts';
                         'value'    => $filesData,
                         'options'  => [
                             'maxFileSize'      => 100 * 1024 * 1024, // 100MB for downloadable files
-                            'allowedFileTypes' => null, // null = allow all file types
+                            'allowedFileTypes' => [
+                                'audio/*', 'video/*',
+                                'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif', 'image/tiff', 'image/bmp',
+                                'application/pdf', 'application/epub+zip', 'application/x-mobipocket-ebook',
+                                'application/zip', 'application/x-7z-compressed', 'application/x-rar-compressed',
+                                'application/x-tar', 'application/gzip',
+                                'application/msword',
+                                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                                'application/vnd.ms-excel',
+                                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                                'application/vnd.ms-powerpoint',
+                                'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                                'application/vnd.oasis.opendocument.text',
+                                'application/vnd.oasis.opendocument.spreadsheet',
+                                'application/vnd.oasis.opendocument.presentation',
+                                'text/plain', 'text/csv', 'text/markdown', 'text/rtf',
+                                'font/ttf', 'font/otf', 'font/woff', 'font/woff2',
+                                'application/octet-stream',
+                            ],
                             'enableCompression' => false,
                             'enableImageEditor' => false,
                             'autoThumbnail'     => false,
