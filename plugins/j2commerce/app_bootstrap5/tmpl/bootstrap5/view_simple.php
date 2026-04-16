@@ -14,8 +14,6 @@ defined('_JEXEC') or die;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 /** @var \J2Commerce\Component\J2commerce\Site\View\Product\HtmlView $this */
-
-//dump($this->product->variant);
 ?>
 <div class="product-<?php echo (int) $this->product->j2commerce_product_id; ?> <?php echo $this->escape($this->product->product_type); ?>-product">
 
@@ -34,7 +32,6 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
         <div class="col-lg-6">
             <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductTitle', [$this->product, $this->context])->getArgument('html', ''); ?>
-
             <?php echo $this->loadTemplate('title'); ?>
             <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductTitle', [$this->product, $this->context])->getArgument('html', ''); ?>
 
@@ -70,14 +67,13 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
             <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductDescription', [$this->product, $this->context])->getArgument('html', ''); ?>
 
-            <?php if($this->params->get('item_show_sdesc', 1)):?>
+            <?php if ($this->params->get('item_show_sdesc', 1)) : ?>
                 <?php echo $this->loadTemplate('sdesc'); ?>
             <?php endif; ?>
 
             <?php if (isset($this->product->source->event->beforeDisplayContent)) : ?>
                 <?php echo $this->product->source->event->beforeDisplayContent; ?>
             <?php endif; ?>
-
 
             <?php if (J2CommerceHelper::product()->canShowCart($this->params)) : ?>
                 <form action="<?php echo $this->escape($this->product->cart_form_action); ?>"
@@ -87,18 +83,14 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
                       data-product_id="<?php echo (int) $this->product->j2commerce_product_id; ?>"
                       data-product_type="<?php echo $this->escape($this->product->product_type); ?>"
                       enctype="multipart/form-data">
+
                     <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductOptions', [$this->product, $this->context])->getArgument('html', ''); ?>
-
                     <?php echo $this->loadTemplate('options'); ?>
-
                     <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductOptions', [$this->product, $this->context])->getArgument('html', ''); ?>
 
                     <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductCart', [$this->product, $this->context])->getArgument('html', ''); ?>
-
                     <?php echo $this->loadTemplate('cart'); ?>
-
                     <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductCart', [$this->product, $this->context])->getArgument('html', ''); ?>
-
                 </form>
             <?php endif; ?>
             <?php if ($this->params->get('item_use_tabs', 1) == 2) : ?>
@@ -121,19 +113,15 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 </div>
 
 <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductUpsells', [$this->product, $this->context])->getArgument('html', ''); ?>
-
 <?php if ($this->params->get('item_show_product_upsells', 0) && !empty($this->product->up_sells)) : ?>
     <?php echo $this->loadTemplate('upsells'); ?>
 <?php endif; ?>
-
 <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductUpsells', [$this->product, $this->context])->getArgument('html', ''); ?>
 
 <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductCrosssells', [$this->product, $this->context])->getArgument('html', ''); ?>
-
 <?php if ($this->params->get('item_show_product_cross_sells', 0) && !empty($this->product->cross_sells)) : ?>
     <?php echo $this->loadTemplate('crosssells'); ?>
 <?php endif; ?>
-
 <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductCrosssells', [$this->product, $this->context])->getArgument('html', ''); ?>
 
 <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductDetail', [$this->product, $this->context])->getArgument('html', ''); ?>

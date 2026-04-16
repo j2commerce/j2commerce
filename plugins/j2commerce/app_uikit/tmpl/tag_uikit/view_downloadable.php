@@ -14,65 +14,92 @@ defined('_JEXEC') or die;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 /** @var \J2Commerce\Component\J2commerce\Site\View\Product\HtmlView $this */
-
 ?>
-<div class="product-<?php echo $this->product->j2commerce_product_id; ?> <?php echo $this->product->product_type; ?>-product">
-    <div class="uk-grid" uk-grid>
-        <div class="uk-width-1-2@s">
+<div class="product-<?php echo (int) $this->product->j2commerce_product_id; ?> <?php echo $this->escape($this->product->product_type); ?>-product">
+
+    <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductDetail', [$this->product, $this->context])->getArgument('html', ''); ?>
+
+    <div class="uk-grid uk-grid-large uk-margin-large-bottom" uk-grid>
+        <div class="uk-width-1-2@l">
+            <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductImages', [$this->product, $this->context])->getArgument('html', ''); ?>
             <?php
             $images = $this->loadTemplate('images');
             J2CommerceHelper::plugin()->event('BeforeDisplayImages', [&$images, $this, 'com_j2commerce.products.view.uikit']);
             echo $images;
             ?>
+            <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductImages', [$this->product, $this->context])->getArgument('html', ''); ?>
         </div>
 
-        <div class="uk-width-1-2@s">
+        <div class="uk-width-1-2@l">
+            <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductTitle', [$this->product, $this->context])->getArgument('html', ''); ?>
             <?php echo $this->loadTemplate('title'); ?>
+            <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductTitle', [$this->product, $this->context])->getArgument('html', ''); ?>
+
             <?php if (isset($this->product->source->event->afterDisplayTitle)) : ?>
                 <?php echo $this->product->source->event->afterDisplayTitle; ?>
             <?php endif; ?>
 
-            <div class="price-sku-brand-container uk-grid" uk-grid>
+            <div class="sku-price-container uk-grid uk-margin-small-bottom" uk-grid>
                 <?php if (J2CommerceHelper::product()->canShowprice($this->params)) : ?>
-                    <div class="uk-width-1-2@s">
+                    <div class="uk-width-1-2@l">
                         <?php echo $this->loadTemplate('price'); ?>
                     </div>
                 <?php endif; ?>
-
-                <div class="uk-width-1-2@s">
-                    <?php if (isset($this->product->source->event->beforeDisplayContent)) : ?>
-                        <?php echo $this->product->source->event->beforeDisplayContent; ?>
-                    <?php endif; ?>
-
-                    <?php if (J2CommerceHelper::product()->canShowSku($this->params)) : ?>
+                <?php if (J2CommerceHelper::product()->canShowSku($this->params)) : ?>
+                    <div class="uk-width-1-2@l">
                         <?php echo $this->loadTemplate('sku'); ?>
-                    <?php endif; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
 
-                    <?php echo $this->loadTemplate('brand'); ?>
-                    <?php if ($this->params->get('item_show_product_stock', 1) && J2CommerceHelper::product()->managing_stock($this->product->variant)) : ?>
+            <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductStock', [$this->product, $this->context])->getArgument('html', ''); ?>
+
+            <div class="stock-brand-container uk-flex uk-flex-middle uk-margin-bottom" style="gap: 1rem;">
+                <?php if ($this->params->get('item_show_product_stock', 1) && J2CommerceHelper::product()->managing_stock($this->product->variant)) : ?>
+                    <div class="uk-width-1-2@l">
                         <?php echo $this->loadTemplate('stock'); ?>
-                    <?php endif; ?>
+                    </div>
+                <?php endif; ?>
+                <div class="uk-width-1-2@l uk-text-right@l">
+                    <?php echo $this->loadTemplate('brand'); ?>
                 </div>
             </div>
+
+            <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductDescription', [$this->product, $this->context])->getArgument('html', ''); ?>
+
+            <?php if ($this->params->get('item_show_sdesc', 1)) : ?>
+                <?php echo $this->loadTemplate('sdesc'); ?>
+            <?php endif; ?>
+
+            <?php if (isset($this->product->source->event->beforeDisplayContent)) : ?>
+                <?php echo $this->product->source->event->beforeDisplayContent; ?>
+            <?php endif; ?>
+
             <?php if (J2CommerceHelper::product()->canShowCart($this->params)) : ?>
-                <form action="<?php echo $this->product->cart_form_action; ?>"
-                      method="post" class="j2commerce-addtocart-form"
-                      id="j2commerce-addtocart-form-<?php echo $this->product->j2commerce_product_id; ?>"
-                      name="j2commerce-addtocart-form-<?php echo $this->product->j2commerce_product_id; ?>"
-                      data-product_id="<?php echo $this->product->j2commerce_product_id; ?>"
-                      data-product_type="<?php echo $this->product->product_type; ?>"
+                <form action="<?php echo $this->escape($this->product->cart_form_action); ?>"
+                      method="post" class="j2commerce-addtocart-form uk-margin-large-bottom"
+                      id="j2commerce-addtocart-form-<?php echo (int) $this->product->j2commerce_product_id; ?>"
+                      name="j2commerce-addtocart-form-<?php echo (int) $this->product->j2commerce_product_id; ?>"
+                      data-product_id="<?php echo (int) $this->product->j2commerce_product_id; ?>"
+                      data-product_type="<?php echo $this->escape($this->product->product_type); ?>"
                       enctype="multipart/form-data">
 
+                    <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductCart', [$this->product, $this->context])->getArgument('html', ''); ?>
                     <?php echo $this->loadTemplate('cart'); ?>
-
+                    <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductCart', [$this->product, $this->context])->getArgument('html', ''); ?>
                 </form>
+            <?php endif; ?>
+            <?php if ($this->params->get('item_use_tabs', 1) == 2) : ?>
+                <?php echo $this->loadTemplate('accordions'); ?>
             <?php endif; ?>
         </div>
     </div>
 
-    <?php if ($this->params->get('item_use_tabs', 1)) : ?>
+    <?php if ($this->params->get('item_use_tabs', 1) == 1) : ?>
         <?php echo $this->loadTemplate('tabs'); ?>
-    <?php else : ?>
+    <?php endif; ?>
+
+    <?php if ($this->params->get('item_use_tabs', 1) == 0) : ?>
         <?php echo $this->loadTemplate('notabs'); ?>
     <?php endif; ?>
 
@@ -81,10 +108,16 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
     <?php endif; ?>
 </div>
 
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductUpsells', [$this->product, $this->context])->getArgument('html', ''); ?>
 <?php if ($this->params->get('item_show_product_upsells', 0) && !empty($this->product->up_sells)) : ?>
     <?php echo $this->loadTemplate('upsells'); ?>
 <?php endif; ?>
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductUpsells', [$this->product, $this->context])->getArgument('html', ''); ?>
 
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductCrosssells', [$this->product, $this->context])->getArgument('html', ''); ?>
 <?php if ($this->params->get('item_show_product_cross_sells', 0) && !empty($this->product->cross_sells)) : ?>
     <?php echo $this->loadTemplate('crosssells'); ?>
 <?php endif; ?>
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductCrosssells', [$this->product, $this->context])->getArgument('html', ''); ?>
+
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductDetail', [$this->product, $this->context])->getArgument('html', ''); ?>
