@@ -13,6 +13,6 @@
 
 // Version constants for J2Commerce
 \define('J2COMMERCE_PRO', true);
-\define('J2COMMERCE_VERSION', '6.2.1');
-\define('J2COMMERCE_EXTRA_VERSION', '');
-\define('J2COMMERCE_DATE', '2026-04-10');
+\define('J2COMMERCE_VERSION', '6.2.2');
+\define('J2COMMERCE_EXTRA_VERSION', 'beta');
+\define('J2COMMERCE_DATE', '2026-04-15');
