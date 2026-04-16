@@ -61,7 +61,7 @@ if ($this->params->get('item_show_product_stock', 1) && J2CommerceHelper::produc
 
             <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductStock', [$this->product, $this->context])->getArgument('html', ''); ?>
 
-            <div class="stock-brand-container uk-grid uk-flex-middle uk-margin-bottom" uk-grid>
+            <div class="stock-brand-container uk-flex uk-flex-middle uk-margin-bottom" style="gap: 1rem;">
                 <?php if ($this->params->get('item_show_product_stock', 1) && J2CommerceHelper::product()->managing_stock($this->product->variant)) : ?>
                     <div class="uk-width-1-2@l">
                         <?php echo $this->loadTemplate('stock'); ?>
