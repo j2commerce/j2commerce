@@ -1093,7 +1093,7 @@ const J2Commerce = {
         document.addEventListener('click', (e) => {
             const btn = e.target.closest('.count-input:not(.j2commerce-qty-controls) [data-increment]');
             if (!btn) return;
-            const input = btn.parentNode.querySelector('input[type="number"]');
+            const input = btn.parentNode.querySelector('input[type="number"], input[type="text"]');
             if (!input) return;
             const maxValue = parseInt(input.getAttribute('max')) || Infinity;
             if (parseInt(input.value) < maxValue) {
@@ -1106,7 +1106,7 @@ const J2Commerce = {
         document.addEventListener('click', (e) => {
             const btn = e.target.closest('.count-input:not(.j2commerce-qty-controls) [data-decrement]');
             if (!btn) return;
-            const input = btn.parentNode.querySelector('input[type="number"]');
+            const input = btn.parentNode.querySelector('input[type="number"], input[type="text"]');
             if (!input) return;
             const minValue = parseInt(input.getAttribute('min')) || 1;
             if (parseInt(input.value) > minValue) {

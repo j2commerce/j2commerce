@@ -54,7 +54,8 @@
 }
 
 .j2commerce button.choices__button_joomla {
-    color: var(--danger);opacity:1!important;
+    color: var(--danger);
+    opacity: 1!important;
 }
 
 .j2commerce .alert-purple {
@@ -73,15 +74,15 @@
 }
 
 .j2commerce .text-bg-dark {
-    color:#111827!important;
-    background-color:#f9fafb!important;
-    border:1px solid #e5e7eb!important;
+    color: #111827!important;
+    background-color: #f9fafb!important;
+    border: 1px solid #e5e7eb!important;
 }
 
 .j2commerce .text-bg-dark:hover {
-    color:#111827!important;
-    background-color:#f3f4f6!important;
-    border:1px solid #e5e7eb!important;
+    color: #111827!important;
+    background-color: #f3f4f6!important;
+    border: 1px solid #e5e7eb!important;
 }
 
 .j2commerce .text-bg-action {
@@ -90,80 +91,68 @@
 }
 
 .j2commerce .btn-soft-success {
-    color:#166534;
-    background:#f0fdf4;
-    border:1px solid #bbf7d0;
+    color: #166534;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
 }
 
 .j2commerce .btn-soft-success:hover {
-    background:#dcfce7!important;
+    background: #dcfce7!important;
 }
 
 .j2commerce .btn-soft-warning {
-    color:#92400e;
-    background:#fffbeb;
-    border:1px solid #fde68a;
+    color: #92400e;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
 }
 
 .j2commerce .btn-soft-warning:hover {
-    background:#fef3c7!important;
+    background: #fef3c7!important;
 }
 
 .j2commerce .btn-soft-danger {
-    color:#991b1b;
-    background:#fef2f2;
-    border:1px solid #fecaca;
+    color: #991b1b;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
 }
 
 .j2commerce .btn-soft-danger:hover {
-    background:#fee2e2!important;
-    color:#991b1b!important;
+    background: #fee2e2!important;
+    color: #991b1b!important;
 }
 
 .j2commerce .btn-soft-info {
-    color:#1e40af;
-    background:#eff6ff;
-    border:1px solid #bfdbfe;
+    color: #1e40af;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
 }
 
 .j2commerce .btn-soft-info:hover {
-    background:#dbeafe!important;
+    background: #dbeafe!important;
 }
 
 .j2commerce .btn-soft-primary {
-    color:#5b21b6 !important;
-    background:#f5f3ff !important;
-    border:1px solid #ddd6fe;
+    color: #5b21b6 !important;
+    background: #f5f3ff !important;
+    border: 1px solid #ddd6fe;
 }
 
 .j2commerce .btn-soft-primary:hover {
-    background:#ede9fe!important;
+    background: #ede9fe!important;
 }
 
 .j2commerce .btn-soft-dark {
-    color:#111827;
-    background:#f9fafb;
-    border:1px solid #e5e7eb;
+    color: #111827;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
 }
 
 .j2commerce .btn-soft-dark:hover {
-    background:#f3f4f6!important;
+    background: #f3f4f6!important;
 }
 
 .j2commerce .btn-light {
-    background-color: #F9FAFB!important;
-}
-
-.j2commerce-cart-buttons .form-control.qty-input {
-    max-width: 60px;
-    padding:0.6rem;
-    text-align:center;
-}
-
-.j2commerce-cart-buttons input[type="number"]::-webkit-outer-spin-button,
-.j2commerce-cart-buttons input[type="number"]::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
+    background-color: #f9fAfb!important;
 }
 
 .j2commerce-configurable-button.btn[data-bs-toggle="collapse"] .fa-chevron-down {
@@ -181,26 +170,27 @@
 
 #j2commerce-product-detail-tab,
 #j2commerceProfileTabs {
-    box-shadow: rgba(0, 0, 0, 0.05) 0 -4px inset;
+    box-shadow: rgba(0, 0, 0, .05) 0 -4px inset;
 }
 
 #j2commerce-product-detail-tab.nav.nav-tabs .nav-link,
 #j2commerceProfileTabs .nav-link {
-    box-shadow:none!important;
+    box-shadow: none!important;
 }
 
 #j2commerce-product-detail-tab.nav.nav-tabs .nav-link.active,
 #j2commerceProfileTabs .nav-link.active {
-    background:transparent;font-weight:700;
+    background: transparent;
+    font-weight: 700;
 }
 
 @media (width >= 768px) {
     .j2commerce-sidebar-filters-container .offcanvas-md {
         --offcanvas-height: auto;
         --offcanvas-border-width: 0;
-        background-color: #0000 !important;
+        background-color: transparent !important;
         transform: translateX(0);
-        width:100%;
+        width: 100%;
     }
 }
 
@@ -230,7 +220,7 @@
 #j2CommerceAccordion .accordion-button {
     color: var(--accordion-active-color)!important;
     background-color: var(--accordion-active-bg)!important;
-    box-shadow:none!important;
+    box-shadow: none!important;
 }
 
 .product-accordion .accordion-item {
@@ -242,13 +232,13 @@
 
 .product-accordion .accordion-button {
     padding: 1rem 0;
-    font-size: 0.875rem;
+    font-size: .875rem;
     font-weight: 400;
     color: var(--product-color-text);
     background: none;
     border-radius: 0 !important;
     box-shadow: none;
-    letter-spacing: 0.01em;
+    letter-spacing: .01em;
 }
 
 .product-accordion .accordion-button:not(.collapsed) {
@@ -259,9 +249,9 @@
 
 .product-accordion .accordion-button::after {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236b7280' viewBox='0 0 16 16'%3E%3Cpath d='M8 1v14M1 8h14' stroke='%236b7280' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
-    background-size: 0.875rem;
-    width: 0.875rem;
-    height: 0.875rem;
+    background-size: .875rem;
+    width: .875rem;
+    height: .875rem;
     transition: transform 0.2s ease;
 }
 
@@ -272,7 +262,7 @@
 
 .product-accordion .accordion-body {
     padding: 0 0 1rem;
-    font-size: 0.875rem;
+    font-size: .875rem;
     line-height: 1.7;
     color: var(--product-color-text-light);
 }
@@ -290,7 +280,7 @@
     --btn-active-border-color: var(--btn-hover-border-color);
     --btn-disabled-color: var(--btn-color);
     --btn-disabled-bg: var(--btn-bg);
-    --btn-disabled-border-color:var(--btn-bg);
+    --btn-disabled-border-color: var(--btn-bg);
 }
 
 .j2commerce .btn-outline-secondary {
@@ -311,5 +301,5 @@
 }
 
 .j2commerce-payment-providers .dropstart .dropdown-toggle:before {
-    display:none;
+    display: none;
 }
