@@ -107,7 +107,7 @@ class Pkg_J2commerceInstallerScript extends InstallerScript
     private function debugLog(string $message): void
     {
         if (!$this->debugLogFile) {
-            $this->debugLogFile = JPATH_ROOT . '/tmp/j2commerce_install_debug.log';
+            $this->debugLogFile = Factory::getApplication()->get('log_path', JPATH_ADMINISTRATOR . '/logs') . '/j2commerce_install_debug.log';
         }
         file_put_contents($this->debugLogFile, date('[Y-m-d H:i:s] ') . $message . "\n", FILE_APPEND);
     }
