@@ -88,7 +88,7 @@ class AdvancedpricingController extends AdminController
                 $db->execute();
             }
 
-            $this->setMessage(Text::sprintf('COM_J2COMMERCE_N_ITEMS_UPDATED', count($cids)));
+            $this->setMessage(Text::sprintf('COM_J2COMMERCE_N_ITEMS_UPDATED', \count($cids)));
         } catch (\Exception $e) {
             $this->setMessage($e->getMessage(), 'error');
         }
