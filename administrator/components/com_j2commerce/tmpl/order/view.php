@@ -83,6 +83,7 @@ if (empty($customerName)) {
                     <input type="checkbox" class="form-check-input" id="increaseStock" name="increase_stock">
                     <label class="form-check-label small" for="increaseStock"><?php echo Text::_('COM_J2COMMERCE_INCREASE_STOCK'); ?></label>
                 </div>
+                <label for="headerStatusSelect" class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_ORDER_STATUSES'); ?></label>
                 <select name="order_state_id" id="headerStatusSelect" class="form-select form-select-sm w-auto">
                     <?php foreach ($this->orderStatuses as $status) : ?>
                         <option value="<?php echo (int) $status->value; ?>"
