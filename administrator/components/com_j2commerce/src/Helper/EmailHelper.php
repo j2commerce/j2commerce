@@ -2225,13 +2225,15 @@ class EmailHelper
                 ->bind(':context', $context);
         }
 
+        $langAll = '*';
+
         if ($language !== '') {
             $query->where($db->quoteName('language') . ' IN (:language, :languageAll)')
                 ->bind(':language', $language)
-                ->bind(':languageAll', '*');
+                ->bind(':languageAll', $langAll);
         } else {
             $query->where($db->quoteName('language') . ' = :languageAll')
-                ->bind(':languageAll', '*');
+                ->bind(':languageAll', $langAll);
         }
 
         $query->order($db->quoteName('ordering') . ' ASC');
