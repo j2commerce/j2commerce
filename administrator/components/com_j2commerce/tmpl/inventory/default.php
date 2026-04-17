@@ -381,7 +381,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                             </select>
                                         <?php endif; ?>
                                     </td>
-                                    <td class="text-end inventory-actions">
+                                    <td class="text-center inventory-actions">
                                         <button type="button" class="btn btn-sm btn-primary save-btn" onclick="saveInventoryItem(<?php echo $item->j2commerce_product_id; ?>, <?php echo $item->j2commerce_variant_id ?: 0; ?>)">
                                             <?php echo Text::_('COM_J2COMMERCE_SAVE'); ?>
                                         </button>
