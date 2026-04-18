@@ -194,28 +194,22 @@ class ShippingpluginController extends BaseController
      */
     public function ajax(): void
     {
-        $plugin = $this->input->getCmd('plugin', '');
-        $action = $this->input->getCmd('action', '');
+        $method = $this->input->getMethod();
 
-        // Webhook callbacks are authenticated by HMAC, not session token.
-        $isWebhook = $action === 'processWebhook'
-            && isset($_SERVER['HTTP_X_EASYSHIP_SIGNATURE']);
-
-        if (!$isWebhook) {
-            $method = $this->input->getMethod();
-
-            if ($method === 'GET') {
-                if (!Session::checkToken('get')) {
-                    $this->sendJsonError(Text::_('JINVALID_TOKEN'));
-                    return;
-                }
-            } else {
-                if (!Session::checkToken()) {
-                    $this->sendJsonError(Text::_('JINVALID_TOKEN'));
-                    return;
-                }
+        if ($method === 'GET') {
+            if (!Session::checkToken('get')) {
+                $this->sendJsonError(Text::_('JINVALID_TOKEN'));
+                return;
+            }
+        } else {
+            if (!Session::checkToken()) {
+                $this->sendJsonError(Text::_('JINVALID_TOKEN'));
+                return;
             }
         }
+
+        $plugin = $this->input->getCmd('plugin', '');
+        $action = $this->input->getCmd('action', '');
 
         if (empty($plugin) || empty($action)) {
             $this->sendJsonError(Text::_('COM_J2COMMERCE_ERR_INVALID_REQUEST'));
