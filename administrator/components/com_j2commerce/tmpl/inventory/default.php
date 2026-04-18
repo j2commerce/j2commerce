@@ -332,7 +332,15 @@ document.addEventListener("DOMContentLoaded", function() {
                                     <!-- Single variant product - show regular fields -->
                                     <td class="text-center j2commerce-inventory-quantity">
                                         <?php if ($form) : ?>
-                                            <?php echo $form->renderField('quantity', null, $item->quantity, null, null, null, ['hiddenLabel' => true]); ?>
+                                            <?php
+                                            $quantityHtml = $form->renderField('quantity', null, $item->quantity, null, null, null, ['hiddenLabel' => true]);
+                                            $quantityHtml = str_replace(
+                                                ['name="jform[quantity]"', 'id="jform_quantity"'],
+                                                ['name="jform[quantity_' . $item->j2commerce_product_id . ']"', 'id="jform_quantity_' . $item->j2commerce_product_id . '"'],
+                                                $quantityHtml
+                                            );
+                                            echo $quantityHtml;
+                                            ?>
                                         <?php else : ?>
                                             <input type="number" class="form-control quantity-input" value="<?php echo (int) $item->quantity; ?>" min="0" step="1" />
                                         <?php endif; ?>
@@ -369,7 +377,15 @@ document.addEventListener("DOMContentLoaded", function() {
                                     </td>
                                     <td class="text-center j2commerce-inventory-stock_status">
                                         <?php if ($form) : ?>
-                                            <?php echo $form->renderField('availability', null, $item->availability, null, null, null, ['hiddenLabel' => true]); ?>
+                                            <?php
+                                            $availabilityHtml = $form->renderField('availability', null, $item->availability, null, null, null, ['hiddenLabel' => true]);
+                                            $availabilityHtml = str_replace(
+                                                ['name="jform[availability]"', 'id="jform_availability"'],
+                                                ['name="jform[availability_' . $item->j2commerce_product_id . ']"', 'id="jform_availability_' . $item->j2commerce_product_id . '"'],
+                                                $availabilityHtml
+                                            );
+                                            echo $availabilityHtml;
+                                            ?>
                                         <?php else : ?>
                                             <select class="form-select stock-select">
                                                 <option value="1" <?php echo ($item->availability == 1) ? 'selected' : ''; ?>>
@@ -425,7 +441,15 @@ document.addEventListener("DOMContentLoaded", function() {
                                                     <div class="col-md-2">
                                                         <label class="form-label small fw-bold"><?php echo Text::_('COM_J2COMMERCE_VARIANTS_QUANTITY'); ?></label>
                                                         <?php if ($variantForm) : ?>
-                                                            <?php echo $variantForm->renderField('quantity', null, $variant->quantity, null, null, null, ['hiddenLabel' => true]); ?>
+                                                            <?php
+                                                            $variantQuantityHtml = $variantForm->renderField('quantity', null, $variant->quantity, null, null, null, ['hiddenLabel' => true]);
+                                                            $variantQuantityHtml = str_replace(
+                                                                ['name="jform[quantity]"', 'id="jform_quantity"'],
+                                                                ['name="jform[variant_quantity_' . $variant->j2commerce_variant_id . ']"', 'id="jform_variant_quantity_' . $variant->j2commerce_variant_id . '"'],
+                                                                $variantQuantityHtml
+                                                            );
+                                                            echo $variantQuantityHtml;
+                                                            ?>
                                                         <?php else : ?>
                                                             <input type="number" class="form-control form-control-sm quantity-input" value="<?php echo (int) $variant->quantity; ?>" min="0" step="1" />
                                                         <?php endif; ?>
@@ -459,7 +483,15 @@ document.addEventListener("DOMContentLoaded", function() {
                                                     <div class="col-md-2">
                                                         <label class="form-label small fw-bold"><?php echo Text::_('COM_J2COMMERCE_VARIANTS_STOCK_STATUS'); ?></label>
                                                         <?php if ($variantForm) : ?>
-                                                            <?php echo $variantForm->renderField('availability', null, $variant->availability, null, null, null, ['hiddenLabel' => true]); ?>
+                                                            <?php
+                                                            $variantAvailabilityHtml = $variantForm->renderField('availability', null, $variant->availability, null, null, null, ['hiddenLabel' => true]);
+                                                            $variantAvailabilityHtml = str_replace(
+                                                                ['name="jform[availability]"', 'id="jform_availability"'],
+                                                                ['name="jform[variant_availability_' . $variant->j2commerce_variant_id . ']"', 'id="jform_variant_availability_' . $variant->j2commerce_variant_id . '"'],
+                                                                $variantAvailabilityHtml
+                                                            );
+                                                            echo $variantAvailabilityHtml;
+                                                            ?>
                                                         <?php else : ?>
                                                             <select class="form-select form-select-sm stock-select">
                                                                 <option value="1" <?php echo ($variant->availability == 1) ? 'selected' : ''; ?>>
