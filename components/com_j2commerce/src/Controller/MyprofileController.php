@@ -701,12 +701,6 @@ class MyprofileController extends BaseController
                 continue;
             }
 
-            // Subscriptions cannot be reordered; they require a fresh checkout
-            if (\in_array($item->product_type ?? '', ['subscriptionproduct', 'variablesubscriptionproduct'], true)) {
-                $errors[] = Text::sprintf('COM_J2COMMERCE_REORDER_PRODUCT_NOT_AVAILABLE', $item->orderitem_name);
-                continue;
-            }
-
             $productId = (int) $item->product_id;
             $variantId = (int) $item->variant_id;
             $quantity  = (float) $item->orderitem_quantity;
