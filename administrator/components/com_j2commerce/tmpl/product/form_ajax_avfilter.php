@@ -40,43 +40,43 @@ $productFilters = (new ProductfiltersModel)->getFiltersByProduct($item->j2commer
 
 <input type="hidden" name="<?php echo $formPrefix.'[productfilter_ids]';?>" value="" />
 
-<div class="table-responsive">
-    <table id="product_filters_table" class="table itemList j2commerce">
-        <thead>
+<table id="product_filters_table" class="table itemList j2commerce">
+    <thead>
+    <tr>
+        <th scope="col"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_FILTER_VALUE');?></th>
+        <th scope="col" class="w-1 text-center"><?php echo Text::_('COM_J2COMMERCE_REMOVE');?></th>
+    </tr>
+    </thead>
+    <tbody>
+    <?php if(isset($productFilters) && count($productFilters)): ?>
+        <?php foreach($productFilters as $group_id=>$filters):?>
             <tr>
-                <th scope="col"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_FILTER_VALUE');?></th>
-                <th scope="col" class="w-1 text-center"><?php echo Text::_('COM_J2COMMERCE_REMOVE');?></th>
+                <td colspan="2"><h4 class="mb-0"><?php echo Text::_($this->escape($filters['group_name'])); ?></h4></td>
             </tr>
-        </thead>
-        <tbody>
-        <?php if(isset($productFilters) && count($productFilters)): ?>
-            <?php foreach($productFilters as $group_id=>$filters):?>
-                <tr>
-                    <td colspan="2"><h4 class="mb-0"><?php echo Text::_($this->escape($filters['group_name'])); ?></h4></td>
-                </tr>
-                <?php foreach($filters['filters'] as $filter):
-                    ?>
-                    <tr id="product_filter_current_option_<?php echo $filter->filter_id;?>">
-                        <td class="addedFilter">
-                            <?php echo $this->escape($filter->filter_name) ;?>
-                        </td>
-                        <td class="text-center">
+            <?php foreach($filters['filters'] as $filter):
+                ?>
+                <tr id="product_filter_current_option_<?php echo $filter->filter_id;?>">
+                    <td class="addedFilter">
+                        <?php echo $this->escape($filter->filter_name) ;?>
+                    </td>
+                    <td class="text-center">
                                 <span class="filterRemove" onclick="removeFilter(<?php echo $filter->filter_id; ?>, <?php echo $item->j2commerce_product_id; ?>);">
                                     <span class="icon icon-trash text-danger"></span>
                                 </span>
-                            <input type="hidden" value="<?php echo $filter->filter_id;?>" name="<?php echo $formPrefix.'[productfilter_ids]' ;?>[]" />
-                        </td>
-                    </tr>
-                <?php endforeach;?>
+                        <input type="hidden" value="<?php echo $filter->filter_id;?>" name="<?php echo $formPrefix.'[productfilter_ids]' ;?>[]" />
+                    </td>
+                </tr>
             <?php endforeach;?>
-        <?php endif;?>
-        <tr class="j2commerce_a_filter">
-            <td colspan="2">
-                <small><strong><?php echo Text::_('COM_J2COMMERCE_SEARCH_AND_PRODUCT_FILTERS');?></strong></small>
-                <?php echo LayoutHelper::render('joomla.form.field.text', ['name'  => 'productfilter','id'    => 'J2CommerceproductFilter','value' => '','class' => 'form-control ms-2',] + $textFieldDefaults);?>
-            </td>
-        </tr>
-        </tbody>
-    </table>
-</div>
+        <?php endforeach;?>
+    <?php endif;?>
+    <tr class="j2commerce_a_filter">
+        <td colspan="2">
+            <small><strong><?php echo Text::_('COM_J2COMMERCE_SEARCH_AND_PRODUCT_FILTERS');?></strong></small>
+            <div class="d-inline-block position-relative ms-2">
+                <?php echo LayoutHelper::render('joomla.form.field.text', ['name'  => 'productfilter','id'    => 'J2CommerceproductFilter','value' => '','class' => 'form-control',] + $textFieldDefaults);?>
+            </div>
+        </td>
+    </tr>
+    </tbody>
+</table>
 
