@@ -140,7 +140,7 @@ $wa->addInlineScript($submitButtonJs);
                                         (object) ['value' => 0, 'text' => Text::_('JNO')],
                                         (object) ['value' => 1, 'text' => Text::_('JYES')]
                                     ],
-                                    'onchange' => 'this.form.submit();',
+                                    'onchange' => "Joomla.submitbutton('article.apply');",
                                     'label' => Text::_('COM_J2COMMERCE_TREAT_AS_PRODUCT'),
                                     'disabled' => false,
                                     'readonly' => false,
