@@ -388,14 +388,30 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
 
         $j2data = $attribs->j2commerce;
 
-        // Check if product is enabled and has a product type
-        if (empty($j2data->enabled) || empty($j2data->product_type)) {
+        // Check if product already exists for this article
+        $existingProduct = $this->getProductBySource('com_content', $articleId);
+
+        // If being disabled, update existing product record and stop
+        if (empty($j2data->enabled)) {
+            if ($existingProduct && !empty($existingProduct->j2commerce_product_id)) {
+                $db        = $this->getDatabase();
+                $productId = (int) $existingProduct->j2commerce_product_id;
+                $query     = $db->getQuery(true)
+                    ->update($db->quoteName('#__j2commerce_products'))
+                    ->set($db->quoteName('enabled') . ' = 0')
+                    ->where($db->quoteName('j2commerce_product_id') . ' = :productId')
+                    ->bind(':productId', $productId, ParameterType::INTEGER);
+                $db->setQuery($query)->execute();
+            }
+
             return;
         }
 
-        // Check if product already exists for this article
-        $existingProduct = $this->getProductBySource('com_content', $articleId);
-        $alreadyExists   = ($existingProduct && !empty($existingProduct->enabled));
+        if (empty($j2data->product_type)) {
+            return;
+        }
+
+        $alreadyExists = ($existingProduct && !empty($existingProduct->enabled));
 
         // Only save if enabled or already exists
         if ($j2data->enabled != 1 && !$alreadyExists) {
