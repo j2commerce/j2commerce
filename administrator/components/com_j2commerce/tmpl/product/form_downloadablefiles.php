@@ -13,6 +13,7 @@
 
 use J2Commerce\Component\J2commerce\Administrator\Field\MultiImageUploaderField;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\FileLayout;
@@ -73,6 +74,18 @@ if ($productId) {
     }
 }
 
+// Resolve default upload directory from J2Commerce image_directories config
+$j2cParams      = ComponentHelper::getParams('com_j2commerce');
+$configuredDirs = $j2cParams->get('image_directories', []);
+
+if (\is_string($configuredDirs)) {
+    $configuredDirs = json_decode($configuredDirs, false) ?? [];
+}
+
+$defaultUploadDir = !empty($configuredDirs) && !empty($configuredDirs[0]->directory)
+    ? trim((string) $configuredDirs[0]->directory, '/')
+    : 'images/downloads';
+
 $layoutPath = JPATH_ADMINISTRATOR . '/components/com_j2commerce/layouts';
 ?>
 
@@ -114,7 +127,7 @@ $layoutPath = JPATH_ADMINISTRATOR . '/components/com_j2commerce/layouts';
                             'enableCompression' => false,
                             'enableImageEditor' => false,
                             'autoThumbnail'     => false,
-                            'directory'         => 'images/downloads',
+                            'directory'         => $defaultUploadDir,
                             'multiple'          => true,
                             'endpoint'          => 'index.php?option=com_j2commerce&task=multiimageuploader.upload&format=json',
                             'formPrefix'        => $formPrefix,

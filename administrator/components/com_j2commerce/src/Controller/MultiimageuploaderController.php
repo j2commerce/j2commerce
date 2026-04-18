@@ -861,11 +861,33 @@ class MultiimageuploaderController extends BaseController
         $path = preg_replace('#/+#', '/', $path);
         $path = trim($path, '/');
 
-        if (!str_starts_with($path, 'images')) {
-            return 'images';
+        // Build allowed roots from J2Commerce configured directories
+        $directories = ComponentHelper::getParams('com_j2commerce')
+            ->get('image_directories', [(object) ['directory' => 'images']]);
+
+        if (\is_string($directories)) {
+            $directories = json_decode($directories);
         }
 
-        return $path;
+        $allowedRoots = [];
+
+        foreach ($directories as $dir) {
+            if (!empty($dir->directory)) {
+                $allowedRoots[] = trim((string) $dir->directory, '/');
+            }
+        }
+
+        if (empty($allowedRoots)) {
+            $allowedRoots[] = 'images';
+        }
+
+        foreach ($allowedRoots as $root) {
+            if ($path === $root || str_starts_with($path, $root . '/')) {
+                return $path;
+            }
+        }
+
+        return $allowedRoots[0];
     }
 
     /** Verify a resolved path is within JPATH_ROOT to prevent traversal attacks. */
