@@ -32,7 +32,7 @@ if (empty($orders)) {
             <th scope="col"><?php echo Text::_('COM_J2COMMERCE_HEADING_ORDER'); ?></th>
             <th scope="col" class="d-none d-lg-table-cell"><?php echo Text::_('COM_J2COMMERCE_HEADING_DATE'); ?></th>
             <th scope="col"><?php echo Text::_('COM_J2COMMERCE_HEADING_CUSTOMER'); ?></th>
-            <th scope="col" class="text-center"><?php echo Text::_('COM_J2COMMERCE_HEADING_STATUS'); ?></th>
+            <th scope="col" class="d-none d-lg-table-cell text-center"><?php echo Text::_('COM_J2COMMERCE_HEADING_STATUS'); ?></th>
             <th scope="col" class="text-end"><?php echo Text::_('COM_J2COMMERCE_HEADING_TOTAL'); ?></th>
         </tr>
         </thead>
@@ -56,7 +56,7 @@ if (empty($orders)) {
                 <td>
                     <small><?php echo htmlspecialchars($customerName, ENT_QUOTES, 'UTF-8'); ?></small>
                 </td>
-                <td class="text-center">
+                <td class="d-none d-lg-table-cell text-center">
                     <span class="order-status-badge <?php echo htmlspecialchars($order->orderstatus_cssclass ?? 'badge text-bg-secondary', ENT_QUOTES, 'UTF-8'); ?>">
                         <?php echo Text::_($order->orderstatus_name ?? 'COM_J2COMMERCE_UNKNOWN'); ?>
                     </span>
