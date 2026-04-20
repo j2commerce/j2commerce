@@ -322,6 +322,7 @@ final class ReportItemised extends CMSPlugin implements SubscriberInterface
 
         $productIdCol = Text::_('PLG_J2COMMERCE_REPORT_ITEMISED_COL_PRODUCT_ID');
         $nameCol      = Text::_('PLG_J2COMMERCE_REPORT_ITEMISED_COL_PRODUCT_NAME');
+        $skuCol       = Text::_('PLG_J2COMMERCE_REPORT_ITEMISED_COL_SKU');
         $optionsCol   = Text::_('PLG_J2COMMERCE_REPORT_ITEMISED_COL_OPTIONS');
         $categoryCol  = Text::_('PLG_J2COMMERCE_REPORT_ITEMISED_COL_CATEGORY');
         $qtyCol       = Text::_('PLG_J2COMMERCE_REPORT_ITEMISED_COL_QUANTITY');
@@ -351,6 +352,7 @@ final class ReportItemised extends CMSPlugin implements SubscriberInterface
             $csvRow                = new \stdClass();
             $csvRow->$productIdCol = $item->product_id;
             $csvRow->$nameCol      = $item->orderitem_name;
+            $csvRow->$skuCol       = $item->orderitem_sku ?? '';
             $csvRow->$optionsCol   = $optionStr;
             $csvRow->$categoryCol  = $item->category_name ?? '';
             $csvRow->$qtyCol       = $item->total_qty;
@@ -362,6 +364,7 @@ final class ReportItemised extends CMSPlugin implements SubscriberInterface
         $finalRow                = new \stdClass();
         $finalRow->$productIdCol = '';
         $finalRow->$nameCol      = Text::_('PLG_J2COMMERCE_REPORT_ITEMISED_TOTAL');
+        $finalRow->$skuCol       = '';
         $finalRow->$optionsCol   = '';
         $finalRow->$categoryCol  = '';
         $finalRow->$qtyCol       = $qtyTotal;
