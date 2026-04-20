@@ -11,6 +11,7 @@
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use J2Commerce\Component\J2commerce\Administrator\Controller\MultiimageuploaderController;
 use J2Commerce\Component\J2commerce\Administrator\Field\MultiImageUploaderField;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Component\ComponentHelper;
@@ -105,25 +106,15 @@ $layoutPath = JPATH_ADMINISTRATOR . '/components/com_j2commerce/layouts';
                         'value'    => $filesData,
                         'options'  => [
                             'maxFileSize'      => 100 * 1024 * 1024, // 100MB for downloadable files
-                            'allowedFileTypes' => [
-                                'audio/*', 'video/*',
-                                'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif', 'image/tiff', 'image/bmp',
-                                'application/pdf', 'application/epub+zip', 'application/x-mobipocket-ebook',
-                                'application/zip', 'application/x-7z-compressed', 'application/x-rar-compressed',
-                                'application/x-tar', 'application/gzip',
-                                'application/msword',
-                                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                                'application/vnd.ms-excel',
-                                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                                'application/vnd.ms-powerpoint',
-                                'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-                                'application/vnd.oasis.opendocument.text',
-                                'application/vnd.oasis.opendocument.spreadsheet',
-                                'application/vnd.oasis.opendocument.presentation',
-                                'text/plain', 'text/csv', 'text/markdown', 'text/rtf',
-                                'font/ttf', 'font/otf', 'font/woff', 'font/woff2',
-                                'application/octet-stream',
-                            ],
+                            // Mirror the server's FILE_ALLOWLIST as dotted extensions so the
+                            // browser's file picker defaults to these formats and Uppy's
+                            // client-side restriction rejects anything the server would also
+                            // reject — no more `application/octet-stream` catch-all that let
+                            // .exe/.bin slip past client validation.
+                            'allowedFileTypes' => array_values(array_map(
+                                static fn (string $ext): string => '.' . $ext,
+                                MultiimageuploaderController::FILE_ALLOWLIST
+                            )),
                             'enableCompression' => false,
                             'enableImageEditor' => false,
                             'autoThumbnail'     => false,
