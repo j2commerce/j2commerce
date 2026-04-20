@@ -290,26 +290,22 @@
                 allowedMetaFields: allowedMeta,
                 headers: { 'Accept': 'application/json' },
                 getResponseData: (xhr) => {
+                    let json;
                     try {
-                        const text = xhr.responseText;
-                        const json = JSON.parse(text);
-
-                        if (!json.success) {
-                            console.error('[MultiImageUploader] Server error:', json.message);
-                            return {};
-                        }
-
-                        const inner = json.data;
-                        if (!inner) {
-                            return {};
-                        }
-
-                        // inner is { name, path, url, ... }
-                        return inner;
+                        json = JSON.parse(xhr.responseText);
                     } catch (e) {
-                        console.error('[MultiImageUploader] getResponseData error:', e);
-                        return {};
+                        throw new Error(this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_UPLOAD_ERROR'));
                     }
+
+                    // Server-side validation rejected the file (forbidden extension,
+                    // dangerous MIME, etc.). Throwing here makes Uppy treat it as a
+                    // failed upload so `upload-error` fires with the real message
+                    // and the file never lands in the success grid.
+                    if (!json.success) {
+                        throw new Error(json.message || this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_UPLOAD_ERROR'));
+                    }
+
+                    return json.data || {};
                 },
             });
 
