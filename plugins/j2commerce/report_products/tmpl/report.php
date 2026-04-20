@@ -45,7 +45,7 @@ $listDirn    = $vars->listDirn;
                     <th scope="col">
                         <?php echo HTMLHelper::_('searchtools.sort', 'PLG_J2COMMERCE_REPORT_PRODUCTS_PRODUCT_NAME', 'orderitem_name', $listDirn, $listOrder); ?>
                     </th>
-                    <th scope="col" class="w-10">
+                    <th scope="col" class="w-10 d-none d-md-table-cell">
                         <?php echo HTMLHelper::_('searchtools.sort', 'PLG_J2COMMERCE_REPORT_PRODUCTS_TOTAL_QUANTITY', 'total_qty', $listDirn, $listOrder); ?>
                     </th>
                     <th scope="col" class="w-10 d-none d-md-table-cell">
@@ -84,7 +84,7 @@ $listDirn    = $vars->listDirn;
                                 <?php echo htmlspecialchars($product->orderitem_name, ENT_QUOTES, 'UTF-8'); ?>
                                 <small class="text-muted d-block lh-1"><?php echo Text::_('PLG_J2COMMERCE_REPORT_PRODUCTS_SKU'); ?>: <?php echo htmlspecialchars($product->orderitem_sku, ENT_QUOTES, 'UTF-8'); ?></small>
                             </td>
-                            <td class="text-start"><?php echo (int) $product->total_qty; ?></td>
+                            <td class="text-start d-none d-md-table-cell"><?php echo (int) $product->total_qty; ?></td>
                             <td class="text-start d-none d-md-table-cell"><?php echo $currency->format((float) $product->total_item_discount + (float) $product->total_item_discount_tax); ?></td>
                             <td class="text-start d-none d-md-table-cell"><?php echo $currency->format((float) $product->total_item_tax); ?></td>
                             <td class="text-start d-none d-lg-table-cell"><?php echo $currency->format((float) $product->total_final_price_without_tax); ?></td>
@@ -93,7 +93,7 @@ $listDirn    = $vars->listDirn;
                     <?php endforeach; ?>
                     <tr class="fw-bold">
                         <td><?php echo Text::_('PLG_J2COMMERCE_REPORT_PRODUCTS_TOTAL'); ?></td>
-                        <td class="text-start"><?php echo $qtyTotal; ?></td>
+                        <td class="text-start d-none d-md-table-cell"><?php echo $qtyTotal; ?></td>
                         <td class="text-start d-none d-md-table-cell"><?php echo $currency->format($discountTotal); ?></td>
                         <td class="text-start d-none d-md-table-cell"><?php echo $currency->format($totalTax); ?></td>
                         <td class="text-start d-none d-lg-table-cell"><?php echo $currency->format($totalWithoutTax); ?></td>

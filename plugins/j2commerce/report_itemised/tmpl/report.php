@@ -42,7 +42,7 @@ $listDirn    = $vars->listDirn;
             <thead>
                 <tr>
                     <th scope="col" class="w-1 text-center">#</th>
-                    <th scope="col" class="w-5">
+                    <th scope="col" class="w-5 d-none d-md-table-cell">
                         <?php echo HTMLHelper::_('searchtools.sort',
                             'PLG_J2COMMERCE_REPORT_ITEMISED_COL_PRODUCT_ID',
                             'oi.product_id', $listDirn, $listOrder); ?>
@@ -83,7 +83,7 @@ $listDirn    = $vars->listDirn;
                         ?>
                         <tr>
                             <td class="text-center"><?php echo $i + 1; ?></td>
-                            <td><?php echo (int) $item->product_id; ?></td>
+                            <td class="d-none d-md-table-cell"><?php echo (int) $item->product_id; ?></td>
                             <td>
                                 <?php echo htmlspecialchars($item->orderitem_name, ENT_QUOTES, 'UTF-8'); ?>
                                 <?php if (!empty($item->orderitem_sku)) : ?>
@@ -110,7 +110,9 @@ $listDirn    = $vars->listDirn;
                         </tr>
                     <?php endforeach; ?>
                     <tr class="fw-bold">
-                        <td colspan="5"><?php echo Text::_('PLG_J2COMMERCE_REPORT_ITEMISED_TOTAL'); ?></td>
+                        <td colspan="3"><?php echo Text::_('PLG_J2COMMERCE_REPORT_ITEMISED_TOTAL'); ?></td>
+                        <td class="d-none d-md-table-cell"></td>
+                        <td class="d-none d-md-table-cell"></td>
                         <td class="text-end"><?php echo $qtyTotal; ?></td>
                         <td class="text-end"><?php echo $orderTotal; ?></td>
                     </tr>
