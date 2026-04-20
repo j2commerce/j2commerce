@@ -145,11 +145,14 @@ function runBuildCheck(): void
         return;
     }
 
-    $outdated = [];
+    $outdated  = [];
+    $upToDate  = [];
+    $total     = count($manifest['vendors']);
 
     foreach ($manifest['vendors'] as $vendor) {
         $latest = fetchLatestVersion($vendor['npm']);
         if ($latest === null || $latest === $vendor['version']) {
+            $upToDate[] = $vendor['name'];
             continue;
         }
         $outdated[] = sprintf(
@@ -160,16 +163,24 @@ function runBuildCheck(): void
         );
     }
 
+    $line = str_repeat('─', 62);
+
     if (empty($outdated)) {
+        $checked = count($upToDate);
+        echo "Vendors: {$checked}/{$total} up to date\n";
         return;
     }
 
-    $line = str_repeat('─', 62);
+    $upToDateCount = count($upToDate);
     echo "\n┌{$line}┐\n";
     echo "│  ⚠  VENDOR LIBRARIES HAVE UPDATES AVAILABLE" . str_repeat(' ', 16) . "│\n";
     echo "├{$line}┤\n";
     foreach ($outdated as $row) {
         echo "│" . str_pad($row, 62) . "│\n";
+    }
+    if ($upToDateCount > 0) {
+        $okLine = "  {$upToDateCount} other " . ($upToDateCount === 1 ? 'library' : 'libraries') . " up to date";
+        echo "│" . str_pad($okLine, 62) . "│\n";
     }
     echo "├{$line}┤\n";
     echo "│  To update, run:                                             │\n";
