@@ -1,0 +1,128 @@
+{
+    "_comment": "Vendor JS/CSS manifest. Run: php build/check_vendors.php",
+    "vendors": [
+        {
+            "name": "Swiper",
+            "npm": "swiper",
+            "version": "12.1.3",
+            "files": [
+                {
+                    "src": "swiper-bundle.min.js",
+                    "dest": "media/com_j2commerce/vendor/swiper/js/swiper-bundle.min.js"
+                },
+                {
+                    "src": "swiper-bundle.min.css",
+                    "dest": "media/com_j2commerce/vendor/swiper/css/swiper-bundle.min.css"
+                }
+            ]
+        },
+        {
+            "name": "Chart.js",
+            "npm": "chart.js",
+            "version": "4.5.1",
+            "files": [
+                {
+                    "src": "dist/chart.umd.min.js",
+                    "dest": "media/com_j2commerce/vendor/chartjs/js/chart.umd.min.js"
+                }
+            ]
+        },
+        {
+            "name": "Fancybox",
+            "npm": "@fancyapps/ui",
+            "version": "6.1.13",
+            "files": [
+                {
+                    "src": "dist/fancybox/fancybox.umd.js",
+                    "dest": "media/com_j2commerce/vendor/fancybox/js/fancybox.umd.js"
+                },
+                {
+                    "src": "dist/fancybox/fancybox.css",
+                    "dest": "media/com_j2commerce/vendor/fancybox/css/fancybox.css"
+                }
+            ]
+        },
+        {
+            "name": "Leaflet",
+            "npm": "leaflet",
+            "version": "1.9.4",
+            "files": [
+                {
+                    "src": "dist/leaflet.js",
+                    "dest": "media/com_j2commerce/vendor/leaflet/js/leaflet.js"
+                },
+                {
+                    "src": "dist/leaflet.css",
+                    "dest": "media/com_j2commerce/vendor/leaflet/css/leaflet.css"
+                }
+            ]
+        },
+        {
+            "name": "GrapesJS",
+            "npm": "grapesjs",
+            "version": "0.22.15",
+            "files": [
+                {
+                    "src": "dist/grapes.min.js",
+                    "dest": "media/com_j2commerce/vendor/grapesjs/js/grapes.min.js"
+                },
+                {
+                    "src": "dist/grapes.min.css",
+                    "dest": "media/com_j2commerce/vendor/grapesjs/css/grapes.min.css"
+                }
+            ]
+        },
+        {
+            "name": "GrapesJS Newsletter Preset",
+            "npm": "grapesjs-preset-newsletter",
+            "version": "1.0.2",
+            "files": [
+                {
+                    "src": "dist/grapesjs-preset-newsletter.min.js",
+                    "dest": "media/com_j2commerce/vendor/grapesjs/js/grapesjs-preset-newsletter.min.js"
+                }
+            ]
+        },
+        {
+            "name": "Uppy",
+            "npm": "uppy",
+            "version": "5.2.4",
+            "files": [
+                {
+                    "src": "dist/uppy.min.js",
+                    "dest": "media/com_j2commerce/vendor/uppy/js/uppy.min.js"
+                },
+                {
+                    "src": "dist/uppy.min.css",
+                    "dest": "media/com_j2commerce/vendor/uppy/css/uppy.min.css"
+                }
+            ]
+        },
+        {
+            "name": "Dual Listbox",
+            "npm": "dual-listbox",
+            "version": "2.0.0",
+            "files": [
+                {
+                    "src": "dist/dual-listbox.js",
+                    "dest": "media/com_j2commerce/vendor/dual-listbox/js/dual-listbox.js"
+                },
+                {
+                    "src": "dist/dual-listbox.css",
+                    "dest": "media/com_j2commerce/vendor/dual-listbox/css/dual-listbox.css"
+                }
+            ]
+        },
+        {
+            "name": "Zoom Vanilla",
+            "npm": "zoom-vanilla.js",
+            "version": "2.0.6",
+            "files": [
+                {
+                    "src": "dist/zoom-vanilla.min.js",
+                    "dest": "media/com_j2commerce/vendor/zoom-vanilla/js/zoom-vanilla.min.js"
+                }
+            ]
+        }
+    ]
+}
