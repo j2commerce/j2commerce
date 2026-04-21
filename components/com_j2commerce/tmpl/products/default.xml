@@ -161,18 +161,6 @@
 				<option value="1">JSHOW</option>
 			</field>
 
-			<field
-				name="breadcrumb_category_inclusion"
-				type="radio"
-				label="COM_J2COMMERCE_PRODUCT_LIST_BREADCRUMB_CATEGORY"
-				description="COM_J2COMMERCE_PRODUCT_LIST_BREADCRUMB_CATEGORY_DESC"
-				default="1"
-				layout="joomla.form.field.radio.switcher"
-				filter="integer"
-			>
-				<option value="0">JHIDE</option>
-				<option value="1">JSHOW</option>
-			</field>
 
 			<field
 				name="custom_css"
