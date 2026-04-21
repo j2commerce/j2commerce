@@ -5,7 +5,7 @@
 --
 
 ALTER TABLE `#__j2commerce_vouchers`
-    ADD COLUMN `valid_from` datetime DEFAULT NULL AFTER `email_body`;
+    ADD COLUMN `valid_from` datetime DEFAULT NULL AFTER `email_body` /** CAN FAIL **/;
 
 ALTER TABLE `#__j2commerce_vouchers`
-    ADD COLUMN `valid_to` datetime DEFAULT NULL AFTER `valid_from`;
+    ADD COLUMN `valid_to` datetime DEFAULT NULL AFTER `valid_from` /** CAN FAIL **/;
