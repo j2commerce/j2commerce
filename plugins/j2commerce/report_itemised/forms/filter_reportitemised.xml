@@ -6,6 +6,7 @@
             type="text"
             inputmode="search"
             label="PLG_J2COMMERCE_REPORT_ITEMISED_FILTER_SEARCH"
+            description="PLG_J2COMMERCE_REPORT_ITEMISED_FILTER_SEARCH_DESC"
             hint="PLG_J2COMMERCE_REPORT_ITEMISED_FILTER_SEARCH"
         />
 
