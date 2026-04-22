@@ -32,15 +32,15 @@ $checkoutPriceDisplay = $this->params->get('checkout_price_display_options', 0);
     <table class="j2commerce-cart-table table table-borderless">
         <thead>
             <tr>
-                <th><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM'); ?></th>
+                <th scope="col"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM'); ?></th>
                 <?php if ($showQtyField): ?>
-                    <th class="text-start" style="width: 160px;"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_QUANTITY'); ?></th>
+                    <th scope="col" class="text-start" style="width: 160px;"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_QUANTITY'); ?></th>
                 <?php endif; ?>
                 <?php if (isset($this->taxes) && \count($this->taxes) && $showItemTax): ?>
-                    <th class="start"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_TAX'); ?></th>
+                    <th scope="col" class="start"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_TAX'); ?></th>
                 <?php endif; ?>
-                <th class="text-end" style="width: 120px;"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_TOTAL'); ?></th>
-                <td class="text-end"></td>
+                <th scope="col" class="text-end" style="width: 120px;"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_TOTAL'); ?></th>
+                <th scope="col"><span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_ACTIONS'); ?></span></th>
             </tr>
         </thead>
         <tbody>

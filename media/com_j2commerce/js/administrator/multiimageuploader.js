@@ -37,6 +37,7 @@
             this.modalEl = null;
             this.bsModal = null;
             this.csrfToken = this.findCsrfToken();
+            this.pendingDropFiles = [];
 
             this.init();
         }
@@ -95,6 +96,7 @@
 
             this.setupModalHandlers();
             this.setupPreviewHandlers();
+            this.setupDropZone();
             this.renderSelectedImages();
 
             // Sync existing images to form inputs on load so saving
@@ -124,6 +126,18 @@
                     }
                 });
                 this.loadFolderContents(this.currentFolder);
+
+                // Add any files that were drag-and-dropped before the modal opened
+                if (this.pendingDropFiles.length > 0) {
+                    const filesToAdd = this.pendingDropFiles.splice(0);
+                    filesToAdd.forEach(file => {
+                        try {
+                            this.uppy.addFile({ name: file.name, type: file.type, data: file });
+                        } catch (err) {
+                            console.warn('Could not add dragged file to Uppy:', err);
+                        }
+                    });
+                }
             });
 
             // Clean up Uppy selections when modal closes without confirming
@@ -777,6 +791,65 @@
                     this.moveImage(index, direction);
                 }
             });
+        }
+
+        setupDropZone() {
+            const openModalWithFiles = (files, highlightEl) => {
+                highlightEl.classList.remove('drag-over');
+                if (!files.length) return;
+                this.pendingDropFiles = files;
+                bootstrap.Modal.getOrCreateInstance(this.modalEl).show();
+            };
+
+            const addListeners = (target) => {
+                ['dragenter', 'dragover'].forEach(evt => target.addEventListener(evt, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    target.classList.add('drag-over');
+                }));
+                target.addEventListener('dragleave', (e) => {
+                    if (!target.contains(e.relatedTarget)) {
+                        target.classList.remove('drag-over');
+                    }
+                });
+                target.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openModalWithFiles(Array.from(e.dataTransfer?.files ?? []), target);
+                });
+            };
+
+            const emptyState = this.element.querySelector('.uppymedia-empty-state');
+            if (emptyState) {
+                addListeners(emptyState);
+            }
+
+            // Delegate drag events for the dynamically-rendered "+" add-more card
+            const preview = this.element.querySelector('.uppymedia-preview');
+            if (preview) {
+                ['dragenter', 'dragover'].forEach(evt => {
+                    preview.addEventListener(evt, (e) => {
+                        const addMore = e.target.closest('.uppymedia-add-more');
+                        if (!addMore) return;
+                        e.preventDefault();
+                        e.stopPropagation();
+                        addMore.classList.add('drag-over');
+                    });
+                });
+                preview.addEventListener('dragleave', (e) => {
+                    const addMore = e.target.closest('.uppymedia-add-more');
+                    if (addMore && !addMore.contains(e.relatedTarget)) {
+                        addMore.classList.remove('drag-over');
+                    }
+                });
+                preview.addEventListener('drop', (e) => {
+                    const addMore = e.target.closest('.uppymedia-add-more');
+                    if (!addMore) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openModalWithFiles(Array.from(e.dataTransfer?.files ?? []), addMore);
+                });
+            }
         }
 
         /**

@@ -365,13 +365,13 @@ class Configurable
             $product->quantity = 1;
         }
 
-        if ($productHelper->checkStockStatus($product->variant, $product->quantity)) {
+        if ($productHelper->checkStockStatus($product->variant, (int) $product->quantity)) {
             $product->variant->availability = 1;
         } else {
             $product->variant->availability = 0;
         }
 
-        $product->pricing = $productHelper->getPrice($product->variant, $product->quantity);
+        $product->pricing = $productHelper->getPrice($product->variant, (int) $product->quantity);
 
         $product->options = [];
         if ($product->has_options) {
@@ -496,7 +496,7 @@ class Configurable
             $product->quantity = $product->variant->min_sale_qty;
         }
 
-        $pricing = $productHelper->getPrice($product->variant, $product->quantity);
+        $pricing = $productHelper->getPrice($product->variant, (int) $product->quantity);
 
         $parentProductOptions = $input->get('product_option', [], 'ARRAY');
 

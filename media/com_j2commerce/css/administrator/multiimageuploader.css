@@ -630,7 +630,13 @@
     transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
-.uppymedia-empty-state:hover {
+.uppymedia-empty-state:hover,
+.uppymedia-empty-state.drag-over {
+    border-color: var(--bs-primary, #0d6efd);
+    background: #f0f4ff;
+}
+
+.uppymedia-add-more.drag-over {
     border-color: var(--bs-primary, #0d6efd);
     background: #f0f4ff;
 }

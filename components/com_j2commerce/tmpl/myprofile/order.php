@@ -69,9 +69,9 @@ $statusName = !empty($order->orderstatus_name) ? Text::_($order->orderstatus_nam
         <table class="table table-bordered mb-0">
             <thead>
                 <tr>
-                    <th><?php echo Text::_('COM_J2COMMERCE_ORDER_ID'); ?></th>
-                    <th><?php echo Text::_('COM_J2COMMERCE_ORDER_DATE'); ?></th>
-                    <th><?php echo Text::_('COM_J2COMMERCE_ORDER_STATUS'); ?></th>
+                    <th scope="col"><?php echo Text::_('COM_J2COMMERCE_ORDER_ID'); ?></th>
+                    <th scope="col"><?php echo Text::_('COM_J2COMMERCE_ORDER_DATE'); ?></th>
+                    <th scope="col"><?php echo Text::_('COM_J2COMMERCE_ORDER_STATUS'); ?></th>
                 </tr>
             </thead>
             <tbody>
@@ -133,20 +133,20 @@ $statusName = !empty($order->orderstatus_name) ? Text::_($order->orderstatus_nam
             <thead>
                 <tr>
                     <?php if ($params->get('show_thumb_cart', 0)): ?>
-                    <th style="width:60px"><span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_IMAGE'); ?></span></th>
+                    <th scope="col" style="width:60px"><span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_IMAGE'); ?></span></th>
                     <?php endif; ?>
-                    <th><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM'); ?></th>
+                    <th scope="col"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM'); ?></th>
                     <?php if ($params->get('show_sku', 0)): ?>
-                    <th><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_SKU'); ?></th>
+                    <th scope="col"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_SKU'); ?></th>
                     <?php endif; ?>
                     <?php if ($params->get('show_price_field', 1)): ?>
-                    <th class="text-end"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_UNIT_PRICE'); ?></th>
+                    <th scope="col" class="text-end"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_UNIT_PRICE'); ?></th>
                     <?php endif; ?>
-                    <th class="text-center"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_QUANTITY'); ?></th>
+                    <th scope="col" class="text-center"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_QUANTITY'); ?></th>
                     <?php if ($params->get('show_item_tax', 0)): ?>
-                    <th class="text-end"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_TAX'); ?></th>
+                    <th scope="col" class="text-end"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_TAX'); ?></th>
                     <?php endif; ?>
-                    <th class="text-end"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_TOTAL'); ?></th>
+                    <th scope="col" class="text-end"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_TOTAL'); ?></th>
                 </tr>
             </thead>
             <tbody>
