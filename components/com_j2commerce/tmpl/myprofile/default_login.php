@@ -29,7 +29,7 @@ $returnUrl = base64_encode(Uri::getInstance()->toString());
         <?php if ($params->get('show_login_form', 1)): ?>
         <div class="col-lg-6">
             <div class="card">
-                <div class="card-header"><h4 class="mb-0"><?php echo Text::_('COM_J2COMMERCE_LOGIN'); ?></h4></div>
+                <div class="card-header"><h4 class="mb-0"><?php echo Text::_('JLOGIN'); ?></h4></div>
                 <div class="card-body">
                     <form action="<?php echo Route::_('index.php'); ?>" method="post" id="j2commerceLoginForm">
                         <div class="mb-3">
@@ -43,10 +43,10 @@ $returnUrl = base64_encode(Uri::getInstance()->toString());
                         <?php if (PluginHelper::isEnabled('system', 'remember')): ?>
                         <div class="form-check mb-3">
                             <input type="checkbox" name="remember" id="j2c-remember" class="form-check-input" value="yes">
-                            <label class="form-check-label" for="j2c-remember"><?php echo Text::_('COM_J2COMMERCE_REMEMBER_ME'); ?></label>
+                            <label class="form-check-label" for="j2c-remember"><?php echo Text::_('JGLOBAL_REMEMBER_ME'); ?></label>
                         </div>
                         <?php endif; ?>
-                        <button type="submit" class="btn btn-primary"><?php echo Text::_('COM_J2COMMERCE_LOGIN'); ?></button>
+                        <button type="submit" class="btn btn-primary"><?php echo Text::_('JLOGIN'); ?></button>
                         <input type="hidden" name="option" value="com_users">
                         <input type="hidden" name="task" value="user.login">
                         <input type="hidden" name="return" value="<?php echo $returnUrl; ?>">
