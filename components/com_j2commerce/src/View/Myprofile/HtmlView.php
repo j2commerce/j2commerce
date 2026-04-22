@@ -25,7 +25,6 @@ use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Pagination\Pagination;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
-use Joomla\Registry\Registry;
 
 class HtmlView extends BaseHtmlView
 {
@@ -50,7 +49,6 @@ class HtmlView extends BaseHtmlView
     public string $pluginTabHtml        = '';
     public string $pluginContentHtml    = '';
     public string $topMessagesHtml      = '';
-    public ?Registry $menuItemParams    = null;
     public bool $useUnifiedPaymentTab   = false;
     public array $paymentMethodsGrouped = [];
 
@@ -60,13 +58,9 @@ class HtmlView extends BaseHtmlView
 
         UtilitiesHelper::sendNoCacheHeaders();
 
-        $this->params   = J2CommerceHelper::config();
+        $this->params   = $app->getParams();
         $this->currency = J2CommerceHelper::currency();
         $this->user     = $app->getIdentity();
-
-        $menu                 = $app->getMenu();
-        $active               = $menu->getActive();
-        $this->menuItemParams = \is_object($active) ? $active->getParams() : new Registry('{}');
 
         $layout  = $this->getLayout();
         $session = $app->getSession();
@@ -249,7 +243,10 @@ class HtmlView extends BaseHtmlView
 
     protected function _prepareDocument(): void
     {
-        $title = $this->menuItemParams->get('page_title', '');
+        $menu = Factory::getApplication()->getMenu()->getActive();
+        $this->params->def('page_heading', $menu ? $menu->title : '');
+
+        $title = $this->params->get('page_title', '');
 
         if (empty($title)) {
             $title = Text::_('COM_J2COMMERCE_MYPROFILE');
@@ -257,16 +254,16 @@ class HtmlView extends BaseHtmlView
 
         $this->getDocument()->setTitle($title);
 
-        if ($this->menuItemParams->get('menu-meta_description')) {
-            $this->getDocument()->setDescription($this->menuItemParams->get('menu-meta_description'));
+        if ($this->params->get('menu-meta_description')) {
+            $this->getDocument()->setDescription($this->params->get('menu-meta_description'));
         }
 
-        if ($this->menuItemParams->get('menu-meta_keywords')) {
-            $this->getDocument()->setMetaData('keywords', $this->menuItemParams->get('menu-meta_keywords'));
+        if ($this->params->get('menu-meta_keywords')) {
+            $this->getDocument()->setMetaData('keywords', $this->params->get('menu-meta_keywords'));
         }
 
-        if ($this->menuItemParams->get('robots')) {
-            $this->getDocument()->setMetaData('robots', $this->menuItemParams->get('robots'));
+        if ($this->params->get('robots')) {
+            $this->getDocument()->setMetaData('robots', $this->params->get('robots'));
         }
     }
 }

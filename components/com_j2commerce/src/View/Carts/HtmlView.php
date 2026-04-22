@@ -244,15 +244,9 @@ class HtmlView extends BaseHtmlView
             throw new GenericDataException(implode("\n", $errors), 500);
         }
 
-        // Get component and menu parameters
-        $this->params   = J2CommerceHelper::config();
+        $this->params   = $app->getParams();
         $this->currency = $model->getCurrency();
         $this->store    = $model->getStore();
-
-        // Get menu item params
-        $menu                 = $app->getMenu();
-        $active               = $menu->getActive();
-        $this->menuItemParams = \is_object($active) ? $active->getParams() : new Registry('{}');
 
         // Get location state
         $this->country_id = (int) $model->getState('country_id');
@@ -381,24 +375,27 @@ class HtmlView extends BaseHtmlView
      */
     protected function _prepareDocument(): void
     {
-        $pageTitle = $this->menuItemParams->get('page_title', '');
+        $menu = Factory::getApplication()->getMenu()->getActive();
+        $this->params->def('page_heading', $menu ? $menu->title : '');
+
+        $pageTitle = $this->params->get('page_title', '');
         if (empty($pageTitle)) {
             $pageTitle = Text::_('COM_J2COMMERCE_CARTS_PAGE_TITLE');
         }
         $this->getDocument()->setTitle($pageTitle);
 
-        $metaDesc = $this->menuItemParams->get('menu-meta_description', '');
+        $metaDesc = $this->params->get('menu-meta_description', '');
         if (empty($metaDesc)) {
             $metaDesc = Text::_('COM_J2COMMERCE_CARTS_META_DESC');
         }
         $this->getDocument()->setDescription($metaDesc);
 
-        if ($this->menuItemParams->get('menu-meta_keywords')) {
-            $this->getDocument()->setMetaData('keywords', $this->menuItemParams->get('menu-meta_keywords'));
+        if ($this->params->get('menu-meta_keywords')) {
+            $this->getDocument()->setMetaData('keywords', $this->params->get('menu-meta_keywords'));
         }
 
-        if ($this->menuItemParams->get('robots')) {
-            $this->getDocument()->setMetaData('robots', $this->menuItemParams->get('robots'));
+        if ($this->params->get('robots')) {
+            $this->getDocument()->setMetaData('robots', $this->params->get('robots'));
         }
     }
 }

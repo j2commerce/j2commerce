@@ -19,13 +19,13 @@ use Joomla\CMS\Router\Route;
 
 $params = $this->params;
 $user   = $this->user;
-
-$menuParams = $this->menuItemParams;
 ?>
 <div class="j2commerce">
+    <?php if ($this->params->get('show_page_heading')) : ?>
     <div class="page-header">
-        <h1><?php echo $this->escape($menuParams ? $menuParams->get('page_heading', '') : '') ?: Text::_('COM_J2COMMERCE_MYPROFILE'); ?></h1>
+        <h1><?php echo $this->escape($this->params->get('page_heading')); ?></h1>
     </div>
+    <?php endif; ?>
 
     <?php if ($params->get('show_logout_myprofile', 0) && $user->id > 0): ?>
     <div class="d-flex justify-content-end mb-3">

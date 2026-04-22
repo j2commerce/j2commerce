@@ -191,6 +191,7 @@ class HtmlView extends BaseHtmlView
         $document = $this->getDocument();
         $pathway  = $app->getPathway();
         $menu     = $app->getMenu()->getActive();
+        $this->params->def('page_heading', $menu ? $menu->title : '');
 
         // Handle print view - prevent indexing
         if ($this->print) {

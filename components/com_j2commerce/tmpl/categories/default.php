@@ -25,16 +25,16 @@ $params = $this->params;
 $activeMenu = Factory::getApplication()->getMenu()->getActive();
 $displayMode = $this->displayMode;
 $itemId = $activeMenu ? (int) $activeMenu->id : 0;
-$htag = $params->get('show_category_root_title', 1) ? 'h2' : 'h1';
+$htag = $this->params->get('show_page_heading') ? 'h2' : 'h1';
 $category_columns = (int) $params->get('category_columns', 4);
 
 ?>
 <div class="j2commerce j2commerce-categories <?php echo $this->escape($params->get('pageclass_sfx', '')); ?>">
     <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeCategoriesView', array($this))->getArgument('html', ''); ?>
     <div class="container">
-        <?php if ($params->get('show_category_root_title', 1)) : ?>
+        <?php if ($this->params->get('show_page_heading')) : ?>
             <div class="page-header mb-3">
-                <h1><?php echo $this->escape($params->get('page_heading', '')); ?></h1>
+                <h1><?php echo $this->escape($this->params->get('page_heading')); ?></h1>
             </div>
         <?php endif; ?>
 
