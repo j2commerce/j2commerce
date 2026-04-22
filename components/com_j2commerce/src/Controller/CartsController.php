@@ -26,6 +26,7 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Router\Route;
+use Joomla\CMS\Uri\Uri;
 use Joomla\Database\ParameterType;
 
 /**
@@ -244,6 +245,12 @@ class CartsController extends BaseController
         // Buffer output to prevent PHP warnings from corrupting JSON response
         if ($ajax) {
             $this->startAjaxBuffer();
+
+            if (!$this->validateAjaxToken()) {
+                $this->sendJsonResponse(['success' => false, 'message' => 'Invalid token']);
+            }
+        } else {
+            $this->checkToken();
         }
 
         try {
@@ -837,6 +844,15 @@ class CartsController extends BaseController
 
         if (!empty($redirect)) {
             $url = base64_decode($redirect);
+
+            // Validate the redirect: only allow internal URLs to prevent open redirect vulnerabilities
+            $uri     = Uri::getInstance($url);
+            $base    = Uri::base();
+            $baseUri = Uri::getInstance($base);
+
+            if ($uri->getHost() !== '' && $uri->getHost() !== $baseUri->getHost()) {
+                $url = 'index.php';  // Fallback to homepage
+            }
         } else {
             $url = 'index.php';
         }
