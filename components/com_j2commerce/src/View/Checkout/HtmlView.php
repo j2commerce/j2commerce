@@ -22,7 +22,6 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Router\Route;
 use Joomla\Event\Event;
-use Joomla\Registry\Registry;
 
 class HtmlView extends BaseHtmlView
 {
@@ -32,7 +31,6 @@ class HtmlView extends BaseHtmlView
     public $user;
     public bool $logged       = false;
     public bool $showShipping = false;
-    public $menuItemParams    = null;
     public $order             = null;
     public array $items       = [];
     public array $taxes       = [];
@@ -43,15 +41,11 @@ class HtmlView extends BaseHtmlView
 
         UtilitiesHelper::sendNoCacheHeaders();
 
-        $this->params       = J2CommerceHelper::config();
+        $this->params       = $app->getParams();
         $this->currency     = J2CommerceHelper::currency();
         $this->storeProfile = J2CommerceHelper::storeProfile();
         $this->user         = $app->getIdentity();
         $this->logged       = ($this->user && $this->user->id > 0);
-
-        $menu                 = $app->getMenu();
-        $active               = $menu->getActive();
-        $this->menuItemParams = \is_object($active) ? $active->getParams() : new Registry('{}');
 
         // Check cart has items — use cart model to get order with items
         $mvcFactory = $app->bootComponent('com_j2commerce')->getMVCFactory();
@@ -121,24 +115,27 @@ class HtmlView extends BaseHtmlView
 
     protected function _prepareDocument(): void
     {
-        $pageTitle = $this->menuItemParams->get('page_title', '');
+        $menu = Factory::getApplication()->getMenu()->getActive();
+        $this->params->def('page_heading', $menu ? $menu->title : '');
+
+        $pageTitle = $this->params->get('page_title', '');
         if (empty($pageTitle)) {
             $pageTitle = Text::_('COM_J2COMMERCE_CHECKOUT_PAGE_TITLE');
         }
         $this->getDocument()->setTitle($pageTitle);
 
-        $metaDesc = $this->menuItemParams->get('menu-meta_description', '');
+        $metaDesc = $this->params->get('menu-meta_description', '');
         if (empty($metaDesc)) {
             $metaDesc = Text::_('COM_J2COMMERCE_CHECKOUT_META_DESC');
         }
         $this->getDocument()->setDescription($metaDesc);
 
-        if ($this->menuItemParams->get('menu-meta_keywords')) {
-            $this->getDocument()->setMetaData('keywords', $this->menuItemParams->get('menu-meta_keywords'));
+        if ($this->params->get('menu-meta_keywords')) {
+            $this->getDocument()->setMetaData('keywords', $this->params->get('menu-meta_keywords'));
         }
 
-        if ($this->menuItemParams->get('robots')) {
-            $this->getDocument()->setMetaData('robots', $this->menuItemParams->get('robots'));
+        if ($this->params->get('robots')) {
+            $this->getDocument()->setMetaData('robots', $this->params->get('robots'));
         }
     }
 }

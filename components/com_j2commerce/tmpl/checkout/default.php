@@ -21,8 +21,6 @@ use Joomla\CMS\Uri\Uri;
 
 /** @var \J2Commerce\Component\J2commerce\Site\View\Checkout\HtmlView $this */
 
-$pageHeading = $this->menuItemParams->get('show_page_heading', 0);
-$pageHeadingText = $this->menuItemParams->get('page_heading', '');
 $token = Session::getFormToken();
 
 $wa  = Factory::getApplication()->getDocument()->getWebAssetManager();
@@ -49,9 +47,11 @@ if ($this->order && method_exists($this->order, 'get_formatted_order_totals')) {
 $selectZoneJs = htmlspecialchars(Text::sprintf('COM_J2COMMERCE_SELECT_PLACEHOLDER', Text::_('COM_J2COMMERCE_ZONE')), ENT_QUOTES, 'UTF-8');
 ?>
 <div class="j2commerce">
+    <?php if ($this->params->get('show_page_heading')) : ?>
     <div class="page-header">
-        <h1><?php echo $this->escape($pageHeadingText ?: Text::_('COM_J2COMMERCE_CHECKOUT')); ?></h1>
+        <h1><?php echo $this->escape($this->params->get('page_heading')); ?></h1>
     </div>
+    <?php endif; ?>
 
     <?php echo J2CommerceHelper::modules()->loadposition('j2commerce-checkout-top'); ?>
 

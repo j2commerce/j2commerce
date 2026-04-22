@@ -21,9 +21,6 @@ use Joomla\CMS\Session\Session;
 /** @var \J2Commerce\Component\J2commerce\Site\View\Carts\HtmlView $this */
 
 $app = Factory::getApplication();
-$menu = $app->getMenu()->getActive();
-$pageHeading = $this->menuItemParams->get('show_page_heading', 0);
-$pageHeadingText = $this->menuItemParams->get('page_heading', '');
 
 // Load Bootstrap 5 collapse for accordion functionality
 $document = $app->getDocument();
@@ -52,9 +49,11 @@ $clearCartUrl = J2CommerceHelper::platform()->getCartUrl(['task' => 'clearCart']
 
 ?>
 <div class="j2commerce">
+    <?php if ($this->params->get('show_page_heading')) : ?>
     <div class="page-header">
-        <h1><?php echo $this->escape($pageHeadingText ?: Text::_('COM_J2COMMERCE_CARTS_PAGE_TITLE')); ?></h1>
+        <h1><?php echo $this->escape($this->params->get('page_heading')); ?></h1>
     </div>
+    <?php endif; ?>
 
     <?php echo J2CommerceHelper::modules()->loadposition('j2commerce-cart-top'); ?>
 

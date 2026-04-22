@@ -20,7 +20,6 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Router\Route;
-use Joomla\Registry\Registry;
 
 class HtmlView extends BaseHtmlView
 {
@@ -29,7 +28,6 @@ class HtmlView extends BaseHtmlView
     public string $order_link        = '';
     public ?object $params           = null;
     public ?object $currency         = null;
-    public ?Registry $menuItemParams = null;
     public string $paction           = '';
     public array $orderItems         = [];
     public ?object $orderInfo        = null;
@@ -45,12 +43,8 @@ class HtmlView extends BaseHtmlView
 
         UtilitiesHelper::sendNoCacheHeaders();
 
-        $this->params   = J2CommerceHelper::config();
+        $this->params   = $app->getParams();
         $this->currency = J2CommerceHelper::currency();
-
-        $menu                 = $app->getMenu();
-        $active               = $menu->getActive();
-        $this->menuItemParams = \is_object($active) ? $active->getParams() : new Registry('{}');
 
         /** @var \J2Commerce\Component\J2commerce\Site\Model\ConfirmationModel $model */
         $model = $this->getModel();
@@ -108,9 +102,11 @@ class HtmlView extends BaseHtmlView
 
     protected function _prepareDocument(): void
     {
-        $app = Factory::getApplication();
+        $app  = Factory::getApplication();
+        $menu = $app->getMenu()->getActive();
+        $this->params->def('page_heading', $menu ? $menu->title : '');
 
-        $title = $this->menuItemParams->get('page_title', '');
+        $title = $this->params->get('page_title', '');
 
         if (empty($title)) {
             $title = Text::_('COM_J2COMMERCE_ORDER_CONFIRMATION');
@@ -118,12 +114,12 @@ class HtmlView extends BaseHtmlView
 
         $this->getDocument()->setTitle($title);
 
-        if ($this->menuItemParams->get('menu-meta_description')) {
-            $this->getDocument()->setDescription($this->menuItemParams->get('menu-meta_description'));
+        if ($this->params->get('menu-meta_description')) {
+            $this->getDocument()->setDescription($this->params->get('menu-meta_description'));
         }
 
-        if ($this->menuItemParams->get('menu-meta_keywords')) {
-            $this->getDocument()->setMetaData('keywords', $this->menuItemParams->get('menu-meta_keywords'));
+        if ($this->params->get('menu-meta_keywords')) {
+            $this->getDocument()->setMetaData('keywords', $this->params->get('menu-meta_keywords'));
         }
 
         // Force noindex,nofollow for order confirmation pages
