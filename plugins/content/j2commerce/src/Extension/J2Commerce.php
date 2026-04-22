@@ -32,6 +32,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Plugin\CMSPlugin;
+use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
 use Joomla\Database\DatabaseAwareTrait;
 use Joomla\Database\ParameterType;
@@ -660,28 +661,32 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             if (!$j2params->get('catalog_mode', 0)) {
                 $buttonClass = $j2params->get('addtocart_button_class', 'btn btn-primary');
                 $buttonText  = $product->addtocart_text ?: Text::_('PLG_CONTENT_J2COMMERCE_ADD_TO_CART');
+                $action = Route::_('index.php?option=com_j2commerce&task=carts.addItem');
 
                 $html .= '<div class="j2commerce-addtocart">';
-                $html .= '<form class="j2commerce-cart-form" method="post">';
+                $html .= '<form class="j2commerce-cart-form" method="post" action="' . $action . '">';
                 $html .= '<input type="hidden" name="product_id" value="' . (int) $product->j2commerce_product_id . '">';
                 $html .= '<input type="hidden" name="variant_id" value="' . (int) ($variant->j2commerce_variant_id ?? 0) . '">';
                 $html .= '<input type="hidden" name="' . Session::getFormToken() . '" value="1">';
 
                 if ($showOptions && $product->has_options) {
-                    $html .= $this->renderProductOptions($product->j2commerce_product_id);
+                    $html .= $this->renderProductOptions($product);
                 }
 
+                $html .= '<div class="input-group">';
                 // Quantity field
                 if ($j2params->get('show_qty_field', 1)) {
-                    $html .= '<div class="j2commerce-quantity">';
-                    $html .= '<label for="qty_' . $product->j2commerce_product_id . '">' . Text::_('PLG_CONTENT_J2COMMERCE_QUANTITY') . '</label>';
-                    $html .= '<input type="number" name="quantity" id="qty_' . $product->j2commerce_product_id . '" value="1" min="1" class="form-control">';
-                    $html .= '</div>';
+                    //$html .= '<div class="j2commerce-quantity">';
+                    //$html .= '<label for="qty_' . $product->j2commerce_product_id . '">' . Text::_('PLG_CONTENT_J2COMMERCE_QUANTITY') . '</label>';
+                    $html .= '<input type="number" name="product_qty" id="qty_' . $product->j2commerce_product_id . '" value="1" min="1" step="1" class="form-control qty-input" aria-label="' . Text::_('PLG_CONTENT_J2COMMERCE_QUANTITY') . '">';
+                    //$html .= '</div>';
                 }
 
-                $html .= '<button type="submit" class="' . $this->escape($buttonClass) . '">';
+                $html .= '<button type="submit" class="j2commerce-cart-button ' . $this->escape($buttonClass) . '" data-cart-action-always="Adding..." data-cart-action-done="Add to Cart" data-cart-action-timeout="1000">';
                 $html .= $this->escape($buttonText);
                 $html .= '</button>';
+                $html .= '</div>';
+
                 $html .= '</form>';
                 $html .= '</div>';
             }
@@ -695,42 +700,50 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
     /**
      * @since   6.0.0
      */
-    private function renderProductOptions(int $productId): string
+    private function renderProductOptions(object $product): string
     {
-        $db    = $this->getDatabase();
-        $query = $db->getQuery(true)
-            ->select([
-                $db->quoteName('po.j2commerce_product_option_id'),
-                $db->quoteName('po.option_id'),
-                $db->quoteName('po.required'),
-                $db->quoteName('o.option_name'),
-                $db->quoteName('o.type'),
-            ])
-            ->from($db->quoteName('#__j2commerce_product_options', 'po'))
-            ->join('LEFT', $db->quoteName('#__j2commerce_options', 'o'), $db->quoteName('po.option_id') . ' = ' . $db->quoteName('o.j2commerce_option_id'))
-            ->where($db->quoteName('po.product_id') . ' = :productId')
-            ->bind(':productId', $productId, ParameterType::INTEGER)
-            ->order($db->quoteName('po.ordering') . ' ASC');
+        $options   = $product->options ?? [];
+        $productId = (int) $product->j2commerce_product_id;
 
-        $db->setQuery($query);
-        $options = $db->loadObjectList();
+        if (empty($options)) {
+            return '';
+        }
 
         $html = '';
 
-        if (!empty($options)) {
-            $html .= '<div class="j2commerce-product-options">';
+        foreach ($options as $option) {
+            // Skip child options — they are loaded dynamically via doAjaxFilter
+            if (!empty($option['parent_id'])) {
+                continue;
+            }
 
-            foreach ($options as $option) {
-                $html .= '<div class="j2commerce-option">';
-                $html .= '<label>' . $this->escape($option->option_name);
-                if ($option->required) {
-                    $html .= ' <span class="required">*</span>';
+            $optionId = (int) ($option['productoption_id'] ?? 0);
+            $type     = $option['type'] ?? '';
+
+            $html .= '<div id="option-' . $optionId . '" class="option mb-3">';
+
+            // Label heading — select uses <label for=>, radio/checkbox use <div>
+            if ($type === 'select') {
+                $selectInputId = 'product-option-' . $productId . '-' . $optionId;
+                $html .= '<label class="form-label fw-semibold pb-1 mb-1" for="' . $selectInputId . '">';
+                $html .= $this->escape((string) ($option['option_name'] ?? '')) . ':';
+                if (!empty($option['required'])) {
+                    $html .= ' <span class="text-danger">*</span>';
                 }
                 $html .= '</label>';
-                $html .= $this->renderOptionValues($option);
+            } else {
+                $html .= '<div class="form-label fw-semibold pb-1 mb-1">';
+                $html .= $this->escape((string) ($option['option_name'] ?? '')) . ':';
+                if (!empty($option['required'])) {
+                    $html .= ' <span class="text-danger">*</span>';
+                }
+                if ($type === 'radio') {
+                    $html .= ' <span class="fw-normal fs-sm ms-1" id="radioOption' . $optionId . '"></span>';
+                }
                 $html .= '</div>';
             }
 
+            $html .= $this->renderOptionValues($option, $productId);
             $html .= '</div>';
         }
 
@@ -740,61 +753,84 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
     /**
      * @since   6.0.0
      */
-    private function renderOptionValues(object $option): string
+    private function renderOptionValues(array $option, int $productId): string
     {
-        $db    = $this->getDatabase();
-        $query = $db->getQuery(true)
-            ->select([
-                $db->quoteName('pov.j2commerce_product_optionvalue_id'),
-                $db->quoteName('pov.optionvalue_id'),
-                $db->quoteName('pov.price'),
-                $db->quoteName('pov.price_prefix'),
-                $db->quoteName('ov.optionvalue_name'),
-            ])
-            ->from($db->quoteName('#__j2commerce_product_optionvalues', 'pov'))
-            ->join('LEFT', $db->quoteName('#__j2commerce_optionvalues', 'ov'), $db->quoteName('pov.optionvalue_id') . ' = ' . $db->quoteName('ov.j2commerce_optionvalue_id'))
-            ->where($db->quoteName('pov.product_option_id') . ' = :optionId')
-            ->bind(':optionId', $option->j2commerce_product_option_id, ParameterType::INTEGER)
-            ->order($db->quoteName('pov.ordering') . ' ASC');
+        $values   = $option['optionvalue'] ?? [];
+        $html     = '';
+        $optionId = (int) ($option['productoption_id'] ?? 0);
+        $name     = 'product_option[' . $optionId . ']';
 
-        $db->setQuery($query);
-        $values = $db->loadObjectList();
-
-        $html      = '';
-        $fieldName = 'option[' . $option->j2commerce_product_option_id . ']';
-
-        switch ($option->type) {
+        switch ($option['type'] ?? '') {
             case 'select':
-                $html .= '<select name="' . $fieldName . '" class="form-select">';
-                $html .= '<option value="">' . Text::_('PLG_CONTENT_J2COMMERCE_SELECT_OPTION') . '</option>';
+                $selectInputId = 'product-option-' . $productId . '-' . $optionId;
+                $html .= '<select'
+                    . ' id="' . $selectInputId . '"'
+                    . ' name="' . $name . '"'
+                    . ' class="form-select"'
+                    . ' data-product-id="' . $productId . '"'
+                    . ' data-option-id="' . $optionId . '"'
+                    . ' onchange="doAjaxFilter(this.options[this.selectedIndex].value,'
+                        . ' ' . $productId . ', ' . $optionId . ', \'#option-' . $optionId . '\')"'
+                    . '>';
+                $html .= '<option value="">' . Text::_('COM_J2COMMERCE_CHOOSE') . '</option>';
                 foreach ($values as $value) {
-                    $priceText = $this->formatOptionPrice($value);
-                    $html .= '<option value="' . (int) $value->j2commerce_product_optionvalue_id . '">';
-                    $html .= $this->escape($value->optionvalue_name) . $priceText;
+                    $valueId  = (int) ($value['product_optionvalue_id'] ?? 0);
+                    $selected = !empty($value['product_optionvalue_default']) ? ' selected="selected"' : '';
+                    $html .= '<option value="' . $valueId . '"' . $selected . '>';
+                    $html .= $this->escape((string) ($value['optionvalue_name'] ?? '–'));
+                    $html .= $this->formatOptionPriceInline($value);
                     $html .= '</option>';
                 }
                 $html .= '</select>';
                 break;
 
             case 'radio':
+                $html .= '<div class="j2commerce-radio-options d-flex flex-wrap gap-2"'
+                    . ' data-binded-label="#radioOption' . $optionId . '">';
                 foreach ($values as $value) {
-                    $priceText = $this->formatOptionPrice($value);
-                    $html .= '<div class="form-check">';
-                    $html .= '<input type="radio" name="' . $fieldName . '" value="' . (int) $value->j2commerce_product_optionvalue_id . '" class="form-check-input" id="opt_' . (int) $value->j2commerce_product_optionvalue_id . '">';
-                    $html .= '<label class="form-check-label" for="opt_' . (int) $value->j2commerce_product_optionvalue_id . '">';
-                    $html .= $this->escape($value->optionvalue_name) . $priceText;
+                    $valueId     = (int) ($value['product_optionvalue_id'] ?? 0);
+                    $inputId     = 'option-value-' . $productId . '-' . $optionId . '-' . $valueId;
+                    $checked     = !empty($value['product_optionvalue_default']) ? ' checked="checked"' : '';
+                    $labelText   = $this->escape((string) ($value['optionvalue_name'] ?? '–'));
+                    $priceHtml   = $this->formatOptionPriceLabel($value);
+
+                    $html .= '<input' . $checked
+                        . ' type="radio"'
+                        . ' name="' . $name . '"'
+                        . ' value="' . $valueId . '"'
+                        . ' id="' . $inputId . '"'
+                        . ' class="btn-check"'
+                        . ' data-product-id="' . $productId . '"'
+                        . ' data-option-id="' . $optionId . '"'
+                        . ' autocomplete="off"'
+                        . ' onchange="doAjaxFilter(this.value, ' . $productId . ', ' . $optionId . ', \'#option-' . $optionId . '\')"'
+                        . ' />';
+                    $html .= '<label'
+                        . ' class="btn btn-sm btn-outline-secondary form-check-label fs-xs"'
+                        . ' for="' . $inputId . '"'
+                        . ' data-label="' . $labelText . '"'
+                        . '>';
+                    $html .= $labelText . $priceHtml;
                     $html .= '</label>';
-                    $html .= '</div>';
                 }
+                $html .= '</div>';
                 break;
 
             case 'checkbox':
                 foreach ($values as $value) {
-                    $priceText = $this->formatOptionPrice($value);
+                    $valueId   = (int) ($value['product_optionvalue_id'] ?? 0);
+                    $inputId   = 'option-value-' . $productId . '-' . $optionId . '-' . $valueId;
+                    $labelText = $this->escape((string) ($value['optionvalue_name'] ?? '–'));
+                    $priceHtml = $this->formatOptionPriceLabel($value);
+
                     $html .= '<div class="form-check">';
-                    $html .= '<input type="checkbox" name="' . $fieldName . '[]" value="' . (int) $value->j2commerce_product_optionvalue_id . '" class="form-check-input" id="opt_' . (int) $value->j2commerce_product_optionvalue_id . '">';
-                    $html .= '<label class="form-check-label" for="opt_' . (int) $value->j2commerce_product_optionvalue_id . '">';
-                    $html .= $this->escape($value->optionvalue_name) . $priceText;
+                    $html .= '<input type="checkbox"'
+                        . ' name="' . $name . '[]"'
+                        . ' value="' . $valueId . '"'
+                        . ' id="' . $inputId . '"'
+                        . ' class="form-check-input" />';
+                    $html .= '<label class="form-check-label" for="' . $inputId . '">';
+                    $html .= $labelText . $priceHtml;
                     $html .= '</label>';
                     $html .= '</div>';
                 }
@@ -1537,4 +1573,47 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         return htmlspecialchars($string, ENT_QUOTES, 'UTF-8');
     }
 
+    /**
+     * Price for <option>-Text (plain text, kein HTML).
+     *
+     * @since   6.0.0
+     */
+    private function formatOptionPriceInline(array $value): string
+    {
+        $j2params = ComponentHelper::getParams('com_j2commerce');
+        $price    = (float) ($value['product_optionvalue_price'] ?? 0);
+
+        if (!$j2params->get('product_option_price', 1) || $price <= 0) {
+            return '';
+        }
+
+        $prefix = '';
+        if ($j2params->get('product_option_price_prefix', 1)) {
+            $prefix = (string) ($value['product_optionvalue_prefix'] ?? '+');
+        }
+
+        return ' (' . $prefix . $this->formatPrice($price) . ')';
+    }
+
+    /**
+     * Price-HTML for Radio/Checkbox-Labels with <span>.
+     *
+     * @since   6.0.0
+     */
+    private function formatOptionPriceLabel(array $value): string
+    {
+        $j2params = ComponentHelper::getParams('com_j2commerce');
+        $price    = (float) ($value['product_optionvalue_price'] ?? 0);
+
+        if (!$j2params->get('product_option_price', 1) || $price <= 0) {
+            return '';
+        }
+
+        $prefix = (string) ($value['product_optionvalue_prefix'] ?? '+');
+
+        return ' ' . $this->escape($prefix)
+            . ' <span class="j2commerce-product-price">'
+            . $this->formatPrice($price)
+            . '</span>';
+    }
 }
