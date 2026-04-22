@@ -754,7 +754,7 @@ class Flexivariable
                 $product->quantity = $product->variant->min_sale_qty;
             }
 
-            $product->pricing = $productHelper->getPrice($product->variant, $product->quantity);
+            $product->pricing = $productHelper->getPrice($product->variant, (int) $product->quantity);
 
             $paramData     = new Registry($product->variant->params);
             $mainImage     = $paramData->get('variant_main_image', '');

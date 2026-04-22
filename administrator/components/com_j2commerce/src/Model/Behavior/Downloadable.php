@@ -536,14 +536,14 @@ class Downloadable
         }
 
         // Check stock status
-        if ($productHelper->checkStockStatus($product->variant, $product->quantity)) {
+        if ($productHelper->checkStockStatus($product->variant, (int) $product->quantity)) {
             $product->variant->availability = 1;
         } else {
             $product->variant->availability = 0;
         }
 
         // Process pricing
-        $product->pricing = $productHelper->getPrice($product->variant, $product->quantity);
+        $product->pricing = $productHelper->getPrice($product->variant, (int) $product->quantity);
 
         // Load product options if applicable
         $product->options = [];
@@ -627,7 +627,7 @@ class Downloadable
         }
 
         // Process pricing
-        $pricing = $productHelper->getPrice($product->variant, $product->quantity);
+        $pricing = $productHelper->getPrice($product->variant, (int) $product->quantity);
 
         $selectedProductOptions = $input->get('product_option', [], 'ARRAY');
 

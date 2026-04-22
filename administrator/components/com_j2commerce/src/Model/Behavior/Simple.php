@@ -434,14 +434,14 @@ class Simple
         }
 
         // Check stock status
-        if ($productHelper->checkStockStatus($product->variant, $product->quantity)) {
+        if ($productHelper->checkStockStatus($product->variant, (int) $product->quantity)) {
             $product->variant->availability = 1;
         } else {
             $product->variant->availability = 0;
         }
 
         // Process pricing
-        $product->pricing = $productHelper->getPrice($product->variant, $product->quantity);
+        $product->pricing = $productHelper->getPrice($product->variant, (int) $product->quantity);
 
         $product->options = [];
         if ($product->has_options) {
@@ -509,7 +509,7 @@ class Simple
             $product->quantity = $product->variant->min_sale_qty;
         }
 
-        $pricing = $productHelper->getPrice($product->variant, $product->quantity);
+        $pricing = $productHelper->getPrice($product->variant, (int) $product->quantity);
 
         $selectedProductOptions = $app->getInput()->get('product_option', [], 'ARRAY');
 
