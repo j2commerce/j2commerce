@@ -35,7 +35,6 @@ use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\Session\Session;
 use Joomla\Database\DatabaseAwareTrait;
 use Joomla\Database\ParameterType;
-use Joomla\Event\DispatcherInterface;
 use Joomla\Event\SubscriberInterface;
 use Joomla\Registry\Registry;
 
@@ -106,15 +105,6 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
     private function clearArticleCache(int $articleId): void
     {
         unset(self::$articleCache[$articleId]);
-    }
-
-    /** @since 6.0.0 */
-    public function __construct(DispatcherInterface $dispatcher, array $config = [])
-    {
-        parent::__construct($dispatcher, $config);
-
-        // Load component language for COM_J2COMMERCE_* strings used in product form templates
-        Factory::getApplication()->getLanguage()->load('com_j2commerce', JPATH_ADMINISTRATOR . '/components/com_j2commerce');
     }
 
     /** @since 6.0.0 */
