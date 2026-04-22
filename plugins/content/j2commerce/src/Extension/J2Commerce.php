@@ -682,7 +682,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
                     //$html .= '</div>';
                 }
 
-                $html .= '<button type="submit" class="j2commerce-cart-button ' . $this->escape($buttonClass) . '" data-cart-action-always="Adding..." data-cart-action-done="Add to Cart" data-cart-action-timeout="1000">';
+                $html .= '<button type="submit" class="j2commerce-cart-button ' . $this->escape($buttonClass) . '" data-cart-action-always="' . Text::_('COM_J2COMMERCE_ADDING_TO_CART') . '" data-cart-action-done="' . $buttonText . '" data-cart-action-timeout="1000">';
                 $html .= $this->escape($buttonText);
                 $html .= '</button>';
                 $html .= '</div>';
