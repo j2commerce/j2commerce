@@ -128,8 +128,7 @@ class Com_J2commercemigratorInstallerScript implements InstallerScriptInterface
         }
 
         Factory::getApplication()->enqueueMessage(
-            Text::_('COM_J2COMMERCEMIGRATOR_MSG_LEGACY_PLUGIN_DETECTED')
-                ?: 'The old migration system plugin is still installed. Use the new J2Commerce Migrator component (Components → J2Commerce Migrator) for all future migrations.',
+            Text::_('COM_J2COMMERCEMIGRATOR_MSG_LEGACY_PLUGIN_DETECTED'),
             'notice'
         );
     }
