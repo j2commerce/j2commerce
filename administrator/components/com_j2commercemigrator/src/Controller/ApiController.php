@@ -17,6 +17,7 @@ use J2Commerce\Component\J2commercemigrator\Administrator\Service\ConnectionMana
 use J2Commerce\Component\J2commercemigrator\Administrator\Service\MigrationEngine;
 use J2Commerce\Component\J2commercemigrator\Administrator\Service\PreflightAnalyzer;
 use J2Commerce\Component\J2commercemigrator\Administrator\Service\RunRepository;
+use J2Commerce\Component\J2commercemigrator\Administrator\Service\SchemaIntrospector;
 use J2Commerce\Component\J2commercemigrator\Administrator\Helper\MigrationLogger;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -74,6 +75,7 @@ class ApiController extends BaseController
                 'migrate.getTableCount'     => $this->handleGetTableCount($registry, $connMgr, $db, $logger, $input),
                 'migrate.migrateTable'      => $this->handleMigrateTable($registry, $connMgr, $db, $logger, $input),
                 'migrate.normalizeStatuses' => $this->handleNormalizeStatuses($db, $logger),
+                'migrate.discover'          => $this->handleDiscover($registry, $connMgr, $db),
                 default                     => ['error' => "Unknown action: {$action}"],
             };
 
@@ -245,6 +247,19 @@ class ApiController extends BaseController
     {
         $engine = new MigrationEngine($db, $logger);
         return $engine->normalizeOrderStatusCssClasses();
+    }
+
+    private function handleDiscover(AdapterRegistry $registry, ConnectionManager $connMgr, $db): array
+    {
+        $adapterKey = Factory::getApplication()->getInput()->getCmd('adapter', '');
+        $adapter    = $registry->get($adapterKey);
+
+        if (!$adapter) {
+            return ['error' => "Unknown adapter: {$adapterKey}"];
+        }
+
+        $introspector = new SchemaIntrospector($db);
+        return $introspector->discover($adapter, $connMgr->getReader());
     }
 
     private function sendJson(array $data): void
