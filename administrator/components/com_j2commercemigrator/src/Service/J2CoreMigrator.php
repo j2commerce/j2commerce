@@ -558,13 +558,12 @@ class J2CoreMigrator
 
     private function putIdmap(string $entity, int $sourceId, int $targetId): void
     {
-        $this->idMap->record(self::ADAPTER, $entity, (string) $sourceId, $entity, (string) $targetId);
+        $this->idMap->record(self::ADAPTER, $entity, $sourceId, $targetId);
     }
 
     private function getIdmap(string $entity, int $sourceId): ?int
     {
-        $val = $this->idMap->lookupTarget(self::ADAPTER, $entity, (string) $sourceId);
-        return $val !== null ? (int) $val : null;
+        return $this->idMap->lookupTarget(self::ADAPTER, $entity, $sourceId);
     }
 
     // ──────────────────────────────────────────────────────────────────────────

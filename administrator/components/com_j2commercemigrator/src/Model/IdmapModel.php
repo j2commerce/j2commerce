@@ -17,9 +17,6 @@ defined('_JEXEC') or die;
 use J2Commerce\Component\J2commercemigrator\Administrator\Service\IdmapRepository;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 
-/**
- * Model for the source-PK → target-PK cross-reference (idmap) table.
- */
 class IdmapModel extends BaseDatabaseModel
 {
     private function repo(): IdmapRepository
@@ -27,19 +24,19 @@ class IdmapModel extends BaseDatabaseModel
         return new IdmapRepository($this->getDatabase());
     }
 
-    public function lookupTarget(string $adapter, string $sourceTable, string $sourcePk): ?string
+    public function lookupTarget(string $adapter, string $entity, int $sourceId): ?int
     {
-        return $this->repo()->lookupTarget($adapter, $sourceTable, $sourcePk);
+        return $this->repo()->lookupTarget($adapter, $entity, $sourceId);
     }
 
-    public function lookupSource(string $adapter, string $targetTable, string $targetPk): ?string
+    public function lookupSource(string $adapter, string $entity, int $targetId): ?int
     {
-        return $this->repo()->lookupSource($adapter, $targetTable, $targetPk);
+        return $this->repo()->lookupSource($adapter, $entity, $targetId);
     }
 
-    public function record(string $adapter, string $sourceTable, string $sourcePk, string $targetTable, string $targetPk): void
+    public function record(string $adapter, string $entity, int $sourceId, int $targetId): void
     {
-        $this->repo()->record($adapter, $sourceTable, $sourcePk, $targetTable, $targetPk);
+        $this->repo()->record($adapter, $entity, $sourceId, $targetId);
     }
 
     public function dropForAdapter(string $adapter): void
@@ -50,11 +47,5 @@ class IdmapModel extends BaseDatabaseModel
     public function dropAll(): void
     {
         $this->repo()->dropAll();
-    }
-
-    /** Migrates rows from the legacy plugin idmap table (one-time import). */
-    public function migrateFromLegacy(): int
-    {
-        return $this->repo()->migrateFromLegacy();
     }
 }

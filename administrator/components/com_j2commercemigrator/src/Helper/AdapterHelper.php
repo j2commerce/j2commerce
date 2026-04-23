@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commercemigrator\Administrator\Helper;
 
+use J2Commerce\Component\J2commercemigrator\Administrator\Adapter\MigratorAdapterInterface;
 use J2Commerce\Component\J2commercemigrator\Administrator\Dto\TierDefinition;
 
 /**
@@ -214,16 +215,18 @@ final class AdapterHelper
      * IdmapRepository directly.
      *
      * @param  \J2Commerce\Component\J2commercemigrator\Administrator\Service\IdmapRepository $idmap
-     * @param  string $sourceTable  Bare source table name (no prefix), e.g. 'src_products'.
-     * @param  int    $sourcePk     Source primary key value.
-     * @return int|null             Resolved target PK, or null if not yet migrated.
+     * @param  string $adapter  Adapter key, e.g. 'j2store4'.
+     * @param  string $entity   Logical entity name, e.g. 'product'.
+     * @param  int    $sourceId Source primary key value.
+     * @return int|null         Resolved target PK, or null if not yet migrated.
      */
     public static function resolveId(
         \J2Commerce\Component\J2commercemigrator\Administrator\Service\IdmapRepository $idmap,
-        string $sourceTable,
-        int    $sourcePk,
+        string $adapter,
+        string $entity,
+        int    $sourceId,
     ): ?int {
-        return $idmap->resolve($sourceTable, $sourcePk);
+        return $idmap->lookupTarget($adapter, $entity, $sourceId);
     }
 
     // -------------------------------------------------------------------------

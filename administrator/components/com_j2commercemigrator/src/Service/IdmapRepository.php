@@ -19,57 +19,53 @@ class IdmapRepository
 {
     public function __construct(private DatabaseInterface $db) {}
 
-    public function lookupTarget(string $adapter, string $sourceTable, string $sourcePk): ?string
+    public function lookupTarget(string $adapter, string $entity, int $sourceId): ?int
     {
         $query = $this->db->getQuery(true)
-            ->select($this->db->quoteName('target_pk'))
+            ->select($this->db->quoteName('target_id'))
             ->from($this->db->quoteName('#__j2commerce_migrator_idmap'))
             ->where($this->db->quoteName('adapter') . ' = :adapter')
-            ->where($this->db->quoteName('source_table') . ' = :source_table')
-            ->where($this->db->quoteName('source_pk') . ' = :source_pk')
+            ->where($this->db->quoteName('entity') . ' = :entity')
+            ->where($this->db->quoteName('source_id') . ' = :source_id')
             ->bind(':adapter', $adapter)
-            ->bind(':source_table', $sourceTable)
-            ->bind(':source_pk', $sourcePk);
+            ->bind(':entity', $entity)
+            ->bind(':source_id', $sourceId, ParameterType::INTEGER);
 
         $result = $this->db->setQuery($query)->loadResult();
-        return $result ?: null;
+        return $result !== null ? (int) $result : null;
     }
 
-    public function lookupSource(string $adapter, string $targetTable, string $targetPk): ?string
+    public function lookupSource(string $adapter, string $entity, int $targetId): ?int
     {
         $query = $this->db->getQuery(true)
-            ->select($this->db->quoteName('source_pk'))
+            ->select($this->db->quoteName('source_id'))
             ->from($this->db->quoteName('#__j2commerce_migrator_idmap'))
             ->where($this->db->quoteName('adapter') . ' = :adapter')
-            ->where($this->db->quoteName('target_table') . ' = :target_table')
-            ->where($this->db->quoteName('target_pk') . ' = :target_pk')
+            ->where($this->db->quoteName('entity') . ' = :entity')
+            ->where($this->db->quoteName('target_id') . ' = :target_id')
             ->bind(':adapter', $adapter)
-            ->bind(':target_table', $targetTable)
-            ->bind(':target_pk', $targetPk);
+            ->bind(':entity', $entity)
+            ->bind(':target_id', $targetId, ParameterType::INTEGER);
 
         $result = $this->db->setQuery($query)->loadResult();
-        return $result ?: null;
+        return $result !== null ? (int) $result : null;
     }
 
-    public function record(string $adapter, string $sourceTable, string $sourcePk, string $targetTable, string $targetPk): void
+    public function record(string $adapter, string $entity, int $sourceId, int $targetId): void
     {
-        $now = (new \DateTime('now', new \DateTimeZone('UTC')))->format('Y-m-d H:i:s');
-
         $query = $this->db->getQuery(true)
             ->insert($this->db->quoteName('#__j2commerce_migrator_idmap'))
-            ->columns($this->db->quoteName(['adapter', 'source_table', 'source_pk', 'target_table', 'target_pk', 'created_on']))
-            ->values(':adapter, :source_table, :source_pk, :target_table, :target_pk, :created_on')
+            ->columns($this->db->quoteName(['adapter', 'entity', 'source_id', 'target_id']))
+            ->values(':adapter, :entity, :source_id, :target_id')
             ->bind(':adapter', $adapter)
-            ->bind(':source_table', $sourceTable)
-            ->bind(':source_pk', $sourcePk)
-            ->bind(':target_table', $targetTable)
-            ->bind(':target_pk', $targetPk)
-            ->bind(':created_on', $now);
+            ->bind(':entity', $entity)
+            ->bind(':source_id', $sourceId, ParameterType::INTEGER)
+            ->bind(':target_id', $targetId, ParameterType::INTEGER);
 
         try {
             $this->db->setQuery($query)->execute();
         } catch (\Throwable) {
-            // Duplicate — ignore
+            // Duplicate — ignore (UNIQUE KEY uq_idmap_lookup covers adapter+entity+source_id)
         }
     }
 
@@ -86,36 +82,5 @@ class IdmapRepository
     public function dropAll(): void
     {
         $this->db->truncateTable('#__j2commerce_migrator_idmap');
-    }
-
-    public function migrateFromLegacy(): int
-    {
-        $legacy = '#__j2commerce_migration_idmap';
-
-        // Check if legacy table exists
-        try {
-            $exists = $this->db->setQuery("SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '" . $this->db->getPrefix() . 'j2commerce_migration_idmap' . "'")->loadResult();
-
-            if (!$exists) {
-                return 0;
-            }
-        } catch (\Throwable) {
-            return 0;
-        }
-
-        $now = (new \DateTime('now', new \DateTimeZone('UTC')))->format('Y-m-d H:i:s');
-
-        $sql = 'INSERT IGNORE INTO ' . $this->db->quoteName('#__j2commerce_migrator_idmap')
-            . ' (adapter, source_table, source_pk, target_table, target_pk, created_on)'
-            . ' SELECT \'j2store4\', source_table, source_pk, target_table, target_pk, '
-            . $this->db->quote($now)
-            . ' FROM ' . $this->db->quoteName($legacy);
-
-        try {
-            $this->db->setQuery($sql)->execute();
-            return (int) $this->db->getAffectedRows();
-        } catch (\Throwable) {
-            return 0;
-        }
     }
 }
