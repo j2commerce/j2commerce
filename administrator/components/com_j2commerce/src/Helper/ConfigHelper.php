@@ -50,6 +50,60 @@ class ConfigHelper
         return self::getParams()->get($key, $default);
     }
 
+    /**
+     * Normalize the image_directories subform config into a predictable list.
+     *
+     * Joomla may return this field as a JSON string, array of arrays,
+     * array of objects, or a single associative row depending on context.
+     *
+     * @param   array<int, array<string, mixed>>  $default  Fallback rows when config is empty/invalid.
+     *
+     * @return  array<int, array{directory: string, thumbs: int}>
+     */
+    public static function getImageDirectories(array $default = [['directory' => 'images', 'thumbs' => 1]]): array
+    {
+        $normalized = self::normalizeImageDirectories(self::get('image_directories', $default));
+
+        if ($normalized !== []) {
+            return $normalized;
+        }
+
+        $fallback = self::normalizeImageDirectories($default);
+
+        return $fallback !== [] ? $fallback : [['directory' => 'images', 'thumbs' => 1]];
+    }
+
+    /**
+     * Return only the configured image directory paths.
+     *
+     * @param   array<int, string>  $default  Fallback directory paths.
+     *
+     * @return  array<int, string>
+     */
+    public static function getImageDirectoryPaths(array $default = ['images']): array
+    {
+        $defaultRows = [];
+
+        foreach ($default as $directory) {
+            $directory = trim((string) $directory, '/');
+
+            if ($directory !== '') {
+                $defaultRows[] = ['directory' => $directory, 'thumbs' => 1];
+            }
+        }
+
+        $directories = self::getImageDirectories($defaultRows ?: [['directory' => 'images', 'thumbs' => 1]]);
+        $paths = [];
+
+        foreach ($directories as $directory) {
+            if (!empty($directory['directory'])) {
+                $paths[] = $directory['directory'];
+            }
+        }
+
+        return $paths !== [] ? $paths : ($default ?: ['images']);
+    }
+
     /** Sets a value in memory only — does not persist. */
     public static function set(string $key, mixed $value): void
     {
@@ -64,6 +118,58 @@ class ConfigHelper
     public static function reset(): void
     {
         self::$params = null;
+    }
+
+    /**
+     * @return  array<int, array{directory: string, thumbs: int}>
+     */
+    private static function normalizeImageDirectories(mixed $value): array
+    {
+        if ($value instanceof Registry) {
+            $value = $value->toArray();
+        }
+
+        if (\is_string($value)) {
+            $decoded = json_decode($value, true);
+            $value   = \is_array($decoded) ? $decoded : [];
+        } elseif (\is_object($value)) {
+            $value = (array) $value;
+        }
+
+        if (!\is_array($value)) {
+            return [];
+        }
+
+        if (array_key_exists('directory', $value)) {
+            $value = [$value];
+        }
+
+        $normalized = [];
+
+        foreach ($value as $row) {
+            if ($row instanceof Registry) {
+                $row = $row->toArray();
+            } elseif (\is_object($row)) {
+                $row = (array) $row;
+            }
+
+            if (!\is_array($row)) {
+                continue;
+            }
+
+            $directory = trim((string) ($row['directory'] ?? ''), '/');
+
+            if ($directory === '') {
+                continue;
+            }
+
+            $normalized[] = [
+                'directory' => $directory,
+                'thumbs'    => (int) ($row['thumbs'] ?? 0),
+            ];
+        }
+
+        return $normalized;
     }
 
     // =========================================================================
