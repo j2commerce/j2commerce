@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<access component="com_j2commercemigrator">
-    <section name="component">
-        <action name="core.admin" title="JACTION_ADMIN" />
-        <action name="core.manage" title="JACTION_MANAGE" />
-    </section>
-</access>
