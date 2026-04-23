@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageProcessorHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
@@ -264,23 +265,7 @@ class MultiimageuploaderController extends BaseController
             return;
         }
 
-        $componentParams = ComponentHelper::getParams('com_j2commerce');
-        $directories     = $componentParams->get('image_directories', [(object) ['directory' => 'images']]);
-
-        if (\is_string($directories)) {
-            $directories = json_decode($directories);
-        }
-
-        $paths = [];
-        foreach ($directories as $dir) {
-            if (!empty($dir->directory)) {
-                $paths[] = $dir->directory;
-            }
-        }
-
-        if (empty($paths)) {
-            $paths[] = 'images';
-        }
+        $paths = ConfigHelper::getImageDirectoryPaths(['images']);
 
         $this->sendJson(true, '', $paths);
     }
@@ -489,15 +474,10 @@ class MultiimageuploaderController extends BaseController
         }
 
         // Protect configured root directories
-        $componentParams = ComponentHelper::getParams('com_j2commerce');
-        $directories     = $componentParams->get('image_directories', [(object) ['directory' => 'images']]);
-
-        if (\is_string($directories)) {
-            $directories = json_decode($directories);
-        }
+        $directories = ConfigHelper::getImageDirectories();
 
         foreach ($directories as $dir) {
-            if (trim($dir->directory ?? '', '/') === $path) {
+            if (trim((string) ($dir['directory'] ?? ''), '/') === $path) {
                 $this->sendJson(false, 'Cannot delete a configured root directory');
                 return;
             }
@@ -862,24 +842,7 @@ class MultiimageuploaderController extends BaseController
         $path = trim($path, '/');
 
         // Build allowed roots from J2Commerce configured directories
-        $directories = ComponentHelper::getParams('com_j2commerce')
-            ->get('image_directories', [(object) ['directory' => 'images']]);
-
-        if (\is_string($directories)) {
-            $directories = json_decode($directories);
-        }
-
-        $allowedRoots = [];
-
-        foreach ($directories as $dir) {
-            if (!empty($dir->directory)) {
-                $allowedRoots[] = trim((string) $dir->directory, '/');
-            }
-        }
-
-        if (empty($allowedRoots)) {
-            $allowedRoots[] = 'images';
-        }
+        $allowedRoots = ConfigHelper::getImageDirectoryPaths(['images']);
 
         foreach ($allowedRoots as $root) {
             if ($path === $root || str_starts_with($path, $root . '/')) {
