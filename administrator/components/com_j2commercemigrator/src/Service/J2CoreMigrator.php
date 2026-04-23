@@ -123,8 +123,10 @@ class J2CoreMigrator
             return ['error' => "Unknown J2Core tier: {$tier}"];
         }
 
+        // Drop only rows for this tier's entities — each tier is independent and resetting
+        // Users must not erase Content idmap rows (which share the same 'j2core' adapter).
         foreach (self::TIERS[$tier]['tables'] as $table) {
-            $this->idMap->dropForAdapter(self::ADAPTER . ':' . $table);
+            $this->idMap->dropForAdapterAndEntity(self::ADAPTER, $table);
         }
 
         return ['success' => true, 'tier' => $tier];

@@ -79,6 +79,18 @@ class IdmapRepository
         $this->db->setQuery($query)->execute();
     }
 
+    public function dropForAdapterAndEntity(string $adapter, string $entity): void
+    {
+        $query = $this->db->getQuery(true)
+            ->delete($this->db->quoteName('#__j2commerce_migrator_idmap'))
+            ->where($this->db->quoteName('adapter') . ' = :adapter')
+            ->where($this->db->quoteName('entity') . ' = :entity')
+            ->bind(':adapter', $adapter)
+            ->bind(':entity', $entity);
+
+        $this->db->setQuery($query)->execute();
+    }
+
     public function dropAll(): void
     {
         $this->db->truncateTable('#__j2commerce_migrator_idmap');
