@@ -55,7 +55,7 @@ class RunsController extends AdminController
 
         try {
             $repo = new IdmapRepository($this->getDatabase());
-            $repo->dropTable();
+            $repo->dropAll();
             $this->sendJson(['ok' => true]);
         } catch (\Throwable $e) {
             (new MigrationLogger())->error('RunsController::cleanupIdMap', $e->getMessage());
