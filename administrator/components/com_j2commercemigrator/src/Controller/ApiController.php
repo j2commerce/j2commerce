@@ -26,29 +26,64 @@ use Joomla\CMS\Session\Session;
 
 /**
  * Namespaced AJAX endpoint: index.php?option=com_j2commercemigrator&task=api.run&action=...
- * All responses are JSON. All requests require core.admin + CSRF token.
+ * All responses are JSON. All requests require core.manage + CSRF token.
+ * Destructive actions additionally require core.admin.
  */
 class ApiController extends BaseController
 {
+    /**
+     * Actions that are destructive and require core.admin beyond core.manage.
+     * Keyed by action name.
+     */
+    private const ADMIN_REQUIRED = [
+        'connection.clear'          => true,
+        'migrate.resetTier'         => true,
+        'migrate.runTier'           => true,
+    ];
+
+    /**
+     * Actions that must be submitted via POST (mutating operations).
+     */
+    private const POST_REQUIRED = [
+        'connection.verify'         => true,
+        'connection.clear'          => true,
+        'migrate.runTier'           => true,
+        'migrate.resetTier'         => true,
+        'migrate.migrateTable'      => true,
+        'migrate.normalizeStatuses' => true,
+    ];
+
     public function run(): void
     {
         $app = Factory::getApplication();
 
-        // CSRF check
-        if (!Session::checkToken('get') && !Session::checkToken('post')) {
-            $this->sendJson(['error' => Text::_('JINVALID_TOKEN')]);
+        // CSRF check — POST token only; GET tokens leak via logs and Referer headers
+        if (!Session::checkToken('post')) {
+            $this->sendJson(['success' => false, 'error' => Text::_('JINVALID_TOKEN'), 'category' => 'csrf']);
             return;
         }
 
         $user = $app->getIdentity();
 
-        if (!$user || !$user->authorise('core.admin', 'com_j2commercemigrator')) {
-            $this->sendJson(['error' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
+        if (!$user || !$user->authorise('core.manage', 'com_j2commercemigrator')) {
+            $this->sendJson(['success' => false, 'error' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 'category' => 'forbidden']);
             return;
         }
 
         $input  = $app->getInput();
         $action = $input->getCmd('action', '');
+
+        // Enforce POST on mutating actions before any processing
+        if (isset(self::POST_REQUIRED[$action]) && $input->getMethod() !== 'POST') {
+            $this->sendJson(['success' => false, 'error' => Text::_('COM_J2COMMERCEMIGRATOR_ERR_GENERIC'), 'category' => 'post_required']);
+            return;
+        }
+
+        // Destructive actions require core.admin beyond the routine core.manage gate
+        if (isset(self::ADMIN_REQUIRED[$action]) && !$user->authorise('core.admin', 'com_j2commercemigrator')) {
+            $this->sendJson(['success' => false, 'error' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 'category' => 'forbidden_destructive']);
+            return;
+        }
 
         try {
             $db      = $this->getDatabase();
@@ -91,10 +126,6 @@ class ApiController extends BaseController
 
     private function handleConnectionVerify(ConnectionManager $connMgr, $input): array
     {
-        if ($input->getMethod() !== 'POST') {
-            return ['success' => false, 'error' => Text::_('COM_J2COMMERCEMIGRATOR_ERR_GENERIC'), 'category' => 'post_required'];
-        }
-
         $creds = [
             'mode'     => $input->get('mode', 'A', 'cmd'),
             'host'     => $input->get('host', '', 'string'),

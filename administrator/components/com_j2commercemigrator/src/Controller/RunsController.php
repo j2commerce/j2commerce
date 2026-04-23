@@ -37,6 +37,7 @@ class RunsController extends AdminController
 
     /**
      * POST: drops the #__j2commerce_migrator_idmap cross-reference table.
+     * Requires core.admin — destructive, irreversible operation.
      * Responds with JSON.
      */
     public function cleanupIdMap(): void
@@ -44,12 +45,18 @@ class RunsController extends AdminController
         $user = Factory::getApplication()->getIdentity();
 
         if (!$user || !$user->authorise('core.manage', 'com_j2commercemigrator')) {
-            $this->sendJson(['error' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
+            $this->sendJson(['success' => false, 'error' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 'category' => 'forbidden']);
             return;
         }
 
-        if (!Session::checkToken('get') && !Session::checkToken('post')) {
-            $this->sendJson(['error' => Text::_('JINVALID_TOKEN')]);
+        if (!Session::checkToken('post')) {
+            $this->sendJson(['success' => false, 'error' => Text::_('JINVALID_TOKEN'), 'category' => 'csrf']);
+            return;
+        }
+
+        // Destructive: requires core.admin beyond core.manage
+        if (!$user->authorise('core.admin', 'com_j2commercemigrator')) {
+            $this->sendJson(['success' => false, 'error' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 'category' => 'forbidden_destructive']);
             return;
         }
 

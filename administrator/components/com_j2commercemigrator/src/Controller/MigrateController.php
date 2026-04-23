@@ -67,6 +67,7 @@ class MigrateController extends BaseController
     {
         $this->enforceAcl();
         $this->enforceToken();
+        $this->enforceAdminForDestructive();
 
         try {
             $input        = Factory::getApplication()->getInput();
@@ -166,6 +167,7 @@ class MigrateController extends BaseController
     {
         $this->enforceAcl();
         $this->enforceToken();
+        $this->enforceAdminForDestructive();
 
         try {
             $input      = Factory::getApplication()->getInput();
@@ -292,6 +294,7 @@ class MigrateController extends BaseController
     {
         $this->enforceAcl();
         $this->enforceToken();
+        $this->enforceAdminForDestructive();
 
         try {
             $input  = Factory::getApplication()->getInput();
@@ -329,14 +332,24 @@ class MigrateController extends BaseController
         $user = Factory::getApplication()->getIdentity();
 
         if (!$user || !$user->authorise('core.manage', 'com_j2commercemigrator')) {
-            $this->sendJson(['error' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
+            $this->sendJson(['success' => false, 'error' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 'category' => 'forbidden']);
+        }
+    }
+
+    /** Destructive actions (tier reset, full tier run) require core.admin beyond core.manage. */
+    private function enforceAdminForDestructive(): void
+    {
+        $user = Factory::getApplication()->getIdentity();
+
+        if (!$user || !$user->authorise('core.admin', 'com_j2commercemigrator')) {
+            $this->sendJson(['success' => false, 'error' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 'category' => 'forbidden_destructive']);
         }
     }
 
     private function enforceToken(): void
     {
-        if (!Session::checkToken('get') && !Session::checkToken('post')) {
-            $this->sendJson(['error' => Text::_('JINVALID_TOKEN')]);
+        if (!Session::checkToken('post')) {
+            $this->sendJson(['success' => false, 'error' => Text::_('JINVALID_TOKEN'), 'category' => 'csrf']);
         }
     }
 
