@@ -53,8 +53,8 @@ class ImageController extends BaseController
             $srcPath = $input->getString('source_path', '');
 
             $logger  = new MigrationLogger();
-            $service = new ImageCopyService($this->getDatabase(), $logger);
-            $this->sendJson($service->copyFromSource($srcPath));
+            $service = new ImageCopyService($logger);
+            $this->sendJson(['success' => true, 'data' => $service->copyFromSource($srcPath)]);
         } catch (\Throwable $e) {
             $this->handleError('ImageController::copySourceImages', $e);
         }
@@ -73,7 +73,7 @@ class ImageController extends BaseController
 
             $logger  = new MigrationLogger();
             $service = new ImageRebuildService($this->getDatabase(), $logger);
-            $this->sendJson($service->listImageDirectories($root));
+            $this->sendJson(['success' => true, 'data' => $service->listImageDirectories($root)]);
         } catch (\Throwable $e) {
             $this->handleError('ImageController::listImageDirectories', $e);
         }
@@ -94,7 +94,7 @@ class ImageController extends BaseController
 
             $logger  = new MigrationLogger();
             $service = new ImageRebuildService($this->getDatabase(), $logger);
-            $this->sendJson($service->createDirectory($parent, $name));
+            $this->sendJson(['success' => true, 'data' => $service->createDirectory($parent, $name)]);
         } catch (\Throwable $e) {
             $this->handleError('ImageController::createImageDirectory', $e);
         }
@@ -110,7 +110,7 @@ class ImageController extends BaseController
         try {
             $logger  = new MigrationLogger();
             $service = new ImageRebuildService($this->getDatabase(), $logger);
-            $this->sendJson($service->scanProducts());
+            $this->sendJson(['success' => true, 'data' => $service->scanProducts()]);
         } catch (\Throwable $e) {
             $this->handleError('ImageController::scanImages', $e);
         }
@@ -126,14 +126,14 @@ class ImageController extends BaseController
 
         try {
             $input    = Factory::getApplication()->getInput();
-            $category = $input->getString('category', '');
+            $category = $input->getInt('category', 0);
             $dir      = $input->getString('dir', '');
             $offset   = $input->getInt('offset', 0);
             $batch    = $input->getInt('batch', 20);
 
             $logger  = new MigrationLogger();
             $service = new ImageRebuildService($this->getDatabase(), $logger);
-            $this->sendJson($service->rebuildBatch($category, $dir, $offset, $batch));
+            $this->sendJson(['success' => true, 'data' => $service->rebuildBatch($category, $dir, $offset, $batch)]);
         } catch (\Throwable $e) {
             $this->handleError('ImageController::rebuildCategoryImages', $e);
         }
@@ -149,12 +149,12 @@ class ImageController extends BaseController
 
         try {
             $input    = Factory::getApplication()->getInput();
-            $category = $input->getString('category', '');
+            $category = $input->getInt('category', 0);
             $dir      = $input->getString('dir', '');
 
             $logger  = new MigrationLogger();
             $service = new ImageRebuildService($this->getDatabase(), $logger);
-            $this->sendJson($service->updateImagePaths($category, $dir));
+            $this->sendJson(['success' => true, 'data' => $service->updateImagePaths($category, $dir)]);
         } catch (\Throwable $e) {
             $this->handleError('ImageController::updateCategoryImagePaths', $e);
         }
@@ -170,7 +170,7 @@ class ImageController extends BaseController
         try {
             $logger  = new MigrationLogger();
             $service = new ImageRebuildService($this->getDatabase(), $logger);
-            $this->sendJson($service->getImageSettings());
+            $this->sendJson(['success' => true, 'data' => $service->getImageSettings()]);
         } catch (\Throwable $e) {
             $this->handleError('ImageController::getImageSettings', $e);
         }
@@ -185,13 +185,26 @@ class ImageController extends BaseController
         $this->enforceToken();
 
         try {
-            $input    = Factory::getApplication()->getInput();
-            $category = $input->getString('category', '');
-            $log      = $input->get('log', [], 'array');
+            $input              = Factory::getApplication()->getInput();
+            $category           = $input->getInt('category', 0);
+            $baseDir            = $input->getString('baseDir', '');
+            $totalProcessed     = $input->getInt('totalProcessed', 0);
+            $totalAlreadyOptimized = $input->getInt('totalAlreadyOptimized', 0);
+            $totalSkipped       = $input->getInt('totalSkipped', 0);
+            $totalErrors        = $input->getInt('totalErrors', 0);
+            $allSkipDetails     = $input->get('allSkipDetails', [], 'array');
 
             $logger  = new MigrationLogger();
             $service = new ImageRebuildService($this->getDatabase(), $logger);
-            $this->sendJson($service->writeRebuildLog($category, $log));
+            $this->sendJson(['success' => true, 'data' => $service->writeRebuildLog(
+                $category,
+                $baseDir,
+                $totalProcessed,
+                $totalAlreadyOptimized,
+                $totalSkipped,
+                $totalErrors,
+                $allSkipDetails
+            )]);
         } catch (\Throwable $e) {
             $this->handleError('ImageController::writeRebuildLog', $e);
         }
@@ -206,11 +219,11 @@ class ImageController extends BaseController
 
         try {
             $input    = Factory::getApplication()->getInput();
-            $category = $input->getString('category', '');
+            $category = $input->getInt('category', 0);
 
             $logger  = new MigrationLogger();
             $service = new ImageRebuildService($this->getDatabase(), $logger);
-            $this->sendJson($service->getLatestRebuildLog($category));
+            $this->sendJson(['success' => true, 'data' => $service->getLatestRebuildLog($category)]);
         } catch (\Throwable $e) {
             $this->handleError('ImageController::getLatestRebuildLog', $e);
         }
@@ -230,7 +243,7 @@ class ImageController extends BaseController
 
             $logger  = new MigrationLogger();
             $service = new ImageRebuildService($this->getDatabase(), $logger);
-            $this->sendJson($service->saveImageFolder($folder));
+            $this->sendJson(['success' => true, 'data' => $service->saveImageFolder($folder)]);
         } catch (\Throwable $e) {
             $this->handleError('ImageController::saveImageFolder', $e);
         }
@@ -246,7 +259,7 @@ class ImageController extends BaseController
         try {
             $logger  = new MigrationLogger();
             $service = new ImageRebuildService($this->getDatabase(), $logger);
-            $this->sendJson($service->getSavedImageFolder());
+            $this->sendJson(['success' => true, 'data' => $service->getSavedImageFolder()]);
         } catch (\Throwable $e) {
             $this->handleError('ImageController::getSavedImageFolder', $e);
         }
@@ -266,7 +279,7 @@ class ImageController extends BaseController
 
             $logger  = new MigrationLogger();
             $service = new ImageRebuildService($this->getDatabase(), $logger);
-            $this->sendJson($service->deleteImageDirectories($dirs));
+            $this->sendJson(['success' => true, 'data' => $service->deleteImageDirectories($dirs)]);
         } catch (\Throwable $e) {
             $this->handleError('ImageController::deleteImageDirectories', $e);
         }
@@ -285,7 +298,7 @@ class ImageController extends BaseController
 
             $logger  = new MigrationLogger();
             $service = new ImageRebuildService($this->getDatabase(), $logger);
-            $this->sendJson($service->scanOptimizeDirectory($dir));
+            $this->sendJson(['success' => true, 'data' => $service->scanOptimizeDirectory($dir)]);
         } catch (\Throwable $e) {
             $this->handleError('ImageController::scanOptimizeDirectory', $e);
         }
@@ -308,7 +321,7 @@ class ImageController extends BaseController
 
             $logger  = new MigrationLogger();
             $service = new ImageRebuildService($this->getDatabase(), $logger);
-            $this->sendJson($service->optimizeBatch($dir, $offset, $batch, $dims));
+            $this->sendJson(['success' => true, 'data' => $service->optimizeBatch($dir, $offset, $batch, $dims)]);
         } catch (\Throwable $e) {
             $this->handleError('ImageController::optimizeBatch', $e);
         }
@@ -324,7 +337,7 @@ class ImageController extends BaseController
         try {
             $logger  = new MigrationLogger();
             $service = new ImageRebuildService($this->getDatabase(), $logger);
-            $this->sendJson($service->scanImagePathTables());
+            $this->sendJson(['success' => true, 'data' => $service->scanImagePathTables()]);
         } catch (\Throwable $e) {
             $this->handleError('ImageController::scanImagePathTables', $e);
         }
@@ -344,7 +357,7 @@ class ImageController extends BaseController
 
             $logger  = new MigrationLogger();
             $service = new ImageRebuildService($this->getDatabase(), $logger);
-            $this->sendJson($service->updateImagePathTables($tables));
+            $this->sendJson(['success' => true, 'data' => $service->updateImagePathTables($tables)]);
         } catch (\Throwable $e) {
             $this->handleError('ImageController::updateImagePathTables', $e);
         }
@@ -355,25 +368,25 @@ class ImageController extends BaseController
         $user = Factory::getApplication()->getIdentity();
 
         if (!$user || !$user->authorise('core.manage', 'com_j2commercemigrator')) {
-            $this->sendJson(['error' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
+            $this->sendJson(['success' => false, 'error' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
         }
     }
 
     private function enforceToken(): void
     {
         if (!Session::checkToken('get') && !Session::checkToken('post')) {
-            $this->sendJson(['error' => Text::_('JINVALID_TOKEN')]);
+            $this->sendJson(['success' => false, 'error' => Text::_('JINVALID_TOKEN')]);
         }
     }
 
     private function handleError(string $context, \Throwable $e): void
     {
-        (new MigrationLogger())->error($context, $e->getMessage());
+        (new MigrationLogger())->error($context . ': ' . $e->getMessage());
 
         if (\defined('JDEBUG') && JDEBUG) {
-            $this->sendJson(['error' => $e->getMessage()]);
+            $this->sendJson(['success' => false, 'error' => $e->getMessage()]);
         } else {
-            $this->sendJson(['error' => Text::_('COM_J2COMMERCEMIGRATOR_ERR_GENERIC')]);
+            $this->sendJson(['success' => false, 'error' => Text::_('COM_J2COMMERCEMIGRATOR_ERR_GENERIC')]);
         }
     }
 

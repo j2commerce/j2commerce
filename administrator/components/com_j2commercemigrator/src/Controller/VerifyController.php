@@ -14,6 +14,8 @@ namespace J2Commerce\Component\J2commercemigrator\Administrator\Controller;
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commercemigrator\Administrator\Service\AdapterRegistry;
+use J2Commerce\Component\J2commercemigrator\Administrator\Service\ConnectionManager;
 use J2Commerce\Component\J2commercemigrator\Administrator\Service\VerificationService;
 use J2Commerce\Component\J2commercemigrator\Administrator\Helper\MigrationLogger;
 use Joomla\CMS\Factory;
@@ -42,9 +44,14 @@ class VerifyController extends BaseController
         $this->enforceAcl();
 
         try {
-            $logger  = new MigrationLogger();
-            $service = new VerificationService($this->getDatabase(), $logger);
-            $this->sendJson($service->runAll());
+            [$service, $adapter] = $this->makeService();
+
+            if ($adapter === null) {
+                $this->sendJson(['success' => false, 'error' => Text::_('COM_J2COMMERCEMIGRATOR_ERR_GENERIC')]);
+                return;
+            }
+
+            $this->sendJson(['success' => true, 'data' => $service->runAll($adapter)]);
         } catch (\Throwable $e) {
             $this->handleError('VerifyController::verify', $e);
         }
@@ -58,9 +65,14 @@ class VerifyController extends BaseController
         $this->enforceAcl();
 
         try {
-            $logger  = new MigrationLogger();
-            $service = new VerificationService($this->getDatabase(), $logger);
-            $report  = $service->runAll();
+            [$service, $adapter] = $this->makeService();
+
+            if ($adapter === null) {
+                $this->sendJson(['success' => false, 'error' => Text::_('COM_J2COMMERCEMIGRATOR_ERR_GENERIC')]);
+                return;
+            }
+
+            $report = $service->runAll($adapter);
 
             $app = Factory::getApplication();
             $app->setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -72,23 +84,41 @@ class VerifyController extends BaseController
         }
     }
 
+    private function makeService(): array
+    {
+        $app        = Factory::getApplication();
+        $adapterKey = $app->getInput()->getCmd('adapter', '');
+
+        $registry = new AdapterRegistry();
+        $adapter  = $registry->get($adapterKey);
+
+        if (!$adapter) {
+            return [null, null];
+        }
+
+        $connMgr = new ConnectionManager($app, $this->getDatabase());
+        $service = new VerificationService($this->getDatabase(), $connMgr->getReader());
+
+        return [$service, $adapter];
+    }
+
     private function enforceAcl(): void
     {
         $user = Factory::getApplication()->getIdentity();
 
         if (!$user || !$user->authorise('core.manage', 'com_j2commercemigrator')) {
-            $this->sendJson(['error' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
+            $this->sendJson(['success' => false, 'error' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
         }
     }
 
     private function handleError(string $context, \Throwable $e): void
     {
-        (new MigrationLogger())->error($context, $e->getMessage());
+        (new MigrationLogger())->error($context . ': ' . $e->getMessage());
 
         if (\defined('JDEBUG') && JDEBUG) {
-            $this->sendJson(['error' => $e->getMessage()]);
+            $this->sendJson(['success' => false, 'error' => $e->getMessage()]);
         } else {
-            $this->sendJson(['error' => Text::_('COM_J2COMMERCEMIGRATOR_ERR_GENERIC')]);
+            $this->sendJson(['success' => false, 'error' => Text::_('COM_J2COMMERCEMIGRATOR_ERR_GENERIC')]);
         }
     }
 
