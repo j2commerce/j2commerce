@@ -302,4 +302,64 @@ final class AdapterHelper
 
         return $map;
     }
+
+    // -------------------------------------------------------------------------
+    // Adapter enrichment (shared between PluginsModel and DashboardModel)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Flatten an adapter instance into a display-ready array.
+     *
+     * Shape:
+     *   extensionId      => int   (0 when adapter has no installed plugin record)
+     *   key              => string
+     *   title            => string
+     *   description      => string
+     *   icon             => string
+     *   author           => string
+     *   status           => 'enabled' | 'disabled' | 'needs_config'
+     *   enabled          => bool
+     *   prerequisiteErrors => string[]
+     *   lastRunStatus    => string|null
+     *
+     * @param MigratorAdapterInterface $adapter
+     * @param int                      $extensionId   From #__extensions.extension_id (0 if unknown)
+     * @param bool                     $pluginEnabled  Whether the plugin row is enabled in the database
+     * @param string|null              $lastRunStatus  Most recent run status string, or null
+     */
+    public static function enrichAdapter(
+        MigratorAdapterInterface $adapter,
+        int    $extensionId,
+        bool   $pluginEnabled,
+        ?string $lastRunStatus = null,
+    ): array {
+        $info   = $adapter->getSourceInfo();
+        $report = $adapter->validatePrerequisites();
+
+        $errors = array_column(
+            array_filter($report->issues, static fn(array $i) => $i['severity'] === 'error'),
+            'message',
+        );
+
+        if (!$pluginEnabled) {
+            $status = 'disabled';
+        } elseif (!empty($errors)) {
+            $status = 'needs_config';
+        } else {
+            $status = 'enabled';
+        }
+
+        return [
+            'extensionId'       => $extensionId,
+            'key'               => $adapter->getKey(),
+            'title'             => $info->title,
+            'description'       => $info->description,
+            'icon'              => $info->icon,
+            'author'            => $info->author,
+            'status'            => $status,
+            'enabled'           => $pluginEnabled,
+            'prerequisiteErrors' => $errors,
+            'lastRunStatus'     => $lastRunStatus,
+        ];
+    }
 }

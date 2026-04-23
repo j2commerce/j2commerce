@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commercemigrator\Administrator\Model;
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commercemigrator\Administrator\Helper\AdapterHelper;
 use J2Commerce\Component\J2commercemigrator\Administrator\Service\AdapterRegistry;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 use Joomla\Database\ParameterType;
@@ -41,8 +42,11 @@ class PluginsModel extends BaseDatabaseModel
     }
 
     /**
-     * Returns adapter plugins merged with live adapter metadata (source info, tier count).
-     * Plugins that are not yet activated appear in the list as disabled.
+     * Returns adapter plugins merged with live adapter metadata (source info, runtime status).
+     *
+     * Each item shape matches what tmpl/plugins/default.php expects:
+     *   extensionId, key, title, description, icon, author,
+     *   status, enabled, prerequisiteErrors, lastRunStatus
      */
     public function getMergedAdapterList(): array
     {
@@ -50,20 +54,24 @@ class PluginsModel extends BaseDatabaseModel
         $registry = new AdapterRegistry();
         $adapters = $registry->getAll();
 
-        $merged = [];
+        // Index plugins by element key for O(1) lookup.
+        $pluginMap = [];
 
         foreach ($plugins as $plugin) {
-            $key    = $plugin->element;
-            $merged[$key] = [
-                'extension_id' => (int) $plugin->extension_id,
-                'name'         => $plugin->name,
-                'element'      => $key,
-                'enabled'      => (bool) $plugin->enabled,
-                'adapter'      => $adapters[$key] ?? null,
-            ];
+            $pluginMap[$plugin->element] = $plugin;
         }
 
-        return array_values($merged);
+        $merged = [];
+
+        foreach ($adapters as $key => $adapter) {
+            $plugin      = $pluginMap[$key] ?? null;
+            $extensionId = $plugin !== null ? (int) $plugin->extension_id : 0;
+            $enabled     = $plugin !== null && (bool) $plugin->enabled;
+
+            $merged[] = AdapterHelper::enrichAdapter($adapter, $extensionId, $enabled);
+        }
+
+        return $merged;
     }
 
     /** Returns all j2commercemigrator plugins that are currently enabled. */
