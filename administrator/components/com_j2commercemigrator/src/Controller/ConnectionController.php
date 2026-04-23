@@ -139,7 +139,22 @@ class ConnectionController extends BaseController
     private function sendJson(array $data): void
     {
         if (!array_key_exists('success', $data)) {
-            if (array_key_exists('error', $data)) {
+            if (array_key_exists('ok', $data)) {
+                $ok = (bool) $data['ok'];
+                unset($data['ok']);
+
+                if ($ok) {
+                    $data = ['success' => true, 'data' => $data];
+                } else {
+                    $normalized = ['success' => false, 'error' => $data['error'] ?? Text::_('COM_J2COMMERCEMIGRATOR_ERR_GENERIC')];
+
+                    if (array_key_exists('category', $data)) {
+                        $normalized['category'] = $data['category'];
+                    }
+
+                    $data = $normalized;
+                }
+            } elseif (array_key_exists('error', $data)) {
                 $normalized = ['success' => false, 'error' => $data['error']];
 
                 if (array_key_exists('category', $data)) {
