@@ -337,13 +337,15 @@ final class J2store4Adapter extends AbstractMigratorAdapter
 
     public function discoverImages(): ImageDiscoveryResult
     {
+        // J2Store 4 uses Joomla core #__categories (extension='com_j2store'), not a
+        // separate j2store_categories table — omit it from pathColumns to avoid
+        // querying a non-existent table during image discovery.
         return new ImageDiscoveryResult(
             sourceRoot:     'images/com_j2store',
-            subDirectories: ['products', 'categories', 'manufacturers'],
+            subDirectories: ['products', 'manufacturers'],
             pathColumns:    [
                 'j2store_products'      => ['main_image', 'thumb_image'],
                 'j2store_productimages' => ['file_path', 'thumb_path'],
-                'j2store_categories'    => ['image'],
                 'j2store_manufacturers' => ['image'],
             ],
         );
