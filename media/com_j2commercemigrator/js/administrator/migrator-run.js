@@ -44,7 +44,9 @@
                 source:        t.source_table ?? srcTable,
                 target:        t.target_table ?? '',
                 source_count:  t.source_count ?? t.source ?? 0,
+                source_error:  t.source_error ?? null,
                 target_count:  t.target_count ?? t.target ?? 0,
+                target_error:  t.target_error ?? null,
                 status:        t.status ?? '',
             })),
         }));
@@ -55,13 +57,21 @@
         if (!container) return;
 
         container.innerHTML = tiers.map((tier) => {
-            const rows = tier.tables.map((t) => `
+            const rows = tier.tables.map((t) => {
+                const srcCell = t.source_error
+                    ? `<span class="badge text-bg-danger" title="${esc(t.source_error)}">ERR</span>`
+                    : Number(t.source_count).toLocaleString();
+                const tgtCell = t.target_error
+                    ? `<span class="badge text-bg-warning" title="${esc(t.target_error)}">ERR</span>`
+                    : Number(t.target_count).toLocaleString();
+                return `
                 <tr>
                     <td class="font-monospace small">${esc(t.source)}</td>
                     <td class="font-monospace small text-muted">${esc(t.target)}</td>
-                    <td class="text-end">${Number(t.source_count).toLocaleString()}</td>
-                    <td class="text-end">${Number(t.target_count).toLocaleString()}</td>
-                </tr>`).join('');
+                    <td class="text-end">${srcCell}</td>
+                    <td class="text-end">${tgtCell}</td>
+                </tr>`;
+            }).join('');
 
             return `
             <div class="card mb-3">
@@ -342,12 +352,23 @@
         let html = '';
         tiers.forEach((tier) => {
             (tier.tables ?? []).forEach((t) => {
-                const match  = t.source_count === t.target_count;
-                const status = match ? '<span class="badge text-bg-success">Match</span>' : '<span class="badge text-bg-warning">Mismatch</span>';
+                const hasError = t.source_error !== null || t.target_error !== null;
+                const match    = !hasError && t.source_count === t.target_count;
+                const status   = hasError
+                    ? '<span class="badge text-bg-danger">Error</span>'
+                    : match
+                        ? '<span class="badge text-bg-success">Match</span>'
+                        : '<span class="badge text-bg-warning">Mismatch</span>';
+                const srcCell = t.source_error
+                    ? `<span class="badge text-bg-danger" title="${esc(t.source_error)}">ERR</span>`
+                    : Number(t.source_count).toLocaleString();
+                const tgtCell = t.target_error
+                    ? `<span class="badge text-bg-warning" title="${esc(t.target_error)}">ERR</span>`
+                    : Number(t.target_count).toLocaleString();
                 html += `<tr>
                     <td class="font-monospace small">${esc(t.source)}</td>
-                    <td class="text-end">${Number(t.source_count).toLocaleString()}</td>
-                    <td class="text-end">${Number(t.target_count).toLocaleString()}</td>
+                    <td class="text-end">${srcCell}</td>
+                    <td class="text-end">${tgtCell}</td>
                     <td class="text-center">${status}</td>
                 </tr>`;
             });

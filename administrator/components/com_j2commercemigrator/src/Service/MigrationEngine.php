@@ -65,18 +65,20 @@ class MigrationEngine
 
                 $bareTarget  = str_replace($this->db->getPrefix(), '', $targetTable);
                 $bareTarget  = ltrim($bareTarget, '#__');
-                $sourceCount = $this->getSourceRowCount($sourceTable);
-                $targetCount = $this->getTargetRowCount($bareTarget);
+                $src         = $this->getSourceRowCount($sourceTable);
+                $tgt         = $this->getTargetRowCount($bareTarget);
 
                 $tierResults[$sourceTable] = [
-                    'source_table' => $sourceTable,
-                    'target_table' => $targetTable,
-                    'source_count' => $sourceCount,
-                    'target_count' => $targetCount,
-                    'status'       => is_string($sourceCount) || is_string($targetCount)
+                    'source_table'  => $sourceTable,
+                    'target_table'  => $targetTable,
+                    'source_count'  => $src['count'],
+                    'source_error'  => $src['error'],
+                    'target_count'  => $tgt['count'],
+                    'target_error'  => $tgt['error'],
+                    'status'        => ($src['error'] !== null || $tgt['error'] !== null)
                         ? 'error'
-                        : $this->getTableStatus($sourceCount, $targetCount),
-                    'error'        => is_string($targetCount) ? $targetCount : (is_string($sourceCount) ? $sourceCount : null),
+                        : $this->getTableStatus($src['count'], $tgt['count']),
+                    'error'         => $tgt['error'] ?? $src['error'],
                 ];
             }
 
@@ -204,19 +206,17 @@ class MigrationEngine
                 }
 
                 $bareTarget  = $this->bareTable($targetTable);
-                $sourceCount = $this->getSourceRowCount($sourceTable);
-                $targetCount = $this->getTargetRowCount($bareTarget);
+                $src         = $this->getSourceRowCount($sourceTable);
+                $tgt         = $this->getTargetRowCount($bareTarget);
 
-                if (is_int($sourceCount)) {
-                    $sourceTotal += $sourceCount;
-                }
-                if (is_int($targetCount)) {
-                    $targetTotal += $targetCount;
-                }
+                $sourceTotal += $src['count'];
+                $targetTotal += $tgt['count'];
 
                 $tables[$sourceTable] = [
-                    'source' => $sourceCount,
-                    'target' => $targetCount,
+                    'source'       => $src['count'],
+                    'source_error' => $src['error'],
+                    'target'       => $tgt['count'],
+                    'target_error' => $tgt['error'],
                 ];
             }
 
@@ -268,8 +268,8 @@ class MigrationEngine
 
         if ($skipOnly && $this->sourceReader instanceof JoomlaSourceReader) {
             $rows = $this->fetchSourceWithSkipJoin($sourceTable, $bareTarget, $sourcePk, $targetPk, $batchSize, $offset);
-            $existingCount = $this->getTargetRowCount($bareTarget);
-            $counts['skipped'] = is_int($existingCount) ? $existingCount : 0;
+            $existingCount     = $this->getTargetRowCount($bareTarget);
+            $counts['skipped'] = $existingCount['count'];
         } else {
             $rows = $this->sourceReader->fetchBatch($sourceTable, $sourcePk, $offset, $batchSize);
         }
@@ -674,31 +674,37 @@ class MigrationEngine
         return $this->db->setQuery($query)->loadAssocList() ?: [];
     }
 
-    private function getSourceRowCount(string $bareTable): int|string
+    /**
+     * @return array{count: int, error: ?string}
+     */
+    private function getSourceRowCount(string $bareTable): array
     {
         try {
-            return $this->sourceReader->count($bareTable);
+            return ['count' => $this->sourceReader->count($bareTable), 'error' => null];
         } catch (\Throwable $e) {
-            return 'ERR: ' . $e->getMessage();
+            return ['count' => 0, 'error' => $e->getMessage()];
         }
     }
 
-    private function getTargetRowCount(string $bareTable): int|string
+    /**
+     * @return array{count: int, error: ?string}
+     */
+    private function getTargetRowCount(string $bareTable): array
     {
         try {
             $query = $this->db->getQuery(true)
                 ->select('COUNT(*)')
                 ->from($this->db->quoteName('#__' . $bareTable));
 
-            return (int) $this->db->setQuery($query)->loadResult();
+            return ['count' => (int) $this->db->setQuery($query)->loadResult(), 'error' => null];
         } catch (\Throwable $e) {
             $msg = $e->getMessage();
 
             if (stripos($msg, "doesn't exist") !== false || stripos($msg, 'does not exist') !== false) {
-                return 'Table not found';
+                return ['count' => 0, 'error' => 'Table not found'];
             }
 
-            return 'ERR: ' . $msg;
+            return ['count' => 0, 'error' => $msg];
         }
     }
 
