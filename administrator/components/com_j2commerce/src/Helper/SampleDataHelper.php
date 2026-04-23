@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 
 \defined('_JEXEC') or die;
 
+use Joomla\CMS\Access\Access;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Table\Table;
 use Joomla\Database\DatabaseInterface;
@@ -1571,7 +1572,7 @@ final class SampleDataHelper
             $order->is_including_tax       = 0;
             $order->customer_note          = '';
             $order->customer_language      = 'en-GB';
-            $order->customer_group         = 'Registered';
+            $order->customer_group         = implode(',', Access::getGroupsByUser((int) $customer['id'], false));
             $order->order_state_id         = $statusId;
             $order->order_state            = $statusName;
             $order->order_params           = '{}';

@@ -14,6 +14,8 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 
 \defined('_JEXEC') or die;
 
+use Joomla\CMS\Access\Access;
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\Database\DatabaseInterface;
@@ -1397,6 +1399,9 @@ class CartOrder
             'is_including_tax'      => $isIncludingTax,
             'customer_note'         => $this->customer_note,
             'customer_language'     => $app->getLanguage()->getTag(),
+            'customer_group'        => $userId > 0
+                ? implode(',', Access::getGroupsByUser($userId, false))
+                : (string) (int) ComponentHelper::getParams('com_users')->get('guest_usergroup', 1),
             'ip_address'            => $app->input->server->getString('REMOTE_ADDR', ''),
             'order_state_id'        => 5, // Incomplete
             'created_by'            => $userId,

@@ -997,17 +997,25 @@ class EmailHelper
             ->bind(':orderstatus_id', $orderStateId, ParameterType::INTEGER)
             ->bind(':orderstatus_id2', $orderStateId, ParameterType::INTEGER);
 
-        // Customer group filter
+        // Customer group filter — parse to integers to prevent SQL injection
         if (!empty($customerGroup)) {
-            $query->where(
-                'CASE WHEN ' . $db->quoteName('group_id') . ' IN (' . $customerGroup . ')'
-                . ' THEN ' . $db->quoteName('group_id') . ' IN (' . $customerGroup . ')'
-                . ' ELSE ' . $db->quoteName('group_id') . ' = ' . $db->quote('*')
-                . ' OR ' . $db->quoteName('group_id') . ' = ' . $db->quote('1')
-                . ' OR ' . $db->quoteName('group_id') . ' = ' . $db->quote('')
-                . ' OR ' . $db->quoteName('group_id') . ' = ' . $db->quote('0')
-                . ' END'
-            );
+            $groupIds = array_values(array_filter(
+                array_map('intval', explode(',', $customerGroup)),
+                fn($id) => $id > 0
+            ));
+
+            if (!empty($groupIds)) {
+                $inList = implode(',', $groupIds);
+                $query->where(
+                    'CASE WHEN ' . $db->quoteName('group_id') . ' IN (' . $inList . ')'
+                    . ' THEN ' . $db->quoteName('group_id') . ' IN (' . $inList . ')'
+                    . ' ELSE ' . $db->quoteName('group_id') . ' = ' . $db->quote('*')
+                    . ' OR ' . $db->quoteName('group_id') . ' = ' . $db->quote('1')
+                    . ' OR ' . $db->quoteName('group_id') . ' = ' . $db->quote('')
+                    . ' OR ' . $db->quoteName('group_id') . ' = ' . $db->quote('0')
+                    . ' END'
+                );
+            }
         }
 
         // Payment method filter
