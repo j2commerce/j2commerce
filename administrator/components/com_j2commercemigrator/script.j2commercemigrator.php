@@ -25,12 +25,15 @@ class Com_J2commercemigratorInstallerScript implements InstallerScriptInterface
     public function install(InstallerAdapter $adapter): bool
     {
         $this->migrateLegacyIdmap();
+        $this->emitMigrationToolNotice();
 
         return true;
     }
 
     public function update(InstallerAdapter $adapter): bool
     {
+        $this->migrateLegacyIdmap();
+
         return true;
     }
 
@@ -92,6 +95,43 @@ class Com_J2commercemigratorInstallerScript implements InstallerScriptInterface
         $db->setQuery($query);
 
         return (bool) $db->loadResult();
+    }
+
+    /**
+     * Emit a notice when the legacy system plugin is still present, directing
+     * admins to the new component.  Read-only probe only — the plugin is never
+     * modified, disabled, or uninstalled.
+     */
+    private function emitMigrationToolNotice(): void
+    {
+        $db      = Factory::getContainer()->get(DatabaseInterface::class);
+        $element = 'j2commerce_migration_tool';
+        $type    = 'plugin';
+        $folder  = 'system';
+
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('enabled'))
+            ->from($db->quoteName('#__extensions'))
+            ->where($db->quoteName('element') . ' = :element')
+            ->where($db->quoteName('type') . ' = :type')
+            ->where($db->quoteName('folder') . ' = :folder')
+            ->bind(':element', $element)
+            ->bind(':type', $type)
+            ->bind(':folder', $folder);
+
+        $db->setQuery($query);
+        $enabled = $db->loadResult();
+
+        if ($enabled === null) {
+            // Old plugin not installed — no notice needed.
+            return;
+        }
+
+        Factory::getApplication()->enqueueMessage(
+            Text::_('COM_J2COMMERCEMIGRATOR_MSG_LEGACY_PLUGIN_DETECTED')
+                ?: 'The old migration system plugin is still installed. Use the new J2Commerce Migrator component (Components → J2Commerce Migrator) for all future migrations.',
+            'notice'
+        );
     }
 
     /**
