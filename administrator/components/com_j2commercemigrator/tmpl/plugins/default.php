@@ -38,8 +38,8 @@ use Joomla\CMS\Router\Route;
                     <div class="card-body">
                         <div class="d-flex align-items-start gap-3 mb-2">
                             <span class="fa-stack fa-lg text-purple" aria-hidden="true">
-                                <i class="fa-solid fa-square fa-stack-2x opacity-25"></i>
-                                <i class="<?php echo $this->escape($plugin['icon'] ?? 'fa-solid fa-plug'); ?> fa-stack-1x"></i>
+                                <span class="fa-solid fa-square fa-stack-2x opacity-25"></span>
+                                <span class="<?php echo $this->escape($plugin['icon'] ?? 'fa-solid fa-plug'); ?> fa-stack-1x"></span>
                             </span>
                             <div class="flex-grow-1">
                                 <h3 class="h5 mb-0"><?php echo $this->escape($plugin['title'] ?? ''); ?></h3>

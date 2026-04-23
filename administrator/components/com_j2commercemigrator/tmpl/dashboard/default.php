@@ -24,8 +24,8 @@ use Joomla\CMS\Router\Route;
         </div>
         <div class="j2cm-banner-illustration d-none d-lg-block">
             <span class="fa-stack fa-2x text-purple" aria-hidden="true">
-                <i class="fa-solid fa-circle fa-stack-2x opacity-25"></i>
-                <i class="fa-solid fa-right-left fa-stack-1x"></i>
+                <span class="fa-solid fa-circle fa-stack-2x opacity-25"></span>
+                <span class="fa-solid fa-right-left fa-stack-1x"></span>
             </span>
         </div>
     </header>
@@ -53,8 +53,8 @@ use Joomla\CMS\Router\Route;
                         <div class="card-body">
                             <div class="d-flex align-items-start gap-3 mb-2">
                                 <span class="fa-stack fa-lg text-purple" aria-hidden="true">
-                                    <i class="fa-solid fa-square fa-stack-2x opacity-25"></i>
-                                    <i class="<?php echo $this->escape($adapter['icon']); ?> fa-stack-1x"></i>
+                                    <span class="fa-solid fa-square fa-stack-2x opacity-25"></span>
+                                    <span class="<?php echo $this->escape($adapter['icon']); ?> fa-stack-1x"></span>
                                 </span>
                                 <div>
                                     <h3 class="h5 mb-0"><?php echo $this->escape($adapter['title']); ?></h3>

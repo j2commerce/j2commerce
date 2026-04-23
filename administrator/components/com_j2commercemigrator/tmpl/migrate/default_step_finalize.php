@@ -18,8 +18,8 @@ use Joomla\CMS\Router\Route;
 <header class="mb-4 text-center">
     <div class="mb-3">
         <span class="fa-stack fa-3x text-success" aria-hidden="true">
-            <i class="fa-solid fa-circle fa-stack-2x opacity-25"></i>
-            <i class="fa-solid fa-check fa-stack-1x"></i>
+            <span class="fa-solid fa-circle fa-stack-2x opacity-25"></span>
+            <span class="fa-solid fa-check fa-stack-1x"></span>
         </span>
     </div>
     <h2 id="j2cm-step-finalize-title" class="h3 fw-semibold mb-1"><?php echo Text::_('COM_J2COMMERCEMIGRATOR_STEP_FINALIZE_TITLE'); ?></h2>
