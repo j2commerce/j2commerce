@@ -47,6 +47,13 @@ class HtmlView extends BaseHtmlView
 
     private function loadAssets(): void
     {
+        Text::script('COM_J2COMMERCEMIGRATOR_PLUGINS_CONFIGURE');
+        Text::script('COM_J2COMMERCEMIGRATOR_PLUGINS_DISABLE');
+        Text::script('COM_J2COMMERCEMIGRATOR_PLUGINS_ENABLE');
+        Text::script('COM_J2COMMERCEMIGRATOR_PLUGINS_NONE_INSTALLED');
+        Text::script('COM_J2COMMERCEMIGRATOR_PLUGINS_STATUS_DISABLED');
+        Text::script('COM_J2COMMERCEMIGRATOR_PLUGINS_STATUS_ENABLED');
+
         $wa = $this->getDocument()->getWebAssetManager();
         $wa->registerAndUseStyle(
             'com_j2commercemigrator.migrator',

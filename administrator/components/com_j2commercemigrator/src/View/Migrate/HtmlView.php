@@ -55,6 +55,12 @@ class HtmlView extends BaseHtmlView
 
     private function loadAssets(): void
     {
+        Text::script('COM_J2COMMERCEMIGRATOR_PREFLIGHT_BLOCKED');
+        Text::script('COM_J2COMMERCEMIGRATOR_PREFLIGHT_NO_CHECKS');
+        Text::script('COM_J2COMMERCEMIGRATOR_PREFLIGHT_WARNINGS');
+        Text::script('COM_J2COMMERCEMIGRATOR_CONNECTION_BTN_VERIFY');
+        Text::script('COM_J2COMMERCEMIGRATOR_CONNECTION_BTN_VERIFYING');
+
         $wa = $this->getDocument()->getWebAssetManager();
         $wa->registerAndUseStyle('com_j2commercemigrator.migrator', 'media/com_j2commercemigrator/css/administrator/migrator.css');
         $wa->registerAndUseScript('com_j2commercemigrator.migrator', 'media/com_j2commercemigrator/js/administrator/migrator.js', [], ['defer' => true]);

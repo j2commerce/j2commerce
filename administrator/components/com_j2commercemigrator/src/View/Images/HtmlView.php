@@ -51,6 +51,13 @@ class HtmlView extends BaseHtmlView
 
     private function loadAssets(): void
     {
+        Text::script('COM_J2COMMERCEMIGRATOR_IMAGES_COMPLETE');
+        Text::script('COM_J2COMMERCEMIGRATOR_IMAGES_DISCOVERY_TITLE');
+        Text::script('COM_J2COMMERCEMIGRATOR_IMAGES_ESTIMATED');
+        Text::script('COM_J2COMMERCEMIGRATOR_IMAGES_NONE_FOUND');
+        Text::script('COM_J2COMMERCEMIGRATOR_IMAGES_SOURCE_ROOT');
+        Text::script('COM_J2COMMERCEMIGRATOR_IMAGES_SUBDIRS');
+
         $wa = $this->getDocument()->getWebAssetManager();
         $wa->registerAndUseStyle(
             'com_j2commercemigrator.migrator',
