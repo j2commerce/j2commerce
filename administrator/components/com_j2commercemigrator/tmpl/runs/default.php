@@ -74,6 +74,12 @@ use Joomla\CMS\Router\Route;
         </div>
     <?php endif; ?>
 
+    <?php if ($this->pagination && $this->pagination->pagesTotal > 1) : ?>
+        <div class="mt-3">
+            <?php echo $this->pagination->getPagesLinks(); ?>
+        </div>
+    <?php endif; ?>
+
     <div class="mt-3">
         <a href="<?php echo Route::_('index.php?option=com_j2commercemigrator'); ?>" class="btn btn-outline-secondary btn-sm">
             <span class="fa-solid fa-arrow-left me-1" aria-hidden="true"></span>

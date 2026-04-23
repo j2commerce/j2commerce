@@ -12,22 +12,22 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commercemigrator\Administrator\View\Runs;
 
-use J2Commerce\Component\J2commercemigrator\Administrator\Service\RunRepository;
-use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
-use Joomla\Database\DatabaseInterface;
+use Joomla\CMS\Pagination\Pagination;
 
 class HtmlView extends BaseHtmlView
 {
     public array $runs = [];
 
+    public ?Pagination $pagination = null;
+
     public function display($tpl = null): void
     {
-        $db      = Factory::getContainer()->get(DatabaseInterface::class);
-        $runRepo = new RunRepository($db);
-
-        $this->runs = $runRepo->getList(50);
+        $model            = $this->getModel('Runs');
+        $this->runs       = $model->getItems();
+        $this->pagination = $model->getPagination();
+        $this->state      = $model->getState();
 
         $this->setToolbar();
 
