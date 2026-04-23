@@ -58,7 +58,7 @@ class PluginsController extends BaseController
                 ];
             }
 
-            $this->sendJson(['ok' => true, 'adapters' => $adapters]);
+            $this->sendJson(['success' => true, 'data' => ['adapters' => $adapters]]);
         } catch (\Throwable $e) {
             $this->handleError('PluginsController::listAdapters', $e);
         }
@@ -98,14 +98,14 @@ class PluginsController extends BaseController
             $extId = $input->getInt('extension_id', 0);
 
             if ($extId <= 0) {
-                $this->sendJson(['ok' => false, 'error' => Text::_('COM_J2COMMERCEMIGRATOR_ERR_GENERIC')]);
+                $this->sendJson(['success' => false, 'error' => Text::_('COM_J2COMMERCEMIGRATOR_ERR_GENERIC')]);
                 return;
             }
 
             $user = $app->getIdentity();
 
             if (!$user->authorise('core.edit.state', 'com_plugins')) {
-                $this->sendJson(['ok' => false, 'error' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
+                $this->sendJson(['success' => false, 'error' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
                 return;
             }
 
@@ -115,7 +115,7 @@ class PluginsController extends BaseController
 
             $model->publish([$extId], $state);
 
-            $this->sendJson(['ok' => true, 'state' => $state]);
+            $this->sendJson(['success' => true, 'data' => ['state' => $state]]);
         } catch (\Throwable $e) {
             $this->handleError('PluginsController::delegateToPluginsComponent', $e);
         }
@@ -150,6 +150,20 @@ class PluginsController extends BaseController
 
     private function sendJson(array $data): void
     {
+        if (!array_key_exists('success', $data)) {
+            if (array_key_exists('error', $data)) {
+                $normalized = ['success' => false, 'error' => $data['error']];
+
+                if (array_key_exists('category', $data)) {
+                    $normalized['category'] = $data['category'];
+                }
+
+                $data = $normalized;
+            } else {
+                $data = ['success' => true, 'data' => $data];
+            }
+        }
+
         $app = Factory::getApplication();
         $app->setHeader('Content-Type', 'application/json; charset=utf-8');
         echo json_encode($data, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);

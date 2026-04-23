@@ -56,15 +56,29 @@ class RunsController extends AdminController
         try {
             $repo = new IdmapRepository($this->getDatabase());
             $repo->dropAll();
-            $this->sendJson(['ok' => true]);
+            $this->sendJson(['success' => true, 'data' => []]);
         } catch (\Throwable $e) {
             (new MigrationLogger())->error('RunsController::cleanupIdMap', $e->getMessage());
-            $this->sendJson(['ok' => false, 'error' => Text::_('COM_J2COMMERCEMIGRATOR_ERR_GENERIC')]);
+            $this->sendJson(['success' => false, 'error' => Text::_('COM_J2COMMERCEMIGRATOR_ERR_GENERIC')]);
         }
     }
 
     private function sendJson(array $data): void
     {
+        if (!array_key_exists('success', $data)) {
+            if (array_key_exists('error', $data)) {
+                $normalized = ['success' => false, 'error' => $data['error']];
+
+                if (array_key_exists('category', $data)) {
+                    $normalized['category'] = $data['category'];
+                }
+
+                $data = $normalized;
+            } else {
+                $data = ['success' => true, 'data' => $data];
+            }
+        }
+
         $app = Factory::getApplication();
         $app->setHeader('Content-Type', 'application/json; charset=utf-8');
         echo json_encode($data, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);

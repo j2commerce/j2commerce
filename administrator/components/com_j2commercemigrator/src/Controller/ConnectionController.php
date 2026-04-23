@@ -50,7 +50,7 @@ class ConnectionController extends BaseController
         $input = $app->getInput();
 
         if ($input->getMethod() !== 'POST') {
-            $this->sendJson(['ok' => false, 'category' => 'post_required']);
+            $this->sendJson(['success' => false, 'error' => Text::_('COM_J2COMMERCEMIGRATOR_ERR_GENERIC'), 'category' => 'post_required']);
             return;
         }
 
@@ -71,7 +71,7 @@ class ConnectionController extends BaseController
             $this->sendJson($connMgr->verify($creds));
         } catch (\Throwable $e) {
             (new MigrationLogger())->error('ConnectionController::verifyConnection', $e->getMessage());
-            $this->sendJson(['ok' => false, 'error' => Text::_('COM_J2COMMERCEMIGRATOR_ERR_GENERIC')]);
+            $this->sendJson(['success' => false, 'error' => Text::_('COM_J2COMMERCEMIGRATOR_ERR_GENERIC')]);
         }
     }
 
@@ -88,10 +88,10 @@ class ConnectionController extends BaseController
             $app     = Factory::getApplication();
             $connMgr = new ConnectionManager($app, $this->getDatabase());
             $connMgr->clear();
-            $this->sendJson(['ok' => true]);
+            $this->sendJson(['success' => true, 'data' => []]);
         } catch (\Throwable $e) {
             (new MigrationLogger())->error('ConnectionController::clearConnection', $e->getMessage());
-            $this->sendJson(['ok' => false, 'error' => Text::_('COM_J2COMMERCEMIGRATOR_ERR_GENERIC')]);
+            $this->sendJson(['success' => false, 'error' => Text::_('COM_J2COMMERCEMIGRATOR_ERR_GENERIC')]);
         }
     }
 
@@ -108,13 +108,15 @@ class ConnectionController extends BaseController
             $connMgr = new ConnectionManager($app, $this->getDatabase());
 
             $this->sendJson([
-                'ok'           => true,
-                'status'       => $connMgr->getStatus(),
-                'pdoAvailable' => extension_loaded('pdo_mysql'),
+                'success' => true,
+                'data'    => [
+                    'status'       => $connMgr->getStatus(),
+                    'pdoAvailable' => extension_loaded('pdo_mysql'),
+                ],
             ]);
         } catch (\Throwable $e) {
             (new MigrationLogger())->error('ConnectionController::getConnection', $e->getMessage());
-            $this->sendJson(['ok' => false, 'error' => Text::_('COM_J2COMMERCEMIGRATOR_ERR_GENERIC')]);
+            $this->sendJson(['success' => false, 'error' => Text::_('COM_J2COMMERCEMIGRATOR_ERR_GENERIC')]);
         }
     }
 
@@ -136,6 +138,20 @@ class ConnectionController extends BaseController
 
     private function sendJson(array $data): void
     {
+        if (!array_key_exists('success', $data)) {
+            if (array_key_exists('error', $data)) {
+                $normalized = ['success' => false, 'error' => $data['error']];
+
+                if (array_key_exists('category', $data)) {
+                    $normalized['category'] = $data['category'];
+                }
+
+                $data = $normalized;
+            } else {
+                $data = ['success' => true, 'data' => $data];
+            }
+        }
+
         $app = Factory::getApplication();
         $app->setHeader('Content-Type', 'application/json; charset=utf-8');
         echo json_encode($data, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);

@@ -92,7 +92,7 @@ class ApiController extends BaseController
     private function handleConnectionVerify(ConnectionManager $connMgr, $input): array
     {
         if ($input->getMethod() !== 'POST') {
-            return ['ok' => false, 'category' => 'post_required'];
+            return ['success' => false, 'error' => Text::_('COM_J2COMMERCEMIGRATOR_ERR_GENERIC'), 'category' => 'post_required'];
         }
 
         $creds = [
@@ -113,15 +113,17 @@ class ApiController extends BaseController
     private function handleConnectionClear(ConnectionManager $connMgr): array
     {
         $connMgr->clear();
-        return ['ok' => true];
+        return ['success' => true, 'data' => []];
     }
 
     private function handleConnectionGet(ConnectionManager $connMgr): array
     {
         return [
-            'ok'           => true,
-            'status'       => $connMgr->getStatus(),
-            'pdoAvailable' => extension_loaded('pdo_mysql'),
+            'success'      => true,
+            'data'         => [
+                'status'       => $connMgr->getStatus(),
+                'pdoAvailable' => extension_loaded('pdo_mysql'),
+            ],
         ];
     }
 
@@ -141,7 +143,7 @@ class ApiController extends BaseController
             ];
         }
 
-        return ['ok' => true, 'adapters' => $adapters];
+        return ['success' => true, 'data' => ['adapters' => $adapters]];
     }
 
     private function handleAudit(AdapterRegistry $registry, ConnectionManager $connMgr, $db, MigrationLogger $logger, $input): array
@@ -264,9 +266,46 @@ class ApiController extends BaseController
 
     private function sendJson(array $data): void
     {
-        $app = Factory::getApplication();
+        $data = $this->normalizeApiResponse($data);
+        $app  = Factory::getApplication();
         $app->setHeader('Content-Type', 'application/json; charset=utf-8');
         echo json_encode($data, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
         $app->close();
+    }
+
+    private function normalizeApiResponse(array $data): array
+    {
+        if (array_key_exists('success', $data)) {
+            return $data;
+        }
+
+        if (array_key_exists('ok', $data)) {
+            $ok = (bool) $data['ok'];
+            unset($data['ok']);
+
+            if ($ok) {
+                return ['success' => true, 'data' => $data];
+            }
+
+            $normalized = ['success' => false, 'error' => $data['error'] ?? Text::_('COM_J2COMMERCEMIGRATOR_ERR_GENERIC')];
+
+            if (array_key_exists('category', $data)) {
+                $normalized['category'] = $data['category'];
+            }
+
+            return $normalized;
+        }
+
+        if (array_key_exists('error', $data)) {
+            $normalized = ['success' => false, 'error' => $data['error']];
+
+            if (array_key_exists('category', $data)) {
+                $normalized['category'] = $data['category'];
+            }
+
+            return $normalized;
+        }
+
+        return ['success' => true, 'data' => $data];
     }
 }

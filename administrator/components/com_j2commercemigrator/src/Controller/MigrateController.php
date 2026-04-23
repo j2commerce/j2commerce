@@ -147,9 +147,12 @@ class MigrateController extends BaseController
             $reader  = $connMgr->getReader();
 
             $this->sendJson([
-                'source_table' => $sourceTable,
-                'target_table' => $tableMap[$sourceTable],
-                'source_count' => $reader->count($sourceTable),
+                'success' => true,
+                'data'    => [
+                    'source_table' => $sourceTable,
+                    'target_table' => $tableMap[$sourceTable],
+                    'source_count' => $reader->count($sourceTable),
+                ],
             ]);
         } catch (\Throwable $e) {
             $this->handleError('MigrateController::getTableCount', $e);
@@ -350,6 +353,20 @@ class MigrateController extends BaseController
 
     private function sendJson(array $data): void
     {
+        if (!array_key_exists('success', $data)) {
+            if (array_key_exists('error', $data)) {
+                $normalized = ['success' => false, 'error' => $data['error']];
+
+                if (array_key_exists('category', $data)) {
+                    $normalized['category'] = $data['category'];
+                }
+
+                $data = $normalized;
+            } else {
+                $data = ['success' => true, 'data' => $data];
+            }
+        }
+
         $app = Factory::getApplication();
         $app->setHeader('Content-Type', 'application/json; charset=utf-8');
         echo json_encode($data, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
