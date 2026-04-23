@@ -23,6 +23,7 @@ use J2Commerce\Component\J2commercemigrator\Administrator\Helper\MigrationLogger
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\BaseController;
+use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
 
 /**
@@ -35,7 +36,14 @@ class MigrateController extends BaseController
 
     public function display($cachable = false, $urlparams = []): static
     {
-        $this->enforceAcl();
+        $user = Factory::getApplication()->getIdentity();
+
+        if (!$user || !$user->authorise('core.manage', 'com_j2commercemigrator')) {
+            $this->setMessage(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 'error');
+            $this->setRedirect(Route::_('index.php', false));
+            return $this;
+        }
+
         return parent::display($cachable, $urlparams);
     }
 
@@ -269,6 +277,7 @@ class MigrateController extends BaseController
     {
         $this->enforceAcl();
         $this->enforceToken();
+        $this->enforceAdminForDestructive();
 
         try {
             $input        = Factory::getApplication()->getInput();
