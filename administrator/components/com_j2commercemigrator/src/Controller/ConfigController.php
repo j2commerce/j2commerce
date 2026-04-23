@@ -88,7 +88,7 @@ class ConfigController extends BaseController
 
     private function handleError(string $context, \Throwable $e): void
     {
-        (new MigrationLogger())->error($context, $e->getMessage());
+        (new MigrationLogger())->error($context . ': ' . $e->getMessage());
 
         if (\defined('JDEBUG') && JDEBUG) {
             $this->sendJson(['error' => $e->getMessage()]);

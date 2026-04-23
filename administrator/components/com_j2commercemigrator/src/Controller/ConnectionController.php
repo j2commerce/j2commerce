@@ -70,7 +70,7 @@ class ConnectionController extends BaseController
             $connMgr = new ConnectionManager($app, $this->getDatabase());
             $this->sendJson($connMgr->verify($creds));
         } catch (\Throwable $e) {
-            (new MigrationLogger())->error('ConnectionController::verifyConnection', $e->getMessage());
+            (new MigrationLogger())->error('ConnectionController::verifyConnection: ' . $e->getMessage());
             $this->sendJson(['success' => false, 'error' => Text::_('COM_J2COMMERCEMIGRATOR_ERR_GENERIC')]);
         }
     }
@@ -90,7 +90,7 @@ class ConnectionController extends BaseController
             $connMgr->clear();
             $this->sendJson(['success' => true, 'data' => []]);
         } catch (\Throwable $e) {
-            (new MigrationLogger())->error('ConnectionController::clearConnection', $e->getMessage());
+            (new MigrationLogger())->error('ConnectionController::clearConnection: ' . $e->getMessage());
             $this->sendJson(['success' => false, 'error' => Text::_('COM_J2COMMERCEMIGRATOR_ERR_GENERIC')]);
         }
     }
@@ -115,7 +115,7 @@ class ConnectionController extends BaseController
                 ],
             ]);
         } catch (\Throwable $e) {
-            (new MigrationLogger())->error('ConnectionController::getConnection', $e->getMessage());
+            (new MigrationLogger())->error('ConnectionController::getConnection: ' . $e->getMessage());
             $this->sendJson(['success' => false, 'error' => Text::_('COM_J2COMMERCEMIGRATOR_ERR_GENERIC')]);
         }
     }

@@ -58,7 +58,7 @@ class RunsController extends AdminController
             $repo->dropAll();
             $this->sendJson(['success' => true, 'data' => []]);
         } catch (\Throwable $e) {
-            (new MigrationLogger())->error('RunsController::cleanupIdMap', $e->getMessage());
+            (new MigrationLogger())->error('RunsController::cleanupIdMap: ' . $e->getMessage());
             $this->sendJson(['success' => false, 'error' => Text::_('COM_J2COMMERCEMIGRATOR_ERR_GENERIC')]);
         }
     }

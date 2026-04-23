@@ -37,8 +37,14 @@ class MigrationLogger
         Log::add($message, Log::WARNING, self::CATEGORY);
     }
 
-    public function error(string $message): void
+    public function error(string $message, ?\Throwable $throwable = null): void
     {
+        if ($throwable !== null) {
+            $message .= '. ' . $throwable->getMessage();
+            Log::add($message . "\n" . $throwable->getTraceAsString(), Log::ERROR, self::CATEGORY);
+            return;
+        }
+
         Log::add($message, Log::ERROR, self::CATEGORY);
     }
 
