@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commercemigrator\Administrator\Service;
 
 use J2Commerce\Component\J2commercemigrator\Administrator\Adapter\MigratorAdapterInterface;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Plugin\PluginHelper;
 
 class AdapterRegistry
 {
@@ -25,6 +26,10 @@ class AdapterRegistry
         if ($this->adapters !== null) {
             return $this->adapters;
         }
+
+        // Import plugin group so CLI adapter commands see registered adapters.
+        // In console apps, non-console plugin groups are not auto-imported.
+        PluginHelper::importPlugin('j2commercemigrator');
 
         $dispatcher = Factory::getApplication()->getDispatcher();
         $event      = new \Joomla\Event\Event('onJ2CommerceMigratorRegister', ['result' => []]);
