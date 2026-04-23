@@ -13,22 +13,29 @@
 
 use J2Commerce\Component\J2commerce\Administrator\Controller\MultiimageuploaderController;
 use J2Commerce\Component\J2commerce\Administrator\Field\MultiImageUploaderField;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
-use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\FileLayout;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Uri\Uri;
 
-$item = $displayData['product'];
+$displayData = isset($displayData) && \is_array($displayData) ? $displayData : [];
+$item = isset($displayData['product']) && \is_object($displayData['product']) ? $displayData['product'] : new \stdClass();
 $formPrefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
 
 // Defaults for Joomla core layout fields to prevent PHP 8.4 undefined variable warnings
 $textFieldDefaults = ['value' => '', 'onchange' => '', 'disabled' => false, 'readonly' => false, 'dataAttribute' => '', 'hint' => '', 'required' => false, 'autofocus' => false, 'spellcheck' => false, 'addonBefore' => '', 'addonAfter' => '', 'dirname' => '', 'charcounter' => false, 'options' => []];
 
-$product_params = json_decode($item->params);
-$productId = $item->j2commerce_product_id ?? 0;
+$productParamsRaw = isset($item->params) ? (string) $item->params : '{}';
+$product_params = json_decode($productParamsRaw);
+
+if (!\is_object($product_params)) {
+    $product_params = new \stdClass();
+}
+
+$productId = (int) ($item->j2commerce_product_id ?? 0);
 
 // Load MultiImageUploader assets
 MultiImageUploaderField::loadAssetsStatic();
@@ -38,7 +45,9 @@ $filesData = [];
 $siteRoot = rtrim(Uri::root(), '/') . '/';
 
 // Strip repeated Uri::root() prefixes from a stored file path
-$stripBaseUrl = function (string $value) use ($siteRoot): string {
+$stripBaseUrl = function ($value) use ($siteRoot): string {
+    $value = (string) ($value ?? '');
+
     while (str_starts_with($value, $siteRoot)) {
         $value = substr($value, strlen($siteRoot));
     }
@@ -63,7 +72,7 @@ if ($productId) {
     $existingFiles = $db->loadObjectList();
 
     foreach ($existingFiles as $file) {
-        $path = $stripBaseUrl($file->product_file_save_name);
+        $path = $stripBaseUrl($file->product_file_save_name ?? '');
 
         $filesData[] = [
             'id'          => $file->j2commerce_productfile_id,
@@ -75,17 +84,19 @@ if ($productId) {
     }
 }
 
-// Resolve default upload directory from J2Commerce image_directories config
-$j2cParams      = ComponentHelper::getParams('com_j2commerce');
-$configuredDirs = $j2cParams->get('image_directories', []);
+// Resolve default upload directory from J2Commerce image_directories config.
+// This subform value is not guaranteed to come back as an array of objects;
+// normalize it first so the Files tab cannot break on config shape differences.
+$configuredDirs = ConfigHelper::getImageDirectories();
 
-if (\is_string($configuredDirs)) {
-    $configuredDirs = json_decode($configuredDirs, false) ?? [];
+$defaultUploadDir = 'images/downloads';
+
+foreach ($configuredDirs as $configuredDir) {
+    if (!empty($configuredDir['directory'])) {
+        $defaultUploadDir = $configuredDir['directory'];
+        break;
+    }
 }
-
-$defaultUploadDir = !empty($configuredDirs) && !empty($configuredDirs[0]->directory)
-    ? trim((string) $configuredDirs[0]->directory, '/')
-    : 'images/downloads';
 
 $layoutPath = JPATH_ADMINISTRATOR . '/components/com_j2commerce/layouts';
 ?>
