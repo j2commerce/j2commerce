@@ -93,7 +93,7 @@ class ConfigHelper
         }
 
         $directories = self::getImageDirectories($defaultRows ?: [['directory' => 'images', 'thumbs' => 1]]);
-        $paths = [];
+        $paths       = [];
 
         foreach ($directories as $directory) {
             if (!empty($directory['directory'])) {
@@ -140,7 +140,7 @@ class ConfigHelper
             return [];
         }
 
-        if (array_key_exists('directory', $value)) {
+        if (\array_key_exists('directory', $value)) {
             $value = [$value];
         }
 

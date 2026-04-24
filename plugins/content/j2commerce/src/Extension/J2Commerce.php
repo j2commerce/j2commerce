@@ -651,7 +651,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             if (!$j2params->get('catalog_mode', 0)) {
                 $buttonClass = $j2params->get('addtocart_button_class', 'btn btn-primary');
                 $buttonText  = $product->addtocart_text ?: Text::_('PLG_CONTENT_J2COMMERCE_ADD_TO_CART');
-                $action = Route::_('index.php?option=com_j2commerce&task=carts.addItem');
+                $action      = Route::_('index.php?option=com_j2commerce&task=carts.addItem');
 
                 $html .= '<div class="j2commerce-addtocart">';
                 $html .= '<form class="j2commerce-cart-form" method="post" action="' . $action . '">';

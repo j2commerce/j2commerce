@@ -80,12 +80,12 @@ class ImageDirectoryField extends FolderlistField
 
         $directories = $params->get('directories');
 
-        if (is_string($directories)) {
-            $decoded = json_decode($directories, true);
-            $directories = is_array($decoded) ? $decoded : $directories;
+        if (\is_string($directories)) {
+            $decoded     = json_decode($directories, true);
+            $directories = \is_array($decoded) ? $decoded : $directories;
         }
 
-        if (is_array($directories) || is_object($directories)) {
+        if (\is_array($directories) || \is_object($directories)) {
             foreach ((array) $directories as $value) {
                 $this->appendRoot($roots, $value);
             }
@@ -99,7 +99,7 @@ class ImageDirectoryField extends FolderlistField
      */
     private function appendRoot(array &$roots, mixed $value): void
     {
-        if (is_array($value) || is_object($value)) {
+        if (\is_array($value) || \is_object($value)) {
             $items = (array) $value;
 
             if (isset($items['directory'])) {
@@ -117,7 +117,7 @@ class ImageDirectoryField extends FolderlistField
             return;
         }
 
-        if (!is_string($value) || trim($value) === '') {
+        if (!\is_string($value) || trim($value) === '') {
             return;
         }
 
@@ -131,7 +131,7 @@ class ImageDirectoryField extends FolderlistField
                 return;
             }
 
-            $candidate = ltrim(substr($cleanValue, strlen($rootPath)), '/');
+            $candidate = ltrim(substr($cleanValue, \strlen($rootPath)), '/');
         }
 
         $candidate = trim($candidate, '/');
