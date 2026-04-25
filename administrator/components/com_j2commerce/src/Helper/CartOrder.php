@@ -392,7 +392,7 @@ class CartOrder
 
                         if ($manageStock && $stock < $quantity) {
                             $item->stock_error = Text::sprintf(
-                                'COM_J2COMMERCE_CART_ITEM_STOCK_ERROR',
+                                'COM_J2COMMERCE_CART_ITEM_STOCK_NOT_ENOUGH_STOCK',
                                 $item->product_name ?? '',
                                 $stock
                             );
