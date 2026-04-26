@@ -7,7 +7,7 @@
     <license>GNU General Public License v2 or later</license>
     <authorEmail>support@j2commerce.com</authorEmail>
     <authorUrl>https://www.j2commerce.com</authorUrl>
-    <version>6.0.7</version>
+    <version>6.2.2</version>
     <description>MOD_J2COMMERCE_ORDERS_XML_DESCRIPTION</description>
     <namespace path="src">J2Commerce\Module\Orders</namespace>
     <files>
@@ -91,6 +91,7 @@
                     class="form-select"
                     type="modulelayout"
                     label="JFIELD_ALT_LAYOUT_LABEL"
+                    description="JFIELD_ALT_MODULE_LAYOUT_DESC"
                 />
                 <field
                     name="moduleclass_sfx"

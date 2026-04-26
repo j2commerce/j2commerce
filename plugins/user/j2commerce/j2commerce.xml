@@ -7,7 +7,7 @@
     <license>GNU General Public License version 2 or later; see LICENSE.txt</license>
     <authorEmail>support@j2commerce.com</authorEmail>
     <authorUrl>https://www.j2commerce.com</authorUrl>
-    <version>6.0.7</version>
+    <version>6.2.2</version>
     <description>PLG_USER_J2COMMERCE_DESC</description>
 
     <namespace path="src">J2Commerce\Plugin\User\J2Commerce</namespace>

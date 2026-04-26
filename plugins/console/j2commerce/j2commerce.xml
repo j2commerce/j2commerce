@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <extension type="plugin" group="console" method="upgrade">
 	<name>PLG_CONSOLE_J2COMMERCE</name>
-	<version>6.0.0</version>
+	<version>6.2.2</version>
 	<creationDate>2026-02-27</creationDate>
 	<author>J2Commerce, LLC</author>
 	<authorEmail>support@j2commerce.com</authorEmail>
