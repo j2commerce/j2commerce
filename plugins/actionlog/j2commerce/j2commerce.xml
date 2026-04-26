@@ -5,7 +5,7 @@
     <creationDate>2026-02-07</creationDate>
     <copyright>(C)2024-2026 J2Commerce, LLC. All rights reserved.</copyright>
     <license>GNU General Public License version 2 or later</license>
-    <version>6.0.8</version>
+    <version>6.2.2</version>
     <description>PLG_ACTIONLOG_J2COMMERCE_DESCRIPTION</description>
     <namespace path="src">J2Commerce\Plugin\Actionlog\J2commerce</namespace>
     <files>
