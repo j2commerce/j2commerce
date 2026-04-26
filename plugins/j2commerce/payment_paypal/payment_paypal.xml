@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <extension type="plugin" group="j2commerce" method="upgrade">
     <name>PLG_J2COMMERCE_PAYMENT_PAYPAL</name>
-    <version>6.0.7</version>
+    <version>6.2.2</version>
     <author>J2Commerce, LLC</author>
     <creationDate>2026-02</creationDate>
     <copyright>Copyright (C) 2024–2026 J2Commerce, LLC. All rights reserved.</copyright>
@@ -148,6 +148,73 @@
                     size="70"
                     label="PLG_J2COMMERCE_PAYMENT_PAYPAL_SANDBOX_WEBHOOK_ID"
                     description="PLG_J2COMMERCE_PAYMENT_PAYPAL_SANDBOX_WEBHOOK_ID_DESC"
+                />
+
+                <field type="spacer" />
+
+                <field
+                    name="subscription_mode"
+                    type="radio"
+                    layout="joomla.form.field.radio.switcher"
+                    label="PLG_J2COMMERCE_PAYMENT_PAYPAL_SUBSCRIPTION_MODE_LABEL"
+                    description="PLG_J2COMMERCE_PAYMENT_PAYPAL_SUBSCRIPTION_MODE_DESC"
+                    default="rest"
+                >
+                    <option value="rest">PLG_J2COMMERCE_PAYMENT_PAYPAL_SUBSCRIPTION_MODE_REST</option>
+                    <option value="nvp">PLG_J2COMMERCE_PAYMENT_PAYPAL_SUBSCRIPTION_MODE_NVP</option>
+                </field>
+
+                <field
+                    name="nvp_section_note"
+                    type="note"
+                    label="PLG_J2COMMERCE_PAYMENT_PAYPAL_NVP_SECTION_LABEL"
+                    description="PLG_J2COMMERCE_PAYMENT_PAYPAL_NVP_SECTION_DESC"
+                />
+
+                <field
+                    name="api_username"
+                    type="text"
+                    size="70"
+                    label="PLG_J2COMMERCE_PAYMENT_PAYPAL_NVP_API_USERNAME"
+                    description="PLG_J2COMMERCE_PAYMENT_PAYPAL_NVP_API_USERNAME_DESC"
+                />
+                <field
+                    name="api_password"
+                    type="text"
+                    size="70"
+                    label="PLG_J2COMMERCE_PAYMENT_PAYPAL_NVP_API_PASSWORD"
+                    description="PLG_J2COMMERCE_PAYMENT_PAYPAL_NVP_API_PASSWORD_DESC"
+                />
+                <field
+                    name="api_signature"
+                    type="text"
+                    size="70"
+                    label="PLG_J2COMMERCE_PAYMENT_PAYPAL_NVP_API_SIGNATURE"
+                    description="PLG_J2COMMERCE_PAYMENT_PAYPAL_NVP_API_SIGNATURE_DESC"
+                />
+
+                <field type="spacer" />
+
+                <field
+                    name="sandbox_api_username"
+                    type="text"
+                    size="70"
+                    label="PLG_J2COMMERCE_PAYMENT_PAYPAL_NVP_SANDBOX_API_USERNAME"
+                    description="PLG_J2COMMERCE_PAYMENT_PAYPAL_NVP_SANDBOX_API_USERNAME_DESC"
+                />
+                <field
+                    name="sandbox_api_password"
+                    type="text"
+                    size="70"
+                    label="PLG_J2COMMERCE_PAYMENT_PAYPAL_NVP_SANDBOX_API_PASSWORD"
+                    description="PLG_J2COMMERCE_PAYMENT_PAYPAL_NVP_SANDBOX_API_PASSWORD_DESC"
+                />
+                <field
+                    name="sandbox_api_signature"
+                    type="text"
+                    size="70"
+                    label="PLG_J2COMMERCE_PAYMENT_PAYPAL_NVP_SANDBOX_API_SIGNATURE"
+                    description="PLG_J2COMMERCE_PAYMENT_PAYPAL_NVP_SANDBOX_API_SIGNATURE_DESC"
                 />
 
                 <field type="spacer" />
@@ -339,6 +406,22 @@
                     <option value="0">JNO</option>
                     <option value="1">JYES</option>
                 </field>
+
+                <field
+                    name="sandbox_test_note"
+                    type="note"
+                    label="PLG_J2COMMERCE_PAYMENT_PAYPAL_SANDBOX_TEST_LABEL"
+                    description="PLG_J2COMMERCE_PAYMENT_PAYPAL_SANDBOX_TEST_DESC"
+                    showon="sandbox:1"
+                />
+
+                <field
+                    name="sandbox_test_buttons"
+                    type="paypaltestbuttons"
+                    addfieldprefix="J2Commerce\Plugin\J2Commerce\PaymentPaypal\Field"
+                    label=" "
+                    showon="sandbox:1"
+                />
             </fieldset>
         </fields>
     </config>
