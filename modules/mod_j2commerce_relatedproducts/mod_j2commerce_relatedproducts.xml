@@ -5,7 +5,7 @@
     <authorUrl>https://www.j2commerce.com</authorUrl>
     <copyright>(C)2024-2026 J2Commerce, LLC. All rights reserved.</copyright>
     <license>GNU General Public License version 2 or later; see LICENSE.txt</license>
-    <version>6.0.7</version>
+    <version>6.2.2</version>
     <description>MOD_J2COMMERCE_RELATEDPRODUCTS_DESC</description>
     <namespace path="src">J2Commerce\Module\RelatedProducts</namespace>
 

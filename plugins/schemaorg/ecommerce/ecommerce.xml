@@ -7,7 +7,7 @@
 	<license>GNU General Public License version 2 or later; see LICENSE.txt</license>
 	<authorEmail>support@j2commerce.com</authorEmail>
 	<authorUrl>https://www.j2commerce.com</authorUrl>
-	<version>6.0.7</version>
+	<version>6.2.2</version>
 	<description>PLG_SCHEMAORG_ECOMMERCE_XML_DESCRIPTION</description>
 	<namespace path="src">Joomla\Plugin\Schemaorg\Ecommerce</namespace>
 	<files>
