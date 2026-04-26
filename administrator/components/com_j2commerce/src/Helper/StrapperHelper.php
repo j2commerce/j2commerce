@@ -17,6 +17,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Event\GenericEvent;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Language\Text;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
@@ -397,6 +398,182 @@ class StrapperHelper
         }
         return $filesize . " bytes";
 
+    }
+
+    /**
+     * Promote a text input to a Joomla 6 native calendar field (`field.calendar`).
+     *
+     * Wraps the existing `<input>` (located by class name) in the same DOM
+     * structure rendered by `Joomla\CMS\Form\Field\CalendarField`, registers
+     * the core `field.calendar` script/style, and lets Joomla's auto-init
+     * handler upgrade it on `DOMContentLoaded` / `joomla:updated`.
+     *
+     * @param string                $element     Element class name (no leading dot)
+     * @param array|string|Registry $jsonOptions Option parameters (JSON, array, or Registry)
+     * @since 6.0.0
+     */
+    public function addDatePicker(
+        string $element,
+        $jsonOptions = null,
+        string $iconClass = 'icon-calendar',
+        array $iconAttrs = []
+    ): void {
+        $this->addCalendarPicker($element, false, $jsonOptions, $iconClass, $iconAttrs);
+    }
+
+    /**
+     * Promote a text input to a Joomla 6 native calendar field with time selector.
+     *
+     * @param string                $element     Element class name (no leading dot)
+     * @param array|string|Registry $jsonOptions Option parameters (JSON, array, or Registry)
+     * @param string                $iconClass   CSS class for the trigger icon (e.g. `fa-solid fa-calendar`)
+     * @param array<string,string>  $iconAttrs   Extra attributes on the icon span (e.g. `['uk-icon' => 'calendar']`)
+     * @since 6.0.0
+     */
+    public function addDateTimePicker(
+        string $element,
+        $jsonOptions = null,
+        string $iconClass = 'icon-calendar',
+        array $iconAttrs = []
+    ): void {
+        $this->addCalendarPicker($element, true, $jsonOptions, $iconClass, $iconAttrs);
+    }
+
+    /**
+     * Shared implementation that wires an existing input into Joomla 6's native
+     * `field.calendar` widget — registers assets, queues the gregorian helper,
+     * pushes the `Text::script()` strings the calendar consumes at runtime, and
+     * emits a vanilla-JS IIFE that wraps the input + appends the trigger button.
+     *
+     * @param string                $element     Element class name
+     * @param bool                  $showTime    Whether to enable the time selector
+     * @param array|string|Registry $jsonOptions Option parameters
+     * @since 6.0.0
+     */
+    protected function addCalendarPicker(
+        string $element,
+        bool $showTime,
+        $jsonOptions = null,
+        string $iconClass = 'icon-calendar',
+        array $iconAttrs = []
+    ): void {
+        if ($this->wa === null || $this->app === null || !preg_match('/^[A-Za-z0-9_-]+$/', $element)) {
+            return;
+        }
+
+        $params = $jsonOptions instanceof Registry
+            ? $jsonOptions
+            : new Registry($jsonOptions);
+
+        $format = (string) $params->get(
+            'date_format_strftime',
+            $showTime ? '%Y-%m-%d %H:%M' : '%Y-%m-%d'
+        );
+        // Joomla calendar treats min/max year as OFFSETS from current year (calendar.js: minYear = today + dataset.minYear).
+        $minYear = (int) $params->get('hide_pastdates', 1) === 1 ? 0 : -1900;
+        $maxYear = 200;
+        $showTimeAttr = $showTime ? '1' : '0';
+
+        if (empty($this->scriptsLoaded['field.calendar'])) {
+            $document = $this->app->getDocument();
+            $lang     = $this->app->getLanguage();
+            $calendar = $lang->getCalendar();
+            $direction = strtolower($document->getDirection());
+
+            $helperPath = 'system/fields/calendar-locales/date/gregorian/date-helper.min.js';
+            if ($calendar && is_dir(JPATH_ROOT . '/media/system/js/fields/calendar-locales/date/' . strtolower($calendar))) {
+                $helperPath = 'system/fields/calendar-locales/date/' . strtolower($calendar) . '/date-helper.min.js';
+            }
+
+            $this->wa
+                ->registerAndUseScript('field.calendar.helper', $helperPath, [], ['defer' => true])
+                ->useStyle('field.calendar' . ($direction === 'rtl' ? '-rtl' : ''))
+                ->useScript('field.calendar');
+
+            foreach ([
+                'SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY',
+                'SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT',
+                'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
+                'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER',
+                'JANUARY_SHORT', 'FEBRUARY_SHORT', 'MARCH_SHORT', 'APRIL_SHORT', 'MAY_SHORT', 'JUNE_SHORT',
+                'JULY_SHORT', 'AUGUST_SHORT', 'SEPTEMBER_SHORT', 'OCTOBER_SHORT', 'NOVEMBER_SHORT', 'DECEMBER_SHORT',
+                'JCLOSE', 'JCLEAR', 'JLIB_HTML_BEHAVIOR_TODAY',
+                'JLIB_HTML_BEHAVIOR_WK',
+                'JLIB_HTML_BEHAVIOR_AM', 'JLIB_HTML_BEHAVIOR_PM',
+                'JLIB_HTML_BEHAVIOR_OPEN_CALENDAR',
+            ] as $key) {
+                Text::script($key);
+            }
+
+            $this->scriptsLoaded['field.calendar'] = true;
+        }
+
+        $firstDay     = (int) $this->app->getLanguage()->getFirstDay();
+        $weekend      = preg_replace('/[^0-9,]/', '', (string) $this->app->getLanguage()->getWeekEnd()) ?: '0,6';
+        $jsonFlags    = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES;
+        $formatJs     = json_encode($format, $jsonFlags);
+        $labelJs      = json_encode(Text::_('JLIB_HTML_BEHAVIOR_OPEN_CALENDAR'), $jsonFlags);
+        $iconClassJs  = json_encode($iconClass, $jsonFlags);
+        $iconAttrsJs  = json_encode((object) $iconAttrs, $jsonFlags);
+
+        $js = <<<JS
+(function(){
+    function init(){
+        var input=document.querySelector('.{$element}');
+        if(!input||input.dataset.j2cCal)return;
+        input.dataset.j2cCal='1';
+        if(!input.id)input.id='{$element}_input';
+        var inputId=input.id;
+        var btnId=inputId+'_btn';
+        if(!input.hasAttribute('data-alt-value'))input.setAttribute('data-alt-value',input.value||'');
+        input.setAttribute('autocomplete','off');
+        var parent=input.parentNode;
+        var anchor=input.nextSibling;
+        var openLabel={$labelJs};
+        var btn=document.createElement('button');
+        btn.type='button';
+        btn.className='btn btn-primary';
+        btn.id=btnId;
+        btn.title=openLabel;
+        btn.setAttribute('data-inputfield',inputId);
+        btn.setAttribute('data-button',btnId);
+        btn.setAttribute('data-date-format',{$formatJs});
+        btn.setAttribute('data-firstday','{$firstDay}');
+        btn.setAttribute('data-weekend','{$weekend}');
+        btn.setAttribute('data-today-btn','1');
+        btn.setAttribute('data-week-numbers','0');
+        btn.setAttribute('data-show-time','{$showTimeAttr}');
+        btn.setAttribute('data-show-others','1');
+        btn.setAttribute('data-time24','24');
+        btn.setAttribute('data-only-months-nav','0');
+        btn.setAttribute('data-min-year','{$minYear}');
+        btn.setAttribute('data-max-year','{$maxYear}');
+        btn.setAttribute('data-date-type','gregorian');
+        var icon=document.createElement('span');
+        var iconClass={$iconClassJs};
+        if(iconClass)icon.className=iconClass;
+        icon.setAttribute('aria-hidden','true');
+        var iconAttrs={$iconAttrsJs};
+        for(var k in iconAttrs){if(Object.prototype.hasOwnProperty.call(iconAttrs,k))icon.setAttribute(k,iconAttrs[k]);}
+        btn.appendChild(icon);
+        var sr=document.createElement('span');
+        sr.className='visually-hidden';
+        sr.textContent=openLabel;
+        btn.appendChild(sr);
+        var inputGroup=document.createElement('div');
+        inputGroup.className='input-group';
+        inputGroup.appendChild(input);
+        inputGroup.appendChild(btn);
+        var fieldCal=document.createElement('div');
+        fieldCal.className='field-calendar';
+        fieldCal.appendChild(inputGroup);
+        parent.insertBefore(fieldCal,anchor);
+    }
+    if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init,{once:true});}else{init();}
+})();
+JS;
+
+        $this->wa->addInlineScript($js);
     }
 
     /**

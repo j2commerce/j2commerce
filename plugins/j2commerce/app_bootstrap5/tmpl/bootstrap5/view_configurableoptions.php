@@ -220,7 +220,7 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
                     class="<?php echo $element_date; ?>" />
             </div>
             <br>
-            <?php J2CommerceHelper::strapper()->addDatePicker($element_date, $option['option_params']); ?>
+            <?php J2CommerceHelper::strapper()->addDatePicker($element_date, $option['option_params'], 'fa-solid fa-calendar'); ?>
         <?php endif; ?>
 
         <?php if ($option['type'] == 'datetime') : ?>
@@ -237,7 +237,7 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
                     class="<?php echo $element_datetime; ?>" />
             </div>
             <br>
-            <?php J2CommerceHelper::strapper()->addDateTimePicker($element_datetime, $option['option_params']); ?>
+            <?php J2CommerceHelper::strapper()->addDateTimePicker($element_datetime, $option['option_params'], 'fa-solid fa-calendar'); ?>
         <?php endif; ?>
 
         <?php if ($option['type'] == 'time') : ?>

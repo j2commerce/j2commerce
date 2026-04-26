@@ -201,7 +201,7 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
                     value="<?php echo $esc($option['optionvalue'] ?? ''); ?>"
                     class="form-control <?php echo $element_date; ?>" />
             </div>
-            <?php J2CommerceHelper::strapper()->addDatePicker($element_date, $option['option_params']); ?>
+            <?php J2CommerceHelper::strapper()->addDatePicker($element_date, $option['option_params'], 'fa-solid fa-calendar'); ?>
         <?php endif; ?>
 
         <?php if ($option['type'] == 'datetime') : ?>
@@ -217,7 +217,7 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
                     value="<?php echo $esc($option['optionvalue'] ?? ''); ?>"
                     class="form-control <?php echo $element_datetime; ?>" />
             </div>
-            <?php J2CommerceHelper::strapper()->addDateTimePicker($element_datetime, $option['option_params']); ?>
+            <?php J2CommerceHelper::strapper()->addDateTimePicker($element_datetime, $option['option_params'], 'fa-solid fa-calendar'); ?>
         <?php endif; ?>
 
         <?php if ($option['type'] == 'time') : ?>

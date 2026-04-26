@@ -189,7 +189,7 @@ $ajax_url = Route::_('index.php', false);
                     name="product_option[<?php echo $option['productoption_id']; ?>]"
                     value="<?php echo $option['optionvalue']; ?>" />
             </div>
-            <?php J2CommerceHelper::strapper()->addDatePicker($element_date, $option['option_params']); ?>
+            <?php J2CommerceHelper::strapper()->addDatePicker($element_date, $option['option_params'], '', ['uk-icon' => 'calendar']); ?>
         <?php endif; ?>
 
         <?php if ($option['type'] == 'datetime') : ?>
@@ -204,7 +204,7 @@ $ajax_url = Route::_('index.php', false);
                     name="product_option[<?php echo $option['productoption_id']; ?>]"
                     value="<?php echo $option['optionvalue']; ?>" />
             </div>
-            <?php J2CommerceHelper::strapper()->addDateTimePicker($element_datetime, $option['option_params']); ?>
+            <?php J2CommerceHelper::strapper()->addDateTimePicker($element_datetime, $option['option_params'], '', ['uk-icon' => 'calendar']); ?>
         <?php endif; ?>
 
         <?php if ($option['type'] == 'time') : ?>
