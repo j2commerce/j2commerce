@@ -722,13 +722,27 @@ class MyprofileController extends BaseController
                 continue;
             }
 
-            // Prepare item for cart
+            // product_type must propagate from the orderitem so CartModel::getItems()
+            // and CartOrder::createOrderItems route to the correct behavior on the
+            // next pass. Never silently fall back to 'simple' — that downgrades
+            // subscription/variable/etc. products and breaks AfterPayment routing.
+            $itemProductType = trim((string) ($item->product_type ?? ''));
+
+            if ($itemProductType === '') {
+                $errors[] = Text::sprintf('COM_J2COMMERCE_REORDER_FAILED_TO_ADD', $item->orderitem_name);
+                continue;
+            }
+
+            // product_options expects base64-serialized PHP array of option selections;
+            // orderitem_attributes is unrelated JSON (display attributes), so leave empty.
             $cartItem                  = new \stdClass();
             $cartItem->cart_id         = $cartId;
             $cartItem->product_id      = $productId;
             $cartItem->variant_id      = $variantId;
+            $cartItem->vendor_id       = (int) ($item->vendor_id ?? 0);
+            $cartItem->product_type    = $itemProductType;
             $cartItem->product_qty     = $quantity;
-            $cartItem->product_options = $item->orderitem_attributes;
+            $cartItem->product_options = '';
 
             // Add to cart
             $result = $cartModel->addItem($cartItem);

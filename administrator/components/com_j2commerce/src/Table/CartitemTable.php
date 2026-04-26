@@ -86,8 +86,12 @@ class CartitemTable extends Table
             $this->vendor_id = 0;
         }
 
+        // product_type is required and must come from the caller. Never default to
+        // 'simple' — that silently downgrades subscription/variable/configurable
+        // products and breaks downstream AfterPayment routing.
         if (empty($this->product_type)) {
-            $this->product_type = 'simple';
+            $this->setError(Text::sprintf('COM_J2COMMERCE_ERR_FIELD_REQUIRED', 'Product Type'));
+            return false;
         }
 
         if (!isset($this->cartitem_params)) {

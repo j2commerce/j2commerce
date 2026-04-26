@@ -1484,6 +1484,17 @@ class CartOrder
         $now = Factory::getDate()->toSql();
 
         foreach ($this->items as $item) {
+            // product_type must come from the cartitem. Never default to 'simple' —
+            // that downgrades subscription / variable / configurable / etc. products
+            // and breaks AfterPayment routing (e.g. subscription rows never created).
+            $itemProductType = trim((string) ($item->product_type ?? ''));
+
+            if ($itemProductType === '') {
+                throw new \RuntimeException(
+                    'CartOrder::createOrderItems requires $item->product_type — refusing to write orderitem with default "simple"'
+                );
+            }
+
             $pricing           = $item->pricing ?? null;
             $quantity          = (int) ($item->product_qty ?? 1);
             $basePrice         = (float) ($pricing->price ?? $item->variant_price ?? 0);
@@ -1521,7 +1532,7 @@ class CartOrder
                 (int) ($this->cart_id),
                 (int) ($item->j2commerce_cartitem_id ?? $item->cartitem_id ?? 0),
                 (int) ($item->product_id ?? 0),
-                $db->quote($item->product_type ?? 'simple'),
+                $db->quote($itemProductType),
                 (int) ($item->variant_id ?? 0),
                 (int) ($item->vendor_id ?? 0),
                 $db->quote($item->sku ?? ''),

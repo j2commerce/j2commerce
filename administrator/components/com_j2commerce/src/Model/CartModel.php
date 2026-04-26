@@ -180,6 +180,16 @@ class CartModel extends BaseDatabaseModel
             return false;
         }
 
+        // product_type must come from the caller (Cart{Type} behavior or reorder
+        // controller). Never default to 'simple' — that downgrades subscription /
+        // variable / configurable / etc. products and breaks downstream routing.
+        $itemProductType = trim((string) ($item->product_type ?? ''));
+
+        if ($itemProductType === '') {
+            $this->setError('CartModel::addItem requires $item->product_type — refusing to default to "simple"');
+            return false;
+        }
+
         $db  = $this->db;
         $app = Factory::getApplication();
 
@@ -245,7 +255,7 @@ class CartModel extends BaseDatabaseModel
             // Insert new cart item
             $productId   = (int) $item->product_id;
             $vendorId    = (int) ($item->vendor_id ?? 0);
-            $productType = $item->product_type ?? 'simple';
+            $productType = $itemProductType;
             $productQty  = (float) $item->product_qty;
 
             $insertQuery = $db->getQuery(true)
