@@ -21,6 +21,8 @@ use Joomla\CMS\Session\Session;
 
 /** @var \J2Commerce\Component\J2commerce\Administrator\View\Order\HtmlView $this */
 
+$this->getDocument()->getWebAssetManager()->useScript('keepalive');
+
 $item = $this->item;
 $orderInfo = $item->orderinfo ?? null;
 $orderItems = $item->orderitems ?? [];
