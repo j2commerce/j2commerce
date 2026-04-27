@@ -255,10 +255,6 @@ plugins/fields/j2commerceregion/
 modules/mod_j2commerce_advancedcart_toggle/
 modules/mod_j2commerce_categories/
 modules/mod_j2commerce_tags/
-# Non-core package builders (belong in j2commerce6extensions repo)
-build/build_pkg_j2commercemigrator.php
-build/script.pkg_j2commercemigrator.php
-build/language/en-GB/pkg_j2commercemigrator.sys.ini
 # Non-core Behavior files (inserted by 3rd-party plugins, not part of core install)
 administrator/components/com_j2commerce/src/Model/Behavior/Bundleproduct.php
 administrator/components/com_j2commerce/src/Model/Behavior/Boxbuilderproduct.php
