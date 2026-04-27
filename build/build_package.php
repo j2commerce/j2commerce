@@ -299,6 +299,20 @@ function buildComponentZip(string $joomlaRoot, string $tempDir, string $version,
         $count++;
     }
 
+    // 6. Admin language files (referenced by <administration><languages> in manifest)
+    //    Bundles com_j2commerce.{ini,sys.ini} into administrator/language/{tag}/ so
+    //    plugin/module forms and CLI/dispatchers calling
+    //    $lang->load('com_j2commerce', JPATH_ADMINISTRATOR) find the file (fixes #851).
+    foreach (['en-US', 'en-GB'] as $tag) {
+        foreach (['com_j2commerce.ini', 'com_j2commerce.sys.ini'] as $file) {
+            $absPath = $joomlaRoot . '/administrator/language/' . $tag . '/' . $file;
+            if (file_exists($absPath)) {
+                $zip->addFile($absPath, 'administrator/language/' . $tag . '/' . $file);
+                $count++;
+            }
+        }
+    }
+
     $zip->close();
     echo "  com_j2commerce.zip ({$count} files)\n";
     return $zipPath;
