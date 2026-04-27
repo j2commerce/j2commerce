@@ -351,7 +351,7 @@
         const from = document.getElementById('dashboard-from')?.value;
         const to = document.getElementById('dashboard-to')?.value;
         if (!from || !to) return;
-        const days = Math.round((new Date(to) - new Date(from)) / 86400000);
+        const days = Math.round((new Date(to) - new Date(from)) / 86400000) + 1;
         const unit = Joomla.Text._(days === 1 ? 'COM_J2COMMERCE_DASHBOARD_DAY' : 'COM_J2COMMERCE_DASHBOARD_DAYS');
         el.innerHTML = Joomla.Text._('COM_J2COMMERCE_DASHBOARD_DATA_BASED_ON')
             .replace('%s', days)
