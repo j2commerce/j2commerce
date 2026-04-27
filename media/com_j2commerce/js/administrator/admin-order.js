@@ -356,7 +356,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     if (result.success) {
                         itemsEl.innerHTML = renderHistoryItems(result.items);
-                        injectPluginIcons(itemsEl, result.items);
                         historyContainer.dataset.currentPage = targetPage;
                         historyContainer.dataset.totalPages = result.totalPages;
                         updatePagination(historyNav, targetPage, result.totalPages);
