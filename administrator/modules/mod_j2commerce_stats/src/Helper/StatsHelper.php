@@ -127,7 +127,7 @@ class StatsHelper
         // Date strings for recent periods
         $today     = $now->format('Y-m-d');
         $yesterday = Factory::getDate('now -1 days', $tz)->format('Y-m-d');
-        $weekAgo   = Factory::getDate('now -7 days', $tz)->format('Y-m-d');
+        $weekAgo   = Factory::getDate('now -6 days', $tz)->format('Y-m-d');
 
         return [
             'total'    => $this->getOrderStats($orderStatuses),
