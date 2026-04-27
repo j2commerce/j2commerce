@@ -84,17 +84,46 @@ class OrdersController extends AdminController
                 throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_NO_STATUS_SELECTED'));
             }
 
-            $model        = $this->getModel();
-            $updatedCount = 0;
+            $model              = $this->getModel();
+            $updatedCount       = 0;
+            $missingTemplateIds = [];
 
             foreach ($pks as $pk) {
-                if ($model->updateOrderStatus($pk, $statusId, $notify, $comment)) {
-                    $updatedCount++;
+                if (!$model->updateOrderStatus($pk, $statusId, false, $comment)) {
+                    continue;
+                }
+
+                $updatedCount++;
+
+                if (!$notify) {
+                    continue;
+                }
+
+                $order = $model->getItem($pk);
+
+                if (!$order || empty($order->order_id)) {
+                    continue;
+                }
+
+                $notifyResult = $model->sendOrderNotification($order->order_id, true, true);
+
+                if (($notifyResult['customer_sent'] ?? 0) === 0) {
+                    $missingTemplateIds[] = $order->order_id;
                 }
             }
 
             if ($updatedCount > 0) {
                 $this->setMessage(Text::plural('COM_J2COMMERCE_N_ORDERS_STATUS_UPDATED', $updatedCount));
+            }
+
+            if (!empty($missingTemplateIds)) {
+                $this->app->enqueueMessage(
+                    Text::sprintf(
+                        'COM_J2COMMERCE_ORDERS_STATUS_UPDATED_NO_CUSTOMER_EMAIL',
+                        implode(', ', $missingTemplateIds)
+                    ),
+                    'warning'
+                );
             }
         } catch (\Exception $e) {
             $this->app->enqueueMessage($e->getMessage(), 'warning');
@@ -174,16 +203,35 @@ class OrdersController extends AdminController
 
             $model = $this->getModel();
 
-            if (!$model->updateOrderStatus($orderId, $newStatus, $notify)) {
+            if (!$model->updateOrderStatus($orderId, $newStatus, false)) {
                 $errors = $model->getErrors();
                 throw new \Exception(implode("\n", $errors));
             }
 
             $statusInfo = $this->getStatusInfo($newStatus);
-            $response   = [
-                'success' => true,
-                'message' => Text::sprintf('COM_J2COMMERCE_ORDER_STATUS_UPDATED_TO', Text::_($statusInfo->orderstatus_name ?? '')),
-                'data'    => [
+            $message    = Text::sprintf('COM_J2COMMERCE_ORDER_STATUS_UPDATED_TO', Text::_($statusInfo->orderstatus_name ?? ''));
+            $messageType = 'success';
+
+            if ($notify) {
+                $order        = $model->getItem($orderId);
+                $notifyResult = $order && !empty($order->order_id)
+                    ? $model->sendOrderNotification($order->order_id, true, true)
+                    : ['customer_sent' => 0, 'errors' => []];
+
+                if (($notifyResult['customer_sent'] ?? 0) === 0) {
+                    $reason      = !empty($notifyResult['errors'])
+                        ? implode('; ', $notifyResult['errors'])
+                        : Text::_('COM_J2COMMERCE_NO_EMAIL_TEMPLATES_FOUND');
+                    $message     = Text::sprintf('COM_J2COMMERCE_ORDER_STATUS_UPDATED_NO_CUSTOMER_EMAIL', $reason);
+                    $messageType = 'warning';
+                }
+            }
+
+            $response = [
+                'success'     => true,
+                'message'     => $message,
+                'messageType' => $messageType,
+                'data'        => [
                     'statusName' => Text::_($statusInfo->orderstatus_name ?? ''),
                     'cssclass'   => J2htmlHelper::badgeClass($statusInfo->orderstatus_cssclass ?? 'badge text-bg-secondary'),
                 ],

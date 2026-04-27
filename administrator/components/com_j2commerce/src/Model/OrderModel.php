@@ -996,11 +996,11 @@ class OrderModel extends AdminModel
      * @param   bool    $notifyCustomer  Send to customer.
      * @param   bool    $notifyAdmin     Send to admin.
      *
-     * @return  array{sent: int, errors: string[]}
+     * @return  array{sent: int, customer_sent: int, admin_sent: int, errors: string[]}
      */
     public function sendOrderNotification(string $orderId, bool $notifyCustomer = true, bool $notifyAdmin = true): array
     {
-        $result = ['sent' => 0, 'errors' => []];
+        $result = ['sent' => 0, 'customer_sent' => 0, 'admin_sent' => 0, 'errors' => []];
 
         if (empty($orderId)) {
             $result['errors'][] = 'No order ID provided';
@@ -1058,6 +1058,7 @@ class OrderModel extends AdminModel
                         );
                         $emailHelper->logEmailSend($orderId, 'customer', $template->mailer->Subject, array_keys($recipients), true);
                         $result['sent']++;
+                        $result['customer_sent']++;
                     }
                 } catch (\Throwable $e) {
                     $errorMsg           = Text::sprintf('COM_J2COMMERCE_EMAIL_SEND_FAILED', $e->getMessage());
@@ -1098,6 +1099,7 @@ class OrderModel extends AdminModel
                         );
                         $emailHelper->logEmailSend($orderId, 'admin', $template->mailer->Subject, array_keys($recipients), true);
                         $result['sent']++;
+                        $result['admin_sent']++;
                     }
                 } catch (\Throwable $e) {
                     $errorMsg           = Text::sprintf('COM_J2COMMERCE_EMAIL_SEND_FAILED', $e->getMessage());

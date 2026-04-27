@@ -86,8 +86,28 @@ class OrderController extends FormController
 
             $model = $this->getModel();
 
-            if ($model->updateOrderStatus($orderId, $statusId, $notify, $comment)) {
-                $this->setMessage(Text::_('COM_J2COMMERCE_ORDER_STATUS_UPDATED'));
+            if ($model->updateOrderStatus($orderId, $statusId, false, $comment)) {
+                if ($notify) {
+                    $order        = $model->getItem($orderId);
+                    $notifyResult = $order && !empty($order->order_id)
+                        ? $model->sendOrderNotification($order->order_id, true, true)
+                        : ['customer_sent' => 0, 'errors' => []];
+
+                    if (($notifyResult['customer_sent'] ?? 0) === 0) {
+                        $reason = !empty($notifyResult['errors'])
+                            ? implode('; ', $notifyResult['errors'])
+                            : Text::_('COM_J2COMMERCE_NO_EMAIL_TEMPLATES_FOUND');
+
+                        $this->app->enqueueMessage(
+                            Text::sprintf('COM_J2COMMERCE_ORDER_STATUS_UPDATED_NO_CUSTOMER_EMAIL', $reason),
+                            'warning'
+                        );
+                    } else {
+                        $this->setMessage(Text::_('COM_J2COMMERCE_ORDER_STATUS_UPDATED'));
+                    }
+                } else {
+                    $this->setMessage(Text::_('COM_J2COMMERCE_ORDER_STATUS_UPDATED'));
+                }
             } else {
                 $errors = $model->getErrors();
                 throw new \Exception(implode("\n", $errors));
@@ -195,17 +215,36 @@ class OrderController extends FormController
 
             $model = $this->getModel();
 
-            if (!$model->updateOrderStatus($orderId, $statusId, $notify)) {
+            if (!$model->updateOrderStatus($orderId, $statusId, false)) {
                 $errors = $model->getErrors();
                 throw new \Exception(implode("\n", $errors));
+            }
+
+            $message     = Text::_('COM_J2COMMERCE_ORDER_STATUS_UPDATED');
+            $messageType = 'success';
+
+            if ($notify) {
+                $order        = $model->getItem($orderId);
+                $notifyResult = $order && !empty($order->order_id)
+                    ? $model->sendOrderNotification($order->order_id, true, true)
+                    : ['customer_sent' => 0, 'errors' => []];
+
+                if (($notifyResult['customer_sent'] ?? 0) === 0) {
+                    $reason      = !empty($notifyResult['errors'])
+                        ? implode('; ', $notifyResult['errors'])
+                        : Text::_('COM_J2COMMERCE_NO_EMAIL_TEMPLATES_FOUND');
+                    $message     = Text::sprintf('COM_J2COMMERCE_ORDER_STATUS_UPDATED_NO_CUSTOMER_EMAIL', $reason);
+                    $messageType = 'warning';
+                }
             }
 
             $status = $this->getStatusInfo($statusId);
 
             echo json_encode([
-                'success' => true,
-                'message' => Text::_('COM_J2COMMERCE_ORDER_STATUS_UPDATED'),
-                'data'    => [
+                'success'     => true,
+                'message'     => $message,
+                'messageType' => $messageType,
+                'data'        => [
                     'statusName' => Text::_($status->orderstatus_name ?? ''),
                     'cssclass'   => $status->orderstatus_cssclass ?? 'secondary',
                 ],
