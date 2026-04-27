@@ -179,6 +179,18 @@ language/
 !modules/mod_j2commerce_*/language/**
 !administrator/modules/mod_j2commerce_*/language/
 !administrator/modules/mod_j2commerce_*/language/**
+# Re-allow com_j2commerce admin language mirror (install target — bundled by build_package.php, fixes #851)
+# Must negate parents first; then re-ignore unwanted siblings; then re-include the four mirror files.
+!administrator/language/
+administrator/language/*
+!administrator/language/en-US/
+!administrator/language/en-GB/
+administrator/language/en-US/*
+administrator/language/en-GB/*
+!administrator/language/en-US/com_j2commerce.ini
+!administrator/language/en-US/com_j2commerce.sys.ini
+!administrator/language/en-GB/com_j2commerce.ini
+!administrator/language/en-GB/com_j2commerce.sys.ini
 .env
 *.log
 cache/

@@ -63,6 +63,13 @@
             <menu link="option=com_j2commerce&amp;view=analytics" view="analytics">COM_J2COMMERCE_ANALYTICS</menu>
         </submenu>
 
+        <languages folder="administrator/language">
+            <language tag="en-US">en-US/com_j2commerce.ini</language>
+            <language tag="en-US">en-US/com_j2commerce.sys.ini</language>
+            <language tag="en-GB">en-GB/com_j2commerce.ini</language>
+            <language tag="en-GB">en-GB/com_j2commerce.sys.ini</language>
+        </languages>
+
         <files folder="administrator/components/com_j2commerce">
             <filename>access.xml</filename>
             <filename>config.xml</filename>
