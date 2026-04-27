@@ -202,15 +202,46 @@ class OrderTable extends Table
         }
 
         // Add order history entry for status change
+        if ($isNew) {
+            $statusComment = Text::_('COM_J2COMMERCE_ORDER_CREATED');
+        } else {
+            $statusComment = Text::sprintf(
+                'COM_J2COMMERCE_STATUS_CHANGED',
+                $this->resolveStatusName($oldStatusId),
+                $this->resolveStatusName($newStatusId)
+            );
+        }
+
         OrderHistoryHelper::add(
             orderId: $this->order_id,
             orderStateId: $newStatusId,
-            comment: $isNew
-                ? Text::_('COM_J2COMMERCE_ORDER_CREATED')
-                : Text::sprintf('COM_J2COMMERCE_STATUS_CHANGED', (string) $oldStatusId, (string) $newStatusId),
+            comment: $statusComment,
         );
 
         return true;
+    }
+
+    /**
+     * Resolve an order status ID to its translated status name.
+     *
+     * Falls back to the numeric ID when no matching status row is found.
+     */
+    private function resolveStatusName(?int $statusId): string
+    {
+        if (!$statusId) {
+            return (string) ($statusId ?? '');
+        }
+
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('orderstatus_name'))
+            ->from($db->quoteName('#__j2commerce_orderstatuses'))
+            ->where($db->quoteName('j2commerce_orderstatus_id') . ' = :id')
+            ->bind(':id', $statusId, \Joomla\Database\ParameterType::INTEGER);
+        $db->setQuery($query);
+        $name = (string) ($db->loadResult() ?? '');
+
+        return $name !== '' ? Text::_($name) : (string) $statusId;
     }
 
     /**
