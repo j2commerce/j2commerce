@@ -411,7 +411,7 @@ class EmailHelper
 
         // Invoice URL — links to myprofile order view (no token; unauthenticated users get login redirect)
         $orderId           = $order->order_id ?? '';
-        $defaultInvoiceUrl = Route::_('index.php?option=com_j2commerce&view=myprofile&task=orderView&order_id=' . urlencode((string) $orderId), false);
+        $defaultInvoiceUrl = Route::_('index.php?option=com_j2commerce&view=myprofile&layout=order&order_id=' . urlencode((string) $orderId), false);
         $url               = str_replace('&amp;', '&', $defaultInvoiceUrl);
         $url               = str_replace('/administrator', '', $url);
         $url               = ltrim($url, '/');
