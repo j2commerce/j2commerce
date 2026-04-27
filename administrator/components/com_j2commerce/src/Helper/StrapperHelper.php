@@ -17,6 +17,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Event\GenericEvent;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
@@ -397,6 +398,138 @@ class StrapperHelper
         }
         return $filesize . " bytes";
 
+    }
+
+    /**
+     * Render a native Joomla 6 calendar (date) field.
+     *
+     * Delegates to the core `joomla.form.field.calendar` layout, which handles
+     * Web Asset Manager registration, Text::script keys, and the input/button
+     * markup that `media/system/js/fields/calendar.js` auto-initializes.
+     *
+     * @param string                     $name     Form input name
+     * @param string                     $id       DOM id (used by calendar.js to bind the trigger)
+     * @param string                     $value    Initial value (Y-m-d or empty)
+     * @param array|string|Registry|null $params   Option parameters (JSON, array, or Registry)
+     * @param bool                       $required Whether the field is required
+     * @since 6.0.0
+     */
+    public function addDatePicker(
+        string $name,
+        string $id,
+        string $value = '',
+        $params = null,
+        bool $required = false
+    ): string {
+        return $this->renderCalendarField($name, $id, $value, false, $params, $required);
+    }
+
+    /**
+     * Render a native Joomla 6 calendar field with time selector.
+     *
+     * @param string                     $name     Form input name
+     * @param string                     $id       DOM id
+     * @param string                     $value    Initial value (Y-m-d H:i or empty)
+     * @param array|string|Registry|null $params   Option parameters
+     * @param bool                       $required Whether the field is required
+     * @since 6.0.0
+     */
+    public function addDateTimePicker(
+        string $name,
+        string $id,
+        string $value = '',
+        $params = null,
+        bool $required = false
+    ): string {
+        return $this->renderCalendarField($name, $id, $value, true, $params, $required);
+    }
+
+    /**
+     * Shared renderer that builds the displayData array for `joomla.form.field.calendar`.
+     *
+     * @since 6.0.0
+     */
+    protected function renderCalendarField(
+        string $name,
+        string $id,
+        string $value,
+        bool $showTime,
+        $params,
+        bool $required
+    ): string {
+        if ($this->app === null) {
+            return '';
+        }
+
+        $registry = $params instanceof Registry ? $params : new Registry($params);
+
+        $format = (string) $registry->get(
+            'date_format_strftime',
+            $showTime ? '%Y-%m-%d %H:%M' : '%Y-%m-%d'
+        );
+
+        // Joomla calendar treats min/max year as OFFSETS from current year.
+        $minYear = (int) $registry->get('hide_pastdates', 0) === 1 ? 0 : -1900;
+        $maxYear = 200;
+
+        $lang      = $this->app->getLanguage();
+        $calendar  = $lang->getCalendar();
+        $direction = strtolower($this->app->getDocument()->getDirection());
+
+        $helperPath = 'system/fields/calendar-locales/date/gregorian/date-helper.min.js';
+        if ($calendar && is_dir(JPATH_ROOT . '/media/system/js/fields/calendar-locales/date/' . strtolower($calendar))) {
+            $helperPath = 'system/fields/calendar-locales/date/' . strtolower($calendar) . '/date-helper.min.js';
+        }
+
+        $weekend = preg_replace('/[^0-9,]/', '', (string) $lang->getWeekEnd()) ?: '0,6';
+
+        return LayoutHelper::render('joomla.form.field.calendar', [
+            'autocomplete'   => 'off',
+            'autofocus'      => false,
+            'class'          => '',
+            'description'    => '',
+            'disabled'       => false,
+            'group'          => null,
+            'hidden'         => false,
+            'hint'           => '',
+            'id'             => $id,
+            'label'          => '',
+            'labelclass'     => '',
+            'multiple'       => false,
+            'name'           => $name,
+            'onchange'       => '',
+            'onclick'        => '',
+            'pattern'        => '',
+            'readonly'       => false,
+            'repeat'         => false,
+            'required'       => $required,
+            'size'           => 0,
+            'spellcheck'     => false,
+            'validate'       => '',
+            'value'          => $value,
+            'checkedOptions' => [],
+            'hasValue'       => $value !== '',
+            'options'        => [],
+            'dataAttribute'  => '',
+            'dataAttributes' => [],
+            'maxlength'      => 0,
+            'maxLength'      => 45,
+            'format'         => $format,
+            'filter'         => '',
+            'todaybutton'    => 1,
+            'weeknumbers'    => 0,
+            'showtime'       => $showTime ? 1 : 0,
+            'filltable'      => 1,
+            'timeformat'     => 24,
+            'singleheader'   => 0,
+            'helperPath'     => $helperPath,
+            'minYear'        => $minYear,
+            'maxYear'        => $maxYear,
+            'direction'      => $direction,
+            'calendar'       => $calendar,
+            'firstday'       => (int) $lang->getFirstDay(),
+            'weekend'        => explode(',', $weekend),
+        ]);
     }
 
     /**

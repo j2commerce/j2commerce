@@ -213,14 +213,16 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
                 <?php if ($option['required']) : ?>
                 <span class="required">*</span>
                 <?php endif; ?>
-                <b><?php echo $esc(Text::_($option['option_name'])); ?>:</b><br>
-                <input type="text"
-                    name="product_option[<?php echo $optionId; ?>]"
-                    value="<?php echo $esc($option['optionvalue'] ?? ''); ?>"
-                    class="<?php echo $element_date; ?>" />
+                <b><label for="<?php echo $element_date; ?>"><?php echo $esc(Text::_($option['option_name'])); ?>:</label></b><br>
+                <?php echo J2CommerceHelper::strapper()->addDatePicker(
+                    'product_option[' . $optionId . ']',
+                    $element_date,
+                    (string) ($option['optionvalue'] ?? ''),
+                    $option['option_params'],
+                    (bool) $option['required']
+                ); ?>
             </div>
             <br>
-            <?php J2CommerceHelper::strapper()->addDatePicker($element_date, $option['option_params']); ?>
         <?php endif; ?>
 
         <?php if ($option['type'] == 'datetime') : ?>
@@ -230,14 +232,16 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
                 <?php if ($option['required']) : ?>
                 <span class="required">*</span>
                 <?php endif; ?>
-                <b><?php echo $esc(Text::_($option['option_name'])); ?>:</b><br>
-                <input type="text"
-                    name="product_option[<?php echo $optionId; ?>]"
-                    value="<?php echo $esc($option['optionvalue'] ?? ''); ?>"
-                    class="<?php echo $element_datetime; ?>" />
+                <b><label for="<?php echo $element_datetime; ?>"><?php echo $esc(Text::_($option['option_name'])); ?>:</label></b><br>
+                <?php echo J2CommerceHelper::strapper()->addDateTimePicker(
+                    'product_option[' . $optionId . ']',
+                    $element_datetime,
+                    (string) ($option['optionvalue'] ?? ''),
+                    $option['option_params'],
+                    (bool) $option['required']
+                ); ?>
             </div>
             <br>
-            <?php J2CommerceHelper::strapper()->addDateTimePicker($element_datetime, $option['option_params']); ?>
         <?php endif; ?>
 
         <?php if ($option['type'] == 'time') : ?>

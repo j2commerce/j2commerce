@@ -756,8 +756,8 @@ class J2CommerceHelper extends ContentHelper
      * $strapper->addJS();
      * $strapper->addCSS();
      *
-     * // Add date picker to an element
-     * $strapper->addDatePicker('my-date-field', ['date_format' => 'yy-mm-dd']);
+     * // Render a native Joomla 6 calendar (date) field
+     * echo $strapper->addDatePicker('my_date', 'my_date_id', '2026-01-15');
      *
      * // Format file size
      * $formatted = $strapper->sizeFormat(1024000);
