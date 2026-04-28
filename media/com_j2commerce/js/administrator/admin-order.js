@@ -83,6 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         badge.textContent = result.data.statusName || '';
                     }
 
+                    await reloadHistory();
                     flashSuccess(headerSaveBtn);
                 } else {
                     showMessage('error', result.message || 'Error updating status');
