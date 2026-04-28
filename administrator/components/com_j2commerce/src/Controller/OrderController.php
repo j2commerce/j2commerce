@@ -406,8 +406,9 @@ class OrderController extends FormController
             $result     = $model->getOrderHistoryPaginated($order->order_id, $offset, $limit);
             $totalPages = $result['total'] > 0 ? (int) ceil($result['total'] / $limit) : 1;
 
-            $dateFormat = \Joomla\CMS\Component\ComponentHelper::getParams('com_j2commerce')
-                ->get('date_format', 'Y-m-d H:i:s');
+            $componentParams = \Joomla\CMS\Component\ComponentHelper::getParams('com_j2commerce');
+            $dateFormat = $componentParams->get('date_format', 'Y-m-d');
+            $timeFormat = $componentParams->get('time_format', 'H:i:s');
 
             $items        = [];
             $historyItems = $result['items'];
@@ -444,7 +445,7 @@ class OrderController extends FormController
                     'order_state_id'   => (int) ($history->order_state_id ?? 0),
                     'color'            => $color,
                     'date'             => \Joomla\CMS\HTML\HTMLHelper::_('date', $history->created_on, $dateFormat),
-                    'time'             => \Joomla\CMS\HTML\HTMLHelper::_('date', $history->created_on, 'g:i A'),
+                    'time'             => \Joomla\CMS\HTML\HTMLHelper::_('date', $history->created_on, $timeFormat),
                     'comment'          => $comment,
                     'createdBy'        => (int) ($history->created_by ?? 0),
                     'isFirst'          => ($offset === 0 && $i === $firstKey),

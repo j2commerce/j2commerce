@@ -171,7 +171,15 @@
             type="text"
             label="COM_J2COMMERCE_CONFIG_DATE_FORMAT"
             description="COM_J2COMMERCE_CONFIG_DATE_FORMAT_DESC"
-            default="Y-m-d H:i:s"
+            default="Y-m-d"
+        />
+
+        <field
+            name="time_format"
+            type="text"
+            label="COM_J2COMMERCE_CONFIG_TIME_FORMAT"
+            description="COM_J2COMMERCE_CONFIG_TIME_FORMAT_DESC"
+            default="H:i:s"
         />
 
         <field
