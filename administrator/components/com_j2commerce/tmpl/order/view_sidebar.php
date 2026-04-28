@@ -57,8 +57,8 @@ if ($orderInfo) {
                 <div class="col-9">
                     <div class="customer-information-item mb-2">
                         <span class="icon-user me-1 fa-fw" aria-hidden="true"></span>
-                        <?php if ((int) $item->user_id > 0) : ?>
-                            <a href="<?php echo Route::_('index.php?option=com_users&task=user.edit&id=' . (int) $item->user_id); ?>">
+                        <?php if (!empty($item->user_email)) : ?>
+                            <a href="<?php echo Route::_('index.php?option=com_j2commerce&view=customers&filter[search]=' . urlencode($item->user_email)); ?>">
                                 <?php echo $this->escape($customerName ?: $item->user_email); ?>
                             </a>
                         <?php else : ?>
