@@ -141,6 +141,9 @@ $currentUserId = (int) (Factory::getApplication()->getIdentity()?->id ?? 0);
                                         </span>
                                     </h3>
                                 <?php endif; ?>
+                                <?php if ($isAdminNote) : ?>
+                                    <strong><?php echo Text::_('COM_J2COMMERCE_ORDER_NOTE'); ?></strong>
+                                <?php endif; ?>
                                 <?php if (!empty($comment)) : ?>
                                     <p class="card-text text-body-secondary small mb-0"><?php echo $this->escape($comment); ?></p>
                                 <?php endif; ?>

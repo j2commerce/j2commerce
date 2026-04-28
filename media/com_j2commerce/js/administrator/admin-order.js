@@ -409,6 +409,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 ? `<h4 class="card-title small mb-1"><span class="badge rounded-2 px-2 text-bg-${color}">${escHtml(item.orderstatus_name)}</span></h4>`
                 : '';
 
+            const noteLabelHtml = item.isAdminNote
+                ? `<strong>${escHtml(Joomla.Text._('COM_J2COMMERCE_ORDER_NOTE'))}</strong>`
+                : '';
+
             const commentHtml = item.comment
                 ? `<p class="card-text text-body-secondary small mb-0">${escHtml(item.comment)}</p>`
                 : '';
@@ -441,6 +445,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 ${deleteBtn}
                             </div>
                             ${statusHtml}
+                            ${noteLabelHtml}
                             ${commentHtml}
                         </div>
                     </div>

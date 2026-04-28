@@ -133,6 +133,7 @@ class HtmlView extends BaseHtmlView
             );
             Text::script('JACTION_DELETE');
             Text::script('COM_J2COMMERCE_ORDER_HISTORY_ROW_ICONS_LABEL');
+            Text::script('COM_J2COMMERCE_ORDER_NOTE');
         }
 
         $this->addToolbar($layout);
