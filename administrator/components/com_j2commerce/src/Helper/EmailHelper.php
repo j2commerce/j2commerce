@@ -1001,7 +1001,7 @@ class EmailHelper
         if (!empty($customerGroup)) {
             $groupIds = array_values(array_filter(
                 array_map('intval', explode(',', $customerGroup)),
-                fn($id) => $id > 0
+                fn ($id) => $id > 0
             ));
 
             if (!empty($groupIds)) {

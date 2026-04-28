@@ -453,7 +453,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
         $nvp = $this->getPayPalNvp();
 
         if (!$nvp->isConfigured()) {
-            $this->log(sprintf(
+            $this->log(\sprintf(
                 'onAfterSubscriptionCanceled: sub=%d has BAID=%s but NVP credentials not configured — manual cancellation required at PayPal',
                 $subscriptionId,
                 $baid
@@ -471,7 +471,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             $response = $nvp->billAgreementUpdate($baid, 'Cancel', $reason);
             $ok       = PayPalNvpClient::isSuccess($response);
 
-            $this->log(sprintf(
+            $this->log(\sprintf(
                 'onAfterSubscriptionCanceled: sub=%d nvp_baid=%s remote_cancel=%s',
                 $subscriptionId,
                 $baid,
@@ -501,7 +501,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
     {
         try {
             $ok = $this->getPayPalSubscriptions()->cancelSubscription($paypalSubId, $reason);
-            $this->log(sprintf(
+            $this->log(\sprintf(
                 'onAfterSubscriptionCanceled: sub=%d paypal=%s remote_cancel=%s',
                 $subscriptionId,
                 $paypalSubId,
@@ -654,7 +654,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             }
         }
 
-        $this->log(sprintf(
+        $this->log(\sprintf(
             'linkMetakeyToOrder: wrote %s=%s on %d local sub(s)',
             $metakey,
             $metavalue,
@@ -729,8 +729,8 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
 
             if (!PayPalNvpClient::isSuccess($response)) {
                 return [
-                    'success'         => false,
-                    'error'           => PayPalNvpClient::getErrorMessage($response),
+                    'success'          => false,
+                    'error'            => PayPalNvpClient::getErrorMessage($response),
                     'gateway_response' => $response,
                 ];
             }
@@ -747,7 +747,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 $details = [];
             }
 
-            $details['nvp_express_token'] = $token;
+            $details['nvp_express_token']  = $token;
             $details['mode']               = 'nvp_express';
             $details['created_at']         = date('Y-m-d H:i:s');
 
@@ -756,7 +756,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
 
             $approveUrl = $nvp->getApprovalUrl($token);
 
-            $this->log(sprintf(
+            $this->log(\sprintf(
                 'createNvpExpressCheckoutForOrder: order=%s token=%s approve=%s',
                 $orderId,
                 $token,
@@ -819,8 +819,8 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
 
             if (!PayPalNvpClient::isSuccess($response)) {
                 return [
-                    'success'         => false,
-                    'error'           => PayPalNvpClient::getErrorMessage($response),
+                    'success'          => false,
+                    'error'            => PayPalNvpClient::getErrorMessage($response),
                     'gateway_response' => $response,
                 ];
             }
@@ -831,19 +831,19 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             if ($baid === '') {
                 $this->log('completeNvpExpressCheckoutForOrder: NO BAID returned in DoExpressCheckoutPayment response', Log::ERROR);
                 return [
-                    'success' => false,
-                    'error'   => 'PayPal did not return a BILLINGAGREEMENTID. Subscription will not be able to renew.',
+                    'success'          => false,
+                    'error'            => 'PayPal did not return a BILLINGAGREEMENTID. Subscription will not be able to renew.',
                     'gateway_response' => $response,
                 ];
             }
 
             $confirmedStateId = (int) $this->params->get('payment_status', 1);
 
-            $details = json_decode((string) ($orderTable->transaction_details ?? '{}'), true) ?: [];
-            $details['billing_agreement_id'] = $baid;
-            $details['transaction_id']       = $transId;
+            $details                          = json_decode((string) ($orderTable->transaction_details ?? '{}'), true) ?: [];
+            $details['billing_agreement_id']  = $baid;
+            $details['transaction_id']        = $transId;
             $details['mode']                  = 'nvp_express';
-            $details['completed_at']         = date('Y-m-d H:i:s');
+            $details['completed_at']          = date('Y-m-d H:i:s');
 
             $orderTable->orderpayment_type   = $this->_name;
             $orderTable->order_state_id      = $confirmedStateId;
@@ -861,7 +861,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 orderStateId: $confirmedStateId,
             );
 
-            $this->log(sprintf(
+            $this->log(\sprintf(
                 'completeNvpExpressCheckoutForOrder: order=%s baid=%s transId=%s',
                 $orderIdString,
                 $baid,
@@ -1007,7 +1007,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 return;
             }
 
-            $orderTable->transaction_id     = $transactionId;
+            $orderTable->transaction_id      = $transactionId;
             $orderTable->transaction_status  = 'Completed';
             $orderTable->orderpayment_type   = $this->_name;
             $orderTable->order_state_id      = (int) $this->params->get('payment_status', 1);
@@ -1212,7 +1212,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             }
         }
 
-        $this->log(sprintf(
+        $this->log(\sprintf(
             'linkPayPalSubscriptionToOrder: linked PayPal sub %s to %d local sub(s)',
             $paypalSubId,
             \count($localSubs)
@@ -1490,7 +1490,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             $orderTable->transaction_details = json_encode($details);
             $orderTable->store();
 
-            $this->log(sprintf(
+            $this->log(\sprintf(
                 'createPayPalSubscriptionForOrder: order=%s paypal_sub=%s plan=%s product=%s',
                 $orderId,
                 $created['id'],
@@ -1585,7 +1585,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 orderStateId: $confirmedStateId,
             );
 
-            $this->log(sprintf(
+            $this->log(\sprintf(
                 'finalizePayPalSubscriptionApproval: order=%s paypal_sub=%s status=%s',
                 $orderIdString,
                 $paypalSubscriptionId,
@@ -2228,11 +2228,11 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
         }
 
         return [
-            'ok'      => false,
-            'status'  => $status,
-            'error'   => 'Credentials test failed — HTTP ' . $status,
-            'detail'  => $response['body'] ?? null,
-            'hint'    => 'Verify sandbox_client_id and sandbox_secret in plugin params; sandbox account must have Subscriptions enabled.',
+            'ok'     => false,
+            'status' => $status,
+            'error'  => 'Credentials test failed — HTTP ' . $status,
+            'detail' => $response['body'] ?? null,
+            'hint'   => 'Verify sandbox_client_id and sandbox_secret in plugin params; sandbox account must have Subscriptions enabled.',
         ];
     }
 
@@ -2276,7 +2276,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
         $planId    = $subs->createBillingPlan($fakeSubscription, $fakeOrder, $context);
 
         $returnUrl = Factory::getApplication()->get('live_site') ?: rtrim(\Joomla\CMS\Uri\Uri::root(), '/');
-        $context  += [
+        $context += [
             'subscriber_given_name' => 'Sandbox',
             'subscriber_surname'    => 'Tester',
             'subscriber_email'      => 'sandbox-tester@example.com',
@@ -2394,8 +2394,8 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
 
         $client = new PayPalNvpClient(
             apiUsername:  $useLive ? $liveUser : $sandboxUser,
-            apiPassword:  $useLive ? $livePwd  : $sandboxPwd,
-            apiSignature: $useLive ? $liveSig  : $sandboxSig,
+            apiPassword:  $useLive ? $livePwd : $sandboxPwd,
+            apiSignature: $useLive ? $liveSig : $sandboxSig,
             sandbox:      !$useLive,
             debug:        (bool) (int) $this->params->get('debug', 0),
             logger:       \Closure::fromCallable($logger)
@@ -2413,12 +2413,12 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
 
         if (\in_array($code, $authFailureCodes, true)) {
             return [
-                'ok'                => false,
-                'used_credentials'  => $useLive ? 'live' : 'sandbox',
-                'tested_endpoint'   => $endpoint,
-                'error'             => 'NVP authentication failed: [' . $code . '] ' . $short,
-                'gateway_response'  => $response,
-                'hint'              => 'Verify ' . ($useLive ? 'live' : 'sandbox') . ' api_username, api_password, and api_signature match your PayPal account exactly. They are case-sensitive and have no surrounding whitespace.',
+                'ok'               => false,
+                'used_credentials' => $useLive ? 'live' : 'sandbox',
+                'tested_endpoint'  => $endpoint,
+                'error'            => 'NVP authentication failed: [' . $code . '] ' . $short,
+                'gateway_response' => $response,
+                'hint'             => 'Verify ' . ($useLive ? 'live' : 'sandbox') . ' api_username, api_password, and api_signature match your PayPal account exactly. They are case-sensitive and have no surrounding whitespace.',
             ];
         }
 
@@ -2431,12 +2431,12 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
         }
 
         return [
-            'ok'                => true,
-            'used_credentials'  => $useLive ? 'live' : 'sandbox',
-            'tested_endpoint'   => $endpoint,
-            'message'           => $message,
-            'gateway_response'  => $response,
-            'note'              => 'Now ready to renew migrated J2Store subscriptions with billing_agreement_id metakey via the renewal cron.'
+            'ok'               => true,
+            'used_credentials' => $useLive ? 'live' : 'sandbox',
+            'tested_endpoint'  => $endpoint,
+            'message'          => $message,
+            'gateway_response' => $response,
+            'note'             => 'Now ready to renew migrated J2Store subscriptions with billing_agreement_id metakey via the renewal cron.'
                 . ($useLive ? ' Note: live NVP creds will be used for ALL renewals (sandbox toggle in plugin params controls REST sandbox/live, NOT NVP — NVP routes by which credential set is configured).' : ''),
         ];
     }

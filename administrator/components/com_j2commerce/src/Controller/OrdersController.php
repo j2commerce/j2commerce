@@ -208,8 +208,8 @@ class OrdersController extends AdminController
                 throw new \Exception(implode("\n", $errors));
             }
 
-            $statusInfo = $this->getStatusInfo($newStatus);
-            $message    = Text::sprintf('COM_J2COMMERCE_ORDER_STATUS_UPDATED_TO', Text::_($statusInfo->orderstatus_name ?? ''));
+            $statusInfo  = $this->getStatusInfo($newStatus);
+            $message     = Text::sprintf('COM_J2COMMERCE_ORDER_STATUS_UPDATED_TO', Text::_($statusInfo->orderstatus_name ?? ''));
             $messageType = 'success';
 
             if ($notify) {

@@ -16,7 +16,6 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\Database\DatabaseInterface;
-use Joomla\Database\ParameterType;
 use Joomla\Event\Event;
 use Joomla\Registry\Registry;
 

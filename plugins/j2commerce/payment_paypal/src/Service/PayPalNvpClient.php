@@ -117,9 +117,9 @@ final class PayPalNvpClient
     public function billAgreementUpdate(string $referenceId, string $action = 'Cancel', string $note = ''): array
     {
         $fields = [
-            'METHOD'                  => 'BillAgreementUpdate',
-            'REFERENCEID'             => $referenceId,
-            'BILLINGAGREEMENTSTATUS'  => $action === 'Cancel' ? 'Canceled' : 'Active',
+            'METHOD'                 => 'BillAgreementUpdate',
+            'REFERENCEID'            => $referenceId,
+            'BILLINGAGREEMENTSTATUS' => $action === 'Cancel' ? 'Canceled' : 'Active',
         ];
 
         if ($note !== '') {
@@ -165,16 +165,16 @@ final class PayPalNvpClient
         array $items = []
     ): array {
         $fields = [
-            'METHOD'                                       => 'SetExpressCheckout',
-            'PAYMENTREQUEST_0_PAYMENTACTION'               => 'Sale',
-            'PAYMENTREQUEST_0_AMT'                         => number_format($amount, 2, '.', ''),
-            'PAYMENTREQUEST_0_CURRENCYCODE'                => $currencyCode,
-            'RETURNURL'                                    => $returnUrl,
-            'CANCELURL'                                    => $cancelUrl,
-            'L_BILLINGTYPE0'                               => 'MerchantInitiatedBillingSingleAgreement',
-            'L_BILLINGAGREEMENTDESCRIPTION0'               => substr(strip_tags($billingDescription), 0, 127),
-            'NOSHIPPING'                                   => '1',
-            'ALLOWNOTE'                                    => '0',
+            'METHOD'                         => 'SetExpressCheckout',
+            'PAYMENTREQUEST_0_PAYMENTACTION' => 'Sale',
+            'PAYMENTREQUEST_0_AMT'           => number_format($amount, 2, '.', ''),
+            'PAYMENTREQUEST_0_CURRENCYCODE'  => $currencyCode,
+            'RETURNURL'                      => $returnUrl,
+            'CANCELURL'                      => $cancelUrl,
+            'L_BILLINGTYPE0'                 => 'MerchantInitiatedBillingSingleAgreement',
+            'L_BILLINGAGREEMENTDESCRIPTION0' => substr(strip_tags($billingDescription), 0, 127),
+            'NOSHIPPING'                     => '1',
+            'ALLOWNOTE'                      => '0',
         ];
 
         if ($invoiceNumber !== '') {
@@ -185,7 +185,7 @@ final class PayPalNvpClient
             $fields['PAYMENTREQUEST_0_CUSTOM'] = substr($custom, 0, 255);
         }
 
-        $i = 0;
+        $i         = 0;
         $itemTotal = 0.0;
 
         foreach ($items as $item) {
@@ -242,13 +242,13 @@ final class PayPalNvpClient
         string $custom = ''
     ): array {
         $fields = [
-            'METHOD'                          => 'DoExpressCheckoutPayment',
-            'TOKEN'                           => $token,
-            'PAYERID'                         => $payerId,
-            'PAYMENTREQUEST_0_PAYMENTACTION'  => 'Sale',
-            'PAYMENTREQUEST_0_AMT'            => number_format($amount, 2, '.', ''),
-            'PAYMENTREQUEST_0_CURRENCYCODE'   => $currencyCode,
-            'PAYMENTREQUEST_0_ITEMAMT'        => number_format($amount, 2, '.', ''),
+            'METHOD'                         => 'DoExpressCheckoutPayment',
+            'TOKEN'                          => $token,
+            'PAYERID'                        => $payerId,
+            'PAYMENTREQUEST_0_PAYMENTACTION' => 'Sale',
+            'PAYMENTREQUEST_0_AMT'           => number_format($amount, 2, '.', ''),
+            'PAYMENTREQUEST_0_CURRENCYCODE'  => $currencyCode,
+            'PAYMENTREQUEST_0_ITEMAMT'       => number_format($amount, 2, '.', ''),
         ];
 
         if ($invoiceNumber !== '') {
@@ -340,7 +340,7 @@ final class PayPalNvpClient
         parse_str((string) $rawResponse, $parsed);
 
         if ($this->debug) {
-            $this->log(sprintf(
+            $this->log(\sprintf(
                 'NVP response: ACK=%s ERR=%s SHORT=%s',
                 $parsed['ACK'] ?? '?',
                 $parsed['L_ERRORCODE0'] ?? '',

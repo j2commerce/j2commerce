@@ -1402,10 +1402,10 @@ class CartOrder
             'customer_group'        => $userId > 0
                 ? implode(',', Access::getGroupsByUser($userId, false))
                 : (string) (int) ComponentHelper::getParams('com_users')->get('guest_usergroup', 1),
-            'ip_address'            => $app->input->server->getString('REMOTE_ADDR', ''),
-            'order_state_id'        => 5, // Incomplete
-            'created_by'            => $userId,
-            'modified_by'           => $userId,
+            'ip_address'     => $app->input->server->getString('REMOTE_ADDR', ''),
+            'order_state_id' => 5, // Incomplete
+            'created_by'     => $userId,
+            'modified_by'    => $userId,
         ];
 
         if (!$orderTable->bind($orderData) || !$orderTable->check() || !$orderTable->store()) {
