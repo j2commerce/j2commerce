@@ -20,6 +20,7 @@ use Joomla\CMS\Language\Text;
 $item = $this->item;
 $orderHistory = $item->orderhistory ?? [];
 $dateFormat = $this->dateFormat;
+$timeFormat = $this->timeFormat;
 
 $listLimit = (int) Factory::getApplication()->get('list_limit', 20);
 $totalItems = count($orderHistory);
@@ -126,7 +127,7 @@ $currentUserId = (int) (Factory::getApplication()->getIdentity()?->id ?? 0);
                             <div class="card-body">
                                 <div class="float-end text-end text-body-secondary small fw-bold">
                                     <div><?php echo HTMLHelper::_('date', $history->created_on, $dateFormat); ?></div>
-                                    <div class="fw-normal"><?php echo HTMLHelper::_('date', $history->created_on, 'g:i A'); ?></div>
+                                    <div class="fw-normal"><?php echo HTMLHelper::_('date', $history->created_on, $timeFormat); ?></div>
                                     <?php if ($isAdminNote && (int) ($history->created_by ?? 0) === $currentUserId) : ?>
                                         <button type="button" class="btn btn-sm btn-link text-danger p-0 mt-0 j2c-delete-note" data-history-id="<?php echo (int) $history->j2commerce_orderhistory_id; ?>" title="<?php echo Text::_('JACTION_DELETE'); ?>">
                                             <span class="icon-trash small" aria-hidden="true"></span>

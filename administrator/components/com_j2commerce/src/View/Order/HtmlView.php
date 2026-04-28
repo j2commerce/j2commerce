@@ -36,7 +36,8 @@ class HtmlView extends BaseHtmlView
     protected $item;
     protected $state;
     protected array $orderStatuses   = [];
-    protected string $dateFormat     = 'Y-m-d H:i:s';
+    protected string $dateFormat     = 'Y-m-d';
+    protected string $timeFormat     = 'H:i:s';
     protected int $customerDays      = 0;
     protected int $totalSales        = 0;
     protected string $currencySymbol = '';
@@ -61,7 +62,8 @@ class HtmlView extends BaseHtmlView
         $this->orderStatuses = $this->getOrderStatuses();
         $this->params        = ComponentHelper::getParams('com_j2commerce');
 
-        $this->dateFormat = $this->params->get('date_format', 'Y-m-d H:i:s');
+        $this->dateFormat = $this->params->get('date_format', 'Y-m-d');
+        $this->timeFormat = $this->params->get('time_format', 'H:i:s');
 
         // Currency formatting
         $this->currencyCode   = $this->item->currency_code ?? '';
