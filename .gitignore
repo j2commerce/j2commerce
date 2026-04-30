@@ -480,3 +480,10 @@ plugins/j2commerce/app_uikit/tmpl/tag_uikit/view_variablesubscriptionproduct.php
 plugins/j2commerce/app_uikit/tmpl/tag_uikit/view_variablesubscriptionproductoptions.php
 # Added by code-review-graph
 .code-review-graph/
+
+# ===========================================================================
+# Migrator package files belong in the j2commerce6extensions repo, not core
+# ===========================================================================
+build/build_pkg_j2commercemigrator.php
+build/script.pkg_j2commercemigrator.php
+build/language/*/pkg_j2commercemigrator.sys.ini
