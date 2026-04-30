@@ -117,6 +117,8 @@
             <option value="">JGLOBAL_SORT_BY</option>
             <option value="a.order_id ASC">COM_J2COMMERCE_HEADING_ORDER_ID_ASC</option>
             <option value="a.order_id DESC">COM_J2COMMERCE_HEADING_ORDER_ID_DESC</option>
+            <option value="invoice ASC">COM_J2COMMERCE_HEADING_INVOICE_ASC</option>
+            <option value="invoice DESC">COM_J2COMMERCE_HEADING_INVOICE_DESC</option>
             <option value="a.created_on ASC">COM_J2COMMERCE_HEADING_DATE_ASC</option>
             <option value="a.created_on DESC">COM_J2COMMERCE_HEADING_DATE_DESC</option>
             <option value="oi.billing_last_name ASC">COM_J2COMMERCE_HEADING_CUSTOMER_ASC</option>

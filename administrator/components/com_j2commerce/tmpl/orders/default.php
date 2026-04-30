@@ -65,7 +65,7 @@ $dateFormat = ComponentHelper::getParams('com_j2commerce')->get('date_format', '
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_ORDER', 'a.order_id', $listDirn, $listOrder); ?>
                                 </th>
                                 <th scope="col" class="d-none d-md-table-cell">
-                                    <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_INVOICE', 'a.j2commerce_order_id', $listDirn, $listOrder); ?>
+                                    <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_INVOICE', 'invoice', $listDirn, $listOrder); ?>
                                 </th>
                                 <th scope="col" class="d-none d-lg-table-cell">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_DATE', 'a.created_on', $listDirn, $listOrder); ?>
