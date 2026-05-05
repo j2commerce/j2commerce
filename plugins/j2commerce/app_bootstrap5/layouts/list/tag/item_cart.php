@@ -70,7 +70,7 @@ $afterCart = J2CommerceHelper::plugin()->eventWithHtml(
             </div>
 
             <div id="add-to-cart-<?php echo $productId; ?>" class="j2commerce-add-to-cart">
-                <?php echo $productHelper->displayQuantity('com_j2commerce.productlist', $product, $params, ['class' => 'input-mini form-control']); ?>
+                <?php echo $productHelper->displayQuantity('com_j2commerce.productlist.bootstrap5', $product, $params, ['class' => 'input-mini form-control']); ?>
 
                 <input type="hidden" name="product_id" value="<?php echo $productId; ?>" />
 

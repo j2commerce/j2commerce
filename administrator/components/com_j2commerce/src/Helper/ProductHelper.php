@@ -17,6 +17,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Uri\Uri;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
@@ -3678,66 +3679,92 @@ class ProductHelper
      */
     public function displayQuantity(string $context, object $product, ?object $params = null, array $options = []): string
     {
-        $inputClass = $options['class'] ?? $options['input_class'] ?? 'j2commerce-qty-input form-control';
-        $iconMinus  = $options['icon-minus'] ?? 'icon-minus fs-sm';
-        $iconPlus   = $options['icon-plus'] ?? 'icon-plus fs-sm';
-        $minQty     = (int) ($product->min_sale_qty ?? 1);
-        $maxQty     = (int) ($product->max_sale_qty ?? 0);
-        $isCart     = str_contains($context, 'cart');
+        $inputClass  = $options['class'] ?? $options['input_class'] ?? 'j2commerce-qty-input form-control';
+        $minQty      = (int) ($product->min_sale_qty ?? 1);
+        $maxQty      = (int) ($product->max_sale_qty ?? 0);
+        $isCart      = str_contains($context, 'cart');
+        $showButtons = $options['show_buttons'] ?? true;
+        $minVal      = $minQty > 0 ? $minQty : 1;
 
         if ($isCart) {
             $currentQty = (int) ($product->orderitem_quantity ?? $product->product_qty ?? 1);
             $defaultQty = $currentQty > 0 ? $currentQty : 1;
             $inputName  = 'qty[' . ($product->cartitem_id ?? $product->j2commerce_cartitem_id ?? 0) . ']';
         } else {
-            $defaultQty = $minQty > 0 ? $minQty : 1;
+            $defaultQty = $minVal;
             $inputName  = 'product_qty';
         }
 
-        $minVal = $minQty > 0 ? $minQty : 1;
-
-        $showButtons = $options['show_buttons'] ?? true;
-
-        // Build the input element
-        $inputType = $showButtons && !$isCart ? 'text' : 'number';
-        $input     = '<input type="' . $inputType . '"';
-        $input .= ' name="' . htmlspecialchars($inputName, ENT_QUOTES, 'UTF-8') . '"';
-        $input .= ' value="' . $defaultQty . '"';
-        $input .= ' min="' . $minVal . '"';
-        if ($showButtons && !$isCart) {
-            $input .= ' pattern="[0-9]*"';
-            $input .= ' inputmode="numeric"';
-        }
-        if ($maxQty > 0) {
-            $input .= ' max="' . $maxQty . '"';
-        }
-        $input .= ' step="1"';
-        if ($showButtons) {
-            $input .= ' readonly';
-        }
-        $input .= ' class="' . htmlspecialchars($inputClass, ENT_QUOTES, 'UTF-8') . '"';
-        $input .= ' aria-label="' . htmlspecialchars(Text::_('COM_J2COMMERCE_QUANTITY'), ENT_QUOTES, 'UTF-8') . '"';
-        $input .= ' />';
-
-        if ($isCart || !$showButtons) {
-            return $input;
-        }
-
-        // Wrap with increment/decrement buttons
+        $inputType         = $showButtons && !$isCart ? 'text' : 'number';
         $decrementDisabled = $defaultQty <= $minVal ? ' disabled' : '';
         $incrementDisabled = $maxQty > 0 && $defaultQty >= $maxQty ? ' disabled' : '';
 
-        $html  = '<div class="count-input flex-shrink-0">';
-        $html .= '<button type="button" class="btn btn-icon btn-lg" data-decrement aria-label="' . Text::_('COM_J2COMMERCE_DECREASE_QUANTITY') . '"' . $decrementDisabled . '>';
-        $html .= '<span class="' . htmlspecialchars($iconMinus, ENT_QUOTES, 'UTF-8') . '"></span>';
-        $html .= '</button>';
-        $html .= $input;
-        $html .= '<button type="button" class="btn btn-icon btn-lg" data-increment aria-label="' . Text::_('COM_J2COMMERCE_INCREASE_QUANTITY') . '"' . $incrementDisabled . '>';
-        $html .= '<span class="' . htmlspecialchars($iconPlus, ENT_QUOTES, 'UTF-8') . '"></span>';
-        $html .= '</button>';
-        $html .= '</div>';
+        // Resolve icon set (5-step: explicit classes → explicit set → context suffix → class sniff → default)
+        if (isset($options['icon-minus']) || isset($options['icon-plus'])) {
+            $iconSet   = 'custom';
+            $iconMinus = $options['icon-minus'] ?? 'fa-solid fa-minus';
+            $iconPlus  = $options['icon-plus']  ?? 'fa-solid fa-plus';
+        } else {
+            $iconSet = $this->resolveIconSet($context, $inputClass, $options['iconSet'] ?? null);
+            [$iconMinus, $iconPlus] = $this->iconClasses($iconSet);
+        }
 
-        return $html;
+        $displayData = [
+            'context'           => $context,
+            'product'           => $product,
+            'inputName'         => $inputName,
+            'inputClass'        => $inputClass,
+            'inputType'         => $inputType,
+            'defaultQty'        => $defaultQty,
+            'minQty'            => $minVal,
+            'maxQty'            => $maxQty,
+            'isCart'            => $isCart,
+            'showButtons'       => $showButtons,
+            'iconSet'           => $iconSet,
+            'iconMinus'         => $iconMinus,
+            'iconPlus'          => $iconPlus,
+            'decrementDisabled' => $decrementDisabled,
+            'incrementDisabled' => $incrementDisabled,
+        ];
+
+        return LayoutHelper::render('product.quantity', $displayData, null, ['component' => 'com_j2commerce']);
+    }
+
+    /** Resolve which icon set to use for quantity controls. */
+    private function resolveIconSet(string $context, string $inputClass, ?string $explicit): string
+    {
+        if ($explicit !== null) {
+            return $explicit;
+        }
+
+        // Context suffix hint: last segment after final dot
+        $segments = explode('.', $context);
+        $suffix   = strtolower(end($segments));
+
+        if ($suffix === 'uikit') {
+            return 'uikit';
+        }
+
+        if ($suffix === 'bootstrap5') {
+            return 'fontawesome';
+        }
+
+        // Class-string sniff: any uk-* token → uikit
+        if (preg_match('/\buk-\w+/', $inputClass)) {
+            return 'uikit';
+        }
+
+        return 'fontawesome';
+    }
+
+    /** Return [minus-class, plus-class] for the given icon set. */
+    private function iconClasses(string $iconSet): array
+    {
+        return match ($iconSet) {
+            'uikit'   => ['', ''],
+            'icomoon' => ['icon-minus fs-sm', 'icon-plus fs-sm'],
+            default   => ['fa-solid fa-minus', 'fa-solid fa-plus'],
+        };
     }
 
     /**
