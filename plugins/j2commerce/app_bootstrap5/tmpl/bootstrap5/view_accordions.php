@@ -28,7 +28,7 @@ if ($wa->assetExists('script', 'bootstrap.esm')) {
     $deps[] = 'bootstrap.bundle';
 }
 
-$wa->registerAndUseScript('bootstrap.collapse',Uri::base().'media/com_j2commerce/js/site/vendor/bootstrap/collapse.min.js',[],['type' => 'module'],$deps);
+$wa->registerAndUseScript('bootstrap.collapse',Uri::base().'media/com_j2commerce/vendor/bootstrap/collapse.min.js',[],['type' => 'module'],$deps);
 HTMLHelper::_('bootstrap.collapse', '.accordion-button', []);
 $hasShortDesc = $this->params->get('item_show_sdesc', 1) && !empty(trim(strip_tags($this->product->product_short_desc ?? '')));
 $hasLongDesc  = $this->params->get('item_show_ldesc', 1) && !empty(trim(strip_tags($this->product->product_long_desc ?? '')));
