@@ -634,22 +634,22 @@ $innerCount = count($innerZips);
 $extTotal = 1 + 1 + $pluginZipCount + count($adminModules) + count($siteModules); // component + library + plugins + modules
 
 echo "\n╔══════════════════════════════════════════════════════════════╗\n";
-echo "║                  PACKAGE BUILD SUMMARY                      ║\n";
+echo "║                  PACKAGE BUILD SUMMARY                       ║\n";
 echo "╠══════════════════════════════════════════════════════════════╣\n";
-printf("║  Package Type:    %-40s ║\n", "type=\"package\" (Joomla native)");
-printf("║  Build Number:    %-40s ║\n", $buildNum);
-printf("║  Version:         %-40s ║\n", $version);
-printf("║  Extensions:      %-40s ║\n", $extTotal . " (1 component + 1 library + " . $pluginZipCount . " plugins + " . (count($adminModules) + count($siteModules)) . " modules)");
-printf("║  Inner ZIPs:      %-40s ║\n", $innerCount);
-printf("║  Total Size:      %-40s ║\n", formatSize($totalSize));
-printf("║  Output:          %-40s ║\n", $finalZipName);
+printf("║  Package Type:     %-40s  ║\n", "type=\"package\" (Joomla native)");
+printf("║  Build Number:     %-40s  ║\n", $buildNum);
+printf("║  Version:          %-40s  ║\n", $version);
+printf("║  Extensions:       %-40s  ║\n", $extTotal . " (1 component + 1 library + " . $pluginZipCount . " plugins + " . (count($adminModules) + count($siteModules)) . " modules)");
+printf("║  Inner ZIPs:       %-40s  ║\n", $innerCount);
+printf("║  Total Size:       %-40s  ║\n", formatSize($totalSize));
+printf("║  Output:           %-40s  ║\n", $finalZipName);
 echo "╠══════════════════════════════════════════════════════════════╣\n";
-echo "║  Inner ZIP Breakdown:                                       ║\n";
-printf("║    %-42s %10s ║\n", "Component (com_j2commerce.zip)", "1");
-printf("║    %-42s %10s ║\n", "Library (lib_j2commerce.zip)", "1");
-printf("║    %-42s %10s ║\n", "Plugin ZIPs", $pluginZipCount);
-printf("║    %-42s %10s ║\n", "Admin module ZIPs", count($adminModules));
-printf("║    %-42s %10s ║\n", "Site module ZIPs", count($siteModules));
+echo "║  Inner ZIP Breakdown:                                        ║\n";
+printf("║    %-42s %10s     ║\n", "Component (com_j2commerce.zip)", "1");
+printf("║    %-42s %10s     ║\n", "Library (lib_j2commerce.zip)", "1");
+printf("║    %-42s %10s     ║\n", "Plugin ZIPs", $pluginZipCount);
+printf("║    %-42s %10s     ║\n", "Admin module ZIPs", count($adminModules));
+printf("║    %-42s %10s     ║\n", "Site module ZIPs", count($siteModules));
 echo "╚══════════════════════════════════════════════════════════════╝\n";
 
 // Clean up temp directory
