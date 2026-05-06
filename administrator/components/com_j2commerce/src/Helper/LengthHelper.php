@@ -440,7 +440,7 @@ class LengthHelper
      *
      * @since   6.0.0
      */
-    public static function formatValue(mixed $value, string $unit = '', ?int $lengthClassId = null): string
+    public static function formatValue(mixed $value, ?string $unit = '', ?int $lengthClassId = null): string
     {
         $floatValue = (float) $value;
         $decimals   = self::getDecimalPlaces($lengthClassId);
@@ -467,7 +467,7 @@ class LengthHelper
      *
      * @since   6.0.0
      */
-    public static function formatDimensions(mixed $length, mixed $width, mixed $height, string $unit = '', ?int $lengthClassId = null): string
+    public static function formatDimensions(mixed $length, mixed $width, mixed $height, ?string $unit = '', ?int $lengthClassId = null): string
     {
         $formatted = self::formatValue($length, '', $lengthClassId) . ' x ' . self::formatValue($width, '', $lengthClassId) . ' x ' . self::formatValue($height, '', $lengthClassId);
 
