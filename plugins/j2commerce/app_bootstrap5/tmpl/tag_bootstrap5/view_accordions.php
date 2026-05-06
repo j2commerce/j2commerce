@@ -13,23 +13,13 @@ defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Factory;
-use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\Uri\Uri;
 
 /** @var \J2Commerce\Component\J2commerce\Site\View\Product\HtmlView $this */
 
 $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
-$deps = [];
+$wa->useScript('bootstrap.collapse');
 
-if ($wa->assetExists('script', 'bootstrap.esm')) {
-    $deps[] = 'bootstrap.esm';
-} elseif ($wa->assetExists('script', 'bootstrap.bundle')) {
-    $deps[] = 'bootstrap.bundle';
-}
-
-//$wa->registerAndUseScript('bootstrap.collapse',Uri::base().'media/com_j2commerce/js/site/vendor/bootstrap/collapse.min.js',[],['type' => 'module'],$deps);
-HTMLHelper::_('bootstrap.collapse', '.accordion-button', []);
 $hasShortDesc = $this->params->get('item_show_sdesc', 1) && !empty(trim(strip_tags($this->product->product_short_desc ?? '')));
 $hasLongDesc  = $this->params->get('item_show_ldesc', 1) && !empty(trim(strip_tags($this->product->product_long_desc ?? '')));
 $hasDescription = $hasShortDesc || $hasLongDesc;
