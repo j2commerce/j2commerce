@@ -419,7 +419,7 @@ class WeightHelper
      *
      * @since   6.0.0
      */
-    public static function formatValue(mixed $value, string $unit = '', ?int $weightClassId = null): string
+    public static function formatValue(mixed $value, ?string $unit = '', ?int $weightClassId = null): string
     {
         $floatValue = (float) $value;
         $decimals   = self::getDecimalPlaces($weightClassId);
