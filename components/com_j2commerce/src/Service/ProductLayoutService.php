@@ -198,10 +198,7 @@ final class ProductLayoutService
 
     public static function setSubtemplateOverride(string $subtemplate): void
     {
-        // Accept both element names (app_bootstrap5) and short names (bootstrap5)
-        self::$subtemplateOverride = str_starts_with($subtemplate, 'app_')
-            ? $subtemplate
-            : 'app_' . $subtemplate;
+        self::$subtemplateOverride = self::mapSubtemplateToPluginFolder($subtemplate);
     }
 
     public static function clearSubtemplateOverride(): void
@@ -227,13 +224,27 @@ final class ProductLayoutService
             $subtemplate = 'bootstrap5';
         }
 
-        $folder = match ($subtemplate) {
-            'tag_bootstrap5', 'bootstrap5' => 'app_bootstrap5',
-            'uikit'                        => 'app_uikit',
-            default                        => 'app_' . $subtemplate,
-        };
+        $folder = self::mapSubtemplateToPluginFolder($subtemplate);
 
         return $folder;
+    }
+
+    /**
+     * Resolve a subtemplate name to its owning plugin element folder.
+     * Accepts plugin element names (app_bootstrap5), short names (bootstrap5),
+     * and view-scoped aliases (tag_bootstrap5, tag_uikit) the matching plugin handles.
+     */
+    private static function mapSubtemplateToPluginFolder(string $subtemplate): string
+    {
+        if (str_starts_with($subtemplate, 'app_')) {
+            $subtemplate = substr($subtemplate, 4);
+        }
+
+        return match ($subtemplate) {
+            'bootstrap5', 'tag_bootstrap5' => 'app_bootstrap5',
+            'uikit', 'tag_uikit'           => 'app_uikit',
+            default                        => 'app_' . $subtemplate,
+        };
     }
 
     private static function getImageWidth(Registry $params, string $context): int
