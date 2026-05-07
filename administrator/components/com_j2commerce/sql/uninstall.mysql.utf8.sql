@@ -4,7 +4,6 @@
 -- DROP TABLE IF EXISTS `#__j2commerce_addresses`;
 -- DROP TABLE IF EXISTS `#__j2commerce_carts`;
 -- DROP TABLE IF EXISTS `#__j2commerce_cartitems`;
--- DROP TABLE IF EXISTS `#__j2commerce_configurations`;
 -- DROP TABLE IF EXISTS `#__j2commerce_countries`;
 -- DROP TABLE IF EXISTS `#__j2commerce_coupons`;
 -- DROP TABLE IF EXISTS `#__j2commerce_currencies`;

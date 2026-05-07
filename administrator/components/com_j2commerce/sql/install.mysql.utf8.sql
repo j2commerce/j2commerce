@@ -84,17 +84,6 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_cartitems` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
--- Table structure for table `#__j2commerce_configurations`
--- --------------------------------------------------------
-
-CREATE TABLE IF NOT EXISTS `#__j2commerce_configurations` (
-  `config_meta_key` varchar(255) NOT NULL,
-  `config_meta_value` text,
-  `config_meta_default` text DEFAULT NULL,
-  PRIMARY KEY (`config_meta_key`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
 -- Table structure for table `#__j2commerce_countries`
 -- --------------------------------------------------------
 
