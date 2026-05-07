@@ -227,7 +227,8 @@ VALUES
   ('Bahraini Dinar', 'BHD', 'pre', '.د.ب', 3, '.', ',', 1.00000000, 1, 45),
   ('Jordanian Dinar', 'JOD', 'pre', 'د.ا', 3, '.', ',', 1.00000000, 1, 46),
   ('Russian Ruble', 'RUB', 'post', '₽', 2, ',', '.', 1.00000000, 1, 47),
-  ('Taiwanese Dollar', 'TWD', 'pre', 'NT$', 0, '.', ',', 1.00000000, 1, 48);
+  ('Taiwanese Dollar', 'TWD', 'pre', 'NT$', 0, '.', ',', 1.00000000, 1, 48),
+  ('Iranian Rial', 'IRR', 'pre', '﷼', 0, '.', ',', 1.00000000, 1, 49);
 
 -- --------------------------------------------------------
 -- Table structure for table `#__j2commerce_customfields`
