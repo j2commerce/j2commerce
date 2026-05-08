@@ -114,7 +114,17 @@
     box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
 }
 
+/* Fallback for browsers where JS-driven focus in the Tab trap does not
+   always match :focus-visible; keep footer actions visibly focused. */
+#j2commerceCategoryWizardModal .modal-footer .btn:focus,
+#j2commerceCategoryWizardModal #j2c-wizard-create:focus {
+    outline: 2px solid var(--bs-primary, var(--primary, #0d6efd)) !important;
+    outline-offset: 2px !important;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+}
+
 [data-bs-theme="dark"] #j2commerceCategoryWizardModal .modal-footer .btn:focus-visible,
+[data-bs-theme="dark"] #j2commerceCategoryWizardModal .modal-footer .btn:focus,
 [data-bs-theme="dark"] #j2commerceCategoryWizardModal .modal-body .btn:focus-visible,
 [data-bs-theme="dark"] #j2commerceCategoryWizardModal .btn-close:focus-visible,
 [data-bs-theme="dark"] .j2c-wizard-card:has(input[type="radio"]:focus-visible),
