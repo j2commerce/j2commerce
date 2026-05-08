@@ -701,7 +701,7 @@ $e = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
           </div>
 
           <div id="ob-sampledata-prompt" class="d-none">
-            <div class="alert alert-info text-center mb-0">
+            <div class="alert alert-info text-center">
               <p class="mb-2"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_SAMPLEDATA_PROMPT'); ?></p>
               <button type="button" class="btn btn-primary btn-sm me-2" data-action="load-sampledata">
                 <span class="fa-solid fa-database me-1" aria-hidden="true"></span>
