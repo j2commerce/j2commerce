@@ -26,10 +26,17 @@ class SetupGuide {
         this.progressFill = el.querySelector('.setup-progress-fill');
 
         this.inDetail = false;
+        this.lastFocusedCheckId = null;
     }
 
     init() {
         this.offcanvas = bootstrap.Offcanvas.getOrCreateInstance(this.el);
+
+        // Announce async status/detail updates to assistive tech.
+        this.groupsList?.setAttribute('aria-live', 'polite');
+        this.groupsList?.setAttribute('aria-atomic', 'false');
+        this.detailView?.setAttribute('aria-live', 'polite');
+        this.detailView?.setAttribute('aria-atomic', 'false');
 
         document.addEventListener('click', (e) => {
             const slide = e.target.closest('[data-message-id="j2commerce_setup_guide"]');
@@ -39,8 +46,31 @@ class SetupGuide {
             }
         });
 
+        // Lock page scroll while the setup guide is open
+        this.el.addEventListener('show.bs.offcanvas', () => {
+            document.body.style.overflow = 'hidden';
+        });
+
+        this.el.addEventListener('hidden.bs.offcanvas', () => {
+            document.body.style.removeProperty('overflow');
+        });
+
         this.el.addEventListener('shown.bs.offcanvas', () => {
             if (!this.inDetail) this.loadStatus();
+        });
+
+        // Tab focus trap — prevent background page scroll when tabbing through the offcanvas
+        this.el.addEventListener('keydown', (event) => {
+            if (event.key !== 'Tab' || !this.el.classList.contains('show')) return;
+            event.preventDefault();
+            this.moveFocusByTab(event.shiftKey);
+        });
+
+        // Recovery guard — if focus somehow escapes, pull it back
+        document.addEventListener('focusin', (event) => {
+            if (!this.el.classList.contains('show')) return;
+            if (event.target instanceof Node && this.el.contains(event.target)) return;
+            this.keepFocusInside();
         });
 
         // Refresh when category wizard completes successfully
@@ -74,7 +104,7 @@ class SetupGuide {
             }
 
             const checkItem = e.target.closest('[data-setup-check]');
-            if (checkItem && !e.target.closest('button')) {
+            if (checkItem && !e.target.closest('button, a, input, select, textarea')) {
                 return this.loadDetail(checkItem.dataset.setupCheck);
             }
 
@@ -125,9 +155,38 @@ class SetupGuide {
                 return this.toggleGroup(groupHeader);
             }
         });
+
+        this.el.addEventListener('keydown', (e) => {
+            if ((e.key !== 'Enter' && e.key !== ' ') || !this.el.classList.contains('show')) {
+                return;
+            }
+
+            const groupHeader = e.target.closest('.setup-group-header');
+
+            if (groupHeader && !e.target.closest('button, a, input, select, textarea')) {
+                e.preventDefault();
+                this.toggleGroup(groupHeader);
+                return;
+            }
+
+            const checkItem = e.target.closest('[data-setup-check]');
+
+            if (!checkItem) {
+                return;
+            }
+
+            // Let native controls inside the row keep their own keyboard behavior.
+            if (e.target.closest('button, a, input, select, textarea')) {
+                return;
+            }
+
+            e.preventDefault();
+            this.loadDetail(checkItem.dataset.setupCheck);
+        });
     }
 
     async loadStatus() {
+        this.groupsList?.setAttribute('aria-busy', 'true');
         this.showLoading(true);
 
         try {
@@ -144,23 +203,27 @@ class SetupGuide {
             this.showLoading(false);
             this.groupsList.innerHTML = `<div class="alert alert-danger m-3">${err.message}</div>`;
             this.groupsList.classList.remove('d-none');
+        } finally {
+            this.groupsList?.setAttribute('aria-busy', 'false');
         }
     }
 
     async loadDetail(checkId) {
+        this.lastFocusedCheckId = checkId;
+        this.detailView?.setAttribute('aria-busy', 'true');
         this.detailView.replaceChildren();
         const spinner = document.createElement('div');
         spinner.className = 'text-center py-4';
-      
+
         const icon = document.createElement('div');
         icon.className = 'spinner-border spinner-border-sm';
         icon.setAttribute('role', 'status');
-      
+
         const hidden = document.createElement('span');
         hidden.className = 'visually-hidden';
         hidden.textContent = Joomla.Text._("COM_J2COMMERCE_LOADING");
-      
-        icon.appendChild(hidden);      
+
+        icon.appendChild(hidden);
         spinner.appendChild(icon);
         this.detailView.appendChild(spinner);
         this.showDetail();
@@ -175,12 +238,25 @@ class SetupGuide {
             tpl.innerHTML = json.data.html;
             this.detailView.replaceChildren(tpl.content);
             this.initTimezoneClocks();
+
+            requestAnimationFrame(() => {
+                const target = this.detailView.querySelector('h1, h2, h3, h4, h5, h6, button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])');
+
+                if (target instanceof HTMLElement) {
+                    if (/^H[1-6]$/.test(target.tagName) && !target.hasAttribute('tabindex')) {
+                        target.setAttribute('tabindex', '-1');
+                    }
+                    target.focus({ preventScroll: true });
+                }
+            });
         } catch (err) {
             this.detailView.replaceChildren();
             const alert = document.createElement('div');
             alert.className = 'alert alert-danger';
             alert.textContent = err.message;
             this.detailView.appendChild(alert);
+        } finally {
+            this.detailView?.setAttribute('aria-busy', 'false');
         }
     }
 
@@ -236,10 +312,27 @@ class SetupGuide {
 
         // Client-side actions — no AJAX needed
         if (action === 'open_category_wizard') {
-            const wizardModal = document.getElementById('j2commerceCategoryWizardModal');
-            if (wizardModal) {
-                bootstrap.Modal.getOrCreateInstance(wizardModal).show();
+            const openWizard = () => {
+                if (window.J2CommerceModalCoordinator) {
+                    window.J2CommerceModalCoordinator.showExclusive('j2commerceCategoryWizardModal', 'j2commerceOnboardingModal');
+                    return;
+                }
+
+                const wizardModal = document.getElementById('j2commerceCategoryWizardModal');
+                if (wizardModal) {
+                    bootstrap.Modal.getOrCreateInstance(wizardModal).show();
+                }
+            };
+
+            if (this.el.classList.contains('show') && this.offcanvas) {
+                this.el.addEventListener('hidden.bs.offcanvas', () => {
+                    openWizard();
+                }, { once: true });
+                this.offcanvas.hide();
+            } else {
+                openWizard();
             }
+
             return;
         }
 
@@ -411,14 +504,15 @@ class SetupGuide {
             const allPassed = group.passed === group.total;
             const collapsed = allPassed ? ' is-collapsed' : '';
             const hidden = allPassed ? ' d-none' : '';
+            const checksId = `setup-group-checks-${this.escHtml(group.id)}`;
 
             html += `<div class="setup-group" data-group="${group.id}">`;
-            html += `<div class="setup-group-header${collapsed}">
+            html += `<div class="setup-group-header${collapsed}" role="button" tabindex="0" aria-controls="${checksId}" aria-expanded="${allPassed ? 'false' : 'true'}">
                 <span class="setup-group-chevron icon-chevron-down" aria-hidden="true"></span>
                 <span class="setup-group-label flex-grow-1">${this.escHtml(group.label)}</span>
                 <span class="badge ${allPassed ? 'bg-success' : 'bg-warning'}">${group.passed}/${group.total}</span>
             </div>`;
-            html += `<div class="setup-group-checks${hidden}">`;
+            html += `<div id="${checksId}" class="setup-group-checks${hidden}">`;
 
             for (const check of group.checks) {
                 const statusClass = check.dismissed ? 'dismissed' : check.status;
@@ -431,7 +525,7 @@ class SetupGuide {
                 };
                 const iconClass = iconMap[statusClass] || iconMap.fail;
 
-                html += `<div class="setup-check-item" data-setup-check="${this.escHtml(check.id)}">
+                html += `<div class="setup-check-item" data-setup-check="${this.escHtml(check.id)}" role="button" tabindex="0" aria-label="${this.escHtml(check.label)}">
                     <span class="${iconClass} setup-check-icon" aria-hidden="true"></span>
                     <span class="setup-check-label flex-grow-1">${this.escHtml(check.label)}</span>`;
 
@@ -449,12 +543,14 @@ class SetupGuide {
                 if (check.dismissible && check.status !== 'pass' && !check.dismissed) {
                     html += `<button type="button" class="btn btn-sm btn-link text-danger setup-dismiss-btn"
                         data-setup-dismiss="${this.escHtml(check.id)}"
+                        aria-label="${this.escHtml(Joomla.Text._('COM_J2COMMERCE_SETUP_GUIDE_DISMISS'))}"
                         title="${Joomla.Text._('COM_J2COMMERCE_SETUP_GUIDE_DISMISS')}">
                         <span class="icon-times" aria-hidden="true"></span></button>`;
                 }
 
                 if (check.guidedTourUid) {
                     html += `<button type="button" class="btn btn-sm btn-outline-info button-start-guidedtour ms-1"
+                        aria-label="${this.escHtml(Joomla.Text._('COM_J2COMMERCE_SETUP_GUIDE_START_GUIDED_TOUR'))}"
                         data-gt-uid="${this.escHtml(check.guidedTourUid)}">
                         <span class="icon-map-signs" aria-hidden="true"></span></button>`;
                 }
@@ -480,17 +576,81 @@ class SetupGuide {
         this.detailView.classList.add('d-none');
         this.groupsList.classList.remove('d-none');
         this.backBtn.classList.add('d-none');
+
+        if (this.lastFocusedCheckId) {
+            requestAnimationFrame(() => {
+                const selector = `[data-setup-check="${CSS.escape(this.lastFocusedCheckId)}"]`;
+                const row = this.el.querySelector(selector);
+
+                if (row instanceof HTMLElement) {
+                    row.focus({ preventScroll: true });
+                }
+            });
+        }
     }
 
     toggleGroup(header) {
         header.classList.toggle('is-collapsed');
         const checks = header.nextElementSibling;
-        if (checks) checks.classList.toggle('d-none');
+        if (checks) {
+            checks.classList.toggle('d-none');
+            header.setAttribute('aria-expanded', checks.classList.contains('d-none') ? 'false' : 'true');
+        }
     }
 
     showLoading(show) {
         this.loading.classList.toggle('d-none', !show);
         if (show) this.groupsList.classList.add('d-none');
+    }
+
+    // =========================================================================
+    // Focus trap helpers
+    // =========================================================================
+
+    getFocusableElements() {
+        const selector = [
+            'a[href]',
+            'button:not([disabled])',
+            'input:not([disabled]):not([type="hidden"])',
+            'select:not([disabled])',
+            'textarea:not([disabled])',
+            '[tabindex]:not([tabindex="-1"])',
+        ].join(',');
+
+        return Array.from(this.el.querySelectorAll(selector)).filter((el) => {
+            if (!(el instanceof HTMLElement)) return false;
+            if (el.hidden || el.getAttribute('aria-hidden') === 'true') return false;
+            if (el.closest('[hidden], [aria-hidden="true"], [inert]')) return false;
+            return el.offsetParent !== null || el === document.activeElement;
+        });
+    }
+
+    keepFocusInside() {
+        const focusable = this.getFocusableElements();
+        if (focusable.length > 0) {
+            focusable[0].focus({ preventScroll: true });
+        } else {
+            this.el.focus({ preventScroll: true });
+        }
+    }
+
+    moveFocusByTab(backward) {
+        const focusable = this.getFocusableElements();
+        if (focusable.length === 0) {
+            this.el.focus({ preventScroll: true });
+            return;
+        }
+
+        const currentIndex = focusable.indexOf(document.activeElement);
+        let targetIndex;
+
+        if (backward) {
+            targetIndex = currentIndex <= 0 ? focusable.length - 1 : currentIndex - 1;
+        } else {
+            targetIndex = currentIndex < 0 || currentIndex === focusable.length - 1 ? 0 : currentIndex + 1;
+        }
+
+        focusable[targetIndex].focus({ preventScroll: true });
     }
 
     escHtml(str) {
