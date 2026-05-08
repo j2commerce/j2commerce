@@ -70,7 +70,19 @@ class CategoryWizard {
 
         // Detect template on modal open (once)
         let templateDetected = false;
-        this.el.addEventListener('show.bs.modal', () => {
+        this.el.addEventListener('show.bs.modal', (event) => {
+            const onboardingModal = document.getElementById('j2commerceOnboardingModal');
+
+            if (onboardingModal && onboardingModal.classList.contains('show')) {
+                event.preventDefault();
+
+                if (window.J2CommerceModalCoordinator) {
+                    window.J2CommerceModalCoordinator.showExclusive('j2commerceCategoryWizardModal', 'j2commerceOnboardingModal');
+                }
+
+                return;
+            }
+
             if (!templateDetected) {
                 templateDetected = true;
                 this.detectTemplate();
@@ -78,11 +90,47 @@ class CategoryWizard {
             this.reset();
         });
 
+        this.el.addEventListener('shown.bs.modal', () => {
+            this.enforceBodyScrollLock();
+            this.focusActiveStepStart();
+        });
+
         // Refresh setup guide when wizard closes after successful creation
         this.el.addEventListener('hidden.bs.modal', () => {
+            if (!document.querySelector('.modal.show')) {
+                document.body.classList.remove('modal-open');
+                document.body.style.removeProperty('overflow');
+            }
+
             if (this.createdData) {
                 document.dispatchEvent(new CustomEvent('j2commerce:wizard:complete'));
             }
+        });
+
+        // Fallback focus trap to prevent tab focus escaping to the page behind the modal.
+        this.el.addEventListener('keydown', (event) => {
+            if (event.key !== 'Tab' || !this.el.classList.contains('show')) {
+                return;
+            }
+
+            event.preventDefault();
+            this.enforceBodyScrollLock();
+            this.moveFocusByTab(event.shiftKey);
+        });
+
+        document.addEventListener('focusin', (event) => {
+            if (!this.el.classList.contains('show')) {
+                return;
+            }
+
+            const target = event.target;
+
+            if (target instanceof Node && this.el.contains(target)) {
+                return;
+            }
+
+            this.enforceBodyScrollLock();
+            this.keepFocusInsideModal();
         });
 
         // Back / Next / Create / Done buttons
@@ -130,6 +178,27 @@ class CategoryWizard {
             }
         });
 
+        // Keyboard support for wizard cards (Enter/Space to select)
+        this.el.addEventListener('keydown', (e) => {
+            if (e.key !== 'Enter' && e.key !== ' ') {
+                return;
+            }
+
+            const radio = e.target.closest('input[type="radio"]');
+            if (!radio) {
+                return;
+            }
+
+            // Prevent default space behavior (page scroll)
+            if (e.key === ' ') {
+                e.preventDefault();
+            }
+
+            // Focus the radio and trigger change
+            radio.checked = true;
+            radio.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+
         // Card radio selection — apply/remove 'selected' class
         this.el.addEventListener('change', (e) => {
             const radio = e.target;
@@ -156,6 +225,15 @@ class CategoryWizard {
                 this.updateNextButton();
             });
         }
+
+        // Enable/disable Next based on option title inputs (delegated)
+        this.el.addEventListener('input', (e) => {
+            if (e.target.classList.contains('j2c-option-title-input') ||
+                e.target.classList.contains('j2c-option-value-input') ||
+                e.target.classList.contains('j2c-category-name-input')) {
+                this.updateNextButton();
+            }
+        });
     }
 
     // =========================================================================
@@ -204,6 +282,135 @@ class CategoryWizard {
         this.updateNavButtons();
         this.updateStepIndicator();
         this.hideError();
+
+        requestAnimationFrame(() => {
+            this.focusActiveStepStart();
+        });
+    }
+
+    collectFocusable(root) {
+        if (!(root instanceof Element)) {
+            return [];
+        }
+
+        const selector = [
+            'a[href]',
+            'button:not([disabled])',
+            'input:not([disabled]):not([type="hidden"])',
+            'select:not([disabled])',
+            'textarea:not([disabled])',
+            '[tabindex]:not([tabindex="-1"])',
+        ].join(',');
+
+        return Array.from(root.querySelectorAll(selector)).filter((el) => {
+            if (!(el instanceof HTMLElement)) {
+                return false;
+            }
+
+            if (el.hidden || el.getAttribute('aria-hidden') === 'true') {
+                return false;
+            }
+
+            if (el.closest('[hidden], [aria-hidden="true"], [inert]')) {
+                return false;
+            }
+
+            return el.offsetParent !== null || el === document.activeElement;
+        });
+    }
+
+    getFocusableElements() {
+        const focusable = [];
+        const seen = new Set();
+
+        const pushUnique = (elements) => {
+            elements.forEach((el) => {
+                if (!seen.has(el)) {
+                    seen.add(el);
+                    focusable.push(el);
+                }
+            });
+        };
+
+        const modalHeader = this.el.querySelector('.modal-header');
+        if (modalHeader) {
+            pushUnique(this.collectFocusable(modalHeader));
+        }
+
+        const activeStep = this.el.querySelector(`.j2c-wizard-step[data-step="${this.currentStepKey}"]:not(.d-none):not([hidden])`);
+        if (activeStep) {
+            pushUnique(this.collectFocusable(activeStep));
+        }
+
+        const modalFooter = this.el.querySelector('.modal-footer');
+        if (modalFooter) {
+            pushUnique(this.collectFocusable(modalFooter));
+        }
+
+        return focusable;
+    }
+
+    keepFocusInsideModal() {
+        if (!this.el.classList.contains('show')) {
+            return;
+        }
+
+        const focusable = this.getFocusableElements();
+
+        if (focusable.length > 0) {
+            focusable[0].focus({ preventScroll: true });
+        } else {
+            this.el.focus({ preventScroll: true });
+        }
+    }
+
+    focusActiveStepStart() {
+        if (!this.el.classList.contains('show')) {
+            return;
+        }
+
+        const activeStep = this.el.querySelector(`.j2c-wizard-step[data-step="${this.currentStepKey}"]:not(.d-none):not([hidden])`);
+
+        if (activeStep) {
+            const stepFocusable = this.collectFocusable(activeStep);
+            if (stepFocusable.length > 0) {
+                stepFocusable[0].focus({ preventScroll: true });
+                return;
+            }
+        }
+
+        this.keepFocusInsideModal();
+    }
+
+    enforceBodyScrollLock() {
+        if (!this.el.classList.contains('show')) {
+            return;
+        }
+
+        document.body.classList.add('modal-open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    moveFocusByTab(backward) {
+        const focusable = this.getFocusableElements();
+
+        if (focusable.length === 0) {
+            this.el.focus({ preventScroll: true });
+            return;
+        }
+
+        const active = document.activeElement;
+        const currentIndex = focusable.indexOf(active);
+
+        let targetIndex;
+
+        if (backward) {
+            targetIndex = currentIndex <= 0 ? focusable.length - 1 : currentIndex - 1;
+        } else {
+            targetIndex = currentIndex < 0 || currentIndex === focusable.length - 1 ? 0 : currentIndex + 1;
+        }
+
+        focusable[targetIndex].focus({ preventScroll: true });
     }
 
     goNext() {
@@ -500,6 +707,39 @@ class CategoryWizard {
             enabled = !!this.el.querySelector('input[name="product_count"]:checked');
         } else if (this.currentStepKey === '2a') {
             enabled = (this.el.querySelector('#j2c-product-name')?.value.trim() || '') !== '';
+        } else if (this.currentStepKey === '2b') {
+            enabled = !!this.el.querySelector('input[name="category_count"]:checked');
+        } else if (this.currentStepKey === '3a') {
+            // Step 3a: product type selection (at least one card/radio selected)
+            enabled = !!this.el.querySelector('input[name="product_type"]:checked');
+        } else if (this.currentStepKey === '3b') {
+            // Step 3b: option titles (at least one non-empty title)
+            const titles = this.collectOptionTitles();
+            enabled = titles.some((t) => t !== '');
+        } else if (this.currentStepKey === '3c') {
+            // Step 3c: option values (all options must have at least one value)
+            const values = this.collectOptionValues();
+            enabled = this.data.optionTitles.every((title) => values[title] && values[title].length > 0);
+        } else if (this.currentStepKey === '3b-multi') {
+            // Step 3b-multi: menu type selection
+            enabled = !!this.el.querySelector('input[name="menu_type"]:checked');
+        } else if (this.currentStepKey === 'category-source') {
+            // Category source selection
+            enabled = !!this.el.querySelector('input[name="category_source"]:checked');
+        } else if (this.currentStepKey === 'category-select') {
+            // At least one category selected
+            let selectedCount = 0;
+            if (this._categoryChoices) {
+                selectedCount = this._categoryChoices.getValue(true).length;
+            } else {
+                const select = this.el.querySelector('#j2c-existing-categories-select');
+                selectedCount = select ? Array.from(select.selectedOptions).length : 0;
+            }
+            enabled = selectedCount > 0;
+        } else if (this.currentStepKey === 'category-naming') {
+            // At least one non-empty category name
+            const names = this.collectCategoryNames();
+            enabled = names.length > 0;
         }
 
         this.btnNext.disabled = !enabled;
@@ -537,13 +777,13 @@ class CategoryWizard {
 
         const removeBtn = document.createElement('button');
         removeBtn.type      = 'button';
-        removeBtn.className = 'btn btn-outline-danger btn-sm flex-shrink-0';
+        removeBtn.className = 'btn btn-danger btn-sm flex-shrink-0 m-0 p-0';
         removeBtn.setAttribute('data-remove-option-title', '');
         removeBtn.setAttribute('aria-label', Joomla.Text._('COM_J2COMMERCE_WIZARD_REMOVE_OPTION'));
         removeBtn.title = Joomla.Text._('COM_J2COMMERCE_WIZARD_REMOVE_OPTION');
 
         const icon = document.createElement('span');
-        icon.className = 'fa-solid fa-times';
+        icon.className = 'fa-solid fa-times m-0';
         removeBtn.appendChild(icon);
 
         row.appendChild(input);
@@ -607,7 +847,7 @@ class CategoryWizard {
 
             const addBtn = document.createElement('button');
             addBtn.type      = 'button';
-            addBtn.className = 'btn btn-outline-secondary btn-sm mt-2';
+            addBtn.className = 'btn btn-secondary btn-sm mt-2';
             addBtn.setAttribute('data-add-option-value', title);
 
             const plusIcon = document.createElement('span');
@@ -631,13 +871,13 @@ class CategoryWizard {
 
         const removeBtn = document.createElement('button');
         removeBtn.type      = 'button';
-        removeBtn.className = 'btn btn-outline-danger btn-sm flex-shrink-0';
+        removeBtn.className = 'btn btn-danger btn-sm flex-shrink-0 p-0 m-0';
         removeBtn.setAttribute('data-remove-option-value', '');
         removeBtn.setAttribute('aria-label', Joomla.Text._('COM_J2COMMERCE_WIZARD_REMOVE_VALUE'));
         removeBtn.title = Joomla.Text._('COM_J2COMMERCE_WIZARD_REMOVE_VALUE');
 
         const icon = document.createElement('span');
-        icon.className = 'fa-solid fa-times';
+        icon.className = 'fa-solid fa-times m-0';
         removeBtn.appendChild(icon);
 
         row.appendChild(input);
@@ -769,6 +1009,11 @@ class CategoryWizard {
                 noChoicesText: Joomla.Text._('JGLOBAL_SELECT_NO_RESULTS_MATCH'),
                 itemSelectText: '',
             });
+
+            // Update Next button when Choices.js selections change
+            select.addEventListener('change', () => {
+                this.updateNextButton();
+            });
         }
     }
 
@@ -835,13 +1080,13 @@ class CategoryWizard {
         if (removable) {
             const removeBtn = document.createElement('button');
             removeBtn.type      = 'button';
-            removeBtn.className = 'btn btn-outline-danger btn-sm flex-shrink-0';
+            removeBtn.className = 'btn btn-danger btn-sm flex-shrink-0 p-0 m-0';
             removeBtn.setAttribute('data-remove-category', '');
             removeBtn.setAttribute('aria-label', Joomla.Text._('COM_J2COMMERCE_WIZARD_REMOVE_OPTION'));
             removeBtn.title = Joomla.Text._('COM_J2COMMERCE_WIZARD_REMOVE_OPTION');
 
             const icon = document.createElement('span');
-            icon.className = 'fa-solid fa-times';
+            icon.className = 'fa-solid fa-times m-0';
             removeBtn.appendChild(icon);
             row.appendChild(removeBtn);
         }
