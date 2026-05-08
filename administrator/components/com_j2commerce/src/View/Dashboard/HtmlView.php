@@ -313,8 +313,9 @@ JS);
 
         // Category Wizard — always register so the modal is available from setup guide and dashboard
         HTMLHelper::_('bootstrap.modal', '#j2commerceCategoryWizardModal');
+        $wa->registerAndUseScript('com_j2commerce.modal-coordinator', 'media/com_j2commerce/js/administrator/modal-coordinator.js', [], ['defer' => true]);
         $wa->usePreset('choicesjs');
-        $wa->registerAndUseScript('com_j2commerce.category-wizard', 'media/com_j2commerce/js/administrator/category-wizard.js', [], ['defer' => true]);
+        $wa->registerAndUseScript('com_j2commerce.category-wizard', 'media/com_j2commerce/js/administrator/category-wizard.js', [], ['defer' => true], ['com_j2commerce.modal-coordinator']);
         $wa->registerAndUseStyle('com_j2commerce.category-wizard.css', 'media/com_j2commerce/css/administrator/category-wizard.css');
 
         Text::script('COM_J2COMMERCE_WIZARD_ERR_PRODUCT_NAME_REQUIRED');
@@ -365,7 +366,7 @@ JS);
 
         if (!SetupGuideHelper::isComplete()) {
             HTMLHelper::_('bootstrap.offcanvas', '#j2commerce-setup-guide');
-            $wa->registerAndUseScript('com_j2commerce.setup-guide', 'media/com_j2commerce/js/administrator/setup-guide.js', [], ['defer' => true]);
+            $wa->registerAndUseScript('com_j2commerce.setup-guide', 'media/com_j2commerce/js/administrator/setup-guide.js', [], ['defer' => true], ['com_j2commerce.modal-coordinator']);
             $wa->registerAndUseStyle('com_j2commerce.setup-guide.css', 'media/com_j2commerce/css/administrator/setup-guide.css');
             $this->getDocument()->addScriptOptions('com_j2commerce.setupGuide', [
                 'isRtl' => Factory::getApplication()->getLanguage()->isRtl(),
@@ -403,7 +404,7 @@ JS);
                 'keyboard' => false,
             ]);
 
-            $wa->registerAndUseScript('com_j2commerce.onboarding', 'media/com_j2commerce/js/administrator/onboarding.js', [], ['defer' => true]);
+            $wa->registerAndUseScript('com_j2commerce.onboarding', 'media/com_j2commerce/js/administrator/onboarding.js', [], ['defer' => true], ['com_j2commerce.modal-coordinator']);
             $wa->registerAndUseStyle('com_j2commerce.onboarding.css', 'media/com_j2commerce/css/administrator/onboarding.css');
 
             // Build JS options for onboarding (replaces inline <script> in template)
