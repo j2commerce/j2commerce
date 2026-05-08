@@ -21,6 +21,187 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentStep = parseInt(document.getElementById('ob-resume-step')?.value || '1', 10) || 1;
 
     const modalInstance = bootstrap.Modal.getOrCreateInstance(modal);
+
+    const collectFocusable = (root) => {
+        if (!(root instanceof Element)) {
+            return [];
+        }
+
+        const selector = [
+            'a[href]',
+            'button:not([disabled])',
+            'input:not([disabled]):not([type="hidden"])',
+            'select:not([disabled])',
+            'textarea:not([disabled])',
+            '[tabindex]:not([tabindex="-1"])',
+        ].join(',');
+
+        return Array.from(root.querySelectorAll(selector)).filter((el) => {
+            if (!(el instanceof HTMLElement)) {
+                return false;
+            }
+
+            if (el.hidden || el.getAttribute('aria-hidden') === 'true') {
+                return false;
+            }
+
+            // Skip elements inside hidden containers (hidden steps, collapsed sections, etc.)
+            if (el.closest('[hidden], [aria-hidden="true"]')) {
+                return false;
+            }
+
+            return el.offsetParent !== null || el === document.activeElement;
+        });
+    };
+
+    const getFocusableElements = () => {
+        const focusable = [];
+        const seen = new Set();
+
+        const pushUnique = (elements) => {
+            elements.forEach((el) => {
+                if (!seen.has(el)) {
+                    seen.add(el);
+                    focusable.push(el);
+                }
+            });
+        };
+
+        const activeStep = modal.querySelector(`.j2c-step[data-step="${currentStep}"]:not([hidden])`);
+
+        // Keep close action reachable for keyboard users.
+        const modalHeader = modal.querySelector('.modal-header');
+        if (modalHeader) {
+            pushUnique(collectFocusable(modalHeader));
+        }
+
+        if (activeStep) {
+            pushUnique(collectFocusable(activeStep));
+        }
+
+        // Keep wizard nav controls reachable across steps (when visible).
+        const modalFooter = modal.querySelector('#ob-footer');
+        if (modalFooter) {
+            pushUnique(collectFocusable(modalFooter));
+        }
+
+        return focusable;
+    };
+
+    const keepFocusInsideModal = () => {
+        if (!modal.classList.contains('show')) {
+            return;
+        }
+
+        const focusable = getFocusableElements();
+
+        if (focusable.length > 0) {
+            focusable[0].focus({ preventScroll: true });
+        } else {
+            modal.focus({ preventScroll: true });
+        }
+    };
+
+    const focusActiveStepStart = () => {
+        if (!modal.classList.contains('show')) {
+            return;
+        }
+
+        const activeStep = modal.querySelector(`.j2c-step[data-step="${currentStep}"]:not([hidden])`);
+
+        if (activeStep) {
+            const stepFocusable = collectFocusable(activeStep);
+            if (stepFocusable.length > 0) {
+                stepFocusable[0].focus({ preventScroll: true });
+                return;
+            }
+        }
+
+        keepFocusInsideModal();
+    };
+
+    const enforceBodyScrollLock = () => {
+        if (!modal.classList.contains('show')) {
+            return;
+        }
+
+        document.body.classList.add('modal-open');
+        document.body.style.overflow = 'hidden';
+    };
+
+    const moveFocusByTab = (backward) => {
+        const focusable = getFocusableElements();
+
+        if (focusable.length === 0) {
+            modal.focus({ preventScroll: true });
+            return;
+        }
+
+        const active = document.activeElement;
+        const currentIndex = focusable.indexOf(active);
+
+        let targetIndex;
+
+        if (backward) {
+            targetIndex = currentIndex <= 0 ? focusable.length - 1 : currentIndex - 1;
+        } else {
+            targetIndex = currentIndex < 0 || currentIndex === focusable.length - 1 ? 0 : currentIndex + 1;
+        }
+
+        focusable[targetIndex].focus({ preventScroll: true });
+    };
+
+    modal.addEventListener('show.bs.modal', (event) => {
+        const wizardModal = document.getElementById('j2commerceCategoryWizardModal');
+
+        if (wizardModal && wizardModal.classList.contains('show')) {
+            event.preventDefault();
+
+            if (window.J2CommerceModalCoordinator) {
+                window.J2CommerceModalCoordinator.showExclusive('j2commerceOnboardingModal', 'j2commerceCategoryWizardModal');
+            }
+        }
+    });
+
+    // Fallback focus trap to prevent focus leakage/scrolling of the page behind the modal.
+    modal.addEventListener('keydown', (event) => {
+        if (event.key !== 'Tab' || !modal.classList.contains('show')) {
+            return;
+        }
+
+        // Always handle Tab ourselves to avoid browser moving focus outside the modal.
+        event.preventDefault();
+        enforceBodyScrollLock();
+        moveFocusByTab(event.shiftKey);
+    });
+
+    document.addEventListener('focusin', (event) => {
+        if (!modal.classList.contains('show')) {
+            return;
+        }
+
+        const target = event.target;
+
+        if (target instanceof Node && modal.contains(target)) {
+            return;
+        }
+
+        enforceBodyScrollLock();
+        keepFocusInsideModal();
+    });
+
+    modal.addEventListener('shown.bs.modal', () => {
+        enforceBodyScrollLock();
+        focusActiveStepStart();
+    });
+
+    modal.addEventListener('hidden.bs.modal', () => {
+        if (!document.querySelector('.modal.show')) {
+            document.body.classList.remove('modal-open');
+            document.body.style.removeProperty('overflow');
+        }
+    });
+
     modalInstance.show();
 
     // -------------------------------------------------------------------------
@@ -167,6 +348,9 @@ document.addEventListener('DOMContentLoaded', () => {
             updateStepper(targetStep);
             updateButtons(targetStep);
             initStep(targetStep);
+            requestAnimationFrame(() => {
+                focusActiveStepStart();
+            });
         }, 250);
     }
 
@@ -565,8 +749,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 break;
             }
             case 'dismiss-onboarding': {
-                const confirmed = window.confirm(Joomla.Text._('COM_J2COMMERCE_ONBOARDING_DISMISS_CONFIRM'));
-                if (!confirmed) return;
 
                 const fd = new FormData();
                 fd.append(token, '1');
