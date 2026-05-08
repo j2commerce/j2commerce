@@ -129,6 +129,12 @@
     background: var(--main-nav-mm-active-bg);
 }
 
+.setup-group-header:focus-visible {
+    outline: 2px solid var(--info, #0d6efd);
+    outline-offset: -2px;
+    background: var(--main-nav-mm-active-bg);
+}
+
 .setup-group-label {
     margin-inline-start: 10px;
     font-size: 0.9rem;
@@ -184,7 +190,14 @@
     background: var(--main-nav-mm-active-bg);
 }
 
-.setup-check-item-label {
+.setup-check-item:focus-visible {
+    outline: 2px solid var(--info, #0d6efd);
+    outline-offset: -2px;
+    background: var(--main-nav-mm-active-bg);
+}
+
+.setup-check-item-label,
+.setup-check-label {
     flex: 1;
     font-size: 0.875rem;
     line-height: 1.4;
