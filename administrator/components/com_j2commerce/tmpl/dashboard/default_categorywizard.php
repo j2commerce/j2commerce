@@ -159,7 +159,7 @@ $sefRewrite = (bool) $app->get('sef_rewrite', false);
                                    aria-label="<?php echo htmlspecialchars(Text::sprintf('COM_J2COMMERCE_WIZARD_OPTION_TITLE_LABEL', 1), ENT_QUOTES, 'UTF-8'); ?>">
                         </div>
                     </div>
-                    <button type="button" class="btn btn-outline-secondary btn-sm" id="j2c-add-option-title">
+                    <button type="button" class="btn btn-secondary btn-sm" id="j2c-add-option-title">
                         <span class="fa-solid fa-plus me-1" aria-hidden="true"></span>
                         <?php echo Text::_('COM_J2COMMERCE_WIZARD_ADD_OPTION'); ?>
                     </button>
@@ -288,7 +288,7 @@ $sefRewrite = (bool) $app->get('sef_rewrite', false);
                     <div id="j2c-category-names-container">
                         <!-- Populated by JS based on category count selection -->
                     </div>
-                    <button type="button" class="btn btn-outline-secondary btn-sm d-none" id="j2c-add-category">
+                    <button type="button" class="btn btn-secondary btn-sm d-none" id="j2c-add-category">
                         <span class="fa-solid fa-plus me-1" aria-hidden="true"></span>
                         <?php echo Text::_('COM_J2COMMERCE_WIZARD_ADD_CATEGORY'); ?>
                     </button>
