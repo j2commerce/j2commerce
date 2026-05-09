@@ -837,7 +837,7 @@
             type="list"
             label="COM_J2COMMERCE_CONFIG_CART_EMPTY_REDIRECT"
             description="COM_J2COMMERCE_CONFIG_CART_EMPTY_REDIRECT_DESC"
-            default="homepage"
+            default="cart"
             validate="options"
         >
             <option value="homepage">COM_J2COMMERCE_TO_HOMEPAGE</option>
