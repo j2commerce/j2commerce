@@ -62,7 +62,7 @@ if ($showWelcome) {
     <nav class="navbar navbar-expand-lg bg-primary border-bottom mb-3" role="navigation" data-bs-theme="dark">
         <div class="container-fluid">
             <a class="navbar-brand" id="j2c-nav-brand" href="<?php echo Route::_('index.php?option=com_j2commerce'); ?>">
-                <span class="icon-cart me-1" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE'); ?><span class="visually-hidden"> - <?php echo Text::_('COM_J2COMMERCE_DASHBOARD'); ?></span>
+                <span class="icon-cart me-1" aria-hidden="true"></span> <span class="d-lg-none d-xl-inline"><?php echo Text::_('COM_J2COMMERCE'); ?></span><span class="visually-hidden"> - <?php echo Text::_('COM_J2COMMERCE_DASHBOARD'); ?></span>
             </a>
 
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#j2commerceNavbar">
@@ -70,7 +70,7 @@ if ($showWelcome) {
             </button>
 
             <div class="collapse navbar-collapse" id="j2commerceNavbar">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0 w-100 justify-content-xl-end">
+                <ul class="navbar-nav mb-2 mb-lg-0 w-100 justify-content-end">
                     <?php foreach ($items as $item) : ?>
                         <?php if (isset($item['children']) && !empty($item['children'])) : ?>
                             <!-- Dropdown Menu -->
