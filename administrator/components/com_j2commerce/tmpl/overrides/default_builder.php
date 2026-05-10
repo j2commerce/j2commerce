@@ -21,7 +21,7 @@ $token = Session::getFormToken();
 ?>
 <div id="j2commerce-builder-container" class="j2commerce-builder" data-token="<?php echo $token; ?>">
     <!-- Builder Toolbar -->
-    <div class="j2commerce-builder-toolbar d-flex align-items-center gap-2 p-3 bg-light rounded-1 mb-3">
+    <div class="j2commerce-builder-toolbar d-flex align-items-center gap-2 p-3 rounded-1 mb-3">
         <!-- File Selector -->
         <div class="builder-file-selector flex-grow-1">
             <select id="builder-file-select" class="form-select">

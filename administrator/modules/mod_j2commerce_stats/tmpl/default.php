@@ -79,7 +79,7 @@ $rightColumn = [
             </div>
         <?php endforeach; ?>
     </div>
-    <div class="mt-3 px-3 py-2 bg-light">
+    <div class="mt-3 px-3 py-2">
         <div class="row">
             <div class="col text-center">
                 <strong><?php echo Text::_('MOD_J2COMMERCE_STATS_DAILY_AVERAGE'); ?>:</strong>
