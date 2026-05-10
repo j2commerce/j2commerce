@@ -83,7 +83,7 @@ if ($this->params->get('list_show_filter', 1) && $filterPosition === 'left'){
                             }
                             ?>
                             <div class="<?php echo $colClass; ?>">
-                                <?php echo ProductLayoutService::renderProductItem($product, $this->params, ProductLayoutService::CONTEXT_LIST, $itemId); ?>
+                                <?php echo ProductLayoutService::renderProductItem($product, $this->params, ProductLayoutService::CONTEXT_LIST . '.tag', $itemId); ?>
                             </div>
                         <?php endforeach; ?>
                     </div>

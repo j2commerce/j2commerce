@@ -18,7 +18,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 
 $productType = strtolower($displayData['product']->product_type ?? 'simple');
-$layoutContext = 'category';
+$layoutContext = ($displayData['contextSub'] ?? '') === 'tag' ? 'tag' : 'category';
 
 // Core product type layout mappings
 $layoutMap = [
