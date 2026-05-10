@@ -11,6 +11,7 @@
 namespace J2Commerce\Plugin\J2Commerce\AppUikit\Extension;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Layout\FileLayout;
 use Joomla\CMS\Plugin\CMSPlugin;
@@ -115,19 +116,18 @@ final class AppUikit extends CMSPlugin implements SubscriberInterface
      */
     public function onViewProductListHtml($event)
     {
-        if ($event instanceof EventInterface || $event instanceof Event) {
-            $args      = $event->getArguments();
-            $view_html = &$args[0];
-            $view      = &$args[1];
-            $model     = $args[2] ?? null;
-        } else {
+        if (!($event instanceof EventInterface) && !($event instanceof Event)) {
             return;
         }
 
-        // Check if this plugin should handle the template rendering
+        $args = $event->getArguments();
+        $view = $args[1] ?? null;
+
         if (!$this->shouldHandleTemplate($view, 'uikit')) {
             return;
         }
+
+        ProductLayoutService::setSubtemplateOverride('uikit');
 
         try {
             $view   = $this->setTemplatePath($view);
@@ -138,9 +138,11 @@ final class AppUikit extends CMSPlugin implements SubscriberInterface
                 return;
             }
 
-            $view_html = $result;
+            $event->addResult((string) $result);
         } catch (\Exception $e) {
             Factory::getApplication()->enqueueMessage($e->getMessage(), 'error');
+        } finally {
+            ProductLayoutService::clearSubtemplateOverride();
         }
     }
 
@@ -155,20 +157,18 @@ final class AppUikit extends CMSPlugin implements SubscriberInterface
      */
     public function onViewProductListTagHtml($event)
     {
-        if ($event instanceof EventInterface || $event instanceof Event) {
-            $args      = $event->getArguments();
-            $view_html = &$args[0];
-            $view      = &$args[1];
-            $model     = $args[2] ?? null;
-        } else {
+        if (!($event instanceof EventInterface) && !($event instanceof Event)) {
             return;
         }
 
-        // Check if this plugin should handle the template rendering
-        // Accept both 'uikit' and 'tag_uikit' as valid subtemplates
+        $args = $event->getArguments();
+        $view = $args[1] ?? null;
+
         if (!$this->shouldHandleTemplate($view, 'uikit', 'tag_uikit')) {
             return;
         }
+
+        ProductLayoutService::setSubtemplateOverride('uikit');
 
         try {
             $view   = $this->setTemplatePath($view, 'tag_uikit');
@@ -179,25 +179,28 @@ final class AppUikit extends CMSPlugin implements SubscriberInterface
                 return;
             }
 
-            $view_html = $result;
+            $event->addResult((string) $result);
         } catch (\Exception $e) {
             Factory::getApplication()->enqueueMessage($e->getMessage(), 'error');
+        } finally {
+            ProductLayoutService::clearSubtemplateOverride();
         }
     }
 
     public function onViewCategoryListHtml($event)
     {
-        if ($event instanceof EventInterface || $event instanceof Event) {
-            $args  = $event->getArguments();
-            $view  = $args[1] ?? null;
-            $model = $args[2] ?? null;
-        } else {
+        if (!($event instanceof EventInterface) && !($event instanceof Event)) {
             return;
         }
+
+        $args = $event->getArguments();
+        $view = $args[1] ?? null;
 
         if (!$this->shouldHandleTemplate($view, 'uikit', 'categories_uikit')) {
             return;
         }
+
+        ProductLayoutService::setSubtemplateOverride('uikit');
 
         try {
             $view   = $this->setTemplatePath($view, 'categories_uikit');
@@ -208,9 +211,11 @@ final class AppUikit extends CMSPlugin implements SubscriberInterface
                 return;
             }
 
-            $event->setArgument('html', $result);
+            $event->addResult((string) $result);
         } catch (\Exception $e) {
             Factory::getApplication()->enqueueMessage($e->getMessage(), 'error');
+        } finally {
+            ProductLayoutService::clearSubtemplateOverride();
         }
     }
 
@@ -225,21 +230,20 @@ final class AppUikit extends CMSPlugin implements SubscriberInterface
      */
     public function onViewProductHtml($event)
     {
-        if ($event instanceof EventInterface || $event instanceof Event) {
-            $args      = $event->getArguments();
-            $view_html = &$args[0];
-            $view      = &$args[1];
-            $model     = $args[2] ?? null;
-        } else {
+        if (!($event instanceof EventInterface) && !($event instanceof Event)) {
             return;
         }
 
-        // Check if this plugin should handle the template rendering
+        $args = $event->getArguments();
+        $view = $args[1] ?? null;
+
         if (!$this->shouldHandleTemplate($view, 'uikit')) {
             return;
         }
 
         $view->setLayout('view');
+
+        ProductLayoutService::setSubtemplateOverride('uikit');
 
         try {
             $view   = $this->setTemplatePath($view);
@@ -250,9 +254,11 @@ final class AppUikit extends CMSPlugin implements SubscriberInterface
                 return;
             }
 
-            $view_html = $result;
+            $event->addResult((string) $result);
         } catch (\Exception $e) {
             Factory::getApplication()->enqueueMessage($e->getMessage(), 'error');
+        } finally {
+            ProductLayoutService::clearSubtemplateOverride();
         }
     }
 
@@ -267,22 +273,20 @@ final class AppUikit extends CMSPlugin implements SubscriberInterface
      */
     public function onViewProductTagHtml($event)
     {
-        if ($event instanceof EventInterface || $event instanceof Event) {
-            $args      = $event->getArguments();
-            $view_html = &$args[0];
-            $view      = &$args[1];
-            $model     = $args[2] ?? null;
-        } else {
+        if (!($event instanceof EventInterface) && !($event instanceof Event)) {
             return;
         }
 
-        // Check if this plugin should handle the template rendering
-        // Accept both 'uikit' and 'tag_uikit' as valid subtemplates
+        $args = $event->getArguments();
+        $view = $args[1] ?? null;
+
         if (!$this->shouldHandleTemplate($view, 'uikit', 'tag_uikit')) {
             return;
         }
 
         $view->setLayout('view');
+
+        ProductLayoutService::setSubtemplateOverride('uikit');
 
         try {
             $view   = $this->setTemplatePath($view, 'tag_uikit');
@@ -293,9 +297,11 @@ final class AppUikit extends CMSPlugin implements SubscriberInterface
                 return;
             }
 
-            $view_html = $result;
+            $event->addResult((string) $result);
         } catch (\Exception $e) {
             Factory::getApplication()->enqueueMessage($e->getMessage(), 'error');
+        } finally {
+            ProductLayoutService::clearSubtemplateOverride();
         }
     }
 

@@ -11,6 +11,7 @@
 namespace J2Commerce\Plugin\J2Commerce\AppBootstrap5\Extension;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Layout\FileLayout;
 use Joomla\CMS\Plugin\CMSPlugin;
@@ -158,6 +159,8 @@ final class AppBootstrap5 extends CMSPlugin implements SubscriberInterface
             return;
         }
 
+        ProductLayoutService::setSubtemplateOverride('bootstrap5');
+
         try {
             $view   = $this->setTemplatePath($view);
             $result = $view->loadTemplate();
@@ -167,11 +170,11 @@ final class AppBootstrap5 extends CMSPlugin implements SubscriberInterface
                 return;
             }
 
-            // Use setArgument with 'html' key to properly return the rendered HTML
-            // The 'html' argument is a mutable argument in J2Commerce's PluginEvent class
-            $event->setArgument('html', $result);
+            $event->addResult((string) $result);
         } catch (\Exception $e) {
             Factory::getApplication()->enqueueMessage($e->getMessage(), 'error');
+        } finally {
+            ProductLayoutService::clearSubtemplateOverride();
         }
     }
 
@@ -203,6 +206,8 @@ final class AppBootstrap5 extends CMSPlugin implements SubscriberInterface
         // Load site CSS and JavaScript assets
         $this->loadSiteAssets(true);
 
+        ProductLayoutService::setSubtemplateOverride('bootstrap5');
+
         try {
             $view   = $this->setTemplatePath($view, 'tag_bootstrap5');
             $result = $view->loadTemplate();
@@ -212,11 +217,11 @@ final class AppBootstrap5 extends CMSPlugin implements SubscriberInterface
                 return;
             }
 
-            // Use setArgument with 'html' key to properly return the rendered HTML
-            // The 'html' argument is a mutable argument in J2Commerce's PluginEvent class
-            $event->setArgument('html', $result);
+            $event->addResult((string) $result);
         } catch (\Exception $e) {
             Factory::getApplication()->enqueueMessage($e->getMessage(), 'error');
+        } finally {
+            ProductLayoutService::clearSubtemplateOverride();
         }
     }
 
@@ -236,6 +241,8 @@ final class AppBootstrap5 extends CMSPlugin implements SubscriberInterface
 
         $this->loadSiteAssets();
 
+        ProductLayoutService::setSubtemplateOverride('bootstrap5');
+
         try {
             $view   = $this->setTemplatePath($view, 'categories_bootstrap5');
             $result = $view->loadTemplate();
@@ -245,9 +252,11 @@ final class AppBootstrap5 extends CMSPlugin implements SubscriberInterface
                 return;
             }
 
-            $event->setArgument('html', $result);
+            $event->addResult((string) $result);
         } catch (\Exception $e) {
             Factory::getApplication()->enqueueMessage($e->getMessage(), 'error');
+        } finally {
+            ProductLayoutService::clearSubtemplateOverride();
         }
     }
 
@@ -280,6 +289,8 @@ final class AppBootstrap5 extends CMSPlugin implements SubscriberInterface
 
         $view->setLayout('view');
 
+        ProductLayoutService::setSubtemplateOverride('bootstrap5');
+
         try {
             $view   = $this->setTemplatePath($view);
             $result = $view->loadTemplate();
@@ -289,11 +300,11 @@ final class AppBootstrap5 extends CMSPlugin implements SubscriberInterface
                 return;
             }
 
-            // Use setArgument with 'html' key to properly return the rendered HTML
-            // The 'html' argument is a mutable argument in J2Commerce's PluginEvent class
-            $event->setArgument('html', $result);
+            $event->addResult((string) $result);
         } catch (\Exception $e) {
             Factory::getApplication()->enqueueMessage($e->getMessage(), 'error');
+        } finally {
+            ProductLayoutService::clearSubtemplateOverride();
         }
     }
 
@@ -327,6 +338,8 @@ final class AppBootstrap5 extends CMSPlugin implements SubscriberInterface
 
         $view->setLayout('view');
 
+        ProductLayoutService::setSubtemplateOverride('bootstrap5');
+
         try {
             $view   = $this->setTemplatePath($view, 'tag_bootstrap5');
             $result = $view->loadTemplate();
@@ -336,11 +349,11 @@ final class AppBootstrap5 extends CMSPlugin implements SubscriberInterface
                 return;
             }
 
-            // Use setArgument with 'html' key to properly return the rendered HTML
-            // The 'html' argument is a mutable argument in J2Commerce's PluginEvent class
-            $event->setArgument('html', $result);
+            $event->addResult((string) $result);
         } catch (\Exception $e) {
             Factory::getApplication()->enqueueMessage($e->getMessage(), 'error');
+        } finally {
+            ProductLayoutService::clearSubtemplateOverride();
         }
     }
 
