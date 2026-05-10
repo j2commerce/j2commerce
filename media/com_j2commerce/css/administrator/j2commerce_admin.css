@@ -8,52 +8,114 @@
     --j2c-grey-bg: #f9f9f9;
     --j2c-white-bg: #fff;
     --j2c-grey-color: #999;
-	--j2c-grey-border: #f0f0f0;
-	--j2c-primary: #1f3047;
+    --j2c-grey-border: #f0f0f0;
+    --j2c-primary: #1f3047;
 
     --j2c-loading-1: #c1e2f1;
     --j2c-loading-2: #45a7d4;
 
-	--j2c-price-filter-bg: #08b2d9;
-	--j2c-price-filter-border: #079ec0;
+    --j2c-price-filter-bg: #08b2d9;
+    --j2c-price-filter-border: #079ec0;
     --j2c-main: #08b2d9;
-
 
     --j2c-icon-default: #d0d0d0;
     --j2c-icon-featured: #f0ad4e;
     --j2c-icon-hot: #d9534f;
     --j2c-icon-new: #337ab7;
 
-
+    /* Bootstrap CSS Variable Fallbacks */
+    --white: #fff;
+    --light-rgb: 248, 249, 250;
+    --dark-rgb: 33, 37, 41;
+    --action-rgb: 0, 123, 255;
+    --bg-opacity: 1;
+    --bs-secondary-bg: #e9ecef;
+    --bs-body-bg: #fff;
 }
 
-body.com_j2commerce #content, #fieldset-j2commerce-product-settings, .j2commerce_extended {
+body.com_j2commerce #content,
+#fieldset-j2commerce-product-settings,
+.j2commerce_extended {
     --success: #0d9347;
     --success-rgb: 51,179,107;
+    --success-text: #0d9347; /* should be used for text color - Joomla uses --success for bg */
     --success-bg-subtle: #ebf7f0;
     --success-btn-bg-subtle: #ebf7f0;
     --success-btn-border-subtle: #ebf7f0;
     --success-border-subtle: #d6f0e1;
     --success-active: #097337;
     --info: #0d6efd;
+    --info-text: var(--info);
     --info-rgb: 13,110,253;
     --info-bg-subtle: #e7f1ff;
     --info-border-subtle: #d5e2f7;
+    --state-info-text: #0d6efd;
+    --state-info-bg: #e7f1ff;
+    --state-info-border: #d5e2f7;
     --warning: #fc9231;
+    --warning-text: var(--warning);
     --warning-rgb: 252,146,49;
     --warning-bg-subtle: #fff4ea;
     --warning-border-subtle: #fee9d6;
     --danger: #dc3545;
+    --danger-text: var(--danger);
     --danger-rgb: 220,53,69;
     --danger-bg-subtle: #fdecec;
     --danger-border-subtle: #fcd8d8;
     --purple: #6f42c1;
+    --purple-text: var(--purple);
     --purple-rgb: 111,66,193;
     --purple-bg-subtle: #e2d9f3;
     --purple-active: #5d2db4;
     --purple-border-subtle:#d4c3f4;
-
     --light-border-subtle: #eef1f6;
+}
+
+html[data-bs-theme="dark"] body.com_j2commerce #content,
+html[data-bs-theme="dark"] #fieldset-j2commerce-product-settings,
+html[data-bs-theme="dark"] .j2commerce_extended {
+    --success: #3d854d; /*d6f0e1;*/
+    --success-rgb: 61,133,77;
+    --success-text: #fff; /* should be used for text color - Joomla uses --success for bg */
+    --success-bg-subtle: #3d854d;
+    --success-btn-bg-subtle: #3d854d;
+    --success-btn-border-subtle: #d6f0e1;
+    --success-border-subtle: #d6f0e1;
+    --success-active: #075228;
+    --info: #c2edff;
+    --info-text: var(--info);
+    --info-rgb: 88,180,255;
+    --info-bg-subtle: #004764;
+    --info-border-subtle: #9eccdf;
+    --state-info-text: #58b4ff;
+    --state-info-bg: #004764;
+    --state-info-border: #9eccdf;
+    --warning: #ffd580;
+    --warning-text: var(--warning);
+    --warning-rgb: 255,213,128;
+    --warning-bg-subtle: #664400;
+    --warning-border-subtle: #ffdfb2;
+    --danger: #ff6b6b;
+    --danger-text: #fff;
+    --danger-rgb: 255,107,107;
+    --danger-bg-subtle: #c62a25;
+    --danger-border-subtle: #ffbebb;
+    --purple: #f0c4ff;
+    --purple-text: var(--purple);
+    --purple-rgb: 216,179,232;
+    --purple-bg-subtle: #5d2db4;
+    --purple-active: #5d2db4;
+    --purple-border-subtle:#d4c3f4;
+    --light: #f8f9fa;
+    --light-rgb: 248,249,250;
+    --light-border-subtle: #495057;
+    --bs-secondary-bg: #495057;
+    --bs-body-bg: #1a1a1a;
+}
+
+body.com_j2commerce #content,
+#fieldset-j2commerce-product-settings,
+.j2commerce_extended {
 
     .text-bg-secondary {
         color: var(--purple)!important;
@@ -62,93 +124,83 @@ body.com_j2commerce #content, #fieldset-j2commerce-product-settings, .j2commerce
 
     .btn-success {
         --btn-bg: var(--success)!important;
-        background-color:var(--success)!important;
-        border-color:var(--success)!important;
-        color:#fff!important;
-
+        background-color: var(--success)!important;
+        border-color: var(--success)!important;
+        color: #fff!important;
     }
+
     .text-bg-success {
-        color: var(--success)!important;
+        color: var(--success-text)!important;
         background-color: var(--success-bg-subtle)!important;
     }
+
     .border-success {
         border-color: var(--success)!important;
     }
 
     .alert-success {
-        color: var(--success)!important;
-        background-color: var(--success-bg-subtle)!important;
-        border-color: var(--success-border-subtle)!important;
-        .alert-link {color: var(--success)!important;}
-        .btn-success{
-            background-color: var(--success);
-            color: #fff;
-            text-decoration:none;
-        }
+        --alert-text: var(--success-text);
+        --alert-bg: var(--success-bg-subtle);
+        --alert-border: var(--success-border-subtle);
+        --alert-btn-bg: var(--success);
+        --alert-btn-text: #fff;
     }
 
     .text-bg-info {
-        color: var(--info)!important;
+        color: var(--info-text)!important;
         background-color: var(--info-bg-subtle)!important;
     }
 
     .alert-info {
-        color: var(--info)!important;
-        background-color: var(--info-bg-subtle)!important;
-        border-color: var(--info-border-subtle)!important;
-        .alert-link {color: var(--info)!important;}
-        .btn-info{
-            background-color: var(--info);
-            color: #fff;
-            text-decoration:none;
-        }
-    }
-
-    .j-main-container > .alert-info {
-        color: var(--state-info-text)!important;
-        background-color: var(--state-info-bg)!important;
-        border-color: var(--state-info-border)!important;
-        .alert-link {color: var(--state-info-text)!important;}
-        .btn-info{
-            background-color: var(--state-info-text);
-            color: #fff;
-            text-decoration:none;
-        }
+        --alert-text: var(--info-text);
+        --alert-bg: var(--info-bg-subtle);
+        --alert-border: var(--info-border-subtle);
+        --alert-btn-bg: var(--info);
+        --alert-btn-text: #fff;
     }
 
     .text-bg-warning {
-        color: var(--warning)!important;
+        color: var(--warning-text)!important;
         background-color: var(--warning-bg-subtle)!important;
     }
 
     .alert-warning {
-        color: var(--warning)!important;
-        background-color: var(--warning-bg-subtle)!important;
-        border-color: var(--warning-border-subtle)!important;
-        .alert-link {color: var(--warning)!important;}
-        .btn-warning{
-            background-color: var(--warning);
-            color: #fff;
-            text-decoration:none;
-        }
+        --alert-text: var(--warning-text);
+        --alert-bg: var(--warning-bg-subtle);
+        --alert-border: var(--warning-border-subtle);
+        --alert-btn-bg: var(--warning);
+        --alert-btn-text: #000;
     }
 
-
-
     .text-bg-danger {
-        color: var(--danger)!important;
+        color: var(--danger-text)!important;
         background-color: var(--danger-bg-subtle)!important;
         border-color: var(--danger-border-subtle)!important;
     }
 
     .alert-danger {
-        color: var(--danger)!important;
-        background-color: var(--danger-bg-subtle)!important;
-        border-color: var(--danger-bg-subtle)!important;
-        .alert-link {color: var(--danger)!important;}
-        .btn-danger{
-            background-color: var(--danger);
-            color: #fff;
+        --alert-text: var(--danger-text);
+        --alert-bg: var(--danger-bg-subtle);
+        --alert-border: var(--danger-border-subtle);
+        --alert-btn-bg: var(--danger);
+        --alert-btn-text: #fff;
+    }
+
+    :is(.alert-success, .alert-info, .alert-warning, .alert-danger, .alert-purple) {
+        color: var(--alert-text)!important;
+        background-color: var(--alert-bg)!important;
+        border-color: var(--alert-border)!important;
+
+        .alert-link {
+            color: var(--alert-text)!important;
+        }
+
+        .btn-success,
+        .btn-info,
+        .btn-warning,
+        .btn-danger {
+            background-color: var(--alert-btn-bg);
+            color: var(--alert-btn-text);
             text-decoration:none;
         }
     }
@@ -158,17 +210,16 @@ body.com_j2commerce #content, #fieldset-j2commerce-product-settings, .j2commerce
     }
 
     .alert-purple {
-        color: var(--purple)!important;
-        background-color: var(--purple-bg-subtle)!important;
-        border-color: var(--purple-border-subtle)!important;
-        .alert-link {color: var(--purple)!important;}
+        --alert-text: var(--purple-text);
+        --alert-bg: var(--purple-bg-subtle);
+        --alert-border: var(--purple-border-subtle);
     }
     .text-purple {
-        color: var(--purple)!important;
+        color: var(--purple-text)!important;
     }
 
     .text-bg-purple {
-        color: var(--purple)!important;
+        color: var(--purple-text)!important;
         background-color: var(--purple-bg-subtle)!important;
     }
 
@@ -186,59 +237,106 @@ body.com_j2commerce #content, #fieldset-j2commerce-product-settings, .j2commerce
 
     .text-bg-light {
         color: #000 !important;
-        background-color: RGBA(var(--light-rgb), var(--bg-opacity, 1)) !important;
+        background-color: #f8f9fa !important;
     }
 
     .text-bg-dark {
         color: #fff !important;
-        background-color: RGBA(var(--dark-rgb), var(--bg-opacity, 1)) !important;
+        background-color: #212529 !important;
     }
 
     .text-bg-action {
         color: #fff !important;
-        background-color: RGBA(var(--action-rgb), var(--bg-opacity, 1)) !important;
+        background-color: #007bff !important;
     }
 
-
     .subform-repeatable-group .control-group {margin-bottom:0;}
-    .progress {background-color: var(--bs-secondary-bg, #eef1f6) !important;}
+    .progress {background-color: #e9ecef !important;}
     .box-shadow-none {box-shadow:none!important;}
 
     .j2commerce-variant-inventory .form-check {padding-block-start: 3px;}
     #dashboardModuleTabs nav.quick-icons {padding:0!important;}
-
-
-
 }
 
 html[data-bs-theme="light"] body.com_j2commerce {
     .text-muted {
         --text-muted-color:#495057;
         color: var(--text-muted-color)!important;
-        opacity:1!important;
+        opacity: 1!important;
     }
 }
 
-
-html[data-bs-theme="dark"] body.com_j2commerce {
+html[data-bs-theme="dark"] body.com_j2commerce,
+html[data-bs-theme="dark"] #fieldset-j2commerce-product-settings,
+html[data-bs-theme="dark"] .j2commerce_extended {
     .btn-outline-primary {
         --btn-color: var(--btn-active-color)!important;
-        border: var(--btn-primary-border-hvr);
+        border: 1px solid var(--primary);
     }
     .btn-outline-primary:hover, .btn-outline-primary:focus, .btn-outline-primary:active {
-        background-color: var(--btn-primary-bg-hvr);
-        border: var(--btn-primary-border-hvr);
+        background-color: rgba(0, 123, 255, 0.2);
+        border: 1px solid var(--primary);
     }
-    .variants-container, .bg-white {background-color: rgba(255, 255, 255, 0.1)!important;border: none;}
-    .quick-icons .quickicon a.alert-success .quickicon-info .quickicon-icon {color: var(--success) !important;}
+    .variants-container, .bg-white {
+        background-color: rgba(255, 255, 255, 0.1)!important;
+        border: none;
+    }
+    .quick-icons .quickicon a.alert-success .quickicon-info .quickicon-icon {
+        color: var(--success) !important;
+    }
+
+    .alert-success {
+        --alert-text: var(--success-text);
+        --alert-bg: var(--success);
+        --alert-border: var(--success);
+        --alert-btn-bg: var(--success-active);
+        --alert-btn-text: var(--white);
+    }
+
+    .alert-info {
+        --alert-text: var(--white);
+        --alert-bg: var(--info-bg-subtle);
+        --alert-border: var(--info-border-subtle);
+        --alert-btn-bg: var(--info);
+        --alert-btn-text: #000;
+    }
+
+    .alert-warning {
+        --alert-text: #000;
+        --alert-bg: var(--warning);
+        --alert-border: var(--warning);
+        --alert-btn-bg: var(--warning-bg-subtle);
+        --alert-btn-text: var(--white);
+    }
+
+    .alert-danger {
+        --alert-text: var(--white);
+        --alert-bg: var(--danger-bg-subtle);
+        --alert-border: var(--danger-border-subtle);
+        --alert-btn-bg: var(--danger);
+        --alert-btn-text: #fff;
+    }
 }
 
-.j2commerce-social-share a[target="_blank"]:before {display:none;}
-.mt-n1 {margin-top: -0.25rem;}
-.mt-n2 {margin-top: -0.5rem;}
-.mt-n3 {margin-top: -1rem;}
-.mt-n4 {margin-top: -2rem;}
-.mt-n5 {margin-top: -3rem;}
+.j2commerce-social-share a[target="_blank"]:before {
+    display: none;
+}
+
+.mt-n1 {
+    margin-top: -0.25rem;
+}
+.mt-n2 {
+    margin-top: -0.5rem;
+}
+.mt-n3 {
+    margin-top: -1rem;
+}
+.mt-n4 {
+    margin-top: -2rem;
+}
+.mt-n5 {
+    margin-top: -3rem;
+}
 
 .j2commerce-navbar-container {
 
@@ -270,28 +368,23 @@ html[data-bs-theme="dark"] body.com_j2commerce {
 
     }
     .bg-primary {
-        background-color: var(--template-bg-dark-80) !important;
+        background-color: #1f3047 !important;
     }
-
-
-
 }
-
 
 #j2commerce-builder-container {
     .card-builder .card-header, #builder-canvas {background-color:#FBFCFE;}
     #builder-placeholder {min-height:500px;}
 }
 
-
 #fieldset-j2commerce-product-settings {
     button:focus-visible {outline: none;}
 
     .modal .btn.btn-sm {padding:.25rem .5rem;font-size:.8rem;line-height:1.5;box-shadow:none;}
-    .modal .btn.btn-primary {color: var(--white);background: var(--btn-primary-bg);border-color: var(--btn-primary-bg);box-shadow:none;}
-    .modal .btn.btn-primary:hover, .modal .btn.btn-primary:focus {color: var(--white);background: var(--primary);border-color: var(--primary);}
-    .modal .btn.btn-success {color: var(--white);background: var(--success);border-color: var(--success);box-shadow:none;}
-    .modal .btn.btn-success:hover, .modal .btn.btn-success:focus {color: var(--white);background: var(--success-active);border-color: var(--success-active);}
+    .modal .btn.btn-primary {color: #fff;background: #0d6efd;border-color: #0d6efd;box-shadow:none;}
+    .modal .btn.btn-primary:hover, .modal .btn.btn-primary:focus {color: #fff;background: #0b5ed7;border-color: #0b5ed7;}
+    .modal .btn.btn-success {color: #fff;background: var(--success);border-color: var(--success);box-shadow:none;}
+    .modal .btn.btn-success:hover, .modal .btn.btn-success:focus {color: #fff;background: var(--success-active);border-color: var(--success-active);}
     .modal .btn.j2commerce-set-default-btn, .modal .btn.j2commerce-delete-optionvalue-btn {border-color:transparent;border-radius:0;background:transparent;box-shadow:none;}
 
     #appsTab, joomla-tab-element {padding-left:0;padding-right:0;}
@@ -343,31 +436,34 @@ html[data-bs-theme="dark"] body.com_j2commerce {
     position: relative !important;
 }
 
-    #priceModal.modal.show .modal-dialog {height:95%;}
-    #priceModal .modal-content {height:100%;}
+#priceModal.modal.show .modal-dialog {
+    height:95%;
+}
 
-    @media only screen and (min-width: 992px) {
-        .j2commerce-navbar-container {
-            .navbar.navbar-expand-lg {
-                --navbar-padding-y: 1rem;
-                padding-top: var(--navbar-padding-y);
-                padding-bottom: var(--navbar-padding-y);
-            }
+#priceModal .modal-content {
+    height:100%;
+}
 
-            #j2commerceNavbar {
-                --nav-link-font-size: .8571rem;
-
-                .dropdown-menu {
-                    --dropdown-font-size: .8571rem;
-                }
-                .navbar-nav > .nav-item + .nav-item {
-                    margin-left: 1rem;
-                }
-            }
+@media only screen and (min-width: 992px) {
+    .j2commerce-navbar-container {
+        .navbar.navbar-expand-lg {
+            --navbar-padding-y: 1rem;
+            padding-top: var(--navbar-padding-y);
+            padding-bottom: var(--navbar-padding-y);
         }
 
+        #j2commerceNavbar {
+            --nav-link-font-size: .8571rem;
 
+            .dropdown-menu {
+                --dropdown-font-size: .8571rem;
+            }
+            .navbar-nav > .nav-item + .nav-item {
+                margin-left: 1rem;
+            }
+        }
     }
+}
 
 .boxpacker-boxes-body .form-control.form-control-sm {width: 70px;}
 .btn .spinner-border {
