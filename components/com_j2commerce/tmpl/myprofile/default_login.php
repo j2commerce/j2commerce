@@ -12,6 +12,7 @@ declare(strict_types=1);
 defined('_JEXEC') or die;
 
 use Joomla\CMS\Component\ComponentHelper;
+use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
@@ -20,8 +21,12 @@ use Joomla\CMS\Uri\Uri;
 
 /** @var \J2Commerce\Component\J2commerce\Site\View\Myprofile\HtmlView $this */
 
-$params  = $this->params;
+$params    = $this->params;
 $returnUrl = base64_encode(Uri::getInstance()->toString());
+
+$input         = Factory::getApplication()->getInput();
+$prefillToken  = trim($input->getString('order_token', ''));
+$prefillEmail  = trim($input->getString('order_email', ''));
 ?>
 
 <div class="j2commerce j2commerce-myprofile-login">
@@ -70,15 +75,16 @@ $returnUrl = base64_encode(Uri::getInstance()->toString());
             <div class="card">
                 <div class="card-header"><h4 class="mb-0"><?php echo Text::_('COM_J2COMMERCE_ORDER_GUEST_VIEW'); ?></h4></div>
                 <div class="card-body">
-                    <p class="text-muted"><?php echo Text::_('COM_J2COMMERCE_ORDER_GUEST_VIEW_DESC'); ?></p>
+                    <p class="text-body-secondary"><?php echo Text::_('COM_J2COMMERCE_ORDER_GUEST_VIEW_DESC'); ?></p>
                     <form action="<?php echo Route::_('index.php?option=com_j2commerce&task=myprofile.guestEntry'); ?>" method="post" id="j2commerceGuestForm">
                         <div class="mb-3">
                             <label for="j2c-guest-email" class="form-label"><?php echo Text::_('COM_J2COMMERCE_ORDER_EMAIL'); ?></label>
-                            <input type="email" name="email" id="j2c-guest-email" class="form-control" required>
+                            <input type="email" name="email" id="j2c-guest-email" class="form-control" value="<?php echo $this->escape($prefillEmail); ?>" required>
                         </div>
                         <div class="mb-3">
                             <label for="j2c-guest-token" class="form-label"><?php echo Text::_('COM_J2COMMERCE_ORDER_TOKEN'); ?></label>
-                            <input type="text" name="order_token" id="j2c-guest-token" class="form-control" required>
+                            <input type="text" name="order_token" id="j2c-guest-token" class="form-control" value="<?php echo $this->escape($prefillToken); ?>" required>
+                            <div class="form-text"><?php echo Text::_('COM_J2COMMERCE_ORDER_TOKEN_HINT'); ?></div>
                         </div>
                         <button type="submit" class="btn btn-primary"><?php echo Text::_('COM_J2COMMERCE_VIEW'); ?></button>
                         <?php echo HTMLHelper::_('form.token'); ?>

@@ -403,25 +403,40 @@ class EmailHelper
         $config   = Factory::getApplication()->getConfig();
         $sitename = $config->get('sitename');
 
-        // Site URL
-        $baseURL    = Uri::base();
-        $subpathURL = Uri::base(true);
-        $baseURL    = str_replace('/administrator', '', $baseURL);
-        $subpathURL = str_replace('/administrator', '', $subpathURL);
+        // Site URL roots — derived from Joomla live_site / URI so they resolve to
+        // the frontend even when this helper is invoked from the admin app or CLI.
+        $siteRoot   = rtrim(Uri::root(), '/');
+        $siteRoot   = preg_replace('#/administrator$#', '', $siteRoot);
+        $subpathURL = rtrim(Uri::root(true), '/');
+        $subpathURL = preg_replace('#/administrator$#', '', $subpathURL);
+        $baseURL    = $siteRoot . '/';
 
         // Invoice URL — links to myprofile order view (no token; unauthenticated users get login redirect)
-        $orderId           = $order->order_id ?? '';
-        $defaultInvoiceUrl = Route::_('index.php?option=com_j2commerce&view=myprofile&layout=order&order_id=' . urlencode((string) $orderId), false);
-        $url               = str_replace('&amp;', '&', $defaultInvoiceUrl);
-        $url               = str_replace('/administrator', '', $url);
-        $url               = ltrim($url, '/');
-        $subpathURL        = ltrim($subpathURL, '/');
+        $orderId       = $order->order_id ?? '';
+        $invoiceURL    = $this->buildSiteUrl(
+            'index.php?option=com_j2commerce&view=myprofile&layout=order&order_id=' . urlencode((string) $orderId),
+            $siteRoot,
+            $subpathURL
+        );
 
-        if (substr($url, 0, \strlen($subpathURL) + 1) === "$subpathURL/") {
-            $url = substr($url, \strlen($subpathURL) + 1);
-        }
+        // Guest order URL — deep link that pre-seeds the guest session via order_token + order_email
+        $orderToken    = (string) ($order->token ?? '');
+        $orderEmail    = (string) ($order->user_email ?? '');
+        $guestOrderURL = $this->buildSiteUrl(
+            'index.php?option=com_j2commerce&view=myprofile&layout=order'
+                . '&order_id=' . urlencode((string) $orderId)
+                . '&order_token=' . urlencode($orderToken)
+                . '&order_email=' . urlencode($orderEmail),
+            $siteRoot,
+            $subpathURL
+        );
 
-        $invoiceURL = rtrim($baseURL, '/') . '/' . ltrim($url, '/');
+        // Bare myprofile URL — landing page with guest-login form
+        $myprofileURL = $this->buildSiteUrl(
+            'index.php?option=com_j2commerce&view=myprofile',
+            $siteRoot,
+            $subpathURL
+        );
 
         // Order date
         $tz   = $config->get('offset');
@@ -515,6 +530,8 @@ class EmailHelper
             '[PAYMENT_TYPE]'              => $this->getPaymentMethodTitle($order->orderpayment_type ?? '', $language),
             '[ORDER_TOKEN]'               => $order->token ?? '',
             '[TOKEN]'                     => $order->token ?? '',
+            '[MYPROFILE_URL]'             => $myprofileURL,
+            '[GUEST_ORDER_URL]'           => $guestOrderURL,
             '[COUPON_CODE]'               => $couponCode,
             '[BANK_TRANSFER_INFORMATION]' => $bankTransferInfo,
             '[SHIPPING_TOTAL_WEIGHT]'     => $this->getTotalShippingWeight($order),
@@ -2326,5 +2343,29 @@ class EmailHelper
     {
         $registry = Factory::getContainer()->get(\J2Commerce\Component\J2commerce\Administrator\Service\EmailTypeRegistry::class);
         return $registry->hasType($emailType);
+    }
+
+    /**
+     * Build an absolute frontend URL through the site router, regardless of
+     * which app (site/admin/CLI) is currently rendering the email. Falls back
+     * to the absolute raw URL if the site router cannot be resolved.
+     */
+    private function buildSiteUrl(string $url, string $siteRoot, string $subpathURL): string
+    {
+        try {
+            $routed = Route::link('site', $url, false);
+        } catch (\Throwable) {
+            return rtrim($siteRoot, '/') . '/' . ltrim($url, '/');
+        }
+
+        $routed = str_replace(['&amp;', '/administrator'], ['&', ''], $routed);
+        $routed = ltrim($routed, '/');
+
+        $subpath = ltrim($subpathURL, '/');
+        if ($subpath !== '' && str_starts_with($routed, $subpath . '/')) {
+            $routed = substr($routed, \strlen($subpath) + 1);
+        }
+
+        return rtrim($siteRoot, '/') . '/' . ltrim($routed, '/');
     }
 }
