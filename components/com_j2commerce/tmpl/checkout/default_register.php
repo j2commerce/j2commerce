@@ -90,11 +90,16 @@ $asterisk = ($requiredIndicator === 'asterisk') ? ' <span class="text-danger">*<
         <?php foreach ($registrationForm->getFieldsets() as $fieldsetName => $fieldset) : ?>
             <?php if ($fieldsetName === 'privacyconsent') : ?>
                 <?php
-                $privacyField    = $registrationForm->getField('privacy', 'privacyconsent');
-                $privacyLink     = '';
-                $privacyLinkText = Text::_('COM_J2COMMERCE_CHECKOUT_PRIVACY_POLICY_LINK');
+                $privacyField = $registrationForm->getField('privacy', 'privacyconsent');
+                $privacyLink  = '';
+                $privacyNote  = '';
 
                 if ($privacyField) {
+                    $noteAttr    = (string) $privacyField->getAttribute('note', '');
+                    $privacyNote = $noteAttr !== ''
+                        ? Text::_($noteAttr)
+                        : Text::_('PLG_SYSTEM_PRIVACYCONSENT_NOTE_FIELD_DEFAULT');
+
                     $articleId  = (int) $privacyField->getAttribute('article', 0);
                     $menuItemId = (int) $privacyField->getAttribute('menu_item', 0);
 
@@ -133,14 +138,9 @@ $asterisk = ($requiredIndicator === 'asterisk') ? ' <span class="text-danger">*<
                         $privacyLink = Route::_($url);
                     }
                 }
-
-                $linkHtml = $privacyLink
-                    ? '<a href="' . htmlspecialchars($privacyLink, ENT_QUOTES, 'UTF-8') . '" target="_blank" rel="noopener">'
-                        . htmlspecialchars($privacyLinkText, ENT_QUOTES, 'UTF-8') . '</a>'
-                    : htmlspecialchars($privacyLinkText, ENT_QUOTES, 'UTF-8');
                 ?>
                 <div class="alert alert-info mt-3" role="alert">
-                    <div class="form-check mb-0">
+                    <div class="form-check mb-2">
                         <input type="checkbox"
                                class="form-check-input"
                                id="jform_privacyconsent_privacy"
@@ -148,9 +148,14 @@ $asterisk = ($requiredIndicator === 'asterisk') ? ' <span class="text-danger">*<
                                value="1"
                                required>
                         <label class="form-check-label" for="jform_privacyconsent_privacy">
-                            <?php echo Text::sprintf('COM_J2COMMERCE_CHECKOUT_PRIVACY_CONSENT_LABEL', $linkHtml); ?>
+                            <?php echo htmlspecialchars($privacyNote, ENT_QUOTES, 'UTF-8'); ?>
                         </label>
                     </div>
+                    <?php if ($privacyLink) : ?>
+                        <a href="<?php echo htmlspecialchars($privacyLink, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener" class="small">
+                            <?php echo Text::_('PLG_SYSTEM_PRIVACYCONSENT_SUBJECT'); ?>
+                        </a>
+                    <?php endif; ?>
                 </div>
             <?php else : ?>
                 <?php foreach ($registrationForm->getFieldset($fieldsetName) as $field) : ?>
