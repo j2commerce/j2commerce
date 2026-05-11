@@ -126,10 +126,10 @@ $doc->getWebAssetManager()
             <nav class="quick-icons bg-transparent" aria-label="<?php echo Text::_('COM_J2COMMERCE_DASHBOARD'); ?>">
                 <div class="row flex-wrap">
                     <div class="quickicon quickicon-single col-12 col-md-6 col-lg-3 mb-3 mb-lg-0 border-0">
-                        <div class="alert alert-success my-0 w-100 border">
+                        <div class="alert alert-success my-0 w-100 border-0">
                             <div class="quickicon-info d-block w-100">
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <div class="quickicon-value display-6 mb-3" id="kpi-revenue"><?php echo $this->escape($this->formattedRevenue); ?></div>
+                                <div class="d-flex flex-wrap align-items-center justify-content-between">
+                                    <div class="quickicon-value mw-100 display-6 mb-3" id="kpi-revenue"><?php echo $this->escape($this->formattedRevenue); ?></div>
                                     <div class="quickicon-change mb-3" id="kpi-revenue-change"><?php echo $changeHtml($revenueChange); ?></div>
                                 </div>
                             </div>
@@ -139,10 +139,10 @@ $doc->getWebAssetManager()
                         </div>
                     </div>
                     <div class="quickicon quickicon-single col-12 col-md-6 col-lg-3 mb-3 mb-lg-0 border-0">
-                        <div class="alert alert-warning my-0 w-100 border">
+                        <div class="alert alert-warning my-0 w-100 border-0">
                             <div class="quickicon-info d-block w-100">
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <div class="quickicon-value display-6 mb-3" id="kpi-orders"><?php echo $this->orderCount; ?></div>
+                                <div class="d-flex flex-wrap align-items-center justify-content-between">
+                                    <div class="quickicon-value mw-100 display-6 mb-3" id="kpi-orders"><?php echo $this->orderCount; ?></div>
                                     <div class="quickicon-change mb-3" id="kpi-orders-change"><?php echo $changeHtml($ordersChange); ?></div>
                                 </div>
                             </div>
@@ -152,10 +152,10 @@ $doc->getWebAssetManager()
                         </div>
                     </div>
                     <div class="quickicon quickicon-single col-12 col-md-6 col-lg-3 mb-3 mb-lg-0 border-0">
-                        <div class="alert alert-info my-0 w-100 border">
+                        <div class="alert alert-info my-0 w-100 border-0">
                             <div class="quickicon-info d-block w-100">
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <div class="quickicon-value display-6 mb-3" id="kpi-conversion"><?php echo $this->escape(number_format($this->conversionRate, 1) . '%'); ?></div>
+                                <div class="d-flex flex-wrap align-items-center justify-content-between">
+                                    <div class="quickicon-value mw-100 display-6 mb-3" id="kpi-conversion"><?php echo $this->escape(number_format($this->conversionRate, 1) . '%'); ?></div>
                                     <div class="quickicon-change mb-3" id="kpi-conversion-change"><?php echo $changeHtml($conversionChange); ?></div>
                                 </div>
                             </div>
@@ -165,10 +165,10 @@ $doc->getWebAssetManager()
                         </div>
                     </div>
                     <div class="quickicon quickicon-single col-12 col-md-6 col-lg-3 mb-3 mb-lg-0 border-0">
-                        <div class="alert alert-purple my-0 w-100 border">
+                        <div class="alert alert-purple my-0 w-100 border-0">
                             <div class="quickicon-info d-block w-100">
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <div class="quickicon-value display-6 mb-3" id="kpi-sessions"><?php echo (int) $this->totalSessions; ?></div>
+                                <div class="d-flex flex-wrap align-items-center justify-content-between">
+                                    <div class="quickicon-value mw-100 display-6 mb-3" id="kpi-sessions"><?php echo (int) $this->totalSessions; ?></div>
                                     <div class="quickicon-change mb-3" id="kpi-sessions-change"><?php echo $changeHtml($sessionsChange); ?></div>
                                 </div>
                             </div>

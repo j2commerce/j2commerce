@@ -93,8 +93,8 @@ $changeHtml = function (array $change): string {
                     <div class="quickicon quickicon-single col-12 col-md-6 col-lg-3 mb-3 mb-lg-0 border-0">
                         <div class="alert alert-success my-0 w-100 border-0">
                             <div class="quickicon-info d-block w-100">
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <div class="quickicon-value display-6 mb-3" id="kpi-revenue"><?php echo $this->escape($this->formattedRevenue); ?></div>
+                                <div class="d-flex flex-wrap align-items-center justify-content-between">
+                                    <div class="quickicon-value mw-100 display-6 mb-3" id="kpi-revenue"><?php echo $this->escape($this->formattedRevenue); ?></div>
                                     <div class="quickicon-change mb-3" id="kpi-revenue-change"><?php echo $changeHtml($revenueChange); ?></div>
                                 </div>
                             </div>
@@ -109,8 +109,8 @@ $changeHtml = function (array $change): string {
                     <div class="quickicon quickicon-single col-12 col-md-6 col-lg-3 mb-3 mb-lg-0 border-0">
                         <div class="alert alert-warning my-0 w-100 border-0">
                             <div class="quickicon-info d-block w-100">
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <div class="quickicon-value display-6 mb-3" id="kpi-orders"><?php echo $this->orderCount; ?></div>
+                                <div class="d-flex flex-wrap align-items-center justify-content-between">
+                                    <div class="quickicon-value mw-100 display-6 mb-3" id="kpi-orders"><?php echo $this->orderCount; ?></div>
                                     <div class="quickicon-change mb-3" id="kpi-orders-change"><?php echo $changeHtml($ordersChange); ?></div>
                                 </div>
                             </div>
@@ -125,8 +125,8 @@ $changeHtml = function (array $change): string {
                     <div class="quickicon quickicon-single col-12 col-md-6 col-lg-3 mb-3 mb-lg-0 border-0">
                         <div class="alert alert-info my-0 w-100 border-0">
                             <div class="quickicon-info d-block w-100">
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <div class="quickicon-value display-6 mb-3" id="kpi-aov"><?php echo $this->escape($this->formattedAOV); ?></div>
+                                <div class="d-flex flex-wrap align-items-center justify-content-between">
+                                    <div class="quickicon-value mw-100 display-6 mb-3" id="kpi-aov"><?php echo $this->escape($this->formattedAOV); ?></div>
                                     <div class="quickicon-change mb-3" id="kpi-aov-change"><?php echo $changeHtml($aovChange); ?></div>
                                 </div>
                             </div>
@@ -141,8 +141,8 @@ $changeHtml = function (array $change): string {
                     <div class="quickicon quickicon-single col-12 col-md-6 col-lg-3 mb-3 mb-lg-0 border-0">
                         <div class="alert alert-purple my-0 w-100 border-0">
                             <div class="quickicon-info d-block w-100">
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <div class="quickicon-value display-6 mb-3" id="kpi-items"><?php echo $this->itemsSold; ?></div>
+                                <div class="d-flex flex-wrap align-items-center justify-content-between">
+                                    <div class="quickicon-value mw-100 display-6 mb-3" id="kpi-items"><?php echo $this->itemsSold; ?></div>
                                     <div class="quickicon-change mb-3" id="kpi-items-change"><?php echo $changeHtml($itemsChange); ?></div>
                                 </div>
                             </div>
