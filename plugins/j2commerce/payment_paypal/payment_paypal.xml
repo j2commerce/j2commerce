@@ -152,6 +152,35 @@
 
                 <field type="spacer" />
 
+                <!-- Payment Sources (funding methods) -->
+                <field
+                    name="enabled_funding_sources"
+                    type="checkboxes"
+                    label="PLG_J2COMMERCE_PAYMENT_PAYPAL_FUNDING_SOURCES_LABEL"
+                    description="PLG_J2COMMERCE_PAYMENT_PAYPAL_FUNDING_SOURCES_DESC"
+                    default="paypal"
+                >
+                    <option value="paypal">PLG_J2COMMERCE_PAYMENT_PAYPAL_FUNDING_PAYPAL</option>
+                    <option value="card">PLG_J2COMMERCE_PAYMENT_PAYPAL_FUNDING_CARD</option>
+                    <option value="paylater">PLG_J2COMMERCE_PAYMENT_PAYPAL_FUNDING_PAYLATER</option>
+                    <option value="venmo">PLG_J2COMMERCE_PAYMENT_PAYPAL_FUNDING_VENMO</option>
+                    <option value="applepay">PLG_J2COMMERCE_PAYMENT_PAYPAL_FUNDING_APPLEPAY</option>
+                    <option value="googlepay">PLG_J2COMMERCE_PAYMENT_PAYPAL_FUNDING_GOOGLEPAY</option>
+                    <option value="ideal">PLG_J2COMMERCE_PAYMENT_PAYPAL_FUNDING_IDEAL</option>
+                    <option value="bancontact">PLG_J2COMMERCE_PAYMENT_PAYPAL_FUNDING_BANCONTACT</option>
+                    <option value="blik">PLG_J2COMMERCE_PAYMENT_PAYPAL_FUNDING_BLIK</option>
+                    <option value="eps">PLG_J2COMMERCE_PAYMENT_PAYPAL_FUNDING_EPS</option>
+                    <option value="giropay">PLG_J2COMMERCE_PAYMENT_PAYPAL_FUNDING_GIROPAY</option>
+                    <option value="mercadopago">PLG_J2COMMERCE_PAYMENT_PAYPAL_FUNDING_MERCADOPAGO</option>
+                    <option value="mybank">PLG_J2COMMERCE_PAYMENT_PAYPAL_FUNDING_MYBANK</option>
+                    <option value="oxxo">PLG_J2COMMERCE_PAYMENT_PAYPAL_FUNDING_OXXO</option>
+                    <option value="przelewy24">PLG_J2COMMERCE_PAYMENT_PAYPAL_FUNDING_PRZELEWY24</option>
+                    <option value="trustly">PLG_J2COMMERCE_PAYMENT_PAYPAL_FUNDING_TRUSTLY</option>
+                    <option value="sepadirectdebit">PLG_J2COMMERCE_PAYMENT_PAYPAL_FUNDING_SEPA</option>
+                </field>
+
+                <field type="spacer" />
+
                 <field
                     name="subscription_mode"
                     type="radio"
