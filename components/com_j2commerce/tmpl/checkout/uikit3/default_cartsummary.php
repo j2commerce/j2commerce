@@ -36,24 +36,24 @@ if ($showItemTax && isset($this->taxes) && \count($this->taxes)) {
 
 ?>
 <div class="j2commerce-checkout-summary">
-    <h5 class="mb-3"><?php echo Text::_('COM_J2COMMERCE_ORDER_SUMMARY'); ?></h5>
+    <h5 class="uk-margin-bottom"><?php echo Text::_('COM_J2COMMERCE_ORDER_SUMMARY'); ?></h5>
 
-    <div class="table-responsive">
-        <table class="table table-striped align-middle">
-            <thead class="table-light">
+    <div class="uk-overflow-auto">
+        <table class="uk-table uk-table-striped uk-table-middle">
+            <thead>
                 <tr>
                     <th><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM'); ?></th>
                     <?php if ($showSku) : ?>
                         <th><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_SKU'); ?></th>
                     <?php endif; ?>
-                    <th class="text-center" style="width: 80px;"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_QUANTITY'); ?></th>
+                    <th class="uk-text-center" style="width: 80px;"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_QUANTITY'); ?></th>
                     <?php if ($showPriceField) : ?>
-                        <th class="text-end"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_UNIT_PRICE'); ?></th>
+                        <th class="uk-text-right"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_UNIT_PRICE'); ?></th>
                     <?php endif; ?>
                     <?php if ($showItemTax && isset($this->taxes) && \count($this->taxes)) : ?>
-                        <th class="text-end"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_TAX'); ?></th>
+                        <th class="uk-text-right"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_TAX'); ?></th>
                     <?php endif; ?>
-                    <th class="text-end" style="width: 120px;"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_TOTAL'); ?></th>
+                    <th class="uk-text-right" style="width: 120px;"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_TOTAL'); ?></th>
                 </tr>
             </thead>
             <tbody>
@@ -68,17 +68,17 @@ if ($showItemTax && isset($this->taxes) && \count($this->taxes)) {
                     ?>
                     <tr>
                         <td>
-                            <div class="d-flex align-items-start gap-2">
+                            <div class="uk-flex uk-flex-top" style="gap: 8px;">
                                 <?php if ($showThumbCart && !empty($thumbImage)) : ?>
                                     <img src="<?php echo $thumbImage; ?>"
                                          alt="<?php echo $this->escape($item->orderitem_name); ?>"
-                                         class="rounded flex-shrink-0"
+                                         class="uk-border-rounded uk-flex-none"
                                          width="50">
                                 <?php endif; ?>
                                 <div>
-                                    <span class="fw-bold"><?php echo $this->escape($item->orderitem_name); ?></span>
+                                    <span class="uk-text-bold"><?php echo $this->escape($item->orderitem_name); ?></span>
                                     <?php if (!empty($item->orderitemattributes)) : ?>
-                                        <div class="mt-1">
+                                        <div class="uk-margin-small-top">
                                             <?php echo LayoutHelper::render('orderitem.attributes', [
                                                 'attributes' => $item->orderitemattributes,
                                                 'item'       => $item,
@@ -94,14 +94,14 @@ if ($showItemTax && isset($this->taxes) && \count($this->taxes)) {
 
                         <?php if ($showSku) : ?>
                             <td>
-                                <small class="text-muted"><?php echo $this->escape($item->orderitem_sku ?? ''); ?></small>
+                                <small class="uk-text-meta"><?php echo $this->escape($item->orderitem_sku ?? ''); ?></small>
                             </td>
                         <?php endif; ?>
 
-                        <td class="text-center"><?php echo $qty; ?></td>
+                        <td class="uk-text-center"><?php echo $qty; ?></td>
 
                         <?php if ($showPriceField) : ?>
-                            <td class="text-end">
+                            <td class="uk-text-right">
                                 <?php echo $this->currency->format(
                                     $this->order->get_formatted_lineitem_price($item, $checkoutPriceDisplay)
                                 ); ?>
@@ -109,12 +109,12 @@ if ($showItemTax && isset($this->taxes) && \count($this->taxes)) {
                         <?php endif; ?>
 
                         <?php if ($showItemTax && isset($this->taxes) && \count($this->taxes)) : ?>
-                            <td class="text-end">
+                            <td class="uk-text-right">
                                 <?php echo $this->currency->format($item->orderitem_tax ?? 0); ?>
                             </td>
                         <?php endif; ?>
 
-                        <td class="text-end fw-bold">
+                        <td class="uk-text-right uk-text-bold">
                             <?php echo $this->currency->format(
                                 $this->order->get_formatted_lineitem_total($item, $checkoutPriceDisplay)
                             ); ?>
@@ -122,14 +122,14 @@ if ($showItemTax && isset($this->taxes) && \count($this->taxes)) {
                     </tr>
                 <?php endforeach; ?>
             </tbody>
-            <tfoot class="table-light">
+            <tfoot>
                 <?php if ($this->order && ($totals = $this->order->get_formatted_order_totals())) : ?>
                     <?php foreach ($totals as $key => $total) : ?>
-                        <tr<?php echo $key === 'grandtotal' ? ' class="fw-bold fs-5"' : ''; ?>>
-                            <td colspan="<?php echo $colspan; ?>" class="text-end">
+                        <tr<?php echo $key === 'grandtotal' ? ' class="uk-text-bold"' : ''; ?>>
+                            <td colspan="<?php echo $colspan; ?>" class="uk-text-right">
                                 <?php echo $total['label']; ?>
                             </td>
-                            <td class="text-end<?php echo $key === 'subtotal' ? ' fw-bold' : ''; ?>">
+                            <td class="uk-text-right<?php echo $key === 'subtotal' ? ' uk-text-bold' : ''; ?>">
                                 <?php echo $total['value']; ?>
                             </td>
                         </tr>

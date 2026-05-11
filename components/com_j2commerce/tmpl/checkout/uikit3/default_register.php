@@ -30,57 +30,38 @@ $config = J2CommerceHelper::config();
 $requiredIndicator = $config->get('checkout_required_indicator', 'asterisk');
 $fieldStyle = $config->get('checkout_field_style', 'normal');
 $isFloating = ($fieldStyle === 'floating');
-$asterisk = ($requiredIndicator === 'asterisk') ? ' <span class="text-danger">*</span>' : '';
+$asterisk = ($requiredIndicator === 'asterisk') ? ' <span class="uk-text-danger">*</span>' : '';
 ?>
 <div class="j2commerce-register-form">
 
-    <div class="row g-3">
+    <div class="uk-grid uk-grid-small" uk-grid>
         <?php foreach ($fields as $field) : ?>
             <?php echo CustomFieldHelper::renderField($field); ?>
         <?php endforeach; ?>
     </div>
 
     <div class="j2commerce-checkout-password-container">
-        <h5 class="mt-4 mb-3"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_SET_PASSWORD'); ?></h5>
-        <div class="row g-3">
-            <?php if ($isFloating) : ?>
-                <div class="col-md-6">
-                    <div class="form-floating">
-                        <input type="password" name="password" id="password" class="form-control" required autocomplete="new-password" placeholder="<?php echo Text::_('COM_J2COMMERCE_CHECKOUT_ENTER_PASSWORD'); ?>" />
-                        <label for="password"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_ENTER_PASSWORD'); ?><?php echo $asterisk; ?></label>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="form-floating">
-                        <input type="password" name="confirm" id="confirm" class="form-control" required autocomplete="new-password" placeholder="<?php echo Text::_('COM_J2COMMERCE_CHECKOUT_CONFIRM_PASSWORD'); ?>" />
-                        <label for="confirm"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_CONFIRM_PASSWORD'); ?><?php echo $asterisk; ?></label>
-                    </div>
-                </div>
-            <?php else : ?>
-                <div class="col-md-6">
-                    <div class="form-normal">
-                        <label for="password" class="form-label"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_ENTER_PASSWORD'); ?><?php echo $asterisk; ?></label>
-                        <input type="password" name="password" id="password" class="form-control" required autocomplete="new-password" />
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="form-normal">
-                        <label for="confirm" class="form-label"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_CONFIRM_PASSWORD'); ?><?php echo $asterisk; ?></label>
-                        <input type="password" name="confirm" id="confirm" class="form-control" required autocomplete="new-password" />
-                    </div>
-                </div>
-            <?php endif; ?>
+        <h5 class="uk-margin-medium-top uk-margin-small-bottom"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_SET_PASSWORD'); ?></h5>
+        <div class="uk-grid uk-grid-small" uk-grid>
+            <div class="uk-width-1-2@m">
+                <label for="password" class="uk-form-label"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_ENTER_PASSWORD'); ?><?php echo $asterisk; ?></label>
+                <input type="password" name="password" id="password" class="uk-input" required autocomplete="new-password" />
+            </div>
+            <div class="uk-width-1-2@m">
+                <label for="confirm" class="uk-form-label"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_CONFIRM_PASSWORD'); ?><?php echo $asterisk; ?></label>
+                <input type="password" name="confirm" id="confirm" class="uk-input" required autocomplete="new-password" />
+            </div>
         </div>
     </div>
 
     <?php if ($showShipping) : ?>
-        <div class="mt-3 mb-3">
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="shipping_address" value="1" id="shipping-same-as-billing" checked>
-                <label class="form-check-label" for="shipping-same-as-billing">
+        <div class="uk-margin">
+            <label class="uk-flex uk-flex-middle">
+                <input class="uk-checkbox uk-margin-small-right" type="checkbox" name="shipping_address" value="1" id="shipping-same-as-billing" checked>
+                <span for="shipping-same-as-billing">
                     <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_SHIPPING_SAME_AS_BILLING'); ?>
-                </label>
-            </div>
+                </span>
+            </label>
         </div>
     <?php endif; ?>
 
@@ -139,27 +120,29 @@ $asterisk = ($requiredIndicator === 'asterisk') ? ' <span class="text-danger">*<
                     }
                 }
                 ?>
-                <div class="alert alert-info mt-3" role="alert">
-                    <div class="form-check mb-2">
-                        <input type="checkbox"
-                               class="form-check-input"
-                               id="jform_privacyconsent_privacy"
-                               name="jform[privacyconsent][privacy]"
-                               value="1"
-                               required>
-                        <label class="form-check-label" for="jform_privacyconsent_privacy">
-                            <?php echo htmlspecialchars($privacyNote, ENT_QUOTES, 'UTF-8'); ?>
+                <div class="uk-alert uk-alert-primary uk-margin-top" uk-alert role="alert">
+                    <div class="uk-margin-small-bottom">
+                        <label class="uk-flex uk-flex-middle">
+                            <input type="checkbox"
+                                   class="uk-checkbox uk-margin-small-right"
+                                   id="jform_privacyconsent_privacy"
+                                   name="jform[privacyconsent][privacy]"
+                                   value="1"
+                                   required>
+                            <span for="jform_privacyconsent_privacy">
+                                <?php echo htmlspecialchars($privacyNote, ENT_QUOTES, 'UTF-8'); ?>
+                            </span>
                         </label>
                     </div>
                     <?php if ($privacyLink) : ?>
-                        <a href="<?php echo htmlspecialchars($privacyLink, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener" class="small">
+                        <a href="<?php echo htmlspecialchars($privacyLink, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener" class="uk-text-small">
                             <?php echo Text::_('PLG_SYSTEM_PRIVACYCONSENT_SUBJECT'); ?>
                         </a>
                     <?php endif; ?>
                 </div>
             <?php else : ?>
                 <?php foreach ($registrationForm->getFieldset($fieldsetName) as $field) : ?>
-                    <div class="mt-3">
+                    <div class="uk-margin-top">
                         <?php echo $field->renderField(); ?>
                     </div>
                 <?php endforeach; ?>
@@ -167,8 +150,8 @@ $asterisk = ($requiredIndicator === 'asterisk') ? ' <span class="text-danger">*<
         <?php endforeach; ?>
     <?php endif; ?>
 
-    <div class="mt-3">
-        <button type="button" id="button-register" class="btn btn-primary">
+    <div class="uk-margin-top">
+        <button type="button" id="button-register" class="uk-button uk-button-primary">
             <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_CONTINUE'); ?>
         </button>
     </div>

@@ -55,10 +55,10 @@ $totals = ($this->order && method_exists($this->order, 'get_formatted_order_tota
 $grandTotalValue = $totals['grandtotal']['value'] ?? '';
 
 ?>
-<div class="bg-light rounded p-3 p-lg-4">
+<div class="uk-background-muted uk-border-rounded uk-padding uk-padding-small@m">
 
             <?php if (!empty($this->items)): ?>
-            <div class="checkout-sidebar-items list-group list-group-flush mb-3">
+            <div class="checkout-sidebar-items uk-margin-bottom">
                 <?php foreach ($this->items as $item): ?>
                     <?php
                     $itemParams = $platform->getRegistry($item->orderitem_params ?? '{}');
@@ -74,23 +74,23 @@ $grandTotalValue = $totals['grandtotal']['value'] ?? '';
                         ? $this->order->get_formatted_lineitem_total($item, $checkoutPriceDisplay)
                         : 0;
                     ?>
-                    <div class="checkout-sidebar-item list-group-item px-0 d-flex align-items-center gap-3">
+                    <div class="checkout-sidebar-item uk-flex uk-flex-middle uk-margin-small-bottom" style="gap: 12px;">
                         <?php if (!empty($thumbImage)): ?>
-                        <div class="position-relative flex-shrink-0" style="width:64px;height:64px;">
-                            <img class="rounded border w-100 h-100 object-fit-cover" src="<?php echo $this->escape($thumbImage); ?>" alt="<?php echo $this->escape($item->orderitem_name); ?>">
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary"><?php echo $qty; ?></span>
+                        <div class="uk-position-relative uk-flex-none" style="width:64px;height:64px;">
+                            <img class="uk-border-rounded uk-border uk-width-1-1 uk-height-1-1" style="object-fit:cover;" src="<?php echo $this->escape($thumbImage); ?>" alt="<?php echo $this->escape($item->orderitem_name); ?>">
+                            <span class="uk-badge uk-position-top-right"><?php echo $qty; ?></span>
                         </div>
                         <?php else: ?>
-                        <div class="position-relative flex-shrink-0 d-flex align-items-center justify-content-center rounded border bg-light" style="width:64px;height:64px;">
-                            <span class="text-muted small"><?php echo $qty; ?>x</span>
+                        <div class="uk-flex-none uk-flex uk-flex-middle uk-flex-center uk-border-rounded uk-border uk-background-default" style="width:64px;height:64px;">
+                            <span class="uk-text-meta uk-text-small"><?php echo $qty; ?>x</span>
                         </div>
                         <?php endif; ?>
 
-                        <div class="flex-grow-1 overflow-hidden">
-                            <div class="fw-medium text-truncate"><?php echo $this->escape($item->orderitem_name); ?></div>
+                        <div class="uk-flex-1" style="min-width:0;">
+                            <div class="uk-text-bold uk-text-truncate"><?php echo $this->escape($item->orderitem_name); ?></div>
                             <?php if ($this->params->get('show_sku', 1) && !empty($item->orderitem_sku)): ?>
-                                <div class="cart-product-sku small">
-                                    <span class="cart-item-title text-muted"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_SKU'); ?>:</span>
+                                <div class="cart-product-sku uk-text-small">
+                                    <span class="cart-item-title uk-text-meta"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_SKU'); ?>:</span>
                                     <span class="cart-item-value"><?php echo $this->escape($item->orderitem_sku); ?></span>
                                 </div>
                             <?php endif; ?>
@@ -105,7 +105,7 @@ $grandTotalValue = $totals['grandtotal']['value'] ?? '';
                             <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterDisplayLineItemTitle', [$item, $this->order, &$this->params]); ?>
                         </div>
 
-                        <div class="fw-medium flex-shrink-0">
+                        <div class="uk-text-bold uk-flex-none">
                             <?php echo $this->currency->format($lineTotal); ?>
                         </div>
                     </div>
@@ -114,7 +114,7 @@ $grandTotalValue = $totals['grandtotal']['value'] ?? '';
             <?php endif; ?>
 
             <?php if ($enableCoupon): ?>
-            <div class="mb-2 checkout-coupon-form">
+            <div class="uk-margin-small-bottom checkout-coupon-form">
                 <?php echo LayoutHelper::render('form.coupon', [
                     'couponCode'   => $coupon,
                     'formId'       => 'sidecart-coupon',
@@ -125,7 +125,7 @@ $grandTotalValue = $totals['grandtotal']['value'] ?? '';
             <?php endif; ?>
 
             <?php if ($enableVoucher): ?>
-            <div class="checkout-voucher-form mb-3">
+            <div class="checkout-voucher-form uk-margin-bottom">
                 <?php echo LayoutHelper::render('form.voucher', [
                     'voucherCode'  => $voucher,
                     'formId'       => 'sidecart-voucher',
@@ -136,16 +136,16 @@ $grandTotalValue = $totals['grandtotal']['value'] ?? '';
             <?php endif; ?>
 
             <?php if (!empty($totals)): ?>
-            <div class="border-top pt-3">
+            <div class="uk-border-top uk-padding-small-top">
                 <?php foreach ($totals as $key => $total): ?>
                     <?php if ($key === 'grandtotal'): ?>
-                        <div class="d-flex justify-content-between align-items-center pt-2 border-top mt-2">
-                            <span class="fs-5 fw-bold"><?php echo $total['label']; ?></span>
-                            <span class="fs-5 fw-bold j2commerce-sidecart-grandtotal"><?php echo $total['value']; ?></span>
+                        <div class="uk-flex uk-flex-between uk-flex-middle uk-padding-small-top uk-border-top uk-margin-small-top">
+                            <span class="uk-text-large uk-text-bold"><?php echo $total['label']; ?></span>
+                            <span class="uk-text-large uk-text-bold j2commerce-sidecart-grandtotal"><?php echo $total['value']; ?></span>
                         </div>
                     <?php else: ?>
-                        <div class="d-flex justify-content-between mb-1">
-                            <span class="text-muted">
+                        <div class="uk-flex uk-flex-between uk-margin-small-bottom">
+                            <span class="uk-text-meta">
                                 <?php echo $total['label']; ?>
                                 <?php if (!empty($total['link'])): ?>
                                     <?php echo $total['link']; ?>

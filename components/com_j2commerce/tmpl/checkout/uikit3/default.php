@@ -24,9 +24,6 @@ use Joomla\CMS\Uri\Uri;
 $token = Session::getFormToken();
 
 $wa  = Factory::getApplication()->getDocument()->getWebAssetManager();
-$wa->useScript('bootstrap.collapse');
-$wa->useScript('bootstrap.dropdown');
-
 $wa->registerAndUseStyle('checkout.style', 'media/com_j2commerce/css/site/checkout.css', [], [], []);
 
 // Register telephone widget assets + script options on initial page render.
@@ -70,18 +67,17 @@ $selectZoneJs = htmlspecialchars(Text::sprintf('COM_J2COMMERCE_SELECT_PLACEHOLDE
                 $logoAlt  = $storeLogo->alt_text ?? '';
                 if ($logoFile && $logoAlt !== '') :
             ?>
-            <div class="text-center mb-3">
+            <div class="uk-text-center uk-margin-bottom">
                 <img src="<?php echo Uri::root() . htmlspecialchars($logoFile, ENT_QUOTES, 'UTF-8'); ?>"
-                     alt="<?php echo htmlspecialchars($logoAlt, ENT_QUOTES, 'UTF-8'); ?>"
-                     class="img-fluid">
+                     alt="<?php echo htmlspecialchars($logoAlt, ENT_QUOTES, 'UTF-8'); ?>">
             </div>
             <?php endif; } ?>
-            <div class="j2commerce-checkout-row row justify-content-xl-center">
-                <div class="j2commerce-checkout-steps col-lg-8 col-xl-6 order-2 order-lg-1">
+            <div class="j2commerce-checkout-row uk-grid" uk-grid>
+                <div class="j2commerce-checkout-steps uk-width-2-3@l">
                     <section id="checkout" role="region" aria-labelledby="checkout-heading-label">
-                        <div class="checkout-heading mb-2 d-flex justify-content-between align-items-center">
+                        <div class="checkout-heading uk-margin-small-bottom uk-flex uk-flex-between uk-flex-middle">
                             <div>
-                                <span id="checkout-heading-label" class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_OPTIONS'); ?></span>
+                                <span id="checkout-heading-label" class="uk-hidden-visually"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_OPTIONS'); ?></span>
                             </div>
                             <?php if ($this->logged) : ?>
                                 <a href="<?php echo Route::_('index.php?option=com_j2commerce&task=checkout.logout&' . $token . '=1'); ?>" class="checkout-logout text-danger">
@@ -94,40 +90,40 @@ $selectZoneJs = htmlspecialchars(Text::sprintf('COM_J2COMMERCE_SELECT_PLACEHOLDE
 
                     <?php if (!$this->logged) : ?>
                     <section id="billing-address" role="region" aria-labelledby="billing-heading-label">
-                        <div class="checkout-heading mb-2"><span id="billing-heading-label"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_ACCOUNT'); ?></span></div>
+                        <div class="checkout-heading uk-margin-small-bottom"><span id="billing-heading-label"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_ACCOUNT'); ?></span></div>
                         <div class="checkout-content" aria-busy="false"></div>
                     </section>
                     <?php else : ?>
                     <section id="billing-address" role="region" aria-labelledby="billing-heading-label">
-                        <div class="checkout-heading mb-2"><span id="billing-heading-label"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_BILLING_ADDRESS'); ?></span></div>
+                        <div class="checkout-heading uk-margin-small-bottom"><span id="billing-heading-label"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_BILLING_ADDRESS'); ?></span></div>
                         <div class="checkout-content" aria-busy="false"></div>
                     </section>
                     <?php endif; ?>
 
                     <section id="custom-steps-after-billing" role="region" aria-labelledby="custom-steps-after-billing-label" style="display:none;">
-                        <div class="checkout-heading mb-2"><span id="custom-steps-after-billing-label"></span></div>
+                        <div class="checkout-heading uk-margin-small-bottom"><span id="custom-steps-after-billing-label"></span></div>
                         <div class="checkout-content" aria-busy="false"></div>
                     </section>
 
                     <?php if ($this->showShipping) : ?>
                     <section id="shipping-address" role="region" aria-labelledby="shipping-heading-label" style="display:none;">
-                        <div class="checkout-heading mb-2"><span id="shipping-heading-label"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_SHIPPING_ADDRESS'); ?></span></div>
+                        <div class="checkout-heading uk-margin-small-bottom"><span id="shipping-heading-label"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_SHIPPING_ADDRESS'); ?></span></div>
                         <div class="checkout-content" aria-busy="false"></div>
                     </section>
                     <?php endif; ?>
 
                     <section id="custom-steps-after-shipping" role="region" aria-labelledby="custom-steps-after-shipping-label" style="display:none;">
-                        <div class="checkout-heading mb-2"><span id="custom-steps-after-shipping-label"></span></div>
+                        <div class="checkout-heading uk-margin-small-bottom"><span id="custom-steps-after-shipping-label"></span></div>
                         <div class="checkout-content" aria-busy="false"></div>
                     </section>
 
                     <section id="custom-steps-before-payment" role="region" aria-labelledby="custom-steps-before-payment-label" style="display:none;">
-                        <div class="checkout-heading mb-2"><span id="custom-steps-before-payment-label"></span></div>
+                        <div class="checkout-heading uk-margin-small-bottom"><span id="custom-steps-before-payment-label"></span></div>
                         <div class="checkout-content" aria-busy="false"></div>
                     </section>
 
                     <section id="shipping-payment-method" role="region" aria-labelledby="payment-heading-label">
-                        <div class="checkout-heading mb-2">
+                        <div class="checkout-heading uk-margin-small-bottom">
                         <span id="payment-heading-label">
                         <?php if ($this->showShipping) : ?>
                             <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_SHIPPING_PAYMENT_METHOD'); ?>
@@ -140,7 +136,7 @@ $selectZoneJs = htmlspecialchars(Text::sprintf('COM_J2COMMERCE_SELECT_PLACEHOLDE
                     </section>
 
                     <section id="custom-steps-before-confirm" role="region" aria-labelledby="custom-steps-before-confirm-label" style="display:none;">
-                        <div class="checkout-heading mb-2"><span id="custom-steps-before-confirm-label"></span></div>
+                        <div class="checkout-heading uk-margin-small-bottom"><span id="custom-steps-before-confirm-label"></span></div>
                         <div class="checkout-content" aria-busy="false"></div>
                     </section>
 
@@ -150,26 +146,25 @@ $selectZoneJs = htmlspecialchars(Text::sprintf('COM_J2COMMERCE_SELECT_PLACEHOLDE
                     </section>
                 </div>
 
-                <div class="j2commerce-checkout-sidebar col-lg-4 offset-xl-1 order-1 order-lg-2">
+                <div class="j2commerce-checkout-sidebar uk-width-1-3@l">
                     <?php echo J2CommerceHelper::modules()->loadposition('j2commerce-checkout-sidecart-top'); ?>
 
-                    <button class="btn btn-light w-100 d-lg-none d-flex justify-content-between align-items-center border py-3 mb-3"
+                    <button class="uk-button uk-button-default uk-width-1-1 uk-hidden@l uk-flex uk-flex-between uk-flex-middle uk-margin-bottom"
                             type="button"
-                            data-bs-toggle="collapse"
-                            data-bs-target="#checkoutSidecartCollapse"
+                            uk-toggle="target: #checkoutSidecartCollapse"
                             aria-expanded="false"
                             aria-controls="checkoutSidecartCollapse">
-                        <span class="d-flex align-items-center gap-2">
-                            <span class="icon-cart" aria-hidden="true"></span>
+                        <span class="uk-flex uk-flex-middle">
+                            <span class="uk-margin-small-right" uk-icon="icon: cart" aria-hidden="true"></span>
                             <span class="j2commerce-sidecart-toggle-text"><?php echo Text::_('COM_J2COMMERCE_SHOW_ORDER_SUMMARY'); ?></span>
-                            <span class="icon-chevron-down small j2commerce-sidecart-chevron" aria-hidden="true"></span>
+                            <span class="uk-margin-small-left j2commerce-sidecart-chevron" uk-icon="icon: chevron-down" aria-hidden="true"></span>
                         </span>
-                        <span class="fw-bold fs-5 j2commerce-sidecart-toggle-total"><?php echo $grandTotal; ?></span>
+                        <span class="uk-text-bold j2commerce-sidecart-toggle-total"><?php echo $grandTotal; ?></span>
                     </button>
 
                     <div class="j2commerce-checkout-sidecart">
-                        <div class="collapse d-lg-block" id="checkoutSidecartCollapse">
-                            <div class="sticky-lg-top" style="top: 1rem;" id="checkout-sidecart-content">
+                        <div id="checkoutSidecartCollapse" hidden>
+                            <div id="checkout-sidecart-content">
                                 <?php echo $this->loadTemplate('sidecart'); ?>
                             </div>
                         </div>
@@ -258,7 +253,10 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.disabled = true;
         var spinner = document.createElement('span');
         spinner.className = 'wait';
-        spinner.innerHTML = '&nbsp;<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_LOADING'); ?></span></span>';
+        var spinnerEl = document.createElement('span');
+        spinnerEl.setAttribute('uk-spinner', 'ratio: 0.6');
+        spinnerEl.setAttribute('aria-label', '<?php echo Text::_('COM_J2COMMERCE_LOADING', true); ?>');
+        spinner.appendChild(spinnerEl);
         btn.parentNode.insertBefore(spinner, btn.nextSibling);
     }
 
@@ -273,7 +271,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Utility: clear warnings and errors
     function clearErrors(container) {
         if (!container) return;
-        container.querySelectorAll('.warning, .j2error, .alert-danger').forEach(function(el) { el.remove(); });
+        container.querySelectorAll('.warning, .j2error, .uk-alert-danger').forEach(function(el) { el.remove(); });
         container.querySelectorAll('.j2-invalid').forEach(function(el) {
             el.classList.remove('j2-invalid');
             el.removeAttribute('aria-invalid');
@@ -285,22 +283,22 @@ document.addEventListener('DOMContentLoaded', function() {
     function showWarning(container, message, detail) {
         if (!container || !message) return;
         var div = document.createElement('div');
-        div.className = 'warning alert alert-danger alert-dismissible';
+        div.className = 'warning uk-alert uk-alert-danger';
         div.setAttribute('role', 'alert');
         div.setAttribute('aria-live', 'assertive');
+        div.setAttribute('uk-alert', '');
         div.textContent = message;
         if (detail) {
             var small = document.createElement('small');
-            small.className = 'd-block mt-1 text-danger-emphasis';
+            small.className = 'uk-display-block uk-margin-small-top';
             small.textContent = detail;
             div.appendChild(small);
         }
-        var btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'btn-close';
-        btn.setAttribute('data-bs-dismiss', 'alert');
+        var btn = document.createElement('a');
+        btn.className = 'uk-alert-close';
+        btn.setAttribute('uk-close', '');
         btn.setAttribute('aria-label', '<?php echo Text::_('JCLOSE', true); ?>');
-        div.appendChild(btn);
+        div.prepend(btn);
         container.prepend(div);
         div.setAttribute('tabindex', '-1');
         div.focus();
@@ -332,7 +330,7 @@ document.addEventListener('DOMContentLoaded', function() {
             field.setAttribute('aria-invalid', 'true');
             field.setAttribute('aria-describedby', fieldId + '-error');
             var span = document.createElement('span');
-            span.className = 'j2error d-block';
+            span.className = 'j2error uk-display-block';
             span.id = fieldId + '-error';
             span.setAttribute('role', 'alert');
             span.textContent = message;
@@ -358,7 +356,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!announcer) {
             announcer = document.createElement('div');
             announcer.id = 'j2commerce-sr-announcer';
-            announcer.className = 'visually-hidden';
+            announcer.className = 'uk-hidden';
             announcer.setAttribute('role', 'status');
             announcer.setAttribute('aria-live', 'polite');
             announcer.setAttribute('aria-atomic', 'true');
@@ -511,12 +509,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.error('Checkout step HTTP ' + response.status + ':', text.substring(0, 500));
                     content.setAttribute('aria-busy', 'false');
                     if (response.status === 403) {
-                        content.innerHTML = '<div class="alert alert-warning" role="alert">Your session has expired. Please <a href="' + window.location.href + '">reload the page</a> and try again.</div>';
+                        content.innerHTML = '<div class="uk-alert uk-alert-warning" uk-alert role="alert">Your session has expired. Please <a href="' + window.location.href + '">reload the page</a> and try again.</div>';
                     } else {
                         var detail = extractErrorDetail(text);
-                        var html = '<div class="alert alert-danger" role="alert">Server error (' + response.status + '). Please try again.';
+                        var html = '<div class="uk-alert uk-alert-danger" uk-alert role="alert">Server error (' + response.status + '). Please try again.';
                         if (detail) {
-                            html += '<small class="d-block mt-1 text-danger-emphasis">' + detail.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</small>';
+                            html += '<small class="uk-display-block uk-margin-small-top">' + detail.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</small>';
                         }
                         html += '</div>';
                         content.innerHTML = html;
@@ -536,7 +534,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(function(error) {
             console.error('Checkout network error:', error);
             content.setAttribute('aria-busy', 'false');
-            content.innerHTML = '<div class="alert alert-danger" role="alert">Unable to connect to the server. Please check your connection and try again.</div>';
+            content.innerHTML = '<div class="uk-alert uk-alert-danger" uk-alert role="alert">Unable to connect to the server. Please check your connection and try again.</div>';
         });
     }
 
@@ -832,7 +830,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     var content = getContent(section.id);
                     if (content) {
                         content.innerHTML = json.html
-                            + '<div class="mt-3"><button id="button-custom-steps" type="button" class="btn btn-primary btn-checkout-step" data-position="' + position + '">'
+                            + '<div class="uk-margin-top"><button id="button-custom-steps" type="button" class="uk-button uk-button-primary btn-checkout-step" data-position="' + position + '">'
                             + '<?php echo Text::_('COM_J2COMMERCE_CHECKOUT_CONTINUE', true); ?></button></div>';
                     }
                     hideAllContents();
@@ -1179,7 +1177,7 @@ document.addEventListener('DOMContentLoaded', function() {
             hideLoading(btn);
 
             // Clear previous error/warning messages
-            form.querySelectorAll('.j2error, .j2success, .j2warning, .warning, .alert-danger, .alert-success').forEach(function(el) { el.remove(); });
+            form.querySelectorAll('.j2error, .j2success, .j2warning, .warning, .uk-alert-danger, .uk-alert-success').forEach(function(el) { el.remove(); });
 
             if (json.error) {
                 var msg = typeof json.error === 'string' ? json.error : Object.values(json.error).join(', ');
@@ -1193,7 +1191,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (json.success && !json.redirect) {
                 var successDiv = document.createElement('div');
-                successDiv.className = 'j2success alert alert-success';
+                successDiv.className = 'j2success uk-alert uk-alert-success';
                 successDiv.textContent = json.success;
                 form.prepend(successDiv);
             }
@@ -1211,7 +1209,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var btn = e.target.closest('#confirm .checkout-content form button');
         if (!btn) return;
         // Skip alert dismiss buttons (close buttons on error/warning alerts)
-        if (btn.classList.contains('btn-close') || btn.hasAttribute('data-bs-dismiss')) return;
+        if (btn.classList.contains('uk-alert-close') || btn.hasAttribute('uk-close') || btn.hasAttribute('uk-modal-close')) return;
         var form = btn.closest('form');
         if (!form || !form.querySelector('input[name="orderpayment_type"]')) return;
         e.preventDefault();
@@ -1232,7 +1230,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (!form.querySelector('input[name="orderpayment_type"]')) return;
         e.preventDefault();
-        var btn = form.querySelector('button[type="submit"]') || form.querySelector('button:not(.btn-close):not([data-bs-dismiss])');
+        var btn = form.querySelector('button[type="submit"]') || form.querySelector('button:not(.uk-alert-close):not([uk-close]):not([uk-modal-close])');
         handlePaymentSubmit(form, btn);
     });
 
@@ -1329,23 +1327,22 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(function(e) { console.error('Auto shipping select error:', e); });
     }
 
-    // Toggle text show/hide for mobile sidecart
-    document.addEventListener('shown.bs.collapse', function(e) {
-        if (e.target.id === 'checkoutSidecartCollapse') {
+    // Toggle text show/hide for mobile sidecart (UIkit toggle events)
+    var sidecartCollapse = document.getElementById('checkoutSidecartCollapse');
+    if (sidecartCollapse) {
+        UIkit.util.on(sidecartCollapse, 'shown', function() {
             var txt = document.querySelector('.j2commerce-sidecart-toggle-text');
             if (txt) txt.textContent = '<?php echo Text::_('COM_J2COMMERCE_HIDE_ORDER_SUMMARY', true); ?>';
             var chevron = document.querySelector('.j2commerce-sidecart-chevron');
             if (chevron) chevron.style.transform = 'rotate(180deg)';
-        }
-    });
-    document.addEventListener('hidden.bs.collapse', function(e) {
-        if (e.target.id === 'checkoutSidecartCollapse') {
+        });
+        UIkit.util.on(sidecartCollapse, 'hidden', function() {
             var txt = document.querySelector('.j2commerce-sidecart-toggle-text');
             if (txt) txt.textContent = '<?php echo Text::_('COM_J2COMMERCE_SHOW_ORDER_SUMMARY', true); ?>';
             var chevron = document.querySelector('.j2commerce-sidecart-chevron');
             if (chevron) chevron.style.transform = '';
-        }
-    });
+        });
+    }
 
     // === SIDECART REFRESH: Generic event for plugins to trigger sidecart updates ===
     document.addEventListener('j2commerce:checkout:refreshSidecart', function() { refreshSidecart(); });

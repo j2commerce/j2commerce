@@ -27,23 +27,23 @@ $freeRedirect = $this->free_redirect ?? '';
 <div class="j2commerce-checkout-confirm">
 
 <?php if (empty($errors)) : ?>
-    <div class="mb-3">
-        <label for="customer_note" class="form-label"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_CUSTOMER_NOTE'); ?></label>
-        <textarea name="customer_note" id="customer_note" class="form-control" rows="3"></textarea>
+    <div class="uk-margin-bottom">
+        <label for="customer_note" class="uk-form-label"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_CUSTOMER_NOTE'); ?></label>
+        <textarea name="customer_note" id="customer_note" class="uk-textarea" rows="3"></textarea>
     </div>
 
     <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeCheckoutConfirm', [$this]); ?>
 
     <?php if (!empty($pluginHtml)) : ?>
         <h5><?php echo Text::_('COM_J2COMMERCE_PAYMENT_METHOD'); ?></h5>
-        <div class="payment mb-3">
+        <div class="payment uk-margin-bottom">
             <?php echo $pluginHtml; ?>
         </div>
     <?php endif; ?>
 
     <?php if (!empty($freeRedirect)) : ?>
         <form action="<?php echo Route::_('index.php?option=com_j2commerce&task=checkout.confirmPayment'); ?>" method="post">
-            <button type="submit" class="btn btn-primary btn-lg">
+            <button type="submit" class="uk-button uk-button-primary uk-button-large">
                 <?php echo Text::_('COM_J2COMMERCE_PLACE_ORDER'); ?>
             </button>
             <input type="hidden" name="option" value="com_j2commerce">
@@ -53,15 +53,17 @@ $freeRedirect = $this->free_redirect ?? '';
     <?php endif; ?>
 
     <?php if ($showTerms && $termsDisplayType === 'checkbox') : ?>
-        <div class="form-check mb-3">
-            <input class="form-check-input" type="checkbox" name="tos_check" value="1" id="tos_check">
-            <label class="form-check-label" for="tos_check">
-                <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_AGREE_TERMS'); ?>
+        <div class="uk-margin-bottom">
+            <label class="uk-flex uk-flex-middle">
+                <input class="uk-checkbox uk-margin-small-right" type="checkbox" name="tos_check" value="1" id="tos_check">
+                <span for="tos_check">
+                    <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_AGREE_TERMS'); ?>
+                </span>
             </label>
         </div>
     <?php endif; ?>
 <?php else : ?>
-    <div class="alert alert-danger">
+    <div class="uk-alert uk-alert-danger" uk-alert>
         <?php echo implode('<br>', array_map('htmlspecialchars', $errors)); ?>
     </div>
 <?php endif; ?>

@@ -26,15 +26,17 @@ $guestShippingData = $this->guestShippingData ?? [];
 <div class="j2commerce-shipping-address">
 
 <?php if ($hasAddresses) : ?>
-    <div class="mb-3">
-        <div class="form-check mb-2">
-            <input class="form-check-input" type="radio" name="shipping_address" value="existing" id="shipping-existing" checked>
-            <label class="form-check-label fw-bold" for="shipping-existing">
-                <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_USE_EXISTING_ADDRESS'); ?>
+    <div class="uk-margin-bottom">
+        <div class="uk-margin-small-bottom">
+            <label class="uk-flex uk-flex-middle">
+                <input class="uk-radio uk-margin-small-right" type="radio" name="shipping_address" value="existing" id="shipping-existing" checked>
+                <span class="uk-text-bold" for="shipping-existing">
+                    <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_USE_EXISTING_ADDRESS'); ?>
+                </span>
             </label>
         </div>
 
-        <select name="address_id" id="shipping-address-id" class="form-select mb-3">
+        <select name="address_id" id="shipping-address-id" class="uk-select uk-margin-bottom">
             <?php foreach ($addresses as $address) : ?>
                 <?php
                 $addressId = $address->j2commerce_address_id ?? $address->id ?? '';
@@ -56,10 +58,12 @@ $guestShippingData = $this->guestShippingData ?? [];
             <?php endforeach; ?>
         </select>
 
-        <div class="form-check mb-3">
-            <input class="form-check-input" type="radio" name="shipping_address" value="new" id="shipping-new">
-            <label class="form-check-label fw-bold" for="shipping-new">
-                <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_NEW_ADDRESS'); ?>
+        <div class="uk-margin-bottom">
+            <label class="uk-flex uk-flex-middle">
+                <input class="uk-radio uk-margin-small-right" type="radio" name="shipping_address" value="new" id="shipping-new">
+                <span class="uk-text-bold" for="shipping-new">
+                    <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_NEW_ADDRESS'); ?>
+                </span>
             </label>
         </div>
     </div>
@@ -70,20 +74,20 @@ $guestShippingData = $this->guestShippingData ?? [];
     <div id="shipping-new-address-form">
 <?php endif; ?>
 
-        <div class="row g-3">
+        <div class="uk-grid uk-grid-small" uk-grid>
             <?php foreach ($fields as $field) : ?>
                 <?php echo CustomFieldHelper::renderField($field, $guestShippingData[$field->field_namekey] ?? ''); ?>
             <?php endforeach; ?>
         </div>
     </div>
 
-    <div class="mt-3">
+    <div class="uk-margin-top">
         <?php if ($isGuest) : ?>
-        <button type="button" id="button-guest-shipping" class="btn btn-primary btn-checkout-step">
+        <button type="button" id="button-guest-shipping" class="uk-button uk-button-primary btn-checkout-step">
             <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_CONTINUE'); ?>
         </button>
         <?php else : ?>
-        <button type="button" id="button-shipping-address" class="btn btn-primary btn-checkout-step">
+        <button type="button" id="button-shipping-address" class="uk-button uk-button-primary btn-checkout-step">
             <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_CONTINUE'); ?>
         </button>
         <?php endif; ?>

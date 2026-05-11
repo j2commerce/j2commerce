@@ -23,27 +23,27 @@ $guestData = $this->guestData ?? [];
 ?>
 <div class="j2commerce-guest-form">
 
-    <div class="row g-3">
+    <div class="uk-grid uk-grid-small" uk-grid>
         <?php foreach ($fields as $field) : ?>
             <?php echo CustomFieldHelper::renderField($field, $guestData[$field->field_namekey] ?? ''); ?>
         <?php endforeach; ?>
     </div>
 
     <?php if ($showShipping) : ?>
-    <div class="mt-3 mb-3">
-        <div class="form-check">
-            <input class="form-check-input" type="checkbox" name="shipping_address" value="1" id="shipping-same-as-billing" checked>
-            <label class="form-check-label" for="shipping-same-as-billing">
+    <div class="uk-margin">
+        <label class="uk-flex uk-flex-middle">
+            <input class="uk-checkbox uk-margin-small-right" type="checkbox" name="shipping_address" value="1" id="shipping-same-as-billing" checked>
+            <span for="shipping-same-as-billing">
                 <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_SHIPPING_SAME_AS_BILLING'); ?>
-            </label>
-        </div>
+            </span>
+        </label>
     </div>
     <?php endif; ?>
 
     <?php echo J2CommerceHelper::plugin()->eventWithHtml('CheckoutGuest', [$this]); ?>
 
-    <div class="mt-3">
-        <button type="button" id="button-guest" class="btn btn-primary">
+    <div class="uk-margin-top">
+        <button type="button" id="button-guest" class="uk-button uk-button-primary">
             <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_CONTINUE'); ?>
         </button>
     </div>

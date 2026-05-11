@@ -25,16 +25,18 @@ $hasAddresses = !empty($addresses);
 <div class="j2commerce-billing-address">
 
 <?php if ($hasAddresses) : ?>
-    <fieldset class="mb-3">
-        <legend class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_ADDRESS_SELECTION'); ?></legend>
-        <div class="form-check mb-2">
-            <input class="form-check-input" type="radio" name="billing_address" value="existing" id="billing-existing" checked>
-            <label class="form-check-label fw-bold" for="billing-existing">
-                <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_USE_EXISTING_ADDRESS'); ?>
+    <fieldset class="uk-margin-bottom">
+        <legend class="uk-hidden-visually"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_ADDRESS_SELECTION'); ?></legend>
+        <div class="uk-margin-small-bottom">
+            <label class="uk-flex uk-flex-middle">
+                <input class="uk-radio uk-margin-small-right" type="radio" name="billing_address" value="existing" id="billing-existing" checked>
+                <span class="uk-text-bold" for="billing-existing">
+                    <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_USE_EXISTING_ADDRESS'); ?>
+                </span>
             </label>
         </div>
 
-        <select name="address_id" id="address_id" class="form-select mb-3" aria-label="<?php echo Text::_('COM_J2COMMERCE_CHECKOUT_SELECT_ADDRESS'); ?>">
+        <select name="address_id" id="address_id" class="uk-select uk-margin-bottom" aria-label="<?php echo Text::_('COM_J2COMMERCE_CHECKOUT_SELECT_ADDRESS'); ?>">
             <?php foreach ($addresses as $address) : ?>
                 <?php
                 $addressId = $address->j2commerce_address_id ?? $address->id ?? '';
@@ -56,10 +58,12 @@ $hasAddresses = !empty($addresses);
             <?php endforeach; ?>
         </select>
 
-        <div class="form-check mb-3">
-            <input class="form-check-input" type="radio" name="billing_address" value="new" id="billing-new">
-            <label class="form-check-label fw-bold" for="billing-new">
-                <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_NEW_ADDRESS'); ?>
+        <div class="uk-margin-bottom">
+            <label class="uk-flex uk-flex-middle">
+                <input class="uk-radio uk-margin-small-right" type="radio" name="billing_address" value="new" id="billing-new">
+                <span class="uk-text-bold" for="billing-new">
+                    <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_NEW_ADDRESS'); ?>
+                </span>
             </label>
         </div>
     </fieldset>
@@ -70,7 +74,7 @@ $hasAddresses = !empty($addresses);
     <div id="billing-new-address-form">
 <?php endif; ?>
 
-        <div class="row g-3">
+        <div class="uk-grid uk-grid-small" uk-grid>
             <?php foreach ($fields as $field) : ?>
                 <?php
                 $prefill = '';
@@ -86,18 +90,18 @@ $hasAddresses = !empty($addresses);
     </div>
 
     <?php if ($showShipping) : ?>
-    <div class="mt-3 mb-3">
-        <div class="form-check">
-            <input class="form-check-input" type="checkbox" name="shipping_address" value="1" id="shipping-same-as-billing" checked>
-            <label class="form-check-label" for="shipping-same-as-billing">
+    <div class="uk-margin">
+        <label class="uk-flex uk-flex-middle">
+            <input class="uk-checkbox uk-margin-small-right" type="checkbox" name="shipping_address" value="1" id="shipping-same-as-billing" checked>
+            <span for="shipping-same-as-billing">
                 <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_SHIPPING_SAME_AS_BILLING'); ?>
-            </label>
-        </div>
+            </span>
+        </label>
     </div>
     <?php endif; ?>
 
-    <div class="mt-3">
-        <button type="button" id="button-billing-address" class="btn btn-primary btn-checkout-step">
+    <div class="uk-margin-top">
+        <button type="button" id="button-billing-address" class="uk-button uk-button-primary btn-checkout-step">
             <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_CONTINUE'); ?>
         </button>
     </div>
