@@ -5,4 +5,18 @@
 			<![CDATA[COM_J2COMMERCE_CART_VIEW_DEFAULT_DESC]]>
 		</message>
 	</layout>
+	<fields name="request">
+	</fields>
+	<fields name="params">
+		<fieldset name="frontend" label="COM_J2COMMERCE_LAYOUT_FRAMEWORK_FIELDSET_LABEL">
+			<field
+				name="framework"
+				type="frameworklist"
+				view_context="carts"
+				label="COM_J2COMMERCE_LAYOUT_FRAMEWORK_LABEL"
+				description="COM_J2COMMERCE_LAYOUT_FRAMEWORK_DESC"
+				default="bootstrap5"
+			/>
+		</fieldset>
+	</fields>
 </metadata>
