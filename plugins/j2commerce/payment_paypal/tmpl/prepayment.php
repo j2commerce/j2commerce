@@ -17,6 +17,7 @@ $vars = $displayData['vars'];
 
 $sandbox = $vars->sandbox ?? false;
 $clientId = $vars->client_id ?? '';
+$fundingSources = !empty($vars->funding_sources) ? implode(',', $vars->funding_sources) : 'paypal';
 ?>
 
 <div class="j2commerce-payment-paypal note note-<?php echo htmlspecialchars($vars->orderpayment_type, ENT_QUOTES, 'UTF-8'); ?>">
@@ -51,6 +52,7 @@ $clientId = $vars->client_id ?? '';
      data-client-id="<?php echo htmlspecialchars($clientId, ENT_QUOTES, 'UTF-8'); ?>"
      data-is-subscription="<?php echo !empty($vars->is_subscription) ? 'true' : 'false'; ?>"
      data-subscription-mode="<?php echo htmlspecialchars($vars->subscription_mode ?? 'rest', ENT_QUOTES, 'UTF-8'); ?>"
+     data-funding-sources="<?php echo htmlspecialchars($fundingSources, ENT_QUOTES, 'UTF-8'); ?>"
      data-debug="<?php echo ($vars->debug ?? 0) ? 'true' : 'false'; ?>"
 ></div>
 
