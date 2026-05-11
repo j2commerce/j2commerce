@@ -62,6 +62,8 @@ class HtmlView extends BaseHtmlView
         $this->currency = J2CommerceHelper::currency();
         $this->user     = $app->getIdentity();
 
+        $this->registerFrameworkTemplatePaths($app);
+
         $layout  = $this->getLayout();
         $session = $app->getSession();
 
@@ -225,6 +227,52 @@ class HtmlView extends BaseHtmlView
 
         $this->_prepareDocument();
         parent::display($tpl);
+    }
+
+    /**
+     * Resolve and register the per-menu-item framework folder so loadTemplate()
+     * and parent::display() pick up the correct framework subfolder.
+     */
+    private function registerFrameworkTemplatePaths(\Joomla\CMS\Application\CMSApplicationInterface $app): void
+    {
+        $framework = (string) $this->params->get('framework', 'bootstrap5');
+        $framework = preg_replace('/[^a-zA-Z0-9_-]/', '', $framework) ?? '';
+
+        $viewName = $this->getName();
+        $template = $app->getTemplate();
+
+        $compRoot = JPATH_COMPONENT . '/tmpl/' . $viewName;
+        $tplRoot  = JPATH_THEMES . '/' . $template . '/html/com_j2commerce/' . $viewName;
+
+        $candidate = '';
+        if ($framework !== '' && (is_dir($compRoot . '/' . $framework) || is_dir($tplRoot . '/' . $framework))) {
+            $candidate = $framework;
+        } elseif (is_dir($compRoot . '/bootstrap5') || is_dir($tplRoot . '/bootstrap5')) {
+            $candidate = 'bootstrap5';
+        } else {
+            $entries = is_dir($compRoot) ? scandir($compRoot) : [];
+            $entries = $entries ?: [];
+            sort($entries);
+            foreach ($entries as $entry) {
+                if ($entry === '.' || $entry === '..' || str_starts_with($entry, '.')) {
+                    continue;
+                }
+                if (is_dir($compRoot . '/' . $entry) && is_file($compRoot . '/' . $entry . '/default.php')) {
+                    $candidate = $entry;
+                    break;
+                }
+            }
+        }
+
+        if ($candidate !== '' && is_dir($compRoot . '/' . $candidate)) {
+            $this->addTemplatePath($compRoot . '/' . $candidate);
+        }
+        if (is_dir($tplRoot)) {
+            $this->addTemplatePath($tplRoot);
+        }
+        if ($candidate !== '' && is_dir($tplRoot . '/' . $candidate)) {
+            $this->addTemplatePath($tplRoot . '/' . $candidate);
+        }
     }
 
     private function validateOrderAccess(object $order, int $userId, string $guestToken, string $guestEmail): bool
