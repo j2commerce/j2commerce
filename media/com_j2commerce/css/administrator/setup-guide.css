@@ -6,8 +6,6 @@
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-
-
 #toolbar-setup-guide button {
     background-color: var(--purple, #6f42c1);
     border-color: var(--purple, #6f42c1);
@@ -21,56 +19,14 @@
     color: #fff;
 }
 
-
 /* sidebar-wrapper class provides Atum dark sidebar theming automatically */
 #j2commerce-setup-guide {
-    --success: #0d9347;
-    --success-rgb: 51,179,107;
-    --success-bg-subtle: #ebf7f0;
-    --success-btn-bg-subtle: #ebf7f0;
-    --success-btn-border-subtle: #ebf7f0;
-    --success-border-subtle: #d6f0e1;
-    --success-active: #097337;
-    --info: #0d6efd;
-    --info-rgb: 13,110,253;
-    --info-bg-subtle: #e7f1ff;
-    --info-border-subtle: #d5e2f7;
-    --warning: #fc9231;
-    --warning-rgb: 252,146,49;
-    --warning-bg-subtle: #fff4ea;
-    --warning-border-subtle: #fee9d6;
-    --danger: #dc3545;
-    --danger-rgb: 220,53,69;
-    --danger-bg-subtle: #fdecec;
-    --danger-border-subtle: #fcd8d8;
-    --purple: #6f42c1;
-    --purple-rgb: 111,66,193;
-    --purple-bg-subtle: #e2d9f3;
-    --purple-active: #5d2db4;
-    --purple-border-subtle:#d4c3f4;
-    --light-border-subtle: #eef1f6;
     --main-nav-mm-active-bg: rgba(255,255,255,0.05);
+    --heading-color: #fff;
     width: 400px;
     max-inline-size: 400px;
     z-index: 1045;
-    --heading-color: #fff;
 
-    .text-bg-success {
-        color: var(--success)!important;
-        background-color: var(--success-bg-subtle)!important;
-    }
-    .text-bg-info {
-        color: var(--info)!important;
-        background-color: var(--info-bg-subtle)!important;
-    }
-    .text-bg-warning {
-        color: var(--warning)!important;
-        background-color: var(--warning-bg-subtle)!important;
-    }
-    .text-bg-danger {
-        color: var(--danger)!important;
-        background-color: var(--danger-bg-subtle)!important;
-    }
     .setup-progress-bar.text-bg-success .setup-progress-fill {
         background-color: #0d9347 !important;
     }
@@ -86,9 +42,9 @@
     .setup-group-checks {
         background-color: var(--main-nav-ul-bg);
     }
-    .setup-group-header .bg-warning {
+    /*.setup-group-header .bg-warning {
         color: #fff !important;
-    }
+    }*/
     .btn-outline-info.button-start-guidedtour {
         color:#fff !important;
         border-color:#0d6efd !important;
