@@ -46,7 +46,9 @@ $productId = $this->product->j2commerce_product_id;
         <input type="hidden" id="j2commerce_product_id" name="product_id" value="<?php echo $productId; ?>" />
 
         <div class="product-add-to-cart-group">
-            <?php echo J2CommerceHelper::product()->displayQuantity('com_j2commerce.product.uikit', $this->product, $this->params, ['class' => 'j2commerce-qty-input uk-input']); ?>
+            <?php if (J2CommerceHelper::config()->showQuantityField()): ?>
+                <?php echo J2CommerceHelper::product()->displayQuantity('com_j2commerce.product.uikit', $this->product, $this->params, ['class' => 'j2commerce-qty-input uk-input']); ?>
+            <?php endif; ?>
 
             <button
                 data-cart-action-always="<?php echo Text::_('COM_J2COMMERCE_ADDING_TO_CART'); ?>"
