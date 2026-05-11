@@ -13,12 +13,18 @@
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use Joomla\CMS\Factory;
+use Joomla\CMS\Language\Multilanguage;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Router\Route;
+use Joomla\Component\Content\Site\Helper\RouteHelper;
+use Joomla\Database\ParameterType;
 
 /** @var \J2Commerce\Component\J2commerce\Site\View\Checkout\HtmlView $this */
 
-$showShipping = $this->showShipping ?? false;
-$fields = $this->fields ?? [];
+$showShipping     = $this->showShipping ?? false;
+$fields           = $this->fields ?? [];
+$registrationForm = $this->registrationForm ?? null;
 
 $config = J2CommerceHelper::config();
 $requiredIndicator = $config->get('checkout_required_indicator', 'asterisk');
@@ -79,6 +85,82 @@ $asterisk = ($requiredIndicator === 'asterisk') ? ' <span class="text-danger">*<
     <?php endif; ?>
 
     <?php echo J2CommerceHelper::plugin()->eventWithHtml('CheckoutRegister', [$this]); ?>
+
+    <?php if ($registrationForm !== null) : ?>
+        <?php foreach ($registrationForm->getFieldsets() as $fieldsetName => $fieldset) : ?>
+            <?php if ($fieldsetName === 'privacyconsent') : ?>
+                <?php
+                $privacyField    = $registrationForm->getField('privacy', 'privacyconsent');
+                $privacyLink     = '';
+                $privacyLinkText = Text::_('COM_J2COMMERCE_CHECKOUT_PRIVACY_POLICY_LINK');
+
+                if ($privacyField) {
+                    $articleId  = (int) $privacyField->getAttribute('article', 0);
+                    $menuItemId = (int) $privacyField->getAttribute('menu_item', 0);
+
+                    if ($articleId > 0) {
+                        $db    = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+                        $query = $db->createQuery()
+                            ->select($db->quoteName(['id', 'alias', 'catid', 'language']))
+                            ->from($db->quoteName('#__content'))
+                            ->where($db->quoteName('id') . ' = :id')
+                            ->bind(':id', $articleId, ParameterType::INTEGER);
+                        $db->setQuery($query);
+                        $article = $db->loadObject();
+
+                        if ($article) {
+                            $slug        = $article->alias ? ($article->id . ':' . $article->alias) : $article->id;
+                            $privacyLink = Route::_(RouteHelper::getArticleRoute($slug, $article->catid, $article->language));
+                        }
+                    } elseif ($menuItemId > 0) {
+                        $url = 'index.php?Itemid=' . $menuItemId;
+
+                        if (Multilanguage::isEnabled()) {
+                            $db    = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+                            $query = $db->createQuery()
+                                ->select($db->quoteName(['id', 'language']))
+                                ->from($db->quoteName('#__menu'))
+                                ->where($db->quoteName('id') . ' = :id')
+                                ->bind(':id', $menuItemId, ParameterType::INTEGER);
+                            $db->setQuery($query);
+                            $menuItem = $db->loadObject();
+
+                            if ($menuItem) {
+                                $url .= '&lang=' . $menuItem->language;
+                            }
+                        }
+
+                        $privacyLink = Route::_($url);
+                    }
+                }
+
+                $linkHtml = $privacyLink
+                    ? '<a href="' . htmlspecialchars($privacyLink, ENT_QUOTES, 'UTF-8') . '" target="_blank" rel="noopener">'
+                        . htmlspecialchars($privacyLinkText, ENT_QUOTES, 'UTF-8') . '</a>'
+                    : htmlspecialchars($privacyLinkText, ENT_QUOTES, 'UTF-8');
+                ?>
+                <div class="alert alert-info mt-3" role="alert">
+                    <div class="form-check mb-0">
+                        <input type="checkbox"
+                               class="form-check-input"
+                               id="jform_privacyconsent_privacy"
+                               name="jform[privacyconsent][privacy]"
+                               value="1"
+                               required>
+                        <label class="form-check-label" for="jform_privacyconsent_privacy">
+                            <?php echo Text::sprintf('COM_J2COMMERCE_CHECKOUT_PRIVACY_CONSENT_LABEL', $linkHtml); ?>
+                        </label>
+                    </div>
+                </div>
+            <?php else : ?>
+                <?php foreach ($registrationForm->getFieldset($fieldsetName) as $field) : ?>
+                    <div class="mt-3">
+                        <?php echo $field->renderField(); ?>
+                    </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        <?php endforeach; ?>
+    <?php endif; ?>
 
     <div class="mt-3">
         <button type="button" id="button-register" class="btn btn-primary">
