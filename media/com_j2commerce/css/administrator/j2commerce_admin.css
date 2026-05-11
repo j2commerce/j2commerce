@@ -1,3 +1,10 @@
+/*
+ * @package     J2Commerce
+ * @subpackage  com_j2commerce
+ *
+ * @copyright   (C)2024-2026 J2Commerce, LLC <https://www.j2commerce.com>
+ * @license     GNU General Public License version 2 or later; see LICENSE.txt
+ */
 
 :root {
     --j2c-error: #dc3545;
@@ -29,13 +36,13 @@
     --dark-rgb: 33, 37, 41;
     --action-rgb: 0, 123, 255;
     --bg-opacity: 1;
-    --bs-secondary-bg: #e9ecef;
-    --bs-body-bg: #fff;
 }
 
 body.com_j2commerce #content,
-#fieldset-j2commerce-product-settings,
-.j2commerce_extended {
+#fieldset-j2commerce,
+#fieldset-schema,
+.j2commerce_extended,
+#j2commerce-setup-guide {
     --success: #0d9347;
     --success-rgb: 51,179,107;
     --success-text: #0d9347; /* should be used for text color - Joomla uses --success for bg */
@@ -69,11 +76,17 @@ body.com_j2commerce #content,
     --purple-active: #5d2db4;
     --purple-border-subtle:#d4c3f4;
     --light-border-subtle: #eef1f6;
+    --bs-secondary-bg: #e9ecef;
+    --bs-body-bg: #fff;
+    --bs-body-color: #212529;
+    --bs-border-color: #dee2e6;
 }
 
 html[data-bs-theme="dark"] body.com_j2commerce #content,
-html[data-bs-theme="dark"] #fieldset-j2commerce-product-settings,
-html[data-bs-theme="dark"] .j2commerce_extended {
+html[data-bs-theme="dark"] #fieldset-j2commerce,
+html[data-bs-theme="dark"] #fieldset-schema,
+html[data-bs-theme="dark"] .j2commerce_extended,
+html[data-bs-theme="dark"] #j2commerce-setup-guide {
     --success: #3d854d; /*d6f0e1;*/
     --success-rgb: 61,133,77;
     --success-text: #fff; /* should be used for text color - Joomla uses --success for bg */
@@ -111,11 +124,16 @@ html[data-bs-theme="dark"] .j2commerce_extended {
     --light-border-subtle: #495057;
     --bs-secondary-bg: #495057;
     --bs-body-bg: #1a1a1a;
+    --bs-body-color: #eee;
+    --bs-border-color: #333;
 }
 
 body.com_j2commerce #content,
-#fieldset-j2commerce-product-settings,
-.j2commerce_extended {
+#fieldset-j2commerce,
+#fieldset-schema,
+.j2commerce_extended,
+#j2commerce-setup-guide
+{
 
     .text-bg-secondary {
         color: var(--purple)!important;
@@ -138,12 +156,12 @@ body.com_j2commerce #content,
         border-color: var(--success)!important;
     }
 
-    .alert-success {
+    .alert.alert-success {
         --alert-text: var(--success-text);
         --alert-bg: var(--success-bg-subtle);
         --alert-border: var(--success-border-subtle);
         --alert-btn-bg: var(--success);
-        --alert-btn-text: #fff;
+        --alert-btn-text: var(--white);
     }
 
     .text-bg-info {
@@ -151,12 +169,12 @@ body.com_j2commerce #content,
         background-color: var(--info-bg-subtle)!important;
     }
 
-    .alert-info {
+    .alert.alert-info {
         --alert-text: var(--info-text);
         --alert-bg: var(--info-bg-subtle);
         --alert-border: var(--info-border-subtle);
         --alert-btn-bg: var(--info);
-        --alert-btn-text: #fff;
+        --alert-btn-text: var(--white);
     }
 
     .text-bg-warning {
@@ -164,7 +182,7 @@ body.com_j2commerce #content,
         background-color: var(--warning-bg-subtle)!important;
     }
 
-    .alert-warning {
+    .alert.alert-warning {
         --alert-text: var(--warning-text);
         --alert-bg: var(--warning-bg-subtle);
         --alert-border: var(--warning-border-subtle);
@@ -178,42 +196,26 @@ body.com_j2commerce #content,
         border-color: var(--danger-border-subtle)!important;
     }
 
-    .alert-danger {
+    .alert.alert-danger {
         --alert-text: var(--danger-text);
         --alert-bg: var(--danger-bg-subtle);
         --alert-border: var(--danger-border-subtle);
         --alert-btn-bg: var(--danger);
-        --alert-btn-text: #fff;
-    }
-
-    :is(.alert-success, .alert-info, .alert-warning, .alert-danger, .alert-purple) {
-        color: var(--alert-text)!important;
-        background-color: var(--alert-bg)!important;
-        border-color: var(--alert-border)!important;
-
-        .alert-link {
-            color: var(--alert-text)!important;
-        }
-
-        .btn-success,
-        .btn-info,
-        .btn-warning,
-        .btn-danger {
-            background-color: var(--alert-btn-bg);
-            color: var(--alert-btn-text);
-            text-decoration:none;
-        }
+        --alert-btn-text: var(--white);
     }
 
     button.choices__button_joomla {
         color: var(--danger);opacity:1!important;
     }
 
-    .alert-purple {
+    .alert.alert-purple {
         --alert-text: var(--purple-text);
         --alert-bg: var(--purple-bg-subtle);
         --alert-border: var(--purple-border-subtle);
+        --alert-btn-bg: var(--purple);
+        --alert-btn-text: var(--white);
     }
+
     .text-purple {
         color: var(--purple-text)!important;
     }
@@ -250,9 +252,9 @@ body.com_j2commerce #content,
         background-color: #007bff !important;
     }
 
-    .subform-repeatable-group .control-group {margin-bottom:0;}
-    .progress {background-color: #e9ecef !important;}
-    .box-shadow-none {box-shadow:none!important;}
+    .subform-repeatable-group .control-group { margin-bottom : 0; }
+    .progress { background-color: #e9ecef !important; }
+    .box-shadow-none { box-shadow : none !important; }
 
     .j2commerce-variant-inventory .form-check {padding-block-start: 3px;}
     #dashboardModuleTabs nav.quick-icons {padding:0!important;}
@@ -260,15 +262,18 @@ body.com_j2commerce #content,
 
 html[data-bs-theme="light"] body.com_j2commerce {
     .text-muted {
-        --text-muted-color:#495057;
+        --text-muted-color : #495057;
         color: var(--text-muted-color)!important;
         opacity: 1!important;
     }
 }
 
-html[data-bs-theme="dark"] body.com_j2commerce,
-html[data-bs-theme="dark"] #fieldset-j2commerce-product-settings,
-html[data-bs-theme="dark"] .j2commerce_extended {
+html[data-bs-theme="dark"] body.com_j2commerce #content,
+html[data-bs-theme="dark"] #fieldset-j2commerce,
+html[data-bs-theme="dark"] #fieldset-schema,
+html[data-bs-theme="dark"] .j2commerce_extended,
+html[data-bs-theme="dark"] #j2commerce-setup-guide {
+
     .btn-outline-primary {
         --btn-color: var(--btn-active-color)!important;
         border: 1px solid var(--primary);
@@ -281,11 +286,11 @@ html[data-bs-theme="dark"] .j2commerce_extended {
         background-color: rgba(255, 255, 255, 0.1)!important;
         border: none;
     }
-    .quick-icons .quickicon a.alert-success .quickicon-info .quickicon-icon {
+    .quick-icons .quickicon a.alert.alert-success .quickicon-info .quickicon-icon {
         color: var(--success) !important;
     }
 
-    .alert-success {
+    .alert.alert-success {
         --alert-text: var(--success-text);
         --alert-bg: var(--success);
         --alert-border: var(--success);
@@ -293,15 +298,15 @@ html[data-bs-theme="dark"] .j2commerce_extended {
         --alert-btn-text: var(--white);
     }
 
-    .alert-info {
+    .alert.alert-info {
         --alert-text: var(--white);
         --alert-bg: var(--info-bg-subtle);
-        --alert-border: var(--info-border-subtle);
+        --alert-border: var(--info-bg-subtle);
         --alert-btn-bg: var(--info);
         --alert-btn-text: #000;
     }
 
-    .alert-warning {
+    .alert.alert-warning {
         --alert-text: #000;
         --alert-bg: var(--warning);
         --alert-border: var(--warning);
@@ -309,12 +314,64 @@ html[data-bs-theme="dark"] .j2commerce_extended {
         --alert-btn-text: var(--white);
     }
 
-    .alert-danger {
+    .alert.alert-danger {
         --alert-text: var(--white);
         --alert-bg: var(--danger-bg-subtle);
-        --alert-border: var(--danger-border-subtle);
+        --alert-border: var(--danger-bg-subtle);
         --alert-btn-bg: var(--danger);
         --alert-btn-text: #fff;
+    }
+
+    .alert.alert-purple {
+        --alert-text: var(--white);
+        --alert-bg: var(--purple-bg-subtle);
+        --alert-border: var(--purple-bg-subtle);
+        --alert-btn-bg: var(--purple);
+        --alert-btn-text: var(--white);
+    }
+}
+
+body.com_j2commerce #content,
+#fieldset-j2commerce,
+#fieldset-schema,
+.j2commerce_extended,
+#j2commerce-setup-guide {
+    :is(.alert.alert-success, .alert.alert-info, .alert.alert-warning, .alert.alert-danger, .alert.alert-purple) {
+        color: var(--alert-text) !important;
+        background-color: var(--alert-bg) !important;
+        border-color: var(--alert-border) !important;
+
+        .alert.alert-link {
+            color: var(--alert-text) !important;
+        }
+
+        .btn-success,
+        .btn-info,
+        .btn-warning,
+        .btn-danger {
+            background-color: var(--alert-btn-bg);
+            color: var(--alert-btn-text);
+            text-decoration: none;
+        }
+    }
+}
+
+.dual-listbox .dual-listbox__buttons button {
+    background-color: #837e7e;
+}
+
+html[data-bs-theme="dark"] {
+    .dual-listbox .dual-listbox__title {
+        background: #1a1a1a;
+        color: #e0e0e0;
+        border-inline-start-color: #1a1a1a;
+        border-inline-end-color: #1a1a1a;
+        border-block-start-color: #1a1a1a;
+    }
+
+    .dual-listbox .dual-listbox__item.dual-listbox__item--selected {
+        background-color: #fff;
+        color: var(--header-logo-bg);
     }
 }
 
@@ -373,11 +430,11 @@ html[data-bs-theme="dark"] .j2commerce_extended {
 }
 
 #j2commerce-builder-container {
-    .card-builder .card-header, #builder-canvas {background-color:#FBFCFE;}
-    #builder-placeholder {min-height:500px;}
+    .card-builder .card-header, #builder-canvas { background-color : #FBFCFE; }
+    #builder-placeholder { min-height: 500px; }
 }
 
-#fieldset-j2commerce-product-settings {
+#fieldset-j2commerce {
     button:focus-visible {outline: none;}
 
     .modal .btn.btn-sm {padding:.25rem .5rem;font-size:.8rem;line-height:1.5;box-shadow:none;}
@@ -478,4 +535,4 @@ html[data-bs-theme="dark"] .j2commerce_extended {
     border-width: .2em !important;
 }
 
-.com_content.view-form.layout-edit #fieldset-j2commerce-product-settings joomla-tab > joomla-tab-element{border:none;}
+.com_content.view-form.layout-edit #fieldset-j2commerce joomla-tab > joomla-tab-element{border:none;}
