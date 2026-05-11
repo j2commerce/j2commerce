@@ -15,6 +15,42 @@
     let debug = false;
     let observer = null;
 
+    // Maps our stored funding-source keys → PayPal SDK FUNDING constant names.
+    const FUNDING_MAP = {
+        paypal:         'PAYPAL',
+        card:           'CARD',
+        paylater:       'PAYLATER',
+        venmo:          'VENMO',
+        applepay:       'APPLEPAY',
+        googlepay:      'GOOGLEPAY',
+        ideal:          'IDEAL',
+        bancontact:     'BANCONTACT',
+        blik:           'BLIK',
+        eps:            'EPS',
+        giropay:        'GIROPAY',
+        mercadopago:    'MERCADOPAGO',
+        mybank:         'MYBANK',
+        oxxo:           'OXXO',
+        przelewy24:     'P24',
+        trustly:        'TRUSTLY',
+        sepadirectdebit:'SEPA',
+    };
+
+    // Sources whose buttons need enable-funding in the SDK URL.
+    // 'paypal' is always on by default; 'card' is on by default but can be
+    // forced via enable-funding too — no harm.
+    const NEEDS_ENABLE_FUNDING = [
+        'card', 'paylater', 'venmo', 'ideal', 'bancontact', 'blik',
+        'eps', 'giropay', 'mercadopago', 'mybank', 'oxxo',
+        'przelewy24', 'trustly', 'sepadirectdebit',
+    ];
+
+    // Sources that require extra SDK components beyond 'buttons'.
+    const EXTRA_COMPONENTS = {
+        applepay:  'applepay',
+        googlepay: 'googlepay',
+    };
+
     const debugLog = (...args) => {
         if (debug) {
             console.log('[PayPal Debug]', ...args);
@@ -80,21 +116,25 @@
             observer = null;
         }
 
-        const orderId = container.dataset.orderId;
-        const createOrderUrl = container.dataset.createOrderUrl;
-        const captureOrderUrl = container.dataset.captureOrderUrl;
-        const csrfToken = container.dataset.csrfToken;
-        const currency = container.dataset.currency || 'USD';
-        const amount = container.dataset.amount;
-        const sandbox = container.dataset.sandbox === 'true';
-        const clientId = container.dataset.clientId;
-        const isSubscription = container.dataset.isSubscription === 'true';
-        const subscriptionMode = container.dataset.subscriptionMode || 'rest';
-        const isNvpMode = isSubscription && subscriptionMode === 'nvp';
+        const orderId            = container.dataset.orderId;
+        const createOrderUrl     = container.dataset.createOrderUrl;
+        const captureOrderUrl    = container.dataset.captureOrderUrl;
+        const csrfToken          = container.dataset.csrfToken;
+        const currency           = container.dataset.currency || 'USD';
+        const amount             = container.dataset.amount;
+        const sandbox            = container.dataset.sandbox === 'true';
+        const clientId           = container.dataset.clientId;
+        const isSubscription     = container.dataset.isSubscription === 'true';
+        const subscriptionMode   = container.dataset.subscriptionMode || 'rest';
+        const isNvpMode          = isSubscription && subscriptionMode === 'nvp';
 
-        debugLog('Configuration:', { orderId, currency, amount, sandbox, isSubscription, subscriptionMode });
+        // Parse the comma-separated list of enabled funding sources (set by the admin).
+        const rawSources = (container.dataset.fundingSources || 'paypal').split(',').map(s => s.trim()).filter(Boolean);
+        const fundingSources = rawSources.length > 0 ? rawSources : ['paypal'];
 
-        const errorContainer = document.getElementById('paypal-error-message');
+        debugLog('Configuration:', { orderId, currency, amount, sandbox, isSubscription, subscriptionMode, fundingSources });
+
+        const errorContainer      = document.getElementById('paypal-error-message');
         const processingContainer = document.getElementById('paypal-processing-message');
 
         if (!clientId) {
@@ -130,9 +170,8 @@
             }
         };
 
-        // Legacy NVP Express Checkout flow: no Smart Buttons SDK. Render a single
-        // "Subscribe via PayPal" button that POSTs to createOrderUrl, gets back a
-        // redirect_url, sends the customer to classic PayPal Express Checkout.
+        // ── Legacy NVP Express Checkout (subscription + nvp mode) ────────────────
+        // No Smart Buttons SDK needed. Redirect the customer to classic PayPal.
         if (isNvpMode) {
             container.dataset.paypalInitialized = 'true';
             buttonsRendered = true;
@@ -181,12 +220,35 @@
             return;
         }
 
-        const baseUrl = sandbox ? 'https://www.sandbox.paypal.com/sdk/js' : 'https://www.paypal.com/sdk/js';
+        // ── Build PayPal JS SDK URL ───────────────────────────────────────────────
+        const baseUrl = sandbox
+            ? 'https://www.sandbox.paypal.com/sdk/js'
+            : 'https://www.paypal.com/sdk/js';
+
         // Subscriptions require vault=true + intent=subscription on the SDK URL.
         // One-off Orders v2 carts use vault=false + intent=capture.
-        const sdkUrl = isSubscription
-            ? `${baseUrl}?client-id=${encodeURIComponent(clientId)}&vault=true&intent=subscription&components=buttons`
-            : `${baseUrl}?client-id=${encodeURIComponent(clientId)}&currency=${encodeURIComponent(currency)}&intent=capture&components=buttons`;
+        let sdkUrl;
+
+        if (isSubscription) {
+            // Subscriptions only work with PayPal Wallet — funding-source selection
+            // is not relevant here; keep the subscription SDK params unchanged.
+            sdkUrl = `${baseUrl}?client-id=${encodeURIComponent(clientId)}&vault=true&intent=subscription&components=buttons`;
+        } else {
+            // Determine which extra SDK components are needed (Apple Pay, Google Pay).
+            const extraComponents = fundingSources
+                .filter(s => EXTRA_COMPONENTS[s])
+                .map(s => EXTRA_COMPONENTS[s]);
+            const components = ['buttons', ...extraComponents].join(',');
+
+            // Determine which sources need the enable-funding param.
+            const toEnable = fundingSources.filter(s => NEEDS_ENABLE_FUNDING.includes(s));
+
+            sdkUrl = `${baseUrl}?client-id=${encodeURIComponent(clientId)}&currency=${encodeURIComponent(currency)}&intent=capture&components=${components}`;
+
+            if (toEnable.length > 0) {
+                sdkUrl += `&enable-funding=${toEnable.join(',')}`;
+            }
+        }
 
         container.dataset.paypalInitialized = 'true';
         buttonsRendered = true;
@@ -197,180 +259,230 @@
                     throw new Error('PayPal SDK loaded but paypal object not available');
                 }
 
-                debugLog('Rendering PayPal buttons (' + (isSubscription ? 'subscription' : 'one-off') + ')');
-
-                const buttonConfig = {
-                    style: {
-                        layout: 'vertical',
-                        color: 'gold',
-                        shape: 'rect',
-                        label: isSubscription ? 'subscribe' : 'paypal',
-                        height: 45
-                    },
-
-                    onCancel: () => {
-                        debugLog('onCancel: Payment cancelled by user');
-                        showError('Payment was cancelled. You can try again or choose a different payment method.');
-                    },
-
-                    onError: (err) => {
-                        console.error('[PayPal] Button error:', err);
-                        const msg = err?.message || (typeof err === 'string' ? err : 'Unknown error');
-                        showError('PayPal error: ' + msg);
-                    }
-                };
-
+                // ── SUBSCRIPTION flow ────────────────────────────────────────────
                 if (isSubscription) {
-                    buttonConfig.createSubscription = async () => {
-                        try {
-                            debugLog('createSubscription: Starting subscription creation');
-                            hideMessages();
+                    debugLog('Rendering PayPal subscription button');
 
-                            const requestBody = {
-                                order_id: orderId,
-                                currency: currency,
-                                amount: amount,
-                                [csrfToken]: '1'
-                            };
+                    paypal.Buttons({
+                        style: {
+                            layout: 'vertical',
+                            color:  'gold',
+                            shape:  'rect',
+                            label:  'subscribe',
+                            height: 45
+                        },
 
-                            const response = await fetch(createOrderUrl, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify(requestBody)
-                            });
+                        createSubscription: async () => {
+                            try {
+                                debugLog('createSubscription: Starting subscription creation');
+                                hideMessages();
 
-                            const data = await response.json();
+                                const response = await fetch(createOrderUrl, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        order_id: orderId,
+                                        currency: currency,
+                                        amount:   amount,
+                                        [csrfToken]: '1'
+                                    })
+                                });
 
-                            debugLog('createSubscription: Response:', { status: response.status, data });
+                                const data = await response.json();
+                                debugLog('createSubscription: Response:', { status: response.status, data });
 
-                            if (!response.ok || !data.success || !data.paypal_subscription_id) {
-                                throw new Error(data.error || 'Failed to create PayPal subscription');
-                            }
-
-                            debugLog('createSubscription: PayPal subscription ID:', data.paypal_subscription_id);
-                            return data.paypal_subscription_id;
-                        } catch (error) {
-                            console.error('[PayPal] createSubscription error:', error);
-                            showError(error.message || 'Failed to initialize subscription. Please try again.');
-                            throw error;
-                        }
-                    };
-
-                    buttonConfig.onApprove = async (data) => {
-                        try {
-                            debugLog('onApprove (subscription): Approving subscription:', data.subscriptionID);
-                            showProcessing();
-
-                            const requestBody = {
-                                paypal_subscription_id: data.subscriptionID,
-                                order_id: orderId,
-                                [csrfToken]: '1'
-                            };
-
-                            const response = await fetch(captureOrderUrl, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify(requestBody)
-                            });
-
-                            const result = await response.json();
-
-                            debugLog('onApprove (subscription): Finalize response:', { status: response.status, result });
-
-                            if (!response.ok || !result.success) {
-                                throw new Error(result.error || 'Subscription approval failed');
-                            }
-
-                            if (result.redirect) {
-                                window.location.href = result.redirect;
-                            } else {
-                                showError('Subscription approved but redirect URL is missing.');
-                            }
-                        } catch (error) {
-                            console.error('[PayPal] onApprove (subscription) error:', error);
-                            showError(error.message || 'Subscription approval failed. Please contact support.');
-                        }
-                    };
-                } else {
-                    buttonConfig.createOrder = async () => {
-                        try {
-                            debugLog('createOrder: Starting order creation');
-                            hideMessages();
-
-
-                            const requestBody = {
-                                order_id: orderId,
-                                currency: currency,
-                                amount: amount,
-                                [csrfToken]: '1'
-                            };
-
-                            const response = await fetch(createOrderUrl, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify(requestBody)
-                            });
-
-                            const data = await response.json();
-
-                            debugLog('createOrder: Response:', { status: response.status, data });
-
-                            if (!response.ok || !data.success) {
-                                throw new Error(data.error || 'Failed to create PayPal order');
-                            }
-
-                            debugLog('createOrder: PayPal order ID:', data.paypal_order_id);
-                            return data.paypal_order_id;
-                        } catch (error) {
-                            console.error('[PayPal] createOrder error:', error);
-                            showError(error.message || 'Failed to initialize payment. Please try again.');
-                            throw error;
-                        }
-                    };
-
-                    buttonConfig.onApprove = async (data) => {
-                        try {
-                            debugLog('onApprove: Capturing payment for order:', data.orderID);
-                            showProcessing();
-
-                            const requestBody = {
-                                paypal_order_id: data.orderID,
-                                order_id: orderId,
-                                [csrfToken]: '1'
-                            };
-
-                            const response = await fetch(captureOrderUrl, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify(requestBody)
-                            });
-
-                            const result = await response.json();
-
-                            debugLog('onApprove: Capture response:', { status: response.status, result });
-
-                            if (!response.ok || !result.success) {
-                                if (result.error && result.error.includes('INSTRUMENT_DECLINED')) {
-                                    showError('Your payment method was declined. Please try a different payment method.');
-                                    return data.restart();
+                                if (!response.ok || !data.success || !data.paypal_subscription_id) {
+                                    throw new Error(data.error || 'Failed to create PayPal subscription');
                                 }
-                                throw new Error(result.error || 'Payment capture failed');
-                            }
 
-                            if (result.redirect) {
-                                debugLog('onApprove: Redirecting to:', result.redirect);
-                                window.location.href = result.redirect;
-                            } else {
-                                showError('Payment completed but redirect URL is missing.');
+                                debugLog('createSubscription: PayPal subscription ID:', data.paypal_subscription_id);
+                                return data.paypal_subscription_id;
+                            } catch (error) {
+                                console.error('[PayPal] createSubscription error:', error);
+                                showError(error.message || 'Failed to initialize subscription. Please try again.');
+                                throw error;
                             }
-                        } catch (error) {
-                            console.error('[PayPal] onApprove error:', error);
-                            showError(error.message || 'Payment processing failed. Please contact support.');
+                        },
+
+                        onApprove: async (data) => {
+                            try {
+                                debugLog('onApprove (subscription): Approving subscription:', data.subscriptionID);
+                                showProcessing();
+
+                                const response = await fetch(captureOrderUrl, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        paypal_subscription_id: data.subscriptionID,
+                                        order_id: orderId,
+                                        [csrfToken]: '1'
+                                    })
+                                });
+
+                                const result = await response.json();
+                                debugLog('onApprove (subscription): Finalize response:', { status: response.status, result });
+
+                                if (!response.ok || !result.success) {
+                                    throw new Error(result.error || 'Subscription approval failed');
+                                }
+
+                                if (result.redirect) {
+                                    window.location.href = result.redirect;
+                                } else {
+                                    showError('Subscription approved but redirect URL is missing.');
+                                }
+                            } catch (error) {
+                                console.error('[PayPal] onApprove (subscription) error:', error);
+                                showError(error.message || 'Subscription approval failed. Please contact support.');
+                            }
+                        },
+
+                        onCancel: () => {
+                            debugLog('onCancel: Subscription cancelled by user');
+                            showError('Payment was cancelled. You can try again or choose a different payment method.');
+                        },
+
+                        onError: (err) => {
+                            console.error('[PayPal] Subscription button error:', err);
+                            showError('PayPal error: ' + (err?.message || (typeof err === 'string' ? err : 'Unknown error')));
                         }
-                    };
+
+                    }).render('#paypal-button-container');
+
+                    return;
                 }
 
-                return paypal.Buttons(buttonConfig).render('#paypal-button-container');
+                // ── ONE-OFF ORDERS: render one button per enabled funding source ──
+                debugLog('Rendering PayPal payment buttons for sources:', fundingSources);
+
+                fundingSources.forEach((source) => {
+                    const fundingConstant = FUNDING_MAP[source];
+
+                    if (!fundingConstant || !paypal.FUNDING || !paypal.FUNDING[fundingConstant]) {
+                        debugLog('Skipping unknown or unavailable funding source:', source);
+                        return;
+                    }
+
+                    // Each button needs its own DOM target inside the outer container.
+                    const btnWrapper = document.createElement('div');
+                    btnWrapper.className = 'paypal-funding-source-btn mb-2';
+                    btnWrapper.id = `paypal-btn-${source}`;
+                    container.appendChild(btnWrapper);
+
+                    const buttonConfig = {
+                        fundingSource: paypal.FUNDING[fundingConstant],
+
+                        style: {
+                            layout: 'vertical',
+                            shape:  'rect',
+                            height: 45
+                        },
+
+                        /**
+                         * createOrder: called when the customer clicks this button.
+                         * Passes the funding source key so the server can include
+                         * the matching payment_source block in the Orders API body.
+                         */
+                        createOrder: async (data) => {
+                            try {
+                                debugLog(`createOrder (${source}): Starting order creation`);
+                                hideMessages();
+
+                                // data.paymentSource is the SDK's own value; prefer our
+                                // stored key for consistency with the server mapping.
+                                const paymentSource = data.paymentSource || source;
+
+                                const response = await fetch(createOrderUrl, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        order_id:       orderId,
+                                        currency:       currency,
+                                        amount:         amount,
+                                        payment_source: paymentSource,
+                                        [csrfToken]:    '1'
+                                    })
+                                });
+
+                                const responseData = await response.json();
+                                debugLog(`createOrder (${source}): Response:`, { status: response.status, responseData });
+
+                                if (!response.ok || !responseData.success) {
+                                    throw new Error(responseData.error || 'Failed to create PayPal order');
+                                }
+
+                                debugLog(`createOrder (${source}): PayPal order ID:`, responseData.paypal_order_id);
+                                return responseData.paypal_order_id;
+                            } catch (error) {
+                                console.error(`[PayPal] createOrder (${source}) error:`, error);
+                                showError(error.message || 'Failed to initialize payment. Please try again.');
+                                throw error;
+                            }
+                        },
+
+                        onApprove: async (data) => {
+                            try {
+                                debugLog(`onApprove (${source}): Capturing payment for order:`, data.orderID);
+                                showProcessing();
+
+                                const response = await fetch(captureOrderUrl, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        paypal_order_id: data.orderID,
+                                        order_id:        orderId,
+                                        [csrfToken]:     '1'
+                                    })
+                                });
+
+                                const result = await response.json();
+                                debugLog(`onApprove (${source}): Capture response:`, { status: response.status, result });
+
+                                if (!response.ok || !result.success) {
+                                    if (result.error && result.error.includes('INSTRUMENT_DECLINED')) {
+                                        showError('Your payment method was declined. Please try a different payment method.');
+                                        return data.restart();
+                                    }
+                                    throw new Error(result.error || 'Payment capture failed');
+                                }
+
+                                if (result.redirect) {
+                                    debugLog(`onApprove (${source}): Redirecting to:`, result.redirect);
+                                    window.location.href = result.redirect;
+                                } else {
+                                    showError('Payment completed but redirect URL is missing.');
+                                }
+                            } catch (error) {
+                                console.error(`[PayPal] onApprove (${source}) error:`, error);
+                                showError(error.message || 'Payment processing failed. Please contact support.');
+                            }
+                        },
+
+                        onCancel: () => {
+                            debugLog(`onCancel (${source}): Payment cancelled by user`);
+                            showError('Payment was cancelled. You can try again or choose a different payment method.');
+                        },
+
+                        onError: (err) => {
+                            console.error(`[PayPal] Button error (${source}):`, err);
+                            const msg = err?.message || (typeof err === 'string' ? err : 'Unknown error');
+                            showError('PayPal error: ' + msg);
+                        }
+                    };
+
+                    const buttons = paypal.Buttons(buttonConfig);
+
+                    // isEligible() returns false when the funding source is not available
+                    // in the current browser/region (e.g. Apple Pay on non-Safari).
+                    if (buttons.isEligible()) {
+                        buttons.render(`#paypal-btn-${source}`);
+                        debugLog(`Button rendered for source: ${source}`);
+                    } else {
+                        // Remove the empty wrapper so it doesn't create whitespace.
+                        btnWrapper.remove();
+                        debugLog(`Button not eligible, skipped: ${source}`);
+                    }
+                });
             })
             .catch((err) => {
                 console.error('[PayPal] Initialization failed:', err);
