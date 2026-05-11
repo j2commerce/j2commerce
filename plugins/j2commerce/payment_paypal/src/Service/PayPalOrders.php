@@ -45,9 +45,75 @@ final class PayPalOrders
             ]],
         ];
 
+        // Inject payment_source when the JS has told us which funding source the customer chose.
+        $paymentSource = $this->buildPaymentSource($orderData);
+
+        if (!empty($paymentSource)) {
+            $body['payment_source'] = $paymentSource;
+        }
+
         return $this->client->requestWithRetry('POST', '/v2/checkout/orders', $body, [
             'Prefer: return=representation',
         ]);
+    }
+
+    /**
+     * Build the PayPal Orders API `payment_source` object.
+     *
+     * - paypal / venmo / paylater  → payment_source.paypal  (experience_context)
+     * - card / applepay / googlepay → omitted (SDK handles these automatically)
+     * - local redirect methods      → payment_source.<method> with return_url / cancel_url
+     *
+     * @param  array<string, mixed> $orderData
+     * @return array<string, mixed>
+     */
+    private function buildPaymentSource(array $orderData): array
+    {
+        $source = trim((string) ($orderData['payment_source'] ?? ''));
+
+        if ($source === '') {
+            return [];
+        }
+
+        // PayPal wallet, Pay Later and Venmo all use the 'paypal' key in payment_source.
+        if (\in_array($source, ['paypal', 'venmo', 'paylater'], true)) {
+            return [
+                'paypal' => [
+                    'experience_context' => [
+                        'payment_method_preference' => 'IMMEDIATE_PAYMENT_REQUIRED',
+                        'user_action'               => 'PAY_NOW',
+                    ],
+                ],
+            ];
+        }
+
+        // Card, Apple Pay and Google Pay are handled entirely by the SDK; no payment_source
+        // block is required (or allowed) in the Create Order body for these funding sources.
+        if (\in_array($source, ['card', 'applepay', 'googlepay'], true)) {
+            return [];
+        }
+
+        // Local / redirect payment methods (iDEAL, Bancontact, BLIK, …) need an
+        // experience_context with return_url and cancel_url so PayPal can redirect
+        // the customer back after they complete their bank flow.
+        $experienceContext = [
+            'payment_method_preference' => 'IMMEDIATE_PAYMENT_REQUIRED',
+            'user_action'               => 'PAY_NOW',
+        ];
+
+        if (!empty($orderData['return_url'])) {
+            $experienceContext['return_url'] = $orderData['return_url'];
+        }
+
+        if (!empty($orderData['cancel_url'])) {
+            $experienceContext['cancel_url'] = $orderData['cancel_url'];
+        }
+
+        return [
+            $source => [
+                'experience_context' => $experienceContext,
+            ],
+        ];
     }
 
     /**
