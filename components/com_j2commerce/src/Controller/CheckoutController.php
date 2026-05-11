@@ -22,12 +22,17 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\CheckoutStepsHelper;
+use Joomla\CMS\Event\Model\PrepareFormEvent;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Form\Form;
+use Joomla\CMS\Form\FormFactoryInterface;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\BaseController;
+use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
 use Joomla\CMS\User\UserFactoryInterface;
+use Joomla\Event\DispatcherInterface;
 
 class CheckoutController extends BaseController
 {
@@ -349,9 +354,34 @@ class CheckoutController extends BaseController
         $fields       = CustomFieldHelper::getFieldsByArea('register');
 
         $this->renderStep('register', [
-            'showShipping' => $showShipping,
-            'fields'       => $fields,
+            'showShipping'     => $showShipping,
+            'fields'           => $fields,
+            'registrationForm' => $this->buildRegistrationForm(),
         ]);
+    }
+
+    private function buildRegistrationForm(): ?Form
+    {
+        try {
+            $formFactory = Factory::getContainer()->get(FormFactoryInterface::class);
+            $form        = $formFactory->createForm('com_users.registration', ['control' => 'jform']);
+
+            // Seed with an empty XML root so plugins can inject fieldsets
+            $form->load('<form></form>');
+
+            $dispatcher = Factory::getContainer()->get(DispatcherInterface::class);
+            PluginHelper::importPlugin('system', null, true, $dispatcher);
+            PluginHelper::importPlugin('user', null, true, $dispatcher);
+
+            $dispatcher->dispatch(
+                'onContentPrepareForm',
+                new PrepareFormEvent('onContentPrepareForm', ['subject' => $form, 'data' => new \stdClass()])
+            );
+
+            return $form;
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     public function registerValidate(): void
@@ -435,11 +465,37 @@ class CheckoutController extends BaseController
 
             $user->registerDate = Factory::getDate()->toSql();
 
-            if (!$user->save()) {
-                $json['error']['warning'] = $user->getError() ?: Text::_('COM_J2COMMERCE_CHECKOUT_REGISTER_ERROR');
+            // Spoof PHP input so plugins that gate on option/task/jform
+            // (e.g. plg_system_privacyconsent, plg_user_terms) run their
+            // enforcement and write their consent records during $user->save().
+            $input       = $this->app->getInput();
+            $savedOption = $input->get('option');
+            $savedTask   = $input->post->get('task');
+            $savedJform  = $input->post->get('jform', [], 'array');
+
+            $input->set('option', 'com_users');
+            $input->post->set('task', 'registration.register');
+            // jform values stay as-is: the submitted jform[privacyconsent][privacy]
+            // etc. from the checkout form are already in $input->post
+
+            try {
+                if (!$user->save()) {
+                    $json['error']['warning'] = $user->getError() ?: Text::_('COM_J2COMMERCE_CHECKOUT_REGISTER_ERROR');
+                    $this->jsonResponse($json);
+
+                    return;
+                }
+            } catch (\InvalidArgumentException $e) {
+                // Plugin enforcement (e.g. privacy consent not ticked, terms not accepted).
+                // The message is already translated by the plugin before throwing.
+                $json['error']['warning'] = $e->getMessage();
                 $this->jsonResponse($json);
 
                 return;
+            } finally {
+                $input->set('option', $savedOption);
+                $input->post->set('task', $savedTask);
+                $input->post->set('jform', $savedJform);
             }
 
             // Auto-login the new user
