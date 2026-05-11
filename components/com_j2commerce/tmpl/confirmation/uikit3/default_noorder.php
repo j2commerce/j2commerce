@@ -19,42 +19,42 @@ use Joomla\CMS\Router\Route;
 ?>
 <div class="j2commerce">
     <div class="j2commerce-confirmation-noorder">
-        <div class="container py-5">
-            <div class="row justify-content-center">
-                <div class="col-md-6 text-center">
+        <div class="uk-section">
+            <div class="uk-container uk-container-small">
+                <div class="uk-text-center">
 
-                    <div class="mb-4">
-                        <span class="fa-solid fa-magnifying-glass fa-3x text-muted" aria-hidden="true"></span>
+                    <div class="uk-margin-bottom">
+                        <span uk-icon="icon: search; ratio: 3" class="uk-text-muted" aria-hidden="true"></span>
                     </div>
 
                     <h2><?php echo Text::_('COM_J2COMMERCE_CONFIRMATION_ENTER_TOKEN'); ?></h2>
-                    <p class="text-muted mb-4"><?php echo Text::_('COM_J2COMMERCE_CONFIRMATION_TOKEN_HELP'); ?></p>
+                    <p class="uk-text-meta uk-margin-bottom"><?php echo Text::_('COM_J2COMMERCE_CONFIRMATION_TOKEN_HELP'); ?></p>
 
-                    <form action="<?php echo Route::_('index.php?option=com_j2commerce&view=confirmation'); ?>" method="get" class="mb-4">
+                    <form action="<?php echo Route::_('index.php?option=com_j2commerce&view=confirmation'); ?>" method="get" class="uk-margin-bottom">
                         <input type="hidden" name="option" value="com_j2commerce">
                         <input type="hidden" name="view" value="confirmation">
 
-                        <div class="mb-3">
+                        <div class="uk-margin-bottom">
                             <input type="text"
                                    name="token"
                                    id="j2c-order-token"
-                                   class="form-control form-control-lg text-center"
+                                   class="uk-input uk-form-large uk-text-center"
                                    placeholder="<?php echo Text::_('COM_J2COMMERCE_CONFIRMATION_TOKEN_PLACEHOLDER'); ?>"
                                    required
                                    autocomplete="off">
                         </div>
 
-                        <button type="submit" class="btn btn-primary btn-lg w-100">
-                            <span class="fa-solid fa-eye me-2" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_CONFIRMATION_TOKEN_SUBMIT'); ?>
+                        <button type="submit" class="uk-button uk-button-primary uk-button-large uk-width-1-1">
+                            <span uk-icon="icon: search" class="uk-margin-small-right" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_CONFIRMATION_TOKEN_SUBMIT'); ?>
                         </button>
                     </form>
 
-                    <div class="d-flex justify-content-center gap-3">
-                        <a href="<?php echo Route::_('index.php?option=com_j2commerce&view=myprofile'); ?>" class="btn btn-outline-secondary">
-                            <span class="fa-solid fa-clock-rotate-left me-1" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_CONFIRMATION_VIEW_ALL_ORDERS'); ?>
+                    <div class="uk-flex uk-flex-center uk-flex-wrap" style="gap: 12px;">
+                        <a href="<?php echo Route::_('index.php?option=com_j2commerce&view=myprofile'); ?>" class="uk-button uk-button-default">
+                            <span uk-icon="icon: history" class="uk-margin-small-right" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_CONFIRMATION_VIEW_ALL_ORDERS'); ?>
                         </a>
-                        <a href="<?php echo Route::_('index.php?option=com_j2commerce&view=products'); ?>" class="btn btn-outline-secondary">
-                            <span class="fa-solid fa-bag-shopping me-1" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_CONFIRMATION_CONTINUE_SHOPPING'); ?>
+                        <a href="<?php echo Route::_('index.php?option=com_j2commerce&view=products'); ?>" class="uk-button uk-button-default">
+                            <span uk-icon="icon: cart" class="uk-margin-small-right" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_CONFIRMATION_CONTINUE_SHOPPING'); ?>
                         </a>
                     </div>
 

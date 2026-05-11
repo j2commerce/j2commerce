@@ -96,9 +96,9 @@ if ($info) {
 
     <div class="j2commerce-confirmation">
         <?php if ($this->showingRecent) : ?>
-        <div class="alert alert-info d-flex justify-content-between align-items-center mb-3">
-            <span><span class="fa-solid fa-circle-info me-2" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_CONFIRMATION_SHOWING_RECENT'); ?></span>
-            <a href="<?php echo Route::_('index.php?option=com_j2commerce&view=myprofile'); ?>" class="btn btn-sm btn-outline-primary">
+        <div class="uk-alert uk-alert-primary uk-flex uk-flex-between uk-flex-middle uk-margin-bottom" uk-alert>
+            <span><span class="uk-margin-small-right" uk-icon="icon: info" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_CONFIRMATION_SHOWING_RECENT'); ?></span>
+            <a href="<?php echo Route::_('index.php?option=com_j2commerce&view=myprofile'); ?>" class="uk-button uk-button-small uk-button-default">
                 <?php echo Text::_('COM_J2COMMERCE_CONFIRMATION_VIEW_ALL_ORDERS'); ?>
             </a>
         </div>
@@ -106,30 +106,30 @@ if ($info) {
 
         <jdoc:include type="modules" name="j2commerce-postpayment-top" style="none" />
 
-        <div class="row g-0">
+        <div class="uk-grid uk-grid-collapse" uk-grid>
             <?php // Left column ?>
-            <div class="<?php echo $isCancelled ? 'col-12' : 'col-lg-7'; ?> j2c-confirmation-main <?php echo $isCancelled ? '' : 'pe-lg-4'; ?>">
+            <div class="<?php echo $isCancelled ? 'uk-width-1-1' : 'uk-width-expand@l'; ?> j2c-confirmation-main<?php echo $isCancelled ? '' : ' uk-padding-right@l'; ?>">
 
-                <div class="alert <?php echo $isCancelled ? 'alert-danger' : 'alert-info'; ?> mb-4 border-0">
-                    <div class="d-flex align-items-center gap-3">
+                <div class="uk-alert <?php echo $isCancelled ? 'uk-alert-danger' : 'uk-alert-primary'; ?> uk-margin-bottom" uk-alert>
+                    <div class="uk-flex uk-flex-middle" style="gap: 12px;">
                         <?php if ($isCancelled) : ?>
-                            <div class="j2c-cancel-circle rounded-circle d-flex align-items-center justify-content-center flex-shrink-0">
-                                <span class="icon-times text-white" style="font-size: 1.5rem;" aria-hidden="true"></span>
+                            <div class="j2c-cancel-circle uk-border-circle uk-flex uk-flex-middle uk-flex-center uk-flex-none">
+                                <span class="icon-times" style="color:#fff; font-size: 1.5rem;" aria-hidden="true"></span>
                             </div>
                             <div>
-                                <h2 class="h4 mb-1 alert-heading"><?php echo Text::_('COM_J2COMMERCE_ORDER_CANCELLED'); ?></h2>
+                                <h2 class="uk-h4 uk-margin-remove"><?php echo Text::_('COM_J2COMMERCE_ORDER_CANCELLED'); ?></h2>
                             </div>
                         <?php else : ?>
-                            <div class="j2c-check-circle rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 bg-info">
-                                <span class="icon-check text-white" style="font-size: 1.5rem;" aria-hidden="true"></span>
+                            <div class="j2c-check-circle uk-border-circle uk-flex uk-flex-middle uk-flex-center uk-flex-none">
+                                <span class="icon-check" style="color:#fff; font-size: 1.5rem;" aria-hidden="true"></span>
                             </div>
                             <div>
                                 <?php if ($firstName !== '') : ?>
-                                    <h2 class="h4 mb-1 alert-heading"><?php echo Text::sprintf('COM_J2COMMERCE_THANK_YOU_NAME', $this->escape($firstName)); ?></h2>
+                                    <h2 class="uk-h4 uk-margin-remove"><?php echo Text::sprintf('COM_J2COMMERCE_THANK_YOU_NAME', $this->escape($firstName)); ?></h2>
                                 <?php else : ?>
-                                    <h2 class="h4 mb-1 alert-heading"><?php echo Text::_('COM_J2COMMERCE_ORDER_CONFIRMATION'); ?></h2>
+                                    <h2 class="uk-h4 uk-margin-remove"><?php echo Text::_('COM_J2COMMERCE_ORDER_CONFIRMATION'); ?></h2>
                                 <?php endif; ?>
-                                <p class="mb-1">
+                                <p class="uk-margin-remove">
                                     <?php echo Text::_('COM_J2COMMERCE_ORDER_ID'); ?>: <?php echo $this->escape($order->order_id); ?>
                                 </p>
                             </div>
@@ -140,14 +140,14 @@ if ($info) {
 
                 <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeConfirmationOrderStatus', array($this, $order, 'onJ2Commerce'))->getArgument('html', ''); ?>
 
-                <div class="card mb-4">
-                    <div class="card-body">
+                <div class="uk-card uk-card-default uk-margin-bottom">
+                    <div class="uk-card-body">
                         <div>
-                            <h3 class="h6 mb-1">
+                            <h3 class="uk-h6 uk-margin-small-bottom">
                                 <?php echo Text::_('COM_J2COMMERCE_ORDERSTATUS'); ?>
-                                <span class="ms-2"><?php echo $statusBadgeHtml; ?></span>
+                                <span class="uk-margin-small-left"><?php echo $statusBadgeHtml; ?></span>
                             </h3>
-                            <p class="text-body-secondary mb-0 small">
+                            <p class="uk-text-meta uk-margin-remove uk-text-small">
                                 <?php if ($isCancelled) : ?>
                                     <?php echo Text::_('COM_J2COMMERCE_ORDER_CANCELLED_MESSAGE'); ?>
                                 <?php else : ?>
@@ -155,7 +155,7 @@ if ($info) {
                                 <?php endif; ?>
                             </p>
                             <?php if ($mapLoaded) : ?>
-                                <div id="j2c-confirmation-map" class="leaflet-map-container mt-3" role="img" aria-label="<?php echo $this->escape($mapAddress); ?>"></div>
+                                <div id="j2c-confirmation-map" class="leaflet-map-container uk-margin-top" role="img" aria-label="<?php echo $this->escape($mapAddress); ?>"></div>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -163,8 +163,8 @@ if ($info) {
 
 
                 <?php if (!empty($this->plugin_html)) : ?>
-                    <div class="card mb-4">
-                        <div class="card-body">
+                    <div class="uk-card uk-card-default uk-margin-bottom">
+                        <div class="uk-card-body">
                             <?php echo $this->plugin_html; ?>
                         </div>
                     </div>
@@ -173,12 +173,12 @@ if ($info) {
                 <?php if (!$isCancelled) : ?>
                     <?php // Email updates card ?>
                     <?php if (!empty($order->user_email)) : ?>
-                        <div class="card mb-4">
-                            <div class="card-body d-flex align-items-center gap-3">
-                                <span class="icon-envelope text-body-secondary" style="font-size: 1.25rem;" aria-hidden="true"></span>
+                        <div class="uk-card uk-card-default uk-margin-bottom">
+                            <div class="uk-card-body uk-flex uk-flex-middle" style="gap: 12px;">
+                                <span class="icon-envelope uk-text-meta" style="font-size: 1.25rem;" aria-hidden="true"></span>
                                 <div>
-                                    <h3 class="h6 mb-1"><?php echo Text::_('COM_J2COMMERCE_ORDER_UPDATES'); ?></h3>
-                                    <p class="text-body-secondary mb-0 small">
+                                    <h3 class="uk-h6 uk-margin-small-bottom"><?php echo Text::_('COM_J2COMMERCE_ORDER_UPDATES'); ?></h3>
+                                    <p class="uk-text-meta uk-margin-remove uk-text-small">
                                         <?php echo Text::_('COM_J2COMMERCE_ORDER_UPDATES_DESC'); ?>
                                         <br><strong><?php echo $this->escape($order->user_email); ?></strong>
                                     </p>
@@ -191,17 +191,17 @@ if ($info) {
 
                     <?php // Customer information grid ?>
                     <?php if ($info) : ?>
-                        <div class="card mb-4">
-                            <div class="card-body">
-                                <h3 class="h6 mb-3"><?php echo Text::_('COM_J2COMMERCE_ORDER_DETAILS'); ?></h3>
+                        <div class="uk-card uk-card-default uk-margin-bottom">
+                            <div class="uk-card-body">
+                                <h3 class="uk-h6 uk-margin-bottom"><?php echo Text::_('COM_J2COMMERCE_ORDER_DETAILS'); ?></h3>
 
-                                <div class="row g-4">
+                                <div class="uk-grid uk-grid-medium" uk-grid>
                                     <?php // Contact information ?>
-                                    <div class="col-sm-6">
-                                        <h4 class="j2c-info-label text-uppercase text-body-dark fw-semibold mb-2">
+                                    <div class="uk-width-1-2@s">
+                                        <h4 class="j2c-info-label uk-text-uppercase uk-text-bold uk-text-small uk-margin-small-bottom">
                                             <?php echo Text::_('COM_J2COMMERCE_CONTACT_INFORMATION'); ?>
                                         </h4>
-                                        <p class="mb-0 small">
+                                        <p class="uk-margin-remove uk-text-small">
                                             <?php echo $this->escape($order->user_email); ?>
                                             <?php if (!empty($info->billing_phone_1)) : ?>
                                                 <br><?php echo $this->escape($info->billing_phone_1); ?>
@@ -210,11 +210,11 @@ if ($info) {
                                     </div>
 
                                     <?php // Payment method ?>
-                                    <div class="col-sm-6">
-                                        <h4 class="j2c-info-label text-uppercase text-body-dark fw-semibold mb-2">
+                                    <div class="uk-width-1-2@s">
+                                        <h4 class="j2c-info-label uk-text-uppercase uk-text-bold uk-text-small uk-margin-small-bottom">
                                             <?php echo Text::_('COM_J2COMMERCE_PAYMENT_METHOD'); ?>
                                         </h4>
-                                        <p class="mb-0 small">
+                                        <p class="uk-margin-remove uk-text-small">
                                             <?php echo $paymentDisplay; ?>
                                             <br><?php echo $fmt((float) $order->order_total); ?>
                                         </p>
@@ -222,11 +222,11 @@ if ($info) {
 
                                     <?php // Shipping address ?>
                                     <?php if ((int) $order->is_shippable) : ?>
-                                        <div class="col-sm-6">
-                                            <h4 class="j2c-info-label text-uppercase text-body-dark fw-semibold mb-2">
+                                        <div class="uk-width-1-2@s">
+                                            <h4 class="j2c-info-label uk-text-uppercase uk-text-bold uk-text-small uk-margin-small-bottom">
                                                 <?php echo Text::_('COM_J2COMMERCE_SHIPPING_ADDRESS'); ?>
                                             </h4>
-                                            <address class="mb-0 small">
+                                            <address class="uk-margin-remove uk-text-small">
                                                 <?php echo $this->escape(trim(($info->shipping_first_name ?? '') . ' ' . ($info->shipping_last_name ?? ''))); ?>
                                                 <?php if (!empty($info->shipping_company)) : ?>
                                                     <br><?php echo $this->escape($info->shipping_company); ?>
@@ -246,11 +246,11 @@ if ($info) {
                                     <?php endif; ?>
 
                                     <?php // Billing address ?>
-                                    <div class="col-sm-6">
-                                        <h4 class="j2c-info-label text-uppercase text-body-dark fw-semibold mb-2">
+                                    <div class="uk-width-1-2@s">
+                                        <h4 class="j2c-info-label uk-text-uppercase uk-text-bold uk-text-small uk-margin-small-bottom">
                                             <?php echo Text::_('COM_J2COMMERCE_BILLING_ADDRESS'); ?>
                                         </h4>
-                                        <address class="mb-0 small">
+                                        <address class="uk-margin-remove uk-text-small">
                                             <?php echo $this->escape(trim(($info->billing_first_name ?? '') . ' ' . ($info->billing_last_name ?? ''))); ?>
                                             <?php if (!empty($info->billing_company)) : ?>
                                                 <br><?php echo $this->escape($info->billing_company); ?>
@@ -274,13 +274,13 @@ if ($info) {
 
                     <?php // Shipping method card ?>
                     <?php if ((int) $order->is_shippable && !empty($shippings)) : ?>
-                        <div class="card mb-4">
-                            <div class="card-body">
-                                <h4 class="j2c-info-label text-uppercase text-body-dark fw-semibold mb-2">
+                        <div class="uk-card uk-card-default uk-margin-bottom">
+                            <div class="uk-card-body">
+                                <h4 class="j2c-info-label uk-text-uppercase uk-text-bold uk-text-small uk-margin-small-bottom">
                                     <?php echo Text::_('COM_J2COMMERCE_SHIPPING_METHOD'); ?>
                                 </h4>
                                 <?php foreach ($shippings as $shipping) : ?>
-                                    <p class="mb-0 small">
+                                    <p class="uk-margin-remove uk-text-small">
                                         <?php echo $this->escape($shipping->ordershipping_name); ?>
                                         &middot;
                                         <?php echo $fmt((float) ($shipping->ordershipping_price ?? 0)); ?>
@@ -291,17 +291,17 @@ if ($info) {
                     <?php endif; ?>
 
                     <?php // Continue shopping + need help ?>
-                    <div class="d-flex flex-wrap align-items-center justify-content-center gap-3 mb-4">
-                        <a href="<?php echo Route::_('index.php?option=com_j2commerce&view=products'); ?>" class="btn btn-primary">
+                    <div class="uk-flex uk-flex-wrap uk-flex-middle uk-flex-center uk-margin-bottom" style="gap: 12px;">
+                        <a href="<?php echo Route::_('index.php?option=com_j2commerce&view=products'); ?>" class="uk-button uk-button-primary">
                             <?php echo Text::_('COM_J2COMMERCE_CONTINUE_SHOPPING'); ?>
                         </a>
                         <?php if (!empty($this->order_link)) : ?>
-                            <a href="<?php echo $this->order_link; ?>" class="btn btn-outline-primary">
+                            <a href="<?php echo $this->order_link; ?>" class="uk-button uk-button-default">
                                 <?php echo Text::_('COM_J2COMMERCE_VIEW_ORDER_HISTORY'); ?>
                             </a>
                         <?php endif; ?>
                     </div>
-                    <p class="text-body-secondary small mb-4">
+                    <p class="uk-text-meta uk-text-small uk-margin-bottom">
                         <?php echo Text::_('COM_J2COMMERCE_NEED_HELP'); ?>
                         <a href="<?php echo Route::_('index.php?option=com_contact'); ?>">
                             <?php echo Text::_('COM_J2COMMERCE_CONTACT_US'); ?>
@@ -310,8 +310,8 @@ if ($info) {
 
                 <?php else : ?>
                     <?php // Cancelled order actions ?>
-                    <div class="d-flex flex-wrap align-items-center gap-3 mb-4">
-                        <a href="<?php echo Route::_('index.php?option=com_j2commerce&view=products'); ?>" class="btn btn-dark">
+                    <div class="uk-flex uk-flex-wrap uk-flex-middle uk-margin-bottom" style="gap: 12px;">
+                        <a href="<?php echo Route::_('index.php?option=com_j2commerce&view=products'); ?>" class="uk-button uk-button-secondary">
                             <?php echo Text::_('COM_J2COMMERCE_CONTINUE_SHOPPING'); ?>
                         </a>
                     </div>
@@ -321,12 +321,12 @@ if ($info) {
 
             <?php // Right column - Order summary sidebar (only for non-cancelled orders) ?>
             <?php if (!$isCancelled) : ?>
-                <div class="col-lg-5 j2c-sidebar-bg p-4">
-                    <h3 class="h5 mb-4"><?php echo Text::_('COM_J2COMMERCE_ORDER_SUMMARY'); ?></h3>
+                <div class="uk-width-1-3@l j2c-sidebar-bg uk-padding">
+                    <h3 class="uk-h5 uk-margin-bottom"><?php echo Text::_('COM_J2COMMERCE_ORDER_SUMMARY'); ?></h3>
 
                     <?php // Order items list ?>
                     <?php if (!empty($items)) : ?>
-                        <div class="mb-4">
+                        <div class="uk-margin-bottom">
                             <?php foreach ($items as $item) : ?>
                                 <?php
                                 $params   = json_decode($item->orderitem_params ?? '{}', true) ?: [];
@@ -337,27 +337,27 @@ if ($info) {
                                 $qty      = (int) $item->orderitem_quantity;
                                 $lineTotal = (float) $item->orderitem_finalprice;
                                 ?>
-                                <div class="d-flex align-items-start gap-3 mb-3">
+                                <div class="uk-flex uk-flex-top uk-margin-small-bottom" style="gap: 12px;">
                                     <?php // Product image with quantity badge ?>
-                                    <div class="position-relative flex-shrink-0">
+                                    <div class="uk-position-relative uk-flex-none">
                                         <?php if (!empty($thumb)) : ?>
                                             <img src="<?php echo $this->escape($thumb); ?>"
                                                  alt="<?php echo $this->escape($item->orderitem_name); ?>"
-                                                 class="j2c-order-item-img rounded border" loading="lazy">
+                                                 class="j2c-order-item-img uk-border-rounded uk-border" loading="lazy">
                                         <?php else : ?>
-                                            <div class="j2c-item-placeholder rounded border d-flex align-items-center justify-content-center">
-                                                <span class="icon-image text-body-tertiary" aria-hidden="true"></span>
+                                            <div class="j2c-item-placeholder uk-border-rounded uk-border uk-flex uk-flex-middle uk-flex-center">
+                                                <span class="icon-image uk-text-muted" aria-hidden="true"></span>
                                             </div>
                                         <?php endif; ?>
                                         <?php if ($qty > 1) : ?>
-                                            <span class="j2c-order-item-qty position-absolute badge rounded-pill bg-secondary d-flex align-items-center justify-content-center">
+                                            <span class="j2c-order-item-qty uk-position-top-right uk-badge">
                                                 <?php echo $qty; ?>
                                             </span>
                                         <?php endif; ?>
                                     </div>
                                     <?php // Product name + options ?>
-                                    <div class="flex-grow-1 small">
-                                        <span class="fw-semibold"><?php echo $this->escape($item->orderitem_name); ?></span>
+                                    <div class="uk-flex-1 uk-text-small">
+                                        <span class="uk-text-bold"><?php echo $this->escape($item->orderitem_name); ?></span>
                                         <?php if (!empty($item->orderitemattributes)) : ?>
                                             <br><?php echo LayoutHelper::render('orderitem.attributes', [
                                                 'attributes' => $item->orderitemattributes,
@@ -367,11 +367,11 @@ if ($info) {
                                             ], JPATH_ROOT . '/components/com_j2commerce/layouts'); ?>
                                         <?php endif; ?>
                                         <?php if (!empty($item->orderitem_sku)) : ?>
-                                            <br><span class="text-body-tertiary"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_SKU'); ?>: <?php echo $this->escape($item->orderitem_sku); ?></span>
+                                            <br><span class="uk-text-muted"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_SKU'); ?>: <?php echo $this->escape($item->orderitem_sku); ?></span>
                                         <?php endif; ?>
                                     </div>
                                     <?php // Item price ?>
-                                    <div class="text-end small fw-semibold text-nowrap">
+                                    <div class="uk-text-right uk-text-small uk-text-bold uk-text-nowrap uk-flex-none">
                                         <?php echo $fmt($lineTotal); ?>
                                     </div>
                                 </div>
@@ -381,11 +381,11 @@ if ($info) {
 
                     <?php // Discount code badges ?>
                     <?php if (!empty($discounts)) : ?>
-                        <div class="mb-3">
+                        <div class="uk-margin-small-bottom">
                             <?php foreach ($discounts as $disc) : ?>
                                 <?php if (!empty($disc->discount_code)) : ?>
-                                    <span class="badge bg-dark text-white me-1 mb-1">
-                                        <span class="icon-tag me-1" aria-hidden="true"></span>
+                                    <span class="uk-badge uk-margin-small-right uk-margin-small-bottom">
+                                        <span class="icon-tag uk-margin-small-right" aria-hidden="true"></span>
                                         <?php echo $this->escape($disc->discount_code); ?>
                                     </span>
                                 <?php endif; ?>
@@ -396,9 +396,9 @@ if ($info) {
                     <hr>
 
                     <?php // Summary lines ?>
-                    <div class="small">
+                    <div class="uk-text-small">
                         <?php // Subtotal ?>
-                        <div class="d-flex justify-content-between mb-2">
+                        <div class="uk-flex uk-flex-between uk-margin-small-bottom">
                             <span><?php echo Text::_('COM_J2COMMERCE_CART_SUBTOTAL'); ?></span>
                             <span><?php echo $fmt((float) $order->order_subtotal); ?></span>
                         </div>
@@ -414,7 +414,7 @@ if ($info) {
                                 }
                             }
                             ?>
-                            <div class="d-flex justify-content-between mb-2">
+                            <div class="uk-flex uk-flex-between uk-margin-small-bottom">
                                 <span><?php echo $this->escape($shippingLabel); ?></span>
                                 <span><?php echo $fmt((float) $order->order_shipping); ?></span>
                             </div>
@@ -424,14 +424,14 @@ if ($info) {
                         <?php if (!empty($fees)) : ?>
                             <?php foreach ($fees as $fee) : ?>
                                 <?php if ((float) ($fee->amount ?? 0) > 0) : ?>
-                                    <div class="d-flex justify-content-between mb-2">
+                                    <div class="uk-flex uk-flex-between uk-margin-small-bottom">
                                         <span><?php echo $this->escape($fee->name ?: Text::_('COM_J2COMMERCE_CART_SURCHARGE')); ?></span>
                                         <span><?php echo $fmt((float) $fee->amount); ?></span>
                                     </div>
                                 <?php endif; ?>
                             <?php endforeach; ?>
                         <?php elseif ((float) ($order->order_surcharge ?? 0) > 0) : ?>
-                            <div class="d-flex justify-content-between mb-2">
+                            <div class="uk-flex uk-flex-between uk-margin-small-bottom">
                                 <span><?php echo Text::_('COM_J2COMMERCE_CART_SURCHARGE'); ?></span>
                                 <span><?php echo $fmt((float) $order->order_surcharge); ?></span>
                             </div>
@@ -445,14 +445,14 @@ if ($info) {
                                     <?php
                                     $discountLabel = $disc->discount_title ?? $disc->discount_code ?? Text::_('COM_J2COMMERCE_CART_DISCOUNT');
                                     ?>
-                                    <div class="d-flex justify-content-between mb-2 text-success">
+                                    <div class="uk-flex uk-flex-between uk-margin-small-bottom uk-text-success">
                                         <span><?php echo $this->escape($discountLabel); ?></span>
                                         <span>-<?php echo $fmt($discountAmount); ?></span>
                                     </div>
                                 <?php endif; ?>
                             <?php endforeach; ?>
                         <?php elseif ((float) $order->order_discount > 0) : ?>
-                            <div class="d-flex justify-content-between mb-2 text-success">
+                            <div class="uk-flex uk-flex-between uk-margin-small-bottom uk-text-success">
                                 <span><?php echo Text::_('COM_J2COMMERCE_CART_DISCOUNT'); ?></span>
                                 <span>-<?php echo $fmt((float) $order->order_discount); ?></span>
                             </div>
@@ -473,13 +473,13 @@ if ($info) {
                                     $taxLabel = Text::_($taxTitle);
                                 }
                                 ?>
-                                <div class="d-flex justify-content-between mb-2">
+                                <div class="uk-flex uk-flex-between uk-margin-small-bottom">
                                     <span><?php echo $this->escape($taxLabel); ?></span>
                                     <span><?php echo $fmt((float) $tax->ordertax_amount); ?></span>
                                 </div>
                             <?php endforeach; ?>
                         <?php elseif ((float) $order->order_tax > 0) : ?>
-                            <div class="d-flex justify-content-between mb-2">
+                            <div class="uk-flex uk-flex-between uk-margin-small-bottom">
                                 <span><?php echo Text::_('COM_J2COMMERCE_CART_TAX'); ?></span>
                                 <span><?php echo $fmt((float) $order->order_tax); ?></span>
                             </div>
@@ -489,19 +489,19 @@ if ($info) {
                     <hr>
 
                     <?php // Grand total ?>
-                    <div class="d-flex justify-content-between align-items-center j2c-summary-total fw-bold">
+                    <div class="uk-flex uk-flex-between uk-flex-middle j2c-summary-total uk-text-bold">
                         <span><?php echo Text::_('COM_J2COMMERCE_CART_GRANDTOTAL'); ?></span>
                         <span>
                             <?php echo $fmt((float) $order->order_total); ?>
                             <?php if (!empty($currencyCode)) : ?>
-                                <span class="j2c-summary-currency badge bg-secondary-subtle text-body-emphasis fw-normal ms-1"><?php echo $this->escape($currencyCode); ?></span>
+                                <span class="j2c-summary-currency uk-badge uk-margin-small-left"><?php echo $this->escape($currencyCode); ?></span>
                             <?php endif; ?>
                         </span>
                     </div>
 
                     <?php // Order date ?>
                     <?php if (!empty($orderDate)) : ?>
-                        <p class="text-body-tertiary small mt-3 mb-0">
+                        <p class="uk-text-muted uk-text-small uk-margin-top uk-margin-remove-bottom">
                             <?php echo Text::_('COM_J2COMMERCE_ORDER_DATE'); ?>: <?php echo $orderDate; ?>
                         </p>
                     <?php endif; ?>
