@@ -1654,7 +1654,22 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
         $vars->is_subscription   = $this->isSubscriptionOrder((string) $vars->order_id);
         $vars->subscription_mode = $vars->is_subscription ? $this->getSubscriptionMode() : 'rest';
 
-        $this->log('_prePayment: Prepared vars - order_id: ' . $vars->order_id . ', currency: ' . $vars->currency_code . ', amount: ' . $vars->orderpayment_amount . ', is_subscription: ' . ($vars->is_subscription ? '1' : '0') . ', subscription_mode: ' . $vars->subscription_mode);
+        // Funding sources: resolve from plugin params (checkboxes field returns array or JSON string)
+        $rawSources = $this->params->get('enabled_funding_sources', ['paypal']);
+
+        if (is_string($rawSources)) {
+            $rawSources = json_decode($rawSources, true) ?: ['paypal'];
+        }
+
+        $rawSources = (array) $rawSources;
+
+        if (empty($rawSources)) {
+            $rawSources = ['paypal'];
+        }
+
+        $vars->funding_sources = array_values(array_unique(array_filter(array_map('trim', $rawSources))));
+
+        $this->log('_prePayment: Prepared vars - order_id: ' . $vars->order_id . ', currency: ' . $vars->currency_code . ', amount: ' . $vars->orderpayment_amount . ', is_subscription: ' . ($vars->is_subscription ? '1' : '0') . ', subscription_mode: ' . $vars->subscription_mode . ', funding_sources: ' . implode(',', $vars->funding_sources));
 
         return $this->_getLayout('prepayment', $vars);
     }
@@ -1849,7 +1864,36 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 'items'               => $items,
             ];
 
-            $this->log('createPayPalOrder: Sending order data to PayPal API - order_id: ' . $orderId . ', total: ' . $total . ' ' . $currency . ', items: ' . \count($items));
+            // payment_source: JS sends the funding source key the customer clicked.
+            // We forward it so PayPalOrders::createOrder can add payment_source to the API body.
+            $paymentSource = trim((string) ($data['payment_source'] ?? ''));
+            $orderData['payment_source'] = $paymentSource;
+
+            // Local payment methods that redirect to a bank page need return/cancel URLs
+            // in the payment_source.{method}.experience_context block.
+            $redirectMethods = [
+                'ideal', 'bancontact', 'blik', 'eps', 'giropay', 'mybank',
+                'oxxo', 'przelewy24', 'sepadirectdebit', 'sofort', 'trustly', 'verkkopankki',
+            ];
+
+            if ($paymentSource !== '' && \in_array($paymentSource, $redirectMethods, true)) {
+                $orderData['return_url'] = Route::_(
+                    'index.php?option=com_j2commerce&view=checkout&task=checkout.confirmPayment'
+                    . '&orderpayment_type=' . $this->_name
+                    . '&order_id=' . urlencode($orderId),
+                    false,
+                    Route::TLS_IGNORE,
+                    true
+                );
+                $orderData['cancel_url'] = Route::_(
+                    'index.php?option=com_j2commerce&view=checkout',
+                    false,
+                    Route::TLS_IGNORE,
+                    true
+                );
+            }
+
+            $this->log('createPayPalOrder: Sending order data to PayPal API - order_id: ' . $orderId . ', total: ' . $total . ' ' . $currency . ', items: ' . \count($items) . ', payment_source: ' . ($paymentSource ?: '(none)'));
 
             $orders = $this->getPayPalOrders();
             $result = $orders->createOrder($orderData);
