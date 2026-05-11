@@ -508,7 +508,7 @@ class CartOrder
                             $taxRates[$rateKey]->tax_amount += $rateAmount;
                         }
 
-                        $taxTotal                    += $itemTaxTotal;
+                        $taxTotal += $itemTaxTotal;
                         $item->orderitem_tax         = $itemTaxTotal;
                         $item->orderitem_tax_percent = $effectivePct;
                     } else {
@@ -711,7 +711,7 @@ class CartOrder
 
         $merged = $event->getEventResult();
 
-        return is_array($merged) ? $merged : $ratesets;
+        return \is_array($merged) ? $merged : $ratesets;
     }
 
     private function getTaxRateForGeozone(int $taxprofileId, array $geozoneIds): ?object

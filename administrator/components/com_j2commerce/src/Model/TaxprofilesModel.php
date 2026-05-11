@@ -166,11 +166,11 @@ class TaxprofilesModel extends ListModel
         }
 
         $event = J2CommerceHelper::plugin()->event('AfterGetTaxprofiles', [
-            'result' => is_array($items) ? $items : [],
+            'result' => \is_array($items) ? $items : [],
         ]);
 
         $merged = $event->getEventResult();
 
-        return is_array($merged) ? $merged : $items;
+        return \is_array($merged) ? $merged : $items;
     }
 }

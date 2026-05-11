@@ -3703,9 +3703,9 @@ class ProductHelper
         if (isset($options['icon-minus']) || isset($options['icon-plus'])) {
             $iconSet   = 'custom';
             $iconMinus = $options['icon-minus'] ?? 'fa-solid fa-minus';
-            $iconPlus  = $options['icon-plus']  ?? 'fa-solid fa-plus';
+            $iconPlus  = $options['icon-plus'] ?? 'fa-solid fa-plus';
         } else {
-            $iconSet = $this->resolveIconSet($context, $inputClass, $options['iconSet'] ?? null);
+            $iconSet                = $this->resolveIconSet($context, $inputClass, $options['iconSet'] ?? null);
             [$iconMinus, $iconPlus] = $this->iconClasses($iconSet);
         }
 

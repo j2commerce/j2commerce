@@ -286,15 +286,15 @@ class ModulesHelper
     public static function getJ2CommercePositions(): array
     {
         return [
-            'j2commerce-categories-top'      => 'Above categories listing',
-            'j2commerce-categories-middle'   => 'Between categories sections',
-            'j2commerce-categories-bottom'   => 'Below categories listing',
-            'j2commerce-product-list-top'    => 'Above product list (products view)',
-            'j2commerce-product-list-bottom' => 'Below product list (products view)',
-            'j2commerce-filter-left-top'     => 'Above left-hand filter sidebar',
-            'j2commerce-filter-left-bottom'  => 'Below left-hand filter sidebar',
-            'j2commerce-filter-right-top'    => 'Above right-hand filter sidebar',
-            'j2commerce-filter-right-bottom' => 'Below right-hand filter sidebar',
+            'j2commerce-categories-top'        => 'Above categories listing',
+            'j2commerce-categories-middle'     => 'Between categories sections',
+            'j2commerce-categories-bottom'     => 'Below categories listing',
+            'j2commerce-product-list-top'      => 'Above product list (products view)',
+            'j2commerce-product-list-bottom'   => 'Below product list (products view)',
+            'j2commerce-filter-left-top'       => 'Above left-hand filter sidebar',
+            'j2commerce-filter-left-bottom'    => 'Below left-hand filter sidebar',
+            'j2commerce-filter-right-top'      => 'Above right-hand filter sidebar',
+            'j2commerce-filter-right-bottom'   => 'Below right-hand filter sidebar',
             'j2commerce-single-product-top'    => 'Above single product detail',
             'j2commerce-single-product-bottom' => 'Below single product detail',
         ];
