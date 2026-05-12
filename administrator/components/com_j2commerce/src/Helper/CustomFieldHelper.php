@@ -208,7 +208,7 @@ class CustomFieldHelper
 
     private static function isGridToken(string $token): bool
     {
-        return (bool) preg_match('/^(col(-\w+)?|uk-width-[\w-]+(@[smlx]+)?)$/', $token);
+        return (bool) preg_match('/^(col(-\w+)*|uk-width-[\w-]+(@[smlx]+)?)$/', $token);
     }
 
     private static function bs5ToUikitGrid(string $token): string
@@ -380,12 +380,14 @@ class CustomFieldHelper
         $html         = '<div class="' . $wrapperClass . '">';
 
         if ($isUikit) {
-            $inputClass    = 'uk-input';
-            $selectClass   = 'uk-select';
+            $inputClass    = 'uk-input uk-width-1-1';
+            $textareaClass = 'uk-textarea uk-width-1-1';
+            $selectClass   = 'uk-select uk-width-1-1';
             $labelClass    = 'uk-form-label';
             $wrapperNormal = '';
         } else {
             $inputClass    = 'form-control';
+            $textareaClass = 'form-control';
             $selectClass   = 'form-select';
             $labelClass    = 'form-label';
             $wrapperNormal = 'form-normal';
@@ -436,7 +438,7 @@ class CustomFieldHelper
                 } else {
                     $html .= ($wrapperNormal !== '' ? '<div class="' . $wrapperNormal . '">' : '')
                         . '<label for="' . $id . '" class="' . $labelClass . '">' . $labelHtml . '</label>'
-                        . '<textarea name="' . $namekey . '" id="' . $id . '" class="' . $inputClass . ($extraClass ? ' ' . $extraClass : '') . '" rows="3"' . $requiredAttr . $placeholderAttr . '>' . htmlspecialchars($fieldValue, ENT_QUOTES, 'UTF-8') . '</textarea>'
+                        . '<textarea name="' . $namekey . '" id="' . $id . '" class="' . $textareaClass . ($extraClass ? ' ' . $extraClass : '') . '" rows="3"' . $requiredAttr . $placeholderAttr . '>' . htmlspecialchars($fieldValue, ENT_QUOTES, 'UTF-8') . '</textarea>'
                         . ($wrapperNormal !== '' ? '</div>' : '');
                 }
                 break;
@@ -791,7 +793,7 @@ class CustomFieldHelper
 
         // "none" mode: plain tel input, no country dropdown / no widget
         if ($phoneMode === 'none') {
-            $inputCls = $isUikit ? 'uk-input' : 'form-control';
+            $inputCls = $isUikit ? 'uk-input uk-width-1-1' : 'form-control';
             return '<input type="tel" class="' . $inputCls . '" '
                 . 'name="' . $name . '" id="' . $id . '" '
                 . 'value="' . $escapedValue . '" '
@@ -832,7 +834,7 @@ class CustomFieldHelper
                 : '<span class="j2c-phone-flag">' . $singleIso . '</span>';
 
             $prefixCls     = $isUikit
-                ? 'j2c-phone-static-prefix uk-padding-small uk-background-muted'
+                ? 'j2c-phone-static-prefix'
                 : 'input-group-text j2c-phone-static-prefix';
             $countryPrefix = '<span class="' . $prefixCls . '">'
                 . $singleFlag . ' '
@@ -953,7 +955,7 @@ class CustomFieldHelper
         if ($phoneMode === 'none') {
             $escapedValue = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
             $escapedAc    = htmlspecialchars($field->field_autocomplete ?? 'tel', ENT_QUOTES, 'UTF-8');
-            $inputCls     = $isUikit ? 'uk-input' : 'form-control';
+            $inputCls     = $isUikit ? 'uk-input uk-width-1-1' : 'form-control';
             $plainInput   = '<input type="tel" class="' . $inputCls . '" '
                 . 'name="' . $namekey . '" id="' . $id . '" '
                 . 'value="' . $escapedValue . '" '
@@ -1009,7 +1011,7 @@ class CustomFieldHelper
                 : '<span class="j2c-phone-flag">' . $singleIso . '</span>';
 
             $prefixCls     = $isUikit
-                ? 'j2c-phone-static-prefix uk-padding-small uk-background-muted'
+                ? 'j2c-phone-static-prefix'
                 : 'input-group-text j2c-phone-static-prefix';
             $countryStatic = '<span class="' . $prefixCls . '">'
                 . $singleFlag . ' '
@@ -1277,7 +1279,7 @@ class CustomFieldHelper
         $entityLabel = ($name === 'country_id') ? Text::_('COM_J2COMMERCE_COUNTRY') : Text::_('COM_J2COMMERCE_ZONE');
         $placeholder = Text::sprintf('COM_J2COMMERCE_SELECT_PLACEHOLDER', $entityLabel);
 
-        $selectCls = $isUikit ? 'uk-select' : 'form-select';
+        $selectCls = $isUikit ? 'uk-select uk-width-1-1' : 'form-select';
         $select    = '<select name="' . $name . '" id="' . $id . '" class="' . $selectCls . '"' . $requiredAttr . '>';
 
         if ($value !== '') {
