@@ -10,6 +10,7 @@
 
 namespace Joomla\Plugin\Schemaorg\Ecommerce\Field;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Factory;
@@ -175,7 +176,7 @@ class EcommerceProductPreviewField extends FormField
         // Price and currency (from default or master variant)
         $price          = $displayVariant ? $helper->getProductPrice($displayVariant) : 0;
         $currency       = $helper->getCurrencyCode();
-        $formattedPrice = '$' . number_format($price, 2);
+        $formattedPrice = CurrencyHelper::format((float) $price, $currency);
 
         // Availability
         $availability      = $displayVariant ? $helper->mapAvailability($displayVariant) : 'https://schema.org/InStock';
@@ -378,7 +379,7 @@ class EcommerceProductPreviewField extends FormField
             // Format variant name using J2Commerce helper for readable option names
             $variantName         = $this->formatVariantName($variant);
             $variantSku          = $variant->sku ?? '';
-            $variantPrice        = '$' . number_format((float) ($variant->price ?? 0), 2);
+            $variantPrice        = CurrencyHelper::format((float) ($variant->price ?? 0), $currency);
             $variantGtin         = $variant->upc ?? '';
             $variantAvailability = $helper->mapAvailability($variant);
             $variantStatus       = $this->getAvailabilityLabel($variantAvailability);
