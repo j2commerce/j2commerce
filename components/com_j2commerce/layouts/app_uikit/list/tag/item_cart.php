@@ -70,7 +70,7 @@ $afterCart = J2CommerceHelper::plugin()->eventWithHtml(
             </div>
 
             <div id="add-to-cart-<?php echo $productId; ?>" class="j2commerce-add-to-cart">
-                <?php if (J2CommerceHelper::config()->showQuantityField()): ?>
+                <?php if ($params->get('show_qty_field', J2CommerceHelper::config()->showQuantityField())): ?>
                     <?php echo $productHelper->displayQuantity('com_j2commerce.productlist.uikit', $product, $params, ['class' => 'input-mini uk-input']); ?>
                 <?php endif; ?>
 
