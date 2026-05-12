@@ -27,6 +27,7 @@ $app = Factory::getApplication();
 $wa = $app->getDocument()->getWebAssetManager();
 $wa->registerAndUseStyle('com_j2commerce.site,css', 'media/com_j2commerce/css/site/j2commerce.css');
 $wa->registerAndUseScript('com_j2commerce.site', 'media/com_j2commerce/js/site/j2commerce.js', [], ['defer' => true], []);
+$wa->registerAndUseScript('com_j2commerce.a11y', 'media/com_j2commerce/js/site/j2commerce-a11y.js', [], ['defer' => true]);
 $wa->registerAndUseScript('com_j2commerce.filters', 'media/com_j2commerce/js/site/j2commerce-filters.es6.js', [], ['defer' => true], []);
 
 $itemId = isset($this->active_menu->id) ? (int) $this->active_menu->id : 0;

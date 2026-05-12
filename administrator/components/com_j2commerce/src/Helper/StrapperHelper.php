@@ -578,6 +578,7 @@ class StrapperHelper
             $context = $forceContext ?? $this->getViewContext();
 
             $wa->registerAndUseScript('com_j2commerce.site', 'media/com_j2commerce/js/site/j2commerce.js', [], ['defer' => true]);
+            $wa->registerAndUseScript('com_j2commerce.a11y', 'media/com_j2commerce/js/site/j2commerce-a11y.js', [], ['defer' => true]);
             $wa->registerAndUseScript('plg_j2commerce_app_flexivariable.flexivariable', 'media/plg_j2commerce_app_flexivariable/js/flexivariable.js', [], ['defer' => true]);
 
             // Load context-specific scripts
@@ -966,6 +967,7 @@ class StrapperHelper
             $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
 
             $wa->registerAndUseScript('com_j2commerce.site', 'media/com_j2commerce/js/site/j2commerce.js', [], ['defer' => true]);
+            $wa->registerAndUseScript('com_j2commerce.a11y', 'media/com_j2commerce/js/site/j2commerce-a11y.js', [], ['defer' => true]);
 
             // Load core CSS (handles template overrides)
             $this->loadCoreCSS($wa);
