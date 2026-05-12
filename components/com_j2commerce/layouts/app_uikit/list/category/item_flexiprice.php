@@ -11,7 +11,6 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
-use Joomla\CMS\Language\Text;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 extract($displayData);
@@ -44,7 +43,7 @@ $salePrice = $pricing->price ?? 0;
         <?php echo $currency->format($minPrice); ?> - <?php echo $currency->format($maxPrice); ?>
     </div>
 <?php endif; ?>
-<div class="j2commerce-product-price-container j2commerce-flexiprice uk-flex uk-flex-middle" style="gap: .25rem;">
+<div class="j2commerce-product-price-container j2commerce-flexiprice uk-flex uk-flex-middle" style="gap: .25rem;" data-j2-a11y-live="polite" data-j2-a11y-atomic="true">
     <?php if ($showSpecialPrice && isset($pricing->price)): ?>
         <div class="sale-price uk-text-large uk-text-bold">
             <?php echo $productHelper->displayPrice((float) $salePrice, $product, $params); ?>
