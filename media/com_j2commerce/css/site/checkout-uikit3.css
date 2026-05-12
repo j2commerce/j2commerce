@@ -1,0 +1,136 @@
+/**
+ * @package     J2Commerce
+ * @subpackage  com_j2commerce
+ *
+ * @copyright   (C)2024-2026 J2Commerce, LLC <https://www.j2commerce.com>
+ * @license     GNU General Public License version 2 or later; see LICENSE.txt
+ */
+
+#j2commerce-checkout :focus {
+    outline-color: var(--uk-global-primary-background, #1e87f0);
+}
+#j2commerce-checkout .j2commerce-customfield input:focus {
+    border-color: var(--uk-global-primary-background, #1e87f0);
+}
+#j2commerce-checkout .btn-checkout-step:focus-visible {
+    outline-color: var(--uk-global-primary-background, #1e87f0);
+    box-shadow: 0 0 0 3px rgba(30, 135, 240, 0.25);
+}
+#j2commerce-checkout .checkout-heading a {
+    color: var(--uk-global-primary-background, #1e87f0);
+}
+#j2commerce-checkout .checkout-voucher-form .uk-input:focus,
+#j2commerce-checkout .checkout-coupon-form .uk-input:focus {
+    box-shadow: none;
+    border-color: var(--uk-global-primary-background, #1e87f0);
+}
+
+#j2commerce-checkout .j2commerce-cart-button.uk-button,
+#j2commerce-checkout .btn-checkout-step.uk-button {
+    width: 100%;
+}
+
+#j2commerce-checkout .shipping-methods-group .shipping-method-item,
+#j2commerce-checkout .payment-methods-group .payment-method-item {
+    display: flex;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Sidecart collapse: hidden < lg, toggled via .uk-open, always shown >= 1200px. */
+.j2commerce-sidecart-collapse {
+    display: none;
+}
+.j2commerce-sidecart-collapse.uk-open {
+    display: block;
+}
+@media (min-width: 1200px) {
+    .j2commerce-sidecart-collapse {
+        display: block !important;
+    }
+}
+
+.j2commerce-sidecart-toggle[aria-expanded="true"] .j2commerce-sidecart-chevron {
+    transform: rotate(180deg);
+}
+
+#checkout-sidecart-content > .uk-background-muted {
+    border-radius: 4px;
+}
+
+.j2commerce-checkout-sidecart .uk-padding {
+    padding: 16px;
+}
+@media (min-width: 960px) {
+    .j2commerce-checkout-sidecart .uk-padding {
+        padding: 24px;
+    }
+}
+
+.j2commerce-checkout-sidecart .j2commerce-sidecart-totals {
+    border-top: 1px solid var(--uk-global-border, #e5e5e5);
+    padding-top: 12px;
+}
+.j2commerce-checkout-sidecart .j2commerce-sidecart-grandtotal-row {
+    border-top: 1px solid var(--uk-global-border, #e5e5e5);
+    padding-top: 8px;
+}
+
+/* Sidecart line item dividers (mirrors BS5 list-group-flush). */
+.j2commerce-checkout-sidecart .checkout-sidebar-items .checkout-sidebar-item {
+    padding-bottom: 12px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--uk-global-border, #e5e5e5);
+}
+.j2commerce-checkout-sidecart .checkout-sidebar-items .checkout-sidebar-item:last-child {
+    padding-bottom: 0;
+    margin-bottom: 0;
+    border-bottom: none;
+}
+
+/* Thumbnail + qty badge overlapping the top-right corner (BS5 parity). */
+.j2commerce-checkout-sidecart .j2commerce-sidecart-thumb {
+    width: 64px;
+    height: 64px;
+}
+.j2commerce-checkout-sidecart .j2commerce-sidecart-qty-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    transform: translate(35%, -35%);
+    min-width: 1.5rem;
+    padding: 0 0.4rem;
+    border-radius: 999px;
+    background: var(--uk-global-muted-background, #6c757d);
+    color: #fff;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    text-align: center;
+}
+
+/* Tighter spacing on inline coupon/voucher rows so they don't dwarf the totals. */
+.j2commerce-checkout-sidecart .j2c-coupon-form,
+.j2commerce-checkout-sidecart .j2c-voucher-form {
+    margin-bottom: 8px;
+}
+.j2commerce-checkout-sidecart .j2c-coupon-form .uk-input,
+.j2commerce-checkout-sidecart .j2c-voucher-form .uk-input {
+    background: #fff;
+}
+
+/* Render coupon/voucher input + button as a joined input-group (UIkit has no native one). */
+.j2commerce-checkout-sidecart .j2c-coupon-form .uk-flex,
+.j2commerce-checkout-sidecart .j2c-voucher-form .uk-flex {
+    align-items: stretch;
+}
+.j2commerce-checkout-sidecart .j2c-coupon-form .uk-input,
+.j2commerce-checkout-sidecart .j2c-voucher-form .uk-input {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    border-right: 0;
+}
+.j2commerce-checkout-sidecart .j2c-coupon-form .uk-button,
+.j2commerce-checkout-sidecart .j2c-voucher-form .uk-button {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}

@@ -66,6 +66,12 @@ class CheckoutController extends BaseController
         }
 
         $view->setLayout('default');
+
+        // AJAX bypasses display(); register framework subfolder so loadTemplate() finds it.
+        if (method_exists($view, 'registerFrameworkTemplatePaths')) {
+            $view->registerFrameworkTemplatePaths($this->app, $this->app->getParams());
+        }
+
         $html = $view->loadTemplate($tpl);
 
         if ($html instanceof \Exception) {
@@ -1665,6 +1671,12 @@ class CheckoutController extends BaseController
 
             ob_start();
             $view->setLayout('default');
+
+            // AJAX bypasses display(); register framework subfolder so loadTemplate() finds it.
+            if (method_exists($view, 'registerFrameworkTemplatePaths')) {
+                $view->registerFrameworkTemplatePaths($this->app, $this->app->getParams());
+            }
+
             echo $view->loadTemplate('sidecart');
             $html = ob_get_clean();
 

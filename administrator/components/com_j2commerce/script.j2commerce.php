@@ -134,10 +134,31 @@ class Com_J2commerceInstallerScript extends InstallerScript
         $this->setDefaultAcl();
         $this->debugLog("UPDATE: default ACL rules set (if empty)");
 
+        $this->cleanupStaleCheckoutTemplates();
+
         Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_UPDATE_SUCCESS'), 'success');
 
         $this->debugLog("=== UPDATE END ===");
         return true;
+    }
+
+    /** Remove pre-subfolder checkout templates left behind on existing sites; harmless if absent. */
+    private function cleanupStaleCheckoutTemplates(): void
+    {
+        $stale = [
+            'default.php', 'default_billing.php', 'default_cartsummary.php',
+            'default_confirm.php', 'default_guest.php', 'default_login.php',
+            'default_register.php', 'default_shipping.php',
+            'default_shipping_payment.php', 'default_sidecart.php',
+        ];
+        $dir = JPATH_SITE . '/components/com_j2commerce/tmpl/checkout/';
+
+        foreach ($stale as $file) {
+            $path = $dir . $file;
+            if (is_file($path) && @unlink($path)) {
+                $this->debugLog("UPDATE: removed stale checkout template {$file}");
+            }
+        }
     }
 
     public function uninstall($parent)

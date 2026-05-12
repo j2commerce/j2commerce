@@ -110,7 +110,55 @@ class HtmlView extends BaseHtmlView
 
         HTMLHelper::_('bootstrap.collapse', 'checkoutSidecartCollapse');
 
+        $this->registerFrameworkTemplatePaths($app);
+
         parent::display($tpl);
+    }
+
+    /** Register the bootstrap5/uikit3 subfolder; AJAX callers pass merged menu params as 2nd arg. */
+    public function registerFrameworkTemplatePaths(
+        \Joomla\CMS\Application\CMSApplicationInterface $app,
+        ?\Joomla\Registry\Registry $params = null
+    ): void {
+        $params ??= $this->params;
+        $framework = (string) ($params ? $params->get('framework', 'bootstrap5') : 'bootstrap5');
+        $framework = preg_replace('/[^a-zA-Z0-9_-]/', '', $framework) ?? '';
+
+        $viewName = $this->getName();
+        $template = $app->getTemplate();
+
+        $compRoot = JPATH_COMPONENT . '/tmpl/' . $viewName;
+        $tplRoot  = JPATH_THEMES . '/' . $template . '/html/com_j2commerce/' . $viewName;
+
+        $candidate = '';
+        if ($framework !== '' && (is_dir($compRoot . '/' . $framework) || is_dir($tplRoot . '/' . $framework))) {
+            $candidate = $framework;
+        } elseif (is_dir($compRoot . '/bootstrap5') || is_dir($tplRoot . '/bootstrap5')) {
+            $candidate = 'bootstrap5';
+        } else {
+            $entries = is_dir($compRoot) ? scandir($compRoot) : [];
+            $entries = $entries ?: [];
+            sort($entries);
+            foreach ($entries as $entry) {
+                if ($entry === '.' || $entry === '..' || str_starts_with($entry, '.')) {
+                    continue;
+                }
+                if (is_dir($compRoot . '/' . $entry) && is_file($compRoot . '/' . $entry . '/default.php')) {
+                    $candidate = $entry;
+                    break;
+                }
+            }
+        }
+
+        if ($candidate !== '' && is_dir($compRoot . '/' . $candidate)) {
+            $this->addTemplatePath($compRoot . '/' . $candidate);
+        }
+        if (is_dir($tplRoot)) {
+            $this->addTemplatePath($tplRoot);
+        }
+        if ($candidate !== '' && is_dir($tplRoot . '/' . $candidate)) {
+            $this->addTemplatePath($tplRoot . '/' . $candidate);
+        }
     }
 
     protected function _prepareDocument(): void

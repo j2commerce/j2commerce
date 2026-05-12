@@ -49,7 +49,20 @@ $variant       = $displayData['variant'] ?? 'inline';
 $accordionId   = $displayData['accordionId'] ?? '';
 $expanded      = !empty($displayData['expanded']);
 $showDiscount  = !empty($displayData['showDiscount']);
+$framework     = $displayData['framework'] ?? 'bootstrap5';
+$isUikit       = ($framework === 'uikit3');
 $hasVoucher    = !empty($voucherCode);
+
+// Framework-conditional class strings
+$clsAppliedRow  = $isUikit ? 'uk-flex uk-flex-middle uk-flex-between uk-padding-small' : 'd-flex align-items-center justify-content-between py-1';
+$clsBadge       = $isUikit ? 'uk-label uk-label-success' : 'badge bg-success';
+$clsIconMargin  = $isUikit ? 'uk-margin-small-right' : 'me-1';
+$clsDiscountSm  = $isUikit ? 'uk-text-muted uk-margin-small-left' : 'text-body-tertiary ms-1';
+$clsRemoveBtn   = $isUikit ? 'uk-button uk-button-link uk-text-danger j2c-remove-voucher' : 'btn btn-sm btn-link text-danger p-0 j2c-remove-voucher';
+$clsInputWrap   = $isUikit ? 'uk-flex uk-flex-stretch' : 'input-group';
+$clsInputInner  = $isUikit ? 'uk-width-expand' : 'input-group_inner';
+$clsInput       = $isUikit ? 'uk-input' : 'form-control';
+$clsApplyBtn    = $isUikit ? 'uk-button uk-button-default j2c-apply-voucher' : 'btn btn-outline-secondary j2c-apply-voucher';
 
 $discountLabel = '';
 if ($hasVoucher && $showDiscount) {
@@ -69,7 +82,19 @@ if ($hasVoucher && $showDiscount) {
 }
 
 ?>
-<?php if ($variant === 'accordion') : ?>
+<?php if ($variant === 'accordion' && $isUikit) : ?>
+<li<?php echo $expanded ? ' class="uk-open"' : ''; ?>>
+    <a class="uk-accordion-title" href="#">
+        <?php echo Text::_('COM_J2COMMERCE_VOUCHER_CODE'); ?>
+        <?php if ($hasVoucher) : ?>
+            <span class="uk-label uk-label-success uk-margin-small-left j2c-voucher-badge"><?php echo htmlspecialchars($voucherCode, ENT_QUOTES, 'UTF-8'); ?></span>
+            <?php if ($discountLabel) : ?>
+                <small class="uk-text-muted uk-margin-small-left"><?php echo htmlspecialchars($discountLabel, ENT_QUOTES, 'UTF-8'); ?></small>
+            <?php endif; ?>
+        <?php endif; ?>
+    </a>
+    <div class="uk-accordion-content">
+<?php elseif ($variant === 'accordion') : ?>
 <div class="accordion-item">
     <h2 class="accordion-header">
         <button class="accordion-button <?php echo $expanded ? '' : 'collapsed'; ?>"
@@ -82,7 +107,7 @@ if ($hasVoucher && $showDiscount) {
             <?php if ($hasVoucher) : ?>
                 <span class="badge bg-success ms-2 j2c-voucher-badge"><?php echo htmlspecialchars($voucherCode, ENT_QUOTES, 'UTF-8'); ?></span>
                 <?php if ($discountLabel) : ?>
-                    <small class="text-muted ms-1"><?php echo htmlspecialchars($discountLabel, ENT_QUOTES, 'UTF-8'); ?></small>
+                    <small class="text-body-tertiary ms-1"><?php echo htmlspecialchars($discountLabel, ENT_QUOTES, 'UTF-8'); ?></small>
                 <?php endif; ?>
             <?php endif; ?>
         </button>
@@ -95,27 +120,27 @@ if ($hasVoucher && $showDiscount) {
 
 <div class="j2c-voucher-form" id="<?php echo $formId; ?>" data-type="voucher">
     <?php if ($hasVoucher) : ?>
-        <div class="d-flex align-items-center justify-content-between py-1">
+        <div class="<?php echo $clsAppliedRow; ?>">
             <span>
-                <span class="badge bg-success">
-                    <span class="icon-tag me-1" aria-hidden="true"></span><?php echo htmlspecialchars($voucherCode, ENT_QUOTES, 'UTF-8'); ?>
+                <span class="<?php echo $clsBadge; ?>">
+                    <span class="icon-tag <?php echo $clsIconMargin; ?>" aria-hidden="true"></span><?php echo htmlspecialchars($voucherCode, ENT_QUOTES, 'UTF-8'); ?>
                 </span>
                 <?php if ($discountLabel) : ?>
-                    <small class="text-muted ms-1"><?php echo htmlspecialchars($discountLabel, ENT_QUOTES, 'UTF-8'); ?></small>
+                    <small class="<?php echo $clsDiscountSm; ?>"><?php echo htmlspecialchars($discountLabel, ENT_QUOTES, 'UTF-8'); ?></small>
                 <?php endif; ?>
             </span>
-            <button type="button" class="btn btn-sm btn-link text-danger p-0 j2c-remove-voucher" title="<?php echo Text::_('COM_J2COMMERCE_REMOVE_VOUCHER'); ?>">
+            <button type="button" class="<?php echo $clsRemoveBtn; ?>" title="<?php echo Text::_('COM_J2COMMERCE_REMOVE_VOUCHER'); ?>">
                 <span class="icon-times" aria-hidden="true"></span>
                 <?php echo Text::_('COM_J2COMMERCE_REMOVE'); ?>
             </button>
         </div>
     <?php else : ?>
         <div class="j2c-voucher-input-wrap">
-            <div class="input-group">
-                <div class="input-group_inner">
-                <input type="text" name="voucher" class="form-control" placeholder="<?php echo Text::_('COM_J2COMMERCE_ENTER_VOUCHER_CODE'); ?>" aria-label="<?php echo Text::_('COM_J2COMMERCE_VOUCHER_CODE'); ?>" />
+            <div class="<?php echo $clsInputWrap; ?>">
+                <div class="<?php echo $clsInputInner; ?>">
+                    <input type="text" name="voucher" class="<?php echo $clsInput; ?>" placeholder="<?php echo Text::_('COM_J2COMMERCE_ENTER_VOUCHER_CODE'); ?>" aria-label="<?php echo Text::_('COM_J2COMMERCE_VOUCHER_CODE'); ?>" />
                 </div>
-                <button type="button" class="btn btn-outline-secondary j2c-apply-voucher">
+                <button type="button" class="<?php echo $clsApplyBtn; ?>">
                     <?php echo Text::_('COM_J2COMMERCE_APPLY_VOUCHER'); ?>
                 </button>
             </div>
@@ -123,7 +148,10 @@ if ($hasVoucher && $showDiscount) {
     <?php endif; ?>
 </div>
 
-<?php if ($variant === 'accordion') : ?>
+<?php if ($variant === 'accordion' && $isUikit) : ?>
+    </div>
+</li>
+<?php elseif ($variant === 'accordion') : ?>
         </div>
     </div>
 </div>
