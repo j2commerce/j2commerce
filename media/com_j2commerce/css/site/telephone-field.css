@@ -45,9 +45,41 @@
     padding: 0.375rem 0.75rem;
 }
 
-.j2c-phone-country-dropdown .text-muted {
+.j2c-phone-country-dropdown .text-body-secondary {
     margin-inline-start: auto;
     font-size: 0.8125rem;
+}
+
+/* uk-* rules apply when CustomFieldHelper framework='uikit'. */
+.j2c-phone-search-sticky {
+    position: sticky;
+    top: 0;
+    background: var(--uk-color-background, #fff);
+    z-index: 2;
+}
+
+.j2c-telephone-field.uk-flex {
+    gap: 0;
+    align-items: stretch;
+}
+
+.j2c-telephone-field.uk-flex .j2c-phone-country-btn {
+    border-start-end-radius: 0;
+    border-end-end-radius: 0;
+}
+
+.j2c-telephone-field.uk-flex .uk-input.j2c-phone-national {
+    border-start-start-radius: 0;
+    border-end-start-radius: 0;
+}
+
+.j2c-phone-static-prefix.uk-background-muted {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    border: 1px solid var(--uk-form-border-color, rgba(0, 0, 0, 0.2));
+    border-inline-end: none;
+    border-radius: var(--uk-border-radius, 4px) 0 0 var(--uk-border-radius, 4px);
 }
 
 .j2c-phone-search {

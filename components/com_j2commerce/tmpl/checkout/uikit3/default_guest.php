@@ -23,9 +23,9 @@ $guestData = $this->guestData ?? [];
 ?>
 <div class="j2commerce-guest-form">
 
-    <div class="row g-3">
+    <div class="uk-grid uk-grid-small" uk-grid>
         <?php foreach ($fields as $field) : ?>
-            <?php echo CustomFieldHelper::renderField($field, $guestData[$field->field_namekey] ?? ''); ?>
+            <?php echo CustomFieldHelper::renderField($field, $guestData[$field->field_namekey] ?? '', [], 'uikit'); ?>
         <?php endforeach; ?>
     </div>
 

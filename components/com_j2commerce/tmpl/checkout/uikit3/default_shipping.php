@@ -74,9 +74,9 @@ $guestShippingData = $this->guestShippingData ?? [];
     <div id="shipping-new-address-form">
 <?php endif; ?>
 
-        <div class="row g-3">
+        <div class="uk-grid uk-grid-small" uk-grid>
             <?php foreach ($fields as $field) : ?>
-                <?php echo CustomFieldHelper::renderField($field, $guestShippingData[$field->field_namekey] ?? ''); ?>
+                <?php echo CustomFieldHelper::renderField($field, $guestShippingData[$field->field_namekey] ?? '', [], 'uikit'); ?>
             <?php endforeach; ?>
         </div>
     </div>

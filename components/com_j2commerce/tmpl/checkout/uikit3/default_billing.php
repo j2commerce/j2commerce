@@ -74,7 +74,7 @@ $hasAddresses = !empty($addresses);
     <div id="billing-new-address-form">
 <?php endif; ?>
 
-        <div class="row g-3">
+        <div class="uk-grid uk-grid-small" uk-grid>
             <?php foreach ($fields as $field) : ?>
                 <?php
                 $prefill = '';
@@ -83,7 +83,7 @@ $hasAddresses = !empty($addresses);
                     $prefill = $this->user->email;
                 }
 
-                echo CustomFieldHelper::renderField($field, $prefill);
+                echo CustomFieldHelper::renderField($field, $prefill, [], 'uikit');
                 ?>
             <?php endforeach; ?>
         </div>

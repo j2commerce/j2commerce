@@ -34,9 +34,9 @@ $asterisk = ($requiredIndicator === 'asterisk') ? ' <span class="uk-text-danger"
 ?>
 <div class="j2commerce-register-form">
 
-    <div class="row g-3">
+    <div class="uk-grid uk-grid-small" uk-grid>
         <?php foreach ($fields as $field) : ?>
-            <?php echo CustomFieldHelper::renderField($field); ?>
+            <?php echo CustomFieldHelper::renderField($field, '', [], 'uikit'); ?>
         <?php endforeach; ?>
     </div>
 
