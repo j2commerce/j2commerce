@@ -265,10 +265,10 @@ class StrapperHelper
         }
 
         try {
-            // Load application-specific scripts
+            // Load application-specific scripts; explicit client checks so cli/api/installation skip.
             if ($this->app->isClient('administrator')) {
                 $this->loadAdminScripts();
-            } else {
+            } elseif ($this->app->isClient('site')) {
                 $this->loadFrontendScripts();
             }
 
@@ -296,10 +296,10 @@ class StrapperHelper
         }
 
         try {
-            // Load application-specific styles
+            // Load application-specific styles; explicit client checks so cli/api/installation skip.
             if ($this->app->isClient('administrator')) {
                 $this->loadAdminCSS();
-            } else {
+            } elseif ($this->app->isClient('site')) {
                 $this->loadFrontendCSS();
             }
 
