@@ -19,17 +19,6 @@
 !build/
 !build/**
 
-# translate_ini local-only tooling - NEVER push to j2commerce repo
-# (the script + its README live in build/scripts/ but are local-only;
-#  they read DeepL credentials from .mcp.json and produce locale files that
-#  ARE pushed, but the tooling itself stays out of the core repo)
-build/scripts/translate_ini.py
-build/scripts/README_translate_ini.md
-build/scripts/.translation_cache/
-build/scripts/.translation_cache/**
-build/scripts/__pycache__/
-build/scripts/__pycache__/**
-
 # ===========================================================================
 # J2Commerce component files
 # Must un-ignore parent directories in order for negation to work
