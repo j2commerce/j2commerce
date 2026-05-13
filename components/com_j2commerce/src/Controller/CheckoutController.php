@@ -1086,7 +1086,7 @@ class CheckoutController extends BaseController
         $allowedFields = [
             'shipping_plugin', 'shipping_price', 'shipping_name',
             'shipping_code', 'shipping_tax', 'shipping_tax_class_id', 'shipping_extra',
-            'payment_plugin', 'tos_check', 'shippingrequired',
+            'payment_plugin', 'shippingrequired',
         ];
 
         $values = [];
@@ -1146,14 +1146,6 @@ class CheckoutController extends BaseController
 
                 if (empty($paymentPlugin)) {
                     $json['error']['warning'] = Text::_('COM_J2COMMERCE_CHECKOUT_ERROR_PAYMENT_METHOD');
-                }
-            }
-
-            if ($params->get('show_terms', 0) && $params->get('terms_display_type', 'link') === 'checkbox') {
-                $tosCheck = $this->input->get('tos_check');
-
-                if (empty($tosCheck)) {
-                    $json['error']['tos_check'] = Text::_('COM_J2COMMERCE_CHECKOUT_ERROR_AGREE_TERMS');
                 }
             }
 
@@ -1342,22 +1334,45 @@ class CheckoutController extends BaseController
         J2CommerceHelper::plugin()->event('BeforeCheckoutConfirm', [$this]);
 
         $this->renderStep('confirm', [
-            'order'         => $order,
-            'items'         => $orderItems,
-            'taxes'         => $taxes,
-            'shipping'      => $shipping,
-            'coupons'       => $coupons,
-            'vouchers'      => $vouchers,
-            'plugin_html'   => $pluginHtml,
-            'showPayment'   => $showPayment,
-            'free_redirect' => $freeRedirect,
-            'errors'        => $errors,
+            'order'            => $order,
+            'items'            => $orderItems,
+            'taxes'            => $taxes,
+            'shipping'         => $shipping,
+            'coupons'          => $coupons,
+            'vouchers'         => $vouchers,
+            'plugin_html'      => $pluginHtml,
+            'showPayment'      => $showPayment,
+            'free_redirect'    => $freeRedirect,
+            'errors'           => $errors,
+            'showTerms'        => (int) J2CommerceHelper::config()->get('show_terms', 0),
+            'termsDisplayType' => (string) J2CommerceHelper::config()->get('terms_display_type', 'link'),
+            'termsArticleId'   => (int) J2CommerceHelper::config()->get('termsid', 0),
         ]);
     }
 
     public function confirmPayment(): void
     {
         UtilitiesHelper::sendNoCacheHeaders();
+
+        $params = J2CommerceHelper::config();
+
+        if ((int) $params->get('show_terms', 0) === 1 && (string) $params->get('terms_display_type', 'link') === 'checkbox') {
+            if (empty($this->input->get('tos_check'))) {
+                $message = Text::_('COM_J2COMMERCE_CHECKOUT_ERROR_AGREE_TERMS');
+                $paction = $this->input->getString('paction', '');
+                $isAjax  = $paction === 'process'
+                    || strtolower($this->input->server->getString('HTTP_X_REQUESTED_WITH', '')) === 'xmlhttprequest';
+
+                if ($isAjax) {
+                    $this->jsonResponse(['error' => ['tos_check' => $message]]);
+
+                    return;
+                }
+
+                $this->app->enqueueMessage($message, 'warning');
+                $this->app->redirect($this->getCheckoutUrl());
+            }
+        }
 
         $orderpaymentType = $this->input->getString('orderpayment_type', '');
 
@@ -1369,6 +1384,8 @@ class CheckoutController extends BaseController
         $params         = J2CommerceHelper::config();
         $orderpaymentId = (int) $this->app->getUserState('j2commerce.orderpayment_id', 0);
         $orderId        = $this->app->getUserState('j2commerce.order_id', '');
+
+        $clearCartTiming = J2CommerceHelper::config()->get('clear_cart', 'order_placed');
 
         $orderTable = $this->getMvcFactory()->createTable('Order', 'Administrator');
 
@@ -1382,6 +1399,20 @@ class CheckoutController extends BaseController
         if ($orderTable && !empty($customerNote) && !empty($orderId)) {
             $orderTable->customer_note = $customerNote;
             $orderTable->store();
+        }
+
+        // ---------------------------------------------------------------
+        // order_placed timing: clear cart immediately once the order row
+        // exists, before payment dispatch.  The user sees an empty cart as
+        // soon as they click "Place Order", regardless of payment outcome.
+        // order_confirmed timing (default): defer clearing until after
+        // payment succeeds so the cart survives a payment failure.
+        // ---------------------------------------------------------------
+        $cartCleared = false;
+
+        if ($clearCartTiming === 'order_placed' && !empty($orderId) && isset($orderTable->order_id)) {
+            $this->clearCartAndSession($orderId, $session);
+            $cartCleared = true;
         }
 
         // ---------------------------------------------------------------
@@ -1424,8 +1455,10 @@ class CheckoutController extends BaseController
 
             J2CommerceHelper::plugin()->event('AfterConfirmFreeProduct', [$orderTable]);
 
-            // Payment succeeded — clear cart and checkout session
-            $this->clearCartAndSession($orderId, $session);
+            // Payment succeeded — clear cart and checkout session (skip if already cleared)
+            if (!$cartCleared) {
+                $this->clearCartAndSession($orderId, $session);
+            }
 
             // Send order confirmation emails for free orders
             $this->sendOrderEmails($orderId);
@@ -1448,7 +1481,9 @@ class CheckoutController extends BaseController
                     if (!$isError) {
                         $orderTable->load(['order_id' => $orderId]);
 
-                        $this->clearCartAndSession($orderId, $session);
+                        if (!$cartCleared) {
+                            $this->clearCartAndSession($orderId, $session);
+                        }
 
                         if (!empty($orderTable->order_id)) {
                             J2CommerceHelper::plugin()->event('AfterPayment', [$orderTable]);
@@ -1485,7 +1520,8 @@ class CheckoutController extends BaseController
         // Clear cart only after confirmed success. When paction=process and
         // the plugin did NOT redirect, payment likely failed — preserve cart.
         // Cart is cleared on the subsequent paction=display call instead.
-        if ($paction !== 'process') {
+        // Skip if already cleared by order_placed timing.
+        if ($paction !== 'process' && !$cartCleared) {
             $this->clearCartAndSession($orderId, $session);
         }
 

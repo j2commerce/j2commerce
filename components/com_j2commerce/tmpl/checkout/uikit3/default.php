@@ -1151,11 +1151,18 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.set('customer_note', noteField.value);
         }
 
+        // Include tos_check from confirm step (checkbox may be outside the payment plugin form)
+        var tosBox = document.getElementById('tos_check');
+        if (tosBox && !formData.has('tos_check')) {
+            formData.set('tos_check', tosBox.checked ? '1' : '0');
+        }
+
         showLoading(btn);
 
         fetch(baseUrl, {
             method: 'POST',
-            body: formData
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
         })
         .then(function(response) {
             return response.text().then(function(text) {
@@ -1227,6 +1234,13 @@ document.addEventListener('DOMContentLoaded', function() {
         var syncField = form.querySelector('.j2commerce-customer-note-sync');
         if (noteField && syncField) {
             syncField.value = noteField.value;
+        }
+
+        // Sync tos_check to the hidden mirror field in the free order form
+        var tosBox = document.getElementById('tos_check');
+        var tosSyncField = form.querySelector('.j2commerce-tos-sync');
+        if (tosBox && tosSyncField) {
+            tosSyncField.value = tosBox.checked ? '1' : '0';
         }
 
         if (!form.querySelector('input[name="orderpayment_type"]')) return;

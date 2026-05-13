@@ -13,6 +13,7 @@ namespace J2Commerce\Plugin\J2Commerce\AppDiagnostics\Extension;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Version;
@@ -135,19 +136,22 @@ final class AppDiagnostics extends CMSPlugin implements SubscriberInterface
      */
     public function clearOutdatedCartData(): void
     {
+        Log::addLogger(['text_file' => 'com_j2commerce.php'], Log::ALL, ['com_j2commerce']);
+
         $app       = $this->getApplication();
         $clearTime = $app->getInput()->getInt('clear_time', 0);
 
         if ($clearTime <= 0) {
             $j2params  = J2CommerceHelper::config();
-            $daysOld   = $j2params->get('clear_outdated_cart_data_term', 90);
-            $clearTime = $daysOld * 1440; // Convert to minutes
+            $daysOld   = (int) $j2params->get('clear_outdated_cart_data_term', 90);
+            $clearTime = $daysOld * 1440; // Convert days to minutes
         }
 
         $tz         = $app->get('offset');
         $cutoffDate = Factory::getDate('now -' . $clearTime . ' minutes', $tz)->toSql(true);
 
-        $db = $this->getDatabase();
+        $db       = $this->getDatabase();
+        $cartType = 'cart';
 
         // Get old cart IDs
         $query = $db->getQuery(true)
@@ -158,7 +162,6 @@ final class AppDiagnostics extends CMSPlugin implements SubscriberInterface
             ->bind(':cartType', $cartType)
             ->bind(':cutoff', $cutoffDate);
 
-        $cartType = 'cart';
         $db->setQuery($query);
         $cartIds = $db->loadColumn();
 
@@ -166,7 +169,7 @@ final class AppDiagnostics extends CMSPlugin implements SubscriberInterface
             return;
         }
 
-        // Delete cart items
+        // Delete cart items belonging to expired carts
         $query = $db->getQuery(true)
             ->delete($db->quoteName('#__j2commerce_cartitems'))
             ->whereIn($db->quoteName('cart_id'), $cartIds);
@@ -174,10 +177,10 @@ final class AppDiagnostics extends CMSPlugin implements SubscriberInterface
         try {
             $db->setQuery($query)->execute();
         } catch (\Exception $e) {
-            // Log error but continue
+            Log::add('clear_cart: delete cartitems failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
         }
 
-        // Delete carts
+        // Delete expired carts
         $query = $db->getQuery(true)
             ->delete($db->quoteName('#__j2commerce_carts'))
             ->where($db->quoteName('cart_type') . ' = :cartType')
@@ -188,7 +191,18 @@ final class AppDiagnostics extends CMSPlugin implements SubscriberInterface
         try {
             $db->setQuery($query)->execute();
         } catch (\Exception $e) {
-            // Log error
+            Log::add('clear_cart: delete carts failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+        }
+
+        // Prune orphaned cartitem rows whose parent cart no longer exists
+        $query = $db->getQuery(true)
+            ->delete($db->quoteName('#__j2commerce_cartitems'))
+            ->where($db->quoteName('cart_id') . ' NOT IN (SELECT ' . $db->quoteName('j2commerce_cart_id') . ' FROM ' . $db->quoteName('#__j2commerce_carts') . ')');
+
+        try {
+            $db->setQuery($query)->execute();
+        } catch (\Exception $e) {
+            Log::add('clear_cart: prune orphan cartitems failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
         }
     }
 }

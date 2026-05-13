@@ -14,15 +14,20 @@
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
+use Joomla\Component\Content\Site\Helper\RouteHelper;
 
 /** @var \J2Commerce\Component\J2commerce\Site\View\Checkout\HtmlView $this */
 
-$errors = $this->errors ?? [];
-$showPayment = $this->showPayment ?? true;
-$showTerms = $this->showTerms ?? 0;
-$termsDisplayType = $this->termsDisplayType ?? 'link';
-$pluginHtml = $this->plugin_html ?? '';
-$freeRedirect = $this->free_redirect ?? '';
+$errors           = $this->errors ?? [];
+$showPayment      = $this->showPayment ?? true;
+$showTerms        = (int) ($this->showTerms ?? 0);
+$termsDisplayType = (string) ($this->termsDisplayType ?? 'link');
+$termsArticleId   = (int) ($this->termsArticleId ?? 0);
+$pluginHtml       = $this->plugin_html ?? '';
+$freeRedirect     = $this->free_redirect ?? '';
+$termsUrl         = $showTerms && $termsArticleId
+    ? Route::_(RouteHelper::getArticleRoute($termsArticleId))
+    : '';
 ?>
 <div class="j2commerce-checkout-confirm">
 
@@ -33,6 +38,35 @@ $freeRedirect = $this->free_redirect ?? '';
     </div>
 
     <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeCheckoutConfirm', [$this]); ?>
+
+    <?php if ($showTerms === 1 && $termsDisplayType === 'checkbox') : ?>
+        <div class="uk-margin-bottom">
+            <label class="uk-flex uk-flex-middle">
+                <input class="uk-checkbox uk-margin-small-right" type="checkbox" name="tos_check" value="1" id="tos_check">
+                <span>
+                    <?php if ($termsUrl !== '') : ?>
+                        <?php echo Text::sprintf(
+                            'COM_J2COMMERCE_CHECKOUT_AGREE_TERMS_LINK',
+                            '<a href="' . htmlspecialchars($termsUrl) . '" target="_blank" rel="noopener">'
+                                . htmlspecialchars(Text::_('COM_J2COMMERCE_CHECKOUT_TERMS_AND_CONDITIONS'))
+                                . '</a>'
+                        ); ?>
+                    <?php else : ?>
+                        <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_AGREE_TERMS'); ?>
+                    <?php endif; ?>
+                </span>
+            </label>
+        </div>
+    <?php elseif ($showTerms === 1 && $termsDisplayType === 'link' && $termsUrl !== '') : ?>
+        <div class="j2commerce-terms-link uk-margin-bottom">
+            <?php echo Text::sprintf(
+                'COM_J2COMMERCE_CHECKOUT_AGREE_TERMS_LINK',
+                '<a href="' . htmlspecialchars($termsUrl) . '" target="_blank" rel="noopener">'
+                    . htmlspecialchars(Text::_('COM_J2COMMERCE_CHECKOUT_TERMS_AND_CONDITIONS'))
+                    . '</a>'
+            ); ?>
+        </div>
+    <?php endif; ?>
 
     <?php if (!empty($pluginHtml)) : ?>
         <h5><?php echo Text::_('COM_J2COMMERCE_PAYMENT_METHOD'); ?></h5>
@@ -49,18 +83,8 @@ $freeRedirect = $this->free_redirect ?? '';
             <input type="hidden" name="option" value="com_j2commerce">
             <input type="hidden" name="task" value="checkout.confirmPayment">
             <input type="hidden" name="customer_note" value="" class="j2commerce-customer-note-sync">
+            <input type="hidden" name="tos_check" value="" class="j2commerce-tos-sync">
         </form>
-    <?php endif; ?>
-
-    <?php if ($showTerms && $termsDisplayType === 'checkbox') : ?>
-        <div class="uk-margin-bottom">
-            <label class="uk-flex uk-flex-middle">
-                <input class="uk-checkbox uk-margin-small-right" type="checkbox" name="tos_check" value="1" id="tos_check">
-                <span for="tos_check">
-                    <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_AGREE_TERMS'); ?>
-                </span>
-            </label>
-        </div>
     <?php endif; ?>
 <?php else : ?>
     <div class="uk-alert uk-alert-danger" uk-alert>
