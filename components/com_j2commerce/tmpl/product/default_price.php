@@ -13,8 +13,6 @@
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Language\Text;
-
-dump($this->item->pricing);
 ?>
 
 <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeRenderingProductPrice', [$this->item])->getArgument('html'); ?>
