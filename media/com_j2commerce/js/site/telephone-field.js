@@ -88,7 +88,9 @@
         // whose stored country differs from the rendered default.
         nationalInput.value = (nationalInput.value || '').replace(/\D/g, '');
 
-        populateDropdown(dropdown, countries, selectedIso);
+        var framework = container.dataset.framework === 'uikit' ? 'uikit' : 'bootstrap5';
+
+        populateDropdown(dropdown, countries, selectedIso, framework);
         applyMaxLength();
 
         // Initial sync: if an address country_id select already has a value
@@ -267,26 +269,47 @@
         }
     }
 
-    function populateDropdown(dropdown, countries, selectedIso) {
-        var html = '';
-        for (var i = 0; i < countries.length; i++) {
-            var c = countries[i];
-            var active = c.iso2 === selectedIso ? ' active' : '';
-            var flagHtml = c.flagUrl
-                ? '<img src="' + c.flagUrl + '" alt="' + c.iso2 + '" class="j2c-phone-flag">'
-                : '<span class="j2c-phone-flag">' + c.iso2 + '</span>';
-            html += '<li><button type="button" class="dropdown-item' + active
-                + '" data-iso="' + c.iso2 + '">'
-                + flagHtml + ' ' + c.name
-                + ' <span class="text-muted">+' + c.code + '</span>'
-                + '</button></li>';
-        }
+    function populateDropdown(dropdown, countries, selectedIso, framework) {
+        var isUikit = framework === 'uikit';
+        var itemClass = isUikit ? 'uk-nav-item j2c-phone-country-item' : 'dropdown-item';
+        var dialClass = isUikit ? 'uk-text-muted' : 'text-body-secondary';
 
-        // Keep the search input (first child), remove everything else
         while (dropdown.children.length > 1) {
             dropdown.removeChild(dropdown.lastChild);
         }
-        dropdown.insertAdjacentHTML('beforeend', html);
+
+        var frag = document.createDocumentFragment();
+        for (var i = 0; i < countries.length; i++) {
+            var c = countries[i];
+            var li = document.createElement('li');
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = itemClass + (c.iso2 === selectedIso ? ' active' : '');
+            btn.dataset.iso = c.iso2;
+
+            var flagNode;
+            if (c.flagUrl) {
+                flagNode = document.createElement('img');
+                flagNode.src = c.flagUrl;
+                flagNode.alt = c.iso2;
+                flagNode.className = 'j2c-phone-flag';
+            } else {
+                flagNode = document.createElement('span');
+                flagNode.className = 'j2c-phone-flag';
+                flagNode.textContent = c.iso2;
+            }
+            btn.appendChild(flagNode);
+            btn.appendChild(document.createTextNode(' ' + c.name + ' '));
+
+            var dial = document.createElement('span');
+            dial.className = dialClass;
+            dial.textContent = '+' + c.code;
+            btn.appendChild(dial);
+
+            li.appendChild(btn);
+            frag.appendChild(li);
+        }
+        dropdown.appendChild(frag);
     }
 
     function filterDropdown(dropdown, query, countries) {

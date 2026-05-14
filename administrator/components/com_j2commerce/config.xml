@@ -205,6 +205,19 @@
         />
 
         <field
+            name="uikit_overrides"
+            type="list"
+            label="COM_J2COMMERCE_CONFIG_UIKIT_OVERRIDES"
+            description="COM_J2COMMERCE_CONFIG_UIKIT_OVERRIDES_DESC"
+            default="all"
+            showon="subtemplate:uikit"
+            layout="joomla.form.field.list-fancy-select"
+        >
+            <option value="main">COM_J2COMMERCE_CONFIG_UIKIT_OVERRIDES_MAIN</option>
+            <option value="all">COM_J2COMMERCE_CONFIG_UIKIT_OVERRIDES_ALL</option>
+        </field>
+
+        <field
             name="j2commerce_enable_css"
             type="radio"
             label="COM_J2COMMERCE_CONFIG_ENABLE_CSS"
@@ -1288,6 +1301,14 @@
             edit="true"
             clear="true"
             addfieldprefix="Joomla\Component\Content\Administrator\Field"
+            showon="show_terms:1"
+        />
+        <field
+            name="termstext"
+            type="text"
+            label="COM_J2COMMERCE_CONFIG_TERMS_TEXT"
+            description="COM_J2COMMERCE_CONFIG_TERMS_TEXT_DESC"
+            filter="raw"
             showon="show_terms:1"
         />
     </fieldset>

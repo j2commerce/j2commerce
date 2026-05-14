@@ -444,7 +444,7 @@ html[data-bs-theme="dark"] {
     .modal .btn.btn-success:hover, .modal .btn.btn-success:focus {color: #fff;background: var(--success-active);border-color: var(--success-active);}
     .modal .btn.j2commerce-set-default-btn, .modal .btn.j2commerce-delete-optionvalue-btn {border-color:transparent;border-radius:0;background:transparent;box-shadow:none;}
 
-    #appsTab, joomla-tab-element {padding-left:0;padding-right:0;}
+    #appsTab, joomla-tab-element {padding-inline-start:0;padding-inline-end:0;}
     .accordion-button:not(.collapsed) {background-color:var(--bs-body-bg, #fff);}
     .accordion-button:focus {box-shadow:none;}
     .j2commerce-app-image {width: 140px;}
@@ -516,7 +516,7 @@ html[data-bs-theme="dark"] {
                 --dropdown-font-size: .8571rem;
             }
             .navbar-nav > .nav-item + .nav-item {
-                margin-left: 1rem;
+                margin-inline-start: 1rem;
             }
         }
     }

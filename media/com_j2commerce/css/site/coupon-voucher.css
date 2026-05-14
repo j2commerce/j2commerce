@@ -38,7 +38,7 @@
 
 /* Add right padding to input when clear button is visible */
 .input-group_inner:has(.j2c-input-clear) > .form-control {
-    padding-right: 2rem;
+    padding-inline-end: 2rem;
 }
 
 .j2c-field-error {

@@ -200,10 +200,10 @@
 /* Alt Text Input */
 .uppymedia-image input[type="text"] {
     font-size: 0.75rem;
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
-    border-left: 0;
-    border-right: 0;
+    border-start-start-radius: 0;
+    border-start-end-radius: 0;
+    border-inline-start: 0;
+    border-inline-end: 0;
     border-bottom: 0;
 }
 

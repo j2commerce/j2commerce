@@ -117,7 +117,7 @@
     border-radius: 50%;
     animation: j2c-spin 0.8s linear infinite;
 }
-#j2commerce-checkout .j2commerce-save-card-container {
+#j2commerce-checkout .j2commerce-save-card-container, #j2commerce-checkout .j2commerce-terms-box {
     background: #f5f5f5;
     padding: .5rem;
 }

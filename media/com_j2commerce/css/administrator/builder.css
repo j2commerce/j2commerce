@@ -31,7 +31,7 @@
     width: 280px;
     min-width: 280px;
     overflow-y: auto;
-    border-right: 1px solid var(--bs-border-color, #dee2e6);
+    border-inline-end: 1px solid var(--bs-border-color, #dee2e6);
     padding: 1rem;
     background: var(--bs-light, #f8f9fa);
     flex-shrink: 0;
@@ -175,7 +175,7 @@
     .builder-sidebar {
         width: 100%;
         min-width: 0;
-        border-right: none;
+        border-inline-end: none;
         border-bottom: 1px solid var(--bs-border-color, #dee2e6);
     }
 }

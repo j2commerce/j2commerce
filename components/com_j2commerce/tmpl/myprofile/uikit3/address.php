@@ -50,7 +50,7 @@ $type    = \in_array($rawType, ['billing', 'shipping'], true) ? $rawType : 'bill
                     </select>
                 </div>
 
-                <div class="row g-3">
+                <div class="uk-grid uk-grid-small" uk-grid>
                     <?php foreach ($fields as $field): ?>
                     <?php
                     $namekey = $field->field_namekey;
@@ -60,7 +60,7 @@ $type    = \in_array($rawType, ['billing', 'shipping'], true) ? $rawType : 'bill
                     } elseif ($isNew && $namekey === 'email' && $this->user && $this->user->email) {
                         $value = (string) $this->user->email;
                     }
-                    echo CustomFieldHelper::renderField($field, $value);
+                    echo CustomFieldHelper::renderField($field, $value, [], 'uikit');
                     ?>
                     <?php endforeach; ?>
                 </div>

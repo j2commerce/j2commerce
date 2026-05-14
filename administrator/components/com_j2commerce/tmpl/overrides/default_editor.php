@@ -19,25 +19,48 @@ use Joomla\CMS\Router\Route;
 /** @var \J2Commerce\Component\J2commerce\Administrator\View\Overrides\HtmlView $this */
 
 $plugin = $this->source->pluginElement ?? '';
-$file = $this->source->fileId ?? '';
+$file   = $this->source->fileId ?? '';
+
+// Helper: render one root <li> for a given label and file tree
+$renderRoot = function (string $label, array $files) use (&$renderRoot): void {
+    if (empty($files)) {
+        return;
+    }
+    $temp                = $this->overrideFiles;
+    $this->overrideFiles = $files;
+    ?>
+    <li class="folder-select">
+        <a class="folder-url" data-id="" href="">
+            <span class="icon-folder icon-fw" aria-hidden="true"></span>
+            <?php echo $this->escape($label); ?>
+        </a>
+        <?php echo $this->loadTemplate('tree'); ?>
+    </li>
+    <?php
+    $this->overrideFiles = $temp;
+};
 ?>
 
 <div class="row mt-2">
     <div id="treeholder" class="col-md-3 tree-holder">
-        <?php if (empty($this->overrideFiles)) : ?>
+        <?php
+        $layoutFiles   = $this->overrideFiles['layouts'] ?? [];
+        $tmplFiles     = $this->overrideFiles['tmpl'] ?? [];
+        $siblingGroups = $this->overrideFiles['siblings'] ?? [];
+        ?>
+        <?php if (empty($layoutFiles) && empty($tmplFiles) && empty($siblingGroups)) : ?>
             <div class="p-3 text-body-secondary text-center small">
                 <?php echo Text::_('COM_J2COMMERCE_OVERRIDE_NO_FILES'); ?>
             </div>
         <?php else : ?>
             <div class="mt-2 mb-2">
                 <ul class="directory-tree treeselect">
-                    <li class="folder-select">
-                        <a class="folder-url" data-id="" href="">
-                            <span class="icon-folder icon-fw" aria-hidden="true"></span>
-                            <?php echo $this->escape($this->activeTemplate); ?>/html/layouts/com_j2commerce
-                        </a>
-                        <?php echo $this->loadTemplate('tree'); ?>
-                    </li>
+                    <?php $renderRoot($this->activeTemplate . '/html/layouts/com_j2commerce', $layoutFiles); ?>
+                    <?php $renderRoot($this->activeTemplate . '/html/com_j2commerce/templates', $tmplFiles); ?>
+                    <?php foreach ($siblingGroups as $siblingName => $siblingTrees) : ?>
+                        <?php $renderRoot($siblingName . '/html/layouts/com_j2commerce', $siblingTrees['layouts'] ?? []); ?>
+                        <?php $renderRoot($siblingName . '/html/com_j2commerce/templates', $siblingTrees['tmpl'] ?? []); ?>
+                    <?php endforeach; ?>
                 </ul>
             </div>
         <?php endif; ?>
@@ -45,16 +68,16 @@ $file = $this->source->fileId ?? '';
     <div class="col-md-9">
         <?php if ($this->source) : ?>
             <?php
-                $isLayoutFile = ($this->source->fileType ?? '') === 'layouts';
+                $isLayoutFile     = ($this->source->fileType ?? '') === 'layouts';
                 $builderFileValue = $this->source->pluginElement . '::' . ($this->source->builderFileId ?? $this->source->filename);
 
                 // Classify: only show builder button for block-layout files, not dispatchers
-                $sourcePath = OverrideRegistry::getSourcePath(
+                $sourcePath         = OverrideRegistry::getSourcePath(
                     $this->source->pluginElement,
                     $this->source->builderFileId ?? $this->source->filename
                 );
                 $fileClassification = OverrideRegistry::classifyLayoutFile($sourcePath);
-                $isBuilderEditable = $isLayoutFile && $fileClassification !== OverrideRegistry::FILE_TYPE_DISPATCHER;
+                $isBuilderEditable  = $isLayoutFile && $fileClassification !== OverrideRegistry::FILE_TYPE_DISPATCHER;
             ?>
             <div class="d-flex align-items-center justify-content-between mb-2">
                 <p class="lead mb-0"><?php echo Text::sprintf('COM_J2COMMERCE_OVERRIDE_FILENAME', $this->escape($this->source->filename)); ?></p>

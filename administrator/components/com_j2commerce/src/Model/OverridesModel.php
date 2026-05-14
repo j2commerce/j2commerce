@@ -16,9 +16,11 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 use J2Commerce\Component\J2commerce\Administrator\Builder\Service\BlockPreviewService;
 use J2Commerce\Component\J2commerce\Administrator\Service\OverrideRegistry;
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 use Joomla\Filesystem\File;
 use Joomla\Filesystem\Folder;
@@ -78,14 +80,54 @@ class OverridesModel extends BaseDatabaseModel
             return false;
         }
 
+        // Task 3: timestamp-rename on collision instead of error
+        $stamp = date('Ymd-His');
         if (is_file($overridePath)) {
-            $this->setError(Text::_('COM_J2COMMERCE_ERR_OVERRIDE_EXISTS'));
-            return false;
+            $info         = pathinfo($overridePath);
+            $overridePath = Path::clean($info['dirname'] . '/' . $info['filename'] . '-' . $stamp . '.' . $info['extension']);
         }
 
         if (!@copy($sourcePath, $overridePath)) {
             $this->setError(Text::_('COM_J2COMMERCE_ERR_FILE_COPY_FAILED'));
             return false;
+        }
+
+        // Task 5: cascade to sibling YOOtheme templates
+        $params   = ComponentHelper::getParams('com_j2commerce');
+        $cascade  = $params->get('subtemplate') === 'uikit' && $params->get('uikit_overrides', 'all') === 'all';
+
+        if ($cascade) {
+            foreach ($this->getSiblingTemplates() as $sibling) {
+                if ($type === 'layouts') {
+                    $siblingBase = $this->getSiblingLayoutOverridePath($sibling);
+                    $siblingPath = Path::clean($siblingBase . '/' . $pluginElement . '/' . $relativePath);
+                } else {
+                    $siblingBase = $this->getSiblingTmplOverridePath($sibling);
+                    $siblingPath = Path::clean($siblingBase . '/' . ($tmplFolder !== '' ? $tmplFolder . '/' : '') . $relativePath);
+                }
+
+                // Defence-in-depth: refuse traversal outside the sibling base
+                if (strpos(Path::clean($siblingPath), Path::clean($siblingBase)) !== 0) {
+                    Log::add('J2Commerce Overrides: refusing traversal write to ' . $siblingPath, Log::WARNING, 'com_j2commerce');
+                    continue;
+                }
+
+                $siblingDir = \dirname($siblingPath);
+
+                if (!is_dir($siblingDir) && !Folder::create($siblingDir)) {
+                    Log::add('J2Commerce Overrides: could not create sibling directory ' . $siblingDir, Log::WARNING, 'com_j2commerce');
+                    continue;
+                }
+
+                if (is_file($siblingPath)) {
+                    $info        = pathinfo($siblingPath);
+                    $siblingPath = Path::clean($info['dirname'] . '/' . $info['filename'] . '-' . $stamp . '.' . $info['extension']);
+                }
+
+                if (!@copy($sourcePath, $siblingPath)) {
+                    Log::add('J2Commerce Overrides: copy to sibling ' . $sibling . ' failed for ' . $siblingPath, Log::WARNING, 'com_j2commerce');
+                }
+            }
         }
 
         return true;
@@ -187,32 +229,112 @@ class OverridesModel extends BaseDatabaseModel
 
     public function getOverrideFiles(): array
     {
-        $files = [];
+        $result = [
+            'layouts' => is_dir($this->getBaseTemplateOverridePath())
+                ? $this->buildDirectoryTree($this->getBaseTemplateOverridePath(), $this->getBaseTemplateOverridePath(), '', 'layouts')
+                : [],
+            'tmpl'    => is_dir($this->getTmplBaseOverridePath())
+                ? $this->buildDirectoryTree($this->getTmplBaseOverridePath(), $this->getTmplBaseOverridePath(), '', 'tmpl')
+                : [],
+        ];
 
-        $layoutPath = $this->getBaseTemplateOverridePath();
-        if (is_dir($layoutPath)) {
-            $files = array_merge($files, $this->buildDirectoryTree($layoutPath, $layoutPath));
+        // Task 4: include sibling override files for Editor tab display
+        $siblings = [];
+        foreach ($this->getSiblingTemplates() as $sibling) {
+            $layoutBase = $this->getSiblingLayoutOverridePath($sibling);
+            $tmplBase   = $this->getSiblingTmplOverridePath($sibling);
+
+            $layoutTree = is_dir($layoutBase)
+                ? $this->buildDirectoryTree($layoutBase, $layoutBase, '', 'layouts', $sibling)
+                : [];
+            $tmplTree = is_dir($tmplBase)
+                ? $this->buildDirectoryTree($tmplBase, $tmplBase, '', 'tmpl', $sibling)
+                : [];
+
+            if (!empty($layoutTree) || !empty($tmplTree)) {
+                $siblings[$sibling] = [
+                    'layouts' => $layoutTree,
+                    'tmpl'    => $tmplTree,
+                ];
+            }
         }
 
-        $tmplPath = $this->getTmplBaseOverridePath();
-        if (is_dir($tmplPath)) {
-            $files = array_merge($files, $this->buildDirectoryTree($tmplPath, $tmplPath));
+        $result['siblings'] = $siblings;
+
+        return $result;
+    }
+
+    /** Returns sibling template folder names matching <activeTemplate>_* */
+    public function getSiblingTemplates(): array
+    {
+        $activeTemplate = $this->getActiveTemplate();
+        $templatesRoot  = JPATH_ROOT . '/templates';
+
+        if (!is_dir($templatesRoot)) {
+            return [];
         }
 
-        return $files;
+        $folders  = Folder::folders($templatesRoot);
+        $siblings = [];
+
+        foreach ($folders as $folder) {
+            if (strpos($folder, $activeTemplate . '_') === 0 && $folder !== $activeTemplate) {
+                $siblings[] = $folder;
+            }
+        }
+
+        return $siblings;
+    }
+
+    public function getSiblingLayoutOverridePath(string $template): string
+    {
+        return Path::clean(JPATH_ROOT . '/templates/' . $template . '/html/layouts/com_j2commerce');
+    }
+
+    public function getSiblingTmplOverridePath(string $template): string
+    {
+        return Path::clean(JPATH_ROOT . '/templates/' . $template . '/html/com_j2commerce/templates');
     }
 
     public function getSourceByPath(string $encodedFile): ?\stdClass
     {
-        $relativePath = base64_decode($encodedFile);
-
-        // Try layout base first, then tmpl base
+        $decoded    = base64_decode($encodedFile);
         $layoutBase = $this->getBaseTemplateOverridePath();
         $tmplBase   = $this->getTmplBaseOverridePath();
-        $fullPath   = Path::clean($layoutBase . '/' . $relativePath);
 
-        if (!is_file($fullPath)) {
+        // Task 4: handle 3-component, 2-component, and legacy 1-component IDs
+        $parts = explode('|', $decoded);
+
+        if (\count($parts) === 3) {
+            [$base, $template, $relativePath] = $parts;
+        } elseif (\count($parts) === 2) {
+            [$base, $relativePath] = $parts;
+            $template              = '';
+        } else {
+            $base         = 'auto';
+            $relativePath = $decoded;
+            $template     = '';
+        }
+
+        // Resolve base paths from sibling or primary template (whitelist sibling against discovered list)
+        if ($template !== '') {
+            if (!\in_array($template, $this->getSiblingTemplates(), true)) {
+                return null;
+            }
+            $layoutBase = $this->getSiblingLayoutOverridePath($template);
+            $tmplBase   = $this->getSiblingTmplOverridePath($template);
+        }
+
+        if ($base === 'layouts') {
+            $fullPath = Path::clean($layoutBase . '/' . $relativePath);
+        } elseif ($base === 'tmpl') {
             $fullPath = Path::clean($tmplBase . '/' . $relativePath);
+        } else {
+            // auto: layouts first, then tmpl
+            $fullPath = Path::clean($layoutBase . '/' . $relativePath);
+            if (!is_file($fullPath)) {
+                $fullPath = Path::clean($tmplBase . '/' . $relativePath);
+            }
         }
 
         if (!is_file($fullPath)) {
@@ -224,22 +346,26 @@ class OverridesModel extends BaseDatabaseModel
             return null;
         }
 
-        // Normalize to forward slashes (Windows Path::clean uses backslashes)
-        $relativePath = str_replace('\\', '/', $relativePath);
+        // Determine file type from the resolved base
+        $fileType = ($base === 'tmpl' || ($base === 'auto' && strpos($cleanFull, Path::clean($tmplBase)) === 0))
+            ? 'tmpl'
+            : 'layouts';
 
-        // Extract plugin element from path (first folder after base path)
+        // Normalize to forward slashes (Windows Path::clean uses backslashes)
+        $relativePath  = str_replace('\\', '/', $relativePath);
         $pathParts     = explode('/', $relativePath);
         $pluginElement = $pathParts[0] ?? '';
 
-        // Detect file type from path structure
-        $isTmpl     = isset($pathParts[1]) && $pathParts[1] === 'tmpl';
-        $fileType   = $isTmpl ? 'tmpl' : 'layouts';
-        $tmplFolder = ($isTmpl && isset($pathParts[2])) ? $pathParts[2] : '';
-
-        // Strip plugin element prefix so filename matches builder select values
-        // relativePath = "app_bootstrap5/list/category/item.php"
-        // filename should be "list/category/item.php" (without plugin element prefix)
-        $filenameWithoutPlugin = implode('/', \array_slice($pathParts, 1));
+        if ($fileType === 'tmpl') {
+            // Under tmpl base: first segment IS the folder (e.g. bootstrap5, tag_bootstrap5, categories_sub)
+            $tmplFolder            = $pluginElement;
+            $filenameWithoutPlugin = implode('/', \array_slice($pathParts, 1));
+        } else {
+            // Under layouts base: path is <pluginElement>/[tmpl/<folder>/]...
+            $isTmplSubdir          = isset($pathParts[1]) && $pathParts[1] === 'tmpl';
+            $tmplFolder            = ($isTmplSubdir && isset($pathParts[2])) ? $pathParts[2] : '';
+            $filenameWithoutPlugin = implode('/', \array_slice($pathParts, 1));
+        }
 
         $item                = new \stdClass();
         $item->pluginElement = $pluginElement;
@@ -252,7 +378,6 @@ class OverridesModel extends BaseDatabaseModel
         $item->source        = file_get_contents($fullPath);
         $item->label         = basename($relativePath);
 
-        // Try to find the core source file
         if (!empty($pluginElement) && \count($pathParts) > 1) {
             $subPath    = implode('/', \array_slice($pathParts, 1));
             $sourcePath = OverrideRegistry::getSourcePath($pluginElement, $subPath);
@@ -267,14 +392,43 @@ class OverridesModel extends BaseDatabaseModel
 
     public function saveSourceByPath(string $encodedFile, string $source): bool
     {
-        $relativePath = base64_decode($encodedFile);
-
+        $decoded    = base64_decode($encodedFile);
         $layoutBase = $this->getBaseTemplateOverridePath();
         $tmplBase   = $this->getTmplBaseOverridePath();
-        $fullPath   = Path::clean($layoutBase . '/' . $relativePath);
 
-        if (!is_file($fullPath)) {
+        // Task 4: handle 3-component, 2-component, and legacy 1-component IDs
+        $parts = explode('|', $decoded);
+
+        if (\count($parts) === 3) {
+            [$base, $template, $relativePath] = $parts;
+        } elseif (\count($parts) === 2) {
+            [$base, $relativePath] = $parts;
+            $template              = '';
+        } else {
+            $base         = 'auto';
+            $relativePath = $decoded;
+            $template     = '';
+        }
+
+        // Resolve base paths from sibling or primary template (whitelist sibling against discovered list)
+        if ($template !== '') {
+            if (!\in_array($template, $this->getSiblingTemplates(), true)) {
+                $this->setError(Text::_('COM_J2COMMERCE_ERR_INVALID_FILE_PATH'));
+                return false;
+            }
+            $layoutBase = $this->getSiblingLayoutOverridePath($template);
+            $tmplBase   = $this->getSiblingTmplOverridePath($template);
+        }
+
+        if ($base === 'layouts') {
+            $fullPath = Path::clean($layoutBase . '/' . $relativePath);
+        } elseif ($base === 'tmpl') {
             $fullPath = Path::clean($tmplBase . '/' . $relativePath);
+        } else {
+            $fullPath = Path::clean($layoutBase . '/' . $relativePath);
+            if (!is_file($fullPath)) {
+                $fullPath = Path::clean($tmplBase . '/' . $relativePath);
+            }
         }
 
         if (!is_file($fullPath)) {
@@ -383,7 +537,10 @@ class OverridesModel extends BaseDatabaseModel
         return $db->loadResult() ?: 'cassiopeia';
     }
 
-    private function buildDirectoryTree(string $dir, string $basePath, string $relativeDirPath = ''): array
+    /**
+     * @param  string  $template  When non-empty, encodes 3-component IDs for sibling templates.
+     */
+    private function buildDirectoryTree(string $dir, string $basePath, string $relativeDirPath = '', string $base = '', string $template = ''): array
     {
         $result = [];
         $items  = scandir($dir);
@@ -397,7 +554,7 @@ class OverridesModel extends BaseDatabaseModel
             $itemRelativePath = $relativeDirPath !== '' ? $relativeDirPath . '/' . $item : $item;
 
             if (is_dir($fullPath)) {
-                $children = $this->buildDirectoryTree($fullPath, $basePath, $itemRelativePath);
+                $children = $this->buildDirectoryTree($fullPath, $basePath, $itemRelativePath, $base, $template);
                 if (!empty($children)) {
                     $result[] = [
                         'type'     => 'folder',
@@ -408,10 +565,20 @@ class OverridesModel extends BaseDatabaseModel
                 }
             } elseif (pathinfo($item, PATHINFO_EXTENSION) === 'php') {
                 $relativePath = str_replace(Path::clean($basePath) . \DIRECTORY_SEPARATOR, '', Path::clean($fullPath));
-                $result[]     = [
+                $relativePath = str_replace('\\', '/', $relativePath);
+
+                if ($template !== '' && $base !== '') {
+                    $encodedId = base64_encode($base . '|' . $template . '|' . $relativePath);
+                } elseif ($base !== '') {
+                    $encodedId = base64_encode($base . '|' . $relativePath);
+                } else {
+                    $encodedId = base64_encode($relativePath);
+                }
+
+                $result[] = [
                     'type' => 'file',
                     'name' => $item,
-                    'id'   => base64_encode($relativePath),
+                    'id'   => $encodedId,
                     'path' => $itemRelativePath,
                 ];
             }

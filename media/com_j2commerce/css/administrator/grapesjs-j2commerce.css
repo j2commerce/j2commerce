@@ -343,7 +343,7 @@
     text-align: center;
     cursor: pointer;
     border: none;
-    border-right: 1px solid var(--gjs-input-border);
+    border-inline-end: 1px solid var(--gjs-input-border);
     background: var(--gjs-input-bg);
     color: var(--gjs-text-primary);
     transition: background-color 0.15s, color 0.15s, box-shadow 0.15s;
@@ -354,7 +354,7 @@
 }
 
 .gjs-sm-property .gjs-radio-item:last-child label {
-    border-right: none;
+    border-inline-end: none;
 }
 
 .gjs-sm-property .gjs-radio-item label:hover {
@@ -415,7 +415,7 @@
 .gjs-sm-composite .gjs-field .gjs-field-units {
     font-size: 0.75rem;
     color: var(--gjs-text-secondary);
-    padding-right: 0.25rem;
+    padding-inline-end: 0.25rem;
     white-space: nowrap;
 }
 
@@ -619,7 +619,7 @@
 .gjs-field-integer .gjs-field-arrows {
     display: flex;
     flex-direction: column;
-    border-left: 1px solid var(--gjs-border-light);
+    border-inline-start: 1px solid var(--gjs-border-light);
     padding: 0.125rem;
 }
 
@@ -671,7 +671,7 @@
 
 .gjs-rte-actionbar .gjs-rte-action {
     color: var(--gjs-toolbar-color);
-    border-right-color: var(--gjs-border);
+    border-inline-end-color: var(--gjs-border);
 }
 
 .gjs-rte-actionbar .gjs-rte-action:hover {

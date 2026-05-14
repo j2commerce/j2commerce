@@ -37,6 +37,11 @@
     box-sizing: border-box;
 }
 
+#j2commerce-checkout .j2commerce-save-card-container, #j2commerce-checkout .j2commerce-terms-box {
+    background: #f5f5f5;
+    padding: .5rem;
+}
+
 /* Sidecart collapse: hidden < lg, toggled via .uk-open, always shown >= 1200px. */
 .j2commerce-sidecart-collapse {
     display: none;
@@ -125,12 +130,12 @@
 }
 .j2commerce-checkout-sidecart .j2c-coupon-form .uk-input,
 .j2commerce-checkout-sidecart .j2c-voucher-form .uk-input {
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
-    border-right: 0;
+    border-start-end-radius: 0;
+    border-end-end-radius: 0;
+    border-inline-end: 0;
 }
 .j2commerce-checkout-sidecart .j2c-coupon-form .uk-button,
 .j2commerce-checkout-sidecart .j2c-voucher-form .uk-button {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
+    border-start-start-radius: 0;
+    border-end-start-radius: 0;
 }
