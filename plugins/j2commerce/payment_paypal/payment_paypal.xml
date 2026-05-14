@@ -155,9 +155,11 @@
                 <!-- Payment Sources (funding methods) -->
                 <field
                     name="enabled_funding_sources"
-                    type="checkboxes"
+                    type="list"
                     label="PLG_J2COMMERCE_PAYMENT_PAYPAL_FUNDING_SOURCES_LABEL"
                     description="PLG_J2COMMERCE_PAYMENT_PAYPAL_FUNDING_SOURCES_DESC"
+                    multiple="true"
+                    layout="joomla.form.field.list-fancy-select"
                     default="paypal"
                 >
                     <option value="paypal">PLG_J2COMMERCE_PAYMENT_PAYPAL_FUNDING_PAYPAL</option>
