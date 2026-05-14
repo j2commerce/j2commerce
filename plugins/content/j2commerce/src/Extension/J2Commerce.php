@@ -954,7 +954,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
                 $layoutId = self::SHORTCODE_LAYOUT_MAP[$option];
 
                 // Route variable product types to their type-specific layouts
-                if (\in_array($productType, ['variable', 'flexivariable', 'configurable'], true)) {
+                if (\in_array($productType, ['flexivariable'], true)) {
                     if (\in_array($option, ['price', 'saleprice', 'regularprice'], true)) {
                         $layoutId = 'list.category.item_flexiprice';
                     } elseif (\in_array($option, ['full', 'card'], true)) {
