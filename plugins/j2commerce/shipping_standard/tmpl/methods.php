@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
@@ -117,7 +118,7 @@ $wa->useScript('table.columns')
                                     </div>
                                     <div class="small">
                                         <strong><?php echo Text::_('COM_J2COMMERCE_SHIPPING_MAX_SUBTOTAL_REQUIRED'); ?>:</strong>
-                                        $<?php echo number_format($maxSubtotal, 2); ?>
+                                        <?php echo $maxSubtotal > 0 ? CurrencyHelper::format($maxSubtotal) : Text::_('COM_J2COMMERCE_UNLIMITED'); ?>
                                     </div>
                                 </td>
                                 <td class="text-center d-none d-md-table-cell">
