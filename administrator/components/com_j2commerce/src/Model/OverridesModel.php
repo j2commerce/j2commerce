@@ -233,7 +233,7 @@ class OverridesModel extends BaseDatabaseModel
             'layouts' => is_dir($this->getBaseTemplateOverridePath())
                 ? $this->buildDirectoryTree($this->getBaseTemplateOverridePath(), $this->getBaseTemplateOverridePath(), '', 'layouts')
                 : [],
-            'tmpl'    => is_dir($this->getTmplBaseOverridePath())
+            'tmpl' => is_dir($this->getTmplBaseOverridePath())
                 ? $this->buildDirectoryTree($this->getTmplBaseOverridePath(), $this->getTmplBaseOverridePath(), '', 'tmpl')
                 : [],
         ];

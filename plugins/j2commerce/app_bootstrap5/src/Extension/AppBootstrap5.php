@@ -68,15 +68,15 @@ final class AppBootstrap5 extends CMSPlugin implements SubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            'onJ2CommerceTemplateFolderList'     => 'onTemplateFolderList',
-            'onJ2CommerceViewProductListHtml'        => 'onViewProductListHtml',
-            'onJ2CommerceViewProductListTagHtml'     => 'onViewProductListTagHtml',
-            'onJ2CommerceViewProductHtml'            => 'onViewProductHtml',
-            'onJ2CommerceViewProductTagHtml'         => 'onViewProductTagHtml',
-            'onJ2CommerceViewCategoryListHtml'       => 'onViewCategoryListHtml',
-            'onJ2CommerceRenderAjaxProductListGrid'  => 'onRenderAjaxProductListGrid',
-            'onJ2CommerceAfterAddCSS'                => 'onAfterAddCSS',
-            'onJ2CommerceAfterAddJS'                 => 'onAfterAddJS',
+            'onJ2CommerceTemplateFolderList'        => 'onTemplateFolderList',
+            'onJ2CommerceViewProductListHtml'       => 'onViewProductListHtml',
+            'onJ2CommerceViewProductListTagHtml'    => 'onViewProductListTagHtml',
+            'onJ2CommerceViewProductHtml'           => 'onViewProductHtml',
+            'onJ2CommerceViewProductTagHtml'        => 'onViewProductTagHtml',
+            'onJ2CommerceViewCategoryListHtml'      => 'onViewCategoryListHtml',
+            'onJ2CommerceRenderAjaxProductListGrid' => 'onRenderAjaxProductListGrid',
+            'onJ2CommerceAfterAddCSS'               => 'onAfterAddCSS',
+            'onJ2CommerceAfterAddJS'                => 'onAfterAddJS',
         ];
     }
 
