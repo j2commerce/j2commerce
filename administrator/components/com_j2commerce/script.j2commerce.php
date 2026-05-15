@@ -131,6 +131,9 @@ class Com_J2commerceInstallerScript extends InstallerScript
     {
         $this->debugLog("=== UPDATE START ===");
 
+        $this->installLocalisation($parent);
+        $this->debugLog("UPDATE: localisation seeded (idempotent)");
+
         $this->setDefaultAcl();
         $this->debugLog("UPDATE: default ACL rules set (if empty)");
 
@@ -416,7 +419,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
             }
 
             if ($needsEmails) {
-                $this->executeSqlFileDirect($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/emailtemplates.sql');
+                $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/emailtemplates.sql');
             }
         } catch (\Exception $e) {
             $this->debugLog("LOCALISATION: email templates error: " . $e->getMessage());
@@ -436,7 +439,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
             }
 
             if ($needsInvoices) {
-                $this->executeSqlFileDirect($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/invoicetemplates.sql');
+                $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/invoicetemplates.sql');
             }
         } catch (\Exception $e) {
             $this->debugLog("LOCALISATION: invoice templates error: " . $e->getMessage());
@@ -453,32 +456,6 @@ class Com_J2commerceInstallerScript extends InstallerScript
         } catch (\Exception $e) {
             $this->debugLog("LOCALISATION: guided tours error: " . $e->getMessage());
             Log::add('Error installing guided tours: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
-        }
-    }
-
-    private function executeSqlFileDirect(string $sqlPath): void
-    {
-        if (!File::exists($sqlPath)) {
-            $this->debugLog("SQL DIRECT: not found: {$sqlPath}");
-            return;
-        }
-
-        $this->debugLog("SQL DIRECT: executing {$sqlPath} (" . filesize($sqlPath) . " bytes)");
-        $db  = Factory::getContainer()->get(DatabaseInterface::class);
-        $sql = trim(file_get_contents($sqlPath));
-
-        if ($sql === '') {
-            $this->debugLog("SQL DIRECT: file is empty");
-            return;
-        }
-
-        try {
-            $db->setQuery($sql);
-            $db->execute();
-            $this->debugLog("SQL DIRECT: success");
-        } catch (\Exception $e) {
-            $this->debugLog("SQL DIRECT ERROR: " . $e->getMessage());
-            Log::add('SQL Direct Error in ' . basename($sqlPath) . ': ' . $e->getMessage(), Log::WARNING, 'j2commerce');
         }
     }
 
