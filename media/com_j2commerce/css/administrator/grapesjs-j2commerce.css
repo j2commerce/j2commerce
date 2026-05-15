@@ -315,6 +315,18 @@
     min-height: 1.5em;
 }
 
+/* FontAwesome 6 weight preservation — grapesjs-preset-newsletter applies
+   .fa.fa-italic / .fa.fa-underline / .fa.fa-strikethrough / .fa.fa-font /
+   .fa.fa-align-* to style-manager radio buttons. Joomla 6 ships FA6 Free
+   where most icons exist only in Solid (font-weight: 900); our radio-item
+   label rule below sets font-weight: 500 which forces fallback to FA Regular
+   (400) and renders missing-character glyphs. Restore 900 inside the editor. */
+#gjs-container .fa,
+.gjs-sm-property .gjs-radio-item label.fa,
+.gjs-sm-property .gjs-radio-item label .fa {
+    font-weight: 900;
+}
+
 /* Radio buttons in Style Manager — Atum btn-group style (e.g., text-align) */
 .gjs-sm-property .gjs-radio-items {
     display: inline-flex;
@@ -477,7 +489,13 @@
 
 /* Integer field with unit selector — see full definition below */
 
-/* Color picker field — swatch + hex text input side by side */
+/* Color picker field. Real DOM:
+   .gjs-field-color (flex outer)
+     ├─ .gjs-input-holder (hex text input)
+     └─ .gjs-field-colorp (absolute swatch wrapper)
+          └─ .gjs-field-colorp-c
+               ├─ .gjs-checker-bg (checkerboard)
+               └─ .gjs-field-color-picker (current-color overlay)         */
 .gjs-field-color {
     display: flex;
     align-items: center;
@@ -486,62 +504,62 @@
     background-color: var(--gjs-input-bg) !important;
     min-height: 2.25rem;
     width: 100%;
-    overflow: visible;
+    overflow: hidden;
     position: relative;
+    padding-inline-end: 2rem;
 }
 
-/* The swatch preview — .gjs-field-color-picker is the colored square */
-.gjs-field-color .gjs-field-color-picker {
-    width: 1.5rem;
-    height: 1.5rem;
-    min-width: 1.5rem;
-    flex-shrink: 0;
-    margin: 0.25rem 0.375rem;
-    border-radius: 0.25rem;
-    border: 1px solid var(--gjs-input-border) !important;
-    cursor: pointer;
-    display: inline-block;
-    box-sizing: border-box;
-}
-
-/* The input-holder wraps the swatch — make it inline, no overflow clip */
 .gjs-field-color .gjs-input-holder {
-    display: flex;
-    align-items: center;
-    overflow: visible;
-    min-height: auto;
-    flex-shrink: 0;
-}
-
-/* The colorp-c wraps the hex text input */
-.gjs-field-color .gjs-field-colorp-c {
     flex: 1;
     display: flex;
     align-items: center;
     min-height: auto;
-    border: none;
-    background: transparent;
+    overflow: hidden;
 }
 
-.gjs-field-color .gjs-field-colorp-c input,
-.gjs-field-color input {
+.gjs-field-color .gjs-input-holder input {
     border: none !important;
     background: transparent !important;
     flex: 1;
-    padding: 0.25rem 0.375rem;
+    width: 100%;
+    padding: 0.25rem 0.5rem;
     font-size: 0.8125rem;
     font-family: monospace;
     color: var(--gjs-text-primary) !important;
     min-height: auto;
-    width: 100%;
 }
 
-/* Standalone color swatch outside .gjs-field-color context */
-.gjs-field-colorp-c {
-    min-height: 1.5rem;
-    min-width: 1.5rem;
+/* Absolute swatch wrapper — pinned to the inner right edge with padding */
+.gjs-field-color .gjs-field-colorp {
+    position: absolute;
+    inset-inline-end: 0.25rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1.5rem;
+    height: 1.5rem;
     border-radius: 0.25rem;
+    overflow: hidden;
     border: 1px solid var(--gjs-input-border);
+    box-sizing: border-box;
+    cursor: pointer;
+}
+
+.gjs-field-color .gjs-field-colorp-c {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: transparent;
+}
+
+.gjs-field-color .gjs-field-color-picker {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: none !important;
+    border-radius: 0;
+    box-shadow: none;
     cursor: pointer;
 }
 
@@ -587,10 +605,14 @@
     min-height: 2.25rem;
 }
 
-/* All integer/number fields — ensure visible input area */
+/* Integer field with unit selector + up/down arrows. Real DOM:
+   .gjs-field-integer (flex outer)
+     ├─ .gjs-input-holder > <input>  — numeric value
+     ├─ .gjs-field-units   > <select> — unit (px/%/em/…)
+     └─ .gjs-field-arrows  — stepper                                  */
 .gjs-field-integer {
     display: flex;
-    align-items: center;
+    align-items: stretch;
     background-color: var(--gjs-input-bg) !important;
     border: 1px solid var(--gjs-input-border) !important;
     border-radius: 0.25rem;
@@ -598,29 +620,53 @@
     overflow: hidden;
 }
 
-.gjs-field-integer input {
-    border: none !important;
+.gjs-field-integer .gjs-input-holder {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
     background: transparent !important;
-    min-width: 2.5rem;
-    flex: 1;
-    padding: 0.25rem 0.375rem;
 }
 
-.gjs-field-integer .gjs-field-units select {
+.gjs-field-integer .gjs-input-holder input {
+    border: none !important;
+    background: transparent !important;
+    width: 100%;
+    min-width: 0;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8125rem;
+    color: var(--gjs-text-primary) !important;
+}
+
+.gjs-field-integer .gjs-field-units {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+}
+
+.gjs-field-integer .gjs-field-units select.gjs-input-unit,
+.gjs-field-integer .gjs-input-unit {
     border: none !important;
     background: transparent !important;
     font-size: 0.75rem;
-    color: var(--gjs-text-secondary);
+    color: var(--gjs-text-secondary) !important;
     padding: 0 0.25rem;
     min-height: auto;
+    width: auto;
+    min-width: 2.25rem;
     cursor: pointer;
+    appearance: auto;
 }
 
 .gjs-field-integer .gjs-field-arrows {
+    flex: 0 0 auto;
     display: flex;
     flex-direction: column;
+    justify-content: center;
     border-inline-start: 1px solid var(--gjs-border-light);
-    padding: 0.125rem;
+    padding: 0 0.25rem;
+    gap: 2px;
 }
 
 
