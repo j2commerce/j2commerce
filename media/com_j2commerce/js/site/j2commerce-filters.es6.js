@@ -192,7 +192,9 @@ class J2CommerceFilters {
 
     bindPagination() {
         document.addEventListener('click', (e) => {
-            const paginationLink = e.target.closest('.j2commerce-pagination a.page-link');
+            // Joomla's pagination chrome doesn't always emit .page-link (UIkit/UI3 chromes
+            // use bare anchors). Match any anchor with an href inside .j2commerce-pagination.
+            const paginationLink = e.target.closest('.j2commerce-pagination a[href]');
             if (!paginationLink) return;
 
             e.preventDefault();
@@ -425,7 +427,9 @@ class J2CommerceFilters {
 
         // Build query string and decode commas for cleaner URLs
         // URLSearchParams encodes commas as %2C, but commas are safe in query strings
-        const queryString = params.toString().replace(/%2C/gi, ',');
+        // URLSearchParams encodes commas and colons; both are safe in query strings.
+        // Keep the composite group:filter token readable as `?filters=caliber:9mm`.
+        const queryString = params.toString().replace(/%2C/gi, ',').replace(/%3A/gi, ':');
         const newUrl = window.location.pathname + (queryString ? '?' + queryString : '');
         window.history.replaceState({ j2commerce: true }, '', newUrl);
     }
