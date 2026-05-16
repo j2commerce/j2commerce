@@ -111,7 +111,7 @@ class HtmlView extends BaseHtmlView
                  && (empty($this->item->id) || $this->item->id == 0);
 
         $canDo      = ContentHelper::getActions('com_j2commerce', 'filtergroup', $this->item->j2commerce_filtergroup_id ?? 0);
-        $checkedOut = !(($this->item->checked_out ?? null) === null || ($this->item->checked_out ?? 0) == $user->id);
+        $checkedOut = !empty($this->item->checked_out) && (int) $this->item->checked_out !== (int) $user->id;
 
         ToolbarHelper::title(
             Text::_('COM_J2COMMERCE_FILTERGROUP') . ': ' . ($isNew ? Text::_('JTOOLBAR_NEW') : Text::_('JTOOLBAR_EDIT')),
