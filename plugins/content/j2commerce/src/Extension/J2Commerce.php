@@ -772,6 +772,13 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             ['defer' => true]
         );
 
+        $wa->registerAndUseScript(
+            'com_j2commerce.a11y',
+            'media/com_j2commerce/js/site/j2commerce-a11y.js',
+            [],
+            ['defer' => true]
+        );
+
         if (($product->product_type ?? '') === 'flexivariable') {
             $wa->registerAndUseScript(
                 'plg_j2commerce_app_flexivariable.flexivariable',
