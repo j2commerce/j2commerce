@@ -756,6 +756,12 @@ class CartModel extends BaseDatabaseModel
             return false;
         }
 
+        // Preserve the shopper's original filename for storage + display, then
+        // sanitize a working copy so Joomla's File::makeSafe (called inside
+        // MediaHelper::canUpload) accepts names with spaces and parens.
+        $originalName = (string) $file['name'];
+        $file['name'] = self::sanitizeUploadFileName($originalName);
+
         if ($checkUpload) {
             $app             = Factory::getApplication();
             $isGuest         = $app->getIdentity()?->guest ?? true;
@@ -849,11 +855,32 @@ class CartModel extends BaseDatabaseModel
         }
 
         return [
-            'original_name' => $file['name'],
+            'original_name' => $originalName,
             'mangled_name'  => $mangledname,
             'saved_name'    => $name,
             'mime_type'     => $mime,
         ];
+    }
+
+    /**
+     * Sanitize an uploaded filename to satisfy Joomla's File::makeSafe rules
+     * while preserving the original extension.
+     */
+    protected static function sanitizeUploadFileName(string $name): string
+    {
+        $name = html_entity_decode($name, ENT_QUOTES, 'UTF-8');
+        $info = pathinfo($name);
+        $base = $info['filename'] ?? '';
+        $ext  = isset($info['extension']) ? '.' . $info['extension'] : '';
+
+        $base = preg_replace('/[^A-Za-z0-9_\-]/', '_', $base) ?? '';
+        $base = trim($base, '_');
+
+        if ($base === '') {
+            $base = 'upload';
+        }
+
+        return $base . $ext;
     }
 
     /**
