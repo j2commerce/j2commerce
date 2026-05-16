@@ -109,6 +109,7 @@ class HtmlView extends BaseHtmlView
         $this->_prepareDocument();
 
         HTMLHelper::_('bootstrap.collapse', 'checkoutSidecartCollapse');
+        HTMLHelper::_('bootstrap.modal');
 
         $this->registerFrameworkTemplatePaths($app);
 

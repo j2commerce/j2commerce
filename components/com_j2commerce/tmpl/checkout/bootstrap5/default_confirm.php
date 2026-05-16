@@ -31,8 +31,20 @@ $termsUrl         = $showTerms && $termsArticleId
 $termsText        = trim((string) ($this->termsText ?? ''));
 $showCustomerNote = (bool) ($this->showCustomerNote ?? true);
 
+// bootstrap.modal is registered on the initial /checkout page load in HtmlView::display().
+
+// Build the terms modal URL from the already-computed $termsUrl (M4 — avoids 4 Route::_ calls).
+$termsModalUrl = '';
+if ($showTerms && $termsArticleId) {
+    $sep           = str_contains($termsUrl, '?') ? '&' : '?';
+    $termsModalUrl = $termsUrl . $sep . 'tmpl=component';
+}
+
 ?>
-<div class="j2commerce-checkout-confirm">
+<div class="j2commerce-checkout-confirm"
+     data-show-terms="<?php echo $showTerms; ?>"
+     data-terms-display-type="<?php echo htmlspecialchars($termsDisplayType, ENT_QUOTES, 'UTF-8'); ?>"
+>
 
 <?php if (empty($errors)) : ?>
 
@@ -46,10 +58,10 @@ $showCustomerNote = (bool) ($this->showCustomerNote ?? true);
                     <?php if ($termsText !== '') : ?>
                         <?php // Raw HTML — admin-controlled via filter="raw" ?>
                         <?php echo $termsText; ?>
-                    <?php elseif ($termsUrl !== '') : ?>
+                    <?php elseif ($termsModalUrl !== '') : ?>
                         <?php echo Text::sprintf(
                             'COM_J2COMMERCE_CHECKOUT_AGREE_TERMS_LINK',
-                            '<a href="' . htmlspecialchars($termsUrl) . '" target="_blank" rel="noopener">'
+                            '<a href="' . $termsUrl . '" data-bs-toggle="modal" data-bs-target="#j2c-terms-modal">'
                                 . htmlspecialchars(Text::_('COM_J2COMMERCE_CHECKOUT_TERMS_AND_CONDITIONS'))
                                 . '</a>'
                         ); ?>
@@ -64,10 +76,17 @@ $showCustomerNote = (bool) ($this->showCustomerNote ?? true);
             <?php if ($termsText !== '') : ?>
                 <?php // Raw HTML — admin-controlled via filter="raw" ?>
                 <?php echo $termsText; ?>
+            <?php elseif ($termsModalUrl !== '') : ?>
+                <?php echo Text::sprintf(
+                    'COM_J2COMMERCE_CHECKOUT_AGREE_TERMS_LINK',
+                    '<a href="' . $termsUrl . '" data-bs-toggle="modal" data-bs-target="#j2c-terms-modal">'
+                        . htmlspecialchars(Text::_('COM_J2COMMERCE_CHECKOUT_TERMS_AND_CONDITIONS'))
+                        . '</a>'
+                ); ?>
             <?php else : ?>
                 <?php echo Text::sprintf(
                     'COM_J2COMMERCE_CHECKOUT_AGREE_TERMS_LINK',
-                    '<a href="' . htmlspecialchars($termsUrl) . '" target="_blank" rel="noopener">'
+                    '<a href="' . $termsUrl . '" target="_blank" rel="noopener">'
                         . htmlspecialchars(Text::_('COM_J2COMMERCE_CHECKOUT_TERMS_AND_CONDITIONS'))
                         . '</a>'
                 ); ?>
@@ -109,3 +128,26 @@ $showCustomerNote = (bool) ($this->showCustomerNote ?? true);
 <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterCheckoutConfirm', [$this]); ?>
 
 </div>
+
+<?php if ($showTerms === 1 && $termsModalUrl !== '') : ?>
+<div class="modal fade" id="j2c-terms-modal" tabindex="-1"
+     aria-labelledby="j2c-terms-modal-label" aria-modal="true" role="dialog">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="j2c-terms-modal-label">
+                    <?php echo htmlspecialchars(Text::_('COM_J2COMMERCE_CHECKOUT_TERMS_AND_CONDITIONS'), ENT_QUOTES, 'UTF-8'); ?>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                        aria-label="<?php echo htmlspecialchars(Text::_('JCLOSE'), ENT_QUOTES, 'UTF-8'); ?>"></button>
+            </div>
+            <div class="modal-body p-0">
+                <iframe src="<?php echo htmlspecialchars($termsModalUrl, ENT_QUOTES, 'UTF-8'); ?>"
+                        title="<?php echo htmlspecialchars(Text::_('COM_J2COMMERCE_CHECKOUT_TERMS_AND_CONDITIONS'), ENT_QUOTES, 'UTF-8'); ?>"
+                        class="w-100 border-0" style="height:60vh;"
+                        loading="lazy"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
