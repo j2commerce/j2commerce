@@ -178,9 +178,30 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
                 <button type="button"
                     id="product-option-<?php echo (int) $option['productoption_id']; ?>"
                     data-loading-text="<?php echo Text::_('COM_J2COMMERCE_LOADING'); ?>"
-                    data-ajax-url="<?php echo $ajax_url; ?>?option=com_j2commerce&view=carts&task=upload&product_id=<?php echo $productId; ?>"
+                    data-ajax-url="<?php echo $ajax_url; ?>?option=com_j2commerce&view=carts&task=carts.upload&product_id=<?php echo $productId; ?>"
                     class="btn btn-secondary j2commerce-file-upload-btn">
                     <span class="fa fa-upload" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_PRODUCT_OPTION_CHOOSE_FILE'); ?>
+                </button>
+                <input type="hidden"
+                    name="product_option[<?php echo (int) $option['productoption_id']; ?>]"
+                    value="" id="input-option<?php echo (int) $option['productoption_id']; ?>" />
+            </div>
+        <?php endif; ?>
+
+        <?php if ($option['type'] == 'image') : ?>
+            <!-- Image -->
+            <div id="option-<?php echo (int) $option['productoption_id']; ?>" class="option mb-3">
+                <?php if ($option['required']) : ?>
+                <span class="required text-danger">*</span>
+                <?php endif; ?>
+                <label class="form-label fw-bold"><?php echo Text::_($option['option_name']); ?>:</label>
+                <button type="button"
+                    id="product-option-<?php echo (int) $option['productoption_id']; ?>"
+                    data-loading-text="<?php echo Text::_('COM_J2COMMERCE_LOADING'); ?>"
+                    data-ajax-url="<?php echo $ajax_url; ?>?option=com_j2commerce&view=carts&task=carts.upload&product_id=<?php echo $productId; ?>"
+                    data-accept="image/*"
+                    class="btn btn-secondary j2commerce-file-upload-btn">
+                    <span class="fa fa-image" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_PRODUCT_OPTION_CHOOSE_IMAGE'); ?>
                 </button>
                 <input type="hidden"
                     name="product_option[<?php echo (int) $option['productoption_id']; ?>]"
@@ -299,6 +320,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const fileInput = document.createElement('input');
             fileInput.type = 'file';
             fileInput.name = 'file';
+            if (node.dataset.accept) {
+                fileInput.accept = node.dataset.accept;
+            }
             form.appendChild(fileInput);
 
             // Prepend form to body

@@ -167,9 +167,29 @@ $ajax_url = Route::_('index.php', false);
                 <button type="button"
                     id="product-option-<?php echo $option['productoption_id']; ?>"
                     data-loading-text="<?php echo Text::_('COM_J2COMMERCE_LOADING'); ?>"
-                    data-ajax-url="<?php echo $ajax_url; ?>?option=com_j2commerce&view=carts&task=upload&product_id=<?php echo $productId; ?>"
+                    data-ajax-url="<?php echo $ajax_url; ?>?option=com_j2commerce&view=carts&task=carts.upload&product_id=<?php echo $productId; ?>"
                     class="uk-button uk-button-default j2commerce-file-upload-btn">
                     <span uk-icon="icon: upload"></span> <?php echo Text::_('COM_J2COMMERCE_PRODUCT_OPTION_CHOOSE_FILE'); ?>
+                </button>
+                <input type="hidden"
+                    name="product_option[<?php echo $option['productoption_id']; ?>]"
+                    value="" id="input-option<?php echo $option['productoption_id']; ?>" />
+            </div>
+        <?php endif; ?>
+
+        <?php if ($option['type'] == 'image') : ?>
+            <div id="option-<?php echo $option['productoption_id']; ?>" class="option uk-margin-small-bottom">
+                <?php if ($option['required']) : ?>
+                <span class="uk-text-danger">*</span>
+                <?php endif; ?>
+                <label class="uk-form-label uk-text-bold"><?php echo Text::_($option['option_name']); ?>:</label>
+                <button type="button"
+                    id="product-option-<?php echo $option['productoption_id']; ?>"
+                    data-loading-text="<?php echo Text::_('COM_J2COMMERCE_LOADING'); ?>"
+                    data-ajax-url="<?php echo $ajax_url; ?>?option=com_j2commerce&view=carts&task=carts.upload&product_id=<?php echo $productId; ?>"
+                    data-accept="image/*"
+                    class="uk-button uk-button-default j2commerce-file-upload-btn">
+                    <span uk-icon="icon: image"></span> <?php echo Text::_('COM_J2COMMERCE_PRODUCT_OPTION_CHOOSE_IMAGE'); ?>
                 </button>
                 <input type="hidden"
                     name="product_option[<?php echo $option['productoption_id']; ?>]"
@@ -283,6 +303,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const fileInput = document.createElement('input');
             fileInput.type = 'file';
             fileInput.name = 'file';
+            if (node.dataset.accept) {
+                fileInput.accept = node.dataset.accept;
+            }
             form.appendChild(fileInput);
 
             document.body.insertAdjacentElement('afterbegin', form);

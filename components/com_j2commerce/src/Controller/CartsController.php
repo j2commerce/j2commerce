@@ -113,7 +113,7 @@ class CartsController extends BaseController
         // Discard any stray output (PHP warnings, notices) that would corrupt JSON
         ob_end_clean();
 
-        $this->app->setHeader('Content-Type', 'application/json; charset=utf-8');
+        $this->app->setHeader('Content-Type', 'application/json; charset=utf-8', true);
         echo json_encode($data);
         $this->app->close();
     }

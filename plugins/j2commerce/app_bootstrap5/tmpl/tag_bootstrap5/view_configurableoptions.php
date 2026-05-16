@@ -206,6 +206,28 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
             <br>
         <?php endif; ?>
 
+        <?php if ($option['type'] == 'image') : ?>
+            <!-- Image -->
+            <div id="option-<?php echo $optionId; ?>" class="option">
+                <?php if ($option['required']) : ?>
+                <span class="required">*</span>
+                <?php endif; ?>
+                <b><?php echo $esc(Text::_($option['option_name'])); ?>:</b><br>
+                <button type="button"
+                    id="product-option-<?php echo $optionId; ?>"
+                    data-loading-text="<?php echo $esc(Text::_('COM_J2COMMERCE_LOADING')); ?>"
+                    data-product-id="<?php echo $productId; ?>"
+                    data-accept="image/*"
+                    class="btn btn-default j2commerce-file-upload-btn">
+                    <span class="fa fa-image" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_PRODUCT_OPTION_CHOOSE_IMAGE'); ?>
+                </button>
+                <input type="hidden"
+                    name="product_option[<?php echo $optionId; ?>]"
+                    value="" id="input-option<?php echo $optionId; ?>" />
+            </div>
+            <br>
+        <?php endif; ?>
+
         <?php if ($option['type'] == 'date') : ?>
             <?php $element_date = 'j2commerce_date_' . $optionId; ?>
             <!-- date -->
@@ -321,6 +343,9 @@ document.addEventListener('DOMContentLoaded', function() {
             var fileInput = document.createElement('input');
             fileInput.type = 'file';
             fileInput.name = 'file';
+            if (node.dataset.accept) {
+                fileInput.accept = node.dataset.accept;
+            }
             form.appendChild(fileInput);
 
             // Prepend form to body
@@ -342,7 +367,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     var originalText = node.innerHTML;
                     node.innerHTML = node.getAttribute('data-loading-text') || 'Loading...';
 
-                    fetch('index.php?option=com_j2commerce&view=carts&task=upload&product_id=' + productId, {
+                    fetch('index.php?option=com_j2commerce&view=carts&task=carts.upload&product_id=' + productId, {
                         method: 'POST',
                         body: formData,
                     })

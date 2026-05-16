@@ -625,9 +625,8 @@ class CartModel extends BaseDatabaseModel
                         'mime_type',
                         'created_by',
                         'created_on',
-                        'enabled',
                     ]))
-                    ->values(':origName, :mangledName, :savedName, :mime, :createdBy, :createdOn, 1')
+                    ->values(':origName, :mangledName, :savedName, :mime, :createdBy, :createdOn')
                     ->bind(':origName', $uploadResult['original_name'])
                     ->bind(':mangledName', $uploadResult['mangled_name'])
                     ->bind(':savedName', $uploadResult['saved_name'])
@@ -725,7 +724,7 @@ class CartModel extends BaseDatabaseModel
 
         // Sanitize filename
         $filename = basename(preg_replace('/[^a-zA-Z0-9\.\-\s+]/', '', html_entity_decode($file['name'], ENT_QUOTES, 'UTF-8')));
-        $name     = $filename . '.' . md5(mt_rand());
+        $name     = $filename . '.' . md5((string) mt_rand());
         $filepath = $uploadFolder . '/' . $name;
 
         if (file_exists($filepath)) {

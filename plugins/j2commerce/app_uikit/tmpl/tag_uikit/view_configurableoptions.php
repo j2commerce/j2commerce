@@ -206,6 +206,25 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
             </div>
         <?php endif; ?>
 
+        <?php if ($option['type'] == 'image') : ?>
+            <div id="option-<?php echo $option['productoption_id']; ?>" class="option uk-margin-small-bottom">
+                <?php if ($option['required']) : ?>
+                <span class="uk-text-danger">*</span>
+                <?php endif; ?>
+                <b><?php echo $this->escape(Text::_($option['option_name'])); ?>:</b><br>
+                <button type="button"
+                    id="product-option-<?php echo $option['productoption_id']; ?>"
+                    data-loading-text="<?php echo Text::_('COM_J2COMMERCE_LOADING'); ?>"
+                    data-accept="image/*"
+                    class="uk-button uk-button-default">
+                    <span uk-icon="icon: image"></span> <?php echo Text::_('COM_J2COMMERCE_PRODUCT_OPTION_CHOOSE_IMAGE'); ?>
+                </button>
+                <input type="hidden"
+                    name="product_option[<?php echo $option['productoption_id']; ?>]"
+                    value="" id="input-option<?php echo $option['productoption_id']; ?>" />
+            </div>
+        <?php endif; ?>
+
         <?php if ($option['type'] == 'date') : ?>
             <?php $element_date = 'j2commerce_date_' . $option['productoption_id']; ?>
             <div id="option-<?php echo $option['productoption_id']; ?>" class="option uk-margin-small-bottom">
@@ -263,7 +282,7 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
 
 <?php if (isset($options) && !empty($options)) : ?>
     <?php foreach ($options as $option) : ?>
-        <?php if ($option['type'] == 'file') : ?>
+        <?php if ($option['type'] == 'file' || $option['type'] == 'image') : ?>
             <script>
                 (function() {
                     const productOptionBtn = document.getElementById('product-option-<?php echo $option['productoption_id']; ?>');
@@ -283,6 +302,9 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
                         const fileInput = document.createElement('input');
                         fileInput.type = 'file';
                         fileInput.name = 'file';
+                        if (node.dataset.accept) {
+                            fileInput.accept = node.dataset.accept;
+                        }
                         form.appendChild(fileInput);
                         document.body.insertAdjacentElement('afterbegin', form);
                         fileInput.click();
@@ -295,7 +317,7 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
                                 const originalText = node.innerHTML;
                                 node.innerHTML = node.getAttribute('data-loading-text') || 'Loading...';
 
-                                fetch('index.php?option=com_j2commerce&view=carts&task=upload&product_id=<?php echo $this->product->j2commerce_product_id; ?>', {
+                                fetch('index.php?option=com_j2commerce&view=carts&task=carts.upload&product_id=<?php echo $this->product->j2commerce_product_id; ?>', {
                                     method: 'POST',
                                     body: formData,
                                 })

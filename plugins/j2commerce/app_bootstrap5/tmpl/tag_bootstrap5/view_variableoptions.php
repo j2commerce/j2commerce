@@ -244,6 +244,29 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
             </div>
         <?php endif; ?>
 
+        <?php if ($option['type'] === 'image') : ?>
+            <div id="option-<?php echo $option['productoption_id']; ?>" class="option mb-3">
+                <label class="form-label fw-semibold pb-1 mb-2">
+                    <?php echo $esc(Text::_($option['option_name'])); ?>
+                    <?php if ($option['required']) : ?>
+                        <span class="text-danger">*</span>
+                    <?php endif; ?>
+                </label>
+                <div>
+                    <button type="button"
+                            id="product-option-<?php echo $option['productoption_id']; ?>"
+                            data-loading-text="<?php echo $esc(Text::_('COM_J2COMMERCE_LOADING')); ?>"
+                            data-accept="image/*"
+                            class="btn btn-outline-secondary btn-sm">
+                        <span class="fa fa-image" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_PRODUCT_OPTION_CHOOSE_IMAGE'); ?>
+                    </button>
+                    <input type="hidden"
+                           name="product_option[<?php echo $option['productoption_id']; ?>]"
+                           value="" id="input-option<?php echo $option['productoption_id']; ?>" />
+                </div>
+            </div>
+        <?php endif; ?>
+
         <?php if ($option['type'] === 'date') : ?>
             <?php $element_date = 'j2commerce_date_' . $option['productoption_id']; ?>
             <div id="option-<?php echo $option['productoption_id']; ?>" class="option mb-3">
@@ -326,6 +349,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const fileInput = document.createElement('input');
             fileInput.type = 'file';
             fileInput.name = 'file';
+            if (node.dataset.accept) {
+                fileInput.accept = node.dataset.accept;
+            }
             form.appendChild(fileInput);
             document.body.insertAdjacentElement('afterbegin', form);
             fileInput.click();
@@ -338,7 +364,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const originalText = node.innerHTML;
                     node.innerHTML = node.getAttribute('data-loading-text') || 'Loading...';
 
-                    fetch('index.php?option=com_j2commerce&view=carts&task=upload&product_id=<?php echo $productId; ?>', {
+                    fetch('index.php?option=com_j2commerce&view=carts&task=carts.upload&product_id=<?php echo $productId; ?>', {
                         method: 'POST',
                         body: formData,
                     })
