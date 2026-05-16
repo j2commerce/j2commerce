@@ -33,12 +33,16 @@ foreach ($menuItems as $idx => $item) {
 
 $wa = $app->getDocument()->getWebAssetManager();
 
-$wa->addInlineStyle('#j2commerceOffcanvas{width:320px;max-inline-size:320px;min-block-size:auto;overflow:visible;flex:none;z-index:1045}#j2commerceOffcanvas .offcanvas-header{border-bottom:1px solid rgb(255 255 255 / .1)}#j2commerceOffcanvas .offcanvas-title{color:var(--sidebar-item-color)}#j2commerceOffcanvas .btn-close{filter:invert(1) grayscale(100%) brightness(200%)}#j2commerceOffcanvas .j2c-nav .has-arrow .sidebar-item-title{margin-inline-end:auto}#j2commerceOffcanvas .j2c-nav .has-arrow:after{content:"\f105";justify-content:center;align-items:center;inline-size:2rem;font-family:"Font Awesome 6 Free";font-weight:900;display:flex}#j2commerceOffcanvas .j2c-nav .mm-active>.has-arrow:after{content:"\f107"}#j2commerceOffcanvas .j2c-nav a.mm-active{background-color:var(--main-nav-mm-active-bg)}#j2commerceOffcanvas .j2c-nav .mm-collapse{display:none}#j2commerceOffcanvas .j2c-nav .mm-collapse.mm-collapsed,#j2commerceOffcanvas .j2c-nav .mm-collapse.mm-show{display:block;padding-left:0}#j2commerceOffcanvas .j2c-nav .mm-collapsing{height:0;transition:all .35s;position:relative;overflow:hidden}#j2commerceOffcanvas .item-level-1.parent{flex-direction:column}#j2commerceOffcanvas .item-level-2>a{padding-inline-start:1.5rem}');
+$wa->registerAndUseStyle(
+    'mod_j2commerce_menu',
+    'media/com_j2commerce/css/administrator/mod-menu.css'
+);
 
-$wa->addInlineScript(
-    'new MetisMenu("#j2commerceNav", { toggle: true });',
-    ['position' => 'after'],
-    ['type' => 'module'],
+$wa->registerAndUseScript(
+    'mod_j2commerce_menu',
+    'media/com_j2commerce/js/administrator/mod-menu.js',
+    [],
+    ['defer' => true],
     ['metismenujs']
 );
 ?>
