@@ -12,18 +12,27 @@ declare(strict_types=1);
 defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Layout\LayoutHelper;
+use Joomla\CMS\Router\Route;
 use Joomla\CMS\Uri\Uri;
 use Joomla\Registry\Registry;
 
 /** @var \J2Commerce\Component\J2commerce\Site\View\Product\HtmlView $this */
 
-$platform = J2CommerceHelper::platform();
-$options = $this->product->options;
-$productId = $this->product->j2commerce_product_id;
-$product_helper = J2CommerceHelper::product();
+$platform         = J2CommerceHelper::platform();
+$options          = $this->product->options;
+$productId        = (int) $this->product->j2commerce_product_id;
+$product_helper   = J2CommerceHelper::product();
 $showOptionImages = (int) ($this->params->get('image_for_product_options', 0) ?? 0);
-$esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+$esc              = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+
+$mediaParams = ComponentHelper::getParams('com_media');
+$uploadMaxMB = (float) $mediaParams->get('upload_maxsize', 0);
+$fileExts    = strtolower((string) $mediaParams->get('restrict_uploads_extensions', ''));
+$imageExts   = strtolower((string) $mediaParams->get('image_extensions', 'bmp,gif,jpg,png,jpeg,webp,avif'));
+$uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.upload&product_id=' . $productId, false);
 ?>
 <?php if ($options) : ?>
 
@@ -189,40 +198,29 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
         <?php endif; ?>
 
         <?php if ($option['type'] == 'file') : ?>
-            <div id="option-<?php echo $option['productoption_id']; ?>" class="option uk-margin-small-bottom">
-                <?php if ($option['required']) : ?>
-                <span class="uk-text-danger">*</span>
-                <?php endif; ?>
-                <b><?php echo $this->escape(Text::_($option['option_name'])); ?>:</b><br>
-                <button type="button"
-                    id="product-option-<?php echo $option['productoption_id']; ?>"
-                    data-loading-text="<?php echo Text::_('COM_J2COMMERCE_LOADING'); ?>"
-                    class="uk-button uk-button-default">
-                    <span uk-icon="icon: upload"></span> <?php echo Text::_('COM_J2COMMERCE_PRODUCT_OPTION_CHOOSE_FILE'); ?>
-                </button>
-                <input type="hidden"
-                    name="product_option[<?php echo $option['productoption_id']; ?>]"
-                    value="" id="input-option<?php echo $option['productoption_id']; ?>" />
-            </div>
+            <?php echo LayoutHelper::render('productoption.upload_file', [
+                'productOptionId' => (int) $option['productoption_id'],
+                'productId'       => $productId,
+                'required'        => (bool) $option['required'],
+                'optionName'      => (string) $option['option_name'],
+                'ajaxUrl'         => $uploadAjax,
+                'maxSizeMB'       => $uploadMaxMB,
+                'allowedExts'     => $fileExts,
+                'framework'       => 'uikit',
+            ]); ?>
         <?php endif; ?>
 
         <?php if ($option['type'] == 'image') : ?>
-            <div id="option-<?php echo $option['productoption_id']; ?>" class="option uk-margin-small-bottom">
-                <?php if ($option['required']) : ?>
-                <span class="uk-text-danger">*</span>
-                <?php endif; ?>
-                <b><?php echo $this->escape(Text::_($option['option_name'])); ?>:</b><br>
-                <button type="button"
-                    id="product-option-<?php echo $option['productoption_id']; ?>"
-                    data-loading-text="<?php echo Text::_('COM_J2COMMERCE_LOADING'); ?>"
-                    data-accept="image/*"
-                    class="uk-button uk-button-default">
-                    <span uk-icon="icon: image"></span> <?php echo Text::_('COM_J2COMMERCE_PRODUCT_OPTION_CHOOSE_IMAGE'); ?>
-                </button>
-                <input type="hidden"
-                    name="product_option[<?php echo $option['productoption_id']; ?>]"
-                    value="" id="input-option<?php echo $option['productoption_id']; ?>" />
-            </div>
+            <?php echo LayoutHelper::render('productoption.upload_image', [
+                'productOptionId' => (int) $option['productoption_id'],
+                'productId'       => $productId,
+                'required'        => (bool) $option['required'],
+                'optionName'      => (string) $option['option_name'],
+                'ajaxUrl'         => $uploadAjax,
+                'maxSizeMB'       => $uploadMaxMB,
+                'allowedExts'     => $imageExts,
+                'framework'       => 'uikit',
+            ]); ?>
         <?php endif; ?>
 
         <?php if ($option['type'] == 'date') : ?>
@@ -280,87 +278,4 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
 </div>
 <?php endif; ?>
 
-<?php if (isset($options) && !empty($options)) : ?>
-    <?php foreach ($options as $option) : ?>
-        <?php if ($option['type'] == 'file' || $option['type'] == 'image') : ?>
-            <script type="text/javascript">
-                (function() {
-                    const productOptionBtn = document.getElementById('product-option-<?php echo $option['productoption_id']; ?>');
-
-                    if (!productOptionBtn) return;
-
-                    productOptionBtn.addEventListener('click', function() {
-                        const node = this;
-
-                        const existingForm = document.getElementById('form-upload');
-                        if (existingForm) {
-                            existingForm.remove();
-                        }
-
-                        const form = document.createElement('form');
-                        form.enctype = 'multipart/form-data';
-                        form.id = 'form-upload';
-                        form.style.display = 'none';
-
-                        const fileInput = document.createElement('input');
-                        fileInput.type = 'file';
-                        fileInput.name = 'file';
-                        if (node.dataset.accept) {
-                            fileInput.accept = node.dataset.accept;
-                        }
-                        form.appendChild(fileInput);
-
-                        document.body.insertAdjacentElement('afterbegin', form);
-                        fileInput.click();
-
-                        const timer = setInterval(() => {
-                            if (fileInput.value !== '') {
-                                clearInterval(timer);
-
-                                const formData = new FormData(form);
-
-                                node.disabled = true;
-                                const originalText = node.innerHTML;
-                                node.innerHTML = node.getAttribute('data-loading-text') || 'Loading...';
-
-                                fetch('index.php?option=com_j2commerce&view=carts&task=carts.upload&product_id=<?php echo $this->product->j2commerce_product_id; ?>', {
-                                    method: 'POST',
-                                    body: formData,
-                                })
-                                .then(response => response.json())
-                                .then(json => {
-                                    node.disabled = false;
-                                    node.innerHTML = originalText;
-
-                                    document.querySelectorAll('.j2file-upload-response').forEach(el => el.remove());
-
-                                    const inputField = node.parentElement.querySelector('input[type="hidden"]');
-
-                                    if (json.error && inputField) {
-                                        const errorSpan = document.createElement('span');
-                                        errorSpan.className = 'j2file-upload-response uk-text-danger';
-                                        errorSpan.textContent = json.error;
-                                        inputField.insertAdjacentElement('afterend', errorSpan);
-                                    }
-
-                                    if (json.success && inputField) {
-                                        const successSpan = document.createElement('span');
-                                        successSpan.className = 'j2file-upload-response uk-text-success';
-                                        successSpan.textContent = json.success + ' ';
-                                        inputField.insertAdjacentElement('afterend', successSpan);
-                                        inputField.value = json.code;
-                                    }
-                                })
-                                .catch(error => {
-                                    alert(error.message + '\r\n' + error);
-                                    node.disabled = false;
-                                    node.innerHTML = originalText;
-                                });
-                            }
-                        }, 500);
-                    });
-                })();
-            </script>
-        <?php endif; ?>
-    <?php endforeach; ?>
-<?php endif; ?>
+<?php /* File/image upload widgets are handled by media/com_j2commerce/js/site/option-upload-fields.js */ ?>
