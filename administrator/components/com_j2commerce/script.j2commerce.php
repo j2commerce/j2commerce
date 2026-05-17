@@ -121,6 +121,9 @@ class Com_J2commerceInstallerScript extends InstallerScript
         $this->setDefaultAcl();
         $this->debugLog("INSTALL: default ACL rules set");
 
+        $this->ensureUploadsFolder();
+        $this->debugLog("INSTALL: product-option uploads folder ensured");
+
         Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_INSTALL_SUCCESS'), 'success');
 
         $this->debugLog("=== INSTALL END ===");
@@ -139,10 +142,37 @@ class Com_J2commerceInstallerScript extends InstallerScript
 
         $this->cleanupStaleCheckoutTemplates();
 
+        $this->ensureUploadsFolder();
+        $this->debugLog("UPDATE: product-option uploads folder ensured");
+
         Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_UPDATE_SUCCESS'), 'success');
 
         $this->debugLog("=== UPDATE END ===");
         return true;
+    }
+
+    /**
+     * Ensure media/com_j2commerce/uploads/ exists with an index.html stub.
+     * CartModel::uploadFile() also lazy-creates it on first upload, but having
+     * it present on install lets admins verify the path without uploading a
+     * file and prevents directory-listing exposure under Options +Indexes.
+     */
+    private function ensureUploadsFolder(): void
+    {
+        $folder = JPATH_ROOT . '/media/com_j2commerce/uploads';
+
+        if (!is_dir($folder) && !@mkdir($folder, 0755, true) && !is_dir($folder)) {
+            $this->debugLog("UPLOADS: failed to create {$folder}");
+            return;
+        }
+
+        $stub = $folder . '/index.html';
+        if (!is_file($stub)) {
+            @file_put_contents(
+                $stub,
+                "<!--~\n  ~ @package     J2Commerce\n  ~ @copyright   (C)2024-2026 J2Commerce, LLC <https://www.j2commerce.com>\n  ~ @license     GNU General Public License version 2 or later; see LICENSE.txt\n  -->\n\n<html>\n<head><title></title></head>\n<body></body>\n</html>\n"
+            );
+        }
     }
 
     /** Remove pre-subfolder checkout templates left behind on existing sites; harmless if absent. */
