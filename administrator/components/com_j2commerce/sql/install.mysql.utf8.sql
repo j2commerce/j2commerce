@@ -1196,6 +1196,7 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_shippingmethods` (
   `shipping_method_name` varchar(255) NOT NULL,
   `published` tinyint NOT NULL,
   `shipping_method_type` tinyint NOT NULL,
+  `params` longtext NULL,
   `tax_class_id` int NOT NULL,
   `address_override` varchar(255) NOT NULL,
   `subtotal_minimum` decimal(15,3) NOT NULL,
