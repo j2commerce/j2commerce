@@ -37,7 +37,8 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         $url     = $event->getUrl();
         $headers = $event->getHeaders();
 
-        if (preg_match('/j2commerce\.com\/j2commerce\//', $url) == false) {
+        // the url starts with https://www.j2commerce.com/add-ons/ and is NOT the update server link
+        if (stripos($url, 'j2commerce.com') === false) {
             return false;
         }
 
