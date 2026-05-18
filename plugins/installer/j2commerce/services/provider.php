@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 \defined('_JEXEC') or die;
 
-use J2Commerce\Plugin\Installer\J2commerce\Extension\J2Commerce;
+use J2Commerce\Plugin\Installer\J2Commerce\Extension\J2Commerce;
 use Joomla\CMS\Extension\PluginInterface;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Plugin\PluginHelper;
