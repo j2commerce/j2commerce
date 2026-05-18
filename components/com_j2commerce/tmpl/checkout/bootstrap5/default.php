@@ -72,7 +72,7 @@ Text::script('COM_J2COMMERCE_CHECKOUT_ERROR_AGREE_TERMS');
                 }
                 $logoFile = $storeLogo->imagefile ?? '';
                 $logoAlt  = $storeLogo->alt_text ?? '';
-                if ($logoFile && $logoAlt !== '') :
+                if ($logoFile) :
             ?>
             <div class="text-center mb-3">
                 <img src="<?php echo Uri::root() . htmlspecialchars($logoFile, ENT_QUOTES, 'UTF-8'); ?>"
