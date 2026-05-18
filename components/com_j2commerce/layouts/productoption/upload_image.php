@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 \defined('_JEXEC') or die;
 
+use Joomla\CMS\Component\ComponentHelper;
+use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 
 /**
@@ -26,6 +28,14 @@ use Joomla\CMS\Language\Text;
  * @var string  $displayData['allowedExts']     comma list (e.g. "jpg,png,webp")
  * @var string  $displayData['framework']       'bs5' (default) | 'uikit'
  */
+
+// Hide the field for guests when allow_guest_uploads=0 — the upload would
+// be rejected server-side by MediaHelper's user-group gate anyway, so the
+// dropzone is misleading. Logged-in users always see it.
+$isGuest = Factory::getApplication()->getIdentity()?->guest ?? true;
+if ($isGuest && (int) ComponentHelper::getParams('com_j2commerce')->get('allow_guest_uploads', 0) !== 1) {
+    return;
+}
 
 $optionId    = (int) ($displayData['productOptionId'] ?? 0);
 $productId   = (int) ($displayData['productId'] ?? 0);

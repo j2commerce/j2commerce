@@ -10,6 +10,7 @@
 defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -27,6 +28,9 @@ $wa->useScript('keepalive')
 
 $layout  = 'edit';
 $tmpl    = Factory::getApplication()->input->get('tmpl', '', 'cmd') === 'component' ? '&tmpl=component' : '';
+
+$guestUploadsEnabled = (int) ComponentHelper::getParams('com_j2commerce')->get('allow_guest_uploads', 0) === 1;
+$configUrl           = Route::_('index.php?option=com_config&view=component&component=com_j2commerce');
 ?>
 
 <form action="<?php echo Route::_('index.php?option=com_j2commerce&view=option&layout=' . $layout . $tmpl . '&id=' . (int) ($this->item->id ?? $this->item->j2commerce_option_id ?? 0)); ?>" method="post" name="adminForm" id="option-form" aria-label="<?php echo Text::_('COM_J2COMMERCE_OPTION_FORM_' . ((int) ($this->item->id ?? $this->item->j2commerce_option_id ?? 0) === 0 ? 'NEW' : 'EDIT'), true); ?>" class="form-validate">
@@ -42,6 +46,17 @@ $tmpl    = Factory::getApplication()->input->get('tmpl', '', 'cmd') === 'compone
                     <?php echo $this->form->renderField('option_name'); ?>
                     <?php echo $this->form->renderField('option_unique_name'); ?>
                     <?php echo $this->form->renderField('type'); ?>
+
+                    <?php if (!$guestUploadsEnabled) : ?>
+                        <div id="j2c-guest-upload-warning"
+                             class="alert alert-warning d-none"
+                             role="alert"
+                             data-j2c-guest-upload-warning>
+                            <span class="fa-solid fa-triangle-exclamation me-1" aria-hidden="true"></span>
+                            <?php echo Text::sprintf('COM_J2COMMERCE_OPTION_UPLOAD_GUEST_DISABLED', $this->escape($configUrl)); ?>
+                        </div>
+                    <?php endif; ?>
+
                     <?php echo $this->form->renderField('published'); ?>
 
                     <div class="alert alert-info">
@@ -133,6 +148,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 lastAutoValue = null;
             }
         });
+    }
+
+    // Toggle the guest-uploads-disabled warning whenever the option type
+    // dropdown changes to/from file or image. The wrapper is only present
+    // in the DOM when allow_guest_uploads=0, so when guests are allowed
+    // the warning never appears regardless of type.
+    const typeField = document.getElementById('jform_type');
+    const guestWarning = document.querySelector('[data-j2c-guest-upload-warning]');
+
+    if (typeField && guestWarning) {
+        const toggleGuestWarning = () => {
+            const value = typeField.value;
+            guestWarning.classList.toggle('d-none', value !== 'file' && value !== 'image');
+        };
+        typeField.addEventListener('change', toggleGuestWarning);
+        toggleGuestWarning();
     }
 
     // Add syntax highlighting helper for JSON params field
