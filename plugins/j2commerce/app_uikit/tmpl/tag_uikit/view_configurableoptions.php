@@ -173,27 +173,32 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
 
         <?php if ($option['type'] == 'text') : ?>
             <?php $text_option_params = $platform->getRegistry($option['option_params']); ?>
+            <?php $textInputId = 'product-option-text-' . $productId . '-' . (int) $option['productoption_id']; ?>
             <div id="option-<?php echo $option['productoption_id']; ?>" class="option uk-margin-small-bottom">
-                <?php if ($option['required']) : ?>
-                <span class="uk-text-danger">*</span>
-                <?php endif; ?>
-                <b><?php echo $this->escape(Text::_($option['option_name'])); ?>:</b><br>
-                <input type="text"
-                    class="uk-input"
+                <label class="uk-form-label uk-text-bold uk-display-block" for="<?php echo $textInputId; ?>">
+                    <?php echo $esc(Text::_($option['option_name'])); ?>
+                    <?php if ($option['required']) : ?>
+                        <span class="uk-text-danger">*</span>
+                    <?php endif; ?>
+                </label>
+                <input id="<?php echo $textInputId; ?>" type="text" class="uk-input"
                     name="product_option[<?php echo $option['productoption_id']; ?>]"
-                    value="<?php echo $option['optionvalue']; ?>"
-                    placeholder="<?php echo $text_option_params->get('place_holder', ''); ?>" />
+                    value="<?php echo $esc((string) ($option['optionvalue'] ?? '')); ?>"
+                    placeholder="<?php echo $esc((string) $text_option_params->get('place_holder', '')); ?>" />
             </div>
         <?php endif; ?>
 
         <?php if ($option['type'] == 'textarea') : ?>
+            <?php $textareaInputId = 'product-option-textarea-' . $productId . '-' . (int) $option['productoption_id']; ?>
             <div id="option-<?php echo $option['productoption_id']; ?>" class="option uk-margin-small-bottom">
-                <?php if ($option['required']) : ?>
-                <span class="uk-text-danger">*</span>
-                <?php endif; ?>
-                <b><?php echo $this->escape(Text::_($option['option_name'])); ?>:</b><br>
-                <textarea class="uk-textarea" name="product_option[<?php echo $option['productoption_id']; ?>]"
-                    cols="20" rows="5"><?php echo $option['optionvalue']; ?></textarea>
+                <label class="uk-form-label uk-text-bold uk-display-block" for="<?php echo $textareaInputId; ?>">
+                    <?php echo $esc(Text::_($option['option_name'])); ?>
+                    <?php if ($option['required']) : ?>
+                        <span class="uk-text-danger">*</span>
+                    <?php endif; ?>
+                </label>
+                <textarea id="<?php echo $textareaInputId; ?>" class="uk-textarea" name="product_option[<?php echo $option['productoption_id']; ?>]"
+                    cols="20" rows="5"><?php echo $esc((string) ($option['optionvalue'] ?? '')); ?></textarea>
             </div>
         <?php endif; ?>
 

@@ -143,10 +143,12 @@ $product_id = (int) $product->j2commerce_product_id;
             <?php $text_option_params = $platform->getRegistry($option['option_params'] ?? '{}'); ?>
             <?php $textInputId = 'child-product-option-text-' . $product_id . '-' . $optionId; ?>
             <div id="child-option-<?php echo $optionId; ?>" class="option mb-3">
-                <?php if ($option['required']) : ?>
-                <span class="required">*</span>
-                <?php endif; ?>
-                <label class="form-label" for="<?php echo $textInputId; ?>"><?php echo htmlspecialchars(Text::_($option['option_name']), ENT_QUOTES, 'UTF-8'); ?>:</label>
+                <label class="form-label fw-semibold pb-1 mb-1" for="<?php echo $textInputId; ?>">
+                    <?php echo htmlspecialchars(Text::_($option['option_name']), ENT_QUOTES, 'UTF-8'); ?>
+                    <?php if ($option['required']) : ?>
+                        <span class="text-danger">*</span>
+                    <?php endif; ?>
+                </label>
                 <input id="<?php echo $textInputId; ?>" type="text" class="form-control"
                     name="product_option[<?php echo $optionId; ?>]"
                     value="<?php echo htmlspecialchars($option['optionvalue'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
@@ -157,10 +159,12 @@ $product_id = (int) $product->j2commerce_product_id;
         <?php if ($option['type'] === 'textarea') : ?>
             <?php $textareaInputId = 'child-product-option-textarea-' . $product_id . '-' . $optionId; ?>
             <div id="child-option-<?php echo $optionId; ?>" class="option mb-3">
-                <?php if ($option['required']) : ?>
-                <span class="required">*</span>
-                <?php endif; ?>
-                <label class="form-label" for="<?php echo $textareaInputId; ?>"><?php echo htmlspecialchars(Text::_($option['option_name']), ENT_QUOTES, 'UTF-8'); ?>:</label>
+                <label class="form-label fw-semibold pb-1 mb-1" for="<?php echo $textareaInputId; ?>">
+                    <?php echo htmlspecialchars(Text::_($option['option_name']), ENT_QUOTES, 'UTF-8'); ?>
+                    <?php if ($option['required']) : ?>
+                        <span class="text-danger">*</span>
+                    <?php endif; ?>
+                </label>
                 <textarea id="<?php echo $textareaInputId; ?>" class="form-control"
                     name="product_option[<?php echo $optionId; ?>]"
                     cols="20" rows="5"><?php echo htmlspecialchars($option['optionvalue'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>

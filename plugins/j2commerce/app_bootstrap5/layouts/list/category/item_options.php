@@ -178,10 +178,12 @@ $optionsSummary = $productHelper::getOptionsSummary($options);
             <?php $text_option_params = $platform->getRegistry($option['option_params'] ?? '{}'); ?>
             <?php $textInputId = 'product-option-text-' . $productId . '-' . $optionId; ?>
             <div id="option-<?php echo $optionId; ?>" class="option mb-3">
-                <?php if ($option['required']) : ?>
-                    <span class="text-danger">*</span>
-                <?php endif; ?>
-                <label class="form-label" for="<?php echo $textInputId; ?>"><?php echo $esc(Text::_($option['option_name'])); ?>:</label>
+                <label class="form-label fw-semibold pb-1 mb-1" for="<?php echo $textInputId; ?>">
+                    <?php echo $esc(Text::_($option['option_name'])); ?>
+                    <?php if ($option['required']) : ?>
+                        <span class="text-danger">*</span>
+                    <?php endif; ?>
+                </label>
                 <input id="<?php echo $textInputId; ?>" type="text" class="form-control"
                        name="product_option[<?php echo $optionId; ?>]"
                        value="<?php echo $esc($option['optionvalue'] ?? ''); ?>"
@@ -192,10 +194,12 @@ $optionsSummary = $productHelper::getOptionsSummary($options);
         <?php if ($option['type'] === 'textarea') : ?>
             <?php $textareaInputId = 'product-option-textarea-' . $productId . '-' . $optionId; ?>
             <div id="option-<?php echo $optionId; ?>" class="option mb-3">
-                <?php if ($option['required']) : ?>
-                    <span class="text-danger">*</span>
-                <?php endif; ?>
-                <label class="form-label" for="<?php echo $textareaInputId; ?>"><?php echo $esc(Text::_($option['option_name'])); ?>:</label>
+                <label class="form-label fw-semibold pb-1 mb-1" for="<?php echo $textareaInputId; ?>">
+                    <?php echo $esc(Text::_($option['option_name'])); ?>
+                    <?php if ($option['required']) : ?>
+                        <span class="text-danger">*</span>
+                    <?php endif; ?>
+                </label>
                 <textarea id="<?php echo $textareaInputId; ?>" class="form-control"
                     name="product_option[<?php echo $optionId; ?>]"
                     cols="20" rows="5"><?php echo $esc($option['optionvalue'] ?? ''); ?></textarea>
