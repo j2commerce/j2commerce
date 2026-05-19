@@ -59,8 +59,8 @@ final class OrderUploadHelper
         $db->setQuery($query);
         $itemRows = $db->loadObjectList() ?: [];
 
-        // Extract mangled tokens for file/image-typed attributes via the shared parser.
-        $mangledTokens = [];
+        // Extract mangled→attribute-type mapping for file/image-typed attributes via the shared parser.
+        $mangledTypeMap = [];
 
         foreach ($itemRows as $itemRow) {
             $raw = (string) ($itemRow->orderitem_attributes ?? '');
@@ -76,20 +76,20 @@ final class OrderUploadHelper
                 $value = $attr->orderitemattribute_value ?? '';
 
                 if (($type === 'file' || $type === 'image') && $value !== '') {
-                    $mangledTokens[] = (string) $value;
+                    $mangledTypeMap[(string) $value] = $type;
                 }
             }
         }
 
-        if (empty($mangledTokens)) {
+        if (empty($mangledTypeMap)) {
             return ['moved' => 0, 'failed' => 0];
         }
 
         // Find matching pending upload rows.
         $uploadQuery = $db->getQuery(true)
-            ->select($db->quoteName(['j2commerce_upload_id', 'saved_name', 'cart_id']))
+            ->select($db->quoteName(['j2commerce_upload_id', 'mangled_name', 'saved_name', 'cart_id']))
             ->from($db->quoteName('#__j2commerce_uploads'))
-            ->whereIn($db->quoteName('mangled_name'), array_values(array_unique($mangledTokens)), ParameterType::STRING)
+            ->whereIn($db->quoteName('mangled_name'), array_keys($mangledTypeMap), ParameterType::STRING)
             ->where($db->quoteName('status') . ' = ' . $db->quote('pending'));
         $db->setQuery($uploadQuery);
         $rows = $db->loadObjectList() ?: [];
@@ -124,14 +124,17 @@ final class OrderUploadHelper
                 $tmpDirsTouched[$tmpDir] = true;
             }
 
-            $update = $db->getQuery(true)
+            $attrType = $mangledTypeMap[$row->mangled_name] ?? 'file';
+            $update   = $db->getQuery(true)
                 ->update($db->quoteName('#__j2commerce_uploads'))
                 ->set($db->quoteName('order_id') . ' = :orderId')
                 ->set($db->quoteName('status') . ' = ' . $db->quote('attached'))
+                ->set($db->quoteName('attribute_type') . ' = :attrType')
                 ->set($db->quoteName('expires_on') . ' = NULL')
                 ->set($db->quoteName('modified_on') . ' = :modOn')
                 ->where($db->quoteName('j2commerce_upload_id') . ' = :pk')
                 ->bind(':orderId', $orderVarchar)
+                ->bind(':attrType', $attrType)
                 ->bind(':modOn', $now)
                 ->bind(':pk', $row->j2commerce_upload_id, ParameterType::INTEGER);
 

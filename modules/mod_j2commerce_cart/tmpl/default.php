@@ -16,6 +16,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
 use Joomla\CMS\Uri\Uri;
@@ -134,12 +135,13 @@ try {
 
                         <?php if (!empty($item->orderitemattributes)) : ?>
                             <div class="cart-item-options mt-1">
-                                <?php foreach ($item->orderitemattributes as $attribute) : ?>
-                                    <small class="d-block text-muted">
-                                        &ndash; <?php echo htmlspecialchars(Text::_($attribute->orderitemattribute_name ?? ''), ENT_QUOTES, 'UTF-8'); ?>:
-                                        <?php echo htmlspecialchars(Text::_($attribute->orderitemattribute_value ?? ''), ENT_QUOTES, 'UTF-8'); ?>
-                                    </small>
-                                <?php endforeach; ?>
+                                <?php echo LayoutHelper::render('orderitem.attributes', [
+                                    'attributes' => $item->orderitemattributes,
+                                    'item'       => $item,
+                                    'context'    => 'cart_module',
+                                    'variant'    => 'compact',
+                                    'framework'  => 'bootstrap5',
+                                ], JPATH_ROOT . '/components/com_j2commerce/layouts'); ?>
                             </div>
                         <?php endif; ?>
 

@@ -301,20 +301,9 @@ class HtmlView extends BaseHtmlView
             // Get items from order (processed with attributes)
             $this->items = $this->order->getItems();
 
-            // Process file upload attributes to show original names
-            $mvcFactory = Factory::getApplication()->bootComponent('com_j2commerce')->getMVCFactory();
-            foreach ($this->items as $item) {
-                if (isset($item->orderitemattributes) && \count($item->orderitemattributes)) {
-                    foreach ($item->orderitemattributes as &$attribute) {
-                        if ($attribute->orderitemattribute_type === 'file') {
-                            $uploadTable = $mvcFactory->createTable('Upload', 'Administrator');
-                            if ($uploadTable && $uploadTable->load(['mangled_name' => $attribute->orderitemattribute_value])) {
-                                $attribute->orderitemattribute_value = $uploadTable->original_name;
-                            }
-                        }
-                    }
-                }
-            }
+            // Upload-name resolution for file/image option uploads happens in
+            // OrderItemAttributeHelper::resolveUploadNames() called by the
+            // canonical layouts/orderitem/attributes.php — do not pre-resolve here.
 
             // Get order details
             $this->taxes    = $this->order->getOrderTaxrates();

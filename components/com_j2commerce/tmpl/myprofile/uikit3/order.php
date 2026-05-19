@@ -177,6 +177,7 @@ $statusName = !empty($order->orderstatus_name) ? Text::_($order->orderstatus_nam
                             'item'       => $lineItem,
                             'context'    => 'myprofile',
                             'variant'    => 'compact',
+                            'framework'  => 'uikit3',
                         ], JPATH_ROOT . '/components/com_j2commerce/layouts'); ?>
                         <?php endif; ?>
                     </td>

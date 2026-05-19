@@ -100,6 +100,7 @@ $grandTotalValue = $totals['grandtotal']['value'] ?? '';
                                     'item'       => $item,
                                     'context'    => 'checkout',
                                     'variant'    => 'compact',
+                                    'framework'  => 'uikit3',
                                 ], JPATH_ROOT . '/components/com_j2commerce/layouts'); ?>
                             <?php endif; ?>
                             <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterDisplayLineItemTitle', [$item, $this->order, &$this->params]); ?>
