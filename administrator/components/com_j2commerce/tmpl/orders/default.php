@@ -133,9 +133,16 @@ $dateFormat = ComponentHelper::getParams('com_j2commerce')->get('date_format', '
                                                     <span class="fas fa-scissors fa-cut text-warning" aria-hidden="true"></span>
                                                 </span>
                                             <?php endif; ?>
-                                            <?php if (!empty($item->upload_count) && (int) $item->upload_count > 0) : ?>
-                                                <span class="clickTooltip ms-1" role="button" tabindex="0" style="cursor:pointer;" data-bs-toggle="tooltip" data-bs-trigger="click" data-bs-placement="top" title="<?php echo $this->escape(Text::plural('COM_J2COMMERCE_ORDER_HAS_N_FILES', (int) $item->upload_count)); ?>">
-                                                    <span class="fas fa-paperclip text-info" aria-hidden="true"></span>
+                                            <?php $fileCount = (int) ($item->file_upload_count ?? 0); ?>
+                                            <?php $imageCount = (int) ($item->image_upload_count ?? 0); ?>
+                                            <?php if ($fileCount > 0) : ?>
+                                                <span class="clickTooltip ms-1" role="button" tabindex="0" style="cursor:pointer;" data-bs-toggle="tooltip" data-bs-trigger="click" data-bs-placement="top" title="<?php echo $this->escape(Text::plural('COM_J2COMMERCE_ORDER_HAS_N_FILES', $fileCount)); ?>">
+                                                    <span class="fa-solid fa-paperclip text-info" aria-hidden="true"></span>
+                                                </span>
+                                            <?php endif; ?>
+                                            <?php if ($imageCount > 0) : ?>
+                                                <span class="clickTooltip ms-1" role="button" tabindex="0" style="cursor:pointer;" data-bs-toggle="tooltip" data-bs-trigger="click" data-bs-placement="top" title="<?php echo $this->escape(Text::plural('COM_J2COMMERCE_ORDER_HAS_N_IMAGES', $imageCount)); ?>">
+                                                    <span class="fa-solid fa-image text-info" aria-hidden="true"></span>
                                                 </span>
                                             <?php endif; ?>
                                         </div>
@@ -145,9 +152,16 @@ $dateFormat = ComponentHelper::getParams('com_j2commerce')->get('date_format', '
                                                 <span class="fas fa-scissors fa-cut text-warning" aria-hidden="true"></span>
                                             </span>
                                         <?php endif; ?>
-                                        <?php if (!empty($item->upload_count) && (int) $item->upload_count > 0) : ?>
-                                            <span class="clickTooltip ms-1" role="button" tabindex="0" style="cursor:pointer;" data-bs-toggle="tooltip" data-bs-trigger="click" data-bs-placement="top" title="<?php echo $this->escape(Text::plural('COM_J2COMMERCE_ORDER_HAS_N_FILES', (int) $item->upload_count)); ?>">
-                                                <span class="fas fa-paperclip text-info" aria-hidden="true"></span>
+                                        <?php $fileCount = (int) ($item->file_upload_count ?? 0); ?>
+                                        <?php $imageCount = (int) ($item->image_upload_count ?? 0); ?>
+                                        <?php if ($fileCount > 0) : ?>
+                                            <span class="clickTooltip ms-1" role="button" tabindex="0" style="cursor:pointer;" data-bs-toggle="tooltip" data-bs-trigger="click" data-bs-placement="top" title="<?php echo $this->escape(Text::plural('COM_J2COMMERCE_ORDER_HAS_N_FILES', $fileCount)); ?>">
+                                                <span class="fa-solid fa-paperclip text-info" aria-hidden="true"></span>
+                                            </span>
+                                        <?php endif; ?>
+                                        <?php if ($imageCount > 0) : ?>
+                                            <span class="clickTooltip ms-1" role="button" tabindex="0" style="cursor:pointer;" data-bs-toggle="tooltip" data-bs-trigger="click" data-bs-placement="top" title="<?php echo $this->escape(Text::plural('COM_J2COMMERCE_ORDER_HAS_N_IMAGES', $imageCount)); ?>">
+                                                <span class="fa-solid fa-image text-info" aria-hidden="true"></span>
                                             </span>
                                         <?php endif; ?>
                                     <?php endif; ?>

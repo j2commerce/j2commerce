@@ -186,11 +186,16 @@ class OrdersModel extends ListModel
             ' AND ' . $db->quoteName('od.discount_type') . ' = ' . $db->quote('coupon')
         );
 
-        // Count of attached customer-uploaded files per order (paperclip indicator)
-        $uploadCountSql = '(SELECT COUNT(*) FROM ' . $db->quoteName('#__j2commerce_uploads', 'u_pc')
+        // Counts of attached customer uploads per order, split by attribute_type for icon indicators
+        $whereAttached = ' FROM ' . $db->quoteName('#__j2commerce_uploads', 'u_pc')
             . ' WHERE ' . $db->quoteName('u_pc.order_id') . ' = ' . $db->quoteName('a.order_id')
-            . ' AND ' . $db->quoteName('u_pc.status') . ' = ' . $db->quote('attached') . ')';
-        $query->select($uploadCountSql . ' AS ' . $db->quoteName('upload_count'));
+            . ' AND ' . $db->quoteName('u_pc.status') . ' = ' . $db->quote('attached');
+        $fileCountSql  = '(SELECT COUNT(*)' . $whereAttached
+            . ' AND ' . $db->quoteName('u_pc.attribute_type') . ' = ' . $db->quote('file') . ')';
+        $imageCountSql = '(SELECT COUNT(*)' . $whereAttached
+            . ' AND ' . $db->quoteName('u_pc.attribute_type') . ' = ' . $db->quote('image') . ')';
+        $query->select($fileCountSql . ' AS ' . $db->quoteName('file_upload_count'));
+        $query->select($imageCountSql . ' AS ' . $db->quoteName('image_upload_count'));
 
         // Join order shipping for shipping info
         $query->select([

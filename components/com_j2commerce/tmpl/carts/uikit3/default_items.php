@@ -86,6 +86,7 @@ $checkoutPriceDisplay = $this->params->get('checkout_price_display_options', 0);
                                             'item'       => $item,
                                             'context'    => 'cart',
                                             'variant'    => 'full',
+                                            'framework'  => 'uikit3',
                                         ], JPATH_ROOT . '/components/com_j2commerce/layouts'); ?>
                                     <?php endif; ?>
 
