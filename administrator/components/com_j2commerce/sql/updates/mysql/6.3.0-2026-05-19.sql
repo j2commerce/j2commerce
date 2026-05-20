@@ -6,5 +6,7 @@
 -- mime_type is the wrong proxy (a file-type option may hold an image-mime file).
 
 ALTER TABLE `#__j2commerce_uploads`
-    ADD COLUMN `attribute_type` ENUM('file','image') NOT NULL DEFAULT 'file' AFTER `status`,
-    ADD INDEX `idx_attribute_type` (`attribute_type`);
+    ADD COLUMN `attribute_type` ENUM('file','image') NOT NULL DEFAULT 'file' AFTER `status` /** CAN FAIL **/;
+
+ALTER TABLE `#__j2commerce_uploads`
+    ADD INDEX `idx_attribute_type` (`attribute_type`) /** CAN FAIL **/;

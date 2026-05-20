@@ -9,5 +9,4 @@
 -- parity with the install.mysql.utf8.sql schema.
 --
 
-/** CAN FAIL **/
-ALTER TABLE `#__j2commerce_shippingmethods` ADD COLUMN `params` LONGTEXT NULL AFTER `shipping_method_type`;
+ALTER TABLE `#__j2commerce_shippingmethods` ADD COLUMN `params` LONGTEXT NULL AFTER `shipping_method_type` /** CAN FAIL **/;
