@@ -1307,6 +1307,25 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(function(e) { console.error('Shipping selection error:', e); });
     });
 
+    // === PAYMENT RADIO CHANGE: save selection to session + refresh sidecart ===
+    document.addEventListener('change', function(e) {
+        var radio = e.target;
+        if (radio.type !== 'radio' || radio.name !== 'payment_plugin') return;
+
+        var formData = new FormData();
+        formData.append('option', 'com_j2commerce');
+        formData.append('task', 'checkout.savePaymentSelection');
+        formData.append(token, '1');
+        formData.append('payment_plugin', radio.value);
+
+        fetch(baseUrl, { method: 'POST', body: formData, headers: {'X-Requested-With': 'XMLHttpRequest'} })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) refreshSidecart();
+            })
+            .catch(function(e) { console.error('Payment selection error:', e); });
+    });
+
     // === SIDECART REFRESH ===
     function refreshSidecart() {
         var formData = new FormData();

@@ -1678,6 +1678,42 @@ class CheckoutController extends BaseController
     }
 
     // =========================================================================
+    // AJAX: Save Payment Selection
+    // =========================================================================
+
+    public function savePaymentSelection(): void
+    {
+        UtilitiesHelper::sendNoCacheHeaders();
+        header('Content-Type: application/json; charset=utf-8');
+
+        $json = [];
+
+        if (!$this->validateAjaxToken()) {
+            $json['success'] = false;
+            $json['message'] = Text::_('JINVALID_TOKEN');
+            echo json_encode($json);
+            $this->app->close();
+
+            return;
+        }
+
+        try {
+            $session       = $this->app->getSession();
+            $paymentPlugin = $this->input->getString('payment_plugin', '');
+
+            $session->set('payment_method', $paymentPlugin, 'j2commerce');
+
+            $json['success'] = true;
+        } catch (\Exception $e) {
+            $json['success'] = false;
+            $json['message'] = $e->getMessage();
+        }
+
+        echo json_encode($json);
+        $this->app->close();
+    }
+
+    // =========================================================================
     // AJAX: Sidecart Refresh
     // =========================================================================
 

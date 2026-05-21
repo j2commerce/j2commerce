@@ -465,7 +465,7 @@ class CartOrder
                 // Allow plugins to modify item price and add discounts
                 // onJ2CommerceGetDiscountedPrice signature: (&$price, &$item, $add_totals, &$order)
                 // Plugins can modify $price by reference and set $item->orderitem_discount
-                J2CommerceHelper::plugin()->event('onJ2CommerceGetDiscountedPrice', [
+                J2CommerceHelper::plugin()->event('GetDiscountedPrice', [
                     &$itemPrice,
                     &$item,
                     true, // $add_totals - accumulate discount totals
@@ -523,7 +523,7 @@ class CartOrder
                 $itemPrice = (float) ($item->price ?? $item->variant_price ?? 0) + (float) ($item->option_price ?? 0);
 
                 // Allow plugins to modify item price even for items without pricing object
-                J2CommerceHelper::plugin()->event('onJ2CommerceGetDiscountedPrice', [
+                J2CommerceHelper::plugin()->event('GetDiscountedPrice', [
                     &$itemPrice,
                     &$item,
                     true,
@@ -593,75 +593,13 @@ class CartOrder
 
     private function getCustomerGeozones(): array
     {
-        $session   = Factory::getApplication()->getSession();
-        $countryId = 0;
-        $zoneId    = 0;
-        $postcode  = '';
+        $address = TaxHelper::getCustomerAddress();
 
-        // Priority 1: saved shipping address
-        $addressId = (int) $session->get('shipping_address_id', 0, 'j2commerce');
+        $this->customerCountryId = (int) $address->country_id;
+        $this->customerZoneId    = (int) $address->zone_id;
+        $this->customerPostcode  = (string) $address->postcode;
 
-        if ($addressId > 0) {
-            $db    = Factory::getContainer()->get(DatabaseInterface::class);
-            $query = $db->getQuery(true)
-                ->select([$db->quoteName('country_id'), $db->quoteName('zone_id'), $db->quoteName('zip')])
-                ->from($db->quoteName('#__j2commerce_addresses'))
-                ->where($db->quoteName('j2commerce_address_id') . ' = :addrId')
-                ->bind(':addrId', $addressId, ParameterType::INTEGER);
-
-            $db->setQuery($query);
-            $address = $db->loadObject();
-
-            if ($address) {
-                $countryId = (int) ($address->country_id ?? 0);
-                $zoneId    = (int) ($address->zone_id ?? 0);
-                $postcode  = (string) ($address->zip ?? '');
-            }
-        }
-
-        // Priority 2: guest shipping address
-        if ($countryId === 0) {
-            $guestShipping = $session->get('guest_shipping', [], 'j2commerce');
-
-            if (!empty($guestShipping) && \is_array($guestShipping)) {
-                $countryId = (int) ($guestShipping['country_id'] ?? 0);
-                $zoneId    = (int) ($guestShipping['zone_id'] ?? 0);
-                $postcode  = (string) ($guestShipping['zip'] ?? $guestShipping['postcode'] ?? '');
-            }
-        }
-
-        // Priority 3: estimate flow flat session keys
-        if ($countryId === 0) {
-            $countryId = (int) $session->get('shipping_country_id', 0, 'j2commerce');
-            $zoneId    = (int) $session->get('shipping_zone_id', 0, 'j2commerce');
-            $postcode  = (string) $session->get('shipping_postcode', '', 'j2commerce');
-        }
-
-        // Cache resolved address for downstream tax-event dispatch.
-        $this->customerCountryId = $countryId;
-        $this->customerZoneId    = $zoneId;
-        $this->customerPostcode  = $postcode;
-
-        if ($countryId === 0) {
-            return [];
-        }
-
-        // Query geozonerules for matching geozones
-        $db    = Factory::getContainer()->get(DatabaseInterface::class);
-        $query = $db->getQuery(true)
-            ->select('DISTINCT ' . $db->quoteName('geozone_id'))
-            ->from($db->quoteName('#__j2commerce_geozonerules'))
-            ->where($db->quoteName('country_id') . ' = :countryId')
-            ->where(
-                '(' . $db->quoteName('zone_id') . ' = 0 OR '
-                . $db->quoteName('zone_id') . ' = :zoneId)'
-            )
-            ->bind(':countryId', $countryId, ParameterType::INTEGER)
-            ->bind(':zoneId', $zoneId, ParameterType::INTEGER);
-
-        $db->setQuery($query);
-
-        return $db->loadColumn() ?: [];
+        return TaxHelper::getCustomerGeozones($address);
     }
 
     /**
@@ -685,69 +623,18 @@ class CartOrder
      */
     private function getTaxRatesForProfile(int $taxprofileId, array $geozoneIds): array
     {
-        $ratesets = [];
+        $address = (object) [
+            'country_id' => $this->customerCountryId,
+            'zone_id'    => $this->customerZoneId,
+            'postcode'   => $this->customerPostcode,
+        ];
 
-        $taxInfo = $this->getTaxRateForGeozone($taxprofileId, $geozoneIds);
-
-        if ($taxInfo !== null) {
-            $rate                         = new \stdClass();
-            $rate->j2commerce_taxrate_id  = (int) ($taxInfo->j2commerce_taxrate_id ?? 0);
-            $rate->name                   = (string) ($taxInfo->taxrate_name ?? '');
-            $rate->taxrate_name           = $rate->name;
-            $rate->rate                   = (float) ($taxInfo->tax_percent ?? 0);
-            $rate->tax_percent            = $rate->rate;
-            $rate->taxprofile_name        = (string) ($taxInfo->taxprofile_name ?? '');
-            $ratesets[]                   = $rate;
-        }
-
-        $event = J2CommerceHelper::plugin()->event('AfterGetTaxRateItems', [
-            'result'        => $ratesets,
-            'address_type'  => 'shipping',
-            'country_id'    => $this->customerCountryId,
-            'zone_id'       => $this->customerZoneId,
-            'postcode'      => $this->customerPostcode,
-            'taxprofile_id' => $taxprofileId,
-        ]);
-
-        $merged = $event->getEventResult();
-
-        return \is_array($merged) ? $merged : $ratesets;
+        return TaxHelper::getTaxRatesForProfile($taxprofileId, $geozoneIds, $address);
     }
 
     private function getTaxRateForGeozone(int $taxprofileId, array $geozoneIds): ?object
     {
-        if (empty($geozoneIds)) {
-            return null;
-        }
-
-        $db    = Factory::getContainer()->get(DatabaseInterface::class);
-        $query = $db->getQuery(true)
-            ->select([
-                $db->quoteName('rt.j2commerce_taxrate_id'),
-                $db->quoteName('rt.taxrate_name'),
-                $db->quoteName('rt.tax_percent'),
-                $db->quoteName('rt.geozone_id'),
-                $db->quoteName('tp.taxprofile_name'),
-            ])
-            ->from($db->quoteName('#__j2commerce_taxrules', 'tr'))
-            ->join(
-                'INNER',
-                $db->quoteName('#__j2commerce_taxrates', 'rt'),
-                $db->quoteName('rt.j2commerce_taxrate_id') . ' = ' . $db->quoteName('tr.taxrate_id')
-            )
-            ->join(
-                'INNER',
-                $db->quoteName('#__j2commerce_taxprofiles', 'tp'),
-                $db->quoteName('tp.j2commerce_taxprofile_id') . ' = ' . $db->quoteName('tr.taxprofile_id')
-            )
-            ->where($db->quoteName('tr.taxprofile_id') . ' = :profileId')
-            ->whereIn($db->quoteName('rt.geozone_id'), array_map('intval', $geozoneIds))
-            ->bind(':profileId', $taxprofileId, ParameterType::INTEGER)
-            ->order($db->quoteName('tr.ordering') . ' ASC');
-
-        $db->setQuery($query, 0, 1);
-
-        return $db->loadObject() ?: null;
+        return TaxHelper::getTaxRateForGeozone($taxprofileId, $geozoneIds);
     }
 
     /**
@@ -1367,16 +1254,44 @@ class CartOrder
             ];
         }
 
-        // Add cart-level discounts (bulk discounts, etc.) from plugins
-        if ($this->discount_cart > 0) {
-            $bulkDiscountTitle = $this->coupon_discount_amounts['bulk_discount_title']
+        // Add cart-level discounts from plugins — one line per discount code with its own title.
+        // Each plugin that calls addOrderDiscounts() / increase_coupon_discount_amount() can set
+        // $order->coupon_discount_amounts['<code>_title'] to override the default label.
+        $renderedAmount = 0.0;
+
+        foreach ($this->coupon_discount_amounts as $code => $amount) {
+            if (!\is_string($code) || str_ends_with($code, '_title')) {
+                continue;
+            }
+
+            if (!is_numeric($amount) || (float) $amount <= 0) {
+                continue;
+            }
+
+            $title = $this->coupon_discount_amounts[$code . '_title']
+                ?? ($code === 'bulk_discount' ? ($this->coupon_discount_amounts['bulk_discount_title'] ?? null) : null)
                 ?? Text::_('COM_J2COMMERCE_CART_BULK_DISCOUNT');
 
             $discounts[] = (object) [
                 'discount_type'   => 'cart_discount',
-                'discount_code'   => 'bulk_discount',
-                'discount_title'  => $bulkDiscountTitle,
-                'discount_amount' => $this->discount_cart,
+                'discount_code'   => $code,
+                'discount_title'  => $title,
+                'discount_amount' => (float) $amount,
+            ];
+
+            $renderedAmount += (float) $amount;
+        }
+
+        // Back-compat: legacy plugins may bump discount_cart without writing a per-code entry.
+        $unrendered = $this->discount_cart - $renderedAmount;
+
+        if ($unrendered > 0.001) {
+            $discounts[] = (object) [
+                'discount_type'  => 'cart_discount',
+                'discount_code'  => 'bulk_discount',
+                'discount_title' => $this->coupon_discount_amounts['bulk_discount_title']
+                    ?? Text::_('COM_J2COMMERCE_CART_BULK_DISCOUNT'),
+                'discount_amount' => $unrendered,
             ];
         }
 
@@ -1950,6 +1865,7 @@ class CartOrder
                 'title'      => $coupon->coupon_name ?? $coupon->coupon_code ?? '',
                 'code'       => $coupon->coupon_code ?? '',
                 'amount'     => (float) ($coupon->discount ?? 0),
+                'tax'        => 0.0,
                 'value_type' => 'fixed',
             ];
         }
@@ -1961,6 +1877,33 @@ class CartOrder
                 'title'      => $voucher->voucher_name ?? $voucher->voucher_code ?? '',
                 'code'       => $voucher->voucher_code ?? '',
                 'amount'     => (float) ($voucher->discount ?? 0),
+                'tax'        => 0.0,
+                'value_type' => 'fixed',
+            ];
+        }
+
+        // Persist plugin cart-level discounts (paymentdiscount, bulkdiscount, bogoboost, etc.).
+        // Each code in coupon_discount_amounts that isn't a *_title sidecar and has a positive
+        // amount gets its own orderdiscounts row, using the optional <code>_title sidecar value.
+        foreach ($this->coupon_discount_amounts as $code => $amount) {
+            if (!\is_string($code) || str_ends_with($code, '_title')) {
+                continue;
+            }
+
+            if (!is_numeric($amount) || (float) $amount <= 0) {
+                continue;
+            }
+
+            $title = (string) ($this->coupon_discount_amounts[$code . '_title']
+                ?? ($code === 'bulk_discount' ? Text::_('COM_J2COMMERCE_CART_BULK_DISCOUNT') : $code));
+
+            $allDiscounts[] = [
+                'type'       => 'cart_discount',
+                'entity_id'  => 0,
+                'title'      => $title,
+                'code'       => $code,
+                'amount'     => (float) $amount,
+                'tax'        => (float) ($this->coupon_discount_tax_amounts[$code] ?? 0),
                 'value_type' => 'fixed',
             ];
         }
@@ -1985,7 +1928,7 @@ class CartOrder
                     $db->quote($userEmail),
                     $userId,
                     (float) $discount['amount'],
-                    0, // discount_tax
+                    (float) ($discount['tax'] ?? 0),
                     $db->quote('{}'),
                 ]));
 
@@ -2335,7 +2278,7 @@ class CartOrder
     protected function calculateDiscountTotals(): void
     {
         // Allow plugins to add discount totals (bulk discounts, volume discounts, etc.)
-        J2CommerceHelper::plugin()->event('onJ2CommerceCalculateDiscountTotals', [$this]);
+        J2CommerceHelper::plugin()->event('CalculateDiscountTotals', [$this]);
 
         // If plugins added discounts, recalculate tax on discounted amount
         if ($this->discount_cart > 0) {
