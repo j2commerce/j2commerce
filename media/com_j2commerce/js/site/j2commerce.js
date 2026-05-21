@@ -1224,6 +1224,10 @@ function get_matching_variant(variants, selected) {
     return J2Commerce.getMatchingVariant(variants, selected);
 }
 
+function doAjaxPrice(productId, elementId) {
+    return J2Commerce.doAjaxPrice(productId, elementId);
+}
+
 // =========================================================================
 // INITIALIZATION
 // =========================================================================
