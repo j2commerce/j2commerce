@@ -1006,6 +1006,7 @@ class Flexivariable
         $return['is_main_as_thum'] = $isMainAsThumb;
 
         $return['sku']             = $variant->sku;
+        $return['upc']             = $variant->upc ?? '';
         $return['quantity']        = (float) $quantity;
         $return['price']           = $variant->price;
         $return['availability']    = $variant->availability;
