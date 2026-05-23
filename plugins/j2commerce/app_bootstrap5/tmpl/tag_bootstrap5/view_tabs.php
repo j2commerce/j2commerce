@@ -25,6 +25,7 @@ $hasLongDesc  = $this->params->get('item_show_ldesc', 1) && !empty(trim(strip_ta
 $hasDescription = $hasShortDesc || $hasLongDesc;
 $set_specification_active = !$hasDescription;
 ?>
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductContent', [$this->product, $this->context])->getArgument('html', ''); ?>
 
 <div class="j2commerce-product-tabs">
     <ul class="nav nav-tabs d-flex justify-content-center border-0 rounded-0 bg-transparent" id="j2commerce-product-detail-tab" role="tablist">
