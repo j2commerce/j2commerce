@@ -46,7 +46,7 @@ $esc         = static fn(string $value): string => htmlspecialchars($value, ENT_
             <span class="ih-title"><?php echo Text::_('COM_J2COMMERCE_UPLOAD_ADD_PHOTO'); ?></span>
             <span class="ih-hint"><?php echo $esc($hintText); ?></span>
         </span>
-        <span class="ih-cta" data-icon-replace="fa-solid fa-arrows-rotate">
+        <span class="ih-cta" data-icon-replace="fa-solid fa-arrows-rotate me-1">
             <span class="fa-solid fa-upload me-1" aria-hidden="true"></span>
             <?php echo Text::_('COM_J2COMMERCE_PRODUCT_OPTION_CHOOSE_IMAGE'); ?>
         </span>

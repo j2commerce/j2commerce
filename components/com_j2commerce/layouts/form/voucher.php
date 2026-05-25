@@ -23,6 +23,12 @@ $lang = Factory::getApplication()->getLanguage();
 $lang->load('com_j2commerce', JPATH_SITE)
     || $lang->load('com_j2commerce', JPATH_SITE . '/components/com_j2commerce');
 
+// Normalize framework (caller passes 'framework' from its own context) — needed by the
+// asset block below, so it MUST be computed before addScriptOptions reads $isUk.
+$rawFramework = $displayData['framework'] ?? 'bootstrap5';
+$framework    = ($rawFramework === 'uikit3' || $rawFramework === 'uikit') ? 'uikit' : 'bootstrap5';
+$isUk         = ($framework === 'uikit');
+
 // Self-register assets (once per request, no matter how many instances)
 static $assetsRegistered = false;
 if (!$assetsRegistered) {
@@ -44,14 +50,37 @@ if (!$assetsRegistered) {
             'removeVoucher'=> Text::_('COM_J2COMMERCE_REMOVE_VOUCHER'),
             'remove'       => Text::_('COM_J2COMMERCE_REMOVE'),
         ],
+        'framework' => $isUk ? 'uikit' : 'bootstrap5',
+        'classes'   => $isUk ? [
+            'appliedRow'     => 'uk-flex uk-flex-middle uk-flex-between uk-padding-small',
+            'badge'          => 'uk-label uk-label-success',
+            'iconTag'        => 'icon-tag uk-margin-small-right',
+            'removeBtnBase'  => 'uk-button uk-button-link uk-text-danger',
+            'input'          => 'uk-input',
+            'inputWrap'      => 'uk-flex uk-flex-stretch',
+            'inputInner'     => 'uk-width-expand',
+            'applyBtnBase'   => 'uk-button uk-button-default',
+            'fieldError'     => 'j2c-field-error uk-text-danger uk-text-small uk-margin-small-top',
+            'accordionBadge' => 'uk-label uk-label-success uk-margin-small-left',
+        ] : [
+            'appliedRow'     => 'd-flex align-items-center justify-content-between py-1',
+            'badge'          => 'badge bg-success',
+            'iconTag'        => 'icon-tag me-1',
+            'removeBtnBase'  => 'btn btn-sm btn-link text-danger p-0',
+            'input'          => 'form-control',
+            'inputWrap'      => 'input-group',
+            'inputInner'     => 'input-group_inner',
+            'applyBtnBase'   => 'btn btn-outline-secondary',
+            'fieldError'     => 'j2c-field-error text-danger small mt-1',
+            'accordionBadge' => 'badge bg-success ms-2',
+        ],
+        'accordion' => $isUk
+            ? ['itemSelector' => 'li', 'headerSelector' => '.uk-accordion-title']
+            : ['itemSelector' => '.accordion-item', 'headerSelector' => '.accordion-button'],
     ]);
     Text::script('COM_J2COMMERCE_LOADING');
     $assetsRegistered = true;
 }
-
-// Normalize framework: caller passes 'framework' key from its own context
-$rawFramework = $displayData['framework'] ?? 'bootstrap5';
-$framework = ($rawFramework === 'uikit3' || $rawFramework === 'uikit') ? 'uikit' : 'bootstrap5';
 
 // Compute discount label (framework-agnostic) — passed into framework files so they stay purely presentational
 $voucherCode  = $displayData['voucherCode'] ?? '';

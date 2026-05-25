@@ -110,7 +110,7 @@
         // submit handler intercepts label clicks. We open the picker explicitly.
         zone.removeAttribute('for');
 
-        const originalTitleHTML = title ? title.innerHTML : '';
+        const originalTitleNodes = title ? Array.from(title.childNodes).map(n => n.cloneNode(true)) : [];
 
         zone.addEventListener('click', e => {
             if (e.target === input) return;
@@ -125,7 +125,7 @@
             if (err) {
                 setStatus(zone, err, 'error');
                 zone.classList.remove('has-file');
-                if (title) title.innerHTML = originalTitleHTML;
+                if (title) title.replaceChildren(...originalTitleNodes.map(n => n.cloneNode(true)));
                 return;
             }
             zone.classList.add('has-file');
@@ -173,9 +173,9 @@
         // submit handler intercepts label clicks. We open the picker explicitly.
         hero.removeAttribute('for');
 
-        const originalTitle = title ? title.textContent : '';
-        const originalHint  = hint ? hint.textContent : '';
-        const originalCta   = cta ? cta.innerHTML : '';
+        const originalTitle    = title ? title.textContent : '';
+        const originalHint     = hint ? hint.textContent : '';
+        const originalCtaNodes = cta ? Array.from(cta.childNodes).map(n => n.cloneNode(true)) : [];
 
         hero.addEventListener('click', e => {
             if (e.target === input) return;
@@ -193,7 +193,7 @@
                 setStatus(hero, err, 'error');
                 if (title) title.textContent = originalTitle;
                 if (hint)  hint.textContent  = originalHint;
-                if (cta)   cta.innerHTML     = originalCta;
+                if (cta)   cta.replaceChildren(...originalCtaNodes.map(n => n.cloneNode(true)));
                 return;
             }
 
@@ -213,13 +213,17 @@
             if (hint)  hint.textContent  = bytesToMB(file.size) + ' MB · ' + t('COM_J2COMMERCE_UPLOAD_READY', 'ready to upload');
 
             if (cta) {
-                // Build the "Change Image" CTA with a refresh icon
-                cta.innerHTML = '';
                 const i = document.createElement('span');
-                i.className = (cta.dataset.iconReplace || 'fa-solid fa-arrows-rotate') + ' me-1';
+                if (cta.dataset.iconReplaceUk) {
+                    i.setAttribute('uk-icon', 'icon: ' + cta.dataset.iconReplaceUk);
+                    if (cta.dataset.iconReplaceClass) {
+                        i.className = cta.dataset.iconReplaceClass;
+                    }
+                } else {
+                    i.className = cta.dataset.iconReplace || 'fa-solid fa-arrows-rotate';
+                }
                 i.setAttribute('aria-hidden', 'true');
-                cta.appendChild(i);
-                cta.appendChild(document.createTextNode(' ' + t('COM_J2COMMERCE_PRODUCT_OPTION_CHANGE_IMAGE', 'Change Image')));
+                cta.replaceChildren(i, document.createTextNode(' ' + t('COM_J2COMMERCE_PRODUCT_OPTION_CHANGE_IMAGE', 'Change Image')));
             }
 
             uploadFile(file, hero);

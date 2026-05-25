@@ -34,20 +34,20 @@ $baseVersion = $matches[1];
 $baseVersionDashed = str_replace('.', '-', $baseVersion);
 $buildNum = 1;
 
-// Check both old com_ and new pkg_ patterns
+// Match legacy `_beta_{N}` and current `-{N}` filename formats so the build
+// number keeps climbing across the naming switch.
 foreach (['com_j2commerce_', 'pkg_j2commerce_'] as $prefix) {
-    $existingFiles = glob($outputDir . '/' . $prefix . $baseVersionDashed . '_beta_*.zip');
-    if ($existingFiles) {
-        foreach ($existingFiles as $f) {
-            if (preg_match('/_beta_(\d+)\.zip$/', $f, $m)) {
-                $buildNum = max($buildNum, (int) $m[1] + 1);
-            }
+    $base = $outputDir . '/' . $prefix . $baseVersionDashed;
+    foreach (array_merge(glob($base . '_beta_*.zip') ?: [], glob($base . '-*.zip') ?: []) as $f) {
+        if (preg_match('/(?:_beta_|-)(\d+)\.zip$/', $f, $m)) {
+            $buildNum = max($buildNum, (int) $m[1] + 1);
         }
     }
 }
 
-// Version used in manifests — NO build number (per PRD)
-$version = $baseVersion;
+// Version used in manifests — base version + build number (e.g. 6.3.2.3) so
+// 3rd-party extensions can identify the exact non-official build.
+$version = $baseVersion . '.' . $buildNum;
 
 $excludePatterns = [
     '.git', '.gitignore', '.github', '.claude',
@@ -601,7 +601,7 @@ if (!empty($conflictFiles)) {
 
 echo "Conflict marker check OK\n";
 
-$finalZipName = "pkg_j2commerce_{$baseVersionDashed}_beta_{$buildNum}.zip";
+$finalZipName = "pkg_j2commerce_{$baseVersionDashed}-{$buildNum}.zip";
 $finalZipPath = $outputDir . '/' . $finalZipName;
 echo "\nBuilding: {$finalZipName}\n\n";
 
