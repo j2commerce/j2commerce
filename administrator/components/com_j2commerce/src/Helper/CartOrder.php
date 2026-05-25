@@ -867,16 +867,17 @@ class CartOrder
     /**
      * Add a fee to the order (stored in session, keyed to prevent duplicates).
      */
-    public static function addFee(string $key, float $amount, string $label, float $tax = 0.0): void
+    public static function addFee(string $key, float $amount, string $label, float $tax = 0.0, int $taxClassId = 0): void
     {
         $session = Factory::getApplication()->getSession();
         $fees    = $session->get('order_fees', [], 'j2commerce');
 
         $fees[$key] = [
-            'name'   => $label,
-            'amount' => $amount,
-            'tax'    => $tax,
-            'plugin' => $key,
+            'name'          => $label,
+            'amount'        => $amount,
+            'tax'           => $tax,
+            'taxprofile_id' => $taxClassId,
+            'plugin'        => $key,
         ];
 
         $session->set('order_fees', $fees, 'j2commerce');
@@ -899,7 +900,8 @@ class CartOrder
     public function add_fee(string $name, float $amount, bool $taxable = false, $taxClassId = 0): void
     {
         $key = 'payment_' . $this->orderpayment_type;
-        self::addFee($key, $amount, $name);
+        // tax stays 0.0 for v1 (tax-free surcharge); taxClassId stored for forward use
+        self::addFee($key, $amount, $name, 0.0, (int) $taxClassId);
     }
 
     /** Legacy compatibility — called by payment plugins via $order->get_payment_method(). */
@@ -915,6 +917,49 @@ class CartOrder
         foreach ($fees as $fee) {
             $this->order_surcharge += (float) $fee->amount;
             $this->order_total += (float) $fee->amount + (float) $fee->tax;
+        }
+    }
+
+    /**
+     * Apply the selected payment method's surcharge.
+     *
+     * Call AFTER orderpayment_type is set (post payment-method selection). Rolls back any
+     * prior payment_* fees (handles method-switching + the stale fee the constructor's
+     * loadFees() folded in), dispatches onJ2CommerceCalculateFees so the selected plugin
+     * calls add_fee(), then folds the new fee into the running total.
+     */
+    public function applyPaymentSurcharge(): void
+    {
+        $session = Factory::getApplication()->getSession();
+        $fees    = $session->get('order_fees', [], 'j2commerce');
+
+        // Roll back ALL prior payment_* fees from the live total + drop from session
+        foreach ($fees as $key => $fee) {
+            if (str_starts_with((string) $key, 'payment_')) {
+                $this->order_surcharge -= (float) ($fee['amount'] ?? 0);
+                $this->order_total -= (float) ($fee['amount'] ?? 0) + (float) ($fee['tax'] ?? 0);
+                unset($fees[$key]);
+            }
+        }
+
+        $session->set('order_fees', $fees, 'j2commerce');
+
+        if ($this->orderpayment_type === '') {
+            return;
+        }
+
+        // Selected payment plugin's onCalculateFees() calls $order->add_fee() → session
+        J2CommerceHelper::plugin()->event('CalculateFees', [$this->orderpayment_type, $this]);
+
+        // Fold the freshly-added payment fee into the total (match by ->plugin key)
+        $key = 'payment_' . $this->orderpayment_type;
+
+        foreach ($this->get_fees() as $fee) {
+            if (($fee->plugin ?? '') === $key) {
+                $this->order_surcharge += (float) $fee->amount;
+                $this->order_total += (float) $fee->amount + (float) $fee->tax;
+                break;
+            }
         }
     }
 

@@ -1294,6 +1294,7 @@ class CheckoutController extends BaseController
 
         if (!$errors && $order) {
             $order->orderpayment_type = $orderpaymentType;
+            $order->applyPaymentSurcharge();
 
             try {
                 $savedOrder = $order->saveOrder();
