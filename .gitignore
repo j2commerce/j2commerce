@@ -314,9 +314,6 @@ components/com_j2commerce/layouts/app_uikit/list/tag/item_variablesubscriptionpr
 components/com_j2commerce/layouts/app_uikit/list/tag/item_variablesubscriptionproductoptions.php
 # Non-core site templates (created by plugins on install — do NOT whitelist)
 components/com_j2commerce/tmpl/vendorapply/
-components/com_j2commerce/tmpl/wishlistsave/
-components/com_j2commerce/tmpl/products/wishlist.php
-components/com_j2commerce/tmpl/products/wishlist.xml
 # Non-core app_bootstrap5 view templates (inserted by 3rd-party plugins)
 plugins/j2commerce/app_bootstrap5/tmpl/bootstrap5/view_boxbuilder.php
 plugins/j2commerce/app_bootstrap5/tmpl/bootstrap5/view_boxbuilder_cart.php
