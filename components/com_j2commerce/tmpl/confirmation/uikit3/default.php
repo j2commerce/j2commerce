@@ -15,12 +15,16 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use J2Commerce\Plugin\System\J2Commerce\Helper\LeafletMapHelper;
+use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Router\Route;
 
 /** @var \J2Commerce\Component\J2commerce\Site\View\Confirmation\HtmlView $this */
+
+$wa = Factory::getApplication()->getDocument()->getWebAssetManager();
+$wa->registerAndUseStyle('com_j2commerce.site', 'media/com_j2commerce/css/site/j2commerce.css');
 
 $order     = $this->order;
 $paction   = $this->paction;
