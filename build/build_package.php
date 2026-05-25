@@ -446,7 +446,7 @@ function buildLibraryZip(string $joomlaRoot, string $tempDir, string $version, a
 
 // ── Package Manifest Generator ────────────────────────────────────────────────
 
-function createPackageManifest(string $version, array $plugins, array $adminModules, array $siteModules): string
+function createPackageManifest(string $version, array $plugins, array $adminModules, array $siteModules, string $joomlaRoot): string
 {
     $xml = '<?xml version="1.0" encoding="utf-8"?>' . "\n";
     $xml .= '<extension type="package" method="upgrade">' . "\n";
@@ -652,7 +652,7 @@ if ($outerZip->open($finalZipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !
 }
 
 // Package manifest (generated)
-$pkgManifest = createPackageManifest($version, $plugins, $adminModules, $siteModules);
+$pkgManifest = createPackageManifest($version, $plugins, $adminModules, $siteModules, $joomlaRoot);
 $outerZip->addFromString('pkg_j2commerce.xml', $pkgManifest);
 
 // Package install script
