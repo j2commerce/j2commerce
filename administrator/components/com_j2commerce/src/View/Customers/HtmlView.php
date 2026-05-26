@@ -165,6 +165,6 @@ class HtmlView extends BaseHtmlView
             $toolbar->preferences('com_j2commerce');
         }
 
-        ToolbarHelper::help('Customers', true, 'https://docs.j2commerce.com/v6/sales/customers');
+        ToolbarHelper::help(Text::_('COM_J2COMMERCE_CUSTOMERS'), true, 'https://docs.j2commerce.com/v6/sales/customers');
     }
 }

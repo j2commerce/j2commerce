@@ -208,7 +208,7 @@ class HtmlView extends BaseHtmlView
         $isNew      = ($this->item->j2commerce_emailtemplate_id == 0);
         $canDo      = ContentHelper::getActions('com_j2commerce', 'emailtemplate', $this->item->j2commerce_emailtemplate_id);
         $user       = Factory::getApplication()->getIdentity();
-        $checkedOut = !(($this->item->checked_out ?? null) === null || ($this->item->checked_out ?? 0) == $user->id);
+        $checkedOut = !empty($this->item->checked_out) && (int) $this->item->checked_out !== (int) $user->id;
 
         Factory::getApplication()->getInput()->set('hidemainmenu', true);
 
@@ -247,6 +247,6 @@ class HtmlView extends BaseHtmlView
 
 
         $toolbar->divider();
-        $toolbar->help('J2Commerce_Email_Template', false, 'https://docs.j2commerce.com/design/email-templates');
+        $toolbar->help(Text::_('COM_J2COMMERCE_EMAILTEMPLATE'), false, 'https://docs.j2commerce.com/v6/design/email-templates/');
     }
 }

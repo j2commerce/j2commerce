@@ -15,9 +15,14 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CartHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\UploadHelper;
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Filter\InputFilter;
+use Joomla\CMS\Helper\MediaHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 use Joomla\CMS\Object\CMSObject;
@@ -25,6 +30,7 @@ use Joomla\CMS\Router\Route;
 use Joomla\CMS\Table\Table;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
+use Joomla\Filesystem\File;
 use Joomla\Registry\Registry;
 
 /**
@@ -330,7 +336,7 @@ class CartModel extends BaseDatabaseModel
      */
     public function getCart(int $cartId = 0, bool $needCreateCart = true): ?object
     {
-        return CartHelper::getInstance()->getCart($cartId, $needCreateCart);
+        return CartHelper::getInstance()->getCart($cartId, $needCreateCart, $this->cart_type);
     }
 
     /**
@@ -611,34 +617,18 @@ class CartModel extends BaseDatabaseModel
             J2CommerceHelper::plugin()->event('AfterValidateFiles', [&$json, &$uploadResult]);
 
             if (empty($json)) {
-                $db   = $this->db;
-                $now  = Factory::getDate()->toSql();
-                $user = Factory::getApplication()->getIdentity();
+                $user   = Factory::getApplication()->getIdentity();
+                $stored = UploadHelper::createPendingUpload(
+                    $this->getCartId(),
+                    (string) $uploadResult['original_name'],
+                    (string) $uploadResult['mangled_name'],
+                    (string) $uploadResult['saved_name'],
+                    (string) $uploadResult['mime_type'],
+                    (int) ($uploadResult['file_size'] ?? 0),
+                    (int) ($user->id ?? 0)
+                );
 
-                // Insert upload record
-                $query = $db->getQuery(true)
-                    ->insert($db->quoteName('#__j2commerce_uploads'))
-                    ->columns($db->quoteName([
-                        'original_name',
-                        'mangled_name',
-                        'saved_name',
-                        'mime_type',
-                        'created_by',
-                        'created_on',
-                        'enabled',
-                    ]))
-                    ->values(':origName, :mangledName, :savedName, :mime, :createdBy, :createdOn, 1')
-                    ->bind(':origName', $uploadResult['original_name'])
-                    ->bind(':mangledName', $uploadResult['mangled_name'])
-                    ->bind(':savedName', $uploadResult['saved_name'])
-                    ->bind(':mime', $uploadResult['mime_type'])
-                    ->bind(':createdBy', $user->id, ParameterType::INTEGER)
-                    ->bind(':createdOn', $now);
-
-                try {
-                    $db->setQuery($query);
-                    $db->execute();
-                } catch (\Exception $e) {
+                if (!$stored) {
                     $json['error'] = Text::sprintf('COM_J2COMMERCE_UPLOAD_ERR_GENERIC_ERROR');
                 }
             }
@@ -651,6 +641,89 @@ class CartModel extends BaseDatabaseModel
         }
 
         return $json;
+    }
+
+    /**
+     * Replicates MediaHelper::canUpload's filename/extension/MIME/size/PHP-tag checks
+     * inline so guests can upload product-option files when the Allow Guest Uploads
+     * config flag is enabled, without flipping Joomla's global media restrictions.
+     * Skips ONLY the user-group gate; every other security check is preserved.
+     *
+     * @param   array  $file  File array from $_FILES.
+     *
+     * @return  string|null  Error message, or null when the file is acceptable.
+     *
+     * @since   6.0.0
+     */
+    protected function validateGuestUpload(array $file): ?string
+    {
+        if (empty($file['name'])) {
+            return Text::_('JLIB_MEDIA_ERROR_UPLOAD_INPUT');
+        }
+
+        if ($file['name'] !== File::makeSafe($file['name'])) {
+            return Text::_('JLIB_MEDIA_ERROR_WARNFILENAME');
+        }
+
+        $parts = explode('.', $file['name']);
+
+        if (\count($parts) < 2) {
+            return Text::_('JLIB_MEDIA_ERROR_WARNFILETYPE');
+        }
+
+        array_shift($parts);
+        $parts = array_map('strtolower', $parts);
+
+        $executables = array_merge(MediaHelper::EXECUTABLES, InputFilter::FORBIDDEN_FILE_EXTENSIONS);
+
+        if (array_intersect($parts, $executables)) {
+            return Text::_('JLIB_MEDIA_ERROR_WARNFILETYPE');
+        }
+
+        $filetype    = array_pop($parts);
+        $mediaParams = ComponentHelper::getParams('com_media');
+        $allowable   = array_map('trim', explode(',', (string) $mediaParams->get('restrict_uploads_extensions', 'bmp,gif,jpg,jpeg,png,webp,avif,ico,mp3,m4a,mp4a,ogg,mp4,mp4v,mpeg,mov,odg,odp,ods,odt,pdf,png,ppt,txt,xcf,xls,csv')));
+
+        if ($filetype === '' || !\in_array($filetype, $allowable, true)) {
+            return Text::_('JLIB_MEDIA_ERROR_WARNFILETYPE');
+        }
+
+        $maxSize = (int) $mediaParams->get('upload_maxsize', 0) * 1024 * 1024;
+
+        if ($maxSize > 0 && (int) ($file['size'] ?? 0) > $maxSize) {
+            return Text::_('JLIB_MEDIA_ERROR_WARNFILETOOLARGE');
+        }
+
+        if (empty($file['tmp_name'])) {
+            return Text::_('JLIB_MEDIA_ERROR_WARNFILETOOLARGE');
+        }
+
+        $mime = MediaHelper::getMimeType($file['tmp_name'], MediaHelper::isImage($file['tmp_name']));
+
+        if ($mime === false) {
+            return Text::_('JLIB_MEDIA_ERROR_WARNINVALID_MIME');
+        }
+
+        if ((int) $mediaParams->get('check_mime', 1) === 1) {
+            $allowedMime = $mediaParams->get(
+                'upload_mime',
+                'image/jpeg,image/gif,image/png,image/bmp,image/webp,image/avif,application/msword,'
+                    . 'application/excel,application/pdf,application/powerpoint,text/plain,application/x-zip'
+            );
+            $allowedMime = array_map('trim', explode(',', str_replace('\\', '', (string) $allowedMime)));
+
+            if (!\in_array($mime, $allowedMime, true)) {
+                return Text::sprintf('JLIB_MEDIA_ERROR_WARNINVALID_MIMETYPE', $mime);
+            }
+        }
+
+        $content = file_get_contents($file['tmp_name']);
+
+        if ($content !== false && preg_match('/\<\?php/i', $content)) {
+            return Text::_('COM_J2COMMERCE_UPLOAD_FILE_PHP_TAGS');
+        }
+
+        return null;
     }
 
     /**
@@ -670,70 +743,76 @@ class CartModel extends BaseDatabaseModel
             return false;
         }
 
+        // Preserve the shopper's original filename for storage + display, then
+        // sanitize a working copy so Joomla's File::makeSafe (called inside
+        // MediaHelper::canUpload) accepts names with spaces and parens.
+        $originalName = (string) $file['name'];
+        $file['name'] = self::sanitizeUploadFileName($originalName);
+
         if ($checkUpload) {
-            $mediaHelper = new \Joomla\CMS\Helper\MediaHelper();
+            $app              = Factory::getApplication();
+            $isGuest          = $app->getIdentity()?->guest ?? true;
+            $j2cParams        = ComponentHelper::getParams('com_j2commerce');
+            $allowGuestBypass = $isGuest && (int) $j2cParams->get('allow_guest_uploads', 0) === 1;
 
-            if (!$mediaHelper->canUpload($file)) {
-                $app    = Factory::getApplication();
-                $errors = $app->getMessageQueue();
+            if ($allowGuestBypass) {
+                $err = $this->validateGuestUpload($file);
 
-                if (\count($errors)) {
-                    $error = array_pop($errors);
-                    $err   = $error['message'];
-                } else {
-                    $err = '';
-                }
-
-                // Check for PHP tags
-                $content = file_get_contents($file['tmp_name']);
-
-                if (preg_match('/\<\?php/i', $content)) {
-                    $err = Text::_('COM_J2COMMERCE_UPLOAD_FILE_PHP_TAGS');
-                }
-
-                if (!empty($err)) {
+                if ($err !== null) {
                     $this->setError(Text::_('COM_J2COMMERCE_UPLOAD_ERR_MEDIAHELPER_ERROR') . ' ' . $err);
-                } else {
-                    $this->setError(Text::_('COM_J2COMMERCE_UPLOAD_ERR_GENERIC_ERROR'));
+                    return false;
                 }
+            } else {
+                $mediaHelper = new MediaHelper();
 
-                return false;
+                if (!$mediaHelper->canUpload($file)) {
+                    $errors = $app->getMessageQueue();
+
+                    if (\count($errors)) {
+                        $error = array_pop($errors);
+                        $err   = $error['message'];
+                    } else {
+                        $err = '';
+                    }
+
+                    // Check for PHP tags
+                    $content = file_get_contents($file['tmp_name']);
+
+                    if (preg_match('/\<\?php/i', $content)) {
+                        $err = Text::_('COM_J2COMMERCE_UPLOAD_FILE_PHP_TAGS');
+                    }
+
+                    if (!empty($err)) {
+                        $this->setError(Text::_('COM_J2COMMERCE_UPLOAD_ERR_MEDIAHELPER_ERROR') . ' ' . $err);
+                    } else {
+                        $this->setError(Text::_('COM_J2COMMERCE_UPLOAD_ERR_GENERIC_ERROR'));
+                    }
+
+                    return false;
+                }
             }
         }
 
-        // Generate mangled name
-        $serverkey = Factory::getApplication()->get('secret', '');
-        $sig       = $file['name'] . microtime() . $serverkey;
+        $attachmentRoot = ConfigHelper::getAttachmentAbsolutePath();
 
-        if (\function_exists('sha256')) {
-            $mangledname = hash('sha256', $sig);
-        } elseif (\function_exists('sha1')) {
-            $mangledname = sha1($sig);
-        } else {
-            $mangledname = md5($sig);
-        }
-
-        // Ensure upload folder exists
-        $uploadFolder = JPATH_ROOT . '/media/com_j2commerce/uploads';
-
-        if (!is_dir($uploadFolder)) {
-            if (!mkdir($uploadFolder, 0755, true)) {
-                $this->setError(Text::_('COM_J2COMMERCE_UPLOAD_ERROR_FOLDER_PERMISSION_ERROR'));
-                return false;
-            }
-        }
-
-        // Sanitize filename
-        $filename = basename(preg_replace('/[^a-zA-Z0-9\.\-\s+]/', '', html_entity_decode($file['name'], ENT_QUOTES, 'UTF-8')));
-        $name     = $filename . '.' . md5(mt_rand());
-        $filepath = $uploadFolder . '/' . $name;
-
-        if (file_exists($filepath)) {
-            $this->setError(Text::_('COM_J2COMMERCE_UPLOAD_ERR_NAMECLASH'));
+        if ($attachmentRoot === null) {
+            $this->setError(Text::_('COM_J2COMMERCE_UPLOAD_ERROR_FOLDER_PERMISSION_ERROR'));
             return false;
         }
 
-        // Move uploaded file
+        $cartId       = $this->getCartId();
+        $uploadFolder = $attachmentRoot . '/tmp/' . $cartId;
+
+        if (!is_dir($uploadFolder) && !mkdir($uploadFolder, 0755, true) && !is_dir($uploadFolder)) {
+            $this->setError(Text::_('COM_J2COMMERCE_UPLOAD_ERROR_FOLDER_PERMISSION_ERROR'));
+            return false;
+        }
+
+        $extension   = strtolower(File::getExt($file['name']));
+        $name        = UploadHelper::randomToken() . ($extension !== '' ? '.' . $extension : '');
+        $mangledname = UploadHelper::randomToken();
+        $filepath    = $uploadFolder . '/' . $name;
+
         if (!move_uploaded_file($file['tmp_name'], $filepath)) {
             $this->setError(Text::_('COM_J2COMMERCE_UPLOAD_ERR_CANTJFILEUPLOAD'));
             return false;
@@ -750,11 +829,33 @@ class CartModel extends BaseDatabaseModel
         }
 
         return [
-            'original_name' => $file['name'],
+            'original_name' => $originalName,
             'mangled_name'  => $mangledname,
             'saved_name'    => $name,
             'mime_type'     => $mime,
+            'file_size'     => filesize($filepath) ?: 0,
         ];
+    }
+
+    /**
+     * Sanitize an uploaded filename to satisfy Joomla's File::makeSafe rules
+     * while preserving the original extension.
+     */
+    protected static function sanitizeUploadFileName(string $name): string
+    {
+        $name = html_entity_decode($name, ENT_QUOTES, 'UTF-8');
+        $info = pathinfo($name);
+        $base = $info['filename'] ?? '';
+        $ext  = isset($info['extension']) ? '.' . $info['extension'] : '';
+
+        $base = preg_replace('/[^A-Za-z0-9_\-]/', '_', $base) ?? '';
+        $base = trim($base, '_');
+
+        if ($base === '') {
+            $base = 'upload';
+        }
+
+        return $base . $ext;
     }
 
     /**

@@ -84,6 +84,7 @@ if ($showItemTax && isset($this->taxes) && \count($this->taxes)) {
                                                 'item'       => $item,
                                                 'context'    => 'checkout_summary',
                                                 'variant'    => 'compact',
+                                                'framework'  => 'uikit3',
                                             ], JPATH_ROOT . '/components/com_j2commerce/layouts'); ?>
                                         </div>
                                     <?php endif; ?>

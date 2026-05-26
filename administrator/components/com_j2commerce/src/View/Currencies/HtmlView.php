@@ -203,6 +203,6 @@ class HtmlView extends BaseHtmlView
             ToolbarHelper::preferences('com_j2commerce');
         }
 
-        ToolbarHelper::help('Currencies', true, 'https://docs.j2commerce.com/v6/localisation/currencies');
+        ToolbarHelper::help(Text::_('COM_J2COMMERCE_CURRENCIES'), true, 'https://docs.j2commerce.com/v6/localization/currencies/');
     }
 }

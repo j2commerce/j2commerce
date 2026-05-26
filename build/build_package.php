@@ -34,20 +34,20 @@ $baseVersion = $matches[1];
 $baseVersionDashed = str_replace('.', '-', $baseVersion);
 $buildNum = 1;
 
-// Check both old com_ and new pkg_ patterns
+// Match legacy `_beta_{N}` and current `-{N}` filename formats so the build
+// number keeps climbing across the naming switch.
 foreach (['com_j2commerce_', 'pkg_j2commerce_'] as $prefix) {
-    $existingFiles = glob($outputDir . '/' . $prefix . $baseVersionDashed . '_beta_*.zip');
-    if ($existingFiles) {
-        foreach ($existingFiles as $f) {
-            if (preg_match('/_beta_(\d+)\.zip$/', $f, $m)) {
-                $buildNum = max($buildNum, (int) $m[1] + 1);
-            }
+    $base = $outputDir . '/' . $prefix . $baseVersionDashed;
+    foreach (array_merge(glob($base . '_beta_*.zip') ?: [], glob($base . '-*.zip') ?: []) as $f) {
+        if (preg_match('/(?:_beta_|-)(\d+)\.zip$/', $f, $m)) {
+            $buildNum = max($buildNum, (int) $m[1] + 1);
         }
     }
 }
 
-// Version used in manifests — NO build number (per PRD)
-$version = $baseVersion;
+// Version used in manifests — base version + build number (e.g. 6.3.2.3) so
+// 3rd-party extensions can identify the exact non-official build.
+$version = $baseVersion . '.' . $buildNum;
 
 $excludePatterns = [
     '.git', '.gitignore', '.github', '.claude',
@@ -58,6 +58,9 @@ $excludePatterns = [
     '.editorconfig', '.php-cs-fixer.php', 'phpunit.xml', 'phpcs.xml',
     '.env', 'docs', 'build',
     'vendorapply',
+    'wishlistsave',
+    'tmpl/products/wishlist.php',
+    'tmpl/products/wishlist.xml',
 ];
 
 // ── Sub-extension definitions ─────────────────────────────────────────────────
@@ -68,25 +71,26 @@ $plugins = [
     ['group' => 'console',     'element' => 'j2commerce'],
     ['group' => 'content',     'element' => 'j2commerce'],
     ['group' => 'finder',      'element' => 'j2commerce'],
+    ['group' => 'installer',   'element' => 'j2commerce'],
     ['group' => 'task',        'element' => 'j2commerce'],
     ['group' => 'user',        'element' => 'j2commerce'],
     ['group' => 'webservices', 'element' => 'j2commerce'],
     ['group' => 'schemaorg',   'element' => 'ecommerce'],
-    ['group' => 'j2commerce', 'element' => 'app_bootstrap5'],
-    ['group' => 'j2commerce', 'element' => 'app_flexivariable'],
-    ['group' => 'j2commerce', 'element' => 'app_diagnostics'],
-    ['group' => 'j2commerce', 'element' => 'app_localization_data'],
-    ['group' => 'j2commerce', 'element' => 'app_currencyupdater'],
-    ['group' => 'j2commerce', 'element' => 'app_uikit'],
-    ['group' => 'j2commerce', 'element' => 'payment_cash'],
-    ['group' => 'j2commerce', 'element' => 'payment_moneyorder'],
-    ['group' => 'j2commerce', 'element' => 'payment_banktransfer'],
-    ['group' => 'j2commerce', 'element' => 'payment_paypal'],
-    ['group' => 'j2commerce', 'element' => 'shipping_standard'],
-    ['group' => 'j2commerce', 'element' => 'shipping_free'],
-    ['group' => 'j2commerce', 'element' => 'report_itemised'],
-    ['group' => 'j2commerce', 'element' => 'report_products'],
-    ['group' => 'sampledata', 'element' => 'j2commerce'],
+    ['group' => 'j2commerce',  'element' => 'app_bootstrap5'],
+    ['group' => 'j2commerce',  'element' => 'app_flexivariable'],
+    ['group' => 'j2commerce',  'element' => 'app_diagnostics'],
+    ['group' => 'j2commerce',  'element' => 'app_localization_data'],
+    ['group' => 'j2commerce',  'element' => 'app_currencyupdater'],
+    ['group' => 'j2commerce',  'element' => 'app_uikit'],
+    ['group' => 'j2commerce',  'element' => 'payment_cash'],
+    ['group' => 'j2commerce',  'element' => 'payment_moneyorder'],
+    ['group' => 'j2commerce',  'element' => 'payment_banktransfer'],
+    ['group' => 'j2commerce',  'element' => 'payment_paypal'],
+    ['group' => 'j2commerce',  'element' => 'shipping_standard'],
+    ['group' => 'j2commerce',  'element' => 'shipping_free'],
+    ['group' => 'j2commerce',  'element' => 'report_itemised'],
+    ['group' => 'j2commerce',  'element' => 'report_products'],
+    ['group' => 'sampledata',  'element' => 'j2commerce'],
 ];
 
 $adminModules = [
@@ -107,12 +111,23 @@ $siteModules = [
 
 function shouldExclude(string $path, array $patterns): bool
 {
-    $parts = explode('/', str_replace('\\', '/', $path));
-    foreach ($parts as $part) {
-        if (in_array($part, $patterns, true)) {
+    $normalized = str_replace('\\', '/', $path);
+    $parts      = explode('/', $normalized);
+
+    foreach ($patterns as $pattern) {
+        if (str_contains($pattern, '/')) {
+            // Slash-bearing pattern: match against full relative path or suffix.
+            if ($normalized === $pattern || str_ends_with($normalized, '/' . $pattern)) {
+                return true;
+            }
+            continue;
+        }
+
+        if (in_array($pattern, $parts, true)) {
             return true;
         }
     }
+
     return false;
 }
 
@@ -303,12 +318,24 @@ function buildComponentZip(string $joomlaRoot, string $tempDir, string $version,
     //    Bundles com_j2commerce.{ini,sys.ini} into administrator/language/{tag}/ so
     //    plugin/module forms and CLI/dispatchers calling
     //    $lang->load('com_j2commerce', JPATH_ADMINISTRATOR) find the file (fixes #851).
-    foreach (['en-US', 'en-GB'] as $tag) {
-        foreach (['com_j2commerce.ini', 'com_j2commerce.sys.ini'] as $file) {
-            $absPath = $joomlaRoot . '/administrator/language/' . $tag . '/' . $file;
-            if (file_exists($absPath)) {
-                $zip->addFile($absPath, 'administrator/language/' . $tag . '/' . $file);
-                $count++;
+    //    Auto-discovers every locale folder under administrator/language/ — add a new
+    //    locale (e.g. pt-BR) by dropping the files into the tree; no edits needed here.
+    $adminLangRoot = $joomlaRoot . '/administrator/language';
+
+    if (is_dir($adminLangRoot)) {
+        foreach (new DirectoryIterator($adminLangRoot) as $entry) {
+            if ($entry->isDot() || !$entry->isDir() || !preg_match('/^[a-z]{2}-[A-Z]{2}$/', $entry->getFilename())) {
+                continue;
+            }
+
+            $tag = $entry->getFilename();
+
+            foreach (['com_j2commerce.ini', 'com_j2commerce.sys.ini'] as $file) {
+                $absPath = $adminLangRoot . '/' . $tag . '/' . $file;
+                if (file_exists($absPath)) {
+                    $zip->addFile($absPath, 'administrator/language/' . $tag . '/' . $file);
+                    $count++;
+                }
             }
         }
     }
@@ -419,7 +446,7 @@ function buildLibraryZip(string $joomlaRoot, string $tempDir, string $version, a
 
 // ── Package Manifest Generator ────────────────────────────────────────────────
 
-function createPackageManifest(string $version, array $plugins, array $adminModules, array $siteModules): string
+function createPackageManifest(string $version, array $plugins, array $adminModules, array $siteModules, string $joomlaRoot): string
 {
     $xml = '<?xml version="1.0" encoding="utf-8"?>' . "\n";
     $xml .= '<extension type="package" method="upgrade">' . "\n";
@@ -465,8 +492,38 @@ function createPackageManifest(string $version, array $plugins, array $adminModu
 
     $xml .= '    </files>' . "\n";
     $xml .= "\n";
+    // Auto-discover package-level sys.ini files. Adding pkg_j2commerce.sys.ini to a
+    // new locale folder (e.g. language/pt-BR/) registers it in the manifest with no
+    // further edits.
     $xml .= '    <languages folder="language">' . "\n";
-    $xml .= '        <language tag="en-GB">en-GB/pkg_j2commerce.sys.ini</language>' . "\n";
+
+    $pkgLangRoot = $joomlaRoot . '/language';
+    $pkgTags     = [];
+
+    if (is_dir($pkgLangRoot)) {
+        foreach (new DirectoryIterator($pkgLangRoot) as $entry) {
+            if ($entry->isDot() || !$entry->isDir() || !preg_match('/^[a-z]{2}-[A-Z]{2}$/', $entry->getFilename())) {
+                continue;
+            }
+
+            $tag = $entry->getFilename();
+
+            if (file_exists($pkgLangRoot . '/' . $tag . '/pkg_j2commerce.sys.ini')) {
+                $pkgTags[] = $tag;
+            }
+        }
+    }
+
+    sort($pkgTags);
+
+    if ($pkgTags === []) {
+        $pkgTags = ['en-GB'];
+    }
+
+    foreach ($pkgTags as $tag) {
+        $xml .= '        <language tag="' . $tag . '">' . $tag . '/pkg_j2commerce.sys.ini</language>' . "\n";
+    }
+
     $xml .= '    </languages>' . "\n";
     $xml .= "\n";
     $xml .= '    <updateservers>' . "\n";
@@ -544,7 +601,7 @@ if (!empty($conflictFiles)) {
 
 echo "Conflict marker check OK\n";
 
-$finalZipName = "pkg_j2commerce_{$baseVersionDashed}_beta_{$buildNum}.zip";
+$finalZipName = "pkg_j2commerce_{$baseVersionDashed}-{$buildNum}.zip";
 $finalZipPath = $outputDir . '/' . $finalZipName;
 echo "\nBuilding: {$finalZipName}\n\n";
 
@@ -595,7 +652,7 @@ if ($outerZip->open($finalZipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !
 }
 
 // Package manifest (generated)
-$pkgManifest = createPackageManifest($version, $plugins, $adminModules, $siteModules);
+$pkgManifest = createPackageManifest($version, $plugins, $adminModules, $siteModules, $joomlaRoot);
 $outerZip->addFromString('pkg_j2commerce.xml', $pkgManifest);
 
 // Package install script

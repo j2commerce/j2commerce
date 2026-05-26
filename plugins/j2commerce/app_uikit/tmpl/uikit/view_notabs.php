@@ -11,12 +11,14 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Language\Text;
 
 /** @var \J2Commerce\Component\J2commerce\Site\View\Product\HtmlView $this */
 
 $productfilters = $this->product->productfilters ?? [];
 ?>
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductContent', [$this->product, J2CommerceHelper::utilities()->getContext('view_content')])->getArgument('html', ''); ?>
 <div class="uk-grid" uk-grid>
     <div class="uk-width-1-1">
         <?php if ($this->params->get('item_show_ldesc', 1)) : ?>

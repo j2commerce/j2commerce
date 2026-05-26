@@ -161,13 +161,14 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
             $displayName = !empty($selectText) ? $selectText : $method->shipping_method_name;
 
             $result[] = [
-                'element' => $this->_name,
-                'name'    => $displayName,
-                'code'    => (string) $methodId,
-                'price'   => $rateData->price + $rateData->handling,
-                'tax'     => $taxAmount,
-                'extra'   => 0,
-                'total'   => $total,
+                'element'      => $this->_name,
+                'name'         => $displayName,
+                'code'         => (string) $methodId,
+                'price'        => $rateData->price + $rateData->handling,
+                'tax'          => $taxAmount,
+                'tax_class_id' => (int) $method->tax_class_id,
+                'extra'        => 0,
+                'total'        => $total,
             ];
         }
 

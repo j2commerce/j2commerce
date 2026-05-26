@@ -222,7 +222,7 @@ class HtmlView extends BaseHtmlView
             $toolbar->preferences('com_j2commerce');
         }
 
-        $toolbar->help('Shipping_Troubleshooter', true, 'https://docs.j2commerce.com/troubleshooting-guide/troubleshooting-shipping-methods');
+        $toolbar->help(Text::_('COM_J2COMMERCE_SHIPPING_TROUBLESHOOTER'), true, 'https://docs.j2commerce.com/v6/setup/shipping-troubleshooter/');
     }
 
     /**

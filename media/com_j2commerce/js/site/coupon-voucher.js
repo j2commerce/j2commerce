@@ -16,7 +16,8 @@
  * After AJAX success, switches the form DOM between input/applied states and
  * dispatches custom DOM events so consuming pages can react (refresh totals, etc.).
  *
- * Required: Joomla.getOptions('j2commerce.couponVoucher') with {baseUrl, csrfToken, strings}
+ * Required: Joomla.getOptions('j2commerce.couponVoucher') with
+ *   {baseUrl, csrfToken, strings, framework, classes, accordion}
  */
 (function () {
 
@@ -24,24 +25,47 @@
     const baseUrl = options.baseUrl || 'index.php';
     const token   = options.csrfToken || '';
     const strings = options.strings || {};
+    const fw      = options.framework || 'bootstrap5';
+    const acc     = options.accordion || { itemSelector: '.accordion-item', headerSelector: '.accordion-button' };
+
+    // Bootstrap 5 fallback defaults (used when options.classes is absent)
+    const DEFAULTS = {
+        appliedRow:     'd-flex align-items-center justify-content-between py-1',
+        badge:          'badge bg-success',
+        iconTag:        'icon-tag me-1',
+        removeBtnBase:  'btn btn-sm btn-link text-danger p-0',
+        input:          'form-control',
+        inputWrap:      'input-group',
+        inputInner:     'input-group_inner',
+        applyBtnBase:   'btn btn-outline-secondary',
+        fieldError:     'j2c-field-error text-danger small mt-1',
+        accordionBadge: 'badge bg-success ms-2',
+    };
+
+    const classes = options.classes || {};
+
+    /** Return the framework class for key, falling back to Bootstrap 5 default. */
+    function cls(key) {
+        return classes[key] || DEFAULTS[key] || '';
+    }
 
     // --- Inline error display ---
 
     function showInputError(input, message) {
         clearInputError(input);
-        const inner = input.closest('.input-group_inner');
+        const inner = input.closest('.input-group_inner, .uk-width-expand');
         if (!inner) return;
 
         input.style.borderColor = '#dc3545';
 
         const xBtn = document.createElement('span');
         xBtn.className = 'j2c-input-clear';
-        xBtn.innerHTML = '&times;';
+        xBtn.textContent = '×';
         inner.appendChild(xBtn);
 
-        const group = inner.closest('.input-group');
+        const group = inner.parentElement;
         const errDiv = document.createElement('div');
-        errDiv.className = 'j2c-field-error text-danger small mt-1';
+        errDiv.className = cls('fieldError');
         errDiv.textContent = message;
         (group || inner).parentElement.appendChild(errDiv);
 
@@ -53,78 +77,130 @@
     }
 
     function clearInputError(input) {
-        const inner = input.closest('.input-group_inner');
+        const inner = input.closest('.input-group_inner, .uk-width-expand');
         if (!inner) return;
         const xBtn = inner.querySelector('.j2c-input-clear');
         if (xBtn) xBtn.remove();
         input.style.borderColor = '';
-        const group = inner.closest('.input-group');
+        const group = inner.parentElement;
         const errDiv = (group || inner).parentElement?.querySelector('.j2c-field-error');
         if (errDiv) errDiv.remove();
+    }
+
+    // --- Spinner ---
+
+    function buildSpinner() {
+        if (fw === 'uikit') {
+            const s = document.createElement('span');
+            s.setAttribute('uk-spinner', '');
+            return s;
+        }
+        const s = document.createElement('span');
+        s.className = 'spinner-border spinner-border-sm';
+        s.setAttribute('role', 'status');
+        const vh = document.createElement('span');
+        vh.className = 'visually-hidden';
+        vh.textContent = Joomla.Text._('COM_J2COMMERCE_LOADING');
+        s.appendChild(vh);
+        return s;
     }
 
     // --- Form state switching ---
 
     function showAppliedState(form, code, type) {
-        var removeClass = type === 'coupon' ? 'j2c-remove-coupon' : 'j2c-remove-voucher';
-        var removeTitle = type === 'coupon' ? (strings.removeCoupon || 'Remove Coupon') : (strings.removeVoucher || 'Remove Voucher');
-        var removeText  = strings.remove || 'Remove';
-        var escaped = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        const removeClass  = type === 'coupon' ? 'j2c-remove-coupon' : 'j2c-remove-voucher';
+        const removeTitle  = type === 'coupon' ? (strings.removeCoupon || 'Remove Coupon') : (strings.removeVoucher || 'Remove Voucher');
+        const removeText   = strings.remove || 'Remove';
 
-        form.innerHTML =
-            '<div class="d-flex align-items-center justify-content-between py-1">' +
-                '<span class="badge bg-success">' +
-                    '<span class="icon-tag me-1" aria-hidden="true"></span>' + escaped +
-                '</span>' +
-                '<button type="button" class="btn btn-sm btn-link text-danger p-0 ' + removeClass + '"' +
-                    ' title="' + removeTitle + '">' +
-                    '<span class="icon-times" aria-hidden="true"></span> ' + removeText +
-                '</button>' +
-            '</div>';
+        // Badge: <span class="badge ..."><span class="icon-tag ..." aria-hidden></span> CODE</span>
+        const iconSpan = document.createElement('span');
+        iconSpan.className = cls('iconTag');
+        iconSpan.setAttribute('aria-hidden', 'true');
 
-        // Update accordion header badge if inside an accordion
-        var accordionItem = form.closest('.accordion-item');
-        if (accordionItem) {
-            var header = accordionItem.querySelector('.accordion-button');
+        const badge = document.createElement('span');
+        badge.className = cls('badge');
+        badge.appendChild(iconSpan);
+        badge.appendChild(document.createTextNode(code));
+
+        // Remove button: <button class="removeBtnBase removeClass" ...>
+        const timesSpan = document.createElement('span');
+        timesSpan.className = 'icon-times';
+        timesSpan.setAttribute('aria-hidden', 'true');
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = cls('removeBtnBase') + ' ' + removeClass;
+        removeBtn.title = removeTitle;
+        removeBtn.appendChild(timesSpan);
+        removeBtn.appendChild(document.createTextNode(' ' + removeText));
+
+        // Row wrapper
+        const row = document.createElement('div');
+        row.className = cls('appliedRow');
+        row.appendChild(badge);
+        row.appendChild(removeBtn);
+
+        form.replaceChildren(row);
+
+        // Update accordion header badge
+        const item = form.closest(acc.itemSelector);
+        if (item) {
+            const header = item.querySelector(acc.headerSelector);
             if (header) {
-                var existingBadge = header.querySelector('.j2c-' + type + '-badge');
+                let existingBadge = header.querySelector('.j2c-' + type + '-badge');
                 if (!existingBadge) {
-                    var badge = document.createElement('span');
-                    badge.className = 'badge bg-success ms-2 j2c-' + type + '-badge';
-                    badge.textContent = code;
-                    header.appendChild(badge);
-                } else {
-                    existingBadge.textContent = code;
+                    existingBadge = document.createElement('span');
+                    existingBadge.className = cls('accordionBadge') + ' j2c-' + type + '-badge';
+                    header.appendChild(existingBadge);
                 }
+                existingBadge.textContent = code;
             }
         }
     }
 
     function showInputState(form, type) {
-        var inputName   = type === 'coupon' ? 'coupon' : 'voucher';
-        var applyClass  = type === 'coupon' ? 'j2c-apply-coupon' : 'j2c-apply-voucher';
-        var placeholder = type === 'coupon' ? (strings.enterCoupon || 'Enter coupon code') : (strings.enterVoucher || 'Enter voucher code');
-        var ariaLabel   = type === 'coupon' ? (strings.couponCode || 'Coupon Code') : (strings.voucherCode || 'Voucher Code');
-        var btnText     = type === 'coupon' ? (strings.applyCoupon || 'Apply Coupon') : (strings.applyVoucher || 'Apply Voucher');
+        const inputName   = type === 'coupon' ? 'coupon' : 'voucher';
+        const applyClass  = type === 'coupon' ? 'j2c-apply-coupon' : 'j2c-apply-voucher';
+        const placeholder = type === 'coupon' ? (strings.enterCoupon || 'Enter coupon code') : (strings.enterVoucher || 'Enter voucher code');
+        const ariaLabel   = type === 'coupon' ? (strings.couponCode || 'Coupon Code') : (strings.voucherCode || 'Voucher Code');
+        const btnText     = type === 'coupon' ? (strings.applyCoupon || 'Apply Coupon') : (strings.applyVoucher || 'Apply Voucher');
 
-        form.innerHTML =
-            '<div class="j2c-' + type + '-input-wrap">' +
-                '<div class="input-group">' +
-                    '<div class="input-group_inner">' +
-                        '<input type="text" name="' + inputName + '" class="form-control"' +
-                            ' placeholder="' + placeholder + '"' +
-                            ' aria-label="' + ariaLabel + '">' +
-                    '</div>' +
-                    '<button type="button" class="btn btn-outline-secondary ' + applyClass + '">' +
-                        btnText +
-                    '</button>' +
-                '</div>' +
-            '</div>';
+        // Input element
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.name = inputName;
+        input.className = cls('input');
+        input.placeholder = placeholder;
+        input.setAttribute('aria-label', ariaLabel);
 
-        // Remove accordion header badge if inside an accordion
-        var accordionItem = form.closest('.accordion-item');
-        if (accordionItem) {
-            var badge = accordionItem.querySelector('.j2c-' + type + '-badge');
+        // Inner wrap
+        const inner = document.createElement('div');
+        inner.className = cls('inputInner');
+        inner.appendChild(input);
+
+        // Apply button
+        const applyBtn = document.createElement('button');
+        applyBtn.type = 'button';
+        applyBtn.className = cls('applyBtnBase') + ' ' + applyClass;
+        applyBtn.textContent = btnText;
+
+        // Outer wrap
+        const wrap = document.createElement('div');
+        wrap.className = cls('inputWrap');
+        wrap.appendChild(inner);
+        wrap.appendChild(applyBtn);
+
+        // Container
+        const container = document.createElement('div');
+        container.className = 'j2c-' + type + '-input-wrap';
+        container.appendChild(wrap);
+
+        form.replaceChildren(container);
+
+        // Remove accordion header badge
+        const item = form.closest(acc.itemSelector);
+        if (item) {
+            const badge = item.querySelector('.j2c-' + type + '-badge');
             if (badge) badge.remove();
         }
     }
@@ -171,9 +247,9 @@
 
         clearInputError(input);
         const code = input.value.trim();
-        const origHTML = btn.innerHTML;
+        const orig = Array.from(btn.childNodes).map(function (n) { return n.cloneNode(true); });
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></span>';
+        btn.replaceChildren(buildSpinner());
 
         postAction('carts.applyCouponAjax', { coupon: code })
             .then(function (data) {
@@ -185,7 +261,7 @@
                 } else {
                     showInputError(input, data.message || 'Invalid coupon code.');
                     btn.disabled = false;
-                    btn.innerHTML = origHTML;
+                    btn.replaceChildren(...orig);
                     dispatchEvent(form, 'j2commerce:coupon:error', {
                         message: data.message || '', formId: form.id
                     });
@@ -194,7 +270,7 @@
             .catch(function () {
                 showInputError(input, 'An error occurred.');
                 btn.disabled = false;
-                btn.innerHTML = origHTML;
+                btn.replaceChildren(...orig);
             });
     });
 
@@ -236,9 +312,9 @@
 
         clearInputError(input);
         const code = input.value.trim();
-        const origHTML = btn.innerHTML;
+        const orig = Array.from(btn.childNodes).map(function (n) { return n.cloneNode(true); });
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></span>';
+        btn.replaceChildren(buildSpinner());
 
         postAction('carts.applyVoucherAjax', { voucher: code })
             .then(function (data) {
@@ -250,7 +326,7 @@
                 } else {
                     showInputError(input, data.message || 'Invalid voucher code.');
                     btn.disabled = false;
-                    btn.innerHTML = origHTML;
+                    btn.replaceChildren(...orig);
                     dispatchEvent(form, 'j2commerce:voucher:error', {
                         message: data.message || '', formId: form.id
                     });
@@ -259,7 +335,7 @@
             .catch(function () {
                 showInputError(input, 'An error occurred.');
                 btn.disabled = false;
-                btn.innerHTML = origHTML;
+                btn.replaceChildren(...orig);
             });
     });
 

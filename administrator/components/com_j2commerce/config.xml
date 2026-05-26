@@ -187,6 +187,7 @@
             type="text"
             label="COM_J2COMMERCE_CONFIG_ATTACHMENT_PATH"
             description="COM_J2COMMERCE_CONFIG_ATTACHMENT_PATH_DESC"
+            default="files/com_j2commerce"
             class="w-100"
         />
 
@@ -481,6 +482,18 @@
             type="list"
             label="COM_J2COMMERCE_CONFIG_SHOW_SKU_GUEST"
             description="COM_J2COMMERCE_CONFIG_SHOW_SKU_GUEST_DESC"
+            default="0"
+            validate="options"
+        >
+            <option value="0">COM_J2COMMERCE_EVERYONE</option>
+            <option value="1">COM_J2COMMERCE_REGISTERED_ONLY</option>
+        </field>
+
+        <field
+            name="show_product_upc_for_register_user"
+            type="list"
+            label="COM_J2COMMERCE_CONFIG_SHOW_UPC_GUEST"
+            description="COM_J2COMMERCE_CONFIG_SHOW_UPC_GUEST_DESC"
             default="0"
             validate="options"
         >
@@ -803,6 +816,19 @@
             description="COM_J2COMMERCE_CONFIG_ADDTOCART_CLASS_DESC"
             default="btn btn-primary"
         />
+
+        <field
+            name="allow_guest_uploads"
+            type="radio"
+            label="COM_J2COMMERCE_CONFIG_ALLOW_GUEST_UPLOADS"
+            description="COM_J2COMMERCE_CONFIG_ALLOW_GUEST_UPLOADS_DESC"
+            layout="joomla.form.field.radio.switcher"
+            default="0"
+            filter="integer"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
 
         <field
             name="spacer_cart_1"

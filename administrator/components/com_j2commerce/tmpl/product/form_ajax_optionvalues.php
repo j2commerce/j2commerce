@@ -48,7 +48,10 @@ foreach ($parentOptionValues as $parentOpvalue) {
 $conSpan = 0;
 
 
-$style = '.j2commerce-ajax-optionvalues{};';
+$style = '.j2commerce-ajax-optionvalues{}'
+    . '.j2commerce-ov-drag-handle{cursor:grab;}'
+    . '.j2commerce-ov-drag-handle:active{cursor:grabbing;}'
+    . '#j2commerce-optionvalues-tbody tr.j2commerce-ov-dragging{opacity:.5;background:var(--template-bg-dark-5,#f0f0f0);}';
 $wa->addInlineStyle($style, [], []);
 ?>
 <div class="j2commerce-ajax-optionvalues" data-product-id="<?php echo $productId; ?>" data-productoption-id="<?php echo $productOptionId; ?>">
@@ -197,7 +200,7 @@ $wa->addInlineStyle($style, [], []);
                         <?php foreach ($productOptionValues as $key => $poptionvalue): ?>
                             <tr class="row<?php echo $k; ?>" data-pov-id="<?php echo $poptionvalue->j2commerce_product_optionvalue_id; ?>">
                                 <td>
-                                    <span class="icon-menu text-muted" title="<?php echo Text::_('JGRID_HEADING_ORDERING'); ?>"></span>
+                                    <span class="icon-menu j2commerce-ov-drag-handle text-body-tertiary" role="button" aria-label="<?php echo Text::_('JGRID_HEADING_ORDERING'); ?>" title="<?php echo Text::_('JGRID_HEADING_ORDERING'); ?>"></span>
                                     <input type="hidden" name="<?php echo $prefix . '[' . $poptionvalue->j2commerce_product_optionvalue_id . '][productoption_id]'; ?>" value="<?php echo $productOptionId; ?>">
                                     <input type="hidden" name="<?php echo $prefix . '[' . $poptionvalue->j2commerce_product_optionvalue_id . '][j2commerce_product_optionvalue_id]'; ?>" value="<?php echo $poptionvalue->j2commerce_product_optionvalue_id; ?>">
                                 </td>

@@ -43,11 +43,11 @@ $currencyCode = $item->currency_code ?? '';
                             <td class="order-items-cell order-items-cell-image">
                                 <?php if (!empty($orderItemImage)) : ?>
                                     <div class="cart-product-image">
-                                        <img src="<?php echo Uri::root() . $orderItemImage; ?>" alt="<?php echo $this->escape($orderItem->orderitem_name); ?>" class="img-fluid" style="height: 64px;">
+                                        <img src="<?php echo Uri::root() . $orderItemImage; ?>" alt="<?php echo $this->escape($orderItem->orderitem_name); ?>" class="img-fluid">
                                     </div>
                                 <?php endif; ?>
                             </td>
-                            <td class="order-items-cell order-items-cell-info">
+                            <td class="order-items-cell order-items-cell-info ps-2">
                                 <div class="cart-product-info">
                                     <h3 class="cart-product-name mb-1 fs-5"><?php echo $this->escape($orderItem->orderitem_name); ?></h3>
                                     <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterDisplayLineItemTitle', array($orderItem, $item, $this->params))->getArgument('html', ''); ?>

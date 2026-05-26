@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Plugin\Task\J2Commerce\Extension;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\QueueHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Plugin\CMSPlugin;
@@ -51,6 +52,11 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             'langConstPrefix' => 'PLG_TASK_J2COMMERCE_UPDATE_CURRENCY_RATES',
             'method'          => 'updateCurrencyRates',
             'form'            => 'updateCurrencyRates',
+        ],
+        'j2commerce.cleanupOrderUploads' => [
+            'langConstPrefix' => 'PLG_TASK_J2COMMERCE_CLEANUP_ORDER_UPLOADS',
+            'method'          => 'cleanupOrderUploads',
+            'form'            => 'cleanupOrderUploads',
         ],
     ];
 
@@ -375,5 +381,158 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         return $result['failed'] > 0 && $result['updated'] === 0
             ? Status::KNOCKOUT
             : Status::OK;
+    }
+
+    private function cleanupOrderUploads(ExecuteTaskEvent $event): int
+    {
+        $params           = $event->getArgument('params');
+        $cleanupMode      = (string) ($params->cleanup_mode ?? 'both');
+        $statusIds        = array_values(array_filter(array_map('intval', (array) ($params->status_ids ?? []))));
+        $retentionDays    = max(1, (int) ($params->retention_days ?? 30));
+        $tmpRetentionDays = max(1, (int) ($params->tmp_retention_days ?? 7));
+        $deleteDbRows     = (int) ($params->delete_db_rows ?? 0);
+        $dryRun           = (int) ($params->dry_run ?? 1);
+
+        $db   = $this->getDatabase();
+        $root = ConfigHelper::getAttachmentAbsolutePath();
+
+        if ($root === null) {
+            $this->logTask('Attachment root unavailable — aborting.');
+            return Status::KNOCKOUT;
+        }
+
+        $candidates = [];
+
+        if ($cleanupMode === 'both' || $cleanupMode === 'attached') {
+            if (empty($statusIds)) {
+                $this->logTask('Skipping attached-uploads sweep — no statuses selected.');
+            } else {
+                $cutoff = (new \DateTimeImmutable("now -{$retentionDays} days", new \DateTimeZone('UTC')))->format('Y-m-d H:i:s');
+
+                $query = $db->createQuery()
+                    ->select($db->quoteName(['u.j2commerce_upload_id', 'u.saved_name', 'u.order_id', 'u.cart_id', 'u.status']))
+                    ->from($db->quoteName('#__j2commerce_uploads', 'u'))
+                    ->innerJoin(
+                        $db->quoteName('#__j2commerce_orders', 'o')
+                        . ' ON ' . $db->quoteName('o.order_id') . ' = ' . $db->quoteName('u.order_id')
+                    )
+                    ->where($db->quoteName('u.status') . ' = ' . $db->quote('attached'))
+                    ->whereIn($db->quoteName('o.order_state_id'), $statusIds, ParameterType::INTEGER)
+                    ->where($db->quoteName('o.modified_on') . ' < :cutoff')
+                    ->bind(':cutoff', $cutoff);
+
+                $candidates = array_merge($candidates, $db->setQuery($query)->loadObjectList() ?: []);
+            }
+        }
+
+        if ($cleanupMode === 'both' || $cleanupMode === 'orphaned') {
+            $now       = (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format('Y-m-d H:i:s');
+            $tmpCutoff = (new \DateTimeImmutable("now -{$tmpRetentionDays} days", new \DateTimeZone('UTC')))->format('Y-m-d H:i:s');
+
+            $query = $db->createQuery()
+                ->select($db->quoteName(['j2commerce_upload_id', 'saved_name', 'order_id', 'cart_id', 'status']))
+                ->from($db->quoteName('#__j2commerce_uploads'))
+                ->where($db->quoteName('status') . ' = ' . $db->quote('pending'))
+                ->extendWhere(
+                    'AND',
+                    [
+                        $db->quoteName('expires_on') . ' IS NOT NULL AND ' . $db->quoteName('expires_on') . ' < :now',
+                        $db->quoteName('created_on') . ' < :tmpCutoff',
+                    ],
+                    'OR'
+                )
+                ->bind(':now', $now)
+                ->bind(':tmpCutoff', $tmpCutoff);
+
+            $candidates = array_merge($candidates, $db->setQuery($query)->loadObjectList() ?: []);
+        }
+
+        if (empty($candidates)) {
+            $this->logTask('No upload rows matched cleanup criteria.');
+            return Status::OK;
+        }
+
+        $deleted  = 0;
+        $skipped  = 0;
+        $failed   = 0;
+        $rootReal = realpath($root);
+
+        foreach ($candidates as $row) {
+            $status    = (string) $row->status;
+            $savedName = (string) $row->saved_name;
+            $bucket    = $status === 'attached'
+                ? 'orders/' . (string) ($row->order_id ?? '')
+                : 'tmp/' . (int) ($row->cart_id ?? 0);
+            $candidatePath = $root . '/' . $bucket . '/' . $savedName;
+            $realPath      = realpath($candidatePath);
+
+            if ($realPath === false) {
+                // File already gone — sync the DB row in real runs.
+                $skipped++;
+                if (!$dryRun) {
+                    $this->markUploadDeleted($db, (int) $row->j2commerce_upload_id, $deleteDbRows);
+                }
+                continue;
+            }
+
+            if (!str_starts_with($realPath, $rootReal . \DIRECTORY_SEPARATOR)) {
+                $this->logTask(\sprintf('SKIP path escape: upload #%d -> %s', (int) $row->j2commerce_upload_id, $realPath));
+                $skipped++;
+                continue;
+            }
+
+            if ($dryRun) {
+                $this->logTask(\sprintf('[DRY RUN] would delete upload #%d at %s', (int) $row->j2commerce_upload_id, $realPath));
+                continue;
+            }
+
+            if (!@unlink($realPath)) {
+                $failed++;
+                continue;
+            }
+
+            $this->markUploadDeleted($db, (int) $row->j2commerce_upload_id, $deleteDbRows);
+            $deleted++;
+        }
+
+        $this->logTask(\sprintf(
+            '%s mode=%s candidates=%d deleted=%d skipped=%d failed=%d (delete_db_rows=%d, retention=%dd, tmp_retention=%dd)',
+            $dryRun ? '[DRY RUN]' : 'Done.',
+            $cleanupMode,
+            \count($candidates),
+            $deleted,
+            $skipped,
+            $failed,
+            $deleteDbRows,
+            $retentionDays,
+            $tmpRetentionDays
+        ));
+
+        return $failed > 0 && $deleted === 0 ? Status::KNOCKOUT : Status::OK;
+    }
+
+    private function markUploadDeleted(\Joomla\Database\DatabaseInterface $db, int $uploadId, int $deleteDbRows): void
+    {
+        if ($deleteDbRows) {
+            $query = $db->createQuery()
+                ->delete($db->quoteName('#__j2commerce_uploads'))
+                ->where($db->quoteName('j2commerce_upload_id') . ' = :pk')
+                ->bind(':pk', $uploadId, ParameterType::INTEGER);
+        } else {
+            $now   = (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format('Y-m-d H:i:s');
+            $query = $db->createQuery()
+                ->update($db->quoteName('#__j2commerce_uploads'))
+                ->set($db->quoteName('status') . ' = ' . $db->quote('deleted'))
+                ->set($db->quoteName('modified_on') . ' = :modOn')
+                ->where($db->quoteName('j2commerce_upload_id') . ' = :pk')
+                ->bind(':modOn', $now)
+                ->bind(':pk', $uploadId, ParameterType::INTEGER);
+        }
+
+        try {
+            $db->setQuery($query)->execute();
+        } catch (\Throwable $e) {
+            $this->logTask(\sprintf('DB update failed for upload #%d: %s', $uploadId, $e->getMessage()));
+        }
     }
 }

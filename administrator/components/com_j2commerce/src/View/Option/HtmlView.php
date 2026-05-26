@@ -109,7 +109,7 @@ class HtmlView extends BaseHtmlView
         $isNew = (empty($this->item->j2commerce_option_id) || $this->item->j2commerce_option_id == 0)
                  && (empty($this->item->id) || $this->item->id == 0);
         $canDo      = ContentHelper::getActions('com_j2commerce', 'option', $this->item->j2commerce_option_id ?? 0);
-        $checkedOut = !(($this->item->checked_out ?? null) === null || ($this->item->checked_out ?? 0) == $user->id);
+        $checkedOut = !empty($this->item->checked_out) && (int) $this->item->checked_out !== (int) $user->id;
 
         ToolbarHelper::title(
             Text::_('COM_J2COMMERCE_OPTION') . ': ' . ($isNew ? Text::_('JTOOLBAR_NEW') : Text::_('JTOOLBAR_EDIT')),
@@ -137,6 +137,6 @@ class HtmlView extends BaseHtmlView
             ToolbarHelper::cancel('option.cancel', 'JTOOLBAR_CLOSE');
         }
 
-        ToolbarHelper::help('Option', false, 'https://docs.j2commerce.com/v6/catalog/options');
+        ToolbarHelper::help(Text::_('COM_J2COMMERCE_OPTION'), false, 'https://docs.j2commerce.com/v6/catalog/creating-options/');
     }
 }

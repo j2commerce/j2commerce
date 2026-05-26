@@ -26,6 +26,7 @@ $token = Session::getFormToken();
 $wa  = Factory::getApplication()->getDocument()->getWebAssetManager();
 $wa->useScript('bootstrap.collapse');
 $wa->useScript('bootstrap.dropdown');
+$wa->useScript('bootstrap.modal');
 
 $wa->registerAndUseStyle('checkout.style', 'media/com_j2commerce/css/site/checkout.css', [], [], []);
 
@@ -45,6 +46,9 @@ if ($this->order && method_exists($this->order, 'get_formatted_order_totals')) {
 
 // Pre-compute JS-safe language strings
 $selectZoneJs = htmlspecialchars(Text::sprintf('COM_J2COMMERCE_SELECT_PLACEHOLDER', Text::_('COM_J2COMMERCE_ZONE')), ENT_QUOTES, 'UTF-8');
+
+// Pass language strings to JS via Joomla.Text (H1 — replaces addslashes inline)
+Text::script('COM_J2COMMERCE_CHECKOUT_ERROR_AGREE_TERMS');
 ?>
 <div class="j2commerce">
     <?php if ($this->params->get('show_page_heading')) : ?>
@@ -68,7 +72,7 @@ $selectZoneJs = htmlspecialchars(Text::sprintf('COM_J2COMMERCE_SELECT_PLACEHOLDE
                 }
                 $logoFile = $storeLogo->imagefile ?? '';
                 $logoAlt  = $storeLogo->alt_text ?? '';
-                if ($logoFile && $logoAlt !== '') :
+                if ($logoFile) :
             ?>
             <div class="text-center mb-3">
                 <img src="<?php echo Uri::root() . htmlspecialchars($logoFile, ENT_QUOTES, 'UTF-8'); ?>"
@@ -1152,10 +1156,30 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.set('customer_note', noteField.value);
         }
 
-        // Include tos_check from confirm step (checkbox may be outside the payment plugin form)
+        // Include tos_check from confirm step (checkbox may be outside the payment plugin form).
+        // Always overwrite: the hidden mirror field in free-order forms starts empty and must
+        // be replaced with the live checkbox state before the request is sent.
         var tosBox = document.getElementById('tos_check');
-        if (tosBox && !formData.has('tos_check')) {
+        if (!tosBox) {
+            var _confirmEl = document.querySelector('.j2commerce-checkout-confirm');
+            if (_confirmEl && _confirmEl.dataset.showTerms === '1' && _confirmEl.dataset.termsDisplayType === 'checkbox') {
+                console.warn('[J2C] tos_check element missing in confirm step — checkbox state cannot be read');
+            }
+        }
+        if (tosBox) {
             formData.set('tos_check', tosBox.checked ? '1' : '0');
+
+            // Client-side pre-check: bail before the fetch if the box is required but unticked.
+            var confirmEl = document.querySelector('.j2commerce-checkout-confirm');
+            var tosRequired  = confirmEl && confirmEl.dataset.showTerms === '1';
+            var tosIsCheckbox = confirmEl && confirmEl.dataset.termsDisplayType === 'checkbox';
+            if (tosRequired && tosIsCheckbox && !tosBox.checked) {
+                hideLoading(btn);
+                btn.disabled = false;
+                var errMsg = Joomla.Text._('COM_J2COMMERCE_CHECKOUT_ERROR_AGREE_TERMS');
+                showFieldError(document.getElementById('confirm').querySelector('.checkout-content'), 'tos_check', errMsg);
+                return;
+            }
         }
 
         showLoading(btn);
@@ -1189,9 +1213,15 @@ document.addEventListener('DOMContentLoaded', function() {
             form.querySelectorAll('.j2error, .j2success, .j2warning, .warning, .alert-danger, .alert-success').forEach(function(el) { el.remove(); });
 
             if (json.error) {
-                var msg = typeof json.error === 'string' ? json.error : Object.values(json.error).join(', ');
-                showWarning(form, msg, json._detail);
-                btn.disabled = false;
+                var confirmContent = document.getElementById('confirm') && document.getElementById('confirm').querySelector('.checkout-content');
+                if (json.error.tos_check) {
+                    showFieldError(confirmContent || form, 'tos_check', json.error.tos_check);
+                    btn.disabled = false;
+                } else {
+                    var msg = typeof json.error === 'string' ? json.error : Object.values(json.error).join(', ');
+                    showWarning(form, msg, json._detail);
+                    btn.disabled = false;
+                }
             }
 
             if (json.redirect) {
@@ -1237,7 +1267,7 @@ document.addEventListener('DOMContentLoaded', function() {
             syncField.value = noteField.value;
         }
 
-        // Sync tos_check to the hidden mirror field in the free order form
+        // Always sync tos_check to the hidden mirror field in the free order form.
         var tosBox = document.getElementById('tos_check');
         var tosSyncField = form.querySelector('.j2commerce-tos-sync');
         if (tosBox && tosSyncField) {
@@ -1275,6 +1305,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.success) refreshSidecart();
             })
             .catch(function(e) { console.error('Shipping selection error:', e); });
+    });
+
+    // === PAYMENT RADIO CHANGE: save selection to session + refresh sidecart ===
+    document.addEventListener('change', function(e) {
+        var radio = e.target;
+        if (radio.type !== 'radio' || radio.name !== 'payment_plugin') return;
+
+        var formData = new FormData();
+        formData.append('option', 'com_j2commerce');
+        formData.append('task', 'checkout.savePaymentSelection');
+        formData.append(token, '1');
+        formData.append('payment_plugin', radio.value);
+
+        fetch(baseUrl, { method: 'POST', body: formData, headers: {'X-Requested-With': 'XMLHttpRequest'} })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) refreshSidecart();
+            })
+            .catch(function(e) { console.error('Payment selection error:', e); });
     });
 
     // === SIDECART REFRESH ===

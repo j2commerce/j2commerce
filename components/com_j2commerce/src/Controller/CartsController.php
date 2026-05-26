@@ -113,7 +113,7 @@ class CartsController extends BaseController
         // Discard any stray output (PHP warnings, notices) that would corrupt JSON
         ob_end_clean();
 
-        $this->app->setHeader('Content-Type', 'application/json; charset=utf-8');
+        $this->app->setHeader('Content-Type', 'application/json; charset=utf-8', true);
         echo json_encode($data);
         $this->app->close();
     }
@@ -739,11 +739,17 @@ class CartsController extends BaseController
             $view->document = $this->app->getDocument();
 
             // CRITICAL: Populate view properties needed by default_totals.php
-            // The template requires $this->order and $this->checkout_url
-            $view->params       = J2CommerceHelper::config();
+            // The template requires $this->order and $this->checkout_url.
+            // Use the menu-item params (same as HtmlView::display()) so the
+            // 'framework' field resolves correctly when registering paths.
+            $view->params       = $this->app->getParams();
             $view->currency     = $model->getCurrency();
             $view->order        = $model->getOrder();
             $view->checkout_url = $model->getCheckoutUrl();
+
+            // Register framework-specific template paths (bootstrap5/ or
+            // uikit3/) — display() normally does this, but AJAX bypasses it.
+            $view->registerFrameworkTemplatePaths($this->app);
 
             // Capture the totals template output
             ob_start();

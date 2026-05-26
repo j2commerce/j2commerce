@@ -147,7 +147,7 @@ class CartItemsModel extends ListModel
             );
 
         // Join with variants table to get variant information (shipping needed for isShippingEnabled check)
-        $query->select('v.sku, v.price as variant_price, v.shipping')
+        $query->select('v.sku, v.price as variant_price, v.shipping, v.weight')
             ->join('LEFT', $db->quoteName('#__j2commerce_variants', 'v') . ' ON (' . $db->quoteName('v.j2commerce_variant_id') . ' = ' . $db->quoteName('a.variant_id') . ')');
 
         // Filter by cart ID (required)

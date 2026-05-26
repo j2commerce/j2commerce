@@ -102,7 +102,7 @@ class HtmlView extends BaseHtmlView
         $isNew      = empty($this->item->j2commerce_product_id);
         $canDo      = ContentHelper::getActions('com_j2commerce');
         $user       = Factory::getApplication()->getIdentity();
-        $checkedOut = !(($this->item->checked_out ?? null) === null || ($this->item->checked_out ?? 0) == $user->id);
+        $checkedOut = !empty($this->item->checked_out) && (int) $this->item->checked_out !== (int) $user->id;
         $toolbar    = $this->getDocument()->getToolbar();
 
         ToolbarHelper::title(
@@ -125,6 +125,6 @@ class HtmlView extends BaseHtmlView
 
         $toolbar->cancel('product.cancel', $isNew ? 'JTOOLBAR_CANCEL' : 'JTOOLBAR_CLOSE');
 
-        $toolbar->help('Product');
+        $toolbar->help(Text::_('COM_J2COMMERCE_PRODUCT'), true, 'https://docs.j2commerce.com/v6/catalog/managing-products/');
     }
 }

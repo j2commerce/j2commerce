@@ -17,6 +17,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Router\Route;
 use Joomla\Registry\Registry;
 
@@ -160,12 +161,13 @@ $panelId = 'j2commerce-cart-detail-' . $moduleId;
 
                             <?php if (!empty($item->orderitemattributes)) : ?>
                                 <div class="j2commerce-cart-item-options uk-text-small uk-text-muted uk-margin-small-top">
-                                    <?php foreach ($item->orderitemattributes as $attribute) : ?>
-                                        <div>
-                                            &ndash; <?php echo htmlspecialchars(Text::_($attribute->orderitemattribute_name ?? ''), ENT_QUOTES, 'UTF-8'); ?>:
-                                            <?php echo htmlspecialchars(Text::_($attribute->orderitemattribute_value ?? ''), ENT_QUOTES, 'UTF-8'); ?>
-                                        </div>
-                                    <?php endforeach; ?>
+                                    <?php echo LayoutHelper::render('orderitem.attributes', [
+                                        'attributes' => $item->orderitemattributes,
+                                        'item'       => $item,
+                                        'context'    => 'cart_module',
+                                        'variant'    => 'compact',
+                                        'framework'  => 'uikit3',
+                                    ], JPATH_ROOT . '/components/com_j2commerce/layouts'); ?>
                                 </div>
                             <?php endif; ?>
                         </div>

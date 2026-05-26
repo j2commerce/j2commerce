@@ -223,6 +223,6 @@ class HtmlView extends BaseHtmlView
             $toolbar->preferences('com_j2commerce');
         }
 
-        ToolbarHelper::help('Coupons', true, 'https://docs.j2commerce.com/v6/sales/coupons');
+        ToolbarHelper::help(Text::_('COM_J2COMMERCE_COUPONS'), true, 'https://docs.j2commerce.com/v6/sales/coupons');
     }
 }

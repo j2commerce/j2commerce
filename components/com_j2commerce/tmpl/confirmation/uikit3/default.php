@@ -15,12 +15,16 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use J2Commerce\Plugin\System\J2Commerce\Helper\LeafletMapHelper;
+use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Router\Route;
 
 /** @var \J2Commerce\Component\J2commerce\Site\View\Confirmation\HtmlView $this */
+
+$wa = Factory::getApplication()->getDocument()->getWebAssetManager();
+$wa->registerAndUseStyle('com_j2commerce.site', 'media/com_j2commerce/css/site/j2commerce.css');
 
 $order     = $this->order;
 $paction   = $this->paction;
@@ -42,6 +46,46 @@ $fmt = static function (float $amount) use ($currencyCode, $currencyValue): stri
 $checkoutPriceDisplay = (int) (J2CommerceHelper::config()->get('checkout_price_display_options', 0));
 
 $isCancelled = ($paction === 'cancel');
+
+// Status tier drives the confirmation banner. The order state determines whether
+// the customer actually completed payment — never assume success.
+//   success : Confirmed(1), Shipped(7), Delivered(8), Scheduled(9)
+//   pending : Processed(2), Pending(4) — received, awaiting payment confirmation
+//   failed  : Failed(3), New(5), unknown — payment not completed
+$orderStateId = (int) ($order->order_state_id ?? 0);
+$statusTier   = $isCancelled ? 'cancelled' : match ($orderStateId) {
+    1, 7, 8, 9 => 'success',
+    2, 4       => 'pending',
+    default    => 'failed',
+};
+
+$tierAlertClass = match ($statusTier) {
+    'success' => 'uk-alert-success',
+    'pending' => 'uk-alert-primary',
+    default   => 'uk-alert-danger',
+};
+$tierCircleClass = match ($statusTier) {
+    'success' => 'j2c-check-circle',
+    'pending' => 'j2c-info-circle',
+    default   => 'j2c-cancel-circle',
+};
+$tierIcon = match ($statusTier) {
+    'success' => 'icon-check',
+    'pending' => 'icon-info-circle',
+    'failed'  => 'icon-warning',
+    default   => 'icon-times',
+};
+$tierMessage = match ($statusTier) {
+    'success'   => 'COM_J2COMMERCE_ORDER_CONFIRMED_MESSAGE',
+    'pending'   => 'COM_J2COMMERCE_ORDER_RECEIVED_MESSAGE',
+    'cancelled' => 'COM_J2COMMERCE_ORDER_CANCELLED_MESSAGE',
+    default     => 'COM_J2COMMERCE_ORDER_PAYMENT_INCOMPLETE_MESSAGE',
+};
+$tierMessageClass = match ($statusTier) {
+    'pending' => 'uk-text-primary',
+    'failed'  => 'uk-text-danger',
+    default   => 'uk-text-meta',
+};
 
 $firstName = '';
 if ($info) {
@@ -110,30 +154,31 @@ if ($info) {
             <?php // Left column ?>
             <div class="<?php echo $isCancelled ? 'uk-width-1-1' : 'uk-width-expand@l'; ?> j2c-confirmation-main<?php echo $isCancelled ? '' : ' uk-padding-right@l'; ?>">
 
-                <div class="uk-alert <?php echo $isCancelled ? 'uk-alert-danger' : 'uk-alert-primary'; ?> uk-margin-bottom" uk-alert>
+                <div class="uk-alert <?php echo $tierAlertClass; ?> uk-margin-bottom" uk-alert>
                     <div class="uk-flex uk-flex-middle" style="gap: 12px;">
-                        <?php if ($isCancelled) : ?>
-                            <div class="j2c-cancel-circle uk-border-circle uk-flex uk-flex-middle uk-flex-center uk-flex-none">
-                                <span class="icon-times" style="color:#fff; font-size: 1.5rem;" aria-hidden="true"></span>
-                            </div>
-                            <div>
+                        <div class="<?php echo $tierCircleClass; ?> uk-border-circle uk-flex uk-flex-middle uk-flex-center uk-flex-none">
+                            <span class="<?php echo $tierIcon; ?>" style="color:#fff; font-size: 1.5rem;" aria-hidden="true"></span>
+                        </div>
+                        <div>
+                            <?php if ($statusTier === 'cancelled') : ?>
                                 <h2 class="uk-h4 uk-margin-remove"><?php echo Text::_('COM_J2COMMERCE_ORDER_CANCELLED'); ?></h2>
-                            </div>
-                        <?php else : ?>
-                            <div class="j2c-check-circle uk-border-circle uk-flex uk-flex-middle uk-flex-center uk-flex-none">
-                                <span class="icon-check" style="color:#fff; font-size: 1.5rem;" aria-hidden="true"></span>
-                            </div>
-                            <div>
+                            <?php elseif ($statusTier === 'success') : ?>
                                 <?php if ($firstName !== '') : ?>
                                     <h2 class="uk-h4 uk-margin-remove"><?php echo Text::sprintf('COM_J2COMMERCE_THANK_YOU_NAME', $this->escape($firstName)); ?></h2>
                                 <?php else : ?>
                                     <h2 class="uk-h4 uk-margin-remove"><?php echo Text::_('COM_J2COMMERCE_ORDER_CONFIRMATION'); ?></h2>
                                 <?php endif; ?>
+                            <?php elseif ($statusTier === 'pending') : ?>
+                                <h2 class="uk-h4 uk-margin-remove"><?php echo Text::_('COM_J2COMMERCE_ORDER_RECEIVED'); ?></h2>
+                            <?php else : ?>
+                                <h2 class="uk-h4 uk-margin-remove"><?php echo Text::_('COM_J2COMMERCE_ORDER_PAYMENT_INCOMPLETE'); ?></h2>
+                            <?php endif; ?>
+                            <?php if ($statusTier !== 'cancelled') : ?>
                                 <p class="uk-margin-remove">
                                     <?php echo Text::_('COM_J2COMMERCE_ORDER_ID'); ?>: <?php echo $this->escape($order->order_id); ?>
                                 </p>
-                            </div>
-                        <?php endif; ?>
+                            <?php endif; ?>
+                        </div>
                     </div>
 
                 </div>
@@ -147,12 +192,8 @@ if ($info) {
                                 <?php echo Text::_('COM_J2COMMERCE_ORDERSTATUS'); ?>
                                 <span class="uk-margin-small-left"><?php echo $statusBadgeHtml; ?></span>
                             </h3>
-                            <p class="uk-text-meta uk-margin-remove uk-text-small">
-                                <?php if ($isCancelled) : ?>
-                                    <?php echo Text::_('COM_J2COMMERCE_ORDER_CANCELLED_MESSAGE'); ?>
-                                <?php else : ?>
-                                    <?php echo Text::_('COM_J2COMMERCE_ORDER_CONFIRMED_MESSAGE'); ?>
-                                <?php endif; ?>
+                            <p class="<?php echo $tierMessageClass; ?> uk-margin-remove uk-text-small">
+                                <?php echo Text::_($tierMessage); ?>
                             </p>
                             <?php if ($mapLoaded) : ?>
                                 <div id="j2c-confirmation-map" class="leaflet-map-container uk-margin-top" role="img" aria-label="<?php echo $this->escape($mapAddress); ?>"></div>
@@ -364,6 +405,7 @@ if ($info) {
                                                 'item'       => $item,
                                                 'context'    => 'confirmation',
                                                 'variant'    => 'compact',
+                                                'framework'  => 'uikit3',
                                             ], JPATH_ROOT . '/components/com_j2commerce/layouts'); ?>
                                         <?php endif; ?>
                                         <?php if (!empty($item->orderitem_sku)) : ?>

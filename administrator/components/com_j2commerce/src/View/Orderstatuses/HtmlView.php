@@ -177,6 +177,6 @@ class HtmlView extends BaseHtmlView
             ToolbarHelper::preferences('com_j2commerce');
         }
 
-        ToolbarHelper::help('Order Statuses', true, 'https://docs.j2commerce.com/v6/localisation/order-statuses');
+        ToolbarHelper::help(Text::_('COM_J2COMMERCE_ORDER_STATUSES'), true, 'https://docs.j2commerce.com/v6/setup/order-statuses/');
     }
 }

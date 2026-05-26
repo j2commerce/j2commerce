@@ -2832,6 +2832,27 @@ class ProductHelper
         return true;
     }
 
+    /**
+     * Check if UPC should be shown based on params.
+     *
+     * @param   Registry  $params  Component parameters.
+     *
+     * @return  bool  True if UPC should be shown.
+     *
+     * @since   6.4.0
+     */
+    public static function canShowUpc(Registry $params): bool
+    {
+        $showUpcForRegistered = (int) $params->get('show_product_upc_for_register_user', 0);
+        $userId               = Factory::getApplication()->getIdentity()->id;
+
+        if ($showUpcForRegistered && empty($userId)) {
+            return false;
+        }
+
+        return true;
+    }
+
     // =========================================================================
     // FILTER DROPDOWN METHODS
     // =========================================================================

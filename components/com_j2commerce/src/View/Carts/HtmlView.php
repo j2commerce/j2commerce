@@ -301,20 +301,9 @@ class HtmlView extends BaseHtmlView
             // Get items from order (processed with attributes)
             $this->items = $this->order->getItems();
 
-            // Process file upload attributes to show original names
-            $mvcFactory = Factory::getApplication()->bootComponent('com_j2commerce')->getMVCFactory();
-            foreach ($this->items as $item) {
-                if (isset($item->orderitemattributes) && \count($item->orderitemattributes)) {
-                    foreach ($item->orderitemattributes as &$attribute) {
-                        if ($attribute->orderitemattribute_type === 'file') {
-                            $uploadTable = $mvcFactory->createTable('Upload', 'Administrator');
-                            if ($uploadTable && $uploadTable->load(['mangled_name' => $attribute->orderitemattribute_value])) {
-                                $attribute->orderitemattribute_value = $uploadTable->original_name;
-                            }
-                        }
-                    }
-                }
-            }
+            // Upload-name resolution for file/image option uploads happens in
+            // OrderItemAttributeHelper::resolveUploadNames() called by the
+            // canonical layouts/orderitem/attributes.php — do not pre-resolve here.
 
             // Get order details
             $this->taxes    = $this->order->getOrderTaxrates();
@@ -372,13 +361,16 @@ class HtmlView extends BaseHtmlView
      * Resolve and register the per-menu-item framework folder so loadTemplate()
      * and parent::display() pick up the correct framework subfolder.
      *
+     * Public so AJAX controllers that bypass display() (e.g. getTotalsAjax)
+     * can still register the framework path before calling loadTemplate().
+     *
      * Priority order produced (highest first):
      *   1. templates/<tpl>/html/com_j2commerce/{view}/{framework}/
      *   2. templates/<tpl>/html/com_j2commerce/{view}/          (legacy flat overrides)
      *   3. components/com_j2commerce/tmpl/{view}/{framework}/
      *   4. components/com_j2commerce/tmpl/{view}/               (default search path)
      */
-    private function registerFrameworkTemplatePaths(\Joomla\CMS\Application\CMSApplicationInterface $app): void
+    public function registerFrameworkTemplatePaths(\Joomla\CMS\Application\CMSApplicationInterface $app): void
     {
         $framework = (string) $this->params->get('framework', 'bootstrap5');
         $framework = preg_replace('/[^a-zA-Z0-9_-]/', '', $framework) ?? '';

@@ -192,6 +192,6 @@ class HtmlView extends BaseHtmlView
             ToolbarHelper::preferences('com_j2commerce');
         }
 
-        ToolbarHelper::help('Weights', true, 'https://docs.j2commerce.com/v6/localisation/weights');
+        ToolbarHelper::help(Text::_('COM_J2COMMERCE_WEIGHTS'), true, 'https://docs.j2commerce.com/v6/localization/weights/');
     }
 }

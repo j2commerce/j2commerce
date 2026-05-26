@@ -349,16 +349,37 @@ class ConfigHelper
         return (string) self::get('date_format', 'Y-m-d H:i:s');
     }
 
-    /**
-     * Get the attachment folder path
-     *
-     * @return  string  Folder path
-     *
-     * @since   6.0.0
-     */
+    /** Storage root for customer-uploaded order files, relative to JPATH_ROOT. */
     public static function getAttachmentPath(): string
     {
-        return (string) self::get('attachmentfolderpath', '');
+        $value = trim((string) self::get('attachmentfolderpath', ''), '/');
+
+        return $value !== '' ? $value : 'files/com_j2commerce';
+    }
+
+    /**
+     * Absolute on-disk path to the attachment root, with traversal guard.
+     * Returns null when the resolved path falls outside JPATH_ROOT.
+     *
+     * @since  6.3.0
+     */
+    public static function getAttachmentAbsolutePath(): ?string
+    {
+        $relative = self::getAttachmentPath();
+        $absolute = JPATH_ROOT . '/' . $relative;
+
+        if (!is_dir($absolute) && !@mkdir($absolute, 0755, true) && !is_dir($absolute)) {
+            return null;
+        }
+
+        $real     = realpath($absolute);
+        $rootReal = realpath(JPATH_ROOT);
+
+        if ($real === false || $rootReal === false || !str_starts_with($real, $rootReal)) {
+            return null;
+        }
+
+        return $real;
     }
 
     /**

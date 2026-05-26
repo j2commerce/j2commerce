@@ -115,6 +115,6 @@ class HtmlView extends BaseHtmlView
             ToolbarHelper::preferences('com_j2commerce');
         }
 
-        ToolbarHelper::help('Queue_Hub', true, 'https://docs.j2commerce.com/v6/configuration/queue-hub');
+        ToolbarHelper::help(Text::_('COM_J2COMMERCE_QUEUES'), true, 'https://docs.j2commerce.com/v6/setup/queue-hub/');
     }
 }

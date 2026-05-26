@@ -187,7 +187,7 @@ class HtmlView extends BaseHtmlView
             $toolbar->preferences('com_j2commerce');
         }
 
-        $toolbar->help('COM_J2COMMERCE_HELP_INVENTORY');
+        $toolbar->help(Text::_('COM_J2COMMERCE_INVENTORY'), true, 'https://docs.j2commerce.com/v6/catalog/inventory/');
     }
 
     /**

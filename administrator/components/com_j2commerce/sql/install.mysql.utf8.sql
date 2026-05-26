@@ -1196,6 +1196,7 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_shippingmethods` (
   `shipping_method_name` varchar(255) NOT NULL,
   `published` tinyint NOT NULL,
   `shipping_method_type` tinyint NOT NULL,
+  `params` longtext NULL,
   `tax_class_id` int NOT NULL,
   `address_override` varchar(255) NOT NULL,
   `subtotal_minimum` decimal(15,3) NOT NULL,
@@ -1288,11 +1289,23 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_uploads` (
   `j2commerce_upload_id` int NOT NULL AUTO_INCREMENT,
   `original_name` varchar(255) NOT NULL,
   `mangled_name` varchar(255) NOT NULL,
+  `order_id` varchar(255) NOT NULL DEFAULT '',
+  `cart_id` int unsigned NOT NULL DEFAULT 0,
+  `status` enum('pending','attached','orphaned','deleted') NOT NULL DEFAULT 'pending',
+  `attribute_type` enum('file','image') NOT NULL DEFAULT 'file',
   `saved_name` varchar(255) NOT NULL,
   `mime_type` varchar(255) NOT NULL,
+  `file_size` bigint NOT NULL DEFAULT 0,
   `created_by` int NOT NULL,
   `created_on` datetime NOT NULL,
-  PRIMARY KEY (`j2commerce_upload_id`)
+  `expires_on` datetime NULL DEFAULT NULL,
+  `modified_on` datetime NULL DEFAULT NULL,
+  PRIMARY KEY (`j2commerce_upload_id`),
+  KEY `idx_order_id` (`order_id`),
+  KEY `idx_cart_id` (`cart_id`),
+  KEY `idx_status` (`status`),
+  KEY `idx_attribute_type` (`attribute_type`),
+  KEY `idx_expires_on` (`expires_on`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------

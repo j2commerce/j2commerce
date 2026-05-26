@@ -12,10 +12,11 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Site\Controller;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\UploadHelper;
 use Joomla\CMS\Helper\MediaHelper;
 use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\CMS\Session\Session;
-use Joomla\CMS\Uri\Uri;
 use Joomla\Filesystem\File;
 use Joomla\Filesystem\Folder;
 
@@ -29,11 +30,10 @@ use Joomla\Filesystem\Folder;
 class CheckoutuploaderController extends BaseController
 {
     /**
-     * Handle checkout file upload.
+     * Handle checkout file upload — stores under files/com_j2commerce/tmp/{cart_id}/
+     * with randomized filename + DB-tracked mangled token.
      *
-     * @return  void
-     *
-     * @since   6.2.0
+     * @since  6.2.0
      */
     public function upload(): void
     {
@@ -42,11 +42,10 @@ class CheckoutuploaderController extends BaseController
             return;
         }
 
-        // Verify active checkout session (cart with items)
         $session = $this->app->getSession();
-        $cartId  = $session->get('j2commerce.cart_id', 0);
+        $cartId  = (int) $session->get('j2commerce.cart_id', 0);
 
-        if (empty($cartId)) {
+        if ($cartId <= 0) {
             $this->sendJson(false, 'No active checkout session');
             return;
         }
@@ -64,49 +63,81 @@ class CheckoutuploaderController extends BaseController
             return;
         }
 
-        // Force directory to checkout-uploads only (security: prevent path manipulation)
-        $directory = $input->getString('path', 'images/checkout-uploads');
-        $directory = preg_replace('/[^a-zA-Z0-9\/_-]/', '', $directory);
+        $attachmentRoot = ConfigHelper::getAttachmentAbsolutePath();
 
-        if (!str_starts_with($directory, 'images/checkout-uploads')) {
-            $directory = 'images/checkout-uploads';
+        if ($attachmentRoot === null) {
+            $this->sendJson(false, 'Upload storage unavailable');
+            return;
         }
 
-        $uploadPath = JPATH_ROOT . '/' . $directory;
+        $uploadPath = $attachmentRoot . '/tmp/' . $cartId;
 
-        if (!is_dir($uploadPath)) {
-            Folder::create($uploadPath);
+        if (!is_dir($uploadPath) && !Folder::create($uploadPath)) {
+            $this->sendJson(false, 'Failed to prepare storage');
+            return;
         }
 
-        // Ensure path is within site root
         $realUpload = realpath($uploadPath);
-        $realRoot   = realpath(JPATH_ROOT);
 
-        if ($realUpload === false || $realRoot === false || !str_starts_with($realUpload, $realRoot)) {
+        if ($realUpload === false || !str_starts_with($realUpload, $attachmentRoot)) {
             $this->sendJson(false, 'Access denied');
             return;
         }
 
-        $extension = strtolower(File::getExt($file['name']));
-        $safeName  = File::makeSafe($file['name']);
-        $baseName  = File::stripExt($safeName);
-        $fileName  = $baseName . '_' . uniqid() . '.' . $extension;
-        $filePath  = $uploadPath . '/' . $fileName;
+        $extension   = strtolower(File::getExt($file['name']));
+        $savedName   = UploadHelper::randomToken() . ($extension !== '' ? '.' . $extension : '');
+        $mangledName = UploadHelper::randomToken();
+        $filePath    = $uploadPath . '/' . $savedName;
 
         if (!File::upload($file['tmp_name'], $filePath)) {
             $this->sendJson(false, 'Failed to save file');
             return;
         }
 
-        $relativePath = $directory . '/' . $fileName;
-        $fileSize     = filesize($filePath) ?: 0;
+        $fileSize = filesize($filePath) ?: 0;
+        $mimeType = $this->resolveMimeType($filePath, $file);
+        $userId   = (int) ($this->app->getIdentity()->id ?? 0);
+
+        $stored = UploadHelper::createPendingUpload(
+            $cartId,
+            (string) $file['name'],
+            $mangledName,
+            $savedName,
+            $mimeType,
+            (int) $fileSize,
+            $userId
+        );
+
+        if (!$stored) {
+            @unlink($filePath);
+            $this->sendJson(false, 'Failed to persist upload metadata');
+            return;
+        }
 
         $this->sendJson(true, '', [
-            'name' => $file['name'],
-            'path' => $relativePath,
-            'url'  => Uri::root() . $relativePath,
-            'size' => $fileSize,
+            'name'         => $file['name'],
+            'mangled_name' => $mangledName,
+            'size'         => $fileSize,
         ]);
+    }
+
+    /** Resolve a MIME type for the uploaded file, with safe fallback. */
+    private function resolveMimeType(string $filePath, array $file): string
+    {
+        if (\function_exists('finfo_open')) {
+            $finfo = @finfo_open(FILEINFO_MIME_TYPE);
+
+            if ($finfo !== false) {
+                $mime = (string) @finfo_file($finfo, $filePath);
+                @finfo_close($finfo);
+
+                if ($mime !== '') {
+                    return $mime;
+                }
+            }
+        }
+
+        return (string) ($file['type'] ?? 'application/octet-stream');
     }
 
     /**

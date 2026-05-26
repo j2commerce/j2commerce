@@ -812,6 +812,30 @@
 			</field>
 
 			<field
+				name="item_show_product_upc"
+				type="radio"
+				label="COM_J2COMMERCE_PRODUCT_SHOW_PRODUCT_UPC_LABEL"
+				default="0"
+				layout="joomla.form.field.radio.switcher"
+				filter="integer"
+			>
+				<option value="0">JHIDE</option>
+				<option value="1">JSHOW</option>
+			</field>
+
+			<field
+				name="list_show_product_upc"
+				type="radio"
+				label="COM_J2COMMERCE_PRODUCT_LIST_SHOW_PRODUCT_UPC_LABEL"
+				default="0"
+				layout="joomla.form.field.radio.switcher"
+				filter="integer"
+			>
+				<option value="0">JHIDE</option>
+				<option value="1">JSHOW</option>
+			</field>
+
+			<field
 				name="item_show_product_stock"
 				type="radio"
 				label="COM_J2COMMERCE_PRODUCT_SHOW_STOCK_LABEL"

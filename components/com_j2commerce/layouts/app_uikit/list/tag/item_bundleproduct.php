@@ -60,6 +60,9 @@ $cartText = $addtocartText ?? Text::_('COM_J2COMMERCE_VIEW_PRODUCT_DETAILS');
         <?php if ($showSku): ?>
             <?php echo ProductLayoutService::renderLayout('list.category.item_sku', $displayData); ?>
         <?php endif; ?>
+        <?php if ($showUpc): ?>
+            <?php echo ProductLayoutService::renderLayout('list.category.item_upc', $displayData); ?>
+        <?php endif; ?>
     </div>
 
     <?php if ($showCart): ?>

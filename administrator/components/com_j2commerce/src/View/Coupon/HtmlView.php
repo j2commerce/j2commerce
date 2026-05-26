@@ -108,7 +108,7 @@ class HtmlView extends BaseHtmlView
         $user       = Factory::getApplication()->getIdentity();
         $isNew      = ($this->item->j2commerce_coupon_id == 0);
         $canDo      = ContentHelper::getActions('com_j2commerce');
-        $checkedOut = !(($this->item->checked_out ?? null) === null || ($this->item->checked_out ?? 0) == $user->id);
+        $checkedOut = !empty($this->item->checked_out) && (int) $this->item->checked_out !== (int) $user->id;
         $toolbar    = $this->getDocument()->getToolbar();
 
         $layout          = Factory::getApplication()->getInput()->get('layout', 'history');
@@ -185,6 +185,6 @@ class HtmlView extends BaseHtmlView
         }
 
         $toolbar->divider();
-        ToolbarHelper::help('Coupons', true, 'https://docs.j2commerce.com/v6/sales/coupons');
+        ToolbarHelper::help(Text::_('COM_J2COMMERCE_COUPONS'), true, 'https://docs.j2commerce.com/v6/sales/coupons');
     }
 }

@@ -121,6 +121,9 @@ class Com_J2commerceInstallerScript extends InstallerScript
         $this->setDefaultAcl();
         $this->debugLog("INSTALL: default ACL rules set");
 
+        $this->ensureFilesFolder();
+        $this->debugLog("INSTALL: files/com_j2commerce/ tree ensured");
+
         Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_INSTALL_SUCCESS'), 'success');
 
         $this->debugLog("=== INSTALL END ===");
@@ -131,8 +134,14 @@ class Com_J2commerceInstallerScript extends InstallerScript
     {
         $this->debugLog("=== UPDATE START ===");
 
+        $this->installLocalisation($parent);
+        $this->debugLog("UPDATE: localisation seeded (idempotent)");
+
         $this->setDefaultAcl();
         $this->debugLog("UPDATE: default ACL rules set (if empty)");
+
+        $this->ensureFilesFolder();
+        $this->debugLog("UPDATE: files/com_j2commerce/ tree ensured");
 
         $this->cleanupStaleCheckoutTemplates();
 
@@ -416,7 +425,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
             }
 
             if ($needsEmails) {
-                $this->executeSqlFileDirect($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/emailtemplates.sql');
+                $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/emailtemplates.sql');
             }
         } catch (\Exception $e) {
             $this->debugLog("LOCALISATION: email templates error: " . $e->getMessage());
@@ -436,7 +445,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
             }
 
             if ($needsInvoices) {
-                $this->executeSqlFileDirect($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/invoicetemplates.sql');
+                $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/invoicetemplates.sql');
             }
         } catch (\Exception $e) {
             $this->debugLog("LOCALISATION: invoice templates error: " . $e->getMessage());
@@ -453,32 +462,6 @@ class Com_J2commerceInstallerScript extends InstallerScript
         } catch (\Exception $e) {
             $this->debugLog("LOCALISATION: guided tours error: " . $e->getMessage());
             Log::add('Error installing guided tours: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
-        }
-    }
-
-    private function executeSqlFileDirect(string $sqlPath): void
-    {
-        if (!File::exists($sqlPath)) {
-            $this->debugLog("SQL DIRECT: not found: {$sqlPath}");
-            return;
-        }
-
-        $this->debugLog("SQL DIRECT: executing {$sqlPath} (" . filesize($sqlPath) . " bytes)");
-        $db  = Factory::getContainer()->get(DatabaseInterface::class);
-        $sql = trim(file_get_contents($sqlPath));
-
-        if ($sql === '') {
-            $this->debugLog("SQL DIRECT: file is empty");
-            return;
-        }
-
-        try {
-            $db->setQuery($sql);
-            $db->execute();
-            $this->debugLog("SQL DIRECT: success");
-        } catch (\Exception $e) {
-            $this->debugLog("SQL DIRECT ERROR: " . $e->getMessage());
-            Log::add('SQL Direct Error in ' . basename($sqlPath) . ': ' . $e->getMessage(), Log::WARNING, 'j2commerce');
         }
     }
 
@@ -512,5 +495,114 @@ class Com_J2commerceInstallerScript extends InstallerScript
             }
         }
         $this->debugLog("SQL FILE: {$executed} executed, {$skipped} skipped");
+    }
+
+    // ── Customer-upload storage tree (Issue #1056) ─────────────────────────────
+
+    /**
+     * Create the files/com_j2commerce/ storage tree with .htaccess protection.
+     * Idempotent — re-runs safely on every install + update.
+     *
+     * @since  6.3.0
+     */
+    private function ensureFilesFolder(): void
+    {
+        $configuredPath = $this->readAttachmentFolderPath();
+        $root           = JPATH_ROOT . '/' . trim($configuredPath, '/');
+
+        foreach (['', '/tmp', '/orders'] as $sub) {
+            $dir = $root . $sub;
+
+            if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) {
+                $this->debugLog("ENSURE FILES FOLDER: failed to create {$dir}");
+                continue;
+            }
+
+            $this->writeFileIfMissing($dir . '/index.html', '<!DOCTYPE html><title></title>');
+        }
+
+        $htaccess = <<<'HTACCESS'
+# J2Commerce file storage
+# Disable directory browsing
+Options -Indexes
+
+# Block executable/script files
+<FilesMatch "\.(php|phtml|phar|pl|py|jsp|asp|aspx|sh|cgi|exe|bat)$">
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+</FilesMatch>
+HTACCESS;
+
+        $this->writeFileOverwrite($root . '/.htaccess', $htaccess);
+
+        $readme = <<<'README'
+# J2Commerce Customer Upload Storage
+
+This directory holds customer-supplied files attached to orders (product-option uploads and checkout uploads).
+
+- `tmp/{cart_id}/` — uploads bound to in-progress carts; cleaned by the `j2commerce.cleanupOrderUploads` scheduled task once `expires_on` passes.
+- `orders/{order_id}/` — uploads attached to a placed order; cleaned by the same task per configured retention.
+
+Direct web access is denied via `.htaccess`. Downloads must go through `OrderfileController` (admin-only, CSRF + ACL gated).
+
+## Nginx equivalent
+
+If your site is served by Nginx instead of Apache, add this to your server block:
+
+```nginx
+location ~ ^/files/com_j2commerce { deny all; return 403; }
+```
+
+Do not store anything in this tree manually — admin order views look up files by `#__j2commerce_uploads` row, not by filesystem scan.
+README;
+
+        $this->writeFileIfMissing($root . '/README.md', $readme);
+
+        $this->debugLog("ENSURE FILES FOLDER: tree at {$root} ready");
+    }
+
+    /** Read attachmentfolderpath from com_j2commerce params with safe fallback. */
+    private function readAttachmentFolderPath(): string
+    {
+        $default = 'files/com_j2commerce';
+        $db      = Factory::getContainer()->get(DatabaseInterface::class);
+
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('params'))
+            ->from($db->quoteName('#__extensions'))
+            ->where($db->quoteName('element') . ' = ' . $db->quote('com_j2commerce'))
+            ->where($db->quoteName('type') . ' = ' . $db->quote('component'));
+        $db->setQuery($query);
+
+        $params = (string) ($db->loadResult() ?: '');
+        $value  = trim((string) (new Registry($params))->get('attachmentfolderpath', ''));
+
+        return $value !== '' ? $value : $default;
+    }
+
+    /** Write file only if it doesn't already exist. Logs and continues on failure. */
+    private function writeFileIfMissing(string $path, string $contents): void
+    {
+        if (file_exists($path)) {
+            return;
+        }
+
+        if (@file_put_contents($path, $contents) === false) {
+            $this->debugLog("ENSURE FILES FOLDER: failed to write {$path}");
+        }
+    }
+
+    /** Write file, overwriting any existing copy. Logs and continues on failure. */
+    private function writeFileOverwrite(string $path, string $contents): void
+    {
+        if (@file_put_contents($path, $contents) === false) {
+            $this->debugLog("ENSURE FILES FOLDER: failed to write {$path}");
+        }
     }
 }

@@ -55,6 +55,21 @@ class HtmlView extends BaseHtmlView
         $this->order = $model->getOrder();
 
         if ($this->order === null) {
+            $submittedToken = (string) $model->getState('token', '');
+
+            // A token was supplied but did not resolve to an authorised order →
+            // surface an error and redirect to the clean URL so the noisy
+            // ?option=...&view=...&token=... query string from the GET form is gone.
+            if ($submittedToken !== '') {
+                $app->enqueueMessage(
+                    Text::_('COM_J2COMMERCE_CONFIRMATION_TOKEN_INVALID'),
+                    'error'
+                );
+                $app->redirect(Route::_('index.php?option=com_j2commerce&view=confirmation', false));
+
+                return;
+            }
+
             $user = $app->getIdentity();
 
             // Guest → redirect to My Profile (has login + guest order lookup form)

@@ -12,6 +12,7 @@ defined('_JEXEC') or die;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Language\Text;
 ?>
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductContent', [$this->item, J2CommerceHelper::utilities()->getContext('view_content')])->getArgument('html'); ?>
 <div class="row">
     <div class="col-sm-12">
         <ul class="nav nav-tabs" id="j2commerce-product-detail-tab" role="tablist">

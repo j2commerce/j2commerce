@@ -72,6 +72,9 @@ $cartText   = !empty($product->addtocart_text) ? $product->addtocart_text : Text
         <?php if ($showSku): ?>
             <?php echo ProductLayoutService::renderLayout('list.category.item_sku', $displayData); ?>
         <?php endif; ?>
+        <?php if ($showUpc): ?>
+            <?php echo ProductLayoutService::renderLayout('list.category.item_upc', $displayData); ?>
+        <?php endif; ?>
     </div>
 
     <?php if ($showCart): ?>

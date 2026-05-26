@@ -1493,6 +1493,24 @@ final class SampleDataHelper
 
         $now = time();
 
+        $imageMap = [];
+        $imageIds = array_column($productIds, 'id');
+        if (!empty($imageIds)) {
+            $imgQuery = $db->getQuery(true)
+                ->select($db->quoteName(['product_id', 'thumb_image']))
+                ->from($db->quoteName('#__j2commerce_productimages'))
+                ->whereIn($db->quoteName('product_id'), $imageIds);
+            $db->setQuery($imgQuery);
+
+            foreach ($db->loadObjectList() as $row) {
+                $thumb = (string) ($row->thumb_image ?? '');
+                if ($thumb !== '' && strpos($thumb, '#') !== false) {
+                    $thumb = substr($thumb, 0, strpos($thumb, '#'));
+                }
+                $imageMap[(int) $row->product_id] = $thumb;
+            }
+        }
+
         for ($i = 0; $i < $count; $i++) {
             $customer   = $customerIds[$i % $custCount];
             $statusId   = $statusPool[$i % \count($statusPool)];
@@ -1667,7 +1685,10 @@ final class SampleDataHelper
                 $oi->orderitem_finalprice             = $item['line_total'];
                 $oi->orderitem_finalprice_with_tax    = round($item['line_total'] * 1.0825, 5);
                 $oi->orderitem_finalprice_without_tax = $item['line_total'];
-                $oi->orderitem_params                 = '{}';
+                $thumbImage                           = $imageMap[(int) $item['product_id']] ?? '';
+                $oi->orderitem_params                 = $thumbImage !== ''
+                    ? json_encode(['thumb_image' => $thumbImage])
+                    : '{}';
                 $oi->created_on                       = $createdOn;
                 $oi->created_by                       = $customer['id'];
                 $oi->orderitem_weight                 = '0';

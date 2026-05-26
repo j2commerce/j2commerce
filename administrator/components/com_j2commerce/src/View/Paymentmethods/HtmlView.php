@@ -192,7 +192,7 @@ class HtmlView extends BaseHtmlView
             $toolbar->preferences('com_j2commerce');
         }
 
-        $toolbar->help('Payment_Methods', true, 'https://docs.j2commerce.com/v6/payment-methods');
+        $toolbar->help(Text::_('COM_J2COMMERCE_PAYMENT_METHODS'), true, 'https://docs.j2commerce.com/v6/payment-methods');
     }
 
     protected function loadPaymentPluginLanguages(): void

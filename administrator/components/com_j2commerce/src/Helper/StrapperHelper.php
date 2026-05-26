@@ -578,6 +578,7 @@ class StrapperHelper
             $context = $forceContext ?? $this->getViewContext();
 
             $wa->registerAndUseScript('com_j2commerce.site', 'media/com_j2commerce/js/site/j2commerce.js', [], ['defer' => true]);
+            $wa->registerAndUseScript('com_j2commerce.a11y', 'media/com_j2commerce/js/site/j2commerce-a11y.js', [], ['defer' => true]);
             $wa->registerAndUseScript('plg_j2commerce_app_flexivariable.flexivariable', 'media/plg_j2commerce_app_flexivariable/js/flexivariable.js', [], ['defer' => true]);
 
             // Load context-specific scripts
@@ -617,6 +618,17 @@ class StrapperHelper
         if ($loadSwiper) {
             $wa->registerAndUseScript('com_j2commerce.vendor.swiper', 'media/com_j2commerce/vendor/swiper/js/swiper-bundle.min.js', [], ['defer' => true]);
         }
+
+        // Drag & drop / hero-banner upload widgets for product options.
+        $wa->registerAndUseStyle('com_j2commerce.option-upload-fields', 'media/com_j2commerce/css/site/option-upload-fields.css');
+        $wa->registerAndUseScript('com_j2commerce.option-upload-fields', 'media/com_j2commerce/js/site/option-upload-fields.js', [], ['defer' => true]);
+
+        \Joomla\CMS\Language\Text::script('COM_J2COMMERCE_LOADING');
+        \Joomla\CMS\Language\Text::script('COM_J2COMMERCE_UPLOAD_ERR_GENERIC_ERROR');
+        \Joomla\CMS\Language\Text::script('COM_J2COMMERCE_UPLOAD_ERR_TOO_LARGE');
+        \Joomla\CMS\Language\Text::script('COM_J2COMMERCE_UPLOAD_ERR_BAD_EXT');
+        \Joomla\CMS\Language\Text::script('COM_J2COMMERCE_UPLOAD_READY');
+        \Joomla\CMS\Language\Text::script('COM_J2COMMERCE_PRODUCT_OPTION_CHANGE_IMAGE');
     }
 
     /**
@@ -966,6 +978,7 @@ class StrapperHelper
             $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
 
             $wa->registerAndUseScript('com_j2commerce.site', 'media/com_j2commerce/js/site/j2commerce.js', [], ['defer' => true]);
+            $wa->registerAndUseScript('com_j2commerce.a11y', 'media/com_j2commerce/js/site/j2commerce-a11y.js', [], ['defer' => true]);
 
             // Load core CSS (handles template overrides)
             $this->loadCoreCSS($wa);

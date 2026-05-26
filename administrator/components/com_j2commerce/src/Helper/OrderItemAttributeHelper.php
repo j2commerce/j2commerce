@@ -77,13 +77,20 @@ final class OrderItemAttributeHelper
             return [];
         }
 
-        $groups     = [];
-        $childItems = [];
+        $uploadNames = self::resolveUploadNames($attributes);
+        $groups      = [];
+        $childItems  = [];
 
         foreach ($attributes as $attr) {
-            $type  = $attr->orderitemattribute_type ?? 'select';
-            $name  = $attr->orderitemattribute_name ?? '';
-            $value = $attr->orderitemattribute_value ?? '';
+            $type        = $attr->orderitemattribute_type ?? 'select';
+            $name        = $attr->orderitemattribute_name ?? '';
+            $value       = $attr->orderitemattribute_value ?? '';
+            $mangledName = '';
+
+            if (($type === 'file' || $type === 'image') && isset($uploadNames[$value])) {
+                $mangledName = (string) $value;
+                $value       = $uploadNames[$value];
+            }
 
             if (\in_array($type, self::SKIP_TYPES, true)) {
                 continue;
@@ -102,7 +109,12 @@ final class OrderItemAttributeHelper
                     $childItems[$key]['qty']++;
                 }
             } else {
-                $groups[] = ['type' => $type, 'name' => $name, 'value' => $value];
+                $groups[] = [
+                    'type'         => $type,
+                    'name'         => $name,
+                    'value'        => $value,
+                    'mangled_name' => $mangledName,
+                ];
             }
         }
 
@@ -125,6 +137,43 @@ final class OrderItemAttributeHelper
         }
 
         return $result;
+    }
+
+    /**
+     * Map mangled upload names to their original filenames for file/image type attributes.
+     *
+     * @return array<string, string>  mangled_name => original_name
+     */
+    private static function resolveUploadNames(array $attributes): array
+    {
+        $mangled = [];
+
+        foreach ($attributes as $attr) {
+            $type = $attr->orderitemattribute_type ?? '';
+            if (($type === 'file' || $type === 'image') && !empty($attr->orderitemattribute_value)) {
+                $mangled[] = (string) $attr->orderitemattribute_value;
+            }
+        }
+
+        if (empty($mangled)) {
+            return [];
+        }
+
+        $db    = Factory::getContainer()->get(DatabaseInterface::class);
+        $query = $db->getQuery(true)
+            ->select($db->quoteName(['mangled_name', 'original_name']))
+            ->from($db->quoteName('#__j2commerce_uploads'))
+            ->whereIn($db->quoteName('mangled_name'), array_unique($mangled), ParameterType::STRING);
+
+        $db->setQuery($query);
+        $rows = $db->loadObjectList() ?: [];
+
+        $map = [];
+        foreach ($rows as $row) {
+            $map[$row->mangled_name] = $row->original_name;
+        }
+
+        return $map;
     }
 
     /** Format attributes as HTML string for email context. */

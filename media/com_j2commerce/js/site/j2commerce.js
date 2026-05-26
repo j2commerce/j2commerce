@@ -375,11 +375,12 @@ const J2Commerce = {
         const form = element.closest('form');
         if (!form || (form.dataset.product_id ?? form.dataset.productId) != productId) return;
 
-        // Clear child options if present and restore any hidden standalone options
+        // Resolve the child-options container. Keep the current set visible (dimmed,
+        // height reserved) while the new set loads — no eager wipe, so no layout collapse.
         const childContainer = document.getElementById(`ChildOptions${poId}`)
             || document.getElementById(`child-ChildOptions${poId}`);
-        if (povId === '' || childContainer) {
-            if (childContainer) childContainer.innerHTML = '';
+        if (childContainer) {
+            this.setChildLoading(childContainer, true);
         }
         const optionsContainer = form?.querySelector('[id^="configurable-options-"]')
             || element.closest('.options') || element.closest('.j2commerce-product-options');
@@ -425,9 +426,16 @@ const J2Commerce = {
 
         if (!this.baseUrl) this.baseUrl = this.getBaseUrl();
 
-        if (element) {
-            element.insertAdjacentHTML('beforeend',
-                `<span class="wait">&nbsp;<img src="${this.baseUrl}media/com_j2commerce/images/loader.gif" alt="" /></span>`);
+        // Element-level spinner only when there is no child container to show the
+        // in-place overlay (e.g. variable-product price/image refresh).
+        if (element && !childContainer) {
+            const wait = document.createElement('span');
+            wait.className = 'wait';
+            const waitImg = document.createElement('img');
+            waitImg.src = `${this.baseUrl}media/com_j2commerce/images/loader.gif`;
+            waitImg.alt = '';
+            wait.append(' ', waitImg);
+            element.appendChild(wait);
         }
 
         const params = new URLSearchParams(values);
@@ -444,15 +452,16 @@ const J2Commerce = {
 
             this.updateProductDisplay(productId, json, form);
 
-            // Update child options if present
-            if (json.optionhtml) {
-                const childOpts = document.getElementById(`ChildOptions${poId}`)
-                    || document.getElementById(`child-ChildOptions${poId}`);
-                if (childOpts) {
-                    childOpts.innerHTML = json.optionhtml;
-                    this.initConfigCheckboxes(childOpts);
+            // Swap the child options in place with a crossfade (no collapse, gap, or
+            // spinner-in-empty-space, and no surrounding layout shift).
+            if (childContainer) {
+                if (json.optionhtml) {
+                    this.swapChildContent(childContainer, this.parseHtmlFragment(json.optionhtml));
+                    this.initConfigCheckboxes(childContainer);
                     this.initColorOptionLabels();
-                    this.triggerChildDefaults(childOpts, productId);
+                    this.triggerChildDefaults(childContainer, productId);
+                } else {
+                    this.collapseChild(childContainer);
                 }
             }
 
@@ -478,7 +487,104 @@ const J2Commerce = {
         } catch (error) {
             console.error('AJAX filter error:', error);
             document.querySelectorAll('.wait').forEach(el => el.remove());
+            if (childContainer) this.setChildLoading(childContainer, false);
         }
+    },
+
+    // True when the visitor has asked the OS/browser to minimise motion.
+    prefersReducedMotion() {
+        return typeof matchMedia === 'function'
+            && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    },
+
+    // Parse server-rendered option HTML into an inert fragment (no innerHTML, no script
+    // execution; inline onchange attributes are preserved as the child layout expects).
+    parseHtmlFragment(html) {
+        return document.createRange().createContextualFragment(html);
+    },
+
+    // Mark a child-options container as loading without shifting layout: hold its current
+    // height, dim it, and show a centred overlay spinner over the still-visible old set.
+    // No-op for an empty container (e.g. a grandchild placeholder) so it never flashes
+    // phantom height — grandchildren, if any, grow in from 0.
+    setChildLoading(container, loading) {
+        if (!container) return;
+        if (loading) {
+            if (container.childElementCount === 0) return;
+            if (getComputedStyle(container).position === 'static') {
+                container.style.position = 'relative';
+            }
+            container.style.minHeight = `${Math.max(container.offsetHeight, 24)}px`;
+            container.style.transition = 'opacity .2s ease';
+            container.style.opacity = '0.45';
+            container.style.pointerEvents = 'none';
+            if (!container.querySelector(':scope > .j2commerce-options-spinner')) {
+                const spinner = document.createElement('span');
+                spinner.className = 'j2commerce-options-spinner';
+                spinner.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2;';
+                const spinnerImg = document.createElement('img');
+                spinnerImg.src = `${this.baseUrl}media/com_j2commerce/images/loader.gif`;
+                spinnerImg.alt = '';
+                spinner.appendChild(spinnerImg);
+                container.appendChild(spinner);
+            }
+        } else {
+            container.querySelectorAll(':scope > .j2commerce-options-spinner').forEach(s => s.remove());
+            container.style.opacity = '';
+            container.style.pointerEvents = '';
+            container.style.minHeight = '';
+        }
+    },
+
+    // Replace a container's children with new nodes via a pure opacity crossfade.
+    // No height/overflow manipulation: the new set takes its natural height immediately,
+    // so equal-size option sets (the common case) produce ZERO layout shift, and a
+    // genuinely different-size set resizes once cleanly instead of animating a push.
+    swapChildContent(container, fragment) {
+        container.replaceChildren(fragment);
+        container.style.minHeight = '';
+        container.style.pointerEvents = '';
+
+        if (this.prefersReducedMotion()) {
+            container.style.opacity = '';
+            return;
+        }
+
+        container.style.transition = 'opacity .2s ease';
+        container.style.opacity = '0.4';
+        container.getBoundingClientRect();
+        container.style.opacity = '1';
+
+        const cleanup = () => {
+            container.style.opacity = '';
+            container.style.transition = '';
+            container.removeEventListener('transitionend', cleanup);
+        };
+        container.addEventListener('transitionend', cleanup);
+        setTimeout(cleanup, 240);
+    },
+
+    // Empty a child-options container (parent deselected / no children) with a short fade.
+    collapseChild(container) {
+        if (container.childElementCount === 0 || this.prefersReducedMotion()) {
+            container.replaceChildren();
+            this.setChildLoading(container, false);
+            return;
+        }
+
+        container.style.transition = 'opacity .15s ease';
+        container.style.opacity = '0';
+
+        const done = () => {
+            container.replaceChildren();
+            container.style.opacity = '';
+            container.style.transition = '';
+            container.style.minHeight = '';
+            container.style.pointerEvents = '';
+            container.removeEventListener('transitionend', done);
+        };
+        container.addEventListener('transitionend', done);
+        setTimeout(done, 180);
     },
 
     // Attach change listeners to configurable checkbox options injected via innerHTML
@@ -489,7 +595,7 @@ const J2Commerce = {
             div.querySelectorAll('input[type="checkbox"]').forEach(cb => {
                 cb.addEventListener('change', () => {
                     const checked = div.querySelector('input[type="checkbox"]:checked');
-                    doAjaxFilter(checked ? checked.value : '', productId, poId, '#' + div.id);
+                    this.doAjaxFilter(checked ? checked.value : '', productId, poId, '#' + div.id);
                 });
             });
         });
@@ -632,6 +738,12 @@ const J2Commerce = {
         if (response.sku) {
             const sku = product.querySelector('.sku-value') || product.querySelector('.sku');
             if (sku) sku.textContent = response.sku;
+        }
+
+        // UPC — detail uses .upc, list uses .upc-value (parity with SKU)
+        if (typeof response.upc !== 'undefined') {
+            const upc = product.querySelector('.upc-value') || product.querySelector('.upc');
+            if (upc) upc.textContent = response.upc;
         }
 
         // Pricing — handle both standard (.base-price/.sale-price) and flexiprice (.j2commerce-flexiprice) layouts
@@ -781,20 +893,25 @@ const J2Commerce = {
 
         const enableZoom = mainEl.dataset.enableZoom === '1';
 
-        // Case C: No variant images — restore original gallery
+        // Case C: No variant images — restore original gallery only if a swap is active
+        // (avoids needless destroy/rebuild/reinit — and the image flash — on every option change)
         if (!variantGallery || variantGallery.length === 0) {
-            this.restoreOriginalGallery(mainEl, thumbsEl, enableZoom);
+            if (galleryEl.dataset.variantSwapped === '1') {
+                this.restoreOriginalGallery(mainEl, thumbsEl, enableZoom);
+                galleryEl.dataset.variantSwapped = '0';
+            }
             return;
         }
 
         // Case A: Single variant image — replace only first slide
         if (variantGallery.length === 1) {
             this.replaceFirstSlide(mainEl, thumbsEl, variantGallery[0], enableZoom);
-            return;
+        } else {
+            // Case B: Multiple variant images — replace entire gallery
+            this.replaceAllSlides(mainEl, thumbsEl, variantGallery, enableZoom);
         }
 
-        // Case B: Multiple variant images — replace entire gallery
-        this.replaceAllSlides(mainEl, thumbsEl, variantGallery, enableZoom);
+        galleryEl.dataset.variantSwapped = '1';
     },
 
     replaceFirstSlide(mainEl, thumbsEl, image, enableZoom) {
@@ -1222,6 +1339,14 @@ function getPFFilterToggle(id) {
 
 function get_matching_variant(variants, selected) {
     return J2Commerce.getMatchingVariant(variants, selected);
+}
+
+function doAjaxPrice(productId, elementId) {
+    return J2Commerce.doAjaxPrice(productId, elementId);
+}
+
+function doAjaxFilter(povId, productId, poId, elementId) {
+    return J2Commerce.doAjaxFilter(povId, productId, poId, elementId);
 }
 
 // =========================================================================

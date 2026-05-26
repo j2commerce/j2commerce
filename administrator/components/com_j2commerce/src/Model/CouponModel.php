@@ -636,7 +636,7 @@ class CouponModel extends AdminModel
             PluginHelper::importPlugin('j2commerce');
 
             $couponStatus = false;
-            J2CommerceHelper::plugin()->event('onJ2CommerceBeforeCouponIsValid', [$this, $order, &$couponStatus]);
+            J2CommerceHelper::plugin()->event('BeforeCouponIsValid', [$this, $order, &$couponStatus]);
 
             if ($couponStatus) {
                 return true;
@@ -1314,7 +1314,7 @@ class CouponModel extends AdminModel
         if (!empty($this->coupon->free_shipping) && method_exists($order, 'allow_free_shipping')) {
             $order->allow_free_shipping();
         }
-        J2CommerceHelper::plugin()->event('onJ2CommerceGetCouponDiscountAmount', [
+        J2CommerceHelper::plugin()->event('GetCouponDiscountAmount', [
             &$discount,
             $discountingAmount,
             $cartItem,

@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Filesystem\File;
+use Joomla\CMS\Filesystem\Path;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Uri\Uri;
 use Joomla\Database\DatabaseInterface;
@@ -175,7 +176,12 @@ class InvoiceHelper
                         ])
                     );
 
-                    $templateText   = $template->body ?? '';
+                    if (isset($template->body_source) && $template->body_source === 'file') {
+                        $templateText = $this->getTemplateFromFile($template, $order);
+                    } else {
+                        $templateText = $template->body ?? '';
+                    }
+
                     $preferredScore = $langScore;
                 }
             }
@@ -185,6 +191,97 @@ class InvoiceHelper
         }
 
         return $templateText;
+    }
+
+    /**
+     * Resolve a file-based invoice/print template body.
+     *
+     * Mirrors EmailHelper::getTemplateFromFile. Supports two forms of body_source_file:
+     *   - "plg:<group>.<name>:<relative/path.html>" → JPATH_PLUGINS/<group>/<name>/tmpl/<invoice_type>/<relative/path.html>
+     *   - "<file.html>" (standard)                  → component layouts/templates/<invoice_type>/<file.html>
+     *
+     * Falls back to $template->body when the source is not a file, the path is empty,
+     * contains a traversal sequence, or the file is missing/unreadable.
+     *
+     * @param   object  $template  The invoice template row
+     * @param   object  $order     The order object (in scope for the included layout)
+     *
+     * @return  string  The template content
+     *
+     * @since   6.0.0
+     */
+    public function getTemplateFromFile(object $template, object $order): string
+    {
+        if (!isset($template->body_source) || $template->body_source !== 'file') {
+            return $template->body ?? '';
+        }
+
+        if (empty($template->body_source_file)) {
+            return $template->body ?? '';
+        }
+
+        $fileName = $template->body_source_file;
+
+        // Reject path traversal in any caller-supplied segment
+        if (str_contains($fileName, '..')) {
+            return $template->body ?? '';
+        }
+
+        // Subfolder per print type: invoice, packingslip, receipt
+        $invoiceType = preg_replace('/[^a-z0-9_]/i', '', (string) ($template->invoice_type ?? 'invoice')) ?: 'invoice';
+
+        // Plugin-prefixed path: "plg:<group>.<name>:<relative/path.html>"
+        // Resolves to: JPATH_PLUGINS/<group>/<name>/tmpl/<invoice_type>/<relative/path.html>
+        if (str_starts_with($fileName, 'plg:')) {
+            $rest                  = substr($fileName, 4);
+            [$pluginRef, $relPath] = array_pad(explode(':', $rest, 2), 2, '');
+            [$group, $name]        = array_pad(explode('.', $pluginRef, 2), 2, '');
+
+            if ($group === '' || $name === '' || $relPath === '') {
+                return $template->body ?? '';
+            }
+
+            $filePath = Path::clean(
+                JPATH_PLUGINS . '/' . $group . '/' . $name . '/tmpl/' . $invoiceType . '/' . $relPath
+            );
+        } else {
+            // Standard path: resolves under component layouts/templates/<invoice_type>/
+            $filePath = Path::clean(
+                JPATH_ADMINISTRATOR . '/components/com_j2commerce/layouts/templates/' . $invoiceType . '/' . $fileName
+            );
+        }
+
+        if (!file_exists($filePath)) {
+            return $template->body ?? '';
+        }
+
+        Path::setPermissions($filePath, '0644');
+
+        if (!is_readable($filePath)) {
+            return $template->body ?? '';
+        }
+
+        return $this->getLayout($filePath, $order);
+    }
+
+    /**
+     * Include a layout file and capture its output.
+     *
+     * @param   string  $layout  Absolute path to the layout file
+     * @param   object  $order   The order object (available as $order inside the layout)
+     *
+     * @return  string  The rendered layout content
+     *
+     * @since   6.0.0
+     */
+    protected function getLayout(string $layout, object $order): string
+    {
+        ob_start();
+        include $layout;
+        $html = ob_get_contents();
+        ob_end_clean();
+
+        return $html ?: '';
     }
 
     /**

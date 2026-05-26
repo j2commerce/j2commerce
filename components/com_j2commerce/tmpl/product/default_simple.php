@@ -38,6 +38,10 @@ use Joomla\CMS\Language\Text;
             <?php echo $this->loadTemplate('sku'); ?>
         <?php endif; ?>
 
+        <?php if(J2CommerceHelper::product()->canShowUpc($this->params)): ?>
+            <?php echo $this->loadTemplate('upc'); ?>
+        <?php endif; ?>
+
         <?php echo $this->loadTemplate('sdesc'); ?>
 
         <div class="d-flex flex-wrap align-items-center mb-3">

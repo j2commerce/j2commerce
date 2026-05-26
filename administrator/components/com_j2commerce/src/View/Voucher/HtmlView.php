@@ -106,7 +106,7 @@ class HtmlView extends BaseHtmlView
 
         $user       = Factory::getApplication()->getIdentity();
         $isNew      = (empty($this->item->j2commerce_voucher_id) || $this->item->j2commerce_voucher_id == 0);
-        $checkedOut = !(($this->item->checked_out ?? null) === null || ($this->item->checked_out ?? 0) == $user->id);
+        $checkedOut = !empty($this->item->checked_out) && (int) $this->item->checked_out !== (int) $user->id;
         $canDo      = ContentHelper::getActions('com_j2commerce', 'voucher', $this->item->j2commerce_voucher_id ?? 0);
 
         $layout          = Factory::getApplication()->getInput()->get('layout', 'history');
@@ -187,6 +187,6 @@ class HtmlView extends BaseHtmlView
         }
 
         $toolbar->divider();
-        $toolbar->help('Voucher', false, 'https://docs.j2commerce.com/sales/vouchers');
+        $toolbar->help(Text::_('COM_J2COMMERCE_VOUCHER'), false, 'https://docs.j2commerce.com/v6/sales/vouchers/');
     }
 }

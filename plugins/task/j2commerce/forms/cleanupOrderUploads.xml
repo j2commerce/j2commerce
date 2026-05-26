@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form>
+    <fields name="params">
+        <fieldset name="task_params">
+            <field
+                name="cleanup_mode"
+                type="list"
+                label="PLG_TASK_J2COMMERCE_CLEANUP_ORDER_UPLOADS_FIELD_CLEANUP_MODE"
+                description="PLG_TASK_J2COMMERCE_CLEANUP_ORDER_UPLOADS_FIELD_CLEANUP_MODE_DESC"
+                default="both"
+                class="form-select"
+            >
+                <option value="both">PLG_TASK_J2COMMERCE_CLEANUP_ORDER_UPLOADS_MODE_BOTH</option>
+                <option value="attached">PLG_TASK_J2COMMERCE_CLEANUP_ORDER_UPLOADS_MODE_ATTACHED</option>
+                <option value="orphaned">PLG_TASK_J2COMMERCE_CLEANUP_ORDER_UPLOADS_MODE_ORPHANED</option>
+            </field>
+
+            <field
+                name="status_ids"
+                type="OrderStatus"
+                addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field"
+                multiple="true"
+                layout="joomla.form.field.list-fancy-select"
+                label="PLG_TASK_J2COMMERCE_CLEANUP_ORDER_UPLOADS_FIELD_STATUS_IDS"
+                description="PLG_TASK_J2COMMERCE_CLEANUP_ORDER_UPLOADS_FIELD_STATUS_IDS_DESC"
+                showon="cleanup_mode:both,attached"
+            />
+
+            <field
+                name="retention_days"
+                type="number"
+                label="PLG_TASK_J2COMMERCE_CLEANUP_ORDER_UPLOADS_FIELD_RETENTION_DAYS"
+                description="PLG_TASK_J2COMMERCE_CLEANUP_ORDER_UPLOADS_FIELD_RETENTION_DAYS_DESC"
+                default="30"
+                min="1"
+                filter="int"
+                validate="number"
+                showon="cleanup_mode:both,attached"
+            />
+
+            <field
+                name="tmp_retention_days"
+                type="number"
+                label="PLG_TASK_J2COMMERCE_CLEANUP_ORDER_UPLOADS_FIELD_TMP_RETENTION_DAYS"
+                description="PLG_TASK_J2COMMERCE_CLEANUP_ORDER_UPLOADS_FIELD_TMP_RETENTION_DAYS_DESC"
+                default="7"
+                min="1"
+                filter="int"
+                validate="number"
+                showon="cleanup_mode:both,orphaned"
+            />
+
+            <field
+                name="delete_db_rows"
+                type="radio"
+                label="PLG_TASK_J2COMMERCE_CLEANUP_ORDER_UPLOADS_FIELD_DELETE_DB_ROWS"
+                description="PLG_TASK_J2COMMERCE_CLEANUP_ORDER_UPLOADS_FIELD_DELETE_DB_ROWS_DESC"
+                layout="joomla.form.field.radio.switcher"
+                filter="integer"
+                default="0"
+            >
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
+
+            <field
+                name="dry_run"
+                type="radio"
+                label="PLG_TASK_J2COMMERCE_CLEANUP_ORDER_UPLOADS_FIELD_DRY_RUN"
+                description="PLG_TASK_J2COMMERCE_CLEANUP_ORDER_UPLOADS_FIELD_DRY_RUN_DESC"
+                layout="joomla.form.field.radio.switcher"
+                filter="integer"
+                default="1"
+            >
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
+        </fieldset>
+    </fields>
+</form>

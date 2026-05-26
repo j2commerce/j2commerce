@@ -22,6 +22,7 @@ $hasLongDesc  = $this->params->get('item_show_ldesc') && !empty(trim(strip_tags(
 $hasDescription = $hasShortDesc || $hasLongDesc;
 $set_specification_active = !$hasDescription;
 ?>
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductContent', [$this->item, J2CommerceHelper::utilities()->getContext('view_content')])->getArgument('html'); ?>
 
 <div class="accordion mt-5" id="j2CommerceAccordion">
     <?php if($hasDescription):?>

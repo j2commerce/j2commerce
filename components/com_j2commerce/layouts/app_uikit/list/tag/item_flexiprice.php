@@ -31,7 +31,7 @@ $defaultPrice = (float) ($pricing->price ?? 0);
 $hasRange = $minPrice !== null && $maxPrice !== null && $minPrice != $maxPrice;
 $showRange = !empty($product->show_price_range) && $hasRange;
 ?>
-<div class="j2commerce-product-price j2commerce-flexiprice">
+<div class="j2commerce-product-price j2commerce-flexiprice" data-j2-a11y-live="polite" data-j2-a11y-atomic="true">
     <?php if ($showRange): ?>
         <span class="price-range uk-text-muted uk-text-small">
             <?php echo $currency->format($minPrice); ?> - <?php echo $currency->format($maxPrice); ?>

@@ -179,3 +179,5 @@ $thumbsId  = 'product-gallery-thumbs-' . $productId;
         if (thumbsEl) thumbsEl._swiper = thumbSwiper;
     });
 </script>
+
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductGallery', [$this->product, J2CommerceHelper::utilities()->getContext('view_images')])->getArgument('html'); ?>

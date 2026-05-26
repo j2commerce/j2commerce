@@ -15,6 +15,7 @@ namespace J2Commerce\Component\J2commerce\Site\Model;
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
+use J2Commerce\Component\J2commerce\Site\Helper\ProductFilterRequestHelper;
 use Joomla\CMS\Categories\CategoryNode;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Multilanguage;
@@ -227,6 +228,20 @@ class ProductsModel extends ListModel
 
         $limitstart = $app->getInput()->getInt('limitstart', 0);
         $this->setState('list.start', $limitstart);
+
+        // Filter state — single source of truth via ProductFilterRequestHelper.
+        // Reads ?filters=group:alias, ?productfilter_ids[], ?brands=, ?vendors=, ?tag_ids[], pricefrom/to
+        // from the current request so a cold-pasted filtered URL produces the matching product list.
+        $filterState = ProductFilterRequestHelper::resolveFromRequest($input);
+        $this->setState('filter.manufacturer_ids', $filterState['manufacturer_ids']);
+        $this->setState('filter.vendor_ids', $filterState['vendor_ids']);
+        $this->setState('filter.productfilter_ids', $filterState['productfilter_ids']);
+        $this->setState('filter.tag_ids', $filterState['tag_ids']);
+        $this->setState('filter.tag_match', $filterState['tag_match']);
+        if ($filterState['price_from'] > 0 || $filterState['price_to'] > 0) {
+            $this->setState('filter.price_from', $filterState['price_from']);
+            $this->setState('filter.price_to', $filterState['price_to']);
+        }
 
         // Language filter
         $this->setState('filter.language', Multilanguage::isEnabled());

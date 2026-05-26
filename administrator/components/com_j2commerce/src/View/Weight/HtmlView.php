@@ -95,7 +95,7 @@ class HtmlView extends BaseHtmlView
         $isNew      = ($this->item->j2commerce_weight_id == 0);
         $canDo      = ContentHelper::getActions('com_j2commerce');
         $user       = Factory::getApplication()->getIdentity();
-        $checkedOut = !(($this->item->checked_out ?? null) === null || ($this->item->checked_out ?? 0) == $user->id);
+        $checkedOut = !empty($this->item->checked_out) && (int) $this->item->checked_out !== (int) $user->id;
         $toolbar    = $this->getDocument()->getToolbar();
 
         $title = $isNew ? Text::_('COM_J2COMMERCE_TOOLBAR_NEW').' '.Text::_('COM_J2COMMERCE_WEIGHT') : Text::_('COM_J2COMMERCE_TOOLBAR_EDIT').' '.Text::_('COM_J2COMMERCE_WEIGHT');
@@ -127,6 +127,6 @@ class HtmlView extends BaseHtmlView
 
         $toolbar->cancel('weight.cancel', $isNew ? 'JTOOLBAR_CANCEL' : 'JTOOLBAR_CLOSE');
         $toolbar->divider();
-        ToolbarHelper::help('Weights', true, 'https://docs.j2commerce.com/v6/localisation/weights');
+        ToolbarHelper::help(Text::_('COM_J2COMMERCE_WEIGHTS'), true, 'https://docs.j2commerce.com/v6/localization/weights/');
     }
 }

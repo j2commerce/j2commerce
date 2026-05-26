@@ -148,6 +148,7 @@ $filtersCollapsed = ((int) $this->params->get('list_filter_category_toggle', 1) 
                     <?php foreach ($this->filters['productfilters'] as $pfKey => $filtergroup) : ?>
                         <?php
                         $filterScriptId = J2CommerceHelper::utilities()->generateId($filtergroup['group_name']) . '_' . $pfKey;
+                        $groupAlias     = \Joomla\CMS\Filter\OutputFilter::stringURLSafe(Text::_($filtergroup['group_name']));
                         $pfShowExpanded = !$filtersCollapsed;
                         $groupFilterIds = array_map(fn($f) => $f->filter_id, $filtergroup['filters']);
                         $hasSelectedFilters = !empty($sessionProductfilterIds) && count(array_intersect($sessionProductfilterIds, $groupFilterIds)) > 0;
@@ -173,7 +174,7 @@ $filtersCollapsed = ((int) $this->params->get('list_filter_category_toggle', 1) 
                                         ?>
                                         <div class="uk-margin-small-bottom">
                                             <label>
-                                                <input type="checkbox" class="uk-checkbox j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" name="productfilter_ids[]" id="j2commerce-pfilter-<?php echo $filterScriptId; ?>-<?php echo $filter->filter_id; ?>" value="<?php echo $filter->filter_id; ?>" data-alias="<?php echo $this->escape($filterAlias); ?>"<?php echo $checked ? ' checked' : ''; ?> />
+                                                <input type="checkbox" class="uk-checkbox j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" name="productfilter_ids[]" id="j2commerce-pfilter-<?php echo $filterScriptId; ?>-<?php echo $filter->filter_id; ?>" value="<?php echo $filter->filter_id; ?>" data-alias="<?php echo $this->escape($filterAlias); ?>" data-group-alias="<?php echo $this->escape($groupAlias); ?>"<?php echo $checked ? ' checked' : ''; ?> />
                                                 <span class="uk-text-small uk-margin-small-left"><?php echo $this->escape(Text::_($filter->filter_name)); ?></span>
                                             </label>
                                         </div>
@@ -316,6 +317,7 @@ $filtersCollapsed = ((int) $this->params->get('list_filter_category_toggle', 1) 
                 <?php foreach ($this->filters['productfilters'] as $pfKey => $filtergroup) : ?>
                     <?php
                     $filterScriptId = J2CommerceHelper::utilities()->generateId($filtergroup['group_name']) . '_' . $pfKey;
+                    $groupAlias     = \Joomla\CMS\Filter\OutputFilter::stringURLSafe(Text::_($filtergroup['group_name']));
                     $pfShowExpanded = !$filtersCollapsed;
                     $groupFilterIds = array_map(fn($f) => $f->filter_id, $filtergroup['filters']);
                     $hasSelectedFilters = !empty($sessionProductfilterIds) && count(array_intersect($sessionProductfilterIds, $groupFilterIds)) > 0;
@@ -336,7 +338,7 @@ $filtersCollapsed = ((int) $this->params->get('list_filter_category_toggle', 1) 
                                     ?>
                                     <div class="uk-margin-small-bottom">
                                         <label>
-                                            <input type="checkbox" class="uk-checkbox j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" name="productfilter_ids[]" id="j2commerce-pfilter-<?php echo $filterScriptId; ?>-<?php echo $filter->filter_id; ?>" value="<?php echo $filter->filter_id; ?>" data-alias="<?php echo $this->escape($filterAlias); ?>"<?php echo $checked ? ' checked' : ''; ?> />
+                                            <input type="checkbox" class="uk-checkbox j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" name="productfilter_ids[]" id="j2commerce-pfilter-<?php echo $filterScriptId; ?>-<?php echo $filter->filter_id; ?>" value="<?php echo $filter->filter_id; ?>" data-alias="<?php echo $this->escape($filterAlias); ?>" data-group-alias="<?php echo $this->escape($groupAlias); ?>"<?php echo $checked ? ' checked' : ''; ?> />
                                             <span class="uk-text-small uk-margin-small-left"><?php echo $this->escape(Text::_($filter->filter_name)); ?></span>
                                         </label>
                                     </div>

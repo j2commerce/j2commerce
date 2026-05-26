@@ -189,6 +189,6 @@ class HtmlView extends BaseHtmlView
         }
 
         // Add help button
-        $toolbar->help('J2Commerce_Email_Templates', false, 'https://docs.j2commerce.com/design/email-templates');
+        $toolbar->help(Text::_('COM_J2COMMERCE_EMAILTEMPLATES'), false, 'https://docs.j2commerce.com/v6/design/email-templates/');
     }
 }

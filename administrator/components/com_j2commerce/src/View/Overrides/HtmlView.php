@@ -166,6 +166,6 @@ class HtmlView extends BaseHtmlView
             $toolbar->back('JTOOLBAR_BACK', 'index.php?option=com_j2commerce&view=dashboard');
         }
 
-        ToolbarHelper::help('Overrides', true, 'https://docs.j2commerce.com/v6/design/template-overrides');
+        ToolbarHelper::help(Text::_('COM_J2COMMERCE_TEMPLATE_OVERRIDES'), true, 'https://docs.j2commerce.com/v6/design/template-overrides');
     }
 }

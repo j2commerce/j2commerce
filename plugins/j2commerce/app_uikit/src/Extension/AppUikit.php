@@ -60,12 +60,13 @@ final class AppUikit extends CMSPlugin implements SubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            'onJ2CommerceTemplateFolderList'     => 'onTemplateFolderList',
-            'onJ2CommerceViewProductListHtml'    => 'onViewProductListHtml',
-            'onJ2CommerceViewProductListTagHtml' => 'onViewProductListTagHtml',
-            'onJ2CommerceViewProductHtml'        => 'onViewProductHtml',
-            'onJ2CommerceViewProductTagHtml'     => 'onViewProductTagHtml',
-            'onJ2CommerceViewCategoryListHtml'   => 'onViewCategoryListHtml',
+            'onJ2CommerceTemplateFolderList'        => 'onTemplateFolderList',
+            'onJ2CommerceViewProductListHtml'       => 'onViewProductListHtml',
+            'onJ2CommerceViewProductListTagHtml'    => 'onViewProductListTagHtml',
+            'onJ2CommerceViewProductHtml'           => 'onViewProductHtml',
+            'onJ2CommerceViewProductTagHtml'        => 'onViewProductTagHtml',
+            'onJ2CommerceViewCategoryListHtml'      => 'onViewCategoryListHtml',
+            'onJ2CommerceRenderAjaxProductListGrid' => 'onRenderAjaxProductListGrid',
         ];
     }
 
@@ -303,6 +304,43 @@ final class AppUikit extends CMSPlugin implements SubscriberInterface
         } finally {
             ProductLayoutService::clearSubtemplateOverride();
         }
+    }
+
+    public function onRenderAjaxProductListGrid(Event $event): void
+    {
+        $args    = $event->getArguments();
+        $items   = $args[0] ?? [];
+        $params  = $args[1] ?? null;
+        $itemId  = (int) ($args[2] ?? 0);
+
+        if ((string) $params?->get('subtemplate', '') !== 'uikit') {
+            return;
+        }
+
+        $columns = (int) $params->get('list_no_of_columns', 3);
+
+        ob_start();
+
+        echo '<div class="j2commerce-products-row uk-grid uk-grid-medium uk-child-width-1-' . $columns . '@s uk-margin-bottom" uk-grid>';
+
+        foreach ($items as $product) {
+            if (!($product->params instanceof Registry)) {
+                $product->params = new Registry($product->params ?? '{}');
+            }
+
+            echo '<div>';
+            echo ProductLayoutService::renderProductItem(
+                $product,
+                $params,
+                ProductLayoutService::CONTEXT_LIST,
+                $itemId
+            );
+            echo '</div>';
+        }
+
+        echo '</div>';
+
+        $event->addResult(ob_get_clean());
     }
 
     /**

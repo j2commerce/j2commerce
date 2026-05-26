@@ -191,6 +191,6 @@ class HtmlView extends BaseHtmlView
             $toolbar->preferences('com_j2commerce');
         }
 
-        $toolbar->help('Filtergroups');
+        $toolbar->help(Text::_('COM_J2COMMERCE_FILTERGROUPS'), true, 'https://docs.j2commerce.com/v6/catalog/creating-filters/');
     }
 }

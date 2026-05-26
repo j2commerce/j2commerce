@@ -331,6 +331,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const productId = container.dataset.productId;
         const productOptionId = container.dataset.productoptionId;
 
+        initOptionValuesSortable();
+
         const createBtn = document.getElementById('j2commerce-create-optionvalue-btn');
         if (createBtn) {
             createBtn.addEventListener('click', async () => {
@@ -574,6 +576,68 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 btn.disabled = false;
             });
+        });
+    }
+
+    // Drag-to-reorder for the current option values table. Native HTML5 DnD,
+    // restricted to the .j2commerce-ov-drag-handle. On drop the visible
+    // [ordering] inputs are renumbered so "Save Changes" persists the new order.
+    function initOptionValuesSortable() {
+        const tbody = document.getElementById('j2commerce-optionvalues-tbody');
+        if (!tbody) return;
+
+        let dragRow = null;
+
+        tbody.addEventListener('pointerdown', (e) => {
+            const handle = e.target.closest('.j2commerce-ov-drag-handle');
+            const row = e.target.closest('tr[data-pov-id]');
+            if (handle && row) {
+                row.setAttribute('draggable', 'true');
+            }
+        });
+
+        tbody.addEventListener('dragstart', (e) => {
+            const row = e.target.closest('tr[data-pov-id]');
+            if (!row || row.getAttribute('draggable') !== 'true') {
+                e.preventDefault();
+                return;
+            }
+            dragRow = row;
+            row.classList.add('j2commerce-ov-dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', row.dataset.povId || '');
+        });
+
+        tbody.addEventListener('dragover', (e) => {
+            if (!dragRow) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            const target = e.target.closest('tr[data-pov-id]');
+            if (!target || target === dragRow) return;
+            const rect = target.getBoundingClientRect();
+            const after = (e.clientY - rect.top) > rect.height / 2;
+            tbody.insertBefore(dragRow, after ? target.nextSibling : target);
+        });
+
+        tbody.addEventListener('drop', (e) => {
+            if (dragRow) e.preventDefault();
+        });
+
+        tbody.addEventListener('dragend', () => {
+            if (!dragRow) return;
+            dragRow.classList.remove('j2commerce-ov-dragging');
+            dragRow.removeAttribute('draggable');
+            dragRow = null;
+            renumberOptionValueOrdering();
+        });
+    }
+
+    function renumberOptionValueOrdering() {
+        const tbody = document.getElementById('j2commerce-optionvalues-tbody');
+        if (!tbody) return;
+        tbody.querySelectorAll('tr[data-pov-id]').forEach((row, idx) => {
+            const orderingInput = row.querySelector('input[name$="[ordering]"]');
+            if (orderingInput) orderingInput.value = idx + 1;
         });
     }
 

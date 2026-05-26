@@ -630,12 +630,13 @@ class OptionModel extends AdminModel
             $ordering = 1;
 
             foreach ($valuesData as $valueData) {
-                if (empty($valueData['optionvalue_name'])) {
+                // Use a strict empty-string check, not empty(), so a value named "0" is kept
+                $valueName = trim((string) ($valueData['optionvalue_name'] ?? ''));
+                if ($valueName === '') {
                     continue;
                 }
 
                 $existingId = (int) ($valueData['j2commerce_optionvalue_id'] ?? 0);
-                $valueName  = $valueData['optionvalue_name'];
                 $valueImage = $valueData['optionvalue_image'] ?? '';
 
                 if ($existingId > 0) {
@@ -728,12 +729,13 @@ class OptionModel extends AdminModel
             $ordering = 1;
 
             foreach ($valuesData as $valueData) {
-                if (empty($valueData['optionvalue_name'])) {
+                // Use a strict empty-string check, not empty(), so a value named "0" is kept
+                $valueName = trim((string) ($valueData['optionvalue_name'] ?? ''));
+                if ($valueName === '') {
                     continue;
                 }
 
                 $existingId = (int) ($valueData['j2commerce_optionvalue_id'] ?? 0);
-                $valueName  = $valueData['optionvalue_name'];
                 $colorValue = $valueData['optionvalue_color'] ?? '#000000';
 
                 if ($existingId > 0) {

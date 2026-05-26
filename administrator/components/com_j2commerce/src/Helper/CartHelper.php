@@ -836,7 +836,7 @@ class CartHelper
      *
      * @since   6.0.6
      */
-    public function getCart(int $cartId = 0, bool $needCreateCart = true): ?object
+    public function getCart(int $cartId = 0, bool $needCreateCart = true, string $cartType = 'cart'): ?object
     {
         $app     = Factory::getApplication();
         $user    = $app->getIdentity();
@@ -859,7 +859,7 @@ class CartHelper
             }
         }
 
-        $cartType = 'cart';
+        $cartType = $cartType !== '' ? $cartType : 'cart';
         $cart     = null;
 
         // Try to load cart by user ID if logged in
@@ -909,15 +909,33 @@ class CartHelper
 
         // Create new cart if needed and not found
         if (!$cart && $needCreateCart) {
-            $cart = $this->createCart();
+            $cart = $this->createCart($cartType);
         }
 
         // Set cart cookie for persistence across session changes
         if ($cart) {
-            $this->setCartCookie((int) $cart->j2commerce_cart_id);
+            $this->setCartCookie((int) $cart->j2commerce_cart_id, $cartType);
         }
 
         return $cart;
+    }
+
+    /**
+     * Build the cart-id cookie name for a given cart type. The regular cart keeps the
+     * legacy 'j2commerce_cart_id' name for back-compat; other types are namespaced so a
+     * wishlist cart id never overwrites the shopping-cart cookie.
+     *
+     * @param   string  $cartType  Cart type.
+     *
+     * @return  string
+     *
+     * @since   6.0.6
+     */
+    private function getCartCookieName(string $cartType = 'cart'): string
+    {
+        return ($cartType === '' || $cartType === 'cart')
+            ? 'j2commerce_cart_id'
+            : 'j2commerce_' . preg_replace('/[^a-z0-9_]/', '', strtolower($cartType)) . '_cart_id';
     }
 
     /**
@@ -937,8 +955,8 @@ class CartHelper
     {
         $app = Factory::getApplication();
 
-        // Get cart ID from cookie
-        $cookieCartId = (int) $app->getInput()->cookie->getInt('j2commerce_cart_id', 0);
+        // Get cart ID from cookie (cart-type-scoped name)
+        $cookieCartId = (int) $app->getInput()->cookie->getInt($this->getCartCookieName($cartType), 0);
 
         if ($cookieCartId <= 0) {
             return null;
@@ -961,7 +979,7 @@ class CartHelper
 
         if (!$cart) {
             // Cookie points to invalid cart, clear it
-            $this->clearCartCookie();
+            $this->clearCartCookie($cartType);
 
             return null;
         }
@@ -1000,16 +1018,17 @@ class CartHelper
      *
      * @since   6.0.6
      */
-    private function setCartCookie(int $cartId): void
+    private function setCartCookie(int $cartId, string $cartType = 'cart'): void
     {
         if ($cartId <= 0) {
             return;
         }
 
-        $app = Factory::getApplication();
+        $app        = Factory::getApplication();
+        $cookieName = $this->getCartCookieName($cartType);
 
         // Check if cookie already set with same value
-        $existingCartId = (int) $app->getInput()->cookie->getInt('j2commerce_cart_id', 0);
+        $existingCartId = (int) $app->getInput()->cookie->getInt($cookieName, 0);
 
         if ($existingCartId === $cartId) {
             return;
@@ -1021,7 +1040,7 @@ class CartHelper
         $domain  = $app->get('cookie_domain', '');
         $secure  = $app->isHttpsForced();
 
-        setcookie('j2commerce_cart_id', (string) $cartId, $expires, $path, $domain, $secure, true);
+        setcookie($cookieName, (string) $cartId, $expires, $path, $domain, $secure, true);
     }
 
     /**
@@ -1031,13 +1050,13 @@ class CartHelper
      *
      * @since   6.0.6
      */
-    public function clearCartCookie(): void
+    public function clearCartCookie(string $cartType = 'cart'): void
     {
         $app    = Factory::getApplication();
         $path   = $app->get('cookie_path', '/');
         $domain = $app->get('cookie_domain', '');
 
-        setcookie('j2commerce_cart_id', '', time() - 3600, $path, $domain, false, true);
+        setcookie($this->getCartCookieName($cartType), '', time() - 3600, $path, $domain, false, true);
     }
 
     /**
@@ -1047,7 +1066,7 @@ class CartHelper
      *
      * @since   6.0.6
      */
-    private function createCart(): ?object
+    private function createCart(string $cartType = 'cart'): ?object
     {
         $app     = Factory::getApplication();
         $user    = $app->getIdentity();
@@ -1059,7 +1078,7 @@ class CartHelper
         $now       = Factory::getDate()->toSql();
         $ip        = $app->getInput()->server->get('REMOTE_ADDR', '', 'string');
         $browser   = $app->getInput()->server->get('HTTP_USER_AGENT', '', 'string');
-        $cartType  = 'cart';
+        $cartType  = $cartType !== '' ? $cartType : 'cart';
 
         $columns = [
             'user_id',
@@ -1102,7 +1121,7 @@ class CartHelper
             $cartId = (int) $db->insertid();
 
             // Return the newly created cart
-            return $this->getCart($cartId, false);
+            return $this->getCart($cartId, false, $cartType);
         } catch (\Throwable $e) {
             $this->setError($e->getMessage());
             return null;

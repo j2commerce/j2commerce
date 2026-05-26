@@ -16,6 +16,7 @@ class Pkg_J2commerceInstallerScript extends InstallerScript
     protected $minimumJoomlaVersion = '6.0';
     protected $minimumPhpVersion = '8.1';
     private string $debugLogFile = '';
+    private array $preUpdatePluginExists = [];
 
     /**
      * Plugin enable/disable configuration.
@@ -28,6 +29,7 @@ class Pkg_J2commerceInstallerScript extends InstallerScript
         ['console',     'j2commerce',           true],
         ['content',     'j2commerce',           true],
         ['finder',      'j2commerce',           true],
+        ['installer',   'j2commerce',           true],
         ['task',        'j2commerce',           true],
         ['user',        'j2commerce',           false],
         ['webservices', 'j2commerce',           true],
@@ -116,6 +118,11 @@ class Pkg_J2commerceInstallerScript extends InstallerScript
     {
         $this->debugLog("=== PKG PREFLIGHT START (route={$route}) ===");
 
+        if ($route === 'update') {
+            $db = Factory::getContainer()->get(DatabaseInterface::class);
+            $this->snapshotPreUpdatePluginState($db);
+        }
+
         if (version_compare(JVERSION, '6.0.0', '<')) {
             Log::add('J2Commerce requires Joomla 6.0.0 or later. Your version: ' . JVERSION, Log::WARNING, 'jerror');
             return false;
@@ -141,7 +148,7 @@ class Pkg_J2commerceInstallerScript extends InstallerScript
 
         $db = Factory::getContainer()->get(DatabaseInterface::class);
 
-        if ($route === 'install') {
+        if (in_array($route, ['install', 'discover_install'], true)) {
             $this->debugLog("PKG POSTFLIGHT: fresh install");
             $this->enablePlugins($db);
             $this->configureModules($db);
@@ -186,7 +193,7 @@ class Pkg_J2commerceInstallerScript extends InstallerScript
                 continue;
             }
 
-            $this->enablePluginIfNew($db, $group, $element);
+            $this->enablePluginIfNew($db, $group, $element, $this->pluginExistedBeforeUpdate($group, $element));
         }
     }
 
@@ -209,25 +216,51 @@ class Pkg_J2commerceInstallerScript extends InstallerScript
      * Enable a plugin only if it is in the newly-discovered state (enabled = -1).
      * Plugins the user has explicitly disabled (enabled = 0) are left alone.
      */
-    private function enablePluginIfNew(DatabaseInterface $db, string $group, string $element): void
+    private function enablePluginIfNew(DatabaseInterface $db, string $group, string $element, bool $existedBeforeUpdate): void
     {
-        $disabled = -1;
+        if ($existedBeforeUpdate) {
+            return;
+        }
+
         $query = $db->getQuery(true)
             ->update($db->quoteName('#__extensions'))
             ->set($db->quoteName('enabled') . ' = 1')
             ->where($db->quoteName('type') . ' = ' . $db->quote('plugin'))
             ->where($db->quoteName('folder') . ' = :group')
             ->where($db->quoteName('element') . ' = :element')
-            ->where($db->quoteName('enabled') . ' = :disabled')
             ->bind(':group', $group)
-            ->bind(':element', $element)
-            ->bind(':disabled', $disabled, ParameterType::INTEGER);
+            ->bind(':element', $element);
 
         $db->setQuery($query)->execute();
 
         if ($db->getAffectedRows() > 0) {
             $this->debugLog("ENABLE NEW PLUGIN: {$group}/{$element}");
         }
+    }
+
+    private function snapshotPreUpdatePluginState(DatabaseInterface $db): void
+    {
+        foreach ($this->pluginConfig as [$group, $element, $enable]) {
+            if (!$enable) {
+                continue;
+            }
+
+            $query = $db->getQuery(true)
+                ->select('COUNT(*)')
+                ->from($db->quoteName('#__extensions'))
+                ->where($db->quoteName('type') . ' = ' . $db->quote('plugin'))
+                ->where($db->quoteName('folder') . ' = :group')
+                ->where($db->quoteName('element') . ' = :element')
+                ->bind(':group', $group)
+                ->bind(':element', $element);
+
+            $this->preUpdatePluginExists[$group . '/' . $element] = ((int) $db->setQuery($query)->loadResult()) > 0;
+        }
+    }
+
+    private function pluginExistedBeforeUpdate(string $group, string $element): bool
+    {
+        return $this->preUpdatePluginExists[$group . '/' . $element] ?? false;
     }
 
     /**

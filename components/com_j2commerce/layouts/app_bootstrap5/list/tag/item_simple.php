@@ -63,6 +63,9 @@ $afterHtml = J2CommerceHelper::plugin()->eventWithHtml(
     <?php if ($showSku): ?>
         <?php echo ProductLayoutService::renderLayout('list.tag.item_sku', $displayData); ?>
     <?php endif; ?>
+    <?php if ($showUpc): ?>
+        <?php echo ProductLayoutService::renderLayout('list.tag.item_upc', $displayData); ?>
+    <?php endif; ?>
 
     <?php if ($showStock): ?>
         <?php echo ProductLayoutService::renderLayout('list.tag.item_stock', $displayData); ?>

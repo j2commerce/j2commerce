@@ -15,6 +15,8 @@ namespace J2Commerce\Component\J2commerce\Site\Controller;
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Controller\ProductsController as AdminProductsController;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Site\Helper\ProductFilterRequestHelper;
 use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -86,42 +88,18 @@ class ProductsController extends AdminProductsController
         try {
             $session = $app->getSession();
 
-            $manufacturerIds = $input->get('manufacturer_ids', [], 'array');
-            if (empty($manufacturerIds)) {
-                $brandsParam = $input->getString('brands', '');
-                if (!empty($brandsParam)) {
-                    $manufacturerIds = array_filter(explode(',', $brandsParam), 'is_numeric');
-                }
-            }
+            // Single source of truth for filter parsing — same helper used by ProductsModel::populateState().
+            $filterState      = ProductFilterRequestHelper::resolveFromRequest($input);
+            $manufacturerIds  = $filterState['manufacturer_ids'];
+            $vendorIds        = $filterState['vendor_ids'];
+            $productfilterIds = $filterState['productfilter_ids'];
+            $tagIds           = $filterState['tag_ids'];
+            $tagMatch         = $filterState['tag_match'];
+            $priceFrom        = $filterState['price_from'];
+            $priceTo          = $filterState['price_to'];
 
-            $vendorIds = $input->get('vendor_ids', [], 'array');
-            if (empty($vendorIds)) {
-                $vendorsParam = $input->getString('vendors', '');
-                if (!empty($vendorsParam)) {
-                    $vendorIds = array_filter(explode(',', $vendorsParam), 'is_numeric');
-                }
-            }
-
-            $productfilterIds = $input->get('productfilter_ids', [], 'array');
-            if (empty($productfilterIds)) {
-                $filtersParam = $input->getString('filters', '');
-                if (!empty($filtersParam)) {
-                    $filterValues   = explode(',', $filtersParam);
-                    $numericFilters = array_filter($filterValues, 'is_numeric');
-                    if (\count($numericFilters) === \count($filterValues)) {
-                        $productfilterIds = $numericFilters;
-                    } else {
-                        $productfilterIds = $this->resolveFilterAliasesToIds($filterValues);
-                    }
-                }
-            }
-
-            $catid     = $input->getInt('filter_catid', 0);
-            $tagIds    = $input->get('tag_ids', [], 'array');
-            $tagMatch  = $input->getString('tag_match', 'any');
-            $priceFrom = $input->getFloat('pricefrom', 0);
-            $priceTo   = $input->getFloat('priceto', 0);
-            $search    = $input->getString('search', '');
+            $catid  = $input->getInt('filter_catid', 0);
+            $search = $input->getString('search', '');
 
             $sortby = $input->getString('sortby', '');
             if (empty($sortby)) {
@@ -176,6 +154,19 @@ class ProductsController extends AdminProductsController
                 $model = $this->getModel('Products', 'Site');
                 $model->getState();
             }
+
+            // Seed model state with menu/app params — HtmlView::display() does
+            // this normally, but this AJAX endpoint bypasses the view chain.
+            // Without it, ProductsModel::getFilters() fatals on null $params.
+            $model->setState('params', $params);
+
+            // Seed category filter directly. populateState() reads catid from
+            // Input/active-menu, neither of which is reliably populated on this
+            // AJAX path — so $input->set('catid', ...) above is not enough.
+            if ($catid > 0) {
+                $model->setState('filter.catids', [$catid]);
+            }
+
             $model->setState('list.start', $limitstart);
 
             $pageLimit = (int) $params->get('page_limit', 0);
@@ -183,19 +174,8 @@ class ProductsController extends AdminProductsController
                 $model->setState('list.limit', $pageLimit);
             }
 
-            if (!empty($manufacturerIds)) {
-                $model->setState('filter.manufacturer_ids', array_map('intval', $manufacturerIds));
-            }
-            if (!empty($vendorIds)) {
-                $model->setState('filter.vendor_ids', array_map('intval', $vendorIds));
-            }
-            if (!empty($productfilterIds)) {
-                $model->setState('filter.productfilter_ids', array_map('intval', $productfilterIds));
-            }
-            if ($priceFrom > 0 || $priceTo > 0) {
-                $model->setState('filter.price_from', $priceFrom);
-                $model->setState('filter.price_to', $priceTo);
-            }
+            // filter.manufacturer_ids / vendor_ids / productfilter_ids / price_from / price_to
+            // are seeded by ProductsModel::populateState() via ProductFilterRequestHelper.
             if (!empty($search)) {
                 $model->setState('filter.search', $search);
             }
@@ -294,6 +274,18 @@ class ProductsController extends AdminProductsController
         $columns  = (int) $params->get('list_no_of_columns', 3);
         $colClass = 'col-md-' . (int) round(12 / $columns);
 
+        // Let subtemplate plugins render the grid in their own framework
+        // (uk-grid for UIkit, etc.). Fall back to Bootstrap markup below
+        // when no plugin claims the event.
+        $pluginHtml = J2CommerceHelper::plugin()->eventWithHtml(
+            'RenderAjaxProductListGrid',
+            [$items, $params, $itemId]
+        )->getArgument('html', '');
+
+        if ($pluginHtml !== '') {
+            return $pluginHtml;
+        }
+
         ob_start();
 
         echo '<div class="j2commerce-products-row row g-4 mb-4">';
@@ -370,43 +362,4 @@ class ProductsController extends AdminProductsController
         $app->close();
     }
 
-    /**
-     * Convert SEF-friendly filter aliases to IDs.
-     */
-    protected function resolveFilterAliasesToIds(array $aliases): array
-    {
-        if (empty($aliases)) {
-            return [];
-        }
-
-        $db    = Factory::getContainer()->get(DatabaseInterface::class);
-        $query = $db->getQuery(true);
-
-        $query->select($db->quoteName(['j2commerce_filter_id', 'filter_name']))
-            ->from($db->quoteName('#__j2commerce_filters'));
-
-        $db->setQuery($query);
-        $filters = $db->loadObjectList();
-
-        $filterIds = [];
-
-        foreach ($aliases as $alias) {
-            $alias = trim($alias);
-
-            if (is_numeric($alias)) {
-                $filterIds[] = (int) $alias;
-                continue;
-            }
-
-            foreach ($filters as $filter) {
-                $filterAlias = \Joomla\CMS\Filter\OutputFilter::stringURLSafe($filter->filter_name);
-                if ($filterAlias === $alias) {
-                    $filterIds[] = (int) $filter->j2commerce_filter_id;
-                    break;
-                }
-            }
-        }
-
-        return array_unique($filterIds);
-    }
 }

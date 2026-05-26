@@ -100,7 +100,7 @@ class HtmlView extends BaseHtmlView
         $isNew      = ($this->item->j2commerce_customfield_id == 0);
         $canDo      = ContentHelper::getActions('com_j2commerce');
         $user       = Factory::getApplication()->getIdentity();
-        $checkedOut = !(($this->item->checked_out ?? null) === null || ($this->item->checked_out ?? 0) == $user->id);
+        $checkedOut = !empty($this->item->checked_out) && (int) $this->item->checked_out !== (int) $user->id;
         $toolbar    = $this->getDocument()->getToolbar();
 
         // Title: "New Custom Field" or "Edit Custom Field"
@@ -134,6 +134,6 @@ class HtmlView extends BaseHtmlView
 
         $toolbar->cancel('customfield.cancel', $isNew ? 'JTOOLBAR_CANCEL' : 'JTOOLBAR_CLOSE');
         $toolbar->divider();
-        ToolbarHelper::help('Custom_Fields', true, 'https://docs.j2commerce.com/v6/configuration/custom-fields');
+        ToolbarHelper::help(Text::_('COM_J2COMMERCE_CUSTOM_FIELDS'), true, 'https://docs.j2commerce.com/v6/setup/custom-fields/');
     }
 }

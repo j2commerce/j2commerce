@@ -96,7 +96,7 @@ const J2CheckoutUploader = (() => {
             nameSpan.textContent = file.name;
 
             const sizeSpan = document.createElement('span');
-            sizeSpan.className = 'j2c-file-size text-muted small';
+            sizeSpan.className = 'j2c-file-size text-body-secondary small';
             sizeSpan.textContent = formatSize(file.size || 0);
 
             const removeBtn = document.createElement('button');
@@ -129,7 +129,6 @@ const J2CheckoutUploader = (() => {
         const maxFileSize = parseInt(container.dataset.maxFileSize, 10) || 10485760;
         const allowedTypesStr = container.dataset.allowedTypes || '';
         const uploadUrl = container.dataset.uploadUrl || '';
-        const directory = container.dataset.directory || 'images/checkout-uploads';
         const isRequired = container.dataset.required === '1';
 
         // Convert comma-separated extensions to Uppy-compatible format
@@ -223,8 +222,7 @@ const J2CheckoutUploader = (() => {
 
             files.push({
                 name: data.name || '',
-                path: data.path || '',
-                url: data.url || '',
+                mangled_name: data.mangled_name || '',
                 size: data.size || 0,
             });
 

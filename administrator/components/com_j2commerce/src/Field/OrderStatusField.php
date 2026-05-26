@@ -33,6 +33,11 @@ class OrderStatusField extends ListField
     {
         $options = parent::getOptions();
 
+        // Ensure com_j2commerce strings are loaded even when this field renders inside
+        // a different component's admin context (e.g. com_scheduler task forms).
+        Factory::getApplication()->getLanguage()
+            ->load('com_j2commerce', JPATH_ADMINISTRATOR, null, false, true);
+
         try {
             $db = Factory::getContainer()->get(DatabaseInterface::class);
 

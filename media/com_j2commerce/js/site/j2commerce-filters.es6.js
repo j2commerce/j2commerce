@@ -40,10 +40,36 @@ class J2CommerceFilters {
         checkboxSelectors.forEach(selector => {
             document.querySelectorAll(selector).forEach(checkbox => {
                 checkbox.addEventListener('change', () => {
+                    this.syncMirroredCheckbox(checkbox);
                     this.debounce(() => this.applyFilters(), this.checkboxDebounce);
                 });
             });
         });
+    }
+
+    syncMirroredCheckbox(source) {
+        const value = source.value;
+        const groupAlias = source.dataset.groupAlias;
+
+        // Find all pfilter checkboxes with the same value + group; sync their checked state
+        document.querySelectorAll('[class*="j2commerce-pfilter-checkboxes"]').forEach(cb => {
+            if (cb === source) return;
+            if (cb.value !== value) return;
+            // If both have group alias, require it to match; otherwise fall back to value-only match
+            if (groupAlias && cb.dataset.groupAlias && cb.dataset.groupAlias !== groupAlias) return;
+            cb.checked = source.checked;
+        });
+
+        // Also sync brand/vendor mirrors (no group alias needed — IDs are globally unique)
+        if (source.classList.contains('j2commerce-brand-checkboxes')) {
+            document.querySelectorAll('.j2commerce-brand-checkboxes').forEach(cb => {
+                if (cb !== source && cb.value === value) cb.checked = source.checked;
+            });
+        } else if (source.classList.contains('j2commerce-vendor-checkboxes')) {
+            document.querySelectorAll('.j2commerce-vendor-checkboxes').forEach(cb => {
+                if (cb !== source && cb.value === value) cb.checked = source.checked;
+            });
+        }
     }
 
     bindPriceFilter() {
@@ -166,7 +192,9 @@ class J2CommerceFilters {
 
     bindPagination() {
         document.addEventListener('click', (e) => {
-            const paginationLink = e.target.closest('.j2commerce-pagination a.page-link');
+            // Joomla's pagination chrome doesn't always emit .page-link (UIkit/UI3 chromes
+            // use bare anchors). Match any anchor with an href inside .j2commerce-pagination.
+            const paginationLink = e.target.closest('.j2commerce-pagination a[href]');
             if (!paginationLink) return;
 
             e.preventDefault();
@@ -191,8 +219,10 @@ class J2CommerceFilters {
             .map(cb => cb.value);
         vendorIds.forEach(id => data.append('vendor_ids[]', id));
 
-        const productfilterIds = Array.from(document.querySelectorAll('[class*="j2commerce-pfilter-checkboxes"]:checked'))
-            .map(cb => cb.value);
+        const productfilterIds = [...new Set(
+            Array.from(document.querySelectorAll('[class*="j2commerce-pfilter-checkboxes"]:checked'))
+                .map(cb => cb.value)
+        )];
         productfilterIds.forEach(id => data.append('productfilter_ids[]', id));
 
         const catid = document.getElementById('filter_catid')?.value || '';
@@ -355,13 +385,19 @@ class J2CommerceFilters {
             params.set('vendors', vendorIds.join(','));
         }
 
-        // Use human-readable aliases for product filters instead of numeric IDs
-        // e.g., ?filters=milk-chocolate,dark-chocolate instead of ?filters=11,12
-        const productfilterAliases = Array.from(document.querySelectorAll('[class*="j2commerce-pfilter-checkboxes"]:checked'))
-            .map(cb => cb.dataset.alias || cb.value)  // Fallback to value if no alias
-            .filter(alias => alias);  // Remove empty values
-        if (productfilterAliases.length > 0) {
-            params.set('filters', productfilterAliases.join(','));
+        // Use composite groupAlias:filterAlias tokens to disambiguate same-named filters across groups.
+        // Falls back to bare alias (or numeric value) when group alias is absent.
+        const productfilterTokens = [...new Set(
+            Array.from(document.querySelectorAll('[class*="j2commerce-pfilter-checkboxes"]:checked'))
+                .map(cb => {
+                    const alias = cb.dataset.alias || cb.value;
+                    const groupAlias = cb.dataset.groupAlias;
+                    return groupAlias ? `${groupAlias}:${alias}` : alias;
+                })
+                .filter(token => token)
+        )];
+        if (productfilterTokens.length > 0) {
+            params.set('filters', productfilterTokens.join(','));
         }
 
         const search = formData.get('search');
@@ -391,7 +427,9 @@ class J2CommerceFilters {
 
         // Build query string and decode commas for cleaner URLs
         // URLSearchParams encodes commas as %2C, but commas are safe in query strings
-        const queryString = params.toString().replace(/%2C/gi, ',');
+        // URLSearchParams encodes commas and colons; both are safe in query strings.
+        // Keep the composite group:filter token readable as `?filters=caliber:9mm`.
+        const queryString = params.toString().replace(/%2C/gi, ',').replace(/%3A/gi, ':');
         const newUrl = window.location.pathname + (queryString ? '?' + queryString : '');
         window.history.replaceState({ j2commerce: true }, '', newUrl);
     }

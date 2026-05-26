@@ -100,6 +100,7 @@
             description="COM_J2COMMERCE_INVOICETEMPLATE_BODY_SOURCE_DESC"
             class="form-select"
             default="editor"
+            validate="options"
         >
             <option value="visual">COM_J2COMMERCE_INVOICETEMPLATE_BODY_SOURCE_VISUAL</option>
             <option value="editor">COM_J2COMMERCE_INVOICETEMPLATE_BODY_SOURCE_EDITOR</option>

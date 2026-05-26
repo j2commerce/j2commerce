@@ -150,7 +150,7 @@ class HtmlView extends BaseHtmlView
         $canDo         = ContentHelper::getActions('com_j2commerce');
         $canEditOrders = J2CommerceHelper::canAccess('j2commerce.editorders');
         $user          = Factory::getApplication()->getIdentity();
-        $checkedOut    = !(($this->item->checked_out ?? null) === null || ($this->item->checked_out ?? 0) == $user->id);
+        $checkedOut    = !empty($this->item->checked_out) && (int) $this->item->checked_out !== (int) $user->id;
         $toolbar       = $this->getDocument()->getToolbar();
 
         $orderDisplay = $this->item->order_id ?? $this->item->invoice ?? Text::_('COM_J2COMMERCE_ORDER');
@@ -200,7 +200,7 @@ class HtmlView extends BaseHtmlView
         }
 
         $toolbar->divider();
-        ToolbarHelper::help('Orders', true, 'https://docs.j2commerce.com/v6/sales/orders');
+        ToolbarHelper::help(Text::_('COM_J2COMMERCE_ORDERS'), true, 'https://docs.j2commerce.com/v6/sales/orders');
     }
 
     protected function getOrderStatuses(): array

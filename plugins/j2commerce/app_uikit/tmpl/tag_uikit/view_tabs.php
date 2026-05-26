@@ -12,8 +12,10 @@
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Language\Text;
 ?>
+<?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductContent', [$this->item, J2CommerceHelper::utilities()->getContext('view_content')])->getArgument('html', ''); ?>
 	<div class="uk-grid" uk-grid>
 		<div class="uk-width-1-1">
 			<?php

@@ -68,15 +68,67 @@ final class AppBootstrap5 extends CMSPlugin implements SubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            'onJ2CommerceTemplateFolderList'     => 'onTemplateFolderList',
-            'onJ2CommerceViewProductListHtml'    => 'onViewProductListHtml',
-            'onJ2CommerceViewProductListTagHtml' => 'onViewProductListTagHtml',
-            'onJ2CommerceViewProductHtml'        => 'onViewProductHtml',
-            'onJ2CommerceViewProductTagHtml'     => 'onViewProductTagHtml',
-            'onJ2CommerceViewCategoryListHtml'   => 'onViewCategoryListHtml',
-            'onJ2CommerceAfterAddCSS'            => 'onAfterAddCSS',
-            'onJ2CommerceAfterAddJS'             => 'onAfterAddJS',
+            'onJ2CommerceTemplateFolderList'        => 'onTemplateFolderList',
+            'onJ2CommerceViewProductListHtml'       => 'onViewProductListHtml',
+            'onJ2CommerceViewProductListTagHtml'    => 'onViewProductListTagHtml',
+            'onJ2CommerceViewProductHtml'           => 'onViewProductHtml',
+            'onJ2CommerceViewProductTagHtml'        => 'onViewProductTagHtml',
+            'onJ2CommerceViewCategoryListHtml'      => 'onViewCategoryListHtml',
+            'onJ2CommerceRenderAjaxProductListGrid' => 'onRenderAjaxProductListGrid',
+            'onJ2CommerceAfterAddCSS'               => 'onAfterAddCSS',
+            'onJ2CommerceAfterAddJS'                => 'onAfterAddJS',
         ];
+    }
+
+    /**
+     * Render the AJAX product-list grid in Bootstrap 5 markup.
+     *
+     * Fires from ProductsController::filter() after the result set is built.
+     * Mirrors the inner grid emitted by tmpl/bootstrap5/default.php so the
+     * AJAX-replaced HTML is identical to the initial server render.
+     *
+     * @param   Event  $event  Args: [items[], params Registry, itemId int]
+     */
+    public function onRenderAjaxProductListGrid(Event $event): void
+    {
+        if (!($event instanceof EventInterface) && !($event instanceof Event)) {
+            return;
+        }
+
+        $args   = $event->getArguments();
+        $items  = $args[0] ?? [];
+        $params = $args[1] ?? null;
+        $itemId = (int) ($args[2] ?? 0);
+
+        if (!($params instanceof Registry) || empty($items)) {
+            return;
+        }
+
+        if ((string) $params->get('subtemplate', '') !== 'bootstrap5') {
+            return;
+        }
+
+        $columns  = (int) $params->get('list_no_of_columns', 3);
+        $colClass = 'col-md-' . (int) round(12 / max($columns, 1));
+
+        ob_start();
+        echo '<div class="j2commerce-products-row row g-4 mb-4">';
+        foreach ($items as $product) {
+            if (!($product->params instanceof Registry)) {
+                $product->params = new Registry($product->params ?? '{}');
+            }
+            echo '<div class="' . $colClass . '">';
+            echo ProductLayoutService::renderProductItem(
+                $product,
+                $params,
+                ProductLayoutService::CONTEXT_LIST,
+                $itemId
+            );
+            echo '</div>';
+        }
+        echo '</div>';
+
+        $event->addResult(ob_get_clean());
     }
 
     /**

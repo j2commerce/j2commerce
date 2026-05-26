@@ -61,6 +61,7 @@ final class ProductLayoutService
             'showPrice'       => $productHelper->canShowprice($params),
             'showCart'        => $productHelper->canShowCart($params),
             'showSku'         => (bool) $params->get('list_show_product_sku', 0),
+            'showUpc'         => (bool) $params->get('list_show_product_upc', 0),
             'showStock'       => (bool) $params->get('list_show_product_stock', 0)
                                  && isset($product->variant)
                                  && \is_object($product->variant),
