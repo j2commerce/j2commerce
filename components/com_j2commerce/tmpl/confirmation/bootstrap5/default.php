@@ -43,6 +43,46 @@ $checkoutPriceDisplay = (int) (J2CommerceHelper::config()->get('checkout_price_d
 
 $isCancelled = ($paction === 'cancel');
 
+// Status tier drives the confirmation banner. The order state determines whether
+// the customer actually completed payment — never assume success.
+//   success : Confirmed(1), Shipped(7), Delivered(8), Scheduled(9)
+//   pending : Processed(2), Pending(4) — received, awaiting payment confirmation
+//   failed  : Failed(3), New(5), unknown — payment not completed
+$orderStateId = (int) ($order->order_state_id ?? 0);
+$statusTier   = $isCancelled ? 'cancelled' : match ($orderStateId) {
+    1, 7, 8, 9 => 'success',
+    2, 4       => 'pending',
+    default    => 'failed',
+};
+
+$tierAlertClass = match ($statusTier) {
+    'success' => 'alert-success',
+    'pending' => 'alert-info',
+    default   => 'alert-danger',
+};
+$tierCircleClass = match ($statusTier) {
+    'success' => 'j2c-check-circle',
+    'pending' => 'j2c-info-circle',
+    default   => 'j2c-cancel-circle',
+};
+$tierIcon = match ($statusTier) {
+    'success' => 'icon-check',
+    'pending' => 'icon-info-circle',
+    'failed'  => 'icon-warning',
+    default   => 'icon-times',
+};
+$tierMessage = match ($statusTier) {
+    'success'   => 'COM_J2COMMERCE_ORDER_CONFIRMED_MESSAGE',
+    'pending'   => 'COM_J2COMMERCE_ORDER_RECEIVED_MESSAGE',
+    'cancelled' => 'COM_J2COMMERCE_ORDER_CANCELLED_MESSAGE',
+    default     => 'COM_J2COMMERCE_ORDER_PAYMENT_INCOMPLETE_MESSAGE',
+};
+$tierMessageClass = match ($statusTier) {
+    'pending' => 'text-info',
+    'failed'  => 'text-danger',
+    default   => 'text-body-secondary',
+};
+
 $firstName = '';
 if ($info) {
     $firstName = trim((string) ($info->billing_first_name ?? ''));
@@ -110,30 +150,31 @@ if ($info) {
             <?php // Left column ?>
             <div class="<?php echo $isCancelled ? 'col-12' : 'col-lg-7'; ?> j2c-confirmation-main <?php echo $isCancelled ? '' : 'pe-lg-4'; ?>">
 
-                <div class="alert <?php echo $isCancelled ? 'alert-danger' : 'alert-info'; ?> mb-4 border-0">
+                <div class="alert <?php echo $tierAlertClass; ?> mb-4 border-0">
                     <div class="d-flex align-items-center gap-3">
-                        <?php if ($isCancelled) : ?>
-                            <div class="j2c-cancel-circle rounded-circle d-flex align-items-center justify-content-center flex-shrink-0">
-                                <span class="icon-times text-white" style="font-size: 1.5rem;" aria-hidden="true"></span>
-                            </div>
-                            <div>
+                        <div class="<?php echo $tierCircleClass; ?> rounded-circle d-flex align-items-center justify-content-center flex-shrink-0">
+                            <span class="<?php echo $tierIcon; ?> text-white" style="font-size: 1.5rem;" aria-hidden="true"></span>
+                        </div>
+                        <div>
+                            <?php if ($statusTier === 'cancelled') : ?>
                                 <h2 class="h4 mb-1 alert-heading"><?php echo Text::_('COM_J2COMMERCE_ORDER_CANCELLED'); ?></h2>
-                            </div>
-                        <?php else : ?>
-                            <div class="j2c-check-circle rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 bg-info">
-                                <span class="icon-check text-white" style="font-size: 1.5rem;" aria-hidden="true"></span>
-                            </div>
-                            <div>
+                            <?php elseif ($statusTier === 'success') : ?>
                                 <?php if ($firstName !== '') : ?>
                                     <h2 class="h4 mb-1 alert-heading"><?php echo Text::sprintf('COM_J2COMMERCE_THANK_YOU_NAME', $this->escape($firstName)); ?></h2>
                                 <?php else : ?>
                                     <h2 class="h4 mb-1 alert-heading"><?php echo Text::_('COM_J2COMMERCE_ORDER_CONFIRMATION'); ?></h2>
                                 <?php endif; ?>
+                            <?php elseif ($statusTier === 'pending') : ?>
+                                <h2 class="h4 mb-1 alert-heading"><?php echo Text::_('COM_J2COMMERCE_ORDER_RECEIVED'); ?></h2>
+                            <?php else : ?>
+                                <h2 class="h4 mb-1 alert-heading"><?php echo Text::_('COM_J2COMMERCE_ORDER_PAYMENT_INCOMPLETE'); ?></h2>
+                            <?php endif; ?>
+                            <?php if ($statusTier !== 'cancelled') : ?>
                                 <p class="mb-1">
                                     <?php echo Text::_('COM_J2COMMERCE_ORDER_ID'); ?>: <?php echo $this->escape($order->order_id); ?>
                                 </p>
-                            </div>
-                        <?php endif; ?>
+                            <?php endif; ?>
+                        </div>
                     </div>
 
                 </div>
@@ -147,12 +188,8 @@ if ($info) {
                                 <?php echo Text::_('COM_J2COMMERCE_ORDERSTATUS'); ?>
                                 <span class="ms-2"><?php echo $statusBadgeHtml; ?></span>
                             </h3>
-                            <p class="text-body-secondary mb-0 small">
-                                <?php if ($isCancelled) : ?>
-                                    <?php echo Text::_('COM_J2COMMERCE_ORDER_CANCELLED_MESSAGE'); ?>
-                                <?php else : ?>
-                                    <?php echo Text::_('COM_J2COMMERCE_ORDER_CONFIRMED_MESSAGE'); ?>
-                                <?php endif; ?>
+                            <p class="<?php echo $tierMessageClass; ?> mb-0 small">
+                                <?php echo Text::_($tierMessage); ?>
                             </p>
                             <?php if ($mapLoaded) : ?>
                                 <div id="j2c-confirmation-map" class="leaflet-map-container mt-3" role="img" aria-label="<?php echo $this->escape($mapAddress); ?>"></div>

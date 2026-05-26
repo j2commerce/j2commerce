@@ -841,6 +841,13 @@
     background:var(--danger);
 }
 
+.j2commerce-confirmation .j2c-info-circle {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    background:var(--info);
+}
+
 .j2commerce-confirmation .j2c-order-item-img {
     width: 64px;
     height: 64px;
