@@ -489,7 +489,7 @@ const J2Commerce = {
             div.querySelectorAll('input[type="checkbox"]').forEach(cb => {
                 cb.addEventListener('change', () => {
                     const checked = div.querySelector('input[type="checkbox"]:checked');
-                    doAjaxFilter(checked ? checked.value : '', productId, poId, '#' + div.id);
+                    this.doAjaxFilter(checked ? checked.value : '', productId, poId, '#' + div.id);
                 });
             });
         });
@@ -787,20 +787,25 @@ const J2Commerce = {
 
         const enableZoom = mainEl.dataset.enableZoom === '1';
 
-        // Case C: No variant images — restore original gallery
+        // Case C: No variant images — restore original gallery only if a swap is active
+        // (avoids needless destroy/rebuild/reinit — and the image flash — on every option change)
         if (!variantGallery || variantGallery.length === 0) {
-            this.restoreOriginalGallery(mainEl, thumbsEl, enableZoom);
+            if (galleryEl.dataset.variantSwapped === '1') {
+                this.restoreOriginalGallery(mainEl, thumbsEl, enableZoom);
+                galleryEl.dataset.variantSwapped = '0';
+            }
             return;
         }
 
         // Case A: Single variant image — replace only first slide
         if (variantGallery.length === 1) {
             this.replaceFirstSlide(mainEl, thumbsEl, variantGallery[0], enableZoom);
-            return;
+        } else {
+            // Case B: Multiple variant images — replace entire gallery
+            this.replaceAllSlides(mainEl, thumbsEl, variantGallery, enableZoom);
         }
 
-        // Case B: Multiple variant images — replace entire gallery
-        this.replaceAllSlides(mainEl, thumbsEl, variantGallery, enableZoom);
+        galleryEl.dataset.variantSwapped = '1';
     },
 
     replaceFirstSlide(mainEl, thumbsEl, image, enableZoom) {
@@ -1232,6 +1237,10 @@ function get_matching_variant(variants, selected) {
 
 function doAjaxPrice(productId, elementId) {
     return J2Commerce.doAjaxPrice(productId, elementId);
+}
+
+function doAjaxFilter(povId, productId, poId, elementId) {
+    return J2Commerce.doAjaxFilter(povId, productId, poId, elementId);
 }
 
 // =========================================================================

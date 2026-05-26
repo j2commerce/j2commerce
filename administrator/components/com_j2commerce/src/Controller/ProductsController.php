@@ -1486,7 +1486,7 @@ class ProductsController extends AdminController
             try {
                 $db->execute();
                 $response['success'] = true;
-                $response['message'] = Text::_('COM_J2COMMERCE_N_ITEMS_DELETED');
+                $response['message'] = Text::plural('COM_J2COMMERCE_N_ITEMS_DELETED', 1);
             } catch (\Exception $e) {
                 $response['message'] = $e->getMessage();
             }

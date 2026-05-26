@@ -26,10 +26,10 @@ use J2Commerce\Component\J2commerce\Administrator\Table\ProductoptionTable;
 use J2Commerce\Component\J2commerce\Administrator\Table\ProductquantityTable;
 use J2Commerce\Component\J2commerce\Administrator\Table\ProductTable;
 use J2Commerce\Component\J2commerce\Administrator\Table\VariantTable;
+use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 use Joomla\CMS\Event\AbstractEvent;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\Layout\FileLayout;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\Database\ParameterType;
 use Joomla\Registry\Registry;
@@ -464,13 +464,10 @@ class Configurable
                     $product->options = $options;
                     $responseOption   = $options;
 
-                    // Render child options using FileLayout
-                    $layout = new FileLayout('product.configurablechildoptions');
-                    $layout->addIncludePaths([
-                        JPATH_SITE . '/components/com_j2commerce/layouts/app_bootstrap5',
-                    ]);
-
-                    $html = $layout->render([
+                    // Render child options via the active subtemplate (jform[subtemplate]:
+                    // app_bootstrap5 / app_uikit), honouring template overrides and the
+                    // RegisterLayoutPaths event — same resolution the product view uses.
+                    $html = ProductLayoutService::renderLayout('product.configurablechildoptions', [
                         'product' => $product,
                         'params'  => $config,
                         'options' => $options,
