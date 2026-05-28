@@ -33,7 +33,6 @@ use Joomla\CMS\Form\Form;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\Router\Route;
-use Joomla\CMS\Session\Session;
 use Joomla\Database\DatabaseAwareTrait;
 use Joomla\Database\ParameterType;
 use Joomla\Event\SubscriberInterface;
@@ -530,8 +529,61 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         // Save product using native MVC
         $this->saveProduct($j2data);
 
+        // Newly created product: give its article a real per-category ordering value.
+        // Joomla leaves a new article's ordering at 0, which makes the frontend product
+        // list "Ordering" sort meaningless (every new product ties at 0).
+        if (!$existingProduct) {
+            $this->assignArticleOrderingIfUnset($articleId, (int) ($data->catid ?? 0));
+        }
+
         // Clear the static article cache to ensure fresh data on next load
         $this->clearArticleCache($articleId);
+    }
+
+    /**
+     * Set #__content.ordering to (max in category + 1) for a product article whose
+     * ordering is still 0, so the frontend "Ordering" sort produces a stable result.
+     */
+    private function assignArticleOrderingIfUnset(int $articleId, int $catid): void
+    {
+        if ($articleId <= 0 || $catid <= 0) {
+            return;
+        }
+
+        $db = $this->getDatabase();
+
+        $current = (int) $db->setQuery(
+            $db->getQuery(true)
+                ->select($db->quoteName('ordering'))
+                ->from($db->quoteName('#__content'))
+                ->where($db->quoteName('id') . ' = :id')
+                ->bind(':id', $articleId, ParameterType::INTEGER)
+        )->loadResult();
+
+        if ($current > 0) {
+            return;
+        }
+
+        // MAX is taken across the whole category (all articles, not just products) by
+        // design, so products share the same Joomla per-category ordering space.
+        $max = (int) $db->setQuery(
+            $db->getQuery(true)
+                ->select('MAX(' . $db->quoteName('ordering') . ')')
+                ->from($db->quoteName('#__content'))
+                ->where($db->quoteName('catid') . ' = :catid')
+                ->bind(':catid', $catid, ParameterType::INTEGER)
+        )->loadResult();
+
+        $newOrdering = $max + 1;
+
+        $db->setQuery(
+            $db->getQuery(true)
+                ->update($db->quoteName('#__content'))
+                ->set($db->quoteName('ordering') . ' = :ordering')
+                ->where($db->quoteName('id') . ' = :aid')
+                ->bind(':ordering', $newOrdering, ParameterType::INTEGER)
+                ->bind(':aid', $articleId, ParameterType::INTEGER)
+        )->execute();
     }
 
     /**
@@ -970,7 +1022,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
                 }
 
                 $displayData = $this->buildDisplayData($product, $option, $options);
-                $html       .= ProductLayoutService::renderLayout($layoutId, $displayData);
+                $html .= ProductLayoutService::renderLayout($layoutId, $displayData);
             }
 
             $html .= '</div>';
