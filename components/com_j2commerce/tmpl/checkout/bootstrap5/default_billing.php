@@ -12,7 +12,6 @@
 // phpcs:enable PSR1.Files.SideEffects
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
-use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Language\Text;
 
 /** @var \J2Commerce\Component\J2commerce\Site\View\Checkout\HtmlView $this */
@@ -96,8 +95,6 @@ $hasAddresses = !empty($addresses);
         </div>
     </div>
     <?php endif; ?>
-
-    <?php echo J2CommerceHelper::plugin()->eventWithHtml('CheckoutBilling', [$this]); ?>
 
     <div class="mt-3">
         <button type="button" id="button-billing-address" class="btn btn-primary btn-checkout-step">
