@@ -6,7 +6,7 @@
     <copyright>(C)2024–2026 J2Commerce, LLC. All rights reserved.</copyright>
     <authorEmail>support@j2commerce.com</authorEmail>
     <authorUrl>https://www.j2commerce.com</authorUrl>
-    <version>6.3.2</version>
+    <version>6.3.3</version>
     <license>GNU General Public License version 2 or later; see LICENSE.txt</license>
     <description>COM_J2COMMERCE_DESCRIPTION</description>
     <namespace path="src">J2Commerce\Component\J2commerce</namespace>
@@ -101,7 +101,7 @@
             <menu link="option=com_j2commerce&amp;view=analytics" view="analytics">COM_J2COMMERCE_ANALYTICS</menu>
         </submenu>
 
-        <languages folder="administrator/language">
+        <languages folder="administrator/components/com_j2commerce/language">
             <language tag="en-US">en-US/com_j2commerce.ini</language>
             <language tag="en-US">en-US/com_j2commerce.sys.ini</language>
             <language tag="en-GB">en-GB/com_j2commerce.ini</language>

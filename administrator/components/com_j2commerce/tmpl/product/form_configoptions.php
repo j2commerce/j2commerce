@@ -82,7 +82,7 @@ $csrfToken = \Joomla\CMS\Session\Session::getFormToken();
                                         <?php endif; ?>
                                     </div>
                                     <div>
-                                        <small><?php echo Text::_('COM_J2COMMERCE_OPTION_TYPE'); ?> <?php echo Text::_('COM_J2COMMERCE_' . strtoupper($poption->type)); ?></small>
+                                        <small><?php echo Text::_('COM_J2COMMERCE_OPTION_TYPE'); ?> <?php echo $this->escape(J2CommerceHelper::getOptionTypeLabel($poption->type)); ?></small>
                                     </div>
                                 </td>
                                 <td>

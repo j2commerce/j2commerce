@@ -44,7 +44,7 @@
 				type="list"
 				label="COM_J2COMMERCE_PRODUCT_LIST_ORDERING"
 				description="COM_J2COMMERCE_PRODUCT_LIST_ORDERING_DESC"
-				useglobal="true"
+				default="order"
 				validate="options"
 			>
 				<option value="featured">COM_J2COMMERCE_PRODUCT_LIST_ORDERING_FEATURED</option>
@@ -64,6 +64,7 @@
 				label="COM_J2COMMERCE_PRODUCT_LIST_DIRECTION"
 				description="COM_J2COMMERCE_PRODUCT_LIST_DIRECTION_DESC"
 				default="ASC"
+				showon="orderby_sec!:cat_order"
 			>
 				<option value="ASC">JGLOBAL_ORDER_ASCENDING</option>
 				<option value="DESC">JGLOBAL_ORDER_DESCENDING</option>
@@ -86,7 +87,7 @@
 				type="list"
 				label="JGLOBAL_ORDERING_DATE_LABEL"
 				description="JGLOBAL_ORDERING_DATE_DESC"
-				useglobal="true"
+				default="created"
 				validate="options"
 				showon="orderby_sec:date"
 			>

@@ -596,7 +596,7 @@ class Downloadable
 
         $app           = Factory::getApplication();
         $input         = $app->getInput();
-        $config        = J2CommerceHelper::config();
+        $config        = J2CommerceHelper::config()->getParams();
         $productHelper = new ProductHelper();
         $pluginHelper  = J2CommerceHelper::plugin();
 
@@ -607,7 +607,7 @@ class Downloadable
 
         // Get variant
         /** @var VariantsModel $variantModel */
-        $variantModel = $this->mvcFactory->createModel('Variants', 'Administrator');
+        $variantModel = $this->mvcFactory->createModel('Variants', 'Administrator', ['ignore_request' => true]);
         $variantModel->setState('filter.product_id', $product->j2commerce_product_id);
         $variantModel->setState('filter.is_master', 1);
         $variants          = $variantModel->getItems();

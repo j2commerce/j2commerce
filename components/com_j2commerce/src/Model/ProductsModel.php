@@ -134,7 +134,10 @@ class ProductsModel extends ListModel
 
         // Ordering from menu item params
         $orderBy        = $params->get('orderby_sec', 'order');
-        $orderDirection = $params->get('list_order_direction', 'ASC');
+        // 'cat_order' has its own direction field in the menu item; everything else uses list_order_direction.
+        $orderDirection = $orderBy === 'cat_order'
+            ? $params->get('category_order_direction', 'ASC')
+            : $params->get('list_order_direction', 'ASC');
         $orderDate      = match ($params->get('order_date', 'created')) {
             'published' => 'publish_up',
             default     => $params->get('order_date', 'created'),
@@ -267,6 +270,8 @@ class ProductsModel extends ListModel
         $id .= ':' . serialize($this->getState('filter.productfilter_ids', []));
         $id .= ':' . $this->getState('filter.price_from', 0);
         $id .= ':' . $this->getState('filter.price_to', 0);
+        $id .= ':' . $this->getState('list.ordering');
+        $id .= ':' . $this->getState('list.direction');
 
         return parent::getStoreId($id);
     }
@@ -462,6 +467,12 @@ class ProductsModel extends ListModel
         }
 
         $query->order($db->escape($orderCol) . ' ' . $db->escape($orderDir));
+
+        // Deterministic tie-breaker so rows that share an order value (e.g. products
+        // whose article ordering is still 0) keep a stable, predictable sequence.
+        if ($orderCol !== 'a.id') {
+            $query->order($db->quoteName('a.id') . ' ' . $db->escape($orderDir));
+        }
 
         return $query;
     }

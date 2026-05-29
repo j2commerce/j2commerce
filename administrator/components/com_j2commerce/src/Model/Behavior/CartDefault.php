@@ -163,7 +163,7 @@ class CartDefault
             $pluginHelper = J2CommerceHelper::plugin();
             $results      = $pluginHelper->event('AfterCreateItemForAddToCart', [$item, $values]);
 
-            foreach ($results as $result) {
+            foreach ($results->getArgument('result', []) as $result) {
                 if (\is_array($result)) {
                     foreach ($result as $key => $value) {
                         $item->set($key, $value);
@@ -179,8 +179,8 @@ class CartDefault
                 $product->product_options ?? [],
             ]);
 
-            foreach ($validationResults as $result) {
-                if (!empty($result['error'])) {
+            foreach ($validationResults->getArgument('result', []) as $result) {
+                if (\is_array($result) && !empty($result['error'])) {
                     $errors['error']['general'] = $result['error'];
                 }
             }
