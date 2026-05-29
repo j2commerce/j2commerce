@@ -23,7 +23,6 @@ use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\Router\Route;
 use Joomla\Database\DatabaseAwareTrait;
 use Joomla\Database\DatabaseInterface;
-use Joomla\Database\ParameterType;
 use Joomla\Event\DispatcherInterface;
 use Joomla\Event\Event;
 use Joomla\Event\EventInterface;
@@ -102,7 +101,6 @@ final class {{Type}}{{Name}} extends CMSPlugin implements SubscriberInterface
     {
         return [
             'onJ2CommerceCalculateFees'     => 'onCalculateFees',
-            'onJ2CommerceGetPaymentOptions' => 'onGetPaymentOptions',
             'onJ2CommerceGetPaymentPlugins' => 'onGetPaymentPlugins',
             'onJ2CommercePrePayment'        => 'onPrePayment',
             'onJ2CommercePostPayment'       => 'onPostPayment',
@@ -164,41 +162,6 @@ final class {{Type}}{{Name}} extends CMSPlugin implements SubscriberInterface
             }
         }
 {{/if}}
-    }
-
-    public function onGetPaymentOptions(Event $event): void
-    {
-        if (!($event instanceof EventInterface)) {
-            return;
-        }
-
-        $args = $event->getArguments();
-        $element = $args[0] ?? null;
-        $order = $args[1] ?? null;
-
-        if ($element !== $this->_name || $order === null) {
-            return;
-        }
-
-        $found = true;
-
-{{#if geozone}}
-        $geozoneId = (int) $this->params->get('geozone_id', 0);
-
-        if ($geozoneId > 0) {
-            $order->setAddress();
-            $address = $order->getBillingAddress();
-            $found = $this->checkGeozone($geozoneId, $address);
-        }
-{{/if}}
-
-{{#if minmax_subtotal}}
-        if ($found) {
-            $found = $this->checkSubtotalLimits($order->order_subtotal);
-        }
-{{/if}}
-
-        $event->setArgument('result', $found);
     }
 
     public function onGetPaymentPlugins(Event $event): void
@@ -330,53 +293,6 @@ final class {{Type}}{{Name}} extends CMSPlugin implements SubscriberInterface
 
         return $html;
     }
-
-{{#if geozone}}
-    private function checkGeozone(int $geozoneId, array $address): bool
-    {
-        $db = $this->getDatabase();
-        $query = $db->getQuery(true);
-
-        $countryId = (int) ($address['country_id'] ?? 0);
-        $zoneId = (int) ($address['zone_id'] ?? 0);
-
-        $query->select($db->quoteName('gz.j2commerce_geozone_id'))
-            ->from($db->quoteName('#__j2commerce_geozones', 'gz'))
-            ->innerJoin(
-                $db->quoteName('#__j2commerce_geozonerules', 'gzr')
-                . ' ON ' . $db->quoteName('gzr.geozone_id') . ' = ' . $db->quoteName('gz.j2commerce_geozone_id')
-            )
-            ->where($db->quoteName('gz.j2commerce_geozone_id') . ' = :geozoneId')
-            ->where($db->quoteName('gzr.country_id') . ' = :countryId')
-            ->where('(' . $db->quoteName('gzr.zone_id') . ' = 0 OR ' . $db->quoteName('gzr.zone_id') . ' = :zoneId)')
-            ->bind(':geozoneId', $geozoneId, ParameterType::INTEGER)
-            ->bind(':countryId', $countryId, ParameterType::INTEGER)
-            ->bind(':zoneId', $zoneId, ParameterType::INTEGER);
-
-        $db->setQuery($query);
-        $result = $db->loadResult();
-
-        return !empty($result);
-    }
-{{/if}}
-
-{{#if minmax_subtotal}}
-    private function checkSubtotalLimits(float $subtotal): bool
-    {
-        $minSubtotal = (float) $this->params->get('min_subtotal', 0);
-        $maxSubtotal = (float) $this->params->get('max_subtotal', -1);
-
-        if ($minSubtotal > 0 && $subtotal < $minSubtotal) {
-            return false;
-        }
-
-        if ($maxSubtotal >= 0 && $subtotal > $maxSubtotal) {
-            return false;
-        }
-
-        return true;
-    }
-{{/if}}
 
     protected function _getLayout(string $layout, ?\stdClass $vars = null): string
     {
