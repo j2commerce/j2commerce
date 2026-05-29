@@ -596,7 +596,7 @@ class Downloadable
 
         $app           = Factory::getApplication();
         $input         = $app->getInput();
-        $config        = J2CommerceHelper::config();
+        $config        = J2CommerceHelper::config()->getParams();
         $productHelper = new ProductHelper();
         $pluginHelper  = J2CommerceHelper::plugin();
 
