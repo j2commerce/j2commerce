@@ -116,9 +116,14 @@ class OptionTable extends Table
             throw new \Exception(Text::_('COM_J2COMMERCE_OPTION_ERROR_UNIQUE_NAME_EXISTS'));
         }
 
-        // Validate type is one of the allowed types
-        $allowedTypes = ['text', 'textarea', 'select', 'radio', 'checkbox', 'date', 'datetime', 'time', 'file', 'image', 'color', 'number', 'email', 'url'];
-        if (!\in_array($this->type, $allowedTypes)) {
+        // Validate type against the registered option types (core + plugin-provided via onJ2CommerceGetOptionTypes).
+        $optionModel  = Factory::getApplication()
+            ->bootComponent('com_j2commerce')
+            ->getMVCFactory()
+            ->createModel('Option', 'Administrator', ['ignore_request' => true]);
+        $allowedTypes = $optionModel ? array_keys($optionModel->getOptionTypes()) : [];
+
+        if (!\in_array($this->type, $allowedTypes, true)) {
             throw new \Exception(Text::_('COM_J2COMMERCE_OPTION_ERROR_INVALID_TYPE'));
         }
 

@@ -107,6 +107,8 @@ $currency = J2CommerceHelper::currency();
         </div>
     <?php endif; ?>
 
+    <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterDisplayShippingPayment', [$this->order]); ?>
+
     <div class="uk-margin-top">
         <button type="button" id="button-payment-method" class="uk-button uk-button-primary btn-checkout-step">
             <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_CONTINUE'); ?>

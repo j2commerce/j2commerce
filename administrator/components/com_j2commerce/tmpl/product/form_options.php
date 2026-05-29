@@ -66,7 +66,7 @@ $csrfToken = \Joomla\CMS\Session\Session::getFormToken();
                                     <input type="hidden" name="<?php echo $formPrefix.'[item_options]['.$poption->j2commerce_productoption_id .'][option_id]';?>" value="<?php echo $poption->option_id;?>">
 
                                     <small>(<?php echo $this->escape($poption->option_unique_name);?>)</small>
-                                    <small><?php echo Text::_('COM_J2COMMERCE_OPTION_TYPE');?> <?php echo Text::_('COM_J2COMMERCE_'.strtoupper($poption->type))?></small>
+                                    <small><?php echo Text::_('COM_J2COMMERCE_OPTION_TYPE');?> <?php echo $this->escape(J2CommerceHelper::getOptionTypeLabel($poption->type));?></small>
                                     <?php if(isset($poption->type) && ($poption->type =='select' || $poption->type =='radio' || $poption->type =='checkbox' || $poption->type =='color')):?>
                                         <button type="button" class="small ms-2 btn btn-outline-primary btn-sm j2commerce-option-values-link"
                                            data-product-id="<?php echo $item->j2commerce_product_id; ?>"

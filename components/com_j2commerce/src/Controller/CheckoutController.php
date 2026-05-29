@@ -32,7 +32,10 @@ use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
 use Joomla\CMS\User\UserFactoryInterface;
+use Joomla\Database\DatabaseInterface;
+use Joomla\Database\ParameterType;
 use Joomla\Event\DispatcherInterface;
+use Joomla\Registry\Registry;
 
 class CheckoutController extends BaseController
 {
@@ -1050,6 +1053,8 @@ class CheckoutController extends BaseController
             }
         }
 
+        $paymentMethods = $this->filterUnavailablePaymentMethods($paymentMethods, $order);
+
         $defaultPaymentMethod = J2CommerceHelper::config()->get('default_payment_method', '');
         $selectedPayment      = $session->get('payment_method', $defaultPaymentMethod, 'j2commerce');
 
@@ -1072,6 +1077,123 @@ class CheckoutController extends BaseController
             'showTerms'           => (int) J2CommerceHelper::config()->get('show_terms', 0),
             'termsDisplayType'    => J2CommerceHelper::config()->get('terms_display_type', 'link'),
         ]);
+    }
+
+    /**
+     * Drop payment methods whose plugin restricts them out of range.
+     *
+     * Applies the geozone (billing address) and subtotal-range restrictions
+     * advertised by each payment plugin's params. Centralized here because the
+     * per-plugin onJ2CommerceGetPaymentOptions hook is never dispatched.
+     *
+     * @param   array<int, array<string, mixed>>  $methods
+     *
+     * @return  array<int, array<string, mixed>>
+     */
+    private function filterUnavailablePaymentMethods(array $methods, ?object $order): array
+    {
+        if (empty($methods)) {
+            return $methods;
+        }
+
+        // null = billing address not resolvable yet → do not restrict by geozone.
+        $billingGeozones = $this->getBillingGeozones();
+        $subtotal        = (float) ($order->order_subtotal ?? 0);
+
+        $filtered = array_filter($methods, function (array $method) use ($billingGeozones, $subtotal): bool {
+            $element = (string) ($method['element'] ?? '');
+
+            if ($element === '') {
+                return true;
+            }
+
+            $plugin = PluginHelper::getPlugin('j2commerce', $element);
+
+            if (!$plugin) {
+                return true;
+            }
+
+            $params = new Registry($plugin->params ?? '');
+
+            $geozoneId = (int) $params->get('geozone_id', 0);
+
+            // geozone_id 0 = available everywhere. Otherwise it must match the
+            // buyer's billing geozone(s); an empty set means "outside all zones".
+            if ($geozoneId > 0 && $billingGeozones !== null && !\in_array($geozoneId, $billingGeozones, true)) {
+                return false;
+            }
+
+            $minSubtotal = (float) $params->get('min_subtotal', 0);
+            $maxSubtotal = (float) $params->get('max_subtotal', -1);
+
+            if ($minSubtotal > 0 && $subtotal < $minSubtotal) {
+                return false;
+            }
+
+            if ($maxSubtotal >= 0 && $subtotal > $maxSubtotal) {
+                return false;
+            }
+
+            return true;
+        });
+
+        return array_values($filtered);
+    }
+
+    /**
+     * Resolve the geozone IDs matching the buyer's billing address.
+     *
+     * @return  int[]|null  Matching geozone IDs, or null when no billing
+     *                      address is available (caller skips geozone filtering).
+     */
+    private function getBillingGeozones(): ?array
+    {
+        $session   = $this->app->getSession();
+        $countryId = 0;
+        $zoneId    = 0;
+
+        $addressId = (int) $session->get('billing_address_id', 0, 'j2commerce');
+
+        if ($addressId > 0) {
+            $db    = Factory::getContainer()->get(DatabaseInterface::class);
+            $query = $db->getQuery(true);
+
+            $query->select([$db->quoteName('country_id'), $db->quoteName('zone_id')])
+                ->from($db->quoteName('#__j2commerce_addresses'))
+                ->where($db->quoteName('j2commerce_address_id') . ' = :addrId')
+                ->bind(':addrId', $addressId, ParameterType::INTEGER);
+
+            $db->setQuery($query);
+            $address = $db->loadObject();
+
+            if ($address) {
+                $countryId = (int) $address->country_id;
+                $zoneId    = (int) $address->zone_id;
+            }
+        }
+
+        if ($countryId === 0) {
+            $countryId = (int) $session->get('billing_country_id', 0, 'j2commerce');
+            $zoneId    = (int) $session->get('billing_zone_id', 0, 'j2commerce');
+        }
+
+        if ($countryId === 0) {
+            return null;
+        }
+
+        $db    = Factory::getContainer()->get(DatabaseInterface::class);
+        $query = $db->getQuery(true);
+
+        $query->select('DISTINCT ' . $db->quoteName('geozone_id'))
+            ->from($db->quoteName('#__j2commerce_geozonerules'))
+            ->where($db->quoteName('country_id') . ' = :countryId')
+            ->where('(' . $db->quoteName('zone_id') . ' = 0 OR ' . $db->quoteName('zone_id') . ' = :zoneId)')
+            ->bind(':countryId', $countryId, ParameterType::INTEGER)
+            ->bind(':zoneId', $zoneId, ParameterType::INTEGER);
+
+        $db->setQuery($query);
+
+        return array_map('intval', $db->loadColumn() ?: []);
     }
 
     public function shippingPaymentMethodValidate(): void
@@ -1381,6 +1503,12 @@ class CheckoutController extends BaseController
 
         if (empty($orderpaymentType)) {
             Session::checkToken('get') or $this->app->redirect($this->getCheckoutUrl());
+        } elseif ($this->input->getMethod() === 'POST') {
+            // On-site card-collecting plugins POST orderpayment_type alongside
+            // raw PAN/CVV. Enforce CSRF on every browser POST here. Offsite
+            // gateway returns arrive as GET redirects (no token) and are
+            // finalized via order-state guards instead.
+            Session::checkToken('post') or $this->app->redirect($this->getCheckoutUrl());
         }
 
         $session        = $this->app->getSession();

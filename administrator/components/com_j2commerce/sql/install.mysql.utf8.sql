@@ -940,7 +940,7 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_paymentprofiles` (
   `user_id` int NOT NULL,
   `provider` varchar(50) NOT NULL DEFAULT 'authorizenet',
   `customer_profile_id` varchar(50) NOT NULL,
-  `payment_token` varchar(100) NOT NULL DEFAULT '',
+  `payment_token` varchar(255) NOT NULL DEFAULT '',
   `token_label` varchar(100) NOT NULL DEFAULT '',
   `is_renewal_default` tinyint unsigned NOT NULL DEFAULT 0,
   `environment` varchar(10) NOT NULL DEFAULT 'production',

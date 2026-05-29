@@ -98,6 +98,23 @@ class J2CommerceHelper extends ContentHelper
 
         return $layout->render($data);
     }
+
+    /** Resolves an option-type label from the merged core+plugin map (OptionModel::getOptionTypes), cached per request. */
+    public static function getOptionTypeLabel(string $type): string
+    {
+        static $types = null;
+
+        if ($types === null) {
+            $model = Factory::getApplication()
+                ->bootComponent('com_j2commerce')
+                ->getMVCFactory()
+                ->createModel('Option', 'Administrator', ['ignore_request' => true]);
+
+            $types = $model ? $model->getOptionTypes() : [];
+        }
+
+        return $types[$type] ?? Text::_('COM_J2COMMERCE_' . strtoupper($type));
+    }
     /**
      * Gets a list of the actions that can be performed.
      *
