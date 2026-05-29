@@ -2124,6 +2124,27 @@ class ProductHelper
                     'weight'                 => '',
                     'weight_prefix'          => '',
                 ];
+            } else {
+                // Unknown / plugin-registered option type — let a plugin price it.
+                // Handlers addResult(['option_price' => float, 'option_weight' => float, 'option_data' => array]).
+                $event = J2CommerceHelper::plugin()->event('GetCustomOptionPrice', [
+                    'productOption' => $productOption,
+                    'optionValue'   => $optionValue,
+                    'productId'     => $productId,
+                ]);
+
+                foreach ((array) $event->getEventResult() as $row) {
+                    if (!\is_array($row)) {
+                        continue;
+                    }
+
+                    $optionPrice += (float) ($row['option_price'] ?? 0);
+                    $optionWeight += (float) ($row['option_weight'] ?? 0);
+
+                    foreach ((array) ($row['option_data'] ?? []) as $dataRow) {
+                        $optionData[] = $dataRow;
+                    }
+                }
             }
         }
 

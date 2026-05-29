@@ -12,6 +12,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
@@ -482,7 +483,7 @@ class OptionModel extends AdminModel
     public function getOptionTypes()
     {
         // Common option types for ecommerce
-        return [
+        $types = [
             'text'     => Text::_('COM_J2COMMERCE_OPTION_TYPE_TEXT'),
             'textarea' => Text::_('COM_J2COMMERCE_OPTION_TYPE_TEXTAREA'),
             'select'   => Text::_('COM_J2COMMERCE_OPTION_TYPE_SELECT'),
@@ -498,6 +499,20 @@ class OptionModel extends AdminModel
             'email'    => Text::_('COM_J2COMMERCE_OPTION_TYPE_EMAIL'),
             'url'      => Text::_('COM_J2COMMERCE_OPTION_TYPE_URL'),
         ];
+
+        // Allow plugins to register additional option types via addResult([key => label]).
+        $event   = J2CommerceHelper::plugin()->event('GetOptionTypes', ['types' => $types]);
+        $results = $event->getEventResult();
+
+        if (!empty($results) && \is_array($results)) {
+            $validResults = array_filter($results, 'is_array');
+
+            if (!empty($validResults)) {
+                $types = array_merge($types, ...$validResults);
+            }
+        }
+
+        return $types;
     }
 
     /**
