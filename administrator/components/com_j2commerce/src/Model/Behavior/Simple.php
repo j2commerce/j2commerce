@@ -483,7 +483,7 @@ class Simple
         }
 
         $app           = Factory::getApplication();
-        $config        = J2CommerceHelper::config();
+        $config        = J2CommerceHelper::config()->getParams();
         $productHelper = new ProductHelper();
         $pluginHelper  = J2CommerceHelper::plugin();
 
