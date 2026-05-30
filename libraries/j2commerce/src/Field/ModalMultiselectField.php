@@ -27,7 +27,7 @@ use Joomla\Database\ParameterType;
  *
  * @since  1.0.0
  */
-class ModalMultiSelectField extends FormField
+class ModalMultiselectField extends FormField
 {
     /**
      * The form field type.
@@ -35,7 +35,7 @@ class ModalMultiSelectField extends FormField
      * @var    string
      * @since  1.0.0
      */
-    protected $type = 'ModalMultiSelect';
+    protected $type = 'ModalMultiselect';
 
     /**
      * Layout to render
