@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
-use J2Commerce\Component\J2commerce\Administrator\Field\ProductTypeField;
+use J2Commerce\Component\J2commerce\Administrator\Field\ProducttypeField;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
@@ -105,7 +105,7 @@ $getImagePath = function (?string $imagePath): string {
                     $thumbImage = $getImagePath($item->thumb_image);
                     $hasImage = !empty($thumbImage);
                     $productName = !empty($item->product_name) ? $item->product_name : 'Product #' . $item->j2commerce_product_id;
-                    $productTypeLabel = ProductTypeField::getProductTypes()[$item->product_type ?? 'simple'] ?? ucfirst($item->product_type ?? 'simple');
+                    $productTypeLabel = ProducttypeField::getProductTypes()[$item->product_type ?? 'simple'] ?? ucfirst($item->product_type ?? 'simple');
                     $taxProfileText = !empty($item->tax_profile_name) ? $this->escape($item->tax_profile_name) : Text::_('COM_J2COMMERCE_NOT_TAXABLE');
 
                     $lang = '';
