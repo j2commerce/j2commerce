@@ -164,9 +164,7 @@ class Pkg_J2commerceInstallerScript extends InstallerScript
             $this->debugLog('PKG PREFLIGHT: removing legacy renamed files (' . count($this->deleteFiles) . ' configured)');
             $this->removeFiles();
             $this->debugLog('PKG PREFLIGHT: legacy file cleanup completed');
-        }
 
-        if ($route === 'update') {
             $db = Factory::getContainer()->get(DatabaseInterface::class);
             $this->snapshotPreUpdatePluginState($db);
         }
