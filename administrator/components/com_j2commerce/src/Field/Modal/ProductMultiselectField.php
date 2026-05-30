@@ -1,16 +1,16 @@
 <?php
 
 /**
- * @package     J2Commerce Library
- * @subpackage  lib_j2commerce
+ * @package     J2Commerce
+ * @subpackage  com_j2commerce
  *
  * @copyright   (C)2024-2026 J2Commerce, LLC <https://www.j2commerce.com>
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-namespace J2Commerce\Library\J2Commerce\Field\Modal;
+namespace J2Commerce\Component\J2commerce\Administrator\Field\Modal;
 
-use J2Commerce\Library\J2Commerce\Field\ModalMultiSelectField;
+use J2Commerce\Library\J2Commerce\Field\ModalMultiselectField;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\LanguageHelper;
 use Joomla\CMS\Language\Text;
@@ -22,22 +22,19 @@ use Joomla\CMS\Uri\Uri;
 // phpcs:enable PSR1.Files.SideEffects
 
 /**
- * Library version of ContactMultiSelectField for multi-contact selection.
+ * Supports a modal product picker for multiple products.
  *
- * This field provides a modal interface for selecting multiple contacts from com_contact.
- * It can be used by any extension that includes the J2Commerce library.
- *
- * @since  1.0.0
+ * @since  6.0.0
  */
-class ContactMultiSelectField extends ModalMultiSelectField
+class ProductMultiselectField extends ModalMultiselectField
 {
     /**
      * The form field type.
      *
      * @var     string
-     * @since   1.0.0
+     * @since   6.0.0
      */
-    protected $type = 'Modal_ContactMultiselect';
+    protected $type = 'Modal_ProductMultiselect';
 
     /**
      * Method to attach a Form object to the field.
@@ -49,11 +46,11 @@ class ContactMultiSelectField extends ModalMultiSelectField
      * @return  boolean  True on success.
      *
      * @see     FormField::setup()
-     * @since   1.0.0
+     * @since   6.0.0
      */
     public function setup(\SimpleXMLElement $element, $value, $group = null)
     {
-        // Handle comma-separated values for multiple contacts
+        // Handle comma-separated values for multiple products
         if ($value && \is_string($value) && strpos($value, ',') !== false) {
             $values = explode(',', $value);
             $value  = array_map('intval', array_filter($values));
@@ -67,17 +64,20 @@ class ContactMultiSelectField extends ModalMultiSelectField
             return $result;
         }
 
+        // Load J2Commerce language
+        Factory::getApplication()->getLanguage()->load('com_j2commerce', JPATH_ADMINISTRATOR);
+
         $languages = LanguageHelper::getContentLanguages([0, 1], false);
         $language  = (string) $this->element['language'];
 
         // Prepare enabled actions
         $this->canDo['propagate'] = ((string) $this->element['propagate'] == 'true') && \count($languages) > 2;
 
-        // Prepare Urls - use the multi-select modal layout from com_contact
+        // Prepare Urls - use the multi-select modal layout
         $linkItems = (new Uri())->setPath(Uri::base(true) . '/index.php');
         $linkItems->setQuery([
-            'option'                => 'com_contact',
-            'view'                  => 'contacts',
+            'option'                => 'com_j2commerce',
+            'view'                  => 'products',
             'layout'                => 'modal_multiselect',
             'tmpl'                  => 'component',
             'function'              => 'jSelectItemMultiCallback_' . $this->id,
@@ -86,19 +86,15 @@ class ContactMultiSelectField extends ModalMultiSelectField
 
         if ($language) {
             $linkItems->setVar('forcedLanguage', $language);
-            $modalTitle                            = Text::_('LIB_J2COMMERCE_SELECT_CONTACTS') . ' &#8212; ' . $this->getTitle();
+            $modalTitle                            = Text::_('COM_J2COMMERCE_SELECT_PRODUCTS') . ' &#8212; ' . $this->getTitle();
             $this->dataAttributes['data-language'] = $language;
         } else {
-            $modalTitle = Text::_('LIB_J2COMMERCE_CONTACT_SELECT_MODAL_ADD_CONTACTS');
+            $modalTitle = Text::_('COM_J2COMMERCE_PRODUCT_SELECT_MODAL_ADD_PRODUCTS');
         }
 
         $this->urls['select']        = (string) $linkItems;
         $this->modalTitles['select'] = $modalTitle;
-        $this->hint                  = $this->hint ?: Text::_('LIB_J2COMMERCE_SELECT_CONTACTS');
-
-        $this->sql_title_table  = '#__contact_details';
-        $this->sql_title_column = 'name';
-        $this->sql_title_key    = 'id';
+        $this->hint                  = $this->hint ?: Text::_('COM_J2COMMERCE_SELECT_PRODUCTS');
 
         return $result;
     }
@@ -108,7 +104,7 @@ class ContactMultiSelectField extends ModalMultiSelectField
      *
      * @return  string  The field input markup.
      *
-     * @since   1.0.0
+     * @since   6.0.0
      */
     protected function getInput()
     {
@@ -124,27 +120,27 @@ class ContactMultiSelectField extends ModalMultiSelectField
         // Get the parent input HTML
         $html = parent::getInput();
 
-        // Add a container for the contacts table
+        // Add a container for the products table
         $html .= '<div id="' . $this->id . '_table">';
 
-        // Build the table with the selected contacts on first load
+        // Build the table with the selected products on first load
         if (!empty($this->value)) {
-            // Fetch contact titles from the database
-            $contacts = $this->getValueTitles();
-            $html .= '<div class="my-2"><strong>' . Text::_('LIB_J2COMMERCE_SELECTED_CONTACTS') . ' (' . \count($this->value) . '):</strong></div>';
-            $html .= '<table class="table table-sm table-striped"><thead><tr><th class="w-10">' . Text::_('LIB_J2COMMERCE_CONTACT_FIELD_ID') . '</th><th>' . Text::_('LIB_J2COMMERCE_CONTACT_FIELD_NAME') . '</th><th class="text-end w-6"><button type="button" class="btn btn-sm btn-outline-danger" onclick="clearAllItems_' . $this->id . '()" title="' . Text::_('LIB_J2COMMERCE_CONTACTS_CLEAR_ALL') . '"><span class="icon-trash" aria-hidden="true"></span></button></th><th class="w-1"><span class="visually-hidden">' . Text::_('LIB_J2COMMERCE_REMOVE') . '</span></th></tr></thead><tbody>';
-            foreach ($this->value as $index => $contactId) {
-                $contactName = isset($contacts[$contactId]) ? htmlspecialchars($contacts[$contactId]->name, ENT_QUOTES, 'UTF-8') : $contactId;
+            // Fetch product titles from the database
+            $products = $this->getValueTitles();
+            $html .= '<div class="my-2"><strong>' . Text::_('COM_J2COMMERCE_SELECTED_PRODUCTS') . ' (' . \count($this->value) . '):</strong></div>';
+            $html .= '<table class="table table-sm table-striped"><thead><tr><th class="w-10">' . Text::_('COM_J2COMMERCE_PRODUCT_FIELD_ID') . '</th><th>' . Text::_('COM_J2COMMERCE_PRODUCT_FIELD_NAME') . '</th><th class="text-end w-6"><button type="button" class="btn btn-sm btn-outline-danger" onclick="clearAllItems_' . $this->id . '()" title="' . Text::_('COM_J2COMMERCE_PRODUCTS_CLEAR_ALL') . '"><span class="icon-trash" aria-hidden="true"></span></button></th><th class="w-1"><span class="visually-hidden">' . Text::_('COM_J2COMMERCE_REMOVE') . '</span></th></tr></thead><tbody>';
+            foreach ($this->value as $index => $productId) {
+                $productName = isset($products[$productId]) ? htmlspecialchars($products[$productId]->title, ENT_QUOTES, 'UTF-8') : $productId;
                 $html .= '<tr>';
-                $html .= '<td class="fw-bold">' . $contactId . '</td>';
-                $html .= '<td>' . $contactName . '</td>';
-                $html .= '<td class="text-end"><button type="button" class="btn btn-sm btn-danger" onclick="removeItem_' . $this->id . '(' . $contactId . ')" title="' . Text::_('LIB_J2COMMERCE_CONTACT_CLEAR') . '"><span class="icon-trash" aria-hidden="true"></span></button></td>';
-                $html .= '<td class="w-1"><input type="hidden" name="jform[request][contact_ids][' . $index . ']" value="' . $contactId . '" id="' . $this->id . '_hidden_' . $index . '" data-title="' . $contactName . '"></td>';
+                $html .= '<td class="fw-bold">' . $productId . '</td>';
+                $html .= '<td>' . $productName . '</td>';
+                $html .= '<td class="text-end"><button type="button" class="btn btn-sm btn-danger" onclick="removeItem_' . $this->id . '(' . $productId . ')" title="' . Text::_('COM_J2COMMERCE_PRODUCT_CLEAR') . '"><span class="icon-trash" aria-hidden="true"></span></button></td>';
+                $html .= '<td class="w-1"><input type="hidden" name="jform[request][product_ids][' . $index . ']" value="' . $productId . '" id="' . $this->id . '_hidden_' . $index . '" data-title="' . $productName . '"></td>';
                 $html .= '</tr>';
             }
             $html .= '</tbody></table>';
         } else {
-            $html .= '<div class="my-2">' . Text::_('LIB_J2COMMERCE_NO_CONTACTS_SELECTED') . '</div>';
+            $html .= '<div class="my-2">' . Text::_('COM_J2COMMERCE_NO_PRODUCTS_SELECTED') . '</div>';
         }
         $html .= '</div>';
 
@@ -156,7 +152,7 @@ class ContactMultiSelectField extends ModalMultiSelectField
      *
      * @return void
      *
-     * @since   1.0.0
+     * @since   6.0.0
      */
     protected function loadJavaScript()
     {
@@ -170,13 +166,12 @@ class ContactMultiSelectField extends ModalMultiSelectField
             ['core']
         );
 
-        // Load language strings for JavaScript
-        Text::script('LIB_J2COMMERCE_SELECTED_CONTACTS');
-        Text::script('LIB_J2COMMERCE_CONTACT_FIELD_ID');
-        Text::script('LIB_J2COMMERCE_CONTACT_FIELD_NAME');
-        Text::script('LIB_J2COMMERCE_CONTACTS_CLEAR_ALL');
-        Text::script('LIB_J2COMMERCE_CONTACT_CLEAR');
-        Text::script('LIB_J2COMMERCE_REMOVE');
+        Text::script('COM_J2COMMERCE_SELECTED_PRODUCTS');
+        Text::script('COM_J2COMMERCE_PRODUCT_FIELD_ID');
+        Text::script('COM_J2COMMERCE_PRODUCT_FIELD_NAME');
+        Text::script('COM_J2COMMERCE_PRODUCTS_CLEAR_ALL');
+        Text::script('COM_J2COMMERCE_PRODUCT_CLEAR');
+        Text::script('COM_J2COMMERCE_REMOVE');
 
         // Initialize this specific field instance via inline script
         $initScript = "
@@ -184,7 +179,7 @@ class ContactMultiSelectField extends ModalMultiSelectField
             if (window.initItemMultiField) {
                 const handler = window.initItemMultiField('{$this->id}');
 
-                // Set up contact-specific table update function
+                // Set up product-specific table update function
                 handler.customUpdateTable = function(selectedItems) {
                     const tableContainer = document.getElementById('{$this->id}_table');
                     if (!tableContainer) {
@@ -199,7 +194,7 @@ class ContactMultiSelectField extends ModalMultiSelectField
                         // Create table structure
                         const caption = handler.createElement('div', {
                             className: 'my-2',
-                            innerHTML: '<strong>' + Joomla.Text._('LIB_J2COMMERCE_SELECTED_CONTACTS') + ' (' + selectedItems.length + '):</strong>'
+                            innerHTML: '<strong>' + Joomla.Text._('COM_J2COMMERCE_SELECTED_PRODUCTS') + ' (' + selectedItems.length + '):</strong>'
                         });
 
                         const table = handler.createElement('table', {
@@ -208,16 +203,16 @@ class ContactMultiSelectField extends ModalMultiSelectField
 
                         const thead = handler.createElement('thead');
                         const headerRow = handler.createElement('tr', {
-                            innerHTML: '<th class=\"w-10\">' + Joomla.Text._('LIB_J2COMMERCE_CONTACT_FIELD_ID') + '</th>' +
-                                      '<th>' + Joomla.Text._('LIB_J2COMMERCE_CONTACT_FIELD_NAME') + '</th>' +
+                            innerHTML: '<th class=\"w-10\">' + Joomla.Text._('COM_J2COMMERCE_PRODUCT_FIELD_ID') + '</th>' +
+                                      '<th>' + Joomla.Text._('COM_J2COMMERCE_PRODUCT_FIELD_NAME') + '</th>' +
                                       '<th class=\"text-end w-6\">' +
                                           '<button type=\"button\" class=\"btn btn-sm btn-outline-danger\" ' +
                                                   'onclick=\"clearAllItems_{$this->id}()\" ' +
-                                                  'title=\"' + Joomla.Text._('LIB_J2COMMERCE_CONTACTS_CLEAR_ALL') + '\">' +
+                                                  'title=\"' + Joomla.Text._('COM_J2COMMERCE_PRODUCTS_CLEAR_ALL') + '\">' +
                                               '<span class=\"icon-trash\" aria-hidden=\"true\"></span>' +
                                           '</button>' +
                                       '</th>' +
-                                      '<th class=\"w-1\"><span class=\"visually-hidden\">' + Joomla.Text._('LIB_J2COMMERCE_REMOVE') + '</span></th>'
+                                      '<th class=\"w-1\"><span class=\"visually-hidden\">' + Joomla.Text._('COM_J2COMMERCE_REMOVE') + '</span></th>'
                         });
 
                         thead.appendChild(headerRow);
@@ -231,7 +226,7 @@ class ContactMultiSelectField extends ModalMultiSelectField
                             // Create hidden field
                             const hiddenField = handler.createElement('input', {
                                 type: 'hidden',
-                                name: 'jform[request][contact_ids][' + index + ']',
+                                name: 'jform[request][product_ids][' + index + ']',
                                 value: item.id,
                                 id: '{$this->id}_hidden_' + index
                             });
@@ -245,7 +240,7 @@ class ContactMultiSelectField extends ModalMultiSelectField
                                           '<td class=\"text-end\">' +
                                               '<button type=\"button\" class=\"btn btn-sm btn-danger\" ' +
                                                       'onclick=\"removeItem_{$this->id}(' + item.id + ')\" ' +
-                                                      'title=\"' + Joomla.Text._('LIB_J2COMMERCE_CONTACT_CLEAR') + '\">' +
+                                                      'title=\"' + Joomla.Text._('COM_J2COMMERCE_PRODUCT_CLEAR') + '\">' +
                                                   '<span class=\"icon-trash\" aria-hidden=\"true\"></span>' +
                                               '</button>' +
                                           '</td>';
@@ -274,16 +269,47 @@ class ContactMultiSelectField extends ModalMultiSelectField
      *
      * @return  array
      *
-     * @since 1.0.0
+     * @since 6.0.0
      */
     protected function getLayoutData()
     {
         $data                          = parent::getLayoutData();
         $data['language']              = (string) $this->element['language'];
         $data['multiple']              = true;
-        $data['buttonIcons']['select'] = 'fa-solid fa-address-book';
+        $data['buttonIcons']['select'] = 'fa-solid fa-tags';
 
         return $data;
     }
 
+    /**
+     * Get titles for the selected product IDs
+     *
+     * @return  array
+     *
+     * @since   6.0.0
+     */
+    protected function getValueTitles()
+    {
+        if (empty($this->value)) {
+            return [];
+        }
+
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true);
+
+        // Join J2Commerce products with content table to get product titles
+        $query->select('p.j2commerce_product_id, c.title')
+            ->from($db->quoteName('#__j2commerce_products', 'p'))
+            ->join('INNER', $db->quoteName('#__content', 'c') . ' ON p.product_source_id = c.id')
+            ->where('p.j2commerce_product_id IN (' . implode(',', array_map('intval', $this->value)) . ')');
+
+        $db->setQuery($query);
+
+        try {
+            $items = $db->loadObjectList('j2commerce_product_id');
+            return $items ?: [];
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
 }
