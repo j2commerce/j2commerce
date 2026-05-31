@@ -24,6 +24,7 @@ const J2Commerce = {
         this.initRadioOptionLabels();
         this.initShippingSameAsBilling();
         this.initConfigurableDefaults();
+        this.initVariantDeepLink();
         this.equalizeHeights();
         let _eqTimer;
         window.addEventListener('resize', () => {
@@ -359,6 +360,21 @@ const J2Commerce = {
         return undefined;
     },
 
+    // Resolve the element that triggered an inline onchange/onclick handler.
+    // Prefer the live event target so duplicate IDs — which occur when the same
+    // product is rendered twice on a page (detail/list view + a products module)
+    // — resolve to the instance the user actually interacted with, not the first
+    // match in the document. Falls back to ID lookup for programmatic callers.
+    resolveTriggerElement(elementId) {
+        if (elementId instanceof Element) return elementId;
+
+        const evt = window.event;
+        if (evt && evt.target instanceof Element) return evt.target;
+
+        const cleanId = String(elementId).replace(/^#/, '');
+        return document.getElementById(cleanId) || document.querySelector(`[id="${cleanId}"]`);
+    },
+
     /**
      * Handle AJAX filter for product options
      * @param {string} povId - Product option value ID
@@ -367,9 +383,7 @@ const J2Commerce = {
      * @param {string} elementId - Triggering element ID
      */
     async doAjaxFilter(povId, productId, poId, elementId) {
-        // Strip leading # — templates pass CSS selectors but getElementById expects bare IDs
-        const cleanId = elementId.startsWith('#') ? elementId.slice(1) : elementId;
-        const element = document.getElementById(cleanId) || document.querySelector(`[id="${cleanId}"]`);
+        const element = this.resolveTriggerElement(elementId);
         if (!element) return;
 
         const form = element.closest('form');
@@ -377,7 +391,11 @@ const J2Commerce = {
 
         // Resolve the child-options container. Keep the current set visible (dimmed,
         // height reserved) while the new set loads — no eager wipe, so no layout collapse.
-        const childContainer = document.getElementById(`ChildOptions${poId}`)
+        // Scope to the triggering form first so the correct instance is updated when
+        // the same product is rendered twice on a page (duplicate IDs).
+        const childContainer = form.querySelector(`[id="ChildOptions${poId}"]`)
+            || form.querySelector(`[id="child-ChildOptions${poId}"]`)
+            || document.getElementById(`ChildOptions${poId}`)
             || document.getElementById(`child-ChildOptions${poId}`);
         if (childContainer) {
             this.setChildLoading(childContainer, true);
@@ -643,13 +661,64 @@ const J2Commerce = {
         });
     },
 
+    // On page load, honour a ?variant_id=N deep link on the product detail page
+    // by pre-selecting the options that make up that variant. When the param is
+    // absent or does not belong to the product, the server-rendered default
+    // selection is left untouched.
+    initVariantDeepLink() {
+        const requestedVariant = new URLSearchParams(window.location.search).get('variant_id');
+        if (!requestedVariant || !/^\d+$/.test(requestedVariant)) return;
+
+        document.querySelectorAll('form[data-product_variants]').forEach(form => {
+            let variants;
+            try {
+                variants = JSON.parse(form.dataset.product_variants || '{}');
+            } catch (e) {
+                return;
+            }
+
+            // The variant map is keyed by variant id; the value is the
+            // comma-separated option-value combination for that variant.
+            const combination = variants[requestedVariant];
+            if (combination === undefined) return;
+
+            const productId = form.dataset.product_id ?? form.dataset.productId;
+            const povIds = String(combination).split(',').filter(Boolean);
+
+            povIds.forEach(pov => {
+                const choice = form.querySelector('#option-value-' + CSS.escape(pov));
+                if (choice && (choice.type === 'radio' || choice.type === 'checkbox')) {
+                    choice.checked = true;
+                    return;
+                }
+
+                const select = Array.from(form.querySelectorAll('select'))
+                    .find(s => s.querySelector('option[value="' + CSS.escape(pov) + '"]'));
+                if (select) select.value = pov;
+            });
+
+            const variantInput = form.querySelector('input[name="variant_id"]');
+            if (variantInput) variantInput.value = requestedVariant;
+
+            // Re-sync price, SKU, image and stock for the deep-linked variant via
+            // the existing update path (recomputes the variant from the inputs).
+            const firstOption = form.querySelector('[id^="option-"]');
+            if (firstOption && productId) {
+                this.doAjaxPrice(productId, firstOption.id);
+            }
+
+            this.initRadioOptionLabels();
+            this.initColorOptionLabels();
+        });
+    },
+
     /**
      * Handle AJAX price update
      * @param {number} productId - Product ID
      * @param {string} elementId - Triggering element ID
      */
     async doAjaxPrice(productId, elementId) {
-        const element = document.getElementById(elementId) || document.querySelector(`[id="${elementId}"]`);
+        const element = this.resolveTriggerElement(elementId);
         if (!element) return;
 
         const form = element.closest('form');
@@ -731,7 +800,13 @@ const J2Commerce = {
      * @param {HTMLFormElement} form - The product form
      */
     updateProductDisplay(productId, response, form) {
-        const product = document.querySelector(`.j2commerce-product-${productId}`) || document.querySelector(`.product-${productId}`);
+        // Resolve the container from the triggering form first so the correct
+        // instance updates when the same product appears twice on a page (e.g.
+        // detail/list view + a products module). Fall back to the global lookup
+        // for callers with no form context.
+        const product = (form && (form.closest(`.j2commerce-product-${productId}`) || form.closest(`.product-${productId}`)))
+            || document.querySelector(`.j2commerce-product-${productId}`)
+            || document.querySelector(`.product-${productId}`);
         if (!product || response.error) return;
 
         // SKU — detail uses .sku, list uses .sku-value
@@ -806,7 +881,7 @@ const J2Commerce = {
         // Main image — skip legacy swap if variant gallery handled by Swiper
         if (response.main_image && !response.variant_gallery?.length) {
             const mainImages = [
-                document.querySelector(`.j2commerce-product-main-image-${productId}`),
+                product.querySelector(`.j2commerce-product-main-image-${productId}`),
                 product.querySelector('.j2commerce-mainimage .j2commerce-img-responsive'),
                 product.querySelector('.j2commerce-product-additional-images .additional-mainimage')
             ];
