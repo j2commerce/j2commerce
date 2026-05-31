@@ -132,14 +132,34 @@ final class TaxHelper
     /**
      * Load the matching `#__j2commerce_taxrates` row for a profile + geozone set.
      *
+     * Returns the first matching row only. Use getAllTaxRatesForGeozone() when
+     * multiple rates may apply (e.g. state + local tax stacking).
+     *
      * @return  \stdClass|null  Raw row or null when nothing matches.
      *
      * @since   6.3.0
      */
     public static function getTaxRateForGeozone(int $taxprofileId, array $geozoneIds): ?\stdClass
     {
+        $rows = self::getAllTaxRatesForGeozone($taxprofileId, $geozoneIds);
+
+        return $rows[0] ?? null;
+    }
+
+    /**
+     * Load ALL matching `#__j2commerce_taxrates` rows for a profile + geozone set.
+     *
+     * Unlike getTaxRateForGeozone() this returns every rule that matches so that
+     * compound-rate scenarios (e.g. state 6.25% + local 2%) are all included.
+     *
+     * @return  \stdClass[]  Array of raw rows (may be empty).
+     *
+     * @since   6.3.0
+     */
+    public static function getAllTaxRatesForGeozone(int $taxprofileId, array $geozoneIds): array
+    {
         if ($taxprofileId <= 0 || empty($geozoneIds)) {
-            return null;
+            return [];
         }
 
         $db    = Factory::getContainer()->get(DatabaseInterface::class);
@@ -167,9 +187,9 @@ final class TaxHelper
             ->bind(':profileId', $taxprofileId, ParameterType::INTEGER)
             ->order($db->quoteName('tr.ordering') . ' ASC');
 
-        $db->setQuery($query, 0, 1);
+        $db->setQuery($query);
 
-        return $db->loadObject() ?: null;
+        return $db->loadObjectList() ?: [];
     }
 
     /**
@@ -191,17 +211,15 @@ final class TaxHelper
         $address ??= self::getCustomerAddress();
         $ratesets = [];
 
-        $taxInfo = self::getTaxRateForGeozone($taxprofileId, $geozoneIds);
-
-        if ($taxInfo !== null) {
-            $rate                         = new \stdClass();
-            $rate->j2commerce_taxrate_id  = (int) ($taxInfo->j2commerce_taxrate_id ?? 0);
-            $rate->name                   = (string) ($taxInfo->taxrate_name ?? '');
-            $rate->taxrate_name           = $rate->name;
-            $rate->rate                   = (float) ($taxInfo->tax_percent ?? 0);
-            $rate->tax_percent            = $rate->rate;
-            $rate->taxprofile_name        = (string) ($taxInfo->taxprofile_name ?? '');
-            $ratesets[]                   = $rate;
+        foreach (self::getAllTaxRatesForGeozone($taxprofileId, $geozoneIds) as $taxInfo) {
+            $rate                        = new \stdClass();
+            $rate->j2commerce_taxrate_id = (int) ($taxInfo->j2commerce_taxrate_id ?? 0);
+            $rate->name                  = (string) ($taxInfo->taxrate_name ?? '');
+            $rate->taxrate_name          = $rate->name;
+            $rate->rate                  = (float) ($taxInfo->tax_percent ?? 0);
+            $rate->tax_percent           = $rate->rate;
+            $rate->taxprofile_name       = (string) ($taxInfo->taxprofile_name ?? '');
+            $ratesets[]                  = $rate;
         }
 
         $event = J2CommerceHelper::plugin()->event('AfterGetTaxRateItems', [
