@@ -712,6 +712,45 @@ const J2Commerce = {
         });
     },
 
+    // Update a list/module card's product links (image + title) with the
+    // selected variant id. No-op on the product detail page, which has no
+    // .j2commerce-product-item wrapper. A falsy variantId strips the param so
+    // the link falls back to the default variant.
+    syncCardVariantLinks(form, variantId) {
+        const card = form.closest('.j2commerce-product-item');
+        if (!card) return;
+
+        const anchors = card.querySelectorAll(
+            '.j2commerce-product-image a[href], .j2commerce-product-title a[href]'
+        );
+
+        anchors.forEach(a => {
+            const href = a.getAttribute('href');
+            if (!href || href.startsWith('javascript:') || href.startsWith('#')) return;
+            a.setAttribute('href', this.setQueryParam(href, 'variant_id', variantId || null));
+        });
+    },
+
+    // Set (value truthy) or remove (value falsy) a query-string parameter on a
+    // URL, preserving the path, other params and any hash fragment.
+    setQueryParam(url, key, value) {
+        const hashIndex = url.indexOf('#');
+        const hash = hashIndex >= 0 ? url.slice(hashIndex) : '';
+        const path = hashIndex >= 0 ? url.slice(0, hashIndex) : url;
+        const qIndex = path.indexOf('?');
+        const base = qIndex >= 0 ? path.slice(0, qIndex) : path;
+        const params = new URLSearchParams(qIndex >= 0 ? path.slice(qIndex + 1) : '');
+
+        if (value) {
+            params.set(key, value);
+        } else {
+            params.delete(key);
+        }
+
+        const query = params.toString();
+        return base + (query ? '?' + query : '') + hash;
+    },
+
     /**
      * Handle AJAX price update
      * @param {number} productId - Product ID
@@ -762,6 +801,11 @@ const J2Commerce = {
             const variantInput = form.querySelector('input[name="variant_id"]');
             if (variantInput) variantInput.value = variantId || '';
             values.variant_id = variantId;
+
+            // On list/module cards, keep the product links in sync with the
+            // selected variant so clicking the image or title opens the detail
+            // page with that variant pre-selected (consumed by initVariantDeepLink).
+            this.syncCardVariantLinks(form, variantId);
         }
 
         this.dispatchEvent('beforeAjaxPrice', { form, values });
