@@ -370,9 +370,9 @@ class CustomFieldHelper
             }
         } elseif (!$required && $requiredIndicator === 'optional') {
             if ($isUikit) {
-                $labelHtml .= ' <small class="uk-text-muted">(' . Text::_('COM_J2COMMERCE_OPTIONAL') . ')</small>';
+                $labelHtml .= ' <small class="uk-text-muted">' . Text::_('COM_J2COMMERCE_OPTIONAL') . '</small>';
             } else {
-                $labelHtml .= ' <small class="text-body-secondary">(' . Text::_('COM_J2COMMERCE_OPTIONAL') . ')</small>';
+                $labelHtml .= ' <small class="text-body-secondary">' . Text::_('COM_J2COMMERCE_OPTIONAL') . '</small>';
             }
         }
 
