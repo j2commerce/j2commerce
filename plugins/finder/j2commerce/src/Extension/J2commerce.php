@@ -545,7 +545,7 @@ final class J2commerce extends Adapter implements SubscriberInterface
             // search lands on that variant pre-selected on the product page.
             if ($redirectTo !== 'article' && !empty($variantData['first_sku_variant_id'])) {
                 $variantQuery = '&variant_id=' . (int) $variantData['first_sku_variant_id'];
-                $item->url   .= $variantQuery;
+                $item->url .= $variantQuery;
                 $item->route .= $variantQuery;
             }
         }
