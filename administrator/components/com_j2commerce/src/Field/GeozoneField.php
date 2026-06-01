@@ -33,6 +33,10 @@ class GeozoneField extends ListField
     {
         $options = parent::getOptions();
 
+        // Empty value = no geozone restriction (available everywhere). Listed first
+        // so a freshly saved form defaults to "All" instead of the first geozone.
+        array_unshift($options, HTMLHelper::_('select.option', '', Text::_('JALL')));
+
         try {
             $db = Factory::getContainer()->get(DatabaseInterface::class);
 
