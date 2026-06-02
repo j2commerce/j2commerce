@@ -124,6 +124,7 @@ class InventoryModel extends ListModel
                 'pq.sold, ' .
                 'v.manage_stock, ' .
                 'v.availability, ' .
+                'v.allow_backorder, ' .
                 'v.j2commerce_variant_id, ' .
                 'v.sku, ' .
                 'pq.variant_id'
@@ -225,8 +226,13 @@ class InventoryModel extends ListModel
                 // Set default values for null fields
                 $item->quantity     = $item->quantity ?? 0;
                 $item->manage_stock = $item->manage_stock ?? 0;
-                $item->availability = $item->availability ?? 1;
                 $item->has_options  = $item->has_options ?? 0;
+
+                // Reflect the shopper-facing stock status, not the raw column.
+                // Storefront rule (ProductHelper::validateVariableProduct): when stock
+                // is not managed the item is always sellable; when managed it is in
+                // stock only if availability is set or backorders are allowed.
+                $item->availability = $this->resolveStockStatus($item);
 
                 // Add SKU field to item if not present
                 if (!isset($item->sku)) {
@@ -244,6 +250,31 @@ class InventoryModel extends ListModel
         }
 
         return $items;
+    }
+
+    /**
+     * Resolve the shopper-facing stock status for the inventory select.
+     *
+     * Mirrors the storefront rule (ProductHelper::validateVariableProduct):
+     * unmanaged stock is always in stock; managed stock is in stock only when
+     * availability is set or backorders are allowed.
+     *
+     * @param   object  $row  Product/variant row with manage_stock, availability, allow_backorder.
+     *
+     * @return  int  1 = in stock, 0 = out of stock.
+     *
+     * @since   6.0.0
+     */
+    private function resolveStockStatus(object $row): int
+    {
+        if ((int) ($row->manage_stock ?? 0) !== 1) {
+            return 1;
+        }
+
+        $available = !empty($row->availability);
+        $backorder = (int) ($row->allow_backorder ?? 0) >= 1;
+
+        return ($available || $backorder) ? 1 : 0;
     }
 
     /**
@@ -598,6 +629,7 @@ class InventoryModel extends ListModel
                 'v.sku',
                 'v.manage_stock',
                 'v.availability',
+                'v.allow_backorder',
                 'v.is_master',
                 'pq.quantity',
                 'pq.on_hold',
@@ -620,9 +652,9 @@ class InventoryModel extends ListModel
                 foreach ($variants as $variant) {
                     $variant->quantity     = $variant->quantity ?? 0;
                     $variant->manage_stock = $variant->manage_stock ?? 0;
-                    $variant->availability = $variant->availability ?? 1;
                     $variant->on_hold      = $variant->on_hold ?? 0;
                     $variant->sold         = $variant->sold ?? 0;
+                    $variant->availability = $this->resolveStockStatus($variant);
                 }
             }
 
