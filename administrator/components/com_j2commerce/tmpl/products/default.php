@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
-use J2Commerce\Component\J2commerce\Administrator\Field\ProductTypeField;
+use J2Commerce\Component\J2commerce\Administrator\Field\ProducttypeField;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Button\PublishedButton;
@@ -110,7 +110,7 @@ $canChangeState = $user->authorise('core.edit.state', 'com_content');
                             $contentEditLink = Route::_('index.php?option=com_content&task=article.edit&id=' . (int) $item->product_source_id . '&return=' . $returnUrl);
                             $thumbImage = $getImagePath($item->thumb_image);
                             $hasImage = !empty($thumbImage);
-                            $productTypeLabel = ProductTypeField::getProductTypes()[$item->product_type ?? 'simple'] ?? ucfirst($item->product_type ?? 'simple');
+                            $productTypeLabel = ProducttypeField::getProductTypes()[$item->product_type ?? 'simple'] ?? ucfirst($item->product_type ?? 'simple');
                             $articleStateText = ($item->article_state == 1) ? Text::_('JPUBLISHED') : Text::_('JUNPUBLISHED');
                             $articleStateClass = ($item->article_state == 1) ? 'text-success' : 'text-danger';
                             $taxProfileText = !empty($item->taxprofile_name) ? $this->escape($item->taxprofile_name) : Text::_('COM_J2COMMERCE_NOT_TAXABLE');

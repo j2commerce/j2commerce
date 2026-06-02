@@ -12,7 +12,7 @@ defined('_JEXEC') or die;
 use J2Commerce\Component\J2commerce\Administrator\Helper\VersionHelper;
 use Joomla\CMS\Language\Text;
 
-$version = VersionHelper::getVersion();
+$version = VersionHelper::getFullVersion();
 $year    = date('Y');
 
 

@@ -292,9 +292,13 @@ class CustomfieldModel extends AdminModel
         // For save2copy: generate a unique field_namekey to avoid UNIQUE constraint violation
         $task = Factory::getApplication()->getInput()->get('task', '', 'cmd');
 
-        if ($task === 'customfield.save2copy' && !empty($data['field_namekey'])) {
+        if ($task === 'save2copy' && !empty($data['field_namekey'])) {
             $data['j2commerce_customfield_id'] = 0;
-            $data['field_namekey']             = $this->generateUniqueNamekey($data['field_namekey']);
+
+            $avoidAddressColumn = ($data['field_table'] ?? '') === 'address'
+                && !\in_array($data['field_type'] ?? '', ['customtext', 'multiuploader'], true);
+
+            $data['field_namekey'] = $this->generateUniqueNamekey($data['field_namekey'], $avoidAddressColumn);
         }
 
         // Consolidate zone dropdown values into field_default
@@ -385,7 +389,13 @@ class CustomfieldModel extends AdminModel
             isset($data['field_type']) && $data['field_type'] !== 'customtext' && $data['field_type'] !== 'multiuploader' &&
             !empty($data['field_namekey'])) {
 
-            $this->addAddressColumn($data['field_namekey']);
+            try {
+                $this->addAddressColumn($data['field_namekey']);
+            } catch (\RuntimeException $e) {
+                $this->setError($e->getMessage());
+
+                return false;
+            }
         }
 
         // Sync plugin area toggles into field_display JSON before saving
@@ -506,11 +516,15 @@ class CustomfieldModel extends AdminModel
         }
     }
 
-    protected function generateUniqueNamekey(string $baseKey): string
+    protected function generateUniqueNamekey(string $baseKey, bool $avoidAddressColumn = false): string
     {
         $db        = $this->getDatabase();
         $candidate = $baseKey . '_copy';
         $i         = 1;
+
+        // Orphaned columns can linger after a field is deleted, so address-field copies
+        // must also skip any namekey that already exists as an addresses column.
+        $addressColumns = $avoidAddressColumn ? $db->getTableColumns('#__j2commerce_addresses') : [];
 
         while (true) {
             $query = $db->getQuery(true)
@@ -520,7 +534,7 @@ class CustomfieldModel extends AdminModel
                 ->bind(':namekey', $candidate);
             $db->setQuery($query);
 
-            if ((int) $db->loadResult() === 0) {
+            if ((int) $db->loadResult() === 0 && !isset($addressColumns[$candidate])) {
                 return $candidate;
             }
 

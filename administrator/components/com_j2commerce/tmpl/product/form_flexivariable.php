@@ -7,26 +7,14 @@
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
-use J2Commerce\Component\J2commerce\Administrator\Field\ProductTypeField;
-use Joomla\CMS\Factory;
-use Joomla\CMS\Form\Field\RadioField;
-use Joomla\CMS\Form\Form;
-use Joomla\CMS\HTML\Helpers\User;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\FileLayout;
-use Joomla\CMS\Layout\LayoutHelper;
-use Joomla\CMS\Plugin\CMSPlugin;
-use Joomla\CMS\Plugin\PluginHelper;
-use Joomla\Database\DatabaseAwareTrait;
-
-use Joomla\Registry\Registry;
 
 $is_Pro = J2CommerceHelper::isPro();
 $row_class = 'row';
@@ -34,11 +22,7 @@ $col_class = 'col-lg-';
 
 $item = $displayData['product'];
 $formPrefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
-
-
-
 ?>
-
 <div class="alert alert-block alert-info">
     <?php echo Text::_('COM_J2COMMERCE_FLEXIVARIANT_PRODUCT_HELP_TEXT'); ?>
 </div>

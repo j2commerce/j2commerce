@@ -170,9 +170,15 @@ class HtmlView extends BaseHtmlView
 
         ToolbarHelper::title(Text::_('COM_J2COMMERCE_INVENTORY_MANAGER_TITLE'), 'fa-solid fa-barcode');
 
-        if ($canDo->get('core.edit')) {
-            $toolbar->standardButton('square', Text::_('COM_J2COMMERCE_INVENTORY_BATCH_UPDATE'), 'inventory.batch')
-                ->listCheck(true);
+        if (!$this->isEmptyState && $canDo->get('core.edit')) {
+            $toolbar->popupButton('batch', 'COM_J2COMMERCE_INVENTORY_BATCH_UPDATE')
+                ->popupType('inline')
+                ->textHeader(Text::_('COM_J2COMMERCE_INVENTORY_BATCH_TITLE'))
+                ->url('#joomla-dialog-batch')
+                ->modalWidth('600px')
+                ->modalHeight('fit-content')
+                ->listCheck(true)
+                ->icon('icon-ellipsis-h');
         }
 
         if (!$this->isEmptyState) {

@@ -580,6 +580,24 @@ class Variable
         // Select default variant
         $product->variant = ProductHelper::getDefaultVariant($product->variants) ?? reset($product->variants);
 
+        // Honour a ?sku= deep link on the storefront: make the requested SKU's
+        // variant the active one so price, image, stock and the pre-selected
+        // options all render for it. An unknown SKU keeps the default variant.
+        $app = Factory::getApplication();
+
+        if ($app->isClient('site')) {
+            $requestedSku = trim((string) $app->getInput()->getString('sku', ''));
+
+            if ($requestedSku !== '') {
+                foreach ($product->variants as $candidateVariant) {
+                    if (isset($candidateVariant->sku) && (string) $candidateVariant->sku === $requestedSku) {
+                        $product->variant = $candidateVariant;
+                        break;
+                    }
+                }
+            }
+        }
+
         if ($product->variant->quantity_restriction && $product->variant->min_sale_qty > 0) {
             $product->quantity = $product->variant->min_sale_qty;
         } else {

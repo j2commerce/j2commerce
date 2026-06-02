@@ -61,9 +61,9 @@ Or add the prefix to individual fields:
 ### In your component code:
 
 ```php
-use J2Commerce\Library\J2Commerce\Field\Modal\UserMultiSelectField;
-use J2Commerce\Library\J2Commerce\Field\Modal\ArticleMultiSelectField;
-use J2Commerce\Library\J2Commerce\Field\Modal\ContactMultiSelectField;
+use J2Commerce\Library\J2Commerce\Field\Modal\UserMultiselectField;
+use J2Commerce\Library\J2Commerce\Field\Modal\ArticleMultiselectField;
+use J2Commerce\Library\J2Commerce\Field\Modal\ContactMultiselectField;
 ```
 
 ## Components

@@ -16,7 +16,7 @@ declare(strict_types=1);
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
-use J2Commerce\Component\J2commerce\Administrator\Field\ProductTypeField;
+use J2Commerce\Component\J2commerce\Administrator\Field\ProducttypeField;
 use J2Commerce\Component\J2commerce\Administrator\View\Product\HtmlView;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
@@ -55,7 +55,7 @@ $formPrefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
 // Defaults for Joomla core layout fields to prevent PHP 8.4 undefined variable warnings
 $switcherDefaults = ['onchange' => '', 'label' => '', 'disabled' => false, 'readonly' => false, 'dataAttribute' => '', 'class' => ''];
 
-$productTypeField = new ProductTypeField();
+$productTypeField = new ProducttypeField();
 $productTypeField->setDatabase(Factory::getContainer()->get('DatabaseDriver'));
 $element = new SimpleXMLElement('<field />');
 $productTypeField->setup($element, '');
@@ -197,7 +197,7 @@ if ($app->isClient('administrator')) {
                                 <div class="data-item">
                                     <span class="data-key"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_TYPE'); ?></span>
                                     <span class="data-val d-flex align-items-center justify-content-between">
-                                        <span><?php echo htmlspecialchars(ProductTypeField::getProductTypes()[$item->product_type] ?? $item->product_type, ENT_QUOTES, 'UTF-8'); ?></span>
+                                        <span><?php echo htmlspecialchars(ProducttypeField::getProductTypes()[$item->product_type] ?? $item->product_type, ENT_QUOTES, 'UTF-8'); ?></span>
                                         <?php if ($item->j2commerce_product_id && $item->enabled && $item->product_type): ?>
                                             <button type="button" class="btn btn-soft-primary btn-sm ms-2 fw-medium" data-bs-toggle="modal" data-bs-target="#changeProductTypeModal"><?php echo Text::_('COM_J2COMMERCE_CHANGE_PRODUCT_TYPE'); ?></button>
                                         <?php endif; ?>
@@ -325,7 +325,7 @@ if ($app->isClient('administrator')) {
                             </div>
                             <div class="controls">
                                 <?php if(!empty($item->product_type)): ?>
-                                    <span class="<?php echo $product_type_class;?>"><?php echo htmlspecialchars(ProductTypeField::getProductTypes()[$item->product_type] ?? $item->product_type, ENT_QUOTES, 'UTF-8'); ?></span>
+                                    <span class="<?php echo $product_type_class;?>"><?php echo htmlspecialchars(ProducttypeField::getProductTypes()[$item->product_type] ?? $item->product_type, ENT_QUOTES, 'UTF-8'); ?></span>
                                     <input type="hidden" name="<?php echo $formPrefix.'[product_type]'?>" value="<?php echo $item->product_type; ?>" />
                                 <?php else: ?>
                                     <select name="<?php echo $formPrefix;?>[product_type]" id="product_type" class="form-select">

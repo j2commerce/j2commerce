@@ -155,7 +155,7 @@
             type="Modal_ProductMultiselect"
             label="COM_J2COMMERCE_COUPON_PRODUCTS"
             description="COM_J2COMMERCE_COUPON_PRODUCTS_DESCRIPTION"
-            addfieldprefix ="J2Commerce\Component\J2commerce\Administrator\Field\Modal"
+            addfieldprefix ="J2Commerce\Component\J2commerce\Administrator\Field"
         />
 
         <field

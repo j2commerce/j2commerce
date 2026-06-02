@@ -7,19 +7,17 @@
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
-use J2Commerce\Component\J2commerce\Administrator\Field\MultiImageUploaderField;
+use J2Commerce\Component\J2commerce\Administrator\Field\MultiimageuploaderField;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\FileLayout;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Uri\Uri;
-
 
 $item = $displayData['product'];
 $formPrefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
@@ -32,7 +30,7 @@ $base_path = JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product';
 
     <!-- MultiImageUploader Field -->
     <?php
-    MultiImageUploaderField::loadAssetsStatic();
+    MultiimageuploaderField::loadAssetsStatic();
 
     // Build gallery data from existing productimages data
     $galleryData = [];

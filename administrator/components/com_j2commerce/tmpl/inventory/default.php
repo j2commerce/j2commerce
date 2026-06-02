@@ -46,6 +46,8 @@ Text::script('COM_J2COMMERCE_ERROR');
 Text::script('COM_J2COMMERCE_INVENTORY_AJAX_ERROR');
 Text::script('COM_J2COMMERCE_SHOW_VARIANTS');
 Text::script('COM_J2COMMERCE_HIDE_VARIANTS');
+Text::script('COM_J2COMMERCE_INVENTORY_BATCH_NO_SELECTION');
+Text::script('COM_J2COMMERCE_INVENTORY_BATCH_NO_FIELDS');
 
 ?>
 
@@ -373,5 +375,9 @@ Text::script('COM_J2COMMERCE_HIDE_VARIANTS');
         </div>
     </div>
 </form>
+
+<?php if (!empty($this->items)) : ?>
+    <template id="joomla-dialog-batch"><?php echo $this->loadTemplate('batch_body'); ?></template>
+<?php endif; ?>
 
 <?php echo $this->footer ?? ''; ?>

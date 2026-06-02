@@ -169,6 +169,73 @@
             }
         });
 
+        // Batch Update: gather checked products + the chosen modal fields, POST via AJAX, reload on success.
+        document.addEventListener('click', function (event) {
+            const applyBtn = event.target.closest('#j2c-batch-apply');
+            if (!applyBtn) {
+                return;
+            }
+            event.preventDefault();
+
+            const checked = Array.from(document.querySelectorAll('#inventoryList input[name="cid[]"]:checked'));
+            if (!checked.length) {
+                showSystemMessage(t('COM_J2COMMERCE_INVENTORY_BATCH_NO_SELECTION'), 'error');
+                return;
+            }
+
+            const applyQty = document.getElementById('batch_apply_quantity');
+            const applyMs  = document.getElementById('batch_apply_manage_stock');
+            const applyAv  = document.getElementById('batch_apply_availability');
+
+            if (!(applyQty && applyQty.checked) && !(applyMs && applyMs.checked) && !(applyAv && applyAv.checked)) {
+                showSystemMessage(t('COM_J2COMMERCE_INVENTORY_BATCH_NO_FIELDS'), 'error');
+                return;
+            }
+
+            const body = new URLSearchParams();
+            checked.forEach(function (cb) { body.append('cid[]', cb.value); });
+
+            if (applyQty && applyQty.checked) {
+                const q = document.getElementById('batch_quantity');
+                body.set('apply_quantity', '1');
+                body.set('batch_quantity', q ? q.value : '0');
+            }
+            if (applyMs && applyMs.checked) {
+                const r = document.querySelector('input[name="batch_manage_stock"]:checked');
+                body.set('apply_manage_stock', '1');
+                body.set('batch_manage_stock', r ? r.value : '0');
+            }
+            if (applyAv && applyAv.checked) {
+                const s = document.getElementById('batch_availability');
+                body.set('apply_availability', '1');
+                body.set('batch_availability', s ? s.value : '1');
+            }
+            if (csrfToken) {
+                body.set(csrfToken, '1');
+            }
+
+            applyBtn.disabled = true;
+
+            fetch('index.php?option=com_j2commerce&task=inventory.batch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
+                body: body.toString()
+            })
+                .then(function (r) { return r.json(); })
+                .then(function (response) {
+                    if (response.success) {
+                        window.location.reload();
+                    } else {
+                        showSystemMessage(response.message || t('COM_J2COMMERCE_INVENTORY_AJAX_ERROR'), 'error');
+                        applyBtn.disabled = false;
+                    }
+                })
+                .catch(function () {
+                    showSystemMessage(t('COM_J2COMMERCE_INVENTORY_AJAX_ERROR'), 'error');
+                    applyBtn.disabled = false;
+                });
+        });
+
         // Manual toggle fallback when Bootstrap data-bs-toggle="collapse" cannot be used.
         window.toggleVariants = function (productId) {
             const variantsRow = document.getElementById('variants-' + productId);
