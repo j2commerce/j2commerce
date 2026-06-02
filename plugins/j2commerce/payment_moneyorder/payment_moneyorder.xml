@@ -159,7 +159,7 @@
 
                 <field
                     name="geozone_id"
-                    type="GeoZone"
+                    type="Geozone"
                     default=""
                     label="COM_J2COMMERCE_GEOZONE_RESTRICTION"
                     description="COM_J2COMMERCE_GEOZONE_RESTRICTION_DESC"
