@@ -154,16 +154,8 @@ abstract class RouteHelper
             $menuView = $activeMenu->query['view'] ?? null;
 
             if ($menuView === 'categories') {
-                // We're in a categories menu - generate URL within this hierarchy
-                // Use category view which routes through the categories menu
-                $link = 'index.php?option=com_j2commerce&view=category&id=' . $catid;
-
-                // Include the parent from menu for proper path building
-                $menuParentId = isset($activeMenu->query['id']) ? (int) $activeMenu->query['id'] : 1;
-                if ($menuParentId > 1) {
-                    // The router needs this to know where to start the category path
-                    $link .= '&catid=' . $menuParentId;
-                }
+                // We're in a categories menu - stay within this hierarchy via products view
+                $link = 'index.php?option=com_j2commerce&view=products&catid=' . $catid;
 
                 if (!empty($language) && $language !== '*' && Multilanguage::isEnabled()) {
                     $link .= '&lang=' . $language;
@@ -185,10 +177,11 @@ abstract class RouteHelper
      *
      * Priority for category URLs:
      * 1. Single category menu (products view with catid matching this category)
-     * 2. Categories menu (categories view with ancestor hierarchy)
+     * 2. Products view for this category (the nestable products route builds the path)
      *
      * @param   int          $catid      The category ID (required)
-     * @param   int|null     $parentId   The parent category ID (optional, looked up if not provided)
+     * @param   int|null     $parentId   Ignored — retained for backward compatibility; the
+     *                                    nestable products view now derives the path itself
      * @param   string|null  $language   The language code
      *
      * @return  string  The category route URL
@@ -230,59 +223,14 @@ abstract class RouteHelper
             }
         }
 
-        // PRIORITY 2: No single category menu found - use category view with hierarchy
-        $link = 'index.php?option=com_j2commerce&view=category&id=' . $catid;
-
-        // Include parent category ID for proper hierarchy building
-        // This allows RouterView's StandardRules to build the path correctly
-        if ($parentId === null) {
-            // Look up the parent category ID
-            $parentId = self::getCategoryParentId($catid);
-        }
-
-        if ($parentId && $parentId > 1) {
-            $link .= '&catid=' . $parentId;
-        }
+        // PRIORITY 2: no dedicated menu — the nestable products view builds the path.
+        $link = 'index.php?option=com_j2commerce&view=products&catid=' . $catid;
 
         if (!empty($language) && $language !== '*' && Multilanguage::isEnabled()) {
             $link .= '&lang=' . $language;
         }
 
         return $link;
-    }
-
-    /**
-     * Get the parent category ID for a category.
-     *
-     * @param   int  $catid  The category ID
-     *
-     * @return  int|null  The parent category ID or null
-     *
-     * @since   6.0.0
-     */
-    private static function getCategoryParentId(int $catid): ?int
-    {
-        static $cache = [];
-
-        if (isset($cache[$catid])) {
-            return $cache[$catid];
-        }
-
-        $db    = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-        $query = $db->getQuery(true);
-
-        $query->select($db->quoteName('parent_id'))
-            ->from($db->quoteName('#__categories'))
-            ->where($db->quoteName('id') . ' = :catid')
-            ->where($db->quoteName('extension') . ' = ' . $db->quote('com_content'))
-            ->bind(':catid', $catid, \Joomla\Database\ParameterType::INTEGER);
-
-        $db->setQuery($query);
-        $result = $db->loadResult();
-
-        $cache[$catid] = $result ? (int) $result : null;
-
-        return $cache[$catid];
     }
 
     /**
