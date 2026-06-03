@@ -13,7 +13,7 @@
 			addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field">
 			<field
 				name="id"
-				type="RouterModalCategory"
+				type="Routermodalcategory"
 				extension="com_content"
 				label="JGLOBAL_CHOOSE_CATEGORY_LABEL"
 				description="COM_J2COMMERCE_CATEGORYALIAS_CATEGORY_DESC"
