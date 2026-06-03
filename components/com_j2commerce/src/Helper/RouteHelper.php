@@ -185,10 +185,10 @@ abstract class RouteHelper
      *
      * Priority for category URLs:
      * 1. Single category menu (products view with catid matching this category)
-     * 2. Categories menu (categories view with ancestor hierarchy)
+     * 2. Products view for this category (the "Product Category List View")
      *
      * @param   int          $catid      The category ID (required)
-     * @param   int|null     $parentId   The parent category ID (optional, looked up if not provided)
+     * @param   int|null     $parentId   Deprecated/ignored — retained for backward compatibility
      * @param   string|null  $language   The language code
      *
      * @return  string  The category route URL
@@ -230,59 +230,18 @@ abstract class RouteHelper
             }
         }
 
-        // PRIORITY 2: No single category menu found - use category view with hierarchy
-        $link = 'index.php?option=com_j2commerce&view=category&id=' . $catid;
-
-        // Include parent category ID for proper hierarchy building
-        // This allows RouterView's StandardRules to build the path correctly
-        if ($parentId === null) {
-            // Look up the parent category ID
-            $parentId = self::getCategoryParentId($catid);
-        }
-
-        if ($parentId && $parentId > 1) {
-            $link .= '&catid=' . $parentId;
-        }
+        // PRIORITY 2: No single category menu found - route to the products view
+        // for this category. There is no standalone 'category' view in the frontend
+        // component; the products view ("Product Category List View") renders a
+        // category's product list (and its subcategories) from the catid, and the
+        // router resolves the best Itemid + SEF path for view=products&catid=X.
+        $link = 'index.php?option=com_j2commerce&view=products&catid=' . $catid;
 
         if (!empty($language) && $language !== '*' && Multilanguage::isEnabled()) {
             $link .= '&lang=' . $language;
         }
 
         return $link;
-    }
-
-    /**
-     * Get the parent category ID for a category.
-     *
-     * @param   int  $catid  The category ID
-     *
-     * @return  int|null  The parent category ID or null
-     *
-     * @since   6.0.0
-     */
-    private static function getCategoryParentId(int $catid): ?int
-    {
-        static $cache = [];
-
-        if (isset($cache[$catid])) {
-            return $cache[$catid];
-        }
-
-        $db    = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-        $query = $db->getQuery(true);
-
-        $query->select($db->quoteName('parent_id'))
-            ->from($db->quoteName('#__categories'))
-            ->where($db->quoteName('id') . ' = :catid')
-            ->where($db->quoteName('extension') . ' = ' . $db->quote('com_content'))
-            ->bind(':catid', $catid, \Joomla\Database\ParameterType::INTEGER);
-
-        $db->setQuery($query);
-        $result = $db->loadResult();
-
-        $cache[$catid] = $result ? (int) $result : null;
-
-        return $cache[$catid];
     }
 
     /**
