@@ -27,7 +27,7 @@ use Joomla\Database\DatabaseInterface;
  */
 class GeozoneField extends ListField
 {
-    protected $type = 'GeoZone';
+    protected $type = 'Geozone';
 
     public function getOptions(): array
     {

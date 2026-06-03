@@ -74,7 +74,7 @@
 
                 <field
                     name="geozones"
-                    type="GeoZone"
+                    type="Geozone"
                     multiple="true"
                     label="COM_J2COMMERCE_GEOZONE_RESTRICTION"
                     description="COM_J2COMMERCE_GEOZONE_RESTRICTION_DESC"
