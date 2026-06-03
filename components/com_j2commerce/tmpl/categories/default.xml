@@ -13,11 +13,11 @@
 			addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field">
 			<field
 				name="id"
-				type="RouterModalCategory"
+				type="Routermodalcategory"
 				extension="com_content"
 				label="JGLOBAL_CHOOSE_CATEGORY_LABEL"
 				description="COM_J2COMMERCE_CATEGORIES_PARENT_DESC"
-				default="1"
+				default=""
 			/>
 		</fieldset>
 	</fields>
