@@ -23,7 +23,7 @@ use Joomla\CMS\Uri\Uri;
 
 class MultiimageuploaderField extends FormField
 {
-    protected $type = 'MultiImageUploader';
+    protected $type = 'Multiimageuploader';
 
     protected function getInput(): string
     {

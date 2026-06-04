@@ -33,7 +33,7 @@ class VariantpriceField extends FormField
      * @var    string
      * @since  6.0.0
      */
-    protected $type = 'VariantPrice';
+    protected $type = 'Variantprice';
 
     /**
      * Method to get the field input markup.

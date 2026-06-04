@@ -38,7 +38,7 @@ class ReporttoolbarField extends FormField
      * @var    string
      * @since  6.0.0
      */
-    protected $type = 'ReportToolbar';
+    protected $type = 'Reporttoolbar';
 
     /**
      * Add toolbar buttons and return empty HTML.

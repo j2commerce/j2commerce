@@ -39,7 +39,7 @@ class EcommerceproductpreviewField extends FormField
      * @var    string
      * @since  6.0.0
      */
-    protected $type = 'EcommerceProductPreview';
+    protected $type = 'Ecommerceproductpreview';
 
     /**
      * Method to get the field input markup.

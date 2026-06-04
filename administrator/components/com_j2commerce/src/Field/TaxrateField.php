@@ -26,7 +26,7 @@ use Joomla\Database\DatabaseInterface;
  */
 class TaxrateField extends ListField
 {
-    protected $type = 'TaxRate';
+    protected $type = 'Taxrate';
 
     public function getOptions(): array
     {

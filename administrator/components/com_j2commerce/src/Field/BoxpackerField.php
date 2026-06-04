@@ -22,7 +22,7 @@ use Joomla\CMS\Session\Session;
 
 class BoxpackerField extends FormField
 {
-    protected $type = 'BoxPacker';
+    protected $type = 'Boxpacker';
 
     protected function getInput(): string
     {

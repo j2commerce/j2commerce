@@ -28,7 +28,7 @@ use Joomla\CMS\HTML\HTMLHelper;
  */
 class OptiontypeField extends ListField
 {
-    protected $type = 'OptionType';
+    protected $type = 'Optiontype';
 
     protected static ?array $cachedTypes = null;
 

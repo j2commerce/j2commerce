@@ -22,7 +22,7 @@ use Joomla\Registry\Registry;
 
 class ImagedirectoryField extends FolderlistField
 {
-    protected $type = 'ImageDirectory';
+    protected $type = 'Imagedirectory';
 
     protected function getOptions(): array
     {

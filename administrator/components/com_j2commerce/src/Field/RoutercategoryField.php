@@ -18,7 +18,7 @@ use Joomla\CMS\Form\Field\CategoryField;
 
 class RoutercategoryField extends CategoryField
 {
-    public $type = 'RouterCategory';
+    public $type = 'Routercategory';
 
     public function __get($name)
     {

@@ -29,7 +29,7 @@ use Joomla\Database\DatabaseInterface;
  */
 class VendorcountryField extends ListField
 {
-    protected $type = 'VendorCountry';
+    protected $type = 'Vendorcountry';
 
     public function getOptions(): array
     {

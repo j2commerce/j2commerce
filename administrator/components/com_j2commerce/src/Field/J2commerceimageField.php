@@ -23,7 +23,7 @@ use Joomla\CMS\Uri\Uri;
 
 class J2commerceimageField extends FormField
 {
-    protected $type = 'J2CommerceImage';
+    protected $type = 'J2commerceimage';
 
     protected function getInput(): string
     {

@@ -40,7 +40,7 @@ class ShippingtoolbarField extends FormField
      * @var    string
      * @since  6.0.0
      */
-    protected $type = 'ShippingToolbar';
+    protected $type = 'Shippingtoolbar';
 
     /**
      * Add toolbar buttons and return empty HTML.

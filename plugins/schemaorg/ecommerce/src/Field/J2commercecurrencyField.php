@@ -32,7 +32,7 @@ class J2CommercecurrencyField extends FormField
      * @var    string
      * @since  6.0.0
      */
-    protected $type = 'J2CommerceCurrency';
+    protected $type = 'J2commercecurrency';
 
     /**
      * Method to get the field input markup.
