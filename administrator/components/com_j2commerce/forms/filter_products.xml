@@ -42,7 +42,7 @@
 
         <field
             name="product_type"
-            type="ProductType"
+            type="Producttype"
             label="COM_J2COMMERCE_FILTER_PRODUCT_TYPE"
             onchange="this.form.submit();"
             addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field"
@@ -103,7 +103,7 @@
 
         <field
             name="taxprofile_id"
-            type="TaxProfile"
+            type="Taxprofile"
             label="COM_J2COMMERCE_FILTER_TAX_PROFILE"
             addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field"
             onchange="this.form.submit();"

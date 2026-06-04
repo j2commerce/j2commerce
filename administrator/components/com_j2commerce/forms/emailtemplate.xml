@@ -8,7 +8,7 @@
 
         <field
             name="email_type"
-            type="EmailtypeList"
+            type="Emailtypelist"
             label="COM_J2COMMERCE_EMAILTEMPLATE_EMAIL_TYPE"
             description="COM_J2COMMERCE_EMAILTEMPLATE_EMAIL_TYPE_DESC"
             addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field"
@@ -57,7 +57,7 @@
 
         <field
             name="orderstatus_id"
-            type="OrderStatus"
+            type="Orderstatus"
             label="COM_J2COMMERCE_EMAILTEMPLATE_ORDERSTATUS"
             description="COM_J2COMMERCE_EMAILTEMPLATE_ORDERSTATUS_DESC"
             addfieldprefix ="J2Commerce\Component\J2commerce\Administrator\Field"
@@ -82,7 +82,7 @@
 
         <field
             name="paymentmethod"
-            type="PaymentMethods"
+            type="Paymentmethods"
             label="COM_J2COMMERCE_EMAILTEMPLATE_PAYMENTMETHOD"
             description="COM_J2COMMERCE_EMAILTEMPLATE_PAYMENTMETHOD_DESC"
             addfieldprefix ="J2Commerce\Component\J2commerce\Administrator\Field"
@@ -173,7 +173,7 @@
 
         <field
             name="email_template_description"
-            type="TemplateCustom"
+            type="Templatecustom"
             hiddenLabel="true"
             label="COM_J2COMMERCE_TEMPLATE_CUSTOM_FIELD_DESCRIPTION"
             description=""

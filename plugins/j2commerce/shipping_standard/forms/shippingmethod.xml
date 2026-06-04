@@ -34,7 +34,7 @@
 
         <field
             name="tax_class_id"
-            type="TaxProfile"
+            type="Taxprofile"
             label="COM_J2COMMERCE_FIELD_TAX_CLASS"
             description="COM_J2COMMERCE_FIELD_TAX_CLASS_DESC"
             addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field"
