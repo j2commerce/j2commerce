@@ -22,7 +22,7 @@ use Joomla\Filesystem\Path;
 
 class SubtemplatefolderField extends ListField
 {
-    protected $type = 'SubtemplateFolder';
+    protected $type = 'Subtemplatefolder';
 
     public function getOptions(): array
     {

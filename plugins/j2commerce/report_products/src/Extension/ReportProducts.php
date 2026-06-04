@@ -186,6 +186,8 @@ final class ReportProducts extends CMSPlugin implements SubscriberInterface
             $toolbar->linkButton('export', 'PLG_J2COMMERCE_REPORT_PRODUCTS_EXPORT_CSV')
                 ->url($exportUrl)
                 ->icon('icon-download');
+
+            $toolbar->help('', false, 'https://docs.j2commerce.com/v6/reports/report-products');
         }
 
         // Load plugin language so filter form labels resolve correctly

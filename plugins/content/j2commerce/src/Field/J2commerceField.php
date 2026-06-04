@@ -33,7 +33,7 @@ use Joomla\Database\DatabaseInterface;
  */
 final class J2commerceField extends FormField
 {
-    protected $type = 'J2Commerce';
+    protected $type = 'J2commerce';
 
     private ?DatabaseInterface $db = null;
 

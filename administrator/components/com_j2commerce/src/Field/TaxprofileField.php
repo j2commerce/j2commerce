@@ -27,7 +27,7 @@ use Joomla\Database\DatabaseInterface;
  */
 class TaxprofileField extends ListField
 {
-    protected $type = 'TaxProfile';
+    protected $type = 'Taxprofile';
 
     public function getOptions(): array
     {

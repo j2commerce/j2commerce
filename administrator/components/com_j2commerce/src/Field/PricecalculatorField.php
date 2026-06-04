@@ -37,7 +37,7 @@ class PricecalculatorField extends ListField
      * @var    string
      * @since  6.0.7
      */
-    protected $type = 'PriceCalculator';
+    protected $type = 'Pricecalculator';
 
     /**
      * Method to get the field options.

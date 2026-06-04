@@ -27,7 +27,7 @@ use Joomla\Database\DatabaseInterface;
  */
 class StoreprofileField extends ListField
 {
-    protected $type = 'StoreProfile';
+    protected $type = 'Storeprofile';
 
     public function getOptions(): array
     {

@@ -25,7 +25,7 @@ use Joomla\Database\DatabaseInterface;
 
 class LocalizationdataField extends FormField
 {
-    protected $type = 'LocalizationData';
+    protected $type = 'Localizationdata';
 
     protected function getInput(): string
     {

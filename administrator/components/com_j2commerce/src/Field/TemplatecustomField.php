@@ -24,7 +24,7 @@ use Joomla\CMS\Language\Text;
  */
 class TemplatecustomField extends FormField
 {
-    protected $type = 'TemplateCustom';
+    protected $type = 'Templatecustom';
 
     protected function getInput(): string
     {

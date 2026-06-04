@@ -24,7 +24,7 @@ use Joomla\Database\Exception\DatabaseNotFoundException;
 
 class RoutermodalcategoryField extends FormField
 {
-    public $type = 'RouterModalCategory';
+    public $type = 'Routermodalcategory';
 
     protected ?FormField $delegateField = null;
 

@@ -24,7 +24,7 @@ use Joomla\CMS\Router\Route;
 
 class ConfigsubtemplateField extends ListField
 {
-    protected $type = 'ConfigSubtemplate';
+    protected $type = 'Configsubtemplate';
 
     private bool $hasPluginOptions = false;
 

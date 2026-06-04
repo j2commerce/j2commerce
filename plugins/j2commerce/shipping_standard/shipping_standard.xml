@@ -36,7 +36,7 @@
             <fieldset name="display" label="COM_J2COMMERCE_PLUGIN_SUBTEMPLATE">
                 <field
                     name="subtemplate"
-                    type="PluginSubtemplate"
+                    type="Pluginsubtemplate"
                     plugin_group="j2commerce"
                     plugin_element="shipping_standard"
                     label="COM_J2COMMERCE_PLUGIN_SUBTEMPLATE"

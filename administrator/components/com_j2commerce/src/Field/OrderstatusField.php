@@ -27,7 +27,7 @@ use Joomla\Database\DatabaseInterface;
  */
 class OrderstatusField extends ListField
 {
-    protected $type = 'OrderStatus';
+    protected $type = 'Orderstatus';
 
     public function getOptions(): array
     {

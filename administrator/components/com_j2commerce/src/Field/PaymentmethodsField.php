@@ -31,7 +31,7 @@ use Joomla\Database\DatabaseInterface;
  */
 class PaymentmethodsField extends ListField
 {
-    protected $type = 'PaymentMethods';
+    protected $type = 'Paymentmethods';
 
     public function getOptions(): array
     {

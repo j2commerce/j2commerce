@@ -35,7 +35,7 @@ class ProducttypeField extends ListField
      * @var    string
      * @since  6.0.7
      */
-    protected $type = 'ProductType';
+    protected $type = 'Producttype';
 
     /**
      * Cached product types array

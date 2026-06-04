@@ -112,7 +112,7 @@
 
                 <field
                     name="payment_status"
-                    type="OrderStatus"
+                    type="Orderstatus"
                     label="PLG_J2COMMERCE_PAYMENT_BANKTRANSFER_ORDER_STATUS"
                     description="PLG_J2COMMERCE_PAYMENT_BANKTRANSFER_ORDER_STATUS_DESC"
                     default="1"
@@ -146,7 +146,7 @@
 
                 <field
                     name="surcharge_tax_class_id"
-                    type="TaxProfile"
+                    type="Taxprofile"
                     default=""
                     label="COM_J2COMMERCE_PLUGIN_SURCHARGE_TAX_CLASS"
                     description="COM_J2COMMERCE_PLUGIN_SURCHARGE_TAX_CLASS_DESC"
@@ -246,7 +246,7 @@
 
                 <field
                     name="subtemplate"
-                    type="PluginSubtemplate"
+                    type="Pluginsubtemplate"
                     plugin_group="j2commerce"
                     plugin_element="payment_banktransfer"
                     label="COM_J2COMMERCE_PLUGIN_SUBTEMPLATE"

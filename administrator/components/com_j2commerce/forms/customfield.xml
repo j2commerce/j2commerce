@@ -36,7 +36,7 @@
 
         <field
             name="field_type"
-            type="CustomFieldType"
+            type="Customfieldtype"
             label="COM_J2COMMERCE_FIELD_FIELD_TYPE"
             description="COM_J2COMMERCE_FIELD_FIELD_TYPE_DESC"
             default="text"
@@ -293,7 +293,7 @@
 
         <field
             name="phone_countries"
-            type="PhoneCountries"
+            type="Phonecountries"
             label="COM_J2COMMERCE_FIELD_PHONE_COUNTRIES"
             showon="phone_country_mode:selected"
             filter="raw"

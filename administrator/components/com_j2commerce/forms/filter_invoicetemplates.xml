@@ -51,7 +51,7 @@
 
         <field
             name="orderstatus_id"
-            type="OrderStatus"
+            type="Orderstatus"
             addfieldprefix ="J2Commerce\Component\J2commerce\Administrator\Field"
             label="COM_J2COMMERCE_INVOICETEMPLATE_ORDER_STATUS_ID"
             description="COM_J2COMMERCE_INVOICETEMPLATE_ORDER_STATUS_ID_DESC"
@@ -74,7 +74,7 @@
 
         <field
             name="paymentmethod"
-            type="PaymentMethods"
+            type="Paymentmethods"
             label="COM_J2COMMERCE_INVOICETEMPLATE_PAYMENT_METHOD"
             description="COM_J2COMMERCE_INVOICETEMPLATE_PAYMENT_METHOD_DESC"
             addfieldprefix ="J2Commerce\Component\J2commerce\Administrator\Field"

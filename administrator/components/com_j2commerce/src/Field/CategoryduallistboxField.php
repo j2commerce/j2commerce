@@ -27,7 +27,7 @@ use Joomla\Database\DatabaseInterface;
  */
 class CategoryduallistboxField extends ListField
 {
-    protected $type = 'CategoryDuallistbox';
+    protected $type = 'Categoryduallistbox';
 
     public function getOptions(): array
     {

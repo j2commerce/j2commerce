@@ -873,6 +873,8 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
             ->message('JGLOBAL_CONFIRM_DELETE')
             ->listCheck(true);
 
+        $toolbar->help('', false, 'https://docs.j2commerce.com/v6/shipping-methods/shipping-standard');
+
         // Build the query
         $db  = $this->getDatabase();
         $app = Factory::getApplication();

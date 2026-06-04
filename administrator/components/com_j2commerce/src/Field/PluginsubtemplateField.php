@@ -21,7 +21,7 @@ use Joomla\CMS\Language\Text;
 
 class PluginsubtemplateField extends ListField
 {
-    protected $type = 'PluginSubtemplate';
+    protected $type = 'Pluginsubtemplate';
 
     /**
      * Functional directories that are not layout subtemplates.

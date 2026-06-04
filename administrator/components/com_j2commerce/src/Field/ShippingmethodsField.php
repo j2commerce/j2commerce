@@ -31,7 +31,7 @@ use Joomla\Database\DatabaseInterface;
  */
 class ShippingmethodsField extends ListField
 {
-    protected $type = 'ShippingMethods';
+    protected $type = 'Shippingmethods';
 
     public function getOptions(): array
     {

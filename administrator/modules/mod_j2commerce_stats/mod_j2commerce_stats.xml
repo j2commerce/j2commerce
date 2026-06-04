@@ -64,7 +64,7 @@
             <fieldset name="basic" addfieldprefix="J2Commerce\Module\Stats\Administrator\Field">
                 <field
                     name="order_status"
-                    type="OrderStatus"
+                    type="Orderstatus"
                     multiple="true"
                     label="MOD_J2COMMERCE_STATS_FIELD_ORDER_STATUS"
                     description="MOD_J2COMMERCE_STATS_FIELD_ORDER_STATUS_DESC"

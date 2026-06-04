@@ -25,7 +25,7 @@ use Joomla\CMS\Language\Text;
  */
 class PhonecountriesField extends CheckboxesField
 {
-    protected $type = 'PhoneCountries';
+    protected $type = 'Phonecountries';
 
     protected function getChecked(): array
     {

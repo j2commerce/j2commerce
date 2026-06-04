@@ -29,7 +29,7 @@ use Joomla\Database\DatabaseInterface;
  */
 class ManufacturercountryField extends ListField
 {
-    protected $type = 'ManufacturerCountry';
+    protected $type = 'Manufacturercountry';
 
     public function getOptions(): array
     {

@@ -28,7 +28,7 @@ use Joomla\CMS\Language\Text;
  */
 class CustomfieldtypeField extends ListField
 {
-    protected $type = 'CustomFieldType';
+    protected $type = 'Customfieldtype';
 
     protected static ?array $cachedTypes = null;
 
