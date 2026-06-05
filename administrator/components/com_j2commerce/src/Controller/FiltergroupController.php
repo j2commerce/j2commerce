@@ -117,7 +117,7 @@ class FiltergroupController extends FormController
         $recordId = $input->getInt('id', 0);
 
         if (!$this->allowEdit([], 'id')) {
-            $this->setMessage(\JText::_('JLIB_APPLICATION_ERROR_EDIT_NOT_PERMITTED'), 'error');
+            $this->setMessage(Text::_('JLIB_APPLICATION_ERROR_EDIT_NOT_PERMITTED'), 'error');
             $listUrl = 'index.php?option=' . $this->option . '&view=' . $this->view_list . $this->getRedirectToListAppend();
             $this->setRedirect(Route::_($listUrl, false));
             return;
@@ -131,7 +131,7 @@ class FiltergroupController extends FormController
             $model = $this->getModel();
             if (method_exists($model, 'checkout')) {
                 if (!$model->checkout($recordId)) {
-                    $this->setMessage(\JText::sprintf('JLIB_APPLICATION_ERROR_CHECKOUT_FAILED', $model->getError()), 'error');
+                    $this->setMessage(Text::sprintf('JLIB_APPLICATION_ERROR_CHECKOUT_FAILED', $model->getError()), 'error');
                     $listUrl = 'index.php?option=' . $this->option . '&view=' . $this->view_list . $this->getRedirectToListAppend();
                     $this->setRedirect(Route::_($listUrl, false));
                     return;
