@@ -163,13 +163,12 @@ jobs:
           extensions: mysqli, pdo_mysql, gd, zip, intl
           coverage: none
 
-      # TODO: pin to the Joomla 6 tag/branch you target.
       - name: Checkout Joomla 6
-            uses: actions/checkout@v4
-            with:
-              repository: joomla/joomla-cms
-              ref: '6.0-dev'
-              path: joomla
+        uses: actions/checkout@v4
+        with:
+          repository: joomla/joomla-cms
+          ref: '6.0-dev'
+          path: joomla
 
       - name: Build Joomla
         working-directory: joomla
