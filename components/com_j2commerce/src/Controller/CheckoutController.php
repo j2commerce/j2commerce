@@ -1123,8 +1123,14 @@ class CheckoutController extends BaseController
                 return false;
             }
 
-            $minSubtotal = (float) $params->get('min_subtotal', 0);
-            $maxSubtotal = (float) $params->get('max_subtotal', -1);
+            $minRaw = $params->get('min_subtotal', '');
+            $maxRaw = $params->get('max_subtotal', '');
+
+            // A blank field means "no limit" — only the -1 sentinel or a real
+            // number constrains. Without this, a saved-empty max_subtotal casts
+            // to 0.0 and (0 >= 0) silently hides the method for any non-zero cart.
+            $minSubtotal = ($minRaw === '' || $minRaw === null) ? 0.0 : (float) $minRaw;
+            $maxSubtotal = ($maxRaw === '' || $maxRaw === null) ? -1.0 : (float) $maxRaw;
 
             if ($minSubtotal > 0 && $subtotal < $minSubtotal) {
                 return false;
