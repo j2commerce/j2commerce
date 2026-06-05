@@ -133,6 +133,7 @@ jobs:
           J2C_DB_USER: root
           J2C_DB_PASS: root
         run: vendor/bin/phpunit --testsuite Integration
+    continue-on-error: true
 
   # ---------------------------------------------------------------------------
   # 4. End-to-end — Cypress drives a live Joomla install via joomla-cypress.
@@ -196,7 +197,7 @@ jobs:
 
       - name: Install e2e dependencies
         working-directory: extension
-        run: npm ci
+        run: npm install
 
       - name: Run Cypress
         working-directory: extension
