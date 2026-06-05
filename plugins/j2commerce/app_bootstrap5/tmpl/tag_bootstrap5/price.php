@@ -13,6 +13,7 @@
 // phpcs:enable PSR1.Files.SideEffects
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use Joomla\CMS\Language\Text;
 
 $product = $this->singleton_product;
 $params = $this->singleton_params;
@@ -56,7 +57,7 @@ $params = $this->singleton_params;
         <?php if( isset($product->pricing->is_discount_pricing_available) && isset($product->pricing->base_price) && !empty($product->pricing->base_price)): ?>
             <?php $discount =(1 - ($product->pricing->price / $product->pricing->base_price) ) * 100; ?>
             <?php if($discount > 0): ?>
-                <?php  echo JText::sprintf('COM_J2COMMERCE_PRODUCT_OFFER',round($discount).'%');?>
+                <?php  echo Text::sprintf('COM_J2COMMERCE_PRODUCT_OFFER',round($discount).'%');?>
             <?php endif; ?>
         <?php endif; ?>
     </div>
