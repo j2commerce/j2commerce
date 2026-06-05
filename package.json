@@ -1,0 +1,16 @@
+{
+  "name": "j2commerce-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cypress end-to-end tests for J2Commerce on Joomla 6.",
+  "type": "module",
+  "scripts": {
+    "cypress:open": "cypress open --e2e",
+    "cypress:run": "cypress run --e2e",
+    "test:install": "cypress run --spec tests/cypress-e2e/integration/01-install.cy.js"
+  },
+  "devDependencies": {
+    "cypress": "^14.3.0",
+    "joomla-cypress": "^1.0.0"
+  }
+}

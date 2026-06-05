@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="tests/bootstrap.php"
+         cacheDirectory=".phpunit.cache"
+         colors="true"
+         executionOrder="depends,defects"
+         beStrictAboutOutputDuringTests="true"
+         beStrictAboutTestsThatDoNotTestAnything="true"
+         failOnRisky="true"
+         failOnWarning="true">
+
+    <testsuites>
+        <!-- Fast, no Joomla bootstrap, no database. Run these on every push. -->
+        <testsuite name="Unit">
+            <directory>tests/Unit</directory>
+        </testsuite>
+        <!-- Hit a real database / Joomla install. Slower; gated behind JOOMLA_TESTS_BASE. -->
+        <testsuite name="Integration">
+            <directory>tests/Integration</directory>
+        </testsuite>
+    </testsuites>
+
+    <!-- Coverage scope: only J2Commerce's own source, never the bundled vendor libs. -->
+    <source restrictNotices="true" restrictWarnings="true">
+        <include>
+            <directory suffix=".php">administrator/components/com_j2commerce/src</directory>
+            <directory suffix=".php">components/com_j2commerce/src</directory>
+            <directory suffix=".php">libraries/j2commerce/src</directory>
+            <directory suffix=".php">plugins</directory>
+            <directory suffix=".php">modules</directory>
+        </include>
+        <exclude>
+            <directory>libraries/j2commerce/vendor</directory>
+            <directory suffix=".php">administrator/components/com_j2commerce/src/View</directory>
+            <directory suffix=".php">components/com_j2commerce/src/View</directory>
+        </exclude>
+    </source>
+
+    <php>
+        <!-- Integration DB connection. Override in CI / locally as needed. -->
+        <env name="J2C_DB_HOST" value="127.0.0.1"/>
+        <env name="J2C_DB_PORT" value="3306"/>
+        <env name="J2C_DB_NAME" value="j2commerce_test"/>
+        <env name="J2C_DB_USER" value="root"/>
+        <env name="J2C_DB_PASS" value="root"/>
+        <env name="J2C_DB_PREFIX" value="jos_"/>
+        <!-- Point at a full Joomla 6 checkout to enable Integration tests.
+             Leave unset to run Unit tests only. -->
+        <!-- <env name="JOOMLA_TESTS_BASE" value="/path/to/joomla"/> -->
+    </php>
+</phpunit>

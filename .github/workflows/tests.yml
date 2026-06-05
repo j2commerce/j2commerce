@@ -1,0 +1,214 @@
+name: Tests
+
+on:
+  push:
+    branches: [main, develop, automated_testing]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1. Coding standards — fast, fails the PR early on style regressions.
+  # ---------------------------------------------------------------------------
+  coding-standards:
+    name: Coding standards
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer:v2
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      # Uses the repo's existing .php-cs-fixer.dist.php ruleset.
+      - name: PHP-CS-Fixer (dry run)
+        run: vendor/bin/php-cs-fixer fix --dry-run --diff --using-cache=no
+
+  # ---------------------------------------------------------------------------
+  # 2. Unit tests — no Joomla, no database. Runs across supported PHP versions.
+  # ---------------------------------------------------------------------------
+  unit:
+    name: Unit (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.3', '8.4']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          tools: composer:v2
+          coverage: pcov
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Run unit tests
+        run: vendor/bin/phpunit --testsuite Unit --coverage-text
+
+  # ---------------------------------------------------------------------------
+  # 3. Integration tests — real MySQL + a Joomla 6 checkout with J2Commerce.
+  # ---------------------------------------------------------------------------
+  integration:
+    name: Integration (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.3']
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: j2commerce_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s --health-timeout=5s --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: extension
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: mysqli, pdo_mysql, gd, zip, intl
+          tools: composer:v2
+          coverage: none
+
+      # TODO: pin to the Joomla 6 tag/branch you target.
+      - name: Checkout Joomla 6
+        uses: actions/checkout@v4
+        with:
+          repository: joomla/joomla-cms
+          ref: '6.0-dev'
+          path: joomla
+
+      - name: Build Joomla
+        working-directory: joomla
+        run: |
+          composer install --no-interaction --no-progress
+          npm ci && npm run build:css || true
+
+      # Copy the extension source into the Joomla tree, then discover-install it.
+      - name: Deploy J2Commerce into Joomla
+        run: |
+          cp -r extension/administrator/components/com_j2commerce joomla/administrator/components/
+          cp -r extension/components/com_j2commerce joomla/components/
+          cp -r extension/libraries/j2commerce joomla/libraries/
+          cp -r extension/media/com_j2commerce joomla/media/ 2>/dev/null || true
+
+      - name: Install extension dev dependencies
+        working-directory: extension
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      # NOTE: a real run installs Joomla via CLI (php joomla.php) and runs the
+      # J2Commerce schema install. Wire that to your build/ scripts.
+      - name: Run integration tests
+        working-directory: extension
+        env:
+          JOOMLA_TESTS_BASE: ${{ github.workspace }}/joomla
+          J2C_DB_HOST: 127.0.0.1
+          J2C_DB_NAME: j2commerce_test
+          J2C_DB_USER: root
+          J2C_DB_PASS: root
+        run: vendor/bin/phpunit --testsuite Integration
+
+  # ---------------------------------------------------------------------------
+  # 4. End-to-end — Cypress drives a live Joomla install via joomla-cypress.
+  # ---------------------------------------------------------------------------
+  e2e:
+    name: Cypress E2E
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: j2commerce_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s --health-timeout=5s --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: extension
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mysqli, pdo_mysql, gd, zip, intl
+          coverage: none
+
+      # TODO: pin to the Joomla 6 tag/branch you target.
+      - name: Checkout Joomla 6
+        uses: actions/checkout@v4
+        with:
+          repository: joomla/joomla-cms
+          ref: '6.0-dev'
+          path: joomla
+
+      - name: Build Joomla
+        working-directory: joomla
+        run: |
+          composer install --no-interaction --no-progress
+          npm ci && npm run build
+
+      - name: Deploy J2Commerce source for installation
+        run: |
+          mkdir -p joomla/j2commerce-src
+          cp -r extension/administrator joomla/j2commerce-src/
+          cp -r extension/components joomla/j2commerce-src/
+          cp -r extension/libraries joomla/j2commerce-src/
+          cp -r extension/media joomla/j2commerce-src/ 2>/dev/null || true
+          cp extension/*.xml joomla/j2commerce-src/ 2>/dev/null || true
+
+      - name: Serve Joomla
+        working-directory: joomla
+        run: php -S 127.0.0.1:8080 -t . >/tmp/php-server.log 2>&1 &
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install e2e dependencies
+        working-directory: extension
+        run: npm ci
+
+      - name: Run Cypress
+        working-directory: extension
+        env:
+          CYPRESS_baseUrl: http://127.0.0.1:8080
+        run: npx cypress run --e2e
+
+      - name: Upload screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-screenshots
+          path: extension/tests/cypress-e2e/output/screenshots
+          if-no-files-found: ignore
