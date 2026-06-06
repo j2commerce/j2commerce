@@ -12,10 +12,17 @@ export default defineConfig({
     videosFolder: 'tests/cypress-e2e/output/videos',
     video: false,
 
+    // CI pages load slowly; joomla-cypress selectors need time.
+    defaultCommandTimeout: 30000,
+    pageLoadTimeout: 60000,
+
     setupNodeEvents(on, config) {
       return config;
     },
   },
+
+  // Required: joomla-cypress reads env values in browser code via Cypress.env().
+  allowCypressEnv: true,
 
   // Joomla admin credentials + DB details, consumed by joomla-cypress helpers.
   env: {

@@ -186,9 +186,34 @@ jobs:
           cp -r extension/media joomla/j2commerce-src/ 2>/dev/null || true
           cp extension/*.xml joomla/j2commerce-src/ 2>/dev/null || true
 
+      - name: Install Joomla via CLI
+        working-directory: joomla
+        run: |
+          php installation/joomla.php site:install \
+            --site-name="J2Commerce Test Site" \
+            --admin-user="Admin" \
+            --admin-username="admin" \
+            --admin-password="admin1234567890" \
+            --admin-email="admin@example.com" \
+            --db-type="MySQLi" \
+            --db-host="127.0.0.1" \
+            --db-name="j2commerce_test" \
+            --db-user="root" \
+            --db-pass="root" \
+            --db-prefix="jos_" \
+            --no-interaction
+
       - name: Serve Joomla
         working-directory: joomla
         run: php -S 127.0.0.1:8080 -t . >/tmp/php-server.log 2>&1 &
+
+      - name: Wait for PHP server
+        run: |
+          echo "Waiting for PHP server..."
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:8080/ -o /dev/null && echo "Server ready after ${i}s" && break
+            sleep 2
+          done
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -209,6 +234,7 @@ jobs:
         working-directory: extension
         env:
           CYPRESS_baseUrl: http://127.0.0.1:8080
+          CYPRESS_joomlaExtensionPath: ${{ github.workspace }}/joomla/j2commerce-src
         run: npx cypress run --e2e
 
       - name: Upload screenshots on failure
