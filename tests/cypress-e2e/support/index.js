@@ -1,3 +1,2 @@
-// Pull in the Joomla helper commands: doAdministratorLogin, doFrontendLogin,
-// installJoomla, installExtensionFromFolder, checkForPhpNoticesOrWarnings, etc.
-import 'joomla-cypress';
+import { registerCommands } from 'joomla-cypress';
+registerCommands();
