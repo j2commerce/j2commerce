@@ -167,6 +167,15 @@ $changeHtml = function (array $change): string {
                             <div style="min-height:350px"><canvas id="chart-revenue"></canvas></div>
                         <?php echo HTMLHelper::_('uitab.endTab'); ?>
 
+                        <?php foreach ($this->pluginChartTabs as $pluginTab) :
+                            $tabId    = htmlspecialchars((string) ($pluginTab['id'] ?? ''), ENT_QUOTES, 'UTF-8');
+                            $tabTitle = htmlspecialchars((string) ($pluginTab['title'] ?? ''), ENT_QUOTES, 'UTF-8');
+                            if ($tabId === '' || $tabTitle === '') continue;
+                            echo HTMLHelper::_('uitab.addTab', 'analyticsMainTabs', $tabId, $tabTitle);
+                            echo $pluginTab['body'] ?? '';
+                            echo HTMLHelper::_('uitab.endTab');
+                        endforeach; ?>
+
                         <?php $analyticsMainModules = ModuleHelper::getModules('j2commerce-analytics-main-tab');
                         foreach ($analyticsMainModules as $analyticsMainTab) :
                             $analyticsMainTabId    = 'analytmain' . (int) $analyticsMainTab->id;
