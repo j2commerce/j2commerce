@@ -10,7 +10,7 @@
     "test:install": "cypress run --spec tests/cypress-e2e/integration/01-install.cy.js"
   },
   "devDependencies": {
-    "cypress": "^14.3.0",
+    "cypress": "^15.16.0",
     "joomla-cypress": "^1.0.0"
   }
 }
