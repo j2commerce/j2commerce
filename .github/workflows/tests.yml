@@ -195,9 +195,15 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Cache Cypress binary
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/Cypress
+          key: cypress-${{ runner.os }}-${{ hashFiles('extension/package-lock.json') }}
+
       - name: Install e2e dependencies
         working-directory: extension
-        run: npm install
+        run: npm ci
 
       - name: Run Cypress
         working-directory: extension
