@@ -46,6 +46,15 @@ $fees      = $item->orderfees ?? [];
                     </tr>
                 </thead>
                 <tbody>
+                    <?php // Plugin-contributed extra summary rows ?>
+                    <?php foreach (J2CommerceHelper::plugin()->eventWithArray('GetOrderSummaryExtraRows', [$item]) as $extraRow) : ?>
+                        <?php if (\is_array($extraRow) && isset($extraRow['label'], $extraRow['value'])) : ?>
+                            <tr>
+                                <th scope="row"><?php echo $this->escape($extraRow['label']); ?></th>
+                                <td class="text-end"><?php echo $this->escape($extraRow['value']); ?></td>
+                            </tr>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
                     <tr>
                         <th scope="row"><?php echo Text::_('COM_J2COMMERCE_SUBTOTAL'); ?></th>
                         <td class="text-end"><?php echo $fmt((float) $item->order_subtotal); ?></td>
