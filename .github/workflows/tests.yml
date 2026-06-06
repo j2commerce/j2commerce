@@ -186,6 +186,23 @@ jobs:
           cp -r extension/media joomla/j2commerce-src/ 2>/dev/null || true
           cp extension/*.xml joomla/j2commerce-src/ 2>/dev/null || true
 
+      - name: Install Joomla via CLI
+        working-directory: joomla
+        run: |
+          php installation/joomla.php site:install \
+            --site-name="J2Commerce Test Site" \
+            --admin-user=admin \
+            --admin-password=admin1234567890 \
+            --admin-email=admin@example.com \
+            --db-type=mysqli \
+            --db-host=127.0.0.1 \
+            --db-user=root \
+            --db-pass=root \
+            --db-name=j2commerce_test \
+            --db-prefix=jos_ \
+            --no-interaction
+          rm -rf installation/
+
       - name: Serve Joomla
         working-directory: joomla
         run: php -S 127.0.0.1:8080 -t . >/tmp/php-server.log 2>&1 &
