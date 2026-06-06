@@ -215,6 +215,12 @@ vendor/
 # Claude Code temp files
 tmpclaude-*
 
+# Website-layout skill (tooling + committed reference copy of template)
+!.claude/
+!.claude/skills/
+!.claude/skills/website-layout/
+!.claude/skills/website-layout/**
+
 # ===========================================================================
 # SEPARATE EXTENSIONS — belong in j2commerce6extensions repo, NOT here
 # ===========================================================================
