@@ -198,6 +198,15 @@ class Router extends RouterView
             $catid    = (int) $query['catid'];
             $menuItem = $this->findProductsMenuByCatid($catid);
 
+            // Fall back to a categories menu that roots this category, so buildSefRoute()
+            // resolves a menu BEFORE build() runs. Without this, a subcategory with no
+            // dedicated products menu loses its Itemid here and falls back to the raw
+            // /component/j2commerce/<alias> URL even though build() sets the Itemid later.
+            if (!$menuItem) {
+                $result   = $this->findCategoriesMenuForCategory($catid);
+                $menuItem = $result ? $result['menu'] : null;
+            }
+
             if ($menuItem) {
                 $query['Itemid'] = $menuItem->id;
             }
