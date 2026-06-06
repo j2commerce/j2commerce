@@ -88,6 +88,7 @@ if ($hasDetails) {
                             <strong class="text-body"><?php echo $this->escape($item->transaction_id); ?></strong>
                         </div>
                     <?php endif; ?>
+                    <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterAdminOrderPaymentInfo', array($item))->getArgument('html', ''); ?>
                 </div>
             </div>
             <div class="j2c-detail-card-payment-buttons d-flex align-items-center gap-2">

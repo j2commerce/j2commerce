@@ -202,6 +202,15 @@ $statusName = !empty($order->orderstatus_name) ? Text::_($order->orderstatus_nam
         <div class="col-md-6 offset-md-6">
             <table class="table table-sm">
                 <tbody>
+                    <?php // Plugin-contributed extra summary rows ?>
+                    <?php foreach (J2CommerceHelper::plugin()->eventWithArray('GetOrderSummaryExtraRows', [$order]) as $extraRow): ?>
+                        <?php if (\is_array($extraRow) && isset($extraRow['label'], $extraRow['value'])): ?>
+                        <tr>
+                            <td class="text-end"><?php echo $this->escape($extraRow['label']); ?></td>
+                            <td class="text-end fw-bold"><?php echo $this->escape($extraRow['value']); ?></td>
+                        </tr>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
                     <tr>
                         <td class="text-end"><?php echo Text::_('COM_J2COMMERCE_CART_SUBTOTAL'); ?></td>
                         <td class="text-end fw-bold"><?php echo $fmt((float) ($order->order_subtotal ?? 0)); ?></td>
