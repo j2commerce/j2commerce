@@ -177,14 +177,15 @@ jobs:
           composer install --no-interaction --no-progress
           npm ci && npm run build
 
-      - name: Deploy J2Commerce source for installation
+      - name: Deploy J2Commerce into Joomla
         run: |
-          mkdir -p joomla/j2commerce-src
-          cp -r extension/administrator joomla/j2commerce-src/
-          cp -r extension/components joomla/j2commerce-src/
-          cp -r extension/libraries joomla/j2commerce-src/
-          cp -r extension/media joomla/j2commerce-src/ 2>/dev/null || true
-          cp extension/*.xml joomla/j2commerce-src/ 2>/dev/null || true
+          cp -r extension/administrator/components/com_j2commerce joomla/administrator/components/
+          cp -r extension/libraries/j2commerce joomla/libraries/
+          cp -r extension/components/com_j2commerce joomla/components/ 2>/dev/null || true
+          cp -r extension/media/com_j2commerce joomla/media/ 2>/dev/null || true
+          cp -r extension/administrator/modules/. joomla/administrator/modules/ 2>/dev/null || true
+          cp -r extension/modules/. joomla/modules/ 2>/dev/null || true
+          cp -r extension/plugins/. joomla/plugins/ 2>/dev/null || true
 
       - name: Install Joomla via CLI
         working-directory: joomla
@@ -203,6 +204,12 @@ jobs:
             --db-prefix=jos_ \
             --no-interaction
           rm -rf installation/
+
+      - name: Install J2Commerce via CLI
+        working-directory: joomla
+        run: |
+          php joomla.php extension:discover
+          php joomla.php extension:discover:install
 
       - name: Serve Joomla
         working-directory: joomla
@@ -235,7 +242,6 @@ jobs:
         working-directory: extension
         env:
           CYPRESS_baseUrl: http://127.0.0.1:8080
-          CYPRESS_joomlaExtensionPath: ${{ github.workspace }}/joomla/j2commerce-src
         run: npx cypress run --e2e
 
       - name: Upload screenshots on failure
