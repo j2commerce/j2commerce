@@ -208,8 +208,8 @@ jobs:
       - name: Install J2Commerce via CLI
         working-directory: joomla
         run: |
-          php joomla.php extension:discover
-          php joomla.php extension:discover:install
+          php cli/joomla.php extension:discover
+          php cli/joomla.php extension:discover:install
 
       - name: Serve Joomla
         working-directory: joomla
