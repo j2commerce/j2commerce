@@ -213,7 +213,10 @@ jobs:
 
       - name: Serve Joomla
         working-directory: joomla
-        run: php -S 127.0.0.1:8080 -t . >/tmp/php-server.log 2>&1 &
+        run: |
+          ROUTER=""
+          [ -f ".htrouter.php" ] && ROUTER=".htrouter.php"
+          php -S 127.0.0.1:8080 $ROUTER >/tmp/php-server.log 2>&1 &
 
       - name: Wait for PHP server
         run: |
