@@ -192,6 +192,7 @@ jobs:
           php installation/joomla.php install \
             --site-name="J2Commerce Test Site" \
             --admin-user=admin \
+            --admin-username=admin \
             --admin-password=admin1234567890 \
             --admin-email=admin@example.com \
             --db-type=mysqli \
