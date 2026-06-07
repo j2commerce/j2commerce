@@ -189,7 +189,7 @@ jobs:
       - name: Install Joomla via CLI
         working-directory: joomla
         run: |
-          php installation/joomla.php site:install \
+          php installation/joomla.php install \
             --site-name="J2Commerce Test Site" \
             --admin-user=admin \
             --admin-password=admin1234567890 \
