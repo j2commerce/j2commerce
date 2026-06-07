@@ -168,3 +168,173 @@
         </field>
     </fieldset>
 </form>
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+    <inlinehelp button="show"/>
+    <fieldset name="basic" label="COM_J2COMMERCE_FIELDSET_BASIC">
+        <!-- Hidden primary key field - REQUIRED -->
+        <field
+            name="j2commerce_vendor_id"
+            type="hidden"
+            default="0"
+        />
+
+        <!-- Hidden address ID field -->
+        <field
+            name="j2commerce_address_id"
+            type="hidden"
+            default="0"
+        />
+
+        <!-- User field -->
+        <field
+            name="j2commerce_user_id"
+            type="user"
+            label="COM_J2COMMERCE_FIELD_VENDOR_USER"
+            description="COM_J2COMMERCE_FIELD_VENDOR_USER_DESC"
+        />
+
+        <!-- Hidden address_id field (internal link to address table) -->
+        <field
+            name="address_id"
+            type="hidden"
+            default="0"
+        />
+
+        <!-- REQUIRED: Status field for joomla.edit.global sidebar layout -->
+        <field
+            name="enabled"
+            type="list"
+            label="JSTATUS"
+            description="JFIELD_PUBLISHED_DESC"
+            default="1"
+            class="form-select-color-state"
+        >
+            <option value="1">JPUBLISHED</option>
+            <option value="0">JUNPUBLISHED</option>
+            <option value="-2">JTRASHED</option>
+        </field>
+
+        <!-- REQUIRED: Ordering field for joomla.edit.global sidebar layout -->
+        <field
+            name="ordering"
+            type="ordering"
+            label="JFIELD_ORDERING_LABEL"
+            description="JFIELD_ORDERING_DESC"
+            default="0"
+            content_type="com_j2commerce.vendor"
+        />
+    </fieldset>
+
+    <fieldset name="address" label="COM_J2COMMERCE_FIELDSET_ADDRESS">
+        <!-- Name fields -->
+        <field
+            name="first_name"
+            type="text"
+            label="COM_J2COMMERCE_FIELD_FIRST_NAME"
+            maxlength="255"
+        />
+
+        <field
+            name="last_name"
+            type="text"
+            label="COM_J2COMMERCE_FIELD_LAST_NAME"
+            maxlength="255"
+        />
+
+        <!-- Contact fields -->
+        <field
+            name="email"
+            type="email"
+            label="COM_J2COMMERCE_FIELD_EMAIL"
+            maxlength="255"
+        />
+
+        <field
+            name="phone_1"
+            type="text"
+            label="COM_J2COMMERCE_FIELD_ADDRESS_PHONE_1"
+            maxlength="255"
+        />
+
+        <field
+            name="phone_2"
+            type="text"
+            label="COM_J2COMMERCE_FIELD_ADDRESS_PHONE_2"
+            maxlength="255"
+        />
+
+        <field
+            name="fax"
+            type="text"
+            label="COM_J2COMMERCE_FIELD_ADDRESS_FAX"
+            maxlength="255"
+        />
+
+        <!-- Company fields -->
+        <field
+            name="company"
+            type="text"
+            label="COM_J2COMMERCE_FIELD_VENDOR_COMPANY"
+            maxlength="255"
+            required="true"
+        />
+
+        <field
+            name="tax_number"
+            type="text"
+            label="COM_J2COMMERCE_FIELD_ADDRESS_TAX_NUMBER"
+            maxlength="255"
+        />
+
+        <!-- Address fields -->
+        <field
+            name="address_1"
+            type="text"
+            label="COM_J2COMMERCE_FIELD_ADDRESS_LINE1"
+            maxlength="255"
+        />
+
+        <field
+            name="address_2"
+            type="text"
+            label="COM_J2COMMERCE_FIELD_ADDRESS_LINE2"
+            maxlength="255"
+        />
+
+        <field
+            name="city"
+            type="text"
+            label="COM_J2COMMERCE_FIELD_CITY"
+            maxlength="255"
+        />
+
+        <field
+            name="zip"
+            type="text"
+            label="COM_J2COMMERCE_FIELD_ADDRESS_ZIP"
+            maxlength="255"
+        />
+
+        <field
+            name="country_id"
+            type="Country"
+            label="COM_J2COMMERCE_FIELD_COUNTRY"
+            addfieldprefix ="J2Commerce\Component\J2commerce\Administrator\Field"
+            class="form-select"
+        >
+            <option value="">COM_J2COMMERCE_SELECT_COUNTRY</option>
+        </field>
+
+        <field
+            name="zone_id"
+            type="Zone"
+            label="COM_J2COMMERCE_FIELD_ADDRESS_ZONE"
+            addfieldprefix ="J2Commerce\Component\J2commerce\Administrator\Field"
+            class="form-select"
+            default=""
+        >
+            <option value="">COM_J2COMMERCE_SELECT_ZONE</option>
+        </field>
+    </fieldset>
+</form>
