@@ -339,6 +339,21 @@ class MyprofileController extends BaseController
             return;
         }
 
+        // Allow plugins to handle delivery (e.g. remote/non-web-dir masters).
+        // A plugin that handles delivery must call $event->addResult(true) to signal
+        // that the file has been sent and core should skip its local readfile().
+        $deliveryEvent = J2CommerceHelper::plugin()->event('BeforeFileDownload', [
+            'productFile' => $productFile,
+            'order'       => $order,
+            'download'    => $download,
+        ]);
+
+        foreach ($deliveryEvent->getArgument('result', []) as $handled) {
+            if ($handled === true) {
+                return;
+            }
+        }
+
         // Build file path with path traversal protection
         $filePath = Path::clean(JPATH_SITE . '/' . ltrim($productFile->product_file_save_name, '/'));
         $realPath = @realpath($filePath);

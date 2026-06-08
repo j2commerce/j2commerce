@@ -33,8 +33,10 @@ class TaxprofileField extends ListField
     {
         $options = parent::getOptions();
 
-        // Add "Not Taxable" option at the start
-        //array_unshift($options, HTMLHelper::_('select.option', '', Text::_('COM_J2COMMERCE_NOT_TAXABLE')));
+        // Empty value = no tax profile (not taxable). Listed first so a freshly
+        // saved form defaults to "Not Taxable" instead of auto-charging the first
+        // tax profile in the list.
+        array_unshift($options, HTMLHelper::_('select.option', '', Text::_('COM_J2COMMERCE_NOT_TAXABLE')));
 
         try {
             $db = Factory::getContainer()->get(DatabaseInterface::class);

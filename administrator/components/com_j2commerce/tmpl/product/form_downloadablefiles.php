@@ -155,7 +155,7 @@ $layoutPath = JPATH_ADMINISTRATOR . '/components/com_j2commerce/layouts';
                         'class' => 'form-control',
                         'type'  => 'number',
                     ] + $textFieldDefaults); ?>
-                    <small class="form-text text-muted"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_FILE_DOWNLOAD_LIMIT_DESC'); ?></small>
+                    <small class="form-text text-body-secondary"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_FILE_DOWNLOAD_LIMIT_DESC'); ?></small>
                 </div>
             </div>
 
@@ -174,7 +174,7 @@ $layoutPath = JPATH_ADMINISTRATOR . '/components/com_j2commerce/layouts';
                             'type'  => 'number',
                         ] + $textFieldDefaults); ?>
                     </div>
-                    <small class="form-text text-muted"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_FILE_DOWNLOAD_EXPIRY_DESC'); ?></small>
+                    <small class="form-text text-body-secondary"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_FILE_DOWNLOAD_EXPIRY_DESC'); ?></small>
                 </div>
             </div>
 
