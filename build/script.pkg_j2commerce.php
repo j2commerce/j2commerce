@@ -15,6 +15,48 @@ class Pkg_J2commerceInstallerScript extends InstallerScript
 {
     protected $minimumJoomlaVersion = '6.0';
     protected $minimumPhpVersion = '8.1';
+    protected $deleteFiles = [
+        'administrator/components/com_j2commerce/src/Field/BoxPackerField.php',
+        'administrator/components/com_j2commerce/src/Field/CategoryDuallistboxField.php',
+        'administrator/components/com_j2commerce/src/Field/ConfigSubtemplateField.php',
+        'administrator/components/com_j2commerce/src/Field/CustomFieldTypeField.php',
+        'administrator/components/com_j2commerce/src/Field/EmailtypeListField.php',
+        'administrator/components/com_j2commerce/src/Field/GeoZoneField.php',
+        'administrator/components/com_j2commerce/src/Field/ImageDirectoryField.php',
+        'administrator/components/com_j2commerce/src/Field/J2CommerceImageField.php',
+        'administrator/components/com_j2commerce/src/Field/ManufacturerCountryField.php',
+        'administrator/components/com_j2commerce/src/Field/Modal/ProductMultiSelectField.php',
+        'administrator/components/com_j2commerce/src/Field/MultiImageUploaderField.php',
+        'administrator/components/com_j2commerce/src/Field/OptionTypeField.php',
+        'administrator/components/com_j2commerce/src/Field/OrderStatusField.php',
+        'administrator/components/com_j2commerce/src/Field/PaymentMethodsField.php',
+        'administrator/components/com_j2commerce/src/Field/PhoneCountriesField.php',
+        'administrator/components/com_j2commerce/src/Field/PluginSubtemplateField.php',
+        'administrator/components/com_j2commerce/src/Field/PriceCalculatorField.php',
+        'administrator/components/com_j2commerce/src/Field/ProductTypeField.php',
+        'administrator/components/com_j2commerce/src/Field/RouterCategoryField.php',
+        'administrator/components/com_j2commerce/src/Field/RouterModalCategoryField.php',
+        'administrator/components/com_j2commerce/src/Field/ShippingMethodsField.php',
+        'administrator/components/com_j2commerce/src/Field/StoreProfileField.php',
+        'administrator/components/com_j2commerce/src/Field/SubtemplateFolderField.php',
+        'administrator/components/com_j2commerce/src/Field/TaxProfileField.php',
+        'administrator/components/com_j2commerce/src/Field/TaxRateField.php',
+        'administrator/components/com_j2commerce/src/Field/TemplateCustomField.php',
+        'administrator/components/com_j2commerce/src/Field/VariantAdvancedPricingField.php',
+        'administrator/components/com_j2commerce/src/Field/VariantPriceField.php',
+        'administrator/components/com_j2commerce/src/Field/VendorCountryField.php',
+        'libraries/j2commerce/src/Field/Modal/ArticleMultiSelectField.php',
+        'libraries/j2commerce/src/Field/Modal/ContactMultiSelectField.php',
+        'libraries/j2commerce/src/Field/Modal/UserMultiSelectField.php',
+        'libraries/j2commerce/src/Field/ModalMultiSelectField.php',
+        'plugins/content/j2commerce/src/Field/J2CommerceField.php',
+        'plugins/j2commerce/app_localization_data/src/Field/LocalizationDataField.php',
+        'plugins/j2commerce/report_itemised/src/Field/ReportToolbarField.php',
+        'plugins/j2commerce/report_products/src/Field/ReportToolbarField.php',
+        'plugins/j2commerce/shipping_standard/src/Field/ShippingToolbarField.php',
+        'plugins/schemaorg/ecommerce/src/Field/EcommerceProductPreviewField.php',
+        'plugins/schemaorg/ecommerce/src/Field/J2CommerceCurrencyField.php',
+    ];
     private string $debugLogFile = '';
     private array $preUpdatePluginExists = [];
 
@@ -119,6 +161,10 @@ class Pkg_J2commerceInstallerScript extends InstallerScript
         $this->debugLog("=== PKG PREFLIGHT START (route={$route}) ===");
 
         if ($route === 'update') {
+            $this->debugLog('PKG PREFLIGHT: removing legacy renamed files (' . count($this->deleteFiles) . ' configured)');
+            $this->removeFiles();
+            $this->debugLog('PKG PREFLIGHT: legacy file cleanup completed');
+
             $db = Factory::getContainer()->get(DatabaseInterface::class);
             $this->snapshotPreUpdatePluginState($db);
         }

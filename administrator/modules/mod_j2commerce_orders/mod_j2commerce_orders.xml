@@ -74,7 +74,7 @@
                 />
                 <field
                     name="filter_status"
-                    type="OrderStatus"
+                    type="Orderstatus"
                     addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field"
                     label="MOD_J2COMMERCE_ORDERS_FIELD_FILTER_STATUS"
                     description="MOD_J2COMMERCE_ORDERS_FIELD_FILTER_STATUS_DESC"

@@ -13,6 +13,8 @@
 // phpcs:enable PSR1.Files.SideEffects
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use Joomla\CMS\Language\Text;
+use Joomla\CMS\Router\Route;
 
 $product = $this->singleton_product;
 $params = $this->singleton_params;
@@ -21,14 +23,14 @@ $action = 'index.php?option=com_j2commerce&view=carts&task=carts.addItem&product
 <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeAddToCartButton', array($product, J2CommerceHelper::utilities()->getContext('cart')))->getArgument('html', ''); ?>
 <div class="cart-action-complete" style="display:none;">
 		<p class="text-success">
-			<?php echo JText::_('COM_J2COMMERCE_ITEM_ADDED_TO_CART');?>
+			<?php echo Text::_('COM_J2COMMERCE_ITEM_ADDED_TO_CART');?>
 			<a href="<?php echo htmlspecialchars($product->checkout_link ?? '', ENT_QUOTES, 'UTF-8'); ?>" class="j2commerce-checkout-link">
-				<?php echo JText::_('COM_J2COMMERCE_CHECKOUT'); ?>
+				<?php echo Text::_('COM_J2COMMERCE_CHECKOUT'); ?>
 			</a>
 		</p>
 </div>
 <a class="<?php echo $params->get('addtocart_button_class', 'btn btn-primary');?> j2commerce_add_to_cart_button"
-href="<?php echo JRoute::_($action); ?>" data-quantity="1" data-product_id="<?php echo (int) $product->j2commerce_product_id;?>"
+href="<?php echo Route::_($action); ?>" data-quantity="1" data-product_id="<?php echo (int) $product->j2commerce_product_id;?>"
 rel="nofollow">
 <?php echo $this->singleton_cartext; ?>
 </a>

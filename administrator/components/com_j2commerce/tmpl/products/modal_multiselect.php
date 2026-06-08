@@ -9,7 +9,7 @@
 
 defined('_JEXEC') or die;
 
-use J2Commerce\Component\J2commerce\Administrator\Field\ProductTypeField;
+use J2Commerce\Component\J2commerce\Administrator\Field\ProducttypeField;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
@@ -168,7 +168,7 @@ $canChangeState = $user->authorise('core.edit.state', 'com_content');
                     }
                     $thumbImage = $getImagePath($item->thumb_image);
                     $hasImage = !empty($thumbImage);
-                    $productTypeLabel = ProductTypeField::getProductTypes()[$item->product_type ?? 'simple'] ?? ucfirst($item->product_type ?? 'simple');
+                    $productTypeLabel = ProducttypeField::getProductTypes()[$item->product_type ?? 'simple'] ?? ucfirst($item->product_type ?? 'simple');
                     $articleStateText = ($item->article_state == 1) ? Text::_('JPUBLISHED') : Text::_('JUNPUBLISHED');
                     $articleStateClass = ($item->article_state == 1) ? 'text-success' : 'text-danger';
                     $taxProfileText = !empty($item->tax_profile_name) ? $this->escape($item->tax_profile_name) : Text::_('JNONE');

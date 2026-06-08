@@ -124,6 +124,7 @@ class InventoryModel extends ListModel
                 'pq.sold, ' .
                 'v.manage_stock, ' .
                 'v.availability, ' .
+                'v.allow_backorder, ' .
                 'v.j2commerce_variant_id, ' .
                 'v.sku, ' .
                 'pq.variant_id'
@@ -225,8 +226,13 @@ class InventoryModel extends ListModel
                 // Set default values for null fields
                 $item->quantity     = $item->quantity ?? 0;
                 $item->manage_stock = $item->manage_stock ?? 0;
-                $item->availability = $item->availability ?? 1;
                 $item->has_options  = $item->has_options ?? 0;
+
+                // Reflect the shopper-facing stock status, not the raw column.
+                // Storefront rule (ProductHelper::validateVariableProduct): when stock
+                // is not managed the item is always sellable; when managed it is in
+                // stock only if availability is set or backorders are allowed.
+                $item->availability = $this->resolveStockStatus($item);
 
                 // Add SKU field to item if not present
                 if (!isset($item->sku)) {
@@ -244,6 +250,31 @@ class InventoryModel extends ListModel
         }
 
         return $items;
+    }
+
+    /**
+     * Resolve the shopper-facing stock status for the inventory select.
+     *
+     * Mirrors the storefront rule (ProductHelper::validateVariableProduct):
+     * unmanaged stock is always in stock; managed stock is in stock only when
+     * availability is set or backorders are allowed.
+     *
+     * @param   object  $row  Product/variant row with manage_stock, availability, allow_backorder.
+     *
+     * @return  int  1 = in stock, 0 = out of stock.
+     *
+     * @since   6.0.0
+     */
+    private function resolveStockStatus(object $row): int
+    {
+        if ((int) ($row->manage_stock ?? 0) !== 1) {
+            return 1;
+        }
+
+        $available = !empty($row->availability);
+        $backorder = (int) ($row->allow_backorder ?? 0) >= 1;
+
+        return ($available || $backorder) ? 1 : 0;
     }
 
     /**
@@ -322,6 +353,126 @@ class InventoryModel extends ListModel
             $app->enqueueMessage('Error saving inventory: ' . $e->getMessage(), 'error');
             return false;
         }
+    }
+
+    /**
+     * Batch-update inventory for a set of products. Only the fields present in
+     * $fields are written; missing fields are left untouched. The change cascades
+     * to every variant of each product (master + children).
+     *
+     * @param   int[]  $productIds  Selected product ids (cid).
+     * @param   array  $fields      Subset of ['quantity','manage_stock','availability'] => int value.
+     *
+     * @return  int  Number of variant records updated.
+     */
+    public function batchUpdate(array $productIds, array $fields): int
+    {
+        $productIds = array_values(array_unique(array_filter(array_map('intval', $productIds))));
+
+        if (empty($productIds) || empty($fields)) {
+            return 0;
+        }
+
+        $db      = $this->getDatabase();
+        $updated = 0;
+
+        foreach ($productIds as $productId) {
+            $query = $db->getQuery(true)
+                ->select($db->quoteName('j2commerce_variant_id'))
+                ->from($db->quoteName('#__j2commerce_variants'))
+                ->where($db->quoteName('product_id') . ' = :productId')
+                ->bind(':productId', $productId, ParameterType::INTEGER);
+
+            $db->setQuery($query);
+            $variantIds = (array) $db->loadColumn();
+
+            foreach ($variantIds as $variantId) {
+                if ($this->applyBatchFieldsToVariant((int) $variantId, $fields)) {
+                    $updated++;
+                }
+            }
+        }
+
+        return $updated;
+    }
+
+    /**
+     * Apply the chosen batch fields to a single variant. quantity writes to
+     * productquantities (update-or-insert); manage_stock/availability write to variants.
+     *
+     * @param   int    $variantId  The variant to update.
+     * @param   array  $fields     Subset of ['quantity','manage_stock','availability'] => int value.
+     *
+     * @return  bool  True if at least one write occurred.
+     */
+    private function applyBatchFieldsToVariant(int $variantId, array $fields): bool
+    {
+        if (!$variantId) {
+            return false;
+        }
+
+        $db   = $this->getDatabase();
+        $did  = false;
+
+        if (\array_key_exists('manage_stock', $fields) || \array_key_exists('availability', $fields)) {
+            $query = $db->getQuery(true)->update($db->quoteName('#__j2commerce_variants'));
+
+            if (\array_key_exists('manage_stock', $fields)) {
+                $manageStock = (int) $fields['manage_stock'];
+                $query->set($db->quoteName('manage_stock') . ' = :manageStock')
+                    ->bind(':manageStock', $manageStock, ParameterType::INTEGER);
+            }
+
+            if (\array_key_exists('availability', $fields)) {
+                $availability = (int) $fields['availability'];
+                $query->set($db->quoteName('availability') . ' = :availability')
+                    ->bind(':availability', $availability, ParameterType::INTEGER);
+            }
+
+            $query->where($db->quoteName('j2commerce_variant_id') . ' = :variantId')
+                ->bind(':variantId', $variantId, ParameterType::INTEGER);
+
+            $db->setQuery($query);
+            $db->execute();
+            $did = true;
+        }
+
+        if (\array_key_exists('quantity', $fields)) {
+            $quantity = (int) $fields['quantity'];
+
+            $query = $db->getQuery(true)
+                ->select($db->quoteName('j2commerce_productquantity_id'))
+                ->from($db->quoteName('#__j2commerce_productquantities'))
+                ->where($db->quoteName('variant_id') . ' = :variantId')
+                ->bind(':variantId', $variantId, ParameterType::INTEGER);
+
+            $db->setQuery($query);
+            $existingId = $db->loadResult();
+
+            if ($existingId) {
+                $query = $db->getQuery(true)
+                    ->update($db->quoteName('#__j2commerce_productquantities'))
+                    ->set($db->quoteName('quantity') . ' = :quantity')
+                    ->where($db->quoteName('variant_id') . ' = :variantId')
+                    ->bind(':quantity', $quantity, ParameterType::INTEGER)
+                    ->bind(':variantId', $variantId, ParameterType::INTEGER);
+            } else {
+                $emptyAttributes = '';
+                $query           = $db->getQuery(true)
+                    ->insert($db->quoteName('#__j2commerce_productquantities'))
+                    ->columns($db->quoteName(['variant_id', 'quantity', 'on_hold', 'sold', 'product_attributes']))
+                    ->values(':variantId, :quantity, 0, 0, :productAttributes')
+                    ->bind(':variantId', $variantId, ParameterType::INTEGER)
+                    ->bind(':quantity', $quantity, ParameterType::INTEGER)
+                    ->bind(':productAttributes', $emptyAttributes);
+            }
+
+            $db->setQuery($query);
+            $db->execute();
+            $did = true;
+        }
+
+        return $did;
     }
 
     /**
@@ -598,6 +749,7 @@ class InventoryModel extends ListModel
                 'v.sku',
                 'v.manage_stock',
                 'v.availability',
+                'v.allow_backorder',
                 'v.is_master',
                 'pq.quantity',
                 'pq.on_hold',
@@ -620,9 +772,9 @@ class InventoryModel extends ListModel
                 foreach ($variants as $variant) {
                     $variant->quantity     = $variant->quantity ?? 0;
                     $variant->manage_stock = $variant->manage_stock ?? 0;
-                    $variant->availability = $variant->availability ?? 1;
                     $variant->on_hold      = $variant->on_hold ?? 0;
                     $variant->sold         = $variant->sold ?? 0;
+                    $variant->availability = $this->resolveStockStatus($variant);
                 }
             }
 

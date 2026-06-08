@@ -487,6 +487,16 @@ class EmailHelper
             (float) ($order->currency_value ?? 1)
         );
 
+        // Plugin-contributed extra order summary rows
+        $extraRowsHtml = '';
+        foreach (J2CommerceHelper::plugin()->eventWithArray('GetOrderSummaryExtraRows', [$order]) as $extraRow) {
+            if (\is_array($extraRow) && isset($extraRow['label'], $extraRow['value'])) {
+                $extraRowsHtml .= '<div class="j2c-order-extra-row"><strong>'
+                    . htmlspecialchars((string) $extraRow['label'], ENT_QUOTES, 'UTF-8') . ':</strong> '
+                    . htmlspecialchars((string) $extraRow['value'], ENT_QUOTES, 'UTF-8') . '</div>';
+            }
+        }
+
         $tags = [
             "\\n"                         => "\n",
             '[SITENAME]'                  => $sitename,
@@ -539,6 +549,7 @@ class EmailHelper
             '[DISCOUNT_AMOUNT]'           => ((float) ($order->order_discount ?? 0)) > 0 ? CurrencyHelper::format((float) $order->order_discount, $order->currency_code ?? '', (float) ($order->currency_value ?? 1)) : '',
             '[TAX_AMOUNT]'                => ((float) ($order->order_tax ?? 0)) > 0 ? CurrencyHelper::format((float) $order->order_tax, $order->currency_code ?? '', (float) ($order->currency_value ?? 1)) : '',
             '[SUBTOTAL]'                  => CurrencyHelper::format((float) ($order->order_subtotal ?? 0), $order->currency_code ?? '', (float) ($order->currency_value ?? 1)),
+            '[ORDER_EXTRA_ROWS]'          => $extraRowsHtml,
             '[CURRENT_YEAR]'              => date('Y'),
             '[ITEMS]'                     => $items,
             '[PACKING_ITEMS]'             => $this->loadPackingItemsTemplate($order),

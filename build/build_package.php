@@ -28,25 +28,44 @@ $manifestContent = file_get_contents($manifestPath);
 if (!preg_match('/<version>([^<]+)<\/version>/', $manifestContent, $matches)) {
     die("ERROR: Could not find <version> in j2commerce.xml\n");
 }
-$baseVersion = $matches[1];
-
-// Determine build number — scan for existing packages with same base version
+// Base version = the first three dot-segments only. Any 4th segment in the
+// manifest (a previously stamped dev-build digit) is stripped, so re-reading a
+// stamped manifest can never compound into a 5-digit version.
+$versionParts = explode('.', trim($matches[1]));
+$baseVersion  = implode('.', array_slice($versionParts, 0, 3));
 $baseVersionDashed = str_replace('.', '-', $baseVersion);
-$buildNum = 1;
 
-// Match legacy `_beta_{N}` and current `-{N}` filename formats so the build
-// number keeps climbing across the naming switch.
+// Determine the dev build number. The authoritative counter lives in
+// build/.devbuild.json (keyed by base version) so it keeps climbing even when
+// docs/packages is cleared. Existing package filenames are still scanned as a
+// floor so a fresh counter can never collide with an already-shipped build.
+$counterFile   = $buildDir . '/.devbuild.json';
+$buildCounters = [];
+if (is_file($counterFile)) {
+    $decoded = json_decode((string) file_get_contents($counterFile), true);
+    if (is_array($decoded)) {
+        $buildCounters = $decoded;
+    }
+}
+$trackedHighest = isset($buildCounters[$baseVersion]) ? (int) $buildCounters[$baseVersion] : 0;
+
+// Floor from existing package filenames (legacy `_beta_{N}` + current `-{N}`).
+$scanHighest = 0;
 foreach (['com_j2commerce_', 'pkg_j2commerce_'] as $prefix) {
     $base = $outputDir . '/' . $prefix . $baseVersionDashed;
     foreach (array_merge(glob($base . '_beta_*.zip') ?: [], glob($base . '-*.zip') ?: []) as $f) {
         if (preg_match('/(?:_beta_|-)(\d+)\.zip$/', $f, $m)) {
-            $buildNum = max($buildNum, (int) $m[1] + 1);
+            $scanHighest = max($scanHighest, (int) $m[1]);
         }
     }
 }
 
-// Version used in manifests — base version + build number (e.g. 6.3.2.3) so
-// 3rd-party extensions can identify the exact non-official build.
+$buildNum = max($trackedHighest, $scanHighest) + 1;
+
+// Version stamped into the package manifests + version.php (e.g. 6.3.2.7) so
+// 3rd-party extensions and the admin footer can identify the exact dev build.
+// The 4th digit only ever exists inside the built package — repo source files
+// (j2commerce.xml, version.php) are never modified by this script.
 $version = $baseVersion . '.' . $buildNum;
 
 $excludePatterns = [
@@ -683,6 +702,14 @@ foreach ($innerZips as $innerZipPath) {
 }
 
 $outerZip->close();
+
+// Persist the dev build counter only after the package was assembled, so a
+// failed build does not burn a build number. Keyed by base version.
+$buildCounters[$baseVersion] = $buildNum;
+file_put_contents(
+    $counterFile,
+    json_encode($buildCounters, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n"
+);
 
 // ── 3. Summary ────────────────────────────────────────────────────────────────
 

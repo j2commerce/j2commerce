@@ -370,9 +370,9 @@ class CustomFieldHelper
             }
         } elseif (!$required && $requiredIndicator === 'optional') {
             if ($isUikit) {
-                $labelHtml .= ' <small class="uk-text-muted">(' . Text::_('COM_J2COMMERCE_OPTIONAL') . ')</small>';
+                $labelHtml .= ' <small class="uk-text-muted">' . Text::_('COM_J2COMMERCE_OPTIONAL') . '</small>';
             } else {
-                $labelHtml .= ' <small class="text-body-secondary">(' . Text::_('COM_J2COMMERCE_OPTIONAL') . ')</small>';
+                $labelHtml .= ' <small class="text-body-secondary">' . Text::_('COM_J2COMMERCE_OPTIONAL') . '</small>';
             }
         }
 
@@ -1093,15 +1093,14 @@ class CustomFieldHelper
 
         // UIkit has no form-floating; stacked-label fallback.
         if ($isFloating && !$isUikit) {
-            return '<div class="form-normal">'
-                . '<label for="' . $id . '" class="form-label">' . $labelHtml . '</label>'
-                . '<div class="' . $cls . '"' . $groupAttrs . '>'
+            // Floating style: only the inner form-floating label, no standalone top
+            // label, to match the other field types (text/email/number/etc.).
+            return '<div class="' . $cls . '"' . $groupAttrs . '>'
                 . $hiddenInput
                 . ($isSingleCountry ? $countryStatic : $countryBtn)
                 . '<div class="form-floating flex-grow-1">'
                 . $nationalInput
                 . '<label>' . $labelHtml . '</label>'
-                . '</div>'
                 . '</div>'
                 . '</div>';
         }

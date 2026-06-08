@@ -4,7 +4,7 @@
         <fieldset name="j2commerce" label="PLG_CONTENT_J2COMMERCE_TAB_LABEL">
             <field
                 name="j2commerce"
-                type="J2Commerce"
+                type="J2commerce"
                 id="j2commerce"
                 description="PLG_CONTENT_J2COMMERCE_FIELD_DESC"
                 label="PLG_CONTENT_J2COMMERCE_FIELD_LABEL"

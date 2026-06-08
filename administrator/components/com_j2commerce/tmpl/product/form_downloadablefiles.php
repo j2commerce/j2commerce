@@ -12,7 +12,7 @@
 // phpcs:enable PSR1.Files.SideEffects
 
 use J2Commerce\Component\J2commerce\Administrator\Controller\MultiimageuploaderController;
-use J2Commerce\Component\J2commerce\Administrator\Field\MultiImageUploaderField;
+use J2Commerce\Component\J2commerce\Administrator\Field\MultiimageuploaderField;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Factory;
@@ -38,7 +38,7 @@ if (!\is_object($product_params)) {
 $productId = (int) ($item->j2commerce_product_id ?? 0);
 
 // Load MultiImageUploader assets
-MultiImageUploaderField::loadAssetsStatic();
+MultiimageuploaderField::loadAssetsStatic();
 
 // Build files data from existing productfiles
 $filesData = [];
@@ -155,7 +155,7 @@ $layoutPath = JPATH_ADMINISTRATOR . '/components/com_j2commerce/layouts';
                         'class' => 'form-control',
                         'type'  => 'number',
                     ] + $textFieldDefaults); ?>
-                    <small class="form-text text-muted"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_FILE_DOWNLOAD_LIMIT_DESC'); ?></small>
+                    <small class="form-text text-body-secondary"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_FILE_DOWNLOAD_LIMIT_DESC'); ?></small>
                 </div>
             </div>
 
@@ -174,7 +174,7 @@ $layoutPath = JPATH_ADMINISTRATOR . '/components/com_j2commerce/layouts';
                             'type'  => 'number',
                         ] + $textFieldDefaults); ?>
                     </div>
-                    <small class="form-text text-muted"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_FILE_DOWNLOAD_EXPIRY_DESC'); ?></small>
+                    <small class="form-text text-body-secondary"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_FILE_DOWNLOAD_EXPIRY_DESC'); ?></small>
                 </div>
             </div>
 

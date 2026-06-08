@@ -439,6 +439,15 @@ if ($info) {
 
                     <?php // Summary lines ?>
                     <div class="uk-text-small">
+                        <?php // Plugin-contributed extra summary lines ?>
+                        <?php foreach (J2CommerceHelper::plugin()->eventWithArray('GetOrderSummaryExtraRows', [$order]) as $extraRow) : ?>
+                            <?php if (\is_array($extraRow) && isset($extraRow['label'], $extraRow['value'])) : ?>
+                                <div class="uk-flex uk-flex-between uk-margin-small-bottom">
+                                    <span><?php echo $this->escape($extraRow['label']); ?></span>
+                                    <span><?php echo $this->escape($extraRow['value']); ?></span>
+                                </div>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
                         <?php // Subtotal ?>
                         <div class="uk-flex uk-flex-between uk-margin-small-bottom">
                             <span><?php echo Text::_('COM_J2COMMERCE_CART_SUBTOTAL'); ?></span>

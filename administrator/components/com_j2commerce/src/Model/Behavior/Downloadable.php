@@ -418,8 +418,17 @@ class Downloadable
 
             $fileTable->store();
 
+            $savedFileId = (int) $fileTable->j2commerce_productfile_id;
+
+            // Allow plugins to augment or tag the saved product file record.
+            J2CommerceHelper::plugin()->event('AfterProductFileSave', [
+                'productId' => $productId,
+                'fileTable' => $fileTable,
+                'fileData'  => $fileData,
+            ]);
+
             if ($fileId === 0) {
-                $submittedIds[] = (int) $fileTable->j2commerce_productfile_id;
+                $submittedIds[] = $savedFileId;
             }
         }
 

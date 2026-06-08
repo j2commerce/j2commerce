@@ -7,7 +7,6 @@
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
@@ -15,7 +14,7 @@
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Field\ManufacturersField;
 use J2Commerce\Component\J2commerce\Administrator\Field\VendorsField;
-use J2Commerce\Component\J2commerce\Administrator\Field\TaxProfileField;
+use J2Commerce\Component\J2commerce\Administrator\Field\TaxprofileField;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Field\RadioField;
 use Joomla\CMS\Form\Form;
@@ -42,7 +41,7 @@ $vendorsField->setup($element, '');
 $vendorTypes = $vendorsField->getOptions();
 array_unshift($vendorTypes, (object) ['value' => '', 'text' => Text::_('COM_J2COMMERCE_SELECT_VENDOR')]);
 
-$taxprofilesField = new TaxProfileField();
+$taxprofilesField = new TaxprofileField();
 $taxprofilesField->setDatabase(Factory::getContainer()->get('DatabaseDriver'));
 $element = new SimpleXMLElement('<field />');
 $taxprofilesField->setup($element, '');

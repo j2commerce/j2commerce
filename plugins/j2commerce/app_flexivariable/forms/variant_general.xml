@@ -35,7 +35,7 @@
         <!-- Regular Price with currency symbol prefix -->
         <field
             name="price"
-            type="VariantPrice"
+            type="Variantprice"
             label="COM_J2COMMERCE_PRODUCT_REGULAR_PRICE"
             addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field"
         />
@@ -43,7 +43,7 @@
         <!-- Advanced Pricing button -->
         <field
             name="advanced_pricing"
-            type="VariantAdvancedPricing"
+            type="Variantadvancedpricing"
             label="COM_J2COMMERCE_PRODUCT_SET_ADVANCED_PRICING"
             addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field"
         />
@@ -51,7 +51,7 @@
         <!-- Pricing Calculator dropdown -->
         <field
             name="pricing_calculator"
-            type="PriceCalculator"
+            type="Pricecalculator"
             label="COM_J2COMMERCE_PRODUCT_PRICING_CALCULATOR"
             class="form-select"
             addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field"

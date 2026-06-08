@@ -74,7 +74,7 @@
 
                 <field
                     name="geozones"
-                    type="GeoZone"
+                    type="Geozone"
                     multiple="true"
                     label="COM_J2COMMERCE_GEOZONE_RESTRICTION"
                     description="COM_J2COMMERCE_GEOZONE_RESTRICTION_DESC"
@@ -132,7 +132,7 @@
 
                 <field
                     name="shipping_method"
-                    type="ShippingMethods"
+                    type="Shippingmethods"
                     multiple="true"
                     label="PLG_J2COMMERCE_SHIPPING_FREE_EXCLUDE_SHIPPING"
                     description="PLG_J2COMMERCE_SHIPPING_FREE_EXCLUDE_SHIPPING_DESC"
@@ -153,7 +153,7 @@
 
                 <field
                     name="subtemplate"
-                    type="PluginSubtemplate"
+                    type="Pluginsubtemplate"
                     plugin_group="j2commerce"
                     plugin_element="shipping_free"
                     label="COM_J2COMMERCE_PLUGIN_SUBTEMPLATE"

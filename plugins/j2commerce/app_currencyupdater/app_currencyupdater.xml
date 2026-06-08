@@ -70,7 +70,7 @@
             <fieldset name="basic" label="PLG_J2COMMERCE_APP_CURRENCYUPDATER_SETTINGS">
                 <field
                     name="layout_style"
-                    type="SubtemplateFolder"
+                    type="Subtemplatefolder"
                     tmpl_path="plugins/j2commerce/app_currencyupdater/tmpl"
                     label="PLG_J2COMMERCE_APP_CURRENCYUPDATER_LAYOUT_STYLE"
                     description="PLG_J2COMMERCE_APP_CURRENCYUPDATER_LAYOUT_STYLE_DESC"

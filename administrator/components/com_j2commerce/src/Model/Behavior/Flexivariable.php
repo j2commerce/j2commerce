@@ -750,6 +750,24 @@ class Flexivariable
         if (isset($defaultVariant->j2commerce_variant_id) && !empty($defaultVariant->j2commerce_variant_id)) {
             $product->variant = $defaultVariant;
 
+            // Honour a ?sku= storefront deep link: make the requested SKU's
+            // variant active so price, image, stock and pre-selected options
+            // render for it. An unknown SKU keeps the default variant.
+            $app = Factory::getApplication();
+
+            if ($app->isClient('site')) {
+                $requestedSku = trim((string) $app->getInput()->getString('sku', ''));
+
+                if ($requestedSku !== '') {
+                    foreach ($product->variants as $candidateVariant) {
+                        if (isset($candidateVariant->sku) && (string) $candidateVariant->sku === $requestedSku) {
+                            $product->variant = $candidateVariant;
+                            break;
+                        }
+                    }
+                }
+            }
+
             if ($product->variant->quantity_restriction && $product->variant->min_sale_qty > 0) {
                 $product->quantity = $product->variant->min_sale_qty;
             }

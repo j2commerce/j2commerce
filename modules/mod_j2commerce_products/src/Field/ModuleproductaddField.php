@@ -14,11 +14,11 @@ namespace J2Commerce\Module\Products\Site\Field;
 
 \defined('_JEXEC') or die;
 
-use J2Commerce\Component\J2commerce\Administrator\Field\Modal\ProductMultiSelectField;
+use J2Commerce\Component\J2commerce\Administrator\Field\Modal\ProductMultiselectField;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 
-class ModuleproductaddField extends ProductMultiSelectField
+class ModuleproductaddField extends ProductMultiselectField
 {
     protected $type = 'Moduleproductadd';
 

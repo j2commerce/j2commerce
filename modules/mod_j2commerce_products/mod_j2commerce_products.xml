@@ -99,7 +99,7 @@
                        showon="product_source:tag">
                 </field>
 
-                <field name="product_types" type="ProductType" multiple="true" default=""
+                <field name="product_types" type="Producttype" multiple="true" default=""
                     layout="joomla.form.field.list-fancy-select"
                     label="MOD_J2COMMERCE_PRODUCTS_FIELD_PRODUCT_TYPES"
                     description="MOD_J2COMMERCE_PRODUCTS_FIELD_PRODUCT_TYPES_DESC">

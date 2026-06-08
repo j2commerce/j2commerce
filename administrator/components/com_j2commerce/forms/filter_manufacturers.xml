@@ -22,7 +22,7 @@
 
         <field
             name="country_id"
-            type="ManufacturerCountry"
+            type="Manufacturercountry"
             label="COM_J2COMMERCE_FILTER_COUNTRY"
             addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field"
             onchange="this.form.submit();"

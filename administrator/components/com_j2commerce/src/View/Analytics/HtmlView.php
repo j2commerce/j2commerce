@@ -42,6 +42,7 @@ class HtmlView extends BaseHtmlView
     public array $statusDistribution   = [];
     public array $checkoutFunnel       = [];
     public array $pluginWidgets        = [];
+    public array $pluginChartTabs      = [];
     public array $liveUsers            = [];
     public string $fromDate            = '';
     public string $toDate              = '';
@@ -175,11 +176,17 @@ class HtmlView extends BaseHtmlView
         Text::script('COM_J2COMMERCE_LIVE_USERS_MINUTES_AGO');
         Text::script('COM_J2COMMERCE_ANALYTICS_NO_DATA');
 
-        // Dispatch plugin widget hook
+        // Dispatch plugin hooks
         PluginHelper::importPlugin('j2commerce');
-        $event = new \Joomla\Event\Event('onJ2CommerceGetAnalyticsWidgets', [$this->fromDate, $this->toDate]);
-        Factory::getApplication()->getDispatcher()->dispatch('onJ2CommerceGetAnalyticsWidgets', $event);
-        $this->pluginWidgets = $event->getArgument('result', []);
+        $dispatcher = Factory::getApplication()->getDispatcher();
+
+        $widgetsEvent = new \Joomla\Event\Event('onJ2CommerceGetAnalyticsWidgets', [$this->fromDate, $this->toDate]);
+        $dispatcher->dispatch('onJ2CommerceGetAnalyticsWidgets', $widgetsEvent);
+        $this->pluginWidgets = $widgetsEvent->getArgument('result', []);
+
+        $tabsEvent = new \Joomla\Event\Event('onJ2CommerceGetAnalyticsChartTabs', [$this->fromDate, $this->toDate]);
+        $dispatcher->dispatch('onJ2CommerceGetAnalyticsChartTabs', $tabsEvent);
+        $this->pluginChartTabs = $tabsEvent->getArgument('result', []);
 
         $this->addToolbar();
         parent::display($tpl);

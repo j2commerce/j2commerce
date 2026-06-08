@@ -13,7 +13,7 @@
 
 			<field
 				name="catid"
-				type="RouterModalCategory"
+				type="Routermodalcategory"
 				label="JGLOBAL_CHOOSE_CATEGORY_LABEL"
 				description="COM_J2COMMERCE_MENU_CATEGORY_DESC"
 				required="true"

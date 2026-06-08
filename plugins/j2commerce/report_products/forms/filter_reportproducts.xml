@@ -12,7 +12,7 @@
 
         <field
             name="orderstatus"
-            type="OrderStatus"
+            type="Orderstatus"
             label="PLG_J2COMMERCE_REPORT_PRODUCTS_FILTER_ORDERSTATUS"
             onchange="this.form.submit();"
         >

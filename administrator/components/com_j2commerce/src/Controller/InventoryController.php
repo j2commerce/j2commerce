@@ -103,6 +103,63 @@ class InventoryController extends AdminController
     }
 
     /**
+     * Batch-update inventory for the checked products. Applies only the fields
+     * the user enabled in the modal; the change cascades to every variant of
+     * each selected product.
+     *
+     * @return  void
+     *
+     * @since   6.0.0
+     */
+    public function batch(): void
+    {
+        $this->checkToken();
+
+        $app   = Factory::getApplication();
+        $input = $app->getInput();
+
+        try {
+            if (!$app->getIdentity()->authorise('core.edit', 'com_j2commerce')) {
+                throw new \Exception(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'));
+            }
+
+            $pks = (array) $input->post->get('cid', [], 'int');
+
+            if (empty($pks)) {
+                throw new \Exception(Text::_('COM_J2COMMERCE_INVENTORY_BATCH_NO_SELECTION'));
+            }
+
+            $fields = [];
+
+            if ($input->post->getInt('apply_quantity', 0) === 1) {
+                $fields['quantity'] = $input->post->getInt('batch_quantity', 0);
+            }
+
+            if ($input->post->getInt('apply_manage_stock', 0) === 1) {
+                $fields['manage_stock'] = $input->post->getInt('batch_manage_stock', 0);
+            }
+
+            if ($input->post->getInt('apply_availability', 0) === 1) {
+                $fields['availability'] = $input->post->getInt('batch_availability', 1);
+            }
+
+            if (empty($fields)) {
+                throw new \Exception(Text::_('COM_J2COMMERCE_INVENTORY_BATCH_NO_FIELDS'));
+            }
+
+            $count   = $this->getModel()->batchUpdate($pks, $fields);
+            $message = Text::sprintf('COM_J2COMMERCE_INVENTORY_BATCH_SUCCESS', $count);
+            $app->enqueueMessage($message, 'message');
+
+            echo new JsonResponse(['success' => true, 'message' => $message]);
+        } catch (\Exception $e) {
+            echo new JsonResponse(['success' => false, 'message' => $e->getMessage()]);
+        }
+
+        $app->close();
+    }
+
+    /**
      * Method to check if you can add a new record.
      *
      * @param   array  $data  An array of input data.

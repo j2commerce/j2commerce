@@ -96,31 +96,23 @@ class Router extends RouterView
 
         $this->noIDs = true;
 
-        // Register view hierarchy for canonical URL generation
-        // Following com_content pattern: categories -> category (nestable) -> product
-
-        // Categories view - shows list of product categories (top-level for categories menu)
         $categories = new RouterViewConfiguration('categories');
         $categories->setKey('id');
         $this->registerView($categories);
 
-        // Category view - nestable, parent is categories
-        // Key is 'id' because getCategoryRoute uses id= not catid=
-        // This enables: /categories/chocolate and /categories/chocolate/subcategory
+        // Not nestable: kept only for back-compat segment lineage, never a dispatch target.
         $category = new RouterViewConfiguration('category');
-        $category->setKey('id')->setParent($categories, 'catid')->setNestable();
+        $category->setKey('id')->setParent($categories, 'catid');
         $this->registerView($category);
 
-        // Single product view - parent is category, linked via 'catid'
-        // This enables: /categories/chocolate/product-alias
-        $product = new RouterViewConfiguration('product');
-        $product->setKey('id')->setParent($category, 'catid');
-        $this->registerView($product);
-
-        // Products list view (alternative root for products menu)
-        // Note: Products menu uses catid filter, not category hierarchy in URL
+        // The authoritative category-listing view; nestable so it builds /parent/child paths.
         $products = new RouterViewConfiguration('products');
+        $products->setKey('catid')->setParent($categories, 'catid')->setNestable();
         $this->registerView($products);
+
+        $product = new RouterViewConfiguration('product');
+        $product->setKey('id')->setParent($products, 'catid');
+        $this->registerView($product);
 
         // Other views without category hierarchy
         $this->registerView(new RouterViewConfiguration('producttags'));
@@ -206,6 +198,15 @@ class Router extends RouterView
             $catid    = (int) $query['catid'];
             $menuItem = $this->findProductsMenuByCatid($catid);
 
+            // Fall back to a categories menu that roots this category, so buildSefRoute()
+            // resolves a menu BEFORE build() runs. Without this, a subcategory with no
+            // dedicated products menu loses its Itemid here and falls back to the raw
+            // /component/j2commerce/<alias> URL even though build() sets the Itemid later.
+            if (!$menuItem) {
+                $result   = $this->findCategoriesMenuForCategory($catid);
+                $menuItem = $result ? $result['menu'] : null;
+            }
+
             if ($menuItem) {
                 $query['Itemid'] = $menuItem->id;
             }
@@ -221,40 +222,18 @@ class Router extends RouterView
             }
         }
 
-        // For category view, find matching menu
-        if (isset($query['view']) && $query['view'] === 'category' && isset($query['id'])) {
-            $catid = (int) $query['id'];
-
-            $result         = $this->findCategoriesMenuForCategory($catid);
-            $categoriesMenu = $result ? $result['menu'] : null;
-
-            if ($categoriesMenu) {
-                $query['Itemid'] = $categoriesMenu->id;
-            } else {
-                $productsMenu = $this->findProductsMenuByCatid($catid);
-
-                if ($productsMenu) {
-                    $query['Itemid'] = $productsMenu->id;
-                }
-            }
-        }
-
-        // For categoryalias view, rewrite to category view with correct Itemid
+        // For categoryalias view, rewrite to products view with correct Itemid
         if (($query['view'] ?? '') === 'categoryalias' && !empty($query['id'])) {
-            $catid          = (int) $query['id'];
-            $result         = $this->findCategoriesMenuForCategory($catid);
-            $categoriesMenu = $result ? $result['menu'] : null;
+            $catid    = (int) $query['id'];
+            $result   = $this->findCategoriesMenuForCategory($catid);
+            $menuItem = $result ? $result['menu'] : $this->findProductsMenuByCatid($catid);
 
-            if ($categoriesMenu) {
-                $query['view']   = 'category';
-                $query['Itemid'] = $categoriesMenu->id;
-            } else {
-                $query['view'] = 'category';
-                $menuItem      = $this->findProductsMenuByCatid($catid);
+            $query['view']  = 'products';
+            $query['catid'] = $catid;
+            unset($query['id']);
 
-                if ($menuItem) {
-                    $query['Itemid'] = $menuItem->id;
-                }
+            if ($menuItem) {
+                $query['Itemid'] = $menuItem->id;
             }
         }
 
@@ -316,22 +295,32 @@ class Router extends RouterView
             }
         }
 
-        // CASE 1: Products view with catid - find matching menu item
+        // CASE 1: Products view with catid
         if (isset($query['view']) && $query['view'] === 'products' && isset($query['catid'])) {
             $catid = (int) $query['catid'];
 
-            // Try to find a menu item that matches this products view + catid
+            // PRIORITY 1: an exact products menu for this catid → clean menu alias URL
             $menuItem = $this->findProductsMenuByCatid($catid);
 
             if ($menuItem) {
-                // Set the Itemid to the found menu
                 $query['Itemid'] = $menuItem->id;
-
-                // Remove view and catid from query as they're implicit in the menu item
                 unset($query['view'], $query['catid']);
 
-                // Return empty segments - the menu alias will be the URL
                 return [];
+            }
+
+            // PRIORITY 2: build the category path here when a categories menu roots this
+            // catid. Bypasses StandardRules, which reads the menu's catid key — a categories
+            // menu carries 'id', not 'catid', and would emit an "Undefined array key catid".
+            $categoriesMenu = $this->findCategoriesMenuForCategory($catid);
+
+            if ($categoriesMenu) {
+                $query['Itemid'] = $categoriesMenu['menu']->id;
+
+                unset($query['view'], $query['catid']);
+
+                // Empty path (catid IS the menu's own category) → bare menu alias.
+                return $categoriesMenu['path'];
             }
         }
 
@@ -987,6 +976,17 @@ class Router extends RouterView
         return $id ?: (int) $segment;
     }
 
+    // getProducts*() are resolved by StandardRules via reflection for the nestable products view.
+    public function getProductsSegment($id, $query): array
+    {
+        return $this->getCategorySegment($id, $query);
+    }
+
+    public function getProductsId($segment, $query): int
+    {
+        return $this->getCategoryId($segment, $query);
+    }
+
     /**
      * Get URL segments for categories view
      *
@@ -1383,7 +1383,19 @@ class Router extends RouterView
         }
 
         // Let parent handle other cases
-        return parent::parse($segments);
+        $vars = parent::parse($segments);
+
+        // Back-compat: stale view=category URLs redirect to products
+        if (($vars['view'] ?? '') === 'category') {
+            $vars['view'] = 'products';
+
+            if (isset($vars['id'])) {
+                $vars['catid'] = $vars['id'];
+                unset($vars['id']);
+            }
+        }
+
+        return $vars;
     }
 
     /**

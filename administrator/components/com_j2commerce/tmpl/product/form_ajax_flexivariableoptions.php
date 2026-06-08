@@ -13,7 +13,7 @@ declare(strict_types=1);
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
-use J2Commerce\Component\J2commerce\Administrator\Field\MultiImageUploaderField;
+use J2Commerce\Component\J2commerce\Administrator\Field\MultiimageuploaderField;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
@@ -56,7 +56,7 @@ $style = '.variant-item .variant-button{color:inherit;position:relative;}.varian
 $wa->addInlineStyle($style, [], []);
 
 // Register MultiImageUploader assets once for all variant galleries
-MultiImageUploaderField::loadAssetsStatic();
+MultiimageuploaderField::loadAssetsStatic();
 
 $layoutPath = JPATH_ADMINISTRATOR . '/components/com_j2commerce/layouts';
 $siteRoot       = rtrim(Uri::root(), '/') . '/';

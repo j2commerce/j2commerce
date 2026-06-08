@@ -17,7 +17,7 @@
 
             <field
                 name="status_ids"
-                type="OrderStatus"
+                type="Orderstatus"
                 addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field"
                 multiple="true"
                 layout="joomla.form.field.list-fancy-select"
