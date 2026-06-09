@@ -3986,4 +3986,5 @@ INSERT IGNORE INTO `#__j2commerce_zones` (`j2commerce_zone_id`, `country_id`, `z
 (4012, 73,'FR-MTQ','Martinique', 1, 0),
 (4013, 73,'FR-GUF','Guyane', 1, 0),
 (4014, 73,'FR-REU','La Réunion', 1, 0),
-(4015, 73,'FR-MAY','Mayotte', 1, 0);
+(4015, 73,'FR-MAY','Mayotte', 1, 0),
+(4016, 101, 'ALB', 'Alborz', 1, 0);

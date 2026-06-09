@@ -1,5 +1,5 @@
 {
     "require": {
-        "amzn/amazon-pay-api-sdk-php": "^2.7"
+        "phpseclib/phpseclib": "^3.0"
     }
 }
