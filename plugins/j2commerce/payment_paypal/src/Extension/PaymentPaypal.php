@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Plugin\J2Commerce\PaymentPaypal\Extension;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\Base;
 use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\Payment;
@@ -337,10 +338,10 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
 
     public function onRefundPayment(Event $event): void
     {
-        $args    = $event->getArguments();
-        $element = $args[0] ?? '';
-        $orderId = $args[1] ?? 0;
-        $amount  = $args[2] ?? null;
+        $args      = $event->getArguments();
+        $element   = $args[0] ?? '';
+        $orderId   = $args[1] ?? 0;
+        $rawAmount = $args[2] ?? null;
 
         if ($element !== $this->_name) {
             return;
@@ -365,6 +366,9 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             }
 
             $currency = $this->getCurrency($orderTable);
+            $amount   = $rawAmount !== null
+                ? CurrencyHelper::convertForOrder((float) $rawAmount, $orderTable)
+                : null;
 
             $refunds = $this->getPayPalRefunds();
             $result  = $refunds->refundCapture($captureId, $amount, $currency);
@@ -385,7 +389,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                     orderId: $orderTable->order_id,
                     comment: Text::sprintf(
                         'COM_J2COMMERCE_ORDER_HISTORY_REFUND_PROCESSED',
-                        $amount ?? $orderTable->order_total,
+                        $amount ?? CurrencyHelper::gatewayAmount($orderTable),
                         $currency
                     ),
                     orderStateId: $refundedStateId
@@ -697,7 +701,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             }
 
             $currency = $this->getCurrency($orderTable);
-            $amount   = (float) ($orderTable->order_total ?? 0);
+            $amount   = CurrencyHelper::gatewayAmount($orderTable);
 
             $returnUrl = Route::_(
                 'index.php?option=com_j2commerce&task=checkout.confirmPayment'
@@ -806,7 +810,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             }
 
             $currency = $this->getCurrency($orderTable);
-            $amount   = (float) ($orderTable->order_total ?? 0);
+            $amount   = CurrencyHelper::gatewayAmount($orderTable);
 
             $response = $nvp->doExpressCheckoutPayment(
                 token:         $token,
@@ -967,7 +971,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
         try {
             $response = $nvp->doReferenceTransaction(
                 referenceId:    $baid,
-                amount:         (float) ($subscription->renewal_amount ?? $order->order_total ?? 0),
+                amount:         CurrencyHelper::convertForOrder((float) ($subscription->renewal_amount ?? $order->order_total ?? 0), $order),
                 currencyCode:   strtoupper((string) ($order->currency_code ?? 'USD')),
                 invoiceNumber:  (string) ($order->order_id ?? ''),
                 description:    'J2Commerce subscription renewal #' . ($subscription->id ?? '')
@@ -1818,7 +1822,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             $itemTotal = 0.0;
 
             foreach ($orderItems as $item) {
-                $unitAmount = (float) $item->orderitem_price;
+                $unitAmount = CurrencyHelper::convertForOrder((float) $item->orderitem_price, $orderTable);
                 $quantity   = (int) $item->orderitem_quantity;
 
                 $items[] = [
@@ -1831,10 +1835,10 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 $itemTotal += $unitAmount * $quantity;
             }
 
-            $shipping = (float) $orderTable->order_shipping + (float) $orderTable->order_shipping_tax;
-            $tax      = (float) $orderTable->order_tax;
-            $discount = (float) $orderTable->order_discount;
-            $total    = (float) $orderTable->order_total;
+            $shipping = CurrencyHelper::convertForOrder((float) $orderTable->order_shipping + (float) $orderTable->order_shipping_tax, $orderTable);
+            $tax      = CurrencyHelper::convertForOrder((float) $orderTable->order_tax, $orderTable);
+            $discount = CurrencyHelper::convertForOrder((float) $orderTable->order_discount, $orderTable);
+            $total    = CurrencyHelper::gatewayAmount($orderTable);
 
             $orderData = [
                 'order_id'            => $orderId,

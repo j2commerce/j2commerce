@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace J2Commerce\Plugin\J2Commerce\PaymentPaypal\Service;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
+
 \defined('_JEXEC') or die;
 
 
@@ -97,7 +99,7 @@ final class PayPalSubscriptions
         // entry in billing_cycles[] — extend this array accordingly.
         $totalCycles   = max(0, (int) ($subscription->subscription_length ?? 0));
         $renewalAmount = $this->formatAmount(
-            (float) ($subscription->renewal_amount ?? $order->order_total ?? 0),
+            CurrencyHelper::convertForOrder((float) ($subscription->renewal_amount ?? $order->order_total ?? 0), $order),
             (string) $context['currency_code']
         );
         $sitename      = (string) $context['brand_name'];
@@ -273,7 +275,7 @@ final class PayPalSubscriptions
         }
 
         $currency = strtoupper((string) ($order->currency_code ?? 'USD'));
-        $amount   = $this->formatAmount((float) ($subscription->renewal_amount ?? $order->order_total ?? 0), $currency);
+        $amount   = $this->formatAmount(CurrencyHelper::convertForOrder((float) ($subscription->renewal_amount ?? $order->order_total ?? 0), $order), $currency);
         $body     = [
             'note'         => 'J2Commerce renewal — Order #' . ($order->order_id ?? ''),
             'capture_type' => 'OUTSTANDING_BALANCE',
