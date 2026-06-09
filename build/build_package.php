@@ -325,16 +325,6 @@ function buildComponentZip(string $joomlaRoot, string $tempDir, string $version,
         $count++;
     }
 
-    // 4b. API component files (web-services / JSON:API — declared via <api> in the manifest)
-    $apiDir = $joomlaRoot . '/api/components/com_j2commerce';
-    if (is_dir($apiDir)) {
-        $apiFiles = collectFiles($apiDir, $excludePatterns);
-        foreach ($apiFiles as $rel => $absPath) {
-            $zip->addFile($absPath, 'api/components/com_j2commerce/' . $rel);
-            $count++;
-        }
-    }
-
     // 5. Media files
     $mediaDir = $joomlaRoot . '/media/com_j2commerce';
     $mediaFiles = collectFiles($mediaDir, $excludePatterns);
