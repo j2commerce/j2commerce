@@ -1522,7 +1522,7 @@ class CheckoutController extends BaseController
         $orderpaymentId = (int) $this->app->getUserState('j2commerce.orderpayment_id', 0);
         $orderId        = $this->app->getUserState('j2commerce.order_id', '');
 
-        $clearCartTiming = J2CommerceHelper::config()->get('clear_cart', 'order_placed');
+        $clearCartTiming = J2CommerceHelper::config()->get('clear_cart', 'order_confirmed');
 
         $orderTable = $this->getMvcFactory()->createTable('Order', 'Administrator');
 
@@ -1658,7 +1658,20 @@ class CheckoutController extends BaseController
         // the plugin did NOT redirect, payment likely failed — preserve cart.
         // Cart is cleared on the subsequent paction=display call instead.
         // Skip if already cleared by order_placed timing.
-        if ($paction !== 'process' && !$cartCleared) {
+        //
+        // Only clear when the order reached one of the configured "placed"
+        // states (clear_cart_states, defaulting to confirmed/processed/pending/
+        // shipped/delivered/scheduled). A failed or still-New order keeps the
+        // cart so the shopper can retry from the failed confirmation page. (#1190)
+        $clearStates = array_map('intval', (array) $params->get('clear_cart_states', []));
+
+        if (empty($clearStates)) {
+            $clearStates = [1, 2, 4, 7, 8, 9];
+        }
+
+        $orderPlaced = \in_array((int) ($orderTable->order_state_id ?? 0), $clearStates, true);
+
+        if ($paction !== 'process' && !$cartCleared && $orderPlaced) {
             $this->clearCartAndSession($orderId, $session);
         }
 

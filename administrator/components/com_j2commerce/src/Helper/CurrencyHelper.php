@@ -609,6 +609,33 @@ class CurrencyHelper
         return $value * ($toRate / $fromRate);
     }
 
+    /**
+     * Convert a base-currency order amount to the order's display currency.
+     *
+     * Order money fields are stored in the store base currency; `currency_value`
+     * is the rate to the order's `currency_code`. Payment gateways must be charged
+     * the converted amount (display currency), not the raw base figure. Returns the
+     * unrounded product so callers can sum a breakdown before final gateway rounding.
+     *
+     * @since   6.0.0
+     */
+    public static function convertForOrder(float $number, object $order): float
+    {
+        $rate = (float) ($order->currency_value ?? 1.0);
+
+        if ($rate <= 0) {
+            $rate = 1.0;
+        }
+
+        return $number * $rate;
+    }
+
+    /** Gateway charge amount for an order's grand total, in its display currency. */
+    public static function gatewayAmount(object $order): float
+    {
+        return self::convertForOrder((float) ($order->order_total ?? 0.0), $order);
+    }
+
     // =========================================================================
     // ISO 4217 NUMERIC CODE METHODS
     // =========================================================================
