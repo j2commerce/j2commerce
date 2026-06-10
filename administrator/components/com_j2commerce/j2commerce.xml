@@ -164,6 +164,12 @@
 
     </administration>
 
+    <api>
+        <files folder="api/components/com_j2commerce">
+            <folder>src</folder>
+        </files>
+    </api>
+
     <scriptfile>script.j2commerce.php</scriptfile>
 
 
