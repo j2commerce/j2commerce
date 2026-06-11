@@ -144,7 +144,6 @@
 #j2commerce-checkout .j2c-collapsible-trigger {
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
     min-height: 40px;
     padding: 0.25rem 0;
     color: var(--uk-global-link-color, #1e87f0);
@@ -157,13 +156,26 @@
 #j2commerce-checkout .j2c-collapsible-trigger::-webkit-details-marker {
     display: none;
 }
+#j2commerce-checkout .j2c-collapsible-trigger::before {
+    content: "+";
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-inline-end: 0.45rem;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    font-weight: 700;
+    line-height: 1;
+}
 #j2commerce-checkout .j2c-collapsible-trigger:hover {
     color: var(--uk-global-link-hover-color, #0f6ecd);
     text-decoration: underline;
 }
+/* Once revealed, hide the trigger — the field opens only once. */
 #j2commerce-checkout .j2c-collapsible-field[open] > .j2c-collapsible-trigger {
-    margin-bottom: 0.5rem;
-    font-weight: 600;
+    display: none;
 }
 #j2commerce-checkout .j2c-collapsible-field > .uk-margin-bottom {
     margin-bottom: 0;
