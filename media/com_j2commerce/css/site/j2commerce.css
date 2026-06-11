@@ -899,3 +899,47 @@ html[data-bs-theme="light"] .j2commerce {
         opacity:1!important;
     }
 }
+
+/* Collapsible custom field — native <details>/<summary>, no JavaScript.
+   Lives here (not checkout.css) so it also styles non-checkout pages such as
+   the my-profile address forms. Framework-agnostic (Bootstrap 5 + UIkit 3). */
+.j2c-collapsible-trigger {
+    display: inline-flex;
+    align-items: center;
+    min-height: calc(1.5em + 0.75rem + 2px);
+    padding: 0.25rem 0;
+    color: var(--bs-link-color, #0d6efd);
+    font-weight: 500;
+    cursor: pointer;
+    list-style: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+.j2c-collapsible-trigger::-webkit-details-marker {
+    display: none;
+}
+.j2c-collapsible-trigger::before {
+    content: "+";
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-inline-end: 0.45rem;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    font-weight: 700;
+    line-height: 1;
+}
+.j2c-collapsible-trigger:hover {
+    color: var(--bs-link-hover-color, #0a58ca);
+    text-decoration: underline;
+}
+/* Once revealed, hide the trigger — the field opens only once. */
+.j2c-collapsible-field[open] > .j2c-collapsible-trigger {
+    display: none;
+}
+.j2c-collapsible-field > .mb-3,
+.j2c-collapsible-field > .uk-margin-bottom {
+    margin-bottom: 0;
+}
