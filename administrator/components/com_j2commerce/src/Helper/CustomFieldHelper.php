@@ -611,7 +611,7 @@ class CustomFieldHelper
                 : 'j2c-collapsible-trigger';
 
             return '<details class="' . $outerColClass . ' j2c-collapsible-field">'
-                . '<summary class="' . $summaryClass . '">' . $triggerLabel . '</summary>'
+                . '<summary class="' . $summaryClass . '"><span class="j2c-collapsible-label">' . $triggerLabel . '</span></summary>'
                 . $html
                 . '</details>';
         }

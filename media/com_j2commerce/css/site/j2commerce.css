@@ -931,6 +931,9 @@ html[data-bs-theme="light"] .j2commerce {
 }
 .j2c-collapsible-trigger:hover {
     color: var(--bs-link-hover-color, #0a58ca);
+}
+/* Underline only the label text on hover — never the + marker. */
+.j2c-collapsible-trigger:hover .j2c-collapsible-label {
     text-decoration: underline;
 }
 /* Once revealed, hide the trigger — the field opens only once. */
