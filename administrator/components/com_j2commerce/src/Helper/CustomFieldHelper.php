@@ -360,6 +360,24 @@ class CustomFieldHelper
             : self::getColClass($namekey, $fieldType, $isUikit);
         $requiredAttr = $required ? ' required' : '';
 
+        // "Display behind Add link" toggle: a non-required field with no value is
+        // collapsed behind a "+ Add <label>" trigger. A prefilled value (e.g.
+        // editing a saved address) or a required field always renders expanded.
+        $collapseOpt = false;
+
+        if (!empty($field->field_options)) {
+            $decodedOpts = json_decode($field->field_options, true);
+            $collapseOpt = \is_array($decodedOpts) && !empty($decodedOpts['field_collapse_toggle']);
+        }
+
+        $collapse      = $collapseOpt && !$required && ($fieldValue === '');
+        $outerColClass = $colClass;
+
+        if ($collapse) {
+            // The grid width moves to the collapse wrapper; the inner field spans it.
+            $colClass = $isUikit ? 'uk-width-1-1' : 'col-12';
+        }
+
         // Required indicator in label
         $labelHtml = $label;
         if ($required && $requiredIndicator === 'asterisk') {
@@ -580,7 +598,44 @@ class CustomFieldHelper
 
         $html .= '</div>';
 
+        if ($collapse) {
+            self::ensureCollapseAssets();
+
+            $triggerLabel = htmlspecialchars(
+                Text::sprintf('COM_J2COMMERCE_ADD_FIELD', Text::_($field->field_name)),
+                ENT_QUOTES,
+                'UTF-8'
+            );
+            $btnClass = $isUikit
+                ? 'uk-button uk-button-link j2c-collapsible-trigger'
+                : 'btn btn-link p-0 text-decoration-none j2c-collapsible-trigger';
+
+            return '<div class="' . $outerColClass . ' j2c-collapsible-field" data-j2c-collapsible>'
+                . '<button type="button" class="' . $btnClass . '">' . $triggerLabel . '</button>'
+                . '<div class="j2c-collapsible-content" hidden>' . $html . '</div>'
+                . '</div>';
+        }
+
         return $html;
+    }
+
+    /** Register the collapsible-field reveal script. Runs at most once per request. */
+    private static function ensureCollapseAssets(): void
+    {
+        static $registered = false;
+
+        if ($registered) {
+            return;
+        }
+        $registered = true;
+
+        Factory::getApplication()->getDocument()->getWebAssetManager()
+            ->registerAndUseScript(
+                'com_j2commerce.customfield-collapse',
+                'media/com_j2commerce/js/site/customfield-collapse.js',
+                [],
+                ['defer' => true]
+            );
     }
 
     /**

@@ -381,5 +381,19 @@
             <option value="0">JNO</option>
             <option value="1">JYES</option>
         </field>
+
+        <field
+            name="field_collapse_toggle"
+            type="radio"
+            label="COM_J2COMMERCE_FIELD_COLLAPSE_TOGGLE"
+            description="COM_J2COMMERCE_FIELD_COLLAPSE_TOGGLE_DESC"
+            layout="joomla.form.field.radio.switcher"
+            filter="integer"
+            default="0"
+            showon="field_type!:customtext[AND]field_type!:multiuploader"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
     </fieldset>
 </form>
