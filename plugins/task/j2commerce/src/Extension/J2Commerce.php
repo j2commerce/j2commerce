@@ -188,6 +188,9 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         $batchSize            = (int) ($params->batch_size ?? 10);
         $releaseStaleMinutes  = (int) ($params->release_stale_minutes ?? 30);
 
+        // Register j2commerce-group subscribers before dispatching to them below.
+        PluginHelper::importPlugin('j2commerce');
+
         QueueHelper::releaseStale($releaseStaleMinutes);
 
         $items = QueueHelper::claimBatch($queueType ?: '', $batchSize);

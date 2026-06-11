@@ -971,7 +971,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
         try {
             $response = $nvp->doReferenceTransaction(
                 referenceId:    $baid,
-                amount:         CurrencyHelper::convertForOrder((float) ($subscription->renewal_amount ?? $order->order_total ?? 0), $order),
+                amount:         CurrencyHelper::convertForOrder((float) ($order->order_total ?? $subscription->renewal_amount ?? 0), $order),
                 currencyCode:   strtoupper((string) ($order->currency_code ?? 'USD')),
                 invoiceNumber:  (string) ($order->order_id ?? ''),
                 description:    'J2Commerce subscription renewal #' . ($subscription->id ?? '')

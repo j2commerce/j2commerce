@@ -360,6 +360,24 @@ class CustomFieldHelper
             : self::getColClass($namekey, $fieldType, $isUikit);
         $requiredAttr = $required ? ' required' : '';
 
+        // "Display behind Add link" toggle: a non-required field with no value is
+        // collapsed behind a "+ Add <label>" trigger. A prefilled value (e.g.
+        // editing a saved address) or a required field always renders expanded.
+        $collapseOpt = false;
+
+        if (!empty($field->field_options)) {
+            $decodedOpts = json_decode($field->field_options, true);
+            $collapseOpt = \is_array($decodedOpts) && !empty($decodedOpts['field_collapse_toggle']);
+        }
+
+        $collapse      = $collapseOpt && !$required && ($fieldValue === '');
+        $outerColClass = $colClass;
+
+        if ($collapse) {
+            // The grid width moves to the collapse wrapper; the inner field spans it.
+            $colClass = $isUikit ? 'uk-width-1-1' : 'col-12';
+        }
+
         // Required indicator in label
         $labelHtml = $label;
         if ($required && $requiredIndicator === 'asterisk') {
@@ -579,6 +597,24 @@ class CustomFieldHelper
         }
 
         $html .= '</div>';
+
+        if ($collapse) {
+            // Native <details>/<summary> — no JavaScript. Form controls inside a
+            // closed <details> remain in the DOM and are still submitted.
+            $triggerLabel = htmlspecialchars(
+                Text::sprintf('COM_J2COMMERCE_ADD_FIELD', Text::_($field->field_name)),
+                ENT_QUOTES,
+                'UTF-8'
+            );
+            $summaryClass = $isUikit
+                ? 'uk-link j2c-collapsible-trigger'
+                : 'j2c-collapsible-trigger';
+
+            return '<details class="' . $outerColClass . ' j2c-collapsible-field">'
+                . '<summary class="' . $summaryClass . '"><span class="j2c-collapsible-label">' . $triggerLabel . '</span></summary>'
+                . $html
+                . '</details>';
+        }
 
         return $html;
     }

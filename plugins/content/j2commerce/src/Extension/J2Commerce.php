@@ -742,7 +742,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             $j2commerceCache->clean();
 
             $this->cacheCleared = true;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             // Silently fail on cache clear
         }
     }

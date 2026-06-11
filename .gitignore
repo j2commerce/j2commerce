@@ -46,6 +46,12 @@
 !components/com_j2commerce/
 !components/com_j2commerce/**
 
+# API component (web-services / JSON:API)
+!api/
+!api/components/
+!api/components/com_j2commerce/
+!api/components/com_j2commerce/**
+
 # J2Commerce core plugins (only those in the package skill)
 !plugins/
 !plugins/j2commerce/

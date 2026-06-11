@@ -99,7 +99,7 @@ final class PayPalSubscriptions
         // entry in billing_cycles[] — extend this array accordingly.
         $totalCycles   = max(0, (int) ($subscription->subscription_length ?? 0));
         $renewalAmount = $this->formatAmount(
-            CurrencyHelper::convertForOrder((float) ($subscription->renewal_amount ?? $order->order_total ?? 0), $order),
+            CurrencyHelper::convertForOrder((float) ($order->order_total ?? $subscription->renewal_amount ?? 0), $order),
             (string) $context['currency_code']
         );
         $sitename      = (string) $context['brand_name'];
@@ -275,7 +275,7 @@ final class PayPalSubscriptions
         }
 
         $currency = strtoupper((string) ($order->currency_code ?? 'USD'));
-        $amount   = $this->formatAmount(CurrencyHelper::convertForOrder((float) ($subscription->renewal_amount ?? $order->order_total ?? 0), $order), $currency);
+        $amount   = $this->formatAmount(CurrencyHelper::convertForOrder((float) ($order->order_total ?? $subscription->renewal_amount ?? 0), $order), $currency);
         $body     = [
             'note'         => 'J2Commerce renewal — Order #' . ($order->order_id ?? ''),
             'capture_type' => 'OUTSTANDING_BALANCE',
