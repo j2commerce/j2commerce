@@ -928,6 +928,8 @@ html[data-bs-theme="light"] .j2commerce {
     font-weight: 700;
     line-height: 1;
     text-decoration: none;
+    position: relative;
+    top: -3px;
 }
 .j2c-collapsible-trigger:hover {
     color: var(--bs-link-hover-color, #0a58ca);
