@@ -70,19 +70,23 @@ final class QueueHelper
         $db         = self::db();
         $lockId     = $lockId ?? uniqid('queue_', true);
         $now        = (new \DateTimeImmutable())->format('Y-m-d H:i:s');
-        $status     = 'pending';
+        $pending    = 'pending';
+        $failed     = 'failed';
         $processing = 'processing';
 
+        // Claim fresh 'pending' rows AND 'failed' rows whose backoff window has elapsed,
+        // so transient failures actually retry. 'dead' rows (max attempts reached) are terminal.
         $selectQuery = $db->getQuery(true)
             ->select($db->quoteName('j2commerce_queue_id'))
             ->from($db->quoteName('#__j2commerce_queues'))
             ->where($db->quoteName('queue_type') . ' = :queue_type')
-            ->where($db->quoteName('status') . ' = :status')
+            ->where('(' . $db->quoteName('status') . ' = :pending OR ' . $db->quoteName('status') . ' = :failed)')
             ->where('(' . $db->quoteName('next_attempt_at') . ' IS NULL OR ' . $db->quoteName('next_attempt_at') . ' <= :now)')
             ->order($db->quoteName('priority') . ' DESC')
             ->order($db->quoteName('created_on') . ' ASC')
             ->bind(':queue_type', $queueType)
-            ->bind(':status', $status)
+            ->bind(':pending', $pending)
+            ->bind(':failed', $failed)
             ->bind(':now', $now)
             ->setLimit($limit);
 
