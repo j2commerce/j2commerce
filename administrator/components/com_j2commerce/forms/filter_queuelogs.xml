@@ -29,6 +29,8 @@
             type="sql"
             label="COM_J2COMMERCE_HEADING_QUEUE_TYPE"
             query="SELECT DISTINCT queue_type AS value, queue_type AS text FROM #__j2commerce_queue_logs ORDER BY queue_type ASC"
+            key_field="value"
+            value_field="text"
             class="js-select-submit-on-change"
             header="COM_J2COMMERCE_FILTER_SELECT_QUEUE_TYPE"
         />
