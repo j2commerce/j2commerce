@@ -599,43 +599,24 @@ class CustomFieldHelper
         $html .= '</div>';
 
         if ($collapse) {
-            self::ensureCollapseAssets();
-
+            // Native <details>/<summary> — no JavaScript. Form controls inside a
+            // closed <details> remain in the DOM and are still submitted.
             $triggerLabel = htmlspecialchars(
                 Text::sprintf('COM_J2COMMERCE_ADD_FIELD', Text::_($field->field_name)),
                 ENT_QUOTES,
                 'UTF-8'
             );
-            $btnClass = $isUikit
-                ? 'uk-button uk-button-link j2c-collapsible-trigger'
-                : 'btn btn-link p-0 text-decoration-none j2c-collapsible-trigger';
+            $summaryClass = $isUikit
+                ? 'uk-link j2c-collapsible-trigger'
+                : 'j2c-collapsible-trigger';
 
-            return '<div class="' . $outerColClass . ' j2c-collapsible-field" data-j2c-collapsible>'
-                . '<button type="button" class="' . $btnClass . '">' . $triggerLabel . '</button>'
-                . '<div class="j2c-collapsible-content" hidden>' . $html . '</div>'
-                . '</div>';
+            return '<details class="' . $outerColClass . ' j2c-collapsible-field">'
+                . '<summary class="' . $summaryClass . '">' . $triggerLabel . '</summary>'
+                . $html
+                . '</details>';
         }
 
         return $html;
-    }
-
-    /** Register the collapsible-field reveal script. Runs at most once per request. */
-    private static function ensureCollapseAssets(): void
-    {
-        static $registered = false;
-
-        if ($registered) {
-            return;
-        }
-        $registered = true;
-
-        Factory::getApplication()->getDocument()->getWebAssetManager()
-            ->registerAndUseScript(
-                'com_j2commerce.customfield-collapse',
-                'media/com_j2commerce/js/site/customfield-collapse.js',
-                [],
-                ['defer' => true]
-            );
     }
 
     /**
