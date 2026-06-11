@@ -493,3 +493,19 @@ plugins/j2commerce/app_uikit/tmpl/tag_uikit/view_variablesubscriptionproductopti
 build/build_pkg_j2commercemigrator.php
 build/script.pkg_j2commercemigrator.php
 build/language/*/pkg_j2commercemigrator.sys.ini
+
+# ===========================================================================
+# Testing files
+# ===========================================================================
+!tests/
+!tests/**
+!php-cs-fixer.dist.php
+!phpunit.xml.dist
+!composer.json
+!composer.lock
+!cypress.config.js
+!package-lock.json
+!package.json
+!phpunit.xml
+!.github/
+!.github/**
