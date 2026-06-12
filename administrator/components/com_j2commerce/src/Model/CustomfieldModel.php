@@ -195,6 +195,10 @@ class CustomfieldModel extends AdminModel
                         // Stored as JSON array; form field expects the raw array
                         $data->phone_countries = $options['phone_countries'];
                     }
+                    // Collapse-behind-Add-link toggle
+                    if (isset($options['field_collapse_toggle'])) {
+                        $data->field_collapse_toggle = (int) $options['field_collapse_toggle'];
+                    }
                     // Multiuploader settings
                     if (isset($options['upload_max_files'])) {
                         $data->upload_max_files = $options['upload_max_files'];
@@ -357,13 +361,28 @@ class CustomfieldModel extends AdminModel
             $fieldOptionsData['upload_directory']     = trim($data['upload_directory'] ?? 'images/checkout-uploads');
         }
 
-        if (!empty($fieldOptionsData)) {
-            $data['field_options'] = json_encode($fieldOptionsData, JSON_UNESCAPED_UNICODE);
+        // Collapse-behind-Add-link toggle (any field type). A required field can
+        // never be collapsed, so force it off when the field is required.
+        $collapseToggle = (int) ($data['field_collapse_toggle'] ?? 0);
+
+        if (!empty($data['field_required'])) {
+            $collapseToggle = 0;
         }
+
+        if ($collapseToggle === 1) {
+            $fieldOptionsData['field_collapse_toggle'] = 1;
+        } else {
+            unset($fieldOptionsData['field_collapse_toggle']);
+        }
+
+        $data['field_options'] = !empty($fieldOptionsData)
+            ? json_encode($fieldOptionsData, JSON_UNESCAPED_UNICODE)
+            : '';
 
         // Remove virtual fields before save
         unset($data['field_zonetype'], $data['phone_all_countries'], $data['phone_country_mode'], $data['phone_countries'],
-            $data['upload_max_files'], $data['upload_max_file_size'], $data['upload_allowed_types'], $data['upload_directory']);
+            $data['upload_max_files'], $data['upload_max_file_size'], $data['upload_allowed_types'], $data['upload_directory'],
+            $data['field_collapse_toggle']);
 
         // Encode field_value subform data to JSON for dropdown/radio/checkbox options
         if (\in_array($data['field_type'], ['singledropdown', 'radio', 'checkbox'], true)) {
