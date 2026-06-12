@@ -139,6 +139,7 @@ foreach ($translationKeys as $key) {
                             }
                         }
                         ?>
+                        <?php echo $this->form->renderField('field_collapse_toggle'); ?>
                     </div>
                 </fieldset>
             </div>
@@ -383,6 +384,29 @@ document.addEventListener('DOMContentLoaded', function() {
     form.querySelectorAll('[id^="jform_field_required"]').forEach(function(el) {
         el.addEventListener('change', updatePreview);
     });
+
+    // A required field cannot be collapsed behind an "Add" link: when "required"
+    // is set to Yes, force the collapse toggle to No and disable it.
+    function syncCollapseToggle() {
+        const requiredYes = form.querySelector('#jform_field_required1');
+        const isRequired = requiredYes ? requiredYes.checked : false;
+        const collapseInputs = form.querySelectorAll('[id^="jform_field_collapse_toggle"]');
+
+        collapseInputs.forEach(function(input) {
+            input.disabled = isRequired;
+            if (isRequired && input.id === 'jform_field_collapse_toggle1') {
+                input.checked = false;
+            }
+            if (isRequired && input.id === 'jform_field_collapse_toggle0') {
+                input.checked = true;
+            }
+        });
+    }
+
+    form.querySelectorAll('[id^="jform_field_required"]').forEach(function(el) {
+        el.addEventListener('change', syncCollapseToggle);
+    });
+    syncCollapseToggle();
 
     // Subform option changes (use event delegation for dynamic rows)
     form.addEventListener('input', function(e) {

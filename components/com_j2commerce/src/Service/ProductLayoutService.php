@@ -179,8 +179,27 @@ final class ProductLayoutService
             $layout->setIncludePaths($paths);
         }
 
+        $output = $layout->render($displayData);
 
-        return $layout->render($displayData);
+        // Page-builder in-context instrumentation seam: a no-op unless the request carries the
+        // customize flag. When active, a subscriber may wrap the rendered sub-layout (for example
+        // with data-customize-* markers) by returning the new markup via $event->setEventResult().
+        if (Factory::getApplication()->getInput()->getInt('j2c_customize', 0) === 1) {
+            $event  = J2CommerceHelper::plugin()->event('CustomizeRenderLayout', [
+                'output'        => $output,
+                'layoutId'      => $layoutId,
+                'pluginElement' => $pluginElement,
+                'paths'         => $paths,
+                'displayData'   => $displayData,
+            ]);
+            $result = $event->getEventResult();
+
+            if (\is_string($result) && $result !== '') {
+                $output = $result;
+            }
+        }
+
+        return $output;
     }
 
     private static function getActivePluginElement(): string

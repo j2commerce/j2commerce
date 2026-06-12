@@ -957,12 +957,23 @@
             type="list"
             label="COM_J2COMMERCE_CONFIG_CLEAR_CART_ON"
             description="COM_J2COMMERCE_CONFIG_CLEAR_CART_ON_DESC"
-            default="order_placed"
+            default="order_confirmed"
             validate="options"
         >
             <option value="order_placed">COM_J2COMMERCE_ON_ORDER_PLACED</option>
             <option value="order_confirmed">COM_J2COMMERCE_ON_PAYMENT_CONFIRMED</option>
         </field>
+
+        <field
+            name="clear_cart_states"
+            type="Orderstatus"
+            label="COM_J2COMMERCE_CONFIG_CLEAR_CART_STATES"
+            description="COM_J2COMMERCE_CONFIG_CLEAR_CART_STATES_DESC"
+            multiple="true"
+            layout="joomla.form.field.list-fancy-select"
+            default="1,2,4,7,8,9"
+            showon="clear_cart:order_confirmed"
+        />
 
         <field
             name="clear_outdated_cart_data_term"
