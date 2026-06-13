@@ -1638,6 +1638,22 @@ class CheckoutController extends BaseController
             $orderTable->load(['order_id' => $orderId]);
         }
 
+        // Offsite/return-flow gateways (3DS, hosted pages) finalize inside the
+        // PostPayment event above, and the order they finalize is NOT always the
+        // one the session was primed with at the confirm step: an earlier
+        // abandoned attempt can leave a stale j2commerce.order_id behind. Such a
+        // plugin re-primes the session to the order it actually finalized, so
+        // re-read it here and reload the order before sending emails / clearing
+        // the cart / redirecting — otherwise the confirmation page renders the
+        // stale order alongside the real success message. Inline gateways leave
+        // the session untouched, so this is a no-op for them. (#1208)
+        $finalizedOrderId = (string) $this->app->getUserState('j2commerce.order_id', '');
+
+        if ($finalizedOrderId !== '' && $finalizedOrderId !== (string) $orderId) {
+            $orderId = $finalizedOrderId;
+            $orderTable->load(['order_id' => $orderId]);
+        }
+
         // The paction=display call is the confirmation page after an AJAX
         // payment (paction=process) already sent emails and dispatched
         // AfterPayment.  Only fire these for the initial payment path.
