@@ -454,6 +454,7 @@ class OrderModel extends AdminModel
             )
             ->where($db->quoteName('oh.order_id') . ' = :orderId')
             ->order($db->quoteName('oh.created_on') . ' DESC')
+            ->order($db->quoteName('oh.j2commerce_orderhistory_id') . ' DESC')
             ->bind(':orderId', $orderId);
 
         $db->setQuery($query);
@@ -491,6 +492,7 @@ class OrderModel extends AdminModel
             )
             ->where($db->quoteName('oh.order_id') . ' = :orderId')
             ->order($db->quoteName('oh.created_on') . ' DESC')
+            ->order($db->quoteName('oh.j2commerce_orderhistory_id') . ' DESC')
             ->bind(':orderId', $orderId, ParameterType::STRING);
 
         $db->setQuery($query, $offset, $limit);
