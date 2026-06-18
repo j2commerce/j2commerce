@@ -1080,6 +1080,51 @@ class CheckoutController extends BaseController
     }
 
     /**
+     * Re-render ONLY the payment-methods group, without recomputing shipping rates.
+     *
+     * shippingPaymentMethod() re-queries live carrier rates (UPS/FedEx) on every
+     * call, which is costly. When a listener (e.g. app_conditionalpayment) only
+     * needs the payment list re-pruned after a shipping change, this task skips
+     * the GetShippingRates lookup entirely.
+     */
+    public function paymentMethodsOnly(): void
+    {
+        $this->validateAjaxToken() or $this->jsonResponse(['error' => ['warning' => Text::_('JINVALID_TOKEN')]]);
+
+        $session = $this->app->getSession();
+        $order   = $this->getCartOrder();
+
+        $paymentMethods = [];
+        $paymentResults = J2CommerceHelper::plugin()->eventWithArray('GetPaymentPlugins', [$order]);
+
+        foreach ($paymentResults as $result) {
+            if (\is_array($result) && isset($result['element'])) {
+                $paymentMethods[] = $result;
+            } elseif (\is_array($result)) {
+                $paymentMethods = array_merge($paymentMethods, $result);
+            }
+        }
+
+        $paymentMethods = $this->filterUnavailablePaymentMethods($paymentMethods, $order);
+
+        $defaultPaymentMethod = J2CommerceHelper::config()->get('default_payment_method', '');
+        $selectedPayment      = $session->get('payment_method', $defaultPaymentMethod, 'j2commerce');
+
+        $showPayment = true;
+
+        if ($order && (float) ($order->order_total ?? 0) === 0.0) {
+            $showPayment = false;
+            J2CommerceHelper::plugin()->event('ChangeShowPaymentOnTotalZero', [$order, &$showPayment]);
+        }
+
+        $this->renderStep('payment_methods', [
+            'paymentMethods'  => $paymentMethods,
+            'selectedPayment' => $selectedPayment,
+            'showPayment'     => $showPayment,
+        ]);
+    }
+
+    /**
      * Drop payment methods whose plugin restricts them out of range.
      *
      * Applies the geozone (billing address) and subtotal-range restrictions
@@ -1635,6 +1680,22 @@ class CheckoutController extends BaseController
                 $html .= $result;
             }
 
+            $orderTable->load(['order_id' => $orderId]);
+        }
+
+        // Offsite/return-flow gateways (3DS, hosted pages) finalize inside the
+        // PostPayment event above, and the order they finalize is NOT always the
+        // one the session was primed with at the confirm step: an earlier
+        // abandoned attempt can leave a stale j2commerce.order_id behind. Such a
+        // plugin re-primes the session to the order it actually finalized, so
+        // re-read it here and reload the order before sending emails / clearing
+        // the cart / redirecting — otherwise the confirmation page renders the
+        // stale order alongside the real success message. Inline gateways leave
+        // the session untouched, so this is a no-op for them. (#1208)
+        $finalizedOrderId = (string) $this->app->getUserState('j2commerce.order_id', '');
+
+        if ($finalizedOrderId !== '' && $finalizedOrderId !== (string) $orderId) {
+            $orderId = $finalizedOrderId;
             $orderTable->load(['order_id' => $orderId]);
         }
 

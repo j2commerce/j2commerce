@@ -85,11 +85,17 @@ $currency = J2CommerceHelper::currency();
                     $element = $method['element'] ?? $method->element ?? '';
                     $name = $method['name'] ?? $method->name ?? $element;
                     $image = $method['image'] ?? $method->image ?? '';
+                    $desc = $method['desc'] ?? $method->desc ?? '';
                     $isSelected = ($element === $selectedPayment) || (\count($paymentMethods) === 1);
                     ?>
                     <label class="payment-method-item list-group-item list-group-item-action d-flex align-items-center gap-3 py-3" for="payment-method-<?php echo $i; ?>">
                         <input class="form-check-input flex-shrink-0 mt-0" type="radio" name="payment_plugin" value="<?php echo htmlspecialchars($element); ?>" id="payment-method-<?php echo $i; ?>" <?php echo $isSelected ? 'checked' : ''; ?>>
-                        <div class="fw-medium flex-grow-1"><?php echo htmlspecialchars($name); ?></div>
+                        <div class="payment-method-display flex-grow-1">
+                            <div class="payment-method-name fw-medium"><?php echo htmlspecialchars($name); ?></div>
+                            <?php if (!empty($desc)) : ?>
+                                <div class="payment-method-desc"><small class="text-body-secondary"><?php echo htmlspecialchars($desc); ?></small></div>
+                            <?php endif; ?>
+                        </div>
 
                         <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeCheckoutPaymentImage', [$method, 'onJ2Commerce'])->getArgument('html', ''); ?>
                         <?php echo J2CommerceHelper::getPaymentCardIcons($element); ?>
