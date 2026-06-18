@@ -67,7 +67,7 @@
 			<fieldset name="basic" label="PLG_J2COMMERCE_APP_LOCALIZATION_DATA_BASIC">
 				<field
 					name="localization"
-					type="LocalizationData"
+					type="Localizationdata"
 					addfieldprefix="J2Commerce\Plugin\J2Commerce\AppLocalizationData\Field"
 					label="PLG_J2COMMERCE_APP_LOCALIZATION_DATA_TOOLS"
 					description=""
