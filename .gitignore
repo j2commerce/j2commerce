@@ -221,8 +221,6 @@ vendor/
 # Claude Code temp files
 tmpclaude-*
 
-# .claude/ is local-only — never track or push any Claude Code files
-
 # ===========================================================================
 # SEPARATE EXTENSIONS — belong in j2commerce6extensions repo, NOT here
 # ===========================================================================
