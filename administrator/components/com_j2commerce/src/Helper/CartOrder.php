@@ -1157,12 +1157,20 @@ class CartOrder
         $optionPrice = (float) ($item->option_price ?? $item->orderitem_option_price ?? 0);
         $unitPrice   = $basePrice + $optionPrice;
 
-        // Add tax when displayMode requests tax-inclusive display
-        if ($displayMode == 1) {
-            $taxProfileId = (int) ($item->taxprofile_id ?? $item->orderitem_taxprofile_id ?? 0);
-            if ($taxProfileId > 0) {
-                $productHelper = new ProductHelper();
-                $unitPrice     = $productHelper->get_price_including_tax($unitPrice, $taxProfileId);
+        $taxProfileId = (int) ($item->taxprofile_id ?? $item->orderitem_taxprofile_id ?? 0);
+
+        if ($taxProfileId > 0) {
+            $productHelper  = new ProductHelper();
+            $isIncludingTax = (int) J2CommerceHelper::config()->get('config_including_tax', 0);
+
+            if ($isIncludingTax) {
+                // Stored price already includes tax; strip it for tax-exclusive display only.
+                if ($displayMode == 0) {
+                    $unitPrice = $productHelper->get_price_excluding_tax($unitPrice, $taxProfileId);
+                }
+            } elseif ($displayMode == 1) {
+                // Stored price is net; add tax for tax-inclusive display.
+                $unitPrice = $productHelper->get_price_including_tax($unitPrice, $taxProfileId);
             }
         }
 
