@@ -405,7 +405,7 @@ if ($info) {
                                                 'item'       => $item,
                                                 'context'    => 'confirmation',
                                                 'variant'    => 'compact',
-                                                'framework'  => 'uikit3',
+                                                'framework'  => 'uikit',
                                             ], JPATH_ROOT . '/components/com_j2commerce/layouts'); ?>
                                         <?php endif; ?>
                                         <?php if (!empty($item->orderitem_sku)) : ?>

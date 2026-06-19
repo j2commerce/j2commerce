@@ -132,7 +132,7 @@ $clearCartUrl = J2CommerceHelper::platform()->getCartUrl(['task' => 'clearCart']
                                     'accordionId'  => 'cartToolsAccordion',
                                     'expanded'     => !empty($couponCode),
                                     'showDiscount' => true,
-                                    'framework'    => 'uikit3',
+                                    'framework'    => 'uikit',
                                 ], JPATH_COMPONENT . '/layouts'); ?>
                             <?php endif; ?>
                             <?php if ($enableVoucher) : ?>
@@ -143,7 +143,7 @@ $clearCartUrl = J2CommerceHelper::platform()->getCartUrl(['task' => 'clearCart']
                                     'accordionId'  => 'cartToolsAccordion',
                                     'expanded'     => !empty($voucherCode),
                                     'showDiscount' => true,
-                                    'framework'    => 'uikit3',
+                                    'framework'    => 'uikit',
                                 ], JPATH_COMPONENT . '/layouts'); ?>
                             <?php endif; ?>
                             <?php echo $this->loadTemplate('calculator'); ?>
