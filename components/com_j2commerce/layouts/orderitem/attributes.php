@@ -23,7 +23,7 @@ use Joomla\CMS\Session\Session;
  * @var object $displayData['item']        Order/cart item for context
  * @var string $displayData['context']     admin_order|admin_edit|cart|checkout|confirmation|myprofile|drawer|email|cart_module
  * @var string $displayData['variant']     full|compact|inline
- * @var string $displayData['framework']   bootstrap5|uikit3 (default bootstrap5)
+ * @var string $displayData['framework']   bootstrap5|uikit (default bootstrap5)
  */
 
 $attributes = $displayData['attributes'] ?? [];
@@ -31,7 +31,7 @@ $item       = $displayData['item'] ?? null;
 $context    = $displayData['context'] ?? 'cart';
 $variant    = $displayData['variant'] ?? 'full';
 $rawFramework = ($displayData['framework'] ?? 'bootstrap5');
-$framework  = $rawFramework === 'uikit3' ? 'uikit3' : 'bootstrap5';
+$framework  = ($rawFramework === 'uikit3' || $rawFramework === 'uikit') ? 'uikit' : 'bootstrap5';
 
 if (empty($attributes)) {
     return;
@@ -66,7 +66,7 @@ $displayData['buildDownloadUrl'] = $buildDownloadUrl;
 $displayData['framework']       = $framework;
 
 // Normalize override key
-$override = ($framework === 'uikit3') ? 'uikit' : 'bootstrap5';
+$override = ($framework === 'uikit') ? 'uikit' : 'bootstrap5';
 
 ProductLayoutService::setSubtemplateOverride($override);
 try {

@@ -116,7 +116,7 @@ class HtmlView extends BaseHtmlView
         parent::display($tpl);
     }
 
-    /** Register the bootstrap5/uikit3 subfolder; AJAX callers pass merged menu params as 2nd arg. */
+    /** Register the bootstrap5/uikit subfolder; AJAX callers pass merged menu params as 2nd arg. */
     public function registerFrameworkTemplatePaths(
         \Joomla\CMS\Application\CMSApplicationInterface $app,
         ?\Joomla\Registry\Registry $params = null
