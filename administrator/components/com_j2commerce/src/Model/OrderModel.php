@@ -17,6 +17,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\DownloadHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\EmailHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderItemAttributeHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
@@ -959,8 +960,18 @@ class OrderModel extends AdminModel
             ->bind(':orderIdStr', $orderIdStr);
 
         $db->setQuery($updateQuery);
+        $executed = $db->execute();
 
-        return $db->execute();
+        // Let extensions (e.g. payment/fulfillment plugins) react to a tracking
+        // number being added — there is otherwise no signal for this.
+        if ($executed) {
+            J2CommerceHelper::plugin()->event(
+                'AfterSaveTrackingNumber',
+                ['order_id' => $orderIdStr, 'tracking_id' => $trackingId]
+            );
+        }
+
+        return (bool) $executed;
     }
 
     /**
