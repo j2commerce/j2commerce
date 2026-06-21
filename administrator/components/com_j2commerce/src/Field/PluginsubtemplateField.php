@@ -17,7 +17,6 @@ namespace J2Commerce\Component\J2commerce\Administrator\Field;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Field\ListField;
 use Joomla\CMS\HTML\HTMLHelper;
-use Joomla\CMS\Language\Text;
 
 class PluginsubtemplateField extends ListField
 {
@@ -67,8 +66,6 @@ class PluginsubtemplateField extends ListField
         }
 
         ksort($folders);
-
-        $options[] = HTMLHelper::_('select.option', '', Text::_('JDEFAULT'));
 
         foreach (array_keys($folders) as $folder) {
             $options[] = HTMLHelper::_('select.option', $folder, ucfirst($folder));

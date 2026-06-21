@@ -141,7 +141,7 @@ try {
                                     'item'       => $item,
                                     'context'    => 'cart_module',
                                     'variant'    => 'compact',
-                                    'framework'  => 'uikit3',
+                                    'framework'  => 'uikit',
                                 ], JPATH_ROOT . '/components/com_j2commerce/layouts'); ?>
                             </div>
                         <?php endif; ?>

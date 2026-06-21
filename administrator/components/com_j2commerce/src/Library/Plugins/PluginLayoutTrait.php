@@ -14,20 +14,37 @@ namespace J2Commerce\Component\J2commerce\Administrator\Library\Plugins;
 
 \defined('_JEXEC') or die;
 
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Layout\FileLayout;
 
 trait PluginLayoutTrait
 {
+    /**
+     * Functional directories that are not layout subtemplates.
+     */
+    private const SUBTEMPLATE_EXCLUDED_DIRS = ['admin', 'application', 'confirmation', 'dashboard', 'email'];
+
     protected function resolvePluginLayout(string $name, array|object $data): string
     {
-        $subtemplate = (string) $this->params->get('subtemplate', '');
-        $tpl         = Factory::getApplication()->getTemplate();
-        $group       = $this->_type;
-        $element     = $this->_name;
+        $tpl     = Factory::getApplication()->getTemplate();
+        $group   = $this->_type;
+        $element = $this->_name;
 
-        $overrideRoot  = JPATH_ROOT . '/templates/' . $tpl . '/html/plg_' . $group . '_' . $element;
-        $pluginTmpl    = JPATH_PLUGINS . '/' . $group . '/' . $element . '/tmpl';
+        $overrideRoot = JPATH_ROOT . '/templates/' . $tpl . '/html/plg_' . $group . '_' . $element;
+        $pluginTmpl   = JPATH_PLUGINS . '/' . $group . '/' . $element . '/tmpl';
+
+        // Resolution order: per-plugin override -> global component default -> bootstrap5/first folder.
+        $subtemplate = (string) $this->params->get('subtemplate', '');
+
+        if ($subtemplate === '') {
+            $subtemplate = (string) ComponentHelper::getParams('com_j2commerce')->get('subtemplate', '');
+        }
+
+        if ($subtemplate === ''
+            || (!is_dir($overrideRoot . '/' . $subtemplate) && !is_dir($pluginTmpl . '/' . $subtemplate))) {
+            $subtemplate = $this->defaultSubtemplate($pluginTmpl);
+        }
 
         $paths = [];
 
@@ -43,5 +60,33 @@ trait PluginLayoutTrait
         $layout->setIncludePaths($paths);
 
         return $layout->render((array) $data);
+    }
+
+    /**
+     * Resolve the layout subtemplate to use when none is configured: prefer
+     * bootstrap5, otherwise the first non-functional subfolder, else none.
+     */
+    private function defaultSubtemplate(string $pluginTmpl): string
+    {
+        if (is_dir($pluginTmpl . '/bootstrap5')) {
+            return 'bootstrap5';
+        }
+
+        if (!is_dir($pluginTmpl)) {
+            return '';
+        }
+
+        $folders = [];
+
+        foreach (new \DirectoryIterator($pluginTmpl) as $entry) {
+            if ($entry->isDir() && !$entry->isDot()
+                && !\in_array($entry->getFilename(), self::SUBTEMPLATE_EXCLUDED_DIRS, true)) {
+                $folders[] = $entry->getFilename();
+            }
+        }
+
+        sort($folders);
+
+        return $folders[0] ?? '';
     }
 }

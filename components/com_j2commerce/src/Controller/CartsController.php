@@ -748,7 +748,7 @@ class CartsController extends BaseController
             $view->checkout_url = $model->getCheckoutUrl();
 
             // Register framework-specific template paths (bootstrap5/ or
-            // uikit3/) — display() normally does this, but AJAX bypasses it.
+            // uikit/) — display() normally does this, but AJAX bypasses it.
             $view->registerFrameworkTemplatePaths($this->app);
 
             // Capture the totals template output

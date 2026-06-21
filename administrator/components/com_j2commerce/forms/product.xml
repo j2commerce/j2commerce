@@ -112,17 +112,12 @@
         <!-- Tax Profile -->
         <field
             name="taxprofile_id"
-            type="sql"
+            type="Taxprofile"
             label="COM_J2COMMERCE_FIELD_PRODUCT_TAXPROFILE"
             description="COM_J2COMMERCE_FIELD_PRODUCT_TAXPROFILE_DESC"
-            query="SELECT j2commerce_taxprofile_id AS value, taxprofile_name AS text FROM #__j2commerce_taxprofiles WHERE enabled = 1 ORDER BY taxprofile_name"
-            key_field="value"
-            value_field="text"
             class="form-select"
             default=""
-        >
-            <option value="">COM_J2COMMERCE_SELECT_TAX_PROFILE</option>
-        </field>
+        />
 
         <!-- Manufacturer -->
         <field

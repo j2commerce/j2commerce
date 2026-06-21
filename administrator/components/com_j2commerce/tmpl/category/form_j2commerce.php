@@ -14,7 +14,12 @@ defined('_JEXEC') or die;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CategoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Form\Form;
+use Joomla\CMS\Form\FormHelper;
 use Joomla\CMS\Language\Text;
+
+// Register the component field namespace so J2Commerce custom field types
+// (e.g. Taxprofile) resolve in the app forms loaded via Form::getInstance().
+FormHelper::addFieldPrefix('J2Commerce\\Component\\J2commerce\\Administrator\\Field');
 
 $this->item = $displayData['category'] ?? $displayData['item'] ?? null;
 $this->form_prefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
