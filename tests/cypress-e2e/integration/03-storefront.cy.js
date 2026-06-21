@@ -12,3 +12,4 @@ describe('J2Commerce storefront', () => {
     cy.checkForPhpNoticesOrWarnings();
   });
 });
+ 
