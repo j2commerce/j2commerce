@@ -83,7 +83,7 @@ if ($hasDetails) {
                 <div class="flex-grow-1">
                     <div class="fw-bold fs-6"><?php echo $this->escape($paymentName); ?></div>
                     <?php if (!empty($item->transaction_id)) : ?>
-                        <div class="text-muted small">
+                        <div class="text-body-secondary small">
                             <?php echo Text::_('COM_J2COMMERCE_FIELD_TRANSACTION_ID'); ?>:
                             <strong class="text-body"><?php echo $this->escape($item->transaction_id); ?></strong>
                         </div>
@@ -181,7 +181,7 @@ if ($hasDetails) {
                     <div class="flex-grow-1">
                         <div class="fw-bold fs-6"><?php echo $this->escape($orderShipping->ordershipping_name); ?></div>
                         <?php if (!empty($item->transaction_id)) : ?>
-                            <div class="text-muted small">
+                            <div class="text-body-secondary small">
                                 <?php echo Text::_('COM_J2COMMERCE_FIELD_TRACKING_NUMBER'); ?>:
                                 <strong class="text-body"><?php echo $this->escape($orderShipping->ordershipping_tracking_id ?: '-'); ?></strong>
                             </div>
