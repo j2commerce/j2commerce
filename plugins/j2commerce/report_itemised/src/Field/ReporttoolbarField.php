@@ -19,7 +19,6 @@ namespace J2Commerce\Plugin\J2Commerce\ReportItemised\Field;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\FormField;
 use Joomla\CMS\Toolbar\Button\LinkButton;
-use Joomla\CMS\Toolbar\Toolbar;
 
 /**
  * Custom form field that adds toolbar buttons to the plugin config page.
@@ -63,7 +62,7 @@ class ReporttoolbarField extends FormField
             true
         );
 
-        $toolbar = Toolbar::getInstance('toolbar');
+        $toolbar = Factory::getApplication()->getDocument()->getToolbar('toolbar');
 
         // Prepend so buttons appear to the LEFT of Save/Apply/Close/Help
         // (prependButton uses array_unshift, so add in reverse order)
