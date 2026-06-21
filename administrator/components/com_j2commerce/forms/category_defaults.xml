@@ -2,13 +2,10 @@
 <form>
     <fields name="params">
         <fieldset name="basic" label="COM_J2COMMERCE_CATEGORY_PRODUCT_DEFAULTS">
-            <field name="default_taxprofile_id" type="sql"
-                   query="SELECT j2commerce_taxprofile_id AS value, taxprofile_name AS text FROM #__j2commerce_taxprofiles WHERE enabled = 1 ORDER BY ordering"
-                   key_field="value" value_field="text"
+            <field name="default_taxprofile_id" type="Taxprofile"
+                   nonelabel="COM_J2COMMERCE_CATEGORY_USE_GLOBAL"
                    label="COM_J2COMMERCE_CATEGORY_DEFAULT_TAX_PROFILE"
-                   description="COM_J2COMMERCE_CATEGORY_DEFAULT_TAX_PROFILE_DESC">
-                <option value="">COM_J2COMMERCE_CATEGORY_USE_GLOBAL</option>
-            </field>
+                   description="COM_J2COMMERCE_CATEGORY_DEFAULT_TAX_PROFILE_DESC"/>
 
             <field name="default_manufacturer_id" type="sql"
                    query="SELECT j2commerce_manufacturer_id AS value, manufacturer_name AS text FROM #__j2commerce_manufacturers WHERE enabled = 1 ORDER BY manufacturer_name"
