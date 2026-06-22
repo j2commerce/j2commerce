@@ -1043,8 +1043,8 @@ class Flexivariable
         }
 
         $return['pricing']                           = [];
-        $return['pricing']['base_price']             = J2CommerceHelper::currency()->format((float) $variant->pricing->base_price);
-        $return['pricing']['price']                  = J2CommerceHelper::currency()->format((float) $variant->pricing->price);
+        $return['pricing']['base_price']             = $productHelper->displayPrice((float) $variant->pricing->base_price, $product, $config);
+        $return['pricing']['price']                  = $productHelper->displayPrice((float) $variant->pricing->price, $product, $config);
         $return['pricing']['original']               = [];
         $return['pricing']['original']['base_price'] = number_format((float) $variant->pricing->base_price, 5, '.', '');
         $return['pricing']['original']['price']      = number_format((float) $variant->pricing->price, 5, '.', '');
