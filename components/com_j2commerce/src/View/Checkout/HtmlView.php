@@ -23,6 +23,11 @@ use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Router\Route;
 use Joomla\Event\Event;
 
+/**
+ * HTML Checkout view class for site frontend.
+ *
+ * @since  6.0.0
+ */
 class HtmlView extends BaseHtmlView
 {
     public $params = null;
