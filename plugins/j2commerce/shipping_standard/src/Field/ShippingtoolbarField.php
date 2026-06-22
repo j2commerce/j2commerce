@@ -19,7 +19,6 @@ namespace J2Commerce\Plugin\J2Commerce\ShippingStandard\Field;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\FormField;
 use Joomla\CMS\Toolbar\Button\LinkButton;
-use Joomla\CMS\Toolbar\Toolbar;
 
 /**
  * Custom form field that adds toolbar buttons to the plugin config page.
@@ -60,7 +59,7 @@ class ShippingtoolbarField extends FormField
         // Load the component language file for button text
         $app->getLanguage()->load('com_j2commerce', JPATH_ADMINISTRATOR);
 
-        $toolbar = Toolbar::getInstance('toolbar');
+        $toolbar = Factory::getApplication()->getDocument()->getToolbar('toolbar');
 
         // Prepend so buttons appear to the LEFT of Save/Apply/Close/Help
         // (prependButton uses array_unshift, so add in reverse order)

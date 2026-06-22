@@ -3692,14 +3692,41 @@ class ProductHelper
     public function displayPrice(float|string $price, ?object $product = null, ?Registry $params = null, string $context = ''): string
     {
         $price = (float) $price;
-        $html  = '';
+        $this->reset_tax_text();
 
-        // Format the price using currency helper
+        $taxProfileId = (int) ($product->taxprofile_id ?? 0);
+
+        if ($taxProfileId > 0) {
+            $isIncludingTax     = (int) J2CommerceHelper::config()->get('config_including_tax', 0);
+            $priceDisplayOption = ConfigHelper::getPriceDisplayOption();
+            $taxRate            = $this->getTaxRateForProfile($taxProfileId);
+
+            if ($priceDisplayOption === 2) {
+                // Display price inclusive of tax
+                if (!$isIncludingTax && $taxRate > 0) {
+                    $price += $price * ($taxRate / 100);
+                }
+
+                if ($taxRate > 0) {
+                    $this->_tax_info = Text::sprintf('COM_J2COMMERCE_PRICE_INCLUDING_TAX', round($taxRate, 2) . '%');
+                }
+            } else {
+                // Display price exclusive of tax (default)
+                if ($isIncludingTax && $taxRate > 0) {
+                    $price /= (1 + ($taxRate / 100));
+                }
+
+                if ($taxRate > 0) {
+                    $this->_tax_info = Text::sprintf('COM_J2COMMERCE_PRICE_EXCLUDING_TAX_WITH_PERCENTAGE', round($taxRate, 2) . '%');
+                } else {
+                    $this->_tax_info = Text::_('COM_J2COMMERCE_PRICE_EXCLUDING_TAX');
+                }
+            }
+        }
+
         $formattedPrice = J2CommerceHelper::currency()->format($price);
+        $html           = '<span class="j2commerce-product-price">' . $formattedPrice . '</span>';
 
-        $html = '<span class="j2commerce-product-price">' . $formattedPrice . '</span>';
-
-        // Add tax info if available
         if (!empty($this->_tax_info)) {
             $html .= '<span class="j2commerce-product-tax-info">' . $this->_tax_info . '</span>';
         }
