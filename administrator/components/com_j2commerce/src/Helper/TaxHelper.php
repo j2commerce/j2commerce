@@ -93,6 +93,24 @@ final class TaxHelper
     }
 
     /**
+     * Get the store's own address (country, zone, postcode) from config.
+     *
+     * Used as a fallback for tax calculations when no customer address is available.
+     *
+     * @return  \stdClass  Address object with country_id, zone_id, postcode.
+     *
+     * @since   6.3.8
+     */
+    public static function getStoreAddress(): \stdClass
+    {
+        return (object) [
+            'country_id' => ConfigHelper::getStoreCountryId(),
+            'zone_id'    => ConfigHelper::getStoreZoneId(),
+            'postcode'   => (string) ConfigHelper::get('store_zip', ''),
+        ];
+    }
+
+    /**
      * Resolve the geozone IDs that match the given customer address.
      *
      * @param   \stdClass|null  $address  Pre-resolved address; null → use getCustomerAddress().
