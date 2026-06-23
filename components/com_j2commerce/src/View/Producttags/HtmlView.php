@@ -16,10 +16,13 @@ namespace J2Commerce\Component\J2commerce\Site\View\Producttags;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Site\View\CustomSubtemplateTrait;
+use Joomla\CMS\Categories\CategoryNode;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
+use Joomla\CMS\Pagination\Pagination;
+use Joomla\Registry\Registry;
 
 /**
  * HTML Tagged Products list view class for site frontend.
