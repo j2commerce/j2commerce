@@ -262,10 +262,7 @@ const J2Commerce = {
         try {
             const response = await fetch(`${url}&${params.toString()}`, {
                 method: 'GET',
-                headers: {
-                    'Cache-Control': 'no-cache',
-                    'Content-Type': 'application/json; charset=utf-8'
-                }
+                headers: { 'Cache-Control': 'no-cache' }
             });
             const json = await response.json();
 

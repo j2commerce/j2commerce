@@ -167,9 +167,7 @@ class OrderController extends FormController
     {
         header('Content-Type: application/json; charset=utf-8');
 
-        if (!$this->validateAjaxToken()) {
-            echo json_encode(['success' => false, 'message' => Text::_('JINVALID_TOKEN')]);
-            $this->app->close();
+        if (!$this->checkAjaxAccess()) {
             return;
         }
 
@@ -199,9 +197,7 @@ class OrderController extends FormController
     {
         header('Content-Type: application/json; charset=utf-8');
 
-        if (!$this->validateAjaxToken()) {
-            echo json_encode(['success' => false, 'message' => Text::_('JINVALID_TOKEN')]);
-            $this->app->close();
+        if (!$this->checkAjaxAccess()) {
             return;
         }
 
@@ -261,9 +257,7 @@ class OrderController extends FormController
     {
         header('Content-Type: application/json; charset=utf-8');
 
-        if (!$this->validateAjaxToken()) {
-            echo json_encode(['success' => false, 'message' => Text::_('JINVALID_TOKEN')]);
-            $this->app->close();
+        if (!$this->checkAjaxAccess()) {
             return;
         }
 
@@ -308,9 +302,7 @@ class OrderController extends FormController
     {
         header('Content-Type: application/json; charset=utf-8');
 
-        if (!$this->validateAjaxToken()) {
-            echo json_encode(['success' => false, 'message' => Text::_('JINVALID_TOKEN')]);
-            $this->app->close();
+        if (!$this->checkAjaxAccess()) {
             return;
         }
 
@@ -349,9 +341,7 @@ class OrderController extends FormController
     {
         header('Content-Type: application/json; charset=utf-8');
 
-        if (!$this->validateAjaxToken()) {
-            echo json_encode(['success' => false, 'message' => Text::_('JINVALID_TOKEN')]);
-            $this->app->close();
+        if (!$this->checkAjaxAccess()) {
             return;
         }
 
@@ -381,9 +371,7 @@ class OrderController extends FormController
     {
         header('Content-Type: application/json; charset=utf-8');
 
-        if (!$this->validateAjaxToken()) {
-            echo json_encode(['success' => false, 'message' => Text::_('JINVALID_TOKEN')]);
-            $this->app->close();
+        if (!$this->checkAjaxAccess()) {
             return;
         }
 
@@ -655,6 +643,30 @@ class OrderController extends FormController
         return $this->input->post->get($token, '', 'alnum') === '1';
     }
 
+    /**
+     * CSRF token + backend ACL gate for the order AJAX endpoints. On failure it
+     * emits the JSON error and closes the app, returning false so the caller
+     * can just `return`.
+     */
+    protected function checkAjaxAccess(string $action = 'core.edit'): bool
+    {
+        if (!$this->validateAjaxToken()) {
+            echo json_encode(['success' => false, 'message' => Text::_('JINVALID_TOKEN')]);
+            $this->app->close();
+
+            return false;
+        }
+
+        if (!$this->app->getIdentity()->authorise($action, 'com_j2commerce')) {
+            echo json_encode(['success' => false, 'message' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
+            $this->app->close();
+
+            return false;
+        }
+
+        return true;
+    }
+
     private function getStatusInfo(int $statusId): ?object
     {
         $db    = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
@@ -676,9 +688,7 @@ class OrderController extends FormController
     {
         header('Content-Type: application/json; charset=utf-8');
 
-        if (!$this->validateAjaxToken()) {
-            echo json_encode(['success' => false, 'message' => Text::_('JINVALID_TOKEN')]);
-            $this->app->close();
+        if (!$this->checkAjaxAccess()) {
             return;
         }
 

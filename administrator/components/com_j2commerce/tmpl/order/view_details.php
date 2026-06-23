@@ -180,16 +180,13 @@ if ($hasDetails) {
 
                     <div class="flex-grow-1">
                         <div class="fw-bold fs-6"><?php echo $this->escape($orderShipping->ordershipping_name); ?></div>
-                        <?php if (!empty($item->transaction_id)) : ?>
-                            <div class="text-body-secondary small">
-                                <?php echo Text::_('COM_J2COMMERCE_FIELD_TRACKING_NUMBER'); ?>:
-                                <strong class="text-body"><?php echo $this->escape($orderShipping->ordershipping_tracking_id ?: '-'); ?></strong>
-                            </div>
-                        <?php endif; ?>
+                        <div class="text-body-secondary small">
+                            <?php echo Text::_('COM_J2COMMERCE_FIELD_TRACKING_NUMBER'); ?>:
+                            <strong class="text-body" id="trackingValue"><?php echo $this->escape($orderShipping->ordershipping_tracking_id ?: '-'); ?></strong>
+                        </div>
                     </div>
                 </div>
                 <div class="j2c-detail-card-shipping-buttons d-flex align-items-center gap-2">
-                    <?php if ($hasDetails) : ?>
                         <span id="trackingEdit" class="d-none">
                         <span class="input-group input-group-sm d-inline-flex w-auto">
                             <input type="text" class="form-control form-control-sm" id="trackingInput" style="max-width: 200px;" value="<?php echo $this->escape($orderShipping->ordershipping_tracking_id ?? ''); ?>">
@@ -207,7 +204,6 @@ if ($hasDetails) {
                             <span class="ms-1"><?php echo Text::_('JACTION_EDIT'); ?></span>
                         </button>
                     </span>
-                    <?php endif; ?>
                     <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterAdminOrderShippingButton', array($item))->getArgument('html', ''); ?>
                 </div>
             </div>
