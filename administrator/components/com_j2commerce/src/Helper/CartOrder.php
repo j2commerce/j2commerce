@@ -440,9 +440,10 @@ class CartOrder
      */
     protected function calculateTotals(): void
     {
-        $subtotal = 0.0;
-        $taxTotal = 0.0;
-        $taxRates = [];
+        $subtotal       = 0.0;
+        $taxTotal       = 0.0;
+        $taxRates       = [];
+        $isIncludingTax = (int) J2CommerceHelper::config()->get('config_including_tax', 0);
 
         // Resolve customer geozones once for all items
         $customerGeozones = $this->getCustomerGeozones();
@@ -484,11 +485,27 @@ class CartOrder
                         $itemTaxTotal = 0.0;
                         $effectivePct = 0.0;
 
+                        // Sum total rate percent for inclusive extraction
+                        $totalRatePct = 0.0;
+                        foreach ($ratesets as $rate) {
+                            $totalRatePct += (float) ($rate->rate ?? $rate->tax_percent ?? 0);
+                        }
+
+                        // Total tax for this line (inclusive extraction or exclusive addition)
+                        $lineTotal = $itemPrice * $quantity;
+                        $lineTaxTotal = $isIncludingTax
+                            ? ($totalRatePct > 0 ? $lineTotal * $totalRatePct / (100 + $totalRatePct) : 0.0)
+                            : $lineTotal * ($totalRatePct / 100);
+
                         foreach ($ratesets as $rate) {
                             $rateName    = (string) ($rate->name ?? $rate->taxrate_name ?? '');
                             $ratePercent = (float) ($rate->rate ?? $rate->tax_percent ?? 0);
                             $rateId      = (int) ($rate->j2commerce_taxrate_id ?? 0);
-                            $rateAmount  = $itemPrice * $quantity * ($ratePercent / 100);
+
+                            // Distribute total tax proportionally across rates
+                            $rateAmount = $totalRatePct > 0
+                                ? $lineTaxTotal * ($ratePercent / $totalRatePct)
+                                : 0.0;
 
                             $itemTaxTotal += $rateAmount;
                             $effectivePct += $ratePercent;
@@ -539,7 +556,9 @@ class CartOrder
         $this->order_subtotal = $subtotal;
         $this->order_tax      = $taxTotal;
         $this->taxRates       = array_values($taxRates);
-        $this->order_total    = $subtotal + $taxTotal;
+        // When prices are stored inclusive of tax the subtotal already contains the tax;
+        // adding taxTotal again would double-count it.
+        $this->order_total = $isIncludingTax ? $subtotal : $subtotal + $taxTotal;
     }
 
     /**
@@ -584,11 +603,18 @@ class CartOrder
         $taxReduction    = $oldTaxTotal - $newTaxTotal;
         $this->order_tax = $newTaxTotal;
 
-        // Subtract both the discount amount AND the tax reduction from total
-        // order_total was set to (subtotal + tax) in calculateTotals()
-        // After discount: total = (subtotal - discount) + (tax - taxReduction)
-        // So we need to subtract: discount + taxReduction
-        $this->order_total -= ($totalDiscount + $taxReduction);
+        $isIncludingTax = (int) J2CommerceHelper::config()->get('config_including_tax', 0);
+
+        if ($isIncludingTax) {
+            // For inclusive pricing, order_total = subtotal (tax is embedded).
+            // Only the discount reduces the total; the tax reduction is already
+            // captured proportionally within that discount amount.
+            $this->order_total -= $totalDiscount;
+        } else {
+            // For exclusive pricing, order_total = subtotal + tax.
+            // Both the discount and the proportional tax reduction must be subtracted.
+            $this->order_total -= ($totalDiscount + $taxReduction);
+        }
     }
 
     private function getCustomerGeozones(): array
@@ -599,7 +625,20 @@ class CartOrder
         $this->customerZoneId    = (int) $address->zone_id;
         $this->customerPostcode  = (string) $address->postcode;
 
-        return TaxHelper::getCustomerGeozones($address);
+        $geozones = TaxHelper::getCustomerGeozones($address);
+
+        // No shipping address entered yet — fall back to the store's own address so that
+        // tax rates (and the tax line in the cart totals) are visible from the first page load,
+        // consistent with how displayPrice() computes tax on product/category pages.
+        if (empty($geozones)) {
+            $storeAddress = TaxHelper::getStoreAddress();
+            $this->customerCountryId = (int) $storeAddress->country_id;
+            $this->customerZoneId    = (int) $storeAddress->zone_id;
+            $this->customerPostcode  = (string) $storeAddress->postcode;
+            $geozones = TaxHelper::getCustomerGeozones($storeAddress);
+        }
+
+        return $geozones;
     }
 
     /**
@@ -2063,15 +2102,26 @@ class CartOrder
      */
     public function get_formatted_order_totals(): array
     {
-        $totals     = [];
-        $currency   = J2CommerceHelper::currency();
-        $params     = J2CommerceHelper::config();
-        $combineTax = (int) $params->get('combine_tax_calculations', 1);
+        $totals               = [];
+        $currency             = J2CommerceHelper::currency();
+        $params               = J2CommerceHelper::config();
+        $combineTax           = (int) $params->get('combine_tax_calculations', 1);
+        $checkoutPriceDisplay = (int) $params->get('checkout_price_display_options', 0);
 
-        // Subtotal (before tax) - use keyed index so plugins can target it
+        // Subtotal row — when showing inclusive prices, sum displayed line-item totals
+        // so the subtotal matches what the customer sees (regardless of geozone resolution)
+        if ($checkoutPriceDisplay && !empty($this->items)) {
+            $displaySubtotal = 0.0;
+            foreach ($this->items as $item) {
+                $displaySubtotal += $this->get_formatted_lineitem_total($item, $checkoutPriceDisplay);
+            }
+        } else {
+            $displaySubtotal = $this->order_subtotal;
+        }
+
         $totals['subtotal'] = [
             'label' => Text::_('COM_J2COMMERCE_CART_SUBTOTAL'),
-            'value' => $currency->format($this->order_subtotal),
+            'value' => $currency->format($displaySubtotal),
         ];
 
         // Shipping - placed before tax
@@ -2098,7 +2148,6 @@ class CartOrder
         // Fees - allow plugins to add custom fees via session
         $fees = $this->get_fees();
         if (!empty($fees)) {
-            $checkoutPriceDisplay = (int) $params->get('checkout_price_display_options', 0);
             foreach ($fees as $fee) {
                 $feeKey          = 'fee_' . preg_replace('/[^a-z0-9_]/', '_', strtolower($fee->name ?? 'custom'));
                 $totals[$feeKey] = [
@@ -2128,7 +2177,7 @@ class CartOrder
 
                     if ($discountType === 'coupon') {
                         $label = $discountTitle;
-                        $link  = '<a class="j2commerce-remove j2commerce-remove-coupon remove-icon text-danger ms-2 text-decoration-none" href="#" data-id=" '
+                        $link  = '<a class="j2commerce-remove j2commerce-remove-coupon remove-icon text-danger ms-2 text-decoration-none" '
                             . 'href="javascript:void(0)" title="' . Text::_('COM_J2COMMERCE_REMOVE_COUPON') . '">x</a>';
                     } elseif ($discountType === 'voucher') {
                         $label = $discountTitle;
@@ -2157,8 +2206,6 @@ class CartOrder
 
         // Tax totals — always show Tax Profile Name; combine shipping tax when enabled
         if (!empty($this->taxRates) || ($combineTax && $this->order_shipping_tax > 0)) {
-            $checkoutPriceDisplay = (int) $params->get('checkout_price_display_options', 0);
-
             // Clone taxRates for display to avoid mutating calculated values
             $displayRates = [];
 
