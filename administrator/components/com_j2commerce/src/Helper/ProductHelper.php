@@ -3725,13 +3725,8 @@ class ProductHelper
         }
 
         $formattedPrice = J2CommerceHelper::currency()->format($price);
-        $html           = '<span class="j2commerce-product-price">' . $formattedPrice . '</span>';
 
-        if (!empty($this->_tax_info)) {
-            $html .= '<span class="j2commerce-product-tax-info">' . $this->_tax_info . '</span>';
-        }
-
-        return $html;
+        return '<span class="j2commerce-product-price">' . $formattedPrice . '</span>';
     }
 
     /**
