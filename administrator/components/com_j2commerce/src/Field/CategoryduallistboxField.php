@@ -137,13 +137,13 @@ class CategoryduallistboxField extends ListField
     protected function getInitScript(array $selected): string
     {
         $selectedJson        = json_encode($selected);
-        $availableLabel      = Text::_('COM_J2COMMERCE_DUALLISTBOX_AVAILABLE');
-        $selectedLabel       = Text::_('COM_J2COMMERCE_DUALLISTBOX_SELECTED');
-        $searchPlaceholder   = Text::_('COM_J2COMMERCE_DUALLISTBOX_SEARCH');
-        $addButtonText       = Text::_('COM_J2COMMERCE_DUALLISTBOX_BUTTON_ADD');
-        $addAllButtonText    = Text::_('COM_J2COMMERCE_DUALLISTBOX_BUTTON_ADDALL');
-        $removeButtonText    = Text::_('COM_J2COMMERCE_DUALLISTBOX_BUTTON_REMOVE');
-        $removeAllButtonText = Text::_('COM_J2COMMERCE_DUALLISTBOX_BUTTON_REMOVEALL');
+        $availableLabel      = json_encode(Text::_('COM_J2COMMERCE_DUALLISTBOX_AVAILABLE'));
+        $selectedLabel       = json_encode(Text::_('COM_J2COMMERCE_DUALLISTBOX_SELECTED'));
+        $searchPlaceholder   = json_encode(Text::_('COM_J2COMMERCE_DUALLISTBOX_SEARCH'));
+        $addButtonText       = json_encode(Text::_('COM_J2COMMERCE_DUALLISTBOX_BUTTON_ADD'));
+        $addAllButtonText    = json_encode(Text::_('COM_J2COMMERCE_DUALLISTBOX_BUTTON_ADDALL'));
+        $removeButtonText    = json_encode(Text::_('COM_J2COMMERCE_DUALLISTBOX_BUTTON_REMOVE'));
+        $removeAllButtonText = json_encode(Text::_('COM_J2COMMERCE_DUALLISTBOX_BUTTON_REMOVEALL'));
 
         return <<<JS
 <script>
@@ -152,13 +152,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const selectElement = document.getElementById('{$this->id}');
         if (selectElement) {
             const dualListbox = new DualListbox(selectElement, {
-                availableTitle: '{$availableLabel}',
-                selectedTitle: '{$selectedLabel}',
-                searchPlaceholder: '{$searchPlaceholder}',
-                addButtonText: '{$addButtonText}',
-                addAllButtonText: '{$addAllButtonText}',
-                removeButtonText: '{$removeButtonText}',
-                removeAllButtonText: '{$removeAllButtonText}',
+                availableTitle: {$availableLabel},
+                selectedTitle: {$selectedLabel},
+                searchPlaceholder: {$searchPlaceholder},
+                addButtonText: {$addButtonText},
+                addAllButtonText: {$addAllButtonText},
+                removeButtonText: {$removeButtonText},
+                removeAllButtonText: {$removeAllButtonText},
                 showAddAllButton: true,
                 showRemoveAllButton: true,
                 showSearchFilter: true,
