@@ -31,7 +31,7 @@
         <fields name="params">
             <fieldset name="basic"
                 addfieldprefix="J2Commerce\Plugin\J2Commerce\ShippingStandard\Field">
-                <field name="shipping_toolbar" type="ShippingToolbar" />
+                <field name="shipping_toolbar" type="Shippingtoolbar" />
             </fieldset>
             <fieldset name="display" label="COM_J2COMMERCE_PLUGIN_SUBTEMPLATE">
                 <field
