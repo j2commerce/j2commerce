@@ -195,8 +195,7 @@ class EmailHelper
                     $template->mailer->addRecipient($order->user_email);
                 }
             } elseif (\in_array($template->receiver_type, ['admin', '*']) && $receiverType === 'admin') {
-                $adminEmails = $params->get('admin_email', '');
-                $adminEmails = explode(',', $adminEmails);
+                $adminEmails = array_filter(array_map('trim', explode(',', $params->get('admin_email', ''))));
                 $template->mailer->addRecipient($adminEmails);
 
                 if (isset($order->user_email) && !empty($order->user_email)) {

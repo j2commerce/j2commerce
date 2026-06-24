@@ -23,10 +23,9 @@
 
         <field
             name="admin_email"
-            type="email"
+            type="text"
             label="COM_J2COMMERCE_CONFIG_ADMIN_EMAIL"
             description="COM_J2COMMERCE_CONFIG_ADMIN_EMAIL_DESC"
-            multiple="true"
             class="w-100"
         />
 
