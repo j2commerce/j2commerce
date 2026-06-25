@@ -1553,7 +1553,7 @@ class CheckoutController extends BaseController
         $orderpaymentType = $this->input->getString('orderpayment_type', '');
 
         if (empty($orderpaymentType)) {
-            Session::checkToken('get') or $this->app->redirect($this->getCheckoutUrl());
+            Session::checkToken('post') or $this->app->redirect($this->getCheckoutUrl());
         } elseif ($this->input->getMethod() === 'POST') {
             // On-site card-collecting plugins POST orderpayment_type alongside
             // raw PAN/CVV. Enforce CSRF on every browser POST here. Offsite

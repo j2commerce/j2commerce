@@ -330,7 +330,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!container || !message) return;
         var field = container.querySelector('#' + fieldId);
         if (field) {
-            field.classList.add('j2-invalid');
+            var isCheckbox = field.type === 'checkbox' || field.type === 'radio';
+            // Don't apply j2-invalid to checkboxes/radios: the class injects a background
+            // SVG icon sized for text inputs which renders inside the small checkbox.
+            if (!isCheckbox) {
+                field.classList.add('j2-invalid');
+            }
             field.setAttribute('aria-invalid', 'true');
             field.setAttribute('aria-describedby', fieldId + '-error');
             var span = document.createElement('span');
@@ -338,9 +343,10 @@ document.addEventListener('DOMContentLoaded', function() {
             span.id = fieldId + '-error';
             span.setAttribute('role', 'alert');
             span.textContent = message;
-            // Anchor after the telephone wrapper (if any) so the error
-            // renders below the full widget, not inside its flex row.
-            var anchor = field.closest('.j2c-telephone-field') || field;
+            // Anchor to the immediate parent wrapper so the error appears after the complete
+            // widget: handles .form-check rows, .j2c-telephone-field flex rows,
+            // .form-floating groups, and plain .form-normal wrappers consistently.
+            var anchor = field.parentNode;
             anchor.parentNode.insertBefore(span, anchor.nextSibling);
         }
     }
@@ -1272,7 +1278,16 @@ document.addEventListener('DOMContentLoaded', function() {
             tosSyncField.value = tosBox.checked ? '1' : '0';
         }
 
-        if (!form.querySelector('input[name="orderpayment_type"]')) return;
+        if (!form.querySelector('input[name="orderpayment_type"]')) {
+            // Free order form: validate terms client-side before native POST.
+            var confirmEl = document.querySelector('.j2commerce-checkout-confirm');
+            if (tosBox && confirmEl && confirmEl.dataset.showTerms === '1' && confirmEl.dataset.termsDisplayType === 'checkbox' && !tosBox.checked) {
+                e.preventDefault();
+                var confirmContent = document.getElementById('confirm') && document.getElementById('confirm').querySelector('.checkout-content');
+                showFieldError(confirmContent, 'tos_check', Joomla.Text._('COM_J2COMMERCE_CHECKOUT_ERROR_AGREE_TERMS'));
+            }
+            return;
+        }
         e.preventDefault();
         var btn = form.querySelector('button[type="submit"]') || form.querySelector('button:not(.uk-alert-close):not([uk-close]):not([uk-modal-close])');
         handlePaymentSubmit(form, btn);

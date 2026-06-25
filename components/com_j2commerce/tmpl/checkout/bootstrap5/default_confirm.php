@@ -14,6 +14,7 @@
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
+use Joomla\CMS\Session\Session;
 use Joomla\Component\Content\Site\Helper\RouteHelper;
 
 /** @var \J2Commerce\Component\J2commerce\Site\View\Checkout\HtmlView $this */
@@ -55,7 +56,13 @@ if ($showTerms && $termsArticleId) {
             <div class="form-check">
                 <input class="form-check-input" type="checkbox" name="tos_check" value="1" id="tos_check">
                 <label class="form-check-label" for="tos_check">
-                    <?php if ($termsText !== '') : ?>
+                    <?php if ($termsText !== '' && $termsModalUrl !== '') : ?>
+                        <?php // Raw HTML — admin-controlled via filter="raw" ?>
+                        <?php echo $termsText; ?>
+                        <a href="<?php echo $termsUrl; ?>" data-bs-toggle="modal" data-bs-target="#j2c-terms-modal">
+                            <?php echo htmlspecialchars(Text::_('COM_J2COMMERCE_CHECKOUT_TERMS_AND_CONDITIONS')); ?>
+                        </a>
+                    <?php elseif ($termsText !== '') : ?>
                         <?php // Raw HTML — admin-controlled via filter="raw" ?>
                         <?php echo $termsText; ?>
                     <?php elseif ($termsModalUrl !== '') : ?>
@@ -73,7 +80,13 @@ if ($showTerms && $termsArticleId) {
         </div>
     <?php elseif ($showTerms === 1 && $termsDisplayType === 'link' && ($termsUrl !== '' || $termsText !== '')) : ?>
         <div class="j2commerce-terms-link mb-3">
-            <?php if ($termsText !== '') : ?>
+            <?php if ($termsText !== '' && $termsModalUrl !== '') : ?>
+                <?php // Raw HTML — admin-controlled via filter="raw" ?>
+                <?php echo $termsText; ?>
+                <a href="<?php echo $termsUrl; ?>" data-bs-toggle="modal" data-bs-target="#j2c-terms-modal">
+                    <?php echo htmlspecialchars(Text::_('COM_J2COMMERCE_CHECKOUT_TERMS_AND_CONDITIONS')); ?>
+                </a>
+            <?php elseif ($termsText !== '') : ?>
                 <?php // Raw HTML — admin-controlled via filter="raw" ?>
                 <?php echo $termsText; ?>
             <?php elseif ($termsModalUrl !== '') : ?>
@@ -115,6 +128,7 @@ if ($showTerms && $termsArticleId) {
             </button>
             <input type="hidden" name="option" value="com_j2commerce">
             <input type="hidden" name="task" value="checkout.confirmPayment">
+            <input type="hidden" name="<?php echo Session::getFormToken(); ?>" value="1">
             <input type="hidden" name="customer_note" value="" class="j2commerce-customer-note-sync">
             <input type="hidden" name="tos_check" value="" class="j2commerce-tos-sync">
         </form>
