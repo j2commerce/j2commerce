@@ -55,6 +55,10 @@ $imageSrc = $product->thumb_image ?? $product->main_image ?? '';
             <p class="card-text"><?php echo strip_tags($product->product_short_desc); ?></p>
         <?php endif; ?>
 
+        <?php if ($params->get('list_show_long_desc', 0) && !empty($product->product_long_desc)) : ?>
+            <div class="card-text"><?php echo strip_tags($product->product_long_desc); ?></div>
+        <?php endif; ?>
+
         <?php if ($params->get('list_show_product_base_price', 1)) : ?>
             <div class="j2commerce-price fw-bold">
                 <?php echo J2CommerceHelper::product()->displayPrice($product->pricing->base_price ?? $product->price ?? 0); ?>
