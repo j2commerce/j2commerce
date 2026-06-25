@@ -437,6 +437,7 @@ class CategoriesModel extends BaseDatabaseModel
             $db->quoteName('a.title', 'product_name'),
             $db->quoteName('a.alias'),
             $db->quoteName('a.introtext', 'product_short_desc'),
+            $db->quoteName('a.fulltext', 'product_long_desc'),
             $db->quoteName('a.catid'),
             $db->quoteName('a.state', 'article_state'),
             $db->quoteName('a.access'),
