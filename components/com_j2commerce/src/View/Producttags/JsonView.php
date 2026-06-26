@@ -22,6 +22,11 @@ use Joomla\CMS\MVC\View\JsonView as BaseJsonView;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Uri\Uri;
 
+/**
+ * JSON Tagged Products list view for site frontend.
+ *
+ * @since  6.0.0
+ */
 class JsonView extends BaseJsonView
 {
     public function display($tpl = null): void

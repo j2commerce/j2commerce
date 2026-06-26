@@ -15,9 +15,9 @@ namespace J2Commerce\Plugin\System\J2Commerce\Helper;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
-use Joomla\CMS\Http\HttpFactory;
 use Joomla\CMS\Log\Log;
 use Joomla\Database\DatabaseInterface;
+use Joomla\Http\HttpFactory;
 
 class GeocodingHelper
 {
@@ -140,7 +140,7 @@ class GeocodingHelper
         $url = self::NOMINATIM_URL . '?' . http_build_query($params);
 
         try {
-            $http     = HttpFactory::getHttp([
+            $http     = (new HttpFactory())->getHttp([
                 'transport.curl' => [
                     \CURLOPT_SSL_VERIFYPEER => false,
                     \CURLOPT_SSL_VERIFYHOST => 0,
@@ -151,9 +151,9 @@ class GeocodingHelper
                 'Accept'     => 'application/json',
             ]);
 
-            if ($response->code !== 200) {
+            if ($response->getStatusCode() !== 200) {
                 Log::add(
-                    'Nominatim API returned HTTP ' . $response->code . ' for: ' . $address,
+                    'Nominatim API returned HTTP ' . $response->getStatusCode() . ' for: ' . $address,
                     Log::WARNING,
                     'plg_system_j2commerce'
                 );
@@ -161,7 +161,7 @@ class GeocodingHelper
                 return null;
             }
 
-            $data = json_decode($response->body, true);
+            $data = json_decode((string) $response->getBody(), true);
 
             if (empty($data) || !isset($data[0]['lat'], $data[0]['lon'])) {
                 Log::add(

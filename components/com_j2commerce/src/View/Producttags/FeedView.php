@@ -21,6 +21,11 @@ use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Router\Route;
 
+/**
+ * RSS/Atom Feed Tagged Products list view for site frontend.
+ *
+ * @since  6.0.0
+ */
 class FeedView extends BaseHtmlView
 {
     public function display($tpl = null): void

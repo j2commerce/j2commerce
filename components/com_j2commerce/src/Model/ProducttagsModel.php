@@ -21,10 +21,31 @@ use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\Database\ParameterType;
 use Joomla\Database\QueryInterface;
 
+/**
+ * Tagged Products list model for site frontend.
+ *
+ * Loads products filtered by menu item parameters (categories, ordering, pagination, tags)
+ * and hydrates each product with full data via ProductHelper::getFullProduct().
+ *
+ * @since  6.0.0
+ */
 class ProducttagsModel extends ListModel
 {
+    /**
+     * Model context string.
+     *
+     * @var   string
+     * @since 6.0.0
+     */
     protected $_context = 'com_j2commerce.producttags';
 
+    /**
+     * Constructor.
+     *
+     * @param   array  $config  An optional associative array of configuration settings.
+     *
+     * @since   6.0.0
+     */
     public function __construct($config = [])
     {
         if (empty($config['filter_fields'])) {
@@ -46,6 +67,16 @@ class ProducttagsModel extends ListModel
         parent::__construct($config);
     }
 
+    /**
+     * Method to auto-populate the model state.
+     *
+     * @param   string  $ordering   An optional ordering field.
+     * @param   string  $direction  An optional direction (asc|desc).
+     *
+     * @return  void
+     *
+     * @since   6.0.0
+     */
     protected function populateState($ordering = 'a.ordering', $direction = 'asc'): void
     {
         $app    = Factory::getApplication();
@@ -96,6 +127,7 @@ class ProducttagsModel extends ListModel
             default     => $params->get('order_date', 'created'),
         };
 
+        // Map ordering param to actual SQL ordering
         $orderMapping = match ($orderBy) {
             'date'      => 'a.' . $orderDate,
             'title'     => 'a.title',
@@ -109,12 +141,16 @@ class ProducttagsModel extends ListModel
             default     => 'a.ordering',
         };
 
+        // Allow URL override of ordering
+        // Support both standard Joomla params (filter_order) and SEF-friendly params (sort)
         $listOrdering  = $input->get('filter_order', '', 'cmd');
         $listDirection = $input->get('filter_order_Dir', '', 'cmd');
 
+        // Check for SEF-friendly sort parameter (e.g., sort=name-asc, sort=price-desc)
         if (empty($listOrdering)) {
             $sortParam = $input->getString('sort', '');
             if (!empty($sortParam)) {
+                // Map SEF-friendly sort names to SQL column and direction
                 $sortMapping = [
                     'name-asc'   => ['a.title', 'ASC'],
                     'name-desc'  => ['a.title', 'DESC'],
@@ -124,15 +160,18 @@ class ProducttagsModel extends ListModel
                     'popular'    => ['p.hits', 'DESC'],
                     'default'    => ['a.ordering', 'ASC'],
                 ];
+
                 if (isset($sortMapping[$sortParam])) {
                     [$listOrdering, $listDirection] = $sortMapping[$sortParam];
                 }
             }
         }
 
+        // Also check for sortby parameter from form submission (full SQL format)
         if (empty($listOrdering)) {
             $sortby = $input->getString('sortby', '');
             if (!empty($sortby)) {
+                // Parse "column DIRECTION" format (e.g., "a.title ASC")
                 if (preg_match('/^([a-z_.]+)\s+(ASC|DESC)$/i', $sortby, $matches)) {
                     $listOrdering  = $matches[1];
                     $listDirection = strtoupper($matches[2]);
@@ -142,20 +181,28 @@ class ProducttagsModel extends ListModel
             }
         }
 
-        $listOrdering  = $listOrdering ?: $orderMapping;
-        $listDirection = $listDirection ?: $orderDirection;
+        // Fall back to menu item ordering if no URL override
+        if (empty($listOrdering)) {
+            $listOrdering = $orderMapping;
+        }
+        if (empty($listDirection)) {
+            $listDirection = $orderDirection;
+        }
+
         $listDirection = strtoupper($listDirection) === 'DESC' ? 'DESC' : 'ASC';
 
         $this->setState('list.ordering', $listOrdering);
         $this->setState('list.direction', $listDirection);
 
+        // Set sortby state for template dropdown selection (format: "column DIRECTION")
+        // This matches the dropdown option values in ProductHelper::getSortingOptions()
         $sortbyForTemplate = $listOrdering !== 'a.ordering' ? $listOrdering . ' ' . $listDirection : $listOrdering;
         $this->setState('sortby', $sortbyForTemplate);
 
-        // Search filter
+        // Search filter from frontend - support both 'filter_search' and 'search' params
         $search = $input->getString('filter_search', '') ?: $input->getString('search', '');
         $this->setState('filter.search', $search);
-        $this->setState('search', $search);
+        $this->setState('search', $search); // Also set 'search' for template access
 
         // Pagination
         $limit      = $params->get('page_limit', $app->get('list_limit', 20));
@@ -167,6 +214,15 @@ class ProducttagsModel extends ListModel
         $this->setState('filter.language', Multilanguage::isEnabled());
     }
 
+    /**
+     * Method to get a store id based on model configuration state.
+     *
+     * @param   string  $id  A prefix for the store id.
+     *
+     * @return  string  A store id.
+     *
+     * @since   6.0.0
+     */
     protected function getStoreId($id = ''): string
     {
         $id .= ':' . serialize($this->getState('filter.tag_ids', []));
@@ -183,12 +239,20 @@ class ProducttagsModel extends ListModel
         return parent::getStoreId($id);
     }
 
+    /**
+     * Build an SQL query to load the list data.
+     *
+     * @return  QueryInterface
+     *
+     * @since   6.0.0
+     */
     protected function getListQuery(): QueryInterface
     {
         $db     = $this->getDatabase();
         $query  = $db->getQuery(true);
         $user   = $this->getCurrentUser();
 
+        // Select product fields
         $query->select(
             $db->quoteName([
                 'p.j2commerce_product_id',
@@ -203,6 +267,7 @@ class ProducttagsModel extends ListModel
             ])
         );
 
+        // Select article fields for com_content products
         $query->select([
             $db->quoteName('a.id', 'article_id'),
             $db->quoteName('a.title', 'product_name'),
@@ -218,12 +283,14 @@ class ProducttagsModel extends ListModel
             $db->quoteName('a.language'),
         ]);
 
+        // Select master variant price, SKU, and UPC
         $query->select($db->quoteName('v.price'));
         $query->select($db->quoteName('v.sku'));
         $query->select($db->quoteName('v.upc'));
 
         $query->from($db->quoteName('#__j2commerce_products', 'p'));
 
+        // Join with content articles
         $query->join(
             'INNER',
             $db->quoteName('#__content', 'a'),
@@ -231,12 +298,14 @@ class ProducttagsModel extends ListModel
                 . ' AND ' . $db->quoteName('p.product_source') . ' = ' . $db->quote('com_content')
         );
 
+        // Join with categories
         $query->join(
             'LEFT',
             $db->quoteName('#__categories', 'c'),
             $db->quoteName('c.id') . ' = ' . $db->quoteName('a.catid')
         );
 
+        // Join with master variant for price
         $query->join(
             'LEFT',
             $db->quoteName('#__j2commerce_variants', 'v'),
@@ -244,10 +313,14 @@ class ProducttagsModel extends ListModel
                 . ' AND ' . $db->quoteName('v.is_master') . ' = 1'
         );
 
+        // Filter by enabled products
         $query->where($db->quoteName('p.enabled') . ' = 1');
         $query->where($db->quoteName('p.visibility') . ' = 1');
+
+        // Filter by published articles
         $query->where($db->quoteName('a.state') . ' = 1');
 
+        // Filter by access level
         $groups = $user->getAuthorisedViewLevels();
         $query->whereIn($db->quoteName('a.access'), $groups);
         $query->whereIn($db->quoteName('c.access'), $groups);
@@ -297,7 +370,7 @@ class ProducttagsModel extends ListModel
             );
         }
 
-        // Search filter
+        // Search filter - searches title, SKU, UPC, and description
         $search = $this->getState('filter.search');
         if (!empty($search)) {
             $search = '%' . str_replace(' ', '%', trim($search)) . '%';
@@ -325,7 +398,7 @@ class ProducttagsModel extends ListModel
             $query->whereIn($db->quoteName('p.vendor_id'), array_map('intval', $vendorIds));
         }
 
-        // Filter by product filter IDs
+        // Filter by product filter IDs (custom attributes)
         $productfilterIds = $this->getState('filter.productfilter_ids', []);
         if (!empty($productfilterIds)) {
             $sanitizedFilterIds = implode(',', array_map('intval', $productfilterIds));
@@ -343,9 +416,11 @@ class ProducttagsModel extends ListModel
             $this->applyPriceRangeFilter($query, $db, $user, $priceFrom, $priceTo);
         }
 
+        // Ordering
         $orderCol = $this->state->get('list.ordering', 'a.ordering');
         $orderDir = $this->state->get('list.direction', 'ASC');
 
+        // Handle price ordering specially (use variant price)
         if ($orderCol === 'price' || $orderCol === 'v.price') {
             $orderCol = 'v.price';
         }
@@ -355,6 +430,16 @@ class ProducttagsModel extends ListModel
         return $query;
     }
 
+    /**
+     * Method to get an array of product items.
+     *
+     * Overrides parent to hydrate each product with full data including
+     * images, pricing, stock, etc via ProductHelper::getFullProduct().
+     *
+     * @return  array  An array of product objects.
+     *
+     * @since   6.0.0
+     */
     public function getItems(): array
     {
         $items = parent::getItems();
@@ -366,28 +451,52 @@ class ProducttagsModel extends ListModel
         $hydratedItems = [];
 
         foreach ($items as $item) {
+            // Get fully hydrated product data
             $product = ProductHelper::getFullProduct(
                 (int) $item->j2commerce_product_id,
-                false,
-                false
+                false,  // Don't load variants for list view (performance)
+                false   // Don't load options for list view
             );
 
             if ($product) {
+                // Merge list-level data with full product
                 $product->article_ordering = $item->ordering ?? 0;
                 $product->article_hits     = $item->hits ?? 0;
                 $product->article_featured = $item->featured ?? 0;
+
                 $hydratedItems[]           = $product;
             }
         }
 
         return $hydratedItems;
     }
-
+    /**
+     * Get parent category node.
+     *
+     * @return  null
+     *
+     * @since   6.0.0
+     */
     public function getParent(): ?object
     {
         return null;
     }
 
+    /**
+     * Get filters for product listing sidebar.
+     *
+     * Returns filter data for categories, price range, manufacturers,
+     * vendors, product filters (custom attributes), and sorting options.
+     *
+     * Uses `list_filter_selected_categories` menu item parameter for category filter display,
+     * falling back to the current filter category if not specified.
+     *
+     * @param   array  $items  Array of product items (used for context-aware filtering).
+     *
+     * @return  array  Filter configuration array.
+     *
+     * @since   6.0.3
+     */
     public function getFilters(array $items = []): array
     {
         $filters = ProductHelper::getFilters($items, []);
@@ -453,6 +562,7 @@ class ProducttagsModel extends ListModel
         $query->join('LEFT', '(' . $ppSub . ') AS ' . $db->quoteName('pp') . ' ON ' . $db->quoteName('pp.variant_id') . ' = ' . $db->quoteName('v.j2commerce_variant_id'));
 
         // Base price: use min child variant price when children exist, otherwise master price.
+        // This handles variable/flexivariable products where master_price=$0.
         $basePrice = 'COALESCE(' . $db->quoteName('vc.min_child_price') . ', ' . $db->quoteName('v.price') . ')';
 
         // Effective price: lowest of base price and any active advanced pricing

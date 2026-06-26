@@ -23,6 +23,16 @@ class ProductsController extends J2CommerceApiController
 
     protected $default_view = 'products';
 
+    public function getModel($name = '', $prefix = '', $config = [])
+    {
+        // Use API-layer ProductModel (article + jcfields) for single-item requests
+        if (strtolower($name) === 'product') {
+            $prefix = 'Api';
+        }
+
+        return parent::getModel($name, $prefix, $config);
+    }
+
     public function displayList()
     {
         $apiFilterInfo = $this->input->get('filter', [], 'array');

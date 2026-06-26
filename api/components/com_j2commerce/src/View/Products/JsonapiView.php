@@ -40,6 +40,8 @@ class JsonapiView extends J2CommerceJsonapiView
         'main_image',
         'created_on',
         'modified_on',
+        'article',
+        'jcfields',
     ];
 
     protected $fieldsToRenderList = [
