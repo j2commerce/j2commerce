@@ -588,7 +588,46 @@ class ProductsModel extends ListModel
             $filterCategoryIds = $this->getState('filter.catids', []);
         }
 
-        return ProductHelper::getFilters($items, $filterCategoryIds);
+        // Honour the `list_manufacturer_filter_list_type` menu param: 'selected' restricts
+        // the manufacturer filter to brands represented in the current category listing.
+        $manufacturerListType    = $params->get('list_manufacturer_filter_list_type', 'all');
+        $restrictManufacturerIds = $manufacturerListType === 'selected'
+            ? $this->getMatchingManufacturerIds()
+            : null;
+
+        return ProductHelper::getFilters($items, $filterCategoryIds, $restrictManufacturerIds);
+    }
+
+    /**
+     * Get the IDs of manufacturers represented in the current category-filtered product set.
+     *
+     * Re-uses getListQuery() so the manufacturer list reflects the same category / search /
+     * price / vendor / product-filter constraints as the listing. Any active manufacturer
+     * selection is intentionally ignored so choosing a brand does not collapse the brand list.
+     *
+     * @return  int[]
+     *
+     * @since   6.0.3
+     */
+    protected function getMatchingManufacturerIds(): array
+    {
+        $db = $this->getDatabase();
+
+        $savedManufacturerIds = $this->getState('filter.manufacturer_ids', []);
+        $this->setState('filter.manufacturer_ids', []);
+
+        try {
+            $query = $this->getListQuery();
+        } finally {
+            $this->setState('filter.manufacturer_ids', $savedManufacturerIds);
+        }
+
+        $query->clear('select')->clear('order')->clear('group')
+            ->select('DISTINCT ' . $db->quoteName('p.manufacturer_id'));
+
+        $db->setQuery($query);
+
+        return array_values(array_filter(array_map('intval', $db->loadColumn() ?: [])));
     }
 
     protected function getSiblingCategoryIds(int $categoryId): array

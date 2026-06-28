@@ -46,24 +46,24 @@ final class ProductLayoutService
         $contextParts  = self::parseContext($context);
 
         $displayData = [
-            'product'         => $product,
-            'params'          => $params,
-            'context'         => $context,
-            'contextBase'     => $contextParts['base'],
-            'contextSub'      => $contextParts['sub'],
-            'contextChain'    => $contextParts['chain'],
-            'itemId'          => $itemId,
-            'columns'         => (int) $params->get('list_no_of_columns', 3),
-            'imageWidth'      => self::getImageWidth($params, $context),
-            'showImage'       => (bool) $params->get('list_show_image', 1),
-            'showTitle'       => (bool) $params->get('list_show_title', 1),
+            'product'             => $product,
+            'params'              => $params,
+            'context'             => $context,
+            'contextBase'         => $contextParts['base'],
+            'contextSub'          => $contextParts['sub'],
+            'contextChain'        => $contextParts['chain'],
+            'itemId'              => $itemId,
+            'columns'             => (int) $params->get('list_no_of_columns', 3),
+            'imageWidth'          => self::getImageWidth($params, $context),
+            'showImage'           => (bool) $params->get('list_show_image', 1),
+            'showTitle'           => (bool) $params->get('list_show_title', 1),
             'showDescription'     => (bool) $params->get('list_show_short_desc', $params->get('list_show_description', 0)),
             'showLongDescription' => (bool) $params->get('list_show_long_desc', 0),
-            'showPrice'       => $productHelper->canShowprice($params),
-            'showCart'        => $productHelper->canShowCart($params),
-            'showSku'         => (bool) $params->get('list_show_product_sku', 0),
-            'showUpc'         => (bool) $params->get('list_show_product_upc', 0),
-            'showStock'       => (bool) $params->get('list_show_product_stock', 0)
+            'showPrice'           => $productHelper->canShowprice($params),
+            'showCart'            => $productHelper->canShowCart($params),
+            'showSku'             => (bool) $params->get('list_show_product_sku', 0),
+            'showUpc'             => (bool) $params->get('list_show_product_upc', 0),
+            'showStock'           => (bool) $params->get('list_show_product_stock', 0)
                                  && isset($product->variant)
                                  && \is_object($product->variant),
             'showQuickview' => (bool) $params->get('list_enable_quickview', 0),
@@ -261,10 +261,18 @@ final class ProductLayoutService
             $subtemplate = substr($subtemplate, 4);
         }
 
+        // Strip view-scope prefixes (tag_, categories_, categories_tag_). These are
+        // menu-selectable aliases (e.g. tag_superstore, categories_tag_bootstrap5) that
+        // all map to the SAME owning app plugin folder (app_superstore, app_bootstrap5).
+        // Without this, e.g. 'tag_superstore' resolved to the non-existent
+        // 'app_tag_superstore', leaving FileLayout with no include paths so product
+        // items rendered empty in the AJAX filter response.
+        $subtemplate = preg_replace('/^(categories_tag_|categories_|tag_)/', '', $subtemplate) ?? $subtemplate;
+
         return match ($subtemplate) {
-            'bootstrap5', 'tag_bootstrap5' => 'app_bootstrap5',
-            'uikit', 'tag_uikit'           => 'app_uikit',
-            default                        => 'app_' . $subtemplate,
+            'bootstrap5' => 'app_bootstrap5',
+            'uikit'      => 'app_uikit',
+            default      => 'app_' . $subtemplate,
         };
     }
 

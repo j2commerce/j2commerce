@@ -15,6 +15,7 @@ namespace J2Commerce\Component\J2commerce\Site\Model;
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
+use J2Commerce\Component\J2commerce\Site\Helper\ProductFilterRequestHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Multilanguage;
 use Joomla\CMS\MVC\Model\ListModel;
@@ -209,6 +210,20 @@ class ProducttagsModel extends ListModel
         $limitstart = $input->getInt('limitstart', 0);
         $this->setState('list.limit', (int) $limit);
         $this->setState('list.start', $limitstart);
+
+        // Sidebar filter state — single source of truth via ProductFilterRequestHelper.
+        // Reads ?manufacturer_ids[]/?brands=, ?vendor_ids[]/?vendors=, ?productfilter_ids[]/?filters=,
+        // pricefrom/priceto from the current request so a clicked filter (or cold-pasted filtered URL)
+        // actually narrows the tagged-product list. tag_ids/tag_match are intentionally NOT taken from
+        // the request here — on a tag menu item they are fixed by the menu item (set above).
+        $filterState = ProductFilterRequestHelper::resolveFromRequest($input);
+        $this->setState('filter.manufacturer_ids', $filterState['manufacturer_ids']);
+        $this->setState('filter.vendor_ids', $filterState['vendor_ids']);
+        $this->setState('filter.productfilter_ids', $filterState['productfilter_ids']);
+        if ($filterState['price_from'] > 0 || $filterState['price_to'] > 0) {
+            $this->setState('filter.price_from', $filterState['price_from']);
+            $this->setState('filter.price_to', $filterState['price_to']);
+        }
 
         // Language filter
         $this->setState('filter.language', Multilanguage::isEnabled());
@@ -499,7 +514,17 @@ class ProducttagsModel extends ListModel
      */
     public function getFilters(array $items = []): array
     {
-        $filters = ProductHelper::getFilters($items, []);
+        // Honour the `list_manufacturer_filter_list_type` menu param: when set to
+        // 'selected', restrict the manufacturer filter list to manufacturers actually
+        // represented in the current (tag-matched) product set instead of every store
+        // manufacturer. null = show all (default behaviour).
+        $params                  = $this->getState('params');
+        $manufacturerListType    = $params ? $params->get('list_manufacturer_filter_list_type', 'all') : 'all';
+        $restrictManufacturerIds = $manufacturerListType === 'selected'
+            ? $this->getMatchingManufacturerIds()
+            : null;
+
+        $filters = ProductHelper::getFilters($items, [], $restrictManufacturerIds);
 
         // Override price range with actual prices from tag-filtered items
         if (!empty($items)) {
@@ -519,6 +544,39 @@ class ProducttagsModel extends ListModel
         }
 
         return $filters;
+    }
+
+    /**
+     * Get the IDs of manufacturers represented in the current tag-matched product set.
+     *
+     * Re-uses getListQuery() so the manufacturer list reflects the same tag / search /
+     * price / vendor / product-filter constraints as the listing. Any active manufacturer
+     * selection is intentionally ignored so choosing a brand does not collapse the brand
+     * list to that single brand.
+     *
+     * @return  int[]
+     *
+     * @since   6.0.3
+     */
+    protected function getMatchingManufacturerIds(): array
+    {
+        $db = $this->getDatabase();
+
+        $savedManufacturerIds = $this->getState('filter.manufacturer_ids', []);
+        $this->setState('filter.manufacturer_ids', []);
+
+        try {
+            $query = $this->getListQuery();
+        } finally {
+            $this->setState('filter.manufacturer_ids', $savedManufacturerIds);
+        }
+
+        $query->clear('select')->clear('order')->clear('group')
+            ->select('DISTINCT ' . $db->quoteName('p.manufacturer_id'));
+
+        $db->setQuery($query);
+
+        return array_values(array_filter(array_map('intval', $db->loadColumn() ?: [])));
     }
 
     protected function applyPriceRangeFilter(

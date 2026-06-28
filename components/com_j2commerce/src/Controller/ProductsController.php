@@ -174,8 +174,18 @@ class ProductsController extends AdminProductsController
                 $model->setState('list.limit', $pageLimit);
             }
 
-            // filter.manufacturer_ids / vendor_ids / productfilter_ids / price_from / price_to
-            // are seeded by ProductsModel::populateState() via ProductFilterRequestHelper.
+            // Seed the sidebar filter state explicitly. This AJAX task bypasses the normal
+            // view chain, and the model's populateState() does not run via this controller
+            // path, so manufacturer / vendor / product-filter / price selections must be set
+            // here (same as tag_ids / search / sort above) or they are silently ignored.
+            $model->setState('filter.manufacturer_ids', array_map('intval', $manufacturerIds));
+            $model->setState('filter.vendor_ids', array_map('intval', $vendorIds));
+            $model->setState('filter.productfilter_ids', array_map('intval', $productfilterIds));
+            if ($priceFrom > 0 || $priceTo > 0) {
+                $model->setState('filter.price_from', $priceFrom);
+                $model->setState('filter.price_to', $priceTo);
+            }
+
             if (!empty($search)) {
                 $model->setState('filter.search', $search);
             }

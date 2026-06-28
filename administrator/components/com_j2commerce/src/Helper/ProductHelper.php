@@ -2938,7 +2938,7 @@ class ProductHelper
      *
      * @since   6.0.3
      */
-    public static function getManufacturers(): array
+    public static function getManufacturers(array $restrictIds = []): array
     {
         $db    = self::getDatabase();
         $query = $db->getQuery(true);
@@ -2955,6 +2955,12 @@ class ProductHelper
             )
             ->where($db->quoteName('m.enabled') . ' = 1')
             ->order($db->quoteName('a.company') . ' ASC');
+
+        // Restrict to a specific set of manufacturers (e.g. only those represented in
+        // the current product listing when the menu uses the 'selected' filter type).
+        if (!empty($restrictIds)) {
+            $query->whereIn($db->quoteName('m.j2commerce_manufacturer_id'), array_map('intval', $restrictIds));
+        }
 
         $db->setQuery($query);
 
@@ -3957,7 +3963,7 @@ class ProductHelper
      *
      * @since   6.0.3
      */
-    public static function getFilters(array $items = [], array $catids = []): array
+    public static function getFilters(array $items = [], array $catids = [], ?array $restrictManufacturerIds = null): array
     {
         $filters                      = [];
         $filters['filter_categories'] = [];
@@ -3976,8 +3982,17 @@ class ProductHelper
             }
         }
 
-        // Get manufacturers
-        $filters['manufacturers'] = self::getManufacturers();
+        // Get manufacturers. $restrictManufacturerIds === null means "show every store
+        // manufacturer" (default). A (possibly empty) array means the caller asked for the
+        // 'selected' list type: show only manufacturers in the array — an empty array
+        // therefore yields no manufacturers rather than all of them.
+        if ($restrictManufacturerIds === null) {
+            $filters['manufacturers'] = self::getManufacturers();
+        } elseif (!empty($restrictManufacturerIds)) {
+            $filters['manufacturers'] = self::getManufacturers($restrictManufacturerIds);
+        } else {
+            $filters['manufacturers'] = [];
+        }
 
         // Get vendors with first_name and last_name
         $filters['vendors'] = self::getVendorsWithNames();
