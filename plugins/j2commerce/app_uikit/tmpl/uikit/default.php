@@ -39,6 +39,9 @@ $columns = (int) $this->params->get('list_no_of_columns', 3);
 
 $enableAjaxFilters = $this->params->get('list_enable_ajax_filters', 1);
 
+$isSearchPage = isset($this->active_menu->query['layout']) && $this->active_menu->query['layout'] === 'searchresults';
+$searchTerm   = $isSearchPage ? trim((string) $this->state->get('filter.search', '')) : '';
+
 $platform = J2CommerceHelper::platform();
 if ($this->params->get('list_show_filter', 1) && $filterPosition === 'left'){
     $paddingClass = 'inner_class';
@@ -69,7 +72,13 @@ if ($this->params->get('list_show_filter', 1) && $filterPosition === 'left'){
         <div class="j2commerce-category-description uk-margin-top"><?php echo $this->parent->description; ?></div>
     <?php endif; ?>
 
-    <?php if ($this->params->get('list_show_filter_category', 1) && !empty($this->filters['filter_categories']) && count($this->filters['filter_categories'])) : ?>
+    <?php if ($isSearchPage) : ?>
+        <h1 class="j2commerce-search-results-title uk-margin-top">
+            <?php echo $searchTerm !== ''
+                ? Text::sprintf('COM_J2COMMERCE_SEARCH_RESULTS_FOR', $this->escape($searchTerm))
+                : Text::_('COM_J2COMMERCE_SEARCH_RESULTS'); ?>
+        </h1>
+    <?php elseif ($this->params->get('list_show_filter_category', 1) && !empty($this->filters['filter_categories']) && count($this->filters['filter_categories'])) : ?>
         <?php echo $this->loadTemplate('categoryfilter'); ?>
     <?php endif; ?>
 
