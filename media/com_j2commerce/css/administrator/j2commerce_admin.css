@@ -252,7 +252,7 @@ body.com_j2commerce #content,
         background-color: #007bff !important;
     }
 
-    .subform-repeatable-group .control-group { margin-bottom : 0; }
+    /* .subform-repeatable-group .control-group { margin-bottom : 0; } */
     .progress { background-color: #e9ecef !important; }
     .box-shadow-none { box-shadow : none !important; }
 
