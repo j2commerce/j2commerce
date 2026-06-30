@@ -789,6 +789,21 @@ final class J2commerce extends Adapter implements SubscriberInterface
         // Add product fields
         $query->select($db->quoteName('p') . '.*');
 
+        // p.* re-introduces product columns whose names collide with the content
+        // article columns selected above (access, params, created_by, modified_by,
+        // ordering). On a duplicate column name the later one wins in the result
+        // row, so p.* would clobber the article values — critically a.access, since
+        // #__j2commerce_products.access defaults to 0 (an invalid view level), which
+        // drops every product from frontend Smart Search. Re-select the article
+        // columns last so the content values win.
+        $query->select([
+            $db->quoteName('a.access', 'access'),
+            $db->quoteName('a.attribs', 'params'),
+            $db->quoteName('a.created_by', 'created_by'),
+            $db->quoteName('a.modified_by', 'modified_by'),
+            $db->quoteName('a.ordering', 'ordering'),
+        ]);
+
         // Handle the alias CASE WHEN portion of the query
         $a_id                 = $query->castAs('CHAR', 'a.id');
         $case_when_item_alias = ' CASE WHEN ' . $query->charLength('a.alias', '!=', '0');
