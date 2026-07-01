@@ -333,7 +333,7 @@ class J2CommerceFilters {
         const insertPoint = sortFilter || contentArea.firstChild;
 
         const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = data.products;
+        tempDiv.append(document.createRange().createContextualFragment(data.products));
 
         while (tempDiv.firstChild) {
             if (insertPoint && insertPoint.parentNode === contentArea) {
@@ -345,7 +345,7 @@ class J2CommerceFilters {
 
         if (data.pagination) {
             const paginationDiv = document.createElement('div');
-            paginationDiv.innerHTML = data.pagination;
+            paginationDiv.append(document.createRange().createContextualFragment(data.pagination));
             contentArea.appendChild(paginationDiv.firstChild || paginationDiv);
         }
 
@@ -367,7 +367,7 @@ class J2CommerceFilters {
         total = parseInt(total, 10) || 0;
         const key = total === 1 ? 'COM_J2COMMERCE_SHOWING_1_ITEM' : 'COM_J2COMMERCE_SHOWING_N_ITEMS';
         const str = Joomla.Text._(key) || `Showing <strong>${total}</strong> Items`;
-        el.innerHTML = str.replace(/%d/, total);
+        el.replaceChildren(document.createRange().createContextualFragment(str.replace(/%d/, total)));
     }
 
     updateUrl(formData, limitstart) {
@@ -660,7 +660,10 @@ class J2CommerceFilters {
         }
 
         // Update only the tiles content and "Clear all" visibility — wrapper stays visible
-        container.innerHTML = tiles.length > 0 ? tiles.join('') : '';
+        container.replaceChildren();
+        if (tiles.length > 0) {
+            container.append(document.createRange().createContextualFragment(tiles.join('')));
+        }
         if (clearAllBtn) {
             clearAllBtn.style.display = tiles.length > 0 ? '' : 'none';
         }

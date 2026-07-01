@@ -72,7 +72,7 @@
 
         try {
             button.disabled = true;
-            button.innerHTML = '<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span> ' + Joomla.Text._('COM_J2COMMERCE_LOADING');
+            button.replaceChildren(document.createRange().createContextualFragment('<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span> ' + Joomla.Text._('COM_J2COMMERCE_LOADING')));
 
             const response = await fetch('index.php?option=com_ajax&plugin=' + provider + '&group=j2commerce&method=deleteCard&format=json', {
                 method: 'POST',
@@ -115,7 +115,7 @@
             console.error('Delete card error:', error);
             showErrorMessage(error.message || Joomla.Text._('COM_J2COMMERCE_PAYMENT_METHODS_ERROR'));
             button.disabled = false;
-            button.innerHTML = '<span class="fa-solid fa-trash me-1" aria-hidden="true"></span>' + Joomla.Text._('JACTION_DELETE');
+            button.replaceChildren(document.createRange().createContextualFragment('<span class="fa-solid fa-trash me-1" aria-hidden="true"></span>' + Joomla.Text._('JACTION_DELETE')));
         }
     }
 
@@ -138,7 +138,7 @@
 
         try {
             button.disabled = true;
-            button.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></span>';
+            button.replaceChildren(document.createRange().createContextualFragment('<span class="spinner-border spinner-border-sm me-1" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></span>'));
 
             const response = await fetch('index.php?option=com_ajax&plugin=' + provider + '&group=j2commerce&method=setDefaultCard&format=json', {
                 method: 'POST',
@@ -192,7 +192,7 @@
             console.error('Set default card error:', error);
             showErrorMessage(error.message || Joomla.Text._('COM_J2COMMERCE_PAYMENT_METHODS_ERROR'));
             button.disabled = false;
-            button.innerHTML = '<span class="fa-solid fa-star me-1" aria-hidden="true"></span>' + Joomla.Text._('COM_J2COMMERCE_PAYMENT_METHODS_SET_DEFAULT');
+            button.replaceChildren(document.createRange().createContextualFragment('<span class="fa-solid fa-star me-1" aria-hidden="true"></span>' + Joomla.Text._('COM_J2COMMERCE_PAYMENT_METHODS_SET_DEFAULT')));
         }
     }
 
@@ -246,10 +246,11 @@
         const remainingCards = container.querySelectorAll('.j2commerce-payment-card');
 
         if (remainingCards.length === 0) {
-            container.innerHTML = '<div class="alert alert-info" role="alert">' +
+            container.replaceChildren(document.createRange().createContextualFragment(
+                '<div class="alert alert-info" role="alert">' +
                 '<span class="fa-solid fa-info-circle me-2" aria-hidden="true"></span>' +
                 Joomla.Text._('COM_J2COMMERCE_PAYMENT_METHODS_NO_SAVED') +
-                '</div>';
+                '</div>'));
         }
     }
 })();

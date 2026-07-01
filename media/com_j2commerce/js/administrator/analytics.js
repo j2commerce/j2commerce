@@ -455,7 +455,7 @@
 
         const setChange = (id, change) => {
             const el = document.getElementById(id);
-            if (el) el.innerHTML = changeHtml(change);
+            if (el) el.replaceChildren(document.createRange().createContextualFragment(changeHtml(change)));
         };
 
         setChange('kpi-revenue-change', revenueChange);
@@ -476,18 +476,18 @@
 
         if (!products || !products.length) {
             const noDataText = Joomla.Text._('COM_J2COMMERCE_ANALYTICS_NO_DATA');
-            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">' + escapeHtml(noDataText) + '</td></tr>';
+            tbody.replaceChildren(document.createRange().createContextualFragment('<tr><td colspan="4" class="text-center text-body-secondary">' + escapeHtml(noDataText) + '</td></tr>'));
             return;
         }
 
-        tbody.innerHTML = products.map((p, i) =>
+        tbody.replaceChildren(document.createRange().createContextualFragment(products.map((p, i) =>
             `<tr>
                 <td>${i + 1}</td>
                 <td>${escapeHtml(p.name)}</td>
                 <td class="text-end">${parseInt(p.total_qty, 10)}</td>
                 <td class="text-end">${escapeHtml(p.formatted_revenue || formatCurrency(p.total_revenue))}</td>
             </tr>`
-        ).join('');
+        ).join('')));
     }
 
     async function refreshData() {

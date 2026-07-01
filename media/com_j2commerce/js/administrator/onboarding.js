@@ -1065,12 +1065,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // Add remove button in the last cell
         const lastCell = row.querySelector('td:last-child');
         if (lastCell) {
-            lastCell.innerHTML = '';
+            lastCell.replaceChildren();
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'btn btn-sm btn-link text-danger shadow-none';
             btn.dataset.action = 'remove-rate';
-            btn.innerHTML = '<span class="fa-solid fa-trash-can" aria-hidden="true"></span>';
+            btn.replaceChildren(document.createRange().createContextualFragment('<span class="fa-solid fa-trash-can" aria-hidden="true"></span>'));
             lastCell.appendChild(btn);
         }
 
