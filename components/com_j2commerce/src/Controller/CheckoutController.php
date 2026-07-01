@@ -21,6 +21,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
+use J2Commerce\Component\J2commerce\Site\Helper\CheckoutContextHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\CheckoutStepsHelper;
 use Joomla\CMS\Event\Model\PrepareFormEvent;
 use Joomla\CMS\Factory;
@@ -1342,7 +1343,7 @@ class CheckoutController extends BaseController
 
         $position = $this->input->getString('position', 'after_billing');
         $order    = $this->getCartOrder();
-        $items    = $order ? $order->getItems() : [];
+        $items    = ($order && method_exists($order, 'getItems')) ? $order->getItems() : [];
 
         $context = [
             'items'   => $items,
@@ -1368,7 +1369,7 @@ class CheckoutController extends BaseController
 
         $position = $this->input->getString('position', 'after_billing');
         $order    = $this->getCartOrder();
-        $items    = $order ? $order->getItems() : [];
+        $items    = ($order && method_exists($order, 'getItems')) ? $order->getItems() : [];
 
         $context = [
             'items'   => $items,
@@ -1414,6 +1415,63 @@ class CheckoutController extends BaseController
 
         $session = $this->app->getSession();
         $errors  = [];
+
+        // Context mode: skip saveOrder() — load and finalize an existing order.
+        // Single predicate enforces activated + resolved + validate() before we proceed.
+        if (CheckoutContextHelper::isOwningRequest()) {
+            $resolved      = CheckoutContextHelper::resolveContext();
+            $existingOrder = $resolved->getOrder();
+
+            if ($existingOrder === null) {
+                CheckoutContextHelper::clearContext();
+                $this->jsonResponse(['error' => ['warning' => Text::_('JINVALID_TOKEN')]]);
+                return;
+            }
+
+            $orderpaymentType = !empty($existingOrder->orderpayment_type ?? '')
+                ? (string) $existingOrder->orderpayment_type
+                : $session->get('payment_method', '', 'j2commerce');
+
+            $pluginHtml = '';
+
+            if (!empty($orderpaymentType) && !empty($existingOrder->order_id)) {
+                $paymentValues = [
+                    'order_id'            => $existingOrder->order_id,
+                    'orderpayment_id'     => $existingOrder->j2commerce_order_id ?? '',
+                    'orderpayment_amount' => (float) ($existingOrder->order_total ?? 0),
+                    'order'               => $existingOrder,
+                ];
+                $prePaymentResults = J2CommerceHelper::plugin()->eventWithArray('PrePayment', [$orderpaymentType, $paymentValues]);
+
+                foreach ($prePaymentResults as $result) {
+                    $pluginHtml .= $result;
+                }
+            }
+
+            // Prime user-state so confirmPayment() loads this order, not the cart.
+            $this->app->setUserState('j2commerce.order_id', $existingOrder->order_id ?? null);
+            $this->app->setUserState('j2commerce.orderpayment_id', $existingOrder->j2commerce_order_id ?? null);
+
+            $this->renderStep('confirm', [
+                'order'            => $existingOrder,
+                'items'            => method_exists($existingOrder, 'getItems') ? $existingOrder->getItems() : [],
+                'taxes'            => method_exists($existingOrder, 'getOrderTaxrates') ? $existingOrder->getOrderTaxrates() : [],
+                'shipping'         => method_exists($existingOrder, 'getOrderShippingRate') ? $existingOrder->getOrderShippingRate() : null,
+                'coupons'          => method_exists($existingOrder, 'getOrderCoupons') ? $existingOrder->getOrderCoupons() : [],
+                'vouchers'         => method_exists($existingOrder, 'getOrderVouchers') ? $existingOrder->getOrderVouchers() : [],
+                'plugin_html'      => $pluginHtml,
+                'showPayment'      => !empty($orderpaymentType),
+                'free_redirect'    => '',
+                'errors'           => [],
+                'showTerms'        => (int) J2CommerceHelper::config()->get('show_terms', 0),
+                'termsDisplayType' => (string) J2CommerceHelper::config()->get('terms_display_type', 'link'),
+                'termsArticleId'   => (int) J2CommerceHelper::config()->get('termsid', 0),
+                'termsText'        => (string) J2CommerceHelper::config()->get('termstext', ''),
+                'showCustomerNote' => (int) J2CommerceHelper::config()->get('show_customer_note', 1) === 1,
+            ]);
+
+            return;
+        } // end isOwningRequest() block
 
         if ($session->has('payment_values', 'j2commerce')) {
             $paymentValues = $session->get('payment_values', [], 'j2commerce');
@@ -1567,6 +1625,54 @@ class CheckoutController extends BaseController
         $orderpaymentId = (int) $this->app->getUserState('j2commerce.orderpayment_id', 0);
         $orderId        = $this->app->getUserState('j2commerce.order_id', '');
 
+        // Capture BEFORE any isOwningRequest() call: isOwningRequest() can call
+        // clearContext() internally (on validate() failure) and then return false,
+        // which would make a mid-flow rejection invisible at this level.
+        $wasContextActivated = CheckoutContextHelper::isActivated();
+
+        // Re-assertion: re-validate context ownership for this request and confirm
+        // the primed order matches the context order. If the request entered as an
+        // activated context but ownership no longer holds (plugin validate() rejected,
+        // resolve failed, or order mismatch), hard-abort to cart — never fall through
+        // to finalize the primed order as a normal checkout.
+        if ($wasContextActivated) {
+            if (!CheckoutContextHelper::isOwningRequest()) {
+                // Mid-flow rejection: validate() returned false or resolve failed.
+                // isOwningRequest() may have already cleared; clear again to be safe.
+                CheckoutContextHelper::clearContext();
+                $this->app->redirect(Route::_('index.php?option=com_j2commerce&view=carts'));
+                return;
+            }
+
+            // Context still owns this request; verify primed order_id matches.
+            $freshResolved = CheckoutContextHelper::resolveContext();
+            $contextOrder  = $freshResolved?->getOrder();
+
+            if ($contextOrder === null || (string) ($contextOrder->order_id ?? '') !== (string) $orderId) {
+                CheckoutContextHelper::clearContext();
+                $this->app->redirect(Route::_('index.php?option=com_j2commerce&view=carts'));
+                return;
+            }
+        }
+
+        // A1: Finalize-time context allow-list enforcement.
+        // Re-validates the submitted gateway against the context's allowed payment
+        // methods so a shopper cannot bypass the UI filter by POSTing a different
+        // (but installed/enabled) gateway directly. Only fires when:
+        //   (a) a context was active for this request, AND
+        //   (b) the context exposes a non-empty allowed list, AND
+        //   (c) a concrete gateway type was submitted.
+        // Normal checkout (no context) is completely unaffected.
+        if ($wasContextActivated && $orderpaymentType !== '') {
+            $contextAllowedMethods = CheckoutContextHelper::resolveContext()?->getAllowedPaymentMethods() ?? [];
+
+            if ($contextAllowedMethods !== [] && !\in_array($orderpaymentType, $contextAllowedMethods, true)) {
+                CheckoutContextHelper::clearContext();
+                $this->app->redirect(Route::_('index.php?option=com_j2commerce&view=carts'));
+                return;
+            }
+        }
+
         $clearCartTiming = J2CommerceHelper::config()->get('clear_cart', 'order_confirmed');
 
         $orderTable = $this->getMvcFactory()->createTable('Order', 'Administrator');
@@ -1671,6 +1777,12 @@ class CheckoutController extends BaseController
                             J2CommerceHelper::plugin()->event('AfterPayment', [$orderTable]);
                             $this->sendOrderEmails($orderId);
                         }
+
+                        // Teardown context on the AJAX on-site success path.
+                        // Off-site gateways never reach this block; their context
+                        // survives the outbound round-trip and tears down at the
+                        // terminal confirmation redirect below.
+                        CheckoutContextHelper::clearContext();
                     }
 
                     echo json_encode($decoded);
@@ -1743,6 +1855,15 @@ class CheckoutController extends BaseController
         $this->app->setUserState('j2commerce.order_id', null);
         $this->app->setUserState('j2commerce.orderpayment_id', null);
 
+        // Teardown checkout context only when payment completed. Off-site failure/
+        // cancel returns leave the order in a non-placed state ($orderPlaced false) —
+        // preserve context so the buyer can retry, mirroring the AJAX-failure path
+        // which exits before this point. Genuine success reaches a placed/confirmed
+        // state and $orderPlaced is true.
+        if ($orderPlaced) {
+            CheckoutContextHelper::clearContext();
+        }
+
         // Redirect to the dedicated confirmation view with order_id and token in URL
         $confirmUrl = Route::_(
             'index.php?option=com_j2commerce&view=confirmation&order_id=' . urlencode($orderId)
@@ -1754,7 +1875,8 @@ class CheckoutController extends BaseController
 
     private function clearCartAndSession(string $orderId, \Joomla\CMS\Session\Session $session): void
     {
-        if (!empty($orderId)) {
+        // In context mode the order was already placed; it has no cart rows to clear.
+        if (!empty($orderId) && !CheckoutContextHelper::isOwningRequest()) {
             CartHelper::emptyCart($orderId);
         }
 
@@ -1946,7 +2068,7 @@ class CheckoutController extends BaseController
             $view = $this->getCheckoutView();
 
             $order = $this->getCartOrder();
-            $items = $order ? $order->getItems() : [];
+            $items = ($order && method_exists($order, 'getItems')) ? $order->getItems() : [];
 
             $view->order = $order;
             $view->items = $items;
@@ -1997,6 +2119,11 @@ class CheckoutController extends BaseController
 
     protected function getCartOrder(): ?object
     {
+        // Single predicate: context activated + resolved + valid → serve existing order.
+        if (CheckoutContextHelper::isOwningRequest()) {
+            return CheckoutContextHelper::resolveContext()?->getOrder();
+        }
+
         $cartsModel = $this->getMvcFactory()->createModel('Carts', 'Site', ['ignore_request' => true]);
 
         if (!$cartsModel) {
