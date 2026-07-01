@@ -139,10 +139,16 @@ const J2CommerceFlexivariable = {
      * @param {number} productId - The product ID
      */
     updateProductDisplay: function(productContainer, response, productId) {
-        // Update SKU
+        // Update SKU — detail template uses .sku, list views use .sku-value (parity with core j2commerce.js)
         if (response.sku) {
-            const skuEl = productContainer.querySelector('.sku-value');
-            if (skuEl) skuEl.innerHTML = response.sku;
+            const skuEl = productContainer.querySelector('.sku-value') || productContainer.querySelector('.sku');
+            if (skuEl) skuEl.textContent = response.sku;
+        }
+
+        // Update UPC — detail template uses .upc, list views use .upc-value (parity with core j2commerce.js)
+        if (typeof response.upc !== 'undefined') {
+            const upcEl = productContainer.querySelector('.upc-value') || productContainer.querySelector('.upc');
+            if (upcEl) upcEl.textContent = response.upc;
         }
 
         // Update pricing — handle both standard (.base-price/.sale-price) and flexiprice (.j2commerce-flexiprice) layouts
