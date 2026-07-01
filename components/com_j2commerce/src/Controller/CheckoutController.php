@@ -17,6 +17,7 @@ namespace J2Commerce\Component\J2commerce\Site\Controller;
 // phpcs:enable PSR1.Files.SideEffects
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CartHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
@@ -1428,17 +1429,36 @@ class CheckoutController extends BaseController
                 return;
             }
 
-            $orderpaymentType = !empty($existingOrder->orderpayment_type ?? '')
-                ? (string) $existingOrder->orderpayment_type
-                : $session->get('payment_method', '', 'j2commerce');
+            $orderpaymentType = (string) $session->get('payment_method', '', 'j2commerce');
+            if ($orderpaymentType === '') {
+                $orderpaymentType = (string) ($existingOrder->orderpayment_type ?? '');
+            }
+
+            // Render-time allow-list enforcement (mirrors the finalize-time A1 check
+            // in confirmPayment): never render or persist a gateway the context does
+            // not allow — the session could be seeded with an installed-but-disallowed
+            // gateway, and an off-site-redirect gateway would leave before finalize runs.
+            $contextAllowedMethods = $resolved->getAllowedPaymentMethods() ?? [];
+            if ($contextAllowedMethods !== [] && $orderpaymentType !== '' && !\in_array($orderpaymentType, $contextAllowedMethods, true)) {
+                $orderpaymentType = (string) ($existingOrder->orderpayment_type ?? '');
+
+                if ($orderpaymentType !== '' && !\in_array($orderpaymentType, $contextAllowedMethods, true)) {
+                    $orderpaymentType = '';
+                }
+            }
+
+            if ($orderpaymentType !== '' && $orderpaymentType !== ($existingOrder->orderpayment_type ?? '')) {
+                $existingOrder->orderpayment_type = $orderpaymentType;
+                $existingOrder->store();
+            }
 
             $pluginHtml = '';
 
-            if (!empty($orderpaymentType) && !empty($existingOrder->order_id)) {
+            if (!empty($orderpaymentType) && !empty($existingOrder->order_id) && CurrencyHelper::baseChargeAmount($existingOrder) > 0.0) {
                 $paymentValues = [
                     'order_id'            => $existingOrder->order_id,
                     'orderpayment_id'     => $existingOrder->j2commerce_order_id ?? '',
-                    'orderpayment_amount' => (float) ($existingOrder->order_total ?? 0),
+                    'orderpayment_amount' => CurrencyHelper::baseChargeAmount($existingOrder),
                     'order'               => $existingOrder,
                 ];
                 $prePaymentResults = J2CommerceHelper::plugin()->eventWithArray('PrePayment', [$orderpaymentType, $paymentValues]);
@@ -1534,11 +1554,26 @@ class CheckoutController extends BaseController
                 $this->app->setUserState('j2commerce.orderpayment_id', $savedOrder->j2commerce_order_id ?? null);
                 $this->app->setUserState('j2commerce.order_token', $savedOrder->token ?? null);
 
+                // The in-memory CartOrder does not carry the order_params column
+                // (where amount_due_now lives), so reload the persisted row to
+                // resolve the true charge-now amount. A fully deferred deposit plan
+                // resolves to zero — nothing to charge now.
+                $chargeOrder = $this->getMvcFactory()->createTable('Order', 'Administrator');
+
+                if (empty($savedOrder->j2commerce_order_id) || !$chargeOrder->load((int) $savedOrder->j2commerce_order_id)) {
+                    $chargeOrder = $savedOrder;
+                }
+
+                if ($showPayment && CurrencyHelper::baseChargeAmount($chargeOrder) === 0.0) {
+                    $showPayment  = false;
+                    $freeRedirect = Route::_('index.php?option=com_j2commerce&task=checkout.confirmPayment&' . Session::getFormToken() . '=1');
+                }
+
                 if ($showPayment && !empty($orderpaymentType)) {
                     $paymentValues = [
                         'order_id'            => $savedOrder->order_id ?? '',
                         'orderpayment_id'     => $savedOrder->j2commerce_order_id ?? '',
-                        'orderpayment_amount' => $savedOrder->order_total ?? 0,
+                        'orderpayment_amount' => CurrencyHelper::baseChargeAmount($chargeOrder),
                         'order'               => $savedOrder,
                     ];
 
@@ -1637,21 +1672,53 @@ class CheckoutController extends BaseController
         // to finalize the primed order as a normal checkout.
         if ($wasContextActivated) {
             if (!CheckoutContextHelper::isOwningRequest()) {
-                // Mid-flow rejection: validate() returned false or resolve failed.
-                // isOwningRequest() may have already cleared; clear again to be safe.
-                CheckoutContextHelper::clearContext();
-                $this->app->redirect(Route::_('index.php?option=com_j2commerce&view=carts'));
-                return;
-            }
+                // isOwningRequest() failed. Before hard-aborting, check whether a side-channel
+                // step (e.g. a saved-card AJAX charge) already finalized the order and merely
+                // redirected here for the AfterPayment/confirmation phase. That flow moves the
+                // order off the Scheduled status before this request arrives, which causes
+                // validate() to fail even though payment actually succeeded.
+                // Guard: require the gateway's success signal AND a matching transaction on the
+                // order row — the PI in the URL must equal the transaction_id written by the
+                // side-channel step, proving this redirect is for that specific charge.
+                $paymentIntent = $this->input->getString('payment_intent', '');
+                $sideFinalized = false;
 
-            // Context still owns this request; verify primed order_id matches.
-            $freshResolved = CheckoutContextHelper::resolveContext();
-            $contextOrder  = $freshResolved?->getOrder();
+                if ($this->input->getString('redirect_status', '') === 'succeeded'
+                    && (string) $orderId !== ''
+                    && $paymentIntent !== ''
+                ) {
+                    $sideCheck = $this->getMvcFactory()->createTable('Order', 'Administrator');
 
-            if ($contextOrder === null || (string) ($contextOrder->order_id ?? '') !== (string) $orderId) {
+                    if ($sideCheck && $sideCheck->load(['order_id' => (string) $orderId])) {
+                        // Accept both immediate-capture ('Completed') and manual-capture
+                        // auth-only ('Authorized') — both leave the order off the Scheduled
+                        // status after the side-channel charge and redirect here to confirm.
+                        $sideFinalized = !empty($sideCheck->transaction_id)
+                            && $sideCheck->transaction_id === $paymentIntent
+                            && \in_array($sideCheck->transaction_status, ['Completed', 'Authorized'], true);
+                    }
+                }
+
+                if (!$sideFinalized) {
+                    CheckoutContextHelper::clearContext();
+                    $this->app->redirect(Route::_('index.php?option=com_j2commerce&view=carts'));
+                    return;
+                }
+
+                // Side-finalized: clear context so A1 allow-list and clearCartAndSession
+                // see no active context, then fall through to PostPayment/AfterPayment/
+                // email/confirmation — the normal post-payment path.
                 CheckoutContextHelper::clearContext();
-                $this->app->redirect(Route::_('index.php?option=com_j2commerce&view=carts'));
-                return;
+            } else {
+                // Context still owns this request; verify primed order_id matches.
+                $freshResolved = CheckoutContextHelper::resolveContext();
+                $contextOrder  = $freshResolved?->getOrder();
+
+                if ($contextOrder === null || (string) ($contextOrder->order_id ?? '') !== (string) $orderId) {
+                    CheckoutContextHelper::clearContext();
+                    $this->app->redirect(Route::_('index.php?option=com_j2commerce&view=carts'));
+                    return;
+                }
             }
         }
 

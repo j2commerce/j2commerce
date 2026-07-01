@@ -630,10 +630,41 @@ class CurrencyHelper
         return $number * $rate;
     }
 
-    /** Gateway charge amount for an order's grand total, in its display currency. */
+    /** Gateway charge amount for an order, in its display currency. */
     public static function gatewayAmount(object $order): float
     {
-        return self::convertForOrder((float) ($order->order_total ?? 0.0), $order);
+        return self::convertForOrder(self::baseChargeAmount($order), $order);
+    }
+
+    /**
+     * Amount to charge now, in base currency. Honors an optional
+     * order_params.amount_due_now override (e.g. deposit / installment); falls
+     * back to the order grand total. An explicit 0.0 override charges nothing now.
+     */
+    public static function baseChargeAmount(object $order): float
+    {
+        return self::readAmountDueNow($order) ?? (float) ($order->order_total ?? 0.0);
+    }
+
+    private static function readAmountDueNow(object $order): ?float
+    {
+        $raw = $order->order_params ?? null;
+
+        $data = match (true) {
+            \is_string($raw) && $raw !== '' => json_decode($raw, true),
+            \is_object($raw)                => (array) $raw,
+            \is_array($raw)                 => $raw,
+            default                         => null,
+        };
+
+        if (!\is_array($data) || !\array_key_exists('amount_due_now', $data) || !is_numeric($data['amount_due_now'])) {
+            return null;
+        }
+
+        // A negative override is invalid; ignore it and fall back to the grand total.
+        $value = (float) $data['amount_due_now'];
+
+        return $value >= 0.0 ? $value : null;
     }
 
     // =========================================================================
