@@ -38,6 +38,11 @@ document.addEventListener('DOMContentLoaded', () => {
         return el.innerHTML;
     }
 
+    // Parse server-rendered HTML into an inert fragment (no innerHTML sink) for adoption.
+    function parseFragment(html) {
+        return document.createRange().createContextualFragment(html || '');
+    }
+
     // Capture the initial server-rendered HTML structure so AJAX rebuilds
     // preserve any template override customisations (classes, attributes, etc.)
     const wrap = document.getElementById('j2c-orders-table-wrap');
@@ -45,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let snapshotTableClass = 'table';
     let snapshotPagUlClass = 'pagination my-0';
     let snapshotPagDivClass = 'd-flex justify-content-end align-items-center';
-    let snapshotCountClass = 'text-muted small ms-3 align-self-center';
+    let snapshotCountClass = 'text-body-secondary small ms-3 align-self-center';
     let snapshotNoOrdersId = 'j2c-no-orders';
 
     if (wrap) {
@@ -83,8 +88,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!orders.length) {
                 const emptyKey = search ? 'COM_J2COMMERCE_NO_ORDERS_MATCH_SEARCH' : 'COM_J2COMMERCE_NO_ORDERS';
-                wrap.innerHTML = `<div class="alert alert-info" id="${snapshotNoOrdersId}">`
-                    + (Joomla.Text._(emptyKey)) + '</div>';
+                wrap.replaceChildren(parseFragment(`<div class="alert alert-info" id="${snapshotNoOrdersId}">`
+                    + (Joomla.Text._(emptyKey)) + '</div>'));
                 wrap.style.opacity = '1';
                 return;
             }
@@ -131,14 +136,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 + `<th scope="col" class="text-center" style="width:1%"><span class="visually-hidden">${Joomla.Text._('COM_J2COMMERCE_ACTIONS')}</span></th>`
                 + '</tr></thead>';
 
-            wrap.innerHTML = '<div class="table-responsive">'
+            wrap.replaceChildren(parseFragment('<div class="table-responsive">'
                 + `<table class="${escapeHtml(snapshotTableClass)}" id="j2c-orders-table">`
                 + theadHtml
                 + '<tbody id="j2c-orders-body">' + rows + '</tbody></table></div>'
                 + `<div class="${escapeHtml(snapshotPagDivClass)}" id="j2c-orders-pagination">`
                 + pagHtml
                 + `<span class="${escapeHtml(snapshotCountClass)}" id="j2c-orders-count">${countText}</span>`
-                + '</div>';
+                + '</div>'));
 
             currentPage = page;
         } catch (err) {
@@ -184,7 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let dlSnapshotTableClass = 'table';
     let dlSnapshotPagUlClass = 'pagination my-0';
     let dlSnapshotPagDivClass = 'd-flex justify-content-end align-items-center';
-    let dlSnapshotCountClass = 'text-muted small ms-3 align-self-center';
+    let dlSnapshotCountClass = 'text-body-secondary small ms-3 align-self-center';
     let dlSnapshotNoDownloadsId = 'j2c-no-downloads';
 
     if (dlWrap) {
@@ -221,8 +226,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const { downloads, total, limit } = json;
 
             if (!downloads.length) {
-                dlWrap.innerHTML = `<div class="alert alert-info" id="${dlSnapshotNoDownloadsId}">`
-                    + (Joomla.Text._('COM_J2COMMERCE_NO_DOWNLOADS')) + '</div>';
+                dlWrap.replaceChildren(parseFragment(`<div class="alert alert-info" id="${dlSnapshotNoDownloadsId}">`
+                    + (Joomla.Text._('COM_J2COMMERCE_NO_DOWNLOADS')) + '</div>'));
                 dlWrap.style.opacity = '1';
                 return;
             }
@@ -235,7 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (d.file_name) {
                     fileNameCell = escapeHtml(d.file_name);
                 } else {
-                    fileNameCell = '<span class="text-muted fst-italic">' + (Joomla.Text._('COM_J2COMMERCE_FILE_UNAVAILABLE')) + '</span>';
+                    fileNameCell = '<span class="text-body-secondary fst-italic">' + (Joomla.Text._('COM_J2COMMERCE_FILE_UNAVAILABLE')) + '</span>';
                 }
 
                 // Expires cell
@@ -301,14 +306,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 + `<th scope="col" class="text-center" style="width:1%"><span class="visually-hidden">${Joomla.Text._('COM_J2COMMERCE_ACTIONS')}</span></th>`
                 + '</tr></thead>';
 
-            dlWrap.innerHTML = '<div class="table-responsive">'
+            dlWrap.replaceChildren(parseFragment('<div class="table-responsive">'
                 + `<table class="${escapeHtml(dlSnapshotTableClass)}" id="j2c-downloads-table">`
                 + theadHtml
                 + '<tbody id="j2c-downloads-body">' + rows + '</tbody></table></div>'
                 + `<div class="${escapeHtml(dlSnapshotPagDivClass)}" id="j2c-downloads-pagination">`
                 + pagHtml
                 + `<span class="${escapeHtml(dlSnapshotCountClass)}" id="j2c-downloads-count">${countText}</span>`
-                + '</div>';
+                + '</div>'));
 
             dlCurrentPage = page;
         } catch (err) {
@@ -437,7 +442,7 @@ document.addEventListener('DOMContentLoaded', () => {
         fetch(countryUrl)
             .then(r => r.text())
             .then(html => {
-                countrySelect.innerHTML = html;
+                countrySelect.replaceChildren(parseFragment(html));
                 // If a country was pre-selected, cascade to load zones
                 if (countrySelect.value && zoneSelect) {
                     loadZones(countrySelect.value, savedZoneId);
@@ -448,11 +453,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!zoneSelect) return;
 
         function loadZones(countryId, selectedZoneId) {
-            zoneSelect.innerHTML = '<option value="">...</option>';
+            zoneSelect.replaceChildren(new Option('...', ''));
             zoneSelect.disabled = true;
 
             if (!countryId || countryId === '0' || countryId === '') {
-                zoneSelect.innerHTML = '<option value="">' + (Joomla.Text._('COM_J2COMMERCE_SELECT_ZONE')) + '</option>';
+                zoneSelect.replaceChildren(new Option(Joomla.Text._('COM_J2COMMERCE_SELECT_ZONE'), ''));
                 zoneSelect.disabled = false;
                 return;
             }
@@ -465,12 +470,12 @@ document.addEventListener('DOMContentLoaded', () => {
             fetch(url)
                 .then(r => r.text())
                 .then(html => {
-                    zoneSelect.innerHTML = html;
+                    zoneSelect.replaceChildren(parseFragment(html));
                     zoneSelect.disabled = false;
                 })
                 .catch(err => {
                     console.error('Error loading zones:', err);
-                    zoneSelect.innerHTML = '<option value="">' + (Joomla.Text._('COM_J2COMMERCE_SELECT_ZONE')) + '</option>';
+                    zoneSelect.replaceChildren(new Option(Joomla.Text._('COM_J2COMMERCE_SELECT_ZONE'), ''));
                     zoneSelect.disabled = false;
                 });
         }
@@ -536,7 +541,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!url || !orderModal || !orderModalBody) return;
 
         // Show modal with spinner
-        orderModalBody.innerHTML = '<div class="text-center py-5"><div class="spinner-border" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></div></div>';
+        orderModalBody.replaceChildren(document.createRange().createContextualFragment('<div class="text-center py-5"><div class="spinner-border" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></div></div>'));
         orderModal.show();
 
         try {
@@ -548,10 +553,10 @@ document.addEventListener('DOMContentLoaded', () => {
             // Remove any auto-print scripts from the parsed content
             doc.querySelectorAll('script').forEach(s => s.remove());
             const content = doc.querySelector('.j2commerce-order-detail') || doc.body;
-            orderModalBody.innerHTML = content.innerHTML;
+            orderModalBody.replaceChildren(...content.childNodes);
         } catch (err) {
             console.error('Error loading order:', err);
-            orderModalBody.innerHTML = '<div class="alert alert-danger">Error loading order details.</div>';
+            orderModalBody.replaceChildren(document.createRange().createContextualFragment('<div class="alert alert-danger">Error loading order details.</div>'));
         }
     });
 
@@ -564,7 +569,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const url = btn.dataset.url || btn.getAttribute('href');
         if (!url || !orderModal || !orderModalBody) return;
 
-        orderModalBody.innerHTML = '<div class="text-center py-5"><div class="spinner-border" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></div></div>';
+        orderModalBody.replaceChildren(document.createRange().createContextualFragment('<div class="text-center py-5"><div class="spinner-border" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></div></div>'));
         orderModal.show();
 
         try {
@@ -574,10 +579,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const doc = parser.parseFromString(html, 'text/html');
             doc.querySelectorAll('script').forEach(s => s.remove());
             const content = doc.querySelector('.j2commerce-packingslip-detail') || doc.querySelector('.j2commerce-order-detail') || doc.body;
-            orderModalBody.innerHTML = content.innerHTML;
+            orderModalBody.replaceChildren(...content.childNodes);
         } catch (err) {
             console.error('Error loading packing slip:', err);
-            orderModalBody.innerHTML = '<div class="alert alert-danger">Error loading packing slip.</div>';
+            orderModalBody.replaceChildren(document.createRange().createContextualFragment('<div class="alert alert-danger">Error loading packing slip.</div>'));
         }
     });
 

@@ -1437,8 +1437,20 @@ document.addEventListener('DOMContentLoaded', function() {
     // === INITIALIZATION: Load first step based on login status ===
 
     <?php
+    // Case 0: Context mode — skip login/billing, jump directly to payment step
+    if (!empty($this->checkoutContext['active'])) : ?>
+
+    (function() {
+        var checkoutSection = document.getElementById('checkout');
+        if (checkoutSection) checkoutSection.style.display = 'none';
+        var billingSection = document.getElementById('billing-address');
+        if (billingSection) billingSection.style.display = 'none';
+        showShippingPayment();
+    })();
+
+    <?php
     // Case 1: Guest-only checkout (no login form, no registration)
-    if (!$this->logged && $this->params->get('allow_guest_checkout') && !$this->params->get('show_login_form', 1) && !$this->params->get('allow_registration', 1)) : ?>
+    elseif (!$this->logged && $this->params->get('allow_guest_checkout') && !$this->params->get('show_login_form', 1) && !$this->params->get('allow_registration', 1)) : ?>
 
     // Guest only - skip checkout options, go straight to guest billing
     (function() {

@@ -31,8 +31,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Disable button and show spinner
         saveBtn.disabled = true;
-        const origHTML = saveBtn.innerHTML;
-        saveBtn.innerHTML = '<span class="icon-spinner icon-spin" aria-hidden="true"></span>';
+        const origNodes = [...saveBtn.childNodes];
+        saveBtn.replaceChildren(document.createRange().createContextualFragment('<span class="icon-spinner icon-spin" aria-hidden="true"></span>'));
 
         try {
             const formData = new FormData();
@@ -56,21 +56,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 input.dataset.original = newPrice.toFixed(decimals);
 
                 // Show success feedback
-                saveBtn.innerHTML = '<span class="icon-check" aria-hidden="true"></span>';
+                saveBtn.replaceChildren(document.createRange().createContextualFragment('<span class="icon-check" aria-hidden="true"></span>'));
                 saveBtn.classList.remove('btn-success');
                 saveBtn.classList.add('btn-outline-success');
                 setTimeout(() => {
-                    saveBtn.innerHTML = origHTML;
+                    saveBtn.replaceChildren(...origNodes);
                     saveBtn.classList.remove('btn-outline-success');
                     saveBtn.classList.add('btn-success');
                 }, 2000);
             } else {
                 Joomla.renderMessages({ error: [result.message || 'Save failed'] });
-                saveBtn.innerHTML = origHTML;
+                saveBtn.replaceChildren(...origNodes);
             }
         } catch (err) {
             Joomla.renderMessages({ error: [err.message || 'Network error'] });
-            saveBtn.innerHTML = origHTML;
+            saveBtn.replaceChildren(...origNodes);
         } finally {
             saveBtn.disabled = false;
         }

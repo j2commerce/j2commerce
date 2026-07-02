@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const listEl = widget.querySelector('.j2commerce-liveusers-list');
 
         if (listEl && data.users) {
-            listEl.innerHTML = data.users.map(user => {
+            const html = data.users.map(user => {
                 const mins = Math.max(0, Math.floor((Date.now() / 1000 - user.time) / 60));
                 const timeText = mins < 1
                     ? Joomla.Text._('COM_J2COMMERCE_LIVE_USERS_JUST_NOW')
@@ -65,6 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <small class="text-body-secondary">${timeText}</small>
                 </li>`;
             }).join('');
+            listEl.replaceChildren(document.createRange().createContextualFragment(html));
         }
     }
 

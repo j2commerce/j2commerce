@@ -198,8 +198,8 @@
             if (addFilesEl) {
                 const inner = addFilesEl.querySelector('.uppy-Dashboard-AddFiles-title');
                 if (inner) {
-                    inner.innerHTML = `<span class="uppymedia-uppy-btn"><span class="fa-solid fa-images" aria-hidden="true"></span> ${this.escapeHtml(this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_ADD_PRODUCT_IMAGES'))}</span>`
-                        + `<p class="uppymedia-uppy-hint">${this.escapeHtml(this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_DRAG_DROP_NOTE'))}</p>`;
+                    inner.replaceChildren(document.createRange().createContextualFragment(`<span class="uppymedia-uppy-btn"><span class="fa-solid fa-images" aria-hidden="true"></span> ${this.escapeHtml(this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_ADD_PRODUCT_IMAGES'))}</span>`
+                        + `<p class="uppymedia-uppy-hint">${this.escapeHtml(this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_DRAG_DROP_NOTE'))}</p>`));
                 }
                 // Wire browse button to Uppy's hidden file input
                 const browseSpan = addFilesEl.querySelector('.uppymedia-uppy-btn');
@@ -350,14 +350,14 @@
             const previewStyle = this.options.previewStyle || 'square';
             const isEditable = !this.element.hasAttribute('disabled') && !this.element.hasAttribute('readonly');
 
-            container.innerHTML = this.selectedPaths.map(path => `
+            container.replaceChildren(document.createRange().createContextualFragment(this.selectedPaths.map(path => `
                 <div class="j2commerce-image-thumb ${previewStyle === 'contain' ? 'preview-contain' : ''}" data-path="${this.escapeHtml(path)}">
                     <img src="${this.escapeHtml(this.resolveImageUrl(path))}" alt="" loading="lazy">
                     ${isEditable ? `<button type="button" class="j2commerce-image-remove" aria-label="${this.getText('JACTION_DELETE')}">
                         <span class="fa-solid fa-xmark" aria-hidden="true"></span>
                     </button>` : ''}
                 </div>
-            `).join('');
+            `).join('')));
         }
 
         updateChooseButton() {
@@ -380,7 +380,7 @@
             try {
                 const data = await this.fetchApi('folders');
                 if (data.success && Array.isArray(data.data)) {
-                    folderSelect.innerHTML = '';
+                    folderSelect.replaceChildren();
                     data.data.forEach(path => {
                         const option = document.createElement('option');
                         option.value = path;
@@ -435,7 +435,7 @@
             if (!grid) return;
 
             if (loading) loading.classList.remove('d-none');
-            grid.innerHTML = '';
+            grid.replaceChildren();
 
             try {
                 const data = await this.fetchApi('list', { path });
@@ -447,28 +447,28 @@
                     this.renderBrowserGrid(data.data.folders || [], data.data.files || []);
                     if (this.uppy) this.uppy.setMeta({ path: this.currentFolder });
                 } else {
-                    grid.innerHTML = `<div class="text-center text-muted p-3" style="grid-column:1/-1">${this.escapeHtml(data.message || 'Error loading folder')}</div>`;
+                    grid.replaceChildren(document.createRange().createContextualFragment(`<div class="text-center text-body-secondary p-3" style="grid-column:1/-1">${this.escapeHtml(data.message || 'Error loading folder')}</div>`));
                 }
             } catch {
                 if (loading) loading.classList.add('d-none');
-                grid.innerHTML = '<div class="text-center text-danger p-3" style="grid-column:1/-1">Failed to load images</div>';
+                grid.replaceChildren(document.createRange().createContextualFragment('<div class="text-center text-danger p-3" style="grid-column:1/-1">Failed to load images</div>'));
             }
         }
 
         renderBrowserGrid(folders, files) {
             const grid = this.modalEl.querySelector('.uppymedia-browser-grid');
             if (!grid) return;
-            grid.innerHTML = '';
+            grid.replaceChildren();
 
             folders.forEach(folderName => {
                 if (folderName === 'thumbs' || folderName === 'tiny') return;
 
                 const folderEl = document.createElement('div');
                 folderEl.className = 'uppymedia-browser-folder';
-                folderEl.innerHTML = `
+                folderEl.replaceChildren(document.createRange().createContextualFragment(`
                     <span class="fa-solid fa-folder-open" aria-hidden="true"></span>
                     <span class="uppymedia-folder-name">${this.escapeHtml(folderName)}</span>
-                `;
+                `));
 
                 folderEl.addEventListener('click', () => {
                     const newPath = this.currentFolder + '/' + folderName;
@@ -501,11 +501,11 @@
                     imageEl.classList.add('selected');
                 }
 
-                imageEl.innerHTML = `
+                imageEl.replaceChildren(document.createRange().createContextualFragment(`
                     <img src="${this.escapeHtml(file.thumb_url || file.url)}" alt="${this.escapeHtml(file.name)}" loading="lazy">
                     <div class="uppymedia-check"></div>
                     <div class="uppymedia-browser-name">${this.escapeHtml(file.name)}</div>
-                `;
+                `));
 
                 imageEl.addEventListener('click', () => {
                     if (!this.multiple) {
@@ -535,7 +535,7 @@
             });
 
             if (folders.length === 0 && files.length === 0) {
-                grid.innerHTML = '<div class="text-center text-muted p-3" style="grid-column:1/-1">No images in this folder</div>';
+                grid.replaceChildren(document.createRange().createContextualFragment('<div class="text-center text-body-secondary p-3" style="grid-column:1/-1">No images in this folder</div>'));
             }
         }
 
@@ -543,7 +543,7 @@
             const grid = this.modalEl.querySelector('.uppymedia-browser-grid');
             if (!grid) return;
 
-            const emptyMsg = grid.querySelector('.text-muted, .text-danger');
+            const emptyMsg = grid.querySelector('.text-body-secondary, .text-danger');
             if (emptyMsg?.style.gridColumn) emptyMsg.remove();
 
             const imageEl = document.createElement('div');
@@ -553,11 +553,11 @@
             imageEl.dataset.thumbUrl = file.thumb_url || file.url;
             imageEl.dataset.name = file.name;
 
-            imageEl.innerHTML = `
+            imageEl.replaceChildren(document.createRange().createContextualFragment(`
                 <img src="${this.escapeHtml(file.thumb_url || file.url)}" alt="${this.escapeHtml(file.name)}" loading="lazy">
                 <div class="uppymedia-check"></div>
                 <div class="uppymedia-browser-name">${this.escapeHtml(file.name)}</div>
-            `;
+            `));
 
             this.browserSelections.add(file.path);
 

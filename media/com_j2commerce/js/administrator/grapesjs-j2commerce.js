@@ -398,7 +398,7 @@ function registerCustomComponentTypes(editor) {
         view: {
             onRender() {
                 const tag = this.model.getAttributes()['data-j2c-tag'] || '[TAG]';
-                this.el.innerHTML = tag;
+                this.el.replaceChildren(document.createRange().createContextualFragment(tag));
                 this.el.contentEditable = 'false';
             },
         },
@@ -493,7 +493,7 @@ function registerCustomComponentTypes(editor) {
             onRender() {
                 const pos = this.model.getAttributes()['data-j2c-hook'] || 'AFTER_HEADER';
                 // Render as a styled table cell inside the <tr>
-                this.el.innerHTML = `<td style="border:2px dashed #8b5cf6;padding:8px;text-align:center;color:#8b5cf6;font-size:12px;font-family:monospace;background:#f5f3ff;" colspan="1">[HOOK:${pos}]</td>`;
+                this.el.replaceChildren(document.createRange().createContextualFragment(`<td style="border:2px dashed #8b5cf6;padding:8px;text-align:center;color:#8b5cf6;font-size:12px;font-family:monospace;background:#f5f3ff;" colspan="1">[HOOK:${pos}]</td>`));
                 this.el.contentEditable = 'false';
             },
         },
@@ -622,8 +622,8 @@ function setupPreviewIntegration(editor, options) {
         const token = options.csrfToken;
 
         previewBtn.disabled = true;
-        const origHtml = previewBtn.innerHTML;
-        previewBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></span>';
+        const origNodes = [...previewBtn.childNodes];
+        previewBtn.replaceChildren(document.createRange().createContextualFragment('<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></span>'));
 
         try {
             const formData = new FormData();
@@ -648,7 +648,7 @@ function setupPreviewIntegration(editor, options) {
         }
 
         previewBtn.disabled = false;
-        previewBtn.innerHTML = origHtml;
+        previewBtn.replaceChildren(...origNodes);
     }, true);
 }
 

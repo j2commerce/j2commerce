@@ -201,7 +201,7 @@ class SetupGuide {
             this.groupsList.classList.remove('d-none');
         } catch (err) {
             this.showLoading(false);
-            this.groupsList.innerHTML = `<div class="alert alert-danger m-3">${err.message}</div>`;
+            this.groupsList.replaceChildren(document.createRange().createContextualFragment(`<div class="alert alert-danger m-3">${this.escHtml(err.message)}</div>`));
             this.groupsList.classList.remove('d-none');
         } finally {
             this.groupsList?.setAttribute('aria-busy', 'false');
@@ -234,9 +234,9 @@ class SetupGuide {
 
             if (!json.success) throw new Error(json.message || 'Error');
 
-            const tpl = document.createElement('template');
-            tpl.innerHTML = json.data.html;
-            this.detailView.replaceChildren(tpl.content);
+            const tpl = document.createElement('div');
+            tpl.replaceChildren(document.createRange().createContextualFragment(json.data.html));
+            this.detailView.replaceChildren(...Array.from(tpl.childNodes));
             this.initTimezoneClocks();
 
             requestAnimationFrame(() => {
@@ -337,7 +337,7 @@ class SetupGuide {
         }
 
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></span>';
+        btn.replaceChildren(document.createRange().createContextualFragment('<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></span>'));
 
         try {
             const body = new URLSearchParams();
@@ -375,7 +375,7 @@ class SetupGuide {
 
         const originalText = btn.textContent;
         btn.disabled       = true;
-        btn.innerHTML      = '<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></span>';
+        btn.replaceChildren(document.createRange().createContextualFragment('<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></span>'));
 
         try {
             const body = new URLSearchParams();
@@ -404,10 +404,10 @@ class SetupGuide {
 
     async handleClearParam(btn) {
         const paramName    = btn.dataset.paramName;
-        const originalHtml = btn.outerHTML;
+        const origBtn = btn.cloneNode(true);
 
         btn.disabled  = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></span>';
+        btn.replaceChildren(document.createRange().createContextualFragment('<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></span>'));
 
         try {
             const body = new URLSearchParams();
@@ -427,10 +427,10 @@ class SetupGuide {
             const container = btn.closest('[data-setup-param-form]');
             const placeholder = this.escHtml(Joomla.Text._('COM_J2COMMERCE_SETUP_GUIDE_CHECK_DOWNLOAD_ID_PLACEHOLDER'));
             const saveLabel   = this.escHtml(Joomla.Text._('COM_J2COMMERCE_SETUP_GUIDE_CHECK_DOWNLOAD_ID_SAVE'));
-            container.innerHTML = `<div class="input-group mb-3">
+            container.replaceChildren(document.createRange().createContextualFragment(`<div class="input-group mb-3">
     <input type="text" class="form-control" name="param_value" placeholder="${placeholder}" />
     <button type="button" class="btn btn-primary" data-setup-save-param data-param-name="${this.escHtml(paramName)}">${saveLabel}</button>
-</div>`;
+</div>`));
 
             this.loadStatus();
         } catch (err) {
@@ -441,7 +441,8 @@ class SetupGuide {
                 spinner.remove();
             }
             if (!btn.innerHTML.trim()) {
-                btn.outerHTML = originalHtml;
+                btn.replaceWith(origBtn);
+                btn = origBtn;
             }
         }
     }
@@ -485,14 +486,14 @@ class SetupGuide {
         this.progressFill.className = 'setup-progress-fill rounded-0';
 
         if (progress.passed === progress.total) {
-            this.groupsList.innerHTML = `
+            this.groupsList.replaceChildren(document.createRange().createContextualFragment(`
                 <div class="setup-all-complete text-center py-5 px-3">
                     <div class="setup-all-complete-icon mx-auto mb-3">
                         <span class="fa-solid fa-check" aria-hidden="true"></span>
                     </div>
                     <h5>${Joomla.Text._('COM_J2COMMERCE_SETUP_GUIDE_ALL_COMPLETE')}</h5>
-                    <p class="text-muted">${Joomla.Text._('COM_J2COMMERCE_SETUP_GUIDE_ALL_COMPLETE_DESC')}</p>
-                </div>`;
+                    <p class="text-body-secondary">${Joomla.Text._('COM_J2COMMERCE_SETUP_GUIDE_ALL_COMPLETE_DESC')}</p>
+                </div>`));
             this.groupsList.classList.remove('d-none');
         }
     }
@@ -561,7 +562,7 @@ class SetupGuide {
             html += `</div></div>`;
         }
 
-        this.groupsList.innerHTML = html;
+        this.groupsList.replaceChildren(document.createRange().createContextualFragment(html));
     }
 
     showDetail() {

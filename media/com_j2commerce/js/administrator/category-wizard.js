@@ -942,7 +942,7 @@ class CategoryWizard {
         container.replaceChildren();
         const spinner = document.createElement('div');
         spinner.className = 'text-center py-3';
-        spinner.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
+        spinner.replaceChildren(document.createRange().createContextualFragment('<span class="spinner-border spinner-border-sm" role="status"></span>'));
         container.appendChild(spinner);
 
         // Fetch categories if not cached

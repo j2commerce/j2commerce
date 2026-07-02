@@ -16,6 +16,12 @@
  */
 (function() {
 
+    // Parse server-rendered HTML into an inert fragment (no innerHTML sink, no script
+    // execution) so adopted nodes never re-run injected <script> tags.
+    function parseFragment(html) {
+        return document.createRange().createContextualFragment(html || '');
+    }
+
     /**
      * Initialize cart AJAX functionality
      */
@@ -60,14 +66,14 @@
                     // Find and replace the totals container
                     const totalsContainer = document.querySelector('.cart-totals-block');
                     if (totalsContainer) {
-                        totalsContainer.outerHTML = data.html;
+                        totalsContainer.replaceWith(parseFragment(data.html));
                     }
 
                     // Also update shipping methods display
                     if (data.shipping_html !== undefined) {
                         const shippingWrapper = document.getElementById('j2commerce-cart-shipping-wrapper');
                         if (shippingWrapper) {
-                            shippingWrapper.innerHTML = data.shipping_html;
+                            shippingWrapper.replaceChildren(parseFragment(data.shipping_html));
                         }
                     }
                 }
@@ -87,11 +93,13 @@
                 // Create empty cart message
                 const emptyMessage = document.createElement('div');
                 emptyMessage.className = 'alert alert-info';
-                emptyMessage.innerHTML = '<span class="cart-no-items">' +
-                    (strings.emptyCart || 'Your cart is empty.') + '</span>';
+                const noItems = document.createElement('span');
+                noItems.className = 'cart-no-items';
+                noItems.textContent = strings.emptyCart || 'Your cart is empty.';
+                emptyMessage.append(noItems);
 
                 // Clear the cart container and show empty message
-                cartContainer.innerHTML = '';
+                cartContainer.replaceChildren();
                 cartContainer.appendChild(emptyMessage);
             }
         }

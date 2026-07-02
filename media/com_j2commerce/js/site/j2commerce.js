@@ -254,7 +254,7 @@ const J2Commerce = {
         const loaderHtml = `<span class="wait"><img src="${this.baseUrl}media/com_j2commerce/images/loader.gif" alt="" /></span>`;
 
         if (container) {
-            container.insertAdjacentHTML('beforebegin', loaderHtml);
+            container.before(this.parseHtmlFragment(loaderHtml));
         }
 
         const params = new URLSearchParams(formdata || {});
@@ -809,7 +809,7 @@ const J2Commerce = {
 
         // Clear previous errors
         const notifications = document.querySelector('.j2commerce-notifications .j2error');
-        if (notifications) notifications.innerHTML = '';
+        if (notifications) notifications.replaceChildren();
 
         const params = new URLSearchParams(values);
         if (!this.baseUrl) this.baseUrl = this.getBaseUrl();
@@ -871,12 +871,12 @@ const J2Commerce = {
             if (basePrice || salePrice) {
                 // Standard price layout (detail view, simple products)
                 if (basePrice && response.pricing.base_price) {
-                    basePrice.innerHTML = response.pricing.base_price;
+                    basePrice.replaceChildren(this.parseHtmlFragment(response.pricing.base_price));
                     if (response.pricing.class) {
                         basePrice.style.display = response.pricing.class === 'show' ? 'block' : 'none';
                     }
                 }
-                if (salePrice) salePrice.innerHTML = response.pricing.price;
+                if (salePrice) salePrice.replaceChildren(this.parseHtmlFragment(response.pricing.price));
             } else if (flexiPrice) {
                 // Flexiprice layout (list views) — replace range/from with specific variant price
                 let html = '';
@@ -884,14 +884,14 @@ const J2Commerce = {
                     html += `<del class="base-price text-body-tertiary">${response.pricing.base_price}</del> `;
                 }
                 html += `<span class="sale-price">${response.pricing.price}</span>`;
-                flexiPrice.innerHTML = html;
+                flexiPrice.replaceChildren(this.parseHtmlFragment(html));
             }
         }
 
         // After display price
         if (response.afterDisplayPrice) {
             const adp = product.querySelector('.afterDisplayPrice');
-            if (adp) adp.innerHTML = response.afterDisplayPrice;
+            if (adp) adp.replaceChildren(this.parseHtmlFragment(response.afterDisplayPrice));
         }
 
         // Quantity
@@ -910,13 +910,13 @@ const J2Commerce = {
         // Dimensions
         if (response.dimensions) {
             const dims = product.querySelector('.product-dimensions');
-            if (dims) dims.innerHTML = response.dimensions;
+            if (dims) dims.replaceChildren(this.parseHtmlFragment(response.dimensions));
         }
 
         // Weight
         if (response.weight) {
             const weight = product.querySelector('.product-weight');
-            if (weight) weight.innerHTML = response.weight;
+            if (weight) weight.replaceChildren(this.parseHtmlFragment(response.weight));
         }
 
         // Main image — skip legacy swap if variant gallery handled by Swiper
@@ -940,7 +940,7 @@ const J2Commerce = {
         const discountEl = product.querySelector('.discount-percentage');
         if (discountEl) {
             if (response.pricing?.discount_text) {
-                discountEl.innerHTML = response.pricing.discount_text;
+                discountEl.replaceChildren(this.parseHtmlFragment(response.pricing.discount_text));
                 discountEl.classList.remove('no-discount');
             } else {
                 discountEl.classList.add('no-discount');
@@ -951,8 +951,10 @@ const J2Commerce = {
         if (typeof response.stock_status !== 'undefined') {
             const stockContainer = product.querySelector('.product-stock-container');
             if (stockContainer) {
-                const statusClass = response.availability === 1 ? 'instock' : 'outofstock';
-                stockContainer.innerHTML = `<span class="${statusClass}">${response.stock_status}</span>`;
+                const span = document.createElement('span');
+                span.className = response.availability === 1 ? 'instock' : 'outofstock';
+                span.textContent = response.stock_status;
+                stockContainer.replaceChildren(span);
             }
         }
 
@@ -960,11 +962,15 @@ const J2Commerce = {
         if (typeof response.subscription_duration !== 'undefined') {
             const existing = product.querySelector('.subscriptionproducts');
             if (existing) {
-                existing.outerHTML = response.subscription_duration || '';
+                if (response.subscription_duration) {
+                    existing.replaceWith(this.parseHtmlFragment(response.subscription_duration));
+                } else {
+                    existing.remove();
+                }
             } else if (response.subscription_duration) {
                 const priceContainer = product.querySelector('.j2commerce-product-price-container');
                 if (priceContainer) {
-                    priceContainer.insertAdjacentHTML('afterend', response.subscription_duration);
+                    priceContainer.after(this.parseHtmlFragment(response.subscription_duration));
                 }
             }
         }
@@ -973,11 +979,15 @@ const J2Commerce = {
         if (typeof response.subscription_signup_fee_html !== 'undefined') {
             const existing = product.querySelector('.subscription-signup-fee');
             if (existing) {
-                existing.outerHTML = response.subscription_signup_fee_html || '';
+                if (response.subscription_signup_fee_html) {
+                    existing.replaceWith(this.parseHtmlFragment(response.subscription_signup_fee_html));
+                } else {
+                    existing.remove();
+                }
             } else if (response.subscription_signup_fee_html) {
                 const priceContainer = product.querySelector('.j2commerce-product-price-container');
                 if (priceContainer) {
-                    priceContainer.insertAdjacentHTML('afterend', response.subscription_signup_fee_html);
+                    priceContainer.after(this.parseHtmlFragment(response.subscription_signup_fee_html));
                 }
             }
         }
@@ -1061,14 +1071,14 @@ const J2Commerce = {
             ? '<span class="product-zoom-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></span>'
             : '';
 
-        mainEl.querySelector('.swiper-wrapper').innerHTML = images.map(img =>
+        mainEl.querySelector('.swiper-wrapper').replaceChildren(this.parseHtmlFragment(images.map(img =>
             `<div class="swiper-slide"><img src="${this._escAttr(img.src)}" alt="${this._escAttr(img.alt || '')}" class="j2commerce-product-main-image" ${enableZoom ? 'data-action="zoom"' : ''} loading="lazy" />${zoomIcon}</div>`
-        ).join('');
+        ).join('')));
 
         if (thumbsEl) {
-            thumbsEl.querySelector('.swiper-wrapper').innerHTML = images.map(img =>
+            thumbsEl.querySelector('.swiper-wrapper').replaceChildren(this.parseHtmlFragment(images.map(img =>
                 `<div class="swiper-slide"><img src="${this._escAttr(img.thumb_src)}" alt="${this._escAttr(img.alt || '')}" class="product-thumb" width="100" height="100" loading="lazy" /></div>`
-            ).join('');
+            ).join('')));
         }
 
         const hasMultiple = images.length > 1;
@@ -1091,9 +1101,9 @@ const J2Commerce = {
         if (mainSwiper) mainSwiper.destroy(true, true);
         if (thumbSwiper) thumbSwiper.destroy(true, true);
 
-        mainEl.querySelector('.swiper-wrapper').innerHTML = originalMain;
+        mainEl.querySelector('.swiper-wrapper').replaceChildren(this.parseHtmlFragment(originalMain));
         if (thumbsEl?.dataset.originalSlides) {
-            thumbsEl.querySelector('.swiper-wrapper').innerHTML = thumbsEl.dataset.originalSlides;
+            thumbsEl.querySelector('.swiper-wrapper').replaceChildren(this.parseHtmlFragment(thumbsEl.dataset.originalSlides));
         }
 
         const slideCount = mainEl.querySelectorAll('.swiper-slide').length;

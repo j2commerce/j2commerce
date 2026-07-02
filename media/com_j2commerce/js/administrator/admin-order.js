@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Clear previous messages
         const container = document.getElementById('system-message-container');
         if (container) {
-            container.innerHTML = '';
+            container.replaceChildren();
         }
 
         if (typeof Joomla !== 'undefined' && Joomla.renderMessages) {
@@ -314,7 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const histResult = await postAjax('ajaxGetHistory', { page: 1 });
         if (!histResult.success) return;
 
-        itemsEl.innerHTML = renderHistoryItems(histResult.items);
+        itemsEl.replaceChildren(document.createRange().createContextualFragment(renderHistoryItems(histResult.items)));
         historyContainer.dataset.currentPage = '1';
         historyContainer.dataset.totalPages = histResult.totalPages;
 
@@ -353,7 +353,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const result = await postAjax('ajaxGetHistory', { page: targetPage });
 
                     if (result.success) {
-                        itemsEl.innerHTML = renderHistoryItems(result.items);
+                        itemsEl.replaceChildren(document.createRange().createContextualFragment(renderHistoryItems(result.items)));
                         historyContainer.dataset.currentPage = targetPage;
                         historyContainer.dataset.totalPages = result.totalPages;
                         updatePagination(historyNav, targetPage, result.totalPages);
@@ -468,7 +468,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const li = document.createElement('li');
             li.className = 'page-item' + (p === currentPage ? ' active' : '');
             li.dataset.page = p;
-            li.innerHTML = `<a class="page-link" href="#">${p}</a>`;
+            const a = document.createElement('a');
+            a.className = 'page-link';
+            a.href = '#';
+            a.textContent = p;
+            li.replaceChildren(a);
             ul.insertBefore(li, nextLi);
         }
     }

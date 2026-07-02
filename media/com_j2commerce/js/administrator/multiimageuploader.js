@@ -242,8 +242,8 @@
                         ? 'COM_J2COMMERCE_MULTIIMAGEUPLOADER_ADD_PRODUCT_FILES'
                         : 'COM_J2COMMERCE_MULTIIMAGEUPLOADER_ADD_PRODUCT_IMAGES';
                     const iconClass = this.options.fileMode ? 'fa-solid fa-file-arrow-down' : 'fa-solid fa-images';
-                    inner.innerHTML = `<span class="uppymedia-uppy-btn"><span class="${iconClass}" aria-hidden="true"></span> ${this.escapeHtml(this.getText(addLabelKey))}</span>`
-                        + `<p class="uppymedia-uppy-hint">${this.escapeHtml(this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_DRAG_DROP_NOTE'))}</p>`;
+                    inner.replaceChildren(document.createRange().createContextualFragment(`<span class="uppymedia-uppy-btn"><span class="${iconClass}" aria-hidden="true"></span> ${this.escapeHtml(this.getText(addLabelKey))}</span>`
+                        + `<p class="uppymedia-uppy-hint">${this.escapeHtml(this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_DRAG_DROP_NOTE'))}</p>`));
                 }
                 const browseSpan = addFilesEl.querySelector('.uppymedia-uppy-btn');
                 if (browseSpan) {
@@ -392,7 +392,7 @@
             try {
                 const data = await this.fetchApi('folders');
                 if (data.success && Array.isArray(data.data)) {
-                    folderSelect.innerHTML = '';
+                    folderSelect.replaceChildren();
                     data.data.forEach(path => {
                         const option = document.createElement('option');
                         option.value = path;
@@ -460,7 +460,7 @@
 
             // Show loading
             if (loading) loading.classList.remove('d-none');
-            grid.innerHTML = '';
+            grid.replaceChildren();
 
             try {
                 const listParams = { path: path };
@@ -478,12 +478,12 @@
                         this.uppy.setMeta({ path: this.currentFolder });
                     }
                 } else {
-                    grid.innerHTML = `<div class="text-center text-muted p-3" style="grid-column:1/-1">${this.escapeHtml(data.message || 'Error loading folder')}</div>`;
+                    grid.replaceChildren(document.createRange().createContextualFragment(`<div class="text-center text-body-secondary p-3" style="grid-column:1/-1">${this.escapeHtml(data.message || 'Error loading folder')}</div>`));
                 }
             } catch (e) {
                 if (loading) loading.classList.add('d-none');
                 console.error('Failed to load folder contents:', e);
-                grid.innerHTML = `<div class="text-center text-danger p-3" style="grid-column:1/-1">Failed to load ${this.options.fileMode ? 'files' : 'images'}</div>`;
+                grid.replaceChildren(document.createRange().createContextualFragment(`<div class="text-center text-danger p-3" style="grid-column:1/-1">Failed to load ${this.options.fileMode ? 'files' : 'images'}</div>`));
             }
         }
 
@@ -491,7 +491,7 @@
             const grid = this.modalEl.querySelector('.uppymedia-browser-grid');
             if (!grid) return;
 
-            grid.innerHTML = '';
+            grid.replaceChildren();
 
             // Render subfolders
             folders.forEach(folderName => {
@@ -500,13 +500,13 @@
 
                 const folderEl = document.createElement('div');
                 folderEl.className = 'uppymedia-browser-folder';
-                folderEl.innerHTML = `
+                folderEl.replaceChildren(document.createRange().createContextualFragment(`
                     <button type="button" class="uppymedia-folder-delete" title="${this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_DELETE_FOLDER')}">
                         <span class="fa-solid fa-trash-can" aria-hidden="true"></span>
                     </button>
                     <span class="fa-solid fa-folder-open" aria-hidden="true"></span>
                     <span class="uppymedia-folder-name">${this.escapeHtml(folderName)}</span>
-                `;
+                `));
 
                 // Click folder to navigate into it (but not if clicking delete)
                 folderEl.addEventListener('click', (e) => {
@@ -561,7 +561,7 @@
 
             if (folders.length === 0 && files.length === 0) {
                 const emptyText = this.options.fileMode ? 'No files in this folder' : 'No images in this folder';
-                grid.innerHTML = `<div class="text-center text-muted p-3" style="grid-column:1/-1">${emptyText}</div>`;
+                grid.replaceChildren(document.createRange().createContextualFragment(`<div class="text-center text-body-secondary p-3" style="grid-column:1/-1">${emptyText}</div>`));
             }
         }
 
@@ -585,14 +585,14 @@
                 ? `<img src="${this.escapeHtml(file.thumb_url || file.url)}" alt="${this.escapeHtml(file.name)}" loading="lazy">`
                 : `<div class="uppymedia-file-icon"><span class="fa-solid ${this.getFileIcon(file.name)}" aria-hidden="true"></span></div>`;
 
-            imageEl.innerHTML = `
+            imageEl.replaceChildren(document.createRange().createContextualFragment(`
                 ${mediaHtml}
                 <div class="uppymedia-check"></div>
                 <button type="button" class="uppymedia-browser-delete" title="${this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_DELETE_FROM_SERVER')}">
                     <span class="fa-solid fa-trash-can" aria-hidden="true"></span>
                 </button>
                 <div class="uppymedia-browser-name">${this.escapeHtml(file.name)}</div>
-            `;
+            `));
 
             // Click image area to toggle selection (but not if clicking delete btn)
             imageEl.addEventListener('click', (e) => {
@@ -637,7 +637,7 @@
             if (!grid) return;
 
             // Remove "no images" message if present
-            const emptyMsg = grid.querySelector('.text-muted, .text-danger');
+            const emptyMsg = grid.querySelector('.text-body-secondary, .text-danger');
             if (emptyMsg && emptyMsg.style.gridColumn) {
                 emptyMsg.remove();
             }
@@ -1119,7 +1119,7 @@
                 `;
             }
 
-            preview.innerHTML = html;
+            preview.replaceChildren(document.createRange().createContextualFragment(html));
 
             // Reset bulk action bar since checkboxes are cleared on re-render
             this.updateBulkBar();

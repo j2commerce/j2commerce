@@ -82,7 +82,7 @@ $grandTotalValue = $totals['grandtotal']['value'] ?? '';
                         </div>
                         <?php else: ?>
                         <div class="position-relative flex-shrink-0 d-flex align-items-center justify-content-center rounded border bg-light" style="width:64px;height:64px;">
-                            <span class="text-muted small"><?php echo $qty; ?>x</span>
+                            <span class="text-body-secondary small"><?php echo $qty; ?>x</span>
                         </div>
                         <?php endif; ?>
 
@@ -90,7 +90,7 @@ $grandTotalValue = $totals['grandtotal']['value'] ?? '';
                             <div class="fw-medium text-truncate"><?php echo $this->escape($item->orderitem_name); ?></div>
                             <?php if ($this->params->get('show_sku', 1) && !empty($item->orderitem_sku)): ?>
                                 <div class="cart-product-sku small">
-                                    <span class="cart-item-title text-muted"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_SKU'); ?>:</span>
+                                    <span class="cart-item-title text-body-secondary"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_SKU'); ?>:</span>
                                     <span class="cart-item-value"><?php echo $this->escape($item->orderitem_sku); ?></span>
                                 </div>
                             <?php endif; ?>
@@ -145,7 +145,7 @@ $grandTotalValue = $totals['grandtotal']['value'] ?? '';
                         </div>
                     <?php else: ?>
                         <div class="d-flex justify-content-between mb-1">
-                            <span class="text-muted">
+                            <span class="text-body-secondary">
                                 <?php echo $total['label']; ?>
                                 <?php if (!empty($total['link'])): ?>
                                     <?php echo $total['link']; ?>
@@ -157,5 +157,7 @@ $grandTotalValue = $totals['grandtotal']['value'] ?? '';
                 <?php endforeach; ?>
             </div>
             <?php endif; ?>
+            <?php // Apps can inject below the order totals (e.g. payment plan summary) via onJ2CommerceAfterSidecartTotals ?>
+            <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterSidecartTotals', [$this->order, &$this->params])->getArgument('html', ''); ?>
 
 </div>

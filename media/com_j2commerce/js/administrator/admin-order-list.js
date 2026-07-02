@@ -46,8 +46,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Disable save button and show spinner
         saveBtn.disabled = true;
-        const origText = saveBtn.innerHTML;
-        saveBtn.innerHTML = '<span class="icon-spinner icon-spin" aria-hidden="true"></span>';
+        const origNodes = [...saveBtn.childNodes];
+        saveBtn.replaceChildren(document.createRange().createContextualFragment('<span class="icon-spinner icon-spin" aria-hidden="true"></span>'));
 
         try {
             const formData = new FormData();
@@ -75,21 +75,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 // Show success feedback on button
-                saveBtn.innerHTML = '<span class="icon-check" aria-hidden="true"></span>';
+                saveBtn.replaceChildren(document.createRange().createContextualFragment('<span class="icon-check" aria-hidden="true"></span>'));
                 saveBtn.classList.remove('btn-success');
                 saveBtn.classList.add('btn-outline-success');
                 setTimeout(() => {
-                    saveBtn.innerHTML = origText;
+                    saveBtn.replaceChildren(...origNodes);
                     saveBtn.classList.remove('btn-outline-success');
                     saveBtn.classList.add('btn-success');
                 }, 2000);
             } else {
                 Joomla.renderMessages({ error: [result.message || 'Update failed'] });
-                saveBtn.innerHTML = origText;
+                saveBtn.replaceChildren(...origNodes);
             }
         } catch (err) {
             Joomla.renderMessages({ error: [err.message || 'Network error'] });
-            saveBtn.innerHTML = origText;
+            saveBtn.replaceChildren(...origNodes);
         } finally {
             saveBtn.disabled = false;
         }
