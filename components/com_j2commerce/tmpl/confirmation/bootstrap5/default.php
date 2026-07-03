@@ -89,12 +89,7 @@ if ($info) {
 }
 
 // Fire AfterPostPayment plugin event and collect HTML
-$afterPostHtml = '';
-$results = J2CommerceHelper::plugin()->event('AfterPostPayment', [$this]);
-
-foreach ($results as $result) {
-    $afterPostHtml .= $result;
-}
+$afterPostHtml = J2CommerceHelper::plugin()->eventWithHtml('AfterPostPayment', [$this])->getArgument('html', '');
 
 // Order date formatting
 $orderDate = '';
