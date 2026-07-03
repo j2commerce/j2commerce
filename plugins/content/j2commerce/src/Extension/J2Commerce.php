@@ -31,6 +31,7 @@ use Joomla\CMS\Event\Model\PrepareFormEvent;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\Router\Route;
 use Joomla\Database\DatabaseAwareTrait;
@@ -92,6 +93,9 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
     private bool $cacheCleared = false;
 
     private static array $articleCache = [];
+
+    /** Per-productId counter so shortcode-rendered cart forms get unique ids when a product appears more than once on a page. */
+    private static array $cartFormInstanceCounts = [];
 
     /**
      * Clear the static article cache when an article is saved or deleted.
@@ -950,6 +954,25 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             return;
         }
 
+        // Render contexts outside the normal component controller (custom fields,
+        // page builders) never boot com_j2commerce, so the site language and JS
+        // assets are not guaranteed to be loaded — mirrors getProductBlock().
+        Factory::getApplication()->getLanguage()->load('com_j2commerce', JPATH_SITE);
+
+        $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
+        $wa->registerAndUseScript(
+            'com_j2commerce.site',
+            'media/com_j2commerce/js/site/j2commerce.js',
+            [],
+            ['defer' => true]
+        );
+        $wa->registerAndUseScript(
+            'com_j2commerce.a11y',
+            'media/com_j2commerce/js/site/j2commerce-a11y.js',
+            [],
+            ['defer' => true]
+        );
+
         // WYSIWYG editors (TinyMCE, JCE) often wrap pasted shortcodes in <pre>
         // or <code> tags which would render the product HTML inside a monospace
         // block. Unwrap them before parsing.
@@ -970,6 +993,12 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
 
             // First value is always the product ID
             if (!isset($values[0]) || !is_numeric($values[0])) {
+                Log::add(
+                    \sprintf('Malformed {j2commerce} shortcode body "%s" — expected a numeric product ID separated by |.', $match['body']),
+                    Log::WARNING,
+                    'j2commerce'
+                );
+                $article->text = $this->replaceAtPosition($article->text, $match['raw'], '');
                 continue;
             }
 
@@ -1022,13 +1051,53 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
                 }
 
                 $displayData = $this->buildDisplayData($product, $option, $options);
-                $html .= ProductLayoutService::renderLayout($layoutId, $displayData);
+                $rendered    = ProductLayoutService::renderLayout($layoutId, $displayData);
+
+                // 'cart'/'cartonly' render the bare cart-button partial, which has no
+                // <form> of its own (unlike 'full'/'card', which route through the full
+                // item layout that supplies one) — wrap it so the add-to-cart JS submit
+                // handler (which looks for the nearest .j2commerce-addtocart-form) fires.
+                if (\in_array($option, ['cart', 'cartonly'], true)) {
+                    if ($productType === 'flexivariable') {
+                        $wa->registerAndUseScript(
+                            'plg_j2commerce_app_flexivariable.flexivariable',
+                            'media/plg_j2commerce_app_flexivariable/js/flexivariable.js',
+                            [],
+                            ['defer' => true]
+                        );
+                    }
+
+                    $rendered = $this->wrapCartForm($product, $rendered);
+                }
+
+                $html .= $rendered;
             }
 
             $html .= '</div>';
 
             $article->text = $this->replaceAtPosition($article->text, $match['raw'], $html);
         }
+    }
+
+    /**
+     * Wraps a rendered cart-button partial in the same form markup the full item
+     * layouts (item_simple.php et al.) provide, so the add-to-cart JS submit handler
+     * has a `.j2commerce-addtocart-form` ancestor to bind to.
+     *
+     * @since   6.3.7
+     */
+    private function wrapCartForm(object $product, string $cartHtml): string
+    {
+        $productId   = (int) $product->j2commerce_product_id;
+        $productType = htmlspecialchars($product->product_type ?? '', ENT_QUOTES, 'UTF-8');
+        $action      = htmlspecialchars($product->cart_form_action ?? '', ENT_QUOTES, 'UTF-8');
+
+        self::$cartFormInstanceCounts[$productId] = (self::$cartFormInstanceCounts[$productId] ?? 0) + 1;
+        $formId                                   = 'j2commerce-addtocart-form-' . $productId . '-' . self::$cartFormInstanceCounts[$productId];
+
+        return '<form action="' . $action . '" method="post" class="j2commerce-addtocart-form" id="' . $formId . '" '
+            . 'data-product_id="' . $productId . '" data-product_type="' . $productType . '" enctype="multipart/form-data">'
+            . $cartHtml . '</form>';
     }
 
     /**
@@ -1192,6 +1261,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             'showTitle'       => $this->optionsContainAny($allOptions, ['title', 'full', 'card', 'detail']),
             'showPrice'       => $this->optionsContainAny($allOptions, ['price', 'saleprice', 'regularprice', 'full', 'card', 'detail']),
             'showCart'        => $this->optionsContainAny($allOptions, ['cart', 'cartonly', 'full', 'card', 'detail']),
+            'showQtyField'    => !\in_array('noqty', $allOptions, true),
             'showSku'         => $this->optionsContainAny($allOptions, ['sku', 'full', 'card', 'detail']),
             'showStock'       => $this->optionsContainAny($allOptions, ['stock', 'full', 'card', 'detail']),
             'showDescription' => $this->optionsContainAny($allOptions, ['description', 'desc', 'full', 'card', 'detail']),
@@ -1211,7 +1281,10 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
 
     private function buildArticleParams(): \Joomla\Registry\Registry
     {
-        $params = new \Joomla\Registry\Registry();
+        // Clone the real component config (never mutate the shared cached instance)
+        // so shortcode-rendered layouts respect admin-configured options such as
+        // addtocart_button_class instead of always falling back to layout defaults.
+        $params = clone ComponentHelper::getParams('com_j2commerce');
         $params->set('list_no_of_columns', 1);
         $params->set('list_show_image', 1);
         $params->set('list_show_title', 1);
