@@ -98,10 +98,6 @@ $afterHtml = J2CommerceHelper::plugin()->eventWithHtml(
         <?php echo ProductLayoutService::renderLayout('list.tag.item_stock', $displayData); ?>
     <?php endif; ?>
 
-    <?php if ($showQuickview): ?>
-        <?php echo ProductLayoutService::renderLayout('list.tag.item_quickview', $displayData); ?>
-    <?php endif; ?>
-
     <?php if (isset($product->event->afterDisplayContent)): ?>
         <?php echo $product->event->afterDisplayContent; ?>
     <?php endif; ?>

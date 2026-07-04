@@ -35,9 +35,15 @@ $productType = htmlspecialchars($product->product_type ?? '', ENT_QUOTES, 'UTF-8
 
 $show = $productHelper->validateVariableProduct($product);
 
-$beforeCart = J2CommerceHelper::plugin()->eventWithHtml('BeforeAddToCartButton',[$product, $context])->getArgument('html', '');
+$beforeCart = J2CommerceHelper::plugin()->eventWithHtml(
+    'BeforeAddToCartButton',
+    [$product, $context]
+)->getArgument('html', '');
 
-$afterCart = J2CommerceHelper::plugin()->eventWithHtml('AfterAddToCartButton',[$product, $context])->getArgument('html', '');
+$afterCart = J2CommerceHelper::plugin()->eventWithHtml(
+    'AfterAddToCartButton',
+    [$product, $context]
+)->getArgument('html', '');
 ?>
 <?php echo $beforeCart; ?>
 
@@ -58,11 +64,14 @@ $afterCart = J2CommerceHelper::plugin()->eventWithHtml('AfterAddToCartButton',[$
                 <?php if ($displayData['showQtyField'] ?? $params->get('show_qty_field', J2CommerceHelper::config()->showQuantityField())): ?>
                     <?php echo $productHelper->displayQuantity('com_j2commerce.productlist.bootstrap5', $product, $params, ['class' => 'form-control qty-input','show_buttons' => false]); ?>
                 <?php endif; ?>
-                <button type="submit" class="j2commerce-cart-button flex-fill <?php echo $btnClass; ?>" data-cart-action-always="<?php echo Text::_('COM_J2COMMERCE_ADDING_TO_CART'); ?>" data-cart-action-done="<?php echo htmlspecialchars($cartText ?? '', ENT_QUOTES, 'UTF-8'); ?>" data-cart-action-timeout="1000">
+                <button type="submit"
+                        class="j2commerce-cart-button flex-fill <?php echo $btnClass; ?>"
+                        data-cart-action-always="<?php echo Text::_('COM_J2COMMERCE_ADDING_TO_CART'); ?>"
+                        data-cart-action-done="<?php echo htmlspecialchars($cartText ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                        data-cart-action-timeout="1000">
                     <?php echo htmlspecialchars($cartText ?? '', ENT_QUOTES, 'UTF-8'); ?>
                 </button>
             </div>
-
             <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterAddToCartButtonIcon',[$product, $context])->getArgument('html', ''); ?>
         </div>
     </div>
@@ -82,5 +91,3 @@ $afterCart = J2CommerceHelper::plugin()->eventWithHtml('AfterAddToCartButton',[$
 <input type="hidden" name="return" value="<?php echo base64_encode(Uri::getInstance()->toString()); ?>" />
 
 <div class="j2commerce-notifications"></div>
-
-
