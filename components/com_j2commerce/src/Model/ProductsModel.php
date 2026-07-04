@@ -595,7 +595,25 @@ class ProductsModel extends ListModel
             ? $this->getMatchingManufacturerIds()
             : null;
 
-        return ProductHelper::getFilters($items, $filterCategoryIds, $restrictManufacturerIds);
+        $filters = ProductHelper::getFilters($items, $filterCategoryIds, $restrictManufacturerIds);
+
+        if (!empty($items)) {
+            $prices = [];
+
+            foreach ($items as $item) {
+                $price = (float) ($item->pricing->price ?? $item->price ?? 0);
+
+                if ($price > 0) {
+                    $prices[] = $price;
+                }
+            }
+
+            if (!empty($prices)) {
+                $filters['pricefilters'] = ['min_price' => min($prices), 'max_price' => max($prices)];
+            }
+        }
+
+        return $filters;
     }
 
     /**
