@@ -17,8 +17,8 @@ use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 
 extract($displayData);
 
-$productId = $product->j2commerce_product_id;
-$cssClass = $product->params->get('product_css_class', '') ?? '';
+$productId = (int) $product->j2commerce_product_id;
+$cssClass = htmlspecialchars($product->params->get('product_css_class', '') ?? '', ENT_QUOTES, 'UTF-8');
 $productType = htmlspecialchars($product->product_type ?? '', ENT_QUOTES, 'UTF-8');
 $beforeHtml = J2CommerceHelper::plugin()->eventWithHtml('BeforeProductListItemDisplay', [$product, $context, &$displayData])->getArgument('html', '');
 $afterHtml = J2CommerceHelper::plugin()->eventWithHtml('AfterProductListItemDisplay', [$product, $context, &$displayData])->getArgument('html', '');
@@ -90,10 +90,6 @@ $cartType = (int) $params->get('list_show_cart', 1);
 
     <?php if ($showStock): ?>
         <?php echo ProductLayoutService::renderLayout('list.tag.item_stock', $displayData); ?>
-    <?php endif; ?>
-
-    <?php if ($showQuickview): ?>
-        <?php echo ProductLayoutService::renderLayout('list.tag.item_quickview', $displayData); ?>
     <?php endif; ?>
 
     <?php if (isset($product->event->afterDisplayContent)): ?>
