@@ -14,7 +14,9 @@ defined('_JEXEC') or die;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderTransactionHelper;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\Registry\Registry;
 
@@ -101,6 +103,18 @@ if ($hasDetails) {
                 <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterAdminOrderPaymentButton', array($item))->getArgument('html', ''); ?>
             </div>
         </div>
+
+        <?php
+        $ledgerOrderId = (int) ($item->j2commerce_order_id ?? 0);
+        if ($ledgerOrderId > 0 && OrderTransactionHelper::hasLedger($ledgerOrderId)) :
+            echo LayoutHelper::render('order.payment_balance', [
+                'order_id'       => $ledgerOrderId,
+                'order_total'    => (float) ($item->order_total ?? 0),
+                'currency_code'  => (string) ($item->currency_code ?? 'USD'),
+                'currency_value' => (float) ($item->currency_value ?? 1.0),
+            ], JPATH_ADMINISTRATOR . '/components/com_j2commerce/layouts');
+        endif;
+        ?>
 
         <?php if ($hasDetails) : ?>
             <div class="modal fade" id="transactionDetailsModal" tabindex="-1"

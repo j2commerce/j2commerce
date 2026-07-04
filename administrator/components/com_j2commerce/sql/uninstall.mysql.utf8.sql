@@ -8,6 +8,7 @@
 -- DROP TABLE IF EXISTS `#__j2commerce_coupons`;
 -- DROP TABLE IF EXISTS `#__j2commerce_currencies`;
 -- DROP TABLE IF EXISTS `#__j2commerce_orders`;
+-- DROP TABLE IF EXISTS `#__j2commerce_order_transactions`;
 -- DROP TABLE IF EXISTS `#__j2commerce_orderstatuses`;
 -- DROP TABLE IF EXISTS `#__j2commerce_products`;
 -- DROP TABLE IF EXISTS `#__j2commerce_productquantities`;

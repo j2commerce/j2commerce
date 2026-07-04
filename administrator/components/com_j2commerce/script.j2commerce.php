@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\CliCommands\SeedOrderLedgerCommand;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Installer\InstallerScript;
 use Joomla\CMS\Language\Text;
@@ -145,6 +146,8 @@ class Com_J2commerceInstallerScript extends InstallerScript
 
         $this->cleanupStaleCheckoutTemplates();
 
+        $this->seedOrderLedgerOnce();
+
         Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_UPDATE_SUCCESS'), 'success');
 
         $this->debugLog("=== UPDATE END ===");
@@ -168,6 +171,68 @@ class Com_J2commerceInstallerScript extends InstallerScript
                 $this->debugLog("UPDATE: removed stale checkout template {$file}");
             }
         }
+    }
+
+    /**
+     * One-time backfill of the order-transaction ledger (issue j2commerce#1184).
+     * Guarded by a `#__extensions.params` flag so it only runs once per site; per-order
+     * failures are already logged and skipped inside SeedOrderLedgerCommand::run(), and a
+     * top-level failure here (e.g. autoload not yet refreshed) is caught so it never aborts
+     * the update — it simply retries on the next update.
+     */
+    private function seedOrderLedgerOnce(): void
+    {
+        $db      = Factory::getContainer()->get(DatabaseInterface::class);
+        $element = 'com_j2commerce';
+        $type    = 'component';
+
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('params'))
+            ->from($db->quoteName('#__extensions'))
+            ->where($db->quoteName('element') . ' = :element')
+            ->where($db->quoteName('type') . ' = :type')
+            ->bind(':element', $element)
+            ->bind(':type', $type);
+        $db->setQuery($query);
+        $registry = new Registry((string) ($db->loadResult() ?: ''));
+
+        if ($registry->get('order_ledger_seeded', false)) {
+            return;
+        }
+
+        $commandFile = JPATH_ADMINISTRATOR . '/components/com_j2commerce/src/CliCommands/SeedOrderLedgerCommand.php';
+
+        if (!class_exists(SeedOrderLedgerCommand::class) && file_exists($commandFile)) {
+            require_once $commandFile;
+        }
+
+        try {
+            $result = SeedOrderLedgerCommand::run();
+            $this->debugLog(\sprintf(
+                'ORDER LEDGER SEED: seeded=%d skipped=%d failed=%d',
+                $result['seeded'] ?? 0,
+                $result['skipped'] ?? 0,
+                $result['failed'] ?? 0
+            ));
+        } catch (\Throwable $e) {
+            $this->debugLog('ORDER LEDGER SEED: aborted with error: ' . $e->getMessage());
+            Log::add('Order ledger seed failed: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
+            return;
+        }
+
+        $registry->set('order_ledger_seeded', true);
+        $params = $registry->toString();
+
+        $update = $db->getQuery(true)
+            ->update($db->quoteName('#__extensions'))
+            ->set($db->quoteName('params') . ' = :params')
+            ->where($db->quoteName('element') . ' = :element')
+            ->where($db->quoteName('type') . ' = :type')
+            ->bind(':params', $params)
+            ->bind(':element', $element)
+            ->bind(':type', $type);
+        $db->setQuery($update);
+        $db->execute();
     }
 
     public function uninstall($parent)
