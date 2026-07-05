@@ -25,7 +25,7 @@ class OrderTransactionTable extends Table
     public function __construct(DatabaseDriver $db)
     {
         $this->typeAlias = 'com_j2commerce.ordertransaction';
-        parent::__construct('#__j2commerce_order_transactions', 'j2commerce_order_transaction_id', $db);
+        parent::__construct('#__j2commerce_ordertransactions', 'j2commerce_ordertransaction_id', $db);
     }
 
     /** @throws \UnexpectedValueException */

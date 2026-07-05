@@ -38,7 +38,7 @@ use Joomla\Database\ParameterType;
  */
 final class OrderTransactionHelper
 {
-    private const TABLE = '#__j2commerce_order_transactions';
+    private const TABLE = '#__j2commerce_ordertransactions';
 
     private static ?DatabaseInterface $db = null;
 
@@ -239,14 +239,14 @@ final class OrderTransactionHelper
         $db    = self::getDatabase();
         $query = $db->getQuery(true)
             ->select($db->quoteName([
-                'j2commerce_order_transaction_id', 'order_id', 'plugin', 'type',
+                'j2commerce_ordertransaction_id', 'order_id', 'plugin', 'type',
                 'gateway_txn_id', 'parent_txn_id', 'amount', 'currency_code',
                 'state', 'created_at', 'created_by',
             ]))
             ->from($db->quoteName(self::TABLE))
             ->where($db->quoteName('order_id') . ' = :orderId')
             ->order($db->quoteName('created_at') . ' DESC')
-            ->order($db->quoteName('j2commerce_order_transaction_id') . ' DESC')
+            ->order($db->quoteName('j2commerce_ordertransaction_id') . ' DESC')
             ->bind(':orderId', $orderId, ParameterType::INTEGER);
 
         $db->setQuery($query);
@@ -434,7 +434,7 @@ final class OrderTransactionHelper
     {
         $db    = self::getDatabase();
         $query = $db->getQuery(true)
-            ->select($db->quoteName(['j2commerce_order_transaction_id', 'state']))
+            ->select($db->quoteName(['j2commerce_ordertransaction_id', 'state']))
             ->from($db->quoteName(self::TABLE))
             ->where($db->quoteName('order_id') . ' = :orderId')
             ->where($db->quoteName('gateway_txn_id') . ' = :gatewayTxnId')
@@ -450,7 +450,7 @@ final class OrderTransactionHelper
             return null;
         }
 
-        $id = (int) $row->j2commerce_order_transaction_id;
+        $id = (int) $row->j2commerce_ordertransaction_id;
 
         if ($row->state !== 'succeeded') {
             self::upgradeState($id, 'succeeded');
@@ -465,7 +465,7 @@ final class OrderTransactionHelper
         $query = $db->getQuery(true)
             ->update($db->quoteName(self::TABLE))
             ->set($db->quoteName('state') . ' = :state')
-            ->where($db->quoteName('j2commerce_order_transaction_id') . ' = :id')
+            ->where($db->quoteName('j2commerce_ordertransaction_id') . ' = :id')
             ->bind(':state', $state)
             ->bind(':id', $id, ParameterType::INTEGER);
 
@@ -626,7 +626,7 @@ final class OrderTransactionHelper
         $typeVoid     = 'VOID';
 
         $capturesQuery = $db->getQuery(true)
-            ->select($db->quoteName(['t.gateway_txn_id', 't.amount', 't.created_at', 't.j2commerce_order_transaction_id']))
+            ->select($db->quoteName(['t.gateway_txn_id', 't.amount', 't.created_at', 't.j2commerce_ordertransaction_id']))
             ->from($db->quoteName(self::TABLE, 't'))
             ->where($db->quoteName('t.order_id') . ' = :orderId')
             ->where($db->quoteName('t.type') . ' IN (:typeDebit, :typeCapture)')
@@ -634,7 +634,7 @@ final class OrderTransactionHelper
             ->where($db->quoteName('t.gateway_txn_id') . ' IS NOT NULL')
             ->where(self::notVoidedCorrelatedClause('t'))
             ->order($db->quoteName('t.created_at') . ' DESC')
-            ->order($db->quoteName('t.j2commerce_order_transaction_id') . ' DESC')
+            ->order($db->quoteName('t.j2commerce_ordertransaction_id') . ' DESC')
             ->bind(':orderId', $orderId, ParameterType::INTEGER)
             ->bind(':typeDebit', $typeDebit)
             ->bind(':typeCapture', $typeCapture)

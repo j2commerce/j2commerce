@@ -864,11 +864,11 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_orders` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
--- Table structure for table `#__j2commerce_order_transactions`
+-- Table structure for table `#__j2commerce_ordertransactions`
 -- --------------------------------------------------------
 
-CREATE TABLE IF NOT EXISTS `#__j2commerce_order_transactions` (
-  `j2commerce_order_transaction_id` int NOT NULL AUTO_INCREMENT,
+CREATE TABLE IF NOT EXISTS `#__j2commerce_ordertransactions` (
+  `j2commerce_ordertransaction_id` int NOT NULL AUTO_INCREMENT,
   `order_id` int NOT NULL,
   `plugin` varchar(255) NOT NULL DEFAULT '',
   `type` varchar(20) NOT NULL DEFAULT 'DEBIT',
@@ -879,7 +879,7 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_order_transactions` (
   `state` varchar(20) NOT NULL DEFAULT 'succeeded',
   `created_at` datetime NOT NULL,
   `created_by` int NOT NULL DEFAULT 0,
-  PRIMARY KEY (`j2commerce_order_transaction_id`),
+  PRIMARY KEY (`j2commerce_ordertransaction_id`),
   UNIQUE KEY `uq_order_txn_type` (`order_id`, `gateway_txn_id`, `type`),
   KEY `idx_order` (`order_id`),
   KEY `idx_order_type_state` (`order_id`, `type`, `state`),

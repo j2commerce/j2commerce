@@ -24,7 +24,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
 /**
- * One-time, idempotent backfill of #__j2commerce_order_transactions from legacy
+ * One-time, idempotent backfill of #__j2commerce_ordertransactions from legacy
  * transaction_details JSON. Guarded per-order by OrderTransactionHelper::hasLedger()
  * so re-running never double-seeds. Per-order failures are logged and skipped —
  * never aborts. See docs/plans/order_transactions_ledger_prd.md §8.
