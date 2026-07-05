@@ -6,7 +6,7 @@
     <copyright>(C)2024–2026 J2Commerce, LLC. All rights reserved.</copyright>
     <authorEmail>support@j2commerce.com</authorEmail>
     <authorUrl>https://www.j2commerce.com</authorUrl>
-    <version>6.3.8</version>
+    <version>6.4.0</version>
     <license>GNU General Public License version 2 or later; see LICENSE.txt</license>
     <description>COM_J2COMMERCE_DESCRIPTION</description>
     <namespace path="src">J2Commerce\Component\J2commerce</namespace>
@@ -59,6 +59,8 @@
         <language tag="el-GR">el-GR/com_j2commerce.sys.ini</language>
         <language tag="es-ES">es-ES/com_j2commerce.ini</language>
         <language tag="es-ES">es-ES/com_j2commerce.sys.ini</language>
+        <language tag="fa-IR">fa-IR/com_j2commerce.ini</language>
+        <language tag="fa-IR">fa-IR/com_j2commerce.sys.ini</language>
         <language tag="fi-FI">fi-FI/com_j2commerce.ini</language>
         <language tag="fi-FI">fi-FI/com_j2commerce.sys.ini</language>
         <language tag="fr-FR">fr-FR/com_j2commerce.ini</language>
@@ -116,6 +118,7 @@
             <language tag="el-GR">el-GR/com_j2commerce.sys.ini</language>
             <language tag="es-ES">es-ES/com_j2commerce.ini</language>
             <language tag="es-ES">es-ES/com_j2commerce.sys.ini</language>
+            <language tag="fa-IR">fa-IR/com_j2commerce.ini</language>
             <language tag="fa-IR">fa-IR/com_j2commerce.sys.ini</language>
             <language tag="fi-FI">fi-FI/com_j2commerce.ini</language>
             <language tag="fi-FI">fi-FI/com_j2commerce.sys.ini</language>

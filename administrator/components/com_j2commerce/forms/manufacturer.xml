@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <form>
-    <inlinehelp button="show"/>
+    <config>
+        <inlinehelp button="show"/>
+    </config>
     <fieldset name="basic" label="COM_J2COMMERCE_FIELDSET_BASIC">
         <!-- Hidden primary key field - REQUIRED -->
         <field
