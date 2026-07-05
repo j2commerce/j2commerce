@@ -630,6 +630,7 @@ function setupPreviewIntegration(editor, options) {
             formData.append('body', body);
             formData.append('subject', subject);
             formData.append('custom_css', customCss);
+            formData.append('email_type', document.getElementById('jform_email_type')?.value || 'transactional');
             formData.append(token, '1');
 
             const response = await fetch(options.previewUrl, { method: 'POST', body: formData });
