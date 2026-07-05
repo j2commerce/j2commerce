@@ -17,9 +17,9 @@ use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 
 extract($displayData);
 
-$productId = $product->j2commerce_product_id;
+$productId = (int) $product->j2commerce_product_id;
 $cartType = (int) $params->get('list_show_cart', 1);
-$cssClass = $product->params->get('product_css_class', '') ?? '';
+$cssClass = htmlspecialchars($product->params->get('product_css_class', '') ?? '', ENT_QUOTES, 'UTF-8');
 $productType = htmlspecialchars($product->product_type ?? '', ENT_QUOTES, 'UTF-8');
 $beforeHtml = J2CommerceHelper::plugin()->eventWithHtml('BeforeProductListItemDisplay',[$product, $context, &$displayData])->getArgument('html', '');
 $afterHtml = J2CommerceHelper::plugin()->eventWithHtml('AfterProductListItemDisplay',[$product, $context, &$displayData])->getArgument('html', '');

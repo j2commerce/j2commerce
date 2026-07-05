@@ -30,21 +30,36 @@ $pricing = $product->pricing ?? null;
 $defaultPrice = (float) ($pricing->price ?? 0);
 $hasRange = $minPrice !== null && $maxPrice !== null && $minPrice != $maxPrice;
 $showRange = !empty($product->show_price_range) && $hasRange;
+$showBasePrice = (bool) $params->get('list_show_product_base_price', 1);
+$showSpecialPrice = (bool) $params->get('list_show_product_special_price', 1);
+$showTaxInfo = (bool) $params->get('display_price_with_tax_info', 0);
+
+$beforeHtml = J2CommerceHelper::plugin()->eventWithHtml('BeforeRenderingProductPrice', [$product])->getArgument('html', '');
+$afterHtml = J2CommerceHelper::plugin()->eventWithHtml('AfterRenderingProductPrice', [$product])->getArgument('html', '');
+$basePrice = $pricing->base_price ?? 0;
+$salePrice = $pricing->price ?? 0;
 ?>
-<div class="j2commerce-product-price j2commerce-flexiprice" data-j2-a11y-live="polite" data-j2-a11y-atomic="true">
-    <?php if ($showRange): ?>
-        <span class="price-range text-muted small">
+<?php if ($hasRange && $showRange): ?>
+    <div class="price-range text-muted small">
             <?php echo $currency->format($minPrice); ?> - <?php echo $currency->format($maxPrice); ?>
-        </span>
+    </div>
+<?php endif; ?>
+<div class="j2commerce-product-price-container j2commerce-flexiprice d-flex align-items-center gap-1" data-j2-a11y-live="polite" data-j2-a11y-atomic="true">
+    <?php if ($showSpecialPrice && isset($pricing->price)): ?>
+        <div class="sale-price lh-1 fs-5 fw-semibold">
+            <?php echo $productHelper->displayPrice((float) $salePrice, $product, $params); ?>
+        </div>
     <?php endif; ?>
-    <?php if ($defaultPrice > 0): ?>
-        <span class="price-current">
-            <?php echo $productHelper->displayPrice($defaultPrice, $product, $params); ?>
-        </span>
-    <?php elseif ($minPrice !== null && !$hasRange): ?>
-        <span class="price-from">
-            <?php echo Text::_('COM_J2COMMERCE_PRICE_FROM'); ?>
-            <?php echo $currency->format($minPrice); ?>
-        </span>
+
+    <?php if ($showBasePrice && $basePrice > 0 && $basePrice != $salePrice): ?>
+        <del class="base-price fs-6 fw-normal text-body-tertiary lh-1">
+            <?php echo $productHelper->displayPrice((float) $basePrice, $product, $params); ?>
+        </del>
+    <?php endif; ?>
+
+    <?php if ($showTaxInfo): ?>
+        <div class="tax-text">
+            <small class="fw-normal text-body-tertiary"><?php echo $productHelper->get_tax_text(); ?></small>
+        </div>
     <?php endif; ?>
 </div>

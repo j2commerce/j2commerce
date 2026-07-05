@@ -70,19 +70,20 @@ $afterCart = J2CommerceHelper::plugin()->eventWithHtml(
             </div>
 
             <div id="add-to-cart-<?php echo $productId; ?>" class="j2commerce-add-to-cart">
-                <?php if ($params->get('show_qty_field', J2CommerceHelper::config()->showQuantityField())): ?>
-                    <?php echo $productHelper->displayQuantity('com_j2commerce.productlist.uikit', $product, $params, ['class' => 'input-mini uk-input']); ?>
-                <?php endif; ?>
-
                 <input type="hidden" name="product_id" value="<?php echo $productId; ?>" />
-
-                <button type="submit"
-                        class="j2commerce-cart-button <?php echo $btnClass; ?>"
-                        data-cart-action-always="<?php echo Text::_('COM_J2COMMERCE_ADDING_TO_CART'); ?>"
-                        data-cart-action-done="<?php echo htmlspecialchars($cartText ?? '', ENT_QUOTES, 'UTF-8'); ?>"
-                        data-cart-action-timeout="1000">
-                    <?php echo htmlspecialchars($cartText ?? '', ENT_QUOTES, 'UTF-8'); ?>
-                </button>
+                <div class="j2commerce-cart-buttons uk-flex uk-flex-middle">
+                    <?php if ($params->get('show_qty_field', J2CommerceHelper::config()->showQuantityField())): ?>
+                        <?php echo $productHelper->displayQuantity('com_j2commerce.productlist.uikit', $product, $params, ['class' => 'uk-input qty-input', 'show_buttons' => false]); ?>
+                    <?php endif; ?>
+                    <button type="submit"
+                            class="j2commerce-cart-button uk-width-expand <?php echo $btnClass; ?>"
+                            data-cart-action-always="<?php echo Text::_('COM_J2COMMERCE_ADDING_TO_CART'); ?>"
+                            data-cart-action-done="<?php echo htmlspecialchars($cartText ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                            data-cart-action-timeout="1000">
+                        <?php echo htmlspecialchars($cartText ?? '', ENT_QUOTES, 'UTF-8'); ?>
+                    </button>
+                    <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterAddToCartButtonIcon', [$product, $context])->getArgument('html', ''); ?>
+                </div>
             </div>
 
             <input type="hidden" name="option" value="com_j2commerce" />

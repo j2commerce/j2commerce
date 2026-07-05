@@ -32,11 +32,11 @@ class OrderfulfilmentController extends J2CommerceApiController
     protected $default_view = 'orderfulfilment';
 
     /** Gap 3 — order detail with ship-to block, chosen method and tracking. */
-    public function displayItem()
+    public function displayItem($id = null)
     {
         $this->assertCan(['core.fulfilment', 'core.edit', 'core.manage', 'j2commerce.vieworders']);
 
-        $pk    = $this->input->get('id', 0, 'int');
+        $pk    = ((int) $id) ?: $this->getRouteId();
         $order = $this->getModel('Order')->getItem($pk);
 
         if ($order === false || empty($order->j2commerce_order_id)) {
@@ -80,7 +80,7 @@ class OrderfulfilmentController extends J2CommerceApiController
     {
         $this->assertCan(['core.fulfilment', 'core.edit']);
 
-        $pk       = $this->input->get('id', 0, 'int');
+        $pk       = $this->getRouteId();
         $statusId = $this->input->json->getInt('status_id', 0);
         $notify   = (bool) $this->input->json->get('notify', false, 'BOOLEAN');
         $comment  = (string) $this->input->json->getString('comment', '');
@@ -104,7 +104,7 @@ class OrderfulfilmentController extends J2CommerceApiController
     {
         $this->assertCan(['core.fulfilment', 'core.edit']);
 
-        $pk         = $this->input->get('id', 0, 'int');
+        $pk         = $this->getRouteId();
         $trackingId = trim((string) $this->input->json->getString('tracking_id', ''));
 
         if ($trackingId === '') {
@@ -118,6 +118,14 @@ class OrderfulfilmentController extends J2CommerceApiController
             'ordershipping_tracking_id' => $trackingId,
             'success'                   => $ok,
         ]);
+    }
+
+    /** ApiApplication injects the :id route var into input->post (not top-level input) for POST requests. */
+    private function getRouteId(): int
+    {
+        $id = $this->input->getInt('id', 0);
+
+        return $id > 0 ? $id : $this->input->post->getInt('id', 0);
     }
 
     private function assertCan(array $actions): void
