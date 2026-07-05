@@ -2295,14 +2295,29 @@ class EmailHelper
         return $db->loadObject() ?: null;
     }
 
+    /**
+     * Process email tags for a given type and context.
+     *
+     * This method processes both core tags and plugin-specific tags.
+     *
+     * @param   string  $emailType  The email type
+     * @param   string  $context    The context
+     * @param   object  $data       Context data (order, voucher, etc.)
+     * @param   string  $body       The body to process
+     *
+     * @return  string  Processed body
+     *
+     * @since   6.1.0
+     */
     public static function processTypeTags(string $emailType, string $context, object $data, string $body): string
     {
-        // Attach j2commerce subscribers — this path (admin preview/test) has no checkout flow
-        // to import the group, so without this the event reaches zero handlers and plugin tags
-        // get stripped to empty by processTags() below.
-        \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2commerce');
+        // First, process core transactional tags if applicable
+        if ($emailType === 'transactional' && isset($data->order_id)) {
+            $instance = self::getInstance();
+            $body     = $instance->processTags($body, $data);
+        }
 
-        // Plugin event first — type-specific tags replaced before core strips unknown brackets
+        // Dispatch event for plugin-specific tag processing
         try {
             $app   = Factory::getApplication();
             $event = new \Joomla\Event\Event('onJ2CommerceProcessEmailTags', [
@@ -2319,12 +2334,7 @@ class EmailHelper
                 $body = $result;
             }
         } catch (\Exception $e) {
-            // Continue with original body
-        }
-
-        // Core chrome tags (conditionals, site name, colour substitutions, unknown-tag strip)
-        if (isset($data->order_id) || isset($data->j2commerce_order_id)) {
-            $body = self::getInstance()->processTags($body, $data);
+            // Event dispatching failed, continue with original body
         }
 
         return $body;

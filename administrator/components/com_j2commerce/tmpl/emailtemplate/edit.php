@@ -138,7 +138,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 formData.append("body", body);
                 formData.append("subject", subject);
                 formData.append("custom_css", customCss);
-                formData.append("email_type", document.getElementById("jform_email_type")?.value || "transactional");
                 formData.append(token, "1");
 
                 const response = await fetch("index.php?option=com_j2commerce&task=emailtemplate.preview&format=raw", {
@@ -188,7 +187,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 formData.append("subject", subject);
                 formData.append("custom_css", customCss);
                 formData.append("recipient", email);
-                formData.append("email_type", document.getElementById("jform_email_type")?.value || "transactional");
                 formData.append(token, "1");
 
                 const response = await fetch("index.php?option=com_j2commerce&task=emailtemplate.sendTest&format=json", {
