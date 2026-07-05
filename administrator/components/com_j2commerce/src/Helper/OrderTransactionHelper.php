@@ -19,11 +19,7 @@ use Joomla\Database\ParameterType;
 \defined('_JEXEC') or die;
 
 /**
- * Shared order-transaction ledger accessor.
- *
- * One canonical table for captures, refunds, auths, and voids so every payment
- * plugin reads/writes the same source of truth instead of hand-rolling its own
- * accounting inside `transaction_details` JSON. See docs/plans/order_transactions_ledger_prd.md.
+ * Shared order-transaction ledger accessor. See docs/plans/order_transactions_ledger_prd.md.
  *
  * All amounts are in the ORDER (display) currency — matching `orders.currency_code`,
  * NOT the store base currency that `orders.order_total` is stored in (PRD design
@@ -40,9 +36,15 @@ final class OrderTransactionHelper
 {
     private const TABLE = '#__j2commerce_ordertransactions';
 
+    private const EPSILON = 0.00001;
+
     private static ?DatabaseInterface $db = null;
 
-    /** Per-request memo for hasLedger(); refreshed by writeRow() after an insert. */
+    /**
+     * Per-request memo for hasLedger(); refreshed by writeRow() after an insert.
+     *
+     * @var array<int, bool>
+     */
     private static array $ledgerMemo = [];
 
     private static function getDatabase(): DatabaseInterface
@@ -83,7 +85,7 @@ final class OrderTransactionHelper
         $currencyCode = self::orderCurrencyCode($orderId);
         $id           = self::writeRow($orderId, $pluginEl, 'REVERSAL', $refundTxnId, $parentTxnId, $amount, $currencyCode, $createdBy);
 
-        self::syncOrderRefund($orderId);
+        self::syncOrderRefund($orderId, $createdBy);
 
         return $id;
     }
@@ -229,7 +231,11 @@ final class OrderTransactionHelper
         return ['captured' => $captured, 'refunded' => $refunded, 'net_paid' => $captured - $refunded];
     }
 
-    /** Newest-first ledger rows. Empty for legacy orders with no ledger rows. */
+    /**
+     * Newest-first ledger rows. Empty for legacy orders with no ledger rows.
+     *
+     * @return array<int, object>
+     */
     public static function getCharges(int $orderId): array
     {
         if (!self::hasLedger($orderId)) {
@@ -277,7 +283,7 @@ final class OrderTransactionHelper
                     continue;
                 }
 
-                if ($amount > $capture['remainder'] + 0.00001) {
+                if ($amount > $capture['remainder'] + self::EPSILON) {
                     throw new \RuntimeException(\sprintf(
                         'Refund amount %.5f exceeds the remaining refundable %.5f on transaction %s.',
                         $amount,
@@ -298,7 +304,7 @@ final class OrderTransactionHelper
 
         $totalRemainder = array_sum(array_column($captures, 'remainder'));
 
-        if ($amount > $totalRemainder + 0.00001) {
+        if ($amount > $totalRemainder + self::EPSILON) {
             throw new \RuntimeException(\sprintf(
                 'Refund amount %.5f exceeds the refundable total %.5f for order %d.',
                 $amount,
@@ -311,11 +317,11 @@ final class OrderTransactionHelper
         $remaining = $amount;
 
         foreach ($captures as $capture) {
-            if ($remaining <= 0.00001) {
+            if ($remaining <= self::EPSILON) {
                 break;
             }
 
-            if ($capture['remainder'] <= 0.00001) {
+            if ($capture['remainder'] <= self::EPSILON) {
                 continue;
             }
 
@@ -381,6 +387,13 @@ final class OrderTransactionHelper
             if ($existingId !== null) {
                 return $existingId;
             }
+        }
+
+        // VOID rows always carry amount 0.0 and may have no currencyCode to round
+        // against (order lookup failure) — skip rounding rather than round against
+        // the wrong currency's decimal places.
+        if ($currencyCode !== '') {
+            $amount = round($amount, CurrencyHelper::getDecimalPlace($currencyCode));
         }
 
         $db    = self::getDatabase();
@@ -560,6 +573,7 @@ final class OrderTransactionHelper
     // INTERNAL — reads
     // =========================================================================
 
+    /** @param array<int, string> $types */
     private static function sumByTypes(int $orderId, array $types): float
     {
         $db    = self::getDatabase();
@@ -715,8 +729,14 @@ final class OrderTransactionHelper
      * and rounding to the STORE BASE currency's decimal places — `order_refund` is
      * a base-currency column, so its precision must follow the base currency, not
      * the order's display currency (H2, PRD §6 / §10 D3-note).
+     *
+     * Writes the orders row directly rather than through OrderTable::store() —
+     * ConsoleApplication (CLI/seeder context) never calls loadIdentity(), so
+     * getIdentity() is null there and OrderTable::store() would fault reading
+     * $user->id. modified_on/modified_by are set here instead so that side effect
+     * of going through the Table class isn't lost.
      */
-    private static function syncOrderRefund(int $orderId): void
+    private static function syncOrderRefund(int $orderId, int $modifiedBy = 0): void
     {
         $order = self::fetchOrderRow($orderId);
 
@@ -729,13 +749,20 @@ final class OrderTransactionHelper
         $rate            = $rate > 0 ? $rate : 1.0;
         $decimals        = CurrencyHelper::getDecimalPlace(ConfigHelper::getDefaultCurrency());
         $baseRefunded    = round($displayRefunded / $rate, $decimals);
+        $now             = Factory::getDate()->toSql();
 
         $db    = self::getDatabase();
         $query = $db->getQuery(true)
             ->update($db->quoteName('#__j2commerce_orders'))
-            ->set($db->quoteName('order_refund') . ' = :orderRefund')
+            ->set([
+                $db->quoteName('order_refund') . ' = :orderRefund',
+                $db->quoteName('modified_on') . ' = :modifiedOn',
+                $db->quoteName('modified_by') . ' = :modifiedBy',
+            ])
             ->where($db->quoteName('j2commerce_order_id') . ' = :orderId')
             ->bind(':orderRefund', $baseRefunded, ParameterType::STRING)
+            ->bind(':modifiedOn', $now)
+            ->bind(':modifiedBy', $modifiedBy, ParameterType::INTEGER)
             ->bind(':orderId', $orderId, ParameterType::INTEGER);
 
         $db->setQuery($query);
@@ -746,6 +773,7 @@ final class OrderTransactionHelper
     // INTERNAL — legacy fallback (no ledger rows)
     // =========================================================================
 
+    /** @return float Display-currency amount — order_total is stored in the base currency. */
     private static function legacyCaptured(int $orderId): float
     {
         $order = self::fetchOrderRow($orderId);
@@ -754,16 +782,23 @@ final class OrderTransactionHelper
             return 0.0;
         }
 
-        return match ((string) $order->transaction_status) {
+        $base = match ((string) $order->transaction_status) {
             'Completed', 'Refunded', 'Partially Refunded' => (float) $order->order_total,
             default                                       => 0.0,
         };
+
+        return CurrencyHelper::convertForOrder($base, $order);
     }
 
+    /** @return float Display-currency amount — order_refund is stored in the base currency. */
     private static function legacyRefunded(int $orderId): float
     {
         $order = self::fetchOrderRow($orderId);
 
-        return $order !== null ? (float) ($order->order_refund ?? 0) : 0.0;
+        if ($order === null) {
+            return 0.0;
+        }
+
+        return CurrencyHelper::convertForOrder((float) ($order->order_refund ?? 0), $order);
     }
 }

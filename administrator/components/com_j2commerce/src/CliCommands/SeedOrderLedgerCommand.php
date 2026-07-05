@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\CliCommands;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderTransactionHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Log\Log;
@@ -36,6 +37,8 @@ class SeedOrderLedgerCommand extends AbstractCommand
     private const SEEDABLE_STATUSES = ['Completed', 'Refunded', 'Partially Refunded'];
 
     private const REVERSAL_EPSILON = 0.00001;
+
+    private const BATCH_SIZE = 500;
 
     protected function configure(): void
     {
@@ -63,53 +66,64 @@ class SeedOrderLedgerCommand extends AbstractCommand
     {
         $db = Factory::getContainer()->get(DatabaseInterface::class);
 
-        $query        = $db->getQuery(true)
-            ->select($db->quoteName([
-                'j2commerce_order_id', 'order_total', 'order_refund', 'transaction_id',
-                'transaction_status', 'transaction_details', 'currency_code',
-                'currency_value', 'orderpayment_type', 'created_by',
-            ]))
-            ->from($db->quoteName('#__j2commerce_orders'));
-        $placeholders = [];
-        $statuses     = self::SEEDABLE_STATUSES;
-
-        // bind() holds references — bind the array slots, not the loop variable.
-        foreach ($statuses as $i => $status) {
-            $placeholder    = ':status' . $i;
-            $placeholders[] = $placeholder;
-            $query->bind($placeholder, $statuses[$i]);
-        }
-
-        $query->where($db->quoteName('transaction_status') . ' IN (' . implode(',', $placeholders) . ')');
-
-        $db->setQuery($query);
-        $orders = $db->loadObjectList() ?: [];
-
         $seeded           = 0;
         $skipped          = 0;
         $failed           = 0;
         $reversalsSkipped = 0;
+        $offset           = 0;
 
-        foreach ($orders as $order) {
-            $orderId = (int) $order->j2commerce_order_id;
+        // Paged in fixed-size batches (ordered by PK) rather than loading every
+        // seedable order into memory at once — this table can grow large in
+        // production, and transaction_status doesn't change mid-run, so the
+        // paging window stays stable across iterations.
+        do {
+            $query        = $db->getQuery(true)
+                ->select($db->quoteName([
+                    'j2commerce_order_id', 'order_total', 'order_refund', 'transaction_id',
+                    'transaction_status', 'transaction_details', 'currency_code',
+                    'currency_value', 'orderpayment_type', 'created_by',
+                ]))
+                ->from($db->quoteName('#__j2commerce_orders'))
+                ->order($db->quoteName('j2commerce_order_id') . ' ASC');
+            $placeholders = [];
+            $statuses     = self::SEEDABLE_STATUSES;
 
-            try {
-                if (OrderTransactionHelper::hasLedger($orderId)) {
-                    $skipped++;
-                    continue;
-                }
-
-                $reversalsSkipped += self::seedOrder($order);
-                $seeded++;
-            } catch (\Throwable $e) {
-                $failed++;
-                Log::add(
-                    \sprintf('j2commerce:seed:order-ledger failed for order %d: %s', $orderId, $e->getMessage()),
-                    Log::WARNING,
-                    'j2commerce'
-                );
+            // bind() holds references — bind the array slots, not the loop variable.
+            foreach ($statuses as $i => $status) {
+                $placeholder    = ':status' . $i;
+                $placeholders[] = $placeholder;
+                $query->bind($placeholder, $statuses[$i]);
             }
-        }
+
+            $query->where($db->quoteName('transaction_status') . ' IN (' . implode(',', $placeholders) . ')');
+
+            $db->setQuery($query, $offset, self::BATCH_SIZE);
+            $orders = $db->loadObjectList() ?: [];
+
+            foreach ($orders as $order) {
+                $orderId = (int) $order->j2commerce_order_id;
+
+                try {
+                    if (OrderTransactionHelper::hasLedger($orderId)) {
+                        $skipped++;
+                        continue;
+                    }
+
+                    $reversalsSkipped += self::seedOrder($order);
+                    $seeded++;
+                } catch (\Throwable $e) {
+                    $failed++;
+                    Log::add(
+                        \sprintf('j2commerce:seed:order-ledger failed for order %d: %s', $orderId, $e->getMessage()),
+                        Log::WARNING,
+                        'j2commerce'
+                    );
+                }
+            }
+
+            $batchCount = \count($orders);
+            $offset += self::BATCH_SIZE;
+        } while ($batchCount === self::BATCH_SIZE);
 
         return ['seeded' => $seeded, 'skipped' => $skipped, 'failed' => $failed, 'reversalsSkipped' => $reversalsSkipped];
     }
@@ -152,21 +166,49 @@ class SeedOrderLedgerCommand extends AbstractCommand
                 }
 
                 $gatewayTxnId = (string) ($charge['id'] ?? $charge['gateway_txn_id'] ?? '');
-                OrderTransactionHelper::addCharge($orderId, $plugin, $gatewayTxnId, $amount, $currencyCode, $createdBy);
+                OrderTransactionHelper::addCharge(
+                    orderId: $orderId,
+                    pluginEl: $plugin,
+                    gatewayTxnId: $gatewayTxnId,
+                    amount: $amount,
+                    currencyCode: $currencyCode,
+                    createdBy: $createdBy
+                );
 
                 if ($gatewayTxnId !== '') {
                     $chargeLegs[] = ['gatewayTxnId' => $gatewayTxnId, 'amount' => $amount];
                 }
             }
         } elseif (is_numeric($details['captured'] ?? null) && (float) $details['captured'] > 0.0) {
-            OrderTransactionHelper::addCharge($orderId, $plugin, $transactionId, (float) $details['captured'], $currencyCode, $createdBy);
+            OrderTransactionHelper::addCharge(
+                orderId: $orderId,
+                pluginEl: $plugin,
+                gatewayTxnId: $transactionId,
+                amount: (float) $details['captured'],
+                currencyCode: $currencyCode,
+                createdBy: $createdBy
+            );
         } elseif (is_numeric($details['amount'] ?? null) && (float) $details['amount'] > 0.0) {
-            OrderTransactionHelper::addCharge($orderId, $plugin, $transactionId, (float) $details['amount'], $currencyCode, $createdBy);
+            OrderTransactionHelper::addCharge(
+                orderId: $orderId,
+                pluginEl: $plugin,
+                gatewayTxnId: $transactionId,
+                amount: (float) $details['amount'],
+                currencyCode: $currencyCode,
+                createdBy: $createdBy
+            );
         } else {
-            $orderTotalDisplay = (float) $order->order_total * $currencyValue;
+            $orderTotalDisplay = round((float) $order->order_total * $currencyValue, self::amountDecimals($currencyCode));
 
             if ($orderTotalDisplay > 0.0) {
-                OrderTransactionHelper::addCharge($orderId, $plugin, $transactionId, $orderTotalDisplay, $currencyCode, $createdBy);
+                OrderTransactionHelper::addCharge(
+                    orderId: $orderId,
+                    pluginEl: $plugin,
+                    gatewayTxnId: $transactionId,
+                    amount: $orderTotalDisplay,
+                    currencyCode: $currencyCode,
+                    createdBy: $createdBy
+                );
             }
         }
 
@@ -176,7 +218,7 @@ class SeedOrderLedgerCommand extends AbstractCommand
             return 0;
         }
 
-        $refundDisplay = $orderRefundBase * $currencyValue;
+        $refundDisplay = round($orderRefundBase * $currencyValue, self::amountDecimals($currencyCode));
 
         if ($hasChargesArray) {
             return self::seedChargesReversal($orderId, $plugin, $transactionId, $chargeLegs, $refundDisplay, $createdBy);
@@ -185,9 +227,22 @@ class SeedOrderLedgerCommand extends AbstractCommand
         // Legacy single-transaction orders recorded exactly one charge, so
         // $transactionId doubles as both the reversal's own gateway id and its
         // parent capture id (both branches above wrote the capture with this id).
-        OrderTransactionHelper::addReversal($orderId, $plugin, $transactionId, $transactionId, $refundDisplay, $createdBy);
+        OrderTransactionHelper::addReversal(
+            orderId: $orderId,
+            pluginEl: $plugin,
+            refundTxnId: $transactionId,
+            parentTxnId: $transactionId,
+            amount: $refundDisplay,
+            createdBy: $createdBy
+        );
 
         return 0;
+    }
+
+    /** currencyCode may be '' when the order row lookup yields no currency — fall back to 2dp. */
+    private static function amountDecimals(string $currencyCode): int
+    {
+        return $currencyCode !== '' ? CurrencyHelper::getDecimalPlace($currencyCode) : 2;
     }
 
     /**
@@ -238,12 +293,12 @@ class SeedOrderLedgerCommand extends AbstractCommand
             $leg++;
 
             OrderTransactionHelper::addReversal(
-                $orderId,
-                $plugin,
-                $refundTxnId . '-seed-' . $leg,
-                $charge['gatewayTxnId'],
-                $take,
-                $createdBy
+                orderId: $orderId,
+                pluginEl: $plugin,
+                refundTxnId: $refundTxnId . '-seed-' . $leg,
+                parentTxnId: $charge['gatewayTxnId'],
+                amount: $take,
+                createdBy: $createdBy
             );
 
             $remaining -= $take;

@@ -34,8 +34,12 @@ $balanceDue = max(0.0, $orderTotalDisplay - max(0.0, $netPaid));
 // every value here is already in display currency.
 $fmt = static fn (float $value): string => CurrencyHelper::format($value, $currencyCode, 1.0);
 
-$balanceClass = $balanceDue > 0.01 ? 'text-danger fw-bold' : 'text-success fw-bold';
-$balanceLabel = $balanceDue > 0.01 ? $fmt($balanceDue) : Text::_('COM_J2COMMERCE_PAID_IN_FULL');
+// Half a minor unit of the order's currency — a hardcoded 0.01 misfires for
+// zero-decimal currencies (e.g. JPY) and is too coarse for 3-decimal ones.
+$threshold = 10 ** -CurrencyHelper::getDecimalPlace($currencyCode) / 2;
+
+$balanceClass = $balanceDue > $threshold ? 'text-danger fw-bold' : 'text-success fw-bold';
+$balanceLabel = $balanceDue > $threshold ? $fmt($balanceDue) : Text::_('COM_J2COMMERCE_PAID_IN_FULL');
 ?>
 <div class="alert alert-light border rounded-1 p-3 mb-3">
     <h6 class="mb-2">
@@ -52,7 +56,7 @@ $balanceLabel = $balanceDue > 0.01 ? $fmt($balanceDue) : Text::_('COM_J2COMMERCE
                 <td class="text-body-secondary"><?php echo Text::_('COM_J2COMMERCE_AMOUNT_PAID'); ?></td>
                 <td class="text-end"><?php echo $fmt($captured); ?></td>
             </tr>
-            <?php if ($refunded > 0.01) : ?>
+            <?php if ($refunded > $threshold) : ?>
                 <tr>
                     <td class="text-body-secondary"><?php echo Text::_('COM_J2COMMERCE_REFUNDED'); ?></td>
                     <td class="text-end text-danger">-<?php echo $fmt($refunded); ?></td>
