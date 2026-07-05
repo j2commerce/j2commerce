@@ -246,6 +246,8 @@ class EmailtemplateController extends FormController
         $body      = $this->input->post->getRaw('body', '');
         $subject   = $this->input->post->getString('subject', '');
         $customCss = $this->input->post->getRaw('custom_css', '');
+        $emailType = $this->input->post->getCmd('email_type', 'transactional');
+        $context   = $this->input->post->getCmd('context', 'preview');
 
         // Restore data-j2c-src placeholders back to src (editor injects these to prevent 404s)
         // GrapesJS may reorder attributes, so data-j2c-src may not be adjacent to src
@@ -261,8 +263,8 @@ class EmailtemplateController extends FormController
         $emailHelper = EmailHelper::getInstance();
         $order       = $emailHelper->getSampleOrderData();
 
-        $processedBody    = $emailHelper->processTags($body, $order);
-        $processedSubject = $emailHelper->processTags($subject, $order);
+        $processedBody    = EmailHelper::processTypeTags($emailType, $context, $order, $body);
+        $processedSubject = EmailHelper::processTypeTags($emailType, $context, $order, $subject);
 
         // Build full HTML with custom CSS
         $headStyles = '';
@@ -292,6 +294,8 @@ class EmailtemplateController extends FormController
         $subject   = $this->input->post->getString('subject', '');
         $customCss = $this->input->post->getRaw('custom_css', '');
         $recipient = $this->input->post->getString('recipient', '');
+        $emailType = $this->input->post->getCmd('email_type', 'transactional');
+        $context   = $this->input->post->getCmd('context', 'test');
 
         $json = ['success' => false, 'message' => ''];
 
@@ -307,8 +311,8 @@ class EmailtemplateController extends FormController
             $emailHelper = EmailHelper::getInstance();
             $order       = $emailHelper->getSampleOrderData();
 
-            $processedBody    = $emailHelper->processTags($body, $order);
-            $processedSubject = $emailHelper->processTags($subject, $order);
+            $processedBody    = EmailHelper::processTypeTags($emailType, $context, $order, $body);
+            $processedSubject = EmailHelper::processTypeTags($emailType, $context, $order, $subject);
 
             // Build full HTML
             $headStyles = '';
