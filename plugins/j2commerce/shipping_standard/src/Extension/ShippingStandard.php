@@ -19,6 +19,7 @@ namespace J2Commerce\Plugin\J2Commerce\ShippingStandard\Extension;
 use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\PluginLayoutTrait;
 use J2Commerce\Plugin\J2Commerce\ShippingStandard\Table\ShippingMethodTable;
 use J2Commerce\Plugin\J2Commerce\ShippingStandard\Table\ShippingRateTable;
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Language\Text;
@@ -155,7 +156,16 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
                 );
             }
 
-            $total = $rateData->price + $rateData->handling + $taxAmount;
+            $isIncludingTax = (int) ComponentHelper::getParams('com_j2commerce')->get('config_including_tax', 0);
+
+            // For inclusive pricing the shipping rate entered in the admin already
+            // contains VAT, so the amount the customer pays is just price+handling.
+            // For exclusive pricing the tax is an additional charge on top.
+            if ($isIncludingTax) {
+                $total = $rateData->price + $rateData->handling;
+            } else {
+                $total = $rateData->price + $rateData->handling + $taxAmount;
+            }
 
             $selectText  = $params->get('shipping_select_text', '');
             $displayName = !empty($selectText) ? $selectText : $method->shipping_method_name;
@@ -796,7 +806,16 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
             return 0.0;
         }
 
-        return ($shippingAmount * (float) $taxPercent) / 100.0;
+        $pct            = (float) $taxPercent;
+        $isIncludingTax = (int) ComponentHelper::getParams('com_j2commerce')->get('config_including_tax', 0);
+
+        // When prices are stored inclusive of tax, extract the tax component from the
+        // shipping amount rather than adding tax on top.
+        if ($isIncludingTax) {
+            return $shippingAmount * $pct / (100.0 + $pct);
+        }
+
+        return ($shippingAmount * $pct) / 100.0;
     }
 
     // =========================================================================
