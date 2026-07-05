@@ -16,6 +16,7 @@ namespace J2Commerce\Component\J2commerce\Site\View\Checkout;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
+use J2Commerce\Component\J2commerce\Site\Helper\CheckoutContextHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -34,11 +35,13 @@ class HtmlView extends BaseHtmlView
     public $currency;
     public $storeProfile;
     public $user;
-    public bool $logged       = false;
-    public bool $showShipping = false;
-    public $order             = null;
-    public array $items       = [];
-    public array $taxes       = [];
+    public bool $logged           = false;
+    public bool $showShipping     = false;
+    public bool $showBilling      = true;
+    public $order                 = null;
+    public array $items           = [];
+    public array $taxes           = [];
+    public array $checkoutContext = [];
 
     public function display($tpl = null): void
     {
@@ -52,51 +55,106 @@ class HtmlView extends BaseHtmlView
         $this->user         = $app->getIdentity();
         $this->logged       = ($this->user && $this->user->id > 0);
 
-        // Check cart has items — use cart model to get order with items
-        $mvcFactory = $app->bootComponent('com_j2commerce')->getMVCFactory();
-        $cartsModel = $mvcFactory->createModel('Carts', 'Site', ['ignore_request' => true]);
+        // Nonce-activation: the consumer app redirects here with &checkout_context=<nonce>.
+        // A matching nonce marks the context ACTIVATED so it owns subsequent steps.
+        //
+        // On EVERY View entry the nonce is re-checked, even for already-activated
+        // contexts. If the buyer abandons mid-flow and navigates to a fresh checkout
+        // URL (no nonce), the activated context is cleared so it cannot hijack the
+        // subsequent normal cart checkout. A genuine refresh is safe because the nonce
+        // remains in the address bar from the activation redirect.
+        //
+        // Phase 2 note: if SEF routing strips the checkout_context query parameter,
+        // the nonce cannot survive refreshes and a server-side persistence mechanism
+        // (e.g. session-stored nonce copy on activation) will be required.
+        //
+        // This guard applies to View::display() only. Step-AJAX and off-site return
+        // paths hit the Controller directly and must preserve the activated context.
+        $ctxPayload = CheckoutContextHelper::getContext();
 
-        if ($cartsModel) {
-            $cartsModel->getState();
+        if ($ctxPayload !== null) {
+            $urlNonce = $app->getInput()->getString('checkout_context', '');
 
-            if ($this->user && $this->user->id) {
-                $cartsModel->setState('filter.user_id', (int) $this->user->id);
+            if (CheckoutContextHelper::isActivated()) {
+                // Already-activated: still require the nonce each time so that a
+                // fresh normal-checkout navigation (no nonce in URL) triggers teardown.
+                $storedNonce = (string) ($ctxPayload['nonce'] ?? '');
+
+                if ($urlNonce === '' || $storedNonce === '' || !hash_equals($storedNonce, $urlNonce)) {
+                    CheckoutContextHelper::clearContext();
+                }
+            } elseif (!CheckoutContextHelper::checkNonce($urlNonce)) {
+                // Not yet activated: a missing or non-matching nonce clears the stale context.
+                CheckoutContextHelper::clearContext();
             }
         }
 
-        $order = $cartsModel ? $cartsModel->getOrder() : null;
-        $items = $order ? $order->getItems() : [];
+        // Single predicate: context owns this request when activated + resolved + valid.
+        $contextOwns = CheckoutContextHelper::isOwningRequest();
 
-        $this->order = $order;
-        $this->items = $items;
-        $this->taxes = ($order && method_exists($order, 'getOrderTaxrates')) ? $order->getOrderTaxrates() : [];
+        if ($contextOwns) {
+            // Context mode: source order from the validated resolved context.
+            $resolved    = CheckoutContextHelper::resolveContext();
+            $order       = $resolved->getOrder();
+            $items       = ($order && method_exists($order, 'getItems')) ? $order->getItems() : [];
+            $this->order = $order;
+            $this->items = $items;
+            $this->taxes = ($order && method_exists($order, 'getOrderTaxrates')) ? $order->getOrderTaxrates() : [];
 
-        if (\count($items) < 1) {
-            $cartUrl = Route::_('index.php?option=com_j2commerce&view=carts');
-            $app->redirect($cartUrl);
+            CheckoutContextHelper::primeUserState($order);
 
-            return;
-        }
+            $this->showShipping = $resolved->getShowShipping();
+            $this->showBilling  = $resolved->getShowBilling();
 
-        // Validate stock
-        if ($order->validate_order_stock() === false) {
-            $cartUrl = Route::_('index.php?option=com_j2commerce&view=carts');
-            $app->redirect($cartUrl);
+            $this->checkoutContext = [
+                'active'       => true,
+                'skipLogin'    => true,
+                'skipBilling'  => !$this->showBilling,
+                'skipShipping' => !$this->showShipping,
+            ];
+        } else {
+            // Normal cart checkout — behaviour unchanged.
+            $mvcFactory = $app->bootComponent('com_j2commerce')->getMVCFactory();
+            $cartsModel = $mvcFactory->createModel('Carts', 'Site', ['ignore_request' => true]);
 
-            return;
-        }
+            if ($cartsModel) {
+                $cartsModel->getState();
 
-        // Determine if shipping is needed
-        if ($this->params->get('show_shipping_address', 0)) {
-            $this->showShipping = true;
-        }
+                if ($this->user && $this->user->id) {
+                    $cartsModel->setState('filter.user_id', (int) $this->user->id);
+                }
+            }
 
-        // Check if any cart item has shipping enabled (variants.shipping = 1)
-        if (!$this->showShipping) {
-            foreach ($items as $item) {
-                if (!empty($item->shipping)) {
-                    $this->showShipping = true;
-                    break;
+            $order = $cartsModel ? $cartsModel->getOrder() : null;
+            $items = $order ? $order->getItems() : [];
+
+            $this->order = $order;
+            $this->items = $items;
+            $this->taxes = ($order && method_exists($order, 'getOrderTaxrates')) ? $order->getOrderTaxrates() : [];
+
+            if (\count($items) < 1) {
+                $app->redirect(Route::_('index.php?option=com_j2commerce&view=carts'));
+
+                return;
+            }
+
+            // Stock validation only for normal cart orders; context orders are already placed.
+            if ($order && method_exists($order, 'validate_order_stock') && $order->validate_order_stock() === false) {
+                $app->redirect(Route::_('index.php?option=com_j2commerce&view=carts'));
+
+                return;
+            }
+
+            if ($this->params->get('show_shipping_address', 0)) {
+                $this->showShipping = true;
+            }
+
+            if (!$this->showShipping) {
+                foreach ($items as $item) {
+                    if (!empty($item->shipping)) {
+                        $this->showShipping = true;
+                        break;
+                    }
                 }
             }
         }

@@ -135,7 +135,8 @@ $optionsSummary = $productHelper::getOptionsSummary($options);
                                 name="product_option[<?php echo (int) $option['productoption_id']; ?>]"
                                 value="<?php echo (int) $option_value['product_optionvalue_id']; ?>"
                                 id="<?php echo $optionValueInputId; ?>"
-                                class="btn-check" data-product-id="<?php echo $productId; ?>"
+                                class="btn-check"
+                                data-product-id="<?php echo $productId; ?>"
                                 data-option-id="<?php echo $optionId; ?>"
                                 onchange="doAjaxFilter(this.value, <?php echo $productId; ?>, <?php echo $optionId; ?>, '#option-<?php echo $optionId; ?>')" />
                             <label for="<?php echo $optionValueInputId; ?>" class="btn btn-color fs-xl" title="<?php echo $esc(Text::_($option_value['optionvalue_name'])); ?>" data-label="<?php echo $esc(Text::_($option_value['optionvalue_name'])); ?>" style="color:<?php echo $esc($option_value['optionvalue_image']); ?>;">

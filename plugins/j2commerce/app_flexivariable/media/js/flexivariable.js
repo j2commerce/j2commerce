@@ -131,6 +131,20 @@ const J2CommerceFlexivariable = {
         }
     },
 
+    // Replace an element's children with server-rendered trusted HTML via an inert
+    // fragment (no innerHTML, no script execution) — mirrors core J2Commerce.parseHtmlFragment.
+    setHtml: function(el, html) {
+        el.replaceChildren(document.createRange().createContextualFragment(String(html ?? '')));
+    },
+
+    // Set a button's content to an icon span followed by a text label, without innerHTML.
+    setIconLabel: function(el, iconClass, label) {
+        const icon = document.createElement('span');
+        icon.className = iconClass;
+        icon.setAttribute('aria-hidden', 'true');
+        el.replaceChildren(icon, document.createTextNode(' ' + label));
+    },
+
     /**
      * Update the product display with response data
      *
@@ -139,10 +153,16 @@ const J2CommerceFlexivariable = {
      * @param {number} productId - The product ID
      */
     updateProductDisplay: function(productContainer, response, productId) {
-        // Update SKU
+        // Update SKU — detail template uses .sku, list views use .sku-value (parity with core j2commerce.js)
         if (response.sku) {
-            const skuEl = productContainer.querySelector('.sku-value');
-            if (skuEl) skuEl.innerHTML = response.sku;
+            const skuEl = productContainer.querySelector('.sku-value') || productContainer.querySelector('.sku');
+            if (skuEl) skuEl.textContent = response.sku;
+        }
+
+        // Update UPC — detail template uses .upc, list views use .upc-value (parity with core j2commerce.js)
+        if (typeof response.upc !== 'undefined') {
+            const upcEl = productContainer.querySelector('.upc-value') || productContainer.querySelector('.upc');
+            if (upcEl) upcEl.textContent = response.upc;
         }
 
         // Update pricing — handle both standard (.base-price/.sale-price) and flexiprice (.j2commerce-flexiprice) layouts
@@ -154,7 +174,7 @@ const J2CommerceFlexivariable = {
             if (basePriceEl || salePriceEl) {
                 // Standard price layout (detail view, simple products)
                 if (basePriceEl && response.pricing.base_price) {
-                    basePriceEl.innerHTML = response.pricing.base_price;
+                    this.setHtml(basePriceEl, response.pricing.base_price);
                     if (response.pricing.class === 'show') {
                         basePriceEl.style.display = '';
                         basePriceEl.classList.add('strike');
@@ -163,26 +183,32 @@ const J2CommerceFlexivariable = {
                     }
                 }
                 if (salePriceEl && response.pricing.price) {
-                    salePriceEl.innerHTML = response.pricing.price;
+                    this.setHtml(salePriceEl, response.pricing.price);
                 }
             } else if (flexiPriceEl && response.pricing.price) {
                 // Flexiprice layout (list views) — replace range/from with specific variant price
-                let html = '';
+                const frag = document.createDocumentFragment();
                 if (response.pricing.base_price && response.pricing.class === 'show') {
-                    html += `<del class="base-price text-body-tertiary">${response.pricing.base_price}</del> `;
+                    const del = document.createElement('del');
+                    del.className = 'base-price text-body-tertiary';
+                    this.setHtml(del, response.pricing.base_price);
+                    frag.append(del, ' ');
                 }
-                html += `<span class="sale-price">${response.pricing.price}</span>`;
-                flexiPriceEl.innerHTML = html;
+                const saleSpan = document.createElement('span');
+                saleSpan.className = 'sale-price';
+                this.setHtml(saleSpan, response.pricing.price);
+                frag.append(saleSpan);
+                flexiPriceEl.replaceChildren(frag);
             }
 
             // Discount text — show/hide based on whether the variant has a discount
             const discountEl = productContainer.querySelector('.discount-percentage');
             if (discountEl) {
                 if (response.pricing.discount_text) {
-                    discountEl.innerHTML = response.pricing.discount_text;
+                    this.setHtml(discountEl, response.pricing.discount_text);
                     discountEl.style.display = '';
                 } else {
-                    discountEl.innerHTML = '';
+                    discountEl.replaceChildren();
                     discountEl.style.display = 'none';
                 }
             }
@@ -191,7 +217,7 @@ const J2CommerceFlexivariable = {
         // After display price
         if (response.afterDisplayPrice) {
             const afterPriceEl = productContainer.querySelector('.afterDisplayPrice');
-            if (afterPriceEl) afterPriceEl.innerHTML = response.afterDisplayPrice;
+            if (afterPriceEl) this.setHtml(afterPriceEl, response.afterDisplayPrice);
         }
 
         // Quantity
@@ -233,20 +259,23 @@ const J2CommerceFlexivariable = {
             const stockContainer = productContainer.querySelector('.product-stock-container');
             if (stockContainer) {
                 const statusClass = response.availability == 1 ? 'in-stock' : 'out-of-stock';
-                stockContainer.innerHTML = `<span class="${statusClass}">${response.stock_status}</span>`;
+                const statusSpan = document.createElement('span');
+                statusSpan.className = statusClass;
+                this.setHtml(statusSpan, response.stock_status);
+                stockContainer.replaceChildren(statusSpan);
             }
         }
 
         // Dimensions
         if (response.dimensions) {
             const dimensionsEl = productContainer.querySelector('.product-dimensions');
-            if (dimensionsEl) dimensionsEl.innerHTML = response.dimensions;
+            if (dimensionsEl) this.setHtml(dimensionsEl, response.dimensions);
         }
 
         // Weight
         if (response.weight) {
             const weightEl = productContainer.querySelector('.product-weight');
-            if (weightEl) weightEl.innerHTML = response.weight;
+            if (weightEl) this.setHtml(weightEl, response.weight);
         }
 
         // Variant ID — update hidden field from server response
@@ -270,7 +299,7 @@ const J2CommerceFlexivariable = {
         const deleteButton = document.querySelector(`[data-variant-id="${variantId}"][data-flexivariable-action="delete"]`);
         if (deleteButton) {
             deleteButton.disabled = true;
-            deleteButton.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span> ' + Joomla.Text._('PLG_J2COMMERCE_APP_FLEXIVARIABLE_DELETING');
+            this.setIconLabel(deleteButton, 'spinner-border spinner-border-sm', Joomla.Text._('PLG_J2COMMERCE_APP_FLEXIVARIABLE_DELETING'));
         }
 
         const formData = new FormData();
@@ -304,7 +333,7 @@ const J2CommerceFlexivariable = {
                 Joomla.renderMessages({ error: [data.message || 'Failed to delete variant'] });
                 if (deleteButton) {
                     deleteButton.disabled = false;
-                    deleteButton.innerHTML = '<span class="icon-trash" aria-hidden="true"></span> ' + (Joomla.Text._('JACTION_DELETE') || 'Delete');
+                    this.setIconLabel(deleteButton, 'icon-trash', Joomla.Text._('JACTION_DELETE') || 'Delete');
                 }
             }
         } catch (error) {
@@ -312,7 +341,7 @@ const J2CommerceFlexivariable = {
             Joomla.renderMessages({ error: ['An error occurred while deleting the variant'] });
             if (deleteButton) {
                 deleteButton.disabled = false;
-                deleteButton.innerHTML = '<span class="icon-trash" aria-hidden="true"></span> ' + (Joomla.Text._('JACTION_DELETE') || 'Delete');
+                this.setIconLabel(deleteButton, 'icon-trash', Joomla.Text._('JACTION_DELETE') || 'Delete');
             }
         }
     },

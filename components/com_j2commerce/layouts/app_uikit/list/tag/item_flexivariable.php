@@ -34,7 +34,8 @@ $afterHtml = J2CommerceHelper::plugin()->eventWithHtml(
 ?>
 <div class="j2commerce-product-item j2commerce-product-<?php echo $productId; ?> j2commerce-type-<?php echo $productType;?> <?php echo $cssClass; ?> uk-flex uk-flex-column uk-height-1-1"
      data-product-id="<?php echo $productId; ?>"
-     data-product-type="<?php echo $productType;?>">
+     data-product-type="<?php echo $productType;?>"
+     data-equal-height="itemContainer">
 
     <?php echo $beforeHtml; ?>
 
@@ -96,10 +97,6 @@ $afterHtml = J2CommerceHelper::plugin()->eventWithHtml(
 
     <?php if ($showStock): ?>
         <?php echo ProductLayoutService::renderLayout('list.tag.item_stock', $displayData); ?>
-    <?php endif; ?>
-
-    <?php if ($showQuickview): ?>
-        <?php echo ProductLayoutService::renderLayout('list.tag.item_quickview', $displayData); ?>
     <?php endif; ?>
 
     <?php if (isset($product->event->afterDisplayContent)): ?>

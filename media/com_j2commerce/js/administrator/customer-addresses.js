@@ -36,11 +36,12 @@
     }
 
     function showLoading() {
-        modalBody.innerHTML =
+        modalBody.replaceChildren(document.createRange().createContextualFragment(
             '<div class="text-center py-5">' +
             '<span class="spinner-border" role="status" aria-hidden="true"></span>' +
             '<p class="mt-2 mb-0">' + (opts.strings && opts.strings.loading ? opts.strings.loading : 'Loading...') + '</p>' +
-            '</div>';
+            '</div>'
+        ));
     }
 
     function showError(message) {
@@ -86,11 +87,11 @@
                 return resp.text();
             })
             .then(function (html) {
-                modalBody.innerHTML = html;
+                modalBody.replaceChildren(document.createRange().createContextualFragment(html));
                 bindCountryZoneSync();
             })
             .catch(function (err) {
-                modalBody.innerHTML = '';
+                modalBody.replaceChildren();
                 showError(err && err.message ? err.message : '');
             });
     }
@@ -130,7 +131,7 @@
             .then(function (resp) { return resp.ok ? resp.text() : ''; })
             .then(function (html) {
                 if (html) {
-                    zoneSelect.innerHTML = html;
+                    zoneSelect.replaceChildren(document.createRange().createContextualFragment(html));
                 }
             });
     }
@@ -182,7 +183,7 @@
         var editLabel    = ((opts.strings && opts.strings.editAria)    || 'Edit address for {name}').replace('{name}', displayName);
         var deleteLabel  = ((opts.strings && opts.strings.deleteAria)  || 'Delete address for {name}').replace('{name}', displayName);
 
-        wrapper.innerHTML =
+        wrapper.replaceChildren(document.createRange().createContextualFragment(
             '<article class="card h-100 rounded-1 shadow-sm border" aria-labelledby="' + headingId + '">' +
                 '<header class="card-header d-flex justify-content-between align-items-center">' +
                     '<span class="badge text-bg-info text-uppercase">' +
@@ -210,7 +211,8 @@
                         emailHtml +
                     '</address>' +
                 '</div>' +
-            '</article>';
+            '</article>'
+        ));
 
         return wrapper;
     }

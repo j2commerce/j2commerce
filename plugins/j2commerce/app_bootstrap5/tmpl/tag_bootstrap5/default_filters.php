@@ -124,9 +124,9 @@ HTMLHelper::_('bootstrap.collapse');
                     <?php
                     $minPrice = 0;
                     $maxPrice = (float) $this->filters['pricefilters']['max_price'];
-                    $hasActivePrice = !empty($this->state->pricefrom) || !empty($this->state->priceto);
-                    $priceFrom = $hasActivePrice && $this->state->pricefrom ? (float) $this->state->pricefrom : $minPrice;
-                    $priceTo = $hasActivePrice && $this->state->priceto ? (float) $this->state->priceto : $maxPrice;
+                    $hasActivePrice = $this->state->get('filter.price_from', 0) > 0 || $this->state->get('filter.price_to', 0) > 0;
+                    $priceFrom = $hasActivePrice && $this->state->get('filter.price_from', 0) ? (float) $this->state->get('filter.price_from') : $minPrice;
+                    $priceTo   = $hasActivePrice && $this->state->get('filter.price_to', 0)   ? (float) $this->state->get('filter.price_to')   : $maxPrice;
                     $dPriceFrom = CurrencyHelper::format($priceFrom, $currencyCode, $currencyValue, false);
                     $dPriceTo = CurrencyHelper::format($priceTo, $currencyCode, $currencyValue, false);
                     ?>

@@ -921,7 +921,17 @@ class CartOrder
 
             $this->order_shipping     = $shippingPrice + $shippingExtra;
             $this->order_shipping_tax = $shippingTax;
-            $this->order_total += $this->order_shipping + $this->order_shipping_tax;
+
+            // For inclusive pricing, the shipping price already embeds the tax so we must
+            // not add order_shipping_tax again — doing so would double-count and inflate
+            // the order total by the VAT amount.
+            $isIncludingTax = (int) ComponentHelper::getParams('com_j2commerce')->get('config_including_tax', 0);
+
+            if ($isIncludingTax) {
+                $this->order_total += $this->order_shipping;
+            } else {
+                $this->order_total += $this->order_shipping + $this->order_shipping_tax;
+            }
         }
     }
 
@@ -1891,7 +1901,46 @@ class CartOrder
      */
     protected function saveOrderTaxes(DatabaseInterface $db, string $orderId): void
     {
+        // Build display rates that include shipping tax merged in (mirrors the live-cart display
+        // logic in get_formatted_order_totals) so invoices, confirmation pages, and email
+        // templates show the full VAT amount including shipping VAT.
+        $displayRates = [];
+
         foreach ($this->taxRates as $taxRate) {
+            $displayRates[] = clone $taxRate;
+        }
+
+        if ($this->order_shipping_tax > 0 && $this->shippingRate) {
+            $shippingTaxClassId = $this->getShippingTaxClassId();
+
+            if ($shippingTaxClassId > 0) {
+                $merged = false;
+
+                foreach ($displayRates as $rate) {
+                    if ((int) ($rate->taxprofile_id ?? 0) === $shippingTaxClassId) {
+                        $rate->tax_amount += $this->order_shipping_tax;
+                        $merged = true;
+                        break;
+                    }
+                }
+
+                if (!$merged) {
+                    $profileInfo = $this->getTaxProfileInfo($shippingTaxClassId);
+
+                    if ($profileInfo) {
+                        $displayRates[] = (object) [
+                            'taxprofile_id'   => $shippingTaxClassId,
+                            'taxprofile_name' => $profileInfo->taxprofile_name ?? '',
+                            'taxrate_name'    => $profileInfo->taxrate_name ?? '',
+                            'tax_amount'      => $this->order_shipping_tax,
+                            'tax_percent'     => (float) ($profileInfo->tax_percent ?? 0),
+                        ];
+                    }
+                }
+            }
+        }
+
+        foreach ($displayRates as $taxRate) {
             $taxAmount = (float) ($taxRate->tax_amount ?? 0);
 
             if ($taxAmount <= 0) {

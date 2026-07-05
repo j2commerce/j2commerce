@@ -160,5 +160,7 @@ $grandTotalValue = $totals['grandtotal']['value'] ?? '';
                 <?php endforeach; ?>
             </div>
             <?php endif; ?>
+            <?php // Apps can inject below the order totals (e.g. payment plan summary) via onJ2CommerceAfterSidecartTotals ?>
+            <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterSidecartTotals', [$this->order, &$this->params])->getArgument('html', ''); ?>
 
 </div>

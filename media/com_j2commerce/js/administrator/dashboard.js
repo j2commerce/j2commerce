@@ -165,8 +165,8 @@
         if (!ctx) return;
 
         if (!data || !data.length) {
-            ctx.parentElement.innerHTML = '<p class="text-center text-muted py-4">' +
-                (Joomla.Text._('COM_J2COMMERCE_ANALYTICS_NO_DATA')) + '</p>';
+            ctx.parentElement.replaceChildren(document.createRange().createContextualFragment('<p class="text-center text-body-secondary py-4">' +
+                (Joomla.Text._('COM_J2COMMERCE_ANALYTICS_NO_DATA')) + '</p>'));
             return;
         }
 
@@ -240,8 +240,8 @@
         if (!ctx) return;
 
         if (!data || !data.length) {
-            ctx.parentElement.innerHTML = '<p class="text-center text-muted py-4">' +
-                (Joomla.Text._('COM_J2COMMERCE_ANALYTICS_NO_DATA')) + '</p>';
+            ctx.parentElement.replaceChildren(document.createRange().createContextualFragment('<p class="text-center text-body-secondary py-4">' +
+                (Joomla.Text._('COM_J2COMMERCE_ANALYTICS_NO_DATA')) + '</p>'));
             return;
         }
 
@@ -330,7 +330,7 @@
         const prev = data.previousPeriod || {};
 
         const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-        const setHtml = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; };
+        const setHtml = (id, html) => { const el = document.getElementById(id); if (el) el.replaceChildren(document.createRange().createContextualFragment(html)); };
 
         setEl('kpi-revenue', data.formattedRevenue || formatCurrency(data.totalRevenue));
         setEl('kpi-orders', String(parseInt(data.orderCount || 0, 10)));
@@ -353,9 +353,9 @@
         if (!from || !to) return;
         const days = Math.round((new Date(to) - new Date(from)) / 86400000) + 1;
         const unit = Joomla.Text._(days === 1 ? 'COM_J2COMMERCE_DASHBOARD_DAY' : 'COM_J2COMMERCE_DASHBOARD_DAYS');
-        el.innerHTML = Joomla.Text._('COM_J2COMMERCE_DASHBOARD_DATA_BASED_ON')
+        el.replaceChildren(document.createRange().createContextualFragment(Joomla.Text._('COM_J2COMMERCE_DASHBOARD_DATA_BASED_ON')
             .replace('%s', days)
-            .replace('%s', unit);
+            .replace('%s', unit)));
     }
 
     // ─── AJAX Refresh (date-filtered only) ───

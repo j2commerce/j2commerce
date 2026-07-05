@@ -21,7 +21,7 @@ $productName = htmlspecialchars($product->product_name ?? '', ENT_QUOTES, 'UTF-8
 ?>
 <h3 class="j2commerce-product-title fs-6">
     <?php if ($linkTitle): ?>
-        <a href="<?php echo htmlspecialchars($productLink, ENT_QUOTES, 'UTF-8'); ?>" title="<?php echo $productName; ?>" class="text-decoration-none">
+        <a href="<?php echo htmlspecialchars($productLink ?? '', ENT_QUOTES, 'UTF-8'); ?>" title="<?php echo $productName; ?>" class="text-decoration-none">
     <?php endif; ?>
 
     <?php echo $productName; ?>

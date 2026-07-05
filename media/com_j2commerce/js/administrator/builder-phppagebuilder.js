@@ -350,7 +350,7 @@ function debounce(fn, delay) {
             editor.destroy();
         }
 
-        if (canvas) canvas.innerHTML = '';
+        if (canvas) canvas.replaceChildren();
 
         editor = grapesjs.init({
             container: '#builder-canvas',
@@ -609,7 +609,7 @@ function debounce(fn, delay) {
 
     function populateBlockPalette(blocks) {
         if (!blocksPanel) return;
-        blocksPanel.innerHTML = '';
+        blocksPanel.replaceChildren();
 
         Object.values(blocks).filter(block => !hiddenBlocks.includes(block.slug)).forEach(block => {
             const el = document.createElement('div');
