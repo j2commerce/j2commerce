@@ -2026,6 +2026,10 @@ class CheckoutController extends BaseController
         $event  = J2CommerceHelper::plugin()->event('PaymentCaptureOrder', ['payment_paypal', $input]);
         $result = $event->getArgument('result', ['success' => false, 'error' => 'No payment plugin responded']);
 
+        if (!empty($result['success']) && !empty($orderId)) {
+            $this->sendOrderEmails($orderId);
+        }
+
         $this->jsonResponse($result);
     }
 
