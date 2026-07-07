@@ -574,9 +574,9 @@ class CurrencyHelper
             $thousandsSeparator
         );
 
-        // Add symbol suffix if formatting
-        if ($format && $currencyPosition === 'post') {
-            $result .= $currencySymbol;
+        // Add symbol suffix if formatting (space-separated from the amount)
+        if ($format && $currencyPosition === 'post' && $currencySymbol !== '') {
+            $result .= ' ' . $currencySymbol;
         }
 
         return $result;

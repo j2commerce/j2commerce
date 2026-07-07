@@ -159,7 +159,7 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_currencies` (
   `currency_symbol` varchar(255) NOT NULL,
   `currency_num_decimals` int NOT NULL,
   `currency_decimal` varchar(12) NOT NULL,
-  `currency_thousands` char(1) NOT NULL,
+  `currency_thousands` varchar(12) NOT NULL DEFAULT ',',
   `currency_value` decimal(15,8) NOT NULL,
   `enabled` tinyint NOT NULL DEFAULT 0,
   `ordering` int NOT NULL DEFAULT 0,
