@@ -97,12 +97,6 @@ class CurrencyTable extends Table
             return false;
         }
 
-        // Validate currency thousands separator
-        if (empty($this->currency_thousands)) {
-            $this->setError(Text::sprintf('COM_J2COMMERCE_ERR_FIELD_REQUIRED', Text::_('COM_J2COMMERCE_FIELD_CURRENCY_THOUSANDS')));
-            return false;
-        }
-
         // Validate currency number of decimals
         if (!isset($this->currency_num_decimals) || $this->currency_num_decimals < 0) {
             $this->setError(Text::_('COM_J2COMMERCE_ERR_CURRENCY_NUM_DECIMALS_INVALID'));

@@ -79,16 +79,22 @@ final class QueueHelper
         $selectQuery = $db->getQuery(true)
             ->select($db->quoteName('j2commerce_queue_id'))
             ->from($db->quoteName('#__j2commerce_queues'))
-            ->where($db->quoteName('queue_type') . ' = :queue_type')
             ->where('(' . $db->quoteName('status') . ' = :pending OR ' . $db->quoteName('status') . ' = :failed)')
             ->where('(' . $db->quoteName('next_attempt_at') . ' IS NULL OR ' . $db->quoteName('next_attempt_at') . ' <= :now)')
             ->order($db->quoteName('priority') . ' DESC')
             ->order($db->quoteName('created_on') . ' ASC')
-            ->bind(':queue_type', $queueType)
             ->bind(':pending', $pending)
             ->bind(':failed', $failed)
             ->bind(':now', $now)
             ->setLimit($limit);
+
+        // An empty queue type means "all types" — the scheduled Process Queue task runs this
+        // way. Only constrain by type when one was actually requested; binding an empty string
+        // as an equality filter would match no rows at all (queue_type is never stored empty).
+        if ($queueType !== '') {
+            $selectQuery->where($db->quoteName('queue_type') . ' = :queue_type')
+                ->bind(':queue_type', $queueType);
+        }
 
         $db->setQuery($selectQuery);
         $ids = $db->loadColumn();
@@ -121,6 +127,60 @@ final class QueueHelper
         return $db->loadObjectList() ?: [];
     }
 
+    /**
+     * Claims a specific set of rows by id for an explicit "process these now" action — unlike
+     * claimBatch() this ignores the backoff window (next_attempt_at), since the operator chose
+     * them deliberately. Only rows still workable ('pending' or 'failed') are locked; rows that
+     * are completed, dead or already 'processing' are left untouched and not returned.
+     *
+     * @param  int[]  $ids
+     */
+    public static function claimByIds(array $ids, ?string $lockId = null): array
+    {
+        $ids = array_values(array_filter(array_map('intval', $ids)));
+
+        if (empty($ids)) {
+            return [];
+        }
+
+        $db         = self::db();
+        $lockId     = $lockId ?? uniqid('queue_', true);
+        $now        = (new \DateTimeImmutable())->format('Y-m-d H:i:s');
+        $pending    = 'pending';
+        $failed     = 'failed';
+        $processing = 'processing';
+
+        $updateQuery = $db->getQuery(true)
+            ->update($db->quoteName('#__j2commerce_queues'))
+            ->set($db->quoteName('status') . ' = :processing')
+            ->set($db->quoteName('locked_at') . ' = :locked_at')
+            ->set($db->quoteName('locked_by') . ' = :locked_by')
+            ->set($db->quoteName('modified_on') . ' = :modified_on')
+            ->whereIn($db->quoteName('j2commerce_queue_id'), $ids)
+            ->where('(' . $db->quoteName('status') . ' = :pending OR ' . $db->quoteName('status') . ' = :failed)')
+            ->bind(':processing', $processing)
+            ->bind(':locked_at', $now)
+            ->bind(':locked_by', $lockId)
+            ->bind(':modified_on', $now)
+            ->bind(':pending', $pending)
+            ->bind(':failed', $failed);
+
+        $db->setQuery($updateQuery)->execute();
+
+        // Fetch back only the rows this call actually locked (its own lockId) — rows skipped by
+        // the status filter above keep their prior lock/owner and are correctly excluded.
+        $fetchQuery = $db->getQuery(true)
+            ->select('*')
+            ->from($db->quoteName('#__j2commerce_queues'))
+            ->whereIn($db->quoteName('j2commerce_queue_id'), $ids)
+            ->where($db->quoteName('locked_by') . ' = :locked_by')
+            ->bind(':locked_by', $lockId);
+
+        $db->setQuery($fetchQuery);
+
+        return $db->loadObjectList() ?: [];
+    }
+
     public static function complete(int $queueId): void
     {
         $db     = self::db();
@@ -138,6 +198,42 @@ final class QueueHelper
                 ->where($db->quoteName('j2commerce_queue_id') . ' = :id')
                 ->bind(':status', $status)
                 ->bind(':processed_at', $now)
+                ->bind(':modified_on', $now)
+                ->bind(':id', $queueId, ParameterType::INTEGER)
+        )->execute();
+    }
+
+    // Short cool-off applied to a released (unhandled) item so it does not get re-claimed on
+    // every single run. Without it, an all-types claim (oldest first) would keep re-picking the
+    // oldest unhandleable backlog forever and starve newer, handleable work of other types.
+    private const RELEASE_COOLDOWN_SECONDS = 300;
+
+    /**
+     * Returns a claimed-but-unhandled item to the queue without burning an attempt. Used when no
+     * plugin handled the dispatched item (its handler plugin is disabled or absent), so the work
+     * is retried intact once a handler is available instead of being failed to death. A short
+     * cool-off (RELEASE_COOLDOWN_SECONDS) defers the retry so a stuck backlog can't starve newer
+     * handleable items; the stale error_message from any prior failure is cleared on re-queue.
+     */
+    public static function release(int $queueId): void
+    {
+        $db        = self::db();
+        $now       = (new \DateTimeImmutable())->format('Y-m-d H:i:s');
+        $nextRetry = (new \DateTimeImmutable('+' . self::RELEASE_COOLDOWN_SECONDS . ' seconds'))->format('Y-m-d H:i:s');
+        $status    = 'pending';
+
+        $db->setQuery(
+            $db->getQuery(true)
+                ->update($db->quoteName('#__j2commerce_queues'))
+                ->set($db->quoteName('status') . ' = :status')
+                ->set($db->quoteName('next_attempt_at') . ' = :next_attempt_at')
+                ->set($db->quoteName('error_message') . ' = NULL')
+                ->set($db->quoteName('locked_at') . ' = NULL')
+                ->set($db->quoteName('locked_by') . ' = NULL')
+                ->set($db->quoteName('modified_on') . ' = :modified_on')
+                ->where($db->quoteName('j2commerce_queue_id') . ' = :id')
+                ->bind(':status', $status)
+                ->bind(':next_attempt_at', $nextRetry)
                 ->bind(':modified_on', $now)
                 ->bind(':id', $queueId, ParameterType::INTEGER)
         )->execute();

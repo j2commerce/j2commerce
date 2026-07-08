@@ -445,10 +445,10 @@ function buildModuleZip(string $joomlaRoot, string $tempDir, string $module, str
     return $zipPath;
 }
 
-function buildLibraryZip(string $joomlaRoot, string $tempDir, string $version, array $excludePatterns): string
+function buildLibraryZip(string $joomlaRoot, string $tempDir, string $version, array $excludePatterns, string $libName = 'j2commerce'): string
 {
-    $sourceDir = $joomlaRoot . '/libraries/j2commerce';
-    $zipPath = $tempDir . '/lib_j2commerce.zip';
+    $sourceDir = $joomlaRoot . '/libraries/' . $libName;
+    $zipPath = $tempDir . '/lib_' . $libName . '.zip';
     $zip = new ZipArchive();
     if ($zip->open($zipPath, ZipArchive::CREATE) !== true) {
         die("ERROR: Failed to create {$zipPath}\n");
@@ -462,6 +462,10 @@ function buildLibraryZip(string $joomlaRoot, string $tempDir, string $version, a
             $content = file_get_contents($absPath);
             $content = stampVersion($content, $version);
             $zip->addFromString($rel, $content);
+        } elseif (str_ends_with($rel, 'src/Version.php')) {
+            $content = file_get_contents($absPath);
+            $content = preg_replace("/(const\s+VERSION\s*=\s*')[^']*(')/", '${1}' . $version . '${2}', $content);
+            $zip->addFromString($rel, $content);
         } else {
             $zip->addFile($absPath, $rel);
         }
@@ -469,7 +473,7 @@ function buildLibraryZip(string $joomlaRoot, string $tempDir, string $version, a
     }
 
     $zip->close();
-    echo "  lib_j2commerce.zip ({$count} files)\n";
+    echo "  lib_{$libName}.zip ({$count} files)\n";
     return $zipPath;
 }
 
@@ -500,6 +504,7 @@ function createPackageManifest(string $version, array $plugins, array $adminModu
 
     // Library
     $xml .= '        <file type="library" id="j2commerce">lib_j2commerce.zip</file>' . "\n";
+    $xml .= '        <file type="library" id="j2commerceflow">lib_j2commerceflow.zip</file>' . "\n";
 
     // Plugins
     foreach ($plugins as $p) {
@@ -587,6 +592,7 @@ $conflictDirs = [
     $joomlaRoot . '/components/com_j2commerce',
     $joomlaRoot . '/api/components/com_j2commerce',
     $joomlaRoot . '/libraries/j2commerce',
+    $joomlaRoot . '/libraries/j2commerceflow',
 ];
 
 foreach ($plugins as $p) {
@@ -645,6 +651,9 @@ $innerZips[] = buildComponentZip($joomlaRoot, $tempDir, $version, $excludePatter
 
 echo "\nBuilding library ZIP...\n";
 $innerZips[] = buildLibraryZip($joomlaRoot, $tempDir, $version, $excludePatterns);
+
+echo "\nBuilding j2commerceflow library ZIP...\n";
+$innerZips[] = buildLibraryZip($joomlaRoot, $tempDir, $version, $excludePatterns, 'j2commerceflow');
 
 echo "\nBuilding plugin ZIPs...\n";
 $pluginZipCount = 0;
@@ -726,7 +735,7 @@ file_put_contents(
 
 $totalSize = filesize($finalZipPath);
 $innerCount = count($innerZips);
-$extTotal = 1 + 1 + $pluginZipCount + count($adminModules) + count($siteModules); // component + library + plugins + modules
+$extTotal = 1 + 2 + $pluginZipCount + count($adminModules) + count($siteModules); // component + libraries + plugins + modules
 
 echo "\n╔══════════════════════════════════════════════════════════════╗\n";
 echo "║                  PACKAGE BUILD SUMMARY                       ║\n";
@@ -734,7 +743,7 @@ echo "╠═══════════════════════�
 printf("║  Package Type:     %-40s  ║\n", "type=\"package\" (Joomla native)");
 printf("║  Build Number:     %-40s  ║\n", $buildNum);
 printf("║  Version:          %-40s  ║\n", $version);
-printf("║  Extensions:       %-40s  ║\n", $extTotal . " (1 component + 1 library + " . $pluginZipCount . " plugins + " . (count($adminModules) + count($siteModules)) . " modules)");
+printf("║  Extensions:       %-40s  ║\n", $extTotal . " (1 component + 2 libraries + " . $pluginZipCount . " plugins + " . (count($adminModules) + count($siteModules)) . " modules)");
 printf("║  Inner ZIPs:       %-40s  ║\n", $innerCount);
 printf("║  Total Size:       %-40s  ║\n", formatSize($totalSize));
 printf("║  Output:           %-40s  ║\n", $finalZipName);
@@ -742,6 +751,7 @@ echo "╠═══════════════════════�
 echo "║  Inner ZIP Breakdown:                                        ║\n";
 printf("║    %-42s %10s     ║\n", "Component (com_j2commerce.zip)", "1");
 printf("║    %-42s %10s     ║\n", "Library (lib_j2commerce.zip)", "1");
+printf("║    %-42s %10s     ║\n", "Library (lib_j2commerceflow.zip)", "1");
 printf("║    %-42s %10s     ║\n", "Plugin ZIPs", $pluginZipCount);
 printf("║    %-42s %10s     ║\n", "Admin module ZIPs", count($adminModules));
 printf("║    %-42s %10s     ║\n", "Site module ZIPs", count($siteModules));

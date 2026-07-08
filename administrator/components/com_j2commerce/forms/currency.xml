@@ -82,14 +82,17 @@
         <!-- Thousands separator -->
         <field
             name="currency_thousands"
-            type="text"
+            type="list"
             label="COM_J2COMMERCE_FIELD_CURRENCY_THOUSANDS"
             description="COM_J2COMMERCE_FIELD_CURRENCY_THOUSANDS_DESC"
-            required="true"
-            maxlength="1"
-            size="5"
             default=","
-        />
+        >
+            <option value="">COM_J2COMMERCE_CURRENCY_SEP_NONE</option>
+            <option value=",">COM_J2COMMERCE_CURRENCY_SEP_COMMA</option>
+            <option value=".">COM_J2COMMERCE_CURRENCY_SEP_PERIOD</option>
+            <option value=" ">COM_J2COMMERCE_CURRENCY_SEP_SPACE</option>
+            <option value="'">COM_J2COMMERCE_CURRENCY_SEP_APOSTROPHE</option>
+        </field>
 
         <!-- Currency value (exchange rate) -->
         <field
