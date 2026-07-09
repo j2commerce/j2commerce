@@ -798,10 +798,28 @@ final class SampleDataHelper
 
     private function createCategories(int $count, int $parentId, string $now): array
     {
+        $db     = $this->db;
         $catIds = [];
         $groups = \array_slice(self::CATEGORY_GROUPS, 0, $count);
 
         foreach ($groups as $group) {
+            // Re-install: reuse the existing sample category (title is stable, alias may be suffixed)
+            $title = $group['name'];
+            $query = $db->getQuery(true)
+                ->select($db->quoteName('id'))
+                ->from($db->quoteName('#__categories'))
+                ->where($db->quoteName('extension') . ' = ' . $db->quote('com_content'))
+                ->where($db->quoteName('metakey') . ' = ' . $db->quote(self::SAMPLE_TAG))
+                ->where($db->quoteName('title') . ' = :title')
+                ->bind(':title', $title);
+            $db->setQuery($query);
+            $existingCatId = (int) $db->loadResult();
+
+            if ($existingCatId > 0) {
+                $catIds[] = ['id' => $existingCatId, 'key' => $group['key'] ?? 'electronics', 'name' => $group['name']];
+                continue;
+            }
+
             $alias = $this->uniqueAlias($group['alias'], 'categories');
 
             $table                   = Table::getInstance('Category');
@@ -846,6 +864,27 @@ final class SampleDataHelper
         $names  = \array_slice(self::MANUFACTURER_NAMES, 0, $count);
 
         foreach ($names as $i => $mfgName) {
+            // Re-install: reuse the existing manufacturer (matched via its [SAMPLE] address)
+            $company = '[SAMPLE] ' . $mfgName;
+            $query   = $db->getQuery(true)
+                ->select($db->quoteName('m.j2commerce_manufacturer_id'))
+                ->from($db->quoteName('#__j2commerce_manufacturers', 'm'))
+                ->join(
+                    'INNER',
+                    $db->quoteName('#__j2commerce_addresses', 'a'),
+                    $db->quoteName('a.j2commerce_address_id') . ' = ' . $db->quoteName('m.address_id')
+                )
+                ->where($db->quoteName('a.type') . ' = ' . $db->quote('manufacturer'))
+                ->where($db->quoteName('a.company') . ' = :company')
+                ->bind(':company', $company);
+            $db->setQuery($query);
+            $existingMfgId = (int) $db->loadResult();
+
+            if ($existingMfgId > 0) {
+                $mfgIds[] = $existingMfgId;
+                continue;
+            }
+
             // Create an address record for the manufacturer (required FK)
             $addr              = new \stdClass();
             $addr->user_id     = 0;
@@ -976,9 +1015,25 @@ final class SampleDataHelper
         $options   = \array_slice(self::OPTIONS_DATA, 0, $count);
 
         foreach ($options as $i => $optData) {
+            $uniqueName = 'sample_' . strtolower(str_replace(' ', '_', $optData['name']));
+
+            // Re-install: reuse the existing sample option and its values
+            $query = $db->getQuery(true)
+                ->select($db->quoteName('j2commerce_option_id'))
+                ->from($db->quoteName('#__j2commerce_options'))
+                ->where($db->quoteName('option_unique_name') . ' = :uniqueName')
+                ->bind(':uniqueName', $uniqueName);
+            $db->setQuery($query);
+            $existingOptionId = (int) $db->loadResult();
+
+            if ($existingOptionId > 0) {
+                $optionIds[] = ['id' => $existingOptionId, 'values' => $optData['values']];
+                continue;
+            }
+
             $opt                     = new \stdClass();
             $opt->type               = $optData['type'];
-            $opt->option_unique_name = 'sample_' . strtolower(str_replace(' ', '_', $optData['name']));
+            $opt->option_unique_name = $uniqueName;
             $opt->option_name        = $optData['name'];
             $opt->ordering           = $i + 1;
             $opt->enabled            = 1;
