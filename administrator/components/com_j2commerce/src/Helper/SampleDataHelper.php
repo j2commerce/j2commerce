@@ -914,6 +914,20 @@ final class SampleDataHelper
                 continue;
             }
 
+            // Re-install: reuse the existing vendor row (unique key on j2commerce_user_id)
+            $query = $db->getQuery(true)
+                ->select($db->quoteName('j2commerce_vendor_id'))
+                ->from($db->quoteName('#__j2commerce_vendors'))
+                ->where($db->quoteName('j2commerce_user_id') . ' = :userId')
+                ->bind(':userId', $userId, ParameterType::INTEGER);
+            $db->setQuery($query);
+            $existingVendorId = (int) $db->loadResult();
+
+            if ($existingVendorId > 0) {
+                $vendorIds[] = $existingVendorId;
+                continue;
+            }
+
             $addr              = new \stdClass();
             $addr->user_id     = $userId;
             $addr->first_name  = $vendorName;
