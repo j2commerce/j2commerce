@@ -1454,7 +1454,13 @@ class CheckoutController extends BaseController
 
             $pluginHtml = '';
 
-            if (!empty($orderpaymentType) && !empty($existingOrder->order_id) && CurrencyHelper::baseChargeAmount($existingOrder) > 0.0) {
+            $showPayment = CurrencyHelper::baseChargeAmount($existingOrder) > 0.0;
+
+            if (!$showPayment) {
+                J2CommerceHelper::plugin()->event('ChangeShowPaymentOnTotalZero', [$existingOrder, &$showPayment]);
+            }
+
+            if (!empty($orderpaymentType) && !empty($existingOrder->order_id) && $showPayment) {
                 $paymentValues = [
                     'order_id'            => $existingOrder->order_id,
                     'orderpayment_id'     => $existingOrder->j2commerce_order_id ?? '',
@@ -1813,6 +1819,7 @@ class CheckoutController extends BaseController
             // Payment succeeded — clear cart and checkout session (skip if already cleared)
             if (!$cartCleared) {
                 $this->clearCartAndSession($orderId, $session);
+                $cartCleared = true;
             }
 
             // Send order confirmation emails for free orders
@@ -1894,24 +1901,34 @@ class CheckoutController extends BaseController
             $this->sendOrderEmails($orderId);
         }
 
-        // Clear cart only after confirmed success. When paction=process and
-        // the plugin did NOT redirect, payment likely failed — preserve cart.
-        // Cart is cleared on the subsequent paction=display call instead.
-        // Skip if already cleared by order_placed timing.
-        //
-        // Only clear when the order reached one of the configured "placed"
+        // Clear cart only after the order reached one of the configured "placed"
         // states (clear_cart_states, defaulting to confirmed/processed/pending/
-        // shipped/delivered/scheduled). A failed or still-New order keeps the
-        // cart so the shopper can retry from the failed confirmation page. (#1190)
+        // shipped/delivered/scheduled). A failed or still-New order keeps the cart
+        // so the shopper can retry from the failed confirmation page. Skip if already
+        // cleared by order_placed timing. (#1190)
+        //
+        // paction handling: an OFF-SITE gateway only moves the order to Pending/New on
+        // the initial paction=process request and redirects the shopper away, so its
+        // cart must survive the round-trip and is cleared on the paction=display return
+        // instead. An ON-SITE gateway (Authorize.Net CIM, Stripe) finalizes inline on
+        // THIS paction=process request — reaching a confirmed/terminal state — and never
+        // makes a paction=display call, so it must clear here too; gating that on a
+        // confirmed (non-Pending) placed state tells the two apart. Gating the whole
+        // clear on paction!=='process' left on-site gateways with an uncleared cart.
         $clearStates = array_map('intval', (array) $params->get('clear_cart_states', []));
 
         if (empty($clearStates)) {
             $clearStates = [1, 2, 4, 7, 8, 9];
         }
 
-        $orderPlaced = \in_array((int) ($orderTable->order_state_id ?? 0), $clearStates, true);
+        $orderStateNow = (int) ($orderTable->order_state_id ?? 0);
+        $orderPlaced   = \in_array($orderStateNow, $clearStates, true);
 
-        if ($paction !== 'process' && !$cartCleared && $orderPlaced) {
+        // Confirmed/terminal states an on-site gateway reaches inline (excludes Pending(4),
+        // which at process-time means an off-site gateway is still awaiting its return trip).
+        $finalizedInline = \in_array($orderStateNow, [1, 2, 7, 8, 9], true);
+
+        if (!$cartCleared && $orderPlaced && ($paction !== 'process' || $finalizedInline)) {
             $this->clearCartAndSession($orderId, $session);
         }
 
