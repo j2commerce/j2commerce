@@ -1454,7 +1454,13 @@ class CheckoutController extends BaseController
 
             $pluginHtml = '';
 
-            if (!empty($orderpaymentType) && !empty($existingOrder->order_id) && CurrencyHelper::baseChargeAmount($existingOrder) > 0.0) {
+            $showPayment = CurrencyHelper::baseChargeAmount($existingOrder) > 0.0;
+
+            if (!$showPayment) {
+                J2CommerceHelper::plugin()->event('ChangeShowPaymentOnTotalZero', [$existingOrder, &$showPayment]);
+            }
+
+            if (!empty($orderpaymentType) && !empty($existingOrder->order_id) && $showPayment) {
                 $paymentValues = [
                     'order_id'            => $existingOrder->order_id,
                     'orderpayment_id'     => $existingOrder->j2commerce_order_id ?? '',
