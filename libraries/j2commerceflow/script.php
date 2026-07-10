@@ -29,15 +29,11 @@ return new class () implements InstallerScriptInterface {
 
     public function install(InstallerAdapter $adapter): bool
     {
-        Factory::getApplication()->enqueueMessage(Text::_('LIB_J2COMMERCEFLOW_INSTALL_SUCCESS'), 'success');
-
         return true;
     }
 
     public function update(InstallerAdapter $adapter): bool
     {
-        Factory::getApplication()->enqueueMessage(Text::_('LIB_J2COMMERCEFLOW_UPDATE_SUCCESS'), 'success');
-
         return true;
     }
 
