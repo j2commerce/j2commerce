@@ -21,8 +21,13 @@ $currencyValue = (float) ($displayData['currency_value'] ?? 1.0);
 $currencyValue = $currencyValue > 0 ? $currencyValue : 1.0;
 
 // order_total is stored in the store base currency; convert to the order's display
-// currency to match the ledger-derived figures below (which are already display currency).
-$orderTotalDisplay = (float) ($displayData['order_total'] ?? 0) * $currencyValue;
+// currency to match the ledger-derived figures below (which are already display currency),
+// and round to the display currency's scale so the balance subtraction lines up exactly
+// with the already-scaled netPaid (e.g. 39.925 → 39.93 for USD, not 9.995 balance).
+$orderTotalDisplay = round(
+    (float) ($displayData['order_total'] ?? 0) * $currencyValue,
+    CurrencyHelper::getDecimalPlace($currencyCode)
+);
 
 $summary    = OrderTransactionHelper::getBalanceSummary($orderId);
 $captured   = $summary['captured'];
