@@ -1925,41 +1925,7 @@ class EmailHelper
     /** Get human-readable payment method title from plugin element name. */
     private function getPaymentMethodTitle(string $element, Language $language): string
     {
-        if (empty($element)) {
-            return '';
-        }
-
-        // Try language string: PLG_J2COMMERCE_{ELEMENT}_TITLE (e.g. PLG_J2COMMERCE_PAYMENT_CASH_TITLE)
-        $langKey    = 'PLG_J2COMMERCE_' . strtoupper($element) . '_TITLE';
-        $translated = $language->_($langKey);
-        if ($translated !== $langKey) {
-            return $translated;
-        }
-
-        // Fall back to the extension name field from the database
-        $db     = self::getDatabase();
-        $folder = 'j2commerce';
-        $query  = $db->getQuery(true)
-            ->select($db->quoteName('name'))
-            ->from($db->quoteName('#__extensions'))
-            ->where($db->quoteName('type') . ' = ' . $db->quote('plugin'))
-            ->where($db->quoteName('folder') . ' = :folder')
-            ->where($db->quoteName('element') . ' = :element')
-            ->bind(':folder', $folder)
-            ->bind(':element', $element);
-        $db->setQuery($query, 0, 1);
-        $name = $db->loadResult();
-
-        if ($name) {
-            $translated = $language->_($name);
-            if ($translated !== $name) {
-                return $translated;
-            }
-        }
-
-        // Last resort: humanize the element name (payment_cash → Cash)
-        $short = str_replace(['payment_', 'shipping_', 'app_'], '', $element);
-        return ucwords(str_replace('_', ' ', $short));
+        return J2CommerceHelper::getPaymentDisplayName($element);
     }
 
     /**
