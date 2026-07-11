@@ -274,7 +274,8 @@ class EmailHelper
                 'lang_score'                  => 1,
             ];
 
-            if ($params->get('send_default_email_template', 1) == 1) {
+
+            if ($params->get('send_default_email_template', 0) == 1) {
                 $defaultTemplateGroup[] = $standardTemplate;
             }
         }

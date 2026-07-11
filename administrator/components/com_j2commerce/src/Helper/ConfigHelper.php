@@ -1165,7 +1165,7 @@ class ConfigHelper
      */
     public static function getEmailTemplateMode(): int
     {
-        return (int) self::get('send_default_email_template', 1);
+        return (int) self::get('send_default_email_template', 0);
     }
 
     /**

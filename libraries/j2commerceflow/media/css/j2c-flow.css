@@ -1,0 +1,204 @@
+/**
+ * j2c-flow.css — generic flow-diagram styles for J2CFlow (media/lib_j2commerceflow/js/j2c-flow.js),
+ * an AntV X6 (vendored media/lib_j2commerceflow/js/vendor/x6/x6.min.js) wrapper. Uses only
+ * .j2c-flow-* class names — reusable by any J2Commerce admin flow builder. Reads correctly in
+ * both light and dark (Atum) admin themes via Bootstrap 5 CSS custom properties / semantic
+ * subtle classes only.
+ *
+ * .j2c-flow-node sizing is filled by X6 (each node's box is a fixed width/height set in
+ * JS) rather than a fixed rem width — X6 owns the outer box, this CSS only styles content.
+ */
+
+.j2c-flow-canvas-wrapper {
+    position: relative;
+    min-height: 70vh;
+    background-color: var(--bs-tertiary-bg);
+    border-radius: var(--bs-border-radius-lg);
+    padding: 1rem;
+}
+
+.j2c-flow-toolbar {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    z-index: 2;
+    display: flex;
+    gap: 0.375rem;
+}
+
+.j2c-flow-panel-wrapper.sticky-top {
+    top: 1rem;
+    /* Bootstrap's .sticky-top defaults to z-index: 1020, which overlays the J2Commerce
+       admin offcanvas menu. Keep this panel below it. */
+    z-index: 990;
+}
+
+.j2c-flow-panel {
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius-lg);
+    background-color: var(--bs-body-bg);
+    padding: 1rem;
+}
+
+.j2c-flow-panel-empty {
+    margin: 0;
+}
+
+.j2c-flow-scroll {
+    overflow-x: auto;
+    padding-block: 1rem;
+}
+
+.j2c-flow-canvas {
+    min-height: 20rem;
+}
+
+.j2c-flow-minimap {
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius);
+    background-color: var(--bs-body-bg);
+    overflow: hidden;
+}
+
+.j2c-flow-node {
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius-lg);
+    background-color: var(--bs-body-bg);
+    box-shadow: var(--bs-box-shadow-sm);
+    cursor: pointer;
+}
+
+.j2c-flow-node:focus-visible {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: 2px;
+}
+
+.j2c-flow-node--selected {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.2rem var(--bs-primary-bg-subtle);
+}
+
+.j2c-flow-node-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--bs-border-color);
+    font-weight: 600;
+    border-top-left-radius: var(--bs-border-radius-lg);
+    border-top-right-radius: var(--bs-border-radius-lg);
+}
+
+.j2c-flow-node-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.j2c-flow-node--trigger .j2c-flow-node-header {
+    background-color: var(--bs-warning-bg-subtle);
+    color: var(--bs-warning-text-emphasis);
+}
+
+.j2c-flow-node--offer .j2c-flow-node-header {
+    background-color: var(--bs-primary-bg-subtle);
+    color: var(--bs-primary-text-emphasis);
+}
+
+.j2c-flow-node--terminal .j2c-flow-node-header {
+    background-color: var(--bs-success-bg-subtle);
+    color: var(--bs-success-text-emphasis);
+}
+
+.j2c-flow-node--add {
+    border-style: dashed;
+    box-shadow: none;
+}
+
+.j2c-flow-node--add .j2c-flow-node-header {
+    justify-content: center;
+    border-bottom: none;
+    color: var(--bs-body-secondary-color);
+    font-weight: 500;
+}
+
+.j2c-flow-node--add .j2c-flow-node-body {
+    display: none;
+}
+
+.j2c-flow-node-disabled {
+    opacity: 0.6;
+}
+
+.j2c-flow-node-body {
+    position: relative;
+    padding: 0.75rem;
+    /* Defensive backstop only — real sizing comes from measureNodeHeight() in
+       j2c-flow.js measuring actual content before graph.addNode(); this just
+       guards against any future content that slips past that measurement. */
+    overflow: hidden;
+}
+
+.j2c-flow-node-line {
+    margin: 0 0 0.25rem;
+}
+
+.j2c-flow-node-line:last-child {
+    margin-bottom: 0;
+}
+
+.j2c-flow-trigger-list {
+    margin: 0;
+    padding-inline-start: 1.1rem;
+}
+
+.j2c-flow-decline-chip {
+    border-top: 1px dashed var(--bs-border-color);
+    padding-top: 0.5rem;
+    color: var(--bs-body-secondary-color);
+}
+
+.j2c-flow-badge--secondary {
+    background-color: var(--bs-secondary-bg-subtle);
+    color: var(--bs-secondary-text-emphasis);
+}
+
+.j2c-flow-badge--warning {
+    background-color: var(--bs-warning-bg-subtle);
+    color: var(--bs-warning-text-emphasis);
+}
+
+.j2c-flow-badge--danger {
+    background-color: var(--bs-danger-bg-subtle);
+    color: var(--bs-danger-text-emphasis);
+}
+
+.j2c-flow-add-offer {
+    margin-top: 1rem;
+    border-style: dashed;
+    box-shadow: none;
+    cursor: default;
+    text-align: center;
+    padding: 0.5rem;
+}
+
+.j2c-flow-add-offer-trigger {
+    text-decoration: none;
+}
+
+.j2c-flow-add-offer-search {
+    margin-top: 0.5rem;
+    text-align: start;
+}
+
+.j2c-flow-add-offer-results:not(:empty) {
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius);
+    margin-top: 0.25rem;
+    max-height: 10rem;
+    overflow-y: auto;
+}

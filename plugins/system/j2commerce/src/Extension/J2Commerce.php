@@ -19,13 +19,16 @@ use J2Commerce\Component\J2commerce\Administrator\SetupGuide\SetupGuideHelper;
 use Joomla\CMS\Access\Access;
 use Joomla\CMS\Cache\CacheControllerFactoryInterface;
 use Joomla\CMS\Component\ComponentHelper;
+use Joomla\CMS\Component\Router\RouterViewConfiguration;
 use Joomla\CMS\Document\HtmlDocument;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Router\Route;
+use Joomla\CMS\Session\Session;
 use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\User\UserFactoryInterface;
 use Joomla\CMS\User\UserHelper;
@@ -107,6 +110,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             'onJ2CommerceCalculateFees'        => 'onJ2CommerceCalculateFees',
             'onJ2CommerceProcessCron'          => 'onJ2CommerceProcessCron',
             'onJ2CommerceGetDashboardMessages' => 'onGetDashboardMessages',
+            'onAjaxJ2commerce'                 => 'onAjaxJ2commerce',
         ];
     }
 
@@ -974,7 +978,204 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             ];
         }
 
+        $user = $this->getApplication()->getIdentity();
+
+        if ($user !== null && $user->authorise('core.edit.state', 'com_menus')) {
+            try {
+                foreach ($this->getOrphanedJ2CommerceMenuItems() as $orphan) {
+                    $result[] = [
+                        'id'   => 'j2commerce_orphan_menu_' . (int) $orphan->id,
+                        'text' => Text::sprintf(
+                            'COM_J2COMMERCE_ORPHAN_MENU_DESC',
+                            htmlspecialchars((string) $orphan->title, ENT_QUOTES, 'UTF-8'),
+                            htmlspecialchars((string) $orphan->view, ENT_QUOTES, 'UTF-8')
+                        ),
+                        'type'        => 'danger',
+                        'icon'        => 'fa-solid fa-link-slash',
+                        'dismissible' => 'none',
+                        'link'        => Route::_(
+                            'index.php?option=com_ajax&group=system&plugin=j2commerce&format=json'
+                            . '&j2c_task=unpublishmenu&id=' . (int) $orphan->id . '&' . Session::getFormToken() . '=1'
+                        ),
+                        'linkText' => Text::_('COM_J2COMMERCE_ORPHAN_MENU_UNPUBLISH'),
+                        'priority' => 100,
+                    ];
+                }
+            } catch (\Throwable $e) {
+                // Fail silently — an orphan-menu detection error must never break the dashboard.
+            }
+        }
+
         $event->setArgument('result', $result);
+    }
+
+    /**
+     * Returns published site menu items pointing at com_j2commerce views that no
+     * currently-enabled extension can serve (disabled or uninstalled plugin).
+     *
+     * @return  array<int, object{id: int, title: string, view: string}>
+     *
+     * @since   6.0.4
+     */
+    private function getOrphanedJ2CommerceMenuItems(): array
+    {
+        $db        = $this->getDatabase();
+        $like      = '%option=com_j2commerce%';
+        $clientId  = 0;
+        $published = 1;
+        $type      = 'component';
+
+        $query = $db->getQuery(true)
+            ->select($db->quoteName(['id', 'title', 'link']))
+            ->from($db->quoteName('#__menu'))
+            ->where($db->quoteName('client_id') . ' = :clientId')
+            ->where($db->quoteName('published') . ' = :published')
+            ->where($db->quoteName('type') . ' = :type')
+            ->where($db->quoteName('link') . ' LIKE :link')
+            ->bind(':clientId', $clientId, ParameterType::INTEGER)
+            ->bind(':published', $published, ParameterType::INTEGER)
+            ->bind(':type', $type)
+            ->bind(':link', $like);
+
+        $db->setQuery($query);
+        $rows = $db->loadObjectList();
+
+        if (empty($rows)) {
+            return [];
+        }
+
+        $servableViews = $this->getServableJ2CommerceViews();
+        $orphans       = [];
+
+        foreach ($rows as $row) {
+            parse_str((string) parse_url((string) $row->link, PHP_URL_QUERY), $queryParams);
+
+            if (($queryParams['option'] ?? '') !== 'com_j2commerce') {
+                continue;
+            }
+
+            $view = $queryParams['view'] ?? null;
+
+            if ($view === null || \in_array($view, $servableViews, true)) {
+                continue;
+            }
+
+            $orphans[] = (object) [
+                'id'    => (int) $row->id,
+                'title' => $row->title,
+                'view'  => $view,
+            ];
+        }
+
+        return $orphans;
+    }
+
+    /**
+     * Builds the set of com_j2commerce view names an enabled extension can serve —
+     * the static core views (mirrored from components/com_j2commerce/src/Service/Router.php)
+     * plus any view registered by enabled j2commerce plugins via onJ2CommerceRegisterRouterViews.
+     *
+     * @return  array<int, string>
+     *
+     * @since   6.0.4
+     */
+    private function getServableJ2CommerceViews(): array
+    {
+        $views = [
+            'categories', 'category', 'products', 'product', 'producttags',
+            'dashboard', 'carts', 'checkout', 'myprofile', 'confirmation', 'categoryalias',
+        ];
+
+        try {
+            PluginHelper::importPlugin('j2commerce');
+
+            $collector = new class () {
+                public array $names = [];
+
+                public function registerView(RouterViewConfiguration $cfg): void
+                {
+                    $this->names[] = $cfg->name;
+                }
+            };
+
+            $registerEvent = new Event('onJ2CommerceRegisterRouterViews', ['router' => $collector]);
+            $this->getApplication()->getDispatcher()->dispatch('onJ2CommerceRegisterRouterViews', $registerEvent);
+
+            $views = array_merge($views, $collector->names);
+        } catch (\Throwable $e) {
+            // A misbehaving plugin must not break dashboard orphan detection.
+        }
+
+        return $views;
+    }
+
+    /**
+     * com_ajax handler that unpublishes a single orphaned com_j2commerce menu item.
+     *
+     * @param   Event  $event  The event object
+     *
+     * @return  void
+     *
+     * @since   6.0.4
+     */
+    public function onAjaxJ2commerce(Event $event): void
+    {
+        $app = $this->getApplication();
+
+        if (!$app->isClient('administrator')) {
+            return;
+        }
+
+        $dashboardUrl = Route::_('index.php?option=com_j2commerce&view=dashboard', false);
+
+        if (!Session::checkToken('get')) {
+            $app->enqueueMessage(Text::_('JINVALID_TOKEN'), 'warning');
+            $app->redirect($dashboardUrl);
+
+            return;
+        }
+
+        $user = $app->getIdentity();
+
+        if ($user === null || !$user->authorise('core.edit.state', 'com_menus')) {
+            $app->enqueueMessage(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 'warning');
+            $app->redirect($dashboardUrl);
+
+            return;
+        }
+
+        $id = $app->getInput()->getInt('id', 0);
+
+        try {
+            $isOrphan = false;
+
+            foreach ($this->getOrphanedJ2CommerceMenuItems() as $orphan) {
+                if ($orphan->id === $id) {
+                    $isOrphan = true;
+
+                    break;
+                }
+            }
+
+            if ($id <= 0 || !$isOrphan) {
+                $app->enqueueMessage(Text::_('COM_J2COMMERCE_ORPHAN_MENU_NOT_FOUND'), 'warning');
+                $app->redirect($dashboardUrl);
+
+                return;
+            }
+
+            $table = $app->bootComponent('com_menus')->getMVCFactory()->createTable('Menu', 'Administrator');
+            $table->load($id);
+            $table->published = 0;
+            $table->store();
+
+            $app->enqueueMessage(Text::_('COM_J2COMMERCE_ORPHAN_MENU_UNPUBLISHED'));
+        } catch (\Throwable $e) {
+            Log::add('Orphan menu unpublish failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $app->enqueueMessage(Text::_('COM_J2COMMERCE_ERR_GENERIC'), 'warning');
+        }
+
+        $app->redirect($dashboardUrl);
     }
 
     private function getExtensionId(): int

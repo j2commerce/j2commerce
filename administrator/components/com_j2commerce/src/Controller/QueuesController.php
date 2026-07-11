@@ -100,6 +100,7 @@ class QueuesController extends AdminController
             return false;
         }
 
+        $cid       = array_filter((array) $this->input->get('cid', [], 'int'));
         $filters   = $this->input->get('filter', [], 'array');
         $queueType = trim($filters['queue_type'] ?? '');
 
@@ -113,18 +114,24 @@ class QueuesController extends AdminController
             false
         );
 
-        if ($queueType === '') {
+        QueueHelper::releaseStale(30);
+
+        // A checkbox selection means "process exactly these rows now" (backoff ignored). With no
+        // selection the button falls back to draining the next due batch of the filtered type.
+        if (!empty($cid)) {
+            $items        = QueueHelper::claimByIds($cid);
+            $logQueueType = $queueType !== '' ? $queueType : 'selected';
+        } elseif ($queueType !== '') {
+            $items        = QueueHelper::claimBatch($queueType, 10);
+            $logQueueType = $queueType;
+        } else {
             $this->app->enqueueMessage(Text::_('COM_J2COMMERCE_QUEUE_NO_QUEUE_TYPE_SELECTED'), 'warning');
             $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=queues', false));
             return false;
         }
 
-        QueueHelper::releaseStale(30);
-
-        $items = QueueHelper::claimBatch($queueType, 10);
-
         if (empty($items)) {
-            $this->app->enqueueMessage(Text::sprintf('COM_J2COMMERCE_QUEUE_NO_PENDING_ITEMS', $queueType), 'info');
+            $this->app->enqueueMessage(Text::sprintf('COM_J2COMMERCE_QUEUE_NO_PENDING_ITEMS', $logQueueType), 'info');
             $this->setRedirect($redirectUrl);
             return true;
         }
@@ -139,7 +146,7 @@ class QueuesController extends AdminController
             ->insert($db->quoteName('#__j2commerce_queue_logs'))
             ->columns($db->quoteName(['queue_type', 'started_at', 'status', 'items_total']))
             ->values(':queue_type, :started_at, :status, :items_total')
-            ->bind(':queue_type', $queueType)
+            ->bind(':queue_type', $logQueueType)
             ->bind(':started_at', $startedAt)
             ->bind(':status', $logStatus)
             ->bind(':items_total', $itemsTotal, ParameterType::INTEGER);
@@ -184,14 +191,17 @@ class QueuesController extends AdminController
                 continue;
             }
 
-            QueueHelper::fail($queueId, 'No handler processed this item');
-            $failed++;
+            // Nobody handled it (the responsible plugin is disabled/absent). Release it back to
+            // the queue untouched rather than failing it — failing would burn an attempt and
+            // eventually mark it 'dead', silently destroying valid queued work.
+            QueueHelper::release($queueId);
+            $skipped++;
             $details[] = [
                 'id'          => $queueId,
-                'status'      => 'failed',
+                'status'      => 'skipped',
                 'relation_id' => $item->relation_id ?? '',
                 'item_type'   => $item->item_type ?? '',
-                'error'       => 'No handler processed this item',
+                'note'        => 'No handler processed this item (released)',
             ];
         }
 
@@ -231,7 +241,15 @@ class QueuesController extends AdminController
             ->bind(':status', $completedStatus);
         $db->setQuery($deleteQuery)->execute();
 
-        $this->app->enqueueMessage(Text::sprintf('COM_J2COMMERCE_QUEUE_N_ITEMS_PROCESSED', $success));
+        $this->app->enqueueMessage(
+            Text::sprintf('COM_J2COMMERCE_QUEUE_PROCESS_SUMMARY', $success, $failed, $skipped),
+            $failed > 0 ? 'warning' : 'message'
+        );
+
+        if ($failed > 0) {
+            $this->app->enqueueMessage(Text::_('COM_J2COMMERCE_QUEUE_PROCESS_SEE_LOGS'), 'info');
+        }
+
         $this->setRedirect($redirectUrl);
         return true;
     }

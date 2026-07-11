@@ -246,9 +246,12 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
                 continue;
             }
 
-            QueueHelper::fail($queueId, 'No handler processed this item');
-            $failed++;
-            $details[] = ['id' => $queueId, 'status' => 'failed', 'error' => 'No handler processed this item'];
+            // Nobody handled it (the responsible plugin is disabled/absent). Release it back to
+            // the queue untouched rather than failing it — failing would burn an attempt and
+            // eventually mark it 'dead', silently destroying valid queued work.
+            QueueHelper::release($queueId);
+            $skipped++;
+            $details[] = ['id' => $queueId, 'status' => 'skipped', 'note' => 'No handler processed this item (released)'];
         }
 
         $endMs       = (int) (microtime(true) * 1000);

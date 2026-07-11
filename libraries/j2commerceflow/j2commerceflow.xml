@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="library" method="upgrade">
+    <name>LIB_J2COMMERCEFLOW</name>
+    <libraryname>j2commerceflow</libraryname>
+    <version>6.4.0</version>
+    <creationDate>2026-07-05</creationDate>
+    <author>J2Commerce, LLC</author>
+    <authorEmail>support@j2commerce.com</authorEmail>
+    <authorUrl>https://www.j2commerce.com</authorUrl>
+    <copyright>(C)2024-2026 J2Commerce, LLC</copyright>
+    <license>GNU General Public License version 2 or later</license>
+    <description>LIB_J2COMMERCEFLOW_XML_DESCRIPTION</description>
+    <namespace path="src">J2Commerce\Library\Flow</namespace>
+    <scriptfile>script.php</scriptfile>
+    <files>
+        <folder>src</folder>
+    </files>
+    <languages folder="language">
+        <language tag="en-US">en-US/lib_j2commerceflow.ini</language>
+        <language tag="en-US">en-US/lib_j2commerceflow.sys.ini</language>
+        <language tag="en-GB">en-GB/lib_j2commerceflow.ini</language>
+        <language tag="en-GB">en-GB/lib_j2commerceflow.sys.ini</language>
+        <language tag="ar-AA">ar-AA/lib_j2commerceflow.ini</language>
+        <language tag="ar-AA">ar-AA/lib_j2commerceflow.sys.ini</language>
+        <language tag="da-DK">da-DK/lib_j2commerceflow.ini</language>
+        <language tag="da-DK">da-DK/lib_j2commerceflow.sys.ini</language>
+        <language tag="de-DE">de-DE/lib_j2commerceflow.ini</language>
+        <language tag="de-DE">de-DE/lib_j2commerceflow.sys.ini</language>
+        <language tag="el-GR">el-GR/lib_j2commerceflow.ini</language>
+        <language tag="el-GR">el-GR/lib_j2commerceflow.sys.ini</language>
+        <language tag="es-ES">es-ES/lib_j2commerceflow.ini</language>
+        <language tag="es-ES">es-ES/lib_j2commerceflow.sys.ini</language>
+        <language tag="fa-IR">fa-IR/lib_j2commerceflow.ini</language>
+        <language tag="fa-IR">fa-IR/lib_j2commerceflow.sys.ini</language>
+        <language tag="fi-FI">fi-FI/lib_j2commerceflow.ini</language>
+        <language tag="fi-FI">fi-FI/lib_j2commerceflow.sys.ini</language>
+        <language tag="fr-FR">fr-FR/lib_j2commerceflow.ini</language>
+        <language tag="fr-FR">fr-FR/lib_j2commerceflow.sys.ini</language>
+        <language tag="he-IL">he-IL/lib_j2commerceflow.ini</language>
+        <language tag="he-IL">he-IL/lib_j2commerceflow.sys.ini</language>
+        <language tag="it-IT">it-IT/lib_j2commerceflow.ini</language>
+        <language tag="it-IT">it-IT/lib_j2commerceflow.sys.ini</language>
+        <language tag="ja-JP">ja-JP/lib_j2commerceflow.ini</language>
+        <language tag="ja-JP">ja-JP/lib_j2commerceflow.sys.ini</language>
+        <language tag="nb-NO">nb-NO/lib_j2commerceflow.ini</language>
+        <language tag="nb-NO">nb-NO/lib_j2commerceflow.sys.ini</language>
+        <language tag="nl-NL">nl-NL/lib_j2commerceflow.ini</language>
+        <language tag="nl-NL">nl-NL/lib_j2commerceflow.sys.ini</language>
+        <language tag="pl-PL">pl-PL/lib_j2commerceflow.ini</language>
+        <language tag="pl-PL">pl-PL/lib_j2commerceflow.sys.ini</language>
+        <language tag="pt-BR">pt-BR/lib_j2commerceflow.ini</language>
+        <language tag="pt-BR">pt-BR/lib_j2commerceflow.sys.ini</language>
+        <language tag="pt-PT">pt-PT/lib_j2commerceflow.ini</language>
+        <language tag="pt-PT">pt-PT/lib_j2commerceflow.sys.ini</language>
+        <language tag="ru-RU">ru-RU/lib_j2commerceflow.ini</language>
+        <language tag="ru-RU">ru-RU/lib_j2commerceflow.sys.ini</language>
+        <language tag="sv-SE">sv-SE/lib_j2commerceflow.ini</language>
+        <language tag="sv-SE">sv-SE/lib_j2commerceflow.sys.ini</language>
+        <language tag="tr-TR">tr-TR/lib_j2commerceflow.ini</language>
+        <language tag="tr-TR">tr-TR/lib_j2commerceflow.sys.ini</language>
+        <language tag="zh-TW">zh-TW/lib_j2commerceflow.ini</language>
+        <language tag="zh-TW">zh-TW/lib_j2commerceflow.sys.ini</language>
+    </languages>
+    <media folder="media" destination="lib_j2commerceflow">
+        <folder>js</folder>
+        <folder>css</folder>
+    </media>
+</extension>
