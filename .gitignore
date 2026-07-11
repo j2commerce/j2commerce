@@ -140,6 +140,8 @@
 !libraries/
 !libraries/j2commerce/
 !libraries/j2commerce/**
+!libraries/j2commerceflow/
+!libraries/j2commerceflow/**
 
 # ===========================================================================
 # ALWAYS IGNORE - Even if paths match above
@@ -157,6 +159,9 @@ language/
 # Re-allow language dirs inside J2Commerce library
 !libraries/j2commerce/language/
 !libraries/j2commerce/language/**
+# Re-allow language dirs inside J2CommerceFlow library
+!libraries/j2commerceflow/language/
+!libraries/j2commerceflow/language/**
 # Re-allow language dirs inside core J2Commerce plugins
 !plugins/j2commerce/*/language/
 !plugins/j2commerce/*/language/**
@@ -206,6 +211,9 @@ node_modules/
 vendor/
 !libraries/j2commerce/vendor/
 !libraries/j2commerce/vendor/**
+# Re-allow vendored X6/dagre inside J2CommerceFlow library (media/js/vendor caught by global vendor/ ignore)
+!libraries/j2commerceflow/media/js/vendor/
+!libraries/j2commerceflow/media/js/vendor/**
 !administrator/components/com_j2commerce/src/View/Vendor/
 !administrator/components/com_j2commerce/src/View/Vendor/**
 !administrator/components/com_j2commerce/tmpl/vendor/

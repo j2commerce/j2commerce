@@ -309,7 +309,10 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             return;
         }
 
-        $webhookId = $this->params->get('webhook_id', '');
+        $sandbox   = (bool) $this->params->get('sandbox', 0);
+        $webhookId = $sandbox
+            ? $this->params->get('sandbox_webhook_id', '')
+            : $this->params->get('webhook_id', '');
 
         if (empty($webhookId)) {
             $event->setArgument('result', ['status' => 400, 'message' => 'Webhook ID not configured']);
@@ -2009,7 +2012,10 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
     private function getPayPalWebhooks(): PayPalWebhooks
     {
         if (!$this->paypalWebhooks) {
-            $webhookId            = $this->params->get('webhook_id', '');
+            $sandbox              = (bool) $this->params->get('sandbox', 0);
+            $webhookId            = $sandbox
+                ? $this->params->get('sandbox_webhook_id', '')
+                : $this->params->get('webhook_id', '');
             $this->paypalWebhooks = new PayPalWebhooks(
                 $this->getPayPalClient(),
                 $webhookId,

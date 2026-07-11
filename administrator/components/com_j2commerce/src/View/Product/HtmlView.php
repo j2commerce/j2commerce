@@ -125,6 +125,7 @@ class HtmlView extends BaseHtmlView
 
         $toolbar->cancel('product.cancel', $isNew ? 'JTOOLBAR_CANCEL' : 'JTOOLBAR_CLOSE');
 
+        $toolbar->inlinehelp();
         $toolbar->help(Text::_('COM_J2COMMERCE_PRODUCT'), true, 'https://docs.j2commerce.com/v6/catalog/managing-products/');
     }
 }

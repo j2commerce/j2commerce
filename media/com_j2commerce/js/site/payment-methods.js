@@ -109,7 +109,7 @@
                     'success': [Joomla.Text._('COM_J2COMMERCE_PAYMENT_METHODS_DELETED')]
                 });
             } else {
-                throw new Error(data.message || data.data?.message || Joomla.Text._('COM_J2COMMERCE_PAYMENT_METHODS_ERROR'));
+                throw new Error(data.message || data.data?.message || data.data?.error || data.error || Joomla.Text._('COM_J2COMMERCE_PAYMENT_METHODS_ERROR'));
             }
         } catch (error) {
             console.error('Delete card error:', error);
@@ -186,7 +186,7 @@
                     'success': [Joomla.Text._('COM_J2COMMERCE_PAYMENT_METHODS_DEFAULT_SET')]
                 });
             } else {
-                throw new Error(data.message || data.data?.message || Joomla.Text._('COM_J2COMMERCE_PAYMENT_METHODS_ERROR'));
+                throw new Error(data.message || data.data?.message || data.data?.error || data.error || Joomla.Text._('COM_J2COMMERCE_PAYMENT_METHODS_ERROR'));
             }
         } catch (error) {
             console.error('Set default card error:', error);
