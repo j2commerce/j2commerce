@@ -1032,6 +1032,47 @@ class J2CommerceHelper extends ContentHelper
     }
 
     /**
+     * Get the human-readable display name for a payment plugin element.
+     *
+     * Resolution order:
+     * 1. Plugin's own `display_name` param (a lang key or literal string), via Text::_()
+     *    — honours language overrides such as PLG_J2COMMERCE_PAYMENT_CASH_DEFAULT.
+     * 2. The plugin's language key built from its element: PLG_J2COMMERCE_{ELEMENT}.
+     * 3. Humanised fallback: "payment_cash" → "Cash".
+     *
+     * @param   string  $element  Plugin element name, e.g. "payment_cash".
+     * @return  string
+     */
+    public static function getPaymentDisplayName(string $element): string
+    {
+        if ($element === '') {
+            return '';
+        }
+
+        $plugin = static::plugin()->getPlugin($element, 'j2commerce');
+        if ($plugin) {
+            $params      = new Registry($plugin->params ?? '{}');
+            $displayName = (string) $params->get('display_name', '');
+            if ($displayName !== '') {
+                $translated = Text::_($displayName);
+                // Text::_() returns the key unchanged when not found — treat that as a literal string
+                return $translated;
+            }
+        }
+
+        // Fallback: try PLG_J2COMMERCE_{ELEMENT} (the plugin's sys.ini name key)
+        $langKey = 'PLG_J2COMMERCE_' . strtoupper($element);
+        $translated = Text::_($langKey);
+        if ($translated !== $langKey) {
+            return $translated;
+        }
+
+        // Last resort: humanise the element name, stripping common prefixes
+        $short = preg_replace('/^(payment|shipping|app)_/', '', $element);
+        return ucwords(str_replace('_', ' ', $short));
+    }
+
+    /**
      * Get app image path with fallback logic
      *
      * Searches for app images in the following order:
