@@ -127,12 +127,13 @@ class CartsController extends BaseController
      */
     private function refreshShippingMethods(): void
     {
-        $session   = $this->app->getSession();
-        $countryId = (int) $session->get('shipping_country_id', 0, 'j2commerce');
-        $zoneId    = (int) $session->get('shipping_zone_id', 0, 'j2commerce');
+        $session = $this->app->getSession();
 
-        // No estimate was performed yet -- nothing to refresh
-        if ($countryId === 0 && $zoneId === 0) {
+        // Only refresh when the user explicitly used the cart estimator.
+        // shipping_country_id is also set by checkout, so it cannot be used
+        // as the guard here — it would cause shipping methods to bleed through
+        // to the cart page after the user has entered their checkout address.
+        if (!$session->get('force_calculate_shipping', 0, 'j2commerce')) {
             return;
         }
 
@@ -144,6 +145,7 @@ class CartsController extends BaseController
         if (empty($items)) {
             $session->clear('shipping_methods', 'j2commerce');
             $session->clear('shipping_values', 'j2commerce');
+            $session->clear('force_calculate_shipping', 'j2commerce');
 
             return;
         }
