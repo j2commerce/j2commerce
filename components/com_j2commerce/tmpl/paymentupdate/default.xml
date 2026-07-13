@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+	<layout title="COM_J2COMMERCE_PAYMENTUPDATE_VIEW_DEFAULT_TITLE" option="COM_J2COMMERCE_PAYMENTUPDATE_VIEW_DEFAULT_OPTION">
+		<message>
+			<![CDATA[COM_J2COMMERCE_PAYMENTUPDATE_VIEW_DEFAULT_DESC]]>
+		</message>
+	</layout>
+	<fields name="request">
+	</fields>
+	<fields name="params">
+		<fieldset name="frontend" label="COM_J2COMMERCE_LAYOUT_FRAMEWORK_FIELDSET_LABEL"
+			addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field">
+			<field
+				name="framework"
+				type="Frameworklist"
+				view_context="paymentupdate"
+				label="COM_J2COMMERCE_LAYOUT_FRAMEWORK_LABEL"
+				description="COM_J2COMMERCE_LAYOUT_FRAMEWORK_DESC"
+				default="bootstrap5"
+			/>
+		</fieldset>
+	</fields>
+</metadata>
