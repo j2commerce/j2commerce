@@ -213,6 +213,11 @@ return [
         'Shipping Method'   => 'Delivery Method',
         'shipping method'   => 'delivery method',
         'Shipping & Tax'    => 'Delivery & Tax',
+        'the store'         => 'the shop',
+        'The store'         => 'The shop',
+        'The Store'         => 'The Shop',
+        'contact the store' => 'contact the shop',
+        'Contact the store' => 'Contact the shop',
     ],
     'skip' => [
         'Authorize.Net',

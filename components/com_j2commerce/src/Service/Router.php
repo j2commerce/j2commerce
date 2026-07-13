@@ -121,6 +121,7 @@ class Router extends RouterView
         $this->registerView(new RouterViewConfiguration('checkout'));
         $this->registerView(new RouterViewConfiguration('myprofile'));
         $this->registerView(new RouterViewConfiguration('confirmation'));
+        $this->registerView(new RouterViewConfiguration('paymentupdate'));
         $this->registerView(new RouterViewConfiguration('categoryalias'));
 
         // Allow J2Commerce plugins to register additional frontend views
@@ -238,7 +239,7 @@ class Router extends RouterView
         }
 
         // For simple view-only menu items (carts, checkout, myprofile, etc.)
-        $simpleViews = ['carts', 'checkout', 'myprofile', 'confirmation', 'dashboard'];
+        $simpleViews = ['carts', 'checkout', 'myprofile', 'confirmation', 'dashboard', 'paymentupdate'];
         if (isset($query['view']) && \in_array($query['view'], $simpleViews, true) && !isset($query['Itemid'])) {
             $menuItem = $this->findViewMenu($query['view']);
 

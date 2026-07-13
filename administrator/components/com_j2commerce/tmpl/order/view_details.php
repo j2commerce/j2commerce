@@ -24,11 +24,8 @@ $item = $this->item;
 $orderShipping = $item->ordershipping ?? null;
 
 // Resolve payment plugin display name and image
-$paymentType    = $item->orderpayment_type ?? '';
-$paymentLangKey = 'PLG_J2COMMERCE_' . strtoupper($paymentType);
-$paymentName    = ($paymentType !== '' && Text::_($paymentLangKey) !== $paymentLangKey)
-    ? Text::_($paymentLangKey)
-    : ucwords(str_replace('_', ' ', $paymentType));
+$paymentType = $item->orderpayment_type ?? '';
+$paymentName = J2CommerceHelper::getPaymentDisplayName($paymentType);
 
 $paymentImage = '';
 if ($paymentType !== '') {
