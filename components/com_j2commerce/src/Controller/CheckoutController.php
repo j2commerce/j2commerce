@@ -1658,7 +1658,22 @@ class CheckoutController extends BaseController
             // raw PAN/CVV. Enforce CSRF on every browser POST here. Offsite
             // gateway returns arrive as GET redirects (no token) and are
             // finalized via order-state guards instead.
-            Session::checkToken('post') or $this->app->redirect($this->getCheckoutUrl());
+            if (!Session::checkToken('post')) {
+                // Payment-plugin JS posts here via fetch() expecting JSON. A redirect
+                // would be followed silently and hand the caller an HTML page, which
+                // fails downstream as an opaque parse error the shopper never sees.
+                $paction = $this->input->getString('paction', '');
+                $isAjax  = $paction === 'process'
+                    || strtolower($this->input->server->getString('HTTP_X_REQUESTED_WITH', '')) === 'xmlhttprequest';
+
+                if ($isAjax) {
+                    $this->jsonResponse(['success' => false, 'error' => Text::_('JINVALID_TOKEN')]);
+
+                    return;
+                }
+
+                $this->app->redirect($this->getCheckoutUrl());
+            }
         }
 
         $session        = $this->app->getSession();
