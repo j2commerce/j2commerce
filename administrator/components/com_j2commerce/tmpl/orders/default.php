@@ -239,4 +239,6 @@ $dateFormat = ComponentHelper::getParams('com_j2commerce')->get('date_format', '
 
 <template id="joomla-dialog-batch"><?php echo $this->loadTemplate('batch_body'); ?></template>
 
+<?php echo $this->loadTemplate('export_offcanvas'); ?>
+
 <?php echo $this->footer ?? ''; ?>
