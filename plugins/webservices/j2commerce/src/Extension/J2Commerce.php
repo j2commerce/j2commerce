@@ -80,6 +80,10 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         $private = array_merge(['public' => false], $defaults);
 
         $router->addRoutes([
+            // Voucher balance adjustment + own gift cards (issue #1299 T5.2/T5.3)
+            new Route(['POST'], 'v1/j2commerce/vouchers/:id/adjust', 'vouchers.adjust', ['id' => '(\d+)'], $private),
+            new Route(['GET'], 'v1/j2commerce/vouchers/mine', 'vouchers.mine', [], $private),
+
             // Order items
             new Route(['GET'], 'v1/j2commerce/orders/:id/items', 'orderitems.displayList', ['id' => '(\d+)'], $private),
 

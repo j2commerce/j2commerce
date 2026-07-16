@@ -180,6 +180,7 @@ $statusName = !empty($order->orderstatus_name) ? Text::_($order->orderstatus_nam
                             'framework'  => 'uikit',
                         ], JPATH_ROOT . '/components/com_j2commerce/layouts'); ?>
                         <?php endif; ?>
+                        <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterDisplayLineItemTitle', [$lineItem, $order, &$params]); ?>
                     </td>
                     <?php if ($params->get('show_sku', 0)): ?>
                     <td><?php echo $this->escape($lineItem->orderitem_sku); ?></td>

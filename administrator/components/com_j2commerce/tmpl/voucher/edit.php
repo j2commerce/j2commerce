@@ -29,7 +29,7 @@ $tmpl    = Factory::getApplication()->input->get('tmpl', '', 'cmd') === 'compone
 $voucherId = (int) ($this->item->j2commerce_voucher_id ?? 0);
 ?>
 
-<form action="<?php echo Route::_('index.php?option=com_j2commerce&layout=' . $layout . $tmpl . '&id=' . $voucherId); ?>" method="post" name="adminForm" id="voucher-form" aria-label="<?php echo Text::_('COM_J2COMMERCE_VOUCHER_FORM_' . ($voucherId === 0 ? 'NEW' : 'EDIT'), true); ?>" class="form-validate">
+<form action="<?php echo Route::_('index.php?option=com_j2commerce&view=voucher&layout=' . $layout . $tmpl . '&id=' . $voucherId); ?>" method="post" name="adminForm" id="voucher-form" aria-label="<?php echo Text::_('COM_J2COMMERCE_VOUCHER_FORM_' . ($voucherId === 0 ? 'NEW' : 'EDIT'), true); ?>" class="form-validate">
 
     <div class="main-card">
         <?php echo HTMLHelper::_('uitab.startTabSet', 'myTab', ['active' => 'details', 'recall' => true, 'breakpoint' => 768]); ?>

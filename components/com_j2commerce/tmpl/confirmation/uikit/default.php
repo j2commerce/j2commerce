@@ -101,10 +101,8 @@ if (!empty($order->created_on) && $order->created_on !== '0000-00-00 00:00:00') 
     $orderDate = HTMLHelper::_('date', $order->created_on, Text::_('DATE_FORMAT_LC2'));
 }
 
-// Format payment method display name
-$paymentDisplay = $this->escape($order->orderpayment_type ?? '');
-$paymentDisplay = str_replace('_', ' ', $paymentDisplay);
-$paymentDisplay = ucwords($paymentDisplay);
+// Format payment method display name — reads plugin's display_name param so language overrides are respected
+$paymentDisplay = $this->escape(J2CommerceHelper::getPaymentDisplayName($order->orderpayment_type ?? ''));
 
 $statusBadgeHtml = J2htmlHelper::getOrderStatusHtml((int) ($order->order_state_id ?? 0));
 
@@ -406,6 +404,7 @@ if ($info) {
                                         <?php if (!empty($item->orderitem_sku)) : ?>
                                             <br><span class="uk-text-muted"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_SKU'); ?>: <?php echo $this->escape($item->orderitem_sku); ?></span>
                                         <?php endif; ?>
+                                        <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterDisplayLineItemTitle', [$item, $order, &$this->params]); ?>
                                     </div>
                                     <?php // Item price ?>
                                     <div class="uk-text-right uk-text-small uk-text-bold uk-text-nowrap uk-flex-none">

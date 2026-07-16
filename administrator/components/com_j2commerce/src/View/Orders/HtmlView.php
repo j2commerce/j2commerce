@@ -18,6 +18,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\MenuHelper;
 use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Form\Form;
 use Joomla\CMS\Helper\ContentHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -39,6 +40,8 @@ class HtmlView extends BaseHtmlView
     private $isEmptyState = false;
     public string $navbar;
     public array $orderStatuses         = [];
+    public ?Form $exportForm            = null;
+    public int $exportCount             = 0;
     public bool $hasPackingSlipTemplate = false;
     public bool $canDelete              = false;
 
@@ -60,6 +63,8 @@ class HtmlView extends BaseHtmlView
         $this->filterForm             = $model->getFilterForm();
         $this->activeFilters          = $model->getActiveFilters();
         $this->orderStatuses          = $this->loadOrderStatuses();
+        $this->exportForm             = $this->buildExportForm();
+        $this->exportCount            = (int) $model->getOrdersTotal();
         $this->hasPackingSlipTemplate = $this->hasPackingSlipTemplate();
         $this->canDelete              = $this->getCurrentUser()->authorise('core.delete', 'com_j2commerce');
 
@@ -98,6 +103,19 @@ class HtmlView extends BaseHtmlView
             ['version' => '6.0.8']
         );
 
+        if (!$this->isModal && !$this->isEmptyState) {
+            $wa->registerAndUseScript(
+                'com_j2commerce.admin-order-export',
+                'media/com_j2commerce/js/administrator/admin-order-export.js',
+                [],
+                ['defer' => true]
+            );
+
+            Text::script('COM_J2COMMERCE_EXPORT_CALCULATING');
+            Text::script('COM_J2COMMERCE_N_ORDERS_WILL_BE_EXPORTED');
+            Text::script('COM_J2COMMERCE_N_ORDERS_WILL_BE_EXPORTED_1');
+        }
+
         parent::display($tpl);
     }
 
@@ -134,13 +152,20 @@ class HtmlView extends BaseHtmlView
                     ->icon('icon-ellipsis-h');
             }
 
-            // Export button
+            // Export button — opens an offcanvas panel instead of submitting a task,
+            // so standardButton (which auto-submits via Joomla.submitbutton) can't be used.
             if ($canEditOrders && $canDo->get('core.edit')) {
-                $toolbar->standardButton('export')
-                    ->text('COM_J2COMMERCE_EXPORT')
-                    ->task('orders.export')
-                    ->listCheck(true)
-                    ->icon('icon-download');
+                $toolbar->customButton('export')
+                    ->html(
+                        '<joomla-toolbar-button>'
+                        . '<button type="button" class="btn btn-sm btn-secondary"'
+                        . ' data-bs-toggle="offcanvas" data-bs-target="#orderExportOffcanvas"'
+                        . ' aria-controls="orderExportOffcanvas">'
+                        . '<span class="icon-download" aria-hidden="true"></span> '
+                        . htmlspecialchars(Text::_('COM_J2COMMERCE_EXPORT'), ENT_QUOTES, 'UTF-8')
+                        . '</button>'
+                        . '</joomla-toolbar-button>'
+                    );
             }
         }
 
@@ -167,6 +192,60 @@ class HtmlView extends BaseHtmlView
         $db->setQuery($query);
 
         return $db->loadObjectList() ?: [];
+    }
+
+    /**
+     * Build the export offcanvas form, pre-filled from the current filter-bar state.
+     */
+    protected function buildExportForm(): Form
+    {
+        $form = new Form('com_j2commerce.export_orders', ['control' => '']);
+        $form->loadFile(JPATH_ADMINISTRATOR . '/components/com_j2commerce/forms/export_orders.xml');
+
+        $data = [
+            'search'      => (string) $this->state->get('filter.search', ''),
+            'since'       => (string) $this->state->get('filter.since', ''),
+            'until'       => (string) $this->state->get('filter.until', ''),
+            'coupon_code' => (string) $this->state->get('filter.coupon_code', ''),
+        ];
+
+        foreach (['from_j2commerce_order_id', 'to_j2commerce_order_id'] as $intField) {
+            $value = (int) $this->state->get('filter.' . $intField, 0);
+
+            if ($value > 0) {
+                $data[$intField] = $value;
+            }
+        }
+
+        foreach (['amount_from', 'amount_to'] as $floatField) {
+            $value = (float) $this->state->get('filter.' . $floatField, 0);
+
+            if ($value > 0) {
+                $data[$floatField] = $value;
+            }
+        }
+
+        $paymentType = $this->state->get('filter.payment_type');
+
+        if (\is_string($paymentType) && $paymentType !== '') {
+            $data['payment_type'] = [$paymentType];
+        }
+
+        $orderStateId = (int) $this->state->get('filter.order_state_id', 0);
+
+        if ($orderStateId > 0) {
+            $data['order_state_id'] = [$orderStateId];
+        }
+
+        $userId = (int) $this->state->get('filter.user_id', 0);
+
+        if ($userId > 0) {
+            $data['users'] = [$userId];
+        }
+
+        $form->bind($data);
+
+        return $form;
     }
 
     protected function loadPaymentPluginLanguages(): void

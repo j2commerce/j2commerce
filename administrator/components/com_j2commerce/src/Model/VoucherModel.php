@@ -16,11 +16,11 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CartHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Table\VoucheradjustmentTable;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\Mail\MailerFactoryInterface;
 use Joomla\CMS\MVC\Model\AdminModel;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Table\Table;
@@ -386,85 +386,6 @@ class VoucherModel extends AdminModel
     }
 
     /**
-     * Send a single voucher email.
-     *
-     * @param   int  $pk  The voucher ID.
-     *
-     * @return  bool  True on success, false on failure.
-     *
-     * @since   6.0.6
-     */
-    public function send(int $pk): bool
-    {
-        $item = $this->getItem($pk);
-
-        if (!$item || empty($item->email_to)) {
-            return false;
-        }
-
-        $mailer = Factory::getContainer()->get(MailerFactoryInterface::class)->createMailer();
-
-        $mailer->setSender([
-            Factory::getApplication()->get('mailfrom'),
-            Factory::getApplication()->get('fromname'),
-        ]);
-        $mailer->setSubject($item->subject);
-        $mailer->isHtml(true);
-        $mailer->addRecipient($item->email_to);
-        $mailer->setBody($item->email_body);
-
-        return $mailer->Send() === true;
-    }
-
-    /**
-     * Send voucher emails to multiple recipients.
-     *
-     * @param   array  $cids  Array of voucher IDs to send.
-     *
-     * @return  bool  True on success, false if any failed.
-     *
-     * @since   6.0.6
-     */
-    public function sendVouchers(array $cids): bool
-    {
-        $config      = Factory::getApplication()->getConfig();
-        $emailHelper = J2CommerceHelper::email();
-
-        $mailfrom = $config->get('mailfrom');
-        $fromname = $config->get('fromname');
-
-        $failed = 0;
-
-        foreach ($cids as $cid) {
-            $voucherTable = $this->getTable();
-            $voucherTable->load($cid);
-
-            $mailer = Factory::getContainer()->get(MailerFactoryInterface::class)->createMailer();
-            $mailer->setSender([$mailfrom, $fromname]);
-            $mailer->isHtml(true);
-            $mailer->addRecipient($voucherTable->email_to);
-            $mailer->setSubject($voucherTable->subject);
-
-            // Parse inline images before setting the body
-            $emailHelper->processInlineImages($voucherTable->email_body, $mailer);
-            $mailer->setBody($voucherTable->email_body);
-
-            // Allow plugins to modify
-            J2CommerceHelper::plugin()->event('BeforeSendVoucher', [$voucherTable, &$mailer]);
-
-            if ($mailer->Send() !== true) {
-                $this->setError(Text::sprintf('COM_J2COMMERCE_VOUCHERS_SENDING_FAILED_TO_RECIPIENT', $voucherTable->email_to));
-                $failed++;
-            }
-
-            J2CommerceHelper::plugin()->event('AfterSendVoucher', [$voucherTable, &$mailer]);
-            $mailer = null;
-        }
-
-        return $failed === 0;
-    }
-
-    /**
      * Generate a unique voucher code.
      *
      * @param   int  $length  Length of the code.
@@ -678,6 +599,273 @@ class VoucherModel extends AdminModel
     }
 
     /**
+     * Get a voucher's face value directly from the vouchers table.
+     *
+     * @param   int  $id  The voucher ID.
+     *
+     * @return  float|null  The voucher value, or null if not found.
+     *
+     * @since   6.5.0
+     */
+    private function getVoucherValue(int $id): ?float
+    {
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true);
+
+        $query->select($db->quoteName('voucher_value'))
+            ->from($db->quoteName('#__j2commerce_vouchers'))
+            ->where($db->quoteName('j2commerce_voucher_id') . ' = :id')
+            ->bind(':id', $id, ParameterType::INTEGER);
+
+        $db->setQuery($query);
+        $value = $db->loadResult();
+
+        return $value !== null ? (float) $value : null;
+    }
+
+    /**
+     * @return  array{0: float, 1: float, 2: float}  [creditTotal, debitTotal, correctionNet]
+     *
+     * @since   6.5.0
+     */
+    private function getAdjustmentTotals(int $id): array
+    {
+        $creditTotal   = 0.0;
+        $debitTotal    = 0.0;
+        $correctionNet = 0.0;
+
+        foreach ($this->getAdjustments($id) as $adjustment) {
+            match ($adjustment->adjustment_type) {
+                'credit'     => $creditTotal += (float) $adjustment->amount,
+                'debit'      => $debitTotal += (float) $adjustment->amount,
+                'correction' => $correctionNet += ((float) $adjustment->balance_after - (float) $adjustment->balance_before),
+                default      => null,
+            };
+        }
+
+        return [$creditTotal, $debitTotal, $correctionNet];
+    }
+
+    /**
+     * Derived remaining balance: face value − redemptions + credits − debits ± corrections.
+     * When $orderId is given, that order's own redemption is excluded (admin edit-in-place).
+     *
+     * @since   6.5.0
+     */
+    public function getRemainingBalance(int $id, string $orderId = ''): float
+    {
+        $voucherValue = $this->getVoucherValue($id);
+
+        if ($voucherValue === null) {
+            return 0.0;
+        }
+
+        $redeemedTotal = $this->getAdminVoucherHistoryTotal($id, $orderId) ?? 0.0;
+        [$creditTotal, $debitTotal, $correctionNet] = $this->getAdjustmentTotals($id);
+
+        return round($voucherValue - $redeemedTotal + $creditTotal - $debitTotal + $correctionNet, 5);
+    }
+
+    /**
+     * Append a balance-adjustment ledger row. Credit/debit amounts are always a magnitude;
+     * correction accepts a signed delta directly.
+     *
+     * @throws  \InvalidArgumentException  Invalid type or zero-value amount.
+     * @throws  \RuntimeException          Adjustment would drive the balance negative, or the ledger insert failed.
+     *
+     * @since   6.5.0
+     */
+    public function adjustBalance(int $id, string $type, float $amount, string $reason, ?string $note = null, ?string $orderId = null): float
+    {
+        if (!\in_array($type, ['credit', 'debit', 'correction'], true)) {
+            throw new \InvalidArgumentException(Text::_('COM_J2COMMERCE_ERR_ADJUSTMENT_TYPE_INVALID'));
+        }
+
+        $delta = match ($type) {
+            'credit'     => abs($amount),
+            'debit'      => -abs($amount),
+            'correction' => $amount,
+        };
+
+        if ($delta === 0.0) {
+            throw new \InvalidArgumentException(Text::_('COM_J2COMMERCE_ERR_ADJUSTMENT_AMOUNT_INVALID'));
+        }
+
+        $db = $this->getDatabase();
+        $db->transactionStart();
+
+        try {
+            // Serialize concurrent adjustments on the same voucher: without this lock the
+            // snapshot SELECTs in getRemainingBalance() run non-locking under REPEATABLE READ,
+            // letting two racing admins both pass the negative-balance guard (review M3).
+            // The database layer has no forUpdate() clause support, so the suffix is appended
+            // to hand-built SQL; $id is a strictly-typed int cast inline (no user string reaches SQL).
+            $db->setQuery(
+                'SELECT ' . $db->quoteName('j2commerce_voucher_id')
+                . ' FROM ' . $db->quoteName('#__j2commerce_vouchers')
+                . ' WHERE ' . $db->quoteName('j2commerce_voucher_id') . ' = ' . (int) $id
+                . ' FOR UPDATE'
+            );
+
+            if ($db->loadResult() === null) {
+                throw new \RuntimeException(Text::_('COM_J2COMMERCE_ERR_ADJUSTMENT_SAVE_FAILED'));
+            }
+
+            $balanceBefore = $this->getRemainingBalance($id);
+            $balanceAfter  = round($balanceBefore + $delta, 5);
+
+            if ($balanceAfter < 0) {
+                throw new \RuntimeException(Text::_('COM_J2COMMERCE_ERR_ADJUSTMENT_BALANCE_NEGATIVE'));
+            }
+
+            $table                        = new VoucheradjustmentTable($db);
+            $table->j2commerce_voucher_id = $id;
+            $table->adjustment_type       = $type;
+            $table->amount                = abs($delta);
+            $table->balance_before        = $balanceBefore;
+            $table->balance_after         = $balanceAfter;
+            $table->reason                = $reason;
+            $table->note                  = $note;
+            $table->order_id              = $orderId;
+
+            if (!$table->check() || !$table->store()) {
+                throw new \RuntimeException($table->getError() ?: Text::_('COM_J2COMMERCE_ERR_ADJUSTMENT_SAVE_FAILED'));
+            }
+
+            $db->transactionCommit();
+        } catch (\Throwable $e) {
+            $db->transactionRollback();
+
+            throw $e;
+        }
+
+        return $balanceAfter;
+    }
+
+    /**
+     * Raw balance-adjustment ledger rows for a voucher, newest first.
+     *
+     * @return  object[]
+     *
+     * @since   6.5.0
+     */
+    public function getAdjustments(int $id): array
+    {
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true);
+
+        $query->select(
+            $db->quoteName([
+                'a.j2commerce_voucheradjustment_id',
+                'a.adjustment_type',
+                'a.amount',
+                'a.balance_before',
+                'a.balance_after',
+                'a.reason',
+                'a.note',
+                'a.order_id',
+                'a.created_by',
+                'a.created_on',
+            ])
+        );
+        $query->select($db->quoteName('u.name', 'created_by_name'))
+            ->from($db->quoteName('#__j2commerce_voucheradjustments', 'a'))
+            ->join('LEFT', $db->quoteName('#__users', 'u') . ' ON ' . $db->quoteName('u.id') . ' = ' . $db->quoteName('a.created_by'))
+            ->where($db->quoteName('a.j2commerce_voucher_id') . ' = :id')
+            ->order($db->quoteName('a.created_on') . ' DESC')
+            ->bind(':id', $id, ParameterType::INTEGER);
+
+        $db->setQuery($query);
+
+        return $db->loadObjectList() ?: [];
+    }
+
+    /**
+     * Unified redemption + adjustment ledger for a voucher, newest first, each row
+     * carrying a running remaining-balance snapshot computed chronologically.
+     *
+     * @return  object[]
+     *
+     * @since   6.5.0
+     */
+    public function getLedger(int $id): array
+    {
+        $db           = $this->getDatabase();
+        $query        = $db->getQuery(true);
+        $discountType = 'voucher';
+
+        $query->select(
+            $db->quoteName([
+                'o.order_id',
+                'o.j2commerce_order_id',
+                'o.user_email',
+                'o.created_on',
+                'o.invoice_prefix',
+                'o.invoice_number',
+            ])
+        );
+        $query->select('ROUND(' . $db->quoteName('od.discount_amount') . ' + ' . $db->quoteName('od.discount_tax') . ', 5) AS ' . $db->quoteName('redeemed_amount'));
+        $query->from($db->quoteName('#__j2commerce_orderdiscounts', 'od'))
+            ->join('LEFT', $db->quoteName('#__j2commerce_orders', 'o') . ' ON ' . $db->quoteName('od.order_id') . ' = ' . $db->quoteName('o.order_id'))
+            ->where($db->quoteName('od.discount_type') . ' = :discountType')
+            ->where($db->quoteName('od.discount_entity_id') . ' = :id')
+            ->where('(' . $db->quoteName('o.order_state_id') . ' IS NULL OR ' . $db->quoteName('o.order_state_id') . ' != 5)')
+            ->bind(':discountType', $discountType)
+            ->bind(':id', $id, ParameterType::INTEGER);
+
+        $db->setQuery($query);
+        $redemptions = $db->loadObjectList() ?: [];
+
+        $rows = [];
+
+        foreach ($redemptions as $redemption) {
+            $rows[] = (object) [
+                'type'          => 'redemption',
+                'amount'        => (float) $redemption->redeemed_amount,
+                'signed_amount' => -1 * (float) $redemption->redeemed_amount,
+                'reference'     => $redemption->order_id,
+                'order_pk'      => (int) $redemption->j2commerce_order_id,
+                'actor'         => $redemption->user_email,
+                'reason'        => null,
+                'note'          => null,
+                'created_on'    => $redemption->created_on,
+            ];
+        }
+
+        foreach ($this->getAdjustments($id) as $adjustment) {
+            $signed = match ($adjustment->adjustment_type) {
+                'credit'     => (float) $adjustment->amount,
+                'debit'      => -1 * (float) $adjustment->amount,
+                'correction' => (float) $adjustment->balance_after - (float) $adjustment->balance_before,
+                default      => 0.0,
+            };
+
+            $rows[] = (object) [
+                'type'          => $adjustment->adjustment_type,
+                'amount'        => abs($signed),
+                'signed_amount' => $signed,
+                'reference'     => $adjustment->order_id,
+                'order_pk'      => null,
+                'actor'         => $adjustment->created_by_name ?: Text::_('COM_J2COMMERCE_DELETED_USER'),
+                'reason'        => $adjustment->reason,
+                'note'          => $adjustment->note,
+                'created_on'    => $adjustment->created_on,
+            ];
+        }
+
+        usort($rows, static fn (object $a, object $b): int => strcmp((string) $a->created_on, (string) $b->created_on));
+
+        $running = $this->getVoucherValue($id) ?? 0.0;
+
+        foreach ($rows as $row) {
+            $running += $row->signed_amount;
+            $row->running_balance = round($running, 5);
+        }
+
+        return array_reverse($rows);
+    }
+
+    /**
      * Remove voucher from session and cart.
      *
      * @return  void
@@ -822,8 +1010,7 @@ class VoucherModel extends AdminModel
      */
     private function validateUsageLimit(): void
     {
-        $total  = $this->getVoucherHistoryTotal($this->voucher->j2commerce_voucher_id);
-        $amount = $this->voucher->voucher_value - ($total ?? 0);
+        $amount = $this->getRemainingBalance($this->voucher->j2commerce_voucher_id);
 
         if ($amount <= 0) {
             throw new \Exception(Text::_('COM_J2COMMERCE_VOUCHER_USAGE_LIMIT_HAS_REACHED'));
@@ -844,8 +1031,7 @@ class VoucherModel extends AdminModel
     private function validateAdminUsageLimit(object $order): void
     {
         $orderId = $order->order_id ?? '';
-        $total   = $this->getAdminVoucherHistoryTotal($this->voucher->j2commerce_voucher_id, $orderId);
-        $amount  = $this->voucher->voucher_value - ($total ?? 0);
+        $amount  = $this->getRemainingBalance($this->voucher->j2commerce_voucher_id, $orderId);
 
         if ($amount <= 0) {
             throw new \Exception(Text::_('COM_J2COMMERCE_VOUCHER_USAGE_LIMIT_HAS_REACHED'));
@@ -894,21 +1080,8 @@ class VoucherModel extends AdminModel
     public function getDiscountAmount(float $price, object $cartitem, object $order, bool $single = true): float
     {
         $platform = J2CommerceHelper::platform();
-
-        if ($platform->isClient('administrator')) {
-            $voucherHistoryTotal = $this->getAdminVoucherHistoryTotal(
-                $this->voucher->j2commerce_voucher_id,
-                $order->order_id ?? ''
-            );
-        } else {
-            $voucherHistoryTotal = $this->getVoucherHistoryTotal($this->voucher->j2commerce_voucher_id);
-        }
-
-        if ($voucherHistoryTotal) {
-            $amount = $this->voucher->voucher_value - $voucherHistoryTotal;
-        } else {
-            $amount = $this->voucher->voucher_value;
-        }
+        $orderId  = $platform->isClient('administrator') ? ($order->order_id ?? '') : '';
+        $amount   = max(0.0, $this->getRemainingBalance($this->voucher->j2commerce_voucher_id, $orderId));
 
         // Calculate discount percentage based on item proportion
         $params        = J2CommerceHelper::config();
@@ -951,13 +1124,7 @@ class VoucherModel extends AdminModel
      */
     public function getAdminDiscountAmount(float $price): float
     {
-        $voucherHistoryTotal = $this->getVoucherHistoryTotal($this->voucher->j2commerce_voucher_id);
-
-        if ($voucherHistoryTotal) {
-            $amount = $this->voucher->voucher_value - $voucherHistoryTotal;
-        } else {
-            $amount = $this->voucher->voucher_value;
-        }
+        $amount = max(0.0, $this->getRemainingBalance($this->voucher->j2commerce_voucher_id));
 
         if ($price > $amount) {
             $discount = $amount;

@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\Database\ParameterType;
@@ -26,6 +27,16 @@ use Joomla\Database\QueryInterface;
  */
 class VouchersModel extends ListModel
 {
+    /** D4 status precedence, reused across list/filter/CSV/customer view/API. */
+    public const STATUS_CASE_SQL = "CASE"
+        . " WHEN a.enabled = 0 THEN 'disabled'"
+        . " WHEN a.valid_to IS NOT NULL AND a.valid_to < NOW() THEN 'expired'"
+        . " WHEN a.valid_from IS NOT NULL AND a.valid_from > NOW() THEN 'not_yet_valid'"
+        . " WHEN (a.voucher_value - COALESCE(red.redeemed_total, 0)"
+        . " + COALESCE(adj.credit_total, 0) - COALESCE(adj.debit_total, 0)"
+        . " + COALESCE(adj.correction_net, 0)) <= 0 THEN 'depleted'"
+        . " ELSE 'active' END";
+
     public function __construct($config = [])
     {
         if (empty($config['filter_fields'])) {
@@ -39,6 +50,9 @@ class VouchersModel extends ListModel
                 'created_on', 'a.created_on',
                 'valid_from', 'a.valid_from',
                 'valid_to', 'a.valid_to',
+                'remaining_balance',
+                'uses_count',
+                'derived_status',
             ];
         }
 
@@ -53,6 +67,15 @@ class VouchersModel extends ListModel
         $enabled = $this->getUserStateFromRequest($this->context . '.filter.enabled', 'filter_enabled', '', 'string');
         $this->setState('filter.enabled', $enabled);
 
+        $status = $this->getUserStateFromRequest($this->context . '.filter.status', 'filter_status', '', 'string');
+        $this->setState('filter.status', $status);
+
+        $lowBalance = $this->getUserStateFromRequest($this->context . '.filter.low_balance', 'filter_low_balance', '', 'string');
+        $this->setState('filter.low_balance', $lowBalance);
+
+        $unassigned = $this->getUserStateFromRequest($this->context . '.filter.unassigned', 'filter_unassigned', '', 'string');
+        $this->setState('filter.unassigned', $unassigned);
+
         parent::populateState($ordering, $direction);
     }
 
@@ -60,6 +83,9 @@ class VouchersModel extends ListModel
     {
         $id .= ':' . $this->getState('filter.search');
         $id .= ':' . $this->getState('filter.enabled');
+        $id .= ':' . $this->getState('filter.status');
+        $id .= ':' . $this->getState('filter.low_balance');
+        $id .= ':' . $this->getState('filter.unassigned');
 
         return parent::getStoreId($id);
     }
@@ -69,10 +95,15 @@ class VouchersModel extends ListModel
         $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
+        $remainingBalanceExpr = '(a.voucher_value - COALESCE(red.redeemed_total, 0)'
+            . ' + COALESCE(adj.credit_total, 0) - COALESCE(adj.debit_total, 0)'
+            . ' + COALESCE(adj.correction_net, 0))';
+
         $query->select(
             $db->quoteName([
                 'a.j2commerce_voucher_id',
                 'a.order_id',
+                'a.user_id',
                 'a.email_to',
                 'a.voucher_code',
                 'a.voucher_type',
@@ -87,7 +118,46 @@ class VouchersModel extends ListModel
             ])
         );
 
+        $query->select('COALESCE(red.redeemed_total, 0) AS ' . $db->quoteName('redeemed_total'));
+        $query->select('COALESCE(red.uses_count, 0) AS ' . $db->quoteName('uses_count'));
+        $query->select($remainingBalanceExpr . ' AS ' . $db->quoteName('remaining_balance'));
+        $query->select(self::STATUS_CASE_SQL . ' AS ' . $db->quoteName('derived_status'));
+        $query->select($db->quoteName('u.name', 'recipient_name'));
+
         $query->from($db->quoteName('#__j2commerce_vouchers', 'a'));
+        $query->leftJoin($db->quoteName('#__users', 'u') . ' ON ' . $db->quoteName('u.id') . ' = ' . $db->quoteName('a.user_id'));
+
+        // Subquery binds do not propagate to the outer query's execution — the constant
+        // discount_type value is quoted directly instead (not user input).
+        $redemptions = $db->getQuery(true)
+            ->select(
+                $db->quoteName('od.discount_entity_id') . ', '
+                . 'SUM(' . $db->quoteName('od.discount_amount') . ' + ' . $db->quoteName('od.discount_tax') . ') AS '
+                . $db->quoteName('redeemed_total') . ', '
+                . 'COUNT(*) AS ' . $db->quoteName('uses_count')
+            )
+            ->from($db->quoteName('#__j2commerce_orderdiscounts', 'od'))
+            ->leftJoin($db->quoteName('#__j2commerce_orders', 'o') . ' ON ' . $db->quoteName('od.order_id') . ' = ' . $db->quoteName('o.order_id'))
+            ->where($db->quoteName('od.discount_type') . ' = ' . $db->quote('voucher'))
+            ->where('(' . $db->quoteName('o.order_state_id') . ' IS NULL OR ' . $db->quoteName('o.order_state_id') . ' != 5)')
+            ->group($db->quoteName('od.discount_entity_id'));
+
+        $adjustments = $db->getQuery(true)
+            ->select(
+                $db->quoteName('j2commerce_voucher_id') . ', '
+                . 'SUM(CASE WHEN ' . $db->quoteName('adjustment_type') . " = 'credit' THEN " . $db->quoteName('amount') . ' ELSE 0 END) AS '
+                . $db->quoteName('credit_total') . ', '
+                . 'SUM(CASE WHEN ' . $db->quoteName('adjustment_type') . " = 'debit' THEN " . $db->quoteName('amount') . ' ELSE 0 END) AS '
+                . $db->quoteName('debit_total') . ', '
+                . "SUM(CASE WHEN " . $db->quoteName('adjustment_type') . " = 'correction'"
+                . ' THEN (' . $db->quoteName('balance_after') . ' - ' . $db->quoteName('balance_before') . ') ELSE 0 END) AS '
+                . $db->quoteName('correction_net')
+            )
+            ->from($db->quoteName('#__j2commerce_voucheradjustments'))
+            ->group($db->quoteName('j2commerce_voucher_id'));
+
+        $query->leftJoin('(' . (string) $redemptions . ') AS ' . $db->quoteName('red') . ' ON ' . $db->quoteName('red.discount_entity_id') . ' = ' . $db->quoteName('a.j2commerce_voucher_id'));
+        $query->leftJoin('(' . (string) $adjustments . ') AS ' . $db->quoteName('adj') . ' ON ' . $db->quoteName('adj.j2commerce_voucher_id') . ' = ' . $db->quoteName('a.j2commerce_voucher_id'));
 
         // Filter by enabled state
         $enabled = $this->getState('filter.enabled');
@@ -98,6 +168,34 @@ class VouchersModel extends ListModel
                 ->bind(':enabled', $enabled, ParameterType::INTEGER);
         } elseif ($enabled === '') {
             $query->where($db->quoteName('a.enabled') . ' IN (0, 1)');
+        }
+
+        // Filter by D4 derived status
+        $status = (string) $this->getState('filter.status');
+
+        if ($status !== '' && in_array($status, ['disabled', 'expired', 'not_yet_valid', 'depleted', 'active'], true)) {
+            $query->having(self::STATUS_CASE_SQL . ' = :status')
+                ->bind(':status', $status);
+        }
+
+        // Filter by low balance (0 < remaining < threshold% of voucher_value)
+        $lowBalance = (string) $this->getState('filter.low_balance');
+
+        if ($lowBalance === '1') {
+            $lowBalancePct = (float) J2CommerceHelper::config()->get('voucher_low_balance_pct', 20);
+            $query->having(
+                '(' . $remainingBalanceExpr . ' > 0 AND ' . $remainingBalanceExpr . ' < (a.voucher_value * :lowBalancePct / 100))'
+            )
+                ->bind(':lowBalancePct', $lowBalancePct);
+        }
+
+        // Filter by unassigned (no owner, no recipient email)
+        $unassigned = (string) $this->getState('filter.unassigned');
+
+        if ($unassigned === '1') {
+            $query->where(
+                '(' . $db->quoteName('a.user_id') . ' IS NULL AND (' . $db->quoteName('a.email_to') . " = '' OR " . $db->quoteName('a.email_to') . ' IS NULL))'
+            );
         }
 
         // Filter by search
@@ -121,12 +219,15 @@ class VouchersModel extends ListModel
             }
         }
 
-        // Add ordering clause
-        $orderCol  = $this->state->get('list.ordering', 'a.ordering');
-        $orderDir  = $this->state->get('list.direction', 'ASC');
-        $ordering  = $db->escape($orderCol) . ' ' . $db->escape($orderDir);
+        // Add ordering clause — validated against the filter_fields allow-list, never bound as identifier
+        $orderCol = $this->state->get('list.ordering', 'a.ordering');
+        $orderDir = strtoupper((string) $this->state->get('list.direction', 'ASC')) === 'DESC' ? 'DESC' : 'ASC';
 
-        $query->order($ordering);
+        if (!in_array($orderCol, $this->filter_fields, true)) {
+            $orderCol = 'a.ordering';
+        }
+
+        $query->order($db->escape($orderCol) . ' ' . $orderDir);
 
         return $query;
     }

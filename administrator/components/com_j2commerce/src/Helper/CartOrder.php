@@ -1510,18 +1510,27 @@ class CartOrder
         // Create the order record via OrderTable
         $orderTable = $mvcFactory->createTable('Order', 'Administrator');
 
+        // Round every stored money field to the base currency's decimal scale so the
+        // total is never over-precise (e.g. a 9.25% shipping tax yields 0.925 → a
+        // 3-decimal 39.925 total for a 2-decimal currency). Each field is rounded to
+        // the currency's own scale — 2 for USD/EUR, 0 for JPY, 3 for BHD/KWD — so the
+        // stored total matches what the gateway charges and every downstream sum
+        // (Balance Due, refunds, reports) reconciles exactly.
+        $moneyScale = CurrencyHelper::getDecimalPlace(ConfigHelper::getDefaultCurrency());
+        $money      = static fn (float $value): float => round($value, $moneyScale);
+
         $orderData = [
             'user_id'               => $userId,
             'user_email'            => $userEmail,
             'cart_id'               => $this->cart_id,
-            'order_total'           => $this->order_total,
-            'order_subtotal'        => $this->order_subtotal,
-            'order_subtotal_ex_tax' => $this->order_subtotal,
-            'order_tax'             => $this->order_tax,
-            'order_shipping'        => $this->order_shipping,
-            'order_shipping_tax'    => $this->order_shipping_tax,
-            'order_discount'        => $this->order_discount,
-            'order_surcharge'       => $this->order_surcharge,
+            'order_total'           => $money($this->order_total),
+            'order_subtotal'        => $money($this->order_subtotal),
+            'order_subtotal_ex_tax' => $money($this->order_subtotal),
+            'order_tax'             => $money($this->order_tax),
+            'order_shipping'        => $money($this->order_shipping),
+            'order_shipping_tax'    => $money($this->order_shipping_tax),
+            'order_discount'        => $money($this->order_discount),
+            'order_surcharge'       => $money($this->order_surcharge),
             'orderpayment_type'     => $this->orderpayment_type,
             'currency_id'           => $currencyId,
             'currency_code'         => $currencyCode,

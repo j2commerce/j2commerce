@@ -150,7 +150,7 @@ class ReportsController extends AdminController
             // Header row from object keys
             $firstItem = reset($items);
             $keys      = array_keys((array) $firstItem);
-            fputcsv($output, $keys);
+            fputcsv($output, $keys, ',', '"', '');
 
             // Data rows
             foreach ($items as $item) {
@@ -164,7 +164,7 @@ class ReportsController extends AdminController
                     }
                     $row[] = $value;
                 }
-                fputcsv($output, $row);
+                fputcsv($output, $row, ',', '"', '');
             }
         }
 
