@@ -60,10 +60,6 @@ class HtmlView extends BaseHtmlView
     public array $monthlySales = [];
     public array $yearlySales  = [];
 
-    // Plugin tab injection (uitab format) — main = col-md-8, side = col-md-4
-    public string $dashboardMainTabHtml = '';
-    public string $dashboardSideTabHtml = '';
-
     // Plugin quick icons
     public array $pluginQuickIcons = [];
 
@@ -169,10 +165,9 @@ class HtmlView extends BaseHtmlView
             'storeTimezone'    => $tz,
         ]);
 
-        // Plugin tab injection — plugins output uitab.addTab/endTab blocks
-        $eventData                  = [$this->monthlySales, $this->yearlySales, $this->revenueByDay];
-        $this->dashboardMainTabHtml = J2CommerceHelper::plugin()->eventWithHtml('DashboardMainTabContent', $eventData)->getArgument('html', '');
-        $this->dashboardSideTabHtml = J2CommerceHelper::plugin()->eventWithHtml('DashboardSideTabContent', $eventData)->getArgument('html', '');
+        // Plugin dashboard tabs (DashboardMainTabContent/DashboardSideTabContent) are
+        // dispatched by tmpl/dashboard/default.php inside the open uitab.startTabSet —
+        // uitab.addTab reads static state that startTabSet must have registered first.
 
         // Collect plugin quick icons
         $quickIconEvent = J2CommerceHelper::plugin()->event('GetQuickIcons', ['context' => 'j2commerce_dashboard']);

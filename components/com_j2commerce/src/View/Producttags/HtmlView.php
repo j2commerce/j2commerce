@@ -205,7 +205,7 @@ class HtmlView extends BaseHtmlView
         // If a plugin provided HTML output, still prepare document first
         // This ensures breadcrumbs, page title, and meta tags are set even when
         // a template plugin handles the actual HTML rendering
-        if (!empty($view_html)) {
+        if (!empty($viewHtml)) {
             $this->_prepareDocument();
             echo $viewHtml;
 

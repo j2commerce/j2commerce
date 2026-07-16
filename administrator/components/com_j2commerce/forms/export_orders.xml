@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Orders CSV export offcanvas form.
+
+    Rendered without a control prefix so field names post directly to
+    orders.export / orders.exportCount (except the users field, whose
+    Modal_UserMultiselect implementation posts jform[request][user_ids][]).
+-->
+<form>
+    <fields>
+        <field
+            name="search"
+            type="text"
+            label="COM_J2COMMERCE_FILTER_SEARCH_LABEL"
+            hint="COM_J2COMMERCE_FILTER_SEARCH_LABEL"
+        />
+
+        <field
+            name="from_j2commerce_order_id"
+            type="number"
+            label="COM_J2COMMERCE_FILTER_ORDER_ID_FROM"
+            hint="COM_J2COMMERCE_FILTER_ORDER_ID_FROM"
+            min="0"
+            step="1"
+        />
+
+        <field
+            name="to_j2commerce_order_id"
+            type="number"
+            label="COM_J2COMMERCE_FILTER_ORDER_ID_TO"
+            hint="COM_J2COMMERCE_FILTER_ORDER_ID_TO"
+            min="0"
+            step="1"
+        />
+
+        <field
+            name="since"
+            type="calendar"
+            label="COM_J2COMMERCE_FILTER_DATE_FROM"
+            hint="COM_J2COMMERCE_FILTER_DATE_FROM"
+            format="%Y-%m-%d"
+            showtime="false"
+        />
+
+        <field
+            name="until"
+            type="calendar"
+            label="COM_J2COMMERCE_FILTER_DATE_TO"
+            hint="COM_J2COMMERCE_FILTER_DATE_TO"
+            format="%Y-%m-%d"
+            showtime="false"
+        />
+
+        <field
+            name="users"
+            type="Modal_UserMultiselect"
+            label="COM_J2COMMERCE_EXPORT_CUSTOMER_LABEL"
+            addfieldprefix="J2Commerce\Library\J2Commerce\Field"
+        />
+
+        <field
+            name="amount_from"
+            type="number"
+            label="COM_J2COMMERCE_FILTER_AMOUNT_FROM"
+            hint="COM_J2COMMERCE_FILTER_AMOUNT_FROM_HINT"
+            step="0.01"
+            min="0"
+        />
+
+        <field
+            name="amount_to"
+            type="number"
+            label="COM_J2COMMERCE_FILTER_AMOUNT_TO"
+            hint="COM_J2COMMERCE_FILTER_AMOUNT_TO_HINT"
+            step="0.01"
+            min="0"
+        />
+
+        <field
+            name="payment_type"
+            type="sql"
+            query="SELECT element AS value, name AS text FROM #__extensions WHERE type = &apos;plugin&apos; AND folder = &apos;j2commerce&apos; AND element LIKE &apos;payment_%&apos; AND enabled = 1 ORDER BY name"
+            key_field="value"
+            value_field="text"
+            translate="true"
+            multiple="true"
+            layout="joomla.form.field.list-fancy-select"
+            label="COM_J2COMMERCE_EXPORT_PAYMENT_METHOD_LABEL"
+        />
+
+        <field
+            name="order_state_id"
+            type="sql"
+            query="SELECT j2commerce_orderstatus_id AS value, orderstatus_name AS text FROM #__j2commerce_orderstatuses WHERE enabled = 1 ORDER BY ordering ASC"
+            key_field="value"
+            value_field="text"
+            translate="true"
+            multiple="true"
+            layout="joomla.form.field.list-fancy-select"
+            label="COM_J2COMMERCE_EXPORT_ORDER_STATUS_LABEL"
+        />
+
+        <field
+            name="coupon_code"
+            type="text"
+            label="COM_J2COMMERCE_FILTER_COUPON_CODE"
+            hint="COM_J2COMMERCE_FILTER_COUPON_CODE_HINT"
+        />
+    </fields>
+</form>

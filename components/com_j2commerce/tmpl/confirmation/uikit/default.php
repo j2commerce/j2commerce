@@ -404,6 +404,7 @@ if ($info) {
                                         <?php if (!empty($item->orderitem_sku)) : ?>
                                             <br><span class="uk-text-muted"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_SKU'); ?>: <?php echo $this->escape($item->orderitem_sku); ?></span>
                                         <?php endif; ?>
+                                        <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterDisplayLineItemTitle', [$item, $order, &$this->params]); ?>
                                     </div>
                                     <?php // Item price ?>
                                     <div class="uk-text-right uk-text-small uk-text-bold uk-text-nowrap uk-flex-none">

@@ -9,6 +9,7 @@
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Helper\ModuleHelper;
 use Joomla\CMS\HTML\HTMLHelper;
@@ -22,6 +23,10 @@ use Joomla\CMS\Session\Session;
 $doc = Factory::getApplication()->getDocument();
 $renderer = $doc->loadRenderer('modules');
 $options = ['style' => 'none'];
+
+// Plugin dashboard tabs must be dispatched INSIDE the open uitab.startTabSet below —
+// uitab.addTab reads the tabset's static state that startTabSet registers.
+$dashboardTabEventData = [$this->monthlySales, $this->yearlySales, $this->revenueByDay];
 
 // Calculate % change for KPIs
 $prev = $this->previousPeriod;
@@ -213,7 +218,7 @@ $doc->getWebAssetManager()
                         endforeach;
                     endif; ?>
 
-                    <?php echo $this->dashboardMainTabHtml; ?>
+                    <?php echo J2CommerceHelper::plugin()->eventWithHtml('DashboardMainTabContent', $dashboardTabEventData)->getArgument('html', ''); ?>
 
                     <?php echo HTMLHelper::_('uitab.addTab', 'dashboardMainTabs', 'dashboard-add-main', '<span aria-hidden="true">+</span><span class="visually-hidden">' . Text::_('COM_J2COMMERCE_DASHBOARD_ADD_TAB_LABEL') . '</span>'); ?>
                         <p class="text-body-secondary"><?php echo Text::sprintf('COM_J2COMMERCE_DASHBOARD_ADD_TAB_HELP', '<code>j2commerce-dashboard-main-tab</code>'); ?></p>
@@ -241,7 +246,7 @@ $doc->getWebAssetManager()
                         echo HTMLHelper::_('uitab.endTab');
                     endforeach; ?>
 
-                    <?php echo $this->dashboardSideTabHtml; ?>
+                    <?php echo J2CommerceHelper::plugin()->eventWithHtml('DashboardSideTabContent', $dashboardTabEventData)->getArgument('html', ''); ?>
 
                     <?php echo HTMLHelper::_('uitab.addTab', 'dashboardSideTabs', 'dashboard-add-side', '<span aria-hidden="true">+</span><span class="visually-hidden">' . Text::_('COM_J2COMMERCE_DASHBOARD_ADD_TAB_LABEL') . '</span>'); ?>
                         <p class="text-body-secondary"><?php echo Text::sprintf('COM_J2COMMERCE_DASHBOARD_ADD_TAB_HELP', '<code>j2commerce-dashboard-side-tab</code>'); ?></p>

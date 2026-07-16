@@ -30,6 +30,8 @@ use Joomla\Database\QueryInterface;
  */
 class OrdersModel extends ListModel
 {
+    private const EXPORT_CHUNK_SIZE = 500;
+
     public function __construct($config = [])
     {
         if (empty($config['filter_fields'])) {
@@ -83,8 +85,10 @@ class OrdersModel extends ListModel
         $id .= ':' . $this->getState('filter.search');
         $id .= ':' . $this->getState('filter.order_state_id');
         $id .= ':' . serialize($this->getState('filter.orderstatus'));
-        $id .= ':' . $this->getState('filter.payment_type');
+        $paymentType = $this->getState('filter.payment_type');
+        $id .= ':' . (\is_array($paymentType) ? implode(',', $paymentType) : (string) $paymentType);
         $id .= ':' . $this->getState('filter.user_id');
+        $id .= ':' . serialize($this->getState('filter.user_ids', []));
         $id .= ':' . $this->getState('filter.since');
         $id .= ':' . $this->getState('filter.until');
         $id .= ':' . $this->getState('filter.from_invoice');
@@ -278,9 +282,15 @@ class OrdersModel extends ListModel
             }
         }
 
-        // Payment type filter (exact match on plugin element name)
+        // Payment type filter (exact match on plugin element name; array = any of)
         $paymentType = $this->getState('filter.payment_type');
-        if (!empty($paymentType)) {
+        if (\is_array($paymentType)) {
+            $paymentTypes = array_values(array_filter(array_map('strval', $paymentType)));
+
+            if ($paymentTypes !== []) {
+                $query->whereIn($db->quoteName('a.orderpayment_type'), $paymentTypes, ParameterType::STRING);
+            }
+        } elseif (!empty($paymentType)) {
             $query->where($db->quoteName('a.orderpayment_type') . ' = :paymentType')
                 ->bind(':paymentType', $paymentType);
         }
@@ -290,6 +300,16 @@ class OrdersModel extends ListModel
         if ($userId > 0) {
             $query->where($db->quoteName('a.user_id') . ' = :userId')
                 ->bind(':userId', $userId, ParameterType::INTEGER);
+        }
+
+        // Multiple users filter (export panel)
+        $userIds = $this->getState('filter.user_ids', []);
+        if (\is_array($userIds)) {
+            $userIds = array_values(array_filter(array_map('intval', $userIds)));
+
+            if ($userIds !== []) {
+                $query->whereIn($db->quoteName('a.user_id'), $userIds);
+            }
         }
 
         // Token filter (for guest order lookup)
@@ -317,6 +337,12 @@ class OrdersModel extends ListModel
         // Date range: until
         $until = trim((string) $this->getState('filter.until', ''));
         if (!empty($until) && $until !== '0000-00-00' && $until !== '0000-00-00 00:00:00') {
+            // Date-only values (no time component) must include the entire day,
+            // otherwise the <= bound excludes almost all of the "until" day.
+            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $until) === 1) {
+                $until .= ' 23:59:59';
+            }
+
             $untilDate = $this->convertTimeToUtc($until);
             $query->where($db->quoteName('a.created_on') . ' <= :until')
                 ->bind(':until', $untilDate);
@@ -346,9 +372,20 @@ class OrdersModel extends ListModel
         $couponCode = $this->getState('filter.coupon_code');
         if (!empty($couponCode)) {
             $couponLike = '%' . $couponCode . '%';
-            $query->where($db->quoteName('od.discount_code') . ' LIKE :couponCode')
+
+            // EXISTS keeps the result set free of row duplication regardless of
+            // how many discount rows an order carries.
+            $couponSubQuery = $db->getQuery(true)
+                ->select('1')
+                ->from($db->quoteName('#__j2commerce_orderdiscounts', 'odx'))
+                ->where([
+                    $db->quoteName('odx.order_id') . ' = ' . $db->quoteName('a.order_id'),
+                    $db->quoteName('odx.discount_type') . ' = ' . $db->quote('coupon'),
+                    $db->quoteName('odx.discount_code') . ' LIKE :couponCode',
+                ]);
+
+            $query->where('EXISTS (' . (string) $couponSubQuery . ')')
                 ->bind(':couponCode', $couponLike);
-            $query->where($db->quoteName('od.discount_type') . ' = ' . $db->quote('coupon'));
         }
 
         // Amount range: from
@@ -448,16 +485,12 @@ class OrdersModel extends ListModel
 
         $query->from($db->quoteName('#__j2commerce_orders', 'a'));
 
-        // Join tables needed for filters
+        // Join tables needed for filters (orderinfos is 1:1 with orders; the
+        // coupon filter uses an EXISTS subquery so no discounts join is needed).
         $query->join(
             'LEFT',
             $db->quoteName('#__j2commerce_orderinfos', 'oi') .
             ' ON ' . $db->quoteName('a.order_id') . ' = ' . $db->quoteName('oi.order_id')
-        );
-        $query->join(
-            'LEFT',
-            $db->quoteName('#__j2commerce_orderdiscounts', 'od') .
-            ' ON ' . $db->quoteName('a.order_id') . ' = ' . $db->quoteName('od.order_id')
         );
 
         $this->buildWhereClause($query);
@@ -465,6 +498,250 @@ class OrdersModel extends ListModel
         $db->setQuery($query);
 
         return $sum ? (float) $db->loadResult() : (int) $db->loadResult();
+    }
+
+    /**
+     * Override the current filter state with explicit export filter values.
+     *
+     * Resets every filter the list query understands (including ones not exposed
+     * in the export panel) so a stale session-persisted list filter never bleeds
+     * into an export run.
+     *
+     * @param   array<string, mixed>  $filters  Export filter values keyed by filter name.
+     */
+    public function setExportFilters(array $filters): void
+    {
+        // Trigger populateState() so the state Registry exists before overriding it.
+        $this->getState('filter.search');
+
+        $this->setState('filter.parent_id', 0);
+        $this->setState('filter.orderstatus', []);
+        $this->setState('filter.token', '');
+        $this->setState('filter.user_email', '');
+        $this->setState('filter.nozero', 0);
+        $this->setState('filter.from_invoice', 0);
+        $this->setState('filter.to_invoice', 0);
+
+        $this->setState('filter.search', (string) ($filters['search'] ?? ''));
+        $this->setState('filter.since', (string) ($filters['since'] ?? ''));
+        $this->setState('filter.until', (string) ($filters['until'] ?? ''));
+        $this->setState('filter.from_j2commerce_order_id', (int) ($filters['from_j2commerce_order_id'] ?? 0));
+        $this->setState('filter.to_j2commerce_order_id', (int) ($filters['to_j2commerce_order_id'] ?? 0));
+        $this->setState('filter.user_id', 0);
+        $this->setState('filter.user_ids', array_values(array_filter(array_map('intval', (array) ($filters['user_ids'] ?? [])))));
+        $this->setState('filter.amount_from', (float) ($filters['amount_from'] ?? 0));
+        $this->setState('filter.amount_to', (float) ($filters['amount_to'] ?? 0));
+        $this->setState('filter.payment_type', array_values(array_filter(array_map('strval', (array) ($filters['payment_type'] ?? [])))));
+        $this->setState('filter.order_state_id', 0);
+        $this->setState('filter.orderstatus', array_values(array_filter(array_map('intval', (array) ($filters['order_state_id'] ?? [])))));
+        $this->setState('filter.coupon_code', (string) ($filters['coupon_code'] ?? ''));
+    }
+
+    /**
+     * Get the varchar order_id (and int PK) of every order matching the current filters.
+     *
+     * Lightweight — only two scalar columns per row — so the full result set can be
+     * held in memory even for large exports; row/detail data is fetched separately in chunks.
+     *
+     * @return  array<int, object>  Objects with j2commerce_order_id and order_id.
+     */
+    public function getExportOrderIds(): array
+    {
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true)
+            ->select([
+                $db->quoteName('a.j2commerce_order_id'),
+                $db->quoteName('a.order_id'),
+            ])
+            ->from($db->quoteName('#__j2commerce_orders', 'a'));
+
+        $query->join(
+            'LEFT',
+            $db->quoteName('#__j2commerce_orderinfos', 'oi') .
+            ' ON ' . $db->quoteName('a.order_id') . ' = ' . $db->quoteName('oi.order_id')
+        );
+
+        $this->buildWhereClause($query);
+
+        $query->order($db->quoteName('a.j2commerce_order_id') . ' ASC');
+
+        $db->setQuery($query);
+
+        return $db->loadObjectList() ?: [];
+    }
+
+    /**
+     * Get the highest per-order item count across the given orders.
+     *
+     * Runs a lightweight aggregate query (no item column payload) in chunks
+     * to avoid oversized IN() clauses on large exports.
+     *
+     * @param   array<int, string>  $orderIds  Varchar order_id values.
+     */
+    public function getExportMaxItemCount(array $orderIds): int
+    {
+        if (empty($orderIds)) {
+            return 0;
+        }
+
+        $db  = $this->getDatabase();
+        $max = 0;
+
+        foreach (array_chunk($orderIds, self::EXPORT_CHUNK_SIZE) as $chunk) {
+            // Highest per-order count via ORDER BY ... LIMIT 1: avoids a derived
+            // table, which would lose the whereIn() bound parameters.
+            $query = $db->getQuery(true)
+                ->select('COUNT(*) AS ' . $db->quoteName('item_count'))
+                ->from($db->quoteName('#__j2commerce_orderitems'))
+                ->whereIn($db->quoteName('order_id'), $chunk, ParameterType::STRING)
+                ->group($db->quoteName('order_id'))
+                ->order($db->quoteName('item_count') . ' DESC');
+
+            $db->setQuery($query, 0, 1);
+            $chunkMax = (int) $db->loadResult();
+
+            if ($chunkMax > $max) {
+                $max = $chunkMax;
+            }
+        }
+
+        return $max;
+    }
+
+    /**
+     * Get order + billing/shipping detail rows for the given order_id chunk in ONE query.
+     *
+     * @param   array<int, string>  $orderIds  Varchar order_id values (a single chunk).
+     *
+     * @return  array<string, object>  Keyed by order_id.
+     */
+    public function getExportOrderDetails(array $orderIds): array
+    {
+        if (empty($orderIds)) {
+            return [];
+        }
+
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true);
+
+        $query->select([
+            $db->quoteName('a.j2commerce_order_id'),
+            $db->quoteName('a.order_id'),
+            $db->quoteName('a.invoice_prefix'),
+            $db->quoteName('a.created_on'),
+            $db->quoteName('a.orderpayment_type'),
+            $db->quoteName('a.order_subtotal'),
+            $db->quoteName('a.order_shipping'),
+            $db->quoteName('a.order_tax'),
+            $db->quoteName('a.order_discount'),
+            $db->quoteName('a.order_total'),
+            $db->quoteName('a.currency_code'),
+            $db->quoteName('a.user_email'),
+            $db->quoteName('os.orderstatus_name'),
+            $db->quoteName('ext.name', 'payment_plugin_name'),
+            $db->quoteName('od.discount_code'),
+            $db->quoteName('oi.billing_first_name'),
+            $db->quoteName('oi.billing_last_name'),
+            $db->quoteName('oi.billing_company'),
+            $db->quoteName('oi.billing_phone_1'),
+            $db->quoteName('oi.billing_address_1'),
+            $db->quoteName('oi.billing_address_2'),
+            $db->quoteName('oi.billing_city'),
+            $db->quoteName('oi.billing_zone_name'),
+            $db->quoteName('oi.billing_country_name'),
+            $db->quoteName('oi.billing_zip'),
+            $db->quoteName('oi.shipping_company'),
+            $db->quoteName('oi.shipping_first_name'),
+            $db->quoteName('oi.shipping_last_name'),
+            $db->quoteName('oi.shipping_address_1'),
+            $db->quoteName('oi.shipping_address_2'),
+            $db->quoteName('oi.shipping_city'),
+            $db->quoteName('oi.shipping_zone_name'),
+            $db->quoteName('oi.shipping_country_name'),
+            $db->quoteName('oi.shipping_zip'),
+        ]);
+
+        $query->select(
+            'CASE WHEN ' . $db->quoteName('a.invoice_prefix') . ' IS NULL OR ' .
+            $db->quoteName('a.invoice_prefix') . ' = ' . $db->quote('') . ' THEN ' .
+            $db->quoteName('a.j2commerce_order_id') .
+            ' ELSE CONCAT(' . $db->quoteName('a.invoice_prefix') . ', ' .
+            $db->quoteName('a.j2commerce_order_id') . ') END AS ' . $db->quoteName('invoice')
+        );
+
+        $query->from($db->quoteName('#__j2commerce_orders', 'a'));
+
+        $query->join(
+            'LEFT',
+            $db->quoteName('#__j2commerce_orderstatuses', 'os') .
+            ' ON ' . $db->quoteName('a.order_state_id') . ' = ' . $db->quoteName('os.j2commerce_orderstatus_id')
+        );
+
+        $query->join(
+            'LEFT',
+            $db->quoteName('#__j2commerce_orderinfos', 'oi') .
+            ' ON ' . $db->quoteName('a.order_id') . ' = ' . $db->quoteName('oi.order_id')
+        );
+
+        $query->join(
+            'LEFT',
+            $db->quoteName('#__j2commerce_orderdiscounts', 'od') .
+            ' ON ' . $db->quoteName('a.order_id') . ' = ' . $db->quoteName('od.order_id') .
+            ' AND ' . $db->quoteName('od.discount_type') . ' = ' . $db->quote('coupon')
+        );
+
+        $query->join(
+            'LEFT',
+            $db->quoteName('#__extensions', 'ext') .
+            ' ON ' . $db->quoteName('ext.element') .
+            ' = REPLACE(' . $db->quoteName('a.orderpayment_type') . ', ' . $db->quote('plg_j2commerce_') . ', ' . $db->quote('') . ')' .
+            ' AND ' . $db->quoteName('ext.folder') . ' = ' . $db->quote('j2commerce') .
+            ' AND ' . $db->quoteName('ext.type') . ' = ' . $db->quote('plugin')
+        );
+
+        $query->whereIn($db->quoteName('a.order_id'), $orderIds, ParameterType::STRING);
+
+        $db->setQuery($query);
+
+        return $db->loadObjectList('order_id') ?: [];
+    }
+
+    /**
+     * Get order items for the given order_id chunk in ONE query, grouped by order_id.
+     *
+     * @param   array<int, string>  $orderIds  Varchar order_id values (a single chunk).
+     *
+     * @return  array<string, array<int, object>>  Item rows keyed by order_id.
+     */
+    public function getExportOrderItems(array $orderIds): array
+    {
+        if (empty($orderIds)) {
+            return [];
+        }
+
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true)
+            ->select([
+                $db->quoteName('order_id'),
+                $db->quoteName('orderitem_name'),
+                $db->quoteName('orderitem_sku'),
+                $db->quoteName('orderitem_price'),
+                $db->quoteName('orderitem_quantity'),
+                $db->quoteName('orderitem_finalprice'),
+            ])
+            ->from($db->quoteName('#__j2commerce_orderitems'))
+            ->whereIn($db->quoteName('order_id'), $orderIds, ParameterType::STRING)
+            ->order($db->quoteName('order_id') . ' ASC')
+            ->order($db->quoteName('j2commerce_orderitem_id') . ' ASC');
+
+        $db->setQuery($query);
+
+        $grouped = [];
+        foreach ($db->loadObjectList() ?: [] as $row) {
+            $grouped[$row->order_id][] = $row;
+        }
+
+        return $grouped;
     }
 
     /**
