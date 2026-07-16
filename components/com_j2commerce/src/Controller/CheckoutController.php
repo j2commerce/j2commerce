@@ -20,7 +20,6 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\CartHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
-use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\CheckoutContextHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\CheckoutStepsHelper;
@@ -388,6 +387,11 @@ class CheckoutController extends BaseController
                 'onContentPrepareForm',
                 new PrepareFormEvent('onContentPrepareForm', ['subject' => $form, 'data' => new \stdClass()])
             );
+
+            // plg_user_j2commerce injects its address set for the standalone
+            // com_users registration page; the checkout register step renders
+            // its own address fields, so drop the duplicate group.
+            $form->removeGroup('j2commerce_address');
 
             return $form;
         } catch (\Throwable $e) {
@@ -1819,26 +1823,27 @@ class CheckoutController extends BaseController
         J2CommerceHelper::plugin()->event('ChangeShowPaymentOnTotalZero', [$orderTable, &$showPayment]);
 
         if (!empty($orderId) && (float) ($orderTable->order_total ?? 0) === 0.0 && !$showPayment) {
-            if (method_exists($orderTable, 'payment_complete')) {
-                $orderTable->payment_complete();
+            // Confirm the free order directly — OrderTable::store() fires
+            // onJ2CommerceOrderStatusChange, stock reduction, download grants
+            // and the status-change history entry. Side effects only run on a
+            // successful store of an actual (re-entrant-safe) transition.
+            $wasConfirmed = (int) ($orderTable->order_state_id ?? 0) === 1;
+
+            $orderTable->order_state_id     = 1;
+            $orderTable->transaction_status = 'Completed';
+
+            if ($orderTable->store() && !$wasConfirmed) {
+                J2CommerceHelper::plugin()->event('AfterConfirmFreeProduct', [$orderTable]);
+
+                // Payment succeeded — clear cart and checkout session (skip if already cleared)
+                if (!$cartCleared) {
+                    $this->clearCartAndSession($orderId, $session);
+                    $cartCleared = true;
+                }
+
+                // Send order confirmation emails for free orders
+                $this->sendOrderEmails($orderId);
             }
-
-            OrderHistoryHelper::add(
-                orderId: $orderId,
-                comment: Text::_('COM_J2COMMERCE_ORDER_HISTORY_PAYMENT_COMPLETE'),
-                orderStateId: (int) ($orderTable->order_state_id ?? 1),
-            );
-
-            J2CommerceHelper::plugin()->event('AfterConfirmFreeProduct', [$orderTable]);
-
-            // Payment succeeded — clear cart and checkout session (skip if already cleared)
-            if (!$cartCleared) {
-                $this->clearCartAndSession($orderId, $session);
-                $cartCleared = true;
-            }
-
-            // Send order confirmation emails for free orders
-            $this->sendOrderEmails($orderId);
         } else {
             $values = [
                 'order_id'       => $orderId,
