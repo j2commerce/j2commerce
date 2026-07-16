@@ -86,6 +86,9 @@ class VoucherTable extends Table
             $this->email_body = '';
         }
 
+        // user_id is nullable — 0/'' from the user field means "no owner"
+        $this->user_id = empty($this->user_id) ? null : (int) $this->user_id;
+
         return true;
     }
 

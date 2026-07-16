@@ -16,6 +16,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\View\Vouchers;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\MenuHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ToolbarHelper as VoucherToolbarHelper;
 use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
@@ -134,6 +135,10 @@ class HtmlView extends BaseHtmlView
 
         if ($canDo->get('core.delete') && ($this->state->get('filter.enabled') == -2)) {
             $toolbar->delete('vouchers.delete', 'JTOOLBAR_DELETE_FROM_TRASH')->listCheck(true);
+        }
+
+        if ($canDo->get('core.manage')) {
+            VoucherToolbarHelper::addExportButton('vouchers', 'vouchers.exportCsv');
         }
 
         if ($canDo->get('core.admin') || $canDo->get('core.options')) {

@@ -17,6 +17,13 @@
         />
 
         <field
+            name="user_id"
+            type="user"
+            label="COM_J2COMMERCE_FIELD_CUSTOMER"
+            description="COM_J2COMMERCE_FIELD_CUSTOMER_DESC"
+        />
+
+        <field
             name="email_to"
             type="email"
             label="COM_J2COMMERCE_FIELD_EMAIL_TO"

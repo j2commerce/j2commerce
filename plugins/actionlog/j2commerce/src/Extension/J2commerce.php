@@ -99,6 +99,8 @@ final class J2commerce extends ActionLogPlugin implements SubscriberInterface
             'onJ2CommerceAfterPayment'             => 'onAfterPayment',
             // Order admin events
             'onJ2CommerceAfterOrderStatusChange' => 'onAfterOrderStatusChange',
+            // Voucher balance events
+            'onJ2CommerceVoucherBalanceAdjusted' => 'onVoucherBalanceAdjusted',
             // Admin content events (fired by Joomla's AdminModel)
             'onContentAfterSave'   => 'onContentAfterSave',
             'onContentAfterDelete' => 'onContentAfterDelete',
@@ -355,6 +357,34 @@ final class J2commerce extends ActionLogPlugin implements SubscriberInterface
 
         $this->addLog([$message], $langKey, self::EXTENSION, $this->getUserId());
         $this->checkEmailNotification($langKey, $priority, $message);
+    }
+
+    public function onVoucherBalanceAdjusted(Event $event): void
+    {
+        if (!$this->params->get('log_admin_coupons', 1)) {
+            return;
+        }
+
+        $args        = $this->extractArgs($event, 5);
+        $voucherId   = (int) ($args[0] ?? 0);
+        $type        = (string) ($args[1] ?? '');
+        $delta       = (float) ($args[2] ?? 0.0);
+        $newBalance  = (float) ($args[3] ?? 0.0);
+        $reason      = (string) ($args[4] ?? '');
+        $signedAmount = ($delta >= 0 ? '+' : '') . number_format($delta, 2);
+
+        $langKey = 'PLG_ACTIONLOG_J2COMMERCE_VOUCHER_BALANCE_ADJUSTED';
+        $message = $this->buildMessage($langKey, [
+            'voucher_id'    => $voucherId,
+            'itemlink'      => 'index.php?option=com_j2commerce&view=voucher&layout=history&id=' . $voucherId,
+            'type'          => Text::_('PLG_ACTIONLOG_J2COMMERCE_ADJUSTMENT_TYPE_' . strtoupper($type)),
+            'signed_amount' => $signedAmount,
+            'new_balance'   => number_format($newBalance, 2),
+            'reason'        => $reason,
+        ]);
+
+        $this->addLog([$message], $langKey, self::EXTENSION, $this->getUserId());
+        $this->checkEmailNotification($langKey, self::PRIORITY_ACTION, $message);
     }
 
     // ---------------------------------------------------------------
