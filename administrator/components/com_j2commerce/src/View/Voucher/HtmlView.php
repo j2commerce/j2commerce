@@ -8,6 +8,8 @@
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
+declare(strict_types=1);
+
 namespace J2Commerce\Component\J2commerce\Administrator\View\Voucher;
 
 \defined('_JEXEC') or die;
@@ -16,6 +18,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Helper\ContentHelper;
+use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
@@ -76,9 +79,45 @@ class HtmlView extends BaseHtmlView
         // Get layout to determine what data to load
         $layout = Factory::getApplication()->getInput()->get('layout', 'edit');
 
-        // If this is the history layout, get voucher usage history
+        // If this is the history layout, get the KPI summary + the filterable/sortable/
+        // paginated ledger table (a real ListModel so it behaves like every other list view)
         if ($layout === 'history') {
-            $this->orders = $model->getVoucherHistory();
+            $voucherId = (int) ($this->item->j2commerce_voucher_id ?? 0);
+
+            // Full unfiltered ledger — KPI totals must reflect the true balance, not
+            // whatever the table below happens to be filtered/paginated to.
+            $fullLedger = $model->getLedger($voucherId);
+
+            $this->redeemedTotal  = 0.0;
+            $this->adjustmentsNet = 0.0;
+
+            foreach ($fullLedger as $row) {
+                if ($row->type === 'redemption') {
+                    $this->redeemedTotal += $row->amount;
+                } else {
+                    $this->adjustmentsNet += $row->signed_amount;
+                }
+            }
+
+            $this->remainingBalance = $model->getRemainingBalance($voucherId);
+            $this->ledgerIsEmpty    = empty($fullLedger);
+
+            /** @var \J2Commerce\Component\J2commerce\Administrator\Model\VoucherhistoryModel $historyModel */
+            $historyModel = Factory::getApplication()
+                ->bootComponent('com_j2commerce')
+                ->getMVCFactory()
+                ->createModel('Voucherhistory', 'Administrator', ['ignore_request' => false]);
+
+            $this->ledger           = $historyModel->getItems();
+            $this->ledgerPagination = $historyModel->getPagination();
+            $this->ledgerState      = $historyModel->getState();
+
+            // Property names below are read directly by the core joomla.searchtools.default
+            // layout off $view->filterForm / $view->activeFilters — must not be renamed.
+            $this->filterForm    = $historyModel->getFilterForm();
+            $this->activeFilters = $historyModel->getActiveFilters();
+
+            HTMLHelper::_('bootstrap.modal');
         }
 
         // Check for errors.
@@ -122,7 +161,7 @@ class HtmlView extends BaseHtmlView
             if ($isEditLayout) {
                 ToolbarHelper::title(Text::sprintf('COM_J2COMMERCE_VOUCHER_EDIT', $this->item->j2commerce_voucher_id), 'fa-solid fa-money-check');
             } else {
-                ToolbarHelper::title(Text::sprintf('COM_J2COMMERCE_VOUCHER_HISTORY', $this->item->voucher_code), 'fa-solid fa-money-check');
+                ToolbarHelper::title(Text::_('COM_J2COMMERCE_VOUCHER_HISTORY') . ': ' . $this->item->voucher_code, 'fa-solid fa-money-check');
             }
         }
 
@@ -171,18 +210,23 @@ class HtmlView extends BaseHtmlView
                     ->url('index.php?option=com_j2commerce&view=voucher&layout=history&id=' . $this->item->j2commerce_voucher_id)
                     ->icon('icon-list');
 
-                // Add "Send Voucher"
-                $toolbar->standardButton('voucher-send')
-                    ->text('COM_J2COMMERCE_VOUCHER_SEND_VOUCHER')
-                    ->task('voucher.send')
-                    ->icon('icon-envelope');
-
-
+                // "Send Voucher" moved to plg_j2commerce_app_giftcertificate — it injects its
+                // own button here via onAfterDispatch() and sends through the Central Email
+                // Hub's giftcertificate template instead of this record's raw ad-hoc fields.
             } else {
                 $toolbar->linkButton('voucherback')
                     ->text('JTOOLBAR_BACK')
                     ->url('index.php?option=com_j2commerce&view=voucher&layout=edit&id=' . $this->item->j2commerce_voucher_id)
                     ->icon('icon-arrow-left');
+
+                if ($canDo->get('core.edit')) {
+                    $toolbar->standardButton('voucher-adjust-balance')
+                        ->text('COM_J2COMMERCE_VOUCHER_ADJUST_BALANCE')
+                        ->icon('icon-fa-solid fa-money-check')
+                        ->buttonClass('btn btn-primary')
+                        ->onclick('')
+                        ->attributes(['data-bs-toggle' => 'modal', 'data-bs-target' => '#adjustBalanceModal']);
+                }
             }
         }
 

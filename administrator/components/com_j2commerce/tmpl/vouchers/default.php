@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
@@ -19,12 +20,26 @@ use Joomla\CMS\Session\Session;
 
 /** @var \J2Commerce\Component\J2commerce\Administrator\View\Vouchers\HtmlView $this */
 
+$statusBadgeClass = [
+    'disabled'      => 'text-bg-secondary',
+    'expired'       => 'text-bg-danger',
+    'not_yet_valid' => 'text-bg-info',
+    'depleted'      => 'text-bg-warning',
+    'active'        => 'text-bg-success',
+];
+$statusLabelKey = [
+    'disabled'      => 'COM_J2COMMERCE_DISABLED',
+    'expired'       => 'COM_J2COMMERCE_COUPON_EXPIRED',
+    'not_yet_valid' => 'COM_J2COMMERCE_VOUCHER_STATUS_NOT_YET_VALID',
+    'depleted'      => 'COM_J2COMMERCE_VOUCHER_STATUS_DEPLETED',
+    'active'        => 'COM_J2COMMERCE_COUPON_ACTIVE',
+];
+
 $wa = $this->getDocument()->getWebAssetManager();
 $wa->useScript('table.columns')
     ->useScript('multiselect');
 
 $user      = $this->getCurrentUser();
-$userId    = $user->id;
 $listOrder = $this->escape($this->state->get('list.ordering'));
 $listDirn  = $this->escape($this->state->get('list.direction'));
 $saveOrder = $listOrder === 'a.ordering';
@@ -70,17 +85,29 @@ if ($saveOrder && !empty($this->items)) {
                                 <th scope="col">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_VOUCHER_CODE', 'a.voucher_code', $listDirn, $listOrder); ?>
                                 </th>
+                                <th scope="col" class="w-15">
+                                    <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_RECIPIENT', 'a.email_to', $listDirn, $listOrder); ?>
+                                </th>
                                 <th scope="col" class="w-10 d-none d-md-table-cell">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_VALUE', 'a.voucher_value', $listDirn, $listOrder); ?>
                                 </th>
-                                <th scope="col" class="w-15">
-                                    <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_EMAIL_TO', 'a.email_to', $listDirn, $listOrder); ?>
+                                <th scope="col" class="w-10 d-none d-md-table-cell">
+                                    <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_REMAINING_BALANCE', 'remaining_balance', $listDirn, $listOrder); ?>
+                                </th>
+                                <th scope="col" class="w-5 d-none d-lg-table-cell text-center">
+                                    <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_USES', 'uses_count', $listDirn, $listOrder); ?>
+                                </th>
+                                <th scope="col" class="w-10 d-none d-md-table-cell">
+                                    <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_VOUCHER_STATUS', 'derived_status', $listDirn, $listOrder); ?>
                                 </th>
                                 <th scope="col" class="w-10 d-none d-lg-table-cell">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_VALID_FROM', 'a.valid_from', $listDirn, $listOrder); ?>
                                 </th>
                                 <th scope="col" class="w-10 d-none d-lg-table-cell">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_VALID_TO', 'a.valid_to', $listDirn, $listOrder); ?>
+                                </th>
+                                <th scope="col" class="w-10 d-none d-xl-table-cell">
+                                    <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_FIELD_CREATED_ON', 'a.created_on', $listDirn, $listOrder); ?>
                                 </th>
                                 <th scope="col" class="w-5 d-none d-md-table-cell">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'JGRID_HEADING_ID', 'a.j2commerce_voucher_id', $listDirn, $listOrder); ?>
@@ -119,17 +146,31 @@ if ($saveOrder && !empty($this->items)) {
                                         <?php echo $this->escape($item->voucher_code); ?>
                                     </a>
                                 </th>
-                                <td class="d-none d-md-table-cell">
-                                    <?php echo number_format((float) $item->voucher_value, 2); ?>
-                                </td>
                                 <td class="text-break">
-                                    <?php echo $this->escape($item->email_to); ?>
+                                    <?php echo $this->escape($item->recipient_name ?: ($item->email_to ?: '-')); ?>
+                                </td>
+                                <td class="d-none d-md-table-cell">
+                                    <?php echo CurrencyHelper::format((float) $item->voucher_value); ?>
+                                </td>
+                                <td class="d-none d-md-table-cell">
+                                    <?php echo CurrencyHelper::format((float) $item->remaining_balance); ?>
+                                </td>
+                                <td class="d-none d-lg-table-cell text-center">
+                                    <?php echo (int) $item->uses_count; ?>
+                                </td>
+                                <td class="d-none d-md-table-cell">
+                                    <span class="badge <?php echo $statusBadgeClass[$item->derived_status] ?? 'text-bg-secondary'; ?>">
+                                        <?php echo Text::_($statusLabelKey[$item->derived_status] ?? 'COM_J2COMMERCE_DISABLED'); ?>
+                                    </span>
                                 </td>
                                 <td class="d-none d-lg-table-cell">
                                     <?php echo $item->valid_from ? HTMLHelper::_('date', $item->valid_from, Text::_('DATE_FORMAT_LC4')) : '-'; ?>
                                 </td>
                                 <td class="d-none d-lg-table-cell">
                                     <?php echo $item->valid_to ? HTMLHelper::_('date', $item->valid_to, Text::_('DATE_FORMAT_LC4')) : '-'; ?>
+                                </td>
+                                <td class="d-none d-xl-table-cell">
+                                    <?php echo $item->created_on ? HTMLHelper::_('date', $item->created_on, Text::_('DATE_FORMAT_LC4')) : '-'; ?>
                                 </td>
                                 <td class="d-none d-md-table-cell">
                                     <?php echo (int) $item->j2commerce_voucher_id; ?>

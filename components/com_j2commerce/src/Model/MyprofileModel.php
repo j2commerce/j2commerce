@@ -16,14 +16,12 @@ namespace J2Commerce\Component\J2commerce\Site\Model;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderItemAttributeHelper;
 use Joomla\CMS\Component\ComponentHelper;
+use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 use Joomla\Database\ParameterType;
 
 class MyprofileModel extends BaseDatabaseModel
 {
-    /**
-     * @return array{orders: array, total: int}
-     */
     /**
      * @return array{orders: array, total: int}
      */
@@ -392,4 +390,87 @@ class MyprofileModel extends BaseDatabaseModel
         return ['downloads' => $downloads, 'total' => $total];
     }
 
+    /**
+     * Registered-user gift cards only — ownership IS the authorization, no guest path.
+     * Balance/ledger come from the admin VoucherModel (D1) so that math is never
+     * duplicated; derived_status mirrors VouchersModel::STATUS_CASE_SQL's precedence
+     * but is computed in PHP from the already-fetched balance (that CASE expression
+     * depends on admin-only subquery aliases not present in this simpler query).
+     *
+     * @return array<int, object{
+     *     j2commerce_voucher_id: int, masked_code: string, voucher_value: float,
+     *     remaining_balance: float, valid_from: ?string, valid_to: ?string,
+     *     derived_status: string, ledger: array
+     * }>
+     */
+    public function getCustomerGiftCards(int $userId, string $email, bool $withLedger = true): array
+    {
+        if ($userId <= 0) {
+            return [];
+        }
+
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true);
+
+        $query->select($db->quoteName([
+                'a.j2commerce_voucher_id',
+                'a.voucher_code',
+                'a.voucher_value',
+                'a.valid_from',
+                'a.valid_to',
+                'a.enabled',
+            ]))
+            ->from($db->quoteName('#__j2commerce_vouchers', 'a'))
+            ->where('(' . $db->quoteName('a.user_id') . ' = :userId OR ' . $db->quoteName('a.email_to') . ' = :email)')
+            ->bind(':userId', $userId, ParameterType::INTEGER)
+            ->bind(':email', $email, ParameterType::STRING)
+            ->order($db->quoteName('a.created_on') . ' DESC');
+
+        $db->setQuery($query);
+        $cards = $db->loadObjectList() ?: [];
+
+        if (!$cards) {
+            return [];
+        }
+
+        /** @var \J2Commerce\Component\J2commerce\Administrator\Model\VoucherModel $voucherModel */
+        $voucherModel = Factory::getApplication()->bootComponent('com_j2commerce')
+            ->getMVCFactory()->createModel('Voucher', 'Administrator');
+
+        foreach ($cards as $card) {
+            $id                      = (int) $card->j2commerce_voucher_id;
+            $card->masked_code       = $this->maskVoucherCode((string) $card->voucher_code);
+            $card->voucher_value     = (float) $card->voucher_value;
+            $card->remaining_balance = $voucherModel->getRemainingBalance($id);
+            $card->derived_status    = $this->deriveVoucherStatus($card);
+
+            if ($withLedger) {
+                $card->ledger = $voucherModel->getLedger($id);
+            }
+
+            unset($card->voucher_code, $card->enabled);
+        }
+
+        return $cards;
+    }
+
+    private function deriveVoucherStatus(object $card): string
+    {
+        $now = time();
+
+        return match (true) {
+            !$card->enabled => 'disabled',
+            $card->valid_to && strtotime((string) $card->valid_to) < $now => 'expired',
+            $card->valid_from && strtotime((string) $card->valid_from) > $now => 'not_yet_valid',
+            $card->remaining_balance <= 0 => 'depleted',
+            default => 'active',
+        };
+    }
+
+    private function maskVoucherCode(string $code): string
+    {
+        $visible = min(4, \strlen($code));
+
+        return str_repeat('*', \strlen($code) - $visible) . substr($code, -$visible);
+    }
 }

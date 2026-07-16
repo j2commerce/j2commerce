@@ -640,7 +640,8 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_orderdiscounts` (
   `discount_tax` decimal(15,5) NOT NULL,
   `discount_params` text NOT NULL,
   PRIMARY KEY (`j2commerce_orderdiscount_id`),
-  KEY `order_id` (`order_id`)
+  KEY `order_id` (`order_id`),
+  KEY `idx_type_entity` (`discount_type`, `discount_entity_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -1405,6 +1406,7 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_vouchers` (
   `j2commerce_voucher_id` int NOT NULL AUTO_INCREMENT,
   `order_id` varchar(255) NOT NULL,
   `email_to` varchar(255) NOT NULL,
+  `user_id` int unsigned DEFAULT NULL,
   `voucher_code` varchar(255) NOT NULL,
   `voucher_type` varchar(255) NOT NULL,
   `subject` varchar(255) NOT NULL,
@@ -1426,7 +1428,31 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_vouchers` (
   UNIQUE KEY `voucher_code` (`voucher_code`),
   KEY `idx_access` (`access`),
   KEY `idx_checkout` (`checked_out`),
-  KEY `idx_createdby` (`created_by`)
+  KEY `idx_createdby` (`created_by`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_valid_to` (`valid_to`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+-- Table structure for table `#__j2commerce_voucheradjustments`
+-- --------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS `#__j2commerce_voucheradjustments` (
+  `j2commerce_voucheradjustment_id` int unsigned NOT NULL AUTO_INCREMENT,
+  `j2commerce_voucher_id` int NOT NULL,
+  `adjustment_type` varchar(20) NOT NULL COMMENT 'credit|debit|correction',
+  `amount` decimal(15,5) NOT NULL COMMENT 'always positive',
+  `balance_before` decimal(15,5) NOT NULL,
+  `balance_after` decimal(15,5) NOT NULL,
+  `reason` varchar(255) NOT NULL,
+  `note` text DEFAULT NULL,
+  `order_id` varchar(255) DEFAULT NULL,
+  `created_by` int NOT NULL DEFAULT 0,
+  `created_on` datetime NOT NULL,
+  `ip_address` varchar(45) NOT NULL DEFAULT '',
+  PRIMARY KEY (`j2commerce_voucheradjustment_id`),
+  KEY `idx_voucher_id` (`j2commerce_voucher_id`),
+  KEY `idx_created_on` (`created_on`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
