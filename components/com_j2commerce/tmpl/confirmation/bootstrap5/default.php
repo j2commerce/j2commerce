@@ -399,6 +399,7 @@ if ($info) {
                                         <?php if (!empty($item->orderitem_sku)) : ?>
                                             <br><span class="text-body-tertiary"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_SKU'); ?>: <?php echo $this->escape($item->orderitem_sku); ?></span>
                                         <?php endif; ?>
+                                        <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterDisplayLineItemTitle', [$item, $order, &$this->params]); ?>
                                     </div>
                                     <?php // Item price ?>
                                     <div class="text-end small fw-semibold text-nowrap">
