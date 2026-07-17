@@ -374,10 +374,13 @@ Text::script('COM_J2COMMERCE_INVENTORY_BATCH_NO_FIELDS');
             </div>
         </div>
     </div>
-</form>
 
-<?php if (!empty($this->items)) : ?>
-    <template id="joomla-dialog-batch"><?php echo $this->loadTemplate('batch_body'); ?></template>
-<?php endif; ?>
+    <?php // Must stay inside the form: for popupType=inline, joomla-dialog appends the dialog to
+          // this template's parentElement, so a template outside the form leaves the batch fields
+          // outside it too and they are never submitted. ?>
+    <?php if (!empty($this->items)) : ?>
+        <template id="joomla-dialog-batch"><?php echo $this->loadTemplate('batch_body'); ?></template>
+    <?php endif; ?>
+</form>
 
 <?php echo $this->footer ?? ''; ?>
