@@ -84,7 +84,7 @@ if ($this->params->get('list_show_filter', 1) && $filterPosition === 'left'){
         <?php endif; ?>
 
         <div class="<?php echo $this->params->get('list_show_filter', 1) ? 'col-md-9' : 'col-12'; ?>">
-            <div class="j2commerce-products-content <?php echo $paddingClass;?>">
+            <div class="j2commerce-products-content <?php echo $paddingClass;?>" data-j2commerce-content="products">
                 <?php if ($this->params->get('list_show_top_filter', 1)) : ?>
                     <?php echo $this->loadTemplate('sortfilter'); ?>
                 <?php endif; ?>
