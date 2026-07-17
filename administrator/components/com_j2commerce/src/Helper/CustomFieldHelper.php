@@ -156,6 +156,11 @@ class CustomFieldHelper
         }
 
         try {
+            // Admin template is Bootstrap 5 (Atum) — the site subtemplate must not leak into backend markup
+            if (Factory::getApplication()->isClient('administrator')) {
+                return self::$resolvedFramework = 'bootstrap5';
+            }
+
             $subtemplate = (string) J2CommerceHelper::config()->get('subtemplate', 'bootstrap5');
         } catch (\Throwable) {
             $subtemplate = 'bootstrap5';
