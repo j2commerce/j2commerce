@@ -180,6 +180,17 @@ class HtmlView extends BaseHtmlView
                     ->message('JGLOBAL_CONFIRM_DELETE')
                     ->listCheck(true);
             }
+
+            if ($canDo->get('core.edit')) {
+                $toolbar->popupButton('synccore', 'COM_J2COMMERCE_INVOICETEMPLATE_SYNC_CORE')
+                    ->popupType('inline')
+                    ->textHeader(Text::_('COM_J2COMMERCE_INVOICETEMPLATE_SYNC_CORE_TITLE'))
+                    ->url('#joomla-dialog-synccore')
+                    ->modalWidth('600px')
+                    ->modalHeight('fit-content')
+                    ->listCheck(false)
+                    ->icon('fa-solid fa-rotate-right');
+            }
         }
 
 

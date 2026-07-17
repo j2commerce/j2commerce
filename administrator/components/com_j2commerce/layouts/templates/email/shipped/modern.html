@@ -199,6 +199,7 @@
                       <td style="padding: 0 0 16px; font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: 600; color: [TEXT_COLOR];">[PAYMENT_TYPE]</td>
                     </tr>
                     <!-- Shipping Address -->
+                    [IF:SHIPPING_FIRSTNAME]
                     <tr>
                       <td colspan="2" style="padding: 16px 0 0; border-top: 1px solid #F3F4F6;">
                         <p style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #6B7280; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 8px;">Shipping Address</p>
@@ -211,6 +212,7 @@
                         </p>
                       </td>
                     </tr>
+                    [/IF:SHIPPING_FIRSTNAME]
                   </table>
                 </td>
               </tr>

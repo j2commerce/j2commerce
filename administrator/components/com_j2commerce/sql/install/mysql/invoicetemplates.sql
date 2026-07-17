@@ -29,6 +29,7 @@ VALUES  (1, 'Packing Slip', 'packingslip', '*', '1', '*', '<!-- J2Commerce Packi
 <table border="0" width="100%" cellspacing="0" cellpadding="0">
 <tbody>
 <tr><!-- Ship To -->
+[IF:SHIPPING_FIRSTNAME]
 <td class="address-col" style="width: 60%; vertical-align: top; padding-right: 8px;">
 <table style="background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 10px;" border="0" width="100%" cellspacing="0" cellpadding="0">
 <tbody>
@@ -41,6 +42,7 @@ VALUES  (1, 'Packing Slip', 'packingslip', '*', '1', '*', '<!-- J2Commerce Packi
 </tbody>
 </table>
 </td>
+[/IF:SHIPPING_FIRSTNAME]
 <!-- Order Details -->
 <td class="address-col" style="width: 40%; vertical-align: top; padding-left: 8px;">
 <table style="background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 10px;" border="0" width="100%" cellspacing="0" cellpadding="0">

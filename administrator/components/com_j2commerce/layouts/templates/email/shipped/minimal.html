@@ -117,6 +117,7 @@
         <tr><td style="padding:0;border:0;font-size:0;line-height:0;height:0;overflow:hidden;">[HOOK:BEFORE_SHIPPING]</td></tr>
 
         <!-- Shipping Address -->
+        [IF:SHIPPING_FIRSTNAME]
         <tr>
           <td style="padding: 0 40px 20px;">
             <h2 style="font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold; color: [TEXT_COLOR]; margin: 0 0 8px; border-bottom: 1px solid #eeeeee; padding-bottom: 8px;">Shipping Address</h2>
@@ -129,6 +130,7 @@
             </p>
           </td>
         </tr>
+        [/IF:SHIPPING_FIRSTNAME]
 
         <!-- Order Details Link -->
         <tr>
