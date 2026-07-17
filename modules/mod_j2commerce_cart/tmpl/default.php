@@ -133,6 +133,8 @@ try {
                             <?php endif; ?>
                         </div>
 
+                        <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterDisplayLineItemTitle', [$item, $order, &$params]); ?>
+
                         <?php if (!empty($item->orderitemattributes)) : ?>
                             <div class="cart-item-options mt-1">
                                 <?php echo LayoutHelper::render('orderitem.attributes', [

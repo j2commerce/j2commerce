@@ -746,6 +746,7 @@ class EmailHelper
 
                 $currencyCode  = $order->currency_code ?? '';
                 $currencyValue = (float) ($order->currency_value ?? 1);
+                $params        = ComponentHelper::getParams('com_j2commerce');
                 $result        = '';
 
                 foreach ($items as $item) {
@@ -755,14 +756,15 @@ class EmailHelper
                     $imageUrl = $this->getProductImageForEmail((int) ($item->product_id ?? 0), $baseURL);
 
                     $itemTags = [
-                        '[ITEM_NAME]'    => htmlspecialchars($item->orderitem_name ?? ''),
-                        '[ITEM_SKU]'     => htmlspecialchars($item->orderitem_sku ?? ''),
-                        '[ITEM_QTY]'     => (string) (int) ($item->orderitem_quantity ?? 0),
-                        '[ITEM_PRICE]'   => CurrencyHelper::format((float) ($item->orderitem_price ?? 0), $currencyCode, $currencyValue),
-                        '[ITEM_TOTAL]'   => CurrencyHelper::format((float) ($item->orderitem_finalprice ?? 0), $currencyCode, $currencyValue),
-                        '[ITEM_IMAGE]'   => htmlspecialchars($imageUrl),
-                        '[ITEM_OPTIONS]' => $optionText,
-                        '[ITEM_WEIGHT]'  => (string) (float) ($item->orderitem_weight ?? 0),
+                        '[ITEM_NAME]'        => htmlspecialchars($item->orderitem_name ?? ''),
+                        '[ITEM_SKU]'         => htmlspecialchars($item->orderitem_sku ?? ''),
+                        '[ITEM_QTY]'         => (string) (int) ($item->orderitem_quantity ?? 0),
+                        '[ITEM_PRICE]'       => CurrencyHelper::format((float) ($item->orderitem_price ?? 0), $currencyCode, $currencyValue),
+                        '[ITEM_TOTAL]'       => CurrencyHelper::format((float) ($item->orderitem_finalprice ?? 0), $currencyCode, $currencyValue),
+                        '[ITEM_IMAGE]'       => htmlspecialchars($imageUrl),
+                        '[ITEM_OPTIONS]'     => $optionText,
+                        '[ITEM_WEIGHT]'      => (string) (float) ($item->orderitem_weight ?? 0),
+                        '[ITEM_ANNOTATIONS]' => (string) J2CommerceHelper::plugin()->eventWithHtml('AfterDisplayLineItemTitle', [$item, $order, &$params]),
                     ];
 
                     // Process per-item [IF:ITEM_*] and [IFNOT:ITEM_*] conditionals

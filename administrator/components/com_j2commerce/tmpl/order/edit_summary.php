@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Language\Text;
 
 $item = $this->item;
@@ -35,7 +36,10 @@ $currency = $item->currency_code ?? 'USD';
             <tbody>
                 <?php foreach ($orderItems as $orderItem) : ?>
                 <tr>
-                    <td><?php echo $this->escape($orderItem->orderitem_name); ?></td>
+                    <td>
+                        <?php echo $this->escape($orderItem->orderitem_name); ?>
+                        <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterDisplayLineItemTitle', array($orderItem, $item, $this->params))->getArgument('html', ''); ?>
+                    </td>
                     <td class="text-center"><?php echo (int) $orderItem->orderitem_quantity; ?></td>
                     <td class="text-end"><?php echo $this->escape($currency); ?> <?php echo number_format((float) $orderItem->orderitem_finalprice, 2); ?></td>
                 </tr>

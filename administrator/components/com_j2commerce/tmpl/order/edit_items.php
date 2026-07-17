@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
@@ -52,6 +53,7 @@ $currency = $item->currency_code ?? 'USD';
                         <div class="small text-muted">
                             <?php echo $this->escape($currency); ?> <?php echo number_format((float) $orderItem->orderitem_price, 2); ?> / unit
                         </div>
+                        <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterDisplayLineItemTitle', array($orderItem, $item, $this->params))->getArgument('html', ''); ?>
                     </td>
                     <td class="text-center">
                         <input type="number" class="form-control form-control-sm text-center" style="width: 80px; margin: 0 auto;"
