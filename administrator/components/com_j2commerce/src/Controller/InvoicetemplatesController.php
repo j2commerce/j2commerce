@@ -12,7 +12,9 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\CoreTemplateSyncHelper;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Controller\AdminController;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
@@ -314,5 +316,38 @@ class InvoicetemplatesController extends AdminController
      */
     protected function postDeleteHook(\Joomla\CMS\MVC\Model\BaseDatabaseModel $model, $ids = null)
     {
+    }
+
+    /** Overwrite the core print templates' body/body_json with the currently-installed .html presets. */
+    public function syncCore(): void
+    {
+        Session::checkToken() or jexit(Text::_('JINVALID_TOKEN'));
+
+        $user = $this->app->getIdentity();
+
+        if (!$user || $user->guest || (int) $user->id === 0) {
+            $this->app->enqueueMessage(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 'error');
+            $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=invoicetemplates', false));
+            return;
+        }
+
+        if (!$user->authorise('core.edit', 'com_j2commerce')) {
+            $this->app->enqueueMessage(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 'error');
+            $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=invoicetemplates', false));
+            return;
+        }
+
+        try {
+            $results = (new CoreTemplateSyncHelper())->syncInvoiceTemplates();
+            $updated = \count(array_filter($results, static fn (array $result): bool => $result['status'] === 'updated'));
+            $skipped = \count($results) - $updated;
+
+            $this->setMessage(Text::sprintf('COM_J2COMMERCE_INVOICETEMPLATE_SYNC_CORE_RESULT', $updated, $skipped));
+        } catch (\Throwable $e) {
+            Log::add('Core print template sync failed: ' . $e->getMessage(), Log::ERROR, 'j2commerce');
+            $this->setMessage(Text::_('COM_J2COMMERCE_ERR_GENERIC'), 'error');
+        }
+
+        $this->setRedirect(Route::_('index.php?option=' . $this->option . '&view=' . $this->view_list, false));
     }
 }

@@ -13,6 +13,7 @@ declare(strict_types=1);
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\CliCommands\SeedOrderLedgerCommand;
+use J2Commerce\Component\J2commerce\Administrator\Helper\CoreTemplateSyncHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Installer\InstallerScript;
 use Joomla\CMS\Language\Text;
@@ -491,6 +492,14 @@ class Com_J2commerceInstallerScript extends InstallerScript
 
             if ($needsEmails) {
                 $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/emailtemplates.sql');
+
+                // Freshly-seeded rows may lag the currently-installed .html presets — overwrite immediately.
+                try {
+                    (new CoreTemplateSyncHelper())->syncEmailTemplates();
+                } catch (\Throwable $e) {
+                    $this->debugLog("LOCALISATION: email templates sync error: " . $e->getMessage());
+                    Log::add('Error syncing core email templates: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
+                }
             }
         } catch (\Exception $e) {
             $this->debugLog("LOCALISATION: email templates error: " . $e->getMessage());
@@ -511,6 +520,14 @@ class Com_J2commerceInstallerScript extends InstallerScript
 
             if ($needsInvoices) {
                 $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/invoicetemplates.sql');
+
+                // Freshly-seeded rows may lag the currently-installed .html presets — overwrite immediately.
+                try {
+                    (new CoreTemplateSyncHelper())->syncInvoiceTemplates();
+                } catch (\Throwable $e) {
+                    $this->debugLog("LOCALISATION: invoice templates sync error: " . $e->getMessage());
+                    Log::add('Error syncing core invoice templates: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
+                }
             }
         } catch (\Exception $e) {
             $this->debugLog("LOCALISATION: invoice templates error: " . $e->getMessage());
