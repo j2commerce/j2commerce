@@ -1791,8 +1791,7 @@ class CheckoutController extends BaseController
         $cartCleared = false;
 
         if ($clearCartTiming === 'order_placed' && !empty($orderId) && isset($orderTable->order_id)) {
-            $this->clearCartAndSession($orderId, $session);
-            $cartCleared = true;
+            $cartCleared = $this->clearCartAndSession($orderId, $session);
         }
 
         // ---------------------------------------------------------------
@@ -1837,8 +1836,7 @@ class CheckoutController extends BaseController
 
                 // Payment succeeded — clear cart and checkout session (skip if already cleared)
                 if (!$cartCleared) {
-                    $this->clearCartAndSession($orderId, $session);
-                    $cartCleared = true;
+                    $cartCleared = $this->clearCartAndSession($orderId, $session);
                 }
 
                 // Send order confirmation emails for free orders
@@ -1864,7 +1862,7 @@ class CheckoutController extends BaseController
                         $orderTable->load(['order_id' => $orderId]);
 
                         if (!$cartCleared) {
-                            $this->clearCartAndSession($orderId, $session);
+                            $cartCleared = $this->clearCartAndSession($orderId, $session);
                         }
 
                         if (!empty($orderTable->order_id)) {
@@ -1977,11 +1975,13 @@ class CheckoutController extends BaseController
         $this->app->redirect($confirmUrl);
     }
 
-    private function clearCartAndSession(string $orderId, \Joomla\CMS\Session\Session $session): void
+    private function clearCartAndSession(string $orderId, \Joomla\CMS\Session\Session $session): bool
     {
+        $cartCleared = false;
+
         // In context mode the order was already placed; it has no cart rows to clear.
         if (!empty($orderId) && !CheckoutContextHelper::isOwningRequest()) {
-            CartHelper::emptyCart($orderId);
+            $cartCleared = CartHelper::emptyCart($orderId);
         }
 
         $session->clear('shipping_method', 'j2commerce');
@@ -1995,6 +1995,8 @@ class CheckoutController extends BaseController
         $session->clear('order_fees', 'j2commerce');
 
         J2CommerceHelper::plugin()->event('CheckoutCleanup', [$session]);
+
+        return $cartCleared;
     }
 
     private function sendOrderEmails(string $orderId): void
