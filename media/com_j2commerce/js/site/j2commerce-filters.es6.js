@@ -303,14 +303,21 @@ class J2CommerceFilters {
     }
 
     updateProducts(data) {
-        // Target the inner content wrapper (.j2commerce-products-content) which sits
-        // inside .col-md-9.  This matches the nesting in default.php so AJAX-replaced
-        // HTML is structurally identical to the initial server render.
-        const contentArea = this.productContainer.querySelector('.j2commerce-products-content') ||
-            this.productContainer.querySelector('.col-md-9') ||
-            this.productContainer.querySelector('[class*="col-md-"]');
+        // Target the inner content wrapper.  Prefer the explicit data attribute set by
+        // default.php (unambiguous even in template overrides), then fall back to the
+        // class name.  The old [class*="col-md-"] fallback is intentionally removed: it
+        // matched the sidebar column (.col-md-3) before the content column (.col-md-9)
+        // when filters are positioned on the left, causing products to be inserted into
+        // the sidebar while existing rows were never removed.
+        const contentArea = this.productContainer.querySelector('[data-j2commerce-content="products"]') ||
+            this.productContainer.querySelector('.j2commerce-products-content');
 
-        if (!contentArea) return;
+        if (!contentArea) {
+            // No content area found — cannot do an in-place DOM update.
+            // Fall back to a full form submission so the user still gets filtered results.
+            this.fallbackSubmit();
+            return;
+        }
 
         const existingRows = contentArea.querySelectorAll('.j2commerce-products-row');
         existingRows.forEach(row => row.remove());
@@ -604,13 +611,21 @@ class J2CommerceFilters {
                 const hasCheckedFilters = container.querySelectorAll('.' + checkboxClass + ':checked').length > 0;
                 clearBtn.style.display = hasCheckedFilters ? '' : 'none';
 
-                // Expand the accordion panel if it has checked filters
+                // Expand the accordion/accordion panel if it has checked filters
                 if (hasCheckedFilters) {
+                    // Bootstrap 5
                     const collapseEl = container.closest('.accordion-collapse');
                     if (collapseEl && !collapseEl.classList.contains('show')) {
                         collapseEl.classList.add('show');
                         const btn = collapseEl.previousElementSibling?.querySelector('.accordion-button');
                         if (btn) btn.classList.remove('collapsed');
+                    }
+                    // UIKit
+                    const ukItem = container.closest('li.uk-accordion-item') ?? container.closest('.uk-accordion > li');
+                    if (ukItem && !ukItem.classList.contains('uk-open')) {
+                        ukItem.classList.add('uk-open');
+                        const content = ukItem.querySelector('.uk-accordion-content');
+                        if (content) content.hidden = false;
                     }
                 }
             }
@@ -624,18 +639,23 @@ class J2CommerceFilters {
 
         const tiles = [];
 
+        const getCheckboxLabel = (cb) =>
+            cb.closest('.form-check')?.querySelector('.form-check-label')?.textContent?.trim()
+            ?? cb.labels?.[0]?.textContent?.trim()
+            ?? cb.closest('label')?.textContent?.trim();
+
         document.querySelectorAll('.j2commerce-brand-checkboxes:checked').forEach(cb => {
-            const label = cb.closest('.form-check')?.querySelector('.form-check-label')?.textContent?.trim();
+            const label = getCheckboxLabel(cb);
             if (label) tiles.push(this.createTileHtml('brand', cb.value, label));
         });
 
         document.querySelectorAll('.j2commerce-vendor-checkboxes:checked').forEach(cb => {
-            const label = cb.closest('.form-check')?.querySelector('.form-check-label')?.textContent?.trim();
+            const label = getCheckboxLabel(cb);
             if (label) tiles.push(this.createTileHtml('vendor', cb.value, label));
         });
 
         document.querySelectorAll('[class*="j2commerce-pfilter-checkboxes"]:checked').forEach(cb => {
-            const label = cb.closest('.form-check')?.querySelector('.form-check-label')?.textContent?.trim();
+            const label = getCheckboxLabel(cb);
             if (label) tiles.push(this.createTileHtml('productfilter', cb.value, label));
         });
 
@@ -671,13 +691,17 @@ class J2CommerceFilters {
 
     createTileHtml(type, id, displayLabel) {
         const escaped = this.escapeHtml(displayLabel);
-        return `<span class="filter-chip badge bg-light text-dark border d-flex align-items-center gap-1 p-2" data-type="${type}" data-id="${this.escapeHtml(String(id))}">${escaped}<button type="button" class="btn-close text-danger ms-1" style="font-size:.5rem" aria-label="Remove"></button></span>`;
+        const dataAttrs = `data-type="${type}" data-id="${this.escapeHtml(String(id))}"`;
+        if (typeof UIkit !== 'undefined') {
+            return `<span class="filter-chip uk-label" ${dataAttrs}>${escaped}<button type="button" class="j2commerce-filter-chip-remove uk-close uk-margin-small-left" aria-label="Remove"></button></span>`;
+        }
+        return `<span class="filter-chip badge bg-light text-dark border d-flex align-items-center gap-1 p-2" ${dataAttrs}>${escaped}<button type="button" class="j2commerce-filter-chip-remove btn-close text-danger ms-1" style="font-size:.5rem" aria-label="Remove"></button></span>`;
     }
 
     bindActiveFilterTiles() {
         // Event delegation — survives innerHTML replacement after AJAX
         document.addEventListener('click', (e) => {
-            const removeBtn = e.target.closest('.filter-chip .btn-close');
+            const removeBtn = e.target.closest('.j2commerce-filter-chip-remove') ?? e.target.closest('.filter-chip .btn-close');
             if (!removeBtn) return;
             const chip = removeBtn.closest('.filter-chip');
             if (!chip) return;
@@ -697,8 +721,13 @@ class J2CommerceFilters {
             this.resetAllFilters();
             // Close offcanvas after clearing
             const offcanvasEl = document.getElementById('j2commerceFilterOffcanvas');
-            const offcanvas = globalThis.bootstrap?.Offcanvas?.getInstance(offcanvasEl);
-            offcanvas?.hide();
+            if (offcanvasEl) {
+                if (typeof UIkit !== 'undefined') {
+                    try { UIkit.offcanvas(offcanvasEl).hide(); } catch (_) {}
+                } else {
+                    globalThis.bootstrap?.Offcanvas?.getInstance(offcanvasEl)?.hide();
+                }
+            }
         });
     }
 
