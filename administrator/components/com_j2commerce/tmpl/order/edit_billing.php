@@ -77,7 +77,7 @@ $orderInfo = $item->orderinfo ?? null;
                             <?php echo $this->escape($file['name'] ?? basename($file['path'] ?? '')); ?>
                         </a>
                         <?php if (!empty($file['size'])) : ?>
-                        <span class="text-muted small">(<?php echo number_format((int) $file['size'] / 1024, 1); ?> KB)</span>
+                        <span class="text-body-secondary small">(<?php echo number_format((int) $file['size'] / 1024, 1); ?> KB)</span>
                         <?php endif; ?>
                     </li>
                     <?php endforeach; ?>
@@ -91,15 +91,20 @@ $orderInfo = $item->orderinfo ?? null;
         ?>
 
         <div class="mt-3">
-            <button type="button" class="btn btn-outline-primary me-2" id="editBillingAddressBtn">
+            <button type="button" class="btn btn-outline-primary me-2" id="editBillingAddressBtn" data-j2c-address-edit="billing">
                 <span class="icon-pencil-alt" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_EDIT_ADDRESS'); ?>
             </button>
-            <button type="button" class="btn btn-outline-warning" id="chooseBillingAddressBtn">
+            <button type="button" class="btn btn-outline-info" id="chooseBillingAddressBtn" data-j2c-address-choose="billing">
                 <span class="icon-list" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_CHOOSE_ALTERNATE_ADDRESS'); ?>
             </button>
         </div>
         <?php else : ?>
             <div class="alert alert-info"><?php echo Text::_('COM_J2COMMERCE_NO_BILLING_ADDRESS'); ?></div>
+            <button type="button" class="btn btn-outline-primary" data-j2c-address-edit="billing">
+                <span class="icon-pencil-alt" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_EDIT_ADDRESS'); ?>
+            </button>
         <?php endif; ?>
+
+        <?php $this->addressFormType = 'billing'; echo $this->loadTemplate('address_form'); ?>
     </div>
 </div>
