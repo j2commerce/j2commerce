@@ -1055,8 +1055,9 @@ class CartHelper
         $app    = Factory::getApplication();
         $path   = $app->get('cookie_path', '/');
         $domain = $app->get('cookie_domain', '');
+        $secure = $app->isHttpsForced();
 
-        setcookie($this->getCartCookieName($cartType), '', time() - 3600, $path, $domain, false, true);
+        setcookie($this->getCartCookieName($cartType), '', time() - 3600, $path, $domain, $secure, true);
     }
 
     /**
