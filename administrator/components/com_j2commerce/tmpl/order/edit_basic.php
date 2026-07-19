@@ -46,7 +46,11 @@ $item = $this->item;
                 <label for="customer_language" class="form-label"><?php echo Text::_('COM_J2COMMERCE_FIELD_CUSTOMER_LANGUAGE'); ?></label>
                 <select name="jform[customer_language]" id="customer_language" class="form-select">
                     <option value=""><?php echo Text::_('JALL'); ?></option>
-                    <option value="en-GB" <?php echo ($item->customer_language ?? '') === 'en-GB' ? 'selected' : ''; ?>>English (United Kingdom)</option>
+                    <?php foreach (\Joomla\CMS\Language\LanguageHelper::getContentLanguages([0, 1]) as $language) : ?>
+                        <option value="<?php echo $this->escape($language->lang_code); ?>" <?php echo ($item->customer_language ?? '') === $language->lang_code ? 'selected' : ''; ?>>
+                            <?php echo $this->escape($language->title); ?>
+                        </option>
+                    <?php endforeach; ?>
                 </select>
             </div>
         </div>

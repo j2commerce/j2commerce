@@ -660,7 +660,7 @@ class VoucherModel extends AdminModel
             return 0.0;
         }
 
-        $redeemedTotal = $this->getAdminVoucherHistoryTotal($id, $orderId) ?? 0.0;
+        $redeemedTotal                              = $this->getAdminVoucherHistoryTotal($id, $orderId) ?? 0.0;
         [$creditTotal, $debitTotal, $correctionNet] = $this->getAdjustmentTotals($id);
 
         return round($voucherValue - $redeemedTotal + $creditTotal - $debitTotal + $correctionNet, 5);
@@ -1126,13 +1126,8 @@ class VoucherModel extends AdminModel
     {
         $amount = max(0.0, $this->getRemainingBalance($this->voucher->j2commerce_voucher_id));
 
-        if ($price > $amount) {
-            $discount = $amount;
-        } else {
-            $discount = $amount - $price;
-        }
-
-        return $discount;
+        // Discount is the lesser of the remaining balance and the price being discounted.
+        return min($amount, $price);
     }
 
     /**
@@ -1218,6 +1213,10 @@ class VoucherModel extends AdminModel
     public function setVoucher(string $postVoucher): void
     {
         J2CommerceHelper::plugin()->event('BeforeSetVoucher', [&$postVoucher]);
+
+        // Load the voucher record so isValid()/isAdminValid() can validate it —
+        // previously only the session was written and validation always failed.
+        $this->voucher = $this->getVoucherByCode($postVoucher);
 
         $session = Factory::getApplication()->getSession();
         $session->set('voucher', $postVoucher, 'j2commerce');
