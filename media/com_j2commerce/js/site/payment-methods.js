@@ -74,7 +74,9 @@
             button.disabled = true;
             button.replaceChildren(document.createRange().createContextualFragment('<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span> ' + Joomla.Text._('COM_J2COMMERCE_LOADING')));
 
-            const response = await fetch('index.php?option=com_ajax&plugin=' + provider + '&group=j2commerce&method=deleteCard&format=json', {
+            // task= is what plugin onAjax handlers dispatch on; provider-specific id param
+            // names are mirrored so every provider's handler finds the one it reads.
+            const response = await fetch('index.php?option=com_ajax&plugin=' + provider + '&group=j2commerce&task=deleteCard&format=json', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -82,7 +84,9 @@
                 },
                 body: new URLSearchParams({
                     [csrfToken]: '1',
-                    method_id: methodId
+                    method_id: methodId,
+                    payment_method_id: methodId,
+                    consent_id: methodId
                 })
             });
 
@@ -90,15 +94,15 @@
                 throw new Error(Joomla.Text._('COM_J2COMMERCE_PAYMENT_METHODS_NETWORK_ERROR'));
             }
 
-            const data = await response.json();
+            const data = unwrapAjaxResult(await response.json());
 
-            if (data.success || data.data?.success) {
+            if (data.success) {
                 // Remove card from UI with fade effect
                 card.style.transition = 'opacity 0.3s';
                 card.style.opacity = '0';
 
                 setTimeout(function() {
-                    const row = card.closest('.col-12');
+                    const row = card.closest('.j2commerce-payment-method') || card.closest('.col-12');
                     if (row) {
                         row.remove();
                         checkEmptyProvider(card);
@@ -109,7 +113,7 @@
                     'success': [Joomla.Text._('COM_J2COMMERCE_PAYMENT_METHODS_DELETED')]
                 });
             } else {
-                throw new Error(data.message || data.data?.message || data.data?.error || data.error || Joomla.Text._('COM_J2COMMERCE_PAYMENT_METHODS_ERROR'));
+                throw new Error(data.message || data.error || Joomla.Text._('COM_J2COMMERCE_PAYMENT_METHODS_ERROR'));
             }
         } catch (error) {
             console.error('Delete card error:', error);
@@ -140,7 +144,7 @@
             button.disabled = true;
             button.replaceChildren(document.createRange().createContextualFragment('<span class="spinner-border spinner-border-sm me-1" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></span>'));
 
-            const response = await fetch('index.php?option=com_ajax&plugin=' + provider + '&group=j2commerce&method=setDefaultCard&format=json', {
+            const response = await fetch('index.php?option=com_ajax&plugin=' + provider + '&group=j2commerce&task=setDefaultCard&format=json', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -148,7 +152,9 @@
                 },
                 body: new URLSearchParams({
                     [csrfToken]: '1',
-                    method_id: methodId
+                    method_id: methodId,
+                    payment_method_id: methodId,
+                    consent_id: methodId
                 })
             });
 
@@ -156,9 +162,9 @@
                 throw new Error(Joomla.Text._('COM_J2COMMERCE_PAYMENT_METHODS_NETWORK_ERROR'));
             }
 
-            const data = await response.json();
+            const data = unwrapAjaxResult(await response.json());
 
-            if (data.success || data.data?.success) {
+            if (data.success) {
                 // Update UI - remove default badge from all cards in this provider group
                 const providerGroup = card.closest('.j2commerce-payment-provider');
                 providerGroup.querySelectorAll('.badge.text-bg-info').forEach(function(badge) {
@@ -186,7 +192,7 @@
                     'success': [Joomla.Text._('COM_J2COMMERCE_PAYMENT_METHODS_DEFAULT_SET')]
                 });
             } else {
-                throw new Error(data.message || data.data?.message || data.data?.error || data.error || Joomla.Text._('COM_J2COMMERCE_PAYMENT_METHODS_ERROR'));
+                throw new Error(data.message || data.error || Joomla.Text._('COM_J2COMMERCE_PAYMENT_METHODS_ERROR'));
             }
         } catch (error) {
             console.error('Set default card error:', error);
@@ -201,6 +207,33 @@
      *
      * @returns {string|null} The CSRF token
      */
+    /**
+     * Normalize a com_ajax plugin response to a single result object.
+     *
+     * com_ajax wraps plugin event results as {success, data: [...]}; providers return
+     * their result as an object, an array of objects, or a JSON-encoded string.
+     *
+     * @param {*} raw The parsed JSON response
+     * @returns {Object} The provider result ({success, message?, error?})
+     */
+    function unwrapAjaxResult(raw) {
+        let result = raw?.data ?? raw;
+
+        if (Array.isArray(result)) {
+            result = result[0];
+        }
+
+        if (typeof result === 'string') {
+            try {
+                result = JSON.parse(result);
+            } catch (e) {
+                result = {};
+            }
+        }
+
+        return (result && typeof result === 'object') ? result : {};
+    }
+
     function getCsrfToken() {
         const container = document.querySelector('.j2commerce-payment-methods');
 
