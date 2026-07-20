@@ -14,13 +14,16 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\EmailHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\InventoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\PackingSlipHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\QueueHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Controller\FormController;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
@@ -50,9 +53,70 @@ class OrderController extends FormController
         return parent::edit($key, $urlVar);
     }
 
+    /**
+     * Toolbar Save/Apply for the order edit layout. Routes through the same
+     * persistence as the AJAX endpoints (the generic jform/Table path cannot
+     * persist item lines or shipping details).
+     */
     public function save($key = null, $urlVar = 'id')
     {
-        return parent::save($key, $urlVar);
+        $this->checkToken();
+
+        $orderId = $this->input->getInt('id', 0);
+        $editUrl = Route::_('index.php?option=com_j2commerce&view=order&layout=edit&id=' . $orderId, false);
+        $listUrl = Route::_('index.php?option=com_j2commerce&view=orders', false);
+
+        if (!$this->app->getIdentity()->authorise('core.edit', 'com_j2commerce')
+            || !J2CommerceHelper::canAccess('j2commerce.editorders')
+        ) {
+            $this->setRedirect($listUrl, Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 'error');
+
+            return false;
+        }
+
+        $model = $this->getModel();
+        $order = $orderId > 0 ? $model->getItem($orderId) : null;
+
+        if (!$order || empty($order->order_id)) {
+            $this->setRedirect($listUrl, Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'), 'error');
+
+            return false;
+        }
+
+        try {
+            $jform = $this->input->post->get('jform', [], 'array');
+            $qty   = $this->input->post->get('orderitem_qty', [], 'array');
+            $price = $this->input->post->get('orderitem_price_edit', [], 'array');
+
+            $model->saveOrderEditData($orderId, $jform);
+
+            if (!empty($qty) || !empty($price)) {
+                $model->updateOrderItemLines($order->order_id, $qty, $price);
+            }
+
+            $model->recalculateOrderTotals($order->order_id);
+
+            if ($this->input->post->getInt('notify_customer', 0) === 1) {
+                $model->sendOrderNotification($order->order_id, true, false);
+            }
+
+            $this->setMessage(Text::_('COM_J2COMMERCE_ORDER_CHANGES_SAVED'));
+        } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $this->app->enqueueMessage(Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED'), 'warning');
+            $this->setRedirect($editUrl);
+
+            return false;
+        } catch (\Exception $e) {
+            $this->app->enqueueMessage($e->getMessage(), 'warning');
+            $this->setRedirect($editUrl);
+
+            return false;
+        }
+
+        $this->setRedirect($this->getTask() === 'apply' ? $editUrl : $listUrl);
+
+        return true;
     }
 
     public function cancel($key = 'id')
@@ -630,6 +694,729 @@ class OrderController extends FormController
             . $bodyHtml
             . '<script>window.onload=function(){window.print();};</script>'
             . '</body></html>';
+    }
+
+    /** CSRF + core.edit + the j2commerce.editorders gate for order-edit AJAX endpoints. */
+    private function checkOrderEditAccess(): bool
+    {
+        if (!$this->checkAjaxAccess()) {
+            return false;
+        }
+
+        if (!J2CommerceHelper::canAccess('j2commerce.editorders')) {
+            echo json_encode(['success' => false, 'message' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
+            $this->app->close();
+
+            return false;
+        }
+
+        return true;
+    }
+
+    /** Save the editable order-edit fields (used by the tab Next/Back buttons). */
+    public function ajaxSaveOrderEdit(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+
+        if (!$this->checkOrderEditAccess()) {
+            return;
+        }
+
+        $orderId = $this->input->post->getInt('order_id', 0);
+        $jform   = $this->input->post->get('jform', [], 'array');
+        $qty     = $this->input->post->get('orderitem_qty', [], 'array');
+        $price   = $this->input->post->get('orderitem_price_edit', [], 'array');
+
+        try {
+            if ($orderId < 1) {
+                throw new \Exception(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
+            }
+
+            $model = $this->getModel();
+            $order = $model->getItem($orderId);
+
+            if (!$order || empty($order->order_id)) {
+                throw new \Exception(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
+            }
+
+            if (!$model->saveOrderEditData($orderId, $jform)) {
+                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+            }
+
+            if (!empty($qty) || !empty($price)) {
+                $model->updateOrderItemLines($order->order_id, $qty, $price);
+            }
+
+            $totals = $model->recalculateOrderTotals($order->order_id);
+
+            echo json_encode([
+                'success' => true,
+                'message' => Text::_('COM_J2COMMERCE_ORDER_CHANGES_SAVED'),
+                'totals'  => $this->totalsPayload($totals, (string) $order->currency_code),
+            ]);
+        } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
+        } catch (\Exception $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+
+        $this->app->close();
+    }
+
+    /** Search enabled product variants by SKU or title for the order editor. */
+    public function ajaxSearchProducts(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+
+        if (!$this->checkOrderEditAccess()) {
+            return;
+        }
+
+        $term = trim($this->input->post->getString('term', ''));
+
+        try {
+            if ($term === '') {
+                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+            }
+
+            $results = $this->getModel()->searchProductVariants($term);
+
+            echo json_encode([
+                'success' => true,
+                'results' => array_map(static fn (object $row) => [
+                    'variant_id' => (int) $row->variant_id,
+                    'sku'        => (string) $row->sku,
+                    'name'       => (string) $row->product_name,
+                    'price'      => number_format((float) $row->price, 2, '.', ''),
+                ], $results),
+            ]);
+        } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
+        } catch (\Exception $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+
+        $this->app->close();
+    }
+
+    /** Add a product variant as a new order line item and recalculate totals. */
+    public function ajaxAddOrderItem(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+
+        if (!$this->checkOrderEditAccess()) {
+            return;
+        }
+
+        $orderId   = $this->input->post->getInt('order_id', 0);
+        $variantId = $this->input->post->getInt('variant_id', 0);
+        $qty       = $this->input->post->getInt('quantity', 1);
+
+        try {
+            if ($orderId < 1 || $variantId < 1) {
+                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+            }
+
+            $model = $this->getModel();
+            $order = $model->getItem($orderId);
+
+            if (!$order || empty($order->order_id)) {
+                throw new \Exception(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
+            }
+
+            $item = $model->addOrderItemFromVariant($order->order_id, $variantId, $qty);
+
+            if ($item === null) {
+                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+            }
+
+            $totals = $model->recalculateOrderTotals($order->order_id);
+
+            $model->addAdminNote(
+                $order->order_id,
+                (int) $order->order_state_id,
+                Text::sprintf('COM_J2COMMERCE_ORDER_ITEM_ADDED_NOTE', $item->orderitem_name),
+                'system_note'
+            );
+
+            echo json_encode([
+                'success' => true,
+                'message' => Text::_('COM_J2COMMERCE_ORDER_ITEM_ADDED'),
+                'totals'  => $this->totalsPayload($totals, (string) $order->currency_code),
+            ]);
+        } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
+        } catch (\Exception $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+
+        $this->app->close();
+    }
+
+    /** Update line quantities/prices and recalculate totals. */
+    public function ajaxUpdateItems(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+
+        if (!$this->checkOrderEditAccess()) {
+            return;
+        }
+
+        $orderId = $this->input->post->getInt('order_id', 0);
+        $qty     = $this->input->post->get('orderitem_qty', [], 'array');
+        $price   = $this->input->post->get('orderitem_price_edit', [], 'array');
+
+        try {
+            if ($orderId < 1) {
+                throw new \Exception(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
+            }
+
+            $model = $this->getModel();
+            $order = $model->getItem($orderId);
+
+            if (!$order || empty($order->order_id)) {
+                throw new \Exception(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
+            }
+
+            $model->updateOrderItemLines($order->order_id, $qty, $price);
+            $totals = $model->recalculateOrderTotals($order->order_id);
+
+            // Return refreshed line totals so the UI can update rows in place.
+            $lines = [];
+
+            foreach ($model->getOrderItems($order->order_id) as $line) {
+                $lines[(int) $line->j2commerce_orderitem_id] = [
+                    'quantity'             => (int) $line->orderitem_quantity,
+                    'price'                => number_format((float) $line->orderitem_price, 2, '.', ''),
+                    'finalprice'           => number_format((float) $line->orderitem_finalprice, 2, '.', ''),
+                    'finalprice_formatted' => CurrencyHelper::format((float) $line->orderitem_finalprice, (string) $order->currency_code),
+                ];
+            }
+
+            echo json_encode([
+                'success' => true,
+                'message' => Text::_('COM_J2COMMERCE_ORDER_CHANGES_SAVED'),
+                'totals'  => $this->totalsPayload($totals, (string) $order->currency_code),
+                'lines'   => $lines,
+            ]);
+        } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
+        } catch (\Exception $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+
+        $this->app->close();
+    }
+
+    /** Remove selected order items and recalculate totals. */
+    public function ajaxRemoveItems(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+
+        if (!$this->checkOrderEditAccess()) {
+            return;
+        }
+
+        $orderId = $this->input->post->getInt('order_id', 0);
+        $itemIds = $this->input->post->get('cid', [], 'array');
+
+        try {
+            if ($orderId < 1 || empty($itemIds)) {
+                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+            }
+
+            $model = $this->getModel();
+            $order = $model->getItem($orderId);
+
+            if (!$order || empty($order->order_id)) {
+                throw new \Exception(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
+            }
+
+            $removed = $model->removeOrderItems($order->order_id, $itemIds);
+
+            if (empty($removed)) {
+                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+            }
+
+            $totals = $model->recalculateOrderTotals($order->order_id);
+
+            foreach ($removed as $name) {
+                $model->addAdminNote(
+                    $order->order_id,
+                    (int) $order->order_state_id,
+                    Text::sprintf('COM_J2COMMERCE_ORDER_ITEM_REMOVED_NOTE', $name),
+                    'system_note'
+                );
+            }
+
+            echo json_encode([
+                'success' => true,
+                'message' => Text::_('COM_J2COMMERCE_ORDER_ITEMS_REMOVED'),
+                'totals'  => $this->totalsPayload($totals, (string) $order->currency_code),
+            ]);
+        } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
+        } catch (\Exception $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+
+        $this->app->close();
+    }
+
+    /** Recalculate and persist order totals. */
+    public function ajaxRecalculate(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+
+        if (!$this->checkOrderEditAccess()) {
+            return;
+        }
+
+        $orderId = $this->input->post->getInt('order_id', 0);
+
+        try {
+            if ($orderId < 1) {
+                throw new \Exception(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
+            }
+
+            $model = $this->getModel();
+            $order = $model->getItem($orderId);
+
+            if (!$order || empty($order->order_id)) {
+                throw new \Exception(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
+            }
+
+            $totals = $model->recomputeOrderTax($order->order_id);
+
+            echo json_encode([
+                'success' => true,
+                'message' => Text::_('COM_J2COMMERCE_ORDER_TOTALS_RECALCULATED'),
+                'totals'  => $this->totalsPayload($totals, (string) $order->currency_code),
+            ]);
+        } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
+        } catch (\Exception $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+
+        $this->app->close();
+    }
+
+    /** Append CurrencyHelper-formatted strings to a totals array for the JS layer. */
+    private function totalsPayload(array $totals, string $currencyCode): array
+    {
+        $formatted = [];
+
+        foreach ($totals as $name => $value) {
+            $formatted[$name] = CurrencyHelper::format((float) $value, $currencyCode);
+        }
+
+        $totals['formatted'] = $formatted;
+
+        return $totals;
+    }
+
+    /** Load + validate the order for an order-edit AJAX call, or emit the JSON error. */
+    private function loadOrderForAjax(): ?object
+    {
+        $orderId = $this->input->post->getInt('order_id', 0);
+        $order   = $orderId > 0 ? $this->getModel()->getItem($orderId) : null;
+
+        if (!$order || empty($order->order_id)) {
+            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND')]);
+            $this->app->close();
+
+            return null;
+        }
+
+        return $order;
+    }
+
+    /** Save the billing or shipping address block from the address edit form. */
+    public function ajaxSaveAddress(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+
+        if (!$this->checkOrderEditAccess()) {
+            return;
+        }
+
+        $type    = $this->input->post->getWord('address_type', '');
+        $address = $this->input->post->get('address', [], 'array');
+
+        try {
+            if (!($order = $this->loadOrderForAjax())) {
+                return;
+            }
+
+            if (!\in_array($type, ['billing', 'shipping'], true) || empty($address)) {
+                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+            }
+
+            if (!$this->getModel()->saveOrderAddress($order->order_id, $type, $address)) {
+                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED'));
+            }
+
+            echo json_encode(['success' => true, 'message' => Text::_('COM_J2COMMERCE_ORDER_CHANGES_SAVED')]);
+        } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
+        } catch (\Exception $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+
+        $this->app->close();
+    }
+
+    /** List the customer's saved addresses for the choose-alternate dialog. */
+    public function ajaxGetSavedAddresses(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+
+        if (!$this->checkOrderEditAccess()) {
+            return;
+        }
+
+        try {
+            if (!($order = $this->loadOrderForAjax())) {
+                return;
+            }
+
+            $addresses = $this->getModel()->getSavedAddresses((int) $order->user_id);
+
+            echo json_encode(['success' => true, 'addresses' => $addresses]);
+        } catch (\Exception $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+
+        $this->app->close();
+    }
+
+    /** Copy a saved customer address onto the order (billing or shipping). */
+    public function ajaxApplySavedAddress(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+
+        if (!$this->checkOrderEditAccess()) {
+            return;
+        }
+
+        $type      = $this->input->post->getWord('address_type', '');
+        $addressId = $this->input->post->getInt('address_id', 0);
+
+        try {
+            if (!($order = $this->loadOrderForAjax())) {
+                return;
+            }
+
+            if (!\in_array($type, ['billing', 'shipping'], true) || $addressId < 1) {
+                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+            }
+
+            if (!$this->getModel()->applySavedAddress($order->order_id, $type, $addressId, (int) $order->user_id)) {
+                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+            }
+
+            echo json_encode(['success' => true, 'message' => Text::_('COM_J2COMMERCE_ORDER_CHANGES_SAVED')]);
+        } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
+        } catch (\Exception $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+
+        $this->app->close();
+    }
+
+    /** Zones for a country (address form cascade). */
+    public function ajaxGetZones(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+
+        if (!$this->checkOrderEditAccess()) {
+            return;
+        }
+
+        $countryId = $this->input->post->getInt('country_id', 0);
+
+        echo json_encode(['success' => true, 'zones' => $this->getModel()->getZones($countryId)]);
+        $this->app->close();
+    }
+
+    /** Add a manual fee, recompute tax when taxable, and return fresh totals. */
+    public function ajaxAddFee(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+
+        if (!$this->checkOrderEditAccess()) {
+            return;
+        }
+
+        $name    = trim($this->input->post->getString('fee_name', ''));
+        $amount  = (float) $this->input->post->getString('fee_amount', '0');
+        $taxable = $this->input->post->getInt('fee_taxable', 0) === 1;
+
+        try {
+            if (!($order = $this->loadOrderForAjax())) {
+                return;
+            }
+
+            if ($name === '' || $amount <= 0) {
+                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+            }
+
+            $model = $this->getModel();
+
+            if (!$model->addOrderFee($order->order_id, $name, $amount, $taxable)) {
+                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED'));
+            }
+
+            $totals = $model->recalculateOrderTotals($order->order_id);
+
+            echo json_encode([
+                'success' => true,
+                'message' => Text::_('COM_J2COMMERCE_ORDER_FEE_ADDED'),
+                'totals'  => $this->totalsPayload($totals, (string) $order->currency_code),
+            ]);
+        } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
+        } catch (\Exception $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+
+        $this->app->close();
+    }
+
+    /** Remove a fee row and return fresh totals. */
+    public function ajaxRemoveFee(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+
+        if (!$this->checkOrderEditAccess()) {
+            return;
+        }
+
+        $feeId = $this->input->post->getInt('fee_id', 0);
+
+        try {
+            if (!($order = $this->loadOrderForAjax())) {
+                return;
+            }
+
+            $model = $this->getModel();
+
+            if ($feeId < 1 || !$model->removeOrderFee($order->order_id, $feeId)) {
+                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+            }
+
+            $totals = $model->recalculateOrderTotals($order->order_id);
+
+            echo json_encode([
+                'success' => true,
+                'message' => Text::_('COM_J2COMMERCE_ORDER_FEE_REMOVED'),
+                'totals'  => $this->totalsPayload($totals, (string) $order->currency_code),
+            ]);
+        } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
+        } catch (\Exception $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+
+        $this->app->close();
+    }
+
+    /** Apply a coupon code to the order. */
+    public function ajaxApplyCoupon(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+
+        if (!$this->checkOrderEditAccess()) {
+            return;
+        }
+
+        $code = trim($this->input->post->getString('coupon_code', ''));
+
+        try {
+            if (!($order = $this->loadOrderForAjax())) {
+                return;
+            }
+
+            if ($code === '') {
+                throw new \Exception(Text::_('COM_J2COMMERCE_ENTER_COUPON_CODE'));
+            }
+
+            $model               = $this->getModel();
+            [$success, $message] = $model->applyCouponToOrder($order, $code);
+
+            if (!$success) {
+                echo json_encode(['success' => false, 'message' => $message]);
+                $this->app->close();
+
+                return;
+            }
+
+            $totals = $model->recalculateOrderTotals($order->order_id);
+
+            echo json_encode([
+                'success' => true,
+                'message' => $message,
+                'totals'  => $this->totalsPayload($totals, (string) $order->currency_code),
+            ]);
+        } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
+        } catch (\Exception $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+
+        $this->app->close();
+    }
+
+    /** Apply a gift voucher code to the order. */
+    public function ajaxApplyVoucher(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+
+        if (!$this->checkOrderEditAccess()) {
+            return;
+        }
+
+        $code = trim($this->input->post->getString('voucher_code', ''));
+
+        try {
+            if (!($order = $this->loadOrderForAjax())) {
+                return;
+            }
+
+            if ($code === '') {
+                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+            }
+
+            $model               = $this->getModel();
+            [$success, $message] = $model->applyVoucherToOrder($order, $code);
+
+            if (!$success) {
+                echo json_encode(['success' => false, 'message' => $message]);
+                $this->app->close();
+
+                return;
+            }
+
+            $totals = $model->recalculateOrderTotals($order->order_id);
+
+            echo json_encode([
+                'success' => true,
+                'message' => $message,
+                'totals'  => $this->totalsPayload($totals, (string) $order->currency_code),
+            ]);
+        } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
+        } catch (\Exception $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+
+        $this->app->close();
+    }
+
+    /** Remove an applied discount (coupon or voucher) from the order. */
+    public function ajaxRemoveDiscount(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+
+        if (!$this->checkOrderEditAccess()) {
+            return;
+        }
+
+        $discountId = $this->input->post->getInt('discount_id', 0);
+
+        try {
+            if (!($order = $this->loadOrderForAjax())) {
+                return;
+            }
+
+            $model = $this->getModel();
+
+            if ($discountId < 1 || !$model->removeOrderDiscount($order->order_id, $discountId)) {
+                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+            }
+
+            $totals = $model->recalculateOrderTotals($order->order_id);
+
+            echo json_encode([
+                'success' => true,
+                'message' => Text::_('COM_J2COMMERCE_ORDER_DISCOUNT_REMOVED'),
+                'totals'  => $this->totalsPayload($totals, (string) $order->currency_code),
+            ]);
+        } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
+        } catch (\Exception $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+
+        $this->app->close();
+    }
+
+    /** Adjust a variant's stock by the order line quantity (Inventory column buttons). */
+    public function ajaxAdjustStock(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+
+        if (!$this->checkOrderEditAccess()) {
+            return;
+        }
+
+        $itemId    = $this->input->post->getInt('item_id', 0);
+        $direction = $this->input->post->getWord('direction', '');
+
+        try {
+            if (!($order = $this->loadOrderForAjax())) {
+                return;
+            }
+
+            if ($itemId < 1 || !\in_array($direction, ['increase', 'reduce'], true)) {
+                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+            }
+
+            $line = null;
+
+            foreach ($this->getModel()->getOrderItems($order->order_id) as $item) {
+                if ((int) $item->j2commerce_orderitem_id === $itemId) {
+                    $line = $item;
+                    break;
+                }
+            }
+
+            if (!$line || (int) $line->variant_id < 1) {
+                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+            }
+
+            $qty      = max(1, (int) $line->orderitem_quantity);
+            $delta    = $direction === 'increase' ? $qty : -$qty;
+            $newStock = InventoryHelper::adjustStock((int) $line->variant_id, $delta, $direction === 'reduce');
+
+            echo json_encode([
+                'success'  => true,
+                'message'  => Text::sprintf('COM_J2COMMERCE_STOCK_ADJUSTED', $line->orderitem_name, $newStock),
+                'newStock' => $newStock,
+            ]);
+        } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
+        } catch (\Exception $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+
+        $this->app->close();
     }
 
     protected function validateAjaxToken(): bool

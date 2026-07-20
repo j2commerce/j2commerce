@@ -74,7 +74,7 @@ $orderInfo = $item->orderinfo ?? null;
                             <?php echo $this->escape($file['name'] ?? basename($file['path'] ?? '')); ?>
                         </a>
                         <?php if (!empty($file['size'])) : ?>
-                        <span class="text-muted small">(<?php echo number_format((int) $file['size'] / 1024, 1); ?> KB)</span>
+                        <span class="text-body-secondary small">(<?php echo number_format((int) $file['size'] / 1024, 1); ?> KB)</span>
                         <?php endif; ?>
                     </li>
                     <?php endforeach; ?>
@@ -88,17 +88,22 @@ $orderInfo = $item->orderinfo ?? null;
         ?>
 
         <div class="mt-3">
-            <button type="button" class="btn btn-outline-primary me-2" id="editShippingAddressBtn">
+            <button type="button" class="btn btn-outline-primary me-2" id="editShippingAddressBtn" data-j2c-address-edit="shipping">
                 <span class="icon-pencil-alt" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_EDIT_ADDRESS'); ?>
             </button>
-            <button type="button" class="btn btn-outline-warning" id="chooseShippingAddressBtn">
+            <button type="button" class="btn btn-outline-info" id="chooseShippingAddressBtn" data-j2c-address-choose="shipping">
                 <span class="icon-list" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_CHOOSE_ALTERNATE_ADDRESS'); ?>
             </button>
         </div>
+        <?php $this->addressFormType = 'shipping'; echo $this->loadTemplate('address_form'); ?>
         <?php elseif (!$item->is_shippable) : ?>
             <div class="alert alert-secondary"><?php echo Text::_('COM_J2COMMERCE_ORDER_NOT_SHIPPABLE'); ?></div>
         <?php else : ?>
             <div class="alert alert-info"><?php echo Text::_('COM_J2COMMERCE_NO_SHIPPING_ADDRESS'); ?></div>
+            <button type="button" class="btn btn-outline-primary" data-j2c-address-edit="shipping">
+                <span class="icon-pencil-alt" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_EDIT_ADDRESS'); ?>
+            </button>
+            <?php $this->addressFormType = 'shipping'; echo $this->loadTemplate('address_form'); ?>
         <?php endif; ?>
     </div>
 </div>
