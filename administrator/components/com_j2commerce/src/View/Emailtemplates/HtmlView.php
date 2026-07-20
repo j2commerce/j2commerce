@@ -178,6 +178,18 @@ class HtmlView extends BaseHtmlView
             $toolbar->standardButton('export', 'COM_J2COMMERCE_EMAILTEMPLATE_EXPORT', 'emailtemplates.export')
                 ->icon('icon-download')
                 ->listCheck(true);
+
+            // Popup dialog markup only exists in the default (non-empty) list layout.
+            if ($canDo->get('core.edit')) {
+                $toolbar->popupButton('synccore', 'COM_J2COMMERCE_EMAILTEMPLATE_SYNC_CORE')
+                    ->popupType('inline')
+                    ->textHeader(Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SYNC_CORE_TITLE'))
+                    ->url('#joomla-dialog-synccore')
+                    ->modalWidth('600px')
+                    ->modalHeight('fit-content')
+                    ->listCheck(false)
+                    ->icon('icon-loop');
+            }
         }
 
         $toolbar->standardButton('import', 'COM_J2COMMERCE_EMAILTEMPLATE_IMPORT', 'emailtemplates.import')

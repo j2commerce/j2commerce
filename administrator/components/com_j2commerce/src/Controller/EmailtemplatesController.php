@@ -12,8 +12,10 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\CoreTemplateSyncHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Controller\AdminController;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
@@ -454,6 +456,39 @@ class EmailtemplatesController extends AdminController
         }
 
         $this->setMessage(Text::sprintf('COM_J2COMMERCE_EMAILTEMPLATE_IMPORT_SUCCESS', $imported));
+        $this->setRedirect(Route::_('index.php?option=' . $this->option . '&view=' . $this->view_list, false));
+    }
+
+    /** Overwrite the core email templates' body/body_json with the currently-installed .html presets. */
+    public function syncCore(): void
+    {
+        Session::checkToken() or jexit(Text::_('JINVALID_TOKEN'));
+
+        $user = $this->app->getIdentity();
+
+        if (!$user || $user->guest || (int) $user->id === 0) {
+            $this->app->enqueueMessage(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 'error');
+            $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=emailtemplates', false));
+            return;
+        }
+
+        if (!$user->authorise('core.edit', 'com_j2commerce')) {
+            $this->app->enqueueMessage(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 'error');
+            $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=emailtemplates', false));
+            return;
+        }
+
+        try {
+            $results = (new CoreTemplateSyncHelper())->syncEmailTemplates();
+            $updated = \count(array_filter($results, static fn (array $result): bool => $result['status'] === 'updated'));
+            $skipped = \count($results) - $updated;
+
+            $this->setMessage(Text::sprintf('COM_J2COMMERCE_EMAILTEMPLATE_SYNC_CORE_RESULT', $updated, $skipped));
+        } catch (\Throwable $e) {
+            Log::add('Core email template sync failed: ' . $e->getMessage(), Log::ERROR, 'j2commerce');
+            $this->setMessage(Text::_('COM_J2COMMERCE_ERR_GENERIC'), 'error');
+        }
+
         $this->setRedirect(Route::_('index.php?option=' . $this->option . '&view=' . $this->view_list, false));
     }
 }

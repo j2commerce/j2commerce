@@ -18,6 +18,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Field\ListField;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\Database\DatabaseInterface;
 
 /**
@@ -59,8 +60,11 @@ class OrderstatusField extends ListField
                 }
             }
         } catch (\Exception $e) {
+            // Log the detail server-side; never surface a raw exception message to the user.
+            Log::add('Failed to load order statuses: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+
             Factory::getApplication()->enqueueMessage(
-                Text::sprintf('COM_J2COMMERCE_ERROR_LOADING_ORDER_STATUSES', $e->getMessage()),
+                Text::sprintf('COM_J2COMMERCE_ERROR_LOADING_ORDER_STATUSES', Text::_('JERROR_AN_ERROR_HAS_OCCURRED')),
                 'error'
             );
         }

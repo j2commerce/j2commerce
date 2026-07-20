@@ -45,7 +45,7 @@ $orderShipping = $item->ordershipping ?? null;
         <div class="mb-3">
             <div class="card">
                 <div class="card-body">
-                    <p class="text-muted mb-2"><?php echo Text::_('COM_J2COMMERCE_FIELD_PAYMENT_METHOD'); ?>:</p>
+                    <p class="text-body-secondary mb-2"><?php echo Text::_('COM_J2COMMERCE_FIELD_PAYMENT_METHOD'); ?>:</p>
                     <p><strong><?php echo $this->escape($item->orderpayment_type); ?></strong></p>
                     <input type="hidden" name="jform[orderpayment_type]" value="<?php echo $this->escape($item->orderpayment_type); ?>">
                 </div>

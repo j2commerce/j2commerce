@@ -44,6 +44,10 @@ class HtmlView extends BaseHtmlView
     protected string $currencyCode   = '';
     protected bool $hasPackingSlip   = false;
     protected ?Registry $params      = null;
+    protected array $countries       = [];
+
+    /** Set by the billing/shipping tab templates before loading the shared address form. */
+    protected string $addressFormType = 'billing';
 
     public function display($tpl = null): void
     {
@@ -121,6 +125,20 @@ class HtmlView extends BaseHtmlView
                 [],
                 ['defer' => true]
             );
+            Text::script('COM_J2COMMERCE_ERROR_NETWORK');
+            Text::script('COM_J2COMMERCE_ERROR_INVALID_REQUEST');
+            Text::script('COM_J2COMMERCE_CONFIRM_REMOVE_ITEMS');
+            Text::script('COM_J2COMMERCE_ADD_TO_ORDER');
+            Text::script('JGLOBAL_NO_MATCHING_RESULTS');
+            Text::script('JLIB_HTML_PLEASE_MAKE_A_SELECTION_FROM_THE_LIST');
+            Text::script('COM_J2COMMERCE_CONFIRM_REMOVE_FEE');
+            Text::script('COM_J2COMMERCE_CONFIRM_REMOVE_DISCOUNT');
+            Text::script('COM_J2COMMERCE_NO_SAVED_ADDRESSES');
+            Text::script('COM_J2COMMERCE_USE_THIS_ADDRESS');
+            Text::script('COM_J2COMMERCE_HEADING_QTY');
+            Text::script('JGLOBAL_SELECT_AN_OPTION');
+
+            $this->countries = $model->getCountries();
         } elseif ($layout === 'packingslip') {
             $this->setLayout('packingslip');
         } elseif ($layout === 'invoice') {

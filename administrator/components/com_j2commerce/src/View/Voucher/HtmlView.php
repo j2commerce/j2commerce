@@ -38,21 +38,32 @@ class HtmlView extends BaseHtmlView
      *
      * @var  \Joomla\CMS\Form\Form
      */
-    protected $form;
+    public $form;
 
     /**
      * The active item
      *
      * @var  object
      */
-    protected $item;
+    public $item;
 
     /**
      * The model state
      *
      * @var  object
      */
-    protected $state;
+    public $state;
+
+    /** History layout: ledger rows, list machinery and KPI totals. */
+    public array $ledger = [];
+    public $ledgerPagination;
+    public $ledgerState;
+    public $filterForm;
+    public array $activeFilters    = [];
+    public float $redeemedTotal    = 0.0;
+    public float $adjustmentsNet   = 0.0;
+    public float $remainingBalance = 0.0;
+    public bool $ledgerIsEmpty     = true;
 
     /**
      * Display the view

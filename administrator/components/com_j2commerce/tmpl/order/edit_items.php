@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
@@ -35,7 +37,7 @@ $currency = $item->currency_code ?? 'USD';
             </thead>
             <tbody>
                 <?php foreach ($orderItems as $i => $orderItem) : ?>
-                <tr>
+                <tr data-item-id="<?php echo (int) $orderItem->j2commerce_orderitem_id; ?>">
                     <td class="text-center">
                         <?php echo HTMLHelper::_('grid.id', $i, $orderItem->j2commerce_orderitem_id); ?>
                     </td>
@@ -49,9 +51,16 @@ $currency = $item->currency_code ?? 'USD';
                                 'variant'    => 'compact',
                             ], JPATH_ROOT . '/components/com_j2commerce/layouts'); ?>
                         <?php endif; ?>
-                        <div class="small text-muted">
-                            <?php echo $this->escape($currency); ?> <?php echo number_format((float) $orderItem->orderitem_price, 2); ?> / unit
+                        <div class="input-group input-group-sm mt-1" style="max-width: 180px;">
+                            <span class="input-group-text"><?php echo $this->escape($currency); ?></span>
+                            <input type="number" class="form-control"
+                                   name="orderitem_price_edit[<?php echo (int) $orderItem->j2commerce_orderitem_id; ?>]"
+                                   value="<?php echo number_format((float) $orderItem->orderitem_price, 2, '.', ''); ?>"
+                                   step="0.01" min="0"
+                                   aria-label="<?php echo Text::_('COM_J2COMMERCE_FIELD_UNIT_PRICE'); ?>">
+                            <span class="input-group-text text-body-secondary">/ <?php echo Text::_('COM_J2COMMERCE_UNIT'); ?></span>
                         </div>
+                        <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterDisplayLineItemTitle', array($orderItem, $item, $this->params))->getArgument('html', ''); ?>
                     </td>
                     <td class="text-center">
                         <input type="number" class="form-control form-control-sm text-center" style="width: 80px; margin: 0 auto;"
@@ -73,7 +82,7 @@ $currency = $item->currency_code ?? 'USD';
                         </div>
                     </td>
                     <td class="text-end">
-                        <strong><?php echo $this->escape($currency); ?> <?php echo number_format((float) $orderItem->orderitem_finalprice, 2); ?></strong>
+                        <strong class="j2c-line-total"><?php echo CurrencyHelper::format((float) $orderItem->orderitem_finalprice, $currency); ?></strong>
                     </td>
                 </tr>
                 <?php endforeach; ?>

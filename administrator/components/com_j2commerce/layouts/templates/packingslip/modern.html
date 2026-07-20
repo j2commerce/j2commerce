@@ -54,6 +54,7 @@
             <table width="100%" cellpadding="0" cellspacing="0" border="0">
               <tr>
                 <!-- Ship To -->
+                [IF:SHIPPING_FIRSTNAME]
                 <td class="address-col" style="width: 60%; vertical-align: top; padding-right: 8px;">
                   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 10px;">
                     <tr>
@@ -72,6 +73,7 @@
                     </tr>
                   </table>
                 </td>
+                [/IF:SHIPPING_FIRSTNAME]
                 <!-- Order Details -->
                 <td class="address-col" style="width: 40%; vertical-align: top; padding-left: 8px;">
                   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 10px;">

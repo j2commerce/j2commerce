@@ -250,6 +250,11 @@ $isMultilang = Multilanguage::isEnabled();
             </div>
         </div>
     </div>
+
+    <?php // Must stay inside the form: for popupType=inline, joomla-dialog appends the dialog to
+          // this template's parentElement, so a template outside the form leaves its fields
+          // outside it too and they are never submitted. ?>
+    <template id="joomla-dialog-synccore"><?php echo $this->loadTemplate('synccore_body'); ?></template>
 </form>
 
 <?php echo $this->footer ?? ''; ?>

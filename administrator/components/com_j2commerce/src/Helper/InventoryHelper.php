@@ -1156,6 +1156,12 @@ class InventoryHelper
      *
      * @since   6.0.10
      */
+    /** Public entry point for single-variant stock adjustment (admin order editing). */
+    public static function adjustStock(int $variantId, int $delta, bool $allowNegative = false): int
+    {
+        return self::adjustVariantStock($variantId, $delta, $allowNegative);
+    }
+
     private static function adjustVariantStock(int $variantId, int $delta, bool $allowNegative = false): int
     {
         $db = self::getDatabase();

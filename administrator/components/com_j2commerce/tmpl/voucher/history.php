@@ -14,6 +14,7 @@ defined('_JEXEC') or die;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
@@ -23,7 +24,7 @@ use Joomla\CMS\Router\Route;
 
 J2CommerceHelper::strapper()->addCSS();
 
-$wa = $this->getDocument()->getWebAssetManager();
+$wa = Factory::getApplication()->getDocument()->getWebAssetManager();
 $wa->useScript('table.columns');
 
 $initialValue = (float) $this->item->voucher_value;
@@ -103,7 +104,7 @@ $listDirn   = $this->escape($this->ledgerState->get('list.direction'));
     </div>
 
     <?php if ($this->ledgerIsEmpty) : ?>
-        <?php echo $this->loadTemplate('historyempty'); ?>
+        <?php echo $this->loadTemplate('emptystate'); ?>
     <?php else : ?>
         <form action="<?php echo Route::_('index.php?option=com_j2commerce&view=voucher&layout=history&id=' . (int) $this->item->j2commerce_voucher_id); ?>" method="post" name="adminForm" id="adminForm">
             <div class="row">
