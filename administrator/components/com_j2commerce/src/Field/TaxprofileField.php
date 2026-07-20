@@ -19,6 +19,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Field\ListField;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\Database\DatabaseInterface;
 
 /**
@@ -60,16 +61,34 @@ class TaxprofileField extends ListField
             $merged   = $event->getEventResult();
             $profiles = \is_array($merged) ? $merged : $profiles;
 
+            $seenIds = [];
+
             foreach ($profiles as $profile) {
                 if (!isset($profile->j2commerce_taxprofile_id, $profile->taxprofile_name)) {
                     continue;
                 }
 
-                $options[] = HTMLHelper::_('select.option', $profile->j2commerce_taxprofile_id, $profile->taxprofile_name);
+                // Match the SQL above: disabled profiles (plugin-injected rows carry
+                // their own `enabled` flag) are not selectable.
+                if (isset($profile->enabled) && !(int) $profile->enabled) {
+                    continue;
+                }
+
+                // A plugin-injected profile reusing a real profile's ID would silently
+                // shadow it on save — skip the duplicate instead of listing it twice.
+                $id = (int) $profile->j2commerce_taxprofile_id;
+
+                if (isset($seenIds[$id])) {
+                    continue;
+                }
+
+                $seenIds[$id] = true;
+                $options[]    = HTMLHelper::_('select.option', $profile->j2commerce_taxprofile_id, $profile->taxprofile_name);
             }
         } catch (\Exception $e) {
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
             Factory::getApplication()->enqueueMessage(
-                Text::sprintf('COM_J2COMMERCE_ERROR_LOADING_TAX_PROFILES', $e->getMessage()),
+                Text::_('JERROR_AN_ERROR_HAS_OCCURRED'),
                 'error'
             );
         }
