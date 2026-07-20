@@ -1004,6 +1004,27 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             } catch (\Throwable $e) {
                 // Fail silently — an orphan-menu detection error must never break the dashboard.
             }
+
+            try {
+                foreach ($this->getMissingRequiredMenuViews() as $required) {
+                    $result[] = [
+                        'id'   => 'j2commerce_required_menu_' . preg_replace('/[^a-z0-9_]/', '', strtolower($required->view)),
+                        'text' => Text::sprintf(
+                            'COM_J2COMMERCE_REQUIRED_MENU_DESC',
+                            htmlspecialchars($required->label, ENT_QUOTES, 'UTF-8'),
+                            htmlspecialchars($required->view, ENT_QUOTES, 'UTF-8')
+                        ),
+                        'type'        => 'warning',
+                        'icon'        => 'fa-solid fa-link',
+                        'dismissible' => 'session',
+                        'link'        => Route::_('index.php?option=com_menus&view=items&client_id=0'),
+                        'linkText'    => Text::_('COM_J2COMMERCE_REQUIRED_MENU_MANAGE'),
+                        'priority'    => 90,
+                    ];
+                }
+            } catch (\Throwable $e) {
+                // Fail silently — required-menu detection must never break the dashboard.
+            }
         }
 
         $event->setArgument('result', $result);
@@ -1018,6 +1039,27 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
      * @since   6.0.4
      */
     private function getOrphanedJ2CommerceMenuItems(): array
+    {
+        $links = $this->getPublishedJ2CommerceMenuLinks();
+
+        if ($links === []) {
+            return [];
+        }
+
+        $servableViews = $this->getServableJ2CommerceViews();
+
+        return array_values(array_filter(
+            $links,
+            static fn (object $link): bool => !\in_array($link->view, $servableViews, true)
+        ));
+    }
+
+    /**
+     * Published site component menu items pointing at a com_j2commerce view.
+     *
+     * @return  array<int, object{id: int, title: string, view: string}>
+     */
+    private function getPublishedJ2CommerceMenuLinks(): array
     {
         $db        = $this->getDatabase();
         $like      = '%option=com_j2commerce%';
@@ -1038,36 +1080,65 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             ->bind(':link', $like);
 
         $db->setQuery($query);
-        $rows = $db->loadObjectList();
+        $links = [];
 
-        if (empty($rows)) {
-            return [];
-        }
-
-        $servableViews = $this->getServableJ2CommerceViews();
-        $orphans       = [];
-
-        foreach ($rows as $row) {
+        foreach ($db->loadObjectList() ?: [] as $row) {
             parse_str((string) parse_url((string) $row->link, PHP_URL_QUERY), $queryParams);
 
-            if (($queryParams['option'] ?? '') !== 'com_j2commerce') {
+            if (($queryParams['option'] ?? '') !== 'com_j2commerce' || empty($queryParams['view'])) {
                 continue;
             }
 
-            $view = $queryParams['view'] ?? null;
-
-            if ($view === null || \in_array($view, $servableViews, true)) {
-                continue;
-            }
-
-            $orphans[] = (object) [
+            $links[] = (object) [
                 'id'    => (int) $row->id,
-                'title' => $row->title,
-                'view'  => $view,
+                'title' => (string) $row->title,
+                'view'  => (string) $queryParams['view'],
             ];
         }
 
-        return $orphans;
+        return $links;
+    }
+
+    /**
+     * Views an enabled plugin declared as needing a published site menu item (via
+     * onJ2CommerceGetRequiredMenuViews — entries of ['view' => ..., 'label' => ...])
+     * that no published com_j2commerce menu item currently links to.
+     *
+     * @return  array<int, object{view: string, label: string}>
+     */
+    private function getMissingRequiredMenuViews(): array
+    {
+        PluginHelper::importPlugin('j2commerce');
+
+        $event = new Event('onJ2CommerceGetRequiredMenuViews', ['result' => []]);
+        $this->getApplication()->getDispatcher()->dispatch('onJ2CommerceGetRequiredMenuViews', $event);
+
+        $required = [];
+
+        foreach ((array) $event->getArgument('result', []) as $entry) {
+            $entry = (object) $entry;
+            $view  = trim((string) ($entry->view ?? ''));
+
+            if ($view === '' || isset($required[$view])) {
+                continue;
+            }
+
+            $required[$view] = (object) [
+                'view'  => $view,
+                'label' => trim((string) ($entry->label ?? '')) ?: $view,
+            ];
+        }
+
+        if ($required === []) {
+            return [];
+        }
+
+        $linkedViews = array_column($this->getPublishedJ2CommerceMenuLinks(), 'view');
+
+        return array_values(array_filter(
+            $required,
+            static fn (object $r): bool => !\in_array($r->view, $linkedViews, true)
+        ));
     }
 
     /**
@@ -1083,7 +1154,8 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
     {
         $views = [
             'categories', 'category', 'products', 'product', 'producttags',
-            'dashboard', 'carts', 'checkout', 'myprofile', 'confirmation', 'categoryalias',
+            'dashboard', 'carts', 'checkout', 'myprofile', 'confirmation',
+            'paymentupdate', 'categoryalias',
         ];
 
         try {
