@@ -24,7 +24,9 @@ $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
 $wa->useScript('keepalive')
     ->useScript('form.validate');
 
-$layout  = 'edit';
+// In a picker modal keep layout=modal in the form action so the save redirects to modalreturn.
+$isModal = Factory::getApplication()->getInput()->get('layout') === 'modal';
+$layout  = $isModal ? 'modal' : 'edit';
 $tmpl    = Factory::getApplication()->input->get('tmpl', '', 'cmd') === 'component' ? '&tmpl=component' : '';
 ?>
 

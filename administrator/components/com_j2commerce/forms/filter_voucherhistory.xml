@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+    <fields name="filter">
+        <field
+            name="search"
+            type="text"
+            label="COM_J2COMMERCE_FILTER_SEARCH_LABEL"
+            description="COM_J2COMMERCE_FILTER_SEARCH_VOUCHER_HISTORY_DESC"
+            hint="COM_J2COMMERCE_FILTER_SEARCH_VOUCHER_HISTORY_LABEL"
+            inputmode="search"
+        />
+
+        <field
+            name="type"
+            type="list"
+            label="COM_J2COMMERCE_VOUCHER_LEDGER_TYPE"
+            onchange="this.form.submit();"
+        >
+            <option value="">JALL</option>
+            <option value="redemption">COM_J2COMMERCE_VOUCHER_LEDGER_TYPE_REDEMPTION</option>
+            <option value="credit">COM_J2COMMERCE_VOUCHER_LEDGER_TYPE_CREDIT</option>
+            <option value="debit">COM_J2COMMERCE_VOUCHER_LEDGER_TYPE_DEBIT</option>
+            <option value="correction">COM_J2COMMERCE_VOUCHER_LEDGER_TYPE_CORRECTION</option>
+        </field>
+
+        <field
+            name="amount_from"
+            type="text"
+            inputmode="decimal"
+            filter="float"
+            label="COM_J2COMMERCE_FILTER_VOUCHER_HISTORY_AMOUNT_FROM_LABEL"
+            hint="COM_J2COMMERCE_FILTER_VOUCHER_HISTORY_AMOUNT_FROM_LABEL"
+            onchange="this.form.submit();"
+        />
+
+        <field
+            name="amount_to"
+            type="text"
+            inputmode="decimal"
+            filter="float"
+            label="COM_J2COMMERCE_FILTER_VOUCHER_HISTORY_AMOUNT_TO_LABEL"
+            hint="COM_J2COMMERCE_FILTER_VOUCHER_HISTORY_AMOUNT_TO_LABEL"
+            onchange="this.form.submit();"
+        />
+    </fields>
+
+    <fields name="list">
+        <field
+            name="fullordering"
+            type="list"
+            label="JGLOBAL_SORT_BY"
+            default="created_on DESC"
+            onchange="this.form.submit();"
+            validate="options"
+        >
+            <option value="">JGLOBAL_SORT_BY</option>
+            <option value="created_on ASC">COM_J2COMMERCE_VOUCHER_HISTORY_DATE_ASC</option>
+            <option value="created_on DESC">COM_J2COMMERCE_VOUCHER_HISTORY_DATE_DESC</option>
+            <option value="type ASC">COM_J2COMMERCE_VOUCHER_LEDGER_TYPE_ASC</option>
+            <option value="type DESC">COM_J2COMMERCE_VOUCHER_LEDGER_TYPE_DESC</option>
+            <option value="amount ASC">COM_J2COMMERCE_VOUCHER_LEDGER_AMOUNT_ASC</option>
+            <option value="amount DESC">COM_J2COMMERCE_VOUCHER_LEDGER_AMOUNT_DESC</option>
+            <option value="running_balance ASC">COM_J2COMMERCE_VOUCHER_LEDGER_RUNNING_BALANCE_ASC</option>
+            <option value="running_balance DESC">COM_J2COMMERCE_VOUCHER_LEDGER_RUNNING_BALANCE_DESC</option>
+            <option value="reference ASC">COM_J2COMMERCE_VOUCHER_LEDGER_REFERENCE_ASC</option>
+            <option value="reference DESC">COM_J2COMMERCE_VOUCHER_LEDGER_REFERENCE_DESC</option>
+            <option value="actor ASC">COM_J2COMMERCE_VOUCHER_LEDGER_ACTOR_ASC</option>
+            <option value="actor DESC">COM_J2COMMERCE_VOUCHER_LEDGER_ACTOR_DESC</option>
+            <option value="reason ASC">COM_J2COMMERCE_VOUCHER_LEDGER_REASON_ASC</option>
+            <option value="reason DESC">COM_J2COMMERCE_VOUCHER_LEDGER_REASON_DESC</option>
+        </field>
+
+        <field
+            name="limit"
+            type="limitbox"
+            label="JGLOBAL_LIST_LIMIT"
+            default="25"
+            onchange="this.form.submit();"
+        />
+    </fields>
+</form>

@@ -82,9 +82,20 @@ class HtmlView extends BaseHtmlView
         $this->item  = $model->getItem();
         $this->state = $model->getState();
 
-        $this->addToolbar();
-
         $layout = Factory::getApplication()->getInput()->get('layout', 'edit');
+
+        // The modalreturn layout only reports the saved coupon back to the picker field.
+        if ($layout === 'modalreturn') {
+            parent::display($tpl);
+
+            return;
+        }
+
+        if ($layout === 'modal') {
+            $this->addModalToolbar();
+        } else {
+            $this->addToolbar();
+        }
 
         // If this is the history layout, get coupon usage details
         if ($layout === 'history') {
@@ -186,5 +197,33 @@ class HtmlView extends BaseHtmlView
 
         $toolbar->divider();
         ToolbarHelper::help(Text::_('COM_J2COMMERCE_COUPONS'), true, 'https://docs.j2commerce.com/v6/sales/coupons');
+    }
+
+    /**
+     * Add the slim toolbar shown when the coupon form is opened inside a picker modal.
+     *
+     * @return  void
+     *
+     * @since   6.0.6
+     */
+    protected function addModalToolbar(): void
+    {
+        Factory::getApplication()->getInput()->set('hidemainmenu', true);
+
+        $isNew   = ((int) $this->item->j2commerce_coupon_id === 0);
+        $canDo   = ContentHelper::getActions('com_j2commerce');
+        $toolbar = $this->getDocument()->getToolbar();
+
+        ToolbarHelper::title(
+            Text::_($isNew ? 'COM_J2COMMERCE_NEW_COUPON' : 'COM_J2COMMERCE_EDIT_COUPON'),
+            'fa-solid fa-scissors'
+        );
+
+        if ($isNew ? $canDo->get('core.create') : $canDo->get('core.edit')) {
+            $toolbar->apply('coupon.apply');
+            $toolbar->save('coupon.save');
+        }
+
+        $toolbar->cancel('coupon.cancel');
     }
 }

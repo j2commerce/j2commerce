@@ -28,29 +28,30 @@ use Joomla\CMS\Session\Session;
 
 class HtmlView extends BaseHtmlView
 {
-    public array $orders                = [];
-    public ?Pagination $pagination      = null;
-    public array $addresses             = [];
-    public array $downloads             = [];
-    public int $downloadsTotal          = 0;
-    public ?object $params              = null;
-    public $currency                    = null;
-    public ?\Joomla\CMS\User\User $user = null;
-    public bool $isGuest                = false;
-    public ?object $order               = null;
-    public array $orderItems            = [];
-    public ?object $orderInfo           = null;
-    public array $orderHistory          = [];
-    public array $orderShippings        = [];
-    public array $orderTaxes            = [];
-    public array $orderFees             = [];
-    public ?object $address             = null;
-    public array $customFields          = [];
-    public string $pluginTabHtml        = '';
-    public string $pluginContentHtml    = '';
-    public string $topMessagesHtml      = '';
-    public bool $useUnifiedPaymentTab   = false;
-    public array $paymentMethodsGrouped = [];
+    public array $orders                     = [];
+    public ?Pagination $pagination           = null;
+    public array $addresses                  = [];
+    public array $downloads                  = [];
+    public int $downloadsTotal               = 0;
+    public ?object $params                   = null;
+    public $currency                         = null;
+    public ?\Joomla\CMS\User\User $user      = null;
+    public bool $isGuest                     = false;
+    public ?object $order                    = null;
+    public array $orderItems                 = [];
+    public ?object $orderInfo                = null;
+    public array $orderHistory               = [];
+    public array $orderShippings             = [];
+    public array $orderTaxes                 = [];
+    public array $orderFees                  = [];
+    public ?object $address                  = null;
+    public array $customFields               = [];
+    public string $pluginTabHtml             = '';
+    public string $pluginContentHtml         = '';
+    public string $topMessagesHtml           = '';
+    public bool $useUnifiedPaymentTab        = false;
+    public array $paymentMethodsGrouped      = [];
+    public string $paymentMethodsAddCardHtml = '';
 
     public function display($tpl = null): void
     {
@@ -149,15 +150,26 @@ class HtmlView extends BaseHtmlView
             if ($userId > 0) {
                 $paymentMethods = PaymentMethodsHelper::getPaymentMethods($userId);
 
-                if (!empty($paymentMethods)) {
+                // Provider "Add Card" slots render at the top of the unified tab; a provider
+                // offering one keeps the tab visible even before the first card is saved.
+                $this->paymentMethodsAddCardHtml = J2CommerceHelper::plugin()
+                    ->eventWithHtml('PaymentMethodsAddCard', [$userId])
+                    ->getArgument('html', '');
+
+                if (!empty($paymentMethods) || $this->paymentMethodsAddCardHtml !== '') {
                     $this->useUnifiedPaymentTab  = true;
                     $this->paymentMethodsGrouped = PaymentMethodsHelper::groupByProvider($paymentMethods);
                 }
             }
 
-            // Payment plugins use the unified GetSavedPaymentMethods event instead
-            $this->pluginTabHtml     = J2CommerceHelper::plugin()->eventWithHtml('MyProfileTab')->getArgument('html', '');
-            $this->pluginContentHtml = J2CommerceHelper::plugin()->eventWithHtml('MyProfileTabContent', [$this->orders])->getArgument('html', '');
+            // Payment plugins use the unified GetSavedPaymentMethods event instead; the flag
+            // lets legacy per-plugin tab handlers stand down when the unified tab is active.
+            $this->pluginTabHtml = J2CommerceHelper::plugin()
+                ->eventWithHtml('MyProfileTab', ['useUnifiedPaymentTab' => $this->useUnifiedPaymentTab])
+                ->getArgument('html', '');
+            $this->pluginContentHtml = J2CommerceHelper::plugin()
+                ->eventWithHtml('MyProfileTabContent', [$this->orders, 'useUnifiedPaymentTab' => $this->useUnifiedPaymentTab])
+                ->getArgument('html', '');
 
             // These plugin events should always run regardless of payment tab state
             $this->topMessagesHtml   = J2CommerceHelper::plugin()->eventWithHtml('MyProfileTopMessages', [$this->orders])->getArgument('html', '');
@@ -185,6 +197,7 @@ class HtmlView extends BaseHtmlView
             Text::script('COM_J2COMMERCE_PAYMENT_METHODS_NO_SAVED');
             Text::script('COM_J2COMMERCE_PAYMENT_METHODS_ERROR');
             Text::script('COM_J2COMMERCE_PAYMENT_METHODS_NETWORK_ERROR');
+            Text::script('JACTION_DELETE');
         }
 
         $this->getDocument()->addScriptOptions('com_j2commerce.myprofile', [

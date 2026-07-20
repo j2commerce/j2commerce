@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
@@ -64,17 +65,48 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
                         </thead>
                         <tbody>
                         <?php foreach ($this->items as $i => $item) : ?>
+                            <?php $isPlugin = !empty($item->is_plugin); ?>
                             <tr class="row<?php echo $i % 2; ?>">
                                 <td class="text-center">
-                                    <?php echo HTMLHelper::_('grid.id', $i, $item->j2commerce_taxprofile_id, false, 'cid', 'cb', $item->taxprofile_name); ?>
+                                    <?php if (!$isPlugin) : ?>
+                                        <?php echo HTMLHelper::_('grid.id', $i, $item->j2commerce_taxprofile_id, false, 'cid', 'cb', $item->taxprofile_name); ?>
+                                    <?php endif; ?>
                                 </td>
                                 <td class="text-center">
-                                    <?php echo HTMLHelper::_('jgrid.published', $item->enabled, $i, 'taxprofiles.', true, 'cb'); ?>
+                                    <?php if ($isPlugin) : ?>
+                                        <?php
+                                        $iconClass = !empty($item->enabled) ? 'icon-publish' : 'icon-unpublish';
+                                        $iconTitle = Text::_(!empty($item->enabled) ? 'JLIB_HTML_UNPUBLISH_ITEM' : 'JLIB_HTML_PUBLISH_ITEM');
+                                        ?>
+                                        <?php // Only follow plugin links that are internal routes — a non-index.php URL would pass through Route::_() unescaped. ?>
+                                        <?php if (!empty($item->toggle_link) && str_starts_with((string) $item->toggle_link, 'index.php')) : ?>
+                                            <a class="tbody-icon" href="<?php echo Route::_($item->toggle_link); ?>" title="<?php echo $this->escape($iconTitle); ?>">
+                                                <span class="<?php echo $iconClass; ?>" aria-hidden="true"></span>
+                                            </a>
+                                        <?php else : ?>
+                                            <span class="tbody-icon">
+                                                <span class="<?php echo $iconClass; ?>" aria-hidden="true"></span>
+                                            </span>
+                                        <?php endif; ?>
+                                    <?php else : ?>
+                                        <?php echo HTMLHelper::_('jgrid.published', $item->enabled, $i, 'taxprofiles.', true, 'cb'); ?>
+                                    <?php endif; ?>
                                 </td>
                                 <th scope="row">
-                                    <a href="<?php echo Route::_('index.php?option=com_j2commerce&task=taxprofile.edit&id=' . $item->j2commerce_taxprofile_id); ?>">
-                                        <?php echo $this->escape($item->taxprofile_name); ?>
-                                    </a>
+                                    <?php if ($isPlugin) : ?>
+                                        <?php if (!empty($item->edit_link) && str_starts_with((string) $item->edit_link, 'index.php')) : ?>
+                                            <a href="<?php echo Route::_($item->edit_link); ?>">
+                                                <?php echo $this->escape($item->taxprofile_name); ?>
+                                            </a>
+                                        <?php else : ?>
+                                            <?php echo $this->escape($item->taxprofile_name); ?>
+                                        <?php endif; ?>
+                                        <span class="<?php echo $this->escape(J2htmlHelper::badgeClass('badge text-bg-info')); ?> ms-1"><?php echo $this->escape((string) ($item->taxprofile_source ?? 'plugin')); ?></span>
+                                    <?php else : ?>
+                                        <a href="<?php echo Route::_('index.php?option=com_j2commerce&task=taxprofile.edit&id=' . $item->j2commerce_taxprofile_id); ?>">
+                                            <?php echo $this->escape($item->taxprofile_name); ?>
+                                        </a>
+                                    <?php endif; ?>
                                 </th>
                                 <td class="d-none d-md-table-cell">
                                     <?php echo (int) $item->j2commerce_taxprofile_id; ?>

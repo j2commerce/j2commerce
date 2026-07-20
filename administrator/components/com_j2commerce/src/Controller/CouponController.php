@@ -15,6 +15,8 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\MVC\Controller\FormController;
+use Joomla\CMS\MVC\Model\BaseDatabaseModel;
+use Joomla\CMS\Router\Route;
 
 /**
  * Coupon item controller class.
@@ -103,6 +105,39 @@ class CouponController extends FormController
      */
     public function cancel($key = 'id')
     {
-        return parent::cancel($key);
+        $result = parent::cancel($key);
+
+        // When editing inside a picker modal, land on the modalreturn layout so the dialog closes cleanly.
+        if ($result && $this->input->get('layout') === 'modal') {
+            $id     = $this->input->getInt('id');
+            $return = 'index.php?option=' . $this->option . '&view=' . $this->view_item
+                . $this->getRedirectToItemAppend($id) . '&layout=modalreturn&from-task=cancel';
+
+            $this->setRedirect(Route::_($return, false));
+        }
+
+        return $result;
+    }
+
+    /**
+     * Redirect a modal save to the modalreturn layout so the newly saved coupon
+     * is reported back to the picker field.
+     *
+     * @param   BaseDatabaseModel  $model      The data model object.
+     * @param   array              $validData  The validated data.
+     *
+     * @return  void
+     *
+     * @since   6.0.6
+     */
+    protected function postSaveHook(BaseDatabaseModel $model, $validData = [])
+    {
+        if ($this->input->get('layout') === 'modal' && $this->task === 'save') {
+            $id     = $model->getState($model->getName() . '.id', '');
+            $return = 'index.php?option=' . $this->option . '&view=' . $this->view_item
+                . $this->getRedirectToItemAppend($id) . '&layout=modalreturn&from-task=save';
+
+            $this->setRedirect(Route::_($return, false));
+        }
     }
 }

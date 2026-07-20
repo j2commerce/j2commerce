@@ -32,7 +32,11 @@ final class PaymentMethodData
         public readonly int $expYear,
         public readonly bool $isDefault = false,
         public readonly array $actions = ['delete'],
-        public readonly array $metadata = []
+        public readonly array $metadata = [],
+        /** @var array<array{label: string, class?: string}> Provider status pills (e.g. "Used by 2 subscriptions") */
+        public readonly array $badges = [],
+        /** @var array<array{label: string, class: string, icon?: string, data?: array<string,string>}> Provider dropdown actions handled by the provider's own JS */
+        public readonly array $extraActions = []
     ) {
     }
 
@@ -57,7 +61,9 @@ final class PaymentMethodData
             expYear: (int) ($data['exp_year'] ?? 0),
             isDefault: (bool) ($data['is_default'] ?? false),
             actions: $data['actions'] ?? ['delete'],
-            metadata: $data['metadata'] ?? []
+            metadata: $data['metadata'] ?? [],
+            badges: \is_array($data['badges'] ?? null) ? $data['badges'] : [],
+            extraActions: \is_array($data['extra_actions'] ?? null) ? $data['extra_actions'] : []
         );
     }
 
