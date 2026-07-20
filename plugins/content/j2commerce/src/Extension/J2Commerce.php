@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace J2Commerce\Plugin\Content\J2Commerce\Extension;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\CategoryHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use J2Commerce\Component\J2commerce\Administrator\Service\ProductService;
@@ -36,6 +38,7 @@ use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\Router\Route;
 use Joomla\Database\DatabaseAwareTrait;
 use Joomla\Database\ParameterType;
+use Joomla\Event\DispatcherInterface;
 use Joomla\Event\SubscriberInterface;
 use Joomla\Registry\Registry;
 
@@ -530,6 +533,17 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         $j2data->product_source    = 'com_content';
         $j2data->product_source_id = $articleId;
 
+        // First save of a brand-new product with no tax profile chosen: apply the
+        // category's Default Tax Profile, falling back to the global config default.
+        // Create-only, so products deliberately saved as "Not Taxable" stay that way.
+        if (!$existingProduct && empty($j2data->taxprofile_id)) {
+            $defaultTaxprofileId = $this->resolveDefaultTaxprofileId((int) ($data->catid ?? 0));
+
+            if ($defaultTaxprofileId > 0) {
+                $j2data->taxprofile_id = $defaultTaxprofileId;
+            }
+        }
+
         // Save product using native MVC
         $this->saveProduct($j2data);
 
@@ -542,6 +556,18 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
 
         // Clear the static article cache to ensure fresh data on next load
         $this->clearArticleCache($articleId);
+    }
+
+    /** Category `default_taxprofile_id` param ("" = Use Global) → global config default. */
+    private function resolveDefaultTaxprofileId(int $catid): int
+    {
+        $categoryDefault = $catid > 0
+            ? (int) CategoryHelper::getParams($catid)->get('default_taxprofile_id', 0)
+            : 0;
+
+        return $categoryDefault > 0
+            ? $categoryDefault
+            : (int) ConfigHelper::get('default_taxprofile_id', 0);
     }
 
     /**
@@ -1229,7 +1255,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             // J2CommerceHelper::plugin()->eventWithHtml() because it overwrites
             // the 'html' argument with the concat of 'result' entries after dispatch.
             \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2commerce');
-            $dispatcher  = $app->getDispatcher();
+            $dispatcher  = Factory::getContainer()->get(DispatcherInterface::class);
             $pluginEvent = new \J2Commerce\Component\J2commerce\Administrator\Event\PluginEvent(
                 'onJ2CommerceViewProductHtml',
                 [null, &$view, $model]
