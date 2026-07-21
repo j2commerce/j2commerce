@@ -394,6 +394,23 @@ class CustomerModel extends AdminModel
     {
         $table = $this->getTable();
 
+        // On update, the posted address must belong to the posted user — without
+        // this, any caller passing an arbitrary id could overwrite another
+        // customer's address row.
+        $addressId = (int) ($data['j2commerce_address_id'] ?? 0);
+
+        if ($addressId > 0) {
+            $existing = $this->getTable();
+
+            if (!$existing->load($addressId)
+                || (int) $existing->user_id !== (int) ($data['user_id'] ?? -1)
+            ) {
+                $this->setError(Text::_('COM_J2COMMERCE_CUSTOMER_ADDRESSES_SAVE_ERROR'));
+
+                return false;
+            }
+        }
+
         if (!$table->bind($data)) {
             $this->setError($table->getError() ?: Text::_('COM_J2COMMERCE_CUSTOMER_ADDRESSES_SAVE_ERROR'));
 
