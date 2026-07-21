@@ -12,6 +12,7 @@
 // phpcs:enable PSR1.Files.SideEffects
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 
 /** @var \J2Commerce\Component\J2commerce\Site\View\Checkout\HtmlView $this */
@@ -19,6 +20,7 @@ use Joomla\CMS\Language\Text;
 $paymentMethods  = $this->paymentMethods ?? [];
 $selectedPayment = $this->selectedPayment ?? '';
 $showPayment     = $this->showPayment ?? true;
+$platform        = J2CommerceHelper::platform();
 ?>
 <div class="payment-methods-group list-group mb-4" role="radiogroup" aria-label="<?php echo Text::_('COM_J2COMMERCE_PAYMENT_METHOD', true); ?>">
     <?php if ($showPayment && !empty($paymentMethods)) : ?>
@@ -26,7 +28,8 @@ $showPayment     = $this->showPayment ?? true;
             <?php
             $element = $method['element'] ?? $method->element ?? '';
             $name = $method['name'] ?? $method->name ?? $element;
-            $image = $method['image'] ?? $method->image ?? '';
+            $rawImage = (string) ($method['image'] ?? $method->image ?? '');
+            $image = $rawImage !== '' ? HTMLHelper::_('cleanImageURL', $platform->getImagePath($rawImage))->url : '';
             $isSelected = ($element === $selectedPayment) || (\count($paymentMethods) === 1);
             ?>
             <label class="payment-method-item list-group-item list-group-item-action d-flex align-items-center gap-3 py-3" for="payment-method-<?php echo $i; ?>">

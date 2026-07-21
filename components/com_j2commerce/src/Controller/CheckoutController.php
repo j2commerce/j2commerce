@@ -1082,6 +1082,8 @@ class CheckoutController extends BaseController
             'paymentMethods'      => $paymentMethods,
             'selectedPayment'     => $selectedPayment,
             'showPayment'         => $showPayment,
+            'paymentFields'       => CustomFieldHelper::getFieldsByArea('payment'),
+            'paymentFieldValues'  => (array) $session->get('payment_custom_fields', [], 'j2commerce'),
             'showTerms'           => (int) J2CommerceHelper::config()->get('show_terms', 0),
             'termsDisplayType'    => J2CommerceHelper::config()->get('terms_display_type', 'link'),
         ]);
@@ -1327,6 +1329,25 @@ class CheckoutController extends BaseController
 
                 if (empty($paymentPlugin)) {
                     $json['error']['warning'] = Text::_('COM_J2COMMERCE_CHECKOUT_ERROR_PAYMENT_METHOD');
+                }
+
+                $paymentFields = CustomFieldHelper::getFieldsByArea('payment');
+
+                if ($paymentFields) {
+                    $formData    = $this->collectFormData();
+                    $fieldErrors = CustomFieldHelper::validateFields($paymentFields, $formData);
+
+                    if ($fieldErrors) {
+                        $json['error'] = array_merge($json['error'] ?? [], $fieldErrors);
+                    } else {
+                        $customValues = [];
+
+                        foreach ($paymentFields as $field) {
+                            $customValues[$field->field_namekey] = (string) ($formData[$field->field_namekey] ?? '');
+                        }
+
+                        $session->set('payment_custom_fields', $customValues, 'j2commerce');
+                    }
                 }
             }
 
@@ -1991,6 +2012,7 @@ class CheckoutController extends BaseController
         $session->clear('payment_method', 'j2commerce');
         $session->clear('payment_methods', 'j2commerce');
         $session->clear('payment_values', 'j2commerce');
+        $session->clear('payment_custom_fields', 'j2commerce');
         $session->clear('guest', 'j2commerce');
         $session->clear('guest_shipping', 'j2commerce');
         $session->clear('customer_note', 'j2commerce');

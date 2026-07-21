@@ -12,6 +12,7 @@
 // phpcs:enable PSR1.Files.SideEffects
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 
 /** @var \J2Commerce\Component\J2commerce\Site\View\Checkout\HtmlView $this */
@@ -19,6 +20,7 @@ use Joomla\CMS\Language\Text;
 $paymentMethods  = $this->paymentMethods ?? [];
 $selectedPayment = $this->selectedPayment ?? '';
 $showPayment     = $this->showPayment ?? true;
+$platform        = J2CommerceHelper::platform();
 ?>
 <div class="payment-methods-group uk-margin-bottom" role="radiogroup" aria-label="<?php echo Text::_('COM_J2COMMERCE_PAYMENT_METHOD', true); ?>">
     <?php if ($showPayment && !empty($paymentMethods)) : ?>
@@ -26,7 +28,8 @@ $showPayment     = $this->showPayment ?? true;
             <?php
             $element = $method['element'] ?? $method->element ?? '';
             $name = $method['name'] ?? $method->name ?? $element;
-            $image = $method['image'] ?? $method->image ?? '';
+            $rawImage = (string) ($method['image'] ?? $method->image ?? '');
+            $image = $rawImage !== '' ? HTMLHelper::_('cleanImageURL', $platform->getImagePath($rawImage))->url : '';
             $isSelected = ($element === $selectedPayment) || (\count($paymentMethods) === 1);
             ?>
             <label class="payment-method-item uk-flex uk-flex-middle uk-padding-small uk-margin-small-bottom" for="payment-method-<?php echo $i; ?>" style="gap: 12px; border: 1px solid #e5e5e5; border-radius: 4px;">
