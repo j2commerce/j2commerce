@@ -4,7 +4,7 @@
         {
             "name": "Swiper",
             "npm": "swiper",
-            "version": "12.2.0",
+            "version": "14.0.6",
             "files": [
                 {
                     "src": "swiper-bundle.min.js",
@@ -60,7 +60,7 @@
         {
             "name": "GrapesJS",
             "npm": "grapesjs",
-            "version": "0.23.1",
+            "version": "0.23.2",
             "files": [
                 {
                     "src": "dist/grapes.min.js",
