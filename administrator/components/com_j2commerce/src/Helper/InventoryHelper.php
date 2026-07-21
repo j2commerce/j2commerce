@@ -1162,6 +1162,24 @@ class InventoryHelper
         return self::adjustVariantStock($variantId, $delta, $allowNegative);
     }
 
+    /**
+     * Adjust a variant's stock AND keep its availability flag in sync, mirroring
+     * reduceOrderStock/restoreOrderStock — so a single-line admin adjustment can't
+     * leave a restocked variant flagged unavailable (or vice versa). Returns new stock.
+     */
+    public static function adjustStockAndAvailability(int $variantId, int $delta, bool $allowNegative = false): int
+    {
+        $newStock = self::adjustVariantStock($variantId, $delta, $allowNegative);
+
+        if ($newStock <= 0 && !$allowNegative) {
+            self::setVariantAvailability($variantId, 0);
+        } elseif ($newStock > 0) {
+            self::setVariantAvailability($variantId, 1);
+        }
+
+        return $newStock;
+    }
+
     private static function adjustVariantStock(int $variantId, int $delta, bool $allowNegative = false): int
     {
         $db = self::getDatabase();

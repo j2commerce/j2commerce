@@ -25,11 +25,29 @@
         />
 
         <field
+            name="customer_type"
+            type="radio"
+            label="COM_J2COMMERCE_FIELD_CUSTOMER_TYPE"
+            layout="joomla.form.field.radio.switcher"
+            filter="cmd"
+            default="registered"
+        >
+            <option value="registered">COM_J2COMMERCE_CUSTOMER_TYPE_REGISTERED</option>
+            <option value="guest">COM_J2COMMERCE_GUEST</option>
+        </field>
+
+        <field
+            name="user_id"
+            type="user"
+            label="COM_J2COMMERCE_FIELD_CUSTOMER"
+            showon="customer_type:registered"
+        />
+
+        <field
             name="user_email"
             type="email"
-            label="COM_J2COMMERCE_FIELD_EMAIL"
-            readonly="true"
-            class="readonly"
+            label="COM_J2COMMERCE_FIELD_GUEST_EMAIL"
+            showon="customer_type:guest"
         />
 
         <field

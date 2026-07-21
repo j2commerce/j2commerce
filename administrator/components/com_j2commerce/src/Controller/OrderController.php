@@ -16,9 +16,10 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\EmailHelper;
-use J2Commerce\Component\J2commerce\Administrator\Helper\InventoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderPayGrantHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderTransactionHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\PackingSlipHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\QueueHelper;
 use Joomla\CMS\Factory;
@@ -91,13 +92,50 @@ class OrderController extends FormController
             $model->saveOrderEditData($orderId, $jform);
 
             if (!empty($qty) || !empty($price)) {
-                $model->updateOrderItemLines($order->order_id, $qty, $price);
+                $model->updateOrderItemLines($order->order_id, $qty, $price, $model->isStockCommitted($order));
             }
 
             $model->recalculateOrderTotals($order->order_id);
 
-            if ($this->input->post->getInt('notify_customer', 0) === 1) {
+            $notify    = $this->input->post->getInt('notify_customer', 0) === 1;
+            $newStatus = $this->input->post->getInt('order_state_id', 0);
+
+            if ($newStatus > 0 && $newStatus !== (int) $order->order_state_id) {
+                // A status change writes its own history + fires the status event and
+                // (when notifying) sends its own notification, so don't also fire a plain one.
+                if (!$model->updateOrderStatus($orderId, $newStatus, $notify)) {
+                    $this->app->enqueueMessage(
+                        implode("\n", $model->getErrors()) ?: Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED'),
+                        'warning'
+                    );
+                }
+            } elseif ($notify) {
                 $model->sendOrderNotification($order->order_id, true, false);
+            }
+
+            // Attribution: who edited this order from the admin editor. Written on
+            // the deliberate toolbar Save only — the per-tab AJAX saves would spam.
+            $actingUser = $this->app->getIdentity();
+            $model->addAdminNote(
+                (string) $order->order_id,
+                $newStatus > 0 ? $newStatus : (int) $order->order_state_id,
+                Text::sprintf('COM_J2COMMERCE_ORDER_EDITED_BY_ADMIN', (string) $actingUser->name),
+                'system_note'
+            );
+
+            // Actions log — fire-and-forget; logging must never break saving.
+            try {
+                \Joomla\CMS\Plugin\PluginHelper::importPlugin('actionlog');
+                $this->app->getDispatcher()->dispatch(
+                    'onJ2CommerceAfterAdminOrderEdit',
+                    new \Joomla\Event\Event('onJ2CommerceAfterAdminOrderEdit', [
+                        (string) $order->order_id,
+                        $orderId,
+                        (int) $actingUser->id,
+                    ])
+                );
+            } catch (\Throwable $e) {
+                // Ignore.
             }
 
             $this->setMessage(Text::_('COM_J2COMMERCE_ORDER_CHANGES_SAVED'));
@@ -114,7 +152,10 @@ class OrderController extends FormController
             return false;
         }
 
-        $this->setRedirect($this->getTask() === 'apply' ? $editUrl : $listUrl);
+        // Save & Close lands on the order VIEW (not the list) so the owner sees
+        // the result of their edit; Apply stays on the editor.
+        $viewUrl = Route::_('index.php?option=com_j2commerce&view=order&layout=view&id=' . $orderId, false);
+        $this->setRedirect($this->getTask() === 'apply' ? $editUrl : $viewUrl);
 
         return true;
     }
@@ -696,10 +737,10 @@ class OrderController extends FormController
             . '</body></html>';
     }
 
-    /** CSRF + core.edit + the j2commerce.editorders gate for order-edit AJAX endpoints. */
-    private function checkOrderEditAccess(): bool
+    /** CSRF + core.edit/core.create + the j2commerce.editorders gate for order-edit AJAX endpoints. */
+    private function checkOrderEditAccess(string $action = 'core.edit'): bool
     {
-        if (!$this->checkAjaxAccess()) {
+        if (!$this->checkAjaxAccess($action)) {
             return false;
         }
 
@@ -713,26 +754,49 @@ class OrderController extends FormController
         return true;
     }
 
-    /** Save the editable order-edit fields (used by the tab Next/Back buttons). */
+    /**
+     * Save the editable order-edit fields (used by the tab Next/Back buttons).
+     * When order_id is 0 (blank new-order form), the first call creates the
+     * order row instead of updating one.
+     */
     public function ajaxSaveOrderEdit(): void
     {
         header('Content-Type: application/json; charset=utf-8');
 
-        if (!$this->checkOrderEditAccess()) {
+        $orderId = $this->input->post->getInt('order_id', 0);
+
+        if (!$this->checkOrderEditAccess($orderId < 1 ? 'core.create' : 'core.edit')) {
             return;
         }
 
-        $orderId = $this->input->post->getInt('order_id', 0);
-        $jform   = $this->input->post->get('jform', [], 'array');
-        $qty     = $this->input->post->get('orderitem_qty', [], 'array');
-        $price   = $this->input->post->get('orderitem_price_edit', [], 'array');
+        $jform = $this->input->post->get('jform', [], 'array');
+        $qty   = $this->input->post->get('orderitem_qty', [], 'array');
+        $price = $this->input->post->get('orderitem_price_edit', [], 'array');
 
         try {
+            $model = $this->getModel();
+
             if ($orderId < 1) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
+                $created = $model->createOrderFromEdit($jform);
+                $order   = $model->getItem($created['id']);
+                $totals  = $model->recalculateOrderTotals($created['order_id']);
+
+                echo json_encode([
+                    'success'          => true,
+                    'created'          => true,
+                    'order_id'         => $created['id'],
+                    'order_ref'        => $created['order_id'],
+                    'message'          => Text::_('COM_J2COMMERCE_ORDER_CREATED'),
+                    'totals'           => $this->totalsPayload($totals, (string) ($order->currency_code ?? '')),
+                    'redirect'         => Route::_('index.php?option=com_j2commerce&view=order&layout=edit&id=' . $created['id'], false),
+                    // Reveal the Take Payment button without a page reload.
+                    'take_payment_url' => OrderPayGrantHelper::isPayable($order) ? OrderPayGrantHelper::buildUrl($created['id']) : '',
+                ]);
+                $this->app->close();
+
+                return;
             }
 
-            $model = $this->getModel();
             $order = $model->getItem($orderId);
 
             if (!$order || empty($order->order_id)) {
@@ -744,7 +808,7 @@ class OrderController extends FormController
             }
 
             if (!empty($qty) || !empty($price)) {
-                $model->updateOrderItemLines($order->order_id, $qty, $price);
+                $model->updateOrderItemLines($order->order_id, $qty, $price, $model->isStockCommitted($order));
             }
 
             $totals = $model->recalculateOrderTotals($order->order_id);
@@ -753,6 +817,40 @@ class OrderController extends FormController
                 'success' => true,
                 'message' => Text::_('COM_J2COMMERCE_ORDER_CHANGES_SAVED'),
                 'totals'  => $this->totalsPayload($totals, (string) $order->currency_code),
+            ]);
+        } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
+        } catch (\Exception $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+
+        $this->app->close();
+    }
+
+    /** Create a Joomla customer account from the order editor's "New Customer" modal. */
+    public function ajaxCreateCustomer(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+
+        if (!$this->checkOrderEditAccess('core.create')) {
+            return;
+        }
+
+        $name      = trim($this->input->post->getString('name', ''));
+        $email     = trim($this->input->post->getString('email', ''));
+        $username  = trim($this->input->post->getString('username', ''));
+        $sendEmail = $this->input->post->getInt('send_email', 0) === 1;
+
+        try {
+            $customer = $this->getModel()->createCustomer($name, $email, $username, $sendEmail);
+
+            echo json_encode([
+                'success' => true,
+                'id'      => $customer['id'],
+                'name'    => $customer['name'],
+                'email'   => $customer['email'],
+                'message' => Text::_('COM_J2COMMERCE_CUSTOMER_CREATED'),
             ]);
         } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
@@ -773,22 +871,48 @@ class OrderController extends FormController
             return;
         }
 
-        $term = trim($this->input->post->getString('term', ''));
+        $orderId = $this->input->post->getInt('order_id', 0);
+        $term    = trim($this->input->post->getString('term', ''));
+        $page    = max(1, $this->input->post->getInt('page', 1));
 
         try {
             if ($term === '') {
                 throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
             }
 
-            $results = $this->getModel()->searchProductVariants($term);
+            $model = $this->getModel();
+
+            // Guest orders (user_id < 1) must never offer subscription products.
+            $excludeSubscription = false;
+            $currency            = '';
+
+            if ($orderId > 0) {
+                $order = $model->getItem($orderId);
+
+                if ($order && !empty($order->order_id)) {
+                    $excludeSubscription = (int) $order->user_id < 1;
+                    $currency            = (string) $order->currency_code;
+                }
+            }
+
+            $limit      = (int) $this->app->get('list_limit', 20) ?: 20;
+            $offset     = ($page - 1) * $limit;
+            $total      = $model->countSearchProductVariants($term, $excludeSubscription);
+            $results    = $model->searchProductVariants($term, $limit, $excludeSubscription, $offset);
+            $totalPages = $total > 0 ? (int) ceil($total / $limit) : 1;
 
             echo json_encode([
-                'success' => true,
-                'results' => array_map(static fn (object $row) => [
-                    'variant_id' => (int) $row->variant_id,
-                    'sku'        => (string) $row->sku,
-                    'name'       => (string) $row->product_name,
-                    'price'      => number_format((float) $row->price, 2, '.', ''),
+                'success'    => true,
+                'page'       => $page,
+                'totalPages' => $totalPages,
+                'total'      => $total,
+                'results'    => array_map(static fn (object $row) => [
+                    'variant_id'      => (int) $row->variant_id,
+                    'sku'             => (string) $row->sku,
+                    'name'            => (string) $row->product_name,
+                    'price'           => number_format((float) $row->price, 2, '.', ''),
+                    'price_formatted' => CurrencyHelper::format((float) $row->price, $currency),
+                    'image'           => $model->resolveThumbImage((int) $row->product_id),
                 ], $results),
             ]);
         } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
@@ -826,7 +950,13 @@ class OrderController extends FormController
                 throw new \Exception(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
             }
 
-            $item = $model->addOrderItemFromVariant($order->order_id, $variantId, $qty);
+            $item = $model->addOrderItemFromVariant(
+                $order->order_id,
+                $variantId,
+                $qty,
+                (int) $order->user_id < 1,
+                $model->isStockCommitted($order)
+            );
 
             if ($item === null) {
                 throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
@@ -841,10 +971,25 @@ class OrderController extends FormController
                 'system_note'
             );
 
+            $currency = (string) $order->currency_code;
+
             echo json_encode([
                 'success' => true,
                 'message' => Text::_('COM_J2COMMERCE_ORDER_ITEM_ADDED'),
-                'totals'  => $this->totalsPayload($totals, (string) $order->currency_code),
+                'totals'  => $this->totalsPayload($totals, $currency),
+                'line'    => [
+                    'id'                   => (int) $item->j2commerce_orderitem_id,
+                    'name'                 => (string) $item->orderitem_name,
+                    'sku'                  => (string) ($item->orderitem_sku ?? ''),
+                    'quantity'             => (int) $item->orderitem_quantity,
+                    'price'                => number_format((float) $item->orderitem_price, 2, '.', ''),
+                    'price_formatted'      => CurrencyHelper::format((float) $item->orderitem_price, $currency),
+                    'finalprice_formatted' => CurrencyHelper::format((float) $item->orderitem_finalprice, $currency),
+                    'stock'                => (int) ($item->stock_quantity ?? 0),
+                    'manages_stock'        => (bool) ($item->manages_stock ?? false),
+                    'image_url'            => (string) ($item->image_url ?? ''),
+                    'attributes'           => $model->getOrderItemAttributePairs((int) $item->j2commerce_orderitem_id),
+                ],
             ]);
         } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
@@ -881,10 +1026,10 @@ class OrderController extends FormController
                 throw new \Exception(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
             }
 
-            $model->updateOrderItemLines($order->order_id, $qty, $price);
+            $model->updateOrderItemLines($order->order_id, $qty, $price, $model->isStockCommitted($order));
             $totals = $model->recalculateOrderTotals($order->order_id);
 
-            // Return refreshed line totals so the UI can update rows in place.
+            // Return refreshed line totals + live stock so the UI can update rows in place.
             $lines = [];
 
             foreach ($model->getOrderItems($order->order_id) as $line) {
@@ -893,6 +1038,8 @@ class OrderController extends FormController
                     'price'                => number_format((float) $line->orderitem_price, 2, '.', ''),
                     'finalprice'           => number_format((float) $line->orderitem_finalprice, 2, '.', ''),
                     'finalprice_formatted' => CurrencyHelper::format((float) $line->orderitem_finalprice, (string) $order->currency_code),
+                    'stock'                => (int) ($line->stock_quantity ?? 0),
+                    'manages_stock'        => (bool) ($line->manages_stock ?? false),
                 ];
             }
 
@@ -936,7 +1083,7 @@ class OrderController extends FormController
                 throw new \Exception(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
             }
 
-            $removed = $model->removeOrderItems($order->order_id, $itemIds);
+            $removed = $model->removeOrderItems($order->order_id, $itemIds, $model->isStockCommitted($order));
 
             if (empty($removed)) {
                 throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
@@ -1149,6 +1296,247 @@ class OrderController extends FormController
         $this->app->close();
     }
 
+    /** Copy the billing address onto the shipping address ("same as billing"). */
+    public function ajaxCopyBillingToShipping(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+
+        if (!$this->checkOrderEditAccess()) {
+            return;
+        }
+
+        try {
+            if (!($order = $this->loadOrderForAjax())) {
+                return;
+            }
+
+            if (!$this->getModel()->copyBillingToShipping($order->order_id)) {
+                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED'));
+            }
+
+            echo json_encode(['success' => true, 'message' => Text::_('COM_J2COMMERCE_ORDER_CHANGES_SAVED')]);
+        } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
+        } catch (\Exception $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+
+        $this->app->close();
+    }
+
+    /**
+     * Refund part or all of the order's payment through its own gateway
+     * (onJ2CommerceRefundPayment). Amounts arrive/display in the order (ledger)
+     * currency; the event contract hands the gateway a BASE-currency figure.
+     */
+    public function ajaxRefundOrderPayment(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+
+        if (!$this->checkOrderEditAccess()) {
+            return;
+        }
+
+        $amount = (float) $this->input->post->getString('amount', '0');
+
+        try {
+            if (!($order = $this->loadOrderForAjax())) {
+                return;
+            }
+
+            $orderPk = (int) $order->j2commerce_order_id;
+            $element = (string) ($order->orderpayment_type ?? '');
+
+            if ($element === '') {
+                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+            }
+
+            $currencyCode = (string) ($order->currency_code ?? '');
+            $decimals     = CurrencyHelper::getDecimalPlace($currencyCode);
+            $epsilon      = 10 ** -$decimals / 2;
+            $amount       = round($amount, $decimals);
+            $refundable   = OrderTransactionHelper::getRefundable($orderPk);
+
+            if ($amount < $epsilon || $amount > $refundable + $epsilon) {
+                throw new \Exception(Text::sprintf(
+                    'COM_J2COMMERCE_ERR_REFUND_OUT_OF_RANGE',
+                    CurrencyHelper::format($refundable, $currencyCode, 1.0)
+                ));
+            }
+
+            $refundedBefore = OrderTransactionHelper::getRefunded($orderPk);
+
+            // Event contract (all gateways): args = [element, (int) varchar order_id,
+            // amount in STORE BASE currency] — gateways convert to display internally.
+            $rate       = (float) ($order->currency_value ?? 1.0);
+            $rate       = $rate > 0 ? $rate : 1.0;
+            $baseAmount = $amount / $rate;
+
+            $event  = J2CommerceHelper::plugin()->event('RefundPayment', [$element, (int) $order->order_id, $baseAmount]);
+            $result = $event->getArgument('result');
+
+            if (!\is_array($result) || empty($result['success'])) {
+                $gatewayMessage = \is_array($result) ? (string) ($result['error'] ?? $result['message'] ?? '') : '';
+                throw new \Exception($gatewayMessage !== '' ? $gatewayMessage : Text::_('COM_J2COMMERCE_ERR_REFUND_FAILED'));
+            }
+
+            // A 'void' outcome reversed the whole unsettled capture, not just the
+            // requested figure — the ledger AND the audit note record what actually happened.
+            $ledgerAmount = ($result['action'] ?? '') === 'void' ? $refundable : $amount;
+
+            // Double-entry guard: only write the ledger when the gateway didn't
+            // (airwallex/quickpay self-write reversals; authorize.net does not).
+            if (abs(OrderTransactionHelper::getRefunded($orderPk) - $refundedBefore) < $epsilon) {
+                $userId = (int) ($this->app->getIdentity()?->id ?? 0);
+                $batch  = uniqid('', true);
+
+                foreach (OrderTransactionHelper::allocateRefund($orderPk, $ledgerAmount) as $i => $leg) {
+                    OrderTransactionHelper::addReversal(
+                        $orderPk,
+                        $element,
+                        'admin-refund-' . $orderPk . '-' . $batch . '-' . $i,
+                        $leg['gateway_txn_id'],
+                        $leg['amount'],
+                        $userId
+                    );
+                }
+            }
+
+            $this->getModel()->addAdminNote(
+                $order->order_id,
+                (int) $order->order_state_id,
+                Text::sprintf('COM_J2COMMERCE_ORDER_REFUND_NOTE', CurrencyHelper::format($ledgerAmount, $currencyCode, 1.0), $element),
+                'system_note'
+            );
+
+            echo json_encode(['success' => true, 'message' => Text::_('COM_J2COMMERCE_REFUND_DONE')]);
+        } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
+        } catch (\Exception $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+
+        $this->app->close();
+    }
+
+    /**
+     * Charge the outstanding balance on the customer's stored payment method via
+     * the gateway's supplemental-payment capability (same events the after-sale
+     * specials app uses). Amounts are in the order (ledger/display) currency.
+     */
+    public function ajaxChargeOrderBalance(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+
+        if (!$this->checkOrderEditAccess()) {
+            return;
+        }
+
+        $amount = (float) $this->input->post->getString('amount', '0');
+
+        try {
+            if (!($order = $this->loadOrderForAjax())) {
+                return;
+            }
+
+            $orderPk = (int) $order->j2commerce_order_id;
+            $element = (string) ($order->orderpayment_type ?? '');
+            $model   = $this->getModel();
+
+            // Parity with the UI gate: balance charges only apply to ledgered orders.
+            if (!OrderTransactionHelper::hasLedger($orderPk)) {
+                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+            }
+
+            // Capability + stored profile are re-resolved server-side — never trusted
+            // from the client.
+            $profile = $model->resolveStoredPaymentProfile((int) ($order->user_id ?? 0), $element);
+
+            if ($element === '' || $profile === null || $model->getSupplementalCapability($order) !== 'token_charge') {
+                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+            }
+
+            $currencyCode = (string) ($order->currency_code ?? '');
+            $decimals     = CurrencyHelper::getDecimalPlace($currencyCode);
+            $epsilon      = 10 ** -$decimals / 2;
+            $amount       = round($amount, $decimals);
+
+            $rate              = (float) ($order->currency_value ?? 1.0);
+            $rate              = $rate > 0 ? $rate : 1.0;
+            $orderTotalDisplay = round((float) ($order->order_total ?? 0) * $rate, $decimals);
+            $balanceDue        = max(0.0, $orderTotalDisplay - max(0.0, OrderTransactionHelper::getNetPaid($orderPk)));
+
+            if ($amount < $epsilon || $amount > $balanceDue + $epsilon) {
+                throw new \Exception(Text::sprintf(
+                    'COM_J2COMMERCE_ERR_CHARGE_OUT_OF_RANGE',
+                    CurrencyHelper::format($balanceDue, $currencyCode, 1.0)
+                ));
+            }
+
+            $netPaidBefore = OrderTransactionHelper::getNetPaid($orderPk);
+            $reference     = 'j2c-admin-balance-' . $orderPk . '-' . time();
+
+            $results = J2CommerceHelper::plugin()->eventWithArray('ProcessSupplementalPayment', [
+                'payment_method'  => $element,
+                'order'           => $order,
+                'amount'          => $amount,
+                'payment_profile' => $profile,
+                'reference'       => $reference,
+                'result'          => [],
+            ]);
+
+            $outcome = null;
+
+            foreach ($results as $result) {
+                if (\is_array($result) && !empty($result['status'])) {
+                    $outcome = $result;
+                    break;
+                }
+            }
+
+            if (($outcome['status'] ?? '') !== 'success') {
+                $gatewayMessage = (string) ($outcome['message'] ?? '');
+                throw new \Exception($gatewayMessage !== '' ? $gatewayMessage : Text::_('COM_J2COMMERCE_ERR_CHARGE_FAILED'));
+            }
+
+            $transactionId = (string) ($outcome['transaction_id'] ?? '');
+
+            // Double-entry guard: write the DEBIT only when the gateway didn't.
+            if (abs(OrderTransactionHelper::getNetPaid($orderPk) - $netPaidBefore) < $epsilon) {
+                OrderTransactionHelper::addCharge(
+                    $orderPk,
+                    $element,
+                    $transactionId !== '' ? $transactionId : $reference,
+                    $amount,
+                    $currencyCode,
+                    (int) ($this->app->getIdentity()?->id ?? 0)
+                );
+            }
+
+            $model->addAdminNote(
+                $order->order_id,
+                (int) $order->order_state_id,
+                Text::sprintf(
+                    'COM_J2COMMERCE_ORDER_BALANCE_CHARGE_NOTE',
+                    CurrencyHelper::format($amount, $currencyCode, 1.0),
+                    $transactionId !== '' ? $transactionId : $reference
+                ),
+                'system_note'
+            );
+
+            echo json_encode(['success' => true, 'message' => Text::_('COM_J2COMMERCE_CHARGE_DONE')]);
+        } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
+        } catch (\Exception $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+
+        $this->app->close();
+    }
+
     /** Add a manual fee, recompute tax when taxable, and return fresh totals. */
     public function ajaxAddFee(): void
     {
@@ -1355,59 +1743,6 @@ class OrderController extends FormController
                 'success' => true,
                 'message' => Text::_('COM_J2COMMERCE_ORDER_DISCOUNT_REMOVED'),
                 'totals'  => $this->totalsPayload($totals, (string) $order->currency_code),
-            ]);
-        } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
-            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
-            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
-        } catch (\Exception $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
-        }
-
-        $this->app->close();
-    }
-
-    /** Adjust a variant's stock by the order line quantity (Inventory column buttons). */
-    public function ajaxAdjustStock(): void
-    {
-        header('Content-Type: application/json; charset=utf-8');
-
-        if (!$this->checkOrderEditAccess()) {
-            return;
-        }
-
-        $itemId    = $this->input->post->getInt('item_id', 0);
-        $direction = $this->input->post->getWord('direction', '');
-
-        try {
-            if (!($order = $this->loadOrderForAjax())) {
-                return;
-            }
-
-            if ($itemId < 1 || !\in_array($direction, ['increase', 'reduce'], true)) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
-            }
-
-            $line = null;
-
-            foreach ($this->getModel()->getOrderItems($order->order_id) as $item) {
-                if ((int) $item->j2commerce_orderitem_id === $itemId) {
-                    $line = $item;
-                    break;
-                }
-            }
-
-            if (!$line || (int) $line->variant_id < 1) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
-            }
-
-            $qty      = max(1, (int) $line->orderitem_quantity);
-            $delta    = $direction === 'increase' ? $qty : -$qty;
-            $newStock = InventoryHelper::adjustStock((int) $line->variant_id, $delta, $direction === 'reduce');
-
-            echo json_encode([
-                'success'  => true,
-                'message'  => Text::sprintf('COM_J2COMMERCE_STOCK_ADJUSTED', $line->orderitem_name, $newStock),
-                'newStock' => $newStock,
             ]);
         } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');

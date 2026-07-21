@@ -20,6 +20,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\CartHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderPayGrantHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\CheckoutContextHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\CheckoutStepsHelper;
@@ -32,6 +33,7 @@ use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
+use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\User\UserFactoryInterface;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
@@ -2281,6 +2283,64 @@ class CheckoutController extends BaseController
         }
 
         return false;
+    }
+
+    /**
+     * Admin "Take Payment" entry. A short-lived HMAC grant built in the order
+     * editor authorises priming the pseudo-checkout context for an existing
+     * order — admin and site sessions are separate, so the link is the gate.
+     * GET capability link by design (same class as partial-payment guest links).
+     */
+    public function adminPay(): void
+    {
+        $orderPk = $this->input->getInt('order', 0);
+        $expires = $this->input->getInt('expires', 0);
+        $sig     = $this->input->getString('sig', '');
+
+        $table = $this->getMvcFactory()->createTable('Order', 'Administrator');
+
+        // Single generic failure path — never reveal which check failed.
+        if ($orderPk < 1
+            || !OrderPayGrantHelper::verify($orderPk, $expires, $sig)
+            || !$table->load($orderPk)
+            || !OrderPayGrantHelper::isPayable($table)
+        ) {
+            $this->app->enqueueMessage(Text::_('COM_J2COMMERCE_PAYMENT_LINK_INVALID'), 'warning');
+            $this->app->redirect(Route::_('index.php?option=com_j2commerce&view=carts', false));
+
+            return;
+        }
+
+        CheckoutContextHelper::setContext([
+            'provider' => 'admin_order',
+            'order_id' => (string) $table->order_id,
+            'order_pk' => $orderPk,
+            'expires'  => $expires,
+            'sig'      => $sig,
+        ]);
+
+        $session = $this->app->getSession();
+
+        // Preselect the payment method the store owner chose in the admin editor —
+        // the checkout payment step reads its selection from this session key.
+        if ((string) $table->orderpayment_type !== '') {
+            $session->set('payment_method', (string) $table->orderpayment_type, 'j2commerce');
+        }
+
+        // After a successful charge the confirmation view consumes this flag and
+        // sends the store owner straight back to the admin order editor instead
+        // of rendering the shopper confirmation page.
+        $session->set('adminpay_return', [
+            'order_id' => (string) $table->order_id,
+            'url'      => Uri::root() . 'administrator/index.php?option=com_j2commerce&view=order&layout=edit&id=' . $orderPk,
+            // Mirror the grant TTL so an abandoned Take Payment can never
+            // redirect a later, unrelated checkout in this session.
+            'expires'  => time() + 1800,
+        ], 'j2commerce');
+
+        $nonce = (string) (CheckoutContextHelper::getContext()['nonce'] ?? '');
+
+        $this->app->redirect(Route::_('index.php?option=com_j2commerce&view=checkout&checkout_context=' . urlencode($nonce), false));
     }
 
     protected function getUserFirstAddress(int $userId): ?object
