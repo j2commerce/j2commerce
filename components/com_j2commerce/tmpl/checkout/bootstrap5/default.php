@@ -37,6 +37,10 @@ $wa->registerAndUseStyle('checkout.style', 'media/com_j2commerce/css/site/checko
 // page's <joomla-script-options> block.
 CustomFieldHelper::ensureTelephoneAssets();
 
+// Same AJAX-too-late reason: calendar assets for date/datetime custom fields
+// rendered inside AJAX-loaded steps must be on the page from the start.
+CustomFieldHelper::ensureCalendarAssets();
+
 // Grand total for mobile toggle button
 $grandTotal = '';
 if ($this->order && method_exists($this->order, 'get_formatted_order_totals')) {
@@ -540,6 +544,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 content.innerHTML = html;
                 content.setAttribute('aria-busy', 'false');
                 refreshSidecart();
+                // Core Joomla widgets (calendar picker, etc.) re-init injected markup on this event.
+                content.dispatchEvent(new CustomEvent('joomla:updated', { bubbles: true }));
                 document.dispatchEvent(new CustomEvent('j2commerce:checkout:stepLoaded', { detail: { stepId: stepId } }));
             }
         })

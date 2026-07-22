@@ -15,21 +15,32 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\DownloadHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\EmailHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\InventoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderItemAttributeHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\TaxHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\UserHelper;
+use Joomla\CMS\Access\Access;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\Mail\Mail;
+use Joomla\CMS\Mail\MailerFactoryInterface;
 use Joomla\CMS\MVC\Model\AdminModel;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Table\Table;
+use Joomla\CMS\Uri\Uri;
+use Joomla\CMS\User\User;
+use Joomla\CMS\User\UserFactoryInterface;
+use Joomla\CMS\User\UserHelper as JoomlaUserHelper;
 use Joomla\Database\ParameterType;
 use Joomla\Registry\Registry;
 
@@ -46,6 +57,9 @@ class OrderModel extends AdminModel
     public $typeAlias = 'com_j2commerce.order';
 
     protected $text_prefix = 'COM_J2COMMERCE_ORDER';
+
+    /** Product types that must never appear on a guest order. */
+    private const SUBSCRIPTION_PRODUCT_TYPES = ['subscriptionproduct', 'variablesubscriptionproduct'];
 
     /**
      * @var array|null Cached order items
@@ -154,6 +168,215 @@ class OrderModel extends AdminModel
         return parent::getTable($name, $prefix, $options);
     }
 
+    /**
+     * Create the order row from the Basic tab data on the first "Next" click.
+     * Uses the checkout two-pass save (store() to get the PK, then generate
+     * order_id = time() . PK + token, then store() again) so manually-created
+     * orders share the exact same order_id format as checkout orders.
+     *
+     * @return  array{id: int, order_id: string}
+     */
+    public function createOrderFromEdit(array $data): array
+    {
+        $app  = Factory::getApplication();
+        $user = $app->getIdentity();
+        $type = (string) ($data['customer_type'] ?? 'registered');
+
+        if ($type === 'guest') {
+            $email = trim((string) ($data['user_email'] ?? ''));
+
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                throw new \RuntimeException(Text::_('COM_J2COMMERCE_ERROR_GUEST_EMAIL_REQUIRED'));
+            }
+
+            $customerId    = 0;
+            $customerEmail = $email;
+            $customerGroup = (string) (int) ComponentHelper::getParams('com_users')->get('guest_usergroup', 1);
+        } else {
+            $customerId = (int) ($data['user_id'] ?? 0);
+
+            if ($customerId < 1) {
+                throw new \RuntimeException(Text::_('COM_J2COMMERCE_ERROR_CUSTOMER_REQUIRED'));
+            }
+
+            $customer = Factory::getContainer()->get(UserFactoryInterface::class)->loadUserById($customerId);
+
+            if (!$customer || (int) $customer->id !== $customerId) {
+                throw new \RuntimeException(Text::_('COM_J2COMMERCE_ERROR_CUSTOMER_REQUIRED'));
+            }
+
+            $customerEmail = (string) $customer->email;
+            $customerGroup = implode(',', Access::getGroupsByUser($customerId, false));
+        }
+
+        $currencyCode  = ConfigHelper::getDefaultCurrency();
+        $invoicePrefix = (string) ComponentHelper::getParams('com_j2commerce')->get('invoice_prefix', '');
+
+        /** @var \J2Commerce\Component\J2commerce\Administrator\Table\OrderTable $table */
+        $table = $this->getTable();
+
+        $table->bind([
+            'user_id'           => $customerId,
+            'user_email'        => $customerEmail,
+            'cart_id'           => 0,
+            'currency_code'     => $currencyCode,
+            'currency_id'       => CurrencyHelper::getId($currencyCode),
+            'currency_value'    => 1,
+            'invoice_prefix'    => $invoicePrefix,
+            'customer_language' => $app->getLanguage()->getTag(),
+            'customer_note'     => (string) ($data['customer_note'] ?? ''),
+            'customer_group'    => $customerGroup,
+            'ip_address'        => '',
+            'order_state_id'    => 5,
+            'created_by'        => (int) $user->id,
+            'modified_by'       => (int) $user->id,
+        ]);
+
+        if (!$table->check() || !$table->store()) {
+            throw new \RuntimeException($table->getError() ?: Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED'));
+        }
+
+        // Two-pass save: the PK is only known after the first store(), so the
+        // real order_id (time() . PK, matching checkout) is generated and saved
+        // in a second store() — see Helper/CartOrder.php's saveOrder().
+        $table->order_id = $table->generateOrderId();
+        $table->token    = $table->generateToken();
+
+        if ($invoicePrefix !== '') {
+            $table->invoice_number = (int) $table->j2commerce_order_id;
+        }
+
+        if (!$table->store()) {
+            throw new \RuntimeException($table->getError() ?: Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED'));
+        }
+
+        $this->ensureOrderInfo((string) $table->order_id);
+
+        // Attribution: who created this order from the admin editor.
+        $this->addAdminNote(
+            (string) $table->order_id,
+            5,
+            Text::sprintf('COM_J2COMMERCE_ORDER_CREATED_BY_ADMIN', (string) $user->name),
+            'system_note'
+        );
+
+        // Actions log — fire-and-forget; logging must never break order creation.
+        try {
+            PluginHelper::importPlugin('actionlog');
+            $app->getDispatcher()->dispatch(
+                'onJ2CommerceAfterAdminOrderCreate',
+                new \Joomla\Event\Event('onJ2CommerceAfterAdminOrderCreate', [
+                    (string) $table->order_id,
+                    (int) $table->j2commerce_order_id,
+                    (int) $user->id,
+                ])
+            );
+        } catch (\Throwable $e) {
+            // Ignore.
+        }
+
+        return ['id' => (int) $table->j2commerce_order_id, 'order_id' => (string) $table->order_id];
+    }
+
+    /**
+     * Create a Joomla customer account from the admin order editor's "New
+     * Customer" modal, then optionally send a minimal welcome notification.
+     *
+     * @return  array{id: int, name: string, email: string}
+     *
+     * @throws  \RuntimeException  When validation fails or the account can't be saved.
+     */
+    public function createCustomer(string $name, string $email, string $username, bool $sendEmail): array
+    {
+        $name     = trim($name);
+        $email    = trim($email);
+        $username = trim($username) !== '' ? trim($username) : $email;
+
+        if ($name === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || $username === '') {
+            throw new \RuntimeException(Text::_('COM_J2COMMERCE_ERROR_CUSTOMER_REQUIRED'));
+        }
+
+        if (UserHelper::usernameExists($username)) {
+            throw new \RuntimeException(Text::_('COM_J2COMMERCE_ERROR_USERNAME_TAKEN'));
+        }
+
+        if (UserHelper::emailExists($email)) {
+            throw new \RuntimeException(Text::_('COM_J2COMMERCE_ERROR_EMAIL_TAKEN'));
+        }
+
+        $groupId = (int) ComponentHelper::getParams('com_users')->get('new_usertype', 2);
+
+        $user           = new User();
+        $user->id       = 0;
+        $user->name     = $name;
+        $user->username = $username;
+        $user->email    = $email;
+        $user->password = JoomlaUserHelper::hashPassword(JoomlaUserHelper::genRandomPassword());
+        $user->block    = 0;
+        $user->groups   = [$groupId];
+
+        if (!$user->save()) {
+            throw new \RuntimeException($user->getError() ?: Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED'));
+        }
+
+        if ($sendEmail) {
+            $this->sendCustomerWelcomeEmail($user);
+        }
+
+        return ['id' => (int) $user->id, 'name' => (string) $user->name, 'email' => (string) $user->email];
+    }
+
+    /** Minimal account-created notice; never includes the generated password. */
+    private function sendCustomerWelcomeEmail(User $user): void
+    {
+        $config   = Factory::getApplication()->getConfig();
+        $siteName = (string) $config->get('sitename');
+
+        $subject = Text::sprintf('COM_J2COMMERCE_CUSTOMER_WELCOME_EMAIL_SUBJECT', $siteName);
+        $message = Text::sprintf(
+            'COM_J2COMMERCE_CUSTOMER_WELCOME_EMAIL_BODY',
+            $user->name,
+            $siteName,
+            $user->username,
+            Uri::root() . 'index.php?option=com_users&view=reset'
+        );
+
+        try {
+            $mailer = Factory::getContainer()->get(MailerFactoryInterface::class)->createMailer();
+            $mailer->addRecipient($user->email);
+            $mailer->setSubject($subject);
+            $mailer->setBody($message);
+            $mailer->send();
+        } catch (\Throwable $e) {
+            Log::add('Customer welcome email failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+        }
+    }
+
+    /** Seed an empty orderinfos row so the billing/shipping tabs render cleanly. */
+    private function ensureOrderInfo(string $orderId): void
+    {
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('j2commerce_orderinfo_id'))
+            ->from($db->quoteName('#__j2commerce_orderinfos'))
+            ->where($db->quoteName('order_id') . ' = :orderId')
+            ->bind(':orderId', $orderId);
+        $db->setQuery($query);
+
+        if ($db->loadResult()) {
+            return;
+        }
+
+        $row               = new \stdClass();
+        $row->order_id     = $orderId;
+        $row->shipping_zip = '';
+        $row->all_billing  = '{}';
+        $row->all_shipping = '{}';
+        $row->all_payment  = '{}';
+
+        $db->insertObject('#__j2commerce_orderinfos', $row, 'j2commerce_orderinfo_id');
+    }
+
     protected function loadFormData(): mixed
     {
         $app  = Factory::getApplication();
@@ -193,9 +416,33 @@ class OrderModel extends AdminModel
 
         $item = parent::getItem($pk);
 
-        if ($item === false || empty($item->j2commerce_order_id)) {
+        if ($item === false) {
             return $item;
         }
+
+        if (empty($item->j2commerce_order_id)) {
+            // Brand-new, unsaved order (id=0) — seed display defaults AND the same
+            // computed-property shape a saved order has, so every edit tab renders
+            // cleanly (blank) before the first save without undefined-property notices.
+            $item->customer_type        = 'registered';
+            $item->currency_code        = ConfigHelper::getDefaultCurrency();
+            $item->user_id              = 0;
+            $item->order_id             = '';
+            $item->orderstatus_name     = '';
+            $item->orderstatus_cssclass = '';
+            $item->invoice              = '';
+            $item->orderitems           = [];
+            $item->orderinfo            = null;
+            $item->ordertaxes           = [];
+            $item->ordershipping        = null;
+            $item->orderdiscounts       = [];
+            $item->orderfees            = [];
+            $item->orderhistory         = [];
+
+            return $item;
+        }
+
+        $item->customer_type = ((int) $item->user_id > 0) ? 'registered' : 'guest';
 
         // Add order status info
         $item->orderstatus_name     = '';
@@ -282,7 +529,202 @@ class OrderModel extends AdminModel
             );
         }
 
+        $this->enrichItemStock($items);
+
         return $items;
+    }
+
+    /** Attach live stock_quantity + manages_stock to each order item (one batched query, no N+1). */
+    private function enrichItemStock(array $items): void
+    {
+        $variantIds = array_values(array_unique(array_filter(array_map(
+            static fn ($it): int => (int) ($it->variant_id ?? 0),
+            $items
+        ))));
+
+        $map = [];
+
+        if (!empty($variantIds)) {
+            $db    = $this->getDatabase();
+            $query = $db->getQuery(true)
+                ->select([
+                    $db->quoteName('v.j2commerce_variant_id', 'variant_id'),
+                    $db->quoteName('v.manage_stock'),
+                    $db->quoteName('pq.quantity'),
+                ])
+                ->from($db->quoteName('#__j2commerce_variants', 'v'))
+                ->join(
+                    'LEFT',
+                    $db->quoteName('#__j2commerce_productquantities', 'pq')
+                    . ' ON ' . $db->quoteName('pq.variant_id') . ' = ' . $db->quoteName('v.j2commerce_variant_id')
+                )
+                ->whereIn($db->quoteName('v.j2commerce_variant_id'), $variantIds, ParameterType::INTEGER);
+            $db->setQuery($query);
+
+            foreach ($db->loadObjectList() ?: [] as $row) {
+                $map[(int) $row->variant_id] = $row;
+            }
+        }
+
+        foreach ($items as $item) {
+            $info                 = $map[(int) ($item->variant_id ?? 0)] ?? null;
+            $item->manages_stock  = $info !== null && (int) $info->manage_stock === 1;
+            $item->stock_quantity = $info !== null ? (int) $info->quantity : 0;
+            $item->image_url      = $this->resolveItemImage((int) ($item->product_id ?? 0));
+        }
+    }
+
+    /** Resolve a small product thumbnail URL (tiny → thumb → main), or '' when none. */
+    public function resolveItemImage(int $productId): string
+    {
+        if ($productId < 1) {
+            return '';
+        }
+
+        $images = ProductHelper::getProductImages($productId);
+
+        if (!$images) {
+            return '';
+        }
+
+        $path = (string) ($images->tiny_image ?: $images->thumb_image ?: $images->main_image ?: '');
+
+        return $path !== '' ? ImageHelper::getProductImage($path, 42, 'raw', 42) : '';
+    }
+
+    /** Resolve the product THUMBNAIL image URL (thumb → main), or '' when none. Used by the catalog tiles. */
+    public function resolveThumbImage(int $productId): string
+    {
+        if ($productId < 1) {
+            return '';
+        }
+
+        $images = ProductHelper::getProductImages($productId);
+
+        if (!$images) {
+            return '';
+        }
+
+        $path = (string) ($images->thumb_image ?: $images->main_image ?: '');
+
+        return $path !== '' ? ImageHelper::getImageUrl($path) : '';
+    }
+
+    /** Order-item option attributes as flat [{label, value}] pairs (for the appended-row payload). */
+    public function getOrderItemAttributePairs(int $orderitemId): array
+    {
+        if ($orderitemId < 1) {
+            return [];
+        }
+
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true)
+            ->select([
+                $db->quoteName('orderitemattribute_name', 'label'),
+                $db->quoteName('orderitemattribute_value', 'value'),
+            ])
+            ->from($db->quoteName('#__j2commerce_orderitemattributes'))
+            ->where($db->quoteName('orderitem_id') . ' = :oid')
+            ->bind(':oid', $orderitemId, ParameterType::INTEGER);
+        $db->setQuery($query);
+
+        return array_map(
+            static fn ($r): array => ['label' => (string) $r->label, 'value' => (string) $r->value],
+            $db->loadObjectList() ?: []
+        );
+    }
+
+    /**
+     * Adjust a managed variant's stock for an already-committed order and log it.
+     * Returns the new stock, or null when the order isn't stock-committed / not managed.
+     */
+    private function commitStockAdjust(string $orderId, object $variant, int $delta, string $itemName): ?int
+    {
+        if ($delta === 0 || !InventoryHelper::isManagingStock($variant)) {
+            return null;
+        }
+
+        $variantId = (int) ($variant->j2commerce_variant_id ?? $variant->variant_id ?? 0);
+
+        if ($variantId < 1) {
+            return null;
+        }
+
+        $oldStock = InventoryHelper::getStockQuantity($variantId);
+        $newStock = InventoryHelper::adjustStockAndAvailability($variantId, $delta, InventoryHelper::isBackorderAllowed($variant));
+
+        OrderHistoryHelper::add(
+            orderId: $orderId,
+            comment: Text::sprintf('COM_J2COMMERCE_ORDERITEM_STOCK_ADJUSTED', $itemName, $oldStock, $newStock),
+        );
+
+        return $newStock;
+    }
+
+    /** Order statuses where stock has already been committed (Confirmed / Pending). */
+    public function isStockCommitted(object $order): bool
+    {
+        return \in_array((int) ($order->order_state_id ?? 0), [1, 4], true);
+    }
+
+    /** Supplemental-charge capability of the order's gateway ('token_charge' | 'order_update' | 'none'). */
+    public function getSupplementalCapability(object $order): string
+    {
+        try {
+            $results = J2CommerceHelper::plugin()->eventWithArray('GetSupplementalPaymentCapability', [
+                'payment_method' => (string) ($order->orderpayment_type ?? ''),
+                'order'          => $order,
+                'result'         => [],
+            ]);
+
+            foreach ($results as $result) {
+                if (\is_array($result) && \in_array($result['capability'] ?? '', ['token_charge', 'order_update'], true)) {
+                    return (string) $result['capability'];
+                }
+            }
+        } catch (\Throwable $e) {
+            // A misbehaving gateway must not break the editor — treat as no capability.
+        }
+
+        return 'none';
+    }
+
+    /**
+     * Best stored credential for the order's user, restricted to the gateway that
+     * took the original payment (mirrors app_aftersalespecial's resolver — providers
+     * store their name as 'authorizenet' OR 'payment_authorizenet').
+     */
+    public function resolveStoredPaymentProfile(int $userId, string $paymentElement): ?object
+    {
+        if ($userId <= 0 || $paymentElement === '') {
+            return null;
+        }
+
+        $fullName  = $paymentElement;
+        $shortName = str_starts_with($paymentElement, 'payment_')
+            ? substr($paymentElement, \strlen('payment_'))
+            : $paymentElement;
+
+        try {
+            $db    = $this->getDatabase();
+            $query = $db->getQuery(true)
+                ->select($db->quoteName([
+                    'id', 'user_id', 'provider', 'customer_profile_id', 'environment', 'is_default',
+                    'created_at', 'updated_at', 'payment_token', 'token_label', 'is_renewal_default',
+                ]))
+                ->from($db->quoteName('#__j2commerce_paymentprofiles'))
+                ->where($db->quoteName('user_id') . ' = :userId')
+                ->where($db->quoteName('provider') . ' IN (:providerFull, :providerShort)')
+                ->bind(':userId', $userId, ParameterType::INTEGER)
+                ->bind(':providerFull', $fullName)
+                ->bind(':providerShort', $shortName)
+                ->order($db->quoteName('is_renewal_default') . ' DESC, ' . $db->quoteName('is_default') . ' DESC');
+
+            return $db->setQuery($query, 0, 1)->loadObject() ?: null;
+        } catch (\Throwable $e) {
+            // Payment-profiles table may not exist on this install.
+            return null;
+        }
     }
 
     /**
@@ -1022,6 +1464,12 @@ class OrderModel extends AdminModel
                 ->bind(':createdOn', $createdSql);
         }
 
+        if (\array_key_exists('orderpayment_type', $data)) {
+            $paymentType = (string) $data['orderpayment_type'];
+            $update->set($db->quoteName('orderpayment_type') . ' = :paymentType')
+                ->bind(':paymentType', $paymentType);
+        }
+
         $db->setQuery($update);
         $db->execute();
 
@@ -1091,21 +1539,30 @@ class OrderModel extends AdminModel
      * Stock is intentionally NOT adjusted here — inventory changes only on
      * add/remove item and via the explicit Inventory ± buttons.
      */
-    public function updateOrderItemLines(string $orderId, array $quantities, array $prices): int
+    public function updateOrderItemLines(string $orderId, array $quantities, array $prices, bool $commitStock = false): int
     {
         $db      = $this->getDatabase();
         $query   = $db->getQuery(true)
-            ->select($db->quoteName([
-                'j2commerce_orderitem_id',
-                'orderitem_quantity',
-                'orderitem_price',
-                'orderitem_option_price',
-                'orderitem_per_item_tax',
-                'orderitem_discount',
-                'orderitem_weight',
-            ]))
-            ->from($db->quoteName('#__j2commerce_orderitems'))
-            ->where($db->quoteName('order_id') . ' = :orderId')
+            ->select([
+                $db->quoteName('oi.j2commerce_orderitem_id'),
+                $db->quoteName('oi.orderitem_quantity'),
+                $db->quoteName('oi.orderitem_price'),
+                $db->quoteName('oi.orderitem_option_price'),
+                $db->quoteName('oi.orderitem_per_item_tax'),
+                $db->quoteName('oi.orderitem_discount'),
+                $db->quoteName('oi.orderitem_weight'),
+                $db->quoteName('oi.orderitem_name'),
+                $db->quoteName('oi.variant_id'),
+                $db->quoteName('v.manage_stock'),
+                $db->quoteName('v.allow_backorder'),
+            ])
+            ->from($db->quoteName('#__j2commerce_orderitems', 'oi'))
+            ->join(
+                'LEFT',
+                $db->quoteName('#__j2commerce_variants', 'v')
+                . ' ON ' . $db->quoteName('v.j2commerce_variant_id') . ' = ' . $db->quoteName('oi.variant_id')
+            )
+            ->where($db->quoteName('oi.order_id') . ' = :orderId')
             ->bind(':orderId', $orderId);
         $db->setQuery($query);
         $items   = $db->loadObjectList('j2commerce_orderitem_id') ?: [];
@@ -1153,14 +1610,21 @@ class OrderModel extends AdminModel
                 ->bind(':itemId', $rowId, ParameterType::INTEGER);
             $db->setQuery($update);
             $db->execute();
+
+            // On already-committed orders, deduct the increase / restore the decrease.
+            $qtyDelta = $qty - (int) $row->orderitem_quantity;
+            if ($commitStock && $qtyDelta !== 0 && (int) ($row->variant_id ?? 0) > 0) {
+                $this->commitStockAdjust($orderId, $row, -$qtyDelta, (string) ($row->orderitem_name ?? ''));
+            }
+
             $updated++;
         }
 
         return $updated;
     }
 
-    /** Search enabled product variants by SKU or product title for the admin order editor. */
-    public function searchProductVariants(string $term, int $limit = 10): array
+    /** Search enabled product variants by name (title) or SKU for the admin order editor. */
+    public function searchProductVariants(string $term, int $limit = 10, bool $excludeSubscription = false, int $offset = 0): array
     {
         if (trim($term) === '') {
             return [];
@@ -1202,16 +1666,78 @@ class OrderModel extends AdminModel
             )
             ->bind(':sku', $search)
             ->bind(':title', $search)
-            ->order($db->quoteName('c.title') . ' ASC')
-            ->setLimit($limit);
+            ->order($db->quoteName('c.title') . ' ASC, ' . $db->quoteName('v.j2commerce_variant_id') . ' ASC')
+            ->setLimit($limit, $offset);
+
+        if ($excludeSubscription) {
+            [$subType1, $subType2] = self::SUBSCRIPTION_PRODUCT_TYPES;
+            // A NULL product_type is not a subscription — keep it (NULL NOT IN (...) is NULL, which would drop the row).
+            $query->where(
+                '(' . $db->quoteName('p.product_type') . ' IS NULL'
+                . ' OR ' . $db->quoteName('p.product_type') . ' NOT IN (:subType1, :subType2))'
+            )
+                ->bind(':subType1', $subType1)
+                ->bind(':subType2', $subType2);
+        }
 
         $db->setQuery($query);
 
         return $db->loadObjectList() ?: [];
     }
 
+    /** Count matching product variants for the search pager (same filters as the search). */
+    public function countSearchProductVariants(string $term, bool $excludeSubscription = false): int
+    {
+        if (trim($term) === '') {
+            return 0;
+        }
+
+        $db     = $this->getDatabase();
+        $search = '%' . trim($term) . '%';
+
+        $query = $db->getQuery(true)
+            ->select('COUNT(*)')
+            ->from($db->quoteName('#__j2commerce_variants', 'v'))
+            ->join(
+                'INNER',
+                $db->quoteName('#__j2commerce_products', 'p')
+                . ' ON ' . $db->quoteName('p.j2commerce_product_id') . ' = ' . $db->quoteName('v.product_id')
+            )
+            ->join(
+                'INNER',
+                $db->quoteName('#__content', 'c')
+                . ' ON ' . $db->quoteName('c.id') . ' = ' . $db->quoteName('p.product_source_id')
+                . ' AND ' . $db->quoteName('p.product_source') . ' = ' . $db->quote('com_content')
+            )
+            ->where($db->quoteName('p.enabled') . ' = 1')
+            ->where(
+                'NOT (' . $db->quoteName('v.is_master') . ' = 1 AND '
+                . $db->quoteName('p.product_type') . ' = ' . $db->quote('variable') . ')'
+            )
+            ->where(
+                '(' . $db->quoteName('v.sku') . ' LIKE :sku'
+                . ' OR ' . $db->quoteName('c.title') . ' LIKE :title' . ')'
+            )
+            ->bind(':sku', $search)
+            ->bind(':title', $search);
+
+        if ($excludeSubscription) {
+            [$subType1, $subType2] = self::SUBSCRIPTION_PRODUCT_TYPES;
+            $query->where(
+                '(' . $db->quoteName('p.product_type') . ' IS NULL'
+                . ' OR ' . $db->quoteName('p.product_type') . ' NOT IN (:subType1, :subType2))'
+            )
+                ->bind(':subType1', $subType1)
+                ->bind(':subType2', $subType2);
+        }
+
+        $db->setQuery($query);
+
+        return (int) $db->loadResult();
+    }
+
     /** Add a product variant to an order as a new line item. */
-    public function addOrderItemFromVariant(string $orderId, int $variantId, int $qty = 1): ?object
+    public function addOrderItemFromVariant(string $orderId, int $variantId, int $qty = 1, bool $blockSubscription = false, bool $commitStock = false): ?object
     {
         $qty = max(1, $qty);
         $db  = $this->getDatabase();
@@ -1251,6 +1777,11 @@ class OrderModel extends AdminModel
             return null;
         }
 
+        // Guest orders must never carry subscription products (enforced at add time, not just in search).
+        if ($blockSubscription && \in_array($variant->product_type, self::SUBSCRIPTION_PRODUCT_TYPES, true)) {
+            return null;
+        }
+
         if (InventoryHelper::isManagingStock($variant)
             && !InventoryHelper::isBackorderAllowed($variant)
             && InventoryHelper::getAvailableQuantity((int) $variant->j2commerce_variant_id) < $qty
@@ -1261,6 +1792,18 @@ class OrderModel extends AdminModel
         $price      = (float) $variant->price;
         $finalPrice = $price * $qty;
         $user       = Factory::getApplication()->getIdentity();
+
+        // Persist the product image paths in orderitem_params so the order view,
+        // confirmation, and my-account templates render the thumbnail the same way
+        // as a checkout-created line (they all read orderitem_params->thumb_image).
+        // Strip the "#joomlaImage://..." metadata fragment so the stored value is a
+        // clean path — matching what checkout stores.
+        $cleanImagePath  = static fn ($path): string => explode('#', (string) $path, 2)[0];
+        $images          = ProductHelper::getProductImages((int) $variant->product_id);
+        $orderItemParams = json_encode([
+            'thumb_image' => $images ? $cleanImagePath($images->thumb_image ?? $images->main_image ?? '') : '',
+            'main_image'  => $images ? $cleanImagePath($images->main_image ?? '') : '',
+        ]);
 
         $row = (object) [
             'order_id'                         => $orderId,
@@ -1285,7 +1828,7 @@ class OrderModel extends AdminModel
             'orderitem_finalprice'             => number_format($finalPrice, 5, '.', ''),
             'orderitem_finalprice_with_tax'    => number_format($finalPrice, 5, '.', ''),
             'orderitem_finalprice_without_tax' => number_format($finalPrice, 5, '.', ''),
-            'orderitem_params'                 => '',
+            'orderitem_params'                 => $orderItemParams,
             'created_on'                       => Factory::getDate()->toSql(),
             'created_by'                       => (int) ($user?->id ?? 0),
             'orderitem_weight'                 => (string) ((float) ($variant->weight ?? 0)),
@@ -1296,13 +1839,16 @@ class OrderModel extends AdminModel
 
         $this->copyVariantAttributes((int) $row->j2commerce_orderitem_id, (int) $variant->j2commerce_variant_id);
 
-        if (InventoryHelper::isManagingStock($variant)) {
-            InventoryHelper::adjustStock(
-                (int) $variant->j2commerce_variant_id,
-                -$qty,
-                InventoryHelper::isBackorderAllowed($variant)
-            );
-        }
+        // Deduct stock only when the order already commits stock (Confirmed/Pending);
+        // drafts commit at confirmation via reduceOrderStock (avoids double-deduction).
+        $row->manages_stock = InventoryHelper::isManagingStock($variant);
+
+        $newStock = $commitStock
+            ? $this->commitStockAdjust($orderId, $variant, -$qty, (string) ($variant->product_name ?? $row->orderitem_name))
+            : null;
+
+        $row->stock_quantity = $newStock ?? InventoryHelper::getStockQuantity((int) $variant->j2commerce_variant_id);
+        $row->image_url      = $this->resolveItemImage((int) $variant->product_id);
 
         return $row;
     }
@@ -1373,7 +1919,7 @@ class OrderModel extends AdminModel
     }
 
     /** Remove order items by primary key, returning the removed item names. */
-    public function removeOrderItems(string $orderId, array $itemIds): array
+    public function removeOrderItems(string $orderId, array $itemIds, bool $commitStock = false): array
     {
         $itemIds = array_values(array_filter(array_map('intval', $itemIds), static fn (int $id) => $id > 0));
 
@@ -1407,10 +1953,13 @@ class OrderModel extends AdminModel
             return [];
         }
 
-        // Restore stock for managed variants before deleting the lines
-        foreach ($rows as $row) {
-            if ((int) ($row->variant_id ?? 0) > 0 && InventoryHelper::isManagingStock($row)) {
-                InventoryHelper::adjustStock((int) $row->variant_id, (int) $row->orderitem_quantity);
+        // Restore stock for managed variants only when the order already commits stock
+        // (drafts never deducted, so nothing to restore).
+        if ($commitStock) {
+            foreach ($rows as $row) {
+                if ((int) ($row->variant_id ?? 0) > 0) {
+                    $this->commitStockAdjust($orderId, $row, (int) $row->orderitem_quantity, (string) $row->orderitem_name);
+                }
             }
         }
 
@@ -1519,6 +2068,36 @@ class OrderModel extends AdminModel
         $row->shipping_zip ??= '';
 
         return (bool) $db->insertObject('#__j2commerce_orderinfos', $row, 'j2commerce_orderinfo_id');
+    }
+
+    /** Copy the billing address onto the shipping address (the "same as billing" option). */
+    public function copyBillingToShipping(string $orderId): bool
+    {
+        if (empty($orderId)) {
+            return false;
+        }
+
+        $fields = [
+            'company', 'last_name', 'first_name', 'middle_name',
+            'phone_1', 'phone_2', 'fax', 'address_1', 'address_2',
+            'city', 'zip', 'zone_name', 'country_name', 'zone_id',
+            'country_id', 'tax_number',
+        ];
+
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true)->update($db->quoteName('#__j2commerce_orderinfos'));
+
+        foreach ($fields as $field) {
+            $query->set($db->quoteName('shipping_' . $field) . ' = ' . $db->quoteName('billing_' . $field));
+        }
+
+        $query->where($db->quoteName('order_id') . ' = :orderId')
+            ->bind(':orderId', $orderId);
+
+        $db->setQuery($query);
+        $db->execute();
+
+        return true;
     }
 
     /** Saved addresses of the order's customer, with resolved geo names. */

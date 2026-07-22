@@ -101,8 +101,8 @@ $dateFormat = ComponentHelper::getParams('com_j2commerce')->get('date_format', '
                             $paymentDisplay = !empty($item->payment_plugin_name)
                                 ? Text::_($item->payment_plugin_name)
                                 : $this->escape($item->orderpayment_type ?? '');
-                            $orderViewUrl = Route::_('index.php?option=com_j2commerce&view=order&layout=view&id=' . $item->j2commerce_order_id);
-                            $orderEditUrl = Route::_('index.php?option=com_j2commerce&view=order&layout=edit&id=' . $item->j2commerce_order_id);
+                            $orderViewUrl = Route::_('index.php?option=com_j2commerce&view=order&layout=view&id=' . (int) $item->j2commerce_order_id);
+                            $orderEditUrl = Route::_('index.php?option=com_j2commerce&view=order&layout=edit&id=' . (int) $item->j2commerce_order_id);
                         ?>
                             <tr class="row<?php echo $i % 2; ?>" data-order-id="<?php echo (int) $item->j2commerce_order_id; ?>">
                                 <td class="text-center">
@@ -201,10 +201,13 @@ $dateFormat = ComponentHelper::getParams('com_j2commerce')->get('date_format', '
                                                title="<?php echo Text::sprintf('COM_J2COMMERCE_VIEW_ORDER_X', $this->escape($item->order_id)); ?>">
                                                 <span class="icon-eye" aria-hidden="true"></span>
                                             </a>
-                                            <?php // TODO: Re-enable edit link in a future release when order editing is fully implemented ?>
-                                            <?php /* <a href="<?php echo $orderEditUrl; ?>" class="btn btn-sm btn-link" title="<?php echo Text::_('JACTION_EDIT'); ?>">
-                                                <span class="icon-pencil-alt" aria-hidden="true"></span>
-                                            </a> */ ?>
+                                            <?php if ($canEdit) : ?>
+                                            <a href="<?php echo $orderEditUrl; ?>" class="btn btn-sm btn-link"
+                                               aria-label="<?php echo Text::_('COM_J2COMMERCE_EDIT_ORDER'); ?>"
+                                               title="<?php echo Text::_('COM_J2COMMERCE_EDIT_ORDER'); ?>">
+                                                <span class="fa-solid fa-pen-to-square" aria-hidden="true"></span>
+                                            </a>
+                                            <?php endif; ?>
                                         </div>
                                         <div class="form-check form-switch mt-1 d-flex align-items-center justify-content-center gap-1">
                                             <input type="checkbox" class="form-check-input order-notify-check me-2" role="switch" id="notify_<?php echo (int) $item->j2commerce_order_id; ?>" data-order-id="<?php echo (int) $item->j2commerce_order_id; ?>" style="position: relative;top: -3px;" />

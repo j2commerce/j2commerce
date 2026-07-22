@@ -11,7 +11,9 @@
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 
 /** @var \J2Commerce\Component\J2commerce\Site\View\Checkout\HtmlView $this */
@@ -25,7 +27,10 @@ $selectedPayment = $this->selectedPayment ?? '';
 $showPayment = $this->showPayment ?? true;
 $showTerms = $this->showTerms ?? 0;
 $termsDisplayType = $this->termsDisplayType ?? 'link';
+$paymentFields = $this->paymentFields ?? [];
+$paymentFieldValues = $this->paymentFieldValues ?? [];
 $currency = J2CommerceHelper::currency();
+$platform = J2CommerceHelper::platform();
 ?>
 <div class="j2commerce-shipping-payment">
 
@@ -44,7 +49,8 @@ $currency = J2CommerceHelper::currency();
             $rateTax = $rate['tax'] ?? $rate->tax ?? 0;
             $rateTaxClassId = $rate['tax_class_id'] ?? $rate->tax_class_id ?? 0;
             $rateExtra = $rate['extra'] ?? $rate->extra ?? '';
-            $rateImage = $rate['image'] ?? $rate->image ?? '';
+            $rawRateImage = (string) ($rate['image'] ?? $rate->image ?? '');
+            $rateImage = $rawRateImage !== '' ? HTMLHelper::_('cleanImageURL', $platform->getImagePath($rawRateImage))->url : '';
             $rateDesc = $rate['desc'] ?? $rate->desc ?? '';
             $isSelected = (!empty($shippingValues['shipping_name']) && $shippingValues['shipping_name'] === $rateName)
                 || (\count($shippingRates) === 1);
@@ -57,7 +63,7 @@ $currency = J2CommerceHelper::currency();
                 <div class="shipping-method-display flex-grow-1">
                     <div class="shipping-method-name fw-medium"><?php echo htmlspecialchars($rateName); ?></div>
                     <?php if (!empty($rateDesc)) : ?>
-                        <div class="shipping-method-desc"><small class="text-muted"><?php echo htmlspecialchars($rateDesc); ?></small></div>
+                        <div class="shipping-method-desc"><small class="text-body-secondary"><?php echo htmlspecialchars($rateDesc); ?></small></div>
                     <?php endif; ?>
                 </div>
                 <span class="fw-semibold flex-shrink-0"><?php echo $currency->format($ratePrice); ?></span>
@@ -76,7 +82,7 @@ $currency = J2CommerceHelper::currency();
 
     <?php if ($showPayment) : ?>
         <h5 class="mb-1"><?php echo Text::_('COM_J2COMMERCE_PAYMENT_METHOD'); ?></h5>
-        <p class="text-muted small mb-3"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_TRANSACTIONS_SECURE'); ?></p>
+        <p class="text-body-secondary small mb-3"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_TRANSACTIONS_SECURE'); ?></p>
 
         <div class="payment-methods-group list-group mb-4" role="radiogroup" aria-label="<?php echo Text::_('COM_J2COMMERCE_PAYMENT_METHOD', true); ?>">
             <?php if (!empty($paymentMethods)) : ?>
@@ -84,7 +90,8 @@ $currency = J2CommerceHelper::currency();
                     <?php
                     $element = $method['element'] ?? $method->element ?? '';
                     $name = $method['name'] ?? $method->name ?? $element;
-                    $image = $method['image'] ?? $method->image ?? '';
+                    $rawImage = (string) ($method['image'] ?? $method->image ?? '');
+                    $image = $rawImage !== '' ? HTMLHelper::_('cleanImageURL', $platform->getImagePath($rawImage))->url : '';
                     $desc = $method['desc'] ?? $method->desc ?? '';
                     $isSelected = ($element === $selectedPayment) || (\count($paymentMethods) === 1);
                     ?>
@@ -111,6 +118,14 @@ $currency = J2CommerceHelper::currency();
                 </div>
             <?php endif; ?>
         </div>
+
+        <?php if (!empty($paymentFields)) : ?>
+            <div class="payment-custom-fields row g-3 mb-4">
+                <?php foreach ($paymentFields as $field) : ?>
+                    <?php echo CustomFieldHelper::renderField($field, (string) ($paymentFieldValues[$field->field_namekey] ?? '')); ?>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
     <?php endif; ?>
 
     <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterDisplayShippingPayment', [$this->order]); ?>

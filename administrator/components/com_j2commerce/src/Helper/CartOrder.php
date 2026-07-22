@@ -1742,6 +1742,9 @@ class CartOrder
         $billing  = $this->loadAddressData('billing', $session, $mvcFactory, $userId);
         $shipping = $this->loadAddressData('shipping', $session, $mvcFactory, $userId);
 
+        // Payment-step custom field values captured by shippingPaymentMethodValidate()
+        $paymentCustom = (array) $session->get('payment_custom_fields', [], 'j2commerce');
+
         $columns = [
             'order_id',
             'billing_first_name', 'billing_last_name', 'billing_company',
@@ -1793,7 +1796,7 @@ class CartOrder
             $db->quote($shipping['tax_number'] ?? ''),
             $db->quote(json_encode($billing)),
             $db->quote(json_encode($shipping)),
-            $db->quote('{}'),
+            $db->quote($paymentCustom !== [] ? json_encode($paymentCustom) : '{}'),
         ];
 
         $query = $db->getQuery(true)

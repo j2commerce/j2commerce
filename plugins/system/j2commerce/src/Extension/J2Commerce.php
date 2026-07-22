@@ -16,6 +16,8 @@ namespace J2Commerce\Plugin\System\J2Commerce\Extension;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\SetupGuide\SetupGuideHelper;
+use J2Commerce\Component\J2commerce\Site\Context\AdminOrderCheckoutContext;
+use J2Commerce\Component\J2commerce\Site\Event\CheckoutContextEvent;
 use Joomla\CMS\Access\Access;
 use Joomla\CMS\Cache\CacheControllerFactoryInterface;
 use Joomla\CMS\Component\ComponentHelper;
@@ -111,8 +113,29 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             'onJ2CommerceCalculateFees'        => 'onJ2CommerceCalculateFees',
             'onJ2CommerceProcessCron'          => 'onJ2CommerceProcessCron',
             'onJ2CommerceGetDashboardMessages' => 'onGetDashboardMessages',
+            'onJ2CommerceResolveCheckoutContext' => 'onResolveCheckoutContext',
             'onAjaxJ2commerce'                 => 'onAjaxJ2commerce',
         ];
+    }
+
+    /**
+     * Resolve the 'admin_order' pseudo-checkout context (admin "Take Payment" flow).
+     * The HMAC grant inside the payload is re-verified by the context's validate()
+     * on every request, so a stale or forged payload clears itself.
+     */
+    public function onResolveCheckoutContext(CheckoutContextEvent $event): void
+    {
+        if ($event->getResolved() !== null) {
+            return;
+        }
+
+        $payload = $event->getContextPayload();
+
+        if (($payload['provider'] ?? '') !== 'admin_order' || !class_exists(AdminOrderCheckoutContext::class)) {
+            return;
+        }
+
+        $event->assignResolved(new AdminOrderCheckoutContext($payload));
     }
 
     /**

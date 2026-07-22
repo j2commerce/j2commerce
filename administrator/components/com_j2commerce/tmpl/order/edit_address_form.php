@@ -98,4 +98,3 @@ $zoneName = (string) ($orderInfo->{$type . '_zone_name'} ?? '');
         </div>
     </div>
 </div>
-<div class="mt-3 d-none" id="<?php echo $type; ?>SavedAddresses" data-address-type="<?php echo $type; ?>"></div>

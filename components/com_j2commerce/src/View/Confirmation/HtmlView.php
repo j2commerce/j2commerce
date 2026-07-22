@@ -43,6 +43,28 @@ class HtmlView extends BaseHtmlView
 
         UtilitiesHelper::sendNoCacheHeaders();
 
+        // Admin "Take Payment" flow: skip the shopper confirmation entirely and
+        // return the store owner to the admin order editor. The flag is set by
+        // checkout.adminPay (grant-verified) and consumed once, only when the
+        // confirmed order matches — a different order's confirmation is untouched.
+        $adminReturn = $app->getSession()->get('adminpay_return', null, 'j2commerce');
+
+        if (\is_array($adminReturn) && !empty($adminReturn['url'])) {
+            if (time() > (int) ($adminReturn['expires'] ?? 0)) {
+                // Abandoned Take Payment — drop the stale flag, render normally.
+                $app->getSession()->clear('adminpay_return', 'j2commerce');
+            } else {
+                $confirmedOrderId = $app->getInput()->getString('order_id', '');
+
+                if ($confirmedOrderId === '' || $confirmedOrderId === (string) ($adminReturn['order_id'] ?? '')) {
+                    $app->getSession()->clear('adminpay_return', 'j2commerce');
+                    $app->redirect((string) $adminReturn['url']);
+
+                    return;
+                }
+            }
+        }
+
         $this->params   = $app->getParams();
         $this->currency = J2CommerceHelper::currency();
 

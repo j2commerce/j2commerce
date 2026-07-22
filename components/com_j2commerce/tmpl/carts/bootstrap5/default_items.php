@@ -168,7 +168,7 @@ $checkoutPriceDisplay = $this->params->get('checkout_price_display_options', 0);
                         $lineTotal = $this->order->get_formatted_lineitem_total($item, $checkoutPriceDisplay);
                         if ($discountInfo && !empty($discountInfo->original_price) && $discountInfo->original_price > $discountInfo->final_price):
                         ?>
-                            <span class="line-total-original text-decoration-line-through text-muted"><?php echo $this->currency->format($discountInfo->original_price); ?></span>
+                            <span class="line-total-original text-decoration-line-through text-body-secondary"><?php echo $this->currency->format($discountInfo->original_price); ?></span>
                             <span class="line-total-value ms-2"><?php echo $this->currency->format($discountInfo->final_price); ?></span>
                         <?php else: ?>
                             <span class="line-total-value"><?php echo $this->currency->format($lineTotal); ?></span>

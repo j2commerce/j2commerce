@@ -99,6 +99,8 @@ final class J2commerce extends ActionLogPlugin implements SubscriberInterface
             'onJ2CommerceAfterPayment'             => 'onAfterPayment',
             // Order admin events
             'onJ2CommerceAfterOrderStatusChange' => 'onAfterOrderStatusChange',
+            'onJ2CommerceAfterAdminOrderCreate'  => 'onAfterAdminOrderCreate',
+            'onJ2CommerceAfterAdminOrderEdit'    => 'onAfterAdminOrderEdit',
             // Voucher balance events
             'onJ2CommerceVoucherBalanceAdjusted' => 'onVoucherBalanceAdjusted',
             // Admin content events (fired by Joomla's AdminModel)
@@ -357,6 +359,38 @@ final class J2commerce extends ActionLogPlugin implements SubscriberInterface
 
         $this->addLog([$message], $langKey, self::EXTENSION, $this->getUserId());
         $this->checkEmailNotification($langKey, $priority, $message);
+    }
+
+    public function onAfterAdminOrderCreate(Event $event): void
+    {
+        if (!$this->params->get('log_order_events', 1)) {
+            return;
+        }
+
+        $args    = $this->extractArgs($event, 3);
+        $orderId = (string) ($args[0] ?? '');
+
+        $langKey = 'PLG_ACTIONLOG_J2COMMERCE_ADMIN_ORDER_CREATE';
+        $message = $this->buildMessage($langKey, ['order_id' => $orderId]);
+
+        $this->addLog([$message], $langKey, self::EXTENSION, $this->getUserId());
+        $this->checkEmailNotification($langKey, self::PRIORITY_ACTION, $message);
+    }
+
+    public function onAfterAdminOrderEdit(Event $event): void
+    {
+        if (!$this->params->get('log_order_events', 1)) {
+            return;
+        }
+
+        $args    = $this->extractArgs($event, 3);
+        $orderId = (string) ($args[0] ?? '');
+
+        $langKey = 'PLG_ACTIONLOG_J2COMMERCE_ADMIN_ORDER_EDIT';
+        $message = $this->buildMessage($langKey, ['order_id' => $orderId]);
+
+        $this->addLog([$message], $langKey, self::EXTENSION, $this->getUserId());
+        $this->checkEmailNotification($langKey, self::PRIORITY_ACTION, $message);
     }
 
     public function onVoucherBalanceAdjusted(Event $event): void

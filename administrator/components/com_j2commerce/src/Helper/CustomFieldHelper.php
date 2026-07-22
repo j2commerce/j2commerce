@@ -393,7 +393,7 @@ class CustomFieldHelper
             }
         } elseif (!$required && $requiredIndicator === 'optional') {
             if ($isUikit) {
-                $labelHtml .= ' <small class="uk-text-muted">' . Text::_('COM_J2COMMERCE_OPTIONAL') . '</small>';
+                $labelHtml .= ' <small class="uk-text-meta">' . Text::_('COM_J2COMMERCE_OPTIONAL') . '</small>';
             } else {
                 $labelHtml .= ' <small class="text-body-secondary">' . Text::_('COM_J2COMMERCE_OPTIONAL') . '</small>';
             }
@@ -421,6 +421,8 @@ class CustomFieldHelper
             case 'email':
             case 'tel':
             case 'number':
+            case 'time':
+                // 'time' stays a native input — Joomla core has no time-only picker.
                 $inputType = $fieldType;
                 // UIkit has no form-floating; stacked-label fallback.
                 if ($isFloating && !$isUikit) {
@@ -434,6 +436,37 @@ class CustomFieldHelper
                         . '<input type="' . $inputType . '" name="' . $namekey . '" id="' . $id . '" class="' . $inputClass . ($extraClass ? ' ' . $extraClass : '') . '" value="' . htmlspecialchars($fieldValue, ENT_QUOTES, 'UTF-8') . '"' . $requiredAttr . $placeholderAttr . $autocompleteAttr . '>'
                         . ($wrapperNormal !== '' ? '</div>' : '');
                 }
+                break;
+
+            case 'date':
+            case 'datetime':
+                // Joomla core calendar picker. The core layout escapes only the
+                // value/hint and echoes name/id raw, so pass the pre-escaped ones.
+                // AJAX consumers must preload assets via ensureCalendarAssets().
+                $calAttribs = [
+                    'class'    => trim(($isUikit ? 'uk-input ' : '') . $extraClass),
+                    'showTime' => $fieldType === 'datetime',
+                ];
+
+                if ($required) {
+                    $calAttribs['required'] = '';
+                }
+
+                if ($placeholderRaw !== '') {
+                    $calAttribs['placeholder'] = Text::_($placeholderRaw);
+                }
+
+                $html .= ($wrapperNormal !== '' ? '<div class="' . $wrapperNormal . '">' : '')
+                    . '<label for="' . $id . '" class="' . $labelClass . '">' . $labelHtml . '</label>'
+                    . HTMLHelper::_(
+                        'calendar',
+                        $fieldValue,
+                        $namekey,
+                        $id,
+                        $fieldType === 'datetime' ? '%Y-%m-%d %H:%M' : '%Y-%m-%d',
+                        $calAttribs
+                    )
+                    . ($wrapperNormal !== '' ? '</div>' : '');
                 break;
 
             case 'telephone':
@@ -774,6 +807,43 @@ class CustomFieldHelper
         }
 
         return $data;
+    }
+
+    /**
+     * Calendar picker assets + JS strings must load with the MAIN page — the
+     * calendar layout's own loading inside an AJAX-rendered checkout step goes
+     * to a discarded document. Mirrors layouts/joomla/form/field/calendar.php.
+     */
+    public static function ensureCalendarAssets(): void
+    {
+        $lang       = Factory::getApplication()->getLanguage();
+        $calendar   = $lang->getCalendar();
+        $helperPath = 'system/fields/calendar-locales/date/gregorian/date-helper.min.js';
+
+        if ($calendar && is_dir(JPATH_ROOT . '/media/system/js/fields/calendar-locales/date/' . strtolower($calendar))) {
+            $helperPath = 'system/fields/calendar-locales/date/' . strtolower($calendar) . '/date-helper.min.js';
+        }
+
+        Factory::getApplication()->getDocument()->getWebAssetManager()
+            ->registerAndUseScript('field.calendar.helper', $helperPath, [], ['defer' => true])
+            ->useStyle('field.calendar')
+            ->useScript('field.calendar');
+
+        $strings = [
+            'SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY',
+            'SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT',
+            'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST',
+            'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER',
+            'JANUARY_SHORT', 'FEBRUARY_SHORT', 'MARCH_SHORT', 'APRIL_SHORT', 'MAY_SHORT', 'JUNE_SHORT',
+            'JULY_SHORT', 'AUGUST_SHORT', 'SEPTEMBER_SHORT', 'OCTOBER_SHORT', 'NOVEMBER_SHORT', 'DECEMBER_SHORT',
+            'JCLOSE', 'JCLEAR', 'JLIB_HTML_BEHAVIOR_TODAY',
+            'JLIB_HTML_BEHAVIOR_WK',
+            'JLIB_HTML_BEHAVIOR_AM', 'JLIB_HTML_BEHAVIOR_PM',
+        ];
+
+        foreach ($strings as $key) {
+            Text::script($key);
+        }
     }
 
     /** Register telephone widget assets. Skip bootstrap.dropdown for UIkit. */
@@ -1259,7 +1329,7 @@ class CustomFieldHelper
         $wrapperClose   = $isUikit ? '' : '</div>';
         $labelClass     = $isUikit ? 'uk-form-label' : 'form-label';
         $constraintCls  = $isUikit
-            ? 'j2c-upload-constraints uk-text-muted uk-text-small uk-margin-small-top'
+            ? 'j2c-upload-constraints uk-text-meta uk-text-small uk-margin-small-top'
             : 'j2c-upload-constraints text-body-secondary small mt-1';
 
         return $wrapperOpen

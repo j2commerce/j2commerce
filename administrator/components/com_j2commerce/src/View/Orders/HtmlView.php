@@ -139,6 +139,13 @@ class HtmlView extends BaseHtmlView
 
         $canEditOrders = J2CommerceHelper::canAccess('j2commerce.editorders');
 
+        if ($canEditOrders && $canDo->get('core.create')) {
+            $toolbar->linkButton('new')
+                ->text('COM_J2COMMERCE_NEW_ORDER')
+                ->url('index.php?option=com_j2commerce&view=order&layout=edit&id=0')
+                ->icon('icon-new');
+        }
+
         if (!$this->isEmptyState) {
             // Bulk Actions popup (Change Status, Print Packing Slips, Delete)
             if ($canEditOrders && $canDo->get('core.edit.state')) {

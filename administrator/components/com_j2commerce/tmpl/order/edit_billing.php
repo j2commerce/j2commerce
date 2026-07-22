@@ -12,18 +12,22 @@ declare(strict_types=1);
 defined('_JEXEC') or die;
 
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Uri\Uri;
 
-$item = $this->item;
+$item      = $this->item;
 $orderInfo = $item->orderinfo ?? null;
 
 ?>
-<div class="row">
-    <div class="col-lg-8">
-        <h2 class="fs-4"><?php echo Text::_('COM_J2COMMERCE_TAB_BILLING_ADDRESS'); ?></h2>
+<div class="row g-0">
+    <div class="col-lg-7 p-4">
+        <div class="text-body-secondary text-uppercase fw-bold mb-2" style="font-size:12px;letter-spacing:.5px;">
+            <?php echo Text::_('COM_J2COMMERCE_TAB_BILLING_ADDRESS'); ?>
+        </div>
 
         <?php if ($orderInfo) : ?>
-        <div class="card">
-            <div class="card-body">
+        <div class="card j2c-inner-card border p-3">
+            <div class="d-flex gap-3">
+                <span class="j2c-icon-tile j2c-icon-tile-lg bg-primary-subtle text-primary"><span class="fa-solid fa-user fs-5" aria-hidden="true"></span></span>
                 <address class="mb-0" style="font-style: normal; line-height: 1.8;">
                     <strong><?php echo $this->escape(($orderInfo->billing_first_name ?? '') . ' ' . ($orderInfo->billing_last_name ?? '')); ?></strong><br>
                     <?php if (!empty($orderInfo->billing_company)) : ?>
@@ -52,7 +56,6 @@ $orderInfo = $item->orderinfo ?? null;
             $paramsData = is_string($billingParams) ? json_decode($billingParams, true) : (array) $billingParams;
             if (is_array($paramsData)) :
                 foreach ($paramsData as $paramKey => $paramValue) :
-                    // Check if this is a multiuploader field (JSON array of file objects)
                     if (is_string($paramValue)) {
                         $files = json_decode($paramValue, true);
                     } elseif (is_array($paramValue)) {
@@ -73,7 +76,7 @@ $orderInfo = $item->orderinfo ?? null;
                     <?php foreach ($files as $file) : ?>
                     <li class="d-flex align-items-center gap-2 py-1">
                         <span class="fa-solid fa-file" aria-hidden="true"></span>
-                        <a href="<?php echo \Joomla\CMS\Uri\Uri::root() . $this->escape($file['path'] ?? ''); ?>" target="_blank" rel="noopener">
+                        <a href="<?php echo Uri::root() . $this->escape($file['path'] ?? ''); ?>" target="_blank" rel="noopener">
                             <?php echo $this->escape($file['name'] ?? basename($file['path'] ?? '')); ?>
                         </a>
                         <?php if (!empty($file['size'])) : ?>
@@ -90,21 +93,45 @@ $orderInfo = $item->orderinfo ?? null;
         endif;
         ?>
 
-        <div class="mt-3">
-            <button type="button" class="btn btn-outline-primary me-2" id="editBillingAddressBtn" data-j2c-address-edit="billing">
-                <span class="icon-pencil-alt" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_EDIT_ADDRESS'); ?>
+        <div class="d-flex gap-2 mt-3">
+            <button type="button" class="btn btn-outline-primary" id="editBillingAddressBtn" data-j2c-address-edit="billing">
+                <span class="fa-solid fa-pen me-2" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_EDIT_ADDRESS'); ?>
             </button>
-            <button type="button" class="btn btn-outline-info" id="chooseBillingAddressBtn" data-j2c-address-choose="billing">
-                <span class="icon-list" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_CHOOSE_ALTERNATE_ADDRESS'); ?>
+            <?php if ((int) ($item->user_id ?? 0) > 0) : ?>
+            <button type="button" class="btn btn-outline-secondary j2c-address-new" data-address-type="billing" data-user-id="<?php echo (int) $item->user_id; ?>">
+                <span class="fa-solid fa-plus me-2" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_CUSTOMER_ADDRESSES_ADD'); ?>
             </button>
+            <?php endif; ?>
         </div>
         <?php else : ?>
             <div class="alert alert-info"><?php echo Text::_('COM_J2COMMERCE_NO_BILLING_ADDRESS'); ?></div>
-            <button type="button" class="btn btn-outline-primary" data-j2c-address-edit="billing">
-                <span class="icon-pencil-alt" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_EDIT_ADDRESS'); ?>
-            </button>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-primary" data-j2c-address-edit="billing">
+                    <span class="fa-solid fa-pen me-2" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_EDIT_ADDRESS'); ?>
+                </button>
+                <?php if ((int) ($item->user_id ?? 0) > 0) : ?>
+                <button type="button" class="btn btn-outline-secondary j2c-address-new" data-address-type="billing" data-user-id="<?php echo (int) $item->user_id; ?>">
+                    <span class="fa-solid fa-plus me-2" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_CUSTOMER_ADDRESSES_ADD'); ?>
+                </button>
+                <?php endif; ?>
+            </div>
         <?php endif; ?>
 
+        <div class="form-check mt-3">
+            <input type="checkbox" class="form-check-input" id="j2c-same-as-shipping">
+            <label class="form-check-label" for="j2c-same-as-shipping"><?php echo Text::_('COM_J2COMMERCE_SHIPPING_SAME_AS_BILLING'); ?></label>
+        </div>
+
         <?php $this->addressFormType = 'billing'; echo $this->loadTemplate('address_form'); ?>
+    </div>
+
+    <div class="col-lg-5 border-start bg-light p-4">
+        <div class="text-body-secondary text-uppercase fw-bold mb-2" style="font-size:12px;letter-spacing:.5px;">
+            <?php echo Text::_('COM_J2COMMERCE_CHOOSE_ALTERNATE_ADDRESS'); ?>
+        </div>
+        <button type="button" class="btn btn-outline-primary w-100" id="chooseBillingAddressBtn" data-j2c-address-choose="billing">
+            <span class="fa-solid fa-list me-2" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_CHOOSE_ALTERNATE_ADDRESS'); ?>
+        </button>
+        <div class="mt-3 d-none" id="billingSavedAddresses" data-address-type="billing"></div>
     </div>
 </div>
