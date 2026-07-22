@@ -358,6 +358,23 @@ if ($info) {
                 <div class="uk-width-1-3@l j2c-sidebar-bg uk-padding">
                     <h3 class="uk-h5 uk-margin-bottom"><?php echo Text::_('COM_J2COMMERCE_ORDER_SUMMARY'); ?></h3>
 
+                    <?php
+                    // Partial-payment orders scale each orderitem_finalprice down to the deposit
+                    // charged today (required by itemising gateways). The plugin preserves the full
+                    // per-item price in order_params so the line items reconcile with the full
+                    // Subtotal/Total; the plugin's Paid Today / Balance Due rows explain the split.
+                    $ppFullPrices = [];
+                    $ppParamsRaw  = (string) ($order->order_params ?? '');
+
+                    if ($ppParamsRaw !== '') {
+                        $ppDecoded = json_decode($ppParamsRaw, true);
+
+                        if (is_array($ppDecoded) && is_array($ppDecoded['partialpayment'] ?? null)) {
+                            $ppFullPrices = (array) ($ppDecoded['partialpayment']['item_full_prices'] ?? []);
+                        }
+                    }
+                    ?>
+
                     <?php // Order items list ?>
                     <?php if (!empty($items)) : ?>
                         <div class="uk-margin-bottom">
@@ -369,7 +386,10 @@ if ($info) {
                                     ? HTMLHelper::_('cleanImageURL', $platform->getImagePath($rawThumb))->url
                                     : '';
                                 $qty      = (int) $item->orderitem_quantity;
-                                $lineTotal = (float) $item->orderitem_finalprice;
+                                $cartitemId = (int) ($item->cartitem_id ?? 0);
+                                $lineTotal  = isset($ppFullPrices[$cartitemId])
+                                    ? (float) $ppFullPrices[$cartitemId]
+                                    : (float) $item->orderitem_finalprice;
                                 ?>
                                 <div class="uk-flex uk-flex-top uk-margin-small-bottom" style="gap: 12px;">
                                     <?php // Product image with quantity badge ?>
