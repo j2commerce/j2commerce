@@ -1177,14 +1177,9 @@ class VoucherModel extends AdminModel
             return false;
         }
 
-        // Check for remaining value
-        $voucherTotal = $this->getVoucherHistoryTotal($voucher->j2commerce_voucher_id);
-
-        if ($voucherTotal !== null) {
-            $amount = $voucher->voucher_value - $voucherTotal;
-        } else {
-            $amount = $voucher->voucher_value;
-        }
+        // Check for remaining value — use the ledger-based balance so that
+        // manual adjustments (credits/debits) are reflected in the display.
+        $amount = $this->getRemainingBalance((int) $voucher->j2commerce_voucher_id);
 
         if ($amount <= 0) {
             return false;
