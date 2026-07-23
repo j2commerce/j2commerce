@@ -872,7 +872,7 @@ class CartOrder
                             return;
                         }
 
-                        $balance  = (float) ($voucher->balance ?? 0);
+                        $balance  = $voucherModel->getRemainingBalance((int) ($voucher->j2commerce_voucher_id ?? 0));
                         $discount = min($balance, $this->order_total);
 
                         $this->vouchers[] = (object) [
