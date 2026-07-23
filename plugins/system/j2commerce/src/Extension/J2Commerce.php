@@ -210,6 +210,8 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
 
         $lang = $app->getLanguage();
 
+        $lang->load('com_j2commerce', JPATH_ADMINISTRATOR);
+
         foreach ($extensions as $extension) {
             $lang->load($extension . '.sys', JPATH_ADMINISTRATOR);
         }
