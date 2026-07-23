@@ -1839,7 +1839,8 @@ class CheckoutController extends BaseController
         // ---------------------------------------------------------------
         // Process payment via plugin events
         // ---------------------------------------------------------------
-        $html = '';
+        $html        = '';
+        $emailsSent  = false;
 
         $showPayment = false;
         J2CommerceHelper::plugin()->event('ChangeShowPaymentOnTotalZero', [$orderTable, &$showPayment]);
@@ -1864,6 +1865,7 @@ class CheckoutController extends BaseController
 
                 // Send order confirmation emails for free orders
                 $this->sendOrderEmails($orderId);
+                $emailsSent = true;
             }
         } else {
             $values = [
@@ -1939,7 +1941,9 @@ class CheckoutController extends BaseController
             }
 
             // Send order confirmation emails (non-AJAX payment path)
-            $this->sendOrderEmails($orderId);
+            if (!$emailsSent) {
+                $this->sendOrderEmails($orderId);
+            }
         }
 
         // Clear cart only after the order reached one of the configured "placed"
