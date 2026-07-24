@@ -1019,6 +1019,8 @@ class InventoryHelper
 
             $variant->quantity = $newStock;
             self::sendStockNotifications($variant, $newStock, $qty, $orderId);
+
+            J2CommerceHelper::plugin()->event('AfterStockAdjust', [(int) $item->variant_id, $newStock]);
         }
     }
 
@@ -1079,6 +1081,8 @@ class InventoryHelper
                     $newStock
                 ),
             );
+
+            J2CommerceHelper::plugin()->event('AfterStockAdjust', [(int) $item->variant_id, $newStock]);
         }
     }
 
@@ -1159,7 +1163,11 @@ class InventoryHelper
     /** Public entry point for single-variant stock adjustment (admin order editing). */
     public static function adjustStock(int $variantId, int $delta, bool $allowNegative = false): int
     {
-        return self::adjustVariantStock($variantId, $delta, $allowNegative);
+        $newStock = self::adjustVariantStock($variantId, $delta, $allowNegative);
+
+        J2CommerceHelper::plugin()->event('AfterStockAdjust', [$variantId, $newStock]);
+
+        return $newStock;
     }
 
     /**
@@ -1176,6 +1184,8 @@ class InventoryHelper
         } elseif ($newStock > 0) {
             self::setVariantAvailability($variantId, 1);
         }
+
+        J2CommerceHelper::plugin()->event('AfterStockAdjust', [$variantId, $newStock]);
 
         return $newStock;
     }
