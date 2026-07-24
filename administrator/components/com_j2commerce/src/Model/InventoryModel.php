@@ -12,6 +12,8 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\InventoryHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\MVC\Model\ListModel;
@@ -347,6 +349,11 @@ class InventoryModel extends ListModel
                 $db->execute();
             }
 
+            if ($variantId) {
+                $newQty = $quantity !== null ? (int) $quantity : InventoryHelper::getStockQuantity((int) $variantId);
+                J2CommerceHelper::plugin()->event('AfterStockAdjust', [(int) $variantId, $newQty]);
+            }
+
             return true;
         } catch (\Exception $e) {
             $app = Factory::getApplication();
@@ -470,6 +477,13 @@ class InventoryModel extends ListModel
             $db->setQuery($query);
             $db->execute();
             $did = true;
+        }
+
+        if ($did) {
+            $newQty = \array_key_exists('quantity', $fields)
+                ? (int) $fields['quantity']
+                : InventoryHelper::getStockQuantity($variantId);
+            J2CommerceHelper::plugin()->event('AfterStockAdjust', [$variantId, $newQty]);
         }
 
         return $did;

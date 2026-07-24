@@ -16,9 +16,9 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
-use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\DownloadHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\EmailHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\InventoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
@@ -1834,6 +1834,11 @@ class OrderModel extends AdminModel
             'orderitem_weight'                 => (string) ((float) ($variant->weight ?? 0)),
             'orderitem_weight_total'           => (string) ((float) ($variant->weight ?? 0) * $qty),
         ];
+
+        // Let extensions substitute per-line values (e.g. a per-variant tax profile) before the row is
+        // persisted — the admin counterpart to the storefront onJ2CommerceGetDiscountedPrice seam.
+        // $row is passed by reference; $variant carries the variant_id needed to resolve a per-variant value.
+        J2CommerceHelper::plugin()->event('BeforeAddOrderItem', [&$row, $variant]);
 
         $db->insertObject('#__j2commerce_orderitems', $row, 'j2commerce_orderitem_id');
 
