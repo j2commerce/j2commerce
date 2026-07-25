@@ -43,23 +43,24 @@ class Categoryj2commerceField extends SpacerField
      */
     protected function getInput()
     {
-        return $this->getLabel();
-    }
-
-    /**
-     * Method to get the field label markup.
-     *
-     * @return  string  The field label markup.
-     *
-     * @since   6.1.0
-     */
-    protected function getLabel()
-    {
-        // Get the category data from the form
-        $category = $this->form->getData() ?? new \stdClass();
-
         // Form prefix for field names
         $formPrefix = 'jform[params][j2commerce]';
+
+        // Load the category params directly from the DB when editing an existing category.
+        // $this->form->getData() only contains values for *registered* form fields; the
+        // j2commerce sub-group is rendered as raw HTML (not registered in the Joomla form),
+        // so it is absent from the form data Registry and would cause the accordion to
+        // always show XML defaults instead of the saved values.
+        $categoryId = (int) ($this->form->getValue('id') ?? 0);
+
+        if ($categoryId > 0) {
+            $dbParams = CategoryHelper::getParams($categoryId);
+            $category = new \stdClass();
+            $category->id     = $categoryId;
+            $category->params = $dbParams->toString();
+        } else {
+            $category = $this->form->getData() ?? new \stdClass();
+        }
 
         // Gather all J2Commerce category app data from plugins
         $pluginApps = J2CommerceHelper::plugin()->eventWithAppData(
@@ -109,14 +110,14 @@ class Categoryj2commerceField extends SpacerField
             $html[] = '                aria-expanded="' . $ariaExpanded . '"';
             $html[] = '                aria-controls="' . $collapseId . '">';
             $html[] = '            <div class="d-block d-lg-flex align-items-center">';
-            $html[] = '                <div class="flex-shrink-0">';
-            $html[] = '                    <span class="d-none d-lg-inline-block d-md-block">';
-            $html[] = '                        <img src="' . htmlspecialchars($imagePath, ENT_QUOTES, 'UTF-8') . '"';
-            $html[] = '                             alt="' . htmlspecialchars(Text::_($nameKey), ENT_QUOTES, 'UTF-8') . '"';
-            $html[] = '                             class="me-2 img-fluid j2commerce-app-image"';
-            $html[] = '                        >';
-            $html[] = '                    </span>';
-            $html[] = '                </div>';
+            // $html[] = '                <div class="flex-shrink-0">';
+            // $html[] = '                    <span class="d-none d-lg-inline-block d-md-block">';
+            // $html[] = '                        <img src="' . htmlspecialchars($imagePath, ENT_QUOTES, 'UTF-8') . '"';
+            // $html[] = '                             alt="' . htmlspecialchars(Text::_($nameKey), ENT_QUOTES, 'UTF-8') . '"';
+            // $html[] = '                             class="me-2 img-fluid j2commerce-app-image"';
+            // $html[] = '                        >';
+            // $html[] = '                    </span>';
+            // $html[] = '                </div>';
             $html[] = '                <div class="flex-grow-1 ms-lg-3 mt-0 mt-lg-0">';
             $html[] = '                    <div>' . htmlspecialchars(Text::_($nameKey), ENT_QUOTES, 'UTF-8') . '</div>';
             $html[] = '                    <div class="small d-none d-md-block text-muted">';
@@ -137,12 +138,12 @@ class Categoryj2commerceField extends SpacerField
                 $form = \Joomla\CMS\Form\Form::getInstance(
                     'j2commerce.category.' . $element,
                     $app['form_xml'],
-                    ['control' => $formPrefix . '[params]']
+                    ['control' => $formPrefix]
                 );
 
                 if ($form) {
                     if (!empty($app['data'])) {
-                        $form->bind($app['data']);
+                        $form->bind(['params' => $app['data']]);
                     }
                     $html[] = $form->renderFieldset('basic');
                 }
@@ -158,5 +159,17 @@ class Categoryj2commerceField extends SpacerField
         $html[] = '</div>';
 
         return implode("\n", $html);
+    }
+
+    /**
+     * Method to get the field label markup.
+     *
+     * @return  string  The field label markup.
+     *
+     * @since   6.1.0
+     */
+    protected function getLabel()
+    {
+        return '';
     }
 }
