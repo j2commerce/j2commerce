@@ -409,8 +409,8 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
     {
         // The accordion is rendered by the Categoryj2commerce form field (getInput).
         // Returning empty here avoids a duplicate accordion with a wrong prefix.
-            return '';
-        }
+        return '';
+    }
 
     /**
      * Handle content before save event.
