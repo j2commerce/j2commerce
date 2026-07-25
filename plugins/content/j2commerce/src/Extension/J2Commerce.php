@@ -362,50 +362,73 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
     }
 
     /**
+     * Persist J2Commerce accordion params for a category.
+     *
+     * Joomla's CategoryModel runs Form::filter() before saving, which strips any
+     * params sub-keys not explicitly registered in the Form XML.  The accordion
+     * fields (category_display, category_elements, …) are rendered as raw HTML by
+     * Categoryj2commerceField and are NOT registered, so they would be silently
+     * discarded.  We work around this by reading the raw POST value and merging it
+     * back into the category item's params before the table is stored.
+     *
+     * @since  6.1.0
+     */
+    private function saveCategoryJ2CommerceParams(BeforeSaveEvent|ModelBeforeSaveEvent $event): void
+    {
+        $item = $event->getItem();
+
+        if (!\is_object($item)) {
+            return;
+        }
+
+        // Read accordion data from raw POST — this is the only place it still exists
+        // after Joomla's form filter has run.
+        // The sub-form controls render as jform[params][j2commerce][params][field]
+        // (the XML files have <fields name="params">), so the actual field values
+        // live one level deeper at ['params']['j2commerce']['params'].
+        $jform       = $this->getApplication()->getInput()->post->get('jform', [], 'array');
+        $j2ParamsRaw = $jform['params']['j2commerce']['params'] ?? null;
+
+        if ($j2ParamsRaw === null || !\is_array($j2ParamsRaw)) {
+            return;
+        }
+
+        // Merge into the category params that will be stored.
+        // Result: {"j2commerce": {"display_use_global": "1", ...}}
+        $registry = new \Joomla\Registry\Registry($item->params ?? '{}');
+        $registry->set('j2commerce', $j2ParamsRaw);
+        $item->params = $registry->toString();
+    }
+
+    /**
      * Render the J2Commerce accordion template after the fieldset.
      *
      * @since  6.1.0
      */
     public function onContentAfterFieldset($event): string
     {
-        $context  = $event->getArgument('context');
-        $fieldset = $event->getArgument('fieldset');
-        $data     = $event->getArgument('data');
-
-        // Only for J2Commerce fieldset in com_content category forms
-        if ($context !== 'com_categories.category' || $fieldset->name !== 'j2commerce') {
-            return '';
-        }
-
-        // Ensure this is a com_content category
-        $extension = $this->getApplication()->getInput()->get('extension');
-        if ($extension !== 'com_content') {
-            return '';
-        }
-
-        $category = \is_object($data) ? $data : new \stdClass();
-
-        // Load the accordion template
-        $layout = new \Joomla\CMS\Layout\FileLayout(
-            'category.form_j2commerce',
-            JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl'
-        );
-
-        return $layout->render([
-            'category'    => $category,
-            'form_prefix' => 'jform[attribs][j2commerce]',
-        ]);
+        // The accordion is rendered by the Categoryj2commerce form field (getInput).
+        // Returning empty here avoids a duplicate accordion with a wrong prefix.
+        return '';
     }
 
     /**
      * Handle content before save event.
-     *
      *
      * @since 6.0.0
      */
     public function onContentBeforeSave(BeforeSaveEvent|ModelBeforeSaveEvent $event): void
     {
         $context = $event->getContext();
+
+        // Handle category save: Joomla's form filter strips unregistered params sub-keys,
+        // so we read the j2commerce accordion data from the raw POST and inject it back
+        // into the category params before the table is stored.
+        if ($context === 'com_categories.category') {
+            $this->saveCategoryJ2CommerceParams($event);
+
+            return;
+        }
 
         // Only process com_content contexts - ignore all other components
         if (!str_starts_with($context, 'com_content.')) {
@@ -533,14 +556,31 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         $j2data->product_source    = 'com_content';
         $j2data->product_source_id = $articleId;
 
-        // First save of a brand-new product with no tax profile chosen: apply the
-        // category's Default Tax Profile, falling back to the global config default.
-        // Create-only, so products deliberately saved as "Not Taxable" stay that way.
-        if (!$existingProduct && empty($j2data->taxprofile_id)) {
-            $defaultTaxprofileId = $this->resolveDefaultTaxprofileId((int) ($data->catid ?? 0));
+        // First save of a brand-new product: apply category-level defaults,
+        // falling back to global config. Create-only — values explicitly chosen
+        // by the user (e.g. "Not Taxable" = taxprofile 0) are left unchanged.
+        if (!$existingProduct) {
+            $catid = (int) ($data->catid ?? 0);
 
-            if ($defaultTaxprofileId > 0) {
-                $j2data->taxprofile_id = $defaultTaxprofileId;
+            if (empty($j2data->taxprofile_id)) {
+                $defaultTaxprofileId = $this->resolveDefaultTaxprofileId($catid);
+                if ($defaultTaxprofileId > 0) {
+                    $j2data->taxprofile_id = $defaultTaxprofileId;
+                }
+            }
+
+            if (empty($j2data->manufacturer_id)) {
+                $defaultManufacturerId = $this->resolveDefaultManufacturerId($catid);
+                if ($defaultManufacturerId > 0) {
+                    $j2data->manufacturer_id = $defaultManufacturerId;
+                }
+            }
+
+            if (!isset($j2data->visibility) || $j2data->visibility === '') {
+                $defaultVisibility = $this->resolveDefaultVisibility($catid);
+                if ($defaultVisibility !== null) {
+                    $j2data->visibility = $defaultVisibility;
+                }
             }
         }
 
@@ -558,16 +598,51 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         $this->clearArticleCache($articleId);
     }
 
-    /** Category `default_taxprofile_id` param ("" = Use Global) → global config default. */
+    /** Category `default_taxprofile_id` → global config default. */
     private function resolveDefaultTaxprofileId(int $catid): int
     {
         $categoryDefault = $catid > 0
-            ? (int) CategoryHelper::getParams($catid)->get('default_taxprofile_id', 0)
+            ? (int) CategoryHelper::getCategoryParam($catid, 'default_taxprofile_id', 0)
             : 0;
 
         return $categoryDefault > 0
             ? $categoryDefault
             : (int) ConfigHelper::get('default_taxprofile_id', 0);
+    }
+
+    /** Category `default_manufacturer_id` → global config default. */
+    private function resolveDefaultManufacturerId(int $catid): int
+    {
+        $categoryDefault = $catid > 0
+            ? (int) CategoryHelper::getCategoryParam($catid, 'default_manufacturer_id', 0)
+            : 0;
+
+        return $categoryDefault > 0
+            ? $categoryDefault
+            : (int) ConfigHelper::get('default_manufacturer_id', 0);
+    }
+
+    /**
+     * Category `default_visibility` → product integer visibility (0/1).
+     * Returns null when no category or global default is configured (caller skips override).
+     * The category form stores a string ('visible', 'catalog', 'search', 'hidden');
+     * the product table uses 0 = hidden, 1 = visible.
+     */
+    private function resolveDefaultVisibility(int $catid): ?int
+    {
+        $raw = $catid > 0
+            ? (string) CategoryHelper::getCategoryParam($catid, 'default_visibility', '')
+            : '';
+
+        if ($raw === '') {
+            $raw = (string) ConfigHelper::get('default_visibility', '');
+        }
+
+        return match ($raw) {
+            'visible', 'catalog', 'search' => 1,
+            'hidden'                        => 0,
+            default                         => null,
+        };
     }
 
     /**
