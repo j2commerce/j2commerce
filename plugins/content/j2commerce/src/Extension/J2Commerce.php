@@ -558,16 +558,27 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         $this->clearArticleCache($articleId);
     }
 
-    /** Category `default_taxprofile_id` → global config default. */
+    /**
+     * Resolve the default tax-profile ID for a new product in the given category.
+     *
+     * Sentinel contract (matches TaxprofileField values):
+     *   null / absent key → category has no override → use global config
+     *   ''               → admin explicitly chose "Use Global" → use global config
+     *   '0' / 0          → admin explicitly chose "Not Taxable" → return 0
+     *   > 0              → specific tax-profile ID → return that ID
+     */
     private function resolveDefaultTaxprofileId(int $catid): int
     {
-        $categoryDefault = $catid > 0
-            ? (int) CategoryHelper::getCategoryParam($catid, 'default_taxprofile_id', 0)
-            : 0;
+        if ($catid > 0) {
+            // No third-arg default: returns null when the key is absent entirely.
+            $raw = CategoryHelper::getCategoryParam($catid, 'default_taxprofile_id');
 
-        return $categoryDefault > 0
-            ? $categoryDefault
-            : (int) ConfigHelper::get('default_taxprofile_id', 0);
+            if ($raw !== null && $raw !== '') {
+                return (int) $raw;
+            }
+        }
+
+        return (int) ConfigHelper::get('default_taxprofile_id', 0);
     }
 
     /**
