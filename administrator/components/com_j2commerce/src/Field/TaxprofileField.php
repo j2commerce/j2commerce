@@ -31,6 +31,22 @@ class TaxprofileField extends ListField
 {
     protected $type = 'Taxprofile';
 
+    public function setup(\SimpleXMLElement $element, $value, $group = null): bool
+    {
+        // Do not normalise if:
+        // 1. A custom nonelabel attribute is present (i.e., "Use Global" context like category_defaults.xml).
+        // 2. The XML element already provides child <option> elements (i.e., a filter field that
+        //    defines its own '' sentinel via <option value="">).
+        $hasUseGlobal  = !empty((string) ($element['nonelabel'] ?? ''));
+        $hasXmlOptions = isset($element->option) && count($element->option) > 0;
+
+        if (!$hasUseGlobal && !$hasXmlOptions && ($value === '' || $value === null)) {
+            $value = '0';
+        }
+
+        return parent::setup($element, $value, $group);
+    }
+
     public function getOptions(): array
     {
         $options = parent::getOptions();
@@ -41,7 +57,7 @@ class TaxprofileField extends ListField
         // first so a freshly saved form defaults to it.
         $noneLabel = (string) ($this->element['nonelabel'] ?? '');
         $noneLabel = $noneLabel !== '' ? $noneLabel : 'COM_J2COMMERCE_NOT_TAXABLE';
-        array_unshift($options, HTMLHelper::_('select.option', '', Text::_($noneLabel)));
+        array_unshift($options, HTMLHelper::_('select.option', '0', Text::_($noneLabel)));
 
         try {
             $db = Factory::getContainer()->get(DatabaseInterface::class);
