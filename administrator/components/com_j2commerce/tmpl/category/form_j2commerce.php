@@ -101,12 +101,12 @@ if (empty($apps)): ?>
                     $form = Form::getInstance(
                         'j2commerce.category.' . $element,
                         $app['form_xml'],
-                        ['control' => $this->form_prefix . '[params]']
+                        ['control' => $this->form_prefix]
                     );
 
                     if ($form):
                         if (!empty($app['data'])):
-                            $form->bind($app['data']);
+                            $form->bind(['params' => $app['data']]);
                         endif;
                         echo $form->renderFieldset('basic');
                     endif;

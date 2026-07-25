@@ -182,6 +182,8 @@
             <field name="categories_image" type="media" default=""
                    label="COM_J2COMMERCE_CATEGORY_CATEGORIES_IMAGE"
                    description="COM_J2COMMERCE_CATEGORY_CATEGORIES_IMAGE_DESC" />
+
+            <field name="j2commerce_settings" type="Categoryj2commerce" />
         </fieldset>
     </fields>
 </form>

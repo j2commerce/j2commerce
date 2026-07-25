@@ -55,23 +55,33 @@ class CategoryHelper
     }
 
     /**
+     * Get J2Commerce-specific sub-params for a category (stored under j2commerce.params)
+     */
+    protected static function getJ2CommerceSubParams(int $categoryId): Registry
+    {
+        $params = self::getParams($categoryId);
+
+        return new Registry($params->get('j2commerce', []));
+    }
+
+    /**
      * Get a display setting with fallback to global config
      *
      * Priority: Category param (if not using global) -> Global config -> Default
      */
     public static function getDisplaySetting(int $categoryId, string $key, mixed $default = null): mixed
     {
-        $params = self::getParams($categoryId);
+        $j2Params = self::getJ2CommerceSubParams($categoryId);
 
         // Build the use_global key for this setting group
         $useGlobalKey = self::getUseGlobalKey($key);
-        $useGlobal    = $params->get($useGlobalKey, 1);
+        $useGlobal    = $j2Params->get($useGlobalKey, 1);
 
         if ($useGlobal) {
             return J2CommerceHelper::config()->get($key, $default);
         }
 
-        return $params->get($key, $default);
+        return $j2Params->get($key, $default);
     }
 
     /**
@@ -79,9 +89,9 @@ class CategoryHelper
      */
     public static function getCategoryParam(int $categoryId, string $key, mixed $default = null): mixed
     {
-        $params = self::getParams($categoryId);
+        $j2Params = self::getJ2CommerceSubParams($categoryId);
 
-        return $params->get($key, $default);
+        return $j2Params->get($key, $default);
     }
 
     /**
@@ -89,10 +99,10 @@ class CategoryHelper
      */
     public static function isUsingGlobal(int $categoryId, string $group): bool
     {
-        $params       = self::getParams($categoryId);
+        $j2Params     = self::getJ2CommerceSubParams($categoryId);
         $useGlobalKey = $group . '_use_global';
 
-        return (bool) $params->get($useGlobalKey, 1);
+        return (bool) $j2Params->get($useGlobalKey, 1);
     }
 
     /**
@@ -100,24 +110,13 @@ class CategoryHelper
      */
     public static function getJ2CommerceSettings(int $categoryId): array
     {
-        $params = self::getParams($categoryId);
-
-        // Include known J2Commerce category setting keys
-        $knownKeys = [
-            'display_use_global', 'product_columns', 'products_per_page', 'display_style',
-            'image_width', 'image_height',
-            'elements_use_global', 'show_product_price', 'show_add_to_cart', 'show_product_sku',
-            'show_product_rating', 'show_product_description', 'show_stock_status',
-            'default_taxprofile_id', 'default_manufacturer_id', 'default_visibility', 'default_product_type',
-            'filters_use_global', 'enabled_filters', 'default_sort_order', 'show_sorting_dropdown', 'show_product_count',
-            'subcategories_use_global', 'show_subcategories', 'subcategory_columns',
-            'subcategory_image_width', 'subcategory_image_height', 'show_empty_categories', 'show_product_count_badge',
-        ];
+        $j2Params  = self::getJ2CommerceSubParams($categoryId);
+        $knownKeys = self::getKnownSettingKeys();
 
         $j2commerceSettings = [];
         foreach ($knownKeys as $key) {
-            if ($params->exists($key)) {
-                $j2commerceSettings[$key] = $params->get($key);
+            if ($j2Params->exists($key)) {
+                $j2commerceSettings[$key] = $j2Params->get($key);
             }
         }
 
@@ -189,15 +188,16 @@ class CategoryHelper
     }
 
     /**
-     * Extract J2Commerce params from category params
+     * Extract J2Commerce params from category params (stored under j2commerce.params)
      */
     protected static function extractJ2CommerceParams(Registry $params): array
     {
+        $j2Params = new Registry($params->get('j2commerce', []));
         $settings = [];
-        foreach ($params->toArray() as $key => $value) {
-            // Include known J2Commerce category setting keys
-            if (\in_array($key, self::getKnownSettingKeys(), true)) {
-                $settings[$key] = $value;
+
+        foreach (self::getKnownSettingKeys() as $key) {
+            if ($j2Params->exists($key)) {
+                $settings[$key] = $j2Params->get($key);
             }
         }
 
