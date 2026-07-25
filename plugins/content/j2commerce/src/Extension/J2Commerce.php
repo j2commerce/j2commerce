@@ -561,18 +561,13 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
     /** Category `default_taxprofile_id` → global config default. */
     private function resolveDefaultTaxprofileId(int $catid): int
     {
-        if ($catid > 0) {
-            // getCategoryParam returns null when the key is absent entirely.
-            // '' means "Use Global" was explicitly chosen.
-            // '0'/0 means "Not Taxable" was explicitly chosen — do not fall through to global.
-            $raw = CategoryHelper::getCategoryParam($catid, 'default_taxprofile_id');
+        $categoryDefault = $catid > 0
+            ? (int) CategoryHelper::getCategoryParam($catid, 'default_taxprofile_id', 0)
+            : 0;
 
-            if ($raw !== null && $raw !== '') {
-                return (int) $raw;
-            }
-        }
-
-        return (int) ConfigHelper::get('default_taxprofile_id', 0);
+        return $categoryDefault > 0
+            ? $categoryDefault
+            : (int) ConfigHelper::get('default_taxprofile_id', 0);
     }
 
     /**
