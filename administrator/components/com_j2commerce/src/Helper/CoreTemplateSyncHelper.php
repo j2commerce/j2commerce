@@ -48,8 +48,9 @@ class CoreTemplateSyncHelper
             'j2commerce_emailtemplate_id',
             self::EMAIL_TEMPLATES,
             ['email_type', 'receiver_type', 'orderstatus_id', 'body_source'],
+            // Accept the legacy '*' receiver_type (old core default) so pre-existing rows are recognized, not skipped.
             static fn (object $row, array $expected): bool => (string) $row->email_type === $expected['email_type']
-                && (string) $row->receiver_type === $expected['receiver_type']
+                && \in_array((string) $row->receiver_type, [$expected['receiver_type'], '*'], true)
                 && (string) $row->orderstatus_id === $expected['orderstatus_id']
         );
     }
@@ -101,6 +102,15 @@ class CoreTemplateSyncHelper
             $content  = (string) file_get_contents($filePath);
             $bodyJson = '';
 
+            // Optional `<!--@subject: ... -->` directive at the top of the preset is the single
+            // source for the row's subject; extract it and strip it from the saved body.
+            $subject = null;
+
+            if (preg_match('/<!--@subject:\s*(.*?)\s*-->[ \t]*\r?\n?/', $content, $matches)) {
+                $subject = $matches[1];
+                $content = preg_replace('/<!--@subject:.*?-->[ \t]*\r?\n?/', '', $content, 1);
+            }
+
             $update = $db->getQuery(true)
                 ->update($db->quoteName($table))
                 ->set($db->quoteName('body') . ' = :body')
@@ -109,6 +119,12 @@ class CoreTemplateSyncHelper
                 ->bind(':body', $content)
                 ->bind(':bodyJson', $bodyJson)
                 ->bind(':updateId', $id, ParameterType::INTEGER);
+
+            if ($subject !== null) {
+                $update->set($db->quoteName('subject') . ' = :subject')
+                    ->bind(':subject', $subject);
+            }
+
             $db->setQuery($update);
             $db->execute();
 
