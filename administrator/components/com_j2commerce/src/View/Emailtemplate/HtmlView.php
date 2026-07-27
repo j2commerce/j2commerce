@@ -22,6 +22,7 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Plugin\PluginHelper;
+use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
 use Joomla\CMS\Toolbar\Toolbar;
 use Joomla\CMS\Toolbar\ToolbarHelper;
@@ -52,7 +53,19 @@ class HtmlView extends BaseHtmlView
         /** @var EmailtemplateModel $model */
         $model = $this->getModel();
 
-        $this->item       = $model->getItem();
+        $this->item = $model->getItem();
+
+        // Stale edit URL for a deleted/missing template: getItem() returns false and sets a
+        // "no longer available" error. Redirect back to the list with a friendly notice
+        // instead of throwing the raw 500 error page below.
+        if ($this->item === false) {
+            $app = Factory::getApplication();
+            $app->enqueueMessage(Text::_('JLIB_APPLICATION_ERROR_NOT_EXIST'), 'warning');
+            $app->redirect(Route::_('index.php?option=com_j2commerce&view=emailtemplates', false));
+
+            return;
+        }
+
         $this->form       = $model->getForm();
         $this->state      = $model->getState();
         $this->shortcodes = $model->getAvailableShortcodes();

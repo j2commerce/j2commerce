@@ -93,6 +93,13 @@ class EmailtemplateModel extends AdminModel
 
         if (empty($data)) {
             $data = $this->getItem();
+
+            // A stale edit URL for a deleted/missing record makes getItem() return false;
+            // preprocessData() dispatches a typed PrepareDataEvent that rejects a bool, so
+            // fall back to an empty object to load a blank form instead of fatally erroring.
+            if ($data === false) {
+                $data = new \stdClass();
+            }
         }
 
         $this->preprocessData('com_j2commerce.emailtemplate', $data);
