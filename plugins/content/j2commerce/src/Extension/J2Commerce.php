@@ -995,11 +995,14 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         }
 
         $images = $this->getProductImagesData($product->j2commerce_product_id, $imageType);
+        // example: array(1) { [0]=> object(stdClass)#1894 (2) { ["image_path"]=> string(0) "" ["thumb_image"]=> string(0) "" } }
 
         if (!empty($images)) {
             $html .= '<div class="j2commerce-product-images">';
             foreach ($images as $image) {
-                $html .= '<img src="' . $this->escape($image->image_path) . '" alt="" class="j2commerce-product-image" style="max-width: ' . (int) $mainWidth . 'px;">';
+                if (!empty($image->image_path)) {
+                    $html .= '<img src="' . $this->escape($image->image_path) . '" alt="" class="j2commerce-product-image" style="max-width: ' . (int) $mainWidth . 'px;">';
+                }
             }
             $html .= '</div>';
         }
