@@ -127,7 +127,7 @@ $statusName = !empty($order->orderstatus_name) ? Text::_($order->orderstatus_nam
 
     <!-- Order Summary: items table -->
     <?php if (!empty($items)): ?>
-    <h4 class="mb-3" style="color: #8b0000;"><?php echo Text::_('COM_J2COMMERCE_ORDER_SUMMARY'); ?></h4>
+    <h4 class="mb-3"><?php echo Text::_('COM_J2COMMERCE_ORDER_SUMMARY'); ?></h4>
     <div class="table-responsive mb-3">
         <table class="table">
             <thead>
