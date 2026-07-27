@@ -1581,7 +1581,29 @@ class CheckoutController extends BaseController
             $order->applyPaymentSurcharge();
 
             try {
-                $savedOrder = $order->saveOrder();
+                // Idempotency guard: if a prior confirm() for this cart already
+                // persisted an order in this session (double-click, page reload,
+                // or concurrent request race), reuse that order instead of
+                // inserting a duplicate row.
+                $savedOrder   = null;
+                $priorOrderId = $this->app->getUserState('j2commerce.order_id');
+
+                if (!empty($priorOrderId)) {
+                    $priorTable = $this->getMvcFactory()->createTable('Order', 'Administrator');
+
+                    if ($priorTable && $priorTable->load(['order_id' => $priorOrderId])) {
+                        $currentCart   = CartHelper::getInstance()->getCart();
+                        $currentCartId = (int) ($currentCart->j2commerce_cart_id ?? 0);
+
+                        if ($currentCartId > 0 && (int) ($priorTable->cart_id ?? -1) === $currentCartId) {
+                            $savedOrder = $priorTable;
+                        }
+                    }
+                }
+
+                if ($savedOrder === null) {
+                    $savedOrder = $order->saveOrder();
+                }
 
                 $this->app->setUserState('j2commerce.order_id', $savedOrder->order_id ?? null);
                 $this->app->setUserState('j2commerce.orderpayment_id', $savedOrder->j2commerce_order_id ?? null);
