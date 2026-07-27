@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Plugin\J2Commerce\PaymentPaypal\Extension;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\Base;
@@ -633,13 +634,14 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             )->loadResult();
 
             if ($existing !== null) {
+                $existing_int = (int)$existing;
                 $db->setQuery(
                     $db->getQuery(true)
                         ->update($db->quoteName('#__j2commerce_metafields'))
                         ->set($db->quoteName('metavalue') . ' = :val')
                         ->where($db->quoteName('id') . ' = :id')
                         ->bind(':val', $metavalue)
-                        ->bind(':id', (int) $existing, ParameterType::INTEGER)
+                        ->bind(':id', $existing_int, ParameterType::INTEGER)
                 )->execute();
             } else {
                 $db->setQuery(
@@ -1191,13 +1193,14 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             )->loadResult();
 
             if ($existing !== null) {
+                $existing1 = (int)$existing;
                 $db->setQuery(
                     $db->getQuery(true)
                         ->update($db->quoteName('#__j2commerce_metafields'))
                         ->set($db->quoteName('metavalue') . ' = :val')
                         ->where($db->quoteName('id') . ' = :id')
                         ->bind(':val', $paypalSubId)
-                        ->bind(':id', (int) $existing, ParameterType::INTEGER)
+                        ->bind(':id', $existing1, ParameterType::INTEGER)
                 )->execute();
             } else {
                 $db->setQuery(
@@ -1838,8 +1841,18 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 $itemTotal += $unitAmount * $quantity;
             }
 
-            $shipping = CurrencyHelper::convertForOrder((float) $orderTable->order_shipping + (float) $orderTable->order_shipping_tax, $orderTable);
-            $tax      = CurrencyHelper::convertForOrder((float) $orderTable->order_tax, $orderTable);
+            $shipping = CurrencyHelper::convertForOrder((float) $orderTable->order_shipping, $orderTable);
+
+            if (ConfigHelper::pricesIncludeTax()) {
+                // Prices are tax-inclusive: orderitem_price and order_shipping already contain
+                // the tax. Sending order_tax / order_shipping_tax as a separate tax_total would
+                // double-charge the customer. Set tax_total to zero so the breakdown is:
+                // item_total (incl.) + shipping (incl.) + 0 = order_total.
+                $tax = 0.0;
+            } else {
+                // Prices are tax-exclusive: add both product and shipping taxes explicitly.
+                $tax = CurrencyHelper::convertForOrder((float) $orderTable->order_tax + (float) $orderTable->order_shipping_tax, $orderTable);
+            }
             $discount = CurrencyHelper::convertForOrder((float) $orderTable->order_discount, $orderTable);
             $total    = CurrencyHelper::gatewayAmount($orderTable);
 
