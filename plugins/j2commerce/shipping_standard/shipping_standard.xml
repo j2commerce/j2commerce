@@ -21,6 +21,8 @@
     <languages folder="language">
         <language tag="en-GB">en-GB/plg_j2commerce_shipping_standard.ini</language>
         <language tag="en-GB">en-GB/plg_j2commerce_shipping_standard.sys.ini</language>
+        <language tag="fa-IR">fa-IR/plg_j2commerce_shipping_standard.ini</language>
+        <language tag="fa-IR">fa-IR/plg_j2commerce_shipping_standard.sys.ini</language>
     </languages>
 
     <media folder="media" destination="plg_j2commerce_shipping_standard">

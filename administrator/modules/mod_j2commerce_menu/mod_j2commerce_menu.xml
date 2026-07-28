@@ -31,6 +31,8 @@
         <language tag="en-GB">language/en-GB/mod_j2commerce_menu.sys.ini</language>
         <language tag="es-ES">language/es-ES/mod_j2commerce_menu.ini</language>
         <language tag="es-ES">language/es-ES/mod_j2commerce_menu.sys.ini</language>
+        <!-- <language tag="fa-IR">language/fa-IR/mod_j2commerce_menu.ini</language> -->
+        <!-- <language tag="fa-IR">language/fa-IR/mod_j2commerce_menu.sys.ini</language> -->
         <language tag="fi-FI">language/fi-FI/mod_j2commerce_menu.ini</language>
         <language tag="fi-FI">language/fi-FI/mod_j2commerce_menu.sys.ini</language>
         <language tag="fr-FR">language/fr-FR/mod_j2commerce_menu.ini</language>
