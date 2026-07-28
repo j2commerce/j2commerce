@@ -701,32 +701,36 @@ class CheckoutController extends BaseController
         $addressId      = $this->input->getInt('address_id', 0);
 
         if ($billingAddress === 'existing' && $addressId > 0) {
-            $session->set('billing_address_id', $addressId, 'j2commerce');
-
             $addressTable = $this->getMvcFactory()->createTable('Address', 'Administrator');
 
-            if ($addressTable && $addressTable->load($addressId)) {
-                // Verify address belongs to the current user
-                if ((int) ($addressTable->user_id ?? 0) !== (int) $user->id) {
-                    $json['error']['warning'] = Text::_('COM_J2COMMERCE_CHECKOUT_ERROR');
-                    $this->jsonResponse($json);
+            // Verify the address loads AND belongs to the current user BEFORE trusting the id.
+            // The session key must never hold a request id that failed this check.
+            if (
+                !$addressTable
+                || !$addressTable->load($addressId)
+                || (int) ($addressTable->user_id ?? 0) !== (int) $user->id
+            ) {
+                $session->clear('billing_address_id', 'j2commerce');
+                $json['error']['warning'] = Text::_('COM_J2COMMERCE_CHECKOUT_ERROR');
+                $this->jsonResponse($json);
 
-                    return;
-                }
-
-                $countryId = (int) ($addressTable->country_id ?? 0);
-                $zoneId    = (int) ($addressTable->zone_id ?? 0);
-                $postcode  = $addressTable->zip ?? '';
-
-                if (empty($countryId)) {
-                    $store     = J2CommerceHelper::storeProfile();
-                    $countryId = (int) $store->get('country_id', 0);
-                }
-
-                $session->set('billing_country_id', $countryId, 'j2commerce');
-                $session->set('billing_zone_id', $zoneId, 'j2commerce');
-                $session->set('billing_postcode', $postcode, 'j2commerce');
+                return;
             }
+
+            $session->set('billing_address_id', $addressId, 'j2commerce');
+
+            $countryId = (int) ($addressTable->country_id ?? 0);
+            $zoneId    = (int) ($addressTable->zone_id ?? 0);
+            $postcode  = $addressTable->zip ?? '';
+
+            if (empty($countryId)) {
+                $store     = J2CommerceHelper::storeProfile();
+                $countryId = (int) $store->get('country_id', 0);
+            }
+
+            $session->set('billing_country_id', $countryId, 'j2commerce');
+            $session->set('billing_zone_id', $zoneId, 'j2commerce');
+            $session->set('billing_postcode', $postcode, 'j2commerce');
 
             $session->clear('payment_method', 'j2commerce');
             $session->clear('payment_methods', 'j2commerce');
@@ -859,23 +863,27 @@ class CheckoutController extends BaseController
         $addressId       = $this->input->getInt('address_id', 0);
 
         if ($shippingAddress === 'existing' && $addressId > 0) {
-            $session->set('shipping_address_id', $addressId, 'j2commerce');
-
             $addressTable = $this->getMvcFactory()->createTable('Address', 'Administrator');
 
-            if ($addressTable && $addressTable->load($addressId)) {
-                // Verify address belongs to the current user
-                if ((int) ($addressTable->user_id ?? 0) !== (int) $user->id) {
-                    $json['error']['warning'] = Text::_('COM_J2COMMERCE_CHECKOUT_ERROR');
-                    $this->jsonResponse($json);
+            // Verify the address loads AND belongs to the current user BEFORE trusting the id.
+            // The session key must never hold a request id that failed this check.
+            if (
+                !$addressTable
+                || !$addressTable->load($addressId)
+                || (int) ($addressTable->user_id ?? 0) !== (int) $user->id
+            ) {
+                $session->clear('shipping_address_id', 'j2commerce');
+                $json['error']['warning'] = Text::_('COM_J2COMMERCE_CHECKOUT_ERROR');
+                $this->jsonResponse($json);
 
-                    return;
-                }
-
-                $session->set('shipping_country_id', (int) ($addressTable->country_id ?? 0), 'j2commerce');
-                $session->set('shipping_zone_id', (int) ($addressTable->zone_id ?? 0), 'j2commerce');
-                $session->set('shipping_postcode', $addressTable->zip ?? '', 'j2commerce');
+                return;
             }
+
+            $session->set('shipping_address_id', $addressId, 'j2commerce');
+
+            $session->set('shipping_country_id', (int) ($addressTable->country_id ?? 0), 'j2commerce');
+            $session->set('shipping_zone_id', (int) ($addressTable->zone_id ?? 0), 'j2commerce');
+            $session->set('shipping_postcode', $addressTable->zip ?? '', 'j2commerce');
 
             $session->clear('shipping_method', 'j2commerce');
             $session->clear('shipping_methods', 'j2commerce');
@@ -2383,7 +2391,7 @@ class CheckoutController extends BaseController
             'url'      => Uri::root() . 'administrator/index.php?option=com_j2commerce&view=order&layout=edit&id=' . $orderPk,
             // Mirror the grant TTL so an abandoned Take Payment can never
             // redirect a later, unrelated checkout in this session.
-            'expires'  => time() + 1800,
+            'expires' => time() + 1800,
         ], 'j2commerce');
 
         $nonce = (string) (CheckoutContextHelper::getContext()['nonce'] ?? '');
