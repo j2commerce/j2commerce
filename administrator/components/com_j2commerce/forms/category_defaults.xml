@@ -13,7 +13,7 @@
                 <option value="">JNONE</option>
             </field>
 
-            <field name="default_visibility" type="list" default=""
+            <!--<field name="default_visibility" type="list" default=""
                    label="COM_J2COMMERCE_CATEGORY_DEFAULT_VISIBILITY"
                    description="COM_J2COMMERCE_CATEGORY_DEFAULT_VISIBILITY_DESC"
                    class="form-select">
@@ -22,9 +22,9 @@
                 <option value="catalog">COM_J2COMMERCE_VISIBILITY_CATALOG</option>
                 <option value="search">COM_J2COMMERCE_VISIBILITY_SEARCH</option>
                 <option value="hidden">COM_J2COMMERCE_VISIBILITY_HIDDEN</option>
-            </field>
+            </field>-->
 
-            <field name="default_product_type" type="list" default=""
+            <!--<field name="default_product_type" type="list" default=""
                    label="COM_J2COMMERCE_CATEGORY_DEFAULT_PRODUCT_TYPE"
                    description="COM_J2COMMERCE_CATEGORY_DEFAULT_PRODUCT_TYPE_DESC"
                    class="form-select">
@@ -33,7 +33,7 @@
                 <option value="configurable">COM_J2COMMERCE_PRODUCT_TYPE_CONFIGURABLE</option>
                 <option value="variable">COM_J2COMMERCE_PRODUCT_TYPE_VARIABLE</option>
                 <option value="bundle">COM_J2COMMERCE_PRODUCT_TYPE_BUNDLE</option>
-            </field>
+            </field>-->
         </fieldset>
     </fields>
 </form>
