@@ -341,7 +341,7 @@ body.com_j2commerce #content,
         background-color: var(--alert-bg) !important;
         border-color: var(--alert-border) !important;
 
-        .alert.alert-link {
+        .alert-link {
             color: var(--alert-text) !important;
         }
 
