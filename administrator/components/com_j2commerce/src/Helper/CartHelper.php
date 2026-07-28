@@ -17,6 +17,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 use Joomla\CMS\Factory;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
+use Joomla\Registry\Registry;
 
 /**
  * Cart helper class.
@@ -28,6 +29,14 @@ use Joomla\Database\ParameterType;
  */
 class CartHelper
 {
+    /**
+     * Reserved cartitem_params key holding the plugin-contributed uniqueness signature.
+     *
+     * @var   string
+     * @since 6.1.0
+     */
+    public const CART_ITEM_SIGNATURE_PARAM = '__j2c_signature';
+
     /**
      * Singleton instance
      *
@@ -438,11 +447,14 @@ class CartHelper
         foreach ($items as $item) {
             // Check if item already exists in destination cart
             $productOptions = $item->product_options ?? '';
+            $signature      = (string) (new Registry($item->cartitem_params ?? ''))
+                ->get(self::CART_ITEM_SIGNATURE_PARAM, '');
             $existingItem   = $this->findCartItem(
                 $destCartId,
                 (int) $item->product_id,
                 (int) $item->variant_id,
-                $productOptions
+                $productOptions,
+                $signature
             );
 
             $itemId = (int) $item->j2commerce_cartitem_id;
@@ -726,13 +738,19 @@ class CartHelper
      * @param   int     $productId       Product ID.
      * @param   int     $variantId       Variant ID.
      * @param   string  $productOptions  Product options JSON string.
+     * @param   string  $signature       Plugin-contributed uniqueness signature.
      *
      * @return  object|null  Cart item object or null.
      *
      * @since   6.0.0
      */
-    private function findCartItem(int $cartId, int $productId, int $variantId, string $productOptions = ''): ?object
-    {
+    private function findCartItem(
+        int $cartId,
+        int $productId,
+        int $variantId,
+        string $productOptions = '',
+        string $signature = ''
+    ): ?object {
         $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
@@ -749,7 +767,33 @@ class CartHelper
 
         $db->setQuery($query);
 
-        return $db->loadObject() ?: null;
+        return self::matchCartItemSignature($db->loadObjectList() ?: [], $signature);
+    }
+
+    /**
+     * Pick the candidate cart item whose stored signature matches.
+     *
+     * Rows written before the signature existed carry no key, so they read as an empty
+     * signature and still match an add that no plugin discriminated.
+     *
+     * @param   array   $candidates  Candidate cart item rows.
+     * @param   string  $signature   Signature to match.
+     *
+     * @return  object|null  Matching cart item, or null when none matches.
+     *
+     * @since   6.1.0
+     */
+    public static function matchCartItemSignature(array $candidates, string $signature): ?object
+    {
+        foreach ($candidates as $candidate) {
+            $params = new Registry($candidate->cartitem_params ?? '');
+
+            if ((string) $params->get(self::CART_ITEM_SIGNATURE_PARAM, '') === $signature) {
+                return $candidate;
+            }
+        }
+
+        return null;
     }
 
     // =========================================================================

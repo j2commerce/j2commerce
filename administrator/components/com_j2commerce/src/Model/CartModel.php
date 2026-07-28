@@ -203,6 +203,7 @@ class CartModel extends BaseDatabaseModel
         $cartId         = (int) $cart->j2commerce_cart_id;
         $variantId      = (int) $item->variant_id;
         $productOptions = $item->product_options ?? '';
+        $signature      = $this->buildCartItemSignature($item);
 
         // Check if item already exists in cart
         $query = $db->getQuery(true)
@@ -216,7 +217,7 @@ class CartModel extends BaseDatabaseModel
             ->bind(':options', $productOptions);
 
         $db->setQuery($query);
-        $existingItem = $db->loadObject();
+        $existingItem = CartHelper::matchCartItemSignature($db->loadObjectList() ?: [], $signature);
 
         // Prepare cart item params
         $itemParams = new Registry();
@@ -227,6 +228,10 @@ class CartModel extends BaseDatabaseModel
             } else {
                 $itemParams->loadString($item->cartitem_params);
             }
+        }
+
+        if ($signature !== '') {
+            $itemParams->set(CartHelper::CART_ITEM_SIGNATURE_PARAM, $signature);
         }
 
         $cartitemParams = $itemParams->toString('JSON');
@@ -304,6 +309,42 @@ class CartModel extends BaseDatabaseModel
         }
 
         return $cart;
+    }
+
+    /**
+     * Build the plugin-contributed discriminator for the "same item" merge key.
+     *
+     * Plugins that need two otherwise-identical adds to stay on separate cart lines
+     * return a short string via $event->addResult(). Results are sorted and joined so
+     * the signature is order-independent, then persisted in cartitem_params. When no
+     * plugin contributes, the signature is empty and merge behaviour is unchanged.
+     *
+     * @param   object  $item  Cart item object about to be added.
+     *
+     * @return  string  Signature, or an empty string when no plugin contributes one.
+     *
+     * @since   6.1.0
+     */
+    protected function buildCartItemSignature(object $item): string
+    {
+        $results = J2CommerceHelper::plugin()->eventWithArray('BuildCartItemSignature', [$item]);
+        $parts   = [];
+
+        foreach ($results as $result) {
+            if (!\is_scalar($result)) {
+                continue;
+            }
+
+            $result = trim((string) $result);
+
+            if ($result !== '') {
+                $parts[] = $result;
+            }
+        }
+
+        sort($parts);
+
+        return implode('|', $parts);
     }
 
     /**
