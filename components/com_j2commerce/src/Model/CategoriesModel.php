@@ -33,6 +33,33 @@ use Joomla\Database\ParameterType;
 class CategoriesModel extends BaseDatabaseModel
 {
     /**
+     * Columns an ORDER BY is allowed to name.
+     *
+     * A column name is an SQL identifier, so it can never be bound and $db->escape()
+     * (a value escaper) is no guard at all. The ordering here comes from menu params
+     * rather than the request, but it is still interpolated, so it is matched against
+     * this list before it is used. Aliases: a = #__content,
+     * p = #__j2commerce_products, v = #__j2commerce_variants, c = #__categories.
+     *
+     * @var   string[]
+     * @since 6.5.1
+     */
+    private const ORDER_COLUMNS = [
+        'a.ordering',
+        'a.title',
+        'a.created',
+        'a.modified',
+        'a.publish_up',
+        'a.created_by',
+        'a.hits',
+        'a.featured',
+        'a.id',
+        'v.price',
+        'p.hits',
+        'c.lft',
+    ];
+
+    /**
      * Model context string.
      *
      * @var   string
@@ -524,7 +551,14 @@ class CategoriesModel extends BaseDatabaseModel
             default     => 'a.ordering',
         };
 
-        $query->order($db->escape($orderMapping) . ' ' . $db->escape(strtoupper($orderDirection) === 'DESC' ? 'DESC' : 'ASC'));
+        // The 'date' branch interpolates the order_date menu param, so validate too.
+        if (!\in_array($orderMapping, self::ORDER_COLUMNS, true)) {
+            $orderMapping = 'a.ordering';
+        }
+
+        $query->order(
+            $db->quoteName($orderMapping) . ' ' . (strtoupper((string) $orderDirection) === 'DESC' ? 'DESC' : 'ASC')
+        );
 
         $db->setQuery($query);
         $items = $db->loadObjectList();

@@ -34,6 +34,33 @@ use Joomla\Database\QueryInterface;
 class ProductsModel extends ListModel
 {
     /**
+     * Columns an ORDER BY is allowed to name.
+     *
+     * A column name is an SQL identifier, so it can never be bound and $db->escape()
+     * (a value escaper) is no guard at all. Request input reaches the ordering via
+     * filter_order / filter_order_Dir / sortby, so it is matched against this list
+     * before it is used. Aliases: a = #__content, p = #__j2commerce_products,
+     * v = #__j2commerce_variants, c = #__categories.
+     *
+     * @var   string[]
+     * @since 6.5.1
+     */
+    private const ORDER_COLUMNS = [
+        'a.ordering',
+        'a.title',
+        'a.created',
+        'a.modified',
+        'a.publish_up',
+        'a.created_by',
+        'a.hits',
+        'a.featured',
+        'a.id',
+        'v.price',
+        'p.hits',
+        'c.lft',
+    ];
+
+    /**
      * Model context string.
      *
      * @var   string
@@ -157,6 +184,9 @@ class ProductsModel extends ListModel
             default     => 'a.ordering',
         };
 
+        // The 'date' branch interpolates the order_date menu param, so validate too.
+        $orderMapping = self::filterOrderColumn($orderMapping);
+
         // Allow URL override of ordering
         // Support both standard Joomla params (filter_order) and SEF-friendly params (sort)
         $listOrdering  = $app->getInput()->get('filter_order', '', 'cmd');
@@ -189,9 +219,13 @@ class ProductsModel extends ListModel
             if (!empty($sortby)) {
                 // Parse "column DIRECTION" format (e.g., "a.title ASC")
                 if (preg_match('/^([a-z_.]+)\s+(ASC|DESC)$/i', $sortby, $matches)) {
-                    $listOrdering  = $matches[1];
-                    $listDirection = strtoupper($matches[2]);
-                } elseif (\in_array($sortby, ['a.ordering', 'a.title', 'a.created', 'a.hits', 'v.price'])) {
+                    $candidate = self::filterOrderColumn($matches[1], '');
+
+                    if ($candidate !== '') {
+                        $listOrdering  = $candidate;
+                        $listDirection = strtoupper($matches[2]);
+                    }
+                } elseif (\in_array($sortby, self::ORDER_COLUMNS, true)) {
                     $listOrdering = $sortby;
                 }
             }
@@ -205,6 +239,7 @@ class ProductsModel extends ListModel
             $listDirection = $orderDirection;
         }
 
+        $listOrdering  = self::filterOrderColumn($listOrdering, $orderMapping);
         $listDirection = strtoupper($listDirection) === 'DESC' ? 'DESC' : 'ASC';
         $this->setState('list.ordering', $listOrdering);
         $this->setState('list.direction', $listDirection);
@@ -248,6 +283,26 @@ class ProductsModel extends ListModel
 
         // Language filter
         $this->setState('filter.language', Multilanguage::isEnabled());
+    }
+
+    /**
+     * Reduce an ordering column to one of the known-good identifiers.
+     *
+     * @param   string  $column    Candidate column name.
+     * @param   string  $fallback  Value returned when the candidate is not allowed.
+     *
+     * @return  string  An allow-listed column, or the fallback.
+     *
+     * @since   6.5.1
+     */
+    private static function filterOrderColumn(string $column, string $fallback = 'a.ordering'): string
+    {
+        // 'price' is the menu/legacy alias for the master variant price.
+        if ($column === 'price') {
+            $column = 'v.price';
+        }
+
+        return \in_array($column, self::ORDER_COLUMNS, true) ? $column : $fallback;
     }
 
     /**
@@ -459,20 +514,15 @@ class ProductsModel extends ListModel
         }
 
         // Ordering
-        $orderCol = $this->state->get('list.ordering', 'a.ordering');
-        $orderDir = $this->state->get('list.direction', 'ASC');
+        $orderCol = self::filterOrderColumn((string) $this->state->get('list.ordering', 'a.ordering'));
+        $orderDir = strtoupper((string) $this->state->get('list.direction', 'ASC')) === 'DESC' ? 'DESC' : 'ASC';
 
-        // Handle price ordering specially (use variant price)
-        if ($orderCol === 'price' || $orderCol === 'v.price') {
-            $orderCol = 'v.price';
-        }
-
-        $query->order($db->escape($orderCol) . ' ' . $db->escape($orderDir));
+        $query->order($db->quoteName($orderCol) . ' ' . $orderDir);
 
         // Deterministic tie-breaker so rows that share an order value (e.g. products
         // whose article ordering is still 0) keep a stable, predictable sequence.
         if ($orderCol !== 'a.id') {
-            $query->order($db->quoteName('a.id') . ' ' . $db->escape($orderDir));
+            $query->order($db->quoteName('a.id') . ' ' . $orderDir);
         }
 
         return $query;
