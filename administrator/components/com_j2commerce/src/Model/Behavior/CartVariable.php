@@ -214,7 +214,7 @@ class CartVariable
         // Decode stored options
         $options = [];
         if (!empty($item->product_options)) {
-            $decoded = @unserialize(base64_decode($item->product_options));
+            $decoded = @unserialize(base64_decode($item->product_options), ['allowed_classes' => false]);
             if ($decoded !== false) {
                 $options = $decoded;
             }

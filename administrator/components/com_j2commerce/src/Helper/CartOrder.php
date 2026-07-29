@@ -1063,7 +1063,7 @@ class CartOrder
 
         // Fallback: decode raw product_options if behavior didn't process them
         if (!empty($item->product_options)) {
-            $decoded = @unserialize(base64_decode($item->product_options));
+            $decoded = @unserialize(base64_decode($item->product_options), ['allowed_classes' => false]);
 
             if ($decoded !== false && \is_array($decoded)) {
                 $attributes = $this->processProductOptions($decoded, (int) ($item->product_id ?? 0));

@@ -51,7 +51,7 @@ final class OrderItemAttributeHelper
             return [];
         }
 
-        $unserialized = @unserialize($decoded);
+        $unserialized = @unserialize($decoded, ['allowed_classes' => false]);
         if (!\is_array($unserialized) || empty($unserialized)) {
             return [];
         }
