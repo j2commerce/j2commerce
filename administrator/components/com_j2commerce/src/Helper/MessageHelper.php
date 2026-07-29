@@ -110,6 +110,7 @@ class MessageHelper
      * - [ORDERAMOUNT]: Order total amount (formatted)
      * - [ORDER_TOKEN]: Unique order token for verification
      * - [COUPON_CODE]: Applied coupon code(s)
+     * - [TOTALS]: Complete order totals table (Subtotal, Shipping, Discount, Tax, Grand Total)
      * - [ITEMS]: Order items table (HTML)
      *
      * Triggers the 'onJ2CommerceAfterAdditionalTags' event to allow
@@ -143,6 +144,7 @@ class MessageHelper
             '[DISCOUNT_AMOUNT]' => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_DISCOUNT_AMOUNT'),
             '[CURRENT_YEAR]'    => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_CURRENT_YEAR'),
             '[TAX_LINES]'       => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_TAX_LINES'),
+            '[TOTALS]'          => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_TOTALS'),
             '[ITEMS]'           => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_ITEMS'),
             '[PACKING_ITEMS]'   => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_PACKING_ITEMS'),
         ];

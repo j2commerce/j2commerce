@@ -488,13 +488,12 @@ class EmailHelper
         );
 
         // Plugin-contributed extra order summary rows
-        $extraRowsHtml = '';
-        foreach (J2CommerceHelper::plugin()->eventWithArray('GetOrderSummaryExtraRows', [$order]) as $extraRow) {
-            if (\is_array($extraRow) && isset($extraRow['label'], $extraRow['value'])) {
-                $extraRowsHtml .= '<div class="j2c-order-extra-row"><strong>'
-                    . htmlspecialchars((string) $extraRow['label'], ENT_QUOTES, 'UTF-8') . ':</strong> '
-                    . htmlspecialchars((string) $extraRow['value'], ENT_QUOTES, 'UTF-8') . '</div>';
-            }
+        $orderExtraRows = $this->getOrderSummaryExtraRows($order);
+        $extraRowsHtml  = '';
+        foreach ($orderExtraRows as $extraRow) {
+            $extraRowsHtml .= '<div class="j2c-order-extra-row"><strong>'
+                . htmlspecialchars((string) $extraRow['label'], ENT_QUOTES, 'UTF-8') . ':</strong> '
+                . htmlspecialchars((string) $extraRow['value'], ENT_QUOTES, 'UTF-8') . '</div>';
         }
 
         $tags = [
@@ -550,6 +549,7 @@ class EmailHelper
             '[TAX_AMOUNT]'                => ((float) ($order->order_tax ?? 0)) > 0 ? CurrencyHelper::format((float) $order->order_tax, $order->currency_code ?? '', (float) ($order->currency_value ?? 1)) : '',
             '[SUBTOTAL]'                  => CurrencyHelper::format((float) ($order->order_subtotal ?? 0), $order->currency_code ?? '', (float) ($order->currency_value ?? 1)),
             '[ORDER_EXTRA_ROWS]'          => $extraRowsHtml,
+            '[TOTALS]'                    => str_contains($text, '[TOTALS]') ? $this->buildTotalsTable($order, $orderExtraRows) : '',
             '[CURRENT_YEAR]'              => date('Y'),
             '[ITEMS]'                     => $items,
             '[PACKING_ITEMS]'             => $this->loadPackingItemsTemplate($order),
@@ -919,6 +919,165 @@ class EmailHelper
         }
 
         return '<table width="100%" cellpadding="0" cellspacing="0" border="0">' . $rows . '</table>';
+    }
+
+    /** @return list<array{label: string, value: string}> */
+    private function getOrderSummaryExtraRows(object $order): array
+    {
+        $rows = [];
+        foreach (J2CommerceHelper::plugin()->eventWithArray('GetOrderSummaryExtraRows', [$order]) as $extraRow) {
+            if (\is_array($extraRow) && isset($extraRow['label'], $extraRow['value'])) {
+                $rows[] = $extraRow;
+            }
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Order's #__j2commerce_ordertaxes rows (same source checkout's tax rows use — includes
+     * shipping tax and multi-rate/stacked tax lines, unlike the order_tax column). Empty
+     * when the order predates itemized tax rows.
+     *
+     * @return list<object>
+     */
+    private function getOrderTaxRows(object $order): array
+    {
+        $orderId = $order->order_id ?? '';
+        if ($orderId === '') {
+            return [];
+        }
+
+        $db    = self::getDatabase();
+        $query = $db->getQuery(true)
+            ->select([$db->quoteName('ordertax_title'), $db->quoteName('ordertax_percent'), $db->quoteName('ordertax_amount')])
+            ->from($db->quoteName('#__j2commerce_ordertaxes'))
+            ->where($db->quoteName('order_id') . ' = :order_id')
+            ->bind(':order_id', $orderId);
+
+        return $db->setQuery($query)->loadObjectList() ?: [];
+    }
+
+    /**
+     * Build the full order totals block (subtotal, shipping, surcharge, fees, discount,
+     * tax, plugin extra rows, grand total) as a single well-formed table, matching
+     * checkout's labels, currency formatting, and tax-inclusive/exclusive relabeling.
+     * Zero/absent rows are suppressed the same way the scalar tags are.
+     *
+     * @param   list<array{label: string, value: string}>  $extraRows  From getOrderSummaryExtraRows().
+     */
+    private function buildTotalsTable(object $order, array $extraRows): string
+    {
+        $currencyCode   = $order->currency_code ?? '';
+        $currencyValue  = (float) ($order->currency_value ?? 1);
+        $decimals       = CurrencyHelper::getDecimalPlace($currencyCode);
+        $fmt            = static fn (float $amount): string => CurrencyHelper::format($amount, $currencyCode, $currencyValue);
+        $isIncludingTax = (int) ($order->is_including_tax ?? 0) === 1;
+
+        // order_tax / order_shipping_tax are what order_total was actually built from
+        // (recalculateOrderTotals(): total = subtotal + itemTax(if exclusive) + shipping
+        // + shippingTax + surcharge + fees - discount). #__j2commerce_ordertaxes is NOT a
+        // reliable substitute — it doesn't always fold in shipping tax, depending on which
+        // tax engine created the order — so it is used below for LABELS only.
+        $itemTaxAmount     = (float) ($order->order_tax ?? 0);
+        $shippingTaxAmount = (float) ($order->order_shipping_tax ?? 0);
+        $taxTotal          = $itemTaxAmount + $shippingTaxAmount;
+
+        // Tax-inclusive stores bake item tax into order_subtotal — print the ex-tax
+        // column so this row plus the Tax row(s) below don't double-count it.
+        $subtotal = $isIncludingTax
+            ? (float) ($order->order_subtotal_ex_tax ?? ((float) ($order->order_subtotal ?? 0) - $itemTaxAmount))
+            : (float) ($order->order_subtotal ?? 0);
+
+        $shippingAmount  = (float) ($order->order_shipping ?? 0);
+        $surchargeAmount = (float) ($order->order_surcharge ?? 0);
+        $feesAmount      = (float) ($order->order_fees ?? 0);
+        $discountAmount  = (float) ($order->order_discount ?? 0);
+        $grandTotal      = (float) ($order->order_total ?? 0);
+        $nonTaxTotal     = $subtotal + $shippingAmount + $surchargeAmount + $feesAmount - $discountAmount;
+
+        // Per-profile rows (title + percent) for labeling only — never trusted blind.
+        $taxProfileRows = $this->getOrderTaxRows($order);
+        $profileSum     = array_sum(array_map(static fn (object $t): float => (float) $t->ordertax_amount, $taxProfileRows));
+        $remainder      = round($taxTotal - $profileSum, $decimals);
+
+        if (!empty($taxProfileRows) && $remainder >= 0) {
+            $taxHtml = '';
+            foreach ($taxProfileRows as $tax) {
+                $amount = (float) $tax->ordertax_amount;
+                if ($amount <= 0) {
+                    continue;
+                }
+
+                $percent = (float) $tax->ordertax_percent;
+                $title   = Text::_($tax->ordertax_title);
+                $label   = $percent > 0
+                    ? Text::sprintf($isIncludingTax ? 'COM_J2COMMERCE_CART_TAX_INCLUDED_TITLE' : 'COM_J2COMMERCE_CART_TAX_EXCLUDED_TITLE', $title, $percent . '%')
+                    : $title;
+                $taxHtml .= $this->totalsRow($label, $fmt($amount));
+            }
+
+            if ($remainder > 0) {
+                // order_tax + order_shipping_tax exceeds what #__j2commerce_ordertaxes
+                // accounts for (shipping tax computed outside the itemized tax engine
+                // on this order) — show the gap so the rows keep summing to the total.
+                $taxHtml .= $this->totalsRow(Text::_('COM_J2COMMERCE_FIELD_SHIPPING_TAX'), $fmt($remainder));
+            }
+        } elseif ($taxTotal > 0) {
+            $taxHtml = $this->totalsRow(Text::_('COM_J2COMMERCE_CART_TAX'), $fmt($taxTotal));
+        } else {
+            $taxHtml = '';
+        }
+
+        // Self-check: the monetary rows above (excluding plugin-contributed extra rows,
+        // which are informational — checkout renders them the same way, outside any
+        // total-reconciliation contract) must foot to order_total at the currency's
+        // display precision. If they don't, ship a single derived Tax row rather than a
+        // silently wrong invoice — a block that always balances beats a per-profile
+        // breakdown that sometimes doesn't.
+        if (round($nonTaxTotal + $taxTotal, $decimals) !== round($grandTotal, $decimals)) {
+            $derivedTax = round($grandTotal - $nonTaxTotal, $decimals);
+            $taxHtml    = $derivedTax > 0 ? $this->totalsRow(Text::_('COM_J2COMMERCE_CART_TAX'), $fmt($derivedTax)) : '';
+        }
+
+        $rows = $this->totalsRow(Text::_('COM_J2COMMERCE_CART_SUBTOTAL'), $fmt($subtotal));
+
+        if ($shippingAmount > 0) {
+            $rows .= $this->totalsRow(Text::_('COM_J2COMMERCE_CART_SHIPPING'), $fmt($shippingAmount));
+        }
+
+        if ($surchargeAmount > 0) {
+            $rows .= $this->totalsRow(Text::_('COM_J2COMMERCE_CART_SURCHARGE'), $fmt($surchargeAmount));
+        }
+
+        if ($feesAmount > 0) {
+            $rows .= $this->totalsRow(Text::_('COM_J2COMMERCE_FEES'), $fmt($feesAmount));
+        }
+
+        if ($discountAmount > 0) {
+            $rows .= $this->totalsRow(Text::_('COM_J2COMMERCE_CART_DISCOUNT'), '-' . $fmt($discountAmount));
+        }
+
+        $rows .= $taxHtml;
+
+        foreach ($extraRows as $extraRow) {
+            $rows .= $this->totalsRow((string) $extraRow['label'], (string) $extraRow['value']);
+        }
+
+        $rows .= '<tr>'
+            . '<td style="padding:8px; border:1px solid #ddd; font-weight:bold;">' . htmlspecialchars(Text::_('COM_J2COMMERCE_CART_GRANDTOTAL'), ENT_QUOTES, 'UTF-8') . '</td>'
+            . '<td style="padding:8px; border:1px solid #ddd; text-align:right; font-weight:bold;">' . htmlspecialchars($fmt($grandTotal), ENT_QUOTES, 'UTF-8') . '</td>'
+            . '</tr>';
+
+        return '<table style="width:100%; border-collapse:collapse;"><tbody>' . $rows . '</tbody></table>';
+    }
+
+    private function totalsRow(string $label, string $value): string
+    {
+        return '<tr>'
+            . '<td style="padding:8px; border:1px solid #ddd;">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</td>'
+            . '<td style="padding:8px; border:1px solid #ddd; text-align:right;">' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . '</td>'
+            . '</tr>';
     }
 
     /** Get product thumbnail image URL for email, using ImageHelper for optimal sizing. */
