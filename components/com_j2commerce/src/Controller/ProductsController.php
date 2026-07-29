@@ -111,7 +111,7 @@ class ProductsController extends AdminProductsController
                         'price-asc'  => 'v.price ASC',
                         'price-desc' => 'v.price DESC',
                         'newest'     => 'a.created DESC',
-                        'popular'    => 'a.hits DESC',
+                        'popular'    => 'p.hits DESC',
                     ];
                     $sortby = $sortMap[$sortParam] ?? $sortParam;
                 }

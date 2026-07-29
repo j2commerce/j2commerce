@@ -422,7 +422,7 @@ class J2CommerceFilters {
                 'v.price ASC': 'price-asc',
                 'v.price DESC': 'price-desc',
                 'a.created DESC': 'newest',
-                'a.hits DESC': 'popular'
+                'p.hits DESC': 'popular'
             };
             const sefSort = sortMap[sortby] || sortby;
             params.set('sort', sefSort);
