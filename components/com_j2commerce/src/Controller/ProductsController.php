@@ -30,39 +30,29 @@ use Joomla\Registry\Registry;
 
 /**
  * Site Products controller. Extends admin so all variant AJAX methods are inherited.
- * Overrides execute() to enforce an ACL gate for variant AJAX tasks on frontend.
- * Site-specific AJAX tasks (filter) skip the gate and are handled by this class directly.
+ * Overrides execute() to gate every inherited admin task behind the vendor/editor
+ * check; only the site's own public tasks are exempt.
  *
  * @since  6.2.3
  */
 class ProductsController extends AdminProductsController
 {
     /**
-     * Variant AJAX tasks that require the ACL gate when called from site context.
+     * Tasks this controller serves to anyone. Every other task on this class is
+     * inherited from the admin controller and must clear the vendor/editor gate.
+     * Deny by default: an allow-list cannot silently reopen when the admin
+     * controller gains a public method.
      */
-    private const VARIANT_AJAX_TASKS = [
-        'getProductFilterListAjax',
-        'getProductOptionValuesAjax',
-        'createProductOptionValueAjax',
-        'saveProductOptionValueAjax',
-        'deleteProductOptionValueAjax',
-        'addVariantAjax',
-        'deleteVariantAjax',
-        'deleteAllVariantsAjax',
-        'deleteSelectedVariantsAjax',
-        'generateVariantsAjax',
-        'regenerateVariantsAjax',
-        'getVariantListAjax',
-        'setDefaultVariantAjax',
-        'unsetDefaultVariantAjax',
-        'addProductOptionAjax',
-        'removeProductOptionAjax',
-        'saveProductOptionsAjax',
+    private const PUBLIC_SITE_TASKS = [
+        'filter',
     ];
 
     public function execute($task)
     {
-        if (\in_array($task, self::VARIANT_AJAX_TASKS, true) && !$this->authorizeVariantAjax()) {
+        // Lower-cased to match BaseController::execute(), which lower-cases the task
+        // before resolving it against $taskMap. Comparing the raw string here would
+        // let a differently-cased task skip this gate and still dispatch.
+        if (!\in_array(strtolower((string) $task), self::PUBLIC_SITE_TASKS, true) && !$this->authorizeVariantAjax()) {
             $this->sendVariantJsonError(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'));
             return false;
         }
