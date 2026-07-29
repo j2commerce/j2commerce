@@ -16,6 +16,7 @@ namespace J2Commerce\Component\J2commerce\Site\Controller;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\CartOrder;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
@@ -1400,17 +1401,25 @@ class CartsController extends BaseController
         $model   = $this->getCartModel();
         $session = $this->app->getSession();
 
-        $shippingValues = [
-            'shipping_price'        => $this->input->getFloat('shipping_price', 0),
-            'shipping_extra'        => $this->input->getFloat('shipping_extra', 0),
-            'shipping_code'         => $this->input->getString('shipping_code', ''),
-            'shipping_name'         => $this->input->getString('shipping_name', ''),
-            'shipping_tax'          => $this->input->getFloat('shipping_tax', 0),
-            'shipping_tax_class_id' => $this->input->getInt('shipping_tax_class_id', 0),
-            'shipping_plugin'       => $this->input->getString('shipping_plugin', ''),
-        ];
+        // Only the rate identifier comes from the request — price, tax and extra are
+        // re-resolved from a fresh GetShippingRates dispatch so a tampered
+        // shipping_price can never reach order_total. A selection that matches no
+        // plugin rate leaves the current (server-verified) session values untouched.
+        $selectedPlugin = $this->input->getString('shipping_plugin', '');
+        $cartsModel     = $this->getModel('Carts');
+        $order          = $cartsModel ? $cartsModel->getOrder() : null;
+        $resolved       = $selectedPlugin !== '' && $order
+            ? CartOrder::resolvePluginShippingRate(
+                $order,
+                $selectedPlugin,
+                $this->input->getString('shipping_name', ''),
+                $this->input->getString('shipping_code', '')
+            )
+            : null;
 
-        $session->set('shipping_values', $shippingValues, 'j2commerce');
+        if ($resolved !== null) {
+            $session->set('shipping_values', $resolved, 'j2commerce');
+        }
 
         $redirect         = $model->getCartUrl();
         $json['redirect'] = $redirect;

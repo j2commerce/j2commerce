@@ -531,9 +531,12 @@ PHP;
 
         return preg_replace_callback(
             '/<j2c-conditional\s+data-condition="([^"]+)"[^>]*>(.*?)<\/j2c-conditional>/si',
-            static function (array $matches) use ($open, $close): string {
-                $condition = $matches[1];
-                $content   = $matches[2];
+            function (array $matches) use ($open, $close): string {
+                $content = $matches[2];
+
+                // Never interpolate an unvalidated expression into generated PHP — a
+                // failing condition degrades to a dead branch instead of code.
+                $condition = $this->isAllowedCondition($matches[1]) ? $matches[1] : 'false';
 
                 return $open . ' if (' . $condition . '): ' . $close
                     . $content
@@ -541,6 +544,70 @@ PHP;
             },
             $html
         ) ?? $html;
+    }
+
+    /** Validate a conditional expression against a strict boolean-expression grammar before it is interpolated into generated PHP. */
+    private function isAllowedCondition(string $condition): bool
+    {
+        $condition = trim($condition);
+
+        if ($condition === '' || strlen($condition) > 500) {
+            return false;
+        }
+
+        // Permitted: $variables (incl. ->property chains), numbers, simple single-quoted
+        // strings (no backslash/quote inside), isset()/empty(), the whitelisted
+        // ->canShowprice() / ->canShowCart() calls, parentheses, !, &&, ||, comparison
+        // operators and ??. Everything else is rejected.
+        $tokenPattern = '/\s+'
+            . '|\'[A-Za-z0-9 _.\-]*\''
+            . '|\d+(?:\.\d+)?'
+            . '|\$[A-Za-z_][A-Za-z0-9_]*(?:->[A-Za-z_][A-Za-z0-9_]*)*'
+            . '|isset|empty'
+            . '|===|!==|==|!=|>=|<=|&&|\|\||\?\?'
+            . '|[!><?:]'
+            . '|[()]/A';
+
+        $tokens = [];
+        $offset = 0;
+        $length = strlen($condition);
+
+        while ($offset < $length) {
+            if (!preg_match($tokenPattern, $condition, $m, 0, $offset)) {
+                return false;
+            }
+
+            $tokens[] = $m[0];
+            $offset  += strlen($m[0]);
+        }
+
+        // Balanced parens; a variable chain directly before '(' is a method call —
+        // only the whitelisted view helpers may be called.
+        $depth    = 0;
+        $previous = '';
+
+        foreach ($tokens as $token) {
+            if ($token === '(') {
+                $depth++;
+
+                if ($previous !== '' && !preg_match('/^(?:isset|empty|&&|\|\||!|\(|\?\?|==|!=|===|!==|>=|<=|>|<|\?|:)$/', $previous)
+                    && !preg_match('/->(?:canShowprice|canShowCart)$/', $previous)) {
+                    return false;
+                }
+            } elseif ($token === ')') {
+                $depth--;
+
+                if ($depth < 0) {
+                    return false;
+                }
+            }
+
+            if (!preg_match('/^\s+$/', $token)) {
+                $previous = $token;
+            }
+        }
+
+        return $depth === 0;
     }
 
     private function validateInput(string $html): array
@@ -571,6 +638,15 @@ PHP;
 
         if (preg_match('/<base\b/i', $html)) {
             return ['valid' => false, 'error' => 'Base elements are not allowed in builder output'];
+        }
+
+        // Every conditional expression is interpolated into generated PHP — validate each one.
+        if (preg_match_all('/<j2c-conditional\s+data-condition="([^"]+)"/i', $html, $conditionMatches)) {
+            foreach ($conditionMatches[1] as $conditionExpression) {
+                if (!$this->isAllowedCondition($conditionExpression)) {
+                    return ['valid' => false, 'error' => 'Conditional expressions may only contain boolean logic over layout variables'];
+                }
+            }
         }
 
         return ['valid' => true, 'error' => ''];

@@ -121,6 +121,16 @@ class OrderTable extends Table
             }
         }
 
+        // Monetary sanity backstop: shipping charges and the grand total can never
+        // be negative — a negative value here means upstream tampering.
+        foreach (['order_shipping', 'order_shipping_tax', 'order_total'] as $moneyField) {
+            if (round((float) $this->$moneyField, 5) < 0) {
+                $this->setError(Text::sprintf('COM_J2COMMERCE_ERR_FIELD_INVALID', $moneyField));
+
+                return false;
+            }
+        }
+
         return true;
     }
 
