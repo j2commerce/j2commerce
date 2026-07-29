@@ -1559,8 +1559,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
     /**
      * onApprove branch for subscription carts. PayPal already auto-charged the
      * first cycle as part of subscription activation — we just verify it went
-     * ACTIVE / APPROVED and mark the local order paid. No Orders v2 capture
-     * call needed.
+     * ACTIVE and mark the local order paid. No Orders v2 capture call needed.
      *
      * The subsequent onJ2CommerceAfterPayment listener (priority -100) writes
      * the paypal_subscription_id metakey to link the local subscription row.
@@ -1613,7 +1612,16 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             $status = strtoupper((string) ($info['body']['status'] ?? ''));
 
             // ACTIVE only: APPROVAL_PENDING means the buyer never approved (nothing
-            // charged), and APPROVED means authorized but not yet billed.
+            // charged), and APPROVED means authorized but not yet billed. PayPal can
+            // transiently report APPROVED for a few seconds right after a successful
+            // approval — re-fetch once before rejecting so an honest buyer isn't
+            // bounced into creating a duplicate subscription.
+            if ($status === 'APPROVED') {
+                sleep(2);
+                $info   = $this->getPayPalSubscriptions()->getSubscriptionDetails($paypalSubscriptionId);
+                $status = strtoupper((string) ($info['body']['status'] ?? ''));
+            }
+
             if ($status !== 'ACTIVE') {
                 $this->log(
                     'finalizePayPalSubscriptionApproval: unexpected PayPal sub status=' . $status . ' for ' . $paypalSubscriptionId,
