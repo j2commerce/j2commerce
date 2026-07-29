@@ -204,6 +204,93 @@ $statusName = !empty($order->orderstatus_name) ? Text::_($order->orderstatus_nam
         <div class="uk-width-1-2@m uk-push-1-2@m">
             <table class="uk-table uk-table-small">
                 <tbody>
+                    <?php
+                    // order_tax + order_shipping_tax are the columns order_total is computed from
+                    // (OrderModel::recalculateOrderTotals). #__j2commerce_ordertaxes supplies the
+                    // per-profile labels only — shipping tax is not always folded into its rows,
+                    // depending on the tax engine that created the order.
+                    $itemTax       = (float) ($order->order_tax ?? 0);
+                    $shippingTax   = (float) ($order->order_shipping_tax ?? 0);
+                    $orderTaxTotal = $itemTax + $shippingTax;
+                    $decimals      = CurrencyHelper::getDecimalPlace($currencyCode);
+
+                    // Tax-inclusive stores carry item tax inside order_subtotal — show the ex-tax
+                    // column so the Subtotal row plus the Tax row(s) don't double-count it.
+                    $displaySubtotal = (int) ($order->is_including_tax ?? 0) === 1
+                        ? (float) ($order->order_subtotal_ex_tax ?? ((float) $order->order_subtotal - $itemTax))
+                        : (float) ($order->order_subtotal ?? 0);
+
+                    $taxRows = [];
+                    if (!empty($taxes)) {
+                        $profileSum = 0.0;
+                        foreach ($taxes as $tax) {
+                            $profileSum += (float) ($tax->ordertax_amount ?? 0);
+                        }
+                        $taxRemainder = round($orderTaxTotal - $profileSum, $decimals);
+
+                        if ($taxRemainder >= 0) {
+                            foreach ($taxes as $tax) {
+                                $taxAmount = (float) ($tax->ordertax_amount ?? 0);
+                                if ($taxAmount <= 0) {
+                                    continue;
+                                }
+
+                                $taxTitle = $tax->ordertax_title ?: Text::_('COM_J2COMMERCE_CART_TAX');
+                                $taxPct   = (float) ($tax->ordertax_percent ?? 0);
+                                $taxLabel = $taxPct > 0 ? $taxTitle . ' (' . number_format($taxPct, 2) . '%)' : $taxTitle;
+
+                                $taxRows[] = ['label' => $taxLabel, 'amount' => $taxAmount];
+                            }
+
+                            if ($taxRemainder > 0) {
+                                // Shipping tax computed outside the itemized tax engine on this
+                                // order — show the gap so the rows keep summing to the total.
+                                $taxRows[] = ['label' => Text::_('COM_J2COMMERCE_ORDER_SHIPPING_TAX'), 'amount' => $taxRemainder];
+                            }
+                        }
+                    }
+
+                    if (empty($taxRows) && $orderTaxTotal > 0) {
+                        $taxRows[] = ['label' => Text::_('COM_J2COMMERCE_CART_TAX'), 'amount' => $orderTaxTotal];
+                    }
+
+                    // Self-check: the monetary rows printed below must foot to order_total at the
+                    // currency's display precision — fall back to a single derived Tax row rather
+                    // than show the customer a block that does not add up.
+                    $printedShipping = 0.0;
+                    if (!empty($shippings)) {
+                        foreach ($shippings as $shipping) {
+                            if ((float) ($shipping->ordershipping_price ?? 0) > 0 || !empty($shipping->ordershipping_name)) {
+                                $printedShipping += (float) ($shipping->ordershipping_price ?? 0);
+                            }
+                        }
+                    } elseif ((float) ($order->order_shipping ?? 0) > 0) {
+                        $printedShipping = (float) $order->order_shipping;
+                    }
+
+                    $printedFees = 0.0;
+                    if (!empty($fees)) {
+                        foreach ($fees as $fee) {
+                            $feeAmount = (float) ($fee->amount ?? 0);
+                            if ($feeAmount > 0) {
+                                $printedFees += $feeAmount;
+                            }
+                        }
+                    } elseif ((float) ($order->order_surcharge ?? 0) > 0) {
+                        $printedFees = (float) $order->order_surcharge;
+                    }
+
+                    $printedDiscounts = (float) ($order->order_discount ?? 0) > 0 ? (float) $order->order_discount : 0.0;
+
+                    $nonTaxTotal = $displaySubtotal + $printedShipping + $printedFees - $printedDiscounts;
+
+                    if (round($nonTaxTotal + $orderTaxTotal, $decimals) !== round((float) ($order->order_total ?? 0), $decimals)) {
+                        $derivedTax = round((float) ($order->order_total ?? 0) - $nonTaxTotal, $decimals);
+                        $taxRows    = $derivedTax > 0
+                            ? [['label' => Text::_('COM_J2COMMERCE_CART_TAX'), 'amount' => $derivedTax]]
+                            : [];
+                    }
+                    ?>
                     <?php // Plugin-contributed extra summary rows ?>
                     <?php foreach (J2CommerceHelper::plugin()->eventWithArray('GetOrderSummaryExtraRows', [$order]) as $extraRow): ?>
                         <?php if (\is_array($extraRow) && isset($extraRow['label'], $extraRow['value'])): ?>
@@ -215,7 +302,7 @@ $statusName = !empty($order->orderstatus_name) ? Text::_($order->orderstatus_nam
                     <?php endforeach; ?>
                     <tr>
                         <td class="uk-text-right"><?php echo Text::_('COM_J2COMMERCE_CART_SUBTOTAL'); ?></td>
-                        <td class="uk-text-right uk-text-bold"><?php echo $fmt((float) ($order->order_subtotal ?? 0)); ?></td>
+                        <td class="uk-text-right uk-text-bold"><?php echo $fmt($displaySubtotal); ?></td>
                     </tr>
                     <?php // Shipping ?>
                     <?php if (!empty($shippings)): ?>
@@ -256,28 +343,13 @@ $statusName = !empty($order->orderstatus_name) ? Text::_($order->orderstatus_nam
                         <td class="uk-text-right uk-text-danger">-<?php echo $fmt((float) $order->order_discount); ?></td>
                     </tr>
                     <?php endif; ?>
-                    <?php // Taxes ?>
-                    <?php if (!empty($taxes)): ?>
-                        <?php foreach ($taxes as $tax): ?>
-                            <?php if ((float) ($tax->ordertax_amount ?? 0) > 0): ?>
-                            <tr>
-                                <td class="uk-text-right">
-                                    <?php
-                                    $taxLabel = $this->escape($tax->ordertax_title ?: Text::_('COM_J2COMMERCE_CART_TAX'));
-                                    $taxPct   = (float) ($tax->ordertax_percent ?? 0);
-                                    echo $taxPct > 0 ? $taxLabel . ' (' . number_format($taxPct, 2) . '%)' : $taxLabel;
-                                    ?>
-                                </td>
-                                <td class="uk-text-right"><?php echo $fmt((float) $tax->ordertax_amount); ?></td>
-                            </tr>
-                            <?php endif; ?>
-                        <?php endforeach; ?>
-                    <?php elseif ((float) ($order->order_tax ?? 0) > 0): ?>
+                    <?php // Taxes — per-profile labels; any shipping tax not folded into them shows as its own row ?>
+                    <?php foreach ($taxRows as $taxRow): ?>
                     <tr>
-                        <td class="uk-text-right"><?php echo Text::_('COM_J2COMMERCE_CART_TAX'); ?></td>
-                        <td class="uk-text-right"><?php echo $fmt((float) $order->order_tax); ?></td>
+                        <td class="uk-text-right"><?php echo $this->escape($taxRow['label']); ?></td>
+                        <td class="uk-text-right"><?php echo $fmt($taxRow['amount']); ?></td>
                     </tr>
-                    <?php endif; ?>
+                    <?php endforeach; ?>
                     <tr class="uk-border-top">
                         <td class="uk-text-right uk-text-large"><?php echo Text::_('COM_J2COMMERCE_CART_GRANDTOTAL'); ?></td>
                         <td class="uk-text-right uk-text-large uk-text-bold">
