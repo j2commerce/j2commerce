@@ -20,6 +20,7 @@ use J2Commerce\Component\J2commerce\Site\Helper\ProductFilterRequestHelper;
 use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Session\Session;
@@ -222,7 +223,16 @@ class ProductsController extends AdminProductsController
             $app->close();
 
         } catch (\Throwable $e) {
-            $this->sendJsonError($e->getMessage() . ' at ' . basename($e->getFile()) . ':' . $e->getLine(), 500);
+            // This endpoint is anonymous, so the exception text stays server-side —
+            // it carries table, column and prefix names straight out of the database.
+            Log::add(
+                'Product filter AJAX failed: ' . $e->getMessage()
+                    . ' at ' . $e->getFile() . ':' . $e->getLine(),
+                Log::ERROR,
+                'com_j2commerce'
+            );
+
+            $this->sendJsonError(Text::_('COM_J2COMMERCE_ERR_GENERIC'), 500);
         }
     }
 
