@@ -230,6 +230,10 @@ class CartModel extends BaseDatabaseModel
             }
         }
 
+        // The signature key is core-owned. Drop whatever the caller supplied so only the
+        // value computed from BuildCartItemSignature can ever occupy it.
+        $itemParams->remove(CartHelper::CART_ITEM_SIGNATURE_PARAM);
+
         if ($signature !== '') {
             $itemParams->set(CartHelper::CART_ITEM_SIGNATURE_PARAM, $signature);
         }
