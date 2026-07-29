@@ -356,11 +356,17 @@ class MyprofileController extends BaseController
 
         // Build file path with path traversal protection — must resolve inside an
         // allowed downloads root (attachments folder or legacy images dir), never
-        // configuration.php or a dotfile segment.
-        $filePath = Path::clean(JPATH_SITE . '/' . ltrim($productFile->product_file_save_name, '/'));
-        $realPath = @realpath($filePath);
+        // configuration.php or a dotfile segment in the stored relative path.
+        $relativePath = ltrim(str_replace('\\', '/', $productFile->product_file_save_name), '/');
+        $filePath     = Path::clean(JPATH_SITE . '/' . $relativePath);
+        $realPath     = @realpath($filePath);
 
-        if ($realPath === false || !DownloadHelper::isAllowedResolvedPath($realPath) || !is_readable($realPath)) {
+        if (
+            $realPath === false
+            || preg_match('#(?:^|/)\.[^/]#', $relativePath)
+            || !DownloadHelper::isAllowedResolvedPath($realPath)
+            || !is_readable($realPath)
+        ) {
             $this->app->enqueueMessage(Text::_('COM_J2COMMERCE_MYPROFILE_FILE_NOT_FOUND'), 'error');
             $this->app->redirect($redirectUrl);
 

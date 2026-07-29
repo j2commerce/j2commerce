@@ -269,12 +269,19 @@ final class DownloadHelper
         $roots  = [];
         $attach = trim((string) J2CommerceHelper::config()->get('attachmentfolderpath', 'files/com_j2commerce'), '/');
 
+        // A blank, dot, or dot-dot config value must never widen (or empty) the union.
+        if ($attach === '' || $attach === '.' || $attach === '..') {
+            $attach = 'files/com_j2commerce';
+        }
+
         foreach (array_unique([$attach, 'images']) as $root) {
-            if ($root === '') {
+            // Absolute attachment roots are not servable by the download endpoint,
+            // which always resolves stored paths against JPATH_SITE.
+            if ($root === '' || preg_match('#^(?:/|[a-zA-Z]:)#', $root)) {
                 continue;
             }
 
-            $roots[] = preg_match('#^(?:/|[a-zA-Z]:)#', $root) ? $root : JPATH_SITE . '/' . $root;
+            $roots[] = JPATH_SITE . '/' . $root;
         }
 
         return $roots;
@@ -323,11 +330,13 @@ final class DownloadHelper
 
     /**
      * Sink-side validation of a realpath-resolved product file: must resolve inside
-     * an allowed root, with no dotfile segment and not configuration.php.
+     * an allowed root and not be configuration.php. Dotfile segments are checked by
+     * the caller against the stored relative path (the server prefix may legitimately
+     * contain dot-leading segments on some hosts).
      */
     public static function isAllowedResolvedPath(string $realPath): bool
     {
-        if (preg_match('#(?:^|[\\/])\.[^\\/]#', $realPath) || basename($realPath) === 'configuration.php') {
+        if (basename($realPath) === 'configuration.php') {
             return false;
         }
 

@@ -853,6 +853,18 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                     Log::ERROR
                 );
 
+                // Surface it on the order page too — the buyer's money was charged
+                // but the order stays unpaid until staff review.
+                OrderHistoryHelper::add(
+                    orderId: $orderIdString,
+                    comment: Text::sprintf(
+                        'COM_J2COMMERCE_ORDER_HISTORY_PAYMENT_MISMATCH',
+                        $chargedAmount . ' ' . $chargedCurrency,
+                        $amount . ' ' . $currency
+                    ),
+                    orderStateId: (int) $orderTable->order_state_id
+                );
+
                 return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_INVALID_REQUEST')];
             }
 
@@ -1600,7 +1612,9 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             $info   = $this->getPayPalSubscriptions()->getSubscriptionDetails($paypalSubscriptionId);
             $status = strtoupper((string) ($info['body']['status'] ?? ''));
 
-            if (!\in_array($status, ['ACTIVE', 'APPROVED', 'APPROVAL_PENDING'], true)) {
+            // ACTIVE only: APPROVAL_PENDING means the buyer never approved (nothing
+            // charged), and APPROVED means authorized but not yet billed.
+            if ($status !== 'ACTIVE') {
                 $this->log(
                     'finalizePayPalSubscriptionApproval: unexpected PayPal sub status=' . $status . ' for ' . $paypalSubscriptionId,
                     Log::WARNING
@@ -2021,8 +2035,11 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                     // but the order stays unpaid until staff review.
                     OrderHistoryHelper::add(
                         orderId: (string) $orderTable->order_id,
-                        comment: 'PayPal capture amount/currency mismatch (captured ' . $captureAmount . ' ' . $captureCurrency
-                            . ', expected ' . $expectedAmount . ' ' . $expectedCcy . ') — manual review required',
+                        comment: Text::sprintf(
+                            'COM_J2COMMERCE_ORDER_HISTORY_PAYMENT_MISMATCH',
+                            $captureAmount . ' ' . $captureCurrency,
+                            $expectedAmount . ' ' . $expectedCcy
+                        ),
                         orderStateId: (int) $orderTable->order_state_id
                     );
 
