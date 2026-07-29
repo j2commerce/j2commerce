@@ -447,8 +447,7 @@ class CartHelper
         foreach ($items as $item) {
             // Check if item already exists in destination cart
             $productOptions = $item->product_options ?? '';
-            $signature      = (string) (new Registry($item->cartitem_params ?? ''))
-                ->get(self::CART_ITEM_SIGNATURE_PARAM, '');
+            $signature      = self::readCartItemSignature($item->cartitem_params ?? '');
             $existingItem   = $this->findCartItem(
                 $destCartId,
                 (int) $item->product_id,
@@ -786,14 +785,31 @@ class CartHelper
     public static function matchCartItemSignature(array $candidates, string $signature): ?object
     {
         foreach ($candidates as $candidate) {
-            $params = new Registry($candidate->cartitem_params ?? '');
-
-            if ((string) $params->get(self::CART_ITEM_SIGNATURE_PARAM, '') === $signature) {
+            if (self::readCartItemSignature($candidate->cartitem_params ?? '') === $signature) {
                 return $candidate;
             }
         }
 
         return null;
+    }
+
+    /**
+     * Read the uniqueness signature out of a stored cartitem_params blob.
+     *
+     * A non-scalar under the key is a foreign or corrupt value rather than a signature,
+     * so it reads as unsigned instead of raising a fatal on the string cast.
+     *
+     * @param   string|null  $cartitemParams  Stored cartitem_params JSON.
+     *
+     * @return  string  The stored signature, or an empty string.
+     *
+     * @since   6.5.1
+     */
+    public static function readCartItemSignature(?string $cartitemParams): string
+    {
+        $stored = (new Registry($cartitemParams ?? ''))->get(self::CART_ITEM_SIGNATURE_PARAM, '');
+
+        return \is_scalar($stored) ? (string) $stored : '';
     }
 
     // =========================================================================
