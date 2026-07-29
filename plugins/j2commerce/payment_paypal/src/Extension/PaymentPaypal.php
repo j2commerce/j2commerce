@@ -1924,6 +1924,23 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 ];
             }
 
+            // Re-assert this PayPal order was created for this local order — a capture
+            // funded by someone else's approved PayPal order must never mark it paid.
+            $storedDetails = json_decode($orderTable->transaction_details ?? '{}', true);
+            $boundPayPalId = (string) ($storedDetails['paypal_order_id'] ?? '');
+
+            if ($boundPayPalId === '' || !hash_equals($boundPayPalId, $paypalOrderId)) {
+                $this->log('capturePayPalOrder: PayPal order id not bound to local order - order_id: ' . $orderId, Log::ERROR);
+                return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_INVALID_REQUEST')];
+            }
+
+            // Only an order still awaiting payment may be captured: New(5), Pending(4)
+            // or Failed(3, retry). A settled, cancelled or refunded order cannot be flipped.
+            if (!\in_array((int) $orderTable->order_state_id, [3, 4, 5], true) || (float) ($orderTable->order_refund ?? 0) > 0) {
+                $this->log('capturePayPalOrder: Order not in a capturable state - order_id: ' . $orderId . ', state: ' . $orderTable->order_state_id, Log::ERROR);
+                return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_INVALID_REQUEST')];
+            }
+
             $this->log('capturePayPalOrder: Sending capture request to PayPal API');
 
             $orders = $this->getPayPalOrders();
@@ -1941,6 +1958,27 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
 
                 $captureId     = $capture['id'] ?? '';
                 $captureStatus = $capture['status'] ?? '';
+
+                // Compare the captured amount and currency against the local order before
+                // writing any paid state — a mismatched capture is logged for manual review.
+                $captureAmount   = (float) ($capture['amount']['value'] ?? 0);
+                $captureCurrency = (string) ($capture['amount']['currency_code'] ?? '');
+                $expectedAmount  = CurrencyHelper::gatewayAmount($orderTable);
+                $expectedCcy     = $this->getCurrency($orderTable);
+
+                if ($captureCurrency !== $expectedCcy || abs($captureAmount - $expectedAmount) > 0.01) {
+                    $this->log(
+                        'capturePayPalOrder: Amount/currency mismatch - captured ' . $captureAmount . ' ' . $captureCurrency
+                        . ', expected ' . $expectedAmount . ' ' . $expectedCcy . ' for order_id: ' . $orderId,
+                        Log::ERROR
+                    );
+                    Factory::getApplication()->getLogger()->error(
+                        'PayPal capture amount mismatch — manual review required',
+                        ['category' => 'j2commerce.paypal', 'order_id' => $orderId, 'captured' => $captureAmount . ' ' . $captureCurrency, 'expected' => $expectedAmount . ' ' . $expectedCcy]
+                    );
+
+                    return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_INVALID_REQUEST')];
+                }
 
                 $this->log('capturePayPalOrder: Capture successful - capture_id: ' . $captureId . ', status: ' . $captureStatus);
 

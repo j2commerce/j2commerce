@@ -359,7 +359,17 @@ class MyprofileController extends BaseController
         $realPath = @realpath($filePath);
         $siteRoot = realpath(JPATH_SITE);
 
-        if (!$realPath || !$siteRoot || !str_starts_with($realPath, $siteRoot) || !is_readable($realPath)) {
+        // Confine to the site root, and never serve the Joomla configuration or
+        // dotfiles (.htaccess, .env, …) — those hold credentials, not downloads.
+        $basename = $realPath !== false ? basename($realPath) : '';
+
+        if (
+            !$realPath || !$siteRoot
+            || !str_starts_with($realPath, $siteRoot . DIRECTORY_SEPARATOR)
+            || $realPath === $siteRoot . DIRECTORY_SEPARATOR . 'configuration.php'
+            || str_starts_with($basename, '.')
+            || !is_readable($realPath)
+        ) {
             $this->app->enqueueMessage(Text::_('COM_J2COMMERCE_MYPROFILE_FILE_NOT_FOUND'), 'error');
             $this->app->redirect($redirectUrl);
 

@@ -102,19 +102,19 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            'onAfterInitialise'                => 'onAfterInitialise',
-            'onAfterRoute'                     => 'onAfterRoute',
-            'onAfterRender'                    => 'onAfterRender',
-            'onContentPrepare'                 => 'onContentPrepare',
-            'onUserLogin'                      => 'onUserLogin',
-            'onBeforeCompileHead'              => ['onBeforeCompileHead', Priority::LOW],
-            'onJ2CommerceAfterUpdateCart'      => 'onJ2CommerceAfterUpdateCart',
-            'onJ2CommerceBeforeGetPrice'       => 'onJ2CommerceBeforeGetPrice',
-            'onJ2CommerceCalculateFees'        => 'onJ2CommerceCalculateFees',
-            'onJ2CommerceProcessCron'          => 'onJ2CommerceProcessCron',
-            'onJ2CommerceGetDashboardMessages' => 'onGetDashboardMessages',
+            'onAfterInitialise'                  => 'onAfterInitialise',
+            'onAfterRoute'                       => 'onAfterRoute',
+            'onAfterRender'                      => 'onAfterRender',
+            'onContentPrepare'                   => 'onContentPrepare',
+            'onUserLogin'                        => 'onUserLogin',
+            'onBeforeCompileHead'                => ['onBeforeCompileHead', Priority::LOW],
+            'onJ2CommerceAfterUpdateCart'        => 'onJ2CommerceAfterUpdateCart',
+            'onJ2CommerceBeforeGetPrice'         => 'onJ2CommerceBeforeGetPrice',
+            'onJ2CommerceCalculateFees'          => 'onJ2CommerceCalculateFees',
+            'onJ2CommerceProcessCron'            => 'onJ2CommerceProcessCron',
+            'onJ2CommerceGetDashboardMessages'   => 'onGetDashboardMessages',
             'onJ2CommerceResolveCheckoutContext' => 'onResolveCheckoutContext',
-            'onAjaxJ2commerce'                 => 'onAjaxJ2commerce',
+            'onAjaxJ2commerce'                   => 'onAjaxJ2commerce',
         ];
     }
 
@@ -1390,8 +1390,9 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             $productSchema
         );
 
-        // Inject the JSON-LD script
-        $script = '<script type="application/ld+json">' . json_encode($jsonLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . '</script>';
+        // Inject the JSON-LD script — HEX flags ensure no literal </script> (or
+        // quote/ampersand) can survive byte-for-byte into the script block.
+        $script = '<script type="application/ld+json">' . json_encode($jsonLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) . '</script>';
         $document->addCustomTag($script);
 
         $debugInfo[] = 'Schema INJECTED';
@@ -2226,9 +2227,10 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             }
         }
 
-        // Clean and truncate
-        $description = strip_tags($description);
+        // Clean and truncate — decode entities FIRST so entity-encoded markup
+        // becomes real tags that strip_tags() can actually remove.
         $description = html_entity_decode($description, ENT_QUOTES, 'UTF-8');
+        $description = strip_tags($description);
         $description = preg_replace('/\s+/', ' ', $description);
         $description = trim($description);
 

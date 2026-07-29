@@ -2100,6 +2100,15 @@ class CheckoutController extends BaseController
             $this->jsonResponse(['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_INVALID_REQUEST')]);
         }
 
+        // Re-bind to the caller's session order — a body order_id is not proof of ownership.
+        $sessionOrderId = (string) $this->app->getUserState('j2commerce.order_id', '');
+
+        if ($sessionOrderId === '' || $sessionOrderId !== (string) $orderId) {
+            $this->jsonResponse(['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_INVALID_REQUEST')]);
+        }
+
+        $input['order_id'] = $sessionOrderId;
+
         // Dispatch to payment plugin via event
         $event  = J2CommerceHelper::plugin()->event('PaymentCreateOrder', ['payment_paypal', $input]);
         $result = $event->getArgument('result', ['success' => false, 'error' => 'No payment plugin responded']);
@@ -2125,6 +2134,15 @@ class CheckoutController extends BaseController
         if (empty($paypalOrderId) || empty($orderId)) {
             $this->jsonResponse(['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_INVALID_REQUEST')]);
         }
+
+        // Re-bind to the caller's session order — a body order_id is not proof of ownership.
+        $sessionOrderId = (string) $this->app->getUserState('j2commerce.order_id', '');
+
+        if ($sessionOrderId === '' || $sessionOrderId !== (string) $orderId) {
+            $this->jsonResponse(['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_INVALID_REQUEST')]);
+        }
+
+        $input['order_id'] = $sessionOrderId;
 
         $event  = J2CommerceHelper::plugin()->event('PaymentCaptureOrder', ['payment_paypal', $input]);
         $result = $event->getArgument('result', ['success' => false, 'error' => 'No payment plugin responded']);

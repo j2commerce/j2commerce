@@ -399,6 +399,20 @@ class Downloadable
                 continue;
             }
 
+            // The path is fully POST-controlled and later streamed back by the download
+            // endpoint. Local paths: reject absolute paths and traversal. Scheme URIs
+            // (e.g. dropbox://) pass through — a plugin delivers those via BeforeFileDownload.
+            if (!preg_match('#^[a-z][a-z0-9+.-]*://#i', $path)) {
+                $normalized = str_replace('\\', '/', $path);
+
+                if (str_starts_with($normalized, '/') || preg_match('#^[a-z]:#i', $normalized) || preg_match('#(?:^|/)\.\.(?:/|$)#', $normalized)) {
+                    Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_ERR_INVALID_FILE_PATH'), 'error');
+                    continue;
+                }
+
+                $path = $normalized;
+            }
+
             if (empty($displayName)) {
                 $displayName = basename($path);
             }
