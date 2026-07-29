@@ -492,7 +492,7 @@ class CartOrder
                         }
 
                         // Total tax for this line (inclusive extraction or exclusive addition)
-                        $lineTotal = $itemPrice * $quantity;
+                        $lineTotal    = $itemPrice * $quantity;
                         $lineTaxTotal = $isIncludingTax
                             ? ($totalRatePct > 0 ? $lineTotal * $totalRatePct / (100 + $totalRatePct) : 0.0)
                             : $lineTotal * ($totalRatePct / 100);
@@ -631,11 +631,11 @@ class CartOrder
         // tax rates (and the tax line in the cart totals) are visible from the first page load,
         // consistent with how displayPrice() computes tax on product/category pages.
         if (empty($geozones)) {
-            $storeAddress = TaxHelper::getStoreAddress();
+            $storeAddress            = TaxHelper::getStoreAddress();
             $this->customerCountryId = (int) $storeAddress->country_id;
             $this->customerZoneId    = (int) $storeAddress->zone_id;
             $this->customerPostcode  = (string) $storeAddress->postcode;
-            $geozones = TaxHelper::getCustomerGeozones($storeAddress);
+            $geozones                = TaxHelper::getCustomerGeozones($storeAddress);
         }
 
         return $geozones;
@@ -1454,21 +1454,6 @@ class CartOrder
             // Guest checkout — get email from session guest data
             $guestData = $session->get('guest', [], 'j2commerce');
             $userEmail = $guestData['email'] ?? '';
-        }
-
-        // Fallback: resolve email from billing address if still empty
-        if (empty($userEmail)) {
-            $billingAddressId = (int) $session->get('billing_address_id', 0, 'j2commerce');
-
-            if ($billingAddressId > 0) {
-                $query = $db->getQuery(true)
-                    ->select($db->quoteName('email'))
-                    ->from($db->quoteName('#__j2commerce_addresses'))
-                    ->where($db->quoteName('j2commerce_address_id') . ' = :addrId')
-                    ->bind(':addrId', $billingAddressId, ParameterType::INTEGER);
-                $db->setQuery($query);
-                $userEmail = $db->loadResult() ?? '';
-            }
         }
 
         // Last resort: use Joomla user email for logged-in users whose identity was resolved late

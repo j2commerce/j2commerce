@@ -1222,15 +1222,21 @@ class CheckoutController extends BaseController
         $zoneId    = 0;
 
         $addressId = (int) $session->get('billing_address_id', 0, 'j2commerce');
+        $userId    = (int) ($this->app->getIdentity()?->id ?? 0);
 
-        if ($addressId > 0) {
+        // Constrain to the current user: the session id is only ever written for a logged-in
+        // shopper, so a row that does not belong to them must not resolve. Guests never hold this
+        // key and fall through to the flat billing_country_id/billing_zone_id keys below.
+        if ($addressId > 0 && $userId > 0) {
             $db    = Factory::getContainer()->get(DatabaseInterface::class);
             $query = $db->getQuery(true);
 
             $query->select([$db->quoteName('country_id'), $db->quoteName('zone_id')])
                 ->from($db->quoteName('#__j2commerce_addresses'))
                 ->where($db->quoteName('j2commerce_address_id') . ' = :addrId')
-                ->bind(':addrId', $addressId, ParameterType::INTEGER);
+                ->where($db->quoteName('user_id') . ' = :userId')
+                ->bind(':addrId', $addressId, ParameterType::INTEGER)
+                ->bind(':userId', $userId, ParameterType::INTEGER);
 
             $db->setQuery($query);
             $address = $db->loadObject();
