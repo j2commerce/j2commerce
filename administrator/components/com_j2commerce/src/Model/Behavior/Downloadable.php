@@ -16,6 +16,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model\Behavior;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\DownloadHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\ProductOptionsModel;
@@ -400,17 +401,23 @@ class Downloadable
             }
 
             // The path is fully POST-controlled and later streamed back by the download
-            // endpoint. Local paths: reject absolute paths and traversal. Scheme URIs
-            // (e.g. dropbox://) pass through — a plugin delivers those via BeforeFileDownload.
+            // endpoint. Local paths must live under an allowed root (attachments folder
+            // or legacy images dir). Scheme URIs (e.g. dropbox://) pass through — a
+            // plugin delivers those via BeforeFileDownload.
             if (!preg_match('#^[a-z][a-z0-9+.-]*://#i', $path)) {
-                $normalized = str_replace('\\', '/', $path);
+                $path = str_replace('\\', '/', $path);
 
-                if (str_starts_with($normalized, '/') || preg_match('#^[a-z]:#i', $normalized) || preg_match('#(?:^|/)\.\.(?:/|$)#', $normalized)) {
+                if (!DownloadHelper::isAllowedLocalPath($path)) {
                     Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_ERR_INVALID_FILE_PATH'), 'error');
+
+                    // Keep any existing row out of the deletion sweep — a rejected edit
+                    // must not silently delete the previously valid file.
+                    if ($fileId > 0) {
+                        $submittedIds[] = $fileId;
+                    }
+
                     continue;
                 }
-
-                $path = $normalized;
             }
 
             if (empty($displayName)) {

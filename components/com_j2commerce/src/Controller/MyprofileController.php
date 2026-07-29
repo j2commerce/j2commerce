@@ -354,22 +354,13 @@ class MyprofileController extends BaseController
             }
         }
 
-        // Build file path with path traversal protection
+        // Build file path with path traversal protection — must resolve inside an
+        // allowed downloads root (attachments folder or legacy images dir), never
+        // configuration.php or a dotfile segment.
         $filePath = Path::clean(JPATH_SITE . '/' . ltrim($productFile->product_file_save_name, '/'));
         $realPath = @realpath($filePath);
-        $siteRoot = realpath(JPATH_SITE);
 
-        // Confine to the site root, and never serve the Joomla configuration or
-        // dotfiles (.htaccess, .env, …) — those hold credentials, not downloads.
-        $basename = $realPath !== false ? basename($realPath) : '';
-
-        if (
-            !$realPath || !$siteRoot
-            || !str_starts_with($realPath, $siteRoot . DIRECTORY_SEPARATOR)
-            || $realPath === $siteRoot . DIRECTORY_SEPARATOR . 'configuration.php'
-            || str_starts_with($basename, '.')
-            || !is_readable($realPath)
-        ) {
+        if ($realPath === false || !DownloadHelper::isAllowedResolvedPath($realPath) || !is_readable($realPath)) {
             $this->app->enqueueMessage(Text::_('COM_J2COMMERCE_MYPROFILE_FILE_NOT_FOUND'), 'error');
             $this->app->redirect($redirectUrl);
 

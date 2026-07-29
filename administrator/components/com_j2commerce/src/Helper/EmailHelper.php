@@ -1721,8 +1721,10 @@ class EmailHelper
             $html
         );
 
-        $text = str_replace([" ", "&nbsp;"], ' ', strip_tags($text));
-        $text = trim(@html_entity_decode($text, ENT_QUOTES, 'UTF-8'));
+        // Decode entities first so entity-encoded markup becomes real tags that
+        // strip_tags() can remove (same ordering fix as the JSON-LD schema output).
+        $text = @html_entity_decode($text, ENT_QUOTES, 'UTF-8');
+        $text = trim(str_replace([" ", "&nbsp;"], ' ', strip_tags($text)));
         $text = preg_replace('# +#', ' ', $text);
         $text = preg_replace('#\n *\n\s+#', "\n\n", $text);
 

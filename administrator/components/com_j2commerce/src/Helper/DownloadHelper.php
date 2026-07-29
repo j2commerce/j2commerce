@@ -257,4 +257,88 @@ final class DownloadHelper
 
         return (int) (new Registry($rawParams))->get('download_limit', 0);
     }
+
+    /**
+     * Allowed local roots for downloadable-product files: the configured attachments
+     * folder plus the legacy images dir. Absolute (native separators, unresolved).
+     *
+     * @return  list<string>
+     */
+    public static function allowedDownloadRoots(): array
+    {
+        $roots  = [];
+        $attach = trim((string) J2CommerceHelper::config()->get('attachmentfolderpath', 'files/com_j2commerce'), '/');
+
+        foreach (array_unique([$attach, 'images']) as $root) {
+            if ($root === '') {
+                continue;
+            }
+
+            $roots[] = preg_match('#^(?:/|[a-zA-Z]:)#', $root) ? $root : JPATH_SITE . '/' . $root;
+        }
+
+        return $roots;
+    }
+
+    /**
+     * Save-side validation of a local product-file path: must stay inside an allowed
+     * root — no absolute paths, traversal, dotfile segments, or configuration.php.
+     */
+    public static function isAllowedLocalPath(string $path): bool
+    {
+        $normalized = str_replace('\\', '/', $path);
+
+        if (str_starts_with($normalized, '/') || preg_match('#^[a-zA-Z]:#', $normalized)) {
+            return false;
+        }
+
+        if (preg_match('#(?:^|/)\.\.(?:/|$)#', $normalized) || preg_match('#(?:^|/)\.[^/]#', $normalized)) {
+            return false;
+        }
+
+        if (basename($normalized) === 'configuration.php') {
+            return false;
+        }
+
+        $sitePrefix = rtrim(str_replace('\\', '/', JPATH_SITE), '/') . '/';
+
+        foreach (self::allowedDownloadRoots() as $root) {
+            $root = rtrim(str_replace('\\', '/', $root), '/') . '/';
+
+            // Express the root site-relative: stored paths are site-relative.
+            if (str_starts_with($root, $sitePrefix)) {
+                $root = substr($root, \strlen($sitePrefix));
+            } elseif (preg_match('#^(?:/|[a-zA-Z]:)#', $root)) {
+                // Root outside the site — a relative path can never point into it.
+                continue;
+            }
+
+            if ($root !== '' && str_starts_with($normalized, $root)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Sink-side validation of a realpath-resolved product file: must resolve inside
+     * an allowed root, with no dotfile segment and not configuration.php.
+     */
+    public static function isAllowedResolvedPath(string $realPath): bool
+    {
+        if (preg_match('#(?:^|[\\/])\.[^\\/]#', $realPath) || basename($realPath) === 'configuration.php') {
+            return false;
+        }
+
+        foreach (self::allowedDownloadRoots() as $root) {
+            $resolved = @realpath($root);
+
+            if ($resolved !== false && str_starts_with($realPath, $resolved . DIRECTORY_SEPARATOR)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

@@ -808,6 +808,13 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_ORDER_NOT_FOUND')];
             }
 
+            // Only an order still awaiting payment may be completed: New(5), Pending(4)
+            // or Failed(3, retry). A settled, cancelled or refunded order cannot be flipped.
+            if (!\in_array((int) $orderTable->order_state_id, [3, 4, 5], true) || (float) ($orderTable->order_refund ?? 0) > 0) {
+                $this->log('completeNvpExpressCheckoutForOrder: order not in a completable state - order_id: ' . $orderIdString . ', state: ' . $orderTable->order_state_id, Log::ERROR);
+                return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_INVALID_REQUEST')];
+            }
+
             $nvp = $this->getPayPalNvp();
 
             if (!$nvp->isConfigured()) {
@@ -832,6 +839,21 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                     'error'            => PayPalNvpClient::getErrorMessage($response),
                     'gateway_response' => $response,
                 ];
+            }
+
+            // Compare the charged amount and currency against the local order before
+            // writing any paid state — a mismatch is logged for manual review.
+            $chargedAmount   = (float) ($response['PAYMENTINFO_0_AMT'] ?? 0);
+            $chargedCurrency = (string) ($response['PAYMENTINFO_0_CURRENCYCODE'] ?? '');
+
+            if ($chargedCurrency !== $currency || abs($chargedAmount - $amount) > 0.01) {
+                $this->log(
+                    'completeNvpExpressCheckoutForOrder: Amount/currency mismatch - charged ' . $chargedAmount . ' ' . $chargedCurrency
+                    . ', expected ' . $amount . ' ' . $currency . ' for order_id: ' . $orderIdString,
+                    Log::ERROR
+                );
+
+                return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_INVALID_REQUEST')];
             }
 
             $baid    = (string) ($response['BILLINGAGREEMENTID'] ?? '');
@@ -1549,12 +1571,30 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
 
             $details = json_decode((string) ($orderTable->transaction_details ?? '{}'), true) ?: [];
 
-            if ($paypalSubscriptionId === '') {
-                $paypalSubscriptionId = (string) ($details['paypal_subscription_id'] ?? '');
+            // Re-assert the subscription was created for this local order — a body
+            // subscription id is accepted only when it matches the one stored at
+            // creation. A request-supplied id on an order that has none is rejected.
+            $storedSubId = (string) ($details['paypal_subscription_id'] ?? '');
+
+            if ($storedSubId === '') {
+                $this->log('finalizePayPalSubscriptionApproval: no stored subscription id on order ' . $orderIdString, Log::ERROR);
+                return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_INVALID_REQUEST')];
             }
 
             if ($paypalSubscriptionId === '') {
-                return ['success' => false, 'error' => 'No PayPal subscription id stored on order'];
+                $paypalSubscriptionId = $storedSubId;
+            }
+
+            if (!hash_equals($storedSubId, $paypalSubscriptionId)) {
+                $this->log('finalizePayPalSubscriptionApproval: subscription id mismatch on order ' . $orderIdString, Log::ERROR);
+                return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_INVALID_REQUEST')];
+            }
+
+            // Only an order still awaiting payment may be finalized: New(5), Pending(4)
+            // or Failed(3, retry). A settled, cancelled or refunded order cannot be flipped.
+            if (!\in_array((int) $orderTable->order_state_id, [3, 4, 5], true) || (float) ($orderTable->order_refund ?? 0) > 0) {
+                $this->log('finalizePayPalSubscriptionApproval: order not in a finalizable state - order_id: ' . $orderIdString . ', state: ' . $orderTable->order_state_id, Log::ERROR);
+                return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_INVALID_REQUEST')];
             }
 
             $info   = $this->getPayPalSubscriptions()->getSubscriptionDetails($paypalSubscriptionId);
@@ -1975,6 +2015,15 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                     Factory::getApplication()->getLogger()->error(
                         'PayPal capture amount mismatch — manual review required',
                         ['category' => 'j2commerce.paypal', 'order_id' => $orderId, 'captured' => $captureAmount . ' ' . $captureCurrency, 'expected' => $expectedAmount . ' ' . $expectedCcy]
+                    );
+
+                    // Surface it on the order page too — the buyer's money was captured
+                    // but the order stays unpaid until staff review.
+                    OrderHistoryHelper::add(
+                        orderId: (string) $orderTable->order_id,
+                        comment: 'PayPal capture amount/currency mismatch (captured ' . $captureAmount . ' ' . $captureCurrency
+                            . ', expected ' . $expectedAmount . ' ' . $expectedCcy . ') — manual review required',
+                        orderStateId: (int) $orderTable->order_state_id
                     );
 
                     return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_INVALID_REQUEST')];
