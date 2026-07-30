@@ -32,8 +32,8 @@
         <language tag="en-GB">en-GB/mod_j2commerce_quickicons.sys.ini</language>
         <language tag="es-ES">es-ES/mod_j2commerce_quickicons.ini</language>
         <language tag="es-ES">es-ES/mod_j2commerce_quickicons.sys.ini</language>
-        <!-- <language tag="fa-IR">fa-IR/mod_j2commerce_quickicons.ini</language> -->
-        <!-- <language tag="fa-IR">fa-IR/mod_j2commerce_quickicons.sys.ini</language> -->
+        <language tag="fa-IR">fa-IR/mod_j2commerce_quickicons.ini</language>
+        <language tag="fa-IR">fa-IR/mod_j2commerce_quickicons.sys.ini</language>
         <language tag="fi-FI">fi-FI/mod_j2commerce_quickicons.ini</language>
         <language tag="fi-FI">fi-FI/mod_j2commerce_quickicons.sys.ini</language>
         <language tag="fr-FR">fr-FR/mod_j2commerce_quickicons.ini</language>

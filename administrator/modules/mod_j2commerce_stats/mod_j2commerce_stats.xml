@@ -25,8 +25,8 @@
         <language tag="de-DE">de-DE/mod_j2commerce_stats.sys.ini</language>
         <language tag="es-ES">es-ES/mod_j2commerce_stats.ini</language>
         <language tag="es-ES">es-ES/mod_j2commerce_stats.sys.ini</language>
-        <!-- <language tag="fa-IR">fa-IR/mod_j2commerce_stats.ini</language> -->
-        <!-- <language tag="fa-IR">fa-IR/mod_j2commerce_stats.sys.ini</language> -->
+        <language tag="fa-IR">fa-IR/mod_j2commerce_stats.ini</language>
+        <language tag="fa-IR">fa-IR/mod_j2commerce_stats.sys.ini</language>
         <language tag="pt-PT">pt-PT/mod_j2commerce_stats.ini</language>
         <language tag="pt-PT">pt-PT/mod_j2commerce_stats.sys.ini</language>
         <language tag="it-IT">it-IT/mod_j2commerce_stats.ini</language>
