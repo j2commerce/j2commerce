@@ -556,7 +556,9 @@ final class BuilderController extends BaseController
 
     private function validateRequest(): void
     {
-        if (!$this->app->getIdentity()->authorise('core.manage', 'com_j2commerce')) {
+        // Writing generated PHP into template overrides is gated at core.admin,
+        // matching OverridesController for the same capability.
+        if (!$this->app->getIdentity()->authorise('core.admin')) {
             $this->sendJson(null, 'Access denied', true);
         }
 

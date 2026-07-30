@@ -17,6 +17,7 @@ namespace J2Commerce\Component\J2commerce\Site\Controller;
 // phpcs:enable PSR1.Files.SideEffects
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CartHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\CartOrder;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
@@ -29,6 +30,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Form\FormFactoryInterface;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Router\Route;
@@ -1350,17 +1352,25 @@ class CheckoutController extends BaseController
             if ($shippingRequired && empty($values['shipping_plugin'] ?? '')) {
                 $json['error']['shipping'] = Text::_('COM_J2COMMERCE_CHECKOUT_SELECT_A_SHIPPING_METHOD');
             } else {
-                $shippingValues = [
-                    'shipping_plugin'       => $values['shipping_plugin'] ?? '',
-                    'shipping_name'         => $values['shipping_name'] ?? '',
-                    'shipping_price'        => $values['shipping_price'] ?? 0,
-                    'shipping_code'         => $values['shipping_code'] ?? '',
-                    'shipping_tax'          => $values['shipping_tax'] ?? 0,
-                    'shipping_tax_class_id' => (int) ($values['shipping_tax_class_id'] ?? 0),
-                    'shipping_extra'        => $values['shipping_extra'] ?? '',
-                ];
-                $session->set('shipping_values', $shippingValues, 'j2commerce');
-                $session->set('shipping_method', $values['shipping_plugin'] ?? '', 'j2commerce');
+                // Only the rate identifier comes from the request — price, tax and
+                // extra are re-resolved from a fresh GetShippingRates dispatch so a
+                // tampered shipping_price can never reach order_total.
+                $selectedPlugin = (string) ($values['shipping_plugin'] ?? '');
+                $resolved       = $selectedPlugin !== ''
+                    ? CartOrder::resolvePluginShippingRate(
+                        $order,
+                        $selectedPlugin,
+                        (string) ($values['shipping_name'] ?? ''),
+                        (string) ($values['shipping_code'] ?? '')
+                    )
+                    : null;
+
+                if ($selectedPlugin !== '' && $resolved === null) {
+                    $json['error']['shipping'] = Text::_('COM_J2COMMERCE_CHECKOUT_SELECT_A_SHIPPING_METHOD');
+                } else {
+                    $session->set('shipping_values', $resolved ?? CartOrder::emptyShippingValues(), 'j2commerce');
+                    $session->set('shipping_method', $selectedPlugin, 'j2commerce');
+                }
             }
         }
 
@@ -2224,23 +2234,34 @@ class CheckoutController extends BaseController
         try {
             $session = $this->app->getSession();
 
-            $shippingValues = [
-                'shipping_plugin'       => $this->input->getString('shipping_plugin', ''),
-                'shipping_name'         => $this->input->getString('shipping_name', ''),
-                'shipping_price'        => $this->input->getString('shipping_price', '0'),
-                'shipping_code'         => $this->input->getString('shipping_code', ''),
-                'shipping_tax'          => $this->input->getString('shipping_tax', '0'),
-                'shipping_tax_class_id' => $this->input->getInt('shipping_tax_class_id', 0),
-                'shipping_extra'        => $this->input->getString('shipping_extra', ''),
-            ];
+            // Only the rate identifier comes from the request — price, tax and
+            // extra are re-resolved from a fresh GetShippingRates dispatch so a
+            // tampered shipping_price can never reach order_total.
+            $selectedPlugin = $this->input->getString('shipping_plugin', '');
+            $order          = $this->getCartOrder();
+            $resolved       = $selectedPlugin !== '' && $order
+                ? CartOrder::resolvePluginShippingRate(
+                    $order,
+                    $selectedPlugin,
+                    $this->input->getString('shipping_name', ''),
+                    $this->input->getString('shipping_code', '')
+                )
+                : null;
 
-            $session->set('shipping_values', $shippingValues, 'j2commerce');
-            $session->set('shipping_method', $shippingValues['shipping_plugin'], 'j2commerce');
+            if ($selectedPlugin !== '' && $resolved === null) {
+                $json['success'] = false;
+                $json['message'] = Text::_('COM_J2COMMERCE_CHECKOUT_SELECT_A_SHIPPING_METHOD');
+            } else {
+                $session->set('shipping_values', $resolved ?? CartOrder::emptyShippingValues(), 'j2commerce');
+                $session->set('shipping_method', $selectedPlugin, 'j2commerce');
 
-            $json['success'] = true;
-        } catch (\Exception $e) {
+                $json['success'] = true;
+            }
+        } catch (\Throwable $e) {
+            Log::add('saveShippingSelection failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+
             $json['success'] = false;
-            $json['message'] = $e->getMessage();
+            $json['message'] = Text::_('COM_J2COMMERCE_ERR_GENERIC');
         }
 
         echo json_encode($json);

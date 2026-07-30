@@ -21,6 +21,8 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
+use Joomla\Event\DispatcherInterface;
+use Joomla\Event\Event;
 
 /**
  * Cart Order value object.
@@ -959,9 +961,11 @@ class CartOrder
         $shippingValues = $session->get('shipping_values', [], 'j2commerce');
 
         if (!empty($shippingValues)) {
-            $shippingPrice = (float) ($shippingValues['shipping_price'] ?? 0);
-            $shippingTax   = (float) ($shippingValues['shipping_tax'] ?? 0);
-            $shippingExtra = (float) ($shippingValues['shipping_extra'] ?? 0);
+            // Price/tax/extra are session data — a negative must never reach the
+            // total, even if some writer (or a plugin event) put one there.
+            $shippingPrice = max(0.0, (float) ($shippingValues['shipping_price'] ?? 0));
+            $shippingTax   = max(0.0, (float) ($shippingValues['shipping_tax'] ?? 0));
+            $shippingExtra = max(0.0, (float) ($shippingValues['shipping_extra'] ?? 0));
 
             $this->shippingRate = (object) [
                 'ordershipping_name'         => $shippingValues['shipping_name'] ?? '',
@@ -987,6 +991,89 @@ class CartOrder
                 $this->order_total += $this->order_shipping + $this->order_shipping_tax;
             }
         }
+    }
+
+    /**
+     * Canonical empty shipping_values array (no method selected).
+     *
+     * @return  array<string, mixed>
+     *
+     * @since   6.1.0
+     */
+    public static function emptyShippingValues(): array
+    {
+        return [
+            'shipping_plugin'       => '',
+            'shipping_name'         => '',
+            'shipping_price'        => '0',
+            'shipping_code'         => '',
+            'shipping_tax'          => '0',
+            'shipping_tax_class_id' => 0,
+            'shipping_extra'        => '',
+        ];
+    }
+
+    /**
+     * Re-resolve a shipping selection against a fresh GetShippingRates dispatch; monetary
+     * values always come from the plugin's rate, never from request input. Null on no match.
+     *
+     * @return  array<string, mixed>|null  Canonical shipping_values, or null when no rate matches.
+     *
+     * @since   6.1.0
+     */
+    public static function resolvePluginShippingRate(object $order, string $plugin, string $name, string $code): ?array
+    {
+        $rates = [];
+
+        foreach (J2CommerceHelper::plugin()->eventWithArray('GetShippingRates', [$order]) as $result) {
+            if (\is_array($result) && isset($result['element'])) {
+                $rates[] = $result;
+            } elseif (\is_array($result)) {
+                $rates = array_merge($rates, $result);
+            }
+        }
+
+        // Apply the same exclusion filter the offer pipeline applies — a rate the
+        // merchant excluded (user group, shipping method) must not be resolvable.
+        $filterEvent = new Event('onJ2CommerceFilterShippingRates', [
+            'rates' => $rates,
+            'order' => $order,
+        ]);
+        Factory::getApplication()->getContainer()->get(DispatcherInterface::class)->dispatch('onJ2CommerceFilterShippingRates', $filterEvent);
+        $rates = $filterEvent->getArgument('rates', $rates);
+
+        foreach ($rates as $rate) {
+            if ((string) ($rate['element'] ?? '') !== $plugin || (string) ($rate['name'] ?? '') !== $name) {
+                continue;
+            }
+
+            $rateCode = (string) ($rate['code'] ?? '');
+
+            if ($rateCode !== '' && $code !== '' && $rateCode !== $code) {
+                continue;
+            }
+
+            $price = (float) ($rate['price'] ?? 0);
+            $tax   = (float) ($rate['tax'] ?? 0);
+            $extra = (float) ($rate['extra'] ?? 0);
+
+            // A plugin returning a negative charge is broken — refuse to bind it.
+            if ($price < 0 || $tax < 0 || $extra < 0) {
+                continue;
+            }
+
+            return [
+                'shipping_plugin'       => (string) ($rate['element'] ?? ''),
+                'shipping_name'         => (string) ($rate['name'] ?? ''),
+                'shipping_price'        => (string) $price,
+                'shipping_code'         => $rateCode,
+                'shipping_tax'          => (string) $tax,
+                'shipping_tax_class_id' => (int) ($rate['tax_class_id'] ?? 0),
+                'shipping_extra'        => (string) $extra,
+            ];
+        }
+
+        return null;
     }
 
     /**
