@@ -234,15 +234,18 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
      */
     private function getShippingGeozones(): array
     {
-        $session   = Factory::getApplication()->getSession();
+        $app       = Factory::getApplication();
+        $session   = $app->getSession();
         $addressId = (int) $session->get('shipping_address_id', 0, 'j2commerce');
+        $userId    = (int) ($app->getIdentity()?->id ?? 0);
 
         // Also check for guest shipping data in session
         $guestShipping = $session->get('guest_shipping', [], 'j2commerce');
         $countryId     = 0;
         $zoneId        = 0;
 
-        if ($addressId > 0) {
+        // Guest address rows carry user_id = 0, so an owner match is only meaningful for a real account.
+        if ($addressId > 0 && $userId > 0) {
             // Load address from DB
             $db    = $this->getDatabase();
             $query = $db->getQuery(true);
@@ -250,7 +253,9 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
             $query->select([$db->quoteName('country_id'), $db->quoteName('zone_id')])
                 ->from($db->quoteName('#__j2commerce_addresses'))
                 ->where($db->quoteName('j2commerce_address_id') . ' = :addrId')
-                ->bind(':addrId', $addressId, ParameterType::INTEGER);
+                ->where($db->quoteName('user_id') . ' = :userId')
+                ->bind(':addrId', $addressId, ParameterType::INTEGER)
+                ->bind(':userId', $userId, ParameterType::INTEGER);
 
             $db->setQuery($query);
             $address = $db->loadObject();
