@@ -15,6 +15,7 @@ use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Session\Session;
 
 /**
  * Drag & Drop file upload widget for product option type=file.
@@ -52,9 +53,10 @@ if ($maxSizeMB > 0) {
 }
 $hintText = implode(' · ', $hintParts);
 
-$displayData['inputId']  = 'j2c-upload-input-' . $optionId;
-$displayData['hiddenId'] = 'input-option' . $optionId;
-$displayData['hintText'] = $hintText;
+$displayData['inputId']   = 'j2c-upload-input-' . $optionId;
+$displayData['hiddenId']  = 'input-option' . $optionId;
+$displayData['hintText']  = $hintText;
+$displayData['formToken'] = Session::getFormToken();
 
 ProductLayoutService::setSubtemplateOverride($framework);
 try {

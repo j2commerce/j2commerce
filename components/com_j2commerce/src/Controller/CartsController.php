@@ -341,6 +341,10 @@ class CartsController extends BaseController
     {
         $this->startAjaxBuffer();
 
+        if (!$this->validateAjaxToken()) {
+            $this->sendJsonResponse(['success' => false, 'message' => Text::_('JINVALID_TOKEN')]);
+        }
+
         $json = J2CommerceHelper::plugin()->eventWithArray('ValidateShipping');
 
         $this->sendJsonResponse($json);
@@ -357,6 +361,7 @@ class CartsController extends BaseController
     {
         UtilitiesHelper::clearCache();
         UtilitiesHelper::sendNoCacheHeaders();
+        $this->checkToken();
 
         $model  = $this->getCartModel();
         $result = $model->update();
@@ -382,6 +387,7 @@ class CartsController extends BaseController
     {
         UtilitiesHelper::clearCache();
         UtilitiesHelper::sendNoCacheHeaders();
+        $this->checkToken();
 
         $model = $this->getCartModel();
         $items = $model->getItems();
@@ -468,6 +474,7 @@ class CartsController extends BaseController
     {
         UtilitiesHelper::clearCache();
         UtilitiesHelper::sendNoCacheHeaders();
+        $this->checkToken();
 
         $model = $this->getCartModel();
 
@@ -597,11 +604,21 @@ class CartsController extends BaseController
                 $this->sendJsonResponse($json);
             }
 
+            // Ownership check: verify cartitem belongs to the current user's cart
+            $model         = $this->getCartModel();
+            $cart          = $model->getCart(0, false);
+            $currentCartId = $cart ? (int) $cart->j2commerce_cart_id : 0;
+
+            if ((int) $cartitem->cart_id !== $currentCartId) {
+                $json['success'] = false;
+                $json['message'] = Text::_('COM_J2COMMERCE_CART_ITEM_NOT_FOUND');
+                $this->sendJsonResponse($json);
+            }
+
             $originalQty = (int) $cartitem->product_qty;
 
             // Validate quantity against min/max constraints
             // Load product to get constraints
-            $model     = $this->getCartModel();
             $db        = Factory::getContainer()->get('DatabaseDriver');
             $variantId = (int) $cartitem->variant_id;
 
@@ -840,6 +857,7 @@ class CartsController extends BaseController
     {
         UtilitiesHelper::clearCache();
         UtilitiesHelper::sendNoCacheHeaders();
+        $this->checkToken();
 
         $currency     = J2CommerceHelper::currency();
         $currencyCode = $this->input->getString('currency_code', '');
@@ -851,16 +869,7 @@ class CartsController extends BaseController
         $redirect = $this->input->getString('redirect', '');
 
         if (!empty($redirect)) {
-            $url = base64_decode($redirect);
-
-            // Validate the redirect: only allow internal URLs to prevent open redirect vulnerabilities
-            $uri     = Uri::getInstance($url);
-            $base    = Uri::base();
-            $baseUri = Uri::getInstance($base);
-
-            if ($uri->getHost() !== '' && $uri->getHost() !== $baseUri->getHost()) {
-                $url = 'index.php';  // Fallback to homepage
-            }
+            $url = $this->validateInternalRedirect(base64_decode($redirect), 'index.php');
         } else {
             $url = 'index.php';
         }
@@ -879,6 +888,7 @@ class CartsController extends BaseController
     {
         UtilitiesHelper::sendNoCacheHeaders();
         UtilitiesHelper::clearCache();
+        $this->checkToken();
 
         $model  = $this->getCartModel();
         $coupon = $this->input->getString('coupon', '');
@@ -891,7 +901,7 @@ class CartsController extends BaseController
         $redirect = $this->input->getBase64('redirect', '');
 
         if (!empty($redirect)) {
-            $url = Route::_(base64_decode($redirect));
+            $url = $this->validateInternalRedirect(base64_decode($redirect), $model->getCartUrl());
         } else {
             $url = $model->getCartUrl();
         }
@@ -910,6 +920,7 @@ class CartsController extends BaseController
     {
         UtilitiesHelper::sendNoCacheHeaders();
         UtilitiesHelper::clearCache();
+        $this->checkToken();
 
         $model       = $this->getCartModel();
         $couponModel = $this->factory->createModel('Coupon', 'Administrator');
@@ -939,6 +950,7 @@ class CartsController extends BaseController
     {
         UtilitiesHelper::sendNoCacheHeaders();
         UtilitiesHelper::clearCache();
+        $this->checkToken();
 
         $model        = $this->getCartModel();
         $voucher      = $this->input->getString('voucher', '');
@@ -950,7 +962,7 @@ class CartsController extends BaseController
         $redirect = $this->input->getBase64('redirect', '');
 
         if (!empty($redirect)) {
-            $url = Route::_(base64_decode($redirect));
+            $url = $this->validateInternalRedirect(base64_decode($redirect), $model->getCartUrl());
         } else {
             $url = $model->getCartUrl();
         }
@@ -969,6 +981,7 @@ class CartsController extends BaseController
     {
         UtilitiesHelper::sendNoCacheHeaders();
         UtilitiesHelper::clearCache();
+        $this->checkToken();
 
         J2CommerceHelper::plugin()->event('BeforeRemoveVoucher');
 
@@ -1195,6 +1208,10 @@ class CartsController extends BaseController
         UtilitiesHelper::sendNoCacheHeaders();
         UtilitiesHelper::clearCache();
         $this->startAjaxBuffer();
+
+        if (!$this->validateAjaxToken()) {
+            $this->sendJsonResponse(['success' => false, 'error' => Text::_('JINVALID_TOKEN')]);
+        }
 
         $model   = $this->getCartModel();
         $session = $this->app->getSession();
@@ -1497,6 +1514,28 @@ class CartsController extends BaseController
     {
         $this->startAjaxBuffer();
 
+        if (!$this->validateAjaxToken()) {
+            $this->sendJsonResponse(['error' => Text::_('JINVALID_TOKEN')]);
+        }
+
+        // Per-session upload throttle (hourly rolling window) so the endpoint
+        // cannot be used as unbounded anonymous storage.
+        $session     = $this->app->getSession();
+        $windowStart = (int) $session->get('upload_window_start', 0, 'j2commerce');
+        $uploadCount = (int) $session->get('upload_count', 0, 'j2commerce');
+
+        if (time() - $windowStart >= 3600) {
+            $windowStart = time();
+            $uploadCount = 0;
+        }
+
+        if ($uploadCount >= 30) {
+            $this->sendJsonResponse(['error' => Text::_('COM_J2COMMERCE_UPLOAD_RATE_LIMITED')]);
+        }
+
+        $session->set('upload_window_start', $windowStart, 'j2commerce');
+        $session->set('upload_count', $uploadCount + 1, 'j2commerce');
+
         $files = $this->input->files->get('file');
         $json  = [];
 
@@ -1519,6 +1558,10 @@ class CartsController extends BaseController
     {
         $this->startAjaxBuffer();
 
+        if (!$this->validateAjaxToken()) {
+            $this->sendJsonResponse(['success' => false, 'message' => Text::_('JINVALID_TOKEN')]);
+        }
+
         $model = $this->getCartModel();
         $model->setCartType('wishlist');
 
@@ -1526,5 +1569,22 @@ class CartsController extends BaseController
         $json   = J2CommerceHelper::plugin()->eventWithArray('AfterAddingToWishlist', [$result]);
 
         $this->sendJsonResponse($json);
+    }
+
+    /**
+     * Allow only same-host redirect targets (open-redirect guard).
+     */
+    private function validateInternalRedirect(string $url, string $fallback): string
+    {
+        $uri     = Uri::getInstance($url);
+        $baseUri = Uri::getInstance(Uri::base());
+
+        if ($uri->getHost() !== '' && $uri->getHost() !== $baseUri->getHost()) {
+            return $fallback;
+        }
+
+        // $xhtml = false: this is a Location header, not markup — the default would
+        // encode the query separators as &amp; and break the parameters.
+        return Route::_($url, false);
     }
 }

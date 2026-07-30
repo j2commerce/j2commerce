@@ -15,6 +15,7 @@ use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Session\Session;
 
 /**
  * Hero Banner image upload widget for product option type=image.
@@ -54,9 +55,10 @@ $hintText = $hintParts !== []
     ? Text::sprintf('COM_J2COMMERCE_UPLOAD_HINT_IMAGE', implode(' · ', $hintParts))
     : Text::_('COM_J2COMMERCE_UPLOAD_HINT_IMAGE_GENERIC');
 
-$displayData['inputId']  = 'j2c-upload-input-' . $optionId;
-$displayData['hiddenId'] = 'input-option' . $optionId;
-$displayData['hintText'] = $hintText;
+$displayData['inputId']   = 'j2c-upload-input-' . $optionId;
+$displayData['hiddenId']  = 'input-option' . $optionId;
+$displayData['hintText']  = $hintText;
+$displayData['formToken'] = Session::getFormToken();
 
 ProductLayoutService::setSubtemplateOverride($framework);
 try {

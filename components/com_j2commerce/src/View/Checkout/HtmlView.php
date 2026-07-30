@@ -139,7 +139,14 @@ class HtmlView extends BaseHtmlView
             }
 
             // Stock validation only for normal cart orders; context orders are already placed.
-            if ($order && method_exists($order, 'validate_order_stock') && $order->validate_order_stock() === false) {
+            if ($order && $order->validate_order_stock() === false) {
+                // Say why. This redirect predates the validator actually being able to
+                // return false, so it used to be unreachable; silently bouncing a
+                // shopper back to the cart is an inescapable loop from their side.
+                foreach ($order->getStockErrors() as $stockError) {
+                    $app->enqueueMessage($stockError, 'warning');
+                }
+
                 $app->redirect(Route::_('index.php?option=com_j2commerce&view=carts'));
 
                 return;

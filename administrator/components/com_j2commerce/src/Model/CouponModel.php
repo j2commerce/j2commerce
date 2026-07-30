@@ -19,6 +19,7 @@ use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Model\AdminModel;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Table\Table;
@@ -620,6 +621,42 @@ class CouponModel extends AdminModel
     }
 
     /**
+     * Count prior coupon uses across orders placed with a given email address
+     * (guest enforcement for max_customer_uses).
+     *
+     * @param   int     $couponId  The coupon ID.
+     * @param   string  $email     Lower-cased customer email.
+     *
+     * @return  int  The number of times the coupon has been used with this email.
+     *
+     * @since   6.3.0
+     */
+    public function getCouponHistoryByEmail(int $couponId, string $email): int
+    {
+        static $history = [];
+
+        if (!isset($history[$couponId][$email])) {
+            $db    = $this->getDatabase();
+            $query = $db->getQuery(true);
+
+            $query->select('COUNT(*) AS total')
+                ->from($db->quoteName('#__j2commerce_orderdiscounts', 'od'))
+                ->join('LEFT', $db->quoteName('#__j2commerce_orders', 'o') . ' ON od.order_id = o.order_id')
+                ->where($db->quoteName('o.order_state_id') . ' != 5')
+                ->where($db->quoteName('od.discount_entity_id') . ' = :couponId')
+                ->where($db->quoteName('od.discount_type') . ' = ' . $db->quote('coupon'))
+                ->where('LOWER(' . $db->quoteName('od.discount_customer_email') . ') = :email')
+                ->bind(':couponId', $couponId, ParameterType::INTEGER)
+                ->bind(':email', $email);
+
+            $db->setQuery($query);
+            $history[$couponId][$email] = (int) $db->loadResult();
+        }
+
+        return $history[$couponId][$email];
+    }
+
+    /**
      * Check if coupon is valid for an order.
      *
      * @param   object  $order  The order object.
@@ -648,7 +685,7 @@ class CouponModel extends AdminModel
             $this->validateUserLogged();
             $this->validateUsers();
             $this->validateUserGroup();
-            $this->validateUserUsageLimit();
+            $this->validateUserUsageLimit($order);
             $this->validateExpiryDate();
             $this->validateMinimumAmount($order);
             $this->validateProductIds();
@@ -660,8 +697,14 @@ class CouponModel extends AdminModel
                 throw new \Exception(Text::_('COM_J2COMMERCE_COUPON_NOT_APPLICABLE'));
             }
         } catch (\Exception $e) {
-            $this->setError($e->getMessage());
-            Factory::getApplication()->enqueueMessage($e->getMessage(), 'warning');
+            // Collapse every failure into one generic message: distinct messages
+            // give an anonymous caller a coupon-enumeration oracle (code exists,
+            // is expired, hit its usage cap, needs a higher subtotal, ...).
+            Log::add(sprintf('Coupon "%s" rejected: %s', $this->coupon->coupon_code ?? '', $e->getMessage()), Log::INFO, 'com_j2commerce');
+
+            $generic = Text::_('COM_J2COMMERCE_COUPON_NOT_VALID');
+            $this->setError($generic);
+            Factory::getApplication()->enqueueMessage($generic, 'warning');
             $this->removeCoupon();
 
             return false;
@@ -902,7 +945,7 @@ class CouponModel extends AdminModel
      * @throws  \Exception
      * @since   6.0.6
      */
-    private function validateUserUsageLimit(): void
+    private function validateUserUsageLimit(object $order): void
     {
         $user = Factory::getApplication()->getIdentity();
 
@@ -910,6 +953,26 @@ class CouponModel extends AdminModel
             $customerTotal = $this->getCouponHistory($this->coupon->j2commerce_coupon_id, (string) $user->id);
 
             if ($this->coupon->max_customer_uses > 0 && ($customerTotal >= $this->coupon->max_customer_uses)) {
+                throw new \Exception(Text::_('COM_J2COMMERCE_COUPON_USER_USAGE_LIMIT_REACHED'));
+            }
+
+            return;
+        }
+
+        // Guests: a per-customer limit means nothing without an identity, so count
+        // prior uses by checkout email instead. The order context only carries the
+        // email at confirm time (billing step) — a cart-page application is
+        // provisional and is re-checked when the order is built.
+        if ($this->coupon->max_customer_uses > 0) {
+            $email = strtolower(trim((string) ($order->user_email ?? '')));
+
+            if ($email === '') {
+                $guestData = Factory::getApplication()->getSession()->get('guest', [], 'j2commerce');
+                $email     = strtolower(trim((string) ($guestData['email'] ?? '')));
+            }
+
+            if ($email !== ''
+                && $this->getCouponHistoryByEmail($this->coupon->j2commerce_coupon_id, $email) >= $this->coupon->max_customer_uses) {
                 throw new \Exception(Text::_('COM_J2COMMERCE_COUPON_USER_USAGE_LIMIT_REACHED'));
             }
         }

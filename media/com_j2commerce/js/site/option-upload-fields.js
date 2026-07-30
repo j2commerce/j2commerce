@@ -76,6 +76,7 @@
         if (!ajaxUrl) return;
 
         const form = new FormData();
+        if (root.dataset.formToken) form.append(root.dataset.formToken, '1');
         form.append('file', file);
 
         setStatus(root, t('COM_J2COMMERCE_LOADING', 'Loading...'), null);

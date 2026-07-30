@@ -36,6 +36,7 @@ $esc         = static fn(string $value): string => htmlspecialchars($value, ENT_
         for="<?php echo $inputId; ?>"
         data-j2c-dropzone
         data-ajax-url="<?php echo $esc($ajaxUrl); ?>"
+        data-form-token="<?php echo $esc((string) ($displayData['formToken'] ?? '')); ?>"
         data-hidden-id="<?php echo $esc($hiddenId); ?>"
         data-maxsize-mb="<?php echo $esc((string) $maxSizeMB); ?>"
         data-allowed-exts="<?php echo $esc($allowedExts); ?>">

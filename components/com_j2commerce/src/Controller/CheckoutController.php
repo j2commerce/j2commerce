@@ -1210,6 +1210,40 @@ class CheckoutController extends BaseController
     }
 
     /**
+     * Re-check a chosen gateway against the plugin-declared availability rules
+     * (geozone, subtotal range). The render-time filter only pruned the UI list —
+     * a shopper can still POST any installed gateway, so validate and confirm must
+     * re-run the same pruning against the submitted selection.
+     */
+    private function isPaymentMethodAllowed(string $element, ?object $order): bool
+    {
+        if ($element === '') {
+            return false;
+        }
+
+        $methods = [];
+        $results = J2CommerceHelper::plugin()->eventWithArray('GetPaymentPlugins', [$order]);
+
+        foreach ($results as $result) {
+            if (\is_array($result) && isset($result['element'])) {
+                $methods[] = $result;
+            } elseif (\is_array($result)) {
+                $methods = array_merge($methods, $result);
+            }
+        }
+
+        $methods = $this->filterUnavailablePaymentMethods($methods, $order);
+
+        foreach ($methods as $method) {
+            if (($method['element'] ?? '') === $element) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Resolve the geozone IDs matching the buyer's billing address.
      *
      * @return  int[]|null  Matching geozone IDs, or null when no billing
@@ -1342,6 +1376,8 @@ class CheckoutController extends BaseController
                 $paymentPlugin = $this->input->getString('payment_plugin', '');
 
                 if (empty($paymentPlugin)) {
+                    $json['error']['warning'] = Text::_('COM_J2COMMERCE_CHECKOUT_ERROR_PAYMENT_METHOD');
+                } elseif (!$this->isPaymentMethodAllowed($paymentPlugin, $order)) {
                     $json['error']['warning'] = Text::_('COM_J2COMMERCE_CHECKOUT_ERROR_PAYMENT_METHOD');
                 }
 
@@ -1553,8 +1589,13 @@ class CheckoutController extends BaseController
         try {
             $order = $this->getCartOrder();
 
-            if ($order && method_exists($order, 'validateOrder')) {
-                $order->validateOrder($order);
+            // Stock is enforced at add-to-cart and quantity-update, but time passes
+            // before confirm — re-check here so two shoppers cannot both buy the last
+            // unit. (The former guard called a validateOrder() that exists nowhere.)
+            if ($order && !$order->validate_order_stock()) {
+                foreach ($order->getStockErrors() as $stockError) {
+                    $errors[] = $stockError;
+                }
             }
 
             J2CommerceHelper::plugin()->event('AfterOrderValidate', [&$order]);
@@ -1581,6 +1622,12 @@ class CheckoutController extends BaseController
 
         if ($showPayment && empty(trim($orderpaymentType))) {
             $errors[] = Text::_('COM_J2COMMERCE_CHECKOUT_ERROR_PAYMENT_METHOD_NOT_SELECTED');
+        }
+
+        // The posted/stored gateway must survive the same availability pruning the
+        // render-time list applied — never trust a selection that arrived by request.
+        if ($showPayment && !empty(trim($orderpaymentType)) && $order && !$this->isPaymentMethodAllowed($orderpaymentType, $order)) {
+            $errors[] = Text::_('COM_J2COMMERCE_CHECKOUT_ERROR_PAYMENT_METHOD');
         }
 
         $pluginHtml = '';

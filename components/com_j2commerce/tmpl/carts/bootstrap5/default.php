@@ -13,6 +13,7 @@
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Factory;
+use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Router\Route;
@@ -70,6 +71,7 @@ $clearCartUrl = J2CommerceHelper::platform()->getCartUrl(['task' => 'clearCart']
                         <input type="hidden" name="option" value="com_j2commerce" />
                         <input type="hidden" name="view" value="carts" />
                         <input type="hidden" id="j2commerce-cart-task" name="task" value="update" />
+                        <?php echo HTMLHelper::_('form.token'); ?>
 
                         <?php echo $this->loadTemplate('items'); ?>
 

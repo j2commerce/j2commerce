@@ -733,6 +733,14 @@ class CartModel extends BaseDatabaseModel
             return Text::_('JLIB_MEDIA_ERROR_WARNFILETYPE');
         }
 
+        // MediaHelper::canUpload() ends in a private isValidSvg() branch we cannot
+        // reach from here. Rather than replicate the sanitiser and risk drifting
+        // from it, deny SVG on the guest path outright — an unsanitised SVG for a
+        // guest while authenticated users get the sanitiser is the wrong way round.
+        if (\in_array($filetype, ['svg', 'svgz'], true)) {
+            return Text::_('JLIB_MEDIA_ERROR_WARNFILETYPE');
+        }
+
         $maxSize = (int) $mediaParams->get('upload_maxsize', 0) * 1024 * 1024;
 
         if ($maxSize > 0 && (int) ($file['size'] ?? 0) > $maxSize) {
