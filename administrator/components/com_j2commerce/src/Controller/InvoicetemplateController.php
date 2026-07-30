@@ -185,7 +185,7 @@ class InvoicetemplateController extends FormController
 
         $emailHelper   = EmailHelper::getInstance();
         $order         = $emailHelper->getSampleOrderData();
-        $processedBody = $emailHelper->processTags($body, $order);
+        $processedBody = $emailHelper->processTags($body, $order, [], '*', true);
         $processedBody = PackingSlipHelper::getInstance()->stripPricingFromItemsTable($processedBody);
 
         // Extract <style> blocks from template body and move to <head>

@@ -123,7 +123,7 @@ class PackingSlipHelper
     public function getFormattedPackingSlip(object $order): string
     {
         $text      = $this->loadPackingSlipTemplate($order);
-        $processed = EmailHelper::getInstance()->processTags($text, $order, []);
+        $processed = EmailHelper::getInstance()->processTags($text, $order, [], '*', true);
 
         return $this->stripPricingFromItemsTable($processed);
     }

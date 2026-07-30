@@ -44,6 +44,44 @@ use Joomla\Registry\Registry;
 class EmailHelper
 {
     /**
+     * Tags whose values are markup by design and must reach the template unencoded:
+     * server-generated tables, merchant-authored config HTML, URLs, style values, and
+     * `[CUSTOMER_NOTE]`, which is escaped at assignment before `nl2br()`.
+     * Everything absent from this list is HTML-encoded — see `processTags()`.
+     *
+     * @var   string[]
+     * @since 6.3.0
+     */
+    private const RAW_HTML_TAGS = [
+        "\\n",
+        '[ITEMS]',
+        '[PACKING_ITEMS]',
+        '[TOTALS]',
+        '[TAX_LINES]',
+        '[ORDER_EXTRA_ROWS]',
+        '[CUSTOMER_NOTE]',
+        '[BANK_TRANSFER_INFORMATION]',
+        '[FOOTER_TEXT]',
+        '[SITEURL]',
+        '[INVOICE_URL]',
+        '[MYPROFILE_URL]',
+        '[GUEST_ORDER_URL]',
+        '[STORE_LOGO_URL]',
+        '[SOCIAL_FACEBOOK]',
+        '[SOCIAL_INSTAGRAM]',
+        '[SOCIAL_TWITTER]',
+        '[LOGO_MAX_HEIGHT]',
+        '[ACCENT_COLOR]',
+        '[HEADER_BG_COLOR]',
+        '[EMAIL_BG_COLOR]',
+        '[TEXT_COLOR]',
+        '[accent_color]',
+        '[header_bg_color]',
+        '[email_bg_color]',
+        '[text_color]',
+    ];
+
+    /**
      * Database instance
      *
      * @var   DatabaseInterface|null
@@ -332,8 +370,10 @@ class EmailHelper
             $templateText = $template->body ?? '';
         }
 
-        $templateText = $this->processTags($templateText, $order, $extras, $receiverType);
-        $subject      = $this->processTags($template->subject ?? '', $order, $extras, $receiverType);
+        // HTML body sink — opt in to tag encoding.
+        $templateText = $this->processTags($templateText, $order, $extras, $receiverType, true);
+        // The subject is a plain-text header — entity encoding would be shown literally.
+        $subject      = $this->processTags($template->subject ?? '', $order, $extras, $receiverType, false);
 
         $baseURL  = str_replace('/administrator', '', Uri::base());
         $baseURL  = ltrim($baseURL, '/');
@@ -392,12 +432,20 @@ class EmailHelper
      * @param   object               $order         The order object
      * @param   array<string, mixed> $extras        Additional tag replacements
      * @param   string               $receiverType  The receiver type
+     * @param   bool                 $escapeHtml    True when the result is rendered as HTML,
+     *                                              which encodes every customer-derived tag
+     *                                              value. Defaults to false so existing
+     *                                              third-party callers — several of which
+     *                                              build mail SUBJECTS, where entity encoding
+     *                                              would be shown literally in the inbox —
+     *                                              keep their current output. Every core
+     *                                              HTML sink opts in explicitly.
      *
      * @return  string  The processed text
      *
      * @since   6.0.0
      */
-    public function processTags(string $text, object $order, array $extras = [], string $receiverType = '*'): string
+    public function processTags(string $text, object $order, array $extras = [], string $receiverType = '*', bool $escapeHtml = false): string
     {
         $params   = ComponentHelper::getParams('com_j2commerce');
         $config   = Factory::getApplication()->getConfig();
@@ -535,7 +583,7 @@ class EmailHelper
             '[SHIPPING_METHOD]'           => $language->_($shipping->ordershipping_name ?? ''),
             '[SHIPPING_TYPE]'             => $language->_($shipping->ordershipping_name ?? ''),
             '[SHIPPING_TRACKING_ID]'      => $shipping->ordershipping_tracking_id ?? '',
-            '[CUSTOMER_NOTE]'             => nl2br($order->customer_note ?? ''),
+            '[CUSTOMER_NOTE]'             => nl2br(htmlspecialchars((string) ($order->customer_note ?? ''), ENT_QUOTES, 'UTF-8')),
             '[PAYMENT_TYPE]'              => $this->getPaymentMethodTitle($order->orderpayment_type ?? '', $language),
             '[ORDER_TOKEN]'               => $order->token ?? '',
             '[TOKEN]'                     => $order->token ?? '',
@@ -601,6 +649,24 @@ class EmailHelper
         // Tax line items with profile names (from ordertaxes table)
         $tags['[TAX_LINES]'] = $this->buildTaxLines($order);
 
+        // Encode every tag value that is not deliberately HTML. The tag map is
+        // str_replace()d into invoice, packing-slip and email HTML which is then
+        // echoed unescaped in the admin order view, so an unencoded value is stored
+        // admin-session XSS the moment any write path bypasses Joomla's InputFilter
+        // (webservices, REST import, an AfterSaveOrder handler, a migrated row).
+        // Deny-list, not allow-list: a tag added later is escaped by default.
+        if ($escapeHtml) {
+            foreach ($tags as $tagKey => $tagValue) {
+                if (\in_array($tagKey, self::RAW_HTML_TAGS, true) || !\is_scalar($tagValue)) {
+                    continue;
+                }
+
+                $tags[$tagKey] = htmlspecialchars((string) $tagValue, ENT_QUOTES, 'UTF-8');
+            }
+        }
+
+        // Plugin- and caller-supplied extras stay raw: they are authored server-side
+        // and several payment plugins deliberately contribute markup.
         $tags = array_merge($tags, $extras);
 
         // Clean up GrapesJS data-j2c-src placeholders (may be persisted in DB from earlier saves)
@@ -1317,8 +1383,8 @@ class EmailHelper
         $this->loadLanguageOverrides($order);
 
         $extras       = [];
-        $templateText = $this->processTags($templateText, $order, $extras);
-        $subject      = $this->processTags($subject, $order, $extras);
+        $templateText = $this->processTags($templateText, $order, $extras, '*', true);
+        $subject      = $this->processTags($subject, $order, $extras, '*', false);
 
         $baseURL = str_replace('/administrator', '', Uri::base());
         $baseURL = ltrim($baseURL, '/');
@@ -1773,7 +1839,12 @@ class EmailHelper
                         }
 
                         if (isset($fieldData['value'])) {
-                            $fieldData['value'] = nl2br((string) $fieldData['value']);
+                            // Shopper-entered checkout field values, landing in the same
+                            // invoice / packing-slip / admin-order sink as the tag map —
+                            // encode before nl2br(), exactly as [CUSTOMER_NOTE] does.
+                            $fieldData['value'] = nl2br(
+                                htmlspecialchars((string) $fieldData['value'], ENT_QUOTES, 'UTF-8')
+                            );
                         }
 
                         $fields[$namekey] = $fieldData;
@@ -2454,7 +2525,7 @@ class EmailHelper
 
         // Core chrome tags (conditionals, site name, colour substitutions, unknown-tag strip)
         if (isset($data->order_id) || isset($data->j2commerce_order_id)) {
-            $body = self::getInstance()->processTags($body, $data);
+            $body = self::getInstance()->processTags($body, $data, [], '*', true);
         }
 
         return $body;
