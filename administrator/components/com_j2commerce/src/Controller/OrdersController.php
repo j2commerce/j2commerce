@@ -261,6 +261,25 @@ class OrdersController extends AdminController
             return;
         }
 
+        // This task moves an order to any status — including Paid and Shipped — and
+        // emails the customer, so it cannot rest on a CSRF token alone.
+        //
+        // `core.edit` is the load-bearing half: canAccess() ORs every custom action with
+        // `core.manage`, which the dispatcher already required, so the editorders check
+        // alone cannot deny anyone. It is kept for parity with the non-AJAX twins
+        // (:70, :152, :215) and becomes meaningful once that OR is removed.
+        $identity = $this->app->getIdentity();
+
+        if (!$identity
+            || $identity->guest
+            || !$identity->authorise('core.edit', 'com_j2commerce')
+            || !J2CommerceHelper::canAccess('j2commerce.editorders')) {
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['success' => false, 'message' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
+            $this->app->close();
+            return;
+        }
+
         $orderId   = $this->input->post->getInt('order_id', 0);
         $newStatus = $this->input->post->getInt('new_status', 0);
         $notify    = $this->input->post->getInt('notify', 0) === 1;

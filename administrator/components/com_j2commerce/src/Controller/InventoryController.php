@@ -64,6 +64,11 @@ class InventoryController extends AdminController
             $app   = Factory::getApplication();
             $input = $app->getInput();
 
+            // Same capability its batch() sibling requires — a stock write is an edit.
+            if (!$app->getIdentity()->authorise('core.edit', 'com_j2commerce')) {
+                throw new \Exception(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'));
+            }
+
             // Get the data from the request
             $productId    = $input->getInt('product_id', 0);
             $variantId    = $input->getInt('variant_id', 0);

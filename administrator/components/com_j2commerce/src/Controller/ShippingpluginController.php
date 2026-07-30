@@ -208,6 +208,17 @@ class ShippingpluginController extends BaseController
             }
         }
 
+        // The handlers behind this dispatcher create, update and delete shipping
+        // rates, and they perform no authorization of their own — so the gate has
+        // to live here, matching the checkPermission('core.edit') its save/apply
+        // siblings enforce. A token is not an authorization decision.
+        $user = Factory::getApplication()->getIdentity();
+
+        if (!$user || $user->guest || !ContentHelper::getActions('com_j2commerce')->get('core.edit')) {
+            $this->sendJsonError(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'));
+            return;
+        }
+
         $plugin = $this->input->getCmd('plugin', '');
         $action = $this->input->getCmd('action', '');
 

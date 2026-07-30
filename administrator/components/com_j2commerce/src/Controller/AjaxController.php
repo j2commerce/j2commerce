@@ -143,6 +143,25 @@ class AjaxController extends BaseController
             return;
         }
 
+        // The queue_key is the sole credential on the public cron endpoint, so this
+        // task both discloses and rotates a live shared secret. A token proves the
+        // request came from our own page, never that the caller may hold the secret:
+        // authenticate, then require the component-configuration capability.
+        // core.options as well as core.admin: the button is rendered inside the component
+        // Options form, which com_config admits on either — and a core.options holder can
+        // already type a new key into the same field and save it. Requiring core.admin
+        // alone would 403 the button without raising the bar.
+        $user = $app->getIdentity();
+
+        if (
+            !$user
+            || $user->guest
+            || (!$user->authorise('core.options', 'com_j2commerce') && !$user->authorise('core.admin', 'com_j2commerce'))
+        ) {
+            $this->sendJsonResponse(false, Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), null);
+            return;
+        }
+
         try {
             // Generate new queue key
             $siteName    = $app->get('sitename', 'J2Commerce');
