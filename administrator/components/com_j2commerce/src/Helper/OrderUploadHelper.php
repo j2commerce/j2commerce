@@ -104,6 +104,8 @@ final class OrderUploadHelper
             return ['moved' => 0, 'failed' => \count($rows)];
         }
 
+        UploadHelper::ensureIndexHtml($orderDir);
+
         $moved            = 0;
         $failed           = 0;
         $tmpDirsTouched   = [];

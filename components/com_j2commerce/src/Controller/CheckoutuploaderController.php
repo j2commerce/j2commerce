@@ -13,8 +13,10 @@ declare(strict_types=1);
 namespace J2Commerce\Component\J2commerce\Site\Controller;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UploadHelper;
 use Joomla\CMS\Helper\MediaHelper;
+use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\CMS\Session\Session;
 use Joomla\Filesystem\File;
@@ -63,6 +65,23 @@ class CheckoutuploaderController extends BaseController
             return;
         }
 
+        // The field's own configured extension/size limits are published to Uppy as
+        // data-* attributes; re-read and apply them here so the browser is not the
+        // only thing enforcing them.
+        $fieldError = CustomFieldHelper::validateMultiuploaderFile($input->getInt('customfield_id', 0), $file);
+
+        if ($fieldError !== null) {
+            $this->sendJson(false, $fieldError);
+            return;
+        }
+
+        // Rolling-hour throttle counted over stored rows — a session counter would
+        // reset itself on every new visit.
+        if (UploadHelper::hasExceededHourlyLimit()) {
+            $this->sendJson(false, Text::_('COM_J2COMMERCE_UPLOAD_RATE_LIMITED'));
+            return;
+        }
+
         $attachmentRoot = ConfigHelper::getAttachmentAbsolutePath();
 
         if ($attachmentRoot === null) {
@@ -76,6 +95,8 @@ class CheckoutuploaderController extends BaseController
             $this->sendJson(false, 'Failed to prepare storage');
             return;
         }
+
+        UploadHelper::ensureIndexHtml($uploadPath);
 
         $realUpload = realpath($uploadPath);
 

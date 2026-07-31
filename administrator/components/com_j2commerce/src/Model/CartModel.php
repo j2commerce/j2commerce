@@ -861,6 +861,8 @@ class CartModel extends BaseDatabaseModel
             return false;
         }
 
+        UploadHelper::ensureIndexHtml($uploadFolder);
+
         $extension   = strtolower(File::getExt($file['name']));
         $name        = UploadHelper::randomToken() . ($extension !== '' ? '.' . $extension : '');
         $mangledname = UploadHelper::randomToken();

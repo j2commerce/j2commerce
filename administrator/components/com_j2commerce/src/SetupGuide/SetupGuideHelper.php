@@ -29,6 +29,7 @@ use J2Commerce\Component\J2commerce\Administrator\SetupGuide\Checks\StoreLogoChe
 use J2Commerce\Component\J2commerce\Administrator\SetupGuide\Checks\SystemPluginCheck;
 use J2Commerce\Component\J2commerce\Administrator\SetupGuide\Checks\TaxProfileCheck;
 use J2Commerce\Component\J2commerce\Administrator\SetupGuide\Checks\TimezoneCheck;
+use J2Commerce\Component\J2commerce\Administrator\SetupGuide\Checks\UploadThrottleCheck;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\Event\Event;
@@ -44,6 +45,7 @@ class SetupGuideHelper
         TimezoneCheck::class,
         SystemPluginCheck::class,
         ContentPluginCheck::class,
+        UploadThrottleCheck::class,
         DownloadIdCheck::class,
         CheckoutPageCheck::class,
         CartPageCheck::class,

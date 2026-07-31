@@ -1308,9 +1308,12 @@ class CustomFieldHelper
         $allowedTypes = trim($options['upload_allowed_types'] ?? '');
         $directory    = trim($options['upload_directory'] ?? 'images/checkout-uploads');
 
-        // Build the upload endpoint URL
+        // Build the upload endpoint URL. customfield_id lets the controller re-read
+        // these same limits server-side instead of trusting the browser.
         $token     = Session::getFormToken();
-        $uploadUrl = Uri::root() . 'index.php?option=com_j2commerce&task=checkoutuploader.upload&format=json&' . $token . '=1';
+        $uploadUrl = Uri::root() . 'index.php?option=com_j2commerce&task=checkoutuploader.upload&format=json'
+            . '&customfield_id=' . (int) ($field->j2commerce_customfield_id ?? 0)
+            . '&' . $token . '=1';
 
         // Register frontend language strings for JS
         Text::script('COM_J2COMMERCE_CHECKOUT_UPLOAD_DROP_OR_BROWSE');
@@ -1353,6 +1356,64 @@ class CustomFieldHelper
             . '<div class="j2c-upload-file-list" id="file-list-' . $id . '"></div>'
             . '</div>'
             . $wrapperClose;
+    }
+
+    /**
+     * Re-apply a multiuploader field's own extension and size limits server-side; the render
+     * step publishes them only as data-* attributes for Uppy. Returns a translated error, or
+     * null when the upload is acceptable — including when the id matches no enabled
+     * multiuploader field, so embeds that supply none keep their previous behaviour.
+     */
+    public static function validateMultiuploaderFile(int $fieldId, array $file): ?string
+    {
+        if ($fieldId <= 0) {
+            return null;
+        }
+
+        $db      = Factory::getContainer()->get(DatabaseInterface::class);
+        $type    = 'multiuploader';
+        $options = $db->setQuery(
+            $db->getQuery(true)
+                ->select($db->quoteName('field_options'))
+                ->from($db->quoteName('#__j2commerce_customfields'))
+                ->where($db->quoteName('j2commerce_customfield_id') . ' = :id')
+                ->where($db->quoteName('field_type') . ' = :type')
+                ->where($db->quoteName('enabled') . ' = 1')
+                ->bind(':id', $fieldId, ParameterType::INTEGER)
+                ->bind(':type', $type, ParameterType::STRING)
+        )->loadResult();
+
+        if ($options === null) {
+            return null;
+        }
+
+        $decoded = json_decode((string) $options, true);
+        $decoded = \is_array($decoded) ? $decoded : [];
+
+        $allowed = trim((string) ($decoded['upload_allowed_types'] ?? ''));
+
+        if ($allowed !== '') {
+            $extensions = array_filter(array_map(
+                static fn ($ext) => strtolower(trim((string) $ext, " \t\n\r\0\x0B.")),
+                explode(',', $allowed)
+            ));
+            $uploaded = strtolower(pathinfo((string) ($file['name'] ?? ''), PATHINFO_EXTENSION));
+
+            if ($uploaded === '' || !\in_array($uploaded, $extensions, true)) {
+                return Text::_('COM_J2COMMERCE_CHECKOUT_UPLOAD_TYPE_NOT_ALLOWED');
+            }
+        }
+
+        $maxSizeMb = (float) ($decoded['upload_max_file_size'] ?? 0);
+
+        if ($maxSizeMb > 0 && (int) ($file['size'] ?? 0) > (int) ($maxSizeMb * 1024 * 1024)) {
+            $maxSizeLabel = rtrim(rtrim(number_format($maxSizeMb, 2, '.', ''), '0'), '.');
+
+            return Text::sprintf('COM_J2COMMERCE_CHECKOUT_UPLOAD_FILE_TOO_LARGE', $maxSizeLabel);
+        }
+
+        // No per-cart file count: Uppy's "remove file" is client-side, so a cap would lock out a shopper re-uploading artwork.
+        return null;
     }
 
     private static function getCountryIso2(int $countryId): ?string
