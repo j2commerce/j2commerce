@@ -472,17 +472,39 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Print order button → open in Bootstrap modal
+    // Print order button → open in the modal the active template family rendered
     const orderModalEl = document.getElementById('j2commerceOrderModal');
     const orderModalBody = document.getElementById('j2commerceOrderModalBody');
     const orderPrintBtn = document.getElementById('j2commerceOrderPrintBtn');
     let orderModal = null;
 
+    // The uikit templates render `<div uk-modal>`, which the Bootstrap modal API cannot present.
+    // UIkit's JS ships with the site template, not with J2Commerce, so fall back to Bootstrap
+    // when the global is absent rather than leaving the button dead.
+    const isUikitModal = !!orderModalEl
+        && orderModalEl.hasAttribute('uk-modal')
+        && typeof UIkit !== 'undefined';
+
+    /** Spinner and alert markup differ per family; Bootstrap classes render as nothing in UIkit. */
+    function frameworkHtml(kind, message) {
+        if (kind === 'spinner') {
+            return isUikitModal
+                ? `<div class="uk-text-center uk-padding"><span uk-spinner="ratio: 2" role="status" aria-label="${message}"></span></div>`
+                : `<div class="text-center py-5"><div class="spinner-border" role="status"><span class="visually-hidden">${message}</span></div></div>`;
+        }
+
+        return isUikitModal
+            ? `<div class="uk-alert-danger" uk-alert>${message}</div>`
+            : `<div class="alert alert-danger">${message}</div>`;
+    }
+
     if (orderModalEl) {
-        orderModal = bootstrap.Modal.getOrCreateInstance(orderModalEl);
+        orderModal = isUikitModal
+            ? { show: () => UIkit.modal(orderModalEl).show() }
+            : bootstrap.Modal.getOrCreateInstance(orderModalEl);
 
         // Do not leave the previous order or slip in the DOM after the modal closes.
-        orderModalEl.addEventListener('hidden.bs.modal', () => {
+        orderModalEl.addEventListener(isUikitModal ? 'hidden' : 'hidden.bs.modal', () => {
             if (orderModalBody) orderModalBody.replaceChildren();
         });
     }
@@ -496,7 +518,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!url || !orderModal || !orderModalBody) return;
 
         // Show modal with spinner
-        orderModalBody.replaceChildren(document.createRange().createContextualFragment('<div class="text-center py-5"><div class="spinner-border" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></div></div>'));
+        orderModalBody.replaceChildren(parseFragment(frameworkHtml('spinner', Joomla.Text._('COM_J2COMMERCE_LOADING'))));
         orderModal.show();
 
         try {
@@ -511,7 +533,7 @@ document.addEventListener('DOMContentLoaded', () => {
             orderModalBody.replaceChildren(...content.childNodes);
         } catch (err) {
             console.error('Error loading order:', err);
-            orderModalBody.replaceChildren(document.createRange().createContextualFragment('<div class="alert alert-danger">Error loading order details.</div>'));
+            orderModalBody.replaceChildren(parseFragment(frameworkHtml('error', 'Error loading order details.')));
         }
     });
 
@@ -524,7 +546,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const url = btn.dataset.url || btn.getAttribute('href');
         if (!url || !orderModal || !orderModalBody) return;
 
-        orderModalBody.replaceChildren(document.createRange().createContextualFragment('<div class="text-center py-5"><div class="spinner-border" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></div></div>'));
+        orderModalBody.replaceChildren(parseFragment(frameworkHtml('spinner', Joomla.Text._('COM_J2COMMERCE_LOADING'))));
         orderModal.show();
 
         try {
@@ -537,7 +559,7 @@ document.addEventListener('DOMContentLoaded', () => {
             orderModalBody.replaceChildren(...content.childNodes);
         } catch (err) {
             console.error('Error loading packing slip:', err);
-            orderModalBody.replaceChildren(document.createRange().createContextualFragment('<div class="alert alert-danger">Error loading packing slip.</div>'));
+            orderModalBody.replaceChildren(parseFragment(frameworkHtml('error', 'Error loading packing slip.')));
         }
     });
 
@@ -555,13 +577,15 @@ document.addEventListener('DOMContentLoaded', () => {
             title.textContent = document.title;
             printDoc.head.appendChild(title);
 
-            const bootstrapHref = document.querySelector('link[href*="bootstrap"]')?.href || '';
+            // Carry the storefront's framework stylesheet into the popup so the printed
+            // markup keeps its layout — uikit storefronts ship no bootstrap link.
+            const frameworkHref = document.querySelector('link[href*="bootstrap"], link[href*="uikit"]')?.href || '';
             let stylesheet = null;
 
-            if (bootstrapHref) {
+            if (frameworkHref) {
                 stylesheet = printDoc.createElement('link');
                 stylesheet.rel = 'stylesheet';
-                stylesheet.href = bootstrapHref;
+                stylesheet.href = frameworkHref;
                 printDoc.head.appendChild(stylesheet);
             }
 
