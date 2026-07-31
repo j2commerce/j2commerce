@@ -808,6 +808,15 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_ORDER_NOT_FOUND')];
             }
 
+            // The express token must match the one stored when this order's checkout was set up.
+            $storedDetails = json_decode($orderTable->transaction_details ?? '{}', true);
+            $boundToken    = (string) ($storedDetails['nvp_express_token'] ?? '');
+
+            if ($boundToken === '' || !hash_equals($boundToken, $token)) {
+                $this->log('completeNvpExpressCheckoutForOrder: express token not bound to local order - order_id: ' . $orderIdString, Log::ERROR);
+                return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_INVALID_REQUEST')];
+            }
+
             // Only an order still awaiting payment may be completed: New(5), Pending(4)
             // or Failed(3, retry). A settled, cancelled or refunded order cannot be flipped.
             if (!\in_array((int) $orderTable->order_state_id, [3, 4, 5], true) || (float) ($orderTable->order_refund ?? 0) > 0) {
@@ -1986,8 +1995,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 ];
             }
 
-            // Re-assert this PayPal order was created for this local order — a capture
-            // funded by someone else's approved PayPal order must never mark it paid.
+            // The PayPal order id must match the one stored on this local order.
             $storedDetails = json_decode($orderTable->transaction_details ?? '{}', true);
             $boundPayPalId = (string) ($storedDetails['paypal_order_id'] ?? '');
 
