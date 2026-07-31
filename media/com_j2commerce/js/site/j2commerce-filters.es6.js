@@ -691,7 +691,7 @@ class J2CommerceFilters {
 
     createTileHtml(type, id, displayLabel) {
         const escaped = this.escapeHtml(displayLabel);
-        const dataAttrs = `data-type="${type}" data-id="${this.escapeHtml(String(id))}"`;
+        const dataAttrs = `data-type="${this.escapeHtml(type)}" data-id="${this.escapeHtml(String(id))}"`;
         if (typeof UIkit !== 'undefined') {
             return `<span class="filter-chip uk-label" ${dataAttrs}>${escaped}<button type="button" class="j2commerce-filter-chip-remove uk-close uk-margin-small-left" aria-label="Remove"></button></span>`;
         }
@@ -771,10 +771,12 @@ class J2CommerceFilters {
         this.applyFilters();
     }
 
+    // textContent → innerHTML is TEXT-node serialisation: it leaves " and ' intact, and the
+    // chip builder puts the result in quoted attributes. Escape the full ENT_QUOTES set.
     escapeHtml(str) {
-        const div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
+        const escapes = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+
+        return String(str ?? '').replace(/[&<>"']/g, ch => escapes[ch]);
     }
 
     disable() {
