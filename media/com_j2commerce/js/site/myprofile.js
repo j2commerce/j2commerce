@@ -13,7 +13,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Tab deep-linking via URL hash
     const hash = window.location.hash;
     if (hash) {
-        const btn = document.querySelector(`[data-bs-target="${hash}"]`);
+        // Compare in JS rather than interpolating the hash into a selector: a URL ending in
+        // #a"] makes querySelector throw, which would abort this whole handler and unbind
+        // every listener in the file.
+        const btn = Array.from(document.querySelectorAll('[data-bs-target]'))
+            .find(el => el.dataset.bsTarget === hash);
+
         if (btn) {
             new bootstrap.Tab(btn).show();
         }
@@ -32,10 +37,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let searchTimer   = null;
     let currentPage   = 0;
 
+    // textContent → innerHTML is TEXT-node serialisation: it leaves " and ' intact, and every
+    // call site below interpolates into a quoted attribute. Escape the full ENT_QUOTES set so
+    // a stored value such as a status CSS class cannot close the attribute and add a handler.
+    const HTML_ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+
     function escapeHtml(str) {
-        const el = document.createElement('span');
-        el.textContent = str;
-        return el.innerHTML;
+        return String(str ?? '').replace(/[&<>"']/g, ch => HTML_ESCAPES[ch]);
     }
 
     // Parse server-rendered HTML into an inert fragment (no innerHTML sink) for adoption.
@@ -121,7 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let pagHtml = '';
 
             if (pages > 1) {
-                pagHtml += `<nav aria-label="${Joomla.Text._('JLIB_HTML_PAGINATION')}"><ul class="${snapshotPagUlClass}" id="j2c-pagination-list">`;
+                pagHtml += `<nav aria-label="${Joomla.Text._('JLIB_HTML_PAGINATION')}"><ul class="${escapeHtml(snapshotPagUlClass)}" id="j2c-pagination-list">`;
                 for (let p = 0; p < pages; p++) {
                     const active = (p === page) ? ' active' : '';
                     pagHtml += `<li class="page-item${active}"><a class="page-link j2c-page-link" href="#" data-page="${p}">${p + 1}</a></li>`;
@@ -299,7 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let pagHtml = '';
 
             if (pages > 1) {
-                pagHtml += `<nav aria-label="${Joomla.Text._('JLIB_HTML_PAGINATION')}"><ul class="${dlSnapshotPagUlClass}" id="j2c-downloads-pagination-list">`;
+                pagHtml += `<nav aria-label="${Joomla.Text._('JLIB_HTML_PAGINATION')}"><ul class="${escapeHtml(dlSnapshotPagUlClass)}" id="j2c-downloads-pagination-list">`;
                 for (let p = 0; p < pages; p++) {
                     const active = (p === page) ? ' active' : '';
                     pagHtml += `<li class="page-item${active}"><a class="page-link j2c-download-page-link" href="#" data-page="${p}">${p + 1}</a></li>`;
