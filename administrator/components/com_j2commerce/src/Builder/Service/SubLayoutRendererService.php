@@ -551,7 +551,7 @@ PHP;
     {
         $condition = trim($condition);
 
-        if ($condition === '' || strlen($condition) > 500) {
+        if ($condition === '' || \strlen($condition) > 500) {
             return false;
         }
 
@@ -570,7 +570,7 @@ PHP;
 
         $tokens = [];
         $offset = 0;
-        $length = strlen($condition);
+        $length = \strlen($condition);
 
         while ($offset < $length) {
             if (!preg_match($tokenPattern, $condition, $m, 0, $offset)) {
@@ -578,7 +578,7 @@ PHP;
             }
 
             $tokens[] = $m[0];
-            $offset  += strlen($m[0]);
+            $offset += \strlen($m[0]);
         }
 
         // Balanced parens; a variable chain directly before '(' is a method call —

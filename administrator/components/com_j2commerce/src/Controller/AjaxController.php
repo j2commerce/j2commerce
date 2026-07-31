@@ -143,14 +143,7 @@ class AjaxController extends BaseController
             return;
         }
 
-        // The queue_key is the sole credential on the public cron endpoint, so this
-        // task both discloses and rotates a live shared secret. A token proves the
-        // request came from our own page, never that the caller may hold the secret:
-        // authenticate, then require the component-configuration capability.
-        // core.options as well as core.admin: the button is rendered inside the component
-        // Options form, which com_config admits on either — and a core.options holder can
-        // already type a new key into the same field and save it. Requiring core.admin
-        // alone would 403 the button without raising the bar.
+        // Requires the component-configuration capability: core.options or core.admin, either of which com_config admits on the Options form.
         $user = $app->getIdentity();
 
         if (

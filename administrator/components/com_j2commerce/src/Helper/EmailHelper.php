@@ -649,12 +649,7 @@ class EmailHelper
         // Tax line items with profile names (from ordertaxes table)
         $tags['[TAX_LINES]'] = $this->buildTaxLines($order);
 
-        // Encode every tag value that is not deliberately HTML. The tag map is
-        // str_replace()d into invoice, packing-slip and email HTML which is then
-        // echoed unescaped in the admin order view, so an unencoded value is stored
-        // admin-session XSS the moment any write path bypasses Joomla's InputFilter
-        // (webservices, REST import, an AfterSaveOrder handler, a migrated row).
-        // Deny-list, not allow-list: a tag added later is escaped by default.
+        // Encode every tag value that is not deliberately HTML; a tag added later is escaped by default.
         if ($escapeHtml) {
             foreach ($tags as $tagKey => $tagValue) {
                 if (\in_array($tagKey, self::RAW_HTML_TAGS, true) || !\is_scalar($tagValue)) {

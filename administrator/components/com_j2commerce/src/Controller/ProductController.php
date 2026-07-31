@@ -507,9 +507,7 @@ class ProductController extends FormController
 
         header('Content-Type: application/json; charset=utf-8');
 
-        // This is the route the product edit form actually posts, and it cascades
-        // deletes across four child tables — so it takes the same core.edit +
-        // core.delete pair as the plural twin, not just a CSRF token.
+        // Takes the same core.edit + core.delete pair as the plural twin.
         $user = $app->getIdentity();
 
         if (

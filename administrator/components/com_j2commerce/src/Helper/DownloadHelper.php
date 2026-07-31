@@ -287,10 +287,7 @@ final class DownloadHelper
         return $roots;
     }
 
-    /**
-     * Save-side validation of a local product-file path: must stay inside an allowed
-     * root — no absolute paths, traversal, dotfile segments, or configuration.php.
-     */
+    /** Save-side validation: the path must resolve inside an allowed root. */
     public static function isAllowedLocalPath(string $path): bool
     {
         $normalized = str_replace('\\', '/', $path);

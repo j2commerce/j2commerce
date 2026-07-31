@@ -16,6 +16,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\Database\ParameterType;
 use Joomla\Database\QueryInterface;
@@ -777,12 +778,13 @@ class OrdersModel extends ListModel
         }
 
         $db         = $this->getDatabase();
-        $now        = Factory::getDate();
         $cutoffTime = Factory::getDate('-' . $heldDuration . ' minutes')->toSql();
 
-        // Find unpaid orders (pending=4, incomplete=5) older than hold duration
+        // Find unpaid orders (pending=4, incomplete=5) older than hold duration.
+        // Select the integer PK — updateOrderStatus() keys on j2commerce_order_id,
+        // not the varchar order_id.
         $query = $db->getQuery(true)
-            ->select($db->quoteName('order_id'))
+            ->select($db->quoteName('j2commerce_order_id'))
             ->from($db->quoteName('#__j2commerce_orders'))
             ->where($db->quoteName('modified_on') . ' < :cutoff')
             ->where($db->quoteName('order_type') . ' = ' . $db->quote('normal'))
@@ -796,27 +798,26 @@ class OrdersModel extends ListModel
             return 0;
         }
 
-        $cancelledCount = 0;
+        /** @var OrderModel|null $orderModel */
+        $orderModel = Factory::getApplication()
+            ->bootComponent('com_j2commerce')
+            ->getMVCFactory()
+            ->createModel('Order', 'Administrator', ['ignore_request' => true]);
 
-        // Process each unpaid order
-        // Note: Full order cancellation requires OrderModel which handles
-        // status update, stock restoration, and customer notification.
-        // This is a placeholder for the actual cancellation logic.
+        if (!$orderModel) {
+            return 0;
+        }
+
+        $cancelledStatusId = 6;
+        $comment           = Text::_('COM_J2COMMERCE_ORDER_HISTORY_ORDER_CANCELLED');
+        $cancelledCount    = 0;
+
+        // Route through the model so the status-change event and order history fire
+        // instead of a raw UPDATE. $notify stays false: this is an automated
+        // hold-expiry sweep and emailing every shopper whose reservation lapsed
+        // would surprise the merchant.
         foreach ($unpaidOrders as $orderId) {
-            // TODO: Implement via OrderModel::cancel() when available
-            // For now, just update status to cancelled (6)
-            $updateQuery = $db->getQuery(true)
-                ->update($db->quoteName('#__j2commerce_orders'))
-                ->set($db->quoteName('order_state_id') . ' = 6')
-                ->set($db->quoteName('order_state') . ' = ' . $db->quote('CANCELLED'))
-                ->set($db->quoteName('modified_on') . ' = :now')
-                ->where($db->quoteName('order_id') . ' = :orderId')
-                ->bind(':now', $now->toSql())
-                ->bind(':orderId', $orderId);
-
-            $db->setQuery($updateQuery);
-
-            if ($db->execute()) {
+            if ($orderModel->updateOrderStatus((int) $orderId, $cancelledStatusId, false, $comment)) {
                 $cancelledCount++;
             }
         }

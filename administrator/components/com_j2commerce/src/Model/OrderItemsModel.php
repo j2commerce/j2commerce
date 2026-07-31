@@ -8,6 +8,8 @@
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
+declare(strict_types=1);
+
 namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 \defined('_JEXEC') or die;
@@ -26,6 +28,18 @@ use Joomla\CMS\Plugin\PluginHelper;
  */
 class OrderItemsModel extends ListModel
 {
+    /** Real columns of #__j2commerce_orderhistories — the only values accepted in an ORDER BY. */
+    private const SORTABLE_COLUMNS = [
+        'j2commerce_orderhistory_id',
+        'order_id',
+        'order_state_id',
+        'notify_customer',
+        'comment',
+        'created_on',
+        'created_by',
+        'params',
+    ];
+
     /**
      * Constructor.
      *
@@ -62,13 +76,22 @@ class OrderItemsModel extends ListModel
         );
         $query->from($db->quoteName('#__j2commerce_orderhistories', 'a'));
 
-        // Add the list ordering clause.
-        $orderCol  = $this->getState('list.ordering', 'a.created_on');
-        $orderDirn = $this->getState('list.direction', 'DESC');
+        // Add the list ordering clause. A column name cannot be bound, so validate it
+        // against the real table columns and fall back to the default on any mismatch.
+        $orderCol  = (string) $this->getState('list.ordering', 'a.created_on');
+        $orderDirn = strtoupper(trim((string) $this->getState('list.direction', 'DESC')));
 
-        if ($orderCol && $orderDirn) {
-            $query->order($db->escape($orderCol . ' ' . $orderDirn));
+        $column = str_starts_with($orderCol, 'a.') ? substr($orderCol, 2) : $orderCol;
+
+        if (!\in_array($column, self::SORTABLE_COLUMNS, true)) {
+            $column = 'created_on';
         }
+
+        if (!\in_array($orderDirn, ['ASC', 'DESC'], true)) {
+            $orderDirn = 'DESC';
+        }
+
+        $query->order($db->quoteName('a.' . $column) . ' ' . $orderDirn);
 
         return $query;
     }

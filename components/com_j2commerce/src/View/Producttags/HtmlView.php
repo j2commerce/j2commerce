@@ -173,7 +173,7 @@ class HtmlView extends BaseHtmlView
         // Load data from model
         $this->state         = $model->getState();
         $this->items         = $model->getItems();
-        $this->products   = $this->items; // Alias for template plugin compatibility
+        $this->products      = $this->items; // Alias for template plugin compatibility
         $this->parent        = $model->getParent();
         $this->pagination    = $model->getPagination();
         $this->user          = $this->getCurrentUser();

@@ -1002,10 +1002,7 @@ class CartHelper
      * Load cart by cookie-stored cart ID.
      *
      * This is a fallback mechanism for guest users when their session changes.
-     * The cookie value is an HMAC-signed `cartId.signature` pair — an unsigned or
-     * tampered value is rejected so a guest cart cannot be adopted by guessing its
-     * sequential ID. If the cart is found via cookie, we update its session_id to
-     * match the current session.
+     * The cookie value is an HMAC-signed `cartId.signature` pair; on a hit the cart's session_id is updated.
      *
      * @param   string  $cartType   Cart type.
      * @param   string  $sessionId  Current session ID to update the cart with.
@@ -1112,7 +1109,7 @@ class CartHelper
     }
 
     /**
-     * Produce the tamper-proof cookie payload for a cart ID.
+     * Produce the signed cookie payload for a cart ID.
      */
     private function signCartId(int $cartId): string
     {

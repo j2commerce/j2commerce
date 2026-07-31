@@ -261,13 +261,7 @@ class OrdersController extends AdminController
             return;
         }
 
-        // This task moves an order to any status — including Paid and Shipped — and
-        // emails the customer, so it cannot rest on a CSRF token alone.
-        //
-        // `core.edit` is the load-bearing half: canAccess() ORs every custom action with
-        // `core.manage`, which the dispatcher already required, so the editorders check
-        // alone cannot deny anyone. It is kept for parity with the non-AJAX twins
-        // (:70, :152, :215) and becomes meaningful once that OR is removed.
+        // Requires core.edit; the editorders check is kept for parity with the non-AJAX twins.
         $identity = $this->app->getIdentity();
 
         if (!$identity

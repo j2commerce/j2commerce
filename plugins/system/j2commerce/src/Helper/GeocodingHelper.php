@@ -140,9 +140,7 @@ class GeocodingHelper
         $url = self::NOMINATIM_URL . '?' . http_build_query($params);
 
         try {
-            // Certificate verification stays on: the response becomes a courier's
-            // real pickup/drop-off coordinates and is cached for 90 days, so a single
-            // forged reply persists. The customer's street address is in the request.
+            // Certificate verification stays on: the response is cached for 90 days.
             $http     = (new HttpFactory())->getHttp();
             $response = $http->get($url, [
                 'User-Agent' => $userAgent,

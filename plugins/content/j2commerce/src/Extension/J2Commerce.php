@@ -651,8 +651,8 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
 
         return match ($raw) {
             'visible', 'catalog', 'search' => 1,
-            'hidden'                        => 0,
-            default                         => null,
+            'hidden'                       => 0,
+            default                        => null,
         };
     }
 

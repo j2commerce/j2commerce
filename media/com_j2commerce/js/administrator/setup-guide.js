@@ -522,7 +522,7 @@ class SetupGuide {
                     pass: 'fa-regular fa-circle-check text-success',
                     fail: 'fa-regular fa-circle-xmark text-danger',
                     warning: 'fa-regular fa-circle text-warning',
-                    dismissed: 'fa-regular fa-circle-minus text-muted',
+                    dismissed: 'fa-regular fa-circle-minus text-body-secondary',
                 };
                 const iconClass = iconMap[statusClass] || iconMap.fail;
 
