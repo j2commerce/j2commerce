@@ -25,6 +25,10 @@ $token = Session::getFormToken();
 
 $wa  = Factory::getApplication()->getDocument()->getWebAssetManager();
 $wa->registerAndUseStyle('checkout.style', 'media/com_j2commerce/css/site/checkout.css', [], [], []);
+
+// Hard dependency of this template's inline JS. Also registered in StrapperHelper; the asset
+// manager de-duplicates by name, and registering here keeps template overrides self-sufficient.
+$wa->registerAndUseScript('com_j2commerce.dom', 'media/com_j2commerce/js/site/j2commerce-dom.js', [], ['defer' => true]);
 $wa->registerAndUseStyle('checkout.uikit.style', 'media/com_j2commerce/css/site/checkout-uikit.css', [], [], []);
 
 // Register telephone widget assets + script options on initial page render.
@@ -45,8 +49,12 @@ if ($this->order && method_exists($this->order, 'get_formatted_order_totals')) {
     $grandTotal = $totals['grandtotal']['value'] ?? '';
 }
 
-// Pre-compute JS-safe language strings
-$selectZoneJs = htmlspecialchars(Text::sprintf('COM_J2COMMERCE_SELECT_PLACEHOLDER', Text::_('COM_J2COMMERCE_ZONE')), ENT_QUOTES, 'UTF-8');
+// Pre-computed JS string literals, quotes included: these are built into DOM text nodes, not
+// into markup, so they must be JS-escaped rather than HTML-escaped.
+$jsString     = static fn(string $text): string => json_encode($text, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?: '""';
+$selectZoneJs = $jsString(Text::sprintf('COM_J2COMMERCE_SELECT_PLACEHOLDER', Text::_('COM_J2COMMERCE_ZONE')));
+$loadingJs    = $jsString(Text::_('COM_J2COMMERCE_LOADING'));
+$continueJs   = $jsString(Text::_('COM_J2COMMERCE_CHECKOUT_CONTINUE'));
 
 // Pass language strings to JS via Joomla.Text (H1 — replaces addslashes inline)
 Text::script('COM_J2COMMERCE_CHECKOUT_ERROR_AGREE_TERMS');
@@ -263,7 +271,7 @@ document.addEventListener('DOMContentLoaded', function() {
         spinner.className = 'wait';
         var spinnerEl = document.createElement('span');
         spinnerEl.setAttribute('uk-spinner', 'ratio: 0.6');
-        spinnerEl.setAttribute('aria-label', '<?php echo Text::_('COM_J2COMMERCE_LOADING', true); ?>');
+        spinnerEl.setAttribute('aria-label', <?php echo $loadingJs; ?>);
         spinner.appendChild(spinnerEl);
         btn.parentNode.insertBefore(spinner, btn.nextSibling);
     }
@@ -407,7 +415,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (!countrySelect) return;
 
-        // Capture any server-rendered selections before replacing innerHTML
+        // Capture any server-rendered selections before replacing the options
         var savedCountryId = countrySelect.value || '';
         var savedZoneId = zoneSelect ? (zoneSelect.value || '') : '';
 
@@ -440,7 +448,7 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch(countryUrl)
             .then(function(r) { return r.text(); })
             .then(function(html) {
-                countrySelect.innerHTML = html;
+                J2CommerceDom.adopt(countrySelect, html);
                 // If a country was pre-selected and zones exist, cascade to load zones
                 if (countrySelect.value && zoneSelect) {
                     loadZones(countrySelect.value, savedZoneId);
@@ -454,11 +462,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Load zones for the selected country
         function loadZones(countryId, selectedZoneId) {
-            zoneSelect.innerHTML = '<option value=""><?php echo Text::_('COM_J2COMMERCE_LOADING', true); ?></option>';
+            zoneSelect.replaceChildren(new Option(<?php echo $loadingJs; ?>, ''));
             zoneSelect.disabled = true;
 
             if (!countryId || countryId === '0' || countryId === '') {
-                zoneSelect.innerHTML = '<option value=""><?php echo $selectZoneJs; ?></option>';
+                zoneSelect.replaceChildren(new Option(<?php echo $selectZoneJs; ?>, ''));
                 zoneSelect.disabled = false;
                 syncZoneRequired();
                 return;
@@ -470,13 +478,13 @@ document.addEventListener('DOMContentLoaded', function() {
             fetch(url)
                 .then(function(r) { return r.text(); })
                 .then(function(html) {
-                    zoneSelect.innerHTML = html;
+                    J2CommerceDom.adopt(zoneSelect, html);
                     zoneSelect.disabled = false;
                     syncZoneRequired();
                 })
                 .catch(function(err) {
                     console.error('Error loading zones:', err);
-                    zoneSelect.innerHTML = '<option value=""><?php echo $selectZoneJs; ?></option>';
+                    zoneSelect.replaceChildren(new Option(<?php echo $selectZoneJs; ?>, ''));
                     zoneSelect.disabled = false;
                     syncZoneRequired();
                 });
@@ -523,15 +531,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.error('Checkout step HTTP ' + response.status + ':', text.substring(0, 500));
                     content.setAttribute('aria-busy', 'false');
                     if (response.status === 403) {
-                        content.innerHTML = '<div class="uk-alert uk-alert-warning" uk-alert role="alert">Your session has expired. Please <a href="' + window.location.href + '">reload the page</a> and try again.</div>';
+                        var expired = J2CommerceDom.el('div', {class: 'uk-alert uk-alert-warning', 'uk-alert': '', role: 'alert'}, 'Your session has expired. Please ');
+                        var reload = J2CommerceDom.el('a', {}, 'reload the page');
+                        reload.href = window.location.href;
+                        expired.append(reload, ' and try again.');
+                        content.replaceChildren(expired);
                     } else {
                         var detail = extractErrorDetail(text);
-                        var html = '<div class="uk-alert uk-alert-danger" uk-alert role="alert">Server error (' + response.status + '). Please try again.';
+                        var failed = J2CommerceDom.el('div', {class: 'uk-alert uk-alert-danger', 'uk-alert': '', role: 'alert'}, 'Server error (' + response.status + '). Please try again.');
                         if (detail) {
-                            html += '<small class="uk-display-block uk-margin-small-top">' + detail.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</small>';
+                            failed.appendChild(J2CommerceDom.el('small', {class: 'uk-display-block uk-margin-small-top'}, detail));
                         }
-                        html += '</div>';
-                        content.innerHTML = html;
+                        content.replaceChildren(failed);
                     }
                 });
             }
@@ -539,7 +550,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(function(html) {
             if (html !== undefined) {
-                content.innerHTML = html;
+                J2CommerceDom.adopt(content, html);
                 content.setAttribute('aria-busy', 'false');
                 refreshSidecart();
                 // Core Joomla widgets (calendar picker, etc.) re-init injected markup on this event.
@@ -550,7 +561,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(function(error) {
             console.error('Checkout network error:', error);
             content.setAttribute('aria-busy', 'false');
-            content.innerHTML = '<div class="uk-alert uk-alert-danger" uk-alert role="alert">Unable to connect to the server. Please check your connection and try again.</div>';
+            content.replaceChildren(J2CommerceDom.el('div', {class: 'uk-alert uk-alert-danger', 'uk-alert': '', role: 'alert'}, 'Unable to connect to the server. Please check your connection and try again.'));
         });
     }
 
@@ -671,8 +682,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Toggle existing/new address form visibility (billing)
-    // Note: The inline script in default_billing.php won't execute via innerHTML,
-    // so we handle it here with event delegation.
+    // Note: injected step markup is adopted inert, so the inline script in default_billing.php
+    // does not execute — we handle it here with event delegation.
     document.addEventListener('change', function(e) {
         if (!e.target.matches('input[name="billing_address"]')) return;
         var newForm = document.getElementById('billing-new-address-form');
@@ -845,9 +856,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     var content = getContent(section.id);
                     if (content) {
-                        content.innerHTML = json.html
-                            + '<div class="uk-margin-top"><button id="button-custom-steps" type="button" class="uk-button uk-button-primary btn-checkout-step" data-position="' + position + '">'
-                            + '<?php echo Text::_('COM_J2COMMERCE_CHECKOUT_CONTINUE', true); ?></button></div>';
+                        // Adopt the plugin fragment first, then append a button we build ourselves,
+                        // so the position never reaches the parser as markup.
+                        J2CommerceDom.adopt(content, json.html);
+                        var continueWrap = J2CommerceDom.el('div', {class: 'uk-margin-top'});
+                        continueWrap.appendChild(J2CommerceDom.el('button', {
+                            id: 'button-custom-steps',
+                            type: 'button',
+                            class: 'uk-button uk-button-primary btn-checkout-step',
+                            'data-position': position
+                        }, <?php echo $continueJs; ?>));
+                        content.appendChild(continueWrap);
                     }
                     hideAllContents();
                     slideDown(content);
@@ -1130,8 +1149,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         var errSpan = document.createElement('span');
                         errSpan.className = 'j2error';
                         errSpan.textContent = json.error.shipping;
-                        shippingDiv.innerHTML = '';
-                        shippingDiv.appendChild(errSpan);
+                        shippingDiv.replaceChildren(errSpan);
                     }
                 }
                 if (json.error.warning) {
@@ -1149,7 +1167,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // === Payment form submission (event delegation) ===
-    // Plugin prepayment templates are loaded via innerHTML which doesn't execute <script> tags.
+    // Plugin prepayment templates are adopted inert, so their <script> tags do not execute.
     // This generic handler catches clicks on any payment submit button in the confirm step.
     function handlePaymentSubmit(form, btn) {
         if (!form || !btn) return;

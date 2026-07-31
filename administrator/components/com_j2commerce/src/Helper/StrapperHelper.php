@@ -678,7 +678,9 @@ class StrapperHelper
         // Load Joomla form validation
         $wa->useScript('form.validate');
 
-        // Checkout-specific scripts can be added here
+        // Safe DOM construction helpers used by the checkout templates' inline JS. Deferred, so
+        // it has executed by the time their DOMContentLoaded handlers run.
+        $wa->registerAndUseScript('com_j2commerce.dom', 'media/com_j2commerce/js/site/j2commerce-dom.js', [], ['defer' => true]);
     }
 
     /**
