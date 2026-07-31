@@ -12,6 +12,7 @@ declare(strict_types=1);
 defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\PackingSlipHelper;
+use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\Database\DatabaseInterface;
 
@@ -27,10 +28,11 @@ if (!$order || empty($order->order_id)) {
 $helper          = PackingSlipHelper::getInstance();
 $packingSlipHtml = $helper->getFormattedPackingSlip($order);
 
-// Extract <style> blocks from the template body and move them to <head>
+// Extract <style> blocks from the template body and move them to <head>. The closing pattern
+// mirrors the HTML tokenizer, which ends the element at "</style" plus any of > / whitespace.
 $extractedStyles = '';
 $bodyHtml        = preg_replace_callback(
-    '/<style\b[^>]*>(.*?)<\/style>/si',
+    '#<style\b[^>]*>(.*?)</\s*style\b[^>]*>#si',
     function (array $m) use (&$extractedStyles): string {
         $extractedStyles .= $m[1] . "\n";
         return '';
@@ -39,16 +41,35 @@ $bodyHtml        = preg_replace_callback(
 );
 
 // Load custom CSS from the matched packing slip template record
-$customCss = '';
-$db = \Joomla\CMS\Factory::getContainer()->get(DatabaseInterface::class);
-$query = $db->getQuery(true)
+$db          = Factory::getContainer()->get(DatabaseInterface::class);
+$invoiceType = 'packingslip';
+$query       = $db->getQuery(true)
     ->select($db->quoteName('custom_css'))
     ->from($db->quoteName('#__j2commerce_invoicetemplates'))
-    ->where($db->quoteName('invoice_type') . ' = ' . $db->quote('packingslip'))
+    ->where($db->quoteName('invoice_type') . ' = :invoice_type')
     ->where($db->quoteName('enabled') . ' = 1')
-    ->order($db->quoteName('ordering') . ' ASC');
+    ->order($db->quoteName('ordering') . ' ASC')
+    ->bind(':invoice_type', $invoiceType);
 $db->setQuery($query, 0, 1);
 $customCss = trim((string) $db->loadResult());
+
+// custom_css is stored with filter="raw", so a "</style" in it would close the element and
+// let the remainder be parsed as markup.
+$safeCss = preg_replace('#</\s*style#i', '', $extractedStyles . "\n" . $customCss);
+
+// Fetched into the order-view modal and reprinted from there: emit only the slip, in the
+// wrapper the print handler looks for. The CSS rides along in an inert <template> so it
+// cannot restyle the storefront behind the modal; the print handler revives it into the
+// print document's <head>. The standalone document below serves a direct hit.
+if (Factory::getApplication()->getInput()->getCmd('tmpl') === 'component') {
+    ?>
+<div class="j2commerce j2commerce-packingslip-detail">
+    <template class="j2commerce-packingslip-css"><style><?php echo $safeCss; ?></style></template>
+    <?php echo $bodyHtml; ?>
+</div>
+    <?php
+    return;
+}
 ?>
 <!DOCTYPE html>
 <html>
@@ -78,8 +99,7 @@ $customCss = trim((string) $db->loadResult());
             font-size: 14px;
         }
         .no-print button:hover { background: #f3f4f6; }
-        <?php echo $extractedStyles; ?>
-        <?php if ($customCss !== '') echo $customCss; ?>
+        <?php echo $safeCss; ?>
         @media print {
             .no-print { display: none !important; }
             body { margin: 0; padding: 0; background: #fff; }

@@ -86,6 +86,10 @@ class HtmlView extends BaseHtmlView
         $model  = $this->getModel();
         $userId = $this->user ? (int) $this->user->id : 0;
 
+        if ($layout === 'packingslip' && !$this->params->get('show_packingslip', 0)) {
+            throw new \Exception(Text::_('JERROR_PAGE_NOT_FOUND'), 404);
+        }
+
         if ($layout === 'order' || $layout === 'packingslip') {
             $orderId     = $app->getInput()->getString('order_id', '');
             $this->order = $model->getOrder($orderId);

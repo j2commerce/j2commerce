@@ -543,6 +543,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (orderModalEl) {
         orderModal = bootstrap.Modal.getOrCreateInstance(orderModalEl);
+
+        // Do not leave the previous order or slip in the DOM after the modal closes.
+        orderModalEl.addEventListener('hidden.bs.modal', () => {
+            if (orderModalBody) orderModalBody.replaceChildren();
+        });
     }
 
     document.addEventListener('click', async e => {
@@ -629,6 +634,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const fragment = printDoc.createDocumentFragment();
             Array.from(orderModalBody.childNodes).forEach(node => {
+                // Packing slip CSS travels inert so it cannot restyle the storefront; it only
+                // becomes a stylesheet here, in the print document.
+                if (node.nodeType === Node.ELEMENT_NODE && node.matches('template.j2commerce-packingslip-css')) {
+                    printDoc.head.appendChild(printDoc.importNode(node.content, true));
+                    return;
+                }
+
                 fragment.appendChild(printDoc.importNode(node, true));
             });
             printDoc.body.appendChild(fragment);

@@ -56,11 +56,16 @@ $statusName = !empty($order->orderstatus_name) ? Text::_($order->orderstatus_nam
         <a href="<?php echo Route::_('index.php?option=com_j2commerce&view=myprofile'); ?>" class="text-decoration-none">
             &larr; <?php echo Text::_('COM_J2COMMERCE_BACK_TO_PROFILE'); ?>
         </a>
-        <?php if (!$isPrint): ?>
+        <div>
             <button type="button" class="btn btn-outline-secondary btn-sm j2commerce-order-print ms-2" data-url="<?php echo Route::_('index.php?option=com_j2commerce&view=myprofile&layout=order&order_id=' . urlencode($order->order_id) . '&tmpl=component'); ?>">
                 <span class="icon-print" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_ORDER_PRINT'); ?>
             </button>
-        <?php endif; ?>
+            <?php if ($params->get('show_packingslip', 0)): ?>
+                <button type="button" class="btn btn-outline-secondary btn-sm j2commerce-packingslip-print ms-2" data-url="<?php echo Route::_('index.php?option=com_j2commerce&view=myprofile&layout=packingslip&order_id=' . urlencode($order->order_id) . '&tmpl=component'); ?>">
+                    <span class="icon-box" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_ORDER_PRINT_PACKING_SLIP'); ?>
+                </button>
+            <?php endif; ?>
+        </div>
     </div>
     <?php endif; ?>
 
