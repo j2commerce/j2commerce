@@ -15,8 +15,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (hash) {
         // Compare in JS rather than interpolating the hash into a selector: a URL ending in
         // #a"] makes querySelector throw, which would abort this whole handler and unbind
-        // every listener in the file.
-        const btn = Array.from(document.querySelectorAll('[data-bs-target]'))
+        // every listener in the file. Restricted to tab toggles for the same reason — show()
+        // resolves siblings through the element's .nav / .list-group / [role=tablist] ancestor
+        // and fails without one, which a navbar toggler or collapse button would not have.
+        const btn = Array.from(document.querySelectorAll('[data-bs-toggle="tab"][data-bs-target]'))
             .find(el => el.dataset.bsTarget === hash);
 
         if (btn) {
