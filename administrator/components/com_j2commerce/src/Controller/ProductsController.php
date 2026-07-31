@@ -78,13 +78,7 @@ class ProductsController extends AdminController
         return parent::getModel($name, $prefix, $config);
     }
 
-    /**
-     * Authenticate and authorise the caller for a component action.
-     *
-     * The dispatcher only establishes `core.manage`, and a CSRF token is anti-forgery
-     * rather than an authorisation decision — so every write task below states the
-     * capability it actually needs.
-     */
+    /** Authenticate and authorise the caller for a component action. */
     private function canDo(string $action): bool
     {
         $user = $this->app->getIdentity();
@@ -218,7 +212,16 @@ class ProductsController extends AdminController
     public function searchproductfilters(): void
     {
         $app = Factory::getApplication();
-        $q   = $app->getInput()->post->getString('q', '');
+
+        // Called only by the admin product edit form, so it takes the same capability its write twins do.
+        if (!$this->canDo('core.edit')) {
+            echo json_encode([]);
+            $app->close();
+
+            return;
+        }
+
+        $q = $app->getInput()->post->getString('q', '');
 
         // Get database and search for filters
         $db    = Factory::getContainer()->get('DatabaseDriver');
@@ -238,9 +241,11 @@ class ProductsController extends AdminController
         if (!empty($q)) {
             $search = '%' . $db->escape($q, true) . '%';
             $query->where(
-                '(' . $db->quoteName('f.filter_name') . ' LIKE ' . $db->quote($search) .
-                ' OR ' . $db->quoteName('fg.group_name') . ' LIKE ' . $db->quote($search) . ')'
-            );
+                '(' . $db->quoteName('f.filter_name') . ' LIKE :search' .
+                ' OR ' . $db->quoteName('fg.group_name') . ' LIKE :searchGroup)'
+            )
+                ->bind(':search', $search, ParameterType::STRING)
+                ->bind(':searchGroup', $search, ParameterType::STRING);
         }
 
         $query->order($db->quoteName('fg.group_name') . ' ASC')
@@ -327,7 +332,15 @@ class ProductsController extends AdminController
      */
     public function getProductFilterListAjax(): void
     {
-        $app        = Factory::getApplication();
+        $app = Factory::getApplication();
+
+        if (!$this->canDo('core.edit')) {
+            echo json_encode(['html' => '']);
+            $app->close();
+
+            return;
+        }
+
         $productId  = $app->getInput()->post->getInt('product_id', 0);
         $limitstart = $app->getInput()->post->getInt('limitstart', 0);
         $limit      = $app->getInput()->post->getInt('limit', 20);
@@ -394,7 +407,17 @@ class ProductsController extends AdminController
      */
     public function getRelatedProducts(): void
     {
-        $app       = Factory::getApplication();
+        $app = Factory::getApplication();
+
+        // Returns the product catalogue with SKUs. Reached only from the admin product
+        // edit form and the admin selector fields in the bundle/box-builder plugins.
+        if (!$this->canDo('core.edit')) {
+            echo json_encode(['products' => []]);
+            $app->close();
+
+            return;
+        }
+
         $q         = $app->getInput()->post->getString('q', '');
         $productId = $app->getInput()->post->getInt('product_id', 0);
 
@@ -432,9 +455,11 @@ class ProductsController extends AdminController
             // Search by product name or SKU
             $search = '%' . $db->escape($q, true) . '%';
             $query->where(
-                '(' . $db->quoteName('c.title') . ' LIKE ' . $db->quote($search) .
-                ' OR ' . $db->quoteName('v.sku') . ' LIKE ' . $db->quote($search) . ')'
-            );
+                '(' . $db->quoteName('c.title') . ' LIKE :search' .
+                ' OR ' . $db->quoteName('v.sku') . ' LIKE :searchSku)'
+            )
+                ->bind(':search', $search, ParameterType::STRING)
+                ->bind(':searchSku', $search, ParameterType::STRING);
 
             $query->group($db->quoteName('p.j2commerce_product_id'))
                 ->order($db->quoteName('c.title') . ' ASC')
@@ -459,7 +484,15 @@ class ProductsController extends AdminController
     public function getBoxBuilderProducts(): void
     {
         $app = Factory::getApplication();
-        $q   = $app->getInput()->post->getString('q', '');
+
+        if (!$this->canDo('core.edit')) {
+            echo json_encode(['products' => []]);
+            $app->close();
+
+            return;
+        }
+
+        $q = $app->getInput()->post->getString('q', '');
 
         $products = [];
 
@@ -487,9 +520,11 @@ class ProductsController extends AdminController
                 ->where($db->quoteName('p.enabled') . ' = 1')
                 ->where($db->quoteName('p.product_type') . ' IN (' . implode(',', array_map([$db, 'quote'], $types)) . ')')
                 ->where(
-                    '(' . $db->quoteName('c.title') . ' LIKE ' . $db->quote($search)
-                    . ' OR ' . $db->quoteName('v.sku') . ' LIKE ' . $db->quote($search) . ')'
+                    '(' . $db->quoteName('c.title') . ' LIKE :search'
+                    . ' OR ' . $db->quoteName('v.sku') . ' LIKE :searchSku)'
                 )
+                ->bind(':search', $search, ParameterType::STRING)
+                ->bind(':searchSku', $search, ParameterType::STRING)
                 ->order($db->quoteName('c.title') . ' ASC')
                 ->setLimit(20);
 
@@ -816,7 +851,17 @@ class ProductsController extends AdminController
     public function setproductoptionvalues(): void
     {
         $app = Factory::getApplication();
-        $db  = Factory::getContainer()->get('DatabaseDriver');
+
+        // Renders the option-value grid (SKUs, price and weight modifiers) for a
+        // product. Read-only, but product data — same capability as its AJAX twin.
+        if (!$this->canDo('core.edit')) {
+            echo Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN');
+            $app->close();
+
+            return;
+        }
+
+        $db = Factory::getContainer()->get('DatabaseDriver');
 
         $productId       = $app->getInput()->getInt('product_id', 0);
         $productOptionId = $app->getInput()->getInt('productoption_id', 0);
@@ -1281,12 +1326,21 @@ class ProductsController extends AdminController
     public function getProductOptionValuesAjax(): void
     {
         $app = Factory::getApplication();
-        $db  = Factory::getContainer()->get('DatabaseDriver');
+
+        $response = ['success' => false, 'html' => '', 'message' => ''];
+
+        if (!$this->canDo('core.edit')) {
+            $response['message'] = Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN');
+            echo json_encode($response);
+            $app->close();
+
+            return;
+        }
+
+        $db = Factory::getContainer()->get('DatabaseDriver');
 
         $productId       = $app->getInput()->getInt('product_id', 0);
         $productOptionId = $app->getInput()->getInt('productoption_id', 0);
-
-        $response = ['success' => false, 'html' => '', 'message' => ''];
 
         if (!$productId || !$productOptionId) {
             $response['message'] = Text::_('COM_J2COMMERCE_INVALID_PRODUCT_OR_OPTION');
@@ -2502,11 +2556,7 @@ class ProductsController extends AdminController
         $app = Factory::getApplication();
         $db  = Factory::getContainer()->get('DatabaseDriver');
 
-        // Discloses the variant grid — SKU, cost, stock. No CSRF token is demanded:
-        // none of the four template callers sends one (one of them ships in a separate
-        // plugin), and for a read the authorisation below is the control that matters.
-        // Shape the denial like an empty page so the caller's `if (data.html)` is a
-        // no-op rather than rendering an error into the accordion.
+        // Requires core.edit; the denial is shaped like an empty page so the caller's `if (data.html)` is a no-op.
         if (!$this->canDo('core.edit')) {
             echo json_encode(['html' => '', 'total' => 0, 'message' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
             $app->close();

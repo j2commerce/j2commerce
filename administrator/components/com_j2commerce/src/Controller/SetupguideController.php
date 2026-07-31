@@ -28,6 +28,12 @@ use Joomla\Registry\Registry;
 
 class SetupguideController extends BaseController
 {
+    /** A menu row linking to this component with no query string beyond the option. */
+    private const MENU_LINK_EXACT = 'index.php?option=com_j2commerce';
+
+    /** Same, followed by further parameters. '!' escapes the literal underscore. */
+    private const MENU_LINK_PREFIX = 'index.php?option=com!_j2commerce&%';
+
     private function getDb(): DatabaseInterface
     {
         return Factory::getContainer()->get(DatabaseInterface::class);
@@ -133,6 +139,10 @@ class SetupguideController extends BaseController
     {
         if (!Session::checkToken()) {
             $this->jsonError(Text::_('JINVALID_TOKEN'), 403);
+            return;
+        }
+
+        if (!$this->requireAdmin()) {
             return;
         }
 
@@ -337,13 +347,56 @@ class SetupguideController extends BaseController
             throw new \InvalidArgumentException('Invalid menu item ID');
         }
 
-        $db    = $this->getDb();
+        // Constrain the row this can touch. Without the link/client_id predicates the
+        // id alone publishes ANY menu item on the site — including an administrator
+        // menu row. Every id the setup guide hands out comes from a check that already
+        // filtered on exactly these two conditions, so nothing legitimate is excluded.
+        $linkExact  = self::MENU_LINK_EXACT;
+        $linkPrefix = self::MENU_LINK_PREFIX;
+        $siteClient = 0;
+
+        $db = $this->getDb();
+
+        $eligible = $db->getQuery(true)
+            ->select($db->quoteName('id'))
+            ->from($db->quoteName('#__menu'))
+            ->where($db->quoteName('id') . ' = :id')
+            ->where($db->quoteName('client_id') . ' = :clientId')
+            ->where($this->componentMenuLinkPredicate($db))
+            ->bind(':id', $menuItemId, ParameterType::INTEGER)
+            ->bind(':clientId', $siteClient, ParameterType::INTEGER)
+            ->bind(':linkExact', $linkExact, ParameterType::STRING)
+            ->bind(':linkPrefix', $linkPrefix, ParameterType::STRING);
+
+        if (!$db->setQuery($eligible)->loadResult()) {
+            throw new \RuntimeException(Text::_('COM_J2COMMERCE_SETUP_GUIDE_MENU_ITEM_NOT_ELIGIBLE'));
+        }
+
+        // The same predicates are repeated on the write so the row cannot change
+        // identity between the check and the update.
         $query = $db->getQuery(true)
             ->update($db->quoteName('#__menu'))
             ->set($db->quoteName('published') . ' = 1')
             ->where($db->quoteName('id') . ' = :id')
-            ->bind(':id', $menuItemId, ParameterType::INTEGER);
+            ->where($db->quoteName('client_id') . ' = :clientId')
+            ->where($this->componentMenuLinkPredicate($db))
+            ->bind(':id', $menuItemId, ParameterType::INTEGER)
+            ->bind(':clientId', $siteClient, ParameterType::INTEGER)
+            ->bind(':linkExact', $linkExact, ParameterType::STRING)
+            ->bind(':linkPrefix', $linkPrefix, ParameterType::STRING);
 
         $db->setQuery($query)->execute();
+    }
+
+    /**
+     * Matches only links whose option value terminates at com_j2commerce — either the
+     * bare link or one followed by '&'. A floating '%option=com_j2commerce%' also matches
+     * the sibling component com_j2commercemigrator and any custom-URL row that merely
+     * contains the string. '_' is a LIKE wildcard, hence the ESCAPE clause.
+     */
+    private function componentMenuLinkPredicate(DatabaseInterface $db): string
+    {
+        return '(' . $db->quoteName('link') . ' = :linkExact'
+            . ' OR ' . $db->quoteName('link') . ' LIKE :linkPrefix ESCAPE ' . $db->quote('!') . ')';
     }
 }

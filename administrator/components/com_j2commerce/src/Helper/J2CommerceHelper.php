@@ -17,6 +17,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 // phpcs:enable PSR1.Files.SideEffects
 
 
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Helper\ContentHelper;
@@ -132,12 +133,10 @@ class J2CommerceHelper extends ContentHelper
     }
 
     /**
-     * Check a J2Commerce custom ACL action with core.manage fallback.
-     *
-     * Custom actions (j2commerce.vieworders, etc.) default to "Inherited" which
-     * resolves to "Not Allowed" for non-Super User groups unless explicitly set.
-     * This method treats core.manage as sufficient base access — the custom actions
-     * serve as additional restrictions, not gates.
+     * Check a J2Commerce custom ACL action (j2commerce.vieworders, etc.), in two phases:
+     * core.manage still grants the action until the install seed has written explicit
+     * allows — so a site deployed by git pull/rsync/FTP, which never runs postflight, is
+     * not locked out — and once the seed flag is present the action is the only gate.
      *
      * @param   string  $action  The action to check (e.g. 'j2commerce.vieworders').
      *
@@ -149,8 +148,19 @@ class J2CommerceHelper extends ContentHelper
     {
         $user = Factory::getApplication()->getIdentity();
 
-        return $user->authorise($action, 'com_j2commerce')
-            || $user->authorise('core.manage', 'com_j2commerce');
+        if (!$user) {
+            return false;
+        }
+
+        if ($user->authorise($action, 'com_j2commerce')) {
+            return true;
+        }
+
+        // ComponentHelper caches the component row for the request, so this is not a
+        // per-call query.
+        $seeded = (int) ComponentHelper::getParams('com_j2commerce')->get('acl_custom_actions_seeded', 0);
+
+        return $seeded !== 1 && $user->authorise('core.manage', 'com_j2commerce');
     }
 
     // ========================================================================
@@ -1061,7 +1071,7 @@ class J2CommerceHelper extends ContentHelper
         }
 
         // Fallback: try PLG_J2COMMERCE_{ELEMENT} (the plugin's sys.ini name key)
-        $langKey = 'PLG_J2COMMERCE_' . strtoupper($element);
+        $langKey    = 'PLG_J2COMMERCE_' . strtoupper($element);
         $translated = Text::_($langKey);
         if ($translated !== $langKey) {
             return $translated;

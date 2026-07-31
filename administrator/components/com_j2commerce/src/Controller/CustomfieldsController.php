@@ -199,6 +199,8 @@ class CustomfieldsController extends AdminController
 
     public function saveOrderAjax(): void
     {
+        $this->checkToken();
+
         $pks   = $this->input->post->get('cid', [], 'array');
         $order = $this->input->post->get('order', [], 'array');
 

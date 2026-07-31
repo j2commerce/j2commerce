@@ -57,6 +57,14 @@ class AppPluginController extends BaseController
             }
         }
 
+        // Component-level floor only; per-action capability checks remain each plugin handler's job.
+        $user = Factory::getApplication()->getIdentity();
+
+        if (!$user || $user->guest || !$user->authorise('core.manage', 'com_j2commerce')) {
+            $this->sendJsonError(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'));
+            return;
+        }
+
         if (empty($plugin) || empty($action)) {
             $this->sendJsonError(Text::_('COM_J2COMMERCE_ERR_INVALID_REQUEST'));
             return;

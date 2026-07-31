@@ -226,6 +226,8 @@ class InvoicetemplatesController extends AdminController
      */
     public function saveOrderAjax()
     {
+        $this->checkToken();
+
         // Get the input
         $pks   = $this->input->post->get('cid', [], 'array');
         $order = $this->input->post->get('order', [], 'array');

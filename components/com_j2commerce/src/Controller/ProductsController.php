@@ -213,8 +213,7 @@ class ProductsController extends AdminProductsController
             $app->close();
 
         } catch (\Throwable $e) {
-            // This endpoint is anonymous, so the exception text stays server-side —
-            // it carries table, column and prefix names straight out of the database.
+            // The exception text stays server-side; the caller gets a generic error.
             Log::add(
                 'Product filter AJAX failed: ' . $e->getMessage()
                     . ' at ' . $e->getFile() . ':' . $e->getLine(),

@@ -227,6 +227,8 @@ class EmailtemplatesController extends AdminController
      */
     public function saveOrderAjax()
     {
+        $this->checkToken();
+
         // Get the input
         $pks   = $this->input->post->get('cid', [], 'array');
         $order = $this->input->post->get('order', [], 'array');
@@ -355,6 +357,13 @@ class EmailtemplatesController extends AdminController
     public function export(): void
     {
         Session::checkToken() or die(Text::_('JINVALID_TOKEN'));
+
+        // Requires core.edit, as syncCore() already does.
+        if (!Factory::getApplication()->getIdentity()->authorise('core.edit', 'com_j2commerce')) {
+            $this->setMessage(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 'error');
+            $this->setRedirect(Route::_('index.php?option=' . $this->option . '&view=' . $this->view_list, false));
+            return;
+        }
 
         $cid = $this->input->get('cid', [], 'array');
         $cid = \Joomla\Utilities\ArrayHelper::toInteger($cid);

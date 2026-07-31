@@ -149,7 +149,7 @@ class CustomerController extends FormController
             $app->close();
         }
 
-        if (!J2CommerceHelper::canAccess('j2commerce.vieworders')) {
+        if (!J2CommerceHelper::canAccess('j2commerce.editorders')) {
             echo json_encode(['success' => false, 'message' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
             $app->close();
         }
@@ -202,7 +202,7 @@ class CustomerController extends FormController
             $app->close();
         }
 
-        if (!J2CommerceHelper::canAccess('j2commerce.vieworders')) {
+        if (!J2CommerceHelper::canAccess('j2commerce.editorders')) {
             echo json_encode(['success' => false, 'message' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
             $app->close();
         }
@@ -254,7 +254,7 @@ class CustomerController extends FormController
             $app->close();
         }
 
-        if (!J2CommerceHelper::canAccess('j2commerce.vieworders')) {
+        if (!J2CommerceHelper::canAccess('j2commerce.editorders')) {
             echo json_encode(['success' => false, 'message' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
             $app->close();
         }

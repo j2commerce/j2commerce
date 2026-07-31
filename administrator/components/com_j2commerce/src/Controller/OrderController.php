@@ -176,6 +176,19 @@ class OrderController extends FormController
     {
         $this->checkToken();
 
+        // Same core.edit pair the AJAX twin and the toolbar Save enforce.
+        if (!$this->app->getIdentity()->authorise('core.edit', 'com_j2commerce')
+            || !J2CommerceHelper::canAccess('j2commerce.editorders')
+        ) {
+            $this->setRedirect(
+                Route::_('index.php?option=com_j2commerce&view=orders', false),
+                Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'),
+                'error'
+            );
+
+            return;
+        }
+
         $orderId  = $this->input->getInt('id', 0);
         $statusId = $this->input->post->getInt('order_state_id', 0);
         $notify   = $this->input->post->getInt('notify_customer', 0) === 1;
@@ -568,6 +581,11 @@ class OrderController extends FormController
     /** Render a single packing slip as a standalone HTML document. */
     public function packingSlip(): void
     {
+        // Authorisation only, no token: this is a GET reached from an admin print link that carries none.
+        if (!$this->requirePackingSlipAccess()) {
+            return;
+        }
+
         $orderId = $this->input->getInt('id', 0);
 
         if ($orderId < 1) {
@@ -593,6 +611,10 @@ class OrderController extends FormController
     public function printPackingSlips(): void
     {
         Session::checkToken('get') or Session::checkToken() or jexit(Text::_('JINVALID_TOKEN'));
+
+        if (!$this->requirePackingSlipAccess()) {
+            return;
+        }
 
         $cid = $this->input->get('cid', [], 'array');
         $cid = array_map('intval', $cid);
@@ -782,13 +804,13 @@ class OrderController extends FormController
                 $totals  = $model->recalculateOrderTotals($created['order_id']);
 
                 echo json_encode([
-                    'success'          => true,
-                    'created'          => true,
-                    'order_id'         => $created['id'],
-                    'order_ref'        => $created['order_id'],
-                    'message'          => Text::_('COM_J2COMMERCE_ORDER_CREATED'),
-                    'totals'           => $this->totalsPayload($totals, (string) ($order->currency_code ?? '')),
-                    'redirect'         => Route::_('index.php?option=com_j2commerce&view=order&layout=edit&id=' . $created['id'], false),
+                    'success'   => true,
+                    'created'   => true,
+                    'order_id'  => $created['id'],
+                    'order_ref' => $created['order_id'],
+                    'message'   => Text::_('COM_J2COMMERCE_ORDER_CREATED'),
+                    'totals'    => $this->totalsPayload($totals, (string) ($order->currency_code ?? '')),
+                    'redirect'  => Route::_('index.php?option=com_j2commerce&view=order&layout=edit&id=' . $created['id'], false),
                     // Reveal the Take Payment button without a page reload.
                     'take_payment_url' => OrderPayGrantHelper::isPayable($order) ? OrderPayGrantHelper::buildUrl($created['id']) : '',
                 ]);
@@ -1763,6 +1785,25 @@ class OrderController extends FormController
         }
 
         return $this->input->post->get($token, '', 'alnum') === '1';
+    }
+
+    /**
+     * Authorisation gate for the packing-slip render tasks, which emit HTML rather
+     * than JSON. Emits the denial and closes the app, returning false so the caller
+     * can just `return`.
+     */
+    private function requirePackingSlipAccess(): bool
+    {
+        $user = $this->app->getIdentity();
+
+        if (!$user || $user->guest || !J2CommerceHelper::canAccess('j2commerce.vieworders')) {
+            echo '<div class="alert alert-danger">' . Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN') . '</div>';
+            $this->app->close();
+
+            return false;
+        }
+
+        return true;
     }
 
     /**

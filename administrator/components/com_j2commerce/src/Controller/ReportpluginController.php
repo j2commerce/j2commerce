@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\BaseController;
@@ -72,6 +73,11 @@ class ReportpluginController extends BaseController
             }
         }
 
+        if (!$this->canViewReports()) {
+            $this->sendJsonError(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'));
+            return;
+        }
+
         $plugin = $this->input->getCmd('plugin', '');
         $action = $this->input->getCmd('action', '');
 
@@ -110,7 +116,14 @@ class ReportpluginController extends BaseController
     {
         $this->checkToken('get');
 
-        $app    = Factory::getApplication();
+        $app = Factory::getApplication();
+
+        if (!$this->canViewReports()) {
+            $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=reports', false));
+            $this->setMessage(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 'error');
+            return;
+        }
+
         $plugin = $this->input->getCmd('plugin', '');
 
         if (empty($plugin)) {
@@ -192,6 +205,17 @@ class ReportpluginController extends BaseController
 
         fclose($output);
         $app->close();
+    }
+
+    /**
+     * Authenticate and authorise the caller for the report surface: Joomla issues valid
+     * form tokens to guest sessions, so the token alone gates nothing.
+     */
+    private function canViewReports(): bool
+    {
+        $user = Factory::getApplication()->getIdentity();
+
+        return $user && !$user->guest && J2CommerceHelper::canAccess('j2commerce.viewreports');
     }
 
     /**
