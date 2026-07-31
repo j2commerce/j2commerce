@@ -393,9 +393,8 @@ class CartOrder
      * summed per variant first: two lines of the same variant with different options
      * must not each be measured against the full stock. Authority is
      * `ProductHelper::checkStockStatus()` — the same helper the cart behaviors use, so
-     * backorder-enabled variants stay purchasable. A load or query failure fails OPEN
-     * (logged, line skipped): an infrastructure blip must not read as "out of stock"
-     * and lock the store out of checkout.
+     * backorder-enabled variants stay purchasable. A load or query failure is logged and the line
+     * skipped — deliberate, so an infrastructure error cannot block every shopper at checkout.
      *
      * @return  bool  True when every managed line still has enough stock.
      *
@@ -413,7 +412,7 @@ class CartOrder
             if (!empty($item->variant_id)) {
                 $variantId            = (int) $item->variant_id;
                 $wanted[$variantId] ??= 0;
-                $wanted[$variantId]  += (int) ($item->product_qty ?? 1);
+                $wanted[$variantId] += (int) ($item->product_qty ?? 1);
             }
         }
 
@@ -1039,7 +1038,7 @@ class CartOrder
             'rates' => $rates,
             'order' => $order,
         ]);
-        Factory::getApplication()->getContainer()->get(DispatcherInterface::class)->dispatch('onJ2CommerceFilterShippingRates', $filterEvent);
+        Factory::getContainer()->get(DispatcherInterface::class)->dispatch('onJ2CommerceFilterShippingRates', $filterEvent);
         $rates = $filterEvent->getArgument('rates', $rates);
 
         foreach ($rates as $rate) {
@@ -1564,6 +1563,35 @@ class CartOrder
     }
 
     /**
+     * Single source of truth shared by saveOrder() (which persists the email) and coupon
+     * per-customer limit validation (which counts prior uses against it), so the address
+     * checked can never diverge from the address stored. A guest address is self-asserted
+     * — an identity hint, not proof of identity.
+     */
+    public function resolveCheckoutEmail(): string
+    {
+        $app    = Factory::getApplication();
+        $user   = $app->getIdentity();
+        $userId = ($user && $user->id) ? (int) $user->id : 0;
+
+        if ($userId === 0) {
+            $guestData = (array) $app->getSession()->get('guest', [], 'j2commerce');
+
+            return (string) ($guestData['email'] ?? '');
+        }
+
+        $email = (string) ($user->email ?? '');
+
+        // Logged-in identities resolved late carry no email on the session object.
+        if ($email === '') {
+            $userFactory = Factory::getContainer()->get(\Joomla\CMS\User\UserFactoryInterface::class);
+            $email       = (string) ($userFactory->loadUserById($userId)->email ?? '');
+        }
+
+        return $email;
+    }
+
+    /**
      * Persist the cart order to the database.
      *
      * Creates records in orders, orderitems, orderinfos, ordertaxes,
@@ -1587,22 +1615,7 @@ class CartOrder
 
         // Gather user info
         $userId    = ($user && $user->id) ? (int) $user->id : 0;
-        $userEmail = '';
-
-        if ($userId > 0) {
-            $userEmail = $user->email;
-        } else {
-            // Guest checkout — get email from session guest data
-            $guestData = $session->get('guest', [], 'j2commerce');
-            $userEmail = $guestData['email'] ?? '';
-        }
-
-        // Last resort: use Joomla user email for logged-in users whose identity was resolved late
-        if (empty($userEmail) && $userId > 0) {
-            $userFactory = Factory::getContainer()->get(\Joomla\CMS\User\UserFactoryInterface::class);
-            $loadedUser  = $userFactory->loadUserById($userId);
-            $userEmail   = $loadedUser->email ?? '';
-        }
+        $userEmail = $this->resolveCheckoutEmail();
 
         $this->user_id       = $userId;
         $this->user_email    = $userEmail;

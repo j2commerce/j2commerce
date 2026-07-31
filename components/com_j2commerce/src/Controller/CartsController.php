@@ -19,14 +19,17 @@ namespace J2Commerce\Component\J2commerce\Site\Controller;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CartOrder;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\UploadHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\CartModel;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Helper\ModuleHelper;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Router\Route;
+use Joomla\CMS\Session\Session;
 use Joomla\CMS\Uri\Uri;
 use Joomla\Database\ParameterType;
 
@@ -70,7 +73,7 @@ class CartsController extends BaseController
      */
     private function validateAjaxToken(): bool
     {
-        $token = \Joomla\CMS\Session\Session::getFormToken();
+        $token = Session::getFormToken();
 
         // Check X-CSRF-Token header first (for fetch/XHR)
         if ($token === $this->input->server->get('HTTP_X_CSRF_TOKEN', '', 'alnum')) {
@@ -79,6 +82,12 @@ class CartsController extends BaseController
 
         // Then check POST body (truthy check, matching Joomla's Session::checkToken behavior)
         return (bool) $this->input->post->get($token, '', 'alnum');
+    }
+
+    /** Same token, read from the query string — for GET endpoints a template override may still call. */
+    private function validateAjaxTokenFromQuery(): bool
+    {
+        return (bool) $this->input->get->get(Session::getFormToken(), '', 'alnum');
     }
 
     /**
@@ -314,17 +323,21 @@ class CartsController extends BaseController
                 }
             }
         } catch (\Exception $e) {
-            // Handle any uncaught exceptions
+            // Add-to-cart business rules (stock, min/max quantity, required options)
+            // are returned in $json['error'] above; anything reaching here is an
+            // infrastructure fault, so the shopper only sees a generic message.
+            Log::add('carts.addItem failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+
             if ($ajax) {
                 $this->sendJsonResponse([
                     'success' => 0,
-                    'error'   => ['general' => $e->getMessage()],
+                    'error'   => ['general' => Text::_('COM_J2COMMERCE_ERR_GENERIC')],
                 ]);
             } else {
                 // For non-AJAX, redirect with error message
                 $this->setRedirect(
                     Route::_('index.php?option=com_j2commerce&view=carts'),
-                    $e->getMessage(),
+                    Text::_('COM_J2COMMERCE_ERR_GENERIC'),
                     'error'
                 );
             }
@@ -457,8 +470,10 @@ class CartsController extends BaseController
             $json['success'] = true;
             $json['message'] = Text::_('COM_J2COMMERCE_CART_CLEAR_SUCCESSFULLY');
         } catch (\Exception $e) {
+            Log::add('carts.clearCartAjax failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+
             $json['success'] = false;
-            $json['message'] = $e->getMessage();
+            $json['message'] = Text::_('COM_J2COMMERCE_ERR_GENERIC');
         }
 
         $this->sendJsonResponse($json);
@@ -554,8 +569,10 @@ class CartsController extends BaseController
                 }
             }
         } catch (\Exception $e) {
+            Log::add('carts.removeAjax failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+
             $json['success'] = false;
-            $json['message'] = $e->getMessage();
+            $json['message'] = Text::_('COM_J2COMMERCE_ERR_GENERIC');
         }
 
         $this->sendJsonResponse($json);
@@ -714,8 +731,10 @@ class CartsController extends BaseController
                 $json['original_qty'] = $originalQty;
             }
         } catch (\Exception $e) {
+            Log::add('carts.updateQuantityAjax failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+
             $json['success']      = false;
-            $json['message']      = $e->getMessage();
+            $json['message']      = Text::_('COM_J2COMMERCE_ERR_GENERIC');
             $json['original_qty'] = $originalQty ?? 1;
         }
 
@@ -789,8 +808,10 @@ class CartsController extends BaseController
             $json['html']          = $html;
             $json['shipping_html'] = $shippingHtml;
         } catch (\Exception $e) {
+            Log::add('carts.getTotalsAjax failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+
             $json['success'] = false;
-            $json['message'] = $e->getMessage();
+            $json['message'] = Text::_('COM_J2COMMERCE_ERR_GENERIC');
         }
 
         $this->sendJsonResponse($json);
@@ -1062,7 +1083,9 @@ class CartsController extends BaseController
                 'coupon'  => $coupon,
             ]);
         } catch (\Exception $e) {
-            $this->sendJsonResponse(['success' => false, 'message' => $e->getMessage()]);
+            Log::add('carts.applyCouponAjax failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+
+            $this->sendJsonResponse(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERR_GENERIC')]);
         }
     }
 
@@ -1101,7 +1124,9 @@ class CartsController extends BaseController
                 ];
             }
         } catch (\Exception $e) {
-            $json = ['success' => false, 'message' => $e->getMessage()];
+            Log::add('carts.removeCouponAjax failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+
+            $json = ['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERR_GENERIC')];
         }
 
         $this->sendJsonResponse($json);
@@ -1150,7 +1175,9 @@ class CartsController extends BaseController
                 'voucher' => $voucher,
             ]);
         } catch (\Exception $e) {
-            $this->sendJsonResponse(['success' => false, 'message' => $e->getMessage()]);
+            Log::add('carts.applyVoucherAjax failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+
+            $this->sendJsonResponse(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERR_GENERIC')]);
         }
     }
 
@@ -1191,7 +1218,9 @@ class CartsController extends BaseController
                 ];
             }
         } catch (\Exception $e) {
-            $json = ['success' => false, 'message' => $e->getMessage()];
+            Log::add('carts.removeVoucherAjax failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+
+            $json = ['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERR_GENERIC')];
         }
 
         $this->sendJsonResponse($json);
@@ -1414,14 +1443,27 @@ class CartsController extends BaseController
         UtilitiesHelper::clearCache();
         $this->startAjaxBuffer();
 
+        // A template override of default_calculator.php / default_shipping.php still sends
+        // the old tokenless GET, and the old JS ignores the response body — so a silent
+        // reject looks like "clicking a shipping option does nothing". Accept the token
+        // from the query string as well, and name the two files when there is none at all.
+        if (!$this->validateAjaxToken() && !$this->validateAjaxTokenFromQuery()) {
+            Log::add(
+                'carts.shippingUpdate rejected: no CSRF token. A template override of '
+                . 'tmpl/carts/{framework}/default_calculator.php or default_shipping.php is '
+                . 'likely still posting the pre-6.3.0 tokenless request — re-copy both files.',
+                Log::WARNING,
+                'com_j2commerce'
+            );
+
+            $this->sendJsonResponse(['success' => false, 'message' => Text::_('JINVALID_TOKEN')]);
+        }
+
         $json    = [];
         $model   = $this->getCartModel();
         $session = $this->app->getSession();
 
-        // Only the rate identifier comes from the request — price, tax and extra are
-        // re-resolved from a fresh GetShippingRates dispatch so a tampered
-        // shipping_price can never reach order_total. A selection that matches no
-        // plugin rate leaves the current (server-verified) session values untouched.
+        // Rates are resolved server-side from the identifier; an unmatched selection leaves session values as they are.
         $selectedPlugin = $this->input->getString('shipping_plugin', '');
         $cartsModel     = $this->getModel('Carts');
         $order          = $cartsModel ? $cartsModel->getOrder() : null;
@@ -1527,23 +1569,11 @@ class CartsController extends BaseController
             $this->sendJsonResponse(['error' => Text::_('JINVALID_TOKEN')]);
         }
 
-        // Per-session upload throttle (hourly rolling window) so the endpoint
-        // cannot be used as unbounded anonymous storage.
-        $session     = $this->app->getSession();
-        $windowStart = (int) $session->get('upload_window_start', 0, 'j2commerce');
-        $uploadCount = (int) $session->get('upload_count', 0, 'j2commerce');
-
-        if (time() - $windowStart >= 3600) {
-            $windowStart = time();
-            $uploadCount = 0;
-        }
-
-        if ($uploadCount >= 30) {
+        // Rolling-hour upload throttle counted over the stored rows, not the session:
+        // a session counter resets itself for free on every new visit.
+        if (UploadHelper::hasExceededHourlyLimit()) {
             $this->sendJsonResponse(['error' => Text::_('COM_J2COMMERCE_UPLOAD_RATE_LIMITED')]);
         }
-
-        $session->set('upload_window_start', $windowStart, 'j2commerce');
-        $session->set('upload_count', $uploadCount + 1, 'j2commerce');
 
         $files = $this->input->files->get('file');
         $json  = [];

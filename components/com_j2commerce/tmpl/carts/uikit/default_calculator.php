@@ -330,15 +330,20 @@ document.addEventListener('DOMContentLoaded', function() {
         if (taxClassIdField) taxClassIdField.value = radio.dataset.taxClassId || '0';
         if (pluginField) pluginField.value = radio.dataset.element;
 
-        // Build params from hidden fields + checked radio
+        // Build params from hidden fields + checked radio. The form carries the CSRF
+        // token as a hidden input, and carts.shippingUpdate only accepts it from the
+        // POST body — so this must be a POST, never a GET with the token in the URL.
         const params = new URLSearchParams();
+        params.append('option', 'com_j2commerce');
+        params.append('task', 'carts.shippingUpdate');
         form.querySelectorAll('input[type="hidden"], input[type="radio"]:checked').forEach(function(input) {
             params.append(input.name, input.value);
         });
 
         // Update shipping via AJAX then refresh totals (skip server redirect)
-        fetch(baseUrl + '?option=com_j2commerce&task=carts.shippingUpdate&' + params.toString(), {
-            method: 'GET',
+        fetch(baseUrl, {
+            method: 'POST',
+            body: params,
             headers: { 'Accept': 'application/json' },
             cache: 'no-store'
         })
