@@ -436,73 +436,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Country → Zone cascading dropdowns (shared AJAX endpoints with checkout)
-    function initCountryZoneFields(formEl) {
-        if (!formEl) return;
-        const countrySelect = formEl.querySelector('select[name="country_id"]');
-        const zoneSelect = formEl.querySelector('select[name="zone_id"]');
-        if (!countrySelect) return;
-
-        const savedCountryId = formEl.dataset.countryId || '';
-        const savedZoneId = formEl.dataset.zoneId || '';
-
-        // Fetch and populate countries, restoring saved selection
-        let countryUrl = baseUrl + sep + 'task=ajax.getCountries';
-        if (savedCountryId && savedCountryId !== '0') {
-            countryUrl += '&country_id=' + encodeURIComponent(savedCountryId);
-        }
-
-        fetch(countryUrl)
-            .then(r => r.text())
-            .then(html => {
-                countrySelect.replaceChildren(parseFragment(html));
-                // If a country was pre-selected, cascade to load zones
-                if (countrySelect.value && zoneSelect) {
-                    loadZones(countrySelect.value, savedZoneId);
-                }
-            })
-            .catch(err => console.error('Error loading countries:', err));
-
-        if (!zoneSelect) return;
-
-        function loadZones(countryId, selectedZoneId) {
-            zoneSelect.replaceChildren(new Option('...', ''));
-            zoneSelect.disabled = true;
-
-            if (!countryId || countryId === '0' || countryId === '') {
-                zoneSelect.replaceChildren(new Option(Joomla.Text._('COM_J2COMMERCE_SELECT_ZONE'), ''));
-                zoneSelect.disabled = false;
-                return;
-            }
-
-            let url = baseUrl + sep + 'task=ajax.getZones&country_id=' + encodeURIComponent(countryId);
-            if (selectedZoneId && selectedZoneId !== '0') {
-                url += '&zone_id=' + encodeURIComponent(selectedZoneId);
-            }
-
-            fetch(url)
-                .then(r => r.text())
-                .then(html => {
-                    zoneSelect.replaceChildren(parseFragment(html));
-                    zoneSelect.disabled = false;
-                })
-                .catch(err => {
-                    console.error('Error loading zones:', err);
-                    zoneSelect.replaceChildren(new Option(Joomla.Text._('COM_J2COMMERCE_SELECT_ZONE'), ''));
-                    zoneSelect.disabled = false;
-                });
-        }
-
-        // Country change → reload zones
-        countrySelect.addEventListener('change', () => {
-            loadZones(countrySelect.value, '');
-        });
-    }
-
-    // Initialize country/zone fields if address form is present
+    // Country → Zone cascading dropdowns — shared with the registration form and checkout
     const addressForm = document.getElementById('j2commerce-address-form');
     if (addressForm) {
-        initCountryZoneFields(addressForm);
+        J2CommerceCountryZone.init(addressForm, { baseUrl });
     }
 
     // Address type change → reload page with correct custom fields for the area

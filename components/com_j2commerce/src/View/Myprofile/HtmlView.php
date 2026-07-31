@@ -186,7 +186,21 @@ class HtmlView extends BaseHtmlView
 
         // Register JS
         $wa = $this->getDocument()->getWebAssetManager();
-        $wa->registerAndUseScript('com_j2commerce.myprofile', 'media/com_j2commerce/js/site/myprofile.js', [], ['defer' => true]);
+        $wa->registerAndUseScript('com_j2commerce.dom', 'media/com_j2commerce/js/site/j2commerce-dom.js', [], ['defer' => true]);
+        $wa->registerAndUseScript(
+            'com_j2commerce.countryzone',
+            'media/com_j2commerce/js/site/j2commerce-countryzone.js',
+            [],
+            ['defer' => true],
+            ['com_j2commerce.dom']
+        );
+        $wa->registerAndUseScript(
+            'com_j2commerce.myprofile',
+            'media/com_j2commerce/js/site/myprofile.js',
+            [],
+            ['defer' => true],
+            ['com_j2commerce.countryzone']
+        );
 
         // Register payment methods JS if unified tab is active
         if ($this->useUnifiedPaymentTab) {

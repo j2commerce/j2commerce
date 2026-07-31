@@ -16,10 +16,13 @@ namespace J2Commerce\Plugin\User\J2Commerce\Extension;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
 use Joomla\CMS\Component\ComponentHelper;
+use Joomla\CMS\Document\HtmlDocument;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Plugin\CMSPlugin;
+use Joomla\CMS\Router\Route;
+use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\User\UserFactoryInterface;
 use Joomla\Database\DatabaseAwareTrait;
 use Joomla\Database\ParameterType;
@@ -232,70 +235,56 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             $html = '<div class="row">' . $fieldsHtml . '</div>';
         }
 
-        // Wrap in container with address ID hidden field
+        // Wrap in container with address ID hidden field. The data attributes drive the shared
+        // country/zone cascade in media/com_j2commerce/js/site/j2commerce-countryzone.js.
         $addressId = $address ? (int) $address->j2commerce_address_id : 0;
-        $html      = '<div id="billing-new">' . $html
+        $html      = '<div id="billing-new" data-j2c-countryzone'
+            . ' data-country-name="j2reg[country_id]"'
+            . ' data-zone-name="j2reg[zone_id]"'
+            . ' data-base-url="' . htmlspecialchars($this->countryZoneBaseUrl(), ENT_QUOTES, 'UTF-8') . '">'
+            . $html
             . '<input type="hidden" name="j2reg[j2commerce_address_id]" value="' . $addressId . '">'
             . '</div>';
 
-        // Add AJAX country/zone linking script
-        $selectCountry = Text::sprintf('COM_J2COMMERCE_SELECT_PLACEHOLDER', Text::_('COM_J2COMMERCE_COUNTRY'));
-        $selectZone    = Text::sprintf('COM_J2COMMERCE_SELECT_PLACEHOLDER', Text::_('COM_J2COMMERCE_ZONE'));
+        $this->loadCountryZoneAssets();
 
-        $html .= '<script>
-document.addEventListener("DOMContentLoaded", function() {
-    var container = document.getElementById("billing-new");
-    if (!container) return;
+        return $html;
+    }
 
-    var countrySelect = container.querySelector(\'select[name="j2reg[country_id]"]\');
-    var zoneSelect = container.querySelector(\'select[name="j2reg[zone_id]"]\');
-    if (!countrySelect) return;
+    /** The AJAX endpoints live in the site application, so admin forms need an absolute site URL. */
+    private function countryZoneBaseUrl(): string
+    {
+        return $this->getApplication()->isClient('administrator')
+            ? Uri::root(true) . '/index.php?option=com_j2commerce'
+            : Route::_('index.php?option=com_j2commerce', false);
+    }
 
-    var savedCountryId = countrySelect.value || "";
-    var savedZoneId = zoneSelect ? (zoneSelect.value || "") : "";
+    /** Register the shared country/zone cascade script and the strings it renders. */
+    private function loadCountryZoneAssets(): void
+    {
+        $app      = $this->getApplication();
+        $document = $app->getDocument();
 
-    var countryUrl = "index.php?option=com_j2commerce&task=ajax.getCountries";
-    if (savedCountryId) countryUrl += "&country_id=" + encodeURIComponent(savedCountryId);
-
-    fetch(countryUrl)
-        .then(function(r) { return r.text(); })
-        .then(function(html) {
-            countrySelect.innerHTML = html;
-            if (countrySelect.value && zoneSelect) {
-                loadZones(countrySelect.value, savedZoneId);
-            }
-        });
-
-    if (!zoneSelect) return;
-
-    function loadZones(countryId, selectedZoneId) {
-        zoneSelect.innerHTML = \'<option value="">...</option>\';
-        zoneSelect.disabled = true;
-
-        if (!countryId || countryId === "0") {
-            zoneSelect.innerHTML = \'<option value="">' . htmlspecialchars($selectZone, ENT_QUOTES, 'UTF-8') . '</option>\';
-            zoneSelect.disabled = false;
+        if (!$document instanceof HtmlDocument) {
             return;
         }
 
-        var url = "index.php?option=com_j2commerce&task=ajax.getZones&country_id=" + encodeURIComponent(countryId);
-        if (selectedZoneId) url += "&zone_id=" + encodeURIComponent(selectedZoneId);
+        $app->getLanguage()->load('com_j2commerce', JPATH_SITE);
 
-        fetch(url)
-            .then(function(r) { return r.text(); })
-            .then(function(html) {
-                zoneSelect.innerHTML = html;
-                zoneSelect.disabled = false;
-            });
-    }
+        $wa = $document->getWebAssetManager();
+        // core carries Joomla.Text, which the cascade reads its placeholder strings from.
+        $wa->useScript('core');
+        $wa->registerAndUseScript('com_j2commerce.dom', 'media/com_j2commerce/js/site/j2commerce-dom.js', [], ['defer' => true]);
+        $wa->registerAndUseScript(
+            'com_j2commerce.countryzone',
+            'media/com_j2commerce/js/site/j2commerce-countryzone.js',
+            [],
+            ['defer' => true],
+            ['com_j2commerce.dom']
+        );
 
-    countrySelect.addEventListener("change", function() {
-        loadZones(this.value, "");
-    });
-});
-</script>';
-
-        return $html;
+        Text::script('COM_J2COMMERCE_LOADING');
+        Text::script('COM_J2COMMERCE_SELECT_ZONE');
     }
 
     /** Rewrite name="field_name" to name="j2reg[field_name]" for form submission. */
