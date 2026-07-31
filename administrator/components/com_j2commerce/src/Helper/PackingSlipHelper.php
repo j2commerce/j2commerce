@@ -122,19 +122,46 @@ class PackingSlipHelper
 
     public function getFormattedPackingSlip(object $order): string
     {
-        $text      = $this->loadPackingSlipTemplate($order);
-        $processed = EmailHelper::getInstance()->processTags($text, $order, [], '*', true);
+        // Strip while the price tags are still placeholders — processTags() replaces them with
+        // formatted amounts, leaving nothing for str_replace() to match afterwards.
+        $text = $this->stripPricingFromItemsTable($this->loadPackingSlipTemplate($order));
 
-        return $this->stripPricingFromItemsTable($processed);
+        return EmailHelper::getInstance()->processTags($text, $order, [], '*', true);
     }
 
+    /** Expects raw template text: the tags must not have been through processTags() yet. */
     public function stripPricingFromItemsTable(string $html): string
     {
         $priceTags = [
-            '[ORDERAMOUNT]', '[SUBTOTAL]', '[TAX_AMOUNT]', '[SHIPPING_AMOUNT]',
-            '[DISCOUNT_AMOUNT]', '[TAX_LINES]', '[COUPON_CODE]',
+            'ORDERAMOUNT', 'SUBTOTAL', 'TAX_AMOUNT', 'SHIPPING_AMOUNT',
+            'DISCOUNT_AMOUNT', 'TAX_LINES', 'COUPON_CODE', 'TOTALS',
+            'ORDER_EXTRA_ROWS', 'ITEM_PRICE', 'ITEM_TOTAL',
         ];
 
-        return str_replace($priceTags, '', $html);
+        // Match the editor manglings processTags() normalises — {TAG} from TinyMCE, lowercase
+        // from GrapesJS — because that normalisation runs after this strip, not before it.
+        // [ITEMS] carries price and total columns; [PACKING_ITEMS] is its price-free twin.
+        $strip = static function (array $m) use ($priceTags): string {
+            $tag = strtoupper($m[1] !== '' ? $m[1] : ($m[2] ?? ''));
+
+            if (\in_array($tag, $priceTags, true)) {
+                return '';
+            }
+
+            return $tag === 'ITEMS' ? '[PACKING_ITEMS]' : $m[0];
+        };
+
+        // Repeat until stable: removing a tag splices its neighbours, which can spell a fresh one.
+        for ($pass = 0; $pass < 10; $pass++) {
+            $stripped = preg_replace_callback('/\[([a-zA-Z][a-zA-Z0-9_]*)\]|\{([A-Z][A-Z0-9_]*)\}/', $strip, $html) ?? $html;
+
+            if ($stripped === $html) {
+                break;
+            }
+
+            $html = $stripped;
+        }
+
+        return $html;
     }
 }

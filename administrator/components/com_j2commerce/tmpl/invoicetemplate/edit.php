@@ -132,6 +132,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 const formData = new FormData();
                 formData.append("body", body);
                 formData.append("custom_css", customCss);
+                formData.append("invoice_type", document.querySelector("select[name=\"jform[invoice_type]\"]")?.value || "");
                 formData.append(token, "1");
 
                 const response = await fetch("index.php?option=com_j2commerce&task=invoicetemplate.preview&format=raw", {

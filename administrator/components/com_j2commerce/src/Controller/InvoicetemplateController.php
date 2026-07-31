@@ -183,10 +183,16 @@ class InvoicetemplateController extends FormController
             $body
         );
 
-        $emailHelper   = EmailHelper::getInstance();
-        $order         = $emailHelper->getSampleOrderData();
+        $emailHelper = EmailHelper::getInstance();
+        $order       = $emailHelper->getSampleOrderData();
+
+        // Mirror the print path: only packing slips lose their price tags, and only while the
+        // tags are still placeholders. Invoices and receipts keep their pricing.
+        if ($this->input->post->getCmd('invoice_type', '') === 'packingslip') {
+            $body = PackingSlipHelper::getInstance()->stripPricingFromItemsTable($body);
+        }
+
         $processedBody = $emailHelper->processTags($body, $order, [], '*', true);
-        $processedBody = PackingSlipHelper::getInstance()->stripPricingFromItemsTable($processedBody);
 
         // Extract <style> blocks from template body and move to <head>
         $extractedStyles = '';
