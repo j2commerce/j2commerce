@@ -21,8 +21,10 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\DownloadHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Form\Rule\PasswordRule;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Router\Route;
@@ -231,11 +233,17 @@ class MyprofileController extends BaseController
 
     public function download(): void
     {
-        $token       = $this->input->getString('token', '');
+        // Public order identifier; validateOrderAccess() is the gate. Legacy links use `token`, so both names are accepted.
+        $orderRef = $this->input->getString('order_id', '');
+
+        if ($orderRef === '') {
+            $orderRef = $this->input->getString('token', '');
+        }
+
         $fileId      = $this->input->getInt('fid', 0);
         $redirectUrl = Route::_('index.php?option=com_j2commerce&view=myprofile', false);
 
-        if (empty($token) || $fileId <= 0) {
+        if ($orderRef === '' || $fileId <= 0) {
             $this->app->enqueueMessage(Text::_('COM_J2COMMERCE_MYPROFILE_DOWNLOAD_INVALID'), 'error');
             $this->app->redirect($redirectUrl);
 
@@ -262,12 +270,13 @@ class MyprofileController extends BaseController
             return;
         }
 
-        // Load order by order_id (the token parameter)
+        // Locate the order by its public identifier. Reaching a row here grants
+        // nothing — validateOrderAccess() immediately below is the access check.
         $query = $db->getQuery(true)
             ->select('*')
             ->from($db->quoteName('#__j2commerce_orders'))
             ->where($db->quoteName('order_id') . ' = :orderId')
-            ->bind(':orderId', $token)
+            ->bind(':orderId', $orderRef)
             ->setLimit(1);
 
         $db->setQuery($query);
@@ -354,9 +363,7 @@ class MyprofileController extends BaseController
             }
         }
 
-        // Build file path with path traversal protection — must resolve inside an
-        // allowed downloads root (attachments folder or legacy images dir), never
-        // configuration.php or a dotfile segment in the stored relative path.
+        // The stored relative path must resolve inside an allowed downloads root.
         $relativePath = ltrim(str_replace('\\', '/', $productFile->product_file_save_name), '/');
         $filePath     = Path::clean(JPATH_SITE . '/' . $relativePath);
         $realPath     = @realpath($filePath);
@@ -446,7 +453,7 @@ class MyprofileController extends BaseController
         $rows = [];
 
         foreach ($data['orders'] as $item) {
-            // Dispatch AfterDisplayOrder event for plugin content (e.g., reorder buttons)
+            // AfterDisplayOrder markup is emitted as returned; the handler owns its encoding.
             $afterDisplayHtml = J2CommerceHelper::plugin()->eventWithHtml('AfterDisplayOrder', [$item])->getArgument('html', '');
 
             $rows[] = [
@@ -496,7 +503,7 @@ class MyprofileController extends BaseController
 
         /** @var \J2Commerce\Component\J2commerce\Site\Model\MyprofileModel $model */
         $model = $this->getModel('Myprofile');
-        $data  = $model->getDownloads($userId, $guestEmail, $limitStart, $limit, $search);
+        $data  = $model->getDownloads($userId, $guestEmail, $limitStart, $limit, $search, (string) $guestToken);
 
         $params     = J2CommerceHelper::config();
         $dateFormat = $params->get('date_format', 'Y-m-d');
@@ -545,7 +552,7 @@ class MyprofileController extends BaseController
                 'remaining'      => $remaining,
                 'can_download'   => $canDownload,
                 'status'         => $statusBadge,
-                'download_url'   => $canDownload ? Route::_('index.php?option=com_j2commerce&task=myprofile.download&token=' . urlencode($dl->order_id) . '&fid=' . (int) $dl->j2commerce_productfile_id) : '',
+                'download_url'   => $canDownload ? Route::_('index.php?option=com_j2commerce&task=myprofile.download&order_id=' . urlencode($dl->order_id) . '&fid=' . (int) $dl->j2commerce_productfile_id) : '',
             ];
         }
 
@@ -594,24 +601,65 @@ class MyprofileController extends BaseController
             $errors['confirm_password'] = Text::_('J2COMMERCE_APP_CHANGEPASSWORD_NEW_PASSWORD_MISMATCH');
         }
 
+        if (!$errors) {
+            $policyErrors = $this->checkPasswordPolicy((string) $password);
+
+            if ($policyErrors !== []) {
+                $errors['password'] = implode(' ', $policyErrors);
+            }
+        }
+
         if ($errors) {
             $this->jsonResponse(['success' => false, 'error' => $errors]);
 
             return;
         }
 
-        // Hash and save the new password
-        $table = $user->getTable();
-        $table->load((int) $user->id);
-        $table->password = UserHelper::hashPassword($password);
+        // Route the change through the user-save pipeline rather than writing the
+        // column directly: User::bind() hashes and records password_clear, and
+        // User::save() fires onUserBeforeSave/onUserAfterSave so action logging,
+        // password history and 2FA plugins observe the change.
+        $passwordData = ['password' => $password, 'password2' => $confirmPassword];
 
-        if (!$table->store()) {
+        if (!$user->bind($passwordData) || !$user->save()) {
+            Log::add('myprofile.changePassword failed: ' . (string) $user->getError(), Log::ERROR, 'com_j2commerce');
             $this->jsonResponse(['success' => false, 'error' => ['general' => Text::_('J2COMMERCE_APP_CHANGEPASSWORD_SAVE_PROBLEM')]]);
 
             return;
         }
 
+        // Invalidate every other session holding the old credentials; true keeps the
+        // session the shopper is standing in so the page they are on stays usable.
+        UserHelper::destroyUserSessions((int) $user->id, true);
+
         $this->jsonResponse(['success' => Text::_('J2COMMERCE_APP_CHANGEPASSWORD_UPDATED_SUCCESSFULLY')]);
+    }
+
+    /**
+     * Apply the site's com_users password policy via Joomla's own PasswordRule, which
+     * reports violations through the message queue — hence the snapshot/restore, which
+     * keeps them out of the next page render.
+     *
+     * @return  string[]  Violation messages, empty when the password is acceptable.
+     */
+    private function checkPasswordPolicy(string $password): array
+    {
+        $before = $this->app->getMessageQueue();
+        $valid  = (new PasswordRule())->test(
+            new \SimpleXMLElement('<field name="password" type="password" required="true" />'),
+            $password
+        );
+        $after = $this->app->getMessageQueue(true);
+
+        foreach ($before as $message) {
+            $this->app->enqueueMessage($message['message'], $message['type']);
+        }
+
+        if ($valid) {
+            return [];
+        }
+
+        return array_column(\array_slice($after, \count($before)), 'message');
     }
 
     /**

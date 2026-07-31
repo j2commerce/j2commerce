@@ -290,13 +290,9 @@ class MyprofileModel extends BaseDatabaseModel
     }
 
     /**
-     * Get downloads for a user with optional search and pagination.
-     *
-     * @param   int     $userId      User ID (0 for guest)
-     * @param   string  $guestEmail  Guest email
-     * @param   int     $limitStart  Pagination offset
-     * @param   int     $limit       Number of items per page
-     * @param   string  $search      Search term (filters by order_id or file name)
+     * $guestToken is appended rather than mirroring getOrders()'s position to keep existing
+     * callers working; omitted, it falls back to the session value the guest order lookup
+     * established, so the guest branch is never reachable on email alone.
      *
      * @return  array{downloads: array, total: int}
      */
@@ -305,8 +301,18 @@ class MyprofileModel extends BaseDatabaseModel
         string $guestEmail = '',
         int $limitStart = 0,
         int $limit = 20,
-        string $search = ''
+        string $search = '',
+        ?string $guestToken = null
     ): array {
+        if ($userId <= 0) {
+            $guestToken ??= (string) Factory::getApplication()->getSession()
+                ->get('guest_order_token', '', 'j2commerce');
+
+            if ($guestToken === '' || $guestEmail === '') {
+                return ['downloads' => [], 'total' => 0];
+            }
+        }
+
         $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
@@ -335,6 +341,9 @@ class MyprofileModel extends BaseDatabaseModel
             $query->where($db->quoteName('d.user_id') . ' = :userId')
                 ->bind(':userId', $userId, ParameterType::INTEGER);
         } else {
+            // Guest rows are keyed on the order token and the email together, mirroring getOrders().
+            $query->where($db->quoteName('o.token') . ' = :guestToken')
+                ->bind(':guestToken', $guestToken, ParameterType::STRING);
             $query->where($db->quoteName('d.user_email') . ' = :email')
                 ->bind(':email', $guestEmail, ParameterType::STRING);
         }
@@ -459,11 +468,11 @@ class MyprofileModel extends BaseDatabaseModel
         $now = time();
 
         return match (true) {
-            !$card->enabled => 'disabled',
-            $card->valid_to && strtotime((string) $card->valid_to) < $now => 'expired',
+            !$card->enabled                                                   => 'disabled',
+            $card->valid_to && strtotime((string) $card->valid_to) < $now     => 'expired',
             $card->valid_from && strtotime((string) $card->valid_from) > $now => 'not_yet_valid',
-            $card->remaining_balance <= 0 => 'depleted',
-            default => 'active',
+            $card->remaining_balance <= 0                                     => 'depleted',
+            default                                                           => 'active',
         };
     }
 

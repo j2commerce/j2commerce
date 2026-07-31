@@ -105,10 +105,14 @@ $customCss = trim((string) $db->loadResult());
 </head>
 <body>
     <div class="no-print">
-        <button onclick="window.print()"><?php echo Text::_('COM_J2COMMERCE_PRINT'); ?></button>
-        <button onclick="window.close()"><?php echo Text::_('JCLOSE'); ?></button>
+        <button type="button" data-j2c-print><?php echo Text::_('COM_J2COMMERCE_PRINT'); ?></button>
+        <button type="button" data-j2c-close><?php echo Text::_('JCLOSE'); ?></button>
     </div>
     <?php echo $bodyHtml; ?>
-    <script>window.onload = function() { window.print(); };</script>
+    <script>
+        window.addEventListener('load', function () { window.print(); });
+        document.querySelector('[data-j2c-print]').addEventListener('click', function () { window.print(); });
+        document.querySelector('[data-j2c-close]').addEventListener('click', function () { window.close(); });
+    </script>
 </body>
 </html>

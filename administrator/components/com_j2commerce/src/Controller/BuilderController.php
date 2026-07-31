@@ -420,8 +420,7 @@ final class BuilderController extends BaseController
 
         $overrideFile = Path::clean($templateOverridePath . '/' . $fileId);
 
-        // Ensure the resolved path is inside the template override directory (prevent traversal)
-        if (strpos($overrideFile, Path::clean($templateOverridePath)) !== 0) {
+        if (!$this->isConfinedToOverrideRoot($overrideFile, $templateOverridePath)) {
             return null;
         }
 
@@ -476,6 +475,48 @@ final class BuilderController extends BaseController
      * html/com_j2commerce override directory and that the file already exists
      * (store owner must create the override first via the Overrides tab).
      */
+    /**
+     * Path::clean() does not resolve '..' and strpos() does not follow symlinks, so a prefix
+     * test is not a boundary. Both sides are resolved and the separator is required, matching
+     * OverridesModel — these paths reach file writes and an unlink().
+     */
+    private function isConfinedToOverrideRoot(string $candidate, string $base): bool
+    {
+        $realBase = realpath($base);
+
+        if ($realBase === false) {
+            return false;
+        }
+
+        // A write target need not exist yet, so resolve the deepest existing ancestor and
+        // re-append the unresolved tail; any '..' surviving in that tail is rejected outright.
+        $resolved = realpath($candidate);
+
+        if ($resolved === false) {
+            $tail = [];
+            $walk = $candidate;
+
+            while ($walk !== '' && realpath($walk) === false) {
+                $parent = \dirname($walk);
+
+                if ($parent === $walk) {
+                    return false;
+                }
+
+                array_unshift($tail, basename($walk));
+                $walk = $parent;
+            }
+
+            if (\in_array('..', $tail, true)) {
+                return false;
+            }
+
+            $resolved = realpath($walk) . \DIRECTORY_SEPARATOR . implode(\DIRECTORY_SEPARATOR, $tail);
+        }
+
+        return str_starts_with($resolved, $realBase . \DIRECTORY_SEPARATOR);
+    }
+
     private function resolveOverridePath(string $pluginElement, string $fileId): ?string
     {
         // Validate plugin element is a known subtemplate
@@ -496,8 +537,7 @@ final class BuilderController extends BaseController
 
         $overrideFile = Path::clean($templateOverridePath . '/' . $fileId);
 
-        // Ensure the resolved path is inside the template override directory (prevent traversal)
-        if (strpos($overrideFile, Path::clean($templateOverridePath)) !== 0) {
+        if (!$this->isConfinedToOverrideRoot($overrideFile, $templateOverridePath)) {
             return null;
         }
 

@@ -39,8 +39,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Parse server-rendered HTML into an inert fragment (no innerHTML sink) for adoption.
+    // createContextualFragment unmarks parsed scripts as "already started", so unlike the
+    // innerHTML assignment this replaced they WOULD run on insertion. Drop them to keep
+    // the original semantics — plugin markup renders, it does not execute.
     function parseFragment(html) {
-        return document.createRange().createContextualFragment(html || '');
+        const frag = document.createRange().createContextualFragment(html || '');
+        frag.querySelectorAll('script').forEach(s => s.remove());
+
+        return frag;
     }
 
     // Capture the initial server-rendered HTML structure so AJAX rebuilds
@@ -105,7 +111,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     + '<td class="text-center text-nowrap">'
                     +   `<a href="${escapeHtml(o.view_url)}" class="btn btn-sm btn-outline-primary" title="${Joomla.Text._('COM_J2COMMERCE_ORDER_VIEW')}"><span class="icon-eye" aria-hidden="true"></span></a> `
                     +   `<button type="button" class="btn btn-sm btn-outline-secondary j2commerce-order-print" data-url="${escapeHtml(o.print_url)}" title="${Joomla.Text._('COM_J2COMMERCE_ORDER_PRINT')}"><span class="icon-print" aria-hidden="true"></span></button>`
-                    +   (o.after_display_html || '')
                     + '</td></tr>';
             }
 
@@ -144,6 +149,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 + pagHtml
                 + `<span class="${escapeHtml(snapshotCountClass)}" id="j2c-orders-count">${countText}</span>`
                 + '</div>'));
+
+            // AfterDisplayOrder markup is plugin-owned: insert it as its own fragment, not into the row string.
+            const actionCells = wrap.querySelectorAll('#j2c-orders-body > tr > td:last-child');
+            orders.forEach((o, i) => {
+                if (o.after_display_html && actionCells[i]) {
+                    actionCells[i].appendChild(parseFragment(o.after_display_html));
+                }
+            });
 
             currentPage = page;
         } catch (err) {
@@ -590,15 +603,52 @@ document.addEventListener('DOMContentLoaded', () => {
     if (orderPrintBtn) {
         orderPrintBtn.addEventListener('click', () => {
             if (!orderModalBody) return;
-            const printWindow = window.open('', '_blank', 'width=800,height=600');
-            if (printWindow) {
-                printWindow.document.write(`<!DOCTYPE html><html><head><title>Order</title>
-                    <link rel="stylesheet" href="${document.querySelector('link[href*="bootstrap"]')?.href || ''}">
-                    <style>body{padding:20px;font-family:sans-serif}@media print{.no-print{display:none}}</style>
-                    </head><body>${orderModalBody.innerHTML}
-                    <script>window.onload=function(){window.print();window.close()}<\/script>
-                    </body></html>`);
-                printWindow.document.close();
+
+            const printWindow = window.open('about:blank', '_blank', 'width=800,height=600');
+            if (!printWindow) return;
+
+            const printDoc = printWindow.document;
+
+            const title = printDoc.createElement('title');
+            title.textContent = document.title;
+            printDoc.head.appendChild(title);
+
+            const bootstrapHref = document.querySelector('link[href*="bootstrap"]')?.href || '';
+            let stylesheet = null;
+
+            if (bootstrapHref) {
+                stylesheet = printDoc.createElement('link');
+                stylesheet.rel = 'stylesheet';
+                stylesheet.href = bootstrapHref;
+                printDoc.head.appendChild(stylesheet);
+            }
+
+            const style = printDoc.createElement('style');
+            style.textContent = 'body{padding:20px;font-family:sans-serif}@media print{.no-print{display:none}}';
+            printDoc.head.appendChild(style);
+
+            const fragment = printDoc.createDocumentFragment();
+            Array.from(orderModalBody.childNodes).forEach(node => {
+                fragment.appendChild(printDoc.importNode(node, true));
+            });
+            printDoc.body.appendChild(fragment);
+
+            let printed = false;
+            const startPrint = () => {
+                if (printed) return;
+                printed = true;
+                printWindow.focus();
+                printWindow.print();
+                printWindow.close();
+            };
+
+            if (stylesheet) {
+                stylesheet.addEventListener('load', startPrint);
+                stylesheet.addEventListener('error', startPrint);
+                // Fallback in case the stylesheet never resolves.
+                window.setTimeout(startPrint, 1500);
+            } else {
+                window.setTimeout(startPrint, 0);
             }
         });
     }

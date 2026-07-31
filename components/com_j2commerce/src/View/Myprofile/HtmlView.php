@@ -140,7 +140,7 @@ class HtmlView extends BaseHtmlView
 
             // Load downloads if enabled
             if ($this->params->get('download_area', 1)) {
-                $downloadData         = $model->getDownloads($userId, $guestEmail, 0, $limit);
+                $downloadData         = $model->getDownloads($userId, $guestEmail, 0, $limit, '', (string) $guestToken);
                 $this->downloads      = $downloadData['downloads'];
                 $this->downloadsTotal = $downloadData['total'];
             }

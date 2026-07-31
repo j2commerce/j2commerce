@@ -99,7 +99,7 @@ $nullDate   = '0000-00-00 00:00:00';
                         </td>
                         <td class="uk-text-center">
                             <?php if ($canDownload): ?>
-                            <a href="<?php echo Route::_('index.php?option=com_j2commerce&task=myprofile.download&token=' . urlencode($dl->order_id) . '&fid=' . (int) $dl->j2commerce_productfile_id); ?>"
+                            <a href="<?php echo Route::_('index.php?option=com_j2commerce&task=myprofile.download&order_id=' . urlencode($dl->order_id) . '&fid=' . (int) $dl->j2commerce_productfile_id); ?>"
                                class="uk-button uk-button-small uk-button-primary" title="<?php echo Text::_('COM_J2COMMERCE_DOWNLOAD'); ?>">
                                 <span class="icon-download" aria-hidden="true"></span>
                             </a>

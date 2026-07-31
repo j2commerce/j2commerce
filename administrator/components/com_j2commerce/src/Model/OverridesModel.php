@@ -72,8 +72,17 @@ class OverridesModel extends BaseDatabaseModel
             return false;
         }
 
-        $overridePath = Path::clean($this->getTemplateOverridePath($pluginElement, $type, $tmplFolder) . '/' . $relativePath);
-        $overrideDir  = \dirname($overridePath);
+        $overridePath = $this->confinePath(
+            $this->getTemplateOverridePath($pluginElement, $type, $tmplFolder) . '/' . $relativePath,
+            [$this->getBaseTemplateOverridePath(), $this->getTmplBaseOverridePath()]
+        );
+
+        if ($overridePath === null) {
+            $this->setError(Text::_('COM_J2COMMERCE_ERR_INVALID_FILE_PATH'));
+            return false;
+        }
+
+        $overrideDir = \dirname($overridePath);
 
         if (!is_dir($overrideDir) && !Folder::create($overrideDir)) {
             $this->setError(Text::_('COM_J2COMMERCE_ERR_OVERRIDE_DIR_CREATE'));
@@ -100,15 +109,17 @@ class OverridesModel extends BaseDatabaseModel
             foreach ($this->getSiblingTemplates() as $sibling) {
                 if ($type === 'layouts') {
                     $siblingBase = $this->getSiblingLayoutOverridePath($sibling);
-                    $siblingPath = Path::clean($siblingBase . '/' . $pluginElement . '/' . $relativePath);
+                    $candidate   = $siblingBase . '/' . $pluginElement . '/' . $relativePath;
                 } else {
                     $siblingBase = $this->getSiblingTmplOverridePath($sibling);
-                    $siblingPath = Path::clean($siblingBase . '/' . ($tmplFolder !== '' ? $tmplFolder . '/' : '') . $relativePath);
+                    $candidate   = $siblingBase . '/' . ($tmplFolder !== '' ? $tmplFolder . '/' : '') . $relativePath;
                 }
 
                 // Defence-in-depth: refuse traversal outside the sibling base
-                if (strpos(Path::clean($siblingPath), Path::clean($siblingBase)) !== 0) {
-                    Log::add('J2Commerce Overrides: refusing traversal write to ' . $siblingPath, Log::WARNING, 'com_j2commerce');
+                $siblingPath = $this->confinePath($candidate, [$siblingBase]);
+
+                if ($siblingPath === null) {
+                    Log::add('J2Commerce Overrides: refusing traversal write to ' . $candidate, Log::WARNING, 'com_j2commerce');
                     continue;
                 }
 
@@ -143,7 +154,15 @@ class OverridesModel extends BaseDatabaseModel
             return false;
         }
 
-        $overridePath = Path::clean($this->getTemplateOverridePath($pluginElement, $type, $tmplFolder) . '/' . $relativePath);
+        $overridePath = $this->confinePath(
+            $this->getTemplateOverridePath($pluginElement, $type, $tmplFolder) . '/' . $relativePath,
+            [$this->getBaseTemplateOverridePath(), $this->getTmplBaseOverridePath()]
+        );
+
+        if ($overridePath === null) {
+            $this->setError(Text::_('COM_J2COMMERCE_ERR_INVALID_FILE_PATH'));
+            return false;
+        }
 
         if (!is_file($overridePath)) {
             $this->setError(Text::_('COM_J2COMMERCE_ERR_NO_OVERRIDE'));
@@ -162,17 +181,12 @@ class OverridesModel extends BaseDatabaseModel
             return null;
         }
 
-        $overridePath = Path::clean($this->getTemplateOverridePath($pluginElement, $type, $tmplFolder) . '/' . $relativePath);
+        $overridePath = $this->confinePath(
+            $this->getTemplateOverridePath($pluginElement, $type, $tmplFolder) . '/' . $relativePath,
+            [$this->getBaseTemplateOverridePath(), $this->getTmplBaseOverridePath()]
+        );
 
-        if (!is_file($overridePath)) {
-            return null;
-        }
-
-        $layoutBase    = Path::clean($this->getBaseTemplateOverridePath());
-        $tmplBase      = Path::clean($this->getTmplBaseOverridePath());
-        $cleanOverride = Path::clean($overridePath);
-
-        if (strpos($cleanOverride, $layoutBase) !== 0 && strpos($cleanOverride, $tmplBase) !== 0) {
+        if ($overridePath === null || !is_file($overridePath)) {
             return null;
         }
 
@@ -206,19 +220,18 @@ class OverridesModel extends BaseDatabaseModel
             return false;
         }
 
-        $overridePath = Path::clean($this->getTemplateOverridePath($pluginElement, $type, $tmplFolder) . '/' . $relativePath);
+        $overridePath = $this->confinePath(
+            $this->getTemplateOverridePath($pluginElement, $type, $tmplFolder) . '/' . $relativePath,
+            [$this->getBaseTemplateOverridePath(), $this->getTmplBaseOverridePath()]
+        );
 
-        if (!is_file($overridePath)) {
-            $this->setError(Text::_('COM_J2COMMERCE_ERR_OVERRIDE_NOT_FOUND'));
+        if ($overridePath === null) {
+            $this->setError(Text::_('COM_J2COMMERCE_ERR_INVALID_FILE_PATH'));
             return false;
         }
 
-        $layoutBase    = Path::clean($this->getBaseTemplateOverridePath());
-        $tmplBase      = Path::clean($this->getTmplBaseOverridePath());
-        $cleanOverride = Path::clean($overridePath);
-
-        if (strpos($cleanOverride, $layoutBase) !== 0 && strpos($cleanOverride, $tmplBase) !== 0) {
-            $this->setError(Text::_('COM_J2COMMERCE_ERR_INVALID_FILE_PATH'));
+        if (!is_file($overridePath)) {
+            $this->setError(Text::_('COM_J2COMMERCE_ERR_OVERRIDE_NOT_FOUND'));
             return false;
         }
 
@@ -326,28 +339,29 @@ class OverridesModel extends BaseDatabaseModel
         }
 
         if ($base === 'layouts') {
-            $fullPath = Path::clean($layoutBase . '/' . $relativePath);
+            $fullPath = $this->confinePath($layoutBase . '/' . $relativePath, [$layoutBase]);
         } elseif ($base === 'tmpl') {
-            $fullPath = Path::clean($tmplBase . '/' . $relativePath);
+            $fullPath = $this->confinePath($tmplBase . '/' . $relativePath, [$tmplBase]);
         } else {
             // auto: layouts first, then tmpl
-            $fullPath = Path::clean($layoutBase . '/' . $relativePath);
-            if (!is_file($fullPath)) {
-                $fullPath = Path::clean($tmplBase . '/' . $relativePath);
+            $fullPath = $this->confinePath($layoutBase . '/' . $relativePath, [$layoutBase]);
+
+            if ($fullPath === null || !is_file($fullPath)) {
+                $fullPath = $this->confinePath($tmplBase . '/' . $relativePath, [$tmplBase]);
             }
         }
 
-        if (!is_file($fullPath)) {
+        if ($fullPath === null || !is_file($fullPath)) {
             return null;
         }
 
-        $cleanFull = Path::clean($fullPath);
-        if (strpos($cleanFull, Path::clean($layoutBase)) !== 0 && strpos($cleanFull, Path::clean($tmplBase)) !== 0) {
-            return null;
-        }
+        $resolvedTmplBase = $this->resolveVirtualPath($tmplBase);
 
         // Determine file type from the resolved base
-        $fileType = ($base === 'tmpl' || ($base === 'auto' && strpos($cleanFull, Path::clean($tmplBase)) === 0))
+        $fileType = ($base === 'tmpl'
+            || ($base === 'auto'
+                && $resolvedTmplBase !== null
+                && strpos($fullPath, rtrim($resolvedTmplBase, '\\/') . \DIRECTORY_SEPARATOR) === 0))
             ? 'tmpl'
             : 'layouts';
 
@@ -421,24 +435,24 @@ class OverridesModel extends BaseDatabaseModel
         }
 
         if ($base === 'layouts') {
-            $fullPath = Path::clean($layoutBase . '/' . $relativePath);
+            $fullPath = $this->confinePath($layoutBase . '/' . $relativePath, [$layoutBase]);
         } elseif ($base === 'tmpl') {
-            $fullPath = Path::clean($tmplBase . '/' . $relativePath);
+            $fullPath = $this->confinePath($tmplBase . '/' . $relativePath, [$tmplBase]);
         } else {
-            $fullPath = Path::clean($layoutBase . '/' . $relativePath);
-            if (!is_file($fullPath)) {
-                $fullPath = Path::clean($tmplBase . '/' . $relativePath);
+            $fullPath = $this->confinePath($layoutBase . '/' . $relativePath, [$layoutBase]);
+
+            if ($fullPath === null || !is_file($fullPath)) {
+                $fullPath = $this->confinePath($tmplBase . '/' . $relativePath, [$tmplBase]);
             }
+        }
+
+        if ($fullPath === null) {
+            $this->setError(Text::_('COM_J2COMMERCE_ERR_INVALID_FILE_PATH'));
+            return false;
         }
 
         if (!is_file($fullPath)) {
             $this->setError(Text::_('COM_J2COMMERCE_ERR_FILE_NOT_FOUND'));
-            return false;
-        }
-
-        $cleanFull = Path::clean($fullPath);
-        if (strpos($cleanFull, Path::clean($layoutBase)) !== 0 && strpos($cleanFull, Path::clean($tmplBase)) !== 0) {
-            $this->setError(Text::_('COM_J2COMMERCE_ERR_INVALID_FILE_PATH'));
             return false;
         }
 
@@ -511,6 +525,68 @@ class OverridesModel extends BaseDatabaseModel
 
         // Fallback for very old format
         return ['layouts', '', $decoded];
+    }
+
+    /**
+     * Resolve a candidate path and confine it below one of the supplied base
+     * directories. Returns the resolved absolute path, or null when it escapes
+     * every base.
+     *
+     * @param   string    $candidate  Path to resolve (may not exist yet).
+     * @param   string[]  $bases      Allowed root directories (may not exist yet).
+     */
+    private function confinePath(string $candidate, array $bases): ?string
+    {
+        $resolved = $this->resolveVirtualPath($candidate);
+
+        if ($resolved === null) {
+            return null;
+        }
+
+        foreach ($bases as $base) {
+            $resolvedBase = $this->resolveVirtualPath($base);
+
+            if ($resolvedBase !== null
+                && strpos($resolved, rtrim($resolvedBase, '\\/') . \DIRECTORY_SEPARATOR) === 0) {
+                return $resolved;
+            }
+        }
+
+        return null;
+    }
+
+    /** realpath() the deepest existing ancestor and re-append the tail, so a not-yet-created target still resolves. */
+    private function resolveVirtualPath(string $path): ?string
+    {
+        $path = Path::clean($path);
+        $tail = [];
+
+        while ($path !== '' && !file_exists($path)) {
+            $parent = \dirname($path);
+
+            if ($parent === $path) {
+                return null;
+            }
+
+            array_unshift($tail, basename($path));
+            $path = $parent;
+        }
+
+        if (\in_array('..', $tail, true)) {
+            return null;
+        }
+
+        $real = realpath($path);
+
+        if ($real === false) {
+            return null;
+        }
+
+        if ($tail === []) {
+            return $real;
+        }
+
+        return rtrim($real, '\\/') . \DIRECTORY_SEPARATOR . implode(\DIRECTORY_SEPARATOR, $tail);
     }
 
     public function getPreviewProducts(): array
