@@ -13,15 +13,14 @@ declare(strict_types=1);
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\CliCommands\SeedOrderLedgerCommand;
+use J2Commerce\Component\J2commerce\Administrator\Helper\AclSeedHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CoreTemplateSyncHelper;
-use Joomla\CMS\Access\Access;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Installer\InstallerScript;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
 use Joomla\Database\DatabaseDriver;
 use Joomla\Database\DatabaseInterface;
-use Joomla\Database\ParameterType;
 use Joomla\Filesystem\File;
 use Joomla\Registry\Registry;
 
@@ -293,139 +292,24 @@ class Com_J2commerceInstallerScript extends InstallerScript
         }
     }
 
-    // ── Custom ACL action seeding ──────────────────────────────────────────────
-
-    /** The custom actions declared in access.xml. */
-    private const CUSTOM_ACL_ACTIONS = [
-        'j2commerce.vieworders',
-        'j2commerce.editorders',
-        'j2commerce.viewproducts',
-        'j2commerce.viewreports',
-        'j2commerce.viewsetup',
-    ];
-
-    /** Extension-params key marking the one-time ACL seed as done; canAccess() reads it too. */
-    private const ACL_SEED_FLAG = 'acl_custom_actions_seeded';
+    // ── Custom ACL action seeding ────────────────────────────────────────────
 
     /**
-     * One-time, idempotent: give every group that can already manage com_j2commerce an explicit
-     * allow on each custom action it does not yet resolve, so existing staff keep the order,
-     * product, report and setup screens once canAccess() stops falling back to core.manage.
-     * Groups holding an explicit deny are left alone; Super Users need no rule because
-     * User::authorise() short-circuits on core.admin.
+     * Seed the custom actions declared in access.xml. The component boot runs the same helper,
+     * so a site that never executes this postflight still converges.
      */
     private function seedCustomAclActions(): void
     {
+        // On a fresh install the PSR-4 map for this namespace is built at the start of the
+        // request, before the component exists, so the helper will not autoload here.
+        $helperFile = JPATH_ADMINISTRATOR . '/components/com_j2commerce/src/Helper/AclSeedHelper.php';
+
+        if (!class_exists(AclSeedHelper::class) && file_exists($helperFile)) {
+            require_once $helperFile;
+        }
+
         try {
-            $db = Factory::getContainer()->get(DatabaseInterface::class);
-
-            $extQuery = $db->getQuery(true)
-                ->select([$db->quoteName('extension_id'), $db->quoteName('params')])
-                ->from($db->quoteName('#__extensions'))
-                ->where($db->quoteName('element') . ' = ' . $db->quote('com_j2commerce'))
-                ->where($db->quoteName('type') . ' = ' . $db->quote('component'));
-            $db->setQuery($extQuery);
-            $extension = $db->loadObject();
-
-            if (!$extension) {
-                $this->debugLog('ACL SEED: com_j2commerce extension row not found — skipped');
-
-                return;
-            }
-
-            $params = new Registry($extension->params);
-
-            if ((int) $params->get(self::ACL_SEED_FLAG, 0) === 1) {
-                $this->debugLog('ACL SEED: already seeded — skipped');
-
-                return;
-            }
-
-            $assetQuery = $db->getQuery(true)
-                ->select([$db->quoteName('id'), $db->quoteName('rules')])
-                ->from($db->quoteName('#__assets'))
-                ->where($db->quoteName('name') . ' = ' . $db->quote('com_j2commerce'));
-            $db->setQuery($assetQuery);
-            $asset = $db->loadObject();
-
-            if (!$asset) {
-                $this->debugLog('ACL SEED: com_j2commerce asset row not found — retry on next update');
-
-                return;
-            }
-
-            $trimmedRules = trim((string) $asset->rules);
-
-            if ($trimmedRules === '') {
-                // Legitimately empty — a fresh install before any permission is set.
-                $rules = [];
-            } else {
-                $decoded = json_decode($trimmedRules, true);
-
-                if (!\is_array($decoded)) {
-                    // Rebuilding from an empty array here would silently drop core.fulfilment
-                    // and every other rule on the row. Leave it alone, leave the flag unset,
-                    // and let a human look at it.
-                    $this->debugLog('ACL SEED: com_j2commerce asset rules are not valid JSON — aborted, row left untouched');
-
-                    return;
-                }
-
-                $rules = $decoded;
-            }
-
-            $groupQuery = $db->getQuery(true)
-                ->select($db->quoteName('id'))
-                ->from($db->quoteName('#__usergroups'));
-            $db->setQuery($groupQuery);
-            $groupIds = array_map('intval', (array) $db->loadColumn());
-
-            // Rules are about to be read through the Access layer; drop anything cached
-            // from earlier in this request so the resolution reflects the stored row.
-            Access::clearStatics();
-
-            $granted = 0;
-
-            foreach ($groupIds as $groupId) {
-                if (Access::checkGroup($groupId, 'core.manage', 'com_j2commerce') !== true) {
-                    continue;
-                }
-
-                foreach (self::CUSTOM_ACL_ACTIONS as $action) {
-                    // null = nothing set anywhere in the group's path. false = an explicit
-                    // deny an administrator entered; honour it rather than overwrite it.
-                    if (Access::checkGroup($groupId, $action, 'com_j2commerce') !== null) {
-                        continue;
-                    }
-
-                    $rules[$action][(string) $groupId] = 1;
-                    $granted++;
-                }
-            }
-
-            $extensionId = (int) $extension->extension_id;
-
-            if ($granted > 0) {
-                // FORCE_OBJECT so a per-action identity map can never serialise as a
-                // JSON array, which Access would then read back with the wrong keys.
-                $rulesJson = json_encode($rules, JSON_FORCE_OBJECT);
-                $assetId   = (int) $asset->id;
-
-                $updateAsset = $db->getQuery(true)
-                    ->update($db->quoteName('#__assets'))
-                    ->set($db->quoteName('rules') . ' = :rules')
-                    ->where($db->quoteName('id') . ' = :id')
-                    ->bind(':rules', $rulesJson)
-                    ->bind(':id', $assetId, ParameterType::INTEGER);
-
-                $db->setQuery($updateAsset)->execute();
-                Access::clearStatics();
-            }
-
-            $params->set(self::ACL_SEED_FLAG, 1);
-            $this->writeExtensionParams($db, $params, $extensionId);
-
-            $this->debugLog("ACL SEED: {$granted} explicit allow(s) written");
+            AclSeedHelper::ensureSeeded(fn (string $message) => $this->debugLog($message));
         } catch (\Throwable $e) {
             // Log the failure: the flag stays unset, so canAccess() keeps its core.manage fallback.
             $this->debugLog('seedCustomAclActions failed: ' . $e->getMessage());
@@ -435,20 +319,6 @@ class Com_J2commerceInstallerScript extends InstallerScript
                 'warning'
             );
         }
-    }
-
-    private function writeExtensionParams(DatabaseInterface $db, Registry $params, int $extensionId): void
-    {
-        $paramsJson = $params->toString();
-
-        $query = $db->getQuery(true)
-            ->update($db->quoteName('#__extensions'))
-            ->set($db->quoteName('params') . ' = :params')
-            ->where($db->quoteName('extension_id') . ' = :id')
-            ->bind(':params', $paramsJson)
-            ->bind(':id', $extensionId, ParameterType::INTEGER);
-
-        $db->setQuery($query)->execute();
     }
 
     // ── Default component params on fresh install ──────────────────────────────
