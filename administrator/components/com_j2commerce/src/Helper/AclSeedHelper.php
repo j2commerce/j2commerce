@@ -151,39 +151,86 @@ class AclSeedHelper
         if ($granted > 0) {
             // FORCE_OBJECT so a per-action identity map can never serialise as a
             // JSON array, which Access would then read back with the wrong keys.
-            $rulesJson = json_encode($rules, JSON_FORCE_OBJECT);
-            $assetId   = (int) $asset->id;
+            $rulesJson     = json_encode($rules, JSON_FORCE_OBJECT);
+            $expectedRules = (string) $asset->rules;
+            $assetId       = (int) $asset->id;
 
+            // The row was read before the Access work above, so an administrator may have
+            // saved Options → Permissions since. Only write over the value this ran against;
+            // a mismatch means their save would be lost, so leave the flag unset and let the
+            // next request start over from the row they wrote.
             $updateAsset = $db->getQuery(true)
                 ->update($db->quoteName('#__assets'))
                 ->set($db->quoteName('rules') . ' = :rules')
                 ->where($db->quoteName('id') . ' = :id')
+                ->where($db->quoteName('rules') . ' = :expected')
                 ->bind(':rules', $rulesJson)
+                ->bind(':expected', $expectedRules)
                 ->bind(':id', $assetId, ParameterType::INTEGER);
 
             $db->setQuery($updateAsset)->execute();
+
+            if ($db->getAffectedRows() === 0) {
+                $log('ACL SEED: asset rules changed while seeding — aborted, flag left unset');
+
+                return false;
+            }
+
             Access::clearStatics();
         }
 
-        $params->set(self::ACL_SEED_FLAG, 1);
-        self::writeExtensionParams($db, $params, (int) $extension->extension_id);
+        // Re-read the params before setting the flag: they were loaded before the Access work
+        // and writing that copy back would revert any component setting saved since. A failed
+        // compare here can leave rules written without the flag, which is harmless — the next
+        // run resolves those actions as already set, grants nothing and sets the flag then.
+        if (!self::writeSeedFlag($db, (int) $extension->extension_id)) {
+            $log('ACL SEED: extension params changed while seeding — flag left unset');
+
+            return false;
+        }
 
         $log("ACL SEED: {$granted} explicit allow(s) written");
 
         return true;
     }
 
-    private static function writeExtensionParams(DatabaseInterface $db, Registry $params, int $extensionId): void
+    /** Set the seed flag on the current params. False when the row changed since it was read. */
+    private static function writeSeedFlag(DatabaseInterface $db, int $extensionId): bool
     {
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('params'))
+            ->from($db->quoteName('#__extensions'))
+            ->where($db->quoteName('extension_id') . ' = :id')
+            ->bind(':id', $extensionId, ParameterType::INTEGER);
+        $db->setQuery($query);
+        $current = (string) $db->loadResult();
+
+        $params = new Registry($current);
+        $params->set(self::ACL_SEED_FLAG, 1);
+
+        return self::writeExtensionParams($db, $params, $extensionId, $current);
+    }
+
+    /** Write params only while the stored value still matches $expected. */
+    private static function writeExtensionParams(
+        DatabaseInterface $db,
+        Registry $params,
+        int $extensionId,
+        string $expected
+    ): bool {
         $paramsJson = $params->toString();
 
         $query = $db->getQuery(true)
             ->update($db->quoteName('#__extensions'))
             ->set($db->quoteName('params') . ' = :params')
             ->where($db->quoteName('extension_id') . ' = :id')
+            ->where($db->quoteName('params') . ' = :expected')
             ->bind(':params', $paramsJson)
+            ->bind(':expected', $expected)
             ->bind(':id', $extensionId, ParameterType::INTEGER);
 
         $db->setQuery($query)->execute();
+
+        return $db->getAffectedRows() > 0;
     }
 }
