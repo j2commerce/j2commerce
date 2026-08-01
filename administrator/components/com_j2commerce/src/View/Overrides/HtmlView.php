@@ -46,7 +46,7 @@ class HtmlView extends BaseHtmlView
     {
         // Template overrides can write arbitrary PHP — restrict to super users
         if (!Factory::getApplication()->getIdentity()->authorise('core.admin')) {
-            throw new \Exception(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 403);
+            J2CommerceHelper::denyAccess(); return;
         }
 
         $this->loadAdminAssets();

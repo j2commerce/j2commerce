@@ -177,6 +177,16 @@ class HtmlView extends BaseHtmlView
 
         foreach ($rawIcons as $entry) {
             if (isset($entry['id'], $entry['link'], $entry['text'])) {
+                if (isset($entry['access'])) {
+                    $user = Factory::getApplication()->getIdentity();
+
+                    // Take each pair of permission, context values.
+                    for ($i = 0, $n = \count($entry['access']); $i < $n; $i += 2) {
+                        if (!$user->authorise($entry['access'][$i], $entry['access'][$i + 1])) {
+                            continue 2; // Skip this icon if access check fails
+                        }
+                    }
+                }
                 $this->pluginQuickIcons[] = $entry;
             }
         }

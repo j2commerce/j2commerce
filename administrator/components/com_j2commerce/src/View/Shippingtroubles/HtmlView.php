@@ -115,7 +115,7 @@ class HtmlView extends BaseHtmlView
     public function display($tpl = null)
     {
         if (!J2CommerceHelper::canAccess('j2commerce.viewsetup')) {
-            throw new \Exception(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 403);
+            J2CommerceHelper::denyAccess(); return;
         }
 
         $this->loadAdminAssets();
