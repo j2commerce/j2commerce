@@ -2240,10 +2240,9 @@ class CheckoutController extends BaseController
             $this->jsonResponse(['success' => false, 'error' => Text::_('JINVALID_TOKEN')]);
         }
 
-        $paypalOrderId = $input['paypal_order_id'] ?? '';
-        $orderId       = $input['order_id'] ?? '';
+        $orderId = $input['order_id'] ?? '';
 
-        if (empty($paypalOrderId) || empty($orderId)) {
+        if (empty($orderId)) {
             $this->jsonResponse(['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_INVALID_REQUEST')]);
         }
 
