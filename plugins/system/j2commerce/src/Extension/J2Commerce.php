@@ -924,6 +924,14 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             return;
         }
 
+        // Stamp the run before doing the work, not after. This runs from onAfterInitialise,
+        // so any request — including an anonymous front-end hit — reaches it, and several
+        // arriving as the window opens would otherwise all pass shouldRunInventoryCron()
+        // and all sweep the same orders. Stamping first closes that window; the status
+        // compare-and-swap in OrderModel::updateOrderStatus() covers what still slips
+        // through. A sweep that then fails costs at most one skipped daily run.
+        $this->updateLastRunTimestamp();
+
         // Attempt to cancel unpaid orders via OrdersModel
         try {
             $app = $this->getApplication();
@@ -942,9 +950,6 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         } catch (\Exception $e) {
             // Model not yet implemented, skip for now
         }
-
-        // Update last run timestamp
-        $this->updateLastRunTimestamp();
     }
 
     /**

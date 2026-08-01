@@ -1045,7 +1045,14 @@ class OrderModel extends AdminModel
             return false;
         }
 
-        // Update order status
+        // Compare-and-swap on the status read above: the write only lands while the order
+        // still holds it. Without the predicate two writers handling the same order — a
+        // webhook redelivery alongside an admin save, or two passes of the hold_stock
+        // sweep — both pass the change check above and both run every side effect below,
+        // appending a second history row, firing the status event twice and re-granting
+        // downloads. Zero affected rows means someone else moved the order first, which is
+        // a completed transition rather than a failure, so it reports success and does no
+        // further work.
         $updateQuery = $db->getQuery(true)
             ->update($db->quoteName('#__j2commerce_orders'))
             ->set($db->quoteName('order_state_id') . ' = :newStatusId')
@@ -1053,17 +1060,23 @@ class OrderModel extends AdminModel
             ->set($db->quoteName('modified_on') . ' = :now')
             ->set($db->quoteName('modified_by') . ' = :userId')
             ->where($db->quoteName('j2commerce_order_id') . ' = :orderId')
+            ->where($db->quoteName('order_state_id') . ' = :oldStatusId')
             ->bind(':newStatusId', $newStatusId, ParameterType::INTEGER)
             ->bind(':stateName', $status->orderstatus_name)
             ->bind(':now', $now)
             ->bind(':userId', $userId, ParameterType::INTEGER)
-            ->bind(':orderId', $orderId, ParameterType::INTEGER);
+            ->bind(':orderId', $orderId, ParameterType::INTEGER)
+            ->bind(':oldStatusId', $oldStatusId, ParameterType::INTEGER);
 
         $db->setQuery($updateQuery);
 
         if (!$db->execute()) {
             $this->setError($db->getErrorMsg());
             return false;
+        }
+
+        if ($db->getAffectedRows() !== 1) {
+            return true;
         }
 
         // Inventory. This model writes order_state_id directly rather than through

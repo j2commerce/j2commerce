@@ -158,7 +158,9 @@ class OrderTable extends Table
         $this->modified_by = (int) $user->id;
 
         // Capture old status before storing (for new records, treat as status change from 5=Incomplete)
-        $oldStatusId = null;
+        $oldStatusId   = null;
+        $newStatusId   = (int) $this->order_state_id;
+        $statusClaimed = true;
 
         if (!$isNew) {
             $db    = $this->getDatabase();
@@ -169,6 +171,14 @@ class OrderTable extends Table
                 ->bind(':id', $this->j2commerce_order_id, \Joomla\Database\ParameterType::INTEGER);
             $db->setQuery($query);
             $oldStatusId = (int) $db->loadResult();
+
+            // Claim the transition against the status just read, so only one writer runs
+            // the side effects below. Two writers on the same order otherwise both see the
+            // same old status, both clear the change check, and both append history, fire
+            // the status event and re-grant downloads.
+            if ($oldStatusId !== $newStatusId) {
+                $statusClaimed = $this->claimStatusTransition($oldStatusId, $newStatusId);
+            }
         }
 
         // stock_committed is owned by InventoryHelper's compare-and-set, never by the row
@@ -179,20 +189,33 @@ class OrderTable extends Table
         $committedProperty = $this->stock_committed ?? null;
         unset($this->stock_committed);
 
+        // A won claim already wrote the status. A lost one means another writer moved the
+        // order in between, so the status columns are kept out of this statement as well:
+        // persisting them would move the order back onto a transition it no longer holds,
+        // leaving the row disagreeing with the stock the winner committed against it.
+        $stateProperties = null;
+
+        if (!$statusClaimed) {
+            $stateProperties = [$this->order_state_id, $this->order_state ?? null];
+            unset($this->order_state_id, $this->order_state);
+        }
+
         // Perform the actual store
         $result = parent::store($updateNulls);
 
         $this->stock_committed = $committedProperty ?? 0;
 
+        if ($stateProperties !== null) {
+            [$this->order_state_id, $this->order_state] = $stateProperties;
+        }
+
         if (!$result) {
             return false;
         }
 
-        // After successful store, handle status-based side effects
-        $newStatusId = (int) $this->order_state_id;
-
-        // Skip if status didn't change (and not a new record)
-        if (!$isNew && $oldStatusId === $newStatusId) {
+        // Skip if status didn't change (and not a new record), or if another writer owns
+        // this transition
+        if (!$isNew && ($oldStatusId === $newStatusId || !$statusClaimed)) {
             return true;
         }
 
@@ -236,6 +259,25 @@ class OrderTable extends Table
         );
 
         return true;
+    }
+
+    /** Compare-and-swap: true only for the writer whose read of the old status still held. */
+    private function claimStatusTransition(int $oldStatusId, int $newStatusId): bool
+    {
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true)
+            ->update($db->quoteName('#__j2commerce_orders'))
+            ->set($db->quoteName('order_state_id') . ' = :newStatusId')
+            ->where($db->quoteName('j2commerce_order_id') . ' = :id')
+            ->where($db->quoteName('order_state_id') . ' = :oldStatusId')
+            ->bind(':newStatusId', $newStatusId, \Joomla\Database\ParameterType::INTEGER)
+            ->bind(':id', $this->j2commerce_order_id, \Joomla\Database\ParameterType::INTEGER)
+            ->bind(':oldStatusId', $oldStatusId, \Joomla\Database\ParameterType::INTEGER);
+
+        $db->setQuery($query);
+        $db->execute();
+
+        return $db->getAffectedRows() === 1;
     }
 
     /**
