@@ -846,6 +846,7 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_orders` (
   `customer_language` varchar(255) NOT NULL,
   `customer_group` varchar(255) NOT NULL,
   `order_state_id` int NOT NULL,
+  `stock_committed` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Whether this order currently holds deducted stock',
   `order_state` varchar(255) NOT NULL COMMENT 'Legacy compatibility',
   `order_params` text DEFAULT NULL,
   `access` int UNSIGNED NOT NULL DEFAULT '0',

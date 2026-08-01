@@ -973,26 +973,99 @@ class InventoryHelper
         return !\in_array($statusId, self::NON_HOLDING_STATUSES, true);
     }
 
+    /** Does this order currently hold deducted stock? */
+    public static function orderStockCommitted(string $orderId): bool
+    {
+        if ($orderId === '') {
+            return false;
+        }
+
+        $db    = self::getDatabase();
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('stock_committed'))
+            ->from($db->quoteName('#__j2commerce_orders'))
+            ->where($db->quoteName('order_id') . ' = :orderId')
+            ->bind(':orderId', $orderId);
+
+        $db->setQuery($query);
+
+        return (int) $db->loadResult() === 1;
+    }
+
+    /**
+     * Claim the transition by flipping the flag, and report whether this caller won it.
+     *
+     * The conditional UPDATE is the lock. Two requests arriving together — a webhook
+     * delivered twice, or one racing the shopper's browser return — would otherwise both
+     * read the old value and both move the stock.
+     */
+    private static function claimStockCommitted(string $orderId, bool $committed): bool
+    {
+        $db   = self::getDatabase();
+        $to   = $committed ? 1 : 0;
+        $from = $committed ? 0 : 1;
+
+        $query = $db->getQuery(true)
+            ->update($db->quoteName('#__j2commerce_orders'))
+            ->set($db->quoteName('stock_committed') . ' = :to')
+            ->where($db->quoteName('order_id') . ' = :orderId')
+            ->where($db->quoteName('stock_committed') . ' = :from')
+            ->bind(':to', $to, ParameterType::INTEGER)
+            ->bind(':from', $from, ParameterType::INTEGER)
+            ->bind(':orderId', $orderId);
+
+        $db->setQuery($query);
+        $db->execute();
+
+        return $db->getAffectedRows() === 1;
+    }
+
     /**
      * Apply the inventory side of an order status transition.
      *
-     * @param   string    $orderId       The order_id string (NOT the PK).
-     * @param   int|null  $oldStatusId   Prior status; null for a newly created order.
-     * @param   int       $newStatusId   Status being written.
+     * Driven by what the order actually did, not by where it has been: the prior status
+     * only ever described the rule in force when that status was written, and that rule
+     * has changed. stock_committed records the debit itself, so a status set the order
+     * never earned cannot produce a credit, and an order created in one pass at a holding
+     * status — with no items to debit yet — never claims one.
+     *
+     * @param   string  $orderId      The order_id string (NOT the PK).
+     * @param   int     $newStatusId  Status being written.
+     *
+     * @return  int|null  The new stock_committed value when it changed, otherwise null.
      *
      * @since   6.5.0
      */
-    public static function applyStatusTransition(string $orderId, ?int $oldStatusId, int $newStatusId): void
+    public static function applyStatusTransition(string $orderId, int $newStatusId): ?int
     {
-        // Stock moves only when the order crosses the holding boundary, in either direction.
-        $oldHolds = $oldStatusId !== null && self::statusHoldsStock($oldStatusId);
-        $newHolds = self::statusHoldsStock($newStatusId);
-
-        if ($newHolds && !$oldHolds) {
-            self::reduceOrderStock($orderId);
-        } elseif ($oldHolds && !$newHolds) {
-            self::restoreOrderStock($orderId);
+        if ($orderId === '') {
+            return null;
         }
+
+        if (self::statusHoldsStock($newStatusId)) {
+            // Claim before debiting, so a concurrent writer cannot debit the same order.
+            if (!self::claimStockCommitted($orderId, true)) {
+                return null;
+            }
+
+            // An order with no items yet — created in one pass at a holding status — has
+            // nothing to account for. Release the claim so it can never credit later.
+            if (!self::reduceOrderStock($orderId)) {
+                self::claimStockCommitted($orderId, false);
+
+                return null;
+            }
+
+            return 1;
+        }
+
+        if (!self::claimStockCommitted($orderId, false)) {
+            return null;
+        }
+
+        self::restoreOrderStock($orderId);
+
+        return 0;
     }
 
     /**
@@ -1007,17 +1080,18 @@ class InventoryHelper
      *
      * @since   6.0.10
      */
-    public static function reduceOrderStock(string $orderId): void
+    public static function reduceOrderStock(string $orderId): bool
     {
         if (empty($orderId)) {
-            return;
+            return false;
         }
 
         $items = self::loadOrderItemsWithVariants($orderId);
 
         if (empty($items)) {
-            return;
+            return false;
         }
+
 
         \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2commerce');
 
@@ -1063,6 +1137,10 @@ class InventoryHelper
 
             J2CommerceHelper::plugin()->event('AfterStockAdjust', [(int) $item->variant_id, $newStock]);
         }
+
+        // Items existed, so this order's stock is now accounted for — even if every line
+        // turned out to be unmanaged and nothing actually moved.
+        return true;
     }
 
     /**

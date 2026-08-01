@@ -661,10 +661,14 @@ class OrderModel extends AdminModel
         return $newStock;
     }
 
-    /** Order statuses where stock has already been committed. */
+    /** Does this order currently hold deducted stock? */
     public function isStockCommitted(object $order): bool
     {
-        return InventoryHelper::statusHoldsStock((int) ($order->order_state_id ?? 0));
+        if (isset($order->stock_committed)) {
+            return (int) $order->stock_committed === 1;
+        }
+
+        return InventoryHelper::orderStockCommitted((string) ($order->order_id ?? ''));
     }
 
     /** Supplemental-charge capability of the order's gateway ('token_charge' | 'order_update' | 'none'). */
@@ -1066,7 +1070,7 @@ class OrderModel extends AdminModel
         // OrderTable::store(), so without this call every status change made here —
         // the admin dropdown, the bulk action, the hold_stock sweep and the shipping
         // plugins — moved the order but left stock untouched in both directions.
-        InventoryHelper::applyStatusTransition($order->order_id, $oldStatusId, $newStatusId);
+        InventoryHelper::applyStatusTransition($order->order_id, $newStatusId);
 
         // Add history entry with status change comment if none provided
         $historyComment = $comment;

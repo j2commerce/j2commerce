@@ -68,6 +68,10 @@ class OrderTable extends Table
             $this->order_state_id = 5;
         }
 
+        if (!isset($this->stock_committed) || $this->stock_committed === '') {
+            $this->stock_committed = 0;
+        }
+
         // Validate user email
         if (empty($this->user_email)) {
             $this->setError(Text::sprintf('COM_J2COMMERCE_ERR_FIELD_REQUIRED', Text::_('COM_J2COMMERCE_FIELD_EMAIL')));
@@ -167,8 +171,18 @@ class OrderTable extends Table
             $oldStatusId = (int) $db->loadResult();
         }
 
+        // stock_committed is owned by InventoryHelper's compare-and-set, never by the row
+        // write. Table::store() persists every non-null property, so a writer holding a row
+        // loaded before the flag was set would put its stale value back and the claim below
+        // would then succeed against that — debiting the same order twice. Unsetting keeps
+        // the column out of the statement entirely; a new row takes the column default.
+        $committedProperty = $this->stock_committed ?? null;
+        unset($this->stock_committed);
+
         // Perform the actual store
         $result = parent::store($updateNulls);
+
+        $this->stock_committed = $committedProperty ?? 0;
 
         if (!$result) {
             return false;
@@ -185,7 +199,11 @@ class OrderTable extends Table
         // Move the stock before announcing the change, matching OrderModel::updateOrderStatus().
         // A listener that reads variant quantities inside the event otherwise gets a different
         // answer depending on which writer fired for the same logical transition.
-        InventoryHelper::applyStatusTransition($this->order_id, $oldStatusId, $newStatusId);
+        $committed = InventoryHelper::applyStatusTransition($this->order_id, $newStatusId);
+
+        if ($committed !== null) {
+            $this->stock_committed = $committed;
+        }
 
         // Trigger plugin event for status change
         PluginHelper::importPlugin('j2commerce');

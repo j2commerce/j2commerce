@@ -262,6 +262,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
         $this->setFinderPluginOrdering();
 
         $this->seedCustomAclActions();
+        $this->seedStockCommitted();
 
         $this->debugLog("=== POSTFLIGHT END ===");
     }
@@ -298,6 +299,76 @@ class Com_J2commerceInstallerScript extends InstallerScript
      * Seed the custom actions declared in access.xml. The component boot runs the same helper,
      * so a site that never executes this postflight still converges.
      */
+    /**
+     * Seed stock_committed on existing orders, once.
+     *
+     * Deliberately not an UPDATE in the schema delta: Joomla only builds check queries for
+     * RENAME/ALTER/CREATE, so Database -> Fix skips an UPDATE while still advancing the
+     * stored schema version past it. A seed lost that way would leave already-deducted
+     * orders marked uncommitted and the next status change would deduct them again.
+     *
+     * The marker lives in the component params so it is independent of #__schemas, and the
+     * seed is a one-shot: re-running it later would re-commit orders whose stock has since
+     * been legitimately returned.
+     */
+    private function seedStockCommitted(): void
+    {
+        try {
+            $db = Factory::getContainer()->get(DatabaseInterface::class);
+
+            $columns = $db->getTableColumns('#__j2commerce_orders', false);
+
+            if (!isset($columns['stock_committed'])) {
+                $this->debugLog('seedStockCommitted: column not present yet, nothing to seed');
+
+                return;
+            }
+
+            $query = $db->getQuery(true)
+                ->select($db->quoteName('params'))
+                ->from($db->quoteName('#__extensions'))
+                ->where($db->quoteName('element') . ' = ' . $db->quote('com_j2commerce'))
+                ->where($db->quoteName('type') . ' = ' . $db->quote('component'));
+            $db->setQuery($query);
+
+            $params = new Registry((string) $db->loadResult());
+
+            if ((int) $params->get('stock_committed_seeded', 0) === 1) {
+                return;
+            }
+
+            // Mirror the rule in force immediately before the flag existed: everything except
+            // Failed, New and Cancelled was treated as holding deducted stock.
+            $db->setQuery(
+                $db->getQuery(true)
+                    ->update($db->quoteName('#__j2commerce_orders'))
+                    ->set($db->quoteName('stock_committed') . ' = 1')
+                    ->where($db->quoteName('order_state_id') . ' NOT IN (3, 5, 6)')
+            );
+            $db->execute();
+
+            $seeded = $db->getAffectedRows();
+
+            $params->set('stock_committed_seeded', 1);
+
+            $paramsJson = $params->toString();
+            $db->setQuery(
+                $db->getQuery(true)
+                    ->update($db->quoteName('#__extensions'))
+                    ->set($db->quoteName('params') . ' = :params')
+                    ->where($db->quoteName('element') . ' = ' . $db->quote('com_j2commerce'))
+                    ->where($db->quoteName('type') . ' = ' . $db->quote('component'))
+                    ->bind(':params', $paramsJson)
+            );
+            $db->execute();
+
+            $this->debugLog('seedStockCommitted: seeded ' . $seeded . ' order(s)');
+        } catch (\Throwable $e) {
+            // Leave the marker unset so the next update retries rather than skipping silently.
+            $this->debugLog('seedStockCommitted failed: ' . $e->getMessage());
+        }
+    }
+
     private function seedCustomAclActions(): void
     {
         // On a fresh install the PSR-4 map for this namespace is built at the start of the
