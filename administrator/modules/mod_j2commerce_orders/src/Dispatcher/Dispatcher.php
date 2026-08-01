@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Module\Orders\Administrator\Dispatcher;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Module\Orders\Administrator\Helper\OrdersHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Dispatcher\AbstractModuleDispatcher;
@@ -27,14 +28,18 @@ class Dispatcher extends AbstractModuleDispatcher implements HelperFactoryAwareI
 {
     use HelperFactoryAwareTrait;
 
+    public function dispatch(): void
+    {
+        if (!J2CommerceHelper::canAccess('j2commerce.vieworders')) {
+            return;
+        }
+
+        parent::dispatch();
+    }
+
     protected function getLayoutData(): array
     {
-        $app  = Factory::getApplication();
-        $user = $app->getIdentity();
-
-        if (!$user->authorise('core.manage', 'com_j2commerce')) {
-            return [];
-        }
+        $app = Factory::getApplication();
 
         $data = parent::getLayoutData();
 
