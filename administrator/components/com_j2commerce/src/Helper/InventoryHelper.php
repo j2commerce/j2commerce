@@ -969,24 +969,23 @@ class InventoryHelper
      */
     public static function applyStatusTransition(string $orderId, ?int $oldStatusId, int $newStatusId): void
     {
-        // Status 1 = Confirmed, 4 = Pending, 5 = Incomplete, 6 = Cancelled.
+        // Status 3 = Failed, 5 = New, 6 = Cancelled. An order in one of these holds no
+        // units: New has not reserved yet, Failed never completed, Cancelled has already
+        // given them back. Every other status holds them — Confirmed, Pending, Processed,
+        // Shipped, Delivered, and any status a merchant adds, which is the safe default.
         //
-        // Entering Confirmed or Pending takes the units. Pending has to reserve: without
-        // it an unpaid order holds nothing, so hold_stock has no reservation to release
-        // when it expires, and cancelling would credit units that were never debited.
-        $reservingStatuses = [1, 4];
+        // Pending has to hold: without it an unpaid order reserves nothing, so hold_stock
+        // has no reservation to release when it expires.
+        $nonHolding = [3, 5, 6];
 
-        // Once taken, the units stay out for the rest of the order's life — Processing,
-        // Shipped and the like all still hold them. Only Incomplete (never reserved) and
-        // Cancelled (already given back) do not, and neither does a brand new order.
-        $holdsStock = $oldStatusId !== null && !\in_array($oldStatusId, [5, 6], true);
+        // One predicate read in both directions. Deciding the two sides separately is what
+        // let a transition credit units it never debited, or debit none and still credit.
+        $heldBefore = $oldStatusId !== null && !\in_array($oldStatusId, $nonHolding, true);
+        $holdsAfter = !\in_array($newStatusId, $nonHolding, true);
 
-        if (\in_array($newStatusId, $reservingStatuses, true)) {
-            // Reduce once — a move between two stock-holding states changes nothing.
-            if (!$holdsStock) {
-                self::reduceOrderStock($orderId);
-            }
-        } elseif ($newStatusId === 6 && $holdsStock) {
+        if (!$heldBefore && $holdsAfter) {
+            self::reduceOrderStock($orderId);
+        } elseif ($heldBefore && !$holdsAfter) {
             self::restoreOrderStock($orderId);
         }
     }
