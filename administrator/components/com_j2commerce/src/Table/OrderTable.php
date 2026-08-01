@@ -182,6 +182,11 @@ class OrderTable extends Table
             return true;
         }
 
+        // Move the stock before announcing the change, matching OrderModel::updateOrderStatus().
+        // A listener that reads variant quantities inside the event otherwise gets a different
+        // answer depending on which writer fired for the same logical transition.
+        InventoryHelper::applyStatusTransition($this->order_id, $oldStatusId, $newStatusId);
+
         // Trigger plugin event for status change
         PluginHelper::importPlugin('j2commerce');
         Factory::getApplication()->triggerEvent('onJ2CommerceOrderStatusChange', [
@@ -189,8 +194,6 @@ class OrderTable extends Table
             $oldStatusId,
             $newStatusId,
         ]);
-
-        InventoryHelper::applyStatusTransition($this->order_id, $oldStatusId, $newStatusId);
 
         // Grant download access when status changes to an allowed download status
         if (\in_array($newStatusId, ConfigHelper::getDownloadAllowedStatuses(), true)) {

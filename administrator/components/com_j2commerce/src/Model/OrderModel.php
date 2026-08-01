@@ -661,10 +661,10 @@ class OrderModel extends AdminModel
         return $newStock;
     }
 
-    /** Order statuses where stock has already been committed (Confirmed / Pending). */
+    /** Order statuses where stock has already been committed. */
     public function isStockCommitted(object $order): bool
     {
-        return \in_array((int) ($order->order_state_id ?? 0), [1, 4], true);
+        return InventoryHelper::statusHoldsStock((int) ($order->order_state_id ?? 0));
     }
 
     /** Supplemental-charge capability of the order's gateway ('token_charge' | 'order_update' | 'none'). */
