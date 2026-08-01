@@ -596,9 +596,9 @@ class CartHelper
     {
         $db = self::getDatabase();
 
-        // Load order to get cart_id
+        // Load order to get cart_id and user_id
         $query = $db->getQuery(true)
-            ->select($db->quoteName(['j2commerce_order_id', 'cart_id']))
+            ->select($db->quoteName(['j2commerce_order_id', 'cart_id', 'user_id']))
             ->from($db->quoteName('#__j2commerce_orders'))
             ->where($db->quoteName('order_id') . ' = :orderId')
             ->bind(':orderId', $orderId);
@@ -611,6 +611,7 @@ class CartHelper
         }
 
         $cartId = (int) $order->cart_id;
+        $userId = (int) ($order->user_id ?? 0);
 
         // Trigger plugin event before emptying cart
         // TODO: Implement plugin events when J2Commerce plugin system is ready
@@ -633,6 +634,38 @@ class CartHelper
 
         $db->setQuery($deleteCart);
         $db->execute();
+
+        // For logged-in users, also purge any other stale 'cart'-type carts that can
+        // accumulate from guest→login migration edge-cases.  A user should have at most
+        // one active cart; leftover secondary carts would otherwise surface as "ghost"
+        // items on the next getCart() call.
+        if ($userId > 0) {
+            $otherCartQuery = $db->getQuery(true)
+                ->select($db->quoteName('j2commerce_cart_id'))
+                ->from($db->quoteName('#__j2commerce_carts'))
+                ->where($db->quoteName('user_id') . ' = :userId')
+                ->where($db->quoteName('cart_type') . ' = ' . $db->quote('cart'))
+                ->bind(':userId', $userId, ParameterType::INTEGER);
+
+            $db->setQuery($otherCartQuery);
+            $otherCartIds = array_map('intval', $db->loadColumn() ?: []);
+
+            if (!empty($otherCartIds)) {
+                $db->setQuery(
+                    $db->getQuery(true)
+                        ->delete($db->quoteName('#__j2commerce_cartitems'))
+                        ->whereIn($db->quoteName('cart_id'), $otherCartIds)
+                );
+                $db->execute();
+
+                $db->setQuery(
+                    $db->getQuery(true)
+                        ->delete($db->quoteName('#__j2commerce_carts'))
+                        ->whereIn($db->quoteName('j2commerce_cart_id'), $otherCartIds)
+                );
+                $db->execute();
+            }
+        }
 
         // Clear cart cookie
         self::getInstance()->clearCartCookie();
