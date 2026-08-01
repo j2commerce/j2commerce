@@ -2261,6 +2261,42 @@ class CheckoutController extends BaseController
 
         if (!empty($result['success']) && !empty($orderId)) {
             $this->sendOrderEmails($orderId);
+
+            // Clear the cart and set up guest session data so the confirmation view
+            // can authorise the guest. confirmPayment() normally handles this but is
+            // bypassed by the Smart Buttons AJAX capture flow.
+            $session    = $this->app->getSession();
+            $orderTable = $this->getMvcFactory()->createTable('Order', 'Administrator');
+
+            if ($orderTable && $orderTable->load(['order_id' => (string) $orderId])) {
+                $user = $this->app->getIdentity();
+
+                if (!$user || !$user->id) {
+                    $guest = $session->get('guest', [], 'j2commerce');
+
+                    if (\is_array($guest) && !empty($guest['email'])) {
+                        $session->set('guest_order_email', $guest['email'], 'j2commerce');
+                    }
+
+                    if (!empty($orderTable->token)) {
+                        $session->set('guest_order_token', $orderTable->token, 'j2commerce');
+
+                        // Append token to the redirect URL so ConfirmationModel::isAuthorised()
+                        // can verify via the URL token even if the session is lost on the
+                        // subsequent page load (cross-site cookie / SameSite edge-cases).
+                        if (!empty($result['redirect']) && !str_contains((string) $result['redirect'], 'token=')) {
+                            $result['redirect'] .= '&token=' . urlencode($orderTable->token);
+                        }
+                    }
+                }
+            }
+
+            $this->clearCartAndSession((string) $orderId, $session);
+
+            // Clear the primed order from session — confirmPayment() normally does
+            // this but is bypassed by the Smart Buttons AJAX flow.
+            $this->app->setUserState('j2commerce.order_id', null);
+            $this->app->setUserState('j2commerce.orderpayment_id', null);
         }
 
         $this->jsonResponse($result);
