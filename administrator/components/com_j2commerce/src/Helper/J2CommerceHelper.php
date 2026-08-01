@@ -17,6 +17,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 // phpcs:enable PSR1.Files.SideEffects
 
 
+use Joomla\CMS\Access\Access;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
@@ -24,6 +25,7 @@ use Joomla\CMS\Helper\ContentHelper;
 use Joomla\CMS\HTML\Helpers\Sidebar;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\FileLayout;
+use Joomla\CMS\Router\Route;
 use Joomla\CMS\Uri\Uri;
 use Joomla\Registry\Registry;
 
@@ -156,11 +158,38 @@ class J2CommerceHelper extends ContentHelper
             return true;
         }
 
+        // If explicit rules (allow OR deny) exist for this action in the component
+        // asset, honour the authorise() result directly — an administrator has
+        // intentionally configured the action and the deny must not be bypassed.
+        // Access::getAssetRules() is cached per-request by Joomla's Access layer.
+        if (array_key_exists($action, Access::getAssetRules('com_j2commerce')->getData())) {
+            return false;
+        }
+
+        // No explicit rules exist for this action yet (pre-seed state).
         // ComponentHelper caches the component row for the request, so this is not a
         // per-call query.
         $seeded = (int) ComponentHelper::getParams('com_j2commerce')->get('acl_custom_actions_seeded', 0);
 
         return $seeded !== 1 && $user->authorise('core.manage', 'com_j2commerce');
+    }
+
+    /**
+     * Redirect to the J2Commerce dashboard with an access-denied message.
+     *
+     * Use this instead of throwing a 403 exception in views so that the user
+     * sees a clean error notice in the normal admin layout rather than a raw
+     * exception page (which is especially ugly when Joomla debug mode is on).
+     *
+     * @return  never
+     *
+     * @since   6.2.0
+     */
+    public static function denyAccess(): never
+    {
+        $app = Factory::getApplication();
+        $app->enqueueMessage(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 'error');
+        $app->redirect(Route::_('index.php?option=com_j2commerce', false));
     }
 
     // ========================================================================
