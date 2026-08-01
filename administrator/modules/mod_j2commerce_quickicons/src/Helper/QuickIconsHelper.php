@@ -50,7 +50,7 @@ class QuickIconsHelper
                 'image'  => 'fa-solid fa-list-alt',
                 'link'   => Route::_('index.php?option=com_j2commerce&view=orders'),
                 'name'   => 'COM_J2COMMERCE_ORDERS',
-                'access' => ['j2commerce.vieworders', 'com_j2commerce'],
+                'access' => ['core.manage', 'com_j2commerce', 'j2commerce.vieworders', 'com_j2commerce'],
                 'group'  => 'MOD_J2COMMERCE_QUICKICONS_GROUP',
             ];
         }
@@ -60,7 +60,7 @@ class QuickIconsHelper
                 'image'  => 'icon-tag',
                 'link'   => Route::_('index.php?option=com_j2commerce&view=products'),
                 'name'   => 'COM_J2COMMERCE_PRODUCTS',
-                'access' => ['j2commerce.viewproducts', 'com_j2commerce'],
+                'access' => ['core.manage', 'com_j2commerce', 'j2commerce.viewproducts', 'com_j2commerce'],
                 'group'  => 'MOD_J2COMMERCE_QUICKICONS_GROUP',
             ];
         }
@@ -70,7 +70,7 @@ class QuickIconsHelper
                 'image'  => 'icon-users',
                 'link'   => Route::_('index.php?option=com_j2commerce&view=customers'),
                 'name'   => 'COM_J2COMMERCE_CUSTOMERS',
-                'access' => ['j2commerce.vieworders', 'com_j2commerce'],
+                'access' => ['core.manage', 'com_j2commerce', 'j2commerce.vieworders', 'com_j2commerce'],
                 'group'  => 'MOD_J2COMMERCE_QUICKICONS_GROUP',
             ];
         }
@@ -90,7 +90,7 @@ class QuickIconsHelper
                 'image'  => 'fa-regular fa-credit-card',
                 'link'   => Route::_('index.php?option=com_j2commerce&view=paymentmethods'),
                 'name'   => 'COM_J2COMMERCE_PAYMENT_METHODS',
-                'access' => ['j2commerce.viewsetup', 'com_j2commerce'],
+                'access' => ['core.manage', 'com_j2commerce', 'j2commerce.viewsetup', 'com_j2commerce'],
                 'group'  => 'MOD_J2COMMERCE_QUICKICONS_GROUP',
             ];
         }
@@ -100,7 +100,7 @@ class QuickIconsHelper
                 'image'  => 'fa-solid fa-truck-plane',
                 'link'   => Route::_('index.php?option=com_j2commerce&view=shippingmethods'),
                 'name'   => 'COM_J2COMMERCE_SHIPPING_METHODS',
-                'access' => ['j2commerce.viewsetup', 'com_j2commerce'],
+                'access' => ['core.manage', 'com_j2commerce', 'j2commerce.viewsetup', 'com_j2commerce'],
                 'group'  => 'MOD_J2COMMERCE_QUICKICONS_GROUP',
             ];
         }
@@ -110,7 +110,7 @@ class QuickIconsHelper
                 'image'  => 'fa-solid fa-chart-pie',
                 'link'   => Route::_('index.php?option=com_j2commerce&view=analytics'),
                 'name'   => 'COM_J2COMMERCE_STATISTICS',
-                'access' => ['j2commerce.viewreports', 'com_j2commerce'],
+                'access' => ['core.manage', 'com_j2commerce', 'j2commerce.viewreports', 'com_j2commerce'],
                 'group'  => 'MOD_J2COMMERCE_QUICKICONS_GROUP',
             ];
         }
@@ -120,7 +120,7 @@ class QuickIconsHelper
                 'image'  => 'fa-solid fa-chart-bar',
                 'link'   => Route::_('index.php?option=com_j2commerce&view=reports'),
                 'name'   => 'COM_J2COMMERCE_REPORTS',
-                'access' => ['j2commerce.viewreports', 'com_j2commerce'],
+                'access' => ['core.manage', 'com_j2commerce', 'j2commerce.viewreports', 'com_j2commerce'],
                 'group'  => 'MOD_J2COMMERCE_QUICKICONS_GROUP',
             ];
         }
