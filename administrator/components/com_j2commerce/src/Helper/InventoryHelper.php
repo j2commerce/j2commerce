@@ -955,6 +955,43 @@ class InventoryHelper
     // =========================================================================
 
     /**
+     * Apply the inventory side of an order status transition.
+     *
+     * The single place that decides which transitions move stock. Both writers of
+     * order_state_id route here — OrderTable::store() and OrderModel::updateOrderStatus() —
+     * so the two cannot drift apart, and the state sets are changed in one spot.
+     *
+     * @param   string    $orderId       The order_id string (NOT the PK).
+     * @param   int|null  $oldStatusId   Prior status; null for a newly created order.
+     * @param   int       $newStatusId   Status being written.
+     *
+     * @since   6.5.0
+     */
+    public static function applyStatusTransition(string $orderId, ?int $oldStatusId, int $newStatusId): void
+    {
+        // Status 1 = Confirmed, 4 = Pending, 5 = Incomplete, 6 = Cancelled.
+        //
+        // Entering Confirmed or Pending takes the units. Pending has to reserve: without
+        // it an unpaid order holds nothing, so hold_stock has no reservation to release
+        // when it expires, and cancelling would credit units that were never debited.
+        $reservingStatuses = [1, 4];
+
+        // Once taken, the units stay out for the rest of the order's life — Processing,
+        // Shipped and the like all still hold them. Only Incomplete (never reserved) and
+        // Cancelled (already given back) do not, and neither does a brand new order.
+        $holdsStock = $oldStatusId !== null && !\in_array($oldStatusId, [5, 6], true);
+
+        if (\in_array($newStatusId, $reservingStatuses, true)) {
+            // Reduce once — a move between two stock-holding states changes nothing.
+            if (!$holdsStock) {
+                self::reduceOrderStock($orderId);
+            }
+        } elseif ($newStatusId === 6 && $holdsStock) {
+            self::restoreOrderStock($orderId);
+        }
+    }
+
+    /**
      * Reduce stock for all items in an order.
      *
      * Called when an order status changes to Confirmed (1).

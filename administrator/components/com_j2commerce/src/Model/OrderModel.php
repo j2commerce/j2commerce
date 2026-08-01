@@ -1062,6 +1062,12 @@ class OrderModel extends AdminModel
             return false;
         }
 
+        // Inventory. This model writes order_state_id directly rather than through
+        // OrderTable::store(), so without this call every status change made here —
+        // the admin dropdown, the bulk action, the hold_stock sweep and the shipping
+        // plugins — moved the order but left stock untouched in both directions.
+        InventoryHelper::applyStatusTransition($order->order_id, $oldStatusId, $newStatusId);
+
         // Add history entry with status change comment if none provided
         $historyComment = $comment;
 
