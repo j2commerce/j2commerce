@@ -21,6 +21,10 @@ use Joomla\CMS\MVC\Controller\AdminController;
  */
 class ShippingtroublesController extends AdminController
 {
+    use WriteAccessTrait;
+
+    protected string $writeAction = 'j2commerce.editsetup';
+
     /**
      * The prefix to use with controller messages.
      *

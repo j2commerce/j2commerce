@@ -29,6 +29,18 @@ use Joomla\Database\ParameterType;
  */
 class ManufacturerController extends FormController
 {
+    use WriteAccessTrait;
+
+    protected string $writeAction = 'j2commerce.editproducts';
+
+    protected function readTasks(): array
+    {
+        return [
+            'display',
+            'getZones',
+        ];
+    }
+
     /**
      * The URL option for the component.
      *

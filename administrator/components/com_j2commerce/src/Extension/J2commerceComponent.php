@@ -102,7 +102,7 @@ class J2commerceComponent extends MVCComponent implements
             return;
         }
 
-        if ((int) ComponentHelper::getParams('com_j2commerce')->get(AclSeedHelper::ACL_SEED_FLAG, 0) === 1) {
+        if (!AclSeedHelper::needsSeeding(ComponentHelper::getParams('com_j2commerce'))) {
             return;
         }
 

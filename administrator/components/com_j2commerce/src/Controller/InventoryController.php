@@ -24,6 +24,10 @@ use Joomla\CMS\Response\JsonResponse;
  */
 class InventoryController extends AdminController
 {
+    use WriteAccessTrait;
+
+    protected string $writeAction = 'j2commerce.editproducts';
+
     /**
      * The default view for the display method.
      *

@@ -24,7 +24,11 @@ use Joomla\Utilities\ArrayHelper;
 
 class AdvancedpricingController extends AdminController
 {
-    protected $text_prefix = 'COM_J2COMMERCE';
+    use WriteAccessTrait;
+
+    protected string $writeAction = 'j2commerce.editproducts';
+
+    protected $text_prefix        = 'COM_J2COMMERCE';
 
     public function getModel($name = 'Productprice', $prefix = 'Administrator', $config = ['ignore_request' => true])
     {

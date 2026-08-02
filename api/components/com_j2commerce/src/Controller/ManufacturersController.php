@@ -25,7 +25,7 @@ class ManufacturersController extends J2CommerceApiController
 
     protected string $readAction = 'j2commerce.viewproducts';
 
-    protected string $writeAction = 'j2commerce.viewproducts';
+    protected string $writeAction = 'j2commerce.editproducts';
 
     public function displayList()
     {

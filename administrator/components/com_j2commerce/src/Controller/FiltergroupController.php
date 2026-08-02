@@ -23,6 +23,10 @@ use Joomla\CMS\Router\Route;
  */
 class FiltergroupController extends FormController
 {
+    use WriteAccessTrait;
+
+    protected string $writeAction = 'j2commerce.editproducts';
+
     /**
      * The prefix to use with controller messages.
      *

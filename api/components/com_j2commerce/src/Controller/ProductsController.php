@@ -25,7 +25,7 @@ class ProductsController extends J2CommerceApiController
 
     protected string $readAction = 'j2commerce.viewproducts';
 
-    protected string $writeAction = 'j2commerce.viewproducts';
+    protected string $writeAction = 'j2commerce.editproducts';
 
     public function getModel($name = '', $prefix = '', $config = [])
     {

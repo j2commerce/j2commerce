@@ -635,6 +635,13 @@
                 default="0"
                 filter="integer"
             />
+
+            <field
+                name="acl_seed_version"
+                type="hidden"
+                default="0"
+                filter="integer"
+            />
         </fieldset>
 
         <!-- ========================================== -->

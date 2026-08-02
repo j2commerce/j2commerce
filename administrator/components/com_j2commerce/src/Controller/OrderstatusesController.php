@@ -26,6 +26,10 @@ use Joomla\Input\Input;
  */
 class OrderstatusesController extends AdminController
 {
+    use WriteAccessTrait;
+
+    protected string $writeAction = 'j2commerce.editsetup';
+
     /**
      * The prefix to use with controller messages.
      *

@@ -33,6 +33,10 @@ use Joomla\Event\Event;
  */
 class ShippingpluginController extends BaseController
 {
+    use WriteAccessTrait;
+
+    protected string $writeAction = 'j2commerce.editsetup';
+
     /**
      * Display the shipping plugin view.
      *

@@ -31,6 +31,10 @@ use Joomla\Event\Event;
  */
 class AppPluginController extends BaseController
 {
+    use WriteAccessTrait;
+
+    protected string $writeAction = 'j2commerce.editsetup';
+
     public function display($cachable = false, $urlparams = []): static
     {
         $this->input->set('view', 'appplugin');

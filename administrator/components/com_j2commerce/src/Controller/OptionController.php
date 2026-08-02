@@ -26,6 +26,10 @@ use Joomla\CMS\MVC\Controller\FormController;
  */
 class OptionController extends FormController
 {
+    use WriteAccessTrait;
+
+    protected string $writeAction = 'j2commerce.editproducts';
+
     /**
      * The prefix to use with controller messages.
      *

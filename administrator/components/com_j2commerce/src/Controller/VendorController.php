@@ -29,6 +29,18 @@ use Joomla\Database\ParameterType;
  */
 class VendorController extends FormController
 {
+    use WriteAccessTrait;
+
+    protected string $writeAction = 'j2commerce.editproducts';
+
+    protected function readTasks(): array
+    {
+        return [
+            'display',
+            'getZones',
+        ];
+    }
+
     /**
      * The prefix to use with controller messages.
      *

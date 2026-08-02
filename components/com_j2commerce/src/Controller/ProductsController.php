@@ -47,6 +47,15 @@ class ProductsController extends AdminProductsController
         'filter',
     ];
 
+    /**
+     * The public tasks read; without this they would inherit the admin controller's list and
+     * WriteAccessTrait would demand j2commerce.editproducts from every shopper.
+     */
+    protected function readTasks(): array
+    {
+        return array_merge(parent::readTasks(), self::PUBLIC_SITE_TASKS);
+    }
+
     public function execute($task)
     {
         // Lower-cased to match BaseController::execute(), which lower-cases the task

@@ -138,7 +138,11 @@ class J2CommerceHelper extends ContentHelper
      * Check a J2Commerce custom ACL action (j2commerce.vieworders, etc.), in two phases:
      * core.manage still grants the action until the install seed has written explicit
      * allows — so a site deployed by git pull/rsync/FTP, which never runs postflight, is
-     * not locked out — and once the seed flag is present the action is the only gate.
+     * not locked out — and once the seed is current the action is the only gate.
+     *
+     * "Current" means the version too, not just the flag: an action added after a site was
+     * seeded has no rule yet, and treating that site as seeded would deny the new action to
+     * everyone below Super User until someone with core.admin opened the administrator.
      *
      * @param   string  $action  The action to check (e.g. 'j2commerce.vieworders').
      *
@@ -162,16 +166,18 @@ class J2CommerceHelper extends ContentHelper
         // asset, honour the authorise() result directly — an administrator has
         // intentionally configured the action and the deny must not be bypassed.
         // Access::getAssetRules() is cached per-request by Joomla's Access layer.
-        if (array_key_exists($action, Access::getAssetRules('com_j2commerce')->getData())) {
+        if (\array_key_exists($action, Access::getAssetRules('com_j2commerce')->getData())) {
             return false;
         }
 
-        // No explicit rules exist for this action yet (pre-seed state).
-        // ComponentHelper caches the component row for the request, so this is not a
-        // per-call query.
-        $seeded = (int) ComponentHelper::getParams('com_j2commerce')->get('acl_custom_actions_seeded', 0);
-
-        return $seeded !== 1 && $user->authorise('core.manage', 'com_j2commerce');
+        // No explicit rules exist for THIS action yet, so fall back to core.manage — but only
+        // while this particular action is still awaiting its seed. Asking per action matters:
+        // a global "is the seed current" answer would re-open the fallback for the older
+        // actions too every time a new one is added, handing back access on a site where the
+        // merchant had removed it. ComponentHelper caches the component row for the request,
+        // so this is not a per-call query.
+        return AclSeedHelper::isPendingSeed($action, ComponentHelper::getParams('com_j2commerce'))
+            && $user->authorise('core.manage', 'com_j2commerce');
     }
 
     /**

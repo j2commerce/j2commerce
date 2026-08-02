@@ -36,6 +36,23 @@ use Joomla\Utilities\ArrayHelper;
  */
 class ProductsController extends AdminController
 {
+    use WriteAccessTrait;
+
+    protected string $writeAction = 'j2commerce.editproducts';
+
+    protected function readTasks(): array
+    {
+        return [
+            'display',
+            'searchproductfilters',
+            'getProductFilterListAjax',
+            'getRelatedProducts',
+            'getBoxBuilderProducts',
+            'getProductOptionValuesAjax',
+            'getVariantListAjax',
+        ];
+    }
+
     /**
      * The prefix to use with controller messages.
      *

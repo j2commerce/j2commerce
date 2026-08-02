@@ -24,5 +24,5 @@ class PaymentmethodsController extends J2CommerceApiController
 
     protected string $readAction = 'j2commerce.viewsetup';
 
-    protected string $writeAction = 'j2commerce.viewsetup';
+    protected string $writeAction = 'j2commerce.editsetup';
 }

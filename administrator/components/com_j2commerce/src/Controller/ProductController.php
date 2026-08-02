@@ -33,6 +33,10 @@ use Joomla\Database\ParameterType;
  */
 class ProductController extends FormController
 {
+    use WriteAccessTrait;
+
+    protected string $writeAction = 'j2commerce.editproducts';
+
     /**
      * The URL option for the component.
      *

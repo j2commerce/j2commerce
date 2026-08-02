@@ -26,6 +26,10 @@ use Joomla\CMS\MVC\Controller\FormController;
  */
 class OrderstatusController extends FormController
 {
+    use WriteAccessTrait;
+
+    protected string $writeAction = 'j2commerce.editsetup';
+
     /**
      * The prefix to use with controller messages.
      *
