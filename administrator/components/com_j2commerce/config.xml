@@ -618,11 +618,19 @@
                 filter="integer"
             />
 
-            <!-- Set by StockCommittedSeedHelper. Declared so that saving Options, which binds
-                 the filtered form data over params wholesale, cannot drop the marker and
-                 re-arm a seed that must only ever run once. -->
+            <!-- Seed markers, set by StockCommittedSeedHelper and AclSeedHelper. Declared so
+                 that saving Options, which binds the filtered form data over params wholesale,
+                 cannot drop them: the stock seed must only ever run once, and dropping the ACL
+                 marker puts canAccess() back on its core.manage fallback until it re-runs. -->
             <field
                 name="stock_committed_seeded"
+                type="hidden"
+                default="0"
+                filter="integer"
+            />
+
+            <field
+                name="acl_custom_actions_seeded"
                 type="hidden"
                 default="0"
                 filter="integer"

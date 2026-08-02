@@ -15,6 +15,7 @@ declare(strict_types=1);
 use J2Commerce\Component\J2commerce\Administrator\CliCommands\SeedOrderLedgerCommand;
 use J2Commerce\Component\J2commerce\Administrator\Helper\AclSeedHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CoreTemplateSyncHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\InventoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\StockCommittedSeedHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Installer\InstallerScript;
@@ -303,11 +304,19 @@ class Com_J2commerceInstallerScript extends InstallerScript
     private function seedStockCommitted(): void
     {
         // On a fresh install the PSR-4 map for this namespace is built at the start of the
-        // request, before the component exists, so the helper will not autoload here.
-        $helperFile = JPATH_ADMINISTRATOR . '/components/com_j2commerce/src/Helper/StockCommittedSeedHelper.php';
+        // request, before the component exists, so neither helper autoloads here. The seed
+        // reads its status set from InventoryHelper, so that one has to be present too.
+        $helpers = [
+            'StockCommittedSeedHelper' => StockCommittedSeedHelper::class,
+            'InventoryHelper'          => InventoryHelper::class,
+        ];
 
-        if (!class_exists(StockCommittedSeedHelper::class) && file_exists($helperFile)) {
-            require_once $helperFile;
+        foreach ($helpers as $file => $class) {
+            $path = JPATH_ADMINISTRATOR . '/components/com_j2commerce/src/Helper/' . $file . '.php';
+
+            if (!class_exists($class) && file_exists($path)) {
+                require_once $path;
+            }
         }
 
         StockCommittedSeedHelper::ensureSeeded(fn (string $message) => $this->debugLog($message));

@@ -28,10 +28,15 @@ use Joomla\Registry\Registry;
  * schema version past it. That path also adds the column without running the installer
  * script at all, so the seed has to converge from the component boot as well.
  *
- * The marker lives in the component params so it is independent of #__schemas, and the seed
- * is a one-shot: re-running it later would re-commit orders whose stock has since been
- * legitimately returned. The marker is therefore claimed before the seed runs, and both
- * writes share a transaction so a failed seed releases the claim.
+ * The marker lives in the component params so it is independent of #__schemas, and is
+ * declared in config.xml so that saving Options — which binds the filtered form data over
+ * params wholesale — cannot drop it. That matters because the seed is a one-shot:
+ * re-running it later would re-commit orders whose stock has since been legitimately
+ * returned, and orders that deliberately hold no stock.
+ *
+ * The seed runs in bounded batches and only ever moves a row from 0 to 1, so it is safe to
+ * resume: a run that is cut short leaves the marker unset and the next one picks up the
+ * rows still outstanding. The marker is written only once no rows remain.
  *
  * @since  6.5.0
  */
@@ -40,8 +45,14 @@ class StockCommittedSeedHelper
     /** Extension-params key marking the seed as done. Declared in config.xml so an Options save keeps it. */
     public const SEED_FLAG = 'stock_committed_seeded';
 
-    /** Mirrors InventoryHelper::NON_HOLDING_STATUSES — Failed, New, Cancelled. Keep the two in step. */
-    private const UNCOMMITTED_STATES = [3, 5, 6];
+    /** Rows per statement, so the row locks stay off the whole table while checkout is live. */
+    private const BATCH_SIZE = 500;
+
+    /** Work ceiling for a single run: the rest is picked up by the next admin request. */
+    private const MAX_BATCHES_PER_RUN = 20;
+
+    /** Attempts at the marker write before giving up, in case Options is saved concurrently. */
+    private const MARKER_WRITE_ATTEMPTS = 3;
 
     /**
      * Seed stock_committed unless the marker is already set. Never throws: a failure leaves
@@ -54,8 +65,6 @@ class StockCommittedSeedHelper
         $log = $logger ?? static function (string $message): void {
             Log::add($message, Log::DEBUG, 'com_j2commerce');
         };
-
-        $inTransaction = false;
 
         try {
             $db = Factory::getContainer()->get(DatabaseInterface::class);
@@ -82,80 +91,114 @@ class StockCommittedSeedHelper
                 return false;
             }
 
-            $storedParams = (string) $extension->params;
-            $params       = new Registry($storedParams);
-
-            if ((int) $params->get(self::SEED_FLAG, 0) === 1) {
+            if ((int) (new Registry((string) $extension->params))->get(self::SEED_FLAG, 0) === 1) {
                 return true;
             }
 
-            $db->transactionStart();
-            $inTransaction = true;
+            [$seeded, $complete] = self::seedBatches($db);
 
-            // Claim the marker first. The boot path is concurrent, so two requests can both
-            // pass the check above; only the one that writes over the params it read owns
-            // the seed, and the rollback below releases the claim if the seed then fails.
-            if (!self::claimMarker($db, $params, (int) $extension->extension_id, $storedParams)) {
-                $db->transactionRollback();
-
-                $log('STOCK SEED: extension params changed while claiming — retry on next request');
+            if (!$complete) {
+                $log("STOCK SEED: {$seeded} order(s) seeded, work ceiling reached — resuming on the next request");
 
                 return false;
             }
 
-            $db->setQuery(
-                $db->getQuery(true)
-                    ->update($db->quoteName('#__j2commerce_orders'))
-                    ->set($db->quoteName('stock_committed') . ' = 1')
-                    ->whereNotIn($db->quoteName('order_state_id'), self::UNCOMMITTED_STATES)
-            );
-            $db->execute();
+            if (!self::claimMarker($db, (int) $extension->extension_id)) {
+                $log("STOCK SEED: {$seeded} order(s) seeded but the marker could not be written — will re-run");
 
-            $seeded = $db->getAffectedRows();
+                return false;
+            }
 
-            $db->transactionCommit();
-            $inTransaction = false;
-
-            $log('STOCK SEED: seeded ' . $seeded . ' order(s)');
+            $log("STOCK SEED: seeded {$seeded} order(s)");
 
             return true;
         } catch (\Throwable $e) {
-            if ($inTransaction) {
-                try {
-                    $db->transactionRollback();
-                } catch (\Throwable $rollbackError) {
-                    $log('STOCK SEED: rollback failed: ' . $rollbackError->getMessage());
-                }
-            }
-
             $log('STOCK SEED failed: ' . $e->getMessage());
 
             return false;
         }
     }
 
-    /** Set the marker only while the stored params still match the value they were read from. */
-    private static function claimMarker(
-        DatabaseInterface $db,
-        Registry $params,
-        int $extensionId,
-        string $expected
-    ): bool {
-        $params->set(self::SEED_FLAG, 1);
+    /**
+     * Commit the outstanding orders in batches.
+     *
+     * @return  array{0: int, 1: bool}  Rows seeded, and whether nothing is left to seed.
+     */
+    private static function seedBatches(DatabaseInterface $db): array
+    {
+        $seeded = 0;
 
-        $paramsJson = $params->toString();
+        for ($batch = 0; $batch < self::MAX_BATCHES_PER_RUN; $batch++) {
+            $query = $db->getQuery(true)
+                ->select($db->quoteName('j2commerce_order_id'))
+                ->from($db->quoteName('#__j2commerce_orders'))
+                ->where($db->quoteName('stock_committed') . ' = 0')
+                ->whereNotIn($db->quoteName('order_state_id'), InventoryHelper::NON_HOLDING_STATUSES)
+                ->setLimit(self::BATCH_SIZE);
+            $db->setQuery($query);
 
-        $query = $db->getQuery(true)
-            ->update($db->quoteName('#__extensions'))
-            ->set($db->quoteName('params') . ' = :params')
-            ->where($db->quoteName('extension_id') . ' = :id')
-            ->where($db->quoteName('params') . ' = :expected')
-            ->bind(':params', $paramsJson)
-            ->bind(':expected', $expected)
-            ->bind(':id', $extensionId, ParameterType::INTEGER);
+            $ids = array_map('intval', (array) $db->loadColumn());
 
-        $db->setQuery($query)->execute();
+            if (!$ids) {
+                return [$seeded, true];
+            }
 
-        return $db->getAffectedRows() > 0;
+            $db->setQuery(
+                $db->getQuery(true)
+                    ->update($db->quoteName('#__j2commerce_orders'))
+                    ->set($db->quoteName('stock_committed') . ' = 1')
+                    ->whereIn($db->quoteName('j2commerce_order_id'), $ids)
+            );
+            $db->execute();
+
+            // A concurrent run may have taken some of these rows first; the next pass
+            // re-reads what is genuinely outstanding, so a short count is not an error.
+            $seeded += $db->getAffectedRows();
+        }
+
+        return [$seeded, false];
+    }
+
+    /**
+     * Set the marker, retrying if the params are saved from elsewhere mid-write. Each attempt
+     * writes only over the value it read, so an administrator's Options save is never lost.
+     */
+    private static function claimMarker(DatabaseInterface $db, int $extensionId): bool
+    {
+        for ($attempt = 0; $attempt < self::MARKER_WRITE_ATTEMPTS; $attempt++) {
+            $read = $db->getQuery(true)
+                ->select($db->quoteName('params'))
+                ->from($db->quoteName('#__extensions'))
+                ->where($db->quoteName('extension_id') . ' = :id')
+                ->bind(':id', $extensionId, ParameterType::INTEGER);
+            $db->setQuery($read);
+
+            $expected = (string) $db->loadResult();
+            $params   = new Registry($expected);
+
+            if ((int) $params->get(self::SEED_FLAG, 0) === 1) {
+                return true;
+            }
+
+            $params->set(self::SEED_FLAG, 1);
+            $paramsJson = $params->toString();
+
+            $write = $db->getQuery(true)
+                ->update($db->quoteName('#__extensions'))
+                ->set($db->quoteName('params') . ' = :params')
+                ->where($db->quoteName('extension_id') . ' = :id')
+                ->where($db->quoteName('params') . ' = :expected')
+                ->bind(':params', $paramsJson)
+                ->bind(':expected', $expected)
+                ->bind(':id', $extensionId, ParameterType::INTEGER);
+
+            $db->setQuery($write)->execute();
+
+            if ($db->getAffectedRows() > 0) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

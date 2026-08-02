@@ -959,9 +959,13 @@ class InventoryHelper
      * yet, Cancelled (6) has given its units back, and Failed (3) is a dead end that nothing
      * sweeps — holding there would strand the units on every declined card.
      *
+     * Public because StockCommittedSeedHelper seeds against the same set: a second copy that
+     * drifted from this one would mark as committed the very orders the runtime treats as
+     * non-holding, and each would then credit stock on its next transition.
+     *
      * @since   6.5.0
      */
-    private const NON_HOLDING_STATUSES = [3, 5, 6];
+    public const NON_HOLDING_STATUSES = [3, 5, 6];
 
     /**
      * Does an order in this status hold reserved stock?
