@@ -1906,6 +1906,53 @@ class CheckoutController extends BaseController
             }
         }
 
+        // Re-assert the app-plugin veto at submit time. confirm() dispatches AfterOrderValidate
+        // when the review page is RENDERED; a shopper who loaded that page while the veto was
+        // clear could otherwise submit after it applies and have the order taken anyway — the
+        // opening-hours, additional-terms and subscription rules were all bypassable that way.
+        // Off-site gateway returns are exempt: the money is already captured there, so vetoing
+        // one would strand a paid order.
+        if (!$tokenlessGatewayReturn) {
+            $vetoMessage = '';
+
+            try {
+                $vetoOrder = $this->getCartOrder();
+                J2CommerceHelper::plugin()->event('AfterOrderValidate', [&$vetoOrder]);
+            } catch (ExecutionFailureException | ConnectionFailureException | PrepareStatementFailureException $e) {
+                // Database faults also extend RuntimeException, so catch them before the plugin-veto arm.
+                Log::add('checkout.confirmPayment AfterOrderValidate database failure: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+
+                $vetoMessage = Text::_('COM_J2COMMERCE_ERR_GENERIC');
+            } catch (\RuntimeException $e) {
+                // App plugins veto the order by throwing an already-translated shopper-facing
+                // message — it must reach the shopper verbatim, exactly as in confirm().
+                $vetoMessage = $e->getMessage();
+            } catch (\Throwable $e) {
+                Log::add('checkout.confirmPayment AfterOrderValidate failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+
+                $vetoMessage = Text::_('COM_J2COMMERCE_ERR_GENERIC');
+            }
+
+            if ($vetoMessage !== '') {
+                // On-site card plugins POST here via fetch() expecting JSON; a redirect would be
+                // followed silently and hand them an HTML page.
+                $paction = $this->input->getString('paction', '');
+                $isAjax  = $paction === 'process'
+                    || strtolower($this->input->server->getString('HTTP_X_REQUESTED_WITH', '')) === 'xmlhttprequest';
+
+                if ($isAjax) {
+                    $this->jsonResponse(['success' => false, 'error' => $vetoMessage]);
+
+                    return;
+                }
+
+                $this->app->enqueueMessage($vetoMessage, 'warning');
+                $this->app->redirect($this->getCheckoutUrl());
+
+                return;
+            }
+        }
+
         // A1: Finalize-time context allow-list enforcement.
         // Re-validates the submitted gateway against the context's allowed payment
         // methods so a shopper cannot bypass the UI filter by POSTing a different
