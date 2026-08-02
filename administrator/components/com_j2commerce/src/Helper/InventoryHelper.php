@@ -1113,7 +1113,7 @@ class InventoryHelper
             $allowBackorder = self::isBackorderAllowed($variant);
             $wasAlreadyZero = ($oldStock <= 0 && $allowBackorder);
 
-            $newStock = self::adjustVariantStock((int) $item->variant_id, -$qty, $allowBackorder);
+            $newStock = self::adjustVariantStock((int) $item->variant_id, -$qty);
 
             if ($newStock <= 0 && !$allowBackorder) {
                 self::setVariantAvailability((int) $item->variant_id, 0);
@@ -1185,7 +1185,7 @@ class InventoryHelper
             $qty      = (int) $item->orderitem_quantity;
             $oldStock = self::getStockQuantity((int) $item->variant_id);
 
-            $newStock = self::adjustVariantStock((int) $item->variant_id, $qty, false);
+            $newStock = self::adjustVariantStock((int) $item->variant_id, $qty);
 
             if ($newStock > 0) {
                 self::setVariantAvailability((int) $item->variant_id, 1);
@@ -1268,21 +1268,26 @@ class InventoryHelper
      * Adjust variant stock quantity atomically.
      *
      * Uses atomic SQL update to prevent race conditions on concurrent orders.
-     * For reductions without backorders, stock is clamped at zero.
-     * For reductions with backorders, stock can go negative.
      *
      * @param   int   $variantId       The variant ID.
      * @param   int   $delta           Amount to adjust (negative to reduce).
-     * @param   bool  $allowNegative   Whether stock can go below zero (backorders).
+     * @param   bool  $allowNegative   Whether the variant may sell past zero (backorders).
      *
      * @return  int  The new stock quantity.
      *
      * @since   6.0.10
      */
-    /** Public entry point for single-variant stock adjustment (admin order editing). */
+    /**
+     * Public entry point for single-variant stock adjustment (admin order editing).
+     *
+     * $allowNegative no longer affects the stored value — stock is always recorded as the
+     * signed truth — but the parameter is kept so existing callers, including any using
+     * named arguments, are unaffected. adjustStockAndAvailability() still consults it to
+     * decide whether hitting zero should mark the variant unavailable.
+     */
     public static function adjustStock(int $variantId, int $delta, bool $allowNegative = false): int
     {
-        $newStock = self::adjustVariantStock($variantId, $delta, $allowNegative);
+        $newStock = self::adjustVariantStock($variantId, $delta);
 
         J2CommerceHelper::plugin()->event('AfterStockAdjust', [$variantId, $newStock]);
 
@@ -1296,7 +1301,7 @@ class InventoryHelper
      */
     public static function adjustStockAndAvailability(int $variantId, int $delta, bool $allowNegative = false): int
     {
-        $newStock = self::adjustVariantStock($variantId, $delta, $allowNegative);
+        $newStock = self::adjustVariantStock($variantId, $delta);
 
         if ($newStock <= 0 && !$allowNegative) {
             self::setVariantAvailability($variantId, 0);
@@ -1309,7 +1314,17 @@ class InventoryHelper
         return $newStock;
     }
 
-    private static function adjustVariantStock(int $variantId, int $delta, bool $allowNegative = false): int
+    /**
+     * Apply a signed delta to a variant's stock and return the resulting quantity.
+     *
+     * Nothing is clamped here. A debit used to stop at zero while the matching credit
+     * added back the full line quantity, so a debit larger than the stock on hand
+     * returned more than it ever took and manufactured the difference. Storing the true
+     * signed value keeps the two symmetrical; a negative reads as oversold, which is a
+     * fact worth keeping. Callers that must not show a negative use
+     * getAvailableQuantity(), which floors at zero for display.
+     */
+    private static function adjustVariantStock(int $variantId, int $delta): int
     {
         $db = self::getDatabase();
 
@@ -1325,28 +1340,18 @@ class InventoryHelper
 
         if ($existingId) {
             // Atomic update — avoids read-then-write race condition
-            if ($delta < 0 && !$allowNegative) {
-                // Clamp at zero: GREATEST(0, quantity + delta)
-                $db->setQuery(
-                    'UPDATE ' . $db->quoteName('#__j2commerce_productquantities') .
-                    ' SET ' . $db->quoteName('quantity') . ' = GREATEST(0, ' .
-                    $db->quoteName('quantity') . ' + ' . (int) $delta . ')' .
-                    ' WHERE ' . $db->quoteName('variant_id') . ' = ' . (int) $variantId
-                );
-            } else {
-                // Allow negative (backorders) or positive (restore)
-                $db->setQuery(
-                    'UPDATE ' . $db->quoteName('#__j2commerce_productquantities') .
-                    ' SET ' . $db->quoteName('quantity') . ' = ' .
-                    $db->quoteName('quantity') . ' + ' . (int) $delta .
-                    ' WHERE ' . $db->quoteName('variant_id') . ' = ' . (int) $variantId
-                );
-            }
+            $db->setQuery(
+                'UPDATE ' . $db->quoteName('#__j2commerce_productquantities') .
+                ' SET ' . $db->quoteName('quantity') . ' = ' .
+                $db->quoteName('quantity') . ' + ' . (int) $delta .
+                ' WHERE ' . $db->quoteName('variant_id') . ' = ' . (int) $variantId
+            );
 
             $db->execute();
         } else {
-            // Insert new record
-            $newQty = $delta < 0 && !$allowNegative ? max(0, $delta) : $delta;
+            // Insert new record. A debit against a variant with no quantity row still
+            // records what it took, so the matching credit returns that and no more.
+            $newQty = $delta;
 
             $query = $db->getQuery(true)
                 ->insert($db->quoteName('#__j2commerce_productquantities'))
