@@ -166,17 +166,25 @@ class ShippingmethodModel extends AdminModel
      */
     public function save($data)
     {
-        $pk    = (!empty($data['extension_id'])) ? $data['extension_id'] : (int) $this->getState($this->getName() . '.id');
-        $isNew = true;
+        $pk = (int) (!empty($data['extension_id']) ? $data['extension_id'] : $this->getState($this->getName() . '.id'));
 
         // Get a row instance.
         $table = $this->getTable();
 
-        // Load the row if saving an existing item.
-        if ($pk > 0) {
-            $table->load($pk);
-            $isNew = false;
+        // This binds onto the shared #__extensions table, so confine it the way getItem()
+        // already does. Unconfined, an extension_id from the request rewrites params or
+        // enabled on any extension row on the site, which is a core.admin-class capability.
+        // There is no create path either: these rows are plugins, discovered by the installer.
+        if ($pk <= 0 || !$table->load($pk) || $table->type !== 'plugin' || $table->folder !== 'j2commerce') {
+            $this->setError(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'));
+
+            return false;
         }
+
+        // The row's identity is not the caller's to rewrite. extension_id goes too: the table
+        // is already loaded, and a falsy one in the payload would bind over the primary key
+        // and make store() INSERT a clone of the row instead of updating it.
+        unset($data['type'], $data['folder'], $data['element'], $data['extension_id']);
 
         // Bind the data.
         if (!$table->bind($data)) {
