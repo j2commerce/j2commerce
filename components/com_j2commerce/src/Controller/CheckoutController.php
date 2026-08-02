@@ -1779,24 +1779,6 @@ class CheckoutController extends BaseController
 
         $params = J2CommerceHelper::config();
 
-        if ((int) $params->get('show_terms', 0) === 1 && (string) $params->get('terms_display_type', 'link') === 'checkbox') {
-            if (empty($this->input->get('tos_check'))) {
-                $message = Text::_('COM_J2COMMERCE_CHECKOUT_ERROR_AGREE_TERMS');
-                $paction = $this->input->getString('paction', '');
-                $isAjax  = $paction === 'process'
-                    || strtolower($this->input->server->getString('HTTP_X_REQUESTED_WITH', '')) === 'xmlhttprequest';
-
-                if ($isAjax) {
-                    $this->jsonResponse(['error' => ['tos_check' => $message]]);
-
-                    return;
-                }
-
-                $this->app->enqueueMessage($message, 'warning');
-                $this->app->redirect($this->getCheckoutUrl());
-            }
-        }
-
         $orderpaymentType = $this->input->getString('orderpayment_type', '');
 
         // True once this request has been accepted through the tokenless GET branch,
@@ -1834,6 +1816,27 @@ class CheckoutController extends BaseController
             return;
         } else {
             $tokenlessGatewayReturn = true;
+        }
+
+        // Terms & conditions checkbox enforcement. Off-site gateway returns are exempt: the
+        // shopper already accepted T&C on the checkout page before being redirected to the
+        // payment provider, and the return URL carries no form fields.
+        if (!$tokenlessGatewayReturn && (int) $params->get('show_terms', 0) === 1 && (string) $params->get('terms_display_type', 'link') === 'checkbox') {
+            if (empty($this->input->get('tos_check'))) {
+                $message = Text::_('COM_J2COMMERCE_CHECKOUT_ERROR_AGREE_TERMS');
+                $paction = $this->input->getString('paction', '');
+                $isAjax  = $paction === 'process'
+                    || strtolower($this->input->server->getString('HTTP_X_REQUESTED_WITH', '')) === 'xmlhttprequest';
+
+                if ($isAjax) {
+                    $this->jsonResponse(['error' => ['tos_check' => $message]]);
+
+                    return;
+                }
+
+                $this->app->enqueueMessage($message, 'warning');
+                $this->app->redirect($this->getCheckoutUrl());
+            }
         }
 
         $session        = $this->app->getSession();
