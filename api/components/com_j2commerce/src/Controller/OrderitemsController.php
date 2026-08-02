@@ -22,6 +22,10 @@ class OrderitemsController extends J2CommerceApiController
 
     protected $default_view = 'orderitems';
 
+    protected string $readAction = 'j2commerce.vieworders';
+
+    protected string $writeAction = 'j2commerce.editorders';
+
     public function displayList()
     {
         $orderId = $this->input->get('id', 0, 'int');

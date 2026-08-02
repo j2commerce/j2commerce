@@ -21,4 +21,8 @@ class TaxratesController extends J2CommerceApiController
     protected $contentType = 'taxrates';
 
     protected $default_view = 'taxrates';
+
+    protected string $readAction = 'core.manage';
+
+    protected string $writeAction = 'core.manage';
 }

@@ -21,4 +21,8 @@ class ShippingmethodsController extends J2CommerceApiController
     protected $contentType = 'shippingmethods';
 
     protected $default_view = 'shippingmethods';
+
+    protected string $readAction = 'j2commerce.viewsetup';
+
+    protected string $writeAction = 'j2commerce.viewsetup';
 }

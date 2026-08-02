@@ -23,6 +23,10 @@ class ZonesController extends J2CommerceApiController
 
     protected $default_view = 'zones';
 
+    protected string $readAction = 'core.manage';
+
+    protected string $writeAction = 'core.manage';
+
     public function displayList()
     {
         $apiFilterInfo = $this->input->get('filter', [], 'array');

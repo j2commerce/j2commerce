@@ -22,6 +22,10 @@ class VariantsController extends J2CommerceApiController
 
     protected $default_view = 'variants';
 
+    protected string $readAction = 'j2commerce.viewproducts';
+
+    protected string $writeAction = 'j2commerce.viewproducts';
+
     public function displayList()
     {
         $productId = $this->input->get('id', 0, 'int');

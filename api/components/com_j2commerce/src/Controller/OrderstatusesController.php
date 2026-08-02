@@ -21,4 +21,8 @@ class OrderstatusesController extends J2CommerceApiController
     protected $contentType = 'orderstatuses';
 
     protected $default_view = 'orderstatuses';
+
+    protected string $readAction = 'j2commerce.viewsetup';
+
+    protected string $writeAction = 'j2commerce.viewsetup';
 }

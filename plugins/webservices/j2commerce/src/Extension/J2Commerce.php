@@ -34,7 +34,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         $router    = $event->getRouter();
         $component = ['component' => 'com_j2commerce'];
 
-        // Products — public GET, authenticated write
+        // Products — authenticated (createCRUDRoutes defaults $publicGets to false)
         $router->createCRUDRoutes('v1/j2commerce/products', 'products', $component);
 
         // Orders — authenticated
@@ -52,7 +52,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         // Vouchers — authenticated CRUD
         $router->createCRUDRoutes('v1/j2commerce/vouchers', 'vouchers', $component);
 
-        // Catalog reference data — public GET
+        // Catalog reference data — authenticated
         $router->createCRUDRoutes('v1/j2commerce/manufacturers', 'manufacturers', $component);
         $router->createCRUDRoutes('v1/j2commerce/currencies', 'currencies', $component);
         $router->createCRUDRoutes('v1/j2commerce/countries', 'countries', $component);

@@ -28,10 +28,16 @@ class VouchersController extends J2CommerceApiController
 
     protected $default_view = 'vouchers';
 
+    protected string $readAction = 'j2commerce.vieworders';
+
+    protected string $writeAction = 'j2commerce.editorders';
+
     /** Manual balance adjustment (credit/debit/correction) — issue #1299 T5.2, admin only. */
     public function adjust()
     {
-        $this->assertCan(['core.edit']);
+        // The same gate PATCH /vouchers/:id gets. adjustBalance() mints store credit with no
+        // ceiling, so it cannot sit behind less than the CRUD route beside it.
+        $this->assertAllowed($this->writeAction, 'core.edit');
 
         $id = $this->getRouteId();
 
@@ -99,19 +105,6 @@ class VouchersController extends J2CommerceApiController
         $id = $this->input->getInt('id', 0);
 
         return $id > 0 ? $id : $this->input->post->getInt('id', 0);
-    }
-
-    private function assertCan(array $actions): void
-    {
-        $user = $this->app->getIdentity();
-
-        foreach ($actions as $action) {
-            if ($user && $user->authorise($action, 'com_j2commerce')) {
-                return;
-            }
-        }
-
-        throw new NotAllowed('JLIB_APPLICATION_ERROR_EDIT_NOT_PERMITTED', 403);
     }
 
     /** Mirrors the admin User Actions Log trail (VoucherController::logBalanceAdjustment). */

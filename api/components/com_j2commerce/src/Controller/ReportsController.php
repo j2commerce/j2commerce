@@ -23,6 +23,10 @@ class ReportsController extends J2CommerceApiController
 
     protected $default_view = 'reports';
 
+    protected string $readAction = 'j2commerce.viewreports';
+
+    protected string $writeAction = '';
+
     public function displayList()
     {
         $apiFilterInfo = $this->input->get('filter', [], 'array');

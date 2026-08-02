@@ -23,6 +23,10 @@ class CustomersController extends J2CommerceApiController
 
     protected $default_view = 'customers';
 
+    protected string $readAction = 'j2commerce.vieworders';
+
+    protected string $writeAction = 'j2commerce.editorders';
+
     public function displayList()
     {
         $apiFilterInfo = $this->input->get('filter', [], 'array');

@@ -23,6 +23,10 @@ class ManufacturersController extends J2CommerceApiController
 
     protected $default_view = 'manufacturers';
 
+    protected string $readAction = 'j2commerce.viewproducts';
+
+    protected string $writeAction = 'j2commerce.viewproducts';
+
     public function displayList()
     {
         $apiFilterInfo = $this->input->get('filter', [], 'array');

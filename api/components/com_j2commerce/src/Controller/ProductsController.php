@@ -23,6 +23,10 @@ class ProductsController extends J2CommerceApiController
 
     protected $default_view = 'products';
 
+    protected string $readAction = 'j2commerce.viewproducts';
+
+    protected string $writeAction = 'j2commerce.viewproducts';
+
     public function getModel($name = '', $prefix = '', $config = [])
     {
         // Use API-layer ProductModel (article + jcfields) for single-item requests

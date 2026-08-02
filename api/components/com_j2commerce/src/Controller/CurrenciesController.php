@@ -21,4 +21,8 @@ class CurrenciesController extends J2CommerceApiController
     protected $contentType = 'currencies';
 
     protected $default_view = 'currencies';
+
+    protected string $readAction = 'core.manage';
+
+    protected string $writeAction = 'core.manage';
 }

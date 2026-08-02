@@ -23,6 +23,10 @@ class OrdersController extends J2CommerceApiController
 
     protected $default_view = 'orders';
 
+    protected string $readAction = 'j2commerce.vieworders';
+
+    protected string $writeAction = 'j2commerce.editorders';
+
     public function displayList()
     {
         $apiFilterInfo = $this->input->get('filter', [], 'array');

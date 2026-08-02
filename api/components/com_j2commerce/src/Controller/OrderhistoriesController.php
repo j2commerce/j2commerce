@@ -22,6 +22,10 @@ class OrderhistoriesController extends J2CommerceApiController
 
     protected $default_view = 'orderhistories';
 
+    protected string $readAction = 'j2commerce.vieworders';
+
+    protected string $writeAction = 'j2commerce.editorders';
+
     public function displayList()
     {
         $orderId = $this->input->get('id', 0, 'int');

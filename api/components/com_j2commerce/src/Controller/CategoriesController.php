@@ -21,4 +21,8 @@ class CategoriesController extends J2CommerceApiController
     protected $contentType = 'categories';
 
     protected $default_view = 'categories';
+
+    protected string $readAction = 'j2commerce.viewproducts';
+
+    protected string $writeAction = 'j2commerce.viewproducts';
 }

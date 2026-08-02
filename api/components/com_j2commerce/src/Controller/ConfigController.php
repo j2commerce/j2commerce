@@ -14,12 +14,12 @@ namespace J2Commerce\Component\J2commerce\Api\Controller;
 
 \defined('_JEXEC') or die;
 
+use Joomla\CMS\Access\Exception\NotAllowed;
 use Joomla\CMS\Component\ComponentHelper;
-use Joomla\CMS\MVC\Controller\ApiController;
 use Tobscure\JsonApi\AbstractSerializer;
 use Tobscure\JsonApi\Resource;
 
-class ConfigController extends ApiController
+class ConfigController extends J2CommerceApiController
 {
     protected $contentType = 'config';
 
@@ -27,6 +27,8 @@ class ConfigController extends ApiController
 
     public function displayList()
     {
+        $this->assertCanReadOptions();
+
         $params = ComponentHelper::getParams('com_j2commerce');
         $data = (object) array_merge(['id' => 1], $params->toArray());
 
@@ -50,5 +52,24 @@ class ConfigController extends ApiController
         $this->app->getDocument()->setData(new Resource($data, $serializer));
 
         return $this;
+    }
+
+    /**
+     * This returns the component params verbatim — including queue_key, the shared secret the
+     * public cron endpoint compares with hash_equals(), and downloadid. Every one of those is
+     * a declared config.xml field, so the caller must hold what com_config demands to open
+     * Options and read the same values there: core.admin or core.options.
+     */
+    private function assertCanReadOptions(): void
+    {
+        $user = $this->app->getIdentity();
+
+        if (
+            !$user
+            || $user->guest
+            || (!$user->authorise('core.admin', 'com_j2commerce') && !$user->authorise('core.options', 'com_j2commerce'))
+        ) {
+            throw new NotAllowed('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN', 403);
+        }
     }
 }

@@ -21,4 +21,8 @@ class PaymentmethodsController extends J2CommerceApiController
     protected $contentType = 'paymentmethods';
 
     protected $default_view = 'paymentmethods';
+
+    protected string $readAction = 'j2commerce.viewsetup';
+
+    protected string $writeAction = 'j2commerce.viewsetup';
 }

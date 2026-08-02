@@ -21,4 +21,8 @@ class InventoryController extends J2CommerceApiController
     protected $contentType = 'inventory';
 
     protected $default_view = 'inventory';
+
+    protected string $readAction = 'j2commerce.viewproducts';
+
+    protected string $writeAction = 'j2commerce.viewproducts';
 }

@@ -23,6 +23,10 @@ class CountriesController extends J2CommerceApiController
 
     protected $default_view = 'countries';
 
+    protected string $readAction = 'core.manage';
+
+    protected string $writeAction = 'core.manage';
+
     public function displayList()
     {
         $apiFilterInfo = $this->input->get('filter', [], 'array');

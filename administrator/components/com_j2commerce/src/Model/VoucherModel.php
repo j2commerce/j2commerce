@@ -21,6 +21,7 @@ use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Model\AdminModel;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Table\Table;
@@ -729,7 +730,16 @@ class VoucherModel extends AdminModel
             $table->order_id              = $orderId;
 
             if (!$table->check() || !$table->store()) {
-                throw new \RuntimeException($table->getError() ?: Text::_('COM_J2COMMERCE_ERR_ADJUSTMENT_SAVE_FAILED'));
+                // getError() carries the raw driver message here, and the API controller
+                // re-throws this straight into the response body. Log it, tell the caller
+                // nothing beyond the language string.
+                Log::add(
+                    'Voucher adjustment ledger insert failed for voucher ' . $id . ': ' . $table->getError(),
+                    Log::ERROR,
+                    'com_j2commerce'
+                );
+
+                throw new \RuntimeException(Text::_('COM_J2COMMERCE_ERR_ADJUSTMENT_SAVE_FAILED'));
             }
 
             $db->transactionCommit();

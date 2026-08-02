@@ -26,7 +26,6 @@ class JsonapiView extends J2CommerceJsonapiView
         'element',
         'enabled',
         'ordering',
-        'params',
     ];
 
     protected $fieldsToRenderList = [
