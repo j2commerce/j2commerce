@@ -545,6 +545,7 @@ class MyprofileController extends BaseController
 
             $rows[] = [
                 'order_id'       => $dl->order_id,
+                'order_url'      => Route::_('index.php?option=com_j2commerce&view=myprofile&layout=order&order_id=' . urlencode($dl->order_id)),
                 'file_name'      => $dl->product_file_display_name ?? '',
                 'access_granted' => $notGranted ? false : true,
                 'access_expires' => $notGranted ? '' : ($dl->access_expires === $nullDate ? '' : HTMLHelper::_('date', $dl->access_expires, $dateFormat)),

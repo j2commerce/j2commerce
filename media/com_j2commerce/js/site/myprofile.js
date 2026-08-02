@@ -261,7 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // File name cell
                 let fileNameCell = '';
                 if (d.file_name) {
-                    fileNameCell = escapeHtml(d.file_name);
+                    fileNameCell = '<small class="fw-medium">' + escapeHtml(d.file_name) + '</small>';
                 } else {
                     fileNameCell = '<span class="text-body-secondary fst-italic">' + (Joomla.Text._('COM_J2COMMERCE_FILE_UNAVAILABLE')) + '</span>';
                 }
@@ -282,7 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Action cell
                 let actionCell = '';
                 if (d.can_download) {
-                    actionCell = `<a href="${escapeHtml(d.download_url)}" class="btn btn-sm btn-primary" title="${Joomla.Text._('COM_J2COMMERCE_DOWNLOAD')}"><span class="icon-download" aria-hidden="true"></span></a>`;
+                    actionCell = `<a href="${escapeHtml(d.download_url)}" class="btn btn-sm btn-soft-success" title="${Joomla.Text._('COM_J2COMMERCE_DOWNLOAD')}"><span class="icon-download" aria-hidden="true"></span></a>`;
                 } else if (d.status === 'pending') {
                     actionCell = '<span class="badge text-bg-secondary">' + (Joomla.Text._('COM_J2COMMERCE_DOWNLOAD_PENDING')) + '</span>';
                 } else if (d.status === 'expired') {
@@ -294,7 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 rows += '<tr>'
-                    + `<td>${escapeHtml(d.order_id)}</td>`
+                    + `<td><a href="${escapeHtml(d.order_url)}" title="${escapeHtml(d.order_id)}">${escapeHtml(d.order_id)}</a></td>`
                     + `<td>${fileNameCell}</td>`
                     + `<td>${expiresCell}</td>`
                     + `<td class="text-center">${remainingCell}</td>`
