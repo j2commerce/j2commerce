@@ -86,11 +86,13 @@ $conSpan = 0;
                     <tr>
                         <td></td>
                         <td>
+                            <?php if (!empty($options)): ?>
                             <select name="optionvalue_id" class="form-select">
                                 <?php foreach ($options as $ovId => $ovName): ?>
                                     <option value="<?php echo $ovId; ?>"><?php echo htmlspecialchars($ovName, ENT_QUOTES, 'UTF-8'); ?></option>
                                 <?php endforeach; ?>
                             </select>
+                            <?php endif; ?>
                         </td>
                         <?php if ($product->product_type === 'variable' || $product->product_type === 'variablesubscriptionproduct'): ?>
                             <td>
@@ -199,11 +201,13 @@ $conSpan = 0;
                                 </td>
 
                                 <td>
+                                    <?php if (!empty($options)): ?>
                                     <select name="<?php echo $prefix . '[' . $poptionvalue->j2commerce_product_optionvalue_id . '][optionvalue_id]'; ?>" class="form-select">
                                         <?php foreach ($options as $ovId => $ovName): ?>
                                             <option value="<?php echo $ovId; ?>"<?php echo ($poptionvalue->optionvalue_id == $ovId) ? ' selected' : ''; ?>><?php echo htmlspecialchars($ovName, ENT_QUOTES, 'UTF-8'); ?></option>
                                         <?php endforeach; ?>
                                     </select>
+                                    <?php endif; ?>
                                 </td>
                                 <?php if ($product->product_type === 'variable' || $product->product_type === 'variablesubscriptionproduct'): ?>
                                     <td>
