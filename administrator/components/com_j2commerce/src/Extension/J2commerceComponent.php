@@ -15,6 +15,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Extension;
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\AclSeedHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\StockCommittedSeedHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Component\Router\RouterServiceInterface;
 use Joomla\CMS\Component\Router\RouterServiceTrait;
@@ -51,6 +52,37 @@ class J2commerceComponent extends MVCComponent implements
     {
         // CSS assets are loaded via AdminAssetsTrait in each HtmlView
         $this->seedCustomAclActions();
+        $this->seedStockCommitted();
+    }
+
+    /**
+     * Joomla's Database -> Fix adds the stock_committed column and advances #__schemas without
+     * running the installer script, so the postflight seed never happens on that path. Until it
+     * does, every pre-existing order reads as uncommitted while its stock is already deducted,
+     * and the next holding-to-holding status change deducts it a second time.
+     *
+     * Same gate as the ACL seed: an administrator request from a holder of core.admin.
+     */
+    private function seedStockCommitted(): void
+    {
+        $app = Factory::getApplication();
+
+        if (!$app->isClient('administrator')) {
+            return;
+        }
+
+        if ((int) ComponentHelper::getParams('com_j2commerce')->get(StockCommittedSeedHelper::SEED_FLAG, 0) === 1) {
+            return;
+        }
+
+        $user = $app->getIdentity();
+
+        if (!$user || !$user->authorise('core.admin', 'com_j2commerce')) {
+            return;
+        }
+
+        // Never throws; a failure leaves the marker unset and the next request retries.
+        StockCommittedSeedHelper::ensureSeeded();
     }
 
     /**

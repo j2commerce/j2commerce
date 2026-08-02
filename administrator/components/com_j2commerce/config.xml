@@ -617,6 +617,16 @@
                 default="0"
                 filter="integer"
             />
+
+            <!-- Set by StockCommittedSeedHelper. Declared so that saving Options, which binds
+                 the filtered form data over params wholesale, cannot drop the marker and
+                 re-arm a seed that must only ever run once. -->
+            <field
+                name="stock_committed_seeded"
+                type="hidden"
+                default="0"
+                filter="integer"
+            />
         </fieldset>
 
         <!-- ========================================== -->
