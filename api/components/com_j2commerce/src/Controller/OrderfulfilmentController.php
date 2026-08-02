@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Api\Controller;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Api\Controller\J2CommerceApiController;
 use Joomla\CMS\Access\Exception\NotAllowed;
 use Tobscure\JsonApi\AbstractSerializer;
@@ -34,7 +35,7 @@ class OrderfulfilmentController extends J2CommerceApiController
     /** Gap 3 — order detail with ship-to block, chosen method and tracking. */
     public function displayItem($id = null)
     {
-        $this->assertCan(['core.fulfilment', 'core.edit', 'core.manage', 'j2commerce.vieworders']);
+        $this->assertCan(['core.fulfilment', 'core.edit', 'core.manage'], 'j2commerce.vieworders');
 
         $pk    = ((int) $id) ?: $this->getRouteId();
         $order = $this->getModel('Order')->getItem($pk);
@@ -78,7 +79,10 @@ class OrderfulfilmentController extends J2CommerceApiController
     /** Gap 2 — event-safe status change (history row + customer email + download grants). */
     public function changeStatus()
     {
-        $this->assertCan(['core.fulfilment', 'core.edit']);
+        // editorders is required, not an alternative: the four admin routes that reach the
+        // same sink all pair it with core.edit, and a status change here moves stock, grants
+        // downloads and emails the customer.
+        $this->assertCan(['core.fulfilment', 'core.edit'], 'j2commerce.editorders');
 
         $pk       = $this->getRouteId();
         $statusId = $this->input->json->getInt('status_id', 0);
@@ -128,17 +132,29 @@ class OrderfulfilmentController extends J2CommerceApiController
         return $id > 0 ? $id : $this->input->post->getInt('id', 0);
     }
 
-    private function assertCan(array $actions): void
+    /**
+     * Any one of $actions, and — when given — $requires as well.
+     *
+     * $requires is separate because it must not become another alternative: ApiDispatcher
+     * overrides dispatch() without calling checkAccess(), so unlike the admin surface there
+     * is no core.manage floor here, and a capability listed alongside a j2commerce.* action
+     * would let a caller past a deny the merchant configured deliberately.
+     */
+    private function assertCan(array $actions, string $requires = ''): void
     {
-        $user = $this->app->getIdentity();
+        $user    = $this->app->getIdentity();
+        $allowed = false;
 
         foreach ($actions as $action) {
             if ($user && $user->authorise($action, 'com_j2commerce')) {
-                return;
+                $allowed = true;
+                break;
             }
         }
 
-        throw new NotAllowed('JLIB_APPLICATION_ERROR_EDIT_NOT_PERMITTED', 403);
+        if (!$allowed || ($requires !== '' && !J2CommerceHelper::canAccess($requires))) {
+            throw new NotAllowed('JLIB_APPLICATION_ERROR_EDIT_NOT_PERMITTED', 403);
+        }
     }
 
     private function emit(object $data): static
