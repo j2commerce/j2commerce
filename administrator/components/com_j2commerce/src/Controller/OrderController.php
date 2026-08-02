@@ -249,6 +249,19 @@ class OrderController extends FormController
     {
         $this->checkToken();
 
+        // Same core.edit pair the AJAX twin and the toolbar Save enforce.
+        if (!$this->app->getIdentity()->authorise('core.edit', 'com_j2commerce')
+            || !J2CommerceHelper::canAccess('j2commerce.editorders')
+        ) {
+            $this->setRedirect(
+                Route::_('index.php?option=com_j2commerce&view=orders', false),
+                Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'),
+                'error'
+            );
+
+            return;
+        }
+
         $orderId = $this->input->getInt('id', 0);
         $comment = $this->input->post->getString('order_note', '');
         $notify  = $this->input->post->getInt('notify_customer', 0) === 1;
@@ -285,7 +298,7 @@ class OrderController extends FormController
     {
         header('Content-Type: application/json; charset=utf-8');
 
-        if (!$this->checkAjaxAccess()) {
+        if (!$this->checkOrderEditAccess()) {
             return;
         }
 
@@ -378,7 +391,7 @@ class OrderController extends FormController
     {
         header('Content-Type: application/json; charset=utf-8');
 
-        if (!$this->checkAjaxAccess()) {
+        if (!$this->checkOrderEditAccess()) {
             return;
         }
 
@@ -423,7 +436,7 @@ class OrderController extends FormController
     {
         header('Content-Type: application/json; charset=utf-8');
 
-        if (!$this->checkAjaxAccess()) {
+        if (!$this->checkOrderEditAccess()) {
             return;
         }
 
@@ -462,7 +475,7 @@ class OrderController extends FormController
     {
         header('Content-Type: application/json; charset=utf-8');
 
-        if (!$this->checkAjaxAccess()) {
+        if (!$this->checkOrderEditAccess()) {
             return;
         }
 
@@ -1783,7 +1796,11 @@ class OrderController extends FormController
     {
         $token = \Joomla\CMS\Session\Session::getFormToken();
 
-        if ($token === $this->input->server->get('HTTP_X_CSRF_TOKEN', '', 'alnum')) {
+        // Timing-safe comparison for the header variant; the POST variant only
+        // checks for the token's presence as a key, matching Session::checkToken().
+        $headerToken = (string) $this->input->server->get('HTTP_X_CSRF_TOKEN', '', 'alnum');
+
+        if ($headerToken !== '' && hash_equals($token, $headerToken)) {
             return true;
         }
 
@@ -1854,7 +1871,7 @@ class OrderController extends FormController
     {
         header('Content-Type: application/json; charset=utf-8');
 
-        if (!$this->checkAjaxAccess()) {
+        if (!$this->checkOrderEditAccess()) {
             return;
         }
 
