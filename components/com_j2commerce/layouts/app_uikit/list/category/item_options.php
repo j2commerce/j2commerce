@@ -30,6 +30,28 @@ $platform = J2CommerceHelper::platform();
 $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
 $optionsSummary = $productHelper::getOptionsSummary($options);
 
+$valueBasedTypes = ['select', 'radio', 'color', 'checkbox'];
+$hasRenderableOption = false;
+foreach ($options as $option) {
+    if (!empty($option['parent_id'])) {
+        continue;
+    }
+    $type = $option['type'] ?? '';
+    if (in_array($type, $valueBasedTypes, true)) {
+        if (!empty($option['optionvalue'])) {
+            $hasRenderableOption = true;
+            break;
+        }
+    } elseif ($type === 'text' || $type === 'textarea') {
+        $hasRenderableOption = true;
+        break;
+    }
+}
+
+if (!$hasRenderableOption) {
+    return;
+}
+
 ?>
 <div class="j2commerce-product-options uk-padding-small-top" id="product-options-<?php echo $productId; ?>">
     <button class="uk-button uk-button-text uk-padding-remove j2commerce-options-button" type="button" uk-toggle="target: #collapseOptions<?php echo $productId; ?>" aria-expanded="false" aria-controls="collapseOptions<?php echo $productId; ?>">
