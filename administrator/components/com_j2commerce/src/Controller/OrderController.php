@@ -315,7 +315,10 @@ class OrderController extends FormController
     {
         header('Content-Type: application/json; charset=utf-8');
 
-        if (!$this->checkAjaxAccess()) {
+        // The canonical order-edit gate: token, core.edit, and the editorders check the
+        // non-AJAX twin and both Orders-list routes make. Calling it rather than repeating
+        // it keeps this route from drifting away from the other sixteen again.
+        if (!$this->checkOrderEditAccess()) {
             return;
         }
 
