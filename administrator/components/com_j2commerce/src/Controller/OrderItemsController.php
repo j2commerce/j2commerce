@@ -48,7 +48,7 @@ class OrderItemsController extends FormController
         $this->checkToken();
 
         // Set the model
-        $model = $this->getModel('OrderItems', 'Administrator', []);
+        $model = $this->getModel('Orderitems', 'Administrator', []);
 
         // Preset the redirect
         $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=orders' . $this->getRedirectToListAppend(), false));

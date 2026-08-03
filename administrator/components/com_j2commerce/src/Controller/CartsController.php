@@ -33,6 +33,10 @@ use Joomla\Database\DatabaseInterface;
  */
 class CartsController extends AdminController
 {
+    use WriteAccessTrait;
+
+    protected string $writeAction = 'j2commerce.editorders';
+
     /**
      * The prefix to use with controller messages.
      *
@@ -82,6 +86,8 @@ class CartsController extends AdminController
      */
     public function addOrderitems(): void
     {
+        $this->checkToken();
+
         $json = [];
 
         try {
@@ -122,6 +128,8 @@ class CartsController extends AdminController
      */
     public function applyCoupon(): void
     {
+        $this->checkToken();
+
         $json = [];
 
         UtilitiesHelper::sendNoCacheHeaders();
@@ -159,6 +167,8 @@ class CartsController extends AdminController
      */
     public function removeCoupon(): void
     {
+        $this->checkToken();
+
         $json = [];
 
         UtilitiesHelper::sendNoCacheHeaders();
@@ -199,6 +209,8 @@ class CartsController extends AdminController
      */
     public function applyVoucher(): void
     {
+        $this->checkToken();
+
         UtilitiesHelper::sendNoCacheHeaders();
         UtilitiesHelper::clearCache();
 
@@ -236,6 +248,8 @@ class CartsController extends AdminController
      */
     public function removeVoucher(): void
     {
+        $this->checkToken();
+
         UtilitiesHelper::sendNoCacheHeaders();
         UtilitiesHelper::clearCache();
 
@@ -276,6 +290,8 @@ class CartsController extends AdminController
      */
     public function update(): void
     {
+        $this->checkToken();
+
         UtilitiesHelper::clearCache();
         UtilitiesHelper::sendNoCacheHeaders();
 

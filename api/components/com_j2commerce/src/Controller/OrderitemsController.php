@@ -18,6 +18,8 @@ use J2Commerce\Component\J2commerce\Api\Controller\J2CommerceApiController;
 
 class OrderitemsController extends J2CommerceApiController
 {
+    use OrderScopedListTrait;
+
     protected $contentType = 'orderitems';
 
     protected $default_view = 'orderitems';
@@ -28,8 +30,7 @@ class OrderitemsController extends J2CommerceApiController
 
     public function displayList()
     {
-        $orderId = $this->input->get('id', 0, 'int');
-        $this->modelState->set('filter.order_id', $orderId);
+        $this->scopeToRouteOrder();
 
         return parent::displayList();
     }

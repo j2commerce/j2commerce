@@ -17,6 +17,7 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\CMS\Plugin\PluginHelper;
+use Joomla\Database\ParameterType;
 
 /**
  * Orderhistories Model
@@ -25,6 +26,18 @@ use Joomla\CMS\Plugin\PluginHelper;
  */
 class OrderhistoriesModel extends ListModel
 {
+    /** Real columns of #__j2commerce_orderhistories — the only values accepted in an ORDER BY. */
+    private const SORTABLE_COLUMNS = [
+        'j2commerce_orderhistory_id',
+        'order_id',
+        'order_state_id',
+        'notify_customer',
+        'comment',
+        'created_on',
+        'created_by',
+        'params',
+    ];
+
     /**
      * Constructor.
      *
@@ -111,13 +124,33 @@ class OrderhistoriesModel extends ListModel
         );
         $query->from($db->quoteName('#__j2commerce_orderhistories', 'a'));
 
-        // Add the list ordering clause.
-        $orderCol  = $this->getState('list.ordering', 'a.created_on');
-        $orderDirn = $this->getState('list.direction', 'DESC');
+        // Scope to one order when the caller named one. order_id is the varchar reference the
+        // orders table carries alongside its primary key, not the key itself, so it binds as a
+        // string. Absent the filter the query is unscoped, which is what the internal callers
+        // that pass no parent expect.
+        $orderId = (string) $this->getState('filter.order_id', '');
 
-        if ($orderCol && $orderDirn) {
-            $query->order($db->escape($orderCol . ' ' . $orderDirn));
+        if ($orderId !== '') {
+            $query->where($db->quoteName('a.order_id') . ' = :orderId')
+                ->bind(':orderId', $orderId, ParameterType::STRING);
         }
+
+        // Add the list ordering clause. A column name cannot be bound, so validate it
+        // against the real table columns and fall back to the default on any mismatch.
+        $orderCol  = (string) $this->getState('list.ordering', 'a.created_on');
+        $orderDirn = strtoupper(trim((string) $this->getState('list.direction', 'DESC')));
+
+        $column = str_starts_with($orderCol, 'a.') ? substr($orderCol, 2) : $orderCol;
+
+        if (!\in_array($column, self::SORTABLE_COLUMNS, true)) {
+            $column = 'created_on';
+        }
+
+        if (!\in_array($orderDirn, ['ASC', 'DESC'], true)) {
+            $orderDirn = 'DESC';
+        }
+
+        $query->order($db->quoteName('a.' . $column) . ' ' . $orderDirn);
 
         return $query;
     }

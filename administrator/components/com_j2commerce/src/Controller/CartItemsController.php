@@ -23,6 +23,10 @@ use Joomla\CMS\Response\JsonResponse;
  */
 class CartItemsController extends AdminController
 {
+    use WriteAccessTrait;
+
+    protected string $writeAction = 'j2commerce.editorders';
+
     /**
      * The prefix to use with controller messages.
      *

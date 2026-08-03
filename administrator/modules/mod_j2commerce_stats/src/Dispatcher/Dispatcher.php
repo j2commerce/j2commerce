@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Module\Stats\Administrator\Dispatcher;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Module\Stats\Administrator\Helper\StatsHelper;
 use Joomla\CMS\Dispatcher\AbstractModuleDispatcher;
 use Joomla\CMS\Factory;
@@ -31,15 +32,24 @@ class Dispatcher extends AbstractModuleDispatcher implements HelperFactoryAwareI
 {
     use HelperFactoryAwareTrait;
 
+    /**
+     * The figures below are the ones the dashboard resolves j2commerce.viewreports for, so the
+     * module answers to that action rather than to the component floor. Gating in dispatch()
+     * rather than getLayoutData() because the base class stops only on false, which the array
+     * return type there cannot express — an empty array still renders the module.
+     */
+    public function dispatch(): void
+    {
+        if (!J2CommerceHelper::canAccess('j2commerce.viewreports')) {
+            return;
+        }
+
+        parent::dispatch();
+    }
+
     protected function getLayoutData(): array
     {
-        $app  = Factory::getApplication();
-        $user = $app->getIdentity();
-
-        // Check ACL - user must have permission to manage the component
-        if (!$user->authorise('core.manage', 'com_j2commerce')) {
-            return [];
-        }
+        $app = Factory::getApplication();
 
         $data = parent::getLayoutData();
 

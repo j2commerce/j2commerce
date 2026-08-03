@@ -18,6 +18,8 @@ use J2Commerce\Component\J2commerce\Api\Controller\J2CommerceApiController;
 
 class OrderhistoriesController extends J2CommerceApiController
 {
+    use OrderScopedListTrait;
+
     protected $contentType = 'orderhistories';
 
     protected $default_view = 'orderhistories';
@@ -28,8 +30,7 @@ class OrderhistoriesController extends J2CommerceApiController
 
     public function displayList()
     {
-        $orderId = $this->input->get('id', 0, 'int');
-        $this->modelState->set('filter.order_id', $orderId);
+        $this->scopeToRouteOrder();
 
         return parent::displayList();
     }

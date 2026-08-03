@@ -20,24 +20,45 @@ use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\CMS\Plugin\PluginHelper;
+use Joomla\Database\ParameterType;
 
 /**
- * Orderhistories Model
+ * Orderitems Model
  *
  * @since  6.0.0
  */
-class OrderItemsModel extends ListModel
+class OrderitemsModel extends ListModel
 {
-    /** Real columns of #__j2commerce_orderhistories — the only values accepted in an ORDER BY. */
+    /** Real columns of #__j2commerce_orderitems — the only values accepted in an ORDER BY. */
     private const SORTABLE_COLUMNS = [
-        'j2commerce_orderhistory_id',
+        'j2commerce_orderitem_id',
         'order_id',
-        'order_state_id',
-        'notify_customer',
-        'comment',
+        'orderitem_type',
+        'cart_id',
+        'cartitem_id',
+        'product_id',
+        'product_type',
+        'variant_id',
+        'vendor_id',
+        'orderitem_sku',
+        'orderitem_name',
+        'orderitem_attributes',
+        'orderitem_quantity',
+        'orderitem_taxprofile_id',
+        'orderitem_per_item_tax',
+        'orderitem_tax',
+        'orderitem_discount',
+        'orderitem_discount_tax',
+        'orderitem_price',
+        'orderitem_option_price',
+        'orderitem_finalprice',
+        'orderitem_finalprice_with_tax',
+        'orderitem_finalprice_without_tax',
+        'orderitem_params',
         'created_on',
         'created_by',
-        'params',
+        'orderitem_weight',
+        'orderitem_weight_total',
     ];
 
     /**
@@ -74,21 +95,32 @@ class OrderItemsModel extends ListModel
                 'a.*'
             )
         );
-        $query->from($db->quoteName('#__j2commerce_orderhistories', 'a'));
+        $query->from($db->quoteName('#__j2commerce_orderitems', 'a'));
+
+        // Scope to one order when the caller named one. order_id is the varchar reference the
+        // orders table carries alongside its primary key, not the key itself, so it binds as a
+        // string. Absent the filter the query is unscoped, which is what the internal callers
+        // that pass no parent expect.
+        $orderId = (string) $this->getState('filter.order_id', '');
+
+        if ($orderId !== '') {
+            $query->where($db->quoteName('a.order_id') . ' = :orderId')
+                ->bind(':orderId', $orderId, ParameterType::STRING);
+        }
 
         // Add the list ordering clause. A column name cannot be bound, so validate it
         // against the real table columns and fall back to the default on any mismatch.
-        $orderCol  = (string) $this->getState('list.ordering', 'a.created_on');
-        $orderDirn = strtoupper(trim((string) $this->getState('list.direction', 'DESC')));
+        $orderCol  = (string) $this->getState('list.ordering', 'a.j2commerce_orderitem_id');
+        $orderDirn = strtoupper(trim((string) $this->getState('list.direction', 'ASC')));
 
         $column = str_starts_with($orderCol, 'a.') ? substr($orderCol, 2) : $orderCol;
 
         if (!\in_array($column, self::SORTABLE_COLUMNS, true)) {
-            $column = 'created_on';
+            $column = 'j2commerce_orderitem_id';
         }
 
         if (!\in_array($orderDirn, ['ASC', 'DESC'], true)) {
-            $orderDirn = 'DESC';
+            $orderDirn = 'ASC';
         }
 
         $query->order($db->quoteName('a.' . $column) . ' ' . $orderDirn);
@@ -111,7 +143,7 @@ class OrderItemsModel extends ListModel
         if ($items === false || !\is_array($items)) {
             // Log the error for debugging
             $app = Factory::getApplication();
-            $app->enqueueMessage('Failed to retrieve order histories from database. Please check if the j2commerce_orderhistories table exists.', 'warning');
+            $app->enqueueMessage('Failed to retrieve order items from database. Please check if the j2commerce_orderitems table exists.', 'warning');
             return [];
         }
 
@@ -261,17 +293,4 @@ class OrderItemsModel extends ListModel
 
         return true;
     }
-
-    public function getItemsByOrder($order_id)
-    {
-        if (empty($order_id)) {
-            return [];
-        }
-
-        $query = $this->_db->getQuery(true);
-        $query->select('*')->from('#__j2commerce_orderitems')->where('order_id = '.$this->_db->q($order_id));
-        $this->_db->setQuery($query);
-        return  $this->_db->loadObjectList();
-    }
-
 }
