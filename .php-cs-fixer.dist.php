@@ -28,6 +28,7 @@ $finder = PhpCsFixer\Finder::create()
     ->in(
         [
             __DIR__ . '/administrator',
+            __DIR__ . '/api',
             __DIR__ . '/components',
             __DIR__ . '/libraries/',
             __DIR__ . '/modules',
