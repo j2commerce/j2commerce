@@ -148,11 +148,22 @@ class Pkg_J2commerceInstallerScript extends InstallerScript
         ],
     ];
 
+    /**
+     * Always-on install trace, shared with the component installer. Written as .php behind
+     * Joomla's own die guard, because the log directory ships no .htaccess and a plain .log
+     * is served verbatim. Never pass exception text here — use Log::add() for that.
+     */
     private function debugLog(string $message): void
     {
         if (!$this->debugLogFile) {
-            $this->debugLogFile = Factory::getApplication()->get('log_path', JPATH_ADMINISTRATOR . '/logs') . '/j2commerce_install_debug.log';
+            $logPath            = Factory::getApplication()->get('log_path', JPATH_ADMINISTRATOR . '/logs');
+            $this->debugLogFile = $logPath . '/j2commerce_install_debug.php';
+
+            if (!is_file($this->debugLogFile)) {
+                file_put_contents($this->debugLogFile, "#\n#<?php die('Forbidden.'); ?>\n");
+            }
         }
+
         file_put_contents($this->debugLogFile, date('[Y-m-d H:i:s] ') . $message . "\n", FILE_APPEND);
     }
 

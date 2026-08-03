@@ -33,11 +33,22 @@ class Com_J2commerceInstallerScript extends InstallerScript
     protected $minimumPhpVersion    = '8.1';
     private string $debugLogFile    = '';
 
+    /**
+     * Always-on install trace. Written as .php behind Joomla's own die guard, because
+     * the log directory ships no .htaccess and a plain .log is served verbatim.
+     * Never pass exception text here — use Log::add() for that.
+     */
     private function debugLog(string $message): void
     {
         if (!$this->debugLogFile) {
-            $this->debugLogFile = Factory::getApplication()->get('log_path', JPATH_ADMINISTRATOR . '/logs') . '/j2commerce_install_debug.log';
+            $logPath            = Factory::getApplication()->get('log_path', JPATH_ADMINISTRATOR . '/logs');
+            $this->debugLogFile = $logPath . '/j2commerce_install_debug.php';
+
+            if (!is_file($this->debugLogFile)) {
+                file_put_contents($this->debugLogFile, "#\n#<?php die('Forbidden.'); ?>\n");
+            }
         }
+
         file_put_contents($this->debugLogFile, date('[Y-m-d H:i:s] ') . $message . "\n", FILE_APPEND);
     }
 
@@ -219,7 +230,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
                 $result['failed'] ?? 0
             ));
         } catch (\Throwable $e) {
-            $this->debugLog('ORDER LEDGER SEED: aborted with error: ' . $e->getMessage());
+            $this->debugLog('ORDER LEDGER SEED: aborted with error (see the j2commerce log)');
             Log::add('Order ledger seed failed: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
             return;
         }
@@ -265,8 +276,21 @@ class Com_J2commerceInstallerScript extends InstallerScript
 
         $this->seedCustomAclActions();
         $this->seedStockCommitted();
+        $this->removeLegacyDebugLog();
 
         $this->debugLog("=== POSTFLIGHT END ===");
+    }
+
+    /** Retire the pre-6.x unguarded .log left behind on upgraded sites. */
+    private function removeLegacyDebugLog(): void
+    {
+        $legacy = Factory::getApplication()->get('log_path', JPATH_ADMINISTRATOR . '/logs')
+            . '/j2commerce_install_debug.log';
+
+        if (is_file($legacy)) {
+            @unlink($legacy);
+            $this->debugLog('CLEANUP: removed the legacy unguarded install debug log');
+        }
     }
 
     // ── Finder plugin ordering ─────────────────────────────────────────────────
@@ -291,7 +315,8 @@ class Com_J2commerceInstallerScript extends InstallerScript
             $db->setQuery($query);
             $db->execute();
         } catch (\Throwable $e) {
-            $this->debugLog('setFinderPluginOrdering failed: ' . $e->getMessage());
+            $this->debugLog('setFinderPluginOrdering failed (see the j2commerce log)');
+            Log::add('setFinderPluginOrdering failed: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
         }
     }
 
@@ -342,7 +367,8 @@ class Com_J2commerceInstallerScript extends InstallerScript
             AclSeedHelper::ensureSeeded(fn (string $message) => $this->debugLog($message));
         } catch (\Throwable $e) {
             // Log the failure: the flag stays unset, so canAccess() keeps its core.manage fallback.
-            $this->debugLog('seedCustomAclActions failed: ' . $e->getMessage());
+            $this->debugLog('seedCustomAclActions failed (see the j2commerce log)');
+            Log::add('seedCustomAclActions failed: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
 
             Factory::getApplication()->enqueueMessage(
                 Text::_('COM_J2COMMERCE_INSTALL_ACL_SEED_FAILED'),
@@ -507,7 +533,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
                 $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/countries.sql');
             }
         } catch (\Exception $e) {
-            $this->debugLog("LOCALISATION: countries error: " . $e->getMessage());
+            $this->debugLog('LOCALISATION: countries error (see the j2commerce log)');
             Log::add('Error installing countries: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
         }
 
@@ -527,7 +553,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
                 $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/zones.sql');
             }
         } catch (\Exception $e) {
-            $this->debugLog("LOCALISATION: zones error: " . $e->getMessage());
+            $this->debugLog('LOCALISATION: zones error (see the j2commerce log)');
             Log::add('Error installing zones: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
         }
 
@@ -536,7 +562,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
             $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/lengths.sql');
             $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/weights.sql');
         } catch (\Exception $e) {
-            $this->debugLog("LOCALISATION: metrics error: " . $e->getMessage());
+            $this->debugLog('LOCALISATION: metrics error (see the j2commerce log)');
             Log::add('Error installing metrics: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
         }
 
@@ -559,12 +585,12 @@ class Com_J2commerceInstallerScript extends InstallerScript
                 try {
                     (new CoreTemplateSyncHelper())->syncEmailTemplates();
                 } catch (\Throwable $e) {
-                    $this->debugLog("LOCALISATION: email templates sync error: " . $e->getMessage());
+                    $this->debugLog('LOCALISATION: email templates sync error (see the j2commerce log)');
                     Log::add('Error syncing core email templates: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
                 }
             }
         } catch (\Exception $e) {
-            $this->debugLog("LOCALISATION: email templates error: " . $e->getMessage());
+            $this->debugLog('LOCALISATION: email templates error (see the j2commerce log)');
             Log::add('Error installing email templates: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
         }
 
@@ -587,12 +613,12 @@ class Com_J2commerceInstallerScript extends InstallerScript
                 try {
                     (new CoreTemplateSyncHelper())->syncInvoiceTemplates();
                 } catch (\Throwable $e) {
-                    $this->debugLog("LOCALISATION: invoice templates sync error: " . $e->getMessage());
+                    $this->debugLog('LOCALISATION: invoice templates sync error (see the j2commerce log)');
                     Log::add('Error syncing core invoice templates: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
                 }
             }
         } catch (\Exception $e) {
-            $this->debugLog("LOCALISATION: invoice templates error: " . $e->getMessage());
+            $this->debugLog('LOCALISATION: invoice templates error (see the j2commerce log)');
             Log::add('Error installing invoice templates: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
         }
 
@@ -604,7 +630,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
                 $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/guidedtours.sql');
             }
         } catch (\Exception $e) {
-            $this->debugLog("LOCALISATION: guided tours error: " . $e->getMessage());
+            $this->debugLog('LOCALISATION: guided tours error (see the j2commerce log)');
             Log::add('Error installing guided tours: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
         }
     }
@@ -631,7 +657,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
                     $db->execute();
                     $executed++;
                 } catch (\Exception $e) {
-                    $this->debugLog("SQL ERROR in {$sqlPath}: " . $e->getMessage() . " | Query: " . substr($query, 0, 100));
+                    $this->debugLog("SQL ERROR in {$sqlPath} (see the j2commerce log)");
                     Log::add('SQL Error: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
                 }
             } else {
