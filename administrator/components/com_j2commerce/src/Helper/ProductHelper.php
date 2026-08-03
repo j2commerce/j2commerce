@@ -1306,12 +1306,22 @@ class ProductHelper
             return null;
         }
 
-        // Load and return the first matching variant
+        // Load and return the first matching variant, joining the quantity table
+        // so that $variant->quantity reflects live stock (required for checkStockStatus / displayStock)
         foreach ($rows as $row) {
             $variantQuery = $db->getQuery(true)
-                ->select('*')
-                ->from($db->quoteName('#__j2commerce_variants'))
-                ->where($db->quoteName('j2commerce_variant_id') . ' = :variantId')
+                ->select('a.*')
+                ->select([
+                    $db->quoteName('q.quantity'),
+                    $db->quoteName('q.j2commerce_productquantity_id'),
+                ])
+                ->from($db->quoteName('#__j2commerce_variants', 'a'))
+                ->join(
+                    'LEFT',
+                    $db->quoteName('#__j2commerce_productquantities', 'q'),
+                    $db->quoteName('a.j2commerce_variant_id') . ' = ' . $db->quoteName('q.variant_id')
+                )
+                ->where($db->quoteName('a.j2commerce_variant_id') . ' = :variantId')
                 ->bind(':variantId', $row->variant_id, ParameterType::INTEGER);
 
             $db->setQuery($variantQuery);
@@ -2170,7 +2180,9 @@ class ProductHelper
      */
     public static function managingStock(object $variant): bool
     {
-        $enableInventory = (bool) J2CommerceHelper::config()->get('enable_inventory', 0);
+        // NOTE: enable_inventory config key is not yet wired — default to true to match
+        // the instance managing_stock() used in templates (see TODO in that method).
+        $enableInventory = true;
 
         if (!$enableInventory || empty($variant->manage_stock) || $variant->manage_stock != 1) {
             return false;
