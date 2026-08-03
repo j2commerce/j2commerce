@@ -41,7 +41,7 @@ $itemId      = isset($this->active_menu->id) ? (int) $this->active_menu->id : 0;
         <div class="swiper py-4" data-swiper='{"slidesPerView": 1,"spaceBetween": 24,"loop": true,"navigation": {"prevEl": ".trending-prev","nextEl": ".trending-next"},"breakpoints": {"768": {"slidesPerView": 2}}}'>
             <div class="swiper-wrapper">
                 <?php foreach ($cross_sells as $cross_sell_product) :
-                    $cross_sell_product->product_link = $platform->getProductUrl(['task' => 'view', 'id' => $cross_sell_product->j2commerce_product_id]);
+                    $cross_sell_product->product_link = J2CommerceHelper::platform()->getProductUrl(['task' => 'view', 'id' => $cross_sell_product->j2commerce_product_id]);
 
                     $itemHtml = ProductLayoutService::renderProductItem(
                         $cross_sell_product,
