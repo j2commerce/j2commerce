@@ -256,13 +256,33 @@ const J2CommerceFlexivariable = {
 
         // Stock status
         if (typeof response.stock_status !== 'undefined') {
-            const stockContainer = productContainer.querySelector('.product-stock-container');
-            if (stockContainer) {
-                const statusClass = response.availability == 1 ? 'in-stock' : 'out-of-stock';
-                const statusSpan = document.createElement('span');
-                statusSpan.className = statusClass;
-                this.setHtml(statusSpan, response.stock_status);
-                stockContainer.replaceChildren(statusSpan);
+            const inStock = response.availability == 1;
+            const statusClass = inStock ? 'in-stock' : 'out-of-stock';
+
+            // List-view layout: in-stock/out-of-stock class lives on the container div itself
+            const listStock = productContainer.querySelector('.j2commerce-product-stock');
+            if (listStock) {
+                listStock.classList.toggle('in-stock', inStock);
+                listStock.classList.toggle('out-of-stock', !inStock);
+                this.setHtml(listStock, response.stock_status);
+            }
+
+            // Plugin product-view layout: child span carries the in-stock/out-of-stock class
+            const pluginStock = productContainer.querySelector('.j2commerce-product-stock-container');
+            if (pluginStock) {
+                const span = document.createElement('span');
+                span.className = statusClass;
+                this.setHtml(span, response.stock_status);
+                pluginStock.replaceChildren(span);
+            }
+
+            // Default core template: child span carries instock/outofstock class (no hyphen)
+            const defaultStock = productContainer.querySelector('.product-stock-container');
+            if (defaultStock) {
+                const span = document.createElement('span');
+                span.className = inStock ? 'instock' : 'outofstock';
+                this.setHtml(span, response.stock_status);
+                defaultStock.replaceChildren(span);
             }
         }
 

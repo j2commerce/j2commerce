@@ -949,12 +949,32 @@ const J2Commerce = {
 
         // Stock status
         if (typeof response.stock_status !== 'undefined') {
-            const stockContainer = product.querySelector('.product-stock-container');
-            if (stockContainer) {
+            const inStock = response.availability === 1;
+
+            // List-view layout: in-stock/out-of-stock class lives on the container div itself
+            const listStock = product.querySelector('.j2commerce-product-stock');
+            if (listStock) {
+                listStock.classList.toggle('in-stock', inStock);
+                listStock.classList.toggle('out-of-stock', !inStock);
+                listStock.textContent = response.stock_status;
+            }
+
+            // Plugin product-view layout: child span carries the in-stock/out-of-stock class
+            const pluginStock = product.querySelector('.j2commerce-product-stock-container');
+            if (pluginStock) {
                 const span = document.createElement('span');
-                span.className = response.availability === 1 ? 'instock' : 'outofstock';
+                span.className = inStock ? 'in-stock' : 'out-of-stock';
                 span.textContent = response.stock_status;
-                stockContainer.replaceChildren(span);
+                pluginStock.replaceChildren(span);
+            }
+
+            // Default core template: child span carries instock/outofstock class (no hyphen)
+            const defaultStock = product.querySelector('.product-stock-container');
+            if (defaultStock) {
+                const span = document.createElement('span');
+                span.className = inStock ? 'instock' : 'outofstock';
+                span.textContent = response.stock_status;
+                defaultStock.replaceChildren(span);
             }
         }
 
