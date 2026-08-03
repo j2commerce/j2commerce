@@ -17,17 +17,22 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\AclSeedHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CoreTemplateSyncHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\InventoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\StockCommittedSeedHelper;
+use Joomla\CMS\Access\Access;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Installer\InstallerScript;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
 use Joomla\Database\DatabaseDriver;
 use Joomla\Database\DatabaseInterface;
+use Joomla\Database\ParameterType;
 use Joomla\Filesystem\File;
 use Joomla\Registry\Registry;
 
 class Com_J2commerceInstallerScript extends InstallerScript
 {
+    /** Params flag: the asset rules have been settled once, so no later update re-seeds them. */
+    private const DEFAULT_ACL_FLAG = 'default_acl_seeded';
+
     protected $minimumJoomlaVersion = '6.0';
     protected $maximumJoomlaVersion = '6.99.99';
     protected $minimumPhpVersion    = '8.1';
@@ -451,15 +456,47 @@ class Com_J2commerceInstallerScript extends InstallerScript
     /**
      * Set sensible default ACL rules for com_j2commerce if rules are empty.
      *
-     * Matches Joomla core pattern: Administrator (7) gets full access except
-     * Super Admin, Manager (6) gets core.manage + view/edit permissions.
-     * Only sets rules if currently empty — does not overwrite admin customisation.
-     *
      * @since  6.2.0
      */
     private function setDefaultAcl(): void
     {
+        try {
+            $this->seedDefaultAcl();
+        } catch (\Throwable $e) {
+            // Seeding defaults must never abort a package update. The flag stays unset, so the
+            // next update retries, and canAccess() keeps its core.manage fallback meanwhile.
+            $this->debugLog('setDefaultAcl failed (see the j2commerce log)');
+            Log::add('setDefaultAcl failed: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
+        }
+    }
+
+    /**
+     * Runs from both install() and update(), so it is guarded by a one-time params flag:
+     * '{}' is what an administrator who clears every permission leaves behind, and it is
+     * byte-identical to the row com_config writes on the first Options save. Without the flag
+     * a deliberate reset would be re-populated by every subsequent update.
+     */
+    private function seedDefaultAcl(): void
+    {
         $db = Factory::getContainer()->get(DatabaseInterface::class);
+
+        $query = $db->getQuery(true)
+            ->select([$db->quoteName('extension_id'), $db->quoteName('params')])
+            ->from($db->quoteName('#__extensions'))
+            ->where($db->quoteName('element') . ' = ' . $db->quote('com_j2commerce'))
+            ->where($db->quoteName('type') . ' = ' . $db->quote('component'));
+        $db->setQuery($query);
+        $extension = $db->loadObject();
+
+        if (!$extension) {
+            return;
+        }
+
+        $storedParams = (string) $extension->params;
+
+        if ((int) (new Registry($storedParams))->get(self::DEFAULT_ACL_FLAG, 0) === 1) {
+            return;
+        }
 
         $query = $db->getQuery(true)
             ->select([$db->quoteName('id'), $db->quoteName('rules')])
@@ -472,17 +509,20 @@ class Com_J2commerceInstallerScript extends InstallerScript
             return;
         }
 
-        // Only set defaults if rules are empty (not yet configured by admin)
-        $currentRules = trim($asset->rules ?? '');
+        $storedRules = (string) $asset->rules;
 
-        if ($currentRules !== '' && $currentRules !== '{}') {
+        // Already configured: record that the defaults are settled so a later reset stands.
+        if (trim($storedRules) !== '' && trim($storedRules) !== '{}') {
+            $this->writeDefaultAclFlag($db, (int) $extension->extension_id, $storedParams);
+
             return;
         }
 
-        // Default rules matching the issue requirements:
-        // Super User (8): inherits all (no explicit rules needed)
-        // Administrator (7): everything except core.admin/core.options
-        // Manager (6): core.manage + view orders + view products + edit orders
+        // Super User (8): inherits everything, so it needs no rule of its own.
+        // Administrator (7): full component control, including Options and every edit-tier action.
+        // Manager (6): core.manage plus the read and create tier of day-to-day work.
+        // FORCE_OBJECT so a single-group map can never serialise as a JSON array, which
+        // Access would then read back with the wrong keys.
         $rules = json_encode([
             'core.admin'              => ['7' => 1],
             'core.options'            => ['7' => 1],
@@ -492,19 +532,66 @@ class Com_J2commerceInstallerScript extends InstallerScript
             'core.edit'               => ['6' => 1],
             'core.edit.state'         => ['6' => 1],
             'core.edit.own'           => ['6' => 1],
+            'core.fulfilment'         => ['7' => 1],
             'j2commerce.vieworders'   => ['6' => 1],
             'j2commerce.editorders'   => ['7' => 1],
+            'j2commerce.exportorders' => ['7' => 1],
             'j2commerce.viewproducts' => ['6' => 1],
+            'j2commerce.editproducts' => ['7' => 1],
             'j2commerce.viewreports'  => ['7' => 1],
             'j2commerce.viewsetup'    => ['7' => 1],
-        ]);
+            'j2commerce.editsetup'    => ['7' => 1],
+        ], JSON_FORCE_OBJECT);
 
+        $assetId = (int) $asset->id;
+
+        // Compare and swap on the bytes this ran against: an administrator may have saved
+        // Options → Permissions since the read, and that save must win. CAST to BINARY because
+        // the default utf8mb4_unicode_ci is case-insensitive, accent-insensitive and PAD SPACE.
         $update = $db->getQuery(true)
             ->update($db->quoteName('#__assets'))
-            ->set($db->quoteName('rules') . ' = ' . $db->quote($rules))
-            ->where($db->quoteName('id') . ' = ' . (int) $asset->id);
-        $db->setQuery($update);
-        $db->execute();
+            ->set($db->quoteName('rules') . ' = :rules')
+            ->where($db->quoteName('id') . ' = :id')
+            ->where('CAST(' . $db->quoteName('rules') . ' AS BINARY) = :expected')
+            ->bind(':rules', $rules)
+            ->bind(':expected', $storedRules)
+            ->bind(':id', $assetId, ParameterType::INTEGER);
+
+        $db->setQuery($update)->execute();
+
+        if ($db->getAffectedRows() === 0) {
+            $this->debugLog('ACL DEFAULTS: asset rules changed while seeding — left as saved');
+
+            return;
+        }
+
+        Access::clearStatics();
+
+        $this->writeDefaultAclFlag($db, (int) $extension->extension_id, $storedParams);
+    }
+
+    /** A lost compare here is harmless: the rules are written, and the next update re-reads them. */
+    private function writeDefaultAclFlag(DatabaseInterface $db, int $extensionId, string $expected): void
+    {
+        $params = new Registry($expected);
+        $params->set(self::DEFAULT_ACL_FLAG, 1);
+
+        $paramsJson = $params->toString();
+
+        $query = $db->getQuery(true)
+            ->update($db->quoteName('#__extensions'))
+            ->set($db->quoteName('params') . ' = :params')
+            ->where($db->quoteName('extension_id') . ' = :id')
+            ->where('CAST(' . $db->quoteName('params') . ' AS BINARY) = :expected')
+            ->bind(':params', $paramsJson)
+            ->bind(':expected', $expected)
+            ->bind(':id', $extensionId, ParameterType::INTEGER);
+
+        $db->setQuery($query)->execute();
+
+        if ($db->getAffectedRows() === 0) {
+            $this->debugLog('ACL DEFAULTS: extension params changed while seeding — flag left unset');
+        }
     }
 
     // ── Localisation data install ────────────────────────────────────────────────
