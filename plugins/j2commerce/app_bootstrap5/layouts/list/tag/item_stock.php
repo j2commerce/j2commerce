@@ -46,6 +46,6 @@ if (!$inStock) {
     $stockText = Text::_('COM_J2COMMERCE_IN_STOCK');
 }
 ?>
-<div class="j2commerce-product-stock <?php echo $stockClass; ?>">
+<div class="j2commerce-product-stock <?php echo $stockClass; ?><?php echo !$inStock && ($showCart ?? false) ? ' invisible' : ''; ?>">
     <?php echo $stockText; ?>
 </div>
