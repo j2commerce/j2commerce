@@ -67,7 +67,7 @@ $afterCart = J2CommerceHelper::plugin()->eventWithHtml('AfterAddToCartButton',[$
         </div>
     </div>
 <?php else: ?>
-    <button type="button" class="j2commerce_button_no_stock btn btn-warning" disabled>
+    <button type="button" class="j2commerce_button_no_stock btn btn-warning w-100" disabled>
         <?php echo Text::_('COM_J2COMMERCE_OUT_OF_STOCK'); ?>
     </button>
 <?php endif; ?>

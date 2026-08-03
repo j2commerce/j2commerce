@@ -74,7 +74,7 @@ $afterCart = J2CommerceHelper::plugin()->eventWithHtml(
         </div>
     </div>
 <?php else: ?>
-    <button type="button" class="j2commerce_button_no_stock uk-button uk-button-default" disabled>
+    <button type="button" class="j2commerce_button_no_stock uk-button uk-button-default uk-width-1-1" disabled>
         <?php echo Text::_('COM_J2COMMERCE_OUT_OF_STOCK'); ?>
     </button>
 <?php endif; ?>
