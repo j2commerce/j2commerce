@@ -36,18 +36,18 @@ class ProductModel extends AdminProductModel
                 && \in_array((int) ($article->access ?? 0), $user->getAuthorisedViewLevels(), true);
 
             if ($visible) {
-                $safe               = new \stdClass();
-                $safe->id           = $article->id ?? null;
-                $safe->title        = $article->title ?? null;
-                $safe->alias        = $article->alias ?? null;
-                $safe->introtext    = $article->introtext ?? null;
-                $safe->fulltext     = $article->fulltext ?? null;
-                $safe->state        = $article->state ?? null;
-                $safe->catid        = $article->catid ?? null;
-                $safe->language     = $article->language ?? null;
-                $safe->created      = $article->created ?? null;
-                $safe->modified     = $article->modified ?? null;
-                $safe->publish_up   = $article->publish_up ?? null;
+                $safe              = new \stdClass();
+                $safe->id          = $article->id ?? null;
+                $safe->title       = $article->title ?? null;
+                $safe->alias       = $article->alias ?? null;
+                $safe->introtext   = $article->introtext ?? null;
+                $safe->fulltext    = $article->fulltext ?? null;
+                $safe->state       = $article->state ?? null;
+                $safe->catid       = $article->catid ?? null;
+                $safe->language    = $article->language ?? null;
+                $safe->created     = $article->created ?? null;
+                $safe->modified    = $article->modified ?? null;
+                $safe->publish_up  = $article->publish_up ?? null;
                 $safe->publish_down = $article->publish_down ?? null;
 
                 $item->article  = $safe;

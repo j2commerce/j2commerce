@@ -15,6 +15,7 @@ namespace J2Commerce\Component\J2commerce\Api\Controller;
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Api\Controller\J2CommerceApiController;
 use Joomla\CMS\Access\Exception\NotAllowed;
 use Tobscure\JsonApi\AbstractSerializer;
 use Tobscure\JsonApi\Exception\InvalidParameterException;
@@ -43,32 +44,32 @@ class OrderfulfilmentController extends J2CommerceApiController
             throw new \Joomla\Router\Exception\RouteNotFoundException('JGLOBAL_ITEM_NOT_FOUND', 404);
         }
 
-        $info     = $order->orderinfo ?? null;
+        $info     = $order->orderinfo     ?? null;
         $shipping = $order->ordershipping ?? null;
 
         $data = (object) [
-            'id'                        => (int) $order->j2commerce_order_id,
-            'order_id'                  => $order->order_id,
-            'order_state_id'            => (int) ($order->order_state_id ?? 0),
-            'order_state'               => $order->order_state ?? '',
-            'shipping_first_name'       => $info->shipping_first_name ?? '',
-            'shipping_middle_name'      => $info->shipping_middle_name ?? '',
-            'shipping_last_name'        => $info->shipping_last_name ?? '',
-            'shipping_company'          => $info->shipping_company ?? '',
-            'shipping_phone_1'          => $info->shipping_phone_1 ?? '',
-            'shipping_phone_2'          => $info->shipping_phone_2 ?? '',
-            'shipping_address_1'        => $info->shipping_address_1 ?? '',
-            'shipping_address_2'        => $info->shipping_address_2 ?? '',
-            'shipping_city'             => $info->shipping_city ?? '',
-            'shipping_zip'              => $info->shipping_zip ?? '',
-            'shipping_zone_name'        => $info->shipping_zone_name ?? '',
-            'shipping_country_name'     => $info->shipping_country_name ?? '',
-            'shipping_zone_id'          => (int) ($info->shipping_zone_id ?? 0),
-            'shipping_country_id'       => (int) ($info->shipping_country_id ?? 0),
-            'shipping_tax_number'       => $info->shipping_tax_number ?? '',
-            'ordershipping_name'        => $shipping->ordershipping_name ?? '',
-            'ordershipping_code'        => $shipping->ordershipping_code ?? '',
-            'ordershipping_type'        => $shipping->ordershipping_type ?? '',
+            'id'                 => (int) $order->j2commerce_order_id,
+            'order_id'           => $order->order_id,
+            'order_state_id'     => (int) ($order->order_state_id ?? 0),
+            'order_state'        => $order->order_state ?? '',
+            'shipping_first_name'  => $info->shipping_first_name  ?? '',
+            'shipping_middle_name' => $info->shipping_middle_name ?? '',
+            'shipping_last_name'   => $info->shipping_last_name   ?? '',
+            'shipping_company'     => $info->shipping_company     ?? '',
+            'shipping_phone_1'     => $info->shipping_phone_1     ?? '',
+            'shipping_phone_2'     => $info->shipping_phone_2     ?? '',
+            'shipping_address_1'   => $info->shipping_address_1   ?? '',
+            'shipping_address_2'   => $info->shipping_address_2   ?? '',
+            'shipping_city'        => $info->shipping_city        ?? '',
+            'shipping_zip'         => $info->shipping_zip         ?? '',
+            'shipping_zone_name'   => $info->shipping_zone_name   ?? '',
+            'shipping_country_name' => $info->shipping_country_name ?? '',
+            'shipping_zone_id'      => (int) ($info->shipping_zone_id    ?? 0),
+            'shipping_country_id'   => (int) ($info->shipping_country_id ?? 0),
+            'shipping_tax_number'   => $info->shipping_tax_number ?? '',
+            'ordershipping_name'        => $shipping->ordershipping_name        ?? '',
+            'ordershipping_code'        => $shipping->ordershipping_code        ?? '',
+            'ordershipping_type'        => $shipping->ordershipping_type        ?? '',
             'ordershipping_tracking_id' => $shipping->ordershipping_tracking_id ?? '',
         ];
 
@@ -172,7 +173,7 @@ class OrderfulfilmentController extends J2CommerceApiController
 
     private function emit(object $data): static
     {
-        $serializer = new class () extends AbstractSerializer {
+        $serializer = new class extends AbstractSerializer {
             protected $type = 'orderfulfilment';
 
             public function getId($model): string

@@ -30,9 +30,9 @@ class ConfigController extends J2CommerceApiController
         $this->assertCanReadOptions();
 
         $params = ComponentHelper::getParams('com_j2commerce');
-        $data   = (object) array_merge(['id' => 1], $params->toArray());
+        $data = (object) array_merge(['id' => 1], $params->toArray());
 
-        $serializer = new class () extends AbstractSerializer {
+        $serializer = new class extends AbstractSerializer {
             protected $type = 'config';
 
             public function getId($model): string
