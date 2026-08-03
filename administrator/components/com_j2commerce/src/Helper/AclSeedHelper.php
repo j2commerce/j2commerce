@@ -191,7 +191,7 @@ class AclSeedHelper
                 ->update($db->quoteName('#__assets'))
                 ->set($db->quoteName('rules') . ' = :rules')
                 ->where($db->quoteName('id') . ' = :id')
-                ->where($db->quoteName('rules') . ' = :expected')
+                ->where('CAST(' . $db->quoteName('rules') . ' AS BINARY) = :expected')
                 ->bind(':rules', $rulesJson)
                 ->bind(':expected', $expectedRules)
                 ->bind(':id', $assetId, ParameterType::INTEGER);
@@ -277,7 +277,14 @@ class AclSeedHelper
         return self::writeExtensionParams($db, $params, $extensionId, $current);
     }
 
-    /** Write params only while the stored value still matches $expected. */
+    /**
+     * Write params only while the stored value still matches $expected, byte for byte.
+     *
+     * The comparison is CAST to BINARY because the default utf8mb4_unicode_ci is
+     * case-insensitive, accent-insensitive and PAD SPACE: a plain = accepts a concurrent save
+     * that differs only in letter case, accents or trailing whitespace and overwrites it.
+     * utf8mb4_bin is PAD SPACE too, and the NO PAD utf8mb4_0900_bin does not exist on MariaDB.
+     */
     private static function writeExtensionParams(
         DatabaseInterface $db,
         Registry $params,
@@ -290,7 +297,7 @@ class AclSeedHelper
             ->update($db->quoteName('#__extensions'))
             ->set($db->quoteName('params') . ' = :params')
             ->where($db->quoteName('extension_id') . ' = :id')
-            ->where($db->quoteName('params') . ' = :expected')
+            ->where('CAST(' . $db->quoteName('params') . ' AS BINARY) = :expected')
             ->bind(':params', $paramsJson)
             ->bind(':expected', $expected)
             ->bind(':id', $extensionId, ParameterType::INTEGER);
