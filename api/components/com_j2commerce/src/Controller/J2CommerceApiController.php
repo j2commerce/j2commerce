@@ -51,6 +51,9 @@ abstract class J2CommerceApiController extends ApiController
     /** Capability a write requires, checked with the core verb for the method. Empty denies. */
     protected string $writeAction = '';
 
+    /** Largest page[limit] a list route will serve, whatever the caller asks for. */
+    private const MAX_PAGE_SIZE = 100;
+
     public function getModel($name = '', $prefix = '', $config = [])
     {
         if (!$prefix) {
@@ -64,6 +67,7 @@ abstract class J2CommerceApiController extends ApiController
     {
         $this->assertAllowed($this->readAction);
         $this->pinResource();
+        $this->capPageSize();
 
         return parent::displayList();
     }
@@ -117,6 +121,27 @@ abstract class J2CommerceApiController extends ApiController
     {
         $this->input->set('model', null);
         $this->input->set('view', null);
+    }
+
+    /**
+     * Hold page[limit] to a size this component chooses.
+     *
+     * ApiController takes the limit straight from the request and applies no ceiling, and a
+     * list response is serialised whole rather than streamed, so the caller would otherwise
+     * decide how much of a table is assembled in memory at once. Clamping before
+     * parent::displayList() keeps the model state and the model itself on the same value, so
+     * the pagination links advance by the size actually served.
+     */
+    private function capPageSize(): void
+    {
+        $page = $this->input->get('page', [], 'array');
+
+        if (!isset($page['limit'])) {
+            return;
+        }
+
+        $page['limit'] = min(max((int) $page['limit'], 1), self::MAX_PAGE_SIZE);
+        $this->input->set('page', $page);
     }
 
     /**

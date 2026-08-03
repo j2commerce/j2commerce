@@ -29,6 +29,10 @@ class CustomersController extends J2CommerceApiController
 
     public function displayList()
     {
+        // Same pairing as the orders list: a customer list read carries contact details for
+        // every row, which is the extract exportorders exists to control.
+        $this->assertAllowed('j2commerce.exportorders');
+
         $apiFilterInfo = $this->input->get('filter', [], 'array');
         $filter = InputFilter::getInstance();
 

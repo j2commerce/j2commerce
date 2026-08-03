@@ -29,6 +29,12 @@ class OrdersController extends J2CommerceApiController
 
     public function displayList()
     {
+        // A list read here returns the same rows the administrator export does, so it answers
+        // to the same pair of actions: vieworders for the order screens (asserted by the base
+        // class from $readAction) and exportorders for taking them in bulk. displayItem() is
+        // an ordinary single read and stays on vieworders alone.
+        $this->assertAllowed('j2commerce.exportorders');
+
         $apiFilterInfo = $this->input->get('filter', [], 'array');
         $filter = InputFilter::getInstance();
 
