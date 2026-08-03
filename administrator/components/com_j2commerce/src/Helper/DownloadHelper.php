@@ -266,13 +266,27 @@ final class DownloadHelper
      */
     public static function allowedDownloadRoots(): array
     {
-        $roots  = [];
-        $attach = trim((string) J2CommerceHelper::config()->get('attachmentfolderpath', 'files/com_j2commerce'), '/');
+        $roots = [];
 
-        // A blank, dot, or dot-dot config value must never widen (or empty) the union.
-        if ($attach === '' || $attach === '.' || $attach === '..') {
-            $attach = 'files/com_j2commerce';
-        }
+        // Read through ConfigHelper so this reader normalises the value the way the installer
+        // and the upload paths do. Reading it raw meant a Windows-typed 'files\com_j2commerce'
+        // named one literal directory here, whose realpath() fails on Linux and dropped the
+        // attachment root from the union without a word.
+        $attach = ConfigHelper::getAttachmentPath();
+
+        // Segment scan, not a whole-string compare: 'files/../..' passed the old test intact
+        // and resolved to the site's parent, at which point the prefix test in
+        // isAllowedResolvedPath() accepted everything beneath it. A '.' segment carries no
+        // traversal, so it is dropped rather than treated as hostile — rejecting it would
+        // send a working 'files/./x' to the default root and break its downloads.
+        $segments = array_filter(
+            explode('/', $attach),
+            static fn (string $segment): bool => $segment !== '' && $segment !== '.'
+        );
+
+        $attach = $segments === [] || \in_array('..', $segments, true)
+            ? AttachmentDenyFileHelper::DEFAULT_PATH
+            : implode('/', $segments);
 
         foreach (array_unique([$attach, 'images']) as $root) {
             // Absolute attachment roots are not servable by the download endpoint,
