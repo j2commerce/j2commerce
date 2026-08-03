@@ -15,7 +15,6 @@ namespace J2Commerce\Component\J2commerce\Api\Controller;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Filter\InputFilter;
-use J2Commerce\Component\J2commerce\Api\Controller\J2CommerceApiController;
 
 class OrdersController extends J2CommerceApiController
 {
@@ -36,7 +35,7 @@ class OrdersController extends J2CommerceApiController
         $this->assertAllowed('j2commerce.exportorders');
 
         $apiFilterInfo = $this->input->get('filter', [], 'array');
-        $filter = InputFilter::getInstance();
+        $filter        = InputFilter::getInstance();
 
         if (\array_key_exists('search', $apiFilterInfo)) {
             $this->modelState->set('filter.search', $filter->clean($apiFilterInfo['search'], 'STRING'));

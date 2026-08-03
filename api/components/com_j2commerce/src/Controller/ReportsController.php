@@ -15,7 +15,6 @@ namespace J2Commerce\Component\J2commerce\Api\Controller;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Filter\InputFilter;
-use J2Commerce\Component\J2commerce\Api\Controller\J2CommerceApiController;
 
 class ReportsController extends J2CommerceApiController
 {
@@ -30,7 +29,7 @@ class ReportsController extends J2CommerceApiController
     public function displayList()
     {
         $apiFilterInfo = $this->input->get('filter', [], 'array');
-        $filter = InputFilter::getInstance();
+        $filter        = InputFilter::getInstance();
 
         $reportType = $this->input->get('report_type', 'sales', 'string');
         $this->modelState->set('filter.report_type', $filter->clean($reportType, 'STRING'));

@@ -14,7 +14,6 @@ namespace J2Commerce\Component\J2commerce\Api\Controller;
 
 \defined('_JEXEC') or die;
 
-use J2Commerce\Component\J2commerce\Api\Controller\J2CommerceApiController;
 
 class TaxratesController extends J2CommerceApiController
 {
