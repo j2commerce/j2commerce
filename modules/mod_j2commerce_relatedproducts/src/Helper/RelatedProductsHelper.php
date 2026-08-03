@@ -62,13 +62,28 @@ class RelatedProductsHelper
             return '';
         }
 
+        $user       = $app->getIdentity();
+        $userLevels = $user ? $user->getAuthorisedViewLevels() : [1];
+        $element    = 'mod_j2commerce_relatedproducts';
+        $now        = Factory::getDate()->toSql();
+
+        // Mirror the constraints ModuleHelper::load() applies: this module, site client,
+        // the caller's view levels and the publish window — not id and state alone.
         $db    = Factory::getContainer()->get(DatabaseInterface::class);
         $query = $db->getQuery(true)
             ->select('*')
             ->from($db->quoteName('#__modules'))
             ->where($db->quoteName('id') . ' = :moduleId')
+            ->where($db->quoteName('module') . ' = :element')
+            ->where($db->quoteName('client_id') . ' = 0')
             ->where($db->quoteName('published') . ' = 1')
-            ->bind(':moduleId', $moduleId, ParameterType::INTEGER);
+            ->whereIn($db->quoteName('access'), $userLevels)
+            ->where('(' . $db->quoteName('publish_up') . ' IS NULL OR ' . $db->quoteName('publish_up') . ' <= :publishUp)')
+            ->where('(' . $db->quoteName('publish_down') . ' IS NULL OR ' . $db->quoteName('publish_down') . ' >= :publishDown)')
+            ->bind(':moduleId', $moduleId, ParameterType::INTEGER)
+            ->bind(':element', $element)
+            ->bind(':publishUp', $now)
+            ->bind(':publishDown', $now);
 
         $db->setQuery($query);
         $module = $db->loadObject();
