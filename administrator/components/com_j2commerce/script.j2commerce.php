@@ -33,6 +33,9 @@ class Com_J2commerceInstallerScript extends InstallerScript
     /** Params flag: the asset rules have been settled once, so no later update re-seeds them. */
     private const DEFAULT_ACL_FLAG = 'default_acl_seeded';
 
+    /** Marker both deny payloads carry, identifying a file as one J2Commerce wrote. */
+    private const DENY_FILE_MARKER = 'J2Commerce file storage';
+
     protected $minimumJoomlaVersion = '6.0';
     protected $maximumJoomlaVersion = '6.99.99';
     protected $minimumPhpVersion    = '8.1';
@@ -143,7 +146,6 @@ class Com_J2commerceInstallerScript extends InstallerScript
         $this->debugLog("INSTALL: default ACL rules set");
 
         $this->ensureFilesFolder();
-        $this->debugLog("INSTALL: files/com_j2commerce/ tree ensured");
 
         Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_INSTALL_SUCCESS'), 'success');
 
@@ -162,7 +164,6 @@ class Com_J2commerceInstallerScript extends InstallerScript
         $this->debugLog("UPDATE: default ACL rules set (if empty)");
 
         $this->ensureFilesFolder();
-        $this->debugLog("UPDATE: files/com_j2commerce/ tree ensured");
 
         $this->cleanupStaleCheckoutTemplates();
 
@@ -764,8 +765,23 @@ class Com_J2commerceInstallerScript extends InstallerScript
      */
     private function ensureFilesFolder(): void
     {
-        $configuredPath = $this->readAttachmentFolderPath();
-        $root           = JPATH_ROOT . '/' . trim($configuredPath, '/');
+        $root = $this->resolveAttachmentRoot();
+
+        // Nothing is written for a path that will not confine. Returning here leaves the tree
+        // unmade rather than dropping a deny-all ruleset somewhere it was never meant to go.
+        if ($root === null) {
+            $message = 'The configured attachment folder path could not be created or does not resolve '
+                . 'inside the site root. The upload storage tree was not created and no deny files were '
+                . 'written. Correct the attachment folder path in the J2Commerce options.';
+
+            // Enqueued as well as logged: category j2commerce matches no logger on a default
+            // site, and an unprotected upload tree must not be announced only where nobody reads.
+            $this->debugLog('ENSURE FILES FOLDER: configured path could not be created or does not resolve inside the site root — skipped');
+            Log::add($message, Log::WARNING, 'j2commerce');
+            Factory::getApplication()->enqueueMessage($message, 'warning');
+
+            return;
+        }
 
         foreach (['', '/tmp', '/orders'] as $sub) {
             $dir = $root . $sub;
@@ -808,7 +824,7 @@ Options -Indexes
 </FilesMatch>
 HTACCESS;
 
-        $this->writeFileOverwrite($root . '/.htaccess', $htaccess);
+        $this->writeDenyFile($root . '/.htaccess', $htaccess);
 
         $webConfig = <<<'WEBCONFIG'
 <?xml version="1.0" encoding="utf-8"?>
@@ -827,7 +843,7 @@ HTACCESS;
 </configuration>
 WEBCONFIG;
 
-        $this->writeFileOverwrite($root . '/web.config', $webConfig);
+        $this->writeDenyFile($root . '/web.config', $webConfig);
 
         $readme = <<<'README'
 # J2Commerce Customer Upload Storage
@@ -870,6 +886,53 @@ README;
         $this->debugLog("ENSURE FILES FOLDER: tree at {$root} ready");
     }
 
+    /**
+     * Absolute, confined on-disk root for the upload tree, or null when the configured value
+     * will not resolve inside the site.
+     *
+     * trim($value, '/') strips slash characters from the ends only — it never removes a '..'
+     * segment — so the path has to be confined rather than merely trimmed. The prefix test
+     * appends a separator so a sibling directory whose name starts with the root's is not
+     * accepted, and the root itself is rejected: denying it would 403 the whole site.
+     */
+    private function resolveAttachmentRoot(): ?string
+    {
+        $relative = trim(str_replace('\\', '/', $this->readAttachmentFolderPath()), '/');
+
+        if (
+            $relative === ''
+            || $relative === '.'
+            || \in_array('..', explode('/', $relative), true)
+            || preg_match('#^[a-zA-Z]:#', $relative)
+        ) {
+            return null;
+        }
+
+        $absolute = JPATH_ROOT . '/' . $relative;
+
+        if (!is_dir($absolute) && !@mkdir($absolute, 0755, true) && !is_dir($absolute)) {
+            $this->debugLog("ENSURE FILES FOLDER: could not create {$absolute}");
+
+            return null;
+        }
+
+        $real     = realpath($absolute);
+        $rootReal = realpath(JPATH_ROOT);
+
+        if ($real === false || $rootReal === false) {
+            return null;
+        }
+
+        $real     = rtrim(str_replace('\\', '/', $real), '/');
+        $rootReal = rtrim(str_replace('\\', '/', $rootReal), '/');
+
+        if ($real === $rootReal || !str_starts_with($real . '/', $rootReal . '/')) {
+            return null;
+        }
+
+        return $real;
+    }
+
     /** Read attachmentfolderpath from com_j2commerce params with safe fallback. */
     private function readAttachmentFolderPath(): string
     {
@@ -889,6 +952,28 @@ README;
         return $value !== '' ? $value : $default;
     }
 
+    /**
+     * Write a deny file only over one J2Commerce wrote. Confinement still allows a configured
+     * path we may reach but do not own, so refusing to replace a foreign file is what makes
+     * clobbering a site's own ruleset impossible whatever the path resolves to.
+     */
+    private function writeDenyFile(string $path, string $contents): void
+    {
+        if (file_exists($path) && !str_contains((string) @file_get_contents($path), self::DENY_FILE_MARKER)) {
+            $this->debugLog("ENSURE FILES FOLDER: left existing non-J2Commerce file in place: {$path}");
+            Log::add(
+                'An existing ' . basename($path) . ' that J2Commerce did not write was left untouched at '
+                . $path . '. The upload storage tree may not be protected from direct web access.',
+                Log::WARNING,
+                'j2commerce'
+            );
+
+            return;
+        }
+
+        $this->writeFileOverwrite($path, $contents);
+    }
+
     /** Write file only if it doesn't already exist. Logs and continues on failure. */
     private function writeFileIfMissing(string $path, string $contents): void
     {
@@ -896,16 +981,17 @@ README;
             return;
         }
 
-        if (@file_put_contents($path, $contents) === false) {
-            $this->debugLog("ENSURE FILES FOLDER: failed to write {$path}");
-        }
+        $this->writeFileOverwrite($path, $contents);
     }
 
     /** Write file, overwriting any existing copy. Logs and continues on failure. */
     private function writeFileOverwrite(string $path, string $contents): void
     {
         if (@file_put_contents($path, $contents) === false) {
+            // Surfaced to the configured logger as well as the trace: a failed deny-file write
+            // leaves the tree readable over HTTP, which the trace alone would never announce.
             $this->debugLog("ENSURE FILES FOLDER: failed to write {$path}");
+            Log::add('Failed to write ' . $path, Log::WARNING, 'j2commerce');
         }
     }
 }

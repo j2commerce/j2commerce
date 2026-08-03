@@ -181,12 +181,18 @@
             default="H:i:s"
         />
 
+        <!-- validate="filePath" rejects '.', '..' and absolute values without requiring the
+             folder to exist, so a new relocation target can still be typed. The exclude list
+             names Joomla's own directories; 'images' is deliberately absent, since sites
+             legitimately point here today. -->
         <field
             name="attachmentfolderpath"
             type="text"
             label="COM_J2COMMERCE_CONFIG_ATTACHMENT_PATH"
             description="COM_J2COMMERCE_CONFIG_ATTACHMENT_PATH_DESC"
             default="files/com_j2commerce"
+            validate="filePath"
+            exclude="administrator|api|cache|cli|components|includes|language|layouts|libraries|media|modules|plugins|templates|tmp|logs"
             class="w-100"
         />
 

@@ -113,7 +113,10 @@ class StockCommittedSeedHelper
 
             return true;
         } catch (\Throwable $e) {
-            $log('STOCK SEED failed: ' . $e->getMessage());
+            // The installer passes debugLog() as the callback and that trace is web-served, so
+            // it never carries exception text — an SQLSTATE string names the prefixed table.
+            $log('STOCK SEED failed (see the j2commerce log)');
+            Log::add('Stock committed seed failed: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
 
             return false;
         }
