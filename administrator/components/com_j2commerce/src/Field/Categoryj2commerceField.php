@@ -35,6 +35,14 @@ class Categoryj2commerceField extends SpacerField
     protected $type = 'Categoryj2commerce';
 
     /**
+     * The label is always empty, so drop the label column and use the full grid width.
+     *
+     * @var    boolean
+     * @since  6.1.0
+     */
+    protected $hiddenLabel = true;
+
+    /**
      * Method to get the field input markup.
      *
      * @return  string  The field input markup.
@@ -54,8 +62,8 @@ class Categoryj2commerceField extends SpacerField
         $categoryId = (int) ($this->form->getValue('id') ?? 0);
 
         if ($categoryId > 0) {
-            $dbParams = CategoryHelper::getParams($categoryId);
-            $category = new \stdClass();
+            $dbParams         = CategoryHelper::getParams($categoryId);
+            $category         = new \stdClass();
             $category->id     = $categoryId;
             $category->params = $dbParams->toString();
         } else {
@@ -120,7 +128,7 @@ class Categoryj2commerceField extends SpacerField
             // $html[] = '                </div>';
             $html[] = '                <div class="flex-grow-1 ms-lg-3 mt-0 mt-lg-0">';
             $html[] = '                    <div>' . htmlspecialchars(Text::_($nameKey), ENT_QUOTES, 'UTF-8') . '</div>';
-            $html[] = '                    <div class="small d-none d-md-block text-muted">';
+            $html[] = '                    <div class="small d-none d-md-block text-body-secondary">';
             $html[] = '                        ' . htmlspecialchars(Text::_($description), ENT_QUOTES, 'UTF-8');
             $html[] = '                    </div>';
             $html[] = '                </div>';
