@@ -33,6 +33,10 @@ use Joomla\Event\Event;
  */
 class VoucherController extends FormController
 {
+    use WriteAccessTrait;
+
+    protected string $writeAction = 'j2commerce.editorders';
+
     protected $option      = 'com_j2commerce';
     protected $view_item   = 'voucher';
     protected $view_list   = 'vouchers';

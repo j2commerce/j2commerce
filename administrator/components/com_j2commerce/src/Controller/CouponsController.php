@@ -28,6 +28,10 @@ use Joomla\Input\Input;
  */
 class CouponsController extends AdminController
 {
+    use WriteAccessTrait;
+
+    protected string $writeAction = 'j2commerce.editorders';
+
     /**
      * The prefix to use with controller messages.
      *

@@ -32,6 +32,22 @@ use Joomla\Database\DatabaseInterface;
 class EmailtemplateController extends FormController
 {
     use VersionableControllerTrait;
+    use WriteAccessTrait;
+
+    protected string $writeAction = 'j2commerce.editsetup';
+
+    /**
+     * loadTemplate and getShortcodes read the shipped template files and the tag list.
+     * preview is not listed: it renders the submitted body against a real order row.
+     */
+    protected function readTasks(): array
+    {
+        return [
+            'display',
+            'loadTemplate',
+            'getShortcodes',
+        ];
+    }
 
     /**
      * The prefix to use with controller messages.

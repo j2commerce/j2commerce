@@ -64,7 +64,8 @@ class HtmlView extends BaseHtmlView
     public function display($tpl = null): void
     {
         if (!J2CommerceHelper::canAccess('j2commerce.vieworders')) {
-            J2CommerceHelper::denyAccess(); return;
+            J2CommerceHelper::denyAccess();
+            return;
         }
 
         $this->loadAdminAssets();
@@ -137,7 +138,9 @@ class HtmlView extends BaseHtmlView
             $toolbar->delete('vouchers.delete', 'JTOOLBAR_DELETE_FROM_TRASH')->listCheck(true);
         }
 
-        if ($canDo->get('core.manage')) {
+        // The endpoint answers to the export capability, so the button follows it rather than
+        // the component floor: a screen that may be read is not necessarily one to take in bulk.
+        if (J2CommerceHelper::canAccess('j2commerce.exportorders')) {
             VoucherToolbarHelper::addExportButton('vouchers', 'vouchers.exportCsv');
         }
 

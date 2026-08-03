@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\AdminController;
@@ -25,6 +26,19 @@ use Joomla\CMS\MVC\Controller\AdminController;
  */
 class VouchersController extends AdminController
 {
+    use WriteAccessTrait;
+
+    protected string $writeAction = 'j2commerce.editorders';
+
+    /** exportCsv reads rather than writes, so it names the read actions itself instead. */
+    protected function readTasks(): array
+    {
+        return [
+            'display',
+            'exportCsv',
+        ];
+    }
+
     /**
      * The prefix to use with controller messages.
      * Uses general prefix so bulk action messages use shared language strings.
@@ -40,17 +54,26 @@ class VouchersController extends AdminController
     }
 
     /**
-     * Streams the currently-filtered voucher list as CSV. Read-only GET task, no
-     * CSRF token — reuses the list model's own populated searchtools filter state.
+     * Streams the currently-filtered voucher list as CSV, reusing the list model's own
+     * populated searchtools filter state.
      *
      * @since   6.5.0
      */
     public function exportCsv(): void
     {
+        $this->checkToken('get');
+
         $app  = Factory::getApplication();
         $user = $app->getIdentity();
 
-        if ($user->guest || (int) $user->id === 0 || !$user->authorise('core.manage', 'com_j2commerce')) {
+        // Reading every voucher at once carries the codes and their remaining balances, so it
+        // answers to the same pair the order export does rather than to the component floor.
+        if (
+            $user->guest
+            || (int) $user->id === 0
+            || !J2CommerceHelper::canAccess('j2commerce.vieworders')
+            || !J2CommerceHelper::canAccess('j2commerce.exportorders')
+        ) {
             throw new \Exception(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 403);
         }
 

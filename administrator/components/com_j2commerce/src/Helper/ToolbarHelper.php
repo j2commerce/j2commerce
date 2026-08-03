@@ -17,6 +17,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
+use Joomla\CMS\Session\Session;
 use Joomla\CMS\Toolbar\Toolbar;
 use Joomla\CMS\Toolbar\ToolbarHelper as JoomlaToolbarHelper;
 use Joomla\CMS\Uri\Uri;
@@ -91,13 +92,18 @@ class ToolbarHelper
 
         $toolbar = self::getToolbar();
 
-        // Build export URL with CSV format
-        $uri             = Uri::getInstance();
+        // Clone: Uri::getInstance() is the request-wide singleton, and everything set below
+        // would otherwise follow it into every URL built after this button — including the
+        // return= that Toolbar::preferences() base64s out of the same instance.
+        $uri             = clone Uri::getInstance();
         $query           = $uri->getQuery(true);
         $query['format'] = 'csv';
         $query['option'] = 'com_j2commerce';
         $query['view']   = $view;
         $query['task']   = $task;
+
+        // The target reads with checkToken('get'), so the link has to carry the token.
+        $query[Session::getFormToken()] = 1;
 
         $uri->setQuery($query);
         $exportUrl = $uri->toString();

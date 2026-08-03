@@ -27,6 +27,19 @@ use Joomla\CMS\Session\Session;
  */
 class EmailtemplatesController extends AdminController
 {
+    use WriteAccessTrait;
+
+    protected string $writeAction = 'j2commerce.editsetup';
+
+    /** export streams the current templates; import and importProcess write, so they stay gated. */
+    protected function readTasks(): array
+    {
+        return [
+            'display',
+            'export',
+        ];
+    }
+
     /**
      * The prefix to use with controller messages.
      *

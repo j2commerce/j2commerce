@@ -28,6 +28,19 @@ use Joomla\CMS\Session\Session;
  */
 class CustomerController extends FormController
 {
+    use WriteAccessTrait;
+
+    protected string $writeAction = 'j2commerce.editorders';
+
+    /** ajaxGetAddressForm renders the address form for reading; it carries its own vieworders gate. */
+    protected function readTasks(): array
+    {
+        return [
+            'display',
+            'ajaxGetAddressForm',
+        ];
+    }
+
     /**
      * The prefix to use with controller messages.
      *

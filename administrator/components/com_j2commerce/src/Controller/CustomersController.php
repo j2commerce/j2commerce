@@ -24,6 +24,10 @@ use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
  */
 class CustomersController extends AdminController
 {
+    use WriteAccessTrait;
+
+    protected string $writeAction = 'j2commerce.editorders';
+
     /**
      * The prefix to use with controller messages.
      *

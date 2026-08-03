@@ -22,6 +22,10 @@ use Joomla\CMS\Router\Route;
  */
 class ShippingmethodController extends FormController
 {
+    use WriteAccessTrait;
+
+    protected string $writeAction = 'j2commerce.editsetup';
+
     /**
      * The prefix to use with controller messages.
      *

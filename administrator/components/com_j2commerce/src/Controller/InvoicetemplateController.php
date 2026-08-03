@@ -29,6 +29,22 @@ use Joomla\CMS\Versioning\VersionableControllerTrait;
 class InvoicetemplateController extends FormController
 {
     use VersionableControllerTrait;
+    use WriteAccessTrait;
+
+    protected string $writeAction = 'j2commerce.editsetup';
+
+    /**
+     * getTemplatePresets and loadTemplate read the shipped presets and template files.
+     * preview is not listed: it renders the submitted body against a real order row.
+     */
+    protected function readTasks(): array
+    {
+        return [
+            'display',
+            'getTemplatePresets',
+            'loadTemplate',
+        ];
+    }
 
     protected $text_prefix = 'COM_J2COMMERCE';
 

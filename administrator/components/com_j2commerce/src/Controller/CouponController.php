@@ -28,6 +28,10 @@ use Joomla\CMS\Router\Route;
  */
 class CouponController extends FormController
 {
+    use WriteAccessTrait;
+
+    protected string $writeAction = 'j2commerce.editorders';
+
     /**
      * The URL option for the component.
      *

@@ -22,6 +22,10 @@ use Joomla\CMS\Router\Route;
  */
 class OrderItemsController extends FormController
 {
+    use WriteAccessTrait;
+
+    protected string $writeAction = 'j2commerce.editorders';
+
     /**
      * The prefix to use with controller messages.
      *
