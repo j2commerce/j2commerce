@@ -34,6 +34,9 @@ final class J2commerce extends ActionLogPlugin implements SubscriberInterface
 
     private const EXTENSION = 'com_j2commerce';
 
+    /** Characters of export-filter text kept in one audit row. */
+    private const MAX_FILTER_DESCRIPTION = 1000;
+
     private const PRIORITY_BROWSE   = 1;
     private const PRIORITY_ACTION   = 2;
     private const PRIORITY_SUCCESS  = 3;
@@ -101,6 +104,7 @@ final class J2commerce extends ActionLogPlugin implements SubscriberInterface
             'onJ2CommerceAfterOrderStatusChange' => 'onAfterOrderStatusChange',
             'onJ2CommerceAfterAdminOrderCreate'  => 'onAfterAdminOrderCreate',
             'onJ2CommerceAfterAdminOrderEdit'    => 'onAfterAdminOrderEdit',
+            'onJ2CommerceAfterOrderExport'       => 'onAfterOrderExport',
             // Voucher balance events
             'onJ2CommerceVoucherBalanceAdjusted' => 'onVoucherBalanceAdjusted',
             // Admin content events (fired by Joomla's AdminModel)
@@ -393,18 +397,42 @@ final class J2commerce extends ActionLogPlugin implements SubscriberInterface
         $this->checkEmailNotification($langKey, self::PRIORITY_ACTION, $message);
     }
 
+    /**
+     * A bulk CSV extract of orders — the largest personal-data egress in the component,
+     * so it is logged at warning priority even though nothing was changed.
+     */
+    public function onAfterOrderExport(Event $event): void
+    {
+        if (!$this->params->get('log_order_events', 1)) {
+            return;
+        }
+
+        $args    = $this->extractArgs($event, 3);
+        $rows    = (int) ($args[0] ?? 0);
+        $filters = \is_array($args[1] ?? null) ? $args[1] : [];
+
+        $langKey = 'PLG_ACTIONLOG_J2COMMERCE_ORDER_EXPORT';
+        $message = $this->buildMessage($langKey, [
+            'rows'    => $rows,
+            'filters' => $this->describeExportFilters($filters),
+        ]);
+
+        $this->addLog([$message], $langKey, self::EXTENSION, $this->getUserId());
+        $this->checkEmailNotification($langKey, self::PRIORITY_WARNING, $message);
+    }
+
     public function onVoucherBalanceAdjusted(Event $event): void
     {
         if (!$this->params->get('log_admin_coupons', 1)) {
             return;
         }
 
-        $args        = $this->extractArgs($event, 5);
-        $voucherId   = (int) ($args[0] ?? 0);
-        $type        = (string) ($args[1] ?? '');
-        $delta       = (float) ($args[2] ?? 0.0);
-        $newBalance  = (float) ($args[3] ?? 0.0);
-        $reason      = (string) ($args[4] ?? '');
+        $args         = $this->extractArgs($event, 5);
+        $voucherId    = (int) ($args[0] ?? 0);
+        $type         = (string) ($args[1] ?? '');
+        $delta        = (float) ($args[2] ?? 0.0);
+        $newBalance   = (float) ($args[3] ?? 0.0);
+        $reason       = (string) ($args[4] ?? '');
         $signedAmount = ($delta >= 0 ? '+' : '') . number_format($delta, 2);
 
         $langKey = 'PLG_ACTIONLOG_J2COMMERCE_VOUCHER_BALANCE_ADJUSTED';
@@ -590,6 +618,44 @@ final class J2commerce extends ActionLogPlugin implements SubscriberInterface
         }
 
         return 'Desktop';
+    }
+
+    /**
+     * Flatten the applied export filters into one scalar for the log message. Must stay a
+     * string: core escapes every message value with htmlspecialchars(), which throws on an array.
+     */
+    private function describeExportFilters(array $filters): string
+    {
+        $parts = [];
+
+        foreach ($filters as $key => $value) {
+            if (\is_array($value)) {
+                $value = implode('|', array_map('strval', $value));
+            }
+
+            $value = trim((string) $value);
+
+            if ($value === '') {
+                continue;
+            }
+
+            $parts[] = $key . '=' . $value;
+        }
+
+        if ($parts === []) {
+            return Text::_('PLG_ACTIONLOG_J2COMMERCE_ORDER_EXPORT_NO_FILTERS');
+        }
+
+        // Capped because the values are request-controlled and #__action_logs.message is TEXT:
+        // padding a filter array until the row exceeds 65535 bytes would make the INSERT throw,
+        // and addLog() swallows that — the export would then complete with no audit row at all.
+        $description = implode(', ', $parts);
+
+        // mb_* so the cut never lands mid-character: invalid UTF-8 makes the json_encode()
+        // in addLog() return false and the audit row would be stored empty.
+        return mb_strlen($description) > self::MAX_FILTER_DESCRIPTION
+            ? mb_substr($description, 0, self::MAX_FILTER_DESCRIPTION) . '…'
+            : $description;
     }
 
     private function getUserId(): int

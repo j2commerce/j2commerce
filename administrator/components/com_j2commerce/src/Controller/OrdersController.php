@@ -159,16 +159,49 @@ class OrdersController extends AdminController
     {
         $this->checkToken();
 
-        if (!J2CommerceHelper::canAccess('j2commerce.editorders')) {
+        // Exporting is a read of every order at once, not an edit of one, so it is gated on
+        // vieworders plus its own action rather than on editorders: a merchant can grant the
+        // order screens without also handing out the whole customer list, and can revoke the
+        // bulk extract without taking away status changes.
+        $identity = $this->app->getIdentity();
+
+        if (
+            !$identity
+            || $identity->guest
+            || !J2CommerceHelper::canAccess('j2commerce.vieworders')
+            || !J2CommerceHelper::canAccess('j2commerce.exportorders')
+        ) {
             throw new \Exception(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 403);
         }
 
+        $filters = $this->getExportFiltersFromRequest();
+
         $model = $this->getModel('Orders', 'Administrator', ['ignore_request' => true]);
-        $model->setExportFilters($this->getExportFiltersFromRequest());
+        $model->setExportFilters($filters);
 
         $orderRefs = $model->getExportOrderIds();
         $orderIds  = array_map(static fn ($ref) => (string) $ref->order_id, $orderRefs);
         $maxItems  = $model->getExportMaxItemCount($orderIds);
+
+        // Actions log — dispatched before the CSV headers go out, so a listener that emits
+        // stray output cannot corrupt the download, and the extraction is recorded even if
+        // the stream dies part way. Fire-and-forget: logging must never break the export.
+        try {
+            \Joomla\CMS\Plugin\PluginHelper::importPlugin('actionlog');
+            $this->app->getDispatcher()->dispatch(
+                'onJ2CommerceAfterOrderExport',
+                new \Joomla\Event\Event('onJ2CommerceAfterOrderExport', [
+                    \count($orderIds),
+                    // in_array over the empty values each filter can actually hold: getFloat()
+                    // returns 0.0, and 0.0 !== 0, so a strict !== 0 would keep the amount range
+                    // on every request and the unfiltered-export case would never be logged.
+                    array_filter($filters, static fn ($value): bool => !\in_array($value, ['', 0, 0.0, []], true)),
+                    (int) $identity->id,
+                ])
+            );
+        } catch (\Throwable $e) {
+            // Ignore.
+        }
 
         $filename = 'orders_export_' . Factory::getDate('now')->format('Ymd_His') . '.csv';
 
@@ -222,7 +255,15 @@ class OrdersController extends AdminController
             return;
         }
 
-        if (!J2CommerceHelper::canAccess('j2commerce.editorders')) {
+        // Same pair as export() above: this counts the rows that export would return.
+        $identity = $this->app->getIdentity();
+
+        if (
+            !$identity
+            || $identity->guest
+            || !J2CommerceHelper::canAccess('j2commerce.vieworders')
+            || !J2CommerceHelper::canAccess('j2commerce.exportorders')
+        ) {
             echo json_encode(['success' => false, 'message' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
             $this->app->close();
             return;

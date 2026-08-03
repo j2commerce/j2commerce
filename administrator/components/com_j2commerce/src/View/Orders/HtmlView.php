@@ -48,7 +48,8 @@ class HtmlView extends BaseHtmlView
     public function display($tpl = null): void
     {
         if (!J2CommerceHelper::canAccess('j2commerce.vieworders')) {
-            J2CommerceHelper::denyAccess(); return;
+            J2CommerceHelper::denyAccess();
+            return;
         }
 
         $this->loadAdminAssets();
@@ -161,7 +162,9 @@ class HtmlView extends BaseHtmlView
 
             // Export button — opens an offcanvas panel instead of submitting a task,
             // so standardButton (which auto-submits via Joomla.submitbutton) can't be used.
-            if ($canEditOrders && $canDo->get('core.edit')) {
+            // Export is its own capability, not part of editorders: display() has already
+            // required vieworders, so this action alone decides whether the panel opens.
+            if (J2CommerceHelper::canAccess('j2commerce.exportorders')) {
                 $toolbar->customButton('export')
                     ->html(
                         '<joomla-toolbar-button>'

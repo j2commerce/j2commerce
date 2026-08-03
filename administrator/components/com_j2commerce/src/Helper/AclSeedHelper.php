@@ -42,6 +42,7 @@ class AclSeedHelper
     public const CUSTOM_ACL_ACTIONS = [
         'j2commerce.vieworders',
         'j2commerce.editorders',
+        'j2commerce.exportorders',
         'j2commerce.viewproducts',
         'j2commerce.editproducts',
         'j2commerce.viewreports',
@@ -62,8 +63,9 @@ class AclSeedHelper
      * for the ones that already do.
      *
      * 2 — 6.5.0 added j2commerce.editproducts and j2commerce.editsetup.
+     * 3 — 6.5.0 added j2commerce.exportorders.
      */
-    public const SEED_VERSION = 2;
+    public const SEED_VERSION = 3;
 
     /** Extension-params key holding the version of CUSTOM_ACL_ACTIONS last seeded. */
     public const SEED_VERSION_FLAG = 'acl_seed_version';
@@ -72,6 +74,7 @@ class AclSeedHelper
     private const ACTION_SEED_VERSION = [
         'j2commerce.editproducts' => 2,
         'j2commerce.editsetup'    => 2,
+        'j2commerce.exportorders' => 3,
     ];
 
     /**

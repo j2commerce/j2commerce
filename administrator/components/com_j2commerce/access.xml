@@ -12,6 +12,7 @@
         <action name="core.fulfilment" title="COM_J2COMMERCE_ACTION_FULFILMENT" description="COM_J2COMMERCE_ACTION_FULFILMENT_DESC" />
         <action name="j2commerce.vieworders" title="COM_J2COMMERCE_ACTION_VIEWORDERS" description="COM_J2COMMERCE_ACTION_VIEWORDERS_DESC" />
         <action name="j2commerce.editorders" title="COM_J2COMMERCE_ACTION_EDITORDERS" description="COM_J2COMMERCE_ACTION_EDITORDERS_DESC" />
+        <action name="j2commerce.exportorders" title="COM_J2COMMERCE_ACTION_EXPORTORDERS" description="COM_J2COMMERCE_ACTION_EXPORTORDERS_DESC" />
         <action name="j2commerce.viewproducts" title="COM_J2COMMERCE_ACTION_VIEWPRODUCTS" description="COM_J2COMMERCE_ACTION_VIEWPRODUCTS_DESC" />
         <action name="j2commerce.editproducts" title="COM_J2COMMERCE_ACTION_EDITPRODUCTS" description="COM_J2COMMERCE_ACTION_EDITPRODUCTS_DESC" />
         <action name="j2commerce.viewreports" title="COM_J2COMMERCE_ACTION_VIEWREPORTS" description="COM_J2COMMERCE_ACTION_VIEWREPORTS_DESC" />
