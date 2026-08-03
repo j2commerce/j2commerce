@@ -398,9 +398,15 @@ class OrdersController extends AdminController
 
     public function getQuickiconContent(): void
     {
-        $app = Factory::getApplication();
+        $app      = Factory::getApplication();
+        $identity = $app->getIdentity();
 
-        if (!$app->getIdentity()->authorise('core.manage', 'com_j2commerce')) {
+        if (
+            !$identity
+            || $identity->guest
+            || !$identity->authorise('core.manage', 'com_j2commerce')
+            || !J2CommerceHelper::canAccess('j2commerce.vieworders')
+        ) {
             echo new JsonResponse(null, Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), true);
             $app->close();
             return;

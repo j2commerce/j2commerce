@@ -15,6 +15,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\SampleDataHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -33,6 +34,9 @@ class DashboardController extends BaseController
 
         Session::checkToken('post') or die('Invalid Token');
 
+        // core.manage rather than a reports action on purpose: this returns Joomla session
+        // telemetry, not trading figures, and the widget renders on screens that do not
+        // require j2commerce.viewreports.
         $user = $this->app->getIdentity();
 
         if (!$user->authorise('core.manage', 'com_j2commerce')) {
@@ -65,7 +69,11 @@ class DashboardController extends BaseController
             return;
         }
 
-        if (!$this->app->getIdentity()->authorise('core.manage', 'com_j2commerce')) {
+        // This serves the same trading series as the Analytics endpoint, so it answers to the
+        // same action the Dashboard view uses to decide whether to render those figures.
+        $user = $this->app->getIdentity();
+
+        if (!$user || $user->guest || !J2CommerceHelper::canAccess('j2commerce.viewreports')) {
             $this->app->setHeader('Content-Type', 'application/json; charset=utf-8');
             $this->app->setHeader('status', '403');
             echo new JsonResponse(null, 'Access Denied', true);

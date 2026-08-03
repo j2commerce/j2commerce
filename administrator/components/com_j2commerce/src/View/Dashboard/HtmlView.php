@@ -60,6 +60,9 @@ class HtmlView extends BaseHtmlView
     public array $monthlySales = [];
     public array $yearlySales  = [];
 
+    /** Whether to build the trading figures at all; the template hides their blocks when false. */
+    public bool $canViewReports = false;
+
     // Plugin quick icons
     public array $pluginQuickIcons = [];
 
@@ -76,12 +79,17 @@ class HtmlView extends BaseHtmlView
     public function display($tpl = null): void
     {
         $this->loadAdminAssets();
-        $this->navbar = $this->getNavbar();
+        $this->navbar         = $this->getNavbar();
+        $this->canViewReports = J2CommerceHelper::canAccess('j2commerce.viewreports');
 
         // Register Chart.js and dashboard JS
         $wa = $this->getDocument()->getWebAssetManager();
-        $wa->registerAndUseScript('chartjs', 'media/com_j2commerce/vendor/chartjs/js/chart.umd.min.js', [], ['defer' => true]);
-        $wa->registerAndUseScript('com_j2commerce.dashboard', 'media/com_j2commerce/js/administrator/dashboard.js', [], ['defer' => true], ['chartjs']);
+
+        if ($this->canViewReports) {
+            $wa->registerAndUseScript('chartjs', 'media/com_j2commerce/vendor/chartjs/js/chart.umd.min.js', [], ['defer' => true]);
+            $wa->registerAndUseScript('com_j2commerce.dashboard', 'media/com_j2commerce/js/administrator/dashboard.js', [], ['defer' => true], ['chartjs']);
+        }
+
         $wa->registerAndUseScript('com_j2commerce.liveusers', 'media/com_j2commerce/js/administrator/liveusers.js', [], ['defer' => true]);
 
         // Default date range: last 30 days in store timezone
@@ -118,23 +126,25 @@ class HtmlView extends BaseHtmlView
         $this->hasProducts   = (bool) $db->loadResult();
         $this->hasSampleData = (new SampleDataHelper($db))->isLoaded();
 
-        // All-time sales data for tabs
-        $this->monthlySales = $model->getMonthlySales();
-        $this->yearlySales  = $model->getYearlySales();
+        if ($this->canViewReports) {
+            // All-time sales data for tabs
+            $this->monthlySales = $model->getMonthlySales();
+            $this->yearlySales  = $model->getYearlySales();
 
-        // Date-filtered KPIs from AnalyticsModel
-        $analyticsModel = Factory::getApplication()->bootComponent('com_j2commerce')
-            ->getMVCFactory()->createModel('Analytics', 'Administrator', ['ignore_request' => true]);
+            // Date-filtered KPIs from AnalyticsModel
+            $analyticsModel = Factory::getApplication()->bootComponent('com_j2commerce')
+                ->getMVCFactory()->createModel('Analytics', 'Administrator', ['ignore_request' => true]);
 
-        if ($analyticsModel) {
-            $this->totalRevenue   = $analyticsModel->getTotalRevenue($fromDateTime, $toDateTime);
-            $this->orderCount     = $analyticsModel->getOrderCount($fromDateTime, $toDateTime);
-            $this->revenueByDay   = $analyticsModel->getRevenueByDay($fromDateTime, $toDateTime);
-            $this->previousPeriod = $analyticsModel->getPreviousPeriodData($fromDateTime, $toDateTime);
+            if ($analyticsModel) {
+                $this->totalRevenue   = $analyticsModel->getTotalRevenue($fromDateTime, $toDateTime);
+                $this->orderCount     = $analyticsModel->getOrderCount($fromDateTime, $toDateTime);
+                $this->revenueByDay   = $analyticsModel->getRevenueByDay($fromDateTime, $toDateTime);
+                $this->previousPeriod = $analyticsModel->getPreviousPeriodData($fromDateTime, $toDateTime);
 
-            $breakdown            = $analyticsModel->getConversionBreakdown($fromDateTime, $toDateTime);
-            $this->conversionRate = (float) ($breakdown['overallRate'] ?? 0.0);
-            $this->totalSessions  = (int) ($breakdown['totalSessions'] ?? 0);
+                $breakdown            = $analyticsModel->getConversionBreakdown($fromDateTime, $toDateTime);
+                $this->conversionRate = (float) ($breakdown['overallRate'] ?? 0.0);
+                $this->totalSessions  = (int) ($breakdown['totalSessions'] ?? 0);
+            }
         }
 
         // Currency formatting
@@ -146,24 +156,26 @@ class HtmlView extends BaseHtmlView
         $dateFormat = $params->get('date_format', 'Y-m-d H:i:s');
 
         // Pass data to JavaScript
-        $this->getDocument()->addScriptOptions('com_j2commerce.dashboard', [
-            'totalRevenue'     => $this->totalRevenue,
-            'orderCount'       => $this->orderCount,
-            'conversionRate'   => $this->conversionRate,
-            'totalSessions'    => $this->totalSessions,
-            'revenueByDay'     => $this->revenueByDay,
-            'previousPeriod'   => $this->previousPeriod,
-            'monthlySales'     => $this->monthlySales,
-            'yearlySales'      => $this->yearlySales,
-            'from'             => $this->fromDate,
-            'to'               => $this->toDate,
-            'ajaxUrl'          => 'index.php?option=com_j2commerce&task=dashboard.getData&format=json',
-            'currencySymbol'   => $this->currencySymbol,
-            'currencyPosition' => $this->currencyPosition,
-            'dateFormat'       => $dateFormat,
-            'formattedRevenue' => $this->formattedRevenue,
-            'storeTimezone'    => $tz,
-        ]);
+        if ($this->canViewReports) {
+            $this->getDocument()->addScriptOptions('com_j2commerce.dashboard', [
+                'totalRevenue'     => $this->totalRevenue,
+                'orderCount'       => $this->orderCount,
+                'conversionRate'   => $this->conversionRate,
+                'totalSessions'    => $this->totalSessions,
+                'revenueByDay'     => $this->revenueByDay,
+                'previousPeriod'   => $this->previousPeriod,
+                'monthlySales'     => $this->monthlySales,
+                'yearlySales'      => $this->yearlySales,
+                'from'             => $this->fromDate,
+                'to'               => $this->toDate,
+                'ajaxUrl'          => 'index.php?option=com_j2commerce&task=dashboard.getData&format=json',
+                'currencySymbol'   => $this->currencySymbol,
+                'currencyPosition' => $this->currencyPosition,
+                'dateFormat'       => $dateFormat,
+                'formattedRevenue' => $this->formattedRevenue,
+                'storeTimezone'    => $tz,
+            ]);
+        }
 
         // Plugin dashboard tabs (DashboardMainTabContent/DashboardSideTabContent) are
         // dispatched by tmpl/dashboard/default.php inside the open uitab.startTabSet —

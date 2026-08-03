@@ -15,6 +15,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Controller\BaseController;
@@ -43,10 +44,12 @@ class AnalyticsController extends BaseController
             return;
         }
 
-        // ACL
+        // ACL — the same action the Analytics view requires, so the screen and the series
+        // behind it answer to one permission. canAccess() keeps the core.manage fallback
+        // while the action is still awaiting its seed.
         $user = $this->app->getIdentity();
 
-        if (!$user->authorise('core.manage', 'com_j2commerce')) {
+        if (!$user || $user->guest || !J2CommerceHelper::canAccess('j2commerce.viewreports')) {
             $this->app->setHeader('Content-Type', 'application/json; charset=utf-8');
             $this->app->setHeader('status', '403');
             echo new JsonResponse(null, 'Access Denied', true);

@@ -96,6 +96,7 @@ $doc->getWebAssetManager()
     </div>
     <?php endif; ?>
 
+    <?php if ($this->canViewReports) : ?>
     <!-- Date Filter Bar -->
     <div class="row mb-4">
         <div class="col-12">
@@ -186,6 +187,7 @@ $doc->getWebAssetManager()
             </nav>
         </div>
     </div>
+    <?php endif; ?>
 
     <?php if (!empty($this->dashboardMessages)) : ?>
         <div class="mb-5" id="j2commerce-dashboard-messages-wrap">
