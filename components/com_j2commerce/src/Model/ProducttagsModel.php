@@ -232,18 +232,25 @@ class ProducttagsModel extends ListModel
 
         // Set sortby state for template dropdown selection (format: "column DIRECTION")
         // This matches the dropdown option values in ProductHelper::getSortingOptions()
-        $sortbyForTemplate = $listOrdering !== 'a.ordering' ? $listOrdering . ' ' . $listDirection : $listOrdering;
+        $sortbyForTemplate = $listOrdering;
+        if ($listOrdering !== 'a.ordering') {
+            $sortbyForTemplate = $listOrdering . ' ' . $listDirection;
+        }
         $this->setState('sortby', $sortbyForTemplate);
 
         // Search filter from frontend - support both 'filter_search' and 'search' params
-        $search = $input->getString('filter_search', '') ?: $input->getString('search', '');
+        $search = $input->getString('filter_search', '');
+        if (empty($search)) {
+            $search = $input->getString('search', '');
+        }
         $this->setState('filter.search', $search);
         $this->setState('search', $search); // Also set 'search' for template access
 
         // Pagination
         $limit      = $params->get('page_limit', $app->get('list_limit', 20));
-        $limitstart = $input->getInt('limitstart', 0);
         $this->setState('list.limit', (int) $limit);
+
+        $limitstart = $input->getInt('limitstart', 0);
         $this->setState('list.start', $limitstart);
 
         // Sidebar filter state — single source of truth via ProductFilterRequestHelper.
@@ -259,6 +266,16 @@ class ProducttagsModel extends ListModel
             $this->setState('filter.price_from', $filterState['price_from']);
             $this->setState('filter.price_to', $filterState['price_to']);
         }
+
+        // Keep the session in sync with the URL-resolved filter state so that
+        // default_filters.php renders checkboxes correctly on full page loads.
+        // When the user navigates to the product list without filter params in
+        // the URL, resolveFromRequest() returns empty arrays and the session is
+        // cleared — preventing stale filter chips from reappearing.
+        $session = $app->getSession();
+        $session->set('manufacturer_ids', array_map('intval', $filterState['manufacturer_ids']), 'j2commerce');
+        $session->set('vendor_ids', array_map('intval', $filterState['vendor_ids']), 'j2commerce');
+        $session->set('productfilter_ids', array_map('intval', $filterState['productfilter_ids']), 'j2commerce');
 
         // Language filter
         $this->setState('filter.language', Multilanguage::isEnabled());
@@ -305,6 +322,8 @@ class ProducttagsModel extends ListModel
         $id .= ':' . serialize($this->getState('filter.productfilter_ids', []));
         $id .= ':' . $this->getState('filter.price_from', 0);
         $id .= ':' . $this->getState('filter.price_to', 0);
+        $id .= ':' . $this->getState('list.ordering');
+        $id .= ':' . $this->getState('list.direction');
 
         return parent::getStoreId($id);
     }
@@ -343,6 +362,7 @@ class ProducttagsModel extends ListModel
             $db->quoteName('a.title', 'product_name'),
             $db->quoteName('a.alias'),
             $db->quoteName('a.introtext', 'product_short_desc'),
+            $db->quoteName('a.fulltext', 'product_long_desc'),
             $db->quoteName('a.catid'),
             $db->quoteName('a.state', 'article_state'),
             $db->quoteName('a.access'),
@@ -492,6 +512,12 @@ class ProducttagsModel extends ListModel
 
         $query->order($db->quoteName($orderCol) . ' ' . $orderDir);
 
+        // Deterministic tie-breaker so rows that share an order value (e.g. products
+        // whose article ordering is still 0) keep a stable, predictable sequence.
+        if ($orderCol !== 'a.id') {
+            $query->order($db->quoteName('a.id') . ' ' . $orderDir);
+        }
+
         return $query;
     }
 
@@ -564,11 +590,10 @@ class ProducttagsModel extends ListModel
      */
     public function getFilters(array $items = []): array
     {
-        // Honour the `list_manufacturer_filter_list_type` menu param: when set to
-        // 'selected', restrict the manufacturer filter list to manufacturers actually
-        // represented in the current (tag-matched) product set instead of every store
-        // manufacturer. null = show all (default behaviour).
-        $params                  = $this->getState('params');
+        $params = $this->getState('params');
+
+        // Honour the `list_manufacturer_filter_list_type` menu param: 'selected' restricts
+        // the manufacturer filter to brands represented in the current category listing.
         $manufacturerListType    = $params ? $params->get('list_manufacturer_filter_list_type', 'all') : 'all';
         $restrictManufacturerIds = $manufacturerListType === 'selected'
             ? $this->getMatchingManufacturerIds()
@@ -576,24 +601,85 @@ class ProducttagsModel extends ListModel
 
         $filters = ProductHelper::getFilters($items, [], $restrictManufacturerIds);
 
-        // Override price range with actual prices from tag-filtered items
-        if (!empty($items)) {
-            $prices = [];
-            foreach ($items as $item) {
-                $price = (float) ($item->pricing->price ?? $item->price ?? 0);
-                if ($price > 0) {
-                    $prices[] = $price;
-                }
-            }
-            if (!empty($prices)) {
-                $filters['pricefilters'] = [
-                    'min_price' => min($prices),
-                    'max_price' => max($prices),
-                ];
-            }
+        // ProductHelper::getPriceFilters() does a simple WHERE catid IN (...) and misses
+        // subcategory-expanded products. Override with a query that mirrors the same
+        // lft/rgt subcategory expansion used by getListQuery().
+        $priceRange = $this->getPriceRangeForListing();
+        if ($priceRange['max_price'] > 0) {
+            $filters['pricefilters'] = $priceRange;
         }
 
         return $filters;
+    }
+
+    /**
+     * Get the price range across ALL products that match the current listing filters,
+     * using the same subcategory expansion as getListQuery().
+     *
+     * @return  array{min_price: float, max_price: float}
+     *
+     * @since   6.5.0
+     */
+    private function getPriceRangeForListing(): array
+    {
+        $db             = $this->getDatabase();
+        $catids         = $this->getState('filter.catids', []);
+        $subcatLevels   = (int) $this->getState('filter.subcategory_levels', 3);
+        $effectivePrice = 'COALESCE(' . $db->quoteName('vc.min_child_price') . ', ' . $db->quoteName('v.price') . ')';
+
+        // Subquery: min child-variant price per product (handles variable/flexi products
+        // where the master variant price is $0).
+        $vcSub = $db->getQuery(true)
+            ->select([$db->quoteName('vc2.product_id'), 'MIN(' . $db->quoteName('vc2.price') . ') AS ' . $db->quoteName('min_child_price')])
+            ->from($db->quoteName('#__j2commerce_variants', 'vc2'))
+            ->where($db->quoteName('vc2.is_master') . ' = 0')
+            ->where($db->quoteName('vc2.price') . ' > 0')
+            ->group($db->quoteName('vc2.product_id'));
+
+        $query = $db->getQuery(true)
+            ->select(['MIN(' . $effectivePrice . ') AS min_price', 'MAX(' . $effectivePrice . ') AS max_price'])
+            ->from($db->quoteName('#__j2commerce_variants', 'v'))
+            ->join('INNER', $db->quoteName('#__j2commerce_products', 'p') . ' ON ' . $db->quoteName('p.j2commerce_product_id') . ' = ' . $db->quoteName('v.product_id'))
+            ->join('INNER', $db->quoteName('#__content', 'a') . ' ON ' . $db->quoteName('a.id') . ' = ' . $db->quoteName('p.product_source_id'))
+            ->join('LEFT', '(' . $vcSub . ') AS ' . $db->quoteName('vc') . ' ON ' . $db->quoteName('vc.product_id') . ' = ' . $db->quoteName('p.j2commerce_product_id'))
+            ->where($db->quoteName('v.is_master') . ' = 1')
+            ->where($db->quoteName('p.enabled') . ' = 1')
+            ->where($db->quoteName('p.visibility') . ' = 1');
+
+        if (!empty($catids)) {
+            $sanitizedCatids = implode(',', array_map('intval', $catids));
+
+            if ($subcatLevels > 0) {
+                // Mirror the lft/rgt subcategory expansion from getListQuery().
+                $subQuery = $db->getQuery(true)
+                    ->select('DISTINCT ' . $db->quoteName('sub.id'))
+                    ->from($db->quoteName('#__categories', 'sub'))
+                    ->join(
+                        'INNER',
+                        $db->quoteName('#__categories', 'this'),
+                        $db->quoteName('sub.lft') . ' > ' . $db->quoteName('this.lft')
+                        . ' AND ' . $db->quoteName('sub.lft') . ' < ' . $db->quoteName('this.rgt')
+                    )
+                    ->where($db->quoteName('this.id') . ' IN (' . $sanitizedCatids . ')')
+                    ->where($db->quoteName('sub.level') . ' <= ' . $db->quoteName('this.level') . ' + ' . $subcatLevels);
+
+                $query->where(
+                    '(' . $db->quoteName('a.catid') . ' IN (' . $subQuery . ')'
+                    . ' OR ' . $db->quoteName('a.catid') . ' IN (' . $sanitizedCatids . '))'
+                );
+            } else {
+                $query->whereIn($db->quoteName('a.catid'), array_map('intval', $catids));
+            }
+        }
+
+        $db->setQuery($query);
+        $result = $db->loadObject();
+
+        if ($result && $result->min_price !== null && $result->max_price !== null) {
+            return ['min_price' => (float) $result->min_price, 'max_price' => (float) $result->max_price];
+        }
+
+        return ['min_price' => 0.0, 'max_price' => 0.0];
     }
 
     /**
