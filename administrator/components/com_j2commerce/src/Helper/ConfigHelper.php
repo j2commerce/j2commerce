@@ -349,34 +349,71 @@ class ConfigHelper
         return (string) self::get('date_format', 'Y-m-d H:i:s');
     }
 
-    /** Storage root for customer-uploaded order files, relative to JPATH_ROOT. */
+    /**
+     * Storage root for customer-uploaded order files, relative to JPATH_ROOT.
+     * Backslashes are normalised so a Windows-typed value names the same directory
+     * the installer prepares on every platform.
+     */
     public static function getAttachmentPath(): string
     {
-        $value = trim((string) self::get('attachmentfolderpath', ''), '/');
+        $value = trim((string) self::get('attachmentfolderpath', ''));
+        $value = trim(str_replace('\\', '/', $value), '/');
 
-        return $value !== '' ? $value : 'files/com_j2commerce';
+        return $value !== '' ? $value : AttachmentDenyFileHelper::DEFAULT_PATH;
     }
 
     /**
-     * Absolute on-disk path to the attachment root, with traversal guard.
-     * Returns null when the resolved path falls outside JPATH_ROOT.
+     * Absolute on-disk path to the attachment root, with the same traversal guard as the
+     * installer: '.'/'..'/absolute values are rejected before touching the filesystem, the
+     * prefix test is separator-aware so a sibling of the site root cannot pass, and the
+     * site root itself is rejected. When this call creates the tree — an admin relocating
+     * the path in Options does that on the next upload — the deny pair is written with it,
+     * so the new tree is never left readable over HTTP until the next install or update.
      *
      * @since  6.3.0
      */
     public static function getAttachmentAbsolutePath(): ?string
     {
         $relative = self::getAttachmentPath();
-        $absolute = JPATH_ROOT . '/' . $relative;
 
-        if (!is_dir($absolute) && !@mkdir($absolute, 0755, true) && !is_dir($absolute)) {
+        if (
+            $relative === '.'
+            || \in_array('..', explode('/', $relative), true)
+            || preg_match('#^[a-zA-Z]:#', $relative)
+        ) {
+            return null;
+        }
+
+        $absolute = JPATH_ROOT . '/' . $relative;
+        $created  = !is_dir($absolute) && @mkdir($absolute, 0755, true);
+
+        if (!$created && !is_dir($absolute)) {
             return null;
         }
 
         $real     = realpath($absolute);
         $rootReal = realpath(JPATH_ROOT);
 
-        if ($real === false || $rootReal === false || !str_starts_with($real, $rootReal)) {
+        if ($real === false || $rootReal === false) {
             return null;
+        }
+
+        $realNorm = rtrim(str_replace('\\', '/', $real), '/');
+        $rootNorm = rtrim(str_replace('\\', '/', $rootReal), '/');
+
+        if ($realNorm === $rootNorm || !str_starts_with($realNorm . '/', $rootNorm . '/')) {
+            return null;
+        }
+
+        // Also re-attempted when the pair is missing, not only on the run that creates the
+        // tree: a request that died between the mkdir and the write would otherwise leave the
+        // tree readable over HTTP for good, and no later call would notice. One stat in the
+        // steady state.
+        if ($created || !is_file($real . '/.htaccess')) {
+            AttachmentDenyFileHelper::writeDenyPair(
+                $real,
+                AttachmentDenyFileHelper::ownsTree($real, $created, $relative === AttachmentDenyFileHelper::DEFAULT_PATH)
+            );
         }
 
         return $real;
