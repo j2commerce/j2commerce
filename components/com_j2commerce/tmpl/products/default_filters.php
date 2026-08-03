@@ -495,7 +495,9 @@ document.addEventListener('DOMContentLoaded', () => {
         updateDisplays(parseFloat(rangeMin.value), max);
     });
 
-    updateDisplays(currentMin, currentMax);
+    // Use the slider's ceiled/floored positions so the label matches the thumb.
+    // currentMin/currentMax are raw DB floats; the slider snaps to integers.
+    updateDisplays(sliderCurrentMin, sliderCurrentMax);
 })();
 </script>
 <?php endif; ?>
