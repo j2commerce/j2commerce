@@ -120,7 +120,15 @@ abstract class J2CommerceApiController extends ApiController
     }
 
     /**
-     * Throw unless the caller holds $action, plus $coreVerb when one is given.
+     * Throw unless the caller holds core.manage plus $action, and $coreVerb when one is given.
+     *
+     * core.manage is a precondition rather than one capability among several: the ACL seed
+     * materialises the j2commerce.* actions as explicit allows on the component asset for
+     * every group that held core.manage when it ran, and from then on those allows stand on
+     * their own. ComponentDispatcher::checkAccess() applies core.manage for the administrator
+     * client only, and ApiDispatcher::dispatch() never calls checkAccess() at all, so without
+     * the floor below a revoked core.manage closes the admin screens while leaving the whole
+     * API surface open to the same group.
      *
      * j2commerce.* actions go through canAccess(), which honours an explicit deny and keeps
      * the pre-seed core.manage fallback, so this reads the same way the admin views do.
@@ -129,7 +137,7 @@ abstract class J2CommerceApiController extends ApiController
     {
         $user = $this->app->getIdentity();
 
-        if (!$user || $user->guest || $action === '') {
+        if (!$user || $user->guest || $action === '' || !$user->authorise('core.manage', 'com_j2commerce')) {
             throw new NotAllowed('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN', 403);
         }
 

@@ -106,7 +106,10 @@ class OrderfulfilmentController extends J2CommerceApiController
     /** Gap 1 — write ordershipping_tracking_id. */
     public function saveTracking()
     {
-        $this->assertCan(['core.fulfilment', 'core.edit']);
+        // Same conjunct as changeStatus(): the admin twin (OrderController::ajaxSaveTracking()
+        // -> checkOrderEditAccess() -> checkAjaxAccess('core.edit', 'j2commerce.editorders'))
+        // has required editorders since #1433/#1438, and this route writes the same column.
+        $this->assertCan(['core.fulfilment', 'core.edit'], 'j2commerce.editorders');
 
         $pk         = $this->getRouteId();
         $trackingId = trim((string) $this->input->json->getString('tracking_id', ''));
@@ -139,6 +142,13 @@ class OrderfulfilmentController extends J2CommerceApiController
      * overrides dispatch() without calling checkAccess(), so unlike the admin surface there
      * is no core.manage floor here, and a capability listed alongside a j2commerce.* action
      * would let a caller past a deny the merchant configured deliberately.
+     *
+     * For the same reason every alternative except core.fulfilment counts only behind
+     * core.manage: core.edit is inherited from the root asset and the j2commerce.* actions
+     * were written by the ACL seed, so either can outlive the core.manage revoke that removes
+     * the group from the administrator. core.fulfilment is declared for these three routes
+     * alone and is never seeded or inherited, so a warehouse token granted it deliberately
+     * keeps working without component management rights.
      */
     private function assertCan(array $actions, string $requires = ''): void
     {
@@ -146,7 +156,11 @@ class OrderfulfilmentController extends J2CommerceApiController
         $allowed = false;
 
         foreach ($actions as $action) {
-            if ($user && $user->authorise($action, 'com_j2commerce')) {
+            if (!$user || !$user->authorise($action, 'com_j2commerce')) {
+                continue;
+            }
+
+            if ($action === 'core.fulfilment' || $user->authorise('core.manage', 'com_j2commerce')) {
                 $allowed = true;
                 break;
             }
