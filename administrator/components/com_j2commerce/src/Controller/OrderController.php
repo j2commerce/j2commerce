@@ -505,13 +505,17 @@ class OrderController extends FormController
     {
         header('Content-Type: application/json; charset=utf-8');
 
-        if (!$this->checkAjaxAccess()) {
+        // A read, so it gates on vieworders — the same action View/Order/HtmlView.php uses to
+        // withhold this exact data. core.edit is the wrong question to ask of a timeline.
+        if (!$this->checkOrderViewAccess()) {
             return;
         }
 
         $orderId = $this->input->post->getInt('order_id', 0);
         $page    = max(1, $this->input->post->getInt('page', 1));
-        $limit   = (int) $this->app->get('list_limit', 20);
+        // ?: 20 as the sibling at ajaxSearchProducts does — a 0 here would make the page-count
+        // division throw a DivisionByZeroError, which is an Error and escapes the catch below.
+        $limit   = (int) $this->app->get('list_limit', 20) ?: 20;
         $offset  = ($page - 1) * $limit;
 
         try {
@@ -778,18 +782,13 @@ class OrderController extends FormController
     /** CSRF + core.edit/core.create + the j2commerce.editorders gate for order-edit AJAX endpoints. */
     private function checkOrderEditAccess(string $action = 'core.edit'): bool
     {
-        if (!$this->checkAjaxAccess($action)) {
-            return false;
-        }
+        return $this->checkAjaxAccess($action, 'j2commerce.editorders');
+    }
 
-        if (!J2CommerceHelper::canAccess('j2commerce.editorders')) {
-            echo json_encode(['success' => false, 'message' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
-            $this->app->close();
-
-            return false;
-        }
-
-        return true;
+    /** CSRF + the j2commerce.vieworders gate for read-only order AJAX endpoints. */
+    private function checkOrderViewAccess(): bool
+    {
+        return $this->checkAjaxAccess('core.manage', 'j2commerce.vieworders');
     }
 
     /**
@@ -872,6 +871,16 @@ class OrderController extends FormController
         header('Content-Type: application/json; charset=utf-8');
 
         if (!$this->checkOrderEditAccess('core.create')) {
+            return;
+        }
+
+        // This saves a real, unblocked Joomla account into the com_users default group, so it
+        // asks for the capability that owns accounts as well as the one that owns orders.
+        // core.create on com_j2commerce is permission to build an order, not to mint a login.
+        if (!$this->app->getIdentity()->authorise('core.create', 'com_users')) {
+            echo json_encode(['success' => false, 'message' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
+            $this->app->close();
+
             return;
         }
 
@@ -1827,11 +1836,15 @@ class OrderController extends FormController
     }
 
     /**
-     * CSRF token + backend ACL gate for the order AJAX endpoints. On failure it
-     * emits the JSON error and closes the app, returning false so the caller
-     * can just `return`.
+     * CSRF token + backend ACL gate for the order AJAX endpoints: a core.* capability and
+     * the j2commerce.* action the endpoint belongs to. On failure it emits the JSON error
+     * and closes the app, returning false so the caller can just `return`.
+     *
+     * Private, and $j2Action is required, so an endpoint cannot be added later that takes
+     * the core check alone — which is how ajaxGetHistory came to serve the order timeline
+     * to a caller holding core.edit but denied j2commerce.vieworders.
      */
-    protected function checkAjaxAccess(string $action = 'core.edit'): bool
+    private function checkAjaxAccess(string $action, string $j2Action): bool
     {
         if (!$this->validateAjaxToken()) {
             echo json_encode(['success' => false, 'message' => Text::_('JINVALID_TOKEN')]);
@@ -1840,7 +1853,9 @@ class OrderController extends FormController
             return false;
         }
 
-        if (!$this->app->getIdentity()->authorise($action, 'com_j2commerce')) {
+        $user = $this->app->getIdentity();
+
+        if (!$user || $user->guest || !$user->authorise($action, 'com_j2commerce') || !J2CommerceHelper::canAccess($j2Action)) {
             echo json_encode(['success' => false, 'message' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
             $this->app->close();
 

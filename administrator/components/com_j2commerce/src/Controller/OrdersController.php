@@ -67,7 +67,17 @@ class OrdersController extends AdminController
     {
         $this->checkToken();
 
-        if (!J2CommerceHelper::canAccess('j2commerce.editorders')) {
+        // Same pair as the AJAX twin below and both OrderController twins. This is the bulk
+        // path: it moves stock, writes history, grants downloads and mails the customer for
+        // every selected order, with caller-supplied comment text.
+        $identity = $this->app->getIdentity();
+
+        if (
+            !$identity
+            || $identity->guest
+            || !$identity->authorise('core.edit', 'com_j2commerce')
+            || !J2CommerceHelper::canAccess('j2commerce.editorders')
+        ) {
             throw new \Exception(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 403);
         }
 
@@ -229,7 +239,18 @@ class OrdersController extends AdminController
     {
         $this->checkToken();
 
-        if (!$this->app->getIdentity()->authorise('core.delete', 'com_j2commerce')) {
+        // editorders as well as core.delete: this hard-cascades the order and every related
+        // row — items, addresses, history, shipping, discounts, fees, taxes, downloads — with
+        // no prior-state guard. core.delete is inherited globally by Administrator, so without
+        // the component's own action a merchant who denied editorders has not stopped it.
+        $identity = $this->app->getIdentity();
+
+        if (
+            !$identity
+            || $identity->guest
+            || !$identity->authorise('core.delete', 'com_j2commerce')
+            || !J2CommerceHelper::canAccess('j2commerce.editorders')
+        ) {
             throw new \Exception(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 403);
         }
 
