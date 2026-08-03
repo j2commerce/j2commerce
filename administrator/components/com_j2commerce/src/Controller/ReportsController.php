@@ -12,10 +12,8 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
 \defined('_JEXEC') or die;
 
-use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\AdminController;
-use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
 
@@ -53,8 +51,8 @@ class ReportsController extends AdminController
     /**
      * Display a single report plugin's view.
      *
-     * Loads the report plugin row from #__extensions and dispatches
-     * onJ2CommerceGetReportView (or onJ2CommerceGetReportExported for CSV).
+     * Resolves the report plugin row from #__extensions and hands off to the
+     * reportplugin route, which owns both the view and the CSV export.
      *
      * @return  void
      *
@@ -66,14 +64,6 @@ class ReportsController extends AdminController
 
         if (!$id) {
             $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=reports', false));
-            return;
-        }
-
-        // Check for CSV export request
-        $format = $this->input->getString('format', '');
-
-        if ($format === 'csv') {
-            $this->exportCsv($id);
             return;
         }
 
@@ -92,84 +82,6 @@ class ReportsController extends AdminController
             'index.php?option=com_j2commerce&view=reportplugin&plugin=' . $row->element . '&pluginview=report',
             false
         ));
-    }
-
-    /**
-     * Handle CSV export for a report plugin.
-     *
-     * @param   int  $id  The extension_id of the report plugin.
-     *
-     * @return  void
-     *
-     * @since   6.0.0
-     */
-    private function exportCsv(int $id): void
-    {
-        $app = Factory::getApplication();
-
-        // Load the report plugin row
-        $model = $this->getModel('Report', 'Administrator');
-        $row   = $model->getItem($id);
-
-        if (!$row || empty($row->element)) {
-            $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=reports', false));
-            $this->setMessage(Text::_('COM_J2COMMERCE_REPORT_NOT_FOUND'), 'error');
-            return;
-        }
-
-        // Load plugin language
-        $app->getLanguage()->load('plg_j2commerce_' . $row->element, JPATH_PLUGINS . '/j2commerce/' . $row->element, null, true);
-
-        // Dispatch export event
-        PluginHelper::importPlugin('j2commerce');
-        $event = new \Joomla\Event\Event('onJ2CommerceGetReportExported', [$row]);
-        $app->getDispatcher()->dispatch('onJ2CommerceGetReportExported', $event);
-        $results = $event->getArgument('result', []);
-
-        if (empty($results) || empty($results[0])) {
-            $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=reports&task=view&id=' . $id, false));
-            $this->setMessage(Text::_('COM_J2COMMERCE_REPORT_NO_DATA'), 'warning');
-            return;
-        }
-
-        $items       = $results[0];
-        $csvFilename = 'report_' . $row->element . '_' . date('Y-m-d') . '_' . time() . '.csv';
-
-        // Set headers for CSV download
-        $app->setHeader('Content-Type', 'text/csv; charset=utf-8');
-        $app->setHeader('Content-Disposition', 'attachment; filename="' . $csvFilename . '"');
-        $app->setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
-        $app->setHeader('Pragma', 'no-cache');
-        $app->setHeader('Expires', '0');
-        $app->sendHeaders();
-
-        // Output CSV
-        $output = fopen('php://output', 'w');
-
-        if (!empty($items)) {
-            // Header row from object keys
-            $firstItem = reset($items);
-            $keys      = array_keys((array) $firstItem);
-            fputcsv($output, $keys, ',', '"', '');
-
-            // Data rows
-            foreach ($items as $item) {
-                $row = [];
-                foreach ($keys as $key) {
-                    $value = $item->$key ?? '';
-                    if (\is_array($value)) {
-                        $value = 'Array';
-                    } elseif (\is_object($value)) {
-                        $value = 'Object';
-                    }
-                    $row[] = $value;
-                }
-                fputcsv($output, $row, ',', '"', '');
-            }
-        }
-
-        fclose($output);
-        $app->close();
     }
 
     /**
