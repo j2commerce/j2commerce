@@ -328,13 +328,20 @@ final class AppUikit extends CMSPlugin implements SubscriberInterface
                 $product->params = new Registry($product->params ?? '{}');
             }
 
-            echo '<div>';
-            echo ProductLayoutService::renderProductItem(
+            $itemHtml = ProductLayoutService::renderProductItem(
                 $product,
                 $params,
                 ProductLayoutService::CONTEXT_LIST,
                 $itemId
             );
+
+            // A product type with no registered layout renders nothing — skip the wrapper too.
+            if (trim($itemHtml) === '') {
+                continue;
+            }
+
+            echo '<div>';
+            echo $itemHtml;
             echo '</div>';
         }
 

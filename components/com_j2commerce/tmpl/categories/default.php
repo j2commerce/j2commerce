@@ -98,13 +98,21 @@ $category_columns = (int) $params->get('category_columns', 4);
                     <<?php echo $htag; ?>><?php echo Text::_('COM_J2COMMERCE_PRODUCTS'); ?></<?php echo $htag; ?>>
                     <div class="row g-3">
                         <?php foreach ($this->products as $product) : ?>
+                            <?php
+                            $itemHtml = ProductLayoutService::renderProductItem(
+                                $product,
+                                $params,
+                                ProductLayoutService::CONTEXT_LIST,
+                                $itemId
+                            );
+
+                            // A product type with no registered layout renders nothing — skip the wrapper too.
+                            if (trim($itemHtml) === '') {
+                                continue;
+                            }
+                            ?>
                             <div class="<?php echo $this->getProductColumnClass(); ?>">
-                                <?php echo ProductLayoutService::renderProductItem(
-                                    $product,
-                                    $params,
-                                    ProductLayoutService::CONTEXT_LIST,
-                                    $itemId
-                                ); ?>
+                                <?php echo $itemHtml; ?>
                             </div>
                         <?php endforeach; ?>
                     </div>
@@ -214,13 +222,21 @@ $category_columns = (int) $params->get('category_columns', 4);
                             <div class="swiper" id="<?php echo $swiperId; ?>">
                                 <div class="swiper-wrapper">
                                     <?php foreach ($this->trendingProducts as $product) : ?>
+                                        <?php
+                                        $itemHtml = ProductLayoutService::renderProductItem(
+                                            $product,
+                                            $params,
+                                            ProductLayoutService::CONTEXT_LIST,
+                                            $itemId
+                                        );
+
+                                        // A product type with no registered layout renders nothing — skip the slide too.
+                                        if (trim($itemHtml) === '') {
+                                            continue;
+                                        }
+                                        ?>
                                         <div class="swiper-slide">
-                                            <?php echo ProductLayoutService::renderProductItem(
-                                                $product,
-                                                $params,
-                                                ProductLayoutService::CONTEXT_LIST,
-                                                $itemId
-                                            ); ?>
+                                            <?php echo $itemHtml; ?>
                                         </div>
                                     <?php endforeach; ?>
                                 </div>
@@ -275,13 +291,21 @@ $category_columns = (int) $params->get('category_columns', 4);
                     <?php else : ?>
                         <div class="row g-3">
                             <?php foreach ($this->trendingProducts as $product) : ?>
+                                <?php
+                                $itemHtml = ProductLayoutService::renderProductItem(
+                                    $product,
+                                    $params,
+                                    ProductLayoutService::CONTEXT_LIST,
+                                    $itemId
+                                );
+
+                                // A product type with no registered layout renders nothing — skip the wrapper too.
+                                if (trim($itemHtml) === '') {
+                                    continue;
+                                }
+                                ?>
                                 <div class="<?php echo $this->getPopularColumnClass(); ?>">
-                                    <?php echo ProductLayoutService::renderProductItem(
-                                        $product,
-                                        $params,
-                                        ProductLayoutService::CONTEXT_LIST,
-                                        $itemId
-                                    ); ?>
+                                    <?php echo $itemHtml; ?>
                                 </div>
                             <?php endforeach; ?>
                         </div>

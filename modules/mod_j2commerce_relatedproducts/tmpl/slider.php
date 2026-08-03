@@ -45,13 +45,21 @@ $heading = !empty($headingText) ? $headingText : $defaultHeading;
     <div class="swiper" id="j2commerce-related-swiper-<?php echo $moduleId; ?>">
         <div class="swiper-wrapper">
             <?php foreach ($products as $product) : ?>
+                <?php
+                $itemHtml = ProductLayoutService::renderProductItem(
+                    $product,
+                    $params,
+                    ProductLayoutService::CONTEXT_MODULE,
+                    $itemId
+                );
+
+                // A product type with no registered layout renders nothing — skip the slide too.
+                if (trim($itemHtml) === '') {
+                    continue;
+                }
+                ?>
                 <div class="swiper-slide">
-                    <?php echo ProductLayoutService::renderProductItem(
-                        $product,
-                        $params,
-                        ProductLayoutService::CONTEXT_MODULE,
-                        $itemId
-                    ); ?>
+                    <?php echo $itemHtml; ?>
                 </div>
             <?php endforeach; ?>
         </div>

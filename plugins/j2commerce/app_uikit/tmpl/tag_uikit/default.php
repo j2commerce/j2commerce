@@ -81,9 +81,16 @@ if ($this->params->get('list_show_filter', 1) && $filterPosition === 'left'){
                             <?php if (!($product->params instanceof Registry)) {
                                 $product->params = new Registry($product->params ?? '{}');
                             }
+
+                            $itemHtml = ProductLayoutService::renderProductItem($product, $this->params, ProductLayoutService::CONTEXT_LIST . '.tag', $itemId);
+
+                            // A product type with no registered layout renders nothing — skip the wrapper too.
+                            if (trim($itemHtml) === '') {
+                                continue;
+                            }
                             ?>
                             <div>
-                                <?php echo ProductLayoutService::renderProductItem($product, $this->params, ProductLayoutService::CONTEXT_LIST . '.tag', $itemId); ?>
+                                <?php echo $itemHtml; ?>
                             </div>
                         <?php endforeach; ?>
                     </div>

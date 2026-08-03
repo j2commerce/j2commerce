@@ -33,16 +33,21 @@ $counter = 0;
     <?php foreach ($crossSells as $product): ?>
         <?php
         $product->params = $platform->getRegistry($product->params ?? '{}');
+
+        $itemHtml = ProductLayoutService::renderProductItem(
+            $product,
+            $this->params,
+            ProductLayoutService::CONTEXT_CROSSSELL,
+            0
+        );
+
+        // A product type with no registered layout renders nothing — skip the wrapper too.
+        if (trim($itemHtml) === '') {
+            continue;
+        }
         ?>
         <div>
-            <?php
-            echo ProductLayoutService::renderProductItem(
-                $product,
-                $this->params,
-                ProductLayoutService::CONTEXT_CROSSSELL,
-                0
-            );
-            ?>
+            <?php echo $itemHtml; ?>
         </div>
 
         <?php $counter++; ?>

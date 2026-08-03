@@ -38,14 +38,21 @@ $itemId   = isset($this->active_menu->id) ? (int) $this->active_menu->id : 0;
             <div class="swiper-wrapper">
                 <?php foreach ($this->up_sells as $upsell_product) :
                     $upsell_product->product_link = J2CommerceHelper::platform()->getProductUrl(['task' => 'view', 'id' => $upsell_product->j2commerce_product_id]);
+
+                    $itemHtml = ProductLayoutService::renderProductItem(
+                        $upsell_product,
+                        $this->params,
+                        ProductLayoutService::CONTEXT_UPSELL,
+                        $itemId
+                    );
+
+                    // A product type with no registered layout renders nothing — skip the slide too.
+                    if (trim($itemHtml) === '') {
+                        continue;
+                    }
                 ?>
                     <div class="swiper-slide">
-                        <?php echo ProductLayoutService::renderProductItem(
-                            $upsell_product,
-                            $this->params,
-                            ProductLayoutService::CONTEXT_UPSELL,
-                            $itemId
-                        ); ?>
+                        <?php echo $itemHtml; ?>
                     </div>
                 <?php endforeach; ?>
             </div>

@@ -42,14 +42,21 @@ $itemId      = isset($this->active_menu->id) ? (int) $this->active_menu->id : 0;
             <div class="swiper-wrapper">
                 <?php foreach ($cross_sells as $cross_sell_product) :
                     $cross_sell_product->product_link = $platform->getProductUrl(['task' => 'view', 'id' => $cross_sell_product->j2commerce_product_id]);
+
+                    $itemHtml = ProductLayoutService::renderProductItem(
+                        $cross_sell_product,
+                        $this->params,
+                        ProductLayoutService::CONTEXT_CROSSSELL,
+                        $itemId
+                    );
+
+                    // A product type with no registered layout renders nothing — skip the slide too.
+                    if (trim($itemHtml) === '') {
+                        continue;
+                    }
                 ?>
                     <div class="swiper-slide">
-                        <?php echo ProductLayoutService::renderProductItem(
-                            $cross_sell_product,
-                            $this->params,
-                            ProductLayoutService::CONTEXT_CROSSSELL,
-                            $itemId
-                        ); ?>
+                        <?php echo $itemHtml; ?>
                     </div>
                 <?php endforeach; ?>
             </div>

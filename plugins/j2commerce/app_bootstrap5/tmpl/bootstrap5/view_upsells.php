@@ -21,7 +21,24 @@ use Joomla\Registry\Registry;
 $app = Factory::getApplication();
 $wa = $app->getDocument()->getWebAssetManager();
 $upSells = ProductHelper::getUpSells($this->product);
-$total = count($upSells);
+
+// Pre-render: a product type with no registered layout returns an empty string and is dropped,
+// so it never claims a column and never skews the row chunking below.
+$renderedItems = [];
+
+foreach ($upSells as $product) {
+    if (!($product->params instanceof Registry)) {
+        $product->params = new Registry($product->params ?? '{}');
+    }
+
+    $itemHtml = ProductLayoutService::renderProductItem($product, $this->params, ProductLayoutService::CONTEXT_UPSELL);
+
+    if (trim($itemHtml) !== '') {
+        $renderedItems[] = $itemHtml;
+    }
+}
+
+$total = count($renderedItems);
 
 if ($total === 0) {
     return;
@@ -34,12 +51,8 @@ $counter  = 0;
 <div class="j2commerce-upsells-container mt-5 pt-4 border-top">
     <h3 class="text-center mb-5"><?php echo Text::_('COM_J2COMMERCE_RELATED_PRODUCTS_UPSELLS'); ?></h3>
 
-    <?php foreach ($upSells as $product) : ?>
+    <?php foreach ($renderedItems as $itemHtml) : ?>
         <?php
-        if (!($product->params instanceof Registry)) {
-            $product->params = new Registry($product->params ?? '{}');
-        }
-
         $rowcount = ($counter % $columns) + 1;
         if ($rowcount === 1) :
             $row = (int) ($counter / $columns);
@@ -48,7 +61,7 @@ $counter  = 0;
         <?php endif; ?>
 
         <div class="<?php echo $colClass; ?>">
-            <?php echo ProductLayoutService::renderProductItem($product,$this->params,ProductLayoutService::CONTEXT_UPSELL); ?>
+            <?php echo $itemHtml; ?>
         </div>
 
         <?php $counter++; ?>

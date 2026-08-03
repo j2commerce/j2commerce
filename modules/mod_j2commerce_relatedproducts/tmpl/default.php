@@ -59,13 +59,21 @@ $colClass = match ($columns) {
 
     <div class="row g-3">
         <?php foreach ($products as $product) : ?>
+            <?php
+            $itemHtml = ProductLayoutService::renderProductItem(
+                $product,
+                $params,
+                ProductLayoutService::CONTEXT_MODULE,
+                $itemId
+            );
+
+            // A product type with no registered layout renders nothing — skip the wrapper too.
+            if (trim($itemHtml) === '') {
+                continue;
+            }
+            ?>
             <div class="<?php echo $colClass; ?>">
-                <?php echo ProductLayoutService::renderProductItem(
-                    $product,
-                    $params,
-                    ProductLayoutService::CONTEXT_MODULE,
-                    $itemId
-                ); ?>
+                <?php echo $itemHtml; ?>
             </div>
         <?php endforeach; ?>
     </div>
