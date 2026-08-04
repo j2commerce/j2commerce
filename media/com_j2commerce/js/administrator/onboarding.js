@@ -297,8 +297,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (defaults) {
                 const tmpl = Joomla.Text._('COM_J2COMMERCE_ONBOARDING_DEFAULTS_PREVIEW');
                 preview.textContent = tmpl
-                    .replace('%s', defaults.weight_name || '')
-                    .replace('%s', defaults.length_name || '');
+                    .replace(/%1\$s|%s/, defaults.weight_name || '')
+                    .replace(/%2\$s|%s/, defaults.length_name || '');
                 preview.classList.remove('d-none');
             } else {
                 preview.textContent = '';

@@ -1153,8 +1153,8 @@ class CategoryWizard {
                     .reduce((sum, vals) => sum + vals.length, 0);
                 addItem('fa-solid fa-list text-muted',
                     (Joomla.Text._('COM_J2COMMERCE_WIZARD_CONFIRM_SUMMARY_OPTIONS'))
-                        .replace('%d', String(this.data.optionTitles.length))
-                        .replace('%d', String(totalValues)));
+                        .replace(/%1\$d|%d/, String(this.data.optionTitles.length))
+                        .replace(/%2\$d|%d/, String(totalValues)));
             }
 
             addItem('fa-solid fa-link text-muted',
@@ -1171,8 +1171,8 @@ class CategoryWizard {
                 const menuLabel     = this.data.menuType === 'categories' ? 'Product Categories' : 'Product Category';
                 addItem('fa-solid fa-link text-muted',
                     (Joomla.Text._('COM_J2COMMERCE_WIZARD_CONFIRM_SUMMARY_MENU_MULTI'))
-                        .replace('%d', String(menuItemCount))
-                        .replace('%s', menuLabel));
+                        .replace(/%1\$d|%d/, String(menuItemCount))
+                        .replace(/%2\$s|%s/, menuLabel));
             } else {
                 const catNames = this.data.categoryNames.filter((n) => n !== '');
                 const catCount = catNames.length;
@@ -1191,8 +1191,8 @@ class CategoryWizard {
                 const menuLabel     = this.data.menuType === 'categories' ? 'Product Categories' : 'Product Category';
                 addItem('fa-solid fa-link text-muted',
                     (Joomla.Text._('COM_J2COMMERCE_WIZARD_CONFIRM_SUMMARY_MENU_MULTI'))
-                        .replace('%d', String(menuItemCount))
-                        .replace('%s', menuLabel));
+                        .replace(/%1\$d|%d/, String(menuItemCount))
+                        .replace(/%2\$s|%s/, menuLabel));
             }
         }
     }

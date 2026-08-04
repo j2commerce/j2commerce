@@ -354,8 +354,8 @@
         const days = Math.round((new Date(to) - new Date(from)) / 86400000) + 1;
         const unit = Joomla.Text._(days === 1 ? 'COM_J2COMMERCE_DASHBOARD_DAY' : 'COM_J2COMMERCE_DASHBOARD_DAYS');
         el.replaceChildren(document.createRange().createContextualFragment(Joomla.Text._('COM_J2COMMERCE_DASHBOARD_DATA_BASED_ON')
-            .replace('%s', days)
-            .replace('%s', unit)));
+            .replace(/%1\$s|%s/, days)
+            .replace(/%2\$s|%s/, unit)));
     }
 
     // ─── AJAX Refresh (date-filtered only) ───
