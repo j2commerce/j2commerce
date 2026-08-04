@@ -49,6 +49,14 @@ final class J2commerceField extends FormField
             $language->load('com_j2commerce.sys', JPATH_ADMINISTRATOR . '/components/com_j2commerce');
             $language->load('plg_content_j2commerce', JPATH_ADMINISTRATOR);
 
+            // Users without editproducts permission see a notice instead of the edit form
+            $identity = $app->getIdentity();
+            if (!$identity || !$identity->authorise('j2commerce.editproducts', 'com_j2commerce')) {
+                return '<div class="alert alert-warning">'
+                    . Text::_('PLG_CONTENT_J2COMMERCE_NO_EDIT_PRODUCTS_PERMISSION')
+                    . '</div>';
+            }
+
             if ($app->isClient('administrator')) {
                 $articleId = $app->getInput()->getInt('id', 0);
             } else {
