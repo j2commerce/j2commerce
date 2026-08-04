@@ -18,7 +18,6 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Language;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Plugin\CMSPlugin;
-use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
 use Joomla\Database\DatabaseAwareTrait;
@@ -98,60 +97,10 @@ final class ReportItemised extends CMSPlugin implements SubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            // New dispatcher events (ReportpluginController pattern)
             'onJ2CommerceReportPluginView'   => 'onReportPluginView',
             'onJ2CommerceReportPluginAjax'   => 'onReportPluginAjax',
             'onJ2CommerceReportPluginExport' => 'onReportPluginExport',
-            // Legacy events (backwards compatibility)
-            'onJ2CommerceGetReportView'     => 'onGetReportView',
-            'onJ2CommerceGetReportExported' => 'onGetReportExported',
         ];
-    }
-
-    /**
-     * Render the report view (legacy route).
-     *
-     * @param  Event  $event  The event object. Arg[0] = plugin row from #__extensions.
-     *
-     * @return  void
-     * @since  6.0.0
-     */
-    public function onGetReportView(Event $event): void
-    {
-        $args = $event->getArguments();
-        $row  = $args[0] ?? null;
-
-        if (!$this->isMe($row)) {
-            return;
-        }
-
-        $html = $this->renderReport();
-
-        $result   = $event->getArgument('result', []);
-        $result[] = $html;
-        $event->setArgument('result', $result);
-    }
-
-    /**
-     * Export report data as CSV (legacy route).
-     *
-     * @param  Event  $event  The event object.
-     *
-     * @return  void
-     * @since  6.0.0
-     */
-    public function onGetReportExported(Event $event): void
-    {
-        $args = $event->getArguments();
-        $row  = $args[0] ?? null;
-
-        if (!$this->isMe($row)) {
-            return;
-        }
-
-        $result   = $event->getArgument('result', []);
-        $result[] = $this->buildExportData();
-        $event->setArgument('result', $result);
     }
 
     /**
@@ -419,78 +368,4 @@ final class ReportItemised extends CMSPlugin implements SubscriberInterface
         return ob_get_clean();
     }
 
-    /**
-     * Render the full report HTML (legacy route).
-     *
-     * @return  string
-     * @since  6.0.0
-     */
-    private function renderReport(): string
-    {
-        $app = Factory::getApplication();
-
-        // Use plugin model directly for legacy route too
-        $model = $this->createModel();
-        $items = $model->getItems();
-
-        $vars           = new \stdClass();
-        $vars->items    = $items;
-        $vars->currency = J2CommerceHelper::currency();
-        $vars->reportId = $app->getInput()->getInt('id', 0);
-
-        // Build chart data
-        $vars->chartLabels = [];
-        $vars->chartValues = [];
-
-        foreach ($items as $item) {
-            $vars->chartLabels[] = $item->orderitem_name;
-            $vars->chartValues[] = (int) $item->total_qty;
-        }
-
-        $vars->listOrder = $model->getState('list.ordering', 'total_qty');
-        $vars->listDirn  = $model->getState('list.direction', 'DESC');
-
-        $vars->formAction = Route::_('index.php?option=com_j2commerce&view=reports&task=view&id=' . $vars->reportId);
-
-        // Register Chart.js before template rendering
-        if (!empty($vars->chartLabels)) {
-            $app->getDocument()->getWebAssetManager()
-                ->registerAndUseScript(
-                    'chartjs',
-                    'media/com_j2commerce/vendor/chartjs/js/chart.umd.min.js',
-                    [],
-                    ['defer' => false]
-                );
-        }
-
-        // Render template via output buffering
-        $layoutFile  = PluginHelper::getLayoutPath('j2commerce', $this->_element);
-        $displayData = $vars;
-
-        ob_start();
-        include $layoutFile;
-
-        return ob_get_clean();
-    }
-
-    /**
-     * Check if this plugin matches the given report element.
-     *
-     * @param  mixed  $row  Plugin row object or string element name
-     *
-     * @return  bool
-     * @since  6.0.0
-     */
-    private function isMe($row): bool
-    {
-        if (\is_object($row) && !empty($row->element)) {
-            return $row->element === $this->_element;
-        }
-
-        if (\is_string($row)) {
-            return $row === $this->_element;
-        }
-
-        return false;
-    }
 }
