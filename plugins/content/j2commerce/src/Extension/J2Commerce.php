@@ -493,6 +493,12 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             return;
         }
 
+        // Save-path ACL guard: block crafted POST submissions from users without editproducts.
+        // The tab is already hidden for these users, but this prevents bypassing the UI gate.
+        if (!J2CommerceHelper::canAccess('j2commerce.editproducts')) {
+            return;
+        }
+
         // Get stored attribs
         $allAttribs = $app->getInput()->get('j2commerce_all_attribs', '', 'RAW');
         $attribs    = json_decode($allAttribs);
@@ -908,10 +914,31 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         $html      = $this->getProductBlock($product, $context);
         $imageHtml = $this->getProductImageHtml($product, $context, $article, $params);
 
+        $productHtml = $imageHtml . $html;
+
+        /*
+         * Which property does the current view actually write to?
+         *   - Blog / category / featured renders $article->introtext in blog_item.php
+         *   - The single-article view renders $article->text (introtext + fulltext)
+         *
+         * Therefore write to the correct field depending on context, and ONLY append.
+         * Do not overwrite introtext/fulltext and do not reassemble text from
+         * introtext . fulltext — that caused the fulltext leak in the blog view.
+         *
+         * top:    product  →  existing content
+         * bottom: existing content  →  product
+         */
+        $isListContext = \in_array($context, ['com_content.category', 'com_content.featured'], true);
+        $targetProp    = $isListContext ? 'introtext' : 'text';
+
+        if (!isset($article->$targetProp)) {
+            $article->$targetProp = '';
+        }
+
         if ($position === 'top') {
-            $article->text = $imageHtml . $html . $article->text;
+            $article->$targetProp = $productHtml . $article->$targetProp;
         } else {
-            $article->text = $article->text . $imageHtml . $html;
+            $article->$targetProp .= $productHtml;
         }
     }
 
@@ -967,6 +994,11 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         $displayData['showPrice']   = true;
         $displayData['showTitle']   = false;
         $displayData['showImage']   = false;
+        // Do NOT render the description: the article text (introtext/fulltext) is
+        // already output by com_content. Since the product description for article-based
+        // products is populated from exactly that text, rendering it here would cause
+        // it to appear as a duplicate (double introtext).
+        $displayData['showDescription'] = false;
         $displayData['showOptions'] = $showOptions;
 
         return ProductLayoutService::renderLayout('list.category.item', $displayData);
