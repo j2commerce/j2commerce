@@ -999,7 +999,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         // products is populated from exactly that text, rendering it here would cause
         // it to appear as a duplicate (double introtext).
         $displayData['showDescription'] = false;
-        $displayData['showOptions'] = $showOptions;
+        $displayData['showOptions']     = $showOptions;
 
         return ProductLayoutService::renderLayout('list.category.item', $displayData);
     }
