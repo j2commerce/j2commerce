@@ -96,11 +96,11 @@ class JsonapiView extends J2CommerceJsonapiView
         $now = time();
 
         return match (true) {
-            !$item->enabled => 'disabled',
-            !empty($item->valid_to) && strtotime((string) $item->valid_to) < $now => 'expired',
+            !$item->enabled                                                           => 'disabled',
+            !empty($item->valid_to) && strtotime((string) $item->valid_to) < $now     => 'expired',
             !empty($item->valid_from) && strtotime((string) $item->valid_from) > $now => 'not_yet_valid',
-            $remaining <= 0 => 'depleted',
-            default => 'active',
+            $remaining <= 0                                                           => 'depleted',
+            default                                                                   => 'active',
         };
     }
 }
