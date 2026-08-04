@@ -125,6 +125,13 @@ class HtmlView extends BaseHtmlView
             );
         }
 
+        // Saves as it goes, so it answers to the same permission the save buttons do.
+        if (!$checkedOut && ($canDo->get('core.edit') || $canDo->get('core.create'))) {
+            $toolbar->standardButton('addallcountries', 'COM_J2COMMERCE_GEOZONE_ADD_ALL_COUNTRIES', 'geozone.addAllCountries')
+                ->icon('fa-solid fa-earth-americas')
+                ->listCheck(false);
+        }
+
         $toolbar->cancel('geozone.cancel', $isNew ? 'JTOOLBAR_CANCEL' : 'JTOOLBAR_CLOSE');
         $toolbar->divider();
         ToolbarHelper::help(Text::_('COM_J2COMMERCE_GEOZONES'), true, 'https://docs.j2commerce.com/v6/localization/geozones/');

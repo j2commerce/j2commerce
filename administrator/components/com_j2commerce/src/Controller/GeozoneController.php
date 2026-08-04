@@ -18,7 +18,9 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\FormController;
 use Joomla\CMS\Response\JsonResponse;
+use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
+use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
 
 /**
@@ -107,6 +109,24 @@ class GeozoneController extends FormController
 
         // Capture geozonerules from raw input (outside jform namespace)
         $geozonerules = $this->input->post->get('geozonerules', [], 'array');
+
+        // Saving replaces the whole rule set, so a POST cut short by max_input_vars would delete
+        // the rows that never arrived. Refuse the save instead and say what to raise.
+        if ($this->rulePostWasTruncated($geozonerules)) {
+            $app->setUserState($context . '.data', $data);
+            $this->setRedirect(
+                Route::_(
+                    'index.php?option=' . $this->option . '&view=' . $this->view_item
+                    . $this->getRedirectToItemAppend((int) ($data['j2commerce_geozone_id'] ?? 0) ?: null, 'id'),
+                    false
+                ),
+                $this->truncatedRulesMessage(),
+                'error'
+            );
+
+            return false;
+        }
+
         if (!empty($geozonerules)) {
             $data['geozonerules'] = $geozonerules;
         }
@@ -259,6 +279,254 @@ class GeozoneController extends FormController
         }
 
         return true;
+    }
+
+    /**
+     * Append a rule for every enabled country that the geo zone does not already list.
+     *
+     * Saves through the model rather than inserting directly: saveGeozoneRules() replaces the
+     * whole set on every save, so the rules already on screen have to travel with the new ones
+     * or they would be dropped. A country already present keeps the zone it was given.
+     *
+     * @since   6.5.0
+     */
+    public function addAllCountries(): void
+    {
+        $this->checkToken();
+
+        $app      = $this->app;
+        $model    = $this->getModel();
+        $data     = $this->input->post->get('jform', [], 'array');
+        $recordId = (int) ($data['j2commerce_geozone_id'] ?? 0);
+        $context  = "$this->option.edit.$this->context";
+
+        $redirect = Route::_(
+            'index.php?option=' . $this->option . '&view=' . $this->view_item
+            . $this->getRedirectToItemAppend($recordId ?: null, 'id'),
+            false
+        );
+
+        if (!$this->allowSave($data, $this->key)) {
+            $this->setRedirect($redirect, Text::_('JLIB_APPLICATION_ERROR_SAVE_NOT_PERMITTED'), 'error');
+
+            return;
+        }
+
+        // The name is what makes the record saveable, and the button has to save to renumber the
+        // rows it adds. The form guard catches this first; this is the backstop.
+        if (trim((string) ($data['geozone_name'] ?? '')) === '') {
+            $app->setUserState($context . '.data', $data);
+            $this->setRedirect($redirect, Text::_('COM_J2COMMERCE_GEOZONE_ERR_NAME_REQUIRED_FOR_ADD_ALL'), 'warning');
+
+            return;
+        }
+
+        $form = $model->getForm($data, false);
+
+        if (!$form) {
+            $this->setRedirect($redirect, $model->getError(), 'error');
+
+            return;
+        }
+
+        $validData = $model->validate($form, $data);
+
+        if ($validData === false) {
+            foreach ($model->getErrors() as $error) {
+                $app->enqueueMessage($error instanceof \Exception ? $error->getMessage() : $error, 'warning');
+            }
+
+            $app->setUserState($context . '.data', $data);
+            $this->setRedirect($redirect);
+
+            return;
+        }
+
+        $submitted = $this->input->post->get('geozonerules', [], 'array');
+
+        if ($this->rulePostWasTruncated($submitted)) {
+            $this->setRedirect($redirect, $this->truncatedRulesMessage(), 'error');
+
+            return;
+        }
+
+        $rules                     = $this->mergeAllCountriesIntoRules($submitted, $added);
+        $validData['geozonerules'] = $rules;
+
+        if (!$model->save($validData)) {
+            $app->setUserState($context . '.data', $validData);
+            $this->setRedirect($redirect, Text::sprintf('JLIB_APPLICATION_ERROR_SAVE_FAILED', $model->getError()), 'error');
+
+            return;
+        }
+
+        $recordId = (int) $model->getState($model->getName() . '.id');
+        $this->holdEditId($context, $recordId);
+        $app->setUserState($context . '.data', null);
+
+        $this->warnIfNearInputVarLimit(\count($rules));
+
+        $message = $added > 0
+            ? Text::sprintf('COM_J2COMMERCE_GEOZONE_N_COUNTRIES_ADDED', $added)
+            : Text::_('COM_J2COMMERCE_GEOZONE_ALL_COUNTRIES_PRESENT');
+
+        $this->setRedirect(
+            Route::_(
+                'index.php?option=' . $this->option . '&view=' . $this->view_item
+                . $this->getRedirectToItemAppend($recordId, 'id'),
+                false
+            ),
+            $message,
+            $added > 0 ? 'message' : 'info'
+        );
+    }
+
+    /**
+     * True when PHP dropped rule rows from the POST because it hit max_input_vars.
+     *
+     * Every save replaces the whole rule set, so a short POST does not merely fail to add rows —
+     * it deletes the ones that never arrived. The form renders geozonerules_rendered after the
+     * last rule row and PHP truncates in document order, so a missing marker means the rows above
+     * it were cut; a marker higher than what arrived means the array itself was cut.
+     *
+     * @since   6.5.0
+     */
+    private function rulePostWasTruncated(array $submitted): bool
+    {
+        $rendered = $this->input->post->get('geozonerules_rendered', null, 'raw');
+
+        // Absent on a form that predates the marker, and on a page with no rules to lose.
+        if ($rendered === null || $rendered === '') {
+            return $submitted !== [] && \count($_POST, COUNT_RECURSIVE) >= $this->maxInputVars();
+        }
+
+        return \count($submitted) < (int) $rendered;
+    }
+
+    /** Names the host limit and the value it needs, since the store owner cannot infer either. */
+    private function truncatedRulesMessage(): string
+    {
+        $limit    = $this->maxInputVars();
+        $rendered = (int) $this->input->post->get('geozonerules_rendered', 0, 'raw');
+
+        $recommended = max(2000, (int) (ceil((($rendered * 3) + 100) / 500) * 500));
+
+        return Text::sprintf(
+            'COM_J2COMMERCE_GEOZONE_ERR_RULES_TRUNCATED',
+            $limit === PHP_INT_MAX ? 0 : $limit,
+            $recommended
+        );
+    }
+
+    /** Rule rows the host can carry in one POST, from max_input_vars minus the rest of the form. */
+    private function maxInputVars(): int
+    {
+        $limit = (int) \ini_get('max_input_vars');
+
+        // 0 or unreadable means no ceiling is being enforced.
+        return $limit > 0 ? $limit : PHP_INT_MAX;
+    }
+
+    /**
+     * Warn when the rule set is close enough to max_input_vars that the next ordinary save
+     * would be truncated, and name the value the host should be raised to.
+     *
+     * @since   6.5.0
+     */
+    private function warnIfNearInputVarLimit(int $ruleCount): void
+    {
+        $limit = $this->maxInputVars();
+
+        if ($limit === PHP_INT_MAX) {
+            return;
+        }
+
+        // Three inputs per rule, plus the rest of the form and Joomla's own fields.
+        $needed = ($ruleCount * 3) + 100;
+
+        if ($needed <= $limit * 0.9) {
+            return;
+        }
+
+        // Round up to the next 500 so the advice survives the zone growing a little.
+        $recommended = max(2000, (int) (ceil($needed / 500) * 500));
+
+        $this->app->enqueueMessage(
+            Text::sprintf('COM_J2COMMERCE_GEOZONE_WARN_MAX_INPUT_VARS', $ruleCount, $limit, $recommended),
+            'warning'
+        );
+    }
+
+    /**
+     * Merge the submitted rules with one row per enabled country, keeping the zone already chosen.
+     *
+     * @param   array     $submitted  Rules as posted from the edit form.
+     * @param   int|null  $added      Set to the number of countries appended.
+     *
+     * @since   6.5.0
+     */
+    private function mergeAllCountriesIntoRules(array $submitted, ?int &$added): array
+    {
+        $merged        = [];
+        $seenPairs     = [];
+        $seenCountries = [];
+
+        foreach ($submitted as $rule) {
+            $countryId = (int) ($rule['country_id'] ?? 0);
+            $zoneId    = (int) ($rule['zone_id'] ?? 0);
+
+            // An empty row is the blank the Add Country/Zone button leaves behind; drop it rather
+            // than carrying it into a set that is about to list every country anyway.
+            if ($countryId === 0) {
+                continue;
+            }
+
+            // Keyed on the pair, not the country: one country may legitimately carry a row per
+            // zone, and the model replaces the whole set on save, so collapsing to one row here
+            // would delete the others outright.
+            $pairKey = $countryId . ':' . $zoneId;
+
+            if (isset($seenPairs[$pairKey])) {
+                continue;
+            }
+
+            $seenPairs[$pairKey]         = true;
+            $seenCountries[$countryId]   = true;
+            $merged[]                    = [
+                'j2commerce_geozonerule_id' => (int) ($rule['j2commerce_geozonerule_id'] ?? 0),
+                'country_id'                => $countryId,
+                'zone_id'                   => $zoneId,
+            ];
+        }
+
+        $db    = Factory::getContainer()->get(DatabaseInterface::class);
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('j2commerce_country_id'))
+            ->from($db->quoteName('#__j2commerce_countries'))
+            ->where($db->quoteName('enabled') . ' = 1')
+            ->order($db->quoteName('country_name') . ' ASC');
+
+        $db->setQuery($query);
+        $added = 0;
+
+        // A country holding any rule already counts as listed, whichever zones those rules name.
+        foreach ($db->loadColumn() as $countryId) {
+            $countryId = (int) $countryId;
+
+            if (isset($seenCountries[$countryId])) {
+                continue;
+            }
+
+            $seenCountries[$countryId] = true;
+            $merged[]                  = [
+                'j2commerce_geozonerule_id' => 0,
+                'country_id'                => $countryId,
+                'zone_id'                   => 0,
+            ];
+            $added++;
+        }
+
+        return $merged;
     }
 
     /**

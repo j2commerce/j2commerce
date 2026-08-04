@@ -25,6 +25,8 @@ $wa = $this->getDocument()->getWebAssetManager();
 $wa->useScript('keepalive')
     ->useScript('form.validate');
 
+Text::script('COM_J2COMMERCE_GEOZONE_ERR_NAME_REQUIRED_FOR_ADD_ALL');
+
 // Get the countries list for dropdown
 $db = Factory::getContainer()->get('DatabaseDriver');
 $query = $db->getQuery(true);
@@ -98,7 +100,7 @@ $token = Session::getFormToken();
                             <tr>
                                 <th style="width: 40%"><?php echo Text::_('COM_J2COMMERCE_FIELD_COUNTRY'); ?></th>
                                 <th style="width: 40%"><?php echo Text::_('COM_J2COMMERCE_FIELD_ZONE'); ?></th>
-                                <th style="width: 20%"><?php echo Text::_('JACTION_DELETE'); ?></th>
+                                <th style="width: 20%" class="text-end"><?php echo Text::_('JACTION_DELETE'); ?></th>
                             </tr>
                         </thead>
                         <tbody id="geozone-rules-body">
@@ -129,9 +131,9 @@ $token = Session::getFormToken();
                                             </select>
                                             <input type="hidden" name="geozonerules[<?php echo $rowIndex; ?>][j2commerce_geozonerule_id]" value="<?php echo (int) $rule->j2commerce_geozonerule_id; ?>">
                                         </td>
-                                        <td>
-                                            <button type="button" class="btn btn-sm btn-danger" onclick="J2CommerceGeozone.removeRule(<?php echo (int) $rule->j2commerce_geozonerule_id; ?>, <?php echo $rowIndex; ?>)">
-                                                <span class="icon-trash" aria-hidden="true"></span> <?php echo Text::_('JACTION_DELETE'); ?>
+                                        <td class="text-end">
+                                            <button type="button" class="btn btn-danger" onclick="J2CommerceGeozone.removeRule(<?php echo (int) $rule->j2commerce_geozonerule_id; ?>, <?php echo $rowIndex; ?>)">
+                                                <span class="icon-trash me-1" aria-hidden="true"></span> <?php echo Text::_('JACTION_DELETE'); ?>
                                             </button>
                                         </td>
                                     </tr>
@@ -149,6 +151,10 @@ $token = Session::getFormToken();
                             </tr>
                         </tfoot>
                     </table>
+
+                    <?php // Rendered after every rule row on purpose: PHP drops input variables ?>
+                    <?php // past max_input_vars in document order, so this arrives only if they all did. ?>
+                    <input type="hidden" name="geozonerules_rendered" id="geozonerules_rendered" value="<?php echo $rowIndex; ?>">
                 </fieldset>
             </div>
             <div class="col-lg-3">
@@ -168,6 +174,41 @@ $token = Session::getFormToken();
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     'use strict';
+
+    // Add All Countries saves the record so the rows it adds come back numbered from the
+    // database, and the record cannot save without a name. Block the submit rather than let
+    // the round trip fail on the server.
+    const coreSubmitButton = Joomla.submitbutton;
+
+    Joomla.submitbutton = function(task) {
+        // Tell the server how many rule rows this page meant to send, so a POST cut short by
+        // max_input_vars is detected instead of being saved as a smaller set of rules.
+        const renderedField = document.getElementById('geozonerules_rendered');
+
+        if (renderedField) {
+            renderedField.value = String(
+                document.querySelectorAll('#geozone-rules-body tr').length
+            );
+        }
+
+        if (task === 'geozone.addAllCountries') {
+            const nameField = document.getElementById('jform_geozone_name');
+
+            if (!nameField || nameField.value.trim() === '') {
+                Joomla.renderMessages({
+                    warning: [Joomla.Text._('COM_J2COMMERCE_GEOZONE_ERR_NAME_REQUIRED_FOR_ADD_ALL')]
+                });
+
+                if (nameField) {
+                    nameField.focus();
+                }
+
+                return false;
+            }
+        }
+
+        return coreSubmitButton(task);
+    };
 
     // Countries data for new rows
     const countries = <?php echo json_encode(array_map(function($c) {
