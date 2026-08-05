@@ -14,6 +14,8 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 
 \defined('_JEXEC') or die;
 
+use Joomla\CMS\Categories\CategoryNode;
+use Joomla\CMS\Categories\CategoryServiceInterface;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Filter\OutputFilter;
@@ -312,7 +314,10 @@ class ArticleHelper
         $db    = self::getDatabase();
         $query = $db->createQuery();
 
-        $query->select('*')
+        // Column list covers every property read by this helper's own consumers
+        // (display(), getArticleLink()) and by the shipped plugins that call
+        // getArticle(). `fulltext` is a MySQL reserved word — quoteName() is required.
+        $query->select($db->quoteName(['id', 'title', 'introtext', 'fulltext', 'catid', 'language', 'state', 'access']))
             ->from($db->quoteName('#__content'))
             ->where($db->quoteName('id') . ' = :id')
             ->bind(':id', $id, ParameterType::INTEGER);
@@ -362,7 +367,7 @@ class ArticleHelper
         $db    = self::getDatabase();
         $query = $db->createQuery();
 
-        $query->select('*')
+        $query->select($db->quoteName(['id', 'title', 'alias', 'introtext', 'fulltext', 'catid', 'language', 'state', 'access']))
             ->from($db->quoteName('#__content'));
 
         if ($contentId > 0) {
@@ -692,15 +697,19 @@ class ArticleHelper
     // =========================================================================
 
     /**
-     * Get a category by ID.
+     * Get a content category by ID.
+     *
+     * Delegates to the core com_content category service rather than querying
+     * `#__categories` directly. `access => false` and `published => 0` keep the
+     * previous behaviour of returning categories regardless of state or view level.
      *
      * @param   int  $id  The category ID.
      *
-     * @return  object|null  Category object or null if not found.
+     * @return  CategoryNode|null  Category node or null if not found.
      *
      * @since   6.0.0
      */
-    public static function getCategoryById(int $id): ?object
+    public static function getCategoryById(int $id): ?CategoryNode
     {
         if ($id < 1) {
             return null;
@@ -710,16 +719,13 @@ class ArticleHelper
             return self::$categoryCache[$id];
         }
 
-        $db    = self::getDatabase();
-        $query = $db->createQuery();
+        $component = Factory::getApplication()->bootComponent('com_content');
 
-        $query->select('*')
-            ->from($db->quoteName('#__categories'))
-            ->where($db->quoteName('id') . ' = :id')
-            ->bind(':id', $id, ParameterType::INTEGER);
+        if (!$component instanceof CategoryServiceInterface) {
+            return null;
+        }
 
-        $db->setQuery($query);
-        $category = $db->loadObject();
+        $category = $component->getCategory(['access' => false, 'published' => 0])->get($id);
 
         self::$categoryCache[$id] = $category ?: null;
 
