@@ -31,7 +31,7 @@ $wa->registerAndUseScript('com_j2commerce.a11y', 'media/com_j2commerce/js/site/j
 $wa->registerAndUseScript('com_j2commerce.filters', 'media/com_j2commerce/js/site/j2commerce-filters.es6.js', [], ['defer' => true], []);
 
 $itemId = isset($this->active_menu->id) ? (int) $this->active_menu->id : 0;
-$activeLink = Route::_(RouteHelper::getProductsRoute($this->filter_catid ?? null));
+$activeLink = Route::_(RouteHelper::getProductsRoute(!empty($this->filter_catid) ? (int) $this->filter_catid : null));
 $filterPosition = $this->params->get('list_filter_position', 'right');
 
 $app->getDocument()->addScriptOptions('j2commerce.Itemid', $itemId);
@@ -113,7 +113,7 @@ if ($this->params->get('list_show_filter', 1) && $filterPosition === 'left'){
                             </div>
                         <?php endforeach; ?>
                     </div>
-                    <form id="j2commerce-pagination" name="j2commercepagination" action="<?php echo Route::_(RouteHelper::getProductsRoute($this->filter_catid ?? null)); ?>" method="post">
+                    <form id="j2commerce-pagination" name="j2commercepagination" action="<?php echo Route::_(RouteHelper::getProductsRoute(!empty($this->filter_catid) ? (int) $this->filter_catid : null)); ?>" method="post">
                         <input type="hidden" name="option" value="com_j2commerce" />
                         <input type="hidden" name="view" value="products" />
                         <input type="hidden" name="task" id="task" value="browse" />

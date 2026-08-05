@@ -646,10 +646,28 @@ class J2CommerceFilters {
         });
     }
 
+    // A layout may render the filter form twice (UIkit ships a mobile offcanvas copy
+    // alongside the desktop sidebar), so every chip target is addressed as a set.
+    // The bare ids are kept in the set for template overrides that predate the classes.
+    filterChipTargets() {
+        const collect = (className, id) => {
+            const nodes = new Set(document.querySelectorAll('.' + className));
+            const legacy = document.getElementById(id);
+
+            if (legacy) nodes.add(legacy);
+
+            return [...nodes];
+        };
+
+        return {
+            containers: collect('j2commerce-active-filter-tiles', 'j2commerce-active-filter-tiles'),
+            clearAllButtons: collect('j2commerce-clear-all-filters', 'j2commerce-clear-all-filters'),
+        };
+    }
+
     buildActiveFilterTiles() {
-        const container = document.getElementById('j2commerce-active-filter-tiles');
-        const clearAllBtn = document.getElementById('j2commerce-clear-all-filters');
-        if (!container) return;
+        const { containers, clearAllButtons } = this.filterChipTargets();
+        if (containers.length === 0) return;
 
         const tiles = [];
 
@@ -698,13 +716,15 @@ class J2CommerceFilters {
         }
 
         // Update only the tiles content and "Clear all" visibility — wrapper stays visible
-        container.replaceChildren();
-        if (tiles.length > 0) {
-            container.append(document.createRange().createContextualFragment(tiles.join('')));
-        }
-        if (clearAllBtn) {
-            clearAllBtn.style.display = tiles.length > 0 ? '' : 'none';
-        }
+        containers.forEach(container => {
+            container.replaceChildren();
+            if (tiles.length > 0) {
+                container.append(document.createRange().createContextualFragment(tiles.join('')));
+            }
+        });
+        clearAllButtons.forEach(btn => {
+            btn.style.display = tiles.length > 0 ? '' : 'none';
+        });
     }
 
     createTileHtml(type, id, displayLabel) {
@@ -728,7 +748,10 @@ class J2CommerceFilters {
             this.removeFilter(chip.dataset.type, chip.dataset.id);
         });
 
-        document.getElementById('j2commerce-clear-all-filters')?.addEventListener('click', (e) => {
+        // Delegated so every rendered copy of the "Clear all" control is covered.
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.j2commerce-clear-all-filters, #j2commerce-clear-all-filters')) return;
+
             e.preventDefault();
             this.resetAllFilters();
         });
@@ -750,23 +773,25 @@ class J2CommerceFilters {
     }
 
     removeFilter(type, id) {
-        const findByValue = (selector) =>
-            Array.from(this.filterForm?.querySelectorAll(selector) || []).find(cb => cb.value === id);
+        // Document-wide, not scoped to this.filterForm: a layout may render the filter
+        // form twice, and clearing only one copy leaves the other checked — collectFilterData()
+        // reads every checkbox in the document, so the filter would survive its own removal.
+        const uncheckByValue = (selector) =>
+            document.querySelectorAll(selector).forEach(cb => {
+                if (cb.value === id) cb.checked = false;
+            });
 
         switch (type) {
             case 'brand': {
-                const cb = findByValue('.j2commerce-brand-checkboxes');
-                if (cb) cb.checked = false;
+                uncheckByValue('.j2commerce-brand-checkboxes');
                 break;
             }
             case 'vendor': {
-                const cb = findByValue('.j2commerce-vendor-checkboxes');
-                if (cb) cb.checked = false;
+                uncheckByValue('.j2commerce-vendor-checkboxes');
                 break;
             }
             case 'productfilter': {
-                const cb = findByValue('[class*="j2commerce-pfilter-checkboxes"]');
-                if (cb) cb.checked = false;
+                uncheckByValue('[class*="j2commerce-pfilter-checkboxes"]');
                 break;
             }
             case 'price': {

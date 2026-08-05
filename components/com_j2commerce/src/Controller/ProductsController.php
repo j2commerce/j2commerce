@@ -93,7 +93,7 @@ class ProductsController extends AdminProductsController
             $manufacturerIds  = $filterState['manufacturer_ids'];
             $vendorIds        = $filterState['vendor_ids'];
             $productfilterIds = $filterState['productfilter_ids'];
-            $tagIds           = $filterState['tag_ids'];
+            $tagIds           = array_filter(array_map('intval', $filterState['tag_ids']));
             $tagMatch         = $filterState['tag_match'];
             $priceFrom        = $filterState['price_from'];
             $priceTo          = $filterState['price_to'];
@@ -129,6 +129,18 @@ class ProductsController extends AdminProductsController
                 if ($menuItem && $menuItem->component === 'com_j2commerce') {
                     $params = clone $app->getParams();
                     $params->merge($menuItem->getParams());
+
+                    // Backstop for a layout that renders no filter_catid carrier (a template
+                    // override predating the wrapper attribute): re-derive the category from
+                    // the menu item, the same way ProductsModel::populateState() does.
+                    if ($catid === 0 && empty($tagIds) && ($menuItem->query['view'] ?? '') === 'products') {
+                        $catid = (int) ($menuItem->query['catid'] ?? 0);
+
+                        if (!$catid && !empty($menuItem->link)) {
+                            parse_str(parse_url($menuItem->link, PHP_URL_QUERY) ?: '', $linkQuery);
+                            $catid = (int) ($linkQuery['catid'] ?? 0);
+                        }
+                    }
                 } else {
                     $params = $app->getParams();
                 }
@@ -144,7 +156,6 @@ class ProductsController extends AdminProductsController
                 $input->set('catid', $catid);
             }
 
-            $tagIds = array_filter(array_map('intval', $tagIds));
             if (!empty($tagIds)) {
                 $model = $this->getModel('Producttags', 'Site');
                 $model->getState();
@@ -195,7 +206,6 @@ class ProductsController extends AdminProductsController
 
             $items      = $model->getItems();
             $pagination = $model->getPagination();
-            $filters    = $model->getFilters($items);
 
             $subtemplate = $params->get('subtemplate', '');
             if (!empty($subtemplate)) {

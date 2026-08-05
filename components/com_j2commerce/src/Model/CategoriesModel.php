@@ -508,8 +508,21 @@ class CategoriesModel extends BaseDatabaseModel
         $query->where($db->quoteName('p.enabled') . ' = 1');
         $query->where($db->quoteName('p.visibility') . ' = 1');
 
-        // Filter by published articles
+        // Filter by published articles in a published category
         $query->where($db->quoteName('a.state') . ' = 1');
+        $query->where($db->quoteName('c.published') . ' = 1');
+
+        // Honour the article publish window — a future publish_up or an elapsed
+        // publish_down must hide the product, same as com_content does.
+        $nowDate = Factory::getDate()->toSql();
+        $query->where(
+            '(' . $db->quoteName('a.publish_up') . ' IS NULL OR ' . $db->quoteName('a.publish_up') . ' <= :publishUp)'
+        )
+            ->where(
+                '(' . $db->quoteName('a.publish_down') . ' IS NULL OR ' . $db->quoteName('a.publish_down') . ' >= :publishDown)'
+            )
+            ->bind(':publishUp', $nowDate)
+            ->bind(':publishDown', $nowDate);
 
         // Filter by access level
         $groups = $user->getAuthorisedViewLevels();
@@ -596,10 +609,11 @@ class CategoriesModel extends BaseDatabaseModel
 
     public function getPopularProducts(int $categoryId, int $limit = 12): array
     {
-        $db     = $this->getDatabase();
-        $query  = $db->getQuery(true);
-        $user   = $this->getCurrentUser();
-        $groups = $user->getAuthorisedViewLevels();
+        $db      = $this->getDatabase();
+        $query   = $db->getQuery(true);
+        $user    = $this->getCurrentUser();
+        $groups  = $user->getAuthorisedViewLevels();
+        $nowDate = Factory::getDate()->toSql();
 
         // Get category and all its descendant IDs for deep product aggregation
         $categoryIds   = $this->getCategoryDescendants($categoryId);
@@ -627,6 +641,15 @@ class CategoriesModel extends BaseDatabaseModel
             ->where($db->quoteName('p.enabled') . ' = 1')
             ->where($db->quoteName('p.visibility') . ' = 1')
             ->where($db->quoteName('a.state') . ' = 1')
+            ->where($db->quoteName('c.published') . ' = 1')
+            ->where(
+                '(' . $db->quoteName('a.publish_up') . ' IS NULL OR ' . $db->quoteName('a.publish_up') . ' <= :publishUp)'
+            )
+            ->where(
+                '(' . $db->quoteName('a.publish_down') . ' IS NULL OR ' . $db->quoteName('a.publish_down') . ' >= :publishDown)'
+            )
+            ->bind(':publishUp', $nowDate)
+            ->bind(':publishDown', $nowDate)
             ->whereIn($db->quoteName('a.access'), $groups)
             ->whereIn($db->quoteName('c.access'), $groups)
             ->whereIn($db->quoteName('a.catid'), $categoryIds)
