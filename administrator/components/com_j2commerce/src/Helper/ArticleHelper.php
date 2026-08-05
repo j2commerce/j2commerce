@@ -19,7 +19,6 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Filter\OutputFilter;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Associations;
-use Joomla\CMS\Language\LanguageAssociations;
 use Joomla\CMS\Language\LanguageHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
@@ -223,7 +222,7 @@ class ArticleHelper
         $urlSelect    = $linkArticles . '&amp;function=jSelectJ2Article_' . $id;
         if ($value) {
             $db    = Factory::getContainer()->get('DatabaseDriver');
-            $query = $db->getQuery(true)
+            $query = $db->createQuery()
                 ->select($db->quoteName('title'))
                 ->from($db->quoteName('#__content'))
                 ->where($db->quoteName('id') . ' = :value')
@@ -311,7 +310,7 @@ class ArticleHelper
         }
 
         $db    = self::getDatabase();
-        $query = $db->getQuery(true);
+        $query = $db->createQuery();
 
         $query->select('*')
             ->from($db->quoteName('#__content'))
@@ -361,7 +360,7 @@ class ArticleHelper
         }
 
         $db    = self::getDatabase();
-        $query = $db->getQuery(true);
+        $query = $db->createQuery();
 
         $query->select('*')
             ->from($db->quoteName('#__content'));
@@ -495,7 +494,7 @@ class ArticleHelper
             $currentTag = Factory::getApplication()->getLanguage()->getTag();
         }
 
-        $associations = LanguageAssociations::getAssociations(
+        $associations = Associations::getAssociations(
             'com_content',
             '#__content',
             'com_content.item',
@@ -520,7 +519,7 @@ class ArticleHelper
 
             // Verify the associated article is accessible
             $db    = self::getDatabase();
-            $query = $db->getQuery(true)
+            $query = $db->createQuery()
                 ->select($db->quoteName('state'))
                 ->from($db->quoteName('#__content'))
                 ->where($db->quoteName('id') . ' = :assocId')
@@ -574,7 +573,7 @@ class ArticleHelper
         }
 
         $db    = self::getDatabase();
-        $query = $db->getQuery(true);
+        $query = $db->createQuery();
 
         $referenceTable = 'content';
         $referenceField = 'alias';
@@ -619,7 +618,7 @@ class ArticleHelper
         $defaultLangId = self::getLanguageIdByTag($defaultLang);
 
         $db    = self::getDatabase();
-        $query = $db->getQuery(true);
+        $query = $db->createQuery();
 
         // If requesting default language, get original_text; otherwise get translated value
         if ($defaultLangId === $langId) {
@@ -676,7 +675,7 @@ class ArticleHelper
         }
 
         $db    = self::getDatabase();
-        $query = $db->getQuery(true);
+        $query = $db->createQuery();
 
         $query->select($db->quoteName('lang_id'))
             ->from($db->quoteName('#__falang_languages'))
@@ -712,7 +711,7 @@ class ArticleHelper
         }
 
         $db    = self::getDatabase();
-        $query = $db->getQuery(true);
+        $query = $db->createQuery();
 
         $query->select('*')
             ->from($db->quoteName('#__categories'))
@@ -737,7 +736,7 @@ class ArticleHelper
     public static function getContentCategories(): array
     {
         $db    = self::getDatabase();
-        $query = $db->getQuery(true);
+        $query = $db->createQuery();
 
         $extension = 'com_content';
         $published = 1;
