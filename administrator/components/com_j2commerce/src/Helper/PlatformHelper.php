@@ -15,6 +15,8 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Application\CMSApplication;
+use Joomla\CMS\Application\CMSApplicationInterface;
+use Joomla\CMS\Application\CMSWebApplicationInterface;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -47,10 +49,14 @@ class PlatformHelper
     /**
      * Application instance
      *
-     * @var CMSApplication
+     * Typed to the interface, not CMSApplication: ConsoleApplication implements
+     * CMSApplicationInterface but does not extend CMSApplication, so the narrower
+     * hint made this class impossible to construct under CLI/cron.
+     *
+     * @var CMSApplicationInterface
      * @since 6.0.0
      */
-    private CMSApplication $app;
+    private CMSApplicationInterface $app;
 
     /**
      * Database instance
@@ -61,23 +67,40 @@ class PlatformHelper
     private DatabaseInterface $db;
 
     /**
-     * Web Asset Manager instance
+     * Web Asset Manager instance, resolved on first use
      *
-     * @var WebAssetManager
+     * @var WebAssetManager|null
      * @since 6.0.0
      */
-    private WebAssetManager $webAssetManager;
+    private ?WebAssetManager $webAssetManager = null;
 
     /**
      * Constructor - Initialize platform helper
+     *
+     * Resolves nothing web-specific: an application without a document (CLI/cron)
+     * must still be able to use the non-asset methods on this class.
      *
      * @since 6.0.0
      */
     private function __construct()
     {
-        $this->app             = Factory::getApplication();
-        $this->db              = Factory::getContainer()->get(DatabaseInterface::class);
-        $this->webAssetManager = Factory::getApplication()->getDocument()->getWebAssetManager();
+        $this->app = Factory::getApplication();
+        $this->db  = Factory::getContainer()->get(DatabaseInterface::class);
+    }
+
+    /**
+     * Resolve the Web Asset Manager, or null when the application has no document.
+     *
+     * @return WebAssetManager|null
+     * @since 6.0.0
+     */
+    private function webAssetManager(): ?WebAssetManager
+    {
+        if ($this->webAssetManager === null && $this->app instanceof CMSWebApplicationInterface) {
+            $this->webAssetManager = $this->app->getDocument()->getWebAssetManager();
+        }
+
+        return $this->webAssetManager;
     }
 
     /**
@@ -94,10 +117,10 @@ class PlatformHelper
     /**
      * Get the application instance
      *
-     * @return CMSApplication The application instance
+     * @return CMSApplicationInterface The application instance
      * @since 6.0.0
      */
-    public function application(): CMSApplication
+    public function application(): CMSApplicationInterface
     {
         return $this->app;
     }
@@ -117,7 +140,11 @@ class PlatformHelper
             $this->app->enqueueMessage($message, $notice);
         }
 
-        $this->app->redirect($url);
+        // ConsoleApplication has no redirect() — there is nowhere to redirect to
+        // in CLI, so enqueue the message and return rather than fatal.
+        if ($this->app instanceof CMSApplication) {
+            $this->app->redirect($url);
+        }
     }
 
     /**
@@ -343,14 +370,20 @@ class PlatformHelper
      */
     public function addScript(string $asset, string $uri, array $options = [], array $attributes = [], array $dependencies = []): self
     {
+        $wa = $this->webAssetManager();
+
+        if ($wa === null) {
+            return $this;
+        }
+
         try {
             // Register the asset if it doesn't exist
-            if (!$this->webAssetManager->assetExists('script', $asset)) {
-                $this->webAssetManager->registerScript($asset, $uri, $options, $attributes, $dependencies);
+            if (!$wa->assetExists('script', $asset)) {
+                $wa->registerScript($asset, $uri, $options, $attributes, $dependencies);
             }
 
             // Use the asset
-            $this->webAssetManager->useScript($asset);
+            $wa->useScript($asset);
         } catch (\RuntimeException $e) {
             // Fallback to HTMLHelper for compatibility
             HTMLHelper::_('script', $uri, $options, $attributes);
@@ -372,14 +405,20 @@ class PlatformHelper
      */
     public function addStyle(string $asset, string $uri, array $options = [], array $attributes = [], array $dependencies = []): self
     {
+        $wa = $this->webAssetManager();
+
+        if ($wa === null) {
+            return $this;
+        }
+
         try {
             // Register the asset if it doesn't exist
-            if (!$this->webAssetManager->assetExists('style', $asset)) {
-                $this->webAssetManager->registerStyle($asset, $uri, $options, $attributes, $dependencies);
+            if (!$wa->assetExists('style', $asset)) {
+                $wa->registerStyle($asset, $uri, $options, $attributes, $dependencies);
             }
 
             // Use the asset
-            $this->webAssetManager->useStyle($asset);
+            $wa->useStyle($asset);
         } catch (\RuntimeException $e) {
             // Fallback to HTMLHelper for compatibility
             HTMLHelper::_('stylesheet', $uri, $options, $attributes);
@@ -400,8 +439,14 @@ class PlatformHelper
      */
     public function addInlineScript(string $content, array $options = [], array $attributes = [], array $dependencies = []): self
     {
+        $wa = $this->webAssetManager();
+
+        if ($wa === null) {
+            return $this;
+        }
+
         try {
-            $this->webAssetManager->addInlineScript($content, $options, $attributes, $dependencies);
+            $wa->addInlineScript($content, $options, $attributes, $dependencies);
         } catch (\RuntimeException $e) {
             // Fallback: add to document directly
             $doc = Factory::getApplication()->getDocument();
@@ -423,8 +468,14 @@ class PlatformHelper
      */
     public function addInlineStyle(string $content, array $options = [], array $attributes = [], array $dependencies = []): self
     {
+        $wa = $this->webAssetManager();
+
+        if ($wa === null) {
+            return $this;
+        }
+
         try {
-            $this->webAssetManager->addInlineStyle($content, $options, $attributes, $dependencies);
+            $wa->addInlineStyle($content, $options, $attributes, $dependencies);
         } catch (\RuntimeException $e) {
             // Fallback: add to document directly
             $doc = Factory::getApplication()->getDocument();
