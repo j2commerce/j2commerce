@@ -89,13 +89,16 @@ class CustomerController extends FormController
         $app = Factory::getApplication();
 
         if (!Session::checkToken('get')) {
+            // close() is exit(), so respond() never runs — flush the status now or it ships 200.
             $app->setHeader('status', 403, true);
+            $app->sendHeaders();
             echo Text::_('JINVALID_TOKEN');
             $app->close();
         }
 
         if (!J2CommerceHelper::canAccess('j2commerce.vieworders')) {
             $app->setHeader('status', 403, true);
+            $app->sendHeaders();
             echo Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN');
             $app->close();
         }

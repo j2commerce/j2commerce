@@ -11,13 +11,11 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
-use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
-use Joomla\Database\ParameterType;
 
 /** @var \J2Commerce\Component\J2commerce\Administrator\View\Geozone\HtmlView $this */
 
@@ -26,53 +24,16 @@ $wa->useScript('keepalive')
     ->useScript('form.validate');
 
 Text::script('COM_J2COMMERCE_GEOZONE_ERR_NAME_REQUIRED_FOR_ADD_ALL');
+Text::script('JACTION_DELETE');
+Text::script('JCLOSE');
 
-// Get the countries list for dropdown
-$db = Factory::getContainer()->get('DatabaseDriver');
-$query = $db->getQuery(true);
-$query->select($db->quoteName(['j2commerce_country_id', 'country_name']))
-    ->from($db->quoteName('#__j2commerce_countries'))
-    ->where($db->quoteName('enabled') . ' = 1')
-    ->order($db->quoteName('country_name') . ' ASC');
-$db->setQuery($query);
-$countries = $db->loadObjectList();
+// Encodes PHP values for the inline <script>: the hex flags stop a country or zone
+// name containing </script> or a quote from breaking out of the block.
+$toJs = static fn ($value): string => json_encode($value, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 
-// Get existing geozonerules with zone names
-$geozonerules = [];
-if (!empty($this->item->j2commerce_geozone_id)) {
-    $query = $db->getQuery(true);
-    $query->select([
-            $db->quoteName('gr.j2commerce_geozonerule_id'),
-            $db->quoteName('gr.country_id'),
-            $db->quoteName('gr.zone_id'),
-            $db->quoteName('c.country_name'),
-            $db->quoteName('z.zone_name'),
-        ])
-        ->from($db->quoteName('#__j2commerce_geozonerules', 'gr'))
-        ->join('LEFT', $db->quoteName('#__j2commerce_countries', 'c') . ' ON ' . $db->quoteName('c.j2commerce_country_id') . ' = ' . $db->quoteName('gr.country_id'))
-        ->join('LEFT', $db->quoteName('#__j2commerce_zones', 'z') . ' ON ' . $db->quoteName('z.j2commerce_zone_id') . ' = ' . $db->quoteName('gr.zone_id'))
-        ->where($db->quoteName('gr.geozone_id') . ' = :geozone_id')
-        ->bind(':geozone_id', $this->item->j2commerce_geozone_id, ParameterType::INTEGER)
-        ->order($db->quoteName('gr.j2commerce_geozonerule_id') . ' ASC');
-    $db->setQuery($query);
-    $geozonerules = $db->loadObjectList();
-}
-
-// Build zones cache for existing rules (to avoid AJAX on page load)
-$zonesCache = [];
-foreach ($geozonerules as $rule) {
-    if ($rule->country_id && !isset($zonesCache[$rule->country_id])) {
-        $query = $db->getQuery(true);
-        $query->select($db->quoteName(['j2commerce_zone_id', 'zone_name']))
-            ->from($db->quoteName('#__j2commerce_zones'))
-            ->where($db->quoteName('country_id') . ' = :country_id')
-            ->where($db->quoteName('enabled') . ' = 1')
-            ->bind(':country_id', $rule->country_id, ParameterType::INTEGER)
-            ->order($db->quoteName('zone_name') . ' ASC');
-        $db->setQuery($query);
-        $zonesCache[$rule->country_id] = $db->loadObjectList();
-    }
-}
+$countries    = $this->countries;
+$geozonerules = $this->geozonerules;
+$zonesCache   = $this->zonesCache;
 
 $token = Session::getFormToken();
 ?>
@@ -109,7 +70,7 @@ $token = Session::getFormToken();
                                 <?php foreach ($geozonerules as $rule): ?>
                                     <tr id="rule-row-<?php echo $rowIndex; ?>">
                                         <td>
-                                            <select name="geozonerules[<?php echo $rowIndex; ?>][country_id]" id="country-<?php echo $rowIndex; ?>" class="form-select" onchange="J2CommerceGeozone.loadZones(<?php echo $rowIndex; ?>, this.value)">
+                                            <select name="geozonerules[<?php echo $rowIndex; ?>][country_id]" id="country-<?php echo $rowIndex; ?>" class="form-select" data-role="country" data-row-index="<?php echo $rowIndex; ?>">
                                                 <option value=""><?php echo Text::_('COM_J2COMMERCE_SELECT_COUNTRY'); ?></option>
                                                 <?php foreach ($countries as $country): ?>
                                                     <option value="<?php echo (int) $country->j2commerce_country_id; ?>"<?php echo ($country->j2commerce_country_id == $rule->country_id) ? ' selected' : ''; ?>>
@@ -132,7 +93,7 @@ $token = Session::getFormToken();
                                             <input type="hidden" name="geozonerules[<?php echo $rowIndex; ?>][j2commerce_geozonerule_id]" value="<?php echo (int) $rule->j2commerce_geozonerule_id; ?>">
                                         </td>
                                         <td class="text-end">
-                                            <button type="button" class="btn btn-danger" onclick="J2CommerceGeozone.removeRule(<?php echo (int) $rule->j2commerce_geozonerule_id; ?>, <?php echo $rowIndex; ?>)">
+                                            <button type="button" class="btn btn-danger" data-action="remove-rule" data-rule-id="<?php echo (int) $rule->j2commerce_geozonerule_id; ?>" data-row-index="<?php echo $rowIndex; ?>">
                                                 <span class="icon-trash me-1" aria-hidden="true"></span> <?php echo Text::_('JACTION_DELETE'); ?>
                                             </button>
                                         </td>
@@ -144,7 +105,7 @@ $token = Session::getFormToken();
                         <tfoot>
                             <tr>
                                 <td colspan="3">
-                                    <button type="button" class="btn btn-primary" onclick="J2CommerceGeozone.addRule()">
+                                    <button type="button" class="btn btn-primary" data-action="add-rule">
                                         <span class="icon-plus" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_GEOZONE_ADD_RULE'); ?>
                                     </button>
                                 </td>
@@ -207,16 +168,21 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        return coreSubmitButton(task);
+        // Forwards formSelector/validate, which core accepts but this wrapper does not name.
+        return coreSubmitButton.apply(this, arguments);
     };
 
     // Countries data for new rows
-    const countries = <?php echo json_encode(array_map(function($c) {
-        return ['id' => $c->j2commerce_country_id, 'name' => $c->country_name];
-    }, $countries)); ?>;
+    const countries = <?php echo $toJs(array_map(static fn ($c) => ['id' => (int) $c->j2commerce_country_id, 'name' => $c->country_name], $countries)); ?>;
+
+    const strings = <?php echo $toJs([
+        'allZones'      => Text::_('COM_J2COMMERCE_ALL_ZONES'),
+        'loading'       => Text::_('COM_J2COMMERCE_LOADING'),
+        'selectCountry' => Text::_('COM_J2COMMERCE_SELECT_COUNTRY'),
+    ]); ?>;
 
     // CSRF token
-    const token = '<?php echo $token; ?>';
+    const token = <?php echo $toJs($token); ?>;
 
     // Current row index
     let rowIndex = <?php echo $rowIndex; ?>;
@@ -226,26 +192,40 @@ document.addEventListener('DOMContentLoaded', function() {
         /**
          * Load zones for a country via AJAX
          */
-        loadZones: async function(index, countryId, selectedZoneId = 0) {
+        loadZones: async function(index, countryId) {
             const zoneSelect = document.getElementById('zone-' + index);
             if (!zoneSelect) return;
 
             // Show loading state
-            zoneSelect.innerHTML = '<option value="0"><?php echo Text::_('COM_J2COMMERCE_LOADING'); ?></option>';
+            zoneSelect.replaceChildren(new Option(strings.loading, '0'));
             zoneSelect.disabled = true;
 
             try {
-                const url = 'index.php?option=com_j2commerce&task=geozone.getZones&country_id=' + countryId + '&zone_id=' + selectedZoneId;
-                const response = await fetch(url);
-                const html = await response.text();
+                const url = 'index.php?option=com_j2commerce&task=geozone.getZones'
+                    + '&country_id=' + encodeURIComponent(countryId);
+                const response = await fetch(url, {headers: {'X-Requested-With': 'XMLHttpRequest'}});
 
-                zoneSelect.innerHTML = html;
-                zoneSelect.disabled = false;
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
+                }
+
+                const payload = await response.json();
+
+                if (!payload.success) {
+                    throw new Error(payload.message || 'Request failed');
+                }
+
+                zoneSelect.replaceChildren(
+                    new Option(strings.allZones, '0'),
+                    ...payload.data.map((zone) => new Option(zone.name, String(zone.id)))
+                );
             } catch (error) {
                 console.error('Error loading zones:', error);
-                zoneSelect.innerHTML = '<option value="0"><?php echo Text::_('COM_J2COMMERCE_ALL_ZONES'); ?></option>';
-                zoneSelect.disabled = false;
+                zoneSelect.replaceChildren(new Option(strings.allZones, '0'));
+                this.showAlert('error', error.message);
             }
+
+            zoneSelect.disabled = false;
         },
 
         /**
@@ -253,35 +233,54 @@ document.addEventListener('DOMContentLoaded', function() {
          */
         addRule: function() {
             const tbody = document.getElementById('geozone-rules-body');
+            const index = rowIndex;
 
-            // Build country options
-            let countryOptions = '<option value=""><?php echo Text::_('COM_J2COMMERCE_SELECT_COUNTRY'); ?></option>';
-            countries.forEach(function(country) {
-                countryOptions += '<option value="' + country.id + '">' + J2CommerceGeozone.escapeHtml(country.name) + '</option>';
-            });
-
-            // Create new row
             const newRow = document.createElement('tr');
-            newRow.id = 'rule-row-' + rowIndex;
-            newRow.innerHTML = `
-                <td>
-                    <select name="geozonerules[${rowIndex}][country_id]" id="country-${rowIndex}" class="form-select" onchange="J2CommerceGeozone.loadZones(${rowIndex}, this.value)">
-                        ${countryOptions}
-                    </select>
-                </td>
-                <td>
-                    <select name="geozonerules[${rowIndex}][zone_id]" id="zone-${rowIndex}" class="form-select">
-                        <option value="0"><?php echo Text::_('COM_J2COMMERCE_ALL_ZONES'); ?></option>
-                    </select>
-                    <input type="hidden" name="geozonerules[${rowIndex}][j2commerce_geozonerule_id]" value="0">
-                </td>
-                <td>
-                    <button type="button" class="btn btn-sm btn-danger" onclick="J2CommerceGeozone.removeRule(0, ${rowIndex})">
-                        <span class="icon-trash" aria-hidden="true"></span> <?php echo Text::_('JACTION_DELETE'); ?>
-                    </button>
-                </td>
-            `;
+            newRow.id = 'rule-row-' + index;
 
+            const countryCell = document.createElement('td');
+            const countrySelect = document.createElement('select');
+            countrySelect.name = 'geozonerules[' + index + '][country_id]';
+            countrySelect.id = 'country-' + index;
+            countrySelect.className = 'form-select';
+            countrySelect.dataset.role = 'country';
+            countrySelect.dataset.rowIndex = String(index);
+            countrySelect.append(
+                new Option(strings.selectCountry, ''),
+                ...countries.map((country) => new Option(country.name, String(country.id)))
+            );
+            countryCell.appendChild(countrySelect);
+
+            const zoneCell = document.createElement('td');
+            const zoneSelect = document.createElement('select');
+            zoneSelect.name = 'geozonerules[' + index + '][zone_id]';
+            zoneSelect.id = 'zone-' + index;
+            zoneSelect.className = 'form-select';
+            zoneSelect.appendChild(new Option(strings.allZones, '0'));
+
+            const hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.name = 'geozonerules[' + index + '][j2commerce_geozonerule_id]';
+            hidden.value = '0';
+
+            zoneCell.append(zoneSelect, hidden);
+
+            const deleteCell = document.createElement('td');
+            const deleteButton = document.createElement('button');
+            deleteButton.type = 'button';
+            deleteButton.className = 'btn btn-sm btn-danger';
+            deleteButton.dataset.action = 'remove-rule';
+            deleteButton.dataset.ruleId = '0';
+            deleteButton.dataset.rowIndex = String(index);
+
+            const icon = document.createElement('span');
+            icon.className = 'icon-trash';
+            icon.setAttribute('aria-hidden', 'true');
+
+            deleteButton.append(icon, ' ' + Joomla.Text._('JACTION_DELETE'));
+            deleteCell.appendChild(deleteButton);
+
+            newRow.append(countryCell, zoneCell, deleteCell);
             tbody.appendChild(newRow);
             rowIndex++;
         },
@@ -296,8 +295,14 @@ document.addEventListener('DOMContentLoaded', function() {
             // If rule is saved in DB, delete via AJAX
             if (ruleId > 0) {
                 try {
-                    const url = 'index.php?option=com_j2commerce&task=geozone.removeRule&rule_id=' + ruleId + '&' + token + '=1';
+                    const url = 'index.php?option=com_j2commerce&task=geozone.removeRule&rule_id='
+                        + encodeURIComponent(ruleId) + '&' + token + '=1';
                     const response = await fetch(url);
+
+                    if (!response.ok) {
+                        throw new Error('HTTP ' + response.status);
+                    }
+
                     const data = await response.json();
 
                     if (data.data && data.data.success) {
@@ -323,30 +328,58 @@ document.addEventListener('DOMContentLoaded', function() {
             const container = document.getElementById('j2commerce-alert-container');
             const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
 
-            container.innerHTML = `
-                <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
-                    ${this.escapeHtml(message)}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            `;
+            const alert = document.createElement('div');
+            alert.className = 'alert ' + alertClass + ' alert-dismissible fade show';
+            alert.setAttribute('role', 'alert');
+            alert.textContent = message;
+
+            const closeButton = document.createElement('button');
+            closeButton.type = 'button';
+            closeButton.className = 'btn-close';
+            closeButton.dataset.bsDismiss = 'alert';
+            closeButton.setAttribute('aria-label', Joomla.Text._('JCLOSE'));
+
+            alert.appendChild(closeButton);
+            container.replaceChildren(alert);
 
             // Auto-dismiss after 3 seconds
             setTimeout(function() {
-                const alert = container.querySelector('.alert');
-                if (alert) {
-                    alert.remove();
+                const current = container.querySelector('.alert');
+                if (current) {
+                    current.remove();
                 }
             }, 3000);
-        },
-
-        /**
-         * Escape HTML entities
-         */
-        escapeHtml: function(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
         }
     };
+
+    // Delegated on the table so rows added after load are covered without rebinding.
+    const rulesTable = document.getElementById('geozone-rules-table');
+
+    rulesTable.addEventListener('change', function(e) {
+        const select = e.target.closest('select[data-role="country"]');
+
+        if (!select) {
+            return;
+        }
+
+        J2CommerceGeozone.loadZones(Number(select.dataset.rowIndex), select.value)
+            .catch((error) => console.error('Error loading zones:', error));
+    });
+
+    rulesTable.addEventListener('click', function(e) {
+        if (e.target.closest('[data-action="add-rule"]')) {
+            J2CommerceGeozone.addRule();
+            return;
+        }
+
+        const removeButton = e.target.closest('[data-action="remove-rule"]');
+
+        if (removeButton) {
+            J2CommerceGeozone.removeRule(
+                Number(removeButton.dataset.ruleId),
+                Number(removeButton.dataset.rowIndex)
+            );
+        }
+    });
 });
 </script>

@@ -158,6 +158,118 @@ class GeozoneModel extends AdminModel
     }
 
     /**
+     * Enabled countries, for the rule editor's country dropdown.
+     *
+     * @return  object[]
+     *
+     * @since   6.0.3
+     */
+    public function getEnabledCountries(): array
+    {
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true)
+            ->select($db->quoteName(['j2commerce_country_id', 'country_name']))
+            ->from($db->quoteName('#__j2commerce_countries'))
+            ->where($db->quoteName('enabled') . ' = 1')
+            ->order($db->quoteName('country_name') . ' ASC');
+
+        $db->setQuery($query);
+
+        return $db->loadObjectList();
+    }
+
+    /**
+     * Saved rules for a geozone, in display order.
+     *
+     * Country and zone names are not joined here — the edit view resolves them from
+     * getEnabledCountries() and getZonesByCountry(), which it loads anyway.
+     *
+     * @param   int  $geozoneId  The geozone ID.
+     *
+     * @return  object[]
+     *
+     * @since   6.0.3
+     */
+    public function getRules(int $geozoneId): array
+    {
+        if ($geozoneId <= 0) {
+            return [];
+        }
+
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true)
+            ->select($db->quoteName(['j2commerce_geozonerule_id', 'country_id', 'zone_id']))
+            ->from($db->quoteName('#__j2commerce_geozonerules'))
+            ->where($db->quoteName('geozone_id') . ' = :geozone_id')
+            ->bind(':geozone_id', $geozoneId, ParameterType::INTEGER)
+            ->order($db->quoteName('j2commerce_geozonerule_id') . ' ASC');
+
+        $db->setQuery($query);
+
+        return $db->loadObjectList();
+    }
+
+    /**
+     * Enabled zones for the given countries, keyed by country ID.
+     *
+     * One query for the whole set — callers pass every country they need at once
+     * rather than looping.
+     *
+     * @param   int[]  $countryIds  Country IDs to fetch zones for.
+     *
+     * @return  array<int, object[]>
+     *
+     * @since   6.0.3
+     */
+    public function getZonesByCountry(array $countryIds): array
+    {
+        $countryIds = array_values(array_unique(array_filter(array_map('intval', $countryIds))));
+
+        if (!$countryIds) {
+            return [];
+        }
+
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true)
+            ->select($db->quoteName(['j2commerce_zone_id', 'country_id', 'zone_name']))
+            ->from($db->quoteName('#__j2commerce_zones'))
+            ->whereIn($db->quoteName('country_id'), $countryIds)
+            ->where($db->quoteName('enabled') . ' = 1')
+            ->order($db->quoteName('zone_name') . ' ASC');
+
+        $db->setQuery($query);
+
+        $grouped = [];
+
+        foreach ($db->loadObjectList() as $zone) {
+            $grouped[(int) $zone->country_id][] = $zone;
+        }
+
+        return $grouped;
+    }
+
+    /**
+     * Delete a single geozone rule.
+     *
+     * @param   int  $ruleId  The geozonerule ID.
+     *
+     * @return  void
+     *
+     * @since   6.0.3
+     */
+    public function deleteRule(int $ruleId): void
+    {
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true)
+            ->delete($db->quoteName('#__j2commerce_geozonerules'))
+            ->where($db->quoteName('j2commerce_geozonerule_id') . ' = :rule_id')
+            ->bind(':rule_id', $ruleId, ParameterType::INTEGER);
+
+        $db->setQuery($query);
+        $db->execute();
+    }
+
+    /**
      * Method to get the data that should be injected in the form.
      *
      * @return  mixed  The data for the form.

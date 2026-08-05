@@ -57,6 +57,30 @@ class HtmlView extends BaseHtmlView
     protected $state;
 
     /**
+     * Enabled countries for the rule editor dropdowns
+     *
+     * @var    object[]
+     * @since  6.0.3
+     */
+    protected $countries = [];
+
+    /**
+     * Saved rules for this geozone
+     *
+     * @var    object[]
+     * @since  6.0.3
+     */
+    protected $geozonerules = [];
+
+    /**
+     * Zones for every country named by a saved rule, keyed by country ID
+     *
+     * @var    array<int, object[]>
+     * @since  6.0.3
+     */
+    protected $zonesCache = [];
+
+    /**
      * Display the view.
      *
      * @param   string  $tpl  The name of the template file to parse.
@@ -75,6 +99,10 @@ class HtmlView extends BaseHtmlView
         $this->form  = $model->getForm();
         $this->item  = $model->getItem();
         $this->state = $model->getState();
+
+        $this->countries    = $model->getEnabledCountries();
+        $this->geozonerules = $model->getRules((int) ($this->item->j2commerce_geozone_id ?? 0));
+        $this->zonesCache   = $model->getZonesByCountry(array_column($this->geozonerules, 'country_id'));
 
         $this->addToolbar();
 
