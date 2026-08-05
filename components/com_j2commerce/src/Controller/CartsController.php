@@ -1624,6 +1624,12 @@ class CartsController extends BaseController
 
         // $xhtml = false: this is a Location header, not markup — the default would
         // encode the query separators as &amp; and break the parameters.
-        return Route::_($url, false);
+        // Route::_() returns null on router error today and will throw from Joomla 7;
+        // a failed route must yield the caller's fallback, never an empty redirect.
+        try {
+            return (string) (Route::_($url, false) ?? $fallback);
+        } catch (\RuntimeException) {
+            return $fallback;
+        }
     }
 }

@@ -112,7 +112,14 @@ class CheckoutController extends BaseController
 
     protected function getCheckoutUrl(): string
     {
-        return Route::_('index.php?option=com_j2commerce&view=checkout');
+        $url = 'index.php?option=com_j2commerce&view=checkout';
+
+        // Route::_() returns null on router error today and will throw from Joomla 7.
+        try {
+            return (string) (Route::_($url) ?? $url);
+        } catch (\RuntimeException) {
+            return $url;
+        }
     }
 
     /**

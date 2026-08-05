@@ -296,6 +296,11 @@ final class ProductLayoutService
 
         $rawUrl = RouteHelper::getProductRoute($productId, $alias, $catid ?: null);
 
-        return Route::_($rawUrl);
+        // Route::_() returns null on router error today and will throw from Joomla 7.
+        try {
+            return (string) (Route::_($rawUrl) ?? $rawUrl);
+        } catch (\RuntimeException) {
+            return $rawUrl;
+        }
     }
 }

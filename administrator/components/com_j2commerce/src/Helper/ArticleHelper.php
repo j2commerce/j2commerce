@@ -428,13 +428,18 @@ class ArticleHelper
             return '';
         }
 
-        return Route::_(
-            ContentRouteHelper::getArticleRoute(
-                (int) $article->id,
-                (int) $article->catid,
-                $article->language ?? ''
-            )
-        );
+        // Route::_() returns null on router error today and will throw from Joomla 7.
+        try {
+            return (string) (Route::_(
+                ContentRouteHelper::getArticleRoute(
+                    (int) $article->id,
+                    (int) $article->catid,
+                    $article->language ?? ''
+                )
+            ) ?? '');
+        } catch (\RuntimeException) {
+            return '';
+        }
     }
 
     // =========================================================================

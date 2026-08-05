@@ -720,6 +720,12 @@ class PlatformHelper
             return $url;
         }
 
-        return Route::_($url, $xhtml);
+        // Route::_() returns null on router error today and will throw from Joomla 7;
+        // fall back to the raw URL, exactly as the API-context branch above does.
+        try {
+            return (string) (Route::_($url, $xhtml) ?? $url);
+        } catch (\RuntimeException) {
+            return $url;
+        }
     }
 }
