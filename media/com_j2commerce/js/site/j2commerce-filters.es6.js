@@ -225,7 +225,13 @@ class J2CommerceFilters {
         )];
         productfilterIds.forEach(id => data.append('productfilter_ids[]', id));
 
-        const catid = document.getElementById('filter_catid')?.value || '';
+        // #filter_catid lives in the sidebar filter form, which is not rendered when
+        // list_show_filter is off — fall back to the sort form, then to the wrapper's
+        // data attribute, which is always present.
+        const catid = document.getElementById('filter_catid')?.value
+            || document.getElementById('sort_filter_catid')?.value
+            || this.productContainer?.dataset.filterCatid
+            || '';
         if (catid) data.append('filter_catid', catid);
 
         const rangeMin = document.getElementById('j2commerce-range-min');

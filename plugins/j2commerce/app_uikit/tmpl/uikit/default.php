@@ -51,7 +51,7 @@ if ($this->params->get('list_show_filter', 1) && $filterPosition === 'left'){
     $paddingClass = 'inner_class';
 }
 ?>
-<div class="j2commerce j2commerce-product-list uikit" data-link="<?php echo $activeLink; ?>" data-ajax-filters="<?php echo $enableAjaxFilters ? 'true' : 'false'; ?>">
+<div class="j2commerce j2commerce-product-list uikit" data-link="<?php echo $activeLink; ?>" data-filter-catid="<?php echo !empty($this->filter_catid) ? (int) $this->filter_catid : ''; ?>" data-ajax-filters="<?php echo $enableAjaxFilters ? 'true' : 'false'; ?>">
 
     <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeViewProductListDisplay', [$this->products])->getArgument('html', ''); ?>
 
