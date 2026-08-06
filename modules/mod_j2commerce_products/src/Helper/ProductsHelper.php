@@ -101,6 +101,9 @@ class ProductsHelper
 
         $query = $db->getQuery(true);
 
+        $groups  = Factory::getApplication()->getIdentity()->getAuthorisedViewLevels();
+        $nowDate = Factory::getDate()->toSql();
+
         $query->select($db->quoteName('a.j2commerce_product_id'))
             ->from($db->quoteName('#__j2commerce_products', 'a'))
             ->join(
@@ -109,9 +112,22 @@ class ProductsHelper
                 . ' ON ' . $db->quoteName('c.id')
                 . ' = ' . $db->quoteName('a.product_source_id')
             )
+            ->join(
+                'LEFT',
+                $db->quoteName('#__categories', 'cat')
+                . ' ON ' . $db->quoteName('cat.id')
+                . ' = ' . $db->quoteName('c.catid')
+            )
             ->where($db->quoteName('a.enabled') . ' = 1')
             ->where($db->quoteName('a.visibility') . ' = 1')
-            ->where($db->quoteName('c.state') . ' = 1');
+            ->where($db->quoteName('c.state') . ' = 1')
+            ->where($db->quoteName('cat.published') . ' = 1')
+            ->whereIn($db->quoteName('c.access'), $groups)
+            ->whereIn($db->quoteName('cat.access'), $groups)
+            ->where('(' . $db->quoteName('c.publish_up') . ' IS NULL OR ' . $db->quoteName('c.publish_up') . ' <= :publishUp)')
+            ->where('(' . $db->quoteName('c.publish_down') . ' IS NULL OR ' . $db->quoteName('c.publish_down') . ' >= :publishDown)')
+            ->bind(':publishUp', $nowDate)
+            ->bind(':publishDown', $nowDate);
 
         // Product type filter — [""] from empty multi-select must be filtered out
         $productTypes = $params->get('product_types', '');
