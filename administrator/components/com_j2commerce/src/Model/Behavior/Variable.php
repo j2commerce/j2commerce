@@ -290,13 +290,27 @@ class Variable
                 $item->use_store_config_notify_qty   = !empty($item->use_store_config_notify_qty) ? 1 : 0;
 
                 // Build variant params: collect image data from top-level properties into params
-                // This matches Flexivariable.php lines 369-394
+                // This matches Flexivariable.php lines 369-394.
+                // Seeded from the stored row, the way the master variant is (see above): the edit
+                // form only round-trips the keys it renders, so writing the submitted set alone
+                // silently destroys every plugin-owned key held in a child variant's params.
                 $variantParams = [];
+                $storedVariant = $this->mvcFactory->createTable('Variant', 'Administrator');
+
+                if ($storedVariant && $storedVariant->load($resolvedVariantId)) {
+                    $storedParams  = json_decode((string) $storedVariant->params, true);
+                    $variantParams = \is_array($storedParams) ? $storedParams : [];
+                }
+
                 if (isset($item->params) && !empty($item->params)) {
-                    if (\is_string($item->params)) {
-                        $variantParams = json_decode($item->params, true) ?? [];
-                    } elseif (\is_array($item->params) || \is_object($item->params)) {
-                        $variantParams = (array) $item->params;
+                    $submittedParams = \is_string($item->params)
+                        ? json_decode($item->params, true)
+                        : (array) $item->params;
+
+                    // A scalar here would make array_merge() throw a TypeError, which is an Error
+                    // and so passes straight through the catch (\Exception) around the save.
+                    if (\is_array($submittedParams)) {
+                        $variantParams = array_merge($variantParams, $submittedParams);
                     }
                 }
 
