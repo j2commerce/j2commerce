@@ -177,13 +177,31 @@ class RelatedProductsHelper
         return $relatedIds;
     }
 
+    /** Product visibility gates shared by every product query — parity with com_j2commerce's listings. */
+    private function applyVisibilityGates(\Joomla\Database\QueryInterface $query, DatabaseInterface $db, string $productAlias): void
+    {
+        $groups  = Factory::getApplication()->getIdentity()->getAuthorisedViewLevels();
+        $nowDate = Factory::getDate()->toSql();
+
+        $query->join(
+            'LEFT',
+            $db->quoteName('#__categories', 'cat')
+            . ' ON ' . $db->quoteName('cat.id') . ' = ' . $db->quoteName('c.catid')
+        )
+            ->where($db->quoteName($productAlias . '.enabled') . ' = 1')
+            ->where($db->quoteName($productAlias . '.visibility') . ' = 1')
+            ->where($db->quoteName('c.state') . ' = 1')
+            ->where($db->quoteName('cat.published') . ' = 1')
+            ->whereIn($db->quoteName('c.access'), $groups)
+            ->whereIn($db->quoteName('cat.access'), $groups)
+            ->where('(' . $db->quoteName('c.publish_up') . ' IS NULL OR ' . $db->quoteName('c.publish_up') . ' <= :publishUp)')
+            ->where('(' . $db->quoteName('c.publish_down') . ' IS NULL OR ' . $db->quoteName('c.publish_down') . ' >= :publishDown)')
+            ->bind(':publishUp', $nowDate)
+            ->bind(':publishDown', $nowDate);
+    }
+
     private function applyOrdering(array $ids, string $ordering): array
     {
-        if ($ordering === 'random') {
-            shuffle($ids);
-            return $ids;
-        }
-
         if (empty($ids)) {
             return [];
         }
@@ -201,10 +219,9 @@ class RelatedProductsHelper
                 $db->quoteName('#__content', 'c')
                 . ' ON ' . $db->quoteName('c.id')
                 . ' = ' . $db->quoteName('p.product_source_id')
-            )
-            ->where($db->quoteName('p.enabled') . ' = 1')
-            ->where($db->quoteName('p.visibility') . ' = 1')
-            ->where($db->quoteName('c.state') . ' = 1');
+            );
+
+        $this->applyVisibilityGates($query, $db, 'p');
 
         $bindValues   = [];
         $placeholders = [];
@@ -220,6 +237,7 @@ class RelatedProductsHelper
         match ($ordering) {
             'title_asc'  => $query->order($db->quoteName('c.title') . ' ASC'),
             'title_desc' => $query->order($db->quoteName('c.title') . ' DESC'),
+            'random'     => $query->order($query->rand()),
             default      => $query->order($db->quoteName('p.j2commerce_product_id') . ' DESC'),
         };
 
@@ -246,10 +264,9 @@ class RelatedProductsHelper
                 $db->quoteName('#__content', 'c')
                 . ' ON ' . $db->quoteName('c.id')
                 . ' = ' . $db->quoteName('a.product_source_id')
-            )
-            ->where($db->quoteName('a.enabled') . ' = 1')
-            ->where($db->quoteName('a.visibility') . ' = 1')
-            ->where($db->quoteName('c.state') . ' = 1');
+            );
+
+        $this->applyVisibilityGates($query, $db, 'a');
 
         if ($fallback === 'fallback_popular') {
             $query->order($db->quoteName('a.hits') . ' DESC');
