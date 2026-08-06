@@ -2614,6 +2614,7 @@ class OrderModel extends AdminModel
             ->select([
                 'COALESCE(SUM(' . $db->quoteName('amount') . '), 0) AS fee_amount',
                 'COALESCE(SUM(' . $db->quoteName('tax') . '), 0) AS fee_tax',
+                'COUNT(*) AS fee_rows',
             ])
             ->from($db->quoteName('#__j2commerce_orderfees'))
             ->where($db->quoteName('order_id') . ' = :orderId')
@@ -2645,15 +2646,30 @@ class OrderModel extends AdminModel
         $shippingTax = round((float) ($shippingTotals->shipping_tax ?? 0), 2);
         // Re-cap the applied discount if items were removed/reduced after it was applied.
         $discount    = min((float) $order->order_discount, $subtotal);
-        $surcharge   = (float) $order->order_surcharge;
-        $fees        = round((float) ($feeTotals->fee_amount ?? 0) + (float) ($feeTotals->fee_tax ?? 0), 2);
-        $credit      = (float) $order->order_credit;
+        // order_surcharge and the #__j2commerce_orderfees rows are the same money, not two
+        // components: CartOrder::loadFees() and saveOrderFees() both write from one get_fees()
+        // call. Adding them together inflated order_total by the fee on every admin
+        // recalculation.
+        //
+        // Which side is authoritative depends on whether fee rows exist. When they do they
+        // win - they are itemised, they carry the tax, and an admin-added fee (addOrderFee(),
+        // fee_type 'admin') only ever exists as a row, never in the column. When they do not,
+        // the column is the ONLY record of the charge: saveOrderFees() skips rows whose amount
+        // is not positive, and removeOrderFee() deletes rows without touching the column, so
+        // an order can legitimately carry a surcharge with no rows behind it. Treating the
+        // (zero) row sum as authoritative there would drop a real charge off order_total and
+        // then overwrite the one column that still remembered it.
+        $feeRows      = (int) ($feeTotals->fee_rows ?? 0);
+        $fees         = round((float) ($feeTotals->fee_amount ?? 0) + (float) ($feeTotals->fee_tax ?? 0), 2);
+        $surcharge    = round((float) $order->order_surcharge, 2);
+        $feeComponent = $feeRows > 0 ? $fees : $surcharge;
+        $credit       = (float) $order->order_credit;
 
         // Tax-inclusive stores already carry item tax inside the subtotal.
         $itemTaxComponent = ((int) $order->is_including_tax === 1) ? 0.0 : $tax;
 
         $total = round(
-            $subtotal + $itemTaxComponent + $shipping + $shippingTax + $surcharge + $fees - $discount - $credit,
+            $subtotal + $itemTaxComponent + $shipping + $shippingTax + $feeComponent - $discount - $credit,
             2
         );
 
@@ -2664,7 +2680,7 @@ class OrderModel extends AdminModel
         $taxStr        = number_format($tax, 5, '.', '');
         $shippingStr   = number_format($shipping, 5, '.', '');
         $shipTaxStr    = number_format($shippingTax, 5, '.', '');
-        $feesStr       = number_format($fees, 5, '.', '');
+        $feesStr       = number_format($feeRows > 0 ? $fees : 0.0, 5, '.', '');
         $totalStr      = number_format(max(0.0, $total), 5, '.', '');
         $now           = Factory::getDate()->toSql();
         $pk            = (int) $order->j2commerce_order_id;
@@ -2689,6 +2705,18 @@ class OrderModel extends AdminModel
             ->bind(':total', $totalStr)
             ->bind(':modifiedOn', $now)
             ->bind(':pk', $pk, ParameterType::INTEGER);
+
+        // Only clear the deprecated column once the rows have taken the charge over.
+        // EmailHelper adds order_surcharge AND order_fees together, and the storefront
+        // fallbacks suppress the column only when rows exist, so leaving both populated
+        // would show and total the same fee twice. Where there are no rows the column is
+        // the only surviving record of the charge and is deliberately not written at all.
+        if ($feeRows > 0) {
+            $clearedSurcharge = number_format(0, 5, '.', '');
+            $update->set($db->quoteName('order_surcharge') . ' = :surcharge')
+                ->bind(':surcharge', $clearedSurcharge);
+        }
+
         $db->setQuery($update);
         $db->execute();
 
@@ -2698,8 +2726,8 @@ class OrderModel extends AdminModel
             'shipping'     => $shipping,
             'shipping_tax' => $shippingTax,
             'discount'     => round($discount, 2),
-            'surcharge'    => round($surcharge, 2),
-            'fees'         => round($fees, 2),
+            'surcharge'    => $feeRows > 0 ? 0.0 : $surcharge,
+            'fees'         => round($feeRows > 0 ? $fees : 0.0, 2),
             'total'        => max(0.0, $total),
         ];
     }
