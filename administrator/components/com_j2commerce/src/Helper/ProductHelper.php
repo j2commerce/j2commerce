@@ -15,6 +15,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
+use Joomla\CMS\Application\CMSWebApplicationInterface;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
@@ -686,7 +687,18 @@ class ProductHelper
                 $variantCount++;
             }
         }
-        $product->variant_pagination = new \Joomla\CMS\Pagination\Pagination($variantCount, 0, 20);
+
+        // Pagination is presentation state, and its constructor resolves the application's
+        // router. A console application has none registered, so building one here made this
+        // hydrator - which CLI, cron, queue workers and the API all go through - throw before
+        // it could return. Left null off the web; every reader takes only ->total and already
+        // defaults it. ConsoleApplication implements CMSApplicationInterface but not this one,
+        // while ApiApplication extends CMSApplication and so keeps its pagination.
+        $isWebApplication = Factory::getApplication() instanceof CMSWebApplicationInterface;
+
+        $product->variant_pagination = $isWebApplication
+            ? new \Joomla\CMS\Pagination\Pagination($variantCount, 0, 20)
+            : null;
 
         // Add pricing (based on master variant and default quantity of 1)
         // Default display quantity used for pricing calculations
@@ -717,7 +729,9 @@ class ProductHelper
 
         // Product filter pagination (for product filter listings)
         $filterCount                       = self::getProductFilterCount($productId);
-        $product->productfilter_pagination = new \Joomla\CMS\Pagination\Pagination($filterCount, 0, 10);
+        $product->productfilter_pagination = $isWebApplication
+            ? new \Joomla\CMS\Pagination\Pagination($filterCount, 0, 10)
+            : null;
 
         // Populate productfilter_ids from junction table (not from deprecated products column)
         $product->productfilter_ids = implode(',', self::getProductFilterIds($productId));
