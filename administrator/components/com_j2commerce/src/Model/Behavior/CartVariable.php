@@ -99,10 +99,16 @@ class CartVariable
                     $variant                    = null;
                 }
 
-                // Double-check via options (JS selection can be stale)
+                // Double-check via options (JS selection can be stale). The replacement is held to
+                // the same product check the submitted variant_id just passed — otherwise this
+                // line silently discards that check.
                 if ($variant) {
                     $verifyVariant = ProductHelper::getVariantByOptions($options, (int) $product->j2commerce_product_id);
-                    if ($verifyVariant && $verifyVariant->j2commerce_variant_id != $variantId) {
+                    if (
+                        $verifyVariant
+                        && $verifyVariant->j2commerce_variant_id != $variantId
+                        && $verifyVariant->product_id == $product->j2commerce_product_id
+                    ) {
                         $variant = $verifyVariant;
                     }
                 }

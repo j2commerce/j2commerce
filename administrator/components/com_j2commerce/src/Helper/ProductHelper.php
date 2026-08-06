@@ -1277,7 +1277,7 @@ class ProductHelper
      */
     public static function getVariantByOptions(array $productOptions, int $productId): ?object
     {
-        if (empty($productOptions)) {
+        if (empty($productOptions) || $productId < 1) {
             return null;
         }
 
@@ -1322,7 +1322,13 @@ class ProductHelper
                     $db->quoteName('a.j2commerce_variant_id') . ' = ' . $db->quoteName('q.variant_id')
                 )
                 ->where($db->quoteName('a.j2commerce_variant_id') . ' = :variantId')
-                ->bind(':variantId', $row->variant_id, ParameterType::INTEGER);
+                // $productId was accepted but never applied. product_optionvalue_ids is a bare
+                // sorted id set with no product column of its own, so an option combination that
+                // exists under a different product resolved to that product's variant — and the
+                // caller then priced the line from it. Constrain the match to the product asked for.
+                ->where($db->quoteName('a.product_id') . ' = :productId')
+                ->bind(':variantId', $row->variant_id, ParameterType::INTEGER)
+                ->bind(':productId', $productId, ParameterType::INTEGER);
 
             $db->setQuery($variantQuery);
             $variant = $db->loadObject();
