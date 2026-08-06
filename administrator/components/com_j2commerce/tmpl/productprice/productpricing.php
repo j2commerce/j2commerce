@@ -111,8 +111,22 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         },
 
+        // A Joomla calendar shows the date in the admin language's own calendar system and keeps
+        // the Gregorian equivalent in data-alt-value, swapping it into the input from the form's
+        // submit handler. These saves are AJAX, so submit never fires and FormData would post the
+        // displayed value — under a non-Gregorian calendar (fa-IR renders Jalali) the server then
+        // reads "14-05-1404" as a Gregorian year 1404 and the range comes back blank.
+        applyCalendarValues: function(form) {
+            form.querySelectorAll('.field-calendar').forEach(field => {
+                // Per instance, not JoomlaCalendar.onSubmit() — that latches on
+                // Joomla.calendarProcessed and would no-op on every save after the first.
+                field._joomlaCalendar?.setAltValue();
+            });
+        },
+
         createPrice: function() {
             const form = document.getElementById('product-form');
+            this.applyCalendarValues(form);
             const formData = new FormData(form);
             formData.append('task', 'productprice.createprice');
             formData.append(this.token, 1);
@@ -144,6 +158,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         saveAllPrices: function() {
             const form = document.getElementById('product-form');
+            this.applyCalendarValues(form);
             const formData = new FormData(form);
             formData.append('task', 'productprice.saveprices');
             formData.append(this.token, 1);

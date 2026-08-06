@@ -280,9 +280,50 @@ class Com_J2commerceInstallerScript extends InstallerScript
 
         $this->seedCustomAclActions();
         $this->seedStockCommitted();
+        $this->repairVariantAvailability();
         $this->removeLegacyDebugLog();
 
         $this->debugLog("=== POSTFLIGHT END ===");
+    }
+
+    /**
+     * Re-enable variants that hold stock but sit at availability 0/NULL. Mirrors the 6.5.1 delta
+     * SQL, which Database -> Fix skips: schema repair only builds check queries for RENAME/ALTER/
+     * CREATE, so an UPDATE in a delta file never replays once the schema version has moved past
+     * it. Idempotent — a second run matches nothing.
+     */
+    private function repairVariantAvailability(): void
+    {
+        $db = Factory::getContainer()->get(DatabaseInterface::class);
+
+        try {
+            $db->setQuery(
+                'UPDATE ' . $db->quoteName('#__j2commerce_variants', 'v')
+                . ' INNER JOIN ' . $db->quoteName('#__j2commerce_productquantities', 'pq')
+                . ' ON ' . $db->quoteName('pq.variant_id') . ' = ' . $db->quoteName('v.j2commerce_variant_id')
+                . ' SET ' . $db->quoteName('v.availability') . ' = 1'
+                . ' WHERE COALESCE(' . $db->quoteName('v.availability') . ', 0) = 0'
+                . ' AND ' . $db->quoteName('pq.quantity') . ' > 0'
+            )->execute();
+
+            $restocked = $db->getAffectedRows();
+
+            // Variants that do not manage stock have no quantity row to join against.
+            $db->setQuery(
+                'UPDATE ' . $db->quoteName('#__j2commerce_variants')
+                . ' SET ' . $db->quoteName('availability') . ' = 1'
+                . ' WHERE ' . $db->quoteName('availability') . ' IS NULL'
+                . ' AND COALESCE(' . $db->quoteName('manage_stock') . ', 0) <> 1'
+            )->execute();
+
+            $this->debugLog(
+                'AVAILABILITY: re-enabled ' . $restocked . ' in-stock variant(s) and '
+                . $db->getAffectedRows() . ' non-stock-managed variant(s)'
+            );
+        } catch (\Throwable $e) {
+            $this->debugLog('AVAILABILITY: repair failed (see the j2commerce log)');
+            Log::add('Variant availability repair failed: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
+        }
     }
 
     /** Retire the pre-6.x unguarded .log left behind on upgraded sites. */

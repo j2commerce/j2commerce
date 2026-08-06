@@ -1767,7 +1767,7 @@ class ProductsController extends AdminController
      * - "0.00000" for decimal fields (price, dimensions, qty limits)
      * - Default weight/length class IDs from config
      * - Current timestamp and user for created/modified fields
-     * - 0 for integer boolean fields (manage_stock, use_store_config_*, availability)
+     * - 0 for integer boolean fields (manage_stock, use_store_config_*), 1 for availability
      *
      * @return  void
      *
@@ -1883,7 +1883,9 @@ class ProductsController extends AdminController
                 $variant->use_store_config_min_sale_qty = 0;
                 $variant->use_store_config_max_sale_qty = 0;
                 $variant->use_store_config_notify_qty   = 0;
-                $variant->availability                  = 0;
+                // 1, matching the other two variant-creation paths below — a variant born
+                // unavailable cannot be sold until an order happens to resync the flag.
+                $variant->availability                  = 1;
                 $variant->allow_backorder               = 0;
                 $variant->isdefault_variant             = 0;
 

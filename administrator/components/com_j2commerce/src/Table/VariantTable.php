@@ -57,7 +57,7 @@ class VariantTable extends Table
      * - Empty strings for varchar fields (upc, params)
      * - "0.00000" for decimal fields (price, dimensions, qty limits)
      * - Default weight/length class IDs from config
-     * - 0 for integer boolean fields (manage_stock, use_store_config_*, availability)
+     * - 0 for integer boolean fields (manage_stock, use_store_config_*), 1 for availability
      *
      * @return  boolean  True on success.
      *
@@ -101,8 +101,14 @@ class VariantTable extends Table
             $this->use_store_config_notify_qty = 0;
         }
 
+        // availability is derived, not authored — InventoryHelper::adjustStockAndAvailability()
+        // is the only thing that maintains it, and it only runs on the order path. Defaulting an
+        // unset value to 0 meant a variant that never passed through an order (a J2Store import,
+        // or any row whose availability was left NULL) was stamped unavailable on every save,
+        // and validateStock() refuses to sell an unavailable variant no matter how much stock it
+        // has. Default to available and let the stock checks decide.
         if (!isset($this->availability) || $this->availability === null) {
-            $this->availability = 0;
+            $this->availability = 1;
         }
 
         if (!isset($this->allow_backorder) || $this->allow_backorder === null) {
