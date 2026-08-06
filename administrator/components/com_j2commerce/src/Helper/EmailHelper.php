@@ -1054,8 +1054,13 @@ class EmailHelper
         $surchargeAmount = (float) ($order->order_surcharge ?? 0);
         $feesAmount      = (float) ($order->order_fees ?? 0);
         $discountAmount  = (float) ($order->order_discount ?? 0);
+        // recalculateOrderTotals() subtracts order_credit when it builds order_total, so this
+        // has to as well or the reconciliation below fails on any credited order and throws
+        // away the per-profile tax breakdown in favour of a derived Tax row that quietly
+        // absorbs the credit.
+        $creditAmount    = (float) ($order->order_credit ?? 0);
         $grandTotal      = (float) ($order->order_total ?? 0);
-        $nonTaxTotal     = $subtotal + $shippingAmount + $surchargeAmount + $feesAmount - $discountAmount;
+        $nonTaxTotal     = $subtotal + $shippingAmount + $surchargeAmount + $feesAmount - $discountAmount - $creditAmount;
 
         // Per-profile rows (title + percent) for labeling only — never trusted blind.
         $taxProfileRows = $this->getOrderTaxRows($order);
@@ -1117,6 +1122,12 @@ class EmailHelper
 
         if ($discountAmount > 0) {
             $rows .= $this->totalsRow(Text::_('COM_J2COMMERCE_CART_DISCOUNT'), '-' . $fmt($discountAmount));
+        }
+
+        // Printed as well as subtracted above: a credit that reduces the grand total without
+        // appearing as a row leaves the visible rows failing to foot to it.
+        if ($creditAmount > 0) {
+            $rows .= $this->totalsRow(Text::_('COM_J2COMMERCE_CART_CREDIT'), '-' . $fmt($creditAmount));
         }
 
         $rows .= $taxHtml;
