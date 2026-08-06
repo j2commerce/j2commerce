@@ -16,6 +16,7 @@ namespace J2Commerce\Component\J2commerce\Site\Model;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use J2Commerce\Component\J2commerce\Administrator\Table\ProductTable;
+use J2Commerce\Component\J2commerce\Site\Helper\ProductVisibilityHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Multilanguage;
 use Joomla\CMS\Language\Text;
@@ -102,6 +103,11 @@ class ProductModel extends BaseDatabaseModel
         // Check cache first
         if (isset($this->_item[$pk])) {
             return $this->_item[$pk];
+        }
+
+        // A product the visitor may not see reports as missing, never as forbidden.
+        if (!ProductVisibilityHelper::isViewable($pk)) {
+            throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_PRODUCT_NOT_FOUND'), 404);
         }
 
         // Get fully hydrated product from ProductHelper

@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Site\Controller;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Site\Helper\ProductVisibilityHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\MVC\Controller\BaseController;
 
@@ -25,8 +26,13 @@ class DisplayController extends BaseController
     {
         $vName = $this->input->getCmd('view', $this->default_view);
 
-        // Track product hits when viewing single product (same pattern as com_content articles)
-        if ($vName === 'product' && \in_array($this->input->getMethod(), ['GET', 'POST'])) {
+        // Track product hits when viewing single product (same pattern as com_content articles).
+        // Gated so a request the product view rejects cannot still move the counter.
+        if (
+            $vName === 'product'
+            && \in_array($this->input->getMethod(), ['GET', 'POST'])
+            && ProductVisibilityHelper::isViewable($this->input->getInt('id', 0))
+        ) {
             if ($model = $this->getModel($vName)) {
                 if (ComponentHelper::getParams('com_j2commerce')->get('record_hits', 1) == 1) {
                     $model->hit();

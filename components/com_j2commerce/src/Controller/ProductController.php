@@ -16,6 +16,7 @@ namespace J2Commerce\Component\J2commerce\Site\Controller;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use J2Commerce\Component\J2commerce\Administrator\Service\ProductService;
+use J2Commerce\Component\J2commerce\Site\Helper\ProductVisibilityHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Controller\BaseController;
 
@@ -28,7 +29,8 @@ class ProductController extends BaseController
 
         header('Content-Type: application/json; charset=utf-8');
 
-        if (!$productId) {
+        // A product the visitor may not see reports as missing, never as forbidden.
+        if (!$productId || !ProductVisibilityHelper::isViewable($productId)) {
             echo json_encode(['error' => 'Product not found']);
             $app->close();
             return;

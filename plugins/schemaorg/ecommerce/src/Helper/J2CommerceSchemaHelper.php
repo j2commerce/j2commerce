@@ -11,6 +11,7 @@
 namespace Joomla\Plugin\Schemaorg\Ecommerce\Helper;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Site\Helper\ProductVisibilityHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
@@ -142,7 +143,9 @@ class J2CommerceSchemaHelper
             $this->db->setQuery($query);
             $product = $this->db->loadObject();
 
-            if (!$product) {
+            // The article id comes from request input, so it also resolves while an
+            // error document renders — describe only what the visitor may see.
+            if (!$product || !ProductVisibilityHelper::isViewable((int) $product->j2commerce_product_id)) {
                 $this->productCache[$cacheKey] = null;
                 return null;
             }
@@ -176,7 +179,8 @@ class J2CommerceSchemaHelper
             return $this->productCache[$cacheKey];
         }
 
-        if (!$this->isJ2CommerceAvailable()) {
+        if (!$this->isJ2CommerceAvailable() || !ProductVisibilityHelper::isViewable($productId)) {
+            $this->productCache[$cacheKey] = null;
             return null;
         }
 
