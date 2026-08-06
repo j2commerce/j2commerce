@@ -4070,10 +4070,15 @@ class ProductHelper
         $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
+        // The sibling helper getSiblingCategoryIds() already filters on view level; without
+        // the same predicate here the filter bar names categories the visitor cannot open.
+        $groups = Factory::getApplication()->getIdentity()->getAuthorisedViewLevels();
+
         $query->select($db->quoteName(['id', 'title', 'level', 'parent_id']))
             ->from($db->quoteName('#__categories'))
             ->where($db->quoteName('extension') . ' = ' . $db->quote('com_content'))
             ->where($db->quoteName('published') . ' = 1')
+            ->whereIn($db->quoteName('access'), $groups)
             ->order($db->quoteName('lft') . ' ASC');
 
         // If parent categories specified, filter to those and their children

@@ -655,9 +655,28 @@ class ProducttagsModel extends ListModel
             ->join('INNER', $db->quoteName('#__j2commerce_products', 'p') . ' ON ' . $db->quoteName('p.j2commerce_product_id') . ' = ' . $db->quoteName('v.product_id'))
             ->join('INNER', $db->quoteName('#__content', 'a') . ' ON ' . $db->quoteName('a.id') . ' = ' . $db->quoteName('p.product_source_id'))
             ->join('LEFT', '(' . $vcSub . ') AS ' . $db->quoteName('vc') . ' ON ' . $db->quoteName('vc.product_id') . ' = ' . $db->quoteName('p.j2commerce_product_id'))
+            ->join('LEFT', $db->quoteName('#__categories', 'c') . ' ON ' . $db->quoteName('c.id') . ' = ' . $db->quoteName('a.catid'))
             ->where($db->quoteName('v.is_master') . ' = 1')
             ->where($db->quoteName('p.enabled') . ' = 1')
             ->where($db->quoteName('p.visibility') . ' = 1');
+
+        // The slider bounds must be computed over the same rows the listing shows —
+        // without these the MIN/MAX aggregate spans products the visitor cannot see.
+        $groups  = $this->getCurrentUser()->getAuthorisedViewLevels();
+        $nowDate = Factory::getDate()->toSql();
+
+        $query->where($db->quoteName('a.state') . ' = 1')
+            ->where($db->quoteName('c.published') . ' = 1')
+            ->where(
+                '(' . $db->quoteName('a.publish_up') . ' IS NULL OR ' . $db->quoteName('a.publish_up') . ' <= :publishUp)'
+            )
+            ->where(
+                '(' . $db->quoteName('a.publish_down') . ' IS NULL OR ' . $db->quoteName('a.publish_down') . ' >= :publishDown)'
+            )
+            ->bind(':publishUp', $nowDate)
+            ->bind(':publishDown', $nowDate)
+            ->whereIn($db->quoteName('a.access'), $groups)
+            ->whereIn($db->quoteName('c.access'), $groups);
 
         if (!empty($catids)) {
             $sanitizedCatids = implode(',', array_map('intval', $catids));
