@@ -2628,6 +2628,7 @@ class OrderModel extends AdminModel
                 'order_discount',
                 'order_surcharge',
                 'order_credit',
+                'order_tax',
                 'is_including_tax',
             ]))
             ->from($db->quoteName('#__j2commerce_orders'))
@@ -2641,7 +2642,23 @@ class OrderModel extends AdminModel
         }
 
         $subtotal    = round((float) ($itemTotals->subtotal ?? 0), 2);
-        $tax         = round((float) ($itemTotals->tax ?? 0), 2);
+        // Same authoritative-store question the fee component answers below. orderitem_tax is
+        // written only by recomputeOrderTax(), which checkout never calls, so an order placed
+        // through the storefront can carry its item tax solely in orders.order_tax with every
+        // line at 0.00000. Taking the (zero) per-line sum as authoritative there drops the tax
+        // out of order_total and then overwrites the one column that still held it.
+        //
+        // The fallback is orders.order_tax and NOT SUM(ordertaxes.ordertax_amount): the latter
+        // also carries the shipping tax, which $shippingTax adds separately, so it would
+        // double-count it.
+        //
+        // Known limit: "no per-line tax was ever recorded" and "per-line tax is genuinely zero"
+        // are indistinguishable in the data, so removing every taxable line from such an order
+        // leaves the stored tax standing. Accepted deliberately — it errs toward preserving a
+        // real charge rather than destroying it, and only legacy orders reach this branch;
+        // checkout now populates the per-line column, which makes the sum authoritative again.
+        $itemTaxSum  = round((float) ($itemTotals->tax ?? 0), 2);
+        $tax         = $itemTaxSum > 0 ? $itemTaxSum : round((float) $order->order_tax, 2);
         $shipping    = round((float) ($shippingTotals->shipping ?? 0), 2);
         $shippingTax = round((float) ($shippingTotals->shipping_tax ?? 0), 2);
         // Re-cap the applied discount if items were removed/reduced after it was applied.
