@@ -1121,12 +1121,18 @@ class CartOrder
         return $this->orderpayment_type;
     }
 
+    /**
+     * Fee tax is attributed to order_surcharge, not order_tax: order_tax is the
+     * product tax (it mirrors SUM(orderitem_tax) and the #__j2commerce_ordertaxes
+     * rows), so folding fee tax into it would be dropped by the first admin
+     * recalculation. Same treatment shipping tax gets — see loadShipping().
+     */
     protected function loadFees(): void
     {
         $fees = $this->get_fees();
 
         foreach ($fees as $fee) {
-            $this->order_surcharge += (float) $fee->amount;
+            $this->order_surcharge += (float) $fee->amount + (float) $fee->tax;
             $this->order_total += (float) $fee->amount + (float) $fee->tax;
         }
     }
@@ -1147,7 +1153,7 @@ class CartOrder
         // Roll back ALL prior payment_* fees from the live total + drop from session
         foreach ($fees as $key => $fee) {
             if (str_starts_with((string) $key, 'payment_')) {
-                $this->order_surcharge -= (float) ($fee['amount'] ?? 0);
+                $this->order_surcharge -= (float) ($fee['amount'] ?? 0) + (float) ($fee['tax'] ?? 0);
                 $this->order_total -= (float) ($fee['amount'] ?? 0) + (float) ($fee['tax'] ?? 0);
                 unset($fees[$key]);
             }
@@ -1167,7 +1173,7 @@ class CartOrder
 
         foreach ($this->get_fees() as $fee) {
             if (($fee->plugin ?? '') === $key) {
-                $this->order_surcharge += (float) $fee->amount;
+                $this->order_surcharge += (float) $fee->amount + (float) $fee->tax;
                 $this->order_total += (float) $fee->amount + (float) $fee->tax;
                 break;
             }
