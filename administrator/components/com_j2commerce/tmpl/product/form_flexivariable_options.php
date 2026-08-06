@@ -93,7 +93,7 @@ $key = 0;
                                                 <option value="<?php echo $option_list->j2commerce_option_id?>"><?php echo $this->escape($option_list->option_name) .' ('.$this->escape($option_list->option_unique_name).')';?></option>
                                             <?php endforeach; ?>
                                         </select>
-                                        <button type="button" id="j2commerce_flexivar_add_option_btn" class="btn btn-success"><?php echo Text::_('COM_J2COMMERCE_OPTIONS_ADD')?></button>
+                                        <button type="button" id="j2commerce_flexivar_add_option_btn" class="btn btn-primary"><?php echo Text::_('COM_J2COMMERCE_OPTIONS_ADD')?></button>
                                     </div>
                                 </div>
                             </div>

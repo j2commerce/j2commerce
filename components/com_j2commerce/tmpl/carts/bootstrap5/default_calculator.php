@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 zoneSelect.innerHTML = '';
                 const defaultOpt = document.createElement('option');
                 defaultOpt.value = '';
-                defaultOpt.textContent = '<?php echo Text::_('COM_J2COMMERCE_SELECT_OPTION'); ?>';
+                defaultOpt.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_SELECT_OPTION')); ?>;
                 zoneSelect.appendChild(defaultOpt);
                 return;
             }
@@ -156,7 +156,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 const defaultOpt = document.createElement('option');
                 defaultOpt.value = '';
-                defaultOpt.textContent = '<?php echo Text::_('COM_J2COMMERCE_SELECT_OPTION'); ?>';
+                defaultOpt.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_SELECT_OPTION')); ?>;
                 zoneSelect.appendChild(defaultOpt);
 
                 if (data.zone && data.zone.length > 0) {
@@ -173,7 +173,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const noneOpt = document.createElement('option');
                     noneOpt.value = '0';
                     noneOpt.selected = true;
-                    noneOpt.textContent = '<?php echo Text::_('COM_J2COMMERCE_CHECKOUT_ZONE_NONE'); ?>';
+                    noneOpt.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_CHECKOUT_ZONE_NONE')); ?>;
                     zoneSelect.appendChild(noneOpt);
                 }
             })
