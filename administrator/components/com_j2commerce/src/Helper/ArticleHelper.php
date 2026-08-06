@@ -497,8 +497,8 @@ class ArticleHelper
             return [];
         }
 
-        $user   = Factory::getApplication()->getIdentity();
-        $groups = implode(',', $user->getAuthorisedViewLevels());
+        $user       = Factory::getApplication()->getIdentity();
+        $viewLevels = $user->getAuthorisedViewLevels();
 
         if (empty($currentTag)) {
             $currentTag = Factory::getApplication()->getLanguage()->getTag();
@@ -533,7 +533,7 @@ class ArticleHelper
                 ->select($db->quoteName('state'))
                 ->from($db->quoteName('#__content'))
                 ->where($db->quoteName('id') . ' = :assocId')
-                ->where($db->quoteName('access') . ' IN (' . $groups . ')')
+                ->whereIn($db->quoteName('access'), $viewLevels, ParameterType::INTEGER)
                 ->bind(':assocId', $assocId, ParameterType::INTEGER);
 
             $db->setQuery($query);
