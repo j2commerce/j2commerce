@@ -22,9 +22,11 @@ use Joomla\CMS\Component\Router\RouterViewConfiguration;
 use Joomla\CMS\Component\Router\Rules\MenuRules;
 use Joomla\CMS\Component\Router\Rules\NomenuRules;
 use Joomla\CMS\Component\Router\Rules\StandardRules;
+use Joomla\CMS\Language\Multilanguage;
 use Joomla\CMS\Menu\AbstractMenu;
 use Joomla\CMS\Plugin\PluginHelper as JoomlaPluginHelper;
 use Joomla\Database\DatabaseInterface;
+use Joomla\Database\DatabaseQuery;
 use Joomla\Database\ParameterType;
 use Joomla\Event\Event;
 
@@ -969,6 +971,9 @@ class Router extends RouterView
         if ($parentId > 1) {
             $dbquery->where($this->db->quoteName('parent_id') . ' = :parent')
                 ->bind(':parent', $parentId, ParameterType::INTEGER);
+        } else {
+            // No parent to disambiguate by — a bare alias can match one row per language.
+            $this->applyLanguageFilter($dbquery, 'language');
         }
 
         $this->db->setQuery($dbquery);
@@ -1071,6 +1076,8 @@ class Router extends RouterView
             ->where($this->db->quoteName('extension') . ' = ' . $this->db->quote('com_content'))
             ->bind(':segment', $segment);
 
+        $this->applyLanguageFilter($dbquery, 'language');
+
         $this->db->setQuery($dbquery);
         $id = (int) $this->db->loadResult();
 
@@ -1166,6 +1173,12 @@ class Router extends RouterView
             $catid = (int) $query['catid'];
             $dbquery->where($this->db->quoteName('c.catid') . ' = :catid')
                 ->bind(':catid', $catid, ParameterType::INTEGER);
+        } else {
+            // A product sitting directly under its menu item arrives with no catid, and article
+            // aliases are unique only per catid — without this the segment resolves to whichever
+            // language's clone sorts first, which is then routed against a menu tree that does
+            // not contain its category at all.
+            $this->applyLanguageFilter($dbquery, 'c.language');
         }
 
         $this->db->setQuery($dbquery);
@@ -1397,6 +1410,23 @@ class Router extends RouterView
         }
 
         return $vars;
+    }
+
+    /**
+     * Constrains an alias lookup to the languages the current request may see. Aliases are only
+     * unique per parent category (categories) or per catid (articles), so on a multilingual site
+     * the same alias legitimately exists once per language — a bare `alias = :segment` lookup
+     * returns whichever row sorts first and can hand back another language's record entirely.
+     * Callers that already constrain by parent_id or catid do not need this; the ones that
+     * resolve a segment with no such context do.
+     */
+    private function applyLanguageFilter(DatabaseQuery $query, string $column): void
+    {
+        if (!Multilanguage::isEnabled()) {
+            return;
+        }
+
+        $query->whereIn($this->db->quoteName($column), [$this->app->getLanguage()->getTag(), '*'], ParameterType::STRING);
     }
 
     /**
