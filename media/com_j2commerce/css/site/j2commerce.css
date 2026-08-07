@@ -201,6 +201,17 @@
 /* Thumbnail Swiper */
 .product-gallery-thumbs {
     padding: 0.75rem 0 0;
+    /* Without this the strip takes its height from the tallest slide image and then
+       feeds that height back down through .swiper-wrapper, which is how the slides
+       ended up 84px wide by 561px tall. */
+    height: auto;
+}
+.product-gallery-thumbs .swiper-wrapper {
+    height: auto;
+    /* .swiper-wrapper is display:flex, and the default stretch gives every slide a
+       definite cross size — a definite height wins over aspect-ratio, so the square
+       below is silently discarded unless the stretch is switched off here. */
+    align-items: flex-start;
 }
 .product-gallery-thumbs .swiper-slide {
     /* Swiper sets the slide width inline (slidesPerView), so a fixed height makes the
@@ -208,6 +219,7 @@
        stay perfectly square regardless of how many fit across. */
     aspect-ratio: 1 / 1;
     height: auto;
+    align-self: flex-start;
     width: 100px;
     cursor: pointer;
     border: 2px solid transparent;
@@ -737,7 +749,8 @@
 }
 @media (max-width: 767.98px) {
     .product-gallery-thumbs .swiper-slide {
-        height: 70px;
+        /* Width only — Swiper overrides it inline from slidesPerView anyway, and pinning
+           a height here would re-break the square the aspect-ratio rule maintains. */
         width: 70px;
     }
 }
