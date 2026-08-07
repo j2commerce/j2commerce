@@ -31,7 +31,7 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
 $optionsSummary = $productHelper::getOptionsSummary($options);
 ?>
 <div class="j2commerce-flexivariable-options uk-padding-small-top" id="variable-options-<?php echo $productId; ?>">
-    <button class="uk-button uk-button-text uk-padding-remove j2commerce-configurable-button" type="button" uk-toggle="target: #collapseOptions<?php echo $productId; ?>" aria-expanded="false" aria-controls="collapseOptions<?php echo $productId; ?>">
+    <button class="uk-button uk-button-text uk-padding-remove j2commerce-configurable-button" type="button" uk-toggle="target: #collapseOptions<?php echo $productId; ?>; cls: uk-hidden" aria-expanded="false" aria-controls="collapseOptions<?php echo $productId; ?>">
         <?php echo $esc($optionsSummary); ?><span class="uk-margin-small-left fa-solid fa-chevron-down"></span>
     </button>
     <div class="uk-hidden uk-padding-small-top" id="collapseOptions<?php echo $productId; ?>">

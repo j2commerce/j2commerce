@@ -32,7 +32,7 @@ $optionsSummary = $productHelper::getOptionsSummary($options);
 
 ?>
 <div class="j2commerce-configurable-options uk-padding-small-top" id="configurable-options-<?php echo $productId; ?>">
-    <button class="uk-button uk-button-text uk-padding-remove j2commerce-configurable-button" type="button" uk-toggle="target: #collapseOptions<?php echo $productId; ?>" aria-expanded="false" aria-controls="collapseOptions<?php echo $productId; ?>">
+    <button class="uk-button uk-button-text uk-padding-remove j2commerce-configurable-button" type="button" uk-toggle="target: #collapseOptions<?php echo $productId; ?>; cls: uk-hidden" aria-expanded="false" aria-controls="collapseOptions<?php echo $productId; ?>">
         <?php echo $esc($optionsSummary); ?><span class="uk-margin-small-left fa-solid fa-chevron-down"></span>
     </button>
     <div class="uk-hidden uk-padding-small-top" id="collapseOptions<?php echo $productId; ?>">
