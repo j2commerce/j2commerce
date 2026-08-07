@@ -11,14 +11,12 @@
         />
         <field
             name="customer_group_id"
-            type="sql"
+            type="usergrouplist"
             label="COM_J2COMMERCE_HEADING_USER_GROUP"
-            onchange="this.form.submit();"
-            sql_select="id, title"
-            sql_from="#__usergroups"
-            sql_order="title ASC"
-            key_field="id"
-            value_field="title"
+            layout="joomla.form.field.list-fancy-select"
+            default="1"
+            multiple="false"
+            hiddenLabel="true"
         >
             <option value="">COM_J2COMMERCE_SELECT_USER_GROUP</option>
         </field>

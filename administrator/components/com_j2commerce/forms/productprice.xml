@@ -66,7 +66,7 @@
 
         <field
             name="customer_group_id"
-            type="UserGroupList"
+            type="usergrouplist"
             label="COM_J2COMMERCE_PRODUCT_PRICE_GROUP_RANGE"
             layout="joomla.form.field.list-fancy-select"
             default="1"
