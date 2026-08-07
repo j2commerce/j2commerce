@@ -847,6 +847,11 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             // Silently fail if cart table doesn't exist yet or other DB error
             // This allows the plugin to work during initial migration
         }
+
+        // The unavailable-item list CartModel::getItems() keeps was built against the
+        // guest's view levels, and logging in widens them. Drop it so the loader decides
+        // afresh rather than suppressing a message this identity has not been shown.
+        $this->getApplication()->getSession()->clear('unavailable_announced', 'j2commerce');
     }
 
     /**
