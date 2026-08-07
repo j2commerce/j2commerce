@@ -20,12 +20,16 @@ use Joomla\Database\ParameterType;
 
 final class OrderHistoryHelper
 {
+    /** Marks a history line as admin-only; MyprofileModel::getOrderHistory() filters on this shape. */
+    public const ADMIN_NOTE_PARAMS = '{"type":"admin_note"}';
+
     public static function add(
         string $orderId,
         string $comment,
         int $orderStateId = 0,
         bool $notifyCustomer = false,
         int $createdBy = 0,
+        array|string|null $params = null,
     ): bool {
         if (empty($orderId)) {
             return false;
@@ -45,8 +49,12 @@ final class OrderHistoryHelper
                 $createdBy = $user?->id ?? 0;
             }
 
-            $notifyInt   = $notifyCustomer ? 1 : 0;
-            $emptyParams = '{}';
+            $notifyInt  = $notifyCustomer ? 1 : 0;
+            $paramsJson = match (true) {
+                $params === null   => '{}',
+                \is_array($params) => (string) json_encode($params),
+                default            => $params,
+            };
 
             $query = $db->getQuery(true)
                 ->insert($db->quoteName('#__j2commerce_orderhistories'))
@@ -66,7 +74,7 @@ final class OrderHistoryHelper
                 ->bind(':comment', $comment)
                 ->bind(':createdOn', $now)
                 ->bind(':createdBy', $createdBy, ParameterType::INTEGER)
-                ->bind(':params', $emptyParams);
+                ->bind(':params', $paramsJson);
 
             $db->setQuery($query);
 
