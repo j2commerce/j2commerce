@@ -19,6 +19,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UploadHelper;
+use J2Commerce\Component\J2commerce\Site\Helper\ProductVisibilityHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Filter\InputFilter;
@@ -137,9 +138,15 @@ class CartModel extends BaseDatabaseModel
             return $errors;
         }
 
-        // Validate product is enabled (published). Visibility only controls category list display,
-        // not whether a product can be added to cart.
-        if (($product->enabled ?? 0) != 1) {
+        // enabled holds for every client — the helper waives it for users who may edit content,
+        // which suits a preview but not a purchase. Site requests additionally hold to the same
+        // article and category predicates as the product listings; visibility stays out of it,
+        // since that controls category list display only. Back-office order entry stops at
+        // enabled: a store manager may add a product that is not on the storefront.
+        $blocked = ($product->enabled ?? 0) != 1
+            || ($app->isClient('site') && !ProductVisibilityHelper::isViewable($productId));
+
+        if ($blocked) {
             $errors['error'] = ['general' => Text::_('COM_J2COMMERCE_PRODUCT_NOT_ENABLED_CANNOT_ADDTOCART')];
             return $errors;
         }
