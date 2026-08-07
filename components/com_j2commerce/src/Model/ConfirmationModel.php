@@ -356,15 +356,10 @@ class ConfirmationModel extends BaseDatabaseModel
             return true;
         }
 
-        $sessionEmail = $session->get('guest_order_email', '', 'j2commerce');
-
-        if (!empty($sessionEmail)
-            && !empty($orderTable->user_email)
-            && strtolower($sessionEmail) === strtolower($orderTable->user_email)
-        ) {
-            return true;
-        }
-
+        // An address alone is not a secret and is not proof of ownership: order_id here comes
+        // straight from the request, so matching on the session email would authorise reading
+        // every order that shares it. Guest access must present the order token, which is what
+        // MyprofileController and the Myprofile view already require.
         return false;
     }
 }
