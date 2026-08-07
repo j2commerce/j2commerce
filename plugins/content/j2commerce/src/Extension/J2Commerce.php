@@ -20,15 +20,12 @@ use J2Commerce\Component\J2commerce\Administrator\Service\ProductService;
 use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 use Joomla\CMS\Cache\CacheControllerFactoryInterface;
 use Joomla\CMS\Component\ComponentHelper;
-use Joomla\CMS\Event\Content\AfterDeleteEvent;
 use Joomla\CMS\Event\Content\AfterDisplayEvent;
-use Joomla\CMS\Event\Content\AfterSaveEvent;
 use Joomla\CMS\Event\Content\BeforeDisplayEvent;
-use Joomla\CMS\Event\Content\BeforeSaveEvent;
 use Joomla\CMS\Event\Content\ContentPrepareEvent;
-use Joomla\CMS\Event\Model\AfterDeleteEvent as ModelAfterDeleteEvent;
-use Joomla\CMS\Event\Model\AfterSaveEvent as ModelAfterSaveEvent;
-use Joomla\CMS\Event\Model\BeforeSaveEvent as ModelBeforeSaveEvent;
+use Joomla\CMS\Event\Model\AfterDeleteEvent;
+use Joomla\CMS\Event\Model\AfterSaveEvent;
+use Joomla\CMS\Event\Model\BeforeSaveEvent;
 use Joomla\CMS\Event\Model\PrepareFormEvent;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
@@ -373,7 +370,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
      *
      * @since  6.1.0
      */
-    private function saveCategoryJ2CommerceParams(BeforeSaveEvent|ModelBeforeSaveEvent $event): void
+    private function saveCategoryJ2CommerceParams(BeforeSaveEvent $event): void
     {
         $item = $event->getItem();
 
@@ -417,7 +414,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
      *
      * @since 6.0.0
      */
-    public function onContentBeforeSave(BeforeSaveEvent|ModelBeforeSaveEvent $event): void
+    public function onContentBeforeSave(BeforeSaveEvent $event): void
     {
         $context = $event->getContext();
 
@@ -464,7 +461,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
      *
      * @since 6.0.0
      */
-    public function onContentAfterSave(AfterSaveEvent|ModelAfterSaveEvent $event): void
+    public function onContentAfterSave(AfterSaveEvent $event): void
     {
         $context = $event->getContext();
 
@@ -713,7 +710,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
      *
      * @since 6.0.0
      */
-    public function onContentAfterDelete(AfterDeleteEvent|ModelAfterDeleteEvent $event): void
+    public function onContentAfterDelete(AfterDeleteEvent $event): void
     {
         $context = $event->getContext();
 
