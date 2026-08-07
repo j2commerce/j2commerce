@@ -434,6 +434,57 @@ class CartModel extends BaseDatabaseModel
                 $items = [];
             }
 
+            // A line whose product has since stopped resolving is dropped from every site
+            // surface at once — this is the single loader behind the cart, the mini-cart,
+            // checkout, the totals and the order build. The row is left in place rather than
+            // deleted, so a brief unpublish costs the shopper nothing and the line returns
+            // with the product. enabled is held to separately because the helper waives it
+            // for users who may edit content. Wishlists keep their lines: they are long-lived
+            // by nature, and moving one to a cart goes through addCartItem() anyway.
+            $app = Factory::getApplication();
+
+            if ($this->cart_type === 'cart' && $app->isClient('site')) {
+                $session   = $app->getSession();
+                $announced = $session->get('unavailable_announced', [], 'j2commerce');
+                $kept      = [];
+                $isNew     = false;
+
+                foreach ($items as $item) {
+                    if (
+                        (int) ($item->product_enabled ?? 0) === 1
+                        && ProductVisibilityHelper::isViewable((int) ($item->product_id ?? 0))
+                    ) {
+                        $kept[] = $item;
+                        continue;
+                    }
+
+                    // The row survives, so without this the mini-cart would re-announce the
+                    // same line on every page load for the rest of the session.
+                    $cartitemId = (int) ($item->j2commerce_cartitem_id ?? 0);
+
+                    if (\in_array($cartitemId, $announced, true)) {
+                        continue;
+                    }
+
+                    $announced[] = $cartitemId;
+                    $isNew       = true;
+
+                    $app->enqueueMessage(
+                        Text::sprintf(
+                            'COM_J2COMMERCE_CART_ITEM_NO_LONGER_AVAILABLE',
+                            trim((string) ($item->product_name ?? '')) ?: Text::_('COM_J2COMMERCE_PRODUCT')
+                        ),
+                        'warning'
+                    );
+                }
+
+                if ($isNew) {
+                    $session->set('unavailable_announced', $announced, 'j2commerce');
+                }
+
+                $items = $kept;
+            }
+
             // Process each item with product type behavior
             foreach ($items as &$item) {
                 $behaviorClass = $this->getBehaviorClass($item->product_type ?: 'simple');

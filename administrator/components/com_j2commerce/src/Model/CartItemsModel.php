@@ -133,6 +133,7 @@ class CartItemsModel extends ListModel
         $query->select([
             'p.product_type AS product_type_name',
             'p.vendor_id    AS product_vendor_id',
+            'p.enabled      AS product_enabled',
             'c.title        AS product_name',
         ])
             ->join(
