@@ -379,7 +379,7 @@ class SelectHelper
     /**
      * Get all enabled order states as an array
      *
-     * @return  array<int, string>  Array of orderstate_id => orderstatus_name
+     * @return  array<int, string>  Array of orderstatus_id => orderstatus_name
      *
      * @since   6.0.0
      */
@@ -389,8 +389,8 @@ class SelectHelper
         $query   = $db->getQuery(true);
         $enabled = 1;
 
-        $query->select($db->quoteName(['j2commerce_orderstate_id', 'orderstatus_name']))
-            ->from($db->quoteName('#__j2commerce_orderstates'))
+        $query->select($db->quoteName(['j2commerce_orderstatus_id', 'orderstatus_name']))
+            ->from($db->quoteName('#__j2commerce_orderstatuses'))
             ->where($db->quoteName('enabled') . ' = :enabled')
             ->bind(':enabled', $enabled, ParameterType::INTEGER)
             ->order($db->quoteName('ordering') . ' ASC');
@@ -400,7 +400,7 @@ class SelectHelper
 
         $options = [];
         foreach ($orderstates as $orderstate) {
-            $options[(int) $orderstate->j2commerce_orderstate_id] = $orderstate->orderstatus_name;
+            $options[(int) $orderstate->j2commerce_orderstatus_id] = $orderstate->orderstatus_name;
         }
 
         return $options;
@@ -525,18 +525,25 @@ class SelectHelper
         $query   = $db->getQuery(true);
         $enabled = 1;
 
-        $query->select($db->quoteName(['j2commerce_manufacturer_id', 'manufacturer_name']))
-            ->from($db->quoteName('#__j2commerce_manufacturers'))
-            ->where($db->quoteName('enabled') . ' = :enabled')
+        $query->select($db->quoteName('m.j2commerce_manufacturer_id'))
+            ->select($db->quoteName('a.company', 'manufacturer_name'))
+            ->from($db->quoteName('#__j2commerce_manufacturers', 'm'))
+            ->join(
+                'LEFT',
+                $db->quoteName('#__j2commerce_addresses', 'a') . ' ON ' .
+                $db->quoteName('a.j2commerce_address_id') . ' = ' . $db->quoteName('m.address_id')
+            )
+            ->where($db->quoteName('m.enabled') . ' = :enabled')
             ->bind(':enabled', $enabled, ParameterType::INTEGER)
-            ->order($db->quoteName('manufacturer_name') . ' ASC');
+            ->order($db->quoteName('a.company') . ' ASC');
 
         $db->setQuery($query);
         $manufacturers = $db->loadObjectList() ?: [];
 
         $options = [];
         foreach ($manufacturers as $manufacturer) {
-            $options[(int) $manufacturer->j2commerce_manufacturer_id] = $manufacturer->manufacturer_name;
+            // LEFT JOIN: a dangling address_id yields NULL, which the string-typed option() would reject.
+            $options[(int) $manufacturer->j2commerce_manufacturer_id] = (string) $manufacturer->manufacturer_name;
         }
 
         return $options;
@@ -593,18 +600,25 @@ class SelectHelper
         $query   = $db->getQuery(true);
         $enabled = 1;
 
-        $query->select($db->quoteName(['j2commerce_vendor_id', 'vendor_name']))
-            ->from($db->quoteName('#__j2commerce_vendors'))
-            ->where($db->quoteName('enabled') . ' = :enabled')
+        $query->select($db->quoteName('v.j2commerce_vendor_id'))
+            ->select($db->quoteName('a.company', 'vendor_name'))
+            ->from($db->quoteName('#__j2commerce_vendors', 'v'))
+            ->join(
+                'LEFT',
+                $db->quoteName('#__j2commerce_addresses', 'a') . ' ON ' .
+                $db->quoteName('a.j2commerce_address_id') . ' = ' . $db->quoteName('v.address_id')
+            )
+            ->where($db->quoteName('v.enabled') . ' = :enabled')
             ->bind(':enabled', $enabled, ParameterType::INTEGER)
-            ->order($db->quoteName('vendor_name') . ' ASC');
+            ->order($db->quoteName('a.company') . ' ASC');
 
         $db->setQuery($query);
         $vendors = $db->loadObjectList() ?: [];
 
         $options = [];
         foreach ($vendors as $vendor) {
-            $options[(int) $vendor->j2commerce_vendor_id] = $vendor->vendor_name;
+            // LEFT JOIN: a dangling address_id yields NULL, which the string-typed option() would reject.
+            $options[(int) $vendor->j2commerce_vendor_id] = (string) $vendor->vendor_name;
         }
 
         return $options;
@@ -844,28 +858,28 @@ class SelectHelper
     /**
      * Get all enabled shipping methods as an array
      *
-     * @return  array<int, string>  Array of shippingmethod_id => shippingmethod_name
+     * @return  array<int, string>  Array of shippingmethod_id => shipping_method_name
      *
      * @since   6.0.0
      */
     public static function getShippingMethods(): array
     {
-        $db      = self::getDatabase();
-        $query   = $db->getQuery(true);
-        $enabled = 1;
+        $db        = self::getDatabase();
+        $query     = $db->getQuery(true);
+        $published = 1;
 
-        $query->select($db->quoteName(['j2commerce_shippingmethod_id', 'shippingmethod_name']))
+        $query->select($db->quoteName(['j2commerce_shippingmethod_id', 'shipping_method_name']))
             ->from($db->quoteName('#__j2commerce_shippingmethods'))
-            ->where($db->quoteName('enabled') . ' = :enabled')
-            ->bind(':enabled', $enabled, ParameterType::INTEGER)
-            ->order($db->quoteName('ordering') . ' ASC');
+            ->where($db->quoteName('published') . ' = :published')
+            ->bind(':published', $published, ParameterType::INTEGER)
+            ->order($db->quoteName('shipping_method_name') . ' ASC');
 
         $db->setQuery($query);
         $methods = $db->loadObjectList() ?: [];
 
         $options = [];
         foreach ($methods as $method) {
-            $options[(int) $method->j2commerce_shippingmethod_id] = $method->shippingmethod_name;
+            $options[(int) $method->j2commerce_shippingmethod_id] = $method->shipping_method_name;
         }
 
         return $options;
@@ -898,74 +912,6 @@ class SelectHelper
         }
 
         $methods = self::getShippingMethods();
-        foreach ($methods as $id => $methodName) {
-            $options[] = self::option($id, $methodName);
-        }
-
-        return self::genericlist($options, $name, $attribs, $selected, $idTag ?? $name);
-    }
-
-    // =========================================================================
-    // PAYMENT METHOD METHODS
-    // =========================================================================
-
-    /**
-     * Get all enabled payment methods as an array
-     *
-     * @return  array<int, string>  Array of paymentmethod_id => paymentmethod_name
-     *
-     * @since   6.0.0
-     */
-    public static function getPaymentMethods(): array
-    {
-        $db      = self::getDatabase();
-        $query   = $db->getQuery(true);
-        $enabled = 1;
-
-        $query->select($db->quoteName(['j2commerce_paymentmethod_id', 'paymentmethod_name']))
-            ->from($db->quoteName('#__j2commerce_paymentmethods'))
-            ->where($db->quoteName('enabled') . ' = :enabled')
-            ->bind(':enabled', $enabled, ParameterType::INTEGER)
-            ->order($db->quoteName('ordering') . ' ASC');
-
-        $db->setQuery($query);
-        $methods = $db->loadObjectList() ?: [];
-
-        $options = [];
-        foreach ($methods as $method) {
-            $options[(int) $method->j2commerce_paymentmethod_id] = $method->paymentmethod_name;
-        }
-
-        return $options;
-    }
-
-    /**
-     * Generate a payment method select list
-     *
-     * @param   mixed              $selected   The selected value
-     * @param   string             $name       The HTML name attribute
-     * @param   array<string, mixed> $attribs  HTML attributes for the select element
-     * @param   string|null        $idTag      The HTML id attribute
-     * @param   bool               $allowEmpty Include an empty "Select" option
-     *
-     * @return  string  The HTML for the select list
-     *
-     * @since   6.0.0
-     */
-    public static function paymentmethods(
-        mixed $selected = null,
-        string $name = 'paymentmethod_id',
-        array $attribs = [],
-        ?string $idTag = null,
-        bool $allowEmpty = true
-    ): string {
-        $options = [];
-
-        if ($allowEmpty) {
-            $options[] = self::option('', '- ' . Text::_('COM_J2COMMERCE_SELECT_OPTION') . ' -');
-        }
-
-        $methods = self::getPaymentMethods();
         foreach ($methods as $id => $methodName) {
             $options[] = self::option($id, $methodName);
         }
