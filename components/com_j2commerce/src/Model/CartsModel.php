@@ -302,7 +302,7 @@ class CartsModel extends BaseDatabaseModel
      * Validate that the current shipping selection still exists among available methods.
      *
      * If the previously selected method is no longer available (e.g., cart changes
-     * pushed the order outside a rate range), auto-selects the lowest-price method.
+     * pushed the order outside a rate range), auto-selects the first available method.
      * If no methods exist at all, clears the shipping values from session.
      *
      * @return  void
@@ -343,25 +343,18 @@ class CartsModel extends BaseDatabaseModel
             return;
         }
 
-        // Auto-select the lowest-price method
-        $lowest = null;
+        // Auto-select the first method. The session list was already ordered when it was
+        // stored, so this is the cheapest rate or the plugin-ordering leader accordingly.
+        $default = array_values($shippingMethods)[0];
 
-        foreach ($shippingMethods as $method) {
-            if ($lowest === null || (float) $method['price'] < (float) $lowest['price']) {
-                $lowest = $method;
-            }
-        }
-
-        if ($lowest !== null) {
-            $session->set('shipping_values', [
-                'shipping_name'         => $lowest['name'],
-                'shipping_price'        => $lowest['price'],
-                'shipping_tax'          => $lowest['tax'],
-                'shipping_tax_class_id' => $lowest['tax_class_id'] ?? 0,
-                'shipping_extra'        => $lowest['extra'],
-                'shipping_code'         => $lowest['code'],
-                'shipping_plugin'       => $lowest['element'],
-            ], 'j2commerce');
-        }
+        $session->set('shipping_values', [
+            'shipping_name'         => $default['name'],
+            'shipping_price'        => $default['price'],
+            'shipping_tax'          => $default['tax'],
+            'shipping_tax_class_id' => $default['tax_class_id'] ?? 0,
+            'shipping_extra'        => $default['extra'],
+            'shipping_code'         => $default['code'],
+            'shipping_plugin'       => $default['element'],
+        ], 'j2commerce');
     }
 }

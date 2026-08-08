@@ -993,6 +993,44 @@ class CartOrder
     }
 
     /**
+     * Order shipping rates for display. With auto-apply on, the cheapest rate leads.
+     * With it off, the plugin dispatch order (#__extensions.ordering) is preserved
+     * between plugins and the rates one plugin returned are priced ascending inside
+     * its own block. Either way the first entry is the default selection.
+     *
+     * @param   array<int, array<string, mixed>>  $rates      Rates from GetShippingRates.
+     * @param   bool                              $autoApply  Value of auto_apply_shipping_rate.
+     *
+     * @return  array<int, array<string, mixed>>
+     *
+     * @since   6.1.0
+     */
+    public static function sortShippingRates(array $rates, bool $autoApply): array
+    {
+        $byPrice = static fn (array $a, array $b): int => ((float) ($a['price'] ?? 0)) <=> ((float) ($b['price'] ?? 0));
+
+        if ($autoApply) {
+            usort($rates, $byPrice);
+
+            return $rates;
+        }
+
+        $groups = [];
+
+        foreach ($rates as $rate) {
+            $groups[(string) ($rate['element'] ?? '')][] = $rate;
+        }
+
+        foreach ($groups as &$group) {
+            usort($group, $byPrice);
+        }
+
+        unset($group);
+
+        return array_merge(...array_values($groups));
+    }
+
+    /**
      * Canonical empty shipping_values array (no method selected).
      *
      * @return  array<string, mixed>

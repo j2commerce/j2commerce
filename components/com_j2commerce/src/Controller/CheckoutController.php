@@ -1037,12 +1037,9 @@ class CheckoutController extends BaseController
             $this->app->getDispatcher()->dispatch('onJ2CommerceFilterShippingRates', $filterEvent);
             $shippingRates = $filterEvent->getArgument('rates', $shippingRates);
 
-            // Sort rates by price (cheapest first)
-            usort($shippingRates, function (array $a, array $b): int {
-                return ((float) ($a['price'] ?? 0)) <=> ((float) ($b['price'] ?? 0));
-            });
+            $shippingRates = CartOrder::sortShippingRates($shippingRates, ConfigHelper::autoApplyShippingRate());
 
-            // Auto-select cheapest rate if no selection exists or previous selection is no longer available
+            // Auto-select the first rate if no selection exists or previous selection is no longer available
             if (!empty($shippingRates)) {
                 $existingName            = $shippingValues['shipping_name'] ?? '';
                 $selectionStillAvailable = false;
@@ -1068,15 +1065,15 @@ class CheckoutController extends BaseController
                 }
 
                 if (!$selectionStillAvailable) {
-                    $cheapest       = $shippingRates[0];
+                    $defaultRate    = $shippingRates[0];
                     $shippingValues = [
-                        'shipping_plugin'       => $cheapest['element'] ?? '',
-                        'shipping_name'         => $cheapest['name'] ?? '',
-                        'shipping_price'        => (string) ((float) ($cheapest['price'] ?? 0)),
-                        'shipping_code'         => $cheapest['code'] ?? '',
-                        'shipping_tax'          => (string) ((float) ($cheapest['tax'] ?? 0)),
-                        'shipping_tax_class_id' => (int) ($cheapest['tax_class_id'] ?? 0),
-                        'shipping_extra'        => $cheapest['extra'] ?? '',
+                        'shipping_plugin'       => $defaultRate['element'] ?? '',
+                        'shipping_name'         => $defaultRate['name'] ?? '',
+                        'shipping_price'        => (string) ((float) ($defaultRate['price'] ?? 0)),
+                        'shipping_code'         => $defaultRate['code'] ?? '',
+                        'shipping_tax'          => (string) ((float) ($defaultRate['tax'] ?? 0)),
+                        'shipping_tax_class_id' => (int) ($defaultRate['tax_class_id'] ?? 0),
+                        'shipping_extra'        => $defaultRate['extra'] ?? '',
                     ];
                     $session->set('shipping_values', $shippingValues, 'j2commerce');
                     $session->set('shipping_method', $shippingValues['shipping_plugin'], 'j2commerce');

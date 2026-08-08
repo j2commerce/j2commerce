@@ -17,6 +17,7 @@ namespace J2Commerce\Component\J2commerce\Site\Controller;
 // phpcs:enable PSR1.Files.SideEffects
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CartOrder;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UploadHelper;
@@ -133,7 +134,7 @@ class CartsController extends BaseController
      *
      * Called before rendering cart totals so that quantity/item changes that push
      * the order outside a shipping rate range are detected. If the previously
-     * selected method is no longer offered, the lowest-price method is auto-selected.
+     * selected method is no longer offered, the first method is auto-selected.
      */
     private function refreshShippingMethods(): void
     {
@@ -163,8 +164,7 @@ class CartsController extends BaseController
         $order   = OrderHelper::getInstance()->populateOrder($items)->getOrder();
         $methods = J2CommerceHelper::plugin()->eventWithArray('GetShippingRates', [$order]);
 
-        // Sort by price ascending so cheapest rates appear first
-        usort($methods, fn (array $a, array $b) => ((float) ($a['price'] ?? 0)) <=> ((float) ($b['price'] ?? 0)));
+        $methods = CartOrder::sortShippingRates($methods, ConfigHelper::autoApplyShippingRate());
 
         $session->set('shipping_methods', $methods, 'j2commerce');
 
@@ -198,26 +198,19 @@ class CartsController extends BaseController
             return;
         }
 
-        // Auto-select the lowest-price method
-        $lowest = null;
+        // Auto-select the first method -- cheapest when auto-select is on, otherwise
+        // the one the plugin ordering puts first
+        $default = $methods[0];
 
-        foreach ($methods as $method) {
-            if ($lowest === null || (float) $method['price'] < (float) $lowest['price']) {
-                $lowest = $method;
-            }
-        }
-
-        if ($lowest !== null) {
-            $session->set('shipping_values', [
-                'shipping_name'         => $lowest['name'],
-                'shipping_price'        => $lowest['price'],
-                'shipping_tax'          => $lowest['tax'],
-                'shipping_tax_class_id' => $lowest['tax_class_id'] ?? 0,
-                'shipping_extra'        => $lowest['extra'],
-                'shipping_code'         => $lowest['code'],
-                'shipping_plugin'       => $lowest['element'],
-            ], 'j2commerce');
-        }
+        $session->set('shipping_values', [
+            'shipping_name'         => $default['name'],
+            'shipping_price'        => $default['price'],
+            'shipping_tax'          => $default['tax'],
+            'shipping_tax_class_id' => $default['tax_class_id'] ?? 0,
+            'shipping_extra'        => $default['extra'],
+            'shipping_code'         => $default['code'],
+            'shipping_plugin'       => $default['element'],
+        ], 'j2commerce');
     }
 
     private function getProductNameByProductId(int $productId): string
@@ -1393,12 +1386,11 @@ class CartsController extends BaseController
 
                 $methods = J2CommerceHelper::plugin()->eventWithArray('GetShippingRates', [$order]);
 
-                // Sort by price ascending so cheapest rates appear first
-                usort($methods, fn (array $a, array $b) => ((float) ($a['price'] ?? 0)) <=> ((float) ($b['price'] ?? 0)));
+                $methods = CartOrder::sortShippingRates($methods, ConfigHelper::autoApplyShippingRate());
 
                 $session->set('shipping_methods', $methods, 'j2commerce');
 
-                // Auto-select first method (cheapest) so totals include shipping immediately
+                // Auto-select first method so totals include shipping immediately
                 if (!empty($methods)) {
                     $first = $methods[0];
                     $session->set('shipping_values', [
