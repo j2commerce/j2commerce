@@ -18,6 +18,7 @@ namespace J2Commerce\Component\J2commerce\Site\Controller;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CartHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CartOrder;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
@@ -307,6 +308,10 @@ class CheckoutController extends BaseController
 
                 $session->set('uaccount', 'login', 'j2commerce');
 
+                // The identity changed mid-checkout; an order primed under the
+                // previous one is no longer this caller's to resume or rewrite.
+                $this->clearPrimedOrder();
+
                 $loggedUser = $this->app->getIdentity();
 
                 if ($loggedUser && $loggedUser->id && !empty($guestSessionId)) {
@@ -541,7 +546,12 @@ class CheckoutController extends BaseController
             }
 
             // Re-acquire session after fork (login regenerates session ID)
-            $session    = $this->app->getSession();
+            $session = $this->app->getSession();
+
+            // The identity changed mid-checkout; an order primed under the
+            // previous one is no longer this caller's to resume or rewrite.
+            $this->clearPrimedOrder();
+
             $loggedUser = $this->app->getIdentity();
 
             // Merge guest cart items
@@ -1683,10 +1693,22 @@ class CheckoutController extends BaseController
             $order->applyPaymentSurcharge();
 
             try {
-                // Idempotency guard: if a prior confirm() for this cart already
-                // persisted an order in this session (double-click, page reload,
-                // or concurrent request race), reuse that order instead of
-                // inserting a duplicate row.
+                // Idempotency guard: a prior confirm() for this cart in this session
+                // (double-click, page reload, or concurrent request race) already
+                // persisted an order, and repeating the save would insert a duplicate.
+                //
+                // The prior row is only reusable while it still describes the same
+                // purchase. cart_id identifies the cart rather than the purchase: it
+                // is unchanged by a quantity edit, an added or removed line, a coupon
+                // or a different shipping rate, all of which are reachable from the
+                // confirm step's Modify links. Matching on it alone charged the
+                // shopper from the earlier row.
+                //
+                // So the prior row is compared against what is being confirmed now,
+                // and reused only when the two agree. Anything else falls through to
+                // a fresh order: the earlier row is never altered, which keeps this
+                // decision away from any amount a payment plugin may already have
+                // handed a gateway for it.
                 $savedOrder   = null;
                 $priorOrderId = $this->app->getUserState('j2commerce.order_id');
 
@@ -1696,8 +1718,17 @@ class CheckoutController extends BaseController
                     if ($priorTable && $priorTable->load(['order_id' => $priorOrderId])) {
                         $currentCart   = CartHelper::getInstance()->getCart();
                         $currentCartId = (int) ($currentCart->j2commerce_cart_id ?? 0);
+                        $currentUserId = (int) ($this->app->getIdentity()->id ?? 0);
 
-                        if ($currentCartId > 0 && (int) ($priorTable->cart_id ?? -1) === $currentCartId) {
+                        $isSameCart  = $currentCartId > 0 && (int) ($priorTable->cart_id ?? -1) === $currentCartId;
+                        $isSameOwner = (int) ($priorTable->user_id ?? -1) === $currentUserId;
+                        $isUnpaid    = (int) ($priorTable->order_state_id ?? 0) === 5;
+                        $isSameOrder = $isSameCart
+                            && $isSameOwner
+                            && $isUnpaid
+                            && $this->orderMatchesCart($priorTable, $order);
+
+                        if ($isSameOrder) {
                             $savedOrder = $priorTable;
                         }
                     }
@@ -2230,6 +2261,66 @@ class CheckoutController extends BaseController
         J2CommerceHelper::plugin()->event('CheckoutCleanup', [$session]);
 
         return $cartCleared;
+    }
+
+    /**
+     * Whether a persisted order still describes the cart being confirmed.
+     *
+     * Compares the money the shopper would be charged and the lines that money is
+     * for. The total alone would miss a swap of one line for another at the same
+     * price, and the lines alone would miss a coupon or a change of shipping rate,
+     * so both are required.
+     */
+    private function orderMatchesCart(object $priorOrder, CartOrder $cartOrder): bool
+    {
+        $scale  = CurrencyHelper::getDecimalPlace(ConfigHelper::getDefaultCurrency());
+        $factor = 10 ** $scale;
+
+        // Compared in the currency's own minor units: saveOrder() rounds to the same
+        // scale before storing, so equal purchases compare exactly and no float
+        // tolerance has to be invented.
+        $storedTotal  = (int) round(((float) ($priorOrder->order_total ?? 0)) * $factor);
+        $currentTotal = (int) round(((float) ($cartOrder->order_total ?? 0)) * $factor);
+
+        if ($storedTotal !== $currentTotal) {
+            return false;
+        }
+
+        $db      = Factory::getContainer()->get(DatabaseInterface::class);
+        $orderId = (string) ($priorOrder->order_id ?? '');
+
+        $query = $db->getQuery(true)
+            ->select($db->quoteName(['variant_id', 'orderitem_quantity']))
+            ->from($db->quoteName('#__j2commerce_orderitems'))
+            ->where($db->quoteName('order_id') . ' = :orderId')
+            ->bind(':orderId', $orderId);
+
+        $db->setQuery($query);
+
+        $storedLines = [];
+
+        foreach ($db->loadObjectList() ?: [] as $row) {
+            $storedLines[] = (int) $row->variant_id . ':' . (float) $row->orderitem_quantity;
+        }
+
+        $currentLines = [];
+
+        foreach ($cartOrder->getItems() as $item) {
+            $currentLines[] = (int) ($item->variant_id ?? 0) . ':' . (float) ($item->product_qty ?? 1);
+        }
+
+        sort($storedLines);
+        sort($currentLines);
+
+        return $storedLines === $currentLines;
+    }
+
+    /** Drop the order this session had in flight, so a later step cannot resume or rewrite it. */
+    private function clearPrimedOrder(): void
+    {
+        $this->app->setUserState('j2commerce.order_id', null);
+        $this->app->setUserState('j2commerce.orderpayment_id', null);
+        $this->app->setUserState('j2commerce.order_token', null);
     }
 
     private function sendOrderEmails(string $orderId): void
