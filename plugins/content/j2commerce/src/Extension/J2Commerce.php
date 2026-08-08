@@ -17,6 +17,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use J2Commerce\Component\J2commerce\Administrator\Service\ProductService;
+use J2Commerce\Component\J2commerce\Site\Helper\ProductVisibilityHelper;
 use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 use Joomla\CMS\Cache\CacheControllerFactoryInterface;
 use Joomla\CMS\Component\ComponentHelper;
@@ -1150,7 +1151,15 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             }
 
             $productId = (int) $values[0];
-            $product   = $this->getProductById($productId);
+
+            // Same gate the |detail branch resolves through, so both option
+            // branches answer identically on the same request.
+            if (!ProductVisibilityHelper::isViewable($productId)) {
+                $article->text = $this->replaceAtPosition($article->text, $match['raw'], '');
+                continue;
+            }
+
+            $product = $this->getProductById($productId);
 
             if (!$product) {
                 $article->text = $this->replaceAtPosition($article->text, $match['raw'], '');
