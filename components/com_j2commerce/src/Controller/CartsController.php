@@ -307,8 +307,8 @@ class CartsController extends BaseController
             } else {
                 $return = $this->input->getBase64('return');
 
-                if ($return !== null) {
-                    $returnUrl = base64_decode($return);
+                if (!empty($return)) {
+                    $returnUrl = $this->validateInternalRedirect(base64_decode($return), $cartUrl);
                 } else {
                     $returnUrl = $cartUrl;
                 }
