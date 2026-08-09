@@ -1076,7 +1076,7 @@ class ConfigHelper
      */
     public static function autoApplyShippingRate(): bool
     {
-        return (int) self::get('auto_apply_shipping_rate', 0) === 1;
+        return (int) self::get('auto_apply_shipping_rate', 1) === 1;
     }
 
     /**
