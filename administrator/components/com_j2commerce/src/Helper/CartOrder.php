@@ -386,17 +386,20 @@ class CartOrder
     }
 
     /**
-     * Re-check stock for every managed line at order-build time.
+     * Re-check stock and the per-customer sale limits for every managed line at order-build time.
      *
-     * Add-to-cart and quantity-update enforce the stock rules, but time passes before
-     * confirm, so without this two shoppers can both buy the last unit. Quantities are
-     * summed per variant first: two lines of the same variant with different options
-     * must not each be measured against the full stock. Authority is
-     * `ProductHelper::checkStockStatus()` — the same helper the cart behaviors use, so
-     * backorder-enabled variants stay purchasable. A load or query failure is logged and the line
-     * skipped — deliberate, so an infrastructure error cannot block every shopper at checkout.
+     * Add-to-cart and quantity-update enforce both rules, but time passes before confirm,
+     * so without this two shoppers can both buy the last unit, and any path that reaches
+     * confirm without going back through a `Cart*` behavior leaves the limits unasserted.
+     * Quantities are summed per variant first: two lines of the same variant with different
+     * options must not each be measured against the full stock, and together they are what
+     * this shopper is asking to buy. Authority is `ProductHelper::checkStockStatus()` and
+     * `ProductHelper::validateQuantityRestriction()` — the same helpers the cart behaviors
+     * use, so backorder-enabled variants stay purchasable. A load or query failure is logged
+     * and the line skipped — deliberate, so an infrastructure error cannot block every
+     * shopper at checkout.
      *
-     * @return  bool  True when every managed line still has enough stock.
+     * @return  bool  True when every managed line still has enough stock and is within its limits.
      *
      * @since   6.0.6
      */
@@ -416,7 +419,8 @@ class CartOrder
             }
         }
 
-        $short = [];
+        $short   = [];
+        $limited = [];
 
         foreach ($wanted as $variantId => $quantity) {
             try {
@@ -437,6 +441,13 @@ class CartOrder
 
                 if (!ProductHelper::checkStockStatus($variant, $quantity)) {
                     $short[$variantId] = (int) $variant->quantity;
+                    continue;
+                }
+
+                $limitError = ProductHelper::validateQuantityRestriction($variant, (float) $quantity);
+
+                if ($limitError !== '') {
+                    $limited[$variantId] = $limitError;
                 }
             } catch (\Exception $e) {
                 Log::add(
@@ -447,7 +458,7 @@ class CartOrder
             }
         }
 
-        if ($short === []) {
+        if ($short === [] && $limited === []) {
             return true;
         }
 
@@ -460,6 +471,12 @@ class CartOrder
                     $item->product_name ?? '',
                     $short[$variantId]
                 );
+
+                continue;
+            }
+
+            if (isset($limited[$variantId])) {
+                $item->stock_error = $limited[$variantId];
             }
         }
 

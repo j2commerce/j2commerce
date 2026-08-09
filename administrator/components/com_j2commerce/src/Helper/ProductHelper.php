@@ -2480,6 +2480,40 @@ class ProductHelper
         return (int) $db->loadResult();
     }
 
+    /**
+     * Get the quantity of a variant held in one shopper's own basket.
+     *
+     * The per-customer sale limits are about what this shopper holds, so unlike
+     * getTotalCartQuantity() this counts a single cart and applies no expiry cutoff — an
+     * own basket that has aged past the cart expiry term is still the shopper's own.
+     *
+     * @param   int  $variantId  The variant ID.
+     * @param   int  $cartId     The shopper's cart ID.
+     *
+     * @return  int  Quantity of the variant in that cart.
+     *
+     * @since   6.5.2
+     */
+    public static function getShopperCartQuantity(int $variantId, int $cartId): int
+    {
+        if ($variantId < 1 || $cartId < 1) {
+            return 0;
+        }
+
+        $db    = self::getDatabase();
+        $query = $db->getQuery(true)
+            ->select('SUM(' . $db->quoteName('product_qty') . ') AS shopper_cart_qty')
+            ->from($db->quoteName('#__j2commerce_cartitems'))
+            ->where($db->quoteName('variant_id') . ' = :variantId')
+            ->where($db->quoteName('cart_id') . ' = :cartId')
+            ->bind(':variantId', $variantId, ParameterType::INTEGER)
+            ->bind(':cartId', $cartId, ParameterType::INTEGER);
+
+        $db->setQuery($query);
+
+        return (int) $db->loadResult();
+    }
+
     // =========================================================================
     // DISPLAY HELPER METHODS
     // =========================================================================

@@ -216,13 +216,15 @@ class CartFlexivariable
         if (empty($errors) && $variant && isset($cart->cart_type) && $cart->cart_type !== 'wishlist') {
             $variantId = (int) ($variant->j2commerce_variant_id ?? 0);
 
-            // Get total quantity of this variant already in cart
+            // Stock is held by every live basket; the sale limits are per shopper, so they
+            // are measured against this shopper's own basket only.
             $cartTotalQty = ProductHelper::getTotalCartQuantity($variantId);
+            $shopperQty   = ProductHelper::getShopperCartQuantity($variantId, (int) ($cart->j2commerce_cart_id ?? 0));
 
             // Validate minimum/maximum quantity restrictions
             $quantityError = ProductHelper::validateQuantityRestriction(
                 $variant,
-                (float) $cartTotalQty,
+                (float) $shopperQty,
                 (float) $quantity
             );
 
@@ -589,10 +591,11 @@ class CartFlexivariable
             throw new \Exception(Text::_('COM_J2COMMERCE_VARIANT_NOT_FOUND'));
         }
 
-        // Get total quantity of this variant in cart
-        $cartTotalQty = ProductHelper::getTotalCartQuantity(
-            (int) ($variant->j2commerce_variant_id ?? 0)
-        );
+        // Stock is held by every live basket; the sale limits are per shopper, so they
+        // are measured against this shopper's own basket only.
+        $variantId    = (int) ($variant->j2commerce_variant_id ?? 0);
+        $cartTotalQty = ProductHelper::getTotalCartQuantity($variantId);
+        $shopperQty   = ProductHelper::getShopperCartQuantity($variantId, (int) ($cartitem->cart_id ?? 0));
 
         // Calculate quantity difference (new total vs current)
         $currentQty    = (float) ($cartitem->product_qty ?? 0);
@@ -601,7 +604,7 @@ class CartFlexivariable
         // Validate minimum/maximum quantity restrictions
         $quantityError = ProductHelper::validateQuantityRestriction(
             $variant,
-            (float) $cartTotalQty,
+            (float) $shopperQty,
             $differenceQty
         );
 
