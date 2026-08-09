@@ -351,6 +351,26 @@
                     <option value="0">JNO</option>
                     <option value="1">JYES</option>
                 </field>
+                <field
+                    name="prepare_content"
+                    type="radio"
+                    layout="joomla.form.field.radio.switcher"
+                    label="PLG_CONTENT_J2COMMERCE_PREPARE_CONTENT_LABEL"
+                    description="PLG_CONTENT_J2COMMERCE_PREPARE_CONTENT_DESC"
+                    default="1"
+                    filter="integer"
+                >
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                <field
+                    name="preserve_tags"
+                    type="text"
+                    label="PLG_CONTENT_J2COMMERCE_PRESERVE_TAGS_LABEL"
+                    description="PLG_CONTENT_J2COMMERCE_PRESERVE_TAGS_DESC"
+                    default=""
+                    showon="prepare_content:0"
+                />
             </fieldset>
         </fields>
     </config>
