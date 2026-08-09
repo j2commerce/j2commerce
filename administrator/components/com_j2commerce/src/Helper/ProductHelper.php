@@ -2427,7 +2427,11 @@ class ProductHelper
     }
 
     /**
-     * Get total quantity in cart for a variant.
+     * Get total quantity held in live baskets for a variant.
+     *
+     * Counts only rows belonging to an existing cart of type 'cart' that has been touched
+     * within the cart expiry term — wishlists, abandoned baskets and rows whose parent cart
+     * was deleted do not reserve stock.
      *
      * @param   int  $variantId  The variant ID.
      * @param   int  $cartId     Optional cart ID.
@@ -2442,15 +2446,32 @@ class ProductHelper
             return 0;
         }
 
-        $db    = self::getDatabase();
+        $db       = self::getDatabase();
+        $cartType = 'cart';
+
+        // CartHelper writes modified_on via Factory::getDate()->toSql(), so the cutoff is UTC too.
+        $cutoff = Factory::getDate('now -' . ConfigHelper::getCartExpiryDays() . ' days')->toSql();
+
         $query = $db->getQuery(true)
-            ->select('SUM(' . $db->quoteName('product_qty') . ') AS total_cart_qty')
-            ->from($db->quoteName('#__j2commerce_cartitems'))
-            ->where($db->quoteName('variant_id') . ' = :variantId')
-            ->bind(':variantId', $variantId, ParameterType::INTEGER);
+            ->select('SUM(' . $db->quoteName('ci.product_qty') . ') AS total_cart_qty')
+            ->from($db->quoteName('#__j2commerce_cartitems', 'ci'))
+            // Inner join drops rows whose parent cart record is gone — no shopper can reach
+            // those, so they must not hold stock.
+            ->innerJoin(
+                $db->quoteName('#__j2commerce_carts', 'c')
+                . ' ON ' . $db->quoteName('c.j2commerce_cart_id') . ' = ' . $db->quoteName('ci.cart_id')
+            )
+            ->where($db->quoteName('ci.variant_id') . ' = :variantId')
+            // A wishlist is an intent to buy later, not a hold on stock.
+            ->where($db->quoteName('c.cart_type') . ' = :cartType')
+            // Past the cart expiry term a basket is abandoned and releases what it held.
+            ->where($db->quoteName('c.modified_on') . ' >= :cutoff')
+            ->bind(':variantId', $variantId, ParameterType::INTEGER)
+            ->bind(':cartType', $cartType)
+            ->bind(':cutoff', $cutoff);
 
         if ($cartId > 0) {
-            $query->where($db->quoteName('cart_id') . ' = :cartId')
+            $query->where($db->quoteName('ci.cart_id') . ' = :cartId')
                 ->bind(':cartId', $cartId, ParameterType::INTEGER);
         }
 
