@@ -101,7 +101,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
      * Set to true while we are inside our own secondary onContentPrepare dispatch
      * so that J2Commerce's handler skips all processing for that inner call.
      *
-     * @since  6.4.0
+     * @since  6.5.2
      */
     private static bool $preparingContent = false;
 
