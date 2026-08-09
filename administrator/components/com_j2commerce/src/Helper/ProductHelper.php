@@ -16,12 +16,15 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 
 use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use Joomla\CMS\Application\CMSWebApplicationInterface;
+use Joomla\CMS\Event\Content\ContentPrepareEvent;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
+use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Uri\Uri;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
+use Joomla\Event\DispatcherInterface;
 use Joomla\Registry\Registry;
 
 /**
@@ -565,6 +568,101 @@ class ProductHelper
     // =========================================================================
 
     /**
+     * Run Joomla content plugins on product_short_desc and product_long_desc.
+     *
+     * Creates a proxy article object with the real article ID so that
+     * context-sensitive plugins (e.g. plg_content_fields) can resolve field
+     * values. The j2commerce_desc_context flag tells the J2Commerce content
+     * plugin to skip product-block insertion and shortcode expansion for
+     * this pass — the outer dispatch already calls all other plugins.
+     *
+     * Called by getFullProduct() on the site frontend only.
+     *
+     * @param   object  $product    Product object whose descriptions to prepare.
+     * @param   int     $articleId  The source article ID.
+     *
+     * @return  void
+     *
+     * @since   6.4.0
+     */
+    /**
+     * Re-entry guard: true while a description dispatch is already in progress.
+     * Prevents infinite recursion when a content plugin (e.g. loadmoduleid) renders
+     * a J2Commerce module/widget during description preparation, which would otherwise
+     * trigger another getFullProduct() → prepareProductDescriptions() call.
+     *
+     * Also read by plg_content_j2commerce to skip product-block rendering during
+     * description preparation (see isPreparingDescriptions()).
+     *
+     * @var   bool
+     * @since 6.4.0
+     */
+    private static bool $preparingDescriptions = false;
+
+    /**
+     * Returns true while prepareProductDescriptions() is running.
+     *
+     * Used by plg_content_j2commerce to skip product-block insertion and
+     * shortcode expansion when onContentPrepare is fired on behalf of a
+     * product description rather than a regular article.
+     *
+     * @return  bool
+     * @since   6.4.0
+     */
+    public static function isPreparingDescriptions(): bool
+    {
+        return self::$preparingDescriptions;
+    }
+
+    private static function prepareProductDescriptions(object $product, int $articleId): void
+    {
+        if (self::$preparingDescriptions) {
+            return;
+        }
+
+        self::$preparingDescriptions = true;
+
+        try {
+            PluginHelper::importPlugin('content');
+
+            $fakeArticle                          = new \stdClass();
+            $fakeArticle->id                      = $articleId;
+            $fakeArticle->j2commerce_desc_context = true;
+
+            $dispatcher = Factory::getContainer()->get(DispatcherInterface::class);
+            $params     = new Registry();
+
+            foreach (['product_short_desc', 'product_long_desc'] as $prop) {
+                if (empty($product->$prop)) {
+                    continue;
+                }
+
+                // Strip J2Commerce shortcodes so they are never rendered inside
+                // a product description — doing so would inject a duplicate
+                // product block into short/long desc.
+                $text = preg_replace('/\{j2commerce\}.*?\{\/j2commerce\}/is', '', $product->$prop);
+                $text = preg_replace('/\{j2commerce\s[^}]*\}/i', '', $text ?? $product->$prop);
+
+                $fakeArticle->text = $text ?? $product->$prop;
+
+                $dispatcher->dispatch(
+                    'onContentPrepare',
+                    new ContentPrepareEvent('onContentPrepare', [
+                        'context' => 'com_content.article',
+                        'subject' => $fakeArticle,
+                        'params'  => $params,
+                        'page'    => 0,
+                    ])
+                );
+
+                $product->$prop = $fakeArticle->text;
+            }
+        } finally {
+            self::$preparingDescriptions = false;
+        }
+    }
+
+    /**
      * Get a full product object with all related data.
      *
      * Returns a product object including:
@@ -626,10 +724,33 @@ class ProductHelper
             (int) ($product->product_source_id ?? 0)
         );
 
-        $product->source             = $articleData;
-        $product->product_name       = $articleData->title ?? '';
-        $product->product_short_desc = $articleData->introtext ?? '';
-        $product->product_long_desc  = $articleData->fulltext ?? '';
+        $product->source       = $articleData;
+        $product->product_name = $articleData->title ?? '';
+
+        // Run content plugins (e.g. {field 4}, {loadmoduleid 120}) on descriptions
+        // when on the site frontend. The real article ID is passed so context-sensitive
+        // plugins like plg_content_fields can resolve field values by article ID.
+        //
+        // Guard against reentrant calls: when prepareProductDescriptions() dispatches
+        // onContentPrepare and a loaded module calls getFullProduct() for the same
+        // product, the inner call must NOT overwrite product_short_desc / product_long_desc
+        // with the raw DB values — doing so would silently undo the partially-processed
+        // results from the outer loop's earlier iterations (e.g. product_short_desc
+        // already processed in iteration 1 gets reset to raw by an inner call triggered
+        // during iteration 2, and is never re-processed).
+        if (!self::$preparingDescriptions) {
+            $product->product_short_desc = $articleData->introtext ?? '';
+            $product->product_long_desc  = $articleData->fulltext ?? '';
+
+            if (!empty($articleData->id) && Factory::getApplication()->isClient('site')) {
+                static::prepareProductDescriptions($product, (int) $articleData->id);
+            }
+        } else {
+            // Reentrant call: initialize only if the properties have not been set yet
+            // (preserves any already-processed values written by the outer loop).
+            $product->product_short_desc ??= $articleData->introtext ?? '';
+            $product->product_long_desc  ??= $articleData->fulltext  ?? '';
+        }
 
         // Expose catid and alias at top level for routing
         // Required by RouteHelper::getProductRoute() for canonical URLs
@@ -4346,17 +4467,17 @@ class ProductHelper
     {
         // Ensure frontend language file is loaded (this helper is in Administrator
         // but may be called from frontend where site language strings are needed)
-        $lang = \Joomla\CMS\Factory::getLanguage();
+        $lang = Factory::getApplication()->getLanguage();
         $lang->load('com_j2commerce', JPATH_SITE);
 
         return [
-            'a.ordering'     => \Joomla\CMS\Language\Text::_('COM_J2COMMERCE_SORT_DEFAULT'),
-            'a.title ASC'    => \Joomla\CMS\Language\Text::_('COM_J2COMMERCE_SORT_NAME_ASC'),
-            'a.title DESC'   => \Joomla\CMS\Language\Text::_('COM_J2COMMERCE_SORT_NAME_DESC'),
-            'v.price ASC'    => \Joomla\CMS\Language\Text::_('COM_J2COMMERCE_SORT_PRICE_ASC'),
-            'v.price DESC'   => \Joomla\CMS\Language\Text::_('COM_J2COMMERCE_SORT_PRICE_DESC'),
-            'a.created DESC' => \Joomla\CMS\Language\Text::_('COM_J2COMMERCE_SORT_NEWEST'),
-            'p.hits DESC'    => \Joomla\CMS\Language\Text::_('COM_J2COMMERCE_SORT_POPULAR'),
+            'a.ordering'     => Text::_('COM_J2COMMERCE_SORT_DEFAULT'),
+            'a.title ASC'    => Text::_('COM_J2COMMERCE_SORT_NAME_ASC'),
+            'a.title DESC'   => Text::_('COM_J2COMMERCE_SORT_NAME_DESC'),
+            'v.price ASC'    => Text::_('COM_J2COMMERCE_SORT_PRICE_ASC'),
+            'v.price DESC'   => Text::_('COM_J2COMMERCE_SORT_PRICE_DESC'),
+            'a.created DESC' => Text::_('COM_J2COMMERCE_SORT_NEWEST'),
+            'p.hits DESC'    => Text::_('COM_J2COMMERCE_SORT_POPULAR'),
         ];
     }
 
