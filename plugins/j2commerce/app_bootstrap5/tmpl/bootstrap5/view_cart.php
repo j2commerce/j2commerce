@@ -23,6 +23,9 @@ $cart_text = !empty($this->product->addtocart_text)
     ? Text::_($this->product->addtocart_text)
     : Text::_('COM_J2COMMERCE_ADD_TO_CART');
 
+// Merchant free text: encode once here so every emission below is attribute-safe.
+$cart_text = htmlspecialchars($cart_text, ENT_QUOTES, 'UTF-8');
+
 $show = J2CommerceHelper::product()->validateVariableProduct($this->product);
 $productId = (int) $this->product->j2commerce_product_id;
 ?>
@@ -55,7 +58,7 @@ $productId = (int) $this->product->j2commerce_product_id;
                 data-cart-action-done="<?php echo $cart_text; ?>"
                 data-cart-action-timeout="1000"
                 type="submit"
-                class="j2commerce-cart-button w-100 <?php echo $this->params->get('addtocart_button_class', 'btn btn-primary'); ?>"
+                class="j2commerce-cart-button w-100 <?php echo htmlspecialchars($this->params->get('addtocart_button_class', 'btn btn-primary'), ENT_QUOTES, 'UTF-8'); ?>"
             >
                 <?php echo $cart_text; ?>
             </button>

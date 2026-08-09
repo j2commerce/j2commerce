@@ -28,7 +28,7 @@ $hasOptions = !empty($product->options) ||
     in_array($product->product_type ?? 'simple', ['variable', 'flexivariable', 'configurable', 'advancedvariable']);
 
 $cartType = (int) $params->get('list_show_cart', 1);
-$btnClass = $params->get('addtocart_button_class', 'uk-button uk-button-primary');
+$btnClass = htmlspecialchars($params->get('addtocart_button_class', 'uk-button uk-button-primary'), ENT_QUOTES, 'UTF-8');
 $chooseBtnClass = $params->get('choosebtn_class', 'uk-button uk-button-primary');
 $productId = $product->j2commerce_product_id;
 $productType = htmlspecialchars($product->product_type ?? 'simple', ENT_QUOTES, 'UTF-8');

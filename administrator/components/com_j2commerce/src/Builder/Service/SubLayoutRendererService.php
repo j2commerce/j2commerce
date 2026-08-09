@@ -398,7 +398,7 @@ PHP;
                 '}',
                 '',
                 "\$cartType       = (int) \$params->get('list_show_cart', 1);",
-                "\$btnClass       = \$params->get('addtocart_button_class', 'btn btn-primary') ?? 'btn btn-primary';",
+                "\$btnClass       = htmlspecialchars(\$params->get('addtocart_button_class', 'btn btn-primary') ?? 'btn btn-primary', ENT_QUOTES, 'UTF-8');",
                 "\$productId      = (int) \$product->j2commerce_product_id;",
                 "\$productType    = htmlspecialchars(\$product->product_type ?? '', ENT_QUOTES, 'UTF-8');",
                 "\$esc            = static fn(string \$value): string => htmlspecialchars(\$value, ENT_QUOTES, 'UTF-8');",

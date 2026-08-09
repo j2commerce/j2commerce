@@ -22,6 +22,9 @@ if (!empty($this->item->addtocart_text)) {
 } else {
 	$cart_text = Text::_('COM_J2COMMERCE_ADD_TO_CART');
 }
+
+// Merchant free text: encode once here so every emission below is attribute-safe.
+$cart_text = htmlspecialchars($cart_text, ENT_QUOTES, 'UTF-8');
 $show = J2CommerceHelper::product()->validateVariableProduct($this->item);
 
 $manageStock = J2CommerceHelper::product()->managing_stock($this->item->variant);
@@ -59,7 +62,7 @@ if($is_out_of_stock){
 
         <input type="hidden" id="j2commerce_product_id" name="product_id" value="<?php echo $this->item->j2commerce_product_id;?>" />
 
-        <button data-cart-action-always="<?php echo Text::_('COM_J2COMMERCE_ADDING_TO_CART'); ?>" data-cart-action-done="<?php echo $cart_text; ?>" data-cart-action-timeout="1000" value="<?php echo $cart_text; ?>" type="submit" class="j2commerce-cart-button j2commerce-cart-button rounded-1 btn btn-lg w-100 animate-slide-end order-sm-2 order-md-4 order-lg-2 d-flex align-items-center justify-content-center <?php echo $this->params->get('addtocart_button_class', 'btn-primary');?>"<?php echo $disabled;?>>
+        <button data-cart-action-always="<?php echo Text::_('COM_J2COMMERCE_ADDING_TO_CART'); ?>" data-cart-action-done="<?php echo $cart_text; ?>" data-cart-action-timeout="1000" value="<?php echo $cart_text; ?>" type="submit" class="j2commerce-cart-button j2commerce-cart-button rounded-1 btn btn-lg w-100 animate-slide-end order-sm-2 order-md-4 order-lg-2 d-flex align-items-center justify-content-center <?php echo htmlspecialchars($this->params->get('addtocart_button_class', 'btn-primary'), ENT_QUOTES, 'UTF-8');?>"<?php echo $disabled;?>>
             <span class="si-shopping-cart fs-4 animate-target ms-n1 me-2" aria-hidden="true"></span><span class="fs-6 text-capitalize"><?php echo $cart_text; ?></span>
         </button>
 

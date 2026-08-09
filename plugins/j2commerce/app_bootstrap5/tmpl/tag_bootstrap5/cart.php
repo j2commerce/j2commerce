@@ -29,7 +29,7 @@ $action = 'index.php?option=com_j2commerce&view=carts&task=carts.addItem&product
 			</a>
 		</p>
 </div>
-<a class="<?php echo $params->get('addtocart_button_class', 'btn btn-primary');?> j2commerce_add_to_cart_button"
+<a class="<?php echo htmlspecialchars($params->get('addtocart_button_class', 'btn btn-primary'), ENT_QUOTES, 'UTF-8');?> j2commerce_add_to_cart_button"
 href="<?php echo Route::_($action); ?>" data-quantity="1" data-product_id="<?php echo (int) $product->j2commerce_product_id;?>"
 rel="nofollow">
 <?php echo $this->singleton_cartext; ?>
