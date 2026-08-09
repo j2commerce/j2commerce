@@ -1898,7 +1898,11 @@ class CartOrder
             // Storefront counterpart to the dispatch in OrderModel::addOrderItemFromVariant() — same event,
             // same by-reference contract, so one handler serves both write paths. The cart item travels with
             // the row because the shopper's selections live there, not on the order item being built.
+            $baseline = (array) $row;
+
             J2CommerceHelper::plugin()->event('BeforeAddOrderItem', [&$row, $item]);
+
+            OrderHelper::normalizeOrderItemRow($row, $baseline);
 
             $db->insertObject('#__j2commerce_orderitems', $row, 'j2commerce_orderitem_id');
         }

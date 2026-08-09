@@ -94,4 +94,27 @@ class OrderHelper
     {
         return $this->order;
     }
+
+    /**
+     * Restore any order-item column a BeforeAddOrderItem handler left unusable.
+     *
+     * insertObject() skips properties that are unset, null, an array or an object, and every
+     * orderitem_* column is NOT NULL without a default — so a skipped property drops the column
+     * from the INSERT and the write fails. Handler substitutions that are scalars are kept.
+     *
+     * @param   object  $row       Row as it stands after the dispatch.
+     * @param   array   $baseline  Row as it stood before the dispatch.
+     *
+     * @return  void
+     *
+     * @since   6.0.7
+     */
+    public static function normalizeOrderItemRow(object $row, array $baseline): void
+    {
+        foreach ($baseline as $column => $value) {
+            if (!isset($row->$column) || \is_array($row->$column) || \is_object($row->$column)) {
+                $row->$column = $value;
+            }
+        }
+    }
 }

@@ -21,6 +21,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\EmailHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\InventoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderItemAttributeHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
@@ -1861,7 +1862,11 @@ class OrderModel extends AdminModel
         // Let extensions substitute per-line values (e.g. a per-variant tax profile) before the row is
         // persisted — the admin counterpart to the storefront onJ2CommerceGetDiscountedPrice seam.
         // $row is passed by reference; $variant carries the variant_id needed to resolve a per-variant value.
+        $baseline = (array) $row;
+
         J2CommerceHelper::plugin()->event('BeforeAddOrderItem', [&$row, $variant]);
+
+        OrderHelper::normalizeOrderItemRow($row, $baseline);
 
         $db->insertObject('#__j2commerce_orderitems', $row, 'j2commerce_orderitem_id');
 
