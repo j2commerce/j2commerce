@@ -534,10 +534,12 @@ class CurrencyHelper
             $currencyCode = self::$currentCode;
         }
 
-        // Get currency properties
+        // Get currency properties. The symbol and the two separators are merchant-authored
+        // and the composed result is echoed by its callers, so they are encoded where they
+        // are read; number_format()'s own digits stay untouched.
         $currency         = self::$currencies[$currencyCode] ?? [];
         $currencyPosition = (string) ($currency['currency_position'] ?? 'pre');
-        $currencySymbol   = (string) ($currency['currency_symbol'] ?? '');
+        $currencySymbol   = htmlspecialchars((string) ($currency['currency_symbol'] ?? ''), ENT_QUOTES, 'UTF-8');
         $decimalPlaces    = (int) ($currency['currency_num_decimals'] ?? 2);
 
         // Determine exchange rate
@@ -558,8 +560,8 @@ class CurrencyHelper
 
         // Determine separators
         if ($format) {
-            $decimalPoint       = (string) ($currency['currency_decimal'] ?? '.');
-            $thousandsSeparator = (string) ($currency['currency_thousands'] ?? ',');
+            $decimalPoint       = htmlspecialchars((string) ($currency['currency_decimal'] ?? '.'), ENT_QUOTES, 'UTF-8');
+            $thousandsSeparator = htmlspecialchars((string) ($currency['currency_thousands'] ?? ','), ENT_QUOTES, 'UTF-8');
         } else {
             // For raw numbers, use standard format
             $decimalPoint       = '.';
