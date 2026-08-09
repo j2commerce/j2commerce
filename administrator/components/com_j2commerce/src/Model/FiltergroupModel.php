@@ -476,43 +476,88 @@ class FiltergroupModel extends AdminModel
             // Start a database transaction
             $db->transactionStart();
 
-            // First, delete all existing filters for this group
-            $deleteQuery = $db->getQuery(true)
-                ->delete($db->quoteName('#__j2commerce_filters'))
+            // Load the group's existing filter IDs so rows can be updated in
+            // place — recreating them would orphan #__j2commerce_product_filters
+            $query = $db->getQuery(true)
+                ->select($db->quoteName('j2commerce_filter_id'))
+                ->from($db->quoteName('#__j2commerce_filters'))
                 ->where($db->quoteName('group_id') . ' = :groupId')
                 ->bind(':groupId', $groupId, ParameterType::INTEGER);
 
-            $db->setQuery($deleteQuery);
-            $db->execute();
+            $db->setQuery($query);
+            $existingIds = array_map('intval', (array) $db->loadColumn());
 
-            // Now insert the new filters with auto-ordering
+            $keptIds         = [];
+            $orderingCounter = 1;
+
             if (!empty($filtersData) && \is_array($filtersData)) {
-                $orderingCounter = 1; // Start ordering from 1
-
                 foreach ($filtersData as $filterData) {
+                    $filterName = trim($filterData['filter_name'] ?? '');
+
                     // Skip empty filter names
-                    if (empty(trim($filterData['filter_name'] ?? ''))) {
+                    if ($filterName === '') {
                         continue;
                     }
 
-                    $insertQuery = $db->getQuery(true)
-                        ->insert($db->quoteName('#__j2commerce_filters'))
-                        ->columns([
-                            $db->quoteName('group_id'),
-                            $db->quoteName('filter_name'),
-                            $db->quoteName('ordering'),
-                        ])
-                        ->values(':groupId, :filterName, :ordering')
-                        ->bind(':groupId', $groupId, ParameterType::INTEGER)
-                        ->bind(':filterName', trim($filterData['filter_name']), ParameterType::STRING)
-                        ->bind(':ordering', $orderingCounter, ParameterType::INTEGER);
+                    // A posted ID only counts if it belongs to this group and was
+                    // not already claimed earlier in the payload: save2copy posts
+                    // the source group's IDs, and the repeatable-row duplicate
+                    // control clones the hidden ID field.
+                    $filterId = (int) ($filterData['j2commerce_filter_id'] ?? 0);
 
-                    $db->setQuery($insertQuery);
-                    $db->execute();
+                    if ($filterId > 0 && \in_array($filterId, $existingIds, true) && !\in_array($filterId, $keptIds, true)) {
+                        $updateQuery = $db->getQuery(true)
+                            ->update($db->quoteName('#__j2commerce_filters'))
+                            ->set($db->quoteName('filter_name') . ' = :filterName')
+                            ->set($db->quoteName('ordering') . ' = :ordering')
+                            ->where($db->quoteName('j2commerce_filter_id') . ' = :filterId')
+                            ->bind(':filterName', $filterName, ParameterType::STRING)
+                            ->bind(':ordering', $orderingCounter, ParameterType::INTEGER)
+                            ->bind(':filterId', $filterId, ParameterType::INTEGER);
 
-                    // Increment ordering counter for next filter
+                        $db->setQuery($updateQuery);
+                        $db->execute();
+
+                        $keptIds[] = $filterId;
+                    } else {
+                        $insertQuery = $db->getQuery(true)
+                            ->insert($db->quoteName('#__j2commerce_filters'))
+                            ->columns([
+                                $db->quoteName('group_id'),
+                                $db->quoteName('filter_name'),
+                                $db->quoteName('ordering'),
+                            ])
+                            ->values(':groupId, :filterName, :ordering')
+                            ->bind(':groupId', $groupId, ParameterType::INTEGER)
+                            ->bind(':filterName', $filterName, ParameterType::STRING)
+                            ->bind(':ordering', $orderingCounter, ParameterType::INTEGER);
+
+                        $db->setQuery($insertQuery);
+                        $db->execute();
+                    }
+
                     $orderingCounter++;
                 }
+            }
+
+            // Delete only the rows the administrator removed, together with
+            // their product associations
+            $removedIds = array_values(array_diff($existingIds, $keptIds));
+
+            if ($removedIds) {
+                $deleteLinksQuery = $db->getQuery(true)
+                    ->delete($db->quoteName('#__j2commerce_product_filters'))
+                    ->whereIn($db->quoteName('filter_id'), $removedIds);
+
+                $db->setQuery($deleteLinksQuery);
+                $db->execute();
+
+                $deleteQuery = $db->getQuery(true)
+                    ->delete($db->quoteName('#__j2commerce_filters'))
+                    ->whereIn($db->quoteName('j2commerce_filter_id'), $removedIds);
+
+                $db->setQuery($deleteQuery);
+                $db->execute();
             }
 
             // Commit the transaction
