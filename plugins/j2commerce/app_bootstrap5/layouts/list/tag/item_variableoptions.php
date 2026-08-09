@@ -18,7 +18,7 @@ extract($displayData);
 
 $productHelper = J2CommerceHelper::product();
 $cartType = (int) $params->get('list_show_cart', 1);
-$chooseBtnClass = $params->get('choosebtn_class', 'btn btn-success');
+$chooseBtnClass = htmlspecialchars($params->get('choosebtn_class', 'btn btn-success'), ENT_QUOTES, 'UTF-8');
 
 // Variable products always redirect to product page for option selection in list view
 ?>

@@ -29,7 +29,7 @@ $hasOptions = !empty($product->options) ||
 
 $cartType = (int) $params->get('list_show_cart', 1);
 $btnClass = htmlspecialchars($params->get('addtocart_button_class', 'btn btn-primary'), ENT_QUOTES, 'UTF-8');
-$chooseBtnClass = $params->get('choosebtn_class', 'btn btn-success');
+$chooseBtnClass = htmlspecialchars($params->get('choosebtn_class', 'btn btn-success'), ENT_QUOTES, 'UTF-8');
 $productId = (int) $product->j2commerce_product_id;
 $productType = htmlspecialchars($product->product_type ?? '', ENT_QUOTES, 'UTF-8');
 
