@@ -77,6 +77,7 @@ class ImageProcessorHelper
             }
 
             $image = new Image($sourcePath);
+            self::applyOrientationFix($image, $sourcePath);
 
             $originalWidth  = $image->getWidth();
             $originalHeight = $image->getHeight();
@@ -112,6 +113,7 @@ class ImageProcessorHelper
 
         try {
             $image = new Image($sourcePath);
+            self::applyOrientationFix($image, $sourcePath);
         } catch (\Exception $e) {
             return false;
         }
@@ -237,5 +239,50 @@ class ImageProcessorHelper
             'width'  => $imageInfo[0],
             'height' => $imageInfo[1],
         ];
+    }
+
+    /**
+     * Read the EXIF orientation tag and return the rotation angle needed to correct it.
+     * Only JPEG/TIFF files carry EXIF data; other formats return 0.
+     *
+     * @param   string  $sourcePath  Absolute path to the image file
+     *
+     * @return  int  Degrees to rotate counter-clockwise (0, 90, 180, or 270)
+     */
+    private static function getOrientationAngle(string $sourcePath): int
+    {
+        if (!\function_exists('exif_read_data')) {
+            return 0;
+        }
+
+        $exif = @exif_read_data($sourcePath);
+
+        if ($exif === false || !isset($exif['Orientation'])) {
+            return 0;
+        }
+
+        return match ((int) $exif['Orientation']) {
+            3 => 180,
+            6 => 270,
+            8 => 90,
+            default => 0,
+        };
+    }
+
+    /**
+     * Rotate the image in-place to correct its EXIF orientation, if needed.
+     *
+     * @param   Image   $image       The loaded Joomla Image object
+     * @param   string  $sourcePath  Path used to read EXIF data
+     *
+     * @return  void
+     */
+    private static function applyOrientationFix(Image $image, string $sourcePath): void
+    {
+        $angle = self::getOrientationAngle($sourcePath);
+
+        if ($angle !== 0) {
+            $image->rotate($angle, -1, false);
+        }
     }
 }
