@@ -1106,11 +1106,14 @@ class InventoryHelper
 
             $variant = self::buildVariantObject($item);
 
+            // Dispatched before the gate: a composite parent deliberately does not manage its
+            // own stock, so a listener that adjusts the components has to see the item core
+            // is about to skip.
+            J2CommerceHelper::plugin()->event('BeforeStockReduction', [$orderId, &$item]);
+
             if (!self::isManagingStock($variant)) {
                 continue;
             }
-
-            J2CommerceHelper::plugin()->event('BeforeStockReduction', [$orderId, &$item]);
 
             $qty            = (int) $item->orderitem_quantity;
             $oldStock       = self::getStockQuantity((int) $item->variant_id);
@@ -1180,11 +1183,13 @@ class InventoryHelper
 
             $variant = self::buildVariantObject($item);
 
+            // Mirrors reduceOrderStock(): dispatched before the gate so a cancellation restores
+            // the same set the order decremented.
+            J2CommerceHelper::plugin()->event('BeforeStockRestore', [$orderId, &$item]);
+
             if (!self::isManagingStock($variant)) {
                 continue;
             }
-
-            J2CommerceHelper::plugin()->event('BeforeStockRestore', [$orderId, &$item]);
 
             $qty      = (int) $item->orderitem_quantity;
             $oldStock = self::getStockQuantity((int) $item->variant_id);
@@ -1225,10 +1230,13 @@ class InventoryHelper
         $query = $db->getQuery(true)
             ->select([
                 $db->quoteName('oi.product_id'),
+                $db->quoteName('oi.product_type'),
                 $db->quoteName('oi.variant_id'),
+                $db->quoteName('oi.orderitem_type'),
                 $db->quoteName('oi.orderitem_quantity'),
                 $db->quoteName('oi.orderitem_name'),
                 $db->quoteName('oi.orderitem_sku'),
+                $db->quoteName('oi.orderitem_params'),
                 $db->quoteName('v.manage_stock'),
                 $db->quoteName('v.allow_backorder'),
                 $db->quoteName('v.notify_qty'),
