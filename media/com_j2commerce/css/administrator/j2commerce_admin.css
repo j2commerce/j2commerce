@@ -536,3 +536,8 @@ html[data-bs-theme="dark"] {
 }
 
 .com_content.view-form.layout-edit #fieldset-j2commerce joomla-tab > joomla-tab-element{border:none;}
+
+/* Products batch dialog: the category move is server-forced, so the core Copy/Move choice is not offered. */
+.j2c-batch-body #batch-copy-move {
+    display: none;
+}

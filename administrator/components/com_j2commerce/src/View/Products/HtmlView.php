@@ -83,6 +83,12 @@ class HtmlView extends BaseHtmlView
      */
     private $isEmptyState = false;
 
+    /** Category, tag and language batch fields: needs core.edit on both the component and com_content. */
+    protected bool $canBatch = false;
+
+    /** Access-level batch field and Feature/Unfeature: needs core.edit.state on both. */
+    protected bool $canBatchState = false;
+
     /**
      * Display the view
      *
@@ -151,7 +157,15 @@ class HtmlView extends BaseHtmlView
     protected function addToolbar(): void
     {
         $canDo   = ContentHelper::getActions('com_j2commerce');
+        $user    = $this->getCurrentUser();
         $toolbar = $this->getDocument()->getToolbar();
+
+        // Batch and feature write to the linked article, so both the component action and the
+        // matching com_content action are required. canAccess() rather than authorise() so an
+        // explicit deny on j2commerce.editproducts is honoured.
+        $canEditProducts      = J2CommerceHelper::canAccess('j2commerce.editproducts');
+        $this->canBatch       = $canEditProducts && $canDo->get('core.edit') && $user->authorise('core.edit', 'com_content');
+        $this->canBatchState  = $canEditProducts && $canDo->get('core.edit.state') && $user->authorise('core.edit.state', 'com_content');
 
         ToolbarHelper::title(Text::_('COM_J2COMMERCE_PRODUCTS'), 'fa-solid fa-tags');
 
@@ -165,8 +179,8 @@ class HtmlView extends BaseHtmlView
                 ->icon('icon-plus');
         }
 
-        if ($canDo->get('core.edit.state')) {
-            $dropdown = $toolbar->dropdownButton('status-group', 'JTOOLBAR_CHANGE_STATUS')
+        if ($canDo->get('core.edit.state') || $this->canBatch) {
+            $dropdown = $toolbar->dropdownButton('status-group', 'COM_J2COMMERCE_ACTIONS')
                 ->toggleSplit(false)
                 ->icon('icon-ellipsis-h')
                 ->buttonClass('btn btn-action')
@@ -174,8 +188,25 @@ class HtmlView extends BaseHtmlView
 
             $childBar = $dropdown->getChildToolbar();
 
-            $childBar->publish('products.publish')->listCheck(true);
-            $childBar->unpublish('products.unpublish')->listCheck(true);
+            if ($canDo->get('core.edit.state')) {
+                $childBar->publish('products.publish')->listCheck(true);
+                $childBar->unpublish('products.unpublish')->listCheck(true);
+            }
+
+            if ($this->canBatchState) {
+                $childBar->standardButton('featured', 'JFEATURE', 'products.featured')->listCheck(true);
+                $childBar->standardButton('unfeatured', 'JUNFEATURE', 'products.unfeatured')->listCheck(true);
+            }
+
+            if ($this->canBatch) {
+                $childBar->popupButton('batch', 'JTOOLBAR_BATCH')
+                    ->popupType('inline')
+                    ->textHeader(Text::_('COM_J2COMMERCE_BATCH_OPTIONS'))
+                    ->url('#joomla-dialog-batch')
+                    ->modalWidth('800px')
+                    ->modalHeight('fit-content')
+                    ->listCheck(true);
+            }
         }
 
         if ($canDo->get('core.delete')) {

@@ -203,6 +203,10 @@ $canChangeState = $user->authorise('core.edit.state', 'com_content');
                 <input type="hidden" name="task" value="">
                 <input type="hidden" name="boxchecked" value="0">
                 <?php echo HTMLHelper::_('form.token'); ?>
+
+                <?php if ($this->canBatch) : ?>
+                    <template id="joomla-dialog-batch"><?php echo $this->loadTemplate('batch_body'); ?></template>
+                <?php endif; ?>
             </div>
         </div>
     </div>

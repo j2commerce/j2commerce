@@ -77,6 +77,8 @@ class ProductsController extends AdminController
     public function __construct($config = [], ?MVCFactoryInterface $factory = null, ?CMSApplication $app = null, ?Input $input = null)
     {
         parent::__construct($config, $factory, $app, $input);
+
+        $this->registerTask('unfeatured', 'featured');
     }
 
     /**
@@ -748,6 +750,211 @@ class ProductsController extends AdminController
                 'index.php?option=' . $this->option . '&view=' . $this->view_list,
                 false
             )
+        );
+    }
+
+    /**
+     * Batch-process the articles behind the selected products: category move, tags, access
+     * level and language. Every write is delegated to com_content's ArticleModel so the
+     * batch events, workflow handling and per-item checks core performs all still run.
+     *
+     * @return  void
+     *
+     * @since   6.2.0
+     */
+    public function batch(): void
+    {
+        $this->checkToken();
+
+        $redirect = $this->listRedirect();
+        $cid      = array_filter((array) $this->input->post->get('cid', [], 'int'));
+        $commands = (array) $this->input->post->get('batch', [], 'array');
+
+        if (empty($cid)) {
+            $this->setRedirect($redirect, Text::_($this->text_prefix . '_NO_ITEM_SELECTED'), 'warning');
+
+            return;
+        }
+
+        $articleIds = $this->resolveArticleIds($cid, $skipped);
+
+        if ($skipped > 0) {
+            $this->app->enqueueMessage(
+                Text::sprintf('COM_J2COMMERCE_BATCH_SKIPPED_NON_ARTICLE_PRODUCTS', $skipped),
+                CMSWebApplicationInterface::MSG_WARNING
+            );
+        }
+
+        if (empty($articleIds)) {
+            $this->setRedirect($redirect, Text::_('COM_J2COMMERCE_NO_ARTICLE_LINKED'), 'warning');
+
+            return;
+        }
+
+        // Honour only the commands this dialog offers. ArticleModel grafts further keys onto
+        // AdminModel::$batch_commands at runtime, so an allow-list here keeps anything this
+        // screen does not present deny-by-default.
+        $commands = array_intersect_key(
+            $commands,
+            array_flip(['category_id', 'tag', 'tag_addremove', 'assetgroup_id', 'language_id'])
+        );
+
+        // The dialog offers the access level only to core.edit.state, so the controller says the
+        // same rather than leaving the view stating a rule the server does not keep.
+        if (!$this->app->getIdentity()->authorise('core.edit.state', 'com_content')) {
+            unset($commands['assetgroup_id']);
+        }
+
+        // A copy would produce an article with no product row behind it — no variants, prices or
+        // inventory — so the command is fixed here whatever was posted, and the dialog hides the
+        // choice. AdminModel::batch() defaults this to 'c' when it is absent.
+        $commands['move_copy'] = 'm';
+
+        $contexts = [];
+
+        foreach ($articleIds as $articleId) {
+            $contexts[$articleId] = 'com_content.article.' . $articleId;
+        }
+
+        $model = $this->app->bootComponent('com_content')->getMVCFactory()
+            ->createModel('Article', 'Administrator', ['ignore_request' => true]);
+
+        // AdminModel::checkCategoryId() builds its permission asset from the request option, not
+        // from the model, so the target-category core.create test would run against
+        // com_j2commerce.category.X — an asset that does not exist — and refuse every move.
+        $input          = Factory::getApplication()->getInput();
+        $originalOption = $input->get('option', '');
+        $input->set('option', 'com_content');
+
+        try {
+            $result = $model->batch($commands, $articleIds, $contexts);
+        } finally {
+            $input->set('option', $originalOption);
+        }
+
+        if ($result) {
+            $this->setRedirect($redirect, Text::_('JLIB_APPLICATION_SUCCESS_BATCH'));
+
+            return;
+        }
+
+        $this->app->getLogger()->error($model->getError(), ['category' => 'com_j2commerce']);
+        $this->setRedirect($redirect, Text::_('COM_J2COMMERCE_BATCH_FAILED'), 'warning');
+    }
+
+    /**
+     * Feature or unfeature the articles behind the selected products.
+     *
+     * @return  void
+     *
+     * @since   6.2.0
+     */
+    public function featured(): void
+    {
+        $this->checkToken();
+
+        $redirect = $this->listRedirect();
+        $cid      = array_filter((array) $this->input->get('cid', [], 'int'));
+        $value    = strtolower((string) $this->getTask()) === 'featured' ? 1 : 0;
+
+        if (empty($cid)) {
+            $this->setRedirect($redirect, Text::_($this->text_prefix . '_NO_ITEM_SELECTED'), 'warning');
+
+            return;
+        }
+
+        $articleIds = $this->resolveArticleIds($cid, $skipped);
+
+        if ($skipped > 0) {
+            $this->app->enqueueMessage(
+                Text::sprintf('COM_J2COMMERCE_BATCH_SKIPPED_NON_ARTICLE_PRODUCTS', $skipped),
+                CMSWebApplicationInterface::MSG_WARNING
+            );
+        }
+
+        $user = $this->app->getIdentity();
+
+        foreach ($articleIds as $i => $articleId) {
+            if (!$user->authorise('core.edit.state', 'com_content.article.' . $articleId)) {
+                unset($articleIds[$i]);
+                $this->app->enqueueMessage(
+                    Text::_('JLIB_APPLICATION_ERROR_EDITSTATE_NOT_PERMITTED'),
+                    CMSWebApplicationInterface::MSG_WARNING
+                );
+            }
+        }
+
+        if (empty($articleIds)) {
+            $this->setRedirect($redirect, Text::_('COM_J2COMMERCE_NO_ARTICLE_LINKED'), 'warning');
+
+            return;
+        }
+
+        $articleIds = array_values($articleIds);
+
+        // ArticleModel::featured() keeps #__content.featured and #__content_frontpage in step,
+        // which a raw UPDATE on either would not.
+        $model = $this->app->bootComponent('com_content')->getMVCFactory()
+            ->createModel('Article', 'Administrator', ['ignore_request' => true]);
+
+        if (!$model->featured($articleIds, $value)) {
+            $this->app->getLogger()->error($model->getError(), ['category' => 'com_j2commerce']);
+            $this->setRedirect($redirect, Text::_('JERROR_AN_ERROR_HAS_OCCURRED'), 'error');
+
+            return;
+        }
+
+        $ntext = $value === 1
+            ? $this->text_prefix . '_N_ITEMS_FEATURED'
+            : $this->text_prefix . '_N_ITEMS_UNFEATURED';
+
+        $this->setRedirect($redirect, Text::plural($ntext, \count($articleIds)));
+    }
+
+    /**
+     * Map product IDs to the IDs of the articles behind them. Products sourced from anything
+     * other than com_content have no article to act on and are counted in $skipped.
+     *
+     * @param   array     $productIds  Product IDs from the list checkboxes.
+     * @param   int|null  $skipped     Set to the number of products that had no usable article.
+     *
+     * @return  int[]
+     *
+     * @since   6.2.0
+     */
+    private function resolveArticleIds(array $productIds, ?int &$skipped = null): array
+    {
+        $source = 'com_content';
+        $db     = Factory::getContainer()->get('DatabaseDriver');
+        $query  = $db->getQuery(true);
+
+        $query->select($db->quoteName('product_source_id'))
+            ->from($db->quoteName('#__j2commerce_products'))
+            ->whereIn($db->quoteName('j2commerce_product_id'), $productIds, ParameterType::INTEGER)
+            ->where($db->quoteName('product_source') . ' = :source')
+            ->where($db->quoteName('product_source_id') . ' > 0')
+            ->bind(':source', $source);
+
+        $db->setQuery($query);
+
+        $rows    = array_map('intval', $db->loadColumn());
+        $skipped = \count($productIds) - \count($rows);
+
+        return array_values(array_unique($rows));
+    }
+
+    /**
+     * The products list URL with the current filter, ordering and paging state appended.
+     *
+     * @return  string
+     *
+     * @since   6.2.0
+     */
+    private function listRedirect(): string
+    {
+        return Route::_(
+            'index.php?option=' . $this->option . '&view=' . $this->view_list . $this->getRedirectToListAppend(),
+            false
         );
     }
 
