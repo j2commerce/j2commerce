@@ -129,7 +129,7 @@ if ($info) {
 
     <div class="j2commerce-confirmation">
         <?php if ($this->showingRecent) : ?>
-        <div class="alert alert-info d-flex justify-content-between align-items-center mb-3">
+        <div class="j2c-block-showing-recent alert alert-info d-flex justify-content-between align-items-center mb-3">
             <span><span class="fa-solid fa-circle-info me-2" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_CONFIRMATION_SHOWING_RECENT'); ?></span>
             <a href="<?php echo Route::_('index.php?option=com_j2commerce&view=myprofile'); ?>" class="btn btn-sm btn-outline-primary">
                 <?php echo Text::_('COM_J2COMMERCE_CONFIRMATION_VIEW_ALL_ORDERS'); ?>
@@ -137,13 +137,13 @@ if ($info) {
         </div>
         <?php endif; ?>
 
-        <jdoc:include type="modules" name="j2commerce-postpayment-top" style="none" />
+        <div class="j2c-block-postpayment-top"><jdoc:include type="modules" name="j2commerce-postpayment-top" style="none" /></div>
 
         <div class="row g-0">
             <?php // Left column ?>
             <div class="<?php echo $isCancelled ? 'col-12' : 'col-lg-7'; ?> j2c-confirmation-main <?php echo $isCancelled ? '' : 'pe-lg-4'; ?>">
 
-                <div class="alert <?php echo $tierAlertClass; ?> mb-4 border-0">
+                <div class="j2c-block-status-banner alert <?php echo $tierAlertClass; ?> mb-4 border-0">
                     <div class="d-flex align-items-center gap-3">
                         <div class="<?php echo $tierCircleClass; ?> rounded-circle d-flex align-items-center justify-content-center flex-shrink-0">
                             <span class="<?php echo $tierIcon; ?> text-white" style="font-size: 1.5rem;" aria-hidden="true"></span>
@@ -174,7 +174,7 @@ if ($info) {
 
                 <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeConfirmationOrderStatus', array($this, $order, 'onJ2Commerce'))->getArgument('html', ''); ?>
 
-                <div class="card mb-4">
+                <div class="j2c-block-order-status card mb-4">
                     <div class="card-body">
                         <div>
                             <h3 class="h6 mb-1">
@@ -193,7 +193,7 @@ if ($info) {
 
 
                 <?php if (!empty($this->plugin_html)) : ?>
-                    <div class="card mb-4">
+                    <div class="j2c-block-plugin-html card mb-4">
                         <div class="card-body">
                             <?php echo $this->plugin_html; ?>
                         </div>
@@ -203,7 +203,7 @@ if ($info) {
                 <?php if (!$isCancelled) : ?>
                     <?php // Email updates card ?>
                     <?php if (!empty($order->user_email)) : ?>
-                        <div class="card mb-4">
+                        <div class="j2c-block-email-updates card mb-4">
                             <div class="card-body d-flex align-items-center gap-3">
                                 <span class="icon-envelope text-body-secondary" style="font-size: 1.25rem;" aria-hidden="true"></span>
                                 <div>
@@ -221,7 +221,7 @@ if ($info) {
 
                     <?php // Customer information grid ?>
                     <?php if ($info) : ?>
-                        <div class="card mb-4">
+                        <div class="j2c-block-order-details card mb-4">
                             <div class="card-body">
                                 <h3 class="h6 mb-3"><?php echo Text::_('COM_J2COMMERCE_ORDER_DETAILS'); ?></h3>
 
@@ -304,7 +304,7 @@ if ($info) {
 
                     <?php // Shipping method card ?>
                     <?php if ((int) $order->is_shippable && !empty($shippings)) : ?>
-                        <div class="card mb-4">
+                        <div class="j2c-block-shipping-method card mb-4">
                             <div class="card-body">
                                 <h4 class="j2c-info-label text-uppercase text-body-dark fw-semibold mb-2">
                                     <?php echo Text::_('COM_J2COMMERCE_SHIPPING_METHOD'); ?>
@@ -321,7 +321,7 @@ if ($info) {
                     <?php endif; ?>
 
                     <?php // Continue shopping + need help ?>
-                    <div class="d-flex flex-wrap align-items-center justify-content-center gap-3 mb-4">
+                    <div class="j2c-block-actions d-flex flex-wrap align-items-center justify-content-center gap-3 mb-4">
                         <a href="<?php echo Route::_('index.php?option=com_j2commerce&view=products'); ?>" class="btn btn-primary">
                             <?php echo Text::_('COM_J2COMMERCE_CONTINUE_SHOPPING'); ?>
                         </a>
@@ -331,7 +331,7 @@ if ($info) {
                             </a>
                         <?php endif; ?>
                     </div>
-                    <p class="text-body-secondary small mb-4">
+                    <p class="j2c-block-need-help text-body-secondary small mb-4">
                         <?php echo Text::_('COM_J2COMMERCE_NEED_HELP'); ?>
                         <a href="<?php echo Route::_('index.php?option=com_contact'); ?>">
                             <?php echo Text::_('COM_J2COMMERCE_CONTACT_US'); ?>
@@ -351,7 +351,7 @@ if ($info) {
 
             <?php // Right column - Order summary sidebar (only for non-cancelled orders) ?>
             <?php if (!$isCancelled) : ?>
-                <div class="col-lg-5 j2c-sidebar-bg p-4">
+                <div class="j2c-block-order-summary col-lg-5 j2c-sidebar-bg p-4">
                     <h3 class="h5 mb-4"><?php echo Text::_('COM_J2COMMERCE_ORDER_SUMMARY'); ?></h3>
 
                     <?php
@@ -373,7 +373,7 @@ if ($info) {
 
                     <?php // Order items list ?>
                     <?php if (!empty($items)) : ?>
-                        <div class="mb-4">
+                        <div class="j2c-block-order-items mb-4">
                             <?php foreach ($items as $item) : ?>
                                 <?php
                                 $params   = json_decode($item->orderitem_params ?? '{}', true) ?: [];
@@ -432,7 +432,7 @@ if ($info) {
 
                     <?php // Discount code badges ?>
                     <?php if (!empty($discounts)) : ?>
-                        <div class="mb-3">
+                        <div class="j2c-block-discount-codes mb-3">
                             <?php foreach ($discounts as $disc) : ?>
                                 <?php if (!empty($disc->discount_code)) : ?>
                                     <span class="badge bg-dark text-white me-1 mb-1">
@@ -544,7 +544,7 @@ if ($info) {
                     ?>
 
                     <?php // Summary lines ?>
-                    <div class="small">
+                    <div class="j2c-block-summary-lines small">
                         <?php // Plugin-contributed extra summary lines ?>
                         <?php foreach (J2CommerceHelper::plugin()->eventWithArray('GetOrderSummaryExtraRows', [$order]) as $extraRow) : ?>
                             <?php if (\is_array($extraRow) && isset($extraRow['label'], $extraRow['value'])) : ?>
@@ -627,7 +627,7 @@ if ($info) {
                     <hr>
 
                     <?php // Grand total ?>
-                    <div class="d-flex justify-content-between align-items-center j2c-summary-total fw-bold">
+                    <div class="j2c-block-grand-total d-flex justify-content-between align-items-center j2c-summary-total fw-bold">
                         <span><?php echo Text::_('COM_J2COMMERCE_CART_GRANDTOTAL'); ?></span>
                         <span>
                             <?php echo $fmt((float) $order->order_total); ?>
@@ -639,7 +639,7 @@ if ($info) {
 
                     <?php // Order date ?>
                     <?php if (!empty($orderDate)) : ?>
-                        <p class="text-body-tertiary small mt-3 mb-0">
+                        <p class="j2c-block-order-date text-body-tertiary small mt-3 mb-0">
                             <?php echo Text::_('COM_J2COMMERCE_ORDER_DATE'); ?>: <?php echo $orderDate; ?>
                         </p>
                     <?php endif; ?>
@@ -647,12 +647,12 @@ if ($info) {
             <?php endif; ?>
         </div>
 
-        <jdoc:include type="modules" name="j2commerce-postpayment-bottom" style="none" />
-
-        <?php echo $afterPostHtml; ?>
+        <div class="j2c-block-postpayment-bottom"><jdoc:include type="modules" name="j2commerce-postpayment-bottom" style="none" /></div>
 
         <?php if (\is_object($order) && isset($order->orderpayment_type) && $order->orderpayment_type === 'free') : ?>
-            <jdoc:include type="modules" name="j2commerce-postpayment-bottom-free" style="none" />
+            <div class="j2c-block-postpayment-bottom-free"><jdoc:include type="modules" name="j2commerce-postpayment-bottom-free" style="none" /></div>
         <?php endif; ?>
+
+        <?php echo $afterPostHtml; ?>
     </div>
 </div>
