@@ -141,7 +141,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                         id="option-value-<?php echo $option_value['product_optionvalue_id']; ?>" />
                     <?php if ($this->params->get('image_for_product_options', 0) && isset($option_value['optionvalue_image']) && !empty($option_value['optionvalue_image'])) : ?>
                         <img class="optionvalue-image-<?php echo $option_value['product_optionvalue_id']; ?>"
-                             src="<?php echo Uri::root(true) . '/' . $option_value['optionvalue_image']; ?>" />
+                             src="<?php echo Uri::root(true) . '/' . $esc($option_value['optionvalue_image']); ?>" />
                     <?php endif; ?>
                     <?php echo stripslashes($this->escape(Text::_($option_value['optionvalue_name']))); ?>
                     <?php if ($option_value['product_optionvalue_price'] > 0 && $this->params->get('product_option_price', 1)) : ?>

@@ -89,7 +89,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
 
                     <?php if ($this->params->get('image_for_product_options', 0) && isset($option_value['optionvalue_image']) && !empty($option_value['optionvalue_image'])) : ?>
                         <img class="optionvalue-image-<?php echo $option_value['product_optionvalue_id']; ?> uk-border-rounded"
-                             src="<?php echo Uri::root(true) . '/' . $option_value['optionvalue_image']; ?>" alt="" />
+                             src="<?php echo Uri::root(true) . '/' . $esc($option_value['optionvalue_image']); ?>" alt="" />
                     <?php endif; ?>
                     <?php echo stripslashes($this->escape(Text::_($option_value['optionvalue_name']))); ?>
                     <?php if ($option_value['product_optionvalue_price'] > 0 && $this->params->get('product_option_price', 1)) : ?>
@@ -122,7 +122,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                         data-option-id="<?php echo $option['productoption_id']; ?>" />
                     <?php if ($this->params->get('image_for_product_options', 0) && isset($option_value['optionvalue_image']) && !empty($option_value['optionvalue_image'])) : ?>
                         <img class="optionvalue-image-<?php echo $option_value['product_optionvalue_id']; ?> uk-border-rounded"
-                             src="<?php echo Uri::root(true) . '/' . $option_value['optionvalue_image']; ?>" alt="" />
+                             src="<?php echo Uri::root(true) . '/' . $esc($option_value['optionvalue_image']); ?>" alt="" />
                     <?php endif; ?>
                     <?php echo stripslashes($this->escape(Text::_($option_value['optionvalue_name']))); ?>
                     <?php if ($option_value['product_optionvalue_price'] > 0 && $this->params->get('product_option_price', 1)) : ?>
@@ -149,7 +149,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                     class="uk-input"
                     name="product_option[<?php echo $option['productoption_id']; ?>]"
                     value="<?php echo $option['optionvalue']; ?>"
-                    placeholder="<?php echo $text_option_params->get('place_holder', ''); ?>" />
+                    placeholder="<?php echo $esc($text_option_params->get('place_holder', '')); ?>" />
             </div>
         <?php endif; ?>
 

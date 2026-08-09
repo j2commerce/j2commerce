@@ -110,7 +110,7 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
                             onclick="doFlexiAjaxPrice(<?php echo $productId; ?>, '#option-<?php echo $option['productoption_id']; ?>')"
                             <?php echo ($defaultOptionValueId == $ov['product_optionvalue_id']) ? 'checked' : ''; ?>
                         />
-                        <label for="option-value-<?php echo $ov['product_optionvalue_id']; ?>" class="btn-color" data-label="<?php echo $esc(Text::_($ov['optionvalue_name'])); ?>" style="color:<?php echo $ov['optionvalue_image']; ?>;">
+                        <label for="option-value-<?php echo $ov['product_optionvalue_id']; ?>" class="btn-color" data-label="<?php echo $esc(Text::_($ov['optionvalue_name'])); ?>" style="color:<?php echo $esc($ov['optionvalue_image']); ?>;">
                             <span class="uk-invisible"><?php echo $esc(Text::_($ov['optionvalue_name'])); ?></span>
                         </label>
                     <?php endforeach; ?>
