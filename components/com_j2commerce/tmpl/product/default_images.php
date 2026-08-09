@@ -48,8 +48,8 @@ $additional_images = array_filter((array)$additional_images);
             <div class="swiper-wrapper">
                 <?php if(!empty($main_image)):?>
                     <div class="swiper-slide">
-                        <a class="j2c-product-image-link d-block cursor-zoom-in text-center" href="<?php echo $main_image;?>" data-fancybox="gallery" data-thumb="<?php echo $this->item->main_image;?>" title="<?php echo (!empty($this->item->main_image_alt)) ? $this->escape($this->item->main_image_alt) : $this->escape($this->item->product_name); ?>">
-                            <img src="<?php echo $main_image;?>" data-zoom="<?php echo $main_image;?>" alt="<?php echo (!empty($this->item->main_image_alt)) ? $this->escape($this->item->main_image_alt) : $this->escape($this->item->product_name); ?>" class="img-fluid rounded-1 j2commerce-product-main-image-<?php echo $this->item->j2commerce_product_id; ?>">
+                        <a class="j2c-product-image-link d-block cursor-zoom-in text-center" href="<?php echo $this->escape($main_image);?>" data-fancybox="gallery" data-thumb="<?php echo $this->escape($this->item->main_image);?>" title="<?php echo (!empty($this->item->main_image_alt)) ? $this->escape($this->item->main_image_alt) : $this->escape($this->item->product_name); ?>">
+                            <img src="<?php echo $this->escape($main_image);?>" data-zoom="<?php echo $this->escape($main_image);?>" alt="<?php echo (!empty($this->item->main_image_alt)) ? $this->escape($this->item->main_image_alt) : $this->escape($this->item->product_name); ?>" class="img-fluid rounded-1 j2commerce-product-main-image-<?php echo $this->item->j2commerce_product_id; ?>">
                         </a>
                     </div>
                 <?php endif;?>
@@ -61,8 +61,8 @@ $additional_images = array_filter((array)$additional_images);
                         $image_src = HTMLHelper::_('cleanImageURL', $image)->url;
                         ?>
                         <div class="swiper-slide">
-                            <a class="j2c-product-image-link d-block cursor-zoom-in text-center" href="<?php echo $image_src;?>" data-fancybox="gallery" data-thumb="<?php echo $image_src;?>" title="<?php echo $this->escape($this->item->product_name).' '.$key;?>">
-                                <img src="<?php echo $image_src;?>" data-zoom="<?php echo $image_src;?>" alt="<?php echo $this->escape($this->item->product_name).' '.$key;?>" class="j2commerce-item-additionalimage img-fluid rounded-1">
+                            <a class="j2c-product-image-link d-block cursor-zoom-in text-center" href="<?php echo $this->escape($image_src);?>" data-fancybox="gallery" data-thumb="<?php echo $this->escape($image_src);?>" title="<?php echo $this->escape($this->item->product_name).' '.$key;?>">
+                                <img src="<?php echo $this->escape($image_src);?>" data-zoom="<?php echo $this->escape($image_src);?>" alt="<?php echo $this->escape($this->item->product_name).' '.$key;?>" class="j2commerce-item-additionalimage img-fluid rounded-1">
                             </a>
                         </div>
                         <?php //endif;?>
@@ -94,13 +94,7 @@ $additional_images = array_filter((array)$additional_images);
             <div class="px-lg-4f mt-3 pt-3">
                 <div class="swiper swiper-load swiper-thumbs d-none d-lg-block w-100 j2commerce-product-additional-images" id="thumbs" data-swiper='{"direction": "horizontal","spaceBetween": 12,"slidesPerView": 5,"watchSlidesProgress": true,"loop": true,"navigation": {"nextEl": ".swiper-button-next","prevEl": ".swiper-button-prev"}}'>
                     <div class="swiper-wrapper flex-row">
-                        <?php if(!empty($mainImage)):?>
-                            <div class="swiper-slide swiper-thumb border rounded-2">
-                                <div class="j2commerce-image-container ratio ratio-1x1">
-                                    <img src="<?php echo $mainImage;?>" alt="<?php echo (!empty($this->item->main_image_alt)) ? $this->escape($this->item->main_image_alt) : $this->escape($this->item->product_name); ?>" class="img-fluid rounded-1 additional-mainimage j2commerce-item-additionalimage-preview swiper-thumb-img">
-                                </div>
-                            </div>
-                        <?php elseif (!empty($this->item->main_image)):?>
+                        <?php if (!empty($this->item->main_image)):?>
                             <?php echo J2CommerceHelper::product()->displayImage($this->item,array('type'=>'AdditionalMain','params' => $this->params,'alt'=> $this->escape($this->item->main_image_alt))); ?>
                         <?php endif;?>
 
@@ -111,7 +105,7 @@ $additional_images = array_filter((array)$additional_images);
                                 ?>
                                 <div class="swiper-slide swiper-thumb border rounded-2">
                                     <div class="j2commerce-image-container ratio ratio-1x1">
-                                        <img src="<?php echo $image_src;?>" alt="<?php echo $this->escape($this->item->product_name).' '.$key;?>" class="img-fluid rounded-1 j2commerce-item-additionalimage-preview swiper-thumb-img">
+                                        <img src="<?php echo $this->escape($image_src);?>" alt="<?php echo $this->escape($this->item->product_name).' '.$key;?>" class="img-fluid rounded-1 j2commerce-item-additionalimage-preview swiper-thumb-img">
                                     </div>
                                 </div>
                             <?php elseif(!empty($image)):?>

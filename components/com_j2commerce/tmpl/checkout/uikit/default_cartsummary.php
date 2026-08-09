@@ -70,7 +70,7 @@ if ($showItemTax && isset($this->taxes) && \count($this->taxes)) {
                         <td>
                             <div class="uk-flex uk-flex-top" style="gap: 8px;">
                                 <?php if ($showThumbCart && !empty($thumbImage)) : ?>
-                                    <img src="<?php echo $thumbImage; ?>"
+                                    <img src="<?php echo $this->escape($thumbImage); ?>"
                                          alt="<?php echo $this->escape($item->orderitem_name); ?>"
                                          class="uk-border-rounded uk-flex-none"
                                          width="50">

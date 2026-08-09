@@ -45,7 +45,7 @@ $imageAlt = htmlspecialchars($imageAlt ?? '', ENT_QUOTES, 'UTF-8');
         <a href="<?php echo htmlspecialchars($productLink ?? '', ENT_QUOTES, 'UTF-8'); ?>">
     <?php endif; ?>
 
-    <img src="<?php echo $image; ?>"
+    <img src="<?php echo htmlspecialchars($image, ENT_QUOTES, 'UTF-8'); ?>"
          alt="<?php echo $imageAlt; ?>"
          title="<?php echo $productName; ?>"
          class="j2commerce-img-responsive"

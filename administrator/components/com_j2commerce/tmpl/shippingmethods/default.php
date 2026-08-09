@@ -170,7 +170,7 @@ HTMLHelper::_('bootstrap.tooltip', '[data-bs-toggle="tooltip"]', ['placement' =>
                                             <?php else : ?>
                                                 <span class="d-none d-lg-inline-block d-md-block">
                                             <?php endif; ?>
-                                                <img src="<?php echo $imagePath; ?>" class="img-fluid j2commerce-shipping-image" alt="<?php echo Text::_($item->name); ?>"/>
+                                                <img src="<?php echo $this->escape($imagePath); ?>" class="img-fluid j2commerce-shipping-image" alt="<?php echo $this->escape(Text::_($item->name)); ?>"/>
                                             <?php if ($canEdit) : ?>
                                                 </a>
                                             <?php else : ?>

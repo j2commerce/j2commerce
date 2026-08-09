@@ -175,7 +175,7 @@ $encodedReturn = base64_encode('index.php?option=com_j2commerce&view=paymentmeth
                                             <?php else : ?>
                                                 <span class="d-none d-lg-inline-block d-md-block">
                                             <?php endif; ?>
-                                                <img src="<?php echo $imagePath; ?>" class="img-fluid j2commerce-payment-image" alt="<?php echo Text::_($item->name); ?>"/>
+                                                <img src="<?php echo $this->escape($imagePath); ?>" class="img-fluid j2commerce-payment-image" alt="<?php echo $this->escape(Text::_($item->name)); ?>"/>
                                             <?php if ($canEdit) : ?>
                                                 </a>
                                             <?php else : ?>

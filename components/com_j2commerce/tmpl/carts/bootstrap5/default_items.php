@@ -64,7 +64,7 @@ $checkoutPriceDisplay = $this->params->get('checkout_price_display_options', 0);
                                 <?php if ($showThumbCart && !empty($thumbImage)): ?>
                                     <div class="flex-shrink-0 me-3">
                                         <span class="cart-thumb-image flex-shrink-0">
-                                            <img src="<?php echo $thumbImage; ?>" alt="<?php echo $this->escape($item->orderitem_name); ?>" class="img-thumbnail img-fluid object-fit-cover" style="max-width: 80px;width:80px;height:80px;" width="80" height="80">
+                                            <img src="<?php echo $this->escape($thumbImage); ?>" alt="<?php echo $this->escape($item->orderitem_name); ?>" class="img-thumbnail img-fluid object-fit-cover" style="max-width: 80px;width:80px;height:80px;" width="80" height="80">
                                         </span>
                                     </div>
                                 <?php endif; ?>
