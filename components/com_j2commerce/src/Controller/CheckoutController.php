@@ -1624,9 +1624,14 @@ class CheckoutController extends BaseController
             // before confirm — re-check here so two shoppers cannot both buy the last
             // unit. (The former guard called a validateOrder() that exists nowhere.)
             if ($order && !$order->validate_order_stock()) {
-                foreach ($order->getStockErrors() as $stockError) {
-                    $errors[] = $stockError;
-                }
+                // The boolean is the verdict, the messages only explain it. A listener that
+                // re-keyed the line collection it was handed could leave the two disagreeing,
+                // and confirm is the last stock gate on this path — so a refusal blocks even
+                // when nothing came back to say why.
+                $errors = array_merge(
+                    $errors,
+                    $order->getStockErrors() ?: [Text::_('COM_J2COMMERCE_ERR_GENERIC')]
+                );
             }
         } catch (\Throwable $e) {
             Log::add('checkout.confirm order build failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');

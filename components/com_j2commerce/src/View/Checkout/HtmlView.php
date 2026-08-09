@@ -143,7 +143,9 @@ class HtmlView extends BaseHtmlView
                 // Say why. This redirect predates the validator actually being able to
                 // return false, so it used to be unreachable; silently bouncing a
                 // shopper back to the cart is an inescapable loop from their side.
-                foreach ($order->getStockErrors() as $stockError) {
+                $stockErrors = $order->getStockErrors() ?: [Text::_('COM_J2COMMERCE_ERR_GENERIC')];
+
+                foreach ($stockErrors as $stockError) {
                     $app->enqueueMessage($stockError, 'warning');
                 }
 

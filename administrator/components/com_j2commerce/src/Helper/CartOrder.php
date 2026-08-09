@@ -399,6 +399,12 @@ class CartOrder
      * and the line skipped — deliberate, so an infrastructure error cannot block every
      * shopper at checkout.
      *
+     * A line whose stock is carried elsewhere — a composite parent whose components hold it —
+     * reports available on its own variant and passes the checks above unexamined, so
+     * `ValidateOrderStock` is dispatched for every line and a listener that owns one writes
+     * its own message onto `$item->stock_error`, which `getStockErrors()` then reports
+     * alongside core's findings.
+     *
      * @return  bool  True when every managed line still has enough stock and is within its limits.
      *
      * @since   6.0.6
@@ -458,7 +464,41 @@ class CartOrder
             }
         }
 
-        if ($short === [] && $limited === []) {
+        $delegated = false;
+
+        foreach ($this->items as $item) {
+            try {
+                // Dispatched for every line, not only managed ones: the parent a listener
+                // speaks for deliberately leaves manage-stock off, so gating on that would
+                // hide exactly the lines this exists for. Caught for the same reason the
+                // checks above are: this runs on cart and checkout renders as well as at
+                // confirm, so a listener throwing on a transient fault must cost one line
+                // its check rather than take every shopper's cart down with it.
+                $event = J2CommerceHelper::plugin()->event('ValidateOrderStock', [$item, $this]);
+
+                // Listeners written against the legacy contract refuse by argument rather
+                // than by message. Honour that refusal, and give the line a message of its
+                // own so the verdict and what the shopper is told cannot come apart.
+                if ($event->getArgument('result') === false && empty($item->stock_error)) {
+                    $item->stock_error = Text::sprintf(
+                        'COM_J2COMMERCE_CART_ITEM_STOCK_NOT_AVAILABLE',
+                        $item->product_name ?? ''
+                    );
+                }
+            } catch (\Throwable $e) {
+                Log::add(
+                    'ValidateOrderStock listener failed for product ' . ($item->product_id ?? 0) . ': ' . $e->getMessage(),
+                    Log::WARNING,
+                    'com_j2commerce'
+                );
+            }
+
+            if (!empty($item->stock_error)) {
+                $delegated = true;
+            }
+        }
+
+        if ($short === [] && $limited === [] && !$delegated) {
             return true;
         }
 
