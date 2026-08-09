@@ -304,6 +304,20 @@
         description="COM_J2COMMERCE_CONFIG_PRODUCT_DESC"
     >
         <field
+            name="product_surface_mode"
+            type="list"
+            label="COM_J2COMMERCE_CONFIG_PRODUCT_SURFACE_MODE"
+            description="COM_J2COMMERCE_CONFIG_PRODUCT_SURFACE_MODE_DESC"
+            default="both"
+            filter="word"
+            validate="options"
+        >
+            <option value="both">COM_J2COMMERCE_PRODUCT_SURFACE_MODE_BOTH</option>
+            <option value="product">COM_J2COMMERCE_PRODUCT_SURFACE_MODE_PRODUCT</option>
+            <option value="article">COM_J2COMMERCE_PRODUCT_SURFACE_MODE_ARTICLE</option>
+        </field>
+
+        <field
             name="catalog_mode"
             type="radio"
             label="COM_J2COMMERCE_CONFIG_CATALOG_MODE"

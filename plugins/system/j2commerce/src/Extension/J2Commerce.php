@@ -20,7 +20,9 @@ use J2Commerce\Component\J2commerce\Administrator\SetupGuide\SetupGuideHelper;
 use J2Commerce\Component\J2commerce\Site\Context\AdminOrderCheckoutContext;
 use J2Commerce\Component\J2commerce\Site\Event\CheckoutContextEvent;
 use J2Commerce\Component\J2commerce\Site\Helper\ProductVisibilityHelper;
+use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use Joomla\CMS\Access\Access;
+use Joomla\CMS\Application\SiteApplication;
 use Joomla\CMS\Cache\CacheControllerFactoryInterface;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Component\Router\RouterViewConfiguration;
@@ -36,6 +38,7 @@ use Joomla\CMS\Session\Session;
 use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\User\UserFactoryInterface;
 use Joomla\CMS\User\UserHelper;
+use Joomla\Component\Content\Site\Helper\RouteHelper as ContentRouteHelper;
 use Joomla\Database\DatabaseAwareTrait;
 use Joomla\Database\ParameterType;
 use Joomla\Event\DispatcherInterface;
@@ -250,6 +253,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         if ($app->isClient('site')) {
             $this->handleUrlCouponCode();
             $this->loadJ2CommercePluginLanguages();
+            $this->redirectToPreferredProductSurface();
         }
     }
 
@@ -1140,6 +1144,26 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             } catch (\Throwable $e) {
                 // Fail silently — required-menu detection must never break the dashboard.
             }
+
+            try {
+                foreach ($this->getProductArticleMenuItems() as $menuItem) {
+                    $result[] = [
+                        'id'   => 'j2commerce_product_article_menu_' . (int) $menuItem->id,
+                        'text' => Text::sprintf(
+                            'COM_J2COMMERCE_PRODUCT_SURFACE_MENU_DESC',
+                            htmlspecialchars((string) $menuItem->title, ENT_QUOTES, 'UTF-8')
+                        ),
+                        'type'        => 'warning',
+                        'icon'        => 'fa-solid fa-signs-post',
+                        'dismissible' => 'session',
+                        'link'        => Route::_('index.php?option=com_menus&view=item&layout=edit&id=' . (int) $menuItem->id),
+                        'linkText'    => Text::_('COM_J2COMMERCE_PRODUCT_SURFACE_MENU_EDIT'),
+                        'priority'    => 80,
+                    ];
+                }
+            } catch (\Throwable $e) {
+                // Fail silently — surface detection must never break the dashboard.
+            }
         }
 
         $event->setArgument('result', $result);
@@ -1212,6 +1236,83 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         }
 
         return $links;
+    }
+
+    /**
+     * Published article menu items whose article backs a product, while the store
+     * publishes products on the product surface — the redirect leaves these alone,
+     * so the owner has to convert them deliberately.
+     *
+     * @return  array<int, object{id: int, title: string}>
+     */
+    private function getProductArticleMenuItems(): array
+    {
+        if ($this->getProductSurfaceMode() !== 'product') {
+            return [];
+        }
+
+        $db        = $this->getDatabase();
+        $like      = '%option=com_content%';
+        $clientId  = 0;
+        $published = 1;
+        $type      = 'component';
+
+        $query = $db->getQuery(true)
+            ->select($db->quoteName(['id', 'title', 'link']))
+            ->from($db->quoteName('#__menu'))
+            ->where($db->quoteName('client_id') . ' = :clientId')
+            ->where($db->quoteName('published') . ' = :published')
+            ->where($db->quoteName('type') . ' = :type')
+            ->where($db->quoteName('link') . ' LIKE :link')
+            ->bind(':clientId', $clientId, ParameterType::INTEGER)
+            ->bind(':published', $published, ParameterType::INTEGER)
+            ->bind(':type', $type)
+            ->bind(':link', $like);
+
+        $db->setQuery($query);
+
+        $candidates = [];
+
+        foreach ($db->loadObjectList() ?: [] as $row) {
+            parse_str((string) parse_url((string) $row->link, PHP_URL_QUERY), $queryParams);
+
+            if (($queryParams['option'] ?? '') !== 'com_content' || ($queryParams['view'] ?? '') !== 'article') {
+                continue;
+            }
+
+            $articleId = (int) ($queryParams['id'] ?? 0);
+
+            if ($articleId > 0) {
+                $candidates[$articleId][] = (object) [
+                    'id'    => (int) $row->id,
+                    'title' => (string) $row->title,
+                ];
+            }
+        }
+
+        if ($candidates === []) {
+            return [];
+        }
+
+        $source = 'com_content';
+        $query  = $db->getQuery(true)
+            ->select($db->quoteName('product_source_id'))
+            ->from($db->quoteName('#__j2commerce_products'))
+            ->where($db->quoteName('product_source') . ' = :source')
+            ->whereIn($db->quoteName('product_source_id'), array_keys($candidates))
+            ->bind(':source', $source);
+
+        $db->setQuery($query);
+
+        $items = [];
+
+        foreach ($db->loadColumn() ?: [] as $articleId) {
+            foreach ($candidates[(int) $articleId] ?? [] as $menuItem) {
+                $items[] = $menuItem;
+            }
+        }
+
+        return $items;
     }
 
     /**
@@ -1427,9 +1528,11 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             return;
         }
 
-        $headData = $document->getHeadData();
+        $schemaExists = $this->hasExistingProductSchema($document->getHeadData());
 
-        if ($this->hasExistingProductSchema($headData)) {
+        // A schema already on the page ends this handler, unless the surface mode
+        // below still has a canonical and a robots directive to contribute.
+        if ($schemaExists && $this->getProductSurfaceMode() === 'both') {
             if ($debugMode) {
                 $document->addCustomTag('<!-- ' . implode(' | ', $debugInfo) . ' | Schema already exists, skipping -->');
             }
@@ -1468,6 +1571,16 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             return;
         }
 
+        $this->applyProductSurfaceMode($document, (string) $context['type'], $product);
+
+        if ($schemaExists) {
+            if ($debugMode) {
+                $document->addCustomTag('<!-- ' . implode(' | ', $debugInfo) . ' | Schema already exists, skipping -->');
+            }
+
+            return;
+        }
+
         // Build the product schema
         $isVariable  = $this->isVariableProduct($product);
         $variants    = $this->getProductVariants($product);
@@ -1500,6 +1613,225 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         if ($debugMode) {
             $document->addCustomTag('<!-- ' . implode(' | ', $debugInfo) . ' -->');
         }
+    }
+
+    /**
+     * The surface a product is published on: both, product or article.
+     */
+    private function getProductSurfaceMode(): string
+    {
+        $mode = (string) ComponentHelper::getParams(self::COMPONENT_NAME)->get('product_surface_mode', 'both');
+
+        return \in_array($mode, ['product', 'article'], true) ? $mode : 'both';
+    }
+
+    /**
+     * Point the secondary surface at the published one and keep it out of the index.
+     *
+     * @param   string  $surface  The surface being rendered: product or article
+     */
+    private function applyProductSurfaceMode(HtmlDocument $document, string $surface, object $product): void
+    {
+        $mode = $this->getProductSurfaceMode();
+
+        if ($mode === 'both' || $mode === $surface) {
+            return;
+        }
+
+        $url = $this->getProductSurfaceUrl($mode, $product);
+
+        if ($url === '') {
+            return;
+        }
+
+        $document->setMetaData('robots', 'noindex, follow');
+        $this->setCanonicalUrl($document, $url);
+    }
+
+    /**
+     * Absolute URL of one of the two surfaces a product is reachable on.
+     *
+     * @param   string  $surface  The surface to build for: product or article
+     * @param   bool    $xhtml    Escape the ampersands — right for an href, wrong for a Location header
+     */
+    private function getProductSurfaceUrl(string $surface, object $product, bool $xhtml = true): string
+    {
+        $article = $product->source ?? null;
+
+        if ($surface === 'article') {
+            $articleId = (int) ($article->id ?? 0);
+
+            if ($articleId <= 0) {
+                return '';
+            }
+
+            $alias = (string) ($article->alias ?? '');
+            $link  = ContentRouteHelper::getArticleRoute(
+                $alias !== '' ? $articleId . ':' . $alias : (string) $articleId,
+                (int) ($article->catid ?? 0),
+                $article->language ?? null
+            );
+        } else {
+            $productId = (int) ($product->j2commerce_product_id ?? 0);
+
+            if ($productId <= 0) {
+                return '';
+            }
+
+            $link = RouteHelper::getProductRoute(
+                $productId,
+                $product->alias ?? null,
+                (int) ($product->catid ?? 0) ?: null,
+                $article->language ?? null
+            );
+        }
+
+        return (string) Route::_($link, $xhtml, Route::TLS_IGNORE, true);
+    }
+
+    /**
+     * Replaces any canonical the component or a template already set — a second one would cancel both out.
+     */
+    private function setCanonicalUrl(HtmlDocument $document, string $url): void
+    {
+        $links = $document->getHeadData()['links'] ?? [];
+
+        foreach ($links as $href => $link) {
+            if (($link['relation'] ?? '') === 'canonical') {
+                unset($links[$href]);
+            }
+        }
+
+        $document->setHeadData(['links' => $links]);
+        $document->addHeadLink($url, 'canonical');
+    }
+
+    /**
+     * Sends a request for the secondary surface to the published one.
+     */
+    private function redirectToPreferredProductSurface(): void
+    {
+        $mode = $this->getProductSurfaceMode();
+
+        if ($mode === 'both') {
+            return;
+        }
+
+        $app = $this->getApplication();
+
+        if (!$app instanceof SiteApplication) {
+            return;
+        }
+
+        $input = $app->getInput();
+
+        if (!\in_array($input->getMethod(), ['GET', 'HEAD'], true) || $input->getCmd('format', 'html') !== 'html') {
+            return;
+        }
+
+        // A task or an edit layout means the request is doing something with the
+        // article, not reading it — frontend submission included.
+        if ($input->getCmd('task', '') !== '' || $input->getCmd('layout', '') === 'edit') {
+            return;
+        }
+
+        $id = $input->getInt('id', 0);
+
+        if ($id <= 0) {
+            return;
+        }
+
+        $option  = $input->getCmd('option');
+        $view    = $input->getCmd('view');
+        $surface = match (true) {
+            $option === 'com_content' && $view === 'article'        => 'article',
+            $option === self::COMPONENT_NAME && $view === 'product' => 'product',
+            default                                                 => '',
+        };
+
+        if ($surface === '' || $surface === $mode) {
+            return;
+        }
+
+        // Cheap enough to answer before loading a product: the homepage and every
+        // dedicated menu item leave here without touching the database.
+        if ($this->isActiveMenuItemFor($app, $surface, $id)) {
+            return;
+        }
+
+        $product = $surface === 'article'
+            ? $this->getProductByArticleId($id)
+            : $this->getProductById($id);
+
+        if ($product === null) {
+            return;
+        }
+
+        if (!ProductVisibilityHelper::isViewable((int) ($product->j2commerce_product_id ?? 0))) {
+            return;
+        }
+
+        // Leave the author their own preview of an article that is not public yet.
+        if ($this->canEditProductArticle($product)) {
+            return;
+        }
+
+        $url = $this->getProductSurfaceUrl($mode, $product, false);
+
+        if ($url === '') {
+            return;
+        }
+
+        $app->redirect($url, 301);
+    }
+
+    /**
+     * Whether the current user may edit the article backing a product.
+     */
+    private function canEditProductArticle(object $product): bool
+    {
+        $user = $this->getApplication()->getIdentity();
+
+        if ($user === null || (int) $user->id === 0) {
+            return false;
+        }
+
+        $article   = $product->source ?? null;
+        $articleId = (int) ($article->id ?? 0);
+
+        if ($articleId <= 0) {
+            return false;
+        }
+
+        $asset = 'com_content.article.' . $articleId;
+
+        if ($user->authorise('core.edit', $asset)) {
+            return true;
+        }
+
+        return $user->authorise('core.edit.own', $asset)
+            && (int) ($article->created_by ?? 0) === (int) $user->id;
+    }
+
+    /**
+     * Whether the active menu item is the surface being redirected away from.
+     */
+    private function isActiveMenuItemFor(SiteApplication $app, string $surface, int $id): bool
+    {
+        $active = $app->getMenu()->getActive();
+
+        if ($active === null) {
+            return false;
+        }
+
+        parse_str((string) parse_url((string) $active->link, PHP_URL_QUERY), $query);
+
+        $option = $surface === 'article' ? 'com_content' : self::COMPONENT_NAME;
+        $view   = $surface === 'article' ? 'article' : 'product';
+
+        return ($query['option'] ?? '') === $option
+            && ($query['view'] ?? '') === $view
+            && (int) ($query['id'] ?? 0) === $id;
     }
 
     /**
