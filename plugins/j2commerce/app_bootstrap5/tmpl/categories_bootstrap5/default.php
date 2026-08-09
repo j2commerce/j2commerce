@@ -98,7 +98,7 @@ $colsMd = match ($category_columns) {
                                             <a class="j2commerce-category-child-link nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="<?php echo $childUrl; ?>">
                                                 <?php echo $this->escape($child->title); ?>
                                                 <?php if ($params->get('show_product_count', 1) && $child->product_count > 0) : ?>
-                                                    <span class="text-muted">(<?php echo $child->product_count; ?>)</span>
+                                                    <span class="text-body-secondary">(<?php echo $child->product_count; ?>)</span>
                                                 <?php endif; ?>
                                             </a>
                                         </li>
@@ -174,7 +174,7 @@ $colsMd = match ($category_columns) {
                                             <a class="j2commerce-category-child-link nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="<?php echo $childUrl; ?>">
                                                 <?php echo $this->escape($child->title); ?>
                                                 <?php if ($params->get('show_product_count', 1) && $child->product_count > 0) : ?>
-                                                    <span class="text-muted">(<?php echo $child->product_count; ?>)</span>
+                                                    <span class="text-body-secondary">(<?php echo $child->product_count; ?>)</span>
                                                 <?php endif; ?>
                                             </a>
                                         </li>
@@ -226,7 +226,7 @@ $colsMd = match ($category_columns) {
                                             <a class="j2commerce-category-child-link nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="<?php echo $childUrl; ?>">
                                                 <?php echo $this->escape($child->title); ?>
                                                 <?php if ($params->get('show_product_count', 1) && $child->product_count > 0) : ?>
-                                                    <span class="text-muted">(<?php echo $child->product_count; ?>)</span>
+                                                    <span class="text-body-secondary">(<?php echo $child->product_count; ?>)</span>
                                                 <?php endif; ?>
                                             </a>
                                         </li>

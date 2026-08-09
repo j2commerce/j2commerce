@@ -614,20 +614,20 @@ class ProducttagsModel extends ListModel
 
         $filters = ProductHelper::getFilters($items, [], $restrictManufacturerIds);
 
-        // ProductHelper::getPriceFilters() does a simple WHERE catid IN (...) and misses
-        // subcategory-expanded products. Override with a query that mirrors the same
-        // lft/rgt subcategory expansion used by getListQuery().
-        $priceRange = $this->getPriceRangeForListing();
-        if ($priceRange['max_price'] > 0) {
-            $filters['pricefilters'] = $priceRange;
-        }
+        // ProductHelper::getPriceFilters() applies only the enabled/visibility flags, so
+        // its bounds span the whole catalogue. Override unconditionally with a range
+        // computed from the listing's own query; a 0/0 range hides the slider.
+        $filters['pricefilters'] = $this->getPriceRangeForListing();
 
         return $filters;
     }
 
     /**
-     * Get the price range across ALL products that match the current listing filters,
-     * using the same subcategory expansion as getListQuery().
+     * Get the price range across ALL products that match the current listing filters.
+     *
+     * Reuses getListQuery() so the tag, search, manufacturer, vendor, product-filter,
+     * featured, language, publish-window and access predicates all apply. The visitor's
+     * own price selection is blanked so narrowing the slider never shrinks its bounds.
      *
      * @return  array{min_price: float, max_price: float}
      *
@@ -635,74 +635,24 @@ class ProducttagsModel extends ListModel
      */
     private function getPriceRangeForListing(): array
     {
-        $db             = $this->getDatabase();
-        $catids         = $this->getState('filter.catids', []);
-        $subcatLevels   = (int) $this->getState('filter.subcategory_levels', 3);
-        $effectivePrice = 'COALESCE(' . $db->quoteName('vc.min_child_price') . ', ' . $db->quoteName('v.price') . ')';
+        $db = $this->getDatabase();
 
-        // Subquery: min child-variant price per product (handles variable/flexi products
-        // where the master variant price is $0).
-        $vcSub = $db->getQuery(true)
-            ->select([$db->quoteName('vc2.product_id'), 'MIN(' . $db->quoteName('vc2.price') . ') AS ' . $db->quoteName('min_child_price')])
-            ->from($db->quoteName('#__j2commerce_variants', 'vc2'))
-            ->where($db->quoteName('vc2.is_master') . ' = 0')
-            ->where($db->quoteName('vc2.price') . ' > 0')
-            ->group($db->quoteName('vc2.product_id'));
+        $savedPriceFrom = $this->getState('filter.price_from', 0);
+        $savedPriceTo   = $this->getState('filter.price_to', 0);
+        $this->setState('filter.price_from', 0);
+        $this->setState('filter.price_to', 0);
 
-        $query = $db->getQuery(true)
-            ->select(['MIN(' . $effectivePrice . ') AS min_price', 'MAX(' . $effectivePrice . ') AS max_price'])
-            ->from($db->quoteName('#__j2commerce_variants', 'v'))
-            ->join('INNER', $db->quoteName('#__j2commerce_products', 'p') . ' ON ' . $db->quoteName('p.j2commerce_product_id') . ' = ' . $db->quoteName('v.product_id'))
-            ->join('INNER', $db->quoteName('#__content', 'a') . ' ON ' . $db->quoteName('a.id') . ' = ' . $db->quoteName('p.product_source_id'))
-            ->join('LEFT', '(' . $vcSub . ') AS ' . $db->quoteName('vc') . ' ON ' . $db->quoteName('vc.product_id') . ' = ' . $db->quoteName('p.j2commerce_product_id'))
-            ->join('LEFT', $db->quoteName('#__categories', 'c') . ' ON ' . $db->quoteName('c.id') . ' = ' . $db->quoteName('a.catid'))
-            ->where($db->quoteName('v.is_master') . ' = 1')
-            ->where($db->quoteName('p.enabled') . ' = 1')
-            ->where($db->quoteName('p.visibility') . ' = 1');
-
-        // The slider bounds must be computed over the same rows the listing shows —
-        // without these the MIN/MAX aggregate spans products the visitor cannot see.
-        $groups  = $this->getCurrentUser()->getAuthorisedViewLevels();
-        $nowDate = Factory::getDate()->toSql();
-
-        $query->where($db->quoteName('a.state') . ' = 1')
-            ->where($db->quoteName('c.published') . ' = 1')
-            ->where(
-                '(' . $db->quoteName('a.publish_up') . ' IS NULL OR ' . $db->quoteName('a.publish_up') . ' <= :publishUp)'
-            )
-            ->where(
-                '(' . $db->quoteName('a.publish_down') . ' IS NULL OR ' . $db->quoteName('a.publish_down') . ' >= :publishDown)'
-            )
-            ->bind(':publishUp', $nowDate)
-            ->bind(':publishDown', $nowDate)
-            ->whereIn($db->quoteName('a.access'), $groups)
-            ->whereIn($db->quoteName('c.access'), $groups);
-
-        if (!empty($catids)) {
-            $sanitizedCatids = implode(',', array_map('intval', $catids));
-
-            if ($subcatLevels > 0) {
-                // Mirror the lft/rgt subcategory expansion from getListQuery().
-                $subQuery = $db->getQuery(true)
-                    ->select('DISTINCT ' . $db->quoteName('sub.id'))
-                    ->from($db->quoteName('#__categories', 'sub'))
-                    ->join(
-                        'INNER',
-                        $db->quoteName('#__categories', 'this'),
-                        $db->quoteName('sub.lft') . ' > ' . $db->quoteName('this.lft')
-                        . ' AND ' . $db->quoteName('sub.lft') . ' < ' . $db->quoteName('this.rgt')
-                    )
-                    ->where($db->quoteName('this.id') . ' IN (' . $sanitizedCatids . ')')
-                    ->where($db->quoteName('sub.level') . ' <= ' . $db->quoteName('this.level') . ' + ' . $subcatLevels);
-
-                $query->where(
-                    '(' . $db->quoteName('a.catid') . ' IN (' . $subQuery . ')'
-                    . ' OR ' . $db->quoteName('a.catid') . ' IN (' . $sanitizedCatids . '))'
-                );
-            } else {
-                $query->whereIn($db->quoteName('a.catid'), array_map('intval', $catids));
-            }
+        try {
+            $query = $this->getListQuery();
+        } finally {
+            $this->setState('filter.price_from', $savedPriceFrom);
+            $this->setState('filter.price_to', $savedPriceTo);
         }
+
+        $effectivePrice = $this->addEffectivePriceJoins($query, $db, $this->getCurrentUser());
+
+        $query->clear('select')->clear('order')->clear('group')
+            ->select(['MIN(' . $effectivePrice . ') AS min_price', 'MAX(' . $effectivePrice . ') AS max_price']);
 
         $db->setQuery($query);
         $result = $db->loadObject();
@@ -747,13 +697,12 @@ class ProducttagsModel extends ListModel
         return array_values(array_filter(array_map('intval', $db->loadColumn() ?: [])));
     }
 
-    protected function applyPriceRangeFilter(
+    /** Adds the child-variant and advanced-pricing joins, returns the effective-price SQL expression. */
+    protected function addEffectivePriceJoins(
         QueryInterface $query,
         \Joomla\Database\DatabaseInterface $db,
-        \Joomla\CMS\User\User $user,
-        float $priceFrom,
-        float $priceTo
-    ): void {
+        \Joomla\CMS\User\User $user
+    ): string {
         $now        = Factory::getDate()->toSql();
         $userGroups = $user->getAuthorisedGroups();
         $groupList  = !empty($userGroups) ? implode(',', array_map('intval', $userGroups)) : '0';
@@ -792,7 +741,17 @@ class ProducttagsModel extends ListModel
         $basePrice = 'COALESCE(' . $db->quoteName('vc.min_child_price') . ', ' . $db->quoteName('v.price') . ')';
 
         // Effective price: lowest of base price and any active advanced pricing
-        $effectivePrice = 'LEAST(' . $basePrice . ', COALESCE(' . $db->quoteName('pp.min_price') . ', ' . $basePrice . '))';
+        return 'LEAST(' . $basePrice . ', COALESCE(' . $db->quoteName('pp.min_price') . ', ' . $basePrice . '))';
+    }
+
+    protected function applyPriceRangeFilter(
+        QueryInterface $query,
+        \Joomla\Database\DatabaseInterface $db,
+        \Joomla\CMS\User\User $user,
+        float $priceFrom,
+        float $priceTo
+    ): void {
+        $effectivePrice = $this->addEffectivePriceJoins($query, $db, $user);
 
         if ($priceFrom > 0) {
             $query->where($effectivePrice . ' >= :price_from')

@@ -48,7 +48,7 @@ $imageSrc = $product->thumb_image ?? $product->main_image ?? '';
         <?php endif; ?>
 
         <?php if ($params->get('list_show_product_sku', 1) && !empty($product->sku)) : ?>
-            <p class="text-muted small mb-1"><?php echo $this->escape($product->sku); ?></p>
+            <p class="text-body-secondary small mb-1"><?php echo $this->escape($product->sku); ?></p>
         <?php endif; ?>
 
         <?php if ($params->get('list_show_short_desc', 0) && !empty($product->product_short_desc)) : ?>

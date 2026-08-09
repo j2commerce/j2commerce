@@ -48,7 +48,7 @@ $hasFilterGroups = (!empty($this->filters['manufacturers']) && $this->params->ge
     || (!empty($this->filters['vendors']) && $this->params->get('list_show_vendor_filter', 1))
     || (!empty($this->filters['productfilters']) && $this->params->get('list_show_product_filter', 1));
 
-$hasPriceFilter = $this->params->get('list_show_filter_price', 1) && isset($this->filters['pricefilters']) && count($this->filters['pricefilters']);
+$hasPriceFilter = $this->params->get('list_show_filter_price', 1) && !empty($this->filters['pricefilters']['max_price']);
 $filtersCollapsed = ((int) $this->params->get('list_filter_category_toggle', 1) === 2);
 
 HTMLHelper::_('bootstrap.offcanvas');
@@ -144,7 +144,7 @@ HTMLHelper::_('bootstrap.collapse');
                                     <div id="j2commerce-slider-range" class="w-100"></div>
                                     <div id="j2commerce-slider-range-box" class="d-flex align-items-center gap-2 mt-3">
                                         <button type="submit" class="btn btn-dark btn-sm d-none" id="filterProductsBtn"><?php echo Text::_('COM_J2COMMERCE_FILTER_GO'); ?></button>
-                                        <div class="text-center small text-muted w-100">
+                                        <div class="text-center small text-body-secondary w-100">
                                             <span id="min_price" style="display: none"><?php echo $priceFrom; ?></span>
                                             <span id="max_price" style="display: none"><?php echo $priceTo; ?></span>
                                             <?php if ($currencyPosition === 'pre') echo '<span class="fw-semibold">' . $currencySymbol . '</span>'; ?>

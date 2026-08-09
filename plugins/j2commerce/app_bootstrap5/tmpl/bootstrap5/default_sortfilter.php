@@ -48,7 +48,7 @@ $currentSefPath = Uri::getInstance()->getPath();
                 ? Text::_('COM_J2COMMERCE_SHOWING_1_ITEM')
                 : Text::sprintf('COM_J2COMMERCE_SHOWING_N_ITEMS', $totalItems);
             ?>
-            <p class="text-muted mb-0" id="j2commerce-showing-count"><?php echo $showingText; ?></p>
+            <p class="text-body-secondary mb-0" id="j2commerce-showing-count"><?php echo $showingText; ?></p>
         </div>
 
         <div class="d-flex align-items-center gap-2 j2commerce-sortbar-filter-right">

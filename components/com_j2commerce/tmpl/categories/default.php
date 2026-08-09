@@ -81,7 +81,7 @@ $category_columns = (int) $params->get('category_columns', 4);
                                                 <li>
                                                     <a href="<?php echo $childUrl; ?>"><?php echo $this->escape($child->title); ?></a>
                                                     <?php if ($params->get('show_product_count', 1) && $child->product_count > 0) : ?>
-                                                        <span class="text-muted">(<?php echo $child->product_count; ?>)</span>
+                                                        <span class="text-body-secondary">(<?php echo $child->product_count; ?>)</span>
                                                     <?php endif; ?>
                                                 </li>
                                             <?php endforeach; ?>
@@ -147,7 +147,7 @@ $category_columns = (int) $params->get('category_columns', 4);
                                                 <li>
                                                     <a href="<?php echo $childUrl; ?>"><?php echo $this->escape($child->title); ?></a>
                                                     <?php if ($params->get('show_product_count', 1) && $child->product_count > 0) : ?>
-                                                        <span class="text-muted">(<?php echo $child->product_count; ?>)</span>
+                                                        <span class="text-body-secondary">(<?php echo $child->product_count; ?>)</span>
                                                     <?php endif; ?>
                                                 </li>
                                             <?php endforeach; ?>
@@ -189,7 +189,7 @@ $category_columns = (int) $params->get('category_columns', 4);
                                                 <li>
                                                     <a href="<?php echo $childUrl; ?>"><?php echo $this->escape($child->title); ?></a>
                                                     <?php if ($params->get('show_product_count', 1) && $child->product_count > 0) : ?>
-                                                        <span class="text-muted">(<?php echo $child->product_count; ?>)</span>
+                                                        <span class="text-body-secondary">(<?php echo $child->product_count; ?>)</span>
                                                     <?php endif; ?>
                                                 </li>
                                             <?php endforeach; ?>
