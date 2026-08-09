@@ -100,7 +100,8 @@ function initGrapesJSEditor(options) {
 
     window._j2cGrapesEditor = editor;
 
-    // After load, inject responsive styles and swap shortcode src placeholders
+    // After load, inject responsive styles, swap shortcode src placeholders, and
+    // enable inline editing for <th> and <td> cells.
     editor.on('load', () => {
         const frame = editor.Canvas.getFrameEl();
         if (!frame) return;
@@ -123,6 +124,56 @@ function initGrapesJSEditor(options) {
                 img.setAttribute('src', J2C_IMG_PLACEHOLDER);
             }
         });
+
+        // GrapesJS's built-in 'cell' type covers both <td> and <th> and provides no
+        // text-editing view. Templates loaded from body_json restore <th> as 'cell' type
+        // directly, bypassing isComponent detection, so a custom j2c-th type is useless.
+        // Instead we use capture-phase event delegation on the canvas document so dblclick
+        // on any <th> — regardless of how the template was loaded — becomes editable.
+        // Block-level tags whose presence inside a cell means it's a layout container,
+        // not a simple text cell — skip those so we don't clobber nested structures.
+        const BLOCK_TAGS = new Set(['TABLE','DIV','P','TR','TD','TH','THEAD','TBODY','TFOOT','UL','OL','LI','BLOCKQUOTE','PRE']);
+
+        doc.addEventListener('dblclick', (e) => {
+            const el = e.target;
+            if (!el || (el.tagName !== 'TD' && el.tagName !== 'TH')) return;
+            // Skip layout cells — those whose direct children include block-level elements.
+            if (!el.textContent.trim()) return;
+            for (const child of el.children) {
+                if (BLOCK_TAGS.has(child.tagName)) return;
+            }
+
+            e.stopPropagation();
+
+            // Snapshot the selected component before we steal focus from the canvas.
+            // GrapesJS selects on mousedown, so by dblclick the component is already set.
+            const component = editor.getSelected();
+
+            el.contentEditable = 'true';
+            el.focus();
+
+            // Pre-select all text so the user can overtype immediately.
+            const range = doc.createRange();
+            range.selectNodeContents(el);
+            const sel = doc.defaultView?.getSelection();
+            if (sel) { sel.removeAllRanges(); sel.addRange(range); }
+
+            // Enter key commits the edit without inserting a newline.
+            const onKeyDown = (ke) => { if (ke.key === 'Enter') { ke.preventDefault(); el.blur(); } };
+            el.addEventListener('keydown', onKeyDown);
+
+            el.addEventListener('blur', () => {
+                el.removeEventListener('keydown', onKeyDown);
+                el.contentEditable = 'false';
+
+                // Sync the new text back to the GrapesJS model so Save picks it up.
+                if (component) {
+                    const newText = el.textContent.trim();
+                    component.components().reset([{ type: 'textnode', content: newText }]);
+                }
+            }, { once: true });
+
+        }, true); // capture phase — fires before GrapesJS's own bubble-phase handlers
     });
 
     setupFormSyncHandlers(editor);
