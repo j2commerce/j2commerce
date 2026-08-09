@@ -17,7 +17,7 @@ Text::script('COM_J2COMMERCE_INSTOCK');
 Text::script('COM_J2COMMERCE_NOTINSTOCK');
 Text::script('COM_J2COMMERCE_AVAILABLE');
 ?>
-<div class="j2commerce j2commerce-single-product product-<?php echo $this->item->j2commerce_product_id; ?> <?php echo $this->item->product_type; ?> detail <?php echo htmlspecialchars($this->params->get('product_css_class', ''), ENT_QUOTES, 'UTF-8'); ?>">
+<div class="j2commerce j2commerce-single-product product-<?php echo $this->item->j2commerce_product_id; ?> <?php echo htmlspecialchars($this->item->product_type ?? '', ENT_QUOTES, 'UTF-8'); ?> detail <?php echo htmlspecialchars($this->params->get('product_css_class', ''), ENT_QUOTES, 'UTF-8'); ?>">
     <div class="container">
         <?php if ($this->params->get('show_page_heading')) : ?>
             <div class="page-header">

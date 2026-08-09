@@ -77,7 +77,7 @@ use Joomla\CMS\Language\Text;
                   id="j2commerce-addtocart-form-<?php echo $this->item->j2commerce_product_id; ?>"
                   name="j2commerce-addtocart-form-<?php echo $this->item->j2commerce_product_id; ?>"
                   data-product_id="<?php echo $this->item->j2commerce_product_id; ?>"
-                  data-product_type="<?php echo $this->item->product_type; ?>"
+                  data-product_type="<?php echo htmlspecialchars($this->item->product_type ?? '', ENT_QUOTES, 'UTF-8'); ?>"
                   enctype="multipart/form-data">
 
                 <?php echo $this->loadTemplate('options'); ?>
