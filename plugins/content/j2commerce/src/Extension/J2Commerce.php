@@ -33,6 +33,7 @@ use Joomla\CMS\Form\Form;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\Plugin\CMSPlugin;
+use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Router\Route;
 use Joomla\Database\DatabaseAwareTrait;
 use Joomla\Database\ParameterType;
@@ -95,6 +96,15 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
 
     private static array $articleCache = [];
 
+    /**
+     * Recursion guard for the prepare_content event dispatch.
+     * Set to true while we are inside our own secondary onContentPrepare dispatch
+     * so that J2Commerce's handler skips all processing for that inner call.
+     *
+     * @since  6.4.0
+     */
+    private static bool $preparingContent = false;
+
     /** Per-productId counter so shortcode-rendered cart forms get unique ids when a product appears more than once on a page. */
     private static array $cartFormInstanceCounts = [];
 
@@ -135,6 +145,12 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         $article = $event->getItem();
         $params  = $event->getParams();
 
+        // Guard against the recursive onContentPrepare event dispatched by our own
+        // prepare_content logic at the end of this method.
+        if (self::$preparingContent) {
+            return;
+        }
+
         // Strip shortcodes when Smart Search indexer is running
         if ($context === 'com_finder.indexer' && (bool) $this->params->get('shortcode_strip_in_finder', 1)) {
             if (isset($article->text)) {
@@ -155,37 +171,122 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             return;
         }
 
-        // Handle product list context - strip shortcodes
-        if (strpos($context, 'productlist') !== false) {
-            $this->stripShortcodes($article);
+        // Called from ProductHelper::prepareProductDescriptions() to run content
+        // plugins on product_short_desc / product_long_desc.  Skip all J2Commerce
+        // rendering (product blocks, shortcodes, inner dispatch) so the descriptions
+        // only get field tags / module tags resolved, never a duplicate product block.
+        //
+        // Two complementary guards:
+        //   1. isPreparingDescriptions() — a definitive static flag in ProductHelper;
+        //      reliable regardless of how the event subject is stored/returned.
+        //   2. j2commerce_desc_context on the fakeArticle — belt-and-suspenders
+        //      fallback for any code path that reaches here without the flag set.
+        if (ProductHelper::isPreparingDescriptions() || !empty($article->j2commerce_desc_context)) {
+            if (!(bool) $this->params->get('prepare_content', 1)) {
+                $this->stripContentPluginTags($article);
+            }
+
             return;
         }
 
-        // Clear caches if enabled
-        if ($this->params->get('cache_control', 1) && !$this->cacheCleared) {
-            $this->clearContentCaches();
+        // When prepare_content is off, strip standard Joomla content-plugin tags
+        // (loadposition / loadmodule / loadmoduleid) while preserving any patterns
+        // listed in the preserve_tags parameter.
+        if (!(bool) $this->params->get('prepare_content', 1)) {
+            $this->stripContentPluginTags($article);
         }
 
-        // Get J2Commerce component params for placement setting
-        $j2params   = ComponentHelper::getParams('com_j2commerce');
-        $placement  = $j2params->get('addtocart_placement', 'default');
+        if (strpos($context, 'productlist') !== false) {
+            // Product list: strip J2Commerce shortcodes from article descriptions,
+            // then fall through to the prepare_content dispatch below so that
+            // content-plugin tags in introtext / fulltext are rendered or stripped.
+            $this->stripShortcodes($article);
+        } else {
+            // Clear caches if enabled
+            if ($this->params->get('cache_control', 1) && !$this->cacheCleared) {
+                $this->clearContentCaches();
+            }
 
-        // Handle default position placement
-        if (strpos($context, 'com_content') !== false) {
-            if (\in_array($placement, ['default', 'both'], true)) {
-                if ($this->checkPublishDate($article)) {
-                    $this->renderDefaultPosition($context, $article, $params);
+            // Get J2Commerce component params for placement setting
+            $j2params  = ComponentHelper::getParams('com_j2commerce');
+            $placement = $j2params->get('addtocart_placement', 'default');
+
+            // Handle default position placement
+            if (strpos($context, 'com_content') !== false) {
+                if (\in_array($placement, ['default', 'both'], true)) {
+                    if ($this->checkPublishDate($article)) {
+                        $this->renderDefaultPosition($context, $article, $params);
+                    }
                 }
             }
+
+            // Handle tag-based placement
+            if (\in_array($placement, ['tag', 'both'], true)) {
+                $this->processWithinArticle($article);
+            }
+
+            // Always process J2Commerce shortcodes
+            $this->processShortcodes($context, $article, $params);
         }
 
-        // Handle tag-based placement
-        if (\in_array($placement, ['tag', 'both'], true)) {
-            $this->processWithinArticle($article);
-        }
+        // Re-dispatch onContentPrepare with the real article so content plugins can
+        // render remaining tags ({field 4}, {loadmoduleid 120}, etc.).
+        //
+        // Fires for all contexts — including productlist — when:
+        //   - prepare_content is on  → render all plugin tags in the text, OR
+        //   - preserve_tags is set   → stripContentPluginTags already removed the
+        //     unwanted tags; we still need to render the ones that were preserved.
+        //
+        // Using the real article (not a fake stdClass) ensures context-sensitive
+        // plugins like plg_content_fields can resolve field values by article ID.
+        // The static flag above prevents recursion.
+        $hasPreserveTags = trim((string) $this->params->get('preserve_tags', '')) !== '';
 
-        // Always process shortcodes
-        $this->processShortcodes($context, $article, $params);
+        if ((bool) $this->params->get('prepare_content', 1) || $hasPreserveTags) {
+            self::$preparingContent = true;
+            PluginHelper::importPlugin('content');
+            $dispatcher = Factory::getContainer()->get(DispatcherInterface::class);
+
+            try {
+                // Dispatch for each text property that carries content so that
+                // tags in introtext and fulltext are rendered even in list views
+                // where those properties are accessed directly by templates.
+                foreach (['text', 'introtext', 'fulltext'] as $prop) {
+                    if (!isset($article->$prop) || $article->$prop === '') {
+                        continue;
+                    }
+
+                    // When the property is text, dispatch normally.
+                    // For introtext / fulltext: swap into text, dispatch, swap back
+                    // so that content plugins (which only read $article->text) process it.
+                    if ($prop !== 'text') {
+                        if (!isset($article->text) || $article->$prop === $article->text) {
+                            continue;
+                        }
+
+                        $savedText    = $article->text ?? '';
+                        $article->text = $article->$prop;
+                    }
+
+                    $dispatcher->dispatch(
+                        'onContentPrepare',
+                        new ContentPrepareEvent('onContentPrepare', [
+                            'context' => $context,
+                            'subject' => $article,
+                            'params'  => $params,
+                            'page'    => 0,
+                        ])
+                    );
+
+                    if ($prop !== 'text') {
+                        $article->$prop = $article->text;
+                        $article->text  = $savedText;
+                    }
+                }
+            } finally {
+                self::$preparingContent = false;
+            }
+        }
     }
 
     /** @since 6.0.0 */
@@ -888,6 +989,69 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
     }
 
     /**
+     * Strip all Joomla content-plugin-style tags from article text when prepare_content
+     * is disabled. Handles both the paired form ({tagname}…{/tagname}) and the
+     * self-closing form ({tagname} / {tagname attributes}).
+     *
+     * J2Commerce's own {j2commerce} shortcodes are intentionally skipped here — they
+     * are processed or stripped elsewhere in the pipeline. Any tag whose raw text
+     * contains a fragment listed in the preserve_tags plugin parameter is also kept.
+     *
+     * @since   6.4.0
+     */
+    private function stripContentPluginTags(object $article): void
+    {
+        // Build the preserve list from the plugin parameter.
+        $preserveRaw  = trim((string) $this->params->get('preserve_tags', ''));
+        $preserveList = $preserveRaw !== ''
+            ? array_filter(array_map('trim', explode(',', $preserveRaw)))
+            : [];
+
+        // Returns true when the matched tag should be stripped.
+        $shouldStrip = static function (string $raw, string $tagName) use ($preserveList): bool {
+            if (strtolower($tagName) === 'j2commerce') {
+                return false;
+            }
+
+            foreach ($preserveList as $fragment) {
+                if ($fragment !== '' && stripos($raw, $fragment) !== false) {
+                    return false;
+                }
+            }
+
+            return true;
+        };
+
+        $strip = static function (string $text) use ($shouldStrip): string {
+            // Paired form first: {tagname …}…{/tagname}
+            $text = preg_replace_callback(
+                '/\{([a-z][a-z0-9_-]*)(?:\s[^{}]*)?\}.*?\{\/\1\}/is',
+                static function (array $m) use ($shouldStrip): string {
+                    return $shouldStrip($m[0], $m[1]) ? '' : $m[0];
+                },
+                $text
+            ) ?? $text;
+
+            // Self-closing form: {tagname} or {tagname attributes}
+            return preg_replace_callback(
+                '/\{([a-z][a-z0-9_-]*)(?:\s[^{}]*)?\}/i',
+                static function (array $m) use ($shouldStrip): string {
+                    return $shouldStrip($m[0], $m[1]) ? '' : $m[0];
+                },
+                $text
+            ) ?? $text;
+        };
+
+        // Process all three text properties so that tags are stripped regardless
+        // of which property is rendered by the active view template.
+        foreach (['text', 'introtext', 'fulltext'] as $prop) {
+            if (isset($article->$prop) && $article->$prop !== '') {
+                $article->$prop = $strip($article->$prop);
+            }
+        }
+    }
+
+    /**
      * @since   6.0.0
      */
     private function renderDefaultPosition(string $context, object $article, object $params): void
@@ -900,6 +1064,13 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         }
 
         if (!isset($article->id) || !$article->id || $position === 'afterdisplaycontent') {
+            return;
+        }
+
+        // Never inject a product block while ProductHelper is preparing product
+        // descriptions — this is the definitive last-resort guard that prevents
+        // a duplicate product from appearing inside its own short/long description.
+        if (ProductHelper::isPreparingDescriptions() || !empty($article->j2commerce_desc_context)) {
             return;
         }
 
@@ -1381,7 +1552,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             // view_*.php files and sets the 'html' argument. We don't use
             // J2CommerceHelper::plugin()->eventWithHtml() because it overwrites
             // the 'html' argument with the concat of 'result' entries after dispatch.
-            \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2commerce');
+            PluginHelper::importPlugin('j2commerce');
             $dispatcher  = Factory::getContainer()->get(DispatcherInterface::class);
             $pluginEvent = new \J2Commerce\Component\J2commerce\Administrator\Event\PluginEvent(
                 'onJ2CommerceViewProductHtml',
