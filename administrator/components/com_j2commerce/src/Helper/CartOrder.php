@@ -1865,57 +1865,42 @@ class CartOrder
                 $attributes = $item->product_options;
             }
 
-            $columns = [
-                'order_id', 'orderitem_type', 'cart_id', 'cartitem_id',
-                'product_id', 'product_type', 'variant_id', 'vendor_id',
-                'orderitem_sku', 'orderitem_name', 'orderitem_attributes',
-                'orderitem_quantity', 'orderitem_taxprofile_id',
-                'orderitem_per_item_tax', 'orderitem_tax',
-                'orderitem_discount', 'orderitem_discount_tax',
-                'orderitem_price', 'orderitem_option_price',
-                'orderitem_finalprice', 'orderitem_finalprice_with_tax',
-                'orderitem_finalprice_without_tax', 'orderitem_params',
-                'created_on', 'created_by',
-                'orderitem_weight', 'orderitem_weight_total',
+            $row = (object) [
+                'order_id'                         => $orderId,
+                'orderitem_type'                   => 'normal',
+                'cart_id'                          => (int) ($this->cart_id),
+                'cartitem_id'                      => (int) ($item->j2commerce_cartitem_id ?? $item->cartitem_id ?? 0),
+                'product_id'                       => (int) ($item->product_id ?? 0),
+                'product_type'                     => $itemProductType,
+                'variant_id'                       => (int) ($item->variant_id ?? 0),
+                'vendor_id'                        => (int) ($item->vendor_id ?? 0),
+                'orderitem_sku'                    => (string) ($item->sku ?? ''),
+                'orderitem_name'                   => (string) ($item->product_name ?? $item->orderitem_name ?? ''),
+                'orderitem_attributes'             => (string) $attributes,
+                'orderitem_quantity'               => (string) $quantity,
+                'orderitem_taxprofile_id'          => (int) ($item->taxprofile_id ?? $pricing->taxprofile_id ?? 0),
+                'orderitem_per_item_tax'           => $perItemTax,
+                'orderitem_tax'                    => $itemTax,
+                'orderitem_discount'               => 0,
+                'orderitem_discount_tax'           => 0,
+                'orderitem_price'                  => $basePrice,
+                'orderitem_option_price'           => $optionPrice,
+                'orderitem_finalprice'             => $finalPrice,
+                'orderitem_finalprice_with_tax'    => $finalPriceWithTax,
+                'orderitem_finalprice_without_tax' => $finalPrice,
+                'orderitem_params'                 => (string) ($item->cartitem_params ?? $item->orderitem_params ?? '{}'),
+                'created_on'                       => $now,
+                'created_by'                       => $userId,
+                'orderitem_weight'                 => (string) ($item->weight ?? 0),
+                'orderitem_weight_total'           => (string) (($item->weight ?? 0) * $quantity),
             ];
 
-            $values = [
-                $db->quote($orderId),
-                $db->quote('normal'),
-                (int) ($this->cart_id),
-                (int) ($item->j2commerce_cartitem_id ?? $item->cartitem_id ?? 0),
-                (int) ($item->product_id ?? 0),
-                $db->quote($itemProductType),
-                (int) ($item->variant_id ?? 0),
-                (int) ($item->vendor_id ?? 0),
-                $db->quote($item->sku ?? ''),
-                $db->quote($item->product_name ?? $item->orderitem_name ?? ''),
-                $db->quote($attributes),
-                $db->quote((string) $quantity),
-                (int) ($item->taxprofile_id ?? $pricing->taxprofile_id ?? 0),
-                $perItemTax,
-                $itemTax,
-                0, // orderitem_discount
-                0, // orderitem_discount_tax
-                $basePrice,
-                $optionPrice,
-                $finalPrice,
-                $finalPriceWithTax,
-                $finalPrice, // without tax
-                $db->quote($item->cartitem_params ?? $item->orderitem_params ?? '{}'),
-                $db->quote($now),
-                $userId,
-                $db->quote((string) ($item->weight ?? 0)),
-                $db->quote((string) (($item->weight ?? 0) * $quantity)),
-            ];
+            // Storefront counterpart to the dispatch in OrderModel::addOrderItemFromVariant() — same event,
+            // same by-reference contract, so one handler serves both write paths. The cart item travels with
+            // the row because the shopper's selections live there, not on the order item being built.
+            J2CommerceHelper::plugin()->event('BeforeAddOrderItem', [&$row, $item]);
 
-            $query = $db->getQuery(true)
-                ->insert($db->quoteName('#__j2commerce_orderitems'))
-                ->columns($db->quoteName($columns))
-                ->values(implode(',', $values));
-
-            $db->setQuery($query);
-            $db->execute();
+            $db->insertObject('#__j2commerce_orderitems', $row, 'j2commerce_orderitem_id');
         }
     }
 
