@@ -49,6 +49,25 @@ $hasFilterGroups = (!empty($this->filters['manufacturers']) && $this->params->ge
 
 $hasPriceFilter = $this->params->get('list_show_filter_price', 1) && !empty($this->filters['pricefilters']['max_price']);
 $filtersCollapsed = ((int) $this->params->get('list_filter_category_toggle', 1) === 2);
+
+// Choices.js only ships where a group actually asked for the multi-select control.
+$hasFancySelect = false;
+
+foreach (($this->filters['productfilters'] ?? []) as $pfGroup) {
+    if (($pfGroup['filter_input_type'] ?? '') === 'multiselect') {
+        $hasFancySelect = true;
+        break;
+    }
+}
+
+if ($hasFancySelect) {
+    Text::script('JGLOBAL_SELECT_NO_RESULTS_MATCH');
+    Text::script('JGLOBAL_SELECT_PRESS_TO_SELECT');
+
+    $app->getDocument()->getWebAssetManager()
+        ->usePreset('choicesjs')
+        ->useScript('webcomponent.field-fancy-select');
+}
 ?>
 <div id="j2commerce-product-loading" class="j2commerce-loading-overlay" style="display:none;"></div>
 
@@ -80,13 +99,15 @@ $filtersCollapsed = ((int) $this->params->get('list_filter_category_toggle', 1) 
     .j2commerce-dual-range input[type="range"]::-moz-range-track { background: transparent; border: none; }
     .j2commerce-filter-swatches { display: flex; flex-wrap: wrap; gap: .5rem; }
     .j2commerce-swatch-input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
-    .j2commerce-swatch { display: inline-block; width: 1.75rem; height: 1.75rem; border-radius: 50%; border: 1px solid #e5e5e5; cursor: pointer; }
+    /* Same swatch as .j2commerce-color-options on the product options, at a sidebar size. */
+    .j2commerce-filter-swatches .btn-color { border: 2px solid transparent; border-radius: 50%; cursor: pointer; display: inline-block; flex-shrink: 0; height: 1.5rem; padding: .125rem; width: 1.5rem; }
+    .j2commerce-filter-swatches .btn-color::before { background-color: currentcolor; border-radius: 50%; content: ""; display: flex; height: 100%; width: 100%; }
     .j2commerce-swatch-text { display: inline-block; padding: .15rem .6rem; border-radius: 2rem; border: 1px solid #e5e5e5; cursor: pointer; font-size: .875rem; }
-    .j2commerce-swatch-input:checked + .j2commerce-swatch,
+    .j2commerce-swatch-input:checked + .btn-color { border-color: #333; }
     .j2commerce-swatch-input:checked + .j2commerce-swatch-text { outline: 2px solid #333; outline-offset: 2px; }
-    .j2commerce-swatch-input:focus-visible + .j2commerce-swatch,
+    .j2commerce-swatch-input:focus-visible + .btn-color,
     .j2commerce-swatch-input:focus-visible + .j2commerce-swatch-text { outline: 2px solid #1e87f0; outline-offset: 2px; }
-    .j2commerce-filter-unavailable .j2commerce-swatch,
+    .j2commerce-filter-unavailable .btn-color,
     .j2commerce-filter-unavailable .j2commerce-swatch-text { opacity: .35; cursor: not-allowed; }
 </style>
 
@@ -178,9 +199,12 @@ $filtersCollapsed = ((int) $this->params->get('list_filter_category_toggle', 1) 
                                         <?php echo Text::_('COM_J2COMMERCE_CLEAR'); ?>
                                     </a>
                                 </div>
-                                <div id="j2commerce-pf-filter-<?php echo $filterScriptId; ?>" class="j2commerce-productfilter-list<?php echo $pfInputType === 'color' ? ' j2commerce-filter-swatches' : ''; ?>">
+                                <div id="j2commerce-pf-filter-<?php echo $filterScriptId; ?>" class="j2commerce-productfilter-list<?php echo $pfInputType === 'color' ? ' j2commerce-color-options j2commerce-filter-swatches' : ''; ?>">
                                     <?php if ($pfIsList) : ?>
-                                        <select class="uk-select uk-form-small j2commerce-pfilter-select j2commerce-pfilter-select-<?php echo $filterScriptId; ?>" name="productfilter_ids[]" aria-label="<?php echo $this->escape(Text::_($filtergroup['group_name'])); ?>"<?php echo $pfInputType === 'multiselect' ? ' multiple size="' . min(count($filtergroup['filters']), 8) . '"' : ''; ?>>
+                                        <?php if ($pfInputType === 'multiselect') : ?>
+                                            <joomla-field-fancy-select placeholder="<?php echo $this->escape(Text::_('JGLOBAL_TYPE_OR_SELECT_SOME_OPTIONS')); ?>">
+                                        <?php endif; ?>
+                                        <select class="uk-select j2commerce-pfilter-select j2commerce-pfilter-select-<?php echo $filterScriptId; ?>" name="productfilter_ids[]" aria-label="<?php echo $this->escape(Text::_($filtergroup['group_name'])); ?>"<?php echo $pfInputType === 'multiselect' ? ' multiple' : ''; ?>>
                                             <?php if ($pfInputType === 'select') : ?>
                                                 <option class="j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" value=""><?php echo $this->escape(Text::_('COM_J2COMMERCE_FILTER_ANY')); ?></option>
                                             <?php endif; ?>
@@ -194,6 +218,9 @@ $filtersCollapsed = ((int) $this->params->get('list_filter_category_toggle', 1) 
                                                 <option class="j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" value="<?php echo $filter->filter_id; ?>" data-alias="<?php echo $this->escape($filterAlias); ?>" data-count="<?php echo $filterCount; ?>" data-label="<?php echo $this->escape($filterLabel); ?>"<?php echo $checked ? ' selected' : ''; ?><?php echo $filterCount === 0 && !$checked ? ' disabled' : ''; ?>><?php echo $this->escape($filterLabel); ?> (<?php echo $filterCount; ?>)</option>
                                             <?php endforeach; ?>
                                         </select>
+                                            <?php if ($pfInputType === 'multiselect') : ?>
+                                                </joomla-field-fancy-select>
+                                            <?php endif; ?>
                                     <?php else : ?>
                                         <?php if ($pfInputType === 'radio') : ?>
                                             <div class="uk-margin-small-bottom">
@@ -222,7 +249,7 @@ $filtersCollapsed = ((int) $this->params->get('list_filter_category_toggle', 1) 
                                                 <div class="<?php echo $filterUnavailable ? 'j2commerce-filter-unavailable' : ''; ?>">
                                                     <input type="checkbox" class="j2commerce-swatch-input j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" name="<?php echo $pfInputName; ?>" id="<?php echo $filterId; ?>" value="<?php echo $filter->filter_id; ?>" data-alias="<?php echo $this->escape($filterAlias); ?>" data-count="<?php echo $filterCount; ?>" data-label="<?php echo $this->escape($filterLabel); ?>"<?php echo $checked ? ' checked' : ''; ?><?php echo $filterUnavailable ? ' disabled' : ''; ?> />
                                                     <?php if ($swatchColor !== '') : ?>
-                                                        <label class="j2commerce-swatch" for="<?php echo $filterId; ?>" style="background-color: <?php echo $this->escape($swatchColor); ?>" title="<?php echo $this->escape($filterLabel); ?>">
+                                                        <label class="btn-color" for="<?php echo $filterId; ?>" style="color: <?php echo $this->escape($swatchColor); ?>" title="<?php echo $this->escape($filterLabel); ?>" data-label="<?php echo $this->escape($filterLabel); ?>">
                                                             <span class="uk-hidden"><?php echo $this->escape($filterLabel); ?></span>
                                                         </label>
                                                     <?php else : ?>
@@ -387,9 +414,12 @@ $filtersCollapsed = ((int) $this->params->get('list_filter_category_toggle', 1) 
                                     <?php echo Text::_('COM_J2COMMERCE_CLEAR'); ?>
                                 </a>
                             </div>
-                            <div id="j2commerce-pf-filter-<?php echo $filterScriptId; ?>" class="j2commerce-productfilter-list<?php echo $pfInputType === 'color' ? ' j2commerce-filter-swatches' : ''; ?>">
+                            <div id="j2commerce-pf-filter-<?php echo $filterScriptId; ?>" class="j2commerce-productfilter-list<?php echo $pfInputType === 'color' ? ' j2commerce-color-options j2commerce-filter-swatches' : ''; ?>">
                                 <?php if ($pfIsList) : ?>
-                                    <select class="uk-select uk-form-small j2commerce-pfilter-select j2commerce-pfilter-select-<?php echo $filterScriptId; ?>" name="productfilter_ids[]" aria-label="<?php echo $this->escape(Text::_($filtergroup['group_name'])); ?>"<?php echo $pfInputType === 'multiselect' ? ' multiple size="' . min(count($filtergroup['filters']), 8) . '"' : ''; ?>>
+                                    <?php if ($pfInputType === 'multiselect') : ?>
+                                        <joomla-field-fancy-select placeholder="<?php echo $this->escape(Text::_('JGLOBAL_TYPE_OR_SELECT_SOME_OPTIONS')); ?>">
+                                    <?php endif; ?>
+                                    <select class="uk-select j2commerce-pfilter-select j2commerce-pfilter-select-<?php echo $filterScriptId; ?>" name="productfilter_ids[]" aria-label="<?php echo $this->escape(Text::_($filtergroup['group_name'])); ?>"<?php echo $pfInputType === 'multiselect' ? ' multiple' : ''; ?>>
                                         <?php if ($pfInputType === 'select') : ?>
                                             <option class="j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" value=""><?php echo $this->escape(Text::_('COM_J2COMMERCE_FILTER_ANY')); ?></option>
                                         <?php endif; ?>
@@ -403,6 +433,9 @@ $filtersCollapsed = ((int) $this->params->get('list_filter_category_toggle', 1) 
                                             <option class="j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" value="<?php echo $filter->filter_id; ?>" data-alias="<?php echo $this->escape($filterAlias); ?>" data-count="<?php echo $filterCount; ?>" data-label="<?php echo $this->escape($filterLabel); ?>"<?php echo $checked ? ' selected' : ''; ?><?php echo $filterCount === 0 && !$checked ? ' disabled' : ''; ?>><?php echo $this->escape($filterLabel); ?> (<?php echo $filterCount; ?>)</option>
                                         <?php endforeach; ?>
                                     </select>
+                                        <?php if ($pfInputType === 'multiselect') : ?>
+                                            </joomla-field-fancy-select>
+                                        <?php endif; ?>
                                 <?php else : ?>
                                     <?php if ($pfInputType === 'radio') : ?>
                                         <div class="uk-margin-small-bottom">
@@ -431,7 +464,7 @@ $filtersCollapsed = ((int) $this->params->get('list_filter_category_toggle', 1) 
                                             <div class="<?php echo $filterUnavailable ? 'j2commerce-filter-unavailable' : ''; ?>">
                                                 <input type="checkbox" class="j2commerce-swatch-input j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" name="<?php echo $pfInputName; ?>" id="<?php echo $filterId; ?>" value="<?php echo $filter->filter_id; ?>" data-alias="<?php echo $this->escape($filterAlias); ?>" data-count="<?php echo $filterCount; ?>" data-label="<?php echo $this->escape($filterLabel); ?>"<?php echo $checked ? ' checked' : ''; ?><?php echo $filterUnavailable ? ' disabled' : ''; ?> />
                                                 <?php if ($swatchColor !== '') : ?>
-                                                    <label class="j2commerce-swatch" for="<?php echo $filterId; ?>" style="background-color: <?php echo $this->escape($swatchColor); ?>" title="<?php echo $this->escape($filterLabel); ?>">
+                                                    <label class="btn-color" for="<?php echo $filterId; ?>" style="color: <?php echo $this->escape($swatchColor); ?>" title="<?php echo $this->escape($filterLabel); ?>" data-label="<?php echo $this->escape($filterLabel); ?>">
                                                         <span class="uk-hidden"><?php echo $this->escape($filterLabel); ?></span>
                                                     </label>
                                                 <?php else : ?>

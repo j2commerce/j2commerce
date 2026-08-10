@@ -24,6 +24,13 @@ $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
 $wa->useScript('keepalive')
     ->useScript('form.validate');
 
+$wa->registerAndUseScript(
+    'com_j2commerce.admin.filtergroup',
+    'media/com_j2commerce/js/administrator/filtergroup-form.js',
+    [],
+    ['defer' => true]
+);
+
 $layout  = 'edit';
 $tmpl    = Factory::getApplication()->input->get('tmpl', '', 'cmd') === 'component' ? '&tmpl=component' : '';
 ?>
@@ -38,6 +45,7 @@ $tmpl    = Factory::getApplication()->input->get('tmpl', '', 'cmd') === 'compone
                         <fieldset class="options-form">
                             <legend><?php echo Text::_('COM_J2COMMERCE_FILTERGROUP_DETAILS'); ?></legend>
                             <?php echo $this->form->renderField('group_name'); ?>
+                            <?php echo $this->form->renderField('filter_input_type'); ?>
                         </fieldset>
 
                         <?php if (!empty($this->item->id) || !empty($this->item->j2commerce_filtergroup_id)) : ?>
