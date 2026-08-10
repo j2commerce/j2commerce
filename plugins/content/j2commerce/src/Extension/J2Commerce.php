@@ -1183,22 +1183,30 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         // link the image to the product — on a single-article view the image belongs
         // to the article's own product, so a link would point at the current page.
         if (\in_array($context, ['com_content.category', 'com_content.featured'], true)) {
-            $showImage     = $this->params->get('category_display_j2commerce_images', 1);
-            $imageType     = $this->params->get('category_image_type', 'thumbnail');
-            $imageLocation = 'default';
-            $mainWidth     = $this->params->get('list_image_thumbnail_width', 120);
-            $linkImage     = (int) $this->params->get('category_link_image_to_product', 1) === 1;
+            $showImage       = $this->params->get('category_display_j2commerce_images', 1);
+            $imageType       = $this->params->get('category_image_type', 'thumbnail');
+            $imageLocation   = 'default';
+            $mainWidth       = (int) $this->params->get('list_image_thumbnail_width', 120);
+            $additionalWidth = (int) $this->params->get('list_product_additional_image_width', 80);
+            $enableZoom      = (int) $this->params->get('category_enable_image_zoom', 1) === 1;
+            $linkImage       = (int) $this->params->get('category_link_image_to_product', 1) === 1;
         } else {
-            $showImage     = $this->params->get('item_display_j2commerce_images', 1);
-            $imageType     = $this->params->get('item_image_type', 'main');
-            $imageLocation = $this->params->get('item_image_placement', 'default');
-            $mainWidth     = $this->params->get('item_product_main_image_width', 300);
-            $linkImage     = false;
+            $showImage       = $this->params->get('item_display_j2commerce_images', 1);
+            $imageType       = $this->params->get('item_image_type', 'main');
+            $imageLocation   = $this->params->get('item_image_placement', 'default');
+            $mainWidth       = (int) $this->params->get('item_product_main_image_width', 300);
+            $additionalWidth = (int) $this->params->get('item_product_additional_image_width', 100);
+            $enableZoom      = (int) $this->params->get('item_enable_image_zoom', 1) === 1;
+            $linkImage       = false;
         }
 
         if (!$showImage || $imageLocation !== 'default') {
             return $html;
         }
+
+        // A linked image navigates on click, and the zoom handler cancels that default,
+        // so the two cannot both own the click. The link wins.
+        $enableZoom = $enableZoom && !$linkImage;
 
         $images = $this->getProductImagesData($product->j2commerce_product_id, $imageType);
         // example: array(1) { [0]=> object(stdClass)#1894 (2) { ["image_path"]=> string(0) "" ["thumb_image"]=> string(0) "" } }
@@ -1216,9 +1224,13 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             }
 
             $html .= '<div class="j2commerce-product-images">';
-            foreach ($images as $image) {
+            foreach ($images as $index => $image) {
                 if (!empty($image->image_path)) {
-                    $img = '<img src="' . $this->escape($image->image_path) . '" alt="" class="j2commerce-product-image" style="max-width: ' . (int) $mainWidth . 'px;">';
+                    $img = $this->renderProductImageTag(
+                        $image->image_path,
+                        $index === 0 ? $mainWidth : $additionalWidth,
+                        $enableZoom
+                    );
 
                     $html .= $productLink !== ''
                         ? '<a href="' . $this->escape($productLink) . '">' . $img . '</a>'
@@ -1258,19 +1270,59 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             return '';
         }
 
-        $imageType = $this->params->get('item_image_type', 'main');
-        $images    = $this->getProductImagesData($product->j2commerce_product_id, $imageType);
-        $html      = '';
+        $imageType       = $this->params->get('item_image_type', 'main');
+        $mainWidth       = (int) $this->params->get('item_product_main_image_width', 300);
+        $additionalWidth = (int) $this->params->get('item_product_additional_image_width', 100);
+        $enableZoom      = (int) $this->params->get('item_enable_image_zoom', 1) === 1;
+        $images          = $this->getProductImagesData($product->j2commerce_product_id, $imageType);
+        $html            = '';
 
         if (!empty($images)) {
             $html .= '<div class="j2commerce-product-images">';
-            foreach ($images as $image) {
-                $html .= '<img src="' . $this->escape($image->image_path) . '" alt="" class="j2commerce-product-image">';
+            foreach ($images as $index => $image) {
+                $html .= $this->renderProductImageTag(
+                    $image->image_path,
+                    $index === 0 ? $mainWidth : $additionalWidth,
+                    $enableZoom
+                );
             }
             $html .= '</div>';
         }
 
         return $html;
+    }
+
+    /**
+     * The first image is the main one; every image after it is an additional image
+     * and takes the narrower additional width.
+     *
+     * @since   6.5.1
+     */
+    private function renderProductImageTag(string $imagePath, int $width, bool $enableZoom): string
+    {
+        if ($enableZoom) {
+            $this->registerZoomAssets();
+        }
+
+        return '<img src="' . $this->escape($imagePath) . '" alt="" class="j2commerce-product-image"'
+            . ' style="max-width: ' . $width . 'px;"'
+            . ($enableZoom ? ' data-action="zoom"' : '') . '>';
+    }
+
+    /** Guarded — a category listing renders this once per product image. */
+    private function registerZoomAssets(): void
+    {
+        static $registered = false;
+
+        if ($registered) {
+            return;
+        }
+
+        $registered = true;
+
+        $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
+        $wa->registerAndUseStyle('com_j2commerce.vendor.zoom.css', 'media/com_j2commerce/vendor/zoom-vanilla/css/zoom.css');
+        $wa->registerAndUseScript('com_j2commerce.vendor.zoom', 'media/com_j2commerce/vendor/zoom-vanilla/js/zoom-vanilla.min.js', [], ['defer' => true]);
     }
 
     /** @since 6.0.0 */
@@ -1619,7 +1671,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             'shortcodeOption' => $option,
             'priceMode'       => $this->resolvePriceMode($option),
             'imageMode'       => $this->resolveImageMode($option),
-            'showOptions'     => $option !== 'cartonly',
+            'showOptions'     => $option !== 'cartonly' && (int) $this->params->get('shortcode_show_cart_options', 1) === 1,
             'sourceContext'   => 'article',
         ];
     }
