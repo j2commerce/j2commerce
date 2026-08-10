@@ -19,34 +19,13 @@ use Joomla\CMS\Session\Session;
 
 class AppsController extends AdminController
 {
+    use ExtensionCheckinTrait;
+
     protected $text_prefix = 'COM_J2COMMERCE';
 
     public function getModel($name = 'App', $prefix = 'Administrator', $config = ['ignore_request' => true])
     {
         return parent::getModel($name, $prefix, $config);
-    }
-
-    public function checkin()
-    {
-        Session::checkToken() or jexit(Text::_('JINVALID_TOKEN'));
-
-        $cid = (array) $this->input->get('cid', [], 'int');
-
-        if (empty($cid)) {
-            $this->setMessage(Text::_('COM_J2COMMERCE_NO_ITEM_SELECTED'), 'warning');
-        } else {
-            $model = $this->getModel('App', 'Administrator');
-            $cid   = array_map('intval', $cid);
-
-            try {
-                $model->checkin($cid);
-                $this->setMessage(Text::plural('COM_J2COMMERCE_N_ITEMS_CHECKED_IN', \count($cid)));
-            } catch (\Exception $e) {
-                $this->setMessage($e->getMessage(), 'error');
-            }
-        }
-
-        $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=apps', false));
     }
 
     public function refresh()

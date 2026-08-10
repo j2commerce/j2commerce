@@ -16,6 +16,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
+use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\Database\ParameterType;
 
@@ -44,6 +45,34 @@ class J2htmlHelper
         }
 
         return $classes;
+    }
+
+    /**
+     * Same markup as jgrid.checkedout, with the tooltip timestamp rendered
+     * in the component's configured date and time format.
+     */
+    public static function checkedOut(int $i, ?string $editorName, ?string $time, string $prefix = '', bool $enabled = false): string
+    {
+        $params = ComponentHelper::getParams('com_j2commerce');
+        $format = $params->get('date_format', 'Y-m-d') . ' ' . $params->get('time_format', 'H:i:s');
+
+        $text          = $editorName . '<br>' . HTMLHelper::_('date', $time, $format);
+        $activeTitle   = HTMLHelper::_('tooltipText', Text::_('JLIB_HTML_CHECKIN'), $text, 0);
+        $inactiveTitle = HTMLHelper::_('tooltipText', Text::_('JLIB_HTML_CHECKED_OUT'), $text, 0);
+
+        return HTMLHelper::_(
+            'jgrid.action',
+            $i,
+            'checkin',
+            $prefix,
+            html_entity_decode($activeTitle, ENT_QUOTES, 'UTF-8'),
+            html_entity_decode($inactiveTitle, ENT_QUOTES, 'UTF-8'),
+            true,
+            'checkedout',
+            'checkedout',
+            $enabled,
+            false
+        );
     }
 
     public static function getOrderStatusHtml(int $id): string

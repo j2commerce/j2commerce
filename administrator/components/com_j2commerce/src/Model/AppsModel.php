@@ -133,6 +133,11 @@ class AppsModel extends ListModel
         );
         $query->from($db->quoteName('#__extensions', 'a'));
 
+        // Join over the holder of the check-out so the list can name them.
+        $query->select($db->quoteName('uc.name', 'editor'))
+            ->join('LEFT', $db->quoteName('#__users', 'uc') . ' ON ' .
+                $db->quoteName('uc.id') . ' = ' . $db->quoteName('a.checked_out'));
+
         // Filter by plugin type
         $query->where($db->quoteName('a.type') . ' = ' . $db->quote('plugin'));
 

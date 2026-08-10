@@ -15,7 +15,6 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\AdminController;
 use Joomla\CMS\Router\Route;
-use Joomla\CMS\Session\Session;
 
 /**
  * Reports Controller
@@ -24,6 +23,8 @@ use Joomla\CMS\Session\Session;
  */
 class ReportsController extends AdminController
 {
+    use ExtensionCheckinTrait;
+
     /**
      * The prefix to use with controller messages.
      *
@@ -84,39 +85,4 @@ class ReportsController extends AdminController
         ));
     }
 
-    /**
-     * Method to checkin a list of items
-     *
-     * @return  void
-     *
-     * @since   6.0.0
-     */
-    public function checkin()
-    {
-        // Check for request forgeries
-        Session::checkToken() or jexit(Text::_('JINVALID_TOKEN'));
-
-        // Get items to checkin from the request.
-        $cid = (array) $this->input->get('cid', [], 'int');
-
-        if (empty($cid)) {
-            $this->setMessage(Text::_('COM_J2COMMERCE_NO_ITEM_SELECTED'), 'warning');
-        } else {
-            // Get the model.
-            $model = $this->getModel('Report', 'Administrator');
-
-            // Make sure the item ids are integers
-            $cid = array_map('intval', $cid);
-
-            // Checkin the items.
-            try {
-                $model->checkin($cid);
-                $this->setMessage(Text::plural('COM_J2COMMERCE_N_ITEMS_CHECKED_IN', \count($cid)));
-            } catch (\Exception $e) {
-                $this->setMessage($e->getMessage(), 'error');
-            }
-        }
-
-        $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=reports', false));
-    }
 }

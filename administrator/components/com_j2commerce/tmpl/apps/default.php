@@ -166,6 +166,9 @@ $return = rawurlencode($encodedReturn);
                                         </div>
                                         <div class="flex-grow-1 ms-lg-3 mt-0 mt-lg-0">
                                             <div>
+                                                <?php if (!empty($item->checked_out)): ?>
+                                                    <?php echo J2htmlHelper::checkedOut($i, $item->editor, $item->checked_out_time, 'apps.', $canCheckin); ?>
+                                                <?php endif; ?>
                                                 <?php if ($item->enabled): ?>
                                                     <a href="<?php echo Route::_($item->edit_link . '&return=' . $return); ?>"><?php echo $item->display_name; ?></a>
                                                 <?php else: ?>
