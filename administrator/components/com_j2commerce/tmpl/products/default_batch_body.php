@@ -13,7 +13,6 @@ defined('_JEXEC') or die;
 
 use Joomla\CMS\Language\Multilanguage;
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\Layout\LayoutHelper;
 
 /** @var \J2Commerce\Component\J2commerce\Administrator\View\Products\HtmlView $this */
 
@@ -22,28 +21,23 @@ use Joomla\CMS\Layout\LayoutHelper;
     <div class="row">
         <?php if ($this->canBatch && Multilanguage::isEnabled()) : ?>
             <div class="form-group col-md-6">
-                <div class="controls">
-                    <?php echo LayoutHelper::render('joomla.html.batch.language', []); ?>
-                </div>
+                <?php echo $this->batchForm->renderField('language_id', 'batch'); ?>
             </div>
         <?php endif; ?>
         <?php if ($this->canBatchState) : ?>
             <div class="form-group col-md-6">
-                <div class="controls">
-                    <?php echo LayoutHelper::render('joomla.html.batch.access', []); ?>
-                </div>
+                <?php echo $this->batchForm->renderField('assetgroup_id', 'batch'); ?>
             </div>
         <?php endif; ?>
         <?php if ($this->canBatch) : ?>
             <div class="form-group col-md-6">
-                <div class="controls">
-                    <?php echo LayoutHelper::render('joomla.html.batch.item', ['extension' => 'com_content']); ?>
-                </div>
+                <?php echo $this->batchForm->renderField('category_id', 'batch'); ?>
             </div>
             <div class="form-group col-md-6">
-                <div class="controls">
-                    <?php echo LayoutHelper::render('joomla.html.batch.tag', []); ?>
-                </div>
+                <?php echo $this->batchForm->renderField('tag', 'batch'); ?>
+            </div>
+            <div class="form-group col-md-6">
+                <?php echo $this->batchForm->renderField('tag_addremove', 'batch'); ?>
             </div>
         <?php endif; ?>
     </div>

@@ -18,6 +18,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\MenuHelper;
 use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Form\Form;
 use Joomla\CMS\Helper\ContentHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
@@ -89,6 +90,9 @@ class HtmlView extends BaseHtmlView
     /** Access-level batch field and Feature/Unfeature: needs core.edit.state on both. */
     protected bool $canBatchState = false;
 
+    /** Batch dialog controls; see forms/batch_products.xml. */
+    public ?Form $batchForm = null;
+
     /**
      * Display the view
      *
@@ -133,6 +137,15 @@ class HtmlView extends BaseHtmlView
         }
 
         $this->addToolbar();
+
+        // addToolbar() resolves canBatch, so the form is only built once the dialog is known to render.
+        if ($this->canBatch) {
+            $this->batchForm = Form::getInstance(
+                'com_j2commerce.batch.products',
+                JPATH_COMPONENT_ADMINISTRATOR . '/forms/batch_products.xml',
+                ['control' => '']
+            );
+        }
 
         parent::display($tpl);
     }

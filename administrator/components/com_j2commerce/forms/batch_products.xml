@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+    <!--
+        Batch controls for the Products list. `<fields name="batch">` keeps the posted control
+        names as batch[...], the shape ProductsController::batch() already reads.
+
+        The copy/move choice the core joomla.html.batch.item layout carries is deliberately not
+        declared: a copy would produce an article with no product row behind it, so the controller
+        forces move_copy = 'm' whatever is posted.
+    -->
+    <fields name="batch">
+        <field
+            name="language_id"
+            type="contentlanguage"
+            label="JLIB_HTML_BATCH_LANGUAGE_LABEL"
+            filter="string"
+        >
+            <option value="">JLIB_HTML_BATCH_LANGUAGE_NOCHANGE</option>
+            <option value="*">JALL</option>
+        </field>
+
+        <field
+            name="assetgroup_id"
+            type="accesslevel"
+            label="JLIB_HTML_BATCH_ACCESS_LABEL"
+            filter="integer"
+        >
+            <option value="">JLIB_HTML_BATCH_NOCHANGE</option>
+        </field>
+
+        <field
+            name="category_id"
+            type="category"
+            extension="com_content"
+            label="JLIB_HTML_BATCH_MENU_LABEL"
+            filter="integer"
+        >
+            <option value="">JLIB_HTML_BATCH_NO_CATEGORY</option>
+        </field>
+
+        <field
+            name="tag"
+            type="tag"
+            label="JLIB_HTML_BATCH_TAG_LABEL"
+            mode="nested"
+            custom="deny"
+            remote-search="false"
+            multiple="false"
+            published="1"
+            filter="integer"
+        >
+            <option value="">JLIB_HTML_BATCH_TAG_NOCHANGE</option>
+        </field>
+
+        <field
+            name="tag_addremove"
+            type="radio"
+            layout="joomla.form.field.radio.switcher"
+            label="JLIB_HTML_BATCH_TAG_ADDREMOVE_QUESTION"
+            default="a"
+            filter="word"
+        >
+            <option value="a">JLIB_HTML_BATCH_TAG_ADD</option>
+            <option value="r">JLIB_HTML_BATCH_TAG_REMOVE</option>
+        </field>
+    </fields>
+</form>

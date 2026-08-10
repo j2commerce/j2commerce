@@ -20,6 +20,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use Joomla\CMS\Application\CMSApplication;
 use Joomla\CMS\Application\CMSWebApplicationInterface;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Form\Form;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\FileLayout;
 use Joomla\CMS\MVC\Controller\AdminController;
@@ -768,7 +769,9 @@ class ProductsController extends AdminController
 
         $redirect = $this->listRedirect();
         $cid      = array_filter((array) $this->input->post->get('cid', [], 'int'));
-        $commands = (array) $this->input->post->get('batch', [], 'array');
+        $commands = $this->filterBatchCommands(
+            (array) $this->input->post->get('batch', [], 'array')
+        );
 
         if (empty($cid)) {
             $this->setRedirect($redirect, Text::_($this->text_prefix . '_NO_ITEM_SELECTED'), 'warning');
@@ -840,6 +843,18 @@ class ProductsController extends AdminController
 
         $this->app->getLogger()->error($model->getError(), ['category' => 'com_j2commerce']);
         $this->setRedirect($redirect, Text::_('COM_J2COMMERCE_BATCH_FAILED'), 'warning');
+    }
+
+    /** Applies the filter attribute each control declares in forms/batch_products.xml. Not an authorisation boundary — batch() still allow-lists the keys. */
+    private function filterBatchCommands(array $commands): array
+    {
+        $form = Form::getInstance(
+            'com_j2commerce.batch.products',
+            JPATH_COMPONENT_ADMINISTRATOR . '/forms/batch_products.xml',
+            ['control' => '']
+        );
+
+        return (array) ($form->filter(['batch' => $commands])['batch'] ?? []);
     }
 
     /**
