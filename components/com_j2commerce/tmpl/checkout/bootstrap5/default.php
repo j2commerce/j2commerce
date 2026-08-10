@@ -1497,10 +1497,26 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('j2commerce:checkout:refreshSidecart', function() { refreshSidecart(); });
 
     // === SIDECART COUPON/VOUCHER: Listen for events from coupon-voucher.js ===
-    document.addEventListener('j2commerce:coupon:applied', function() { refreshSidecart(); });
-    document.addEventListener('j2commerce:coupon:removed', function() { refreshSidecart(); });
-    document.addEventListener('j2commerce:voucher:applied', function() { refreshSidecart(); });
-    document.addEventListener('j2commerce:voucher:removed', function() { refreshSidecart(); });
+    // The coupon and voucher forms sit in the sidecart, which renders alongside every
+    // step — including confirm, where an order has already been persisted from the cart.
+    // Refreshing only the sidecart there would leave that order describing the pre-coupon
+    // cart, so on confirm the step itself is re-fetched and the order re-persisted.
+    // fetchStep() refreshes the sidecart on completion, so it is not also called here.
+    function onCartTotalsChanged() {
+        var confirmContent = getContent('confirm');
+
+        if (confirmContent && confirmContent.classList.contains('active')) {
+            fetchStep('confirm', 'confirm');
+            return;
+        }
+
+        refreshSidecart();
+    }
+
+    document.addEventListener('j2commerce:coupon:applied', onCartTotalsChanged);
+    document.addEventListener('j2commerce:coupon:removed', onCartTotalsChanged);
+    document.addEventListener('j2commerce:voucher:applied', onCartTotalsChanged);
+    document.addEventListener('j2commerce:voucher:removed', onCartTotalsChanged);
 
     // === INITIALIZATION: Load first step based on login status ===
 

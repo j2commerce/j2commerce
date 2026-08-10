@@ -2019,6 +2019,57 @@ class CheckoutController extends BaseController
             $orderTable->load(['order_id' => $orderId]);
         }
 
+        // The confirm step persists an order and then keeps rendering while the cart
+        // underneath it can still change — the coupon and voucher forms live in the
+        // sidecart, which is on screen throughout. The step re-persists when those
+        // change, but a template override, a second tab or any future cart-touching
+        // path need not go through it, so the amount about to be charged is checked
+        // against the cart one last time here.
+        //
+        // Deliberately narrow. It runs only where the order is still this session's
+        // unfinished cart purchase: an off-site gateway return has already taken the
+        // money, a context order was never built from a cart, and a cart that has been
+        // emptied (order_placed timing, or a retry after one) has nothing to compare.
+        // The surcharge is resolved from the payment method the stored row was saved
+        // with, since that is the method that produced the stored total.
+        if (!$tokenlessGatewayReturn
+            && !$wasContextActivated
+            && !empty($orderId)
+            && !empty($orderTable->j2commerce_order_id)
+            && (int) ($orderTable->order_state_id ?? 0) === 5
+        ) {
+            try {
+                $currentOrder = $this->getCartOrder();
+
+                if ($currentOrder instanceof CartOrder && $currentOrder->getItems()) {
+                    $currentOrder->orderpayment_type = (string) ($orderTable->orderpayment_type ?? '');
+                    $currentOrder->applyPaymentSurcharge();
+
+                    if (!$this->orderMatchesCart($orderTable, $currentOrder)) {
+                        $message = Text::_('COM_J2COMMERCE_CHECKOUT_ERROR_ORDER_OUT_OF_DATE');
+                        $paction = $this->input->getString('paction', '');
+                        $isAjax  = $paction === 'process'
+                            || strtolower($this->input->server->getString('HTTP_X_REQUESTED_WITH', '')) === 'xmlhttprequest';
+
+                        if ($isAjax) {
+                            $this->jsonResponse(['success' => false, 'error' => $message]);
+
+                            return;
+                        }
+
+                        $this->app->enqueueMessage($message, 'warning');
+                        $this->app->redirect($this->getCheckoutUrl());
+
+                        return;
+                    }
+                }
+            } catch (\Throwable $e) {
+                // The comparison could not be made. Refusing on that would strand a
+                // shopper whose order is fine, so the earlier gates stand alone here.
+                Log::add('checkout.confirmPayment cart re-check failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+            }
+        }
+
         $showPayment = false;
         J2CommerceHelper::plugin()->event('ChangeShowPaymentOnTotalZero', [$orderTable, &$showPayment]);
 
