@@ -123,6 +123,17 @@
         </field>
 
         <field
+            name="filter_ids"
+            type="Productfilter"
+            label="COM_J2COMMERCE_FILTER_PRODUCT_FILTERS"
+            multiple="true"
+            layout="joomla.form.field.groupedlist-fancy-select"
+            hint="COM_J2COMMERCE_FILTER_SELECT_PRODUCT_FILTERS"
+            addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field"
+            onchange="this.form.submit();"
+        />
+
+        <field
             name="date_from"
             type="calendar"
             label="COM_J2COMMERCE_FILTER_DATE_FROM"

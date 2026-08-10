@@ -95,4 +95,106 @@ class ProductfilterTable extends Table
 
         return true;
     }
+
+    /**
+     * Assign one filter value to many products, leaving every other value they carry alone.
+     *
+     * Distinct from addFilterToProduct(), which replaces a product's whole set — a batch that
+     * did that would wipe values the operator never named. Products already carrying the value
+     * are skipped rather than re-inserted, so re-running the same batch is a no-op instead of a
+     * collision against the composite primary key.
+     *
+     * @param   int[]  $productIds  Product IDs to assign the value to.
+     *
+     * @return  int  The number of products that did not already carry the value.
+     *
+     * @since   6.5.1
+     */
+    public function addFilterToProducts(int $filterId, array $productIds): int
+    {
+        $productIds = self::cleanIds($productIds);
+
+        if ($filterId < 1 || $productIds === []) {
+            return 0;
+        }
+
+        $db      = $this->getDbo();
+        $missing = array_diff($productIds, $this->productsCarrying($filterId, $productIds));
+
+        if ($missing === []) {
+            return 0;
+        }
+
+        $values = [];
+
+        foreach ($missing as $productId) {
+            $values[] = $productId . ', ' . $filterId;
+        }
+
+        $query = $db->getQuery(true)
+            ->insert($db->quoteName('#__j2commerce_product_filters'))
+            ->columns($db->quoteName(['product_id', 'filter_id']))
+            ->values($values);
+
+        $db->setQuery($query);
+        $db->execute();
+
+        return \count($missing);
+    }
+
+    /**
+     * Unassign one filter value from many products.
+     *
+     * @param   int[]  $productIds  Product IDs to unassign the value from.
+     *
+     * @return  int  The number of products that carried the value.
+     *
+     * @since   6.5.1
+     */
+    public function removeFilterFromProducts(int $filterId, array $productIds): int
+    {
+        $productIds = self::cleanIds($productIds);
+
+        if ($filterId < 1 || $productIds === []) {
+            return 0;
+        }
+
+        $db    = $this->getDbo();
+        $query = $db->getQuery(true)
+            ->delete($db->quoteName('#__j2commerce_product_filters'))
+            ->where($db->quoteName('filter_id') . ' = :filterId')
+            ->whereIn($db->quoteName('product_id'), $productIds)
+            ->bind(':filterId', $filterId, ParameterType::INTEGER);
+
+        $db->setQuery($query);
+        $db->execute();
+
+        return (int) $db->getAffectedRows();
+    }
+
+    /**
+     * @param   int[]  $productIds
+     *
+     * @return  int[]
+     */
+    private function productsCarrying(int $filterId, array $productIds): array
+    {
+        $db    = $this->getDbo();
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('product_id'))
+            ->from($db->quoteName('#__j2commerce_product_filters'))
+            ->where($db->quoteName('filter_id') . ' = :filterId')
+            ->whereIn($db->quoteName('product_id'), $productIds)
+            ->bind(':filterId', $filterId, ParameterType::INTEGER);
+
+        $db->setQuery($query);
+
+        return array_map('intval', $db->loadColumn() ?: []);
+    }
+
+    /** @return int[] */
+    private static function cleanIds(array $ids): array
+    {
+        return array_values(array_unique(array_filter(array_map('intval', $ids), static fn (int $id): bool => $id > 0)));
+    }
 }

@@ -104,6 +104,11 @@ class ProductFilterRequestHelper
      * parameter would live on the subquery object rather than on the outer query it is
      * embedded in as a string, so it would never reach the driver.
      *
+     * $productAlias names the product table in the query being constrained: the storefront
+     * listing and the facet count both alias it 'p', the Products list in the administrator
+     * aliases it 'a'. The predicate is the same rule either way, so the alias is a parameter
+     * rather than a reason for a second copy of it.
+     *
      * @param  array<int, int[]>  $grouped  As returned by groupSelectedIds()
      */
     public static function applyToQuery(
@@ -111,7 +116,8 @@ class ProductFilterRequestHelper
         DatabaseInterface $db,
         array $grouped,
         ?Registry $params = null,
-        int $skipGroupId = 0
+        int $skipGroupId = 0,
+        string $productAlias = 'p'
     ): void {
         $matchAllInGroup = self::wantsAllFilters($params);
 
@@ -138,7 +144,7 @@ class ProductFilterRequestHelper
                     ->having('COUNT(DISTINCT ' . $db->quoteName('pfs.filter_id') . ') = ' . \count($ids));
             }
 
-            $query->where($db->quoteName('p.j2commerce_product_id') . ' IN (' . $subQuery . ')');
+            $query->where($db->quoteName($productAlias . '.j2commerce_product_id') . ' IN (' . $subQuery . ')');
         }
     }
 

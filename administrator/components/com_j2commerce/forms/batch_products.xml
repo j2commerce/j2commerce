@@ -25,23 +25,24 @@
             label="JLIB_HTML_BATCH_ACCESS_LABEL"
             filter="integer"
         >
-            <option value="">JLIB_HTML_BATCH_NOCHANGE</option>
+            <option value="">COM_J2COMMERCE_BATCH_KEEP_CURRENT_ACCESS</option>
         </field>
 
         <field
             name="category_id"
             type="category"
             extension="com_content"
-            label="JLIB_HTML_BATCH_MENU_LABEL"
+            label="COM_J2COMMERCE_BATCH_MOVE_TO_CATEGORY"
             filter="integer"
         >
-            <option value="">JLIB_HTML_BATCH_NO_CATEGORY</option>
+            <option value="">COM_J2COMMERCE_BATCH_KEEP_CURRENT_CATEGORY</option>
         </field>
 
         <field
             name="tag"
             type="tag"
             label="JLIB_HTML_BATCH_TAG_LABEL"
+            layout="joomla.form.field.list"
             mode="nested"
             custom="deny"
             remote-search="false"
@@ -49,19 +50,39 @@
             published="1"
             filter="integer"
         >
-            <option value="">JLIB_HTML_BATCH_TAG_NOCHANGE</option>
+            <option value="">COM_J2COMMERCE_BATCH_KEEP_CURRENT_TAGS</option>
         </field>
 
         <field
             name="tag_addremove"
-            type="radio"
-            layout="joomla.form.field.radio.switcher"
+            type="list"
             label="JLIB_HTML_BATCH_TAG_ADDREMOVE_QUESTION"
             default="a"
             filter="word"
         >
             <option value="a">JLIB_HTML_BATCH_TAG_ADD</option>
             <option value="r">JLIB_HTML_BATCH_TAG_REMOVE</option>
+        </field>
+
+        <field
+            name="filter_id"
+            type="Productfilter"
+            label="COM_J2COMMERCE_BATCH_FILTER_LABEL"
+            addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field"
+            filter="integer"
+        >
+            <option value="">COM_J2COMMERCE_BATCH_KEEP_CURRENT_FILTERS</option>
+        </field>
+
+        <field
+            name="filter_addremove"
+            type="list"
+            label="COM_J2COMMERCE_BATCH_FILTER_ADDREMOVE"
+            default="a"
+            filter="word"
+        >
+            <option value="a">COM_J2COMMERCE_BATCH_FILTER_ADD</option>
+            <option value="r">COM_J2COMMERCE_BATCH_FILTER_REMOVE</option>
         </field>
     </fields>
 </form>

@@ -755,9 +755,11 @@ class ProductsController extends AdminController
     }
 
     /**
-     * Batch-process the articles behind the selected products: category move, tags, access
-     * level and language. Every write is delegated to com_content's ArticleModel so the
-     * batch events, workflow handling and per-item checks core performs all still run.
+     * Batch-process the selected products: filter values, and — through the articles behind
+     * them — category move, tags, access level and language. Every com_content write is
+     * delegated to its own ArticleModel so the batch events, workflow handling and per-item
+     * checks core performs all still run. Filter values have no article side, so they are
+     * applied here, against the product IDs.
      *
      * @return  void
      *
@@ -779,6 +781,11 @@ class ProductsController extends AdminController
             return;
         }
 
+        // Ahead of the article resolution below, because #__j2commerce_product_filters keys on
+        // the product: a product sourced from something other than com_content has no article to
+        // skip over, and its filter values are still the operator's to change.
+        $filtersApplied = $this->batchProductFilters($cid, $commands);
+
         $articleIds = $this->resolveArticleIds($cid, $skipped);
 
         if ($skipped > 0) {
@@ -789,7 +796,9 @@ class ProductsController extends AdminController
         }
 
         if (empty($articleIds)) {
-            $this->setRedirect($redirect, Text::_('COM_J2COMMERCE_NO_ARTICLE_LINKED'), 'warning');
+            $filtersApplied
+                ? $this->setRedirect($redirect, Text::_('JLIB_APPLICATION_SUCCESS_BATCH'))
+                : $this->setRedirect($redirect, Text::_('COM_J2COMMERCE_NO_ARTICLE_LINKED'), 'warning');
 
             return;
         }
@@ -806,6 +815,18 @@ class ProductsController extends AdminController
         // same rather than leaving the view stating a rule the server does not keep.
         if (!$this->app->getIdentity()->authorise('core.edit.state', 'com_content')) {
             unset($commands['assetgroup_id']);
+        }
+
+        // ArticleModel::batch() reports "insufficient batch information" when none of its own
+        // commands carries a value, so a filter-only submit would come back refused and be read
+        // here as a failed batch over a filter change that did run. tag_addremove only qualifies
+        // the tag command, so on its own it is not something to call com_content about.
+        if (array_filter(array_diff_key($commands, ['tag_addremove' => null])) === []) {
+            $filtersApplied
+                ? $this->setRedirect($redirect, Text::_('JLIB_APPLICATION_SUCCESS_BATCH'))
+                : $this->setRedirect($redirect, Text::_('COM_J2COMMERCE_BATCH_NOCHANGE_MSG'), 'warning');
+
+            return;
         }
 
         // A copy would produce an article with no product row behind it — no variants, prices or
@@ -843,6 +864,42 @@ class ProductsController extends AdminController
 
         $this->app->getLogger()->error($model->getError(), ['category' => 'com_j2commerce']);
         $this->setRedirect($redirect, Text::_('COM_J2COMMERCE_BATCH_FAILED'), 'warning');
+    }
+
+    /**
+     * Assign or unassign one filter value across the selected products.
+     *
+     * Kept out of the com_content allow-list on purpose: filter values live in a J2Commerce
+     * table, so there is nothing for ArticleModel::batch() to do with the command.
+     *
+     * @param   int[]  $productIds  Product IDs from the list checkboxes.
+     *
+     * @return  bool  Whether a filter command was present and ran.
+     *
+     * @since   6.5.1
+     */
+    private function batchProductFilters(array $productIds, array $commands): bool
+    {
+        $filterId = (int) ($commands['filter_id'] ?? 0);
+
+        if ($filterId < 1) {
+            return false;
+        }
+
+        /** @var \J2Commerce\Component\J2commerce\Administrator\Table\ProductfilterTable $table */
+        $table = $this->getModel('Product')->getTable('Productfilter', 'Administrator');
+
+        if (($commands['filter_addremove'] ?? 'a') === 'r') {
+            $count = $table->removeFilterFromProducts($filterId, $productIds);
+            $ntext = 'COM_J2COMMERCE_BATCH_N_PRODUCTS_FILTER_REMOVED';
+        } else {
+            $count = $table->addFilterToProducts($filterId, $productIds);
+            $ntext = 'COM_J2COMMERCE_BATCH_N_PRODUCTS_FILTER_ADDED';
+        }
+
+        $this->app->enqueueMessage(Text::plural($ntext, $count), CMSWebApplicationInterface::MSG_INFO);
+
+        return true;
     }
 
     /** Applies the filter attribute each control declares in forms/batch_products.xml. Not an authorisation boundary — batch() still allow-lists the keys. */

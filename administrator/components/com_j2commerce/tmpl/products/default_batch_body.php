@@ -39,6 +39,12 @@ use Joomla\CMS\Language\Text;
             <div class="form-group col-md-6">
                 <?php echo $this->batchForm->renderField('tag_addremove', 'batch'); ?>
             </div>
+            <div class="form-group col-md-6">
+                <?php echo $this->batchForm->renderField('filter_id', 'batch'); ?>
+            </div>
+            <div class="form-group col-md-6">
+                <?php echo $this->batchForm->renderField('filter_addremove', 'batch'); ?>
+            </div>
         <?php endif; ?>
     </div>
 </div>

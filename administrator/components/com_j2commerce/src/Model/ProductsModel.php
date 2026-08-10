@@ -14,8 +14,11 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Site\Helper\ProductFilterRequestHelper;
+use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\Database\ParameterType;
+use Joomla\Registry\Registry;
 
 /**
  * Products list model class.
@@ -50,6 +53,7 @@ class ProductsModel extends ListModel
                 'quantity', 'q.quantity',
                 'category_title', 'cat.title',
                 'catid', 'c.catid',
+                'filter_ids',
             ];
         }
 
@@ -110,7 +114,46 @@ class ProductsModel extends ListModel
         $priceTo = $this->getUserStateFromRequest($this->context . '.filter.price_to', 'filter_price_to', '', 'float');
         $this->setState('filter.price_to', $priceTo);
 
+        $this->setState('filter.filter_ids', $this->filterIdsFromRequest());
+
         parent::populateState($ordering, $direction);
+    }
+
+    /**
+     * The selected filter values, kept in user state the way every other filter on this screen is.
+     *
+     * Not getUserStateFromRequest(): a multi-select posts nothing once its last option is
+     * deselected, which is exactly what Clear does, so that helper reads the absent key as "this
+     * request did not carry the field" and hands back the previous selection — the filter would
+     * survive its own Clear. The search-tools `filter` array is present on every submit of the
+     * bar, so its presence is the signal that the selection was stated, empty or not.
+     *
+     * @return  int[]
+     *
+     * @since   6.5.1
+     */
+    private function filterIdsFromRequest(): array
+    {
+        $app     = Factory::getApplication();
+        $key     = $this->context . '.filter.filter_ids';
+        $filters = $app->getInput()->get('filter', null, 'array');
+
+        if (!\is_array($filters)) {
+            return array_map('intval', (array) $app->getUserState($key, []));
+        }
+
+        $ids = array_values(array_unique(array_filter(
+            array_map('intval', (array) ($filters['filter_ids'] ?? [])),
+            static fn (int $id): bool => $id > 0
+        )));
+
+        if ($ids !== array_map('intval', (array) $app->getUserState($key, []))) {
+            $app->getInput()->set('limitstart', 0);
+        }
+
+        $app->setUserState($key, $ids);
+
+        return $ids;
     }
 
     /**
@@ -138,6 +181,7 @@ class ProductsModel extends ListModel
         $id .= ':' . $this->getState('filter.product_id_to');
         $id .= ':' . $this->getState('filter.price_from');
         $id .= ':' . $this->getState('filter.price_to');
+        $id .= ':' . implode(',', (array) $this->getState('filter.filter_ids', []));
 
         return parent::getStoreId($id);
     }
@@ -403,6 +447,24 @@ class ProductsModel extends ListModel
             $priceToFloat = (float) $priceTo;
             $query->where($db->quoteName('v.price') . ' <= :priceTo')
                 ->bind(':priceTo', $priceToFloat);
+        }
+
+        // Filter by the values the product is tagged with, through the storefront's own matching
+        // rule so both surfaces answer the same question about the same catalogue: OR within a
+        // group, AND between groups. The within-group side is pinned to OR rather than read from
+        // list_product_filter_search_logic_rel — that setting belongs to a storefront listing, and
+        // this screen has no menu item behind it to carry one.
+        $filterIds = (array) $this->getState('filter.filter_ids', []);
+
+        if ($filterIds !== []) {
+            ProductFilterRequestHelper::applyToQuery(
+                $query,
+                $db,
+                ProductFilterRequestHelper::groupSelectedIds($db, $filterIds),
+                new Registry(['list_product_filter_search_logic_rel' => 'OR']),
+                0,
+                'a'
+            );
         }
     }
 }
