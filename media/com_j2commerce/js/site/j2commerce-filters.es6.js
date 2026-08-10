@@ -377,7 +377,10 @@ class J2CommerceFilters {
                 throw new Error(result.message || 'Filter request failed');
             }
 
-            this.updateProducts(result.data || result);
+            const payload = result.data || result;
+
+            this.updateProducts(payload);
+            this.updateFilterCounts(payload.filterCounts);
             this.updateUrl(data, limitstart, fromHistory);
             this.updateClearButtonVisibility();
             this.buildActiveFilterTiles();
@@ -388,6 +391,51 @@ class J2CommerceFilters {
         } finally {
             this.hideLoading();
         }
+    }
+
+    /**
+     * Re-point each sidebar value at the listing that just came back.
+     *
+     * The server sends counts only. The value list is a superset that ignores the current
+     * selection, so every checkbox the visitor could ever need is already in the page and
+     * this only has to update numbers and availability — the accordion stays where it was
+     * and focus is never torn out from under the keyboard.
+     */
+    updateFilterCounts(counts) {
+        if (!counts || typeof counts !== 'object') {
+            return;
+        }
+
+        document.querySelectorAll('[class*="j2commerce-pfilter-checkboxes"]').forEach(checkbox => {
+            const count = Number(counts[checkbox.value] ?? 0);
+            const list = checkbox.closest('.j2commerce-productfilter-list');
+            const wrapper = list
+                ? Array.from(list.children).find(child => child.contains(checkbox))
+                : checkbox.parentElement;
+
+            checkbox.dataset.count = String(count);
+
+            // A ticked value stays operable at zero, or there is no way left to undo the
+            // selection that emptied the listing.
+            checkbox.disabled = count === 0 && !checkbox.checked;
+            wrapper?.classList.toggle('j2commerce-filter-unavailable', checkbox.disabled);
+
+            const badge = wrapper?.querySelector('.j2commerce-filter-count');
+
+            if (badge) {
+                badge.textContent = `(${count})`;
+            }
+        });
+
+        // A group with nothing left to offer is noise — fold the whole accordion item away.
+        document.querySelectorAll('.j2commerce-productfilter-list').forEach(list => {
+            const boxes = Array.from(list.querySelectorAll('input[type="checkbox"]'));
+            const item = list.closest('.accordion-item, li');
+
+            if (item && boxes.length) {
+                item.hidden = boxes.every(cb => cb.disabled);
+            }
+        });
     }
 
     updateProducts(data) {

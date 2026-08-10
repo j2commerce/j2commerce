@@ -194,12 +194,18 @@ HTMLHelper::_('bootstrap.collapse');
                                             <?php
                                             $checked = (!empty($sessionProductfilterIds) && in_array($filter->filter_id, $sessionProductfilterIds));
                                             $filterAlias = \Joomla\CMS\Filter\OutputFilter::stringURLSafe(Text::_($filter->filter_name));
+                                            $filterCount = (int) ($filter->product_count ?? 0);
+                                            // A ticked value stays operable at zero, or the selection that emptied
+                                            // the listing could not be undone from here.
+                                            $filterUnavailable = $filterCount === 0 && !$checked;
                                             ?>
-                                            <div class="form-check mb-2">
-                                                <input type="checkbox" class="form-check-input j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" name="productfilter_ids[]" id="j2commerce-pfilter-<?php echo $filterScriptId; ?>-<?php echo $filter->filter_id; ?>" value="<?php echo $filter->filter_id; ?>" data-alias="<?php echo $this->escape($filterAlias); ?>" data-group-alias="<?php echo $this->escape($groupAlias); ?>"<?php echo $checked ? ' checked' : ''; ?> />
+                                            <div class="form-check mb-2<?php echo $filterUnavailable ? ' j2commerce-filter-unavailable' : ''; ?>">
+                                                <input type="checkbox" class="form-check-input j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" name="productfilter_ids[]" id="j2commerce-pfilter-<?php echo $filterScriptId; ?>-<?php echo $filter->filter_id; ?>" value="<?php echo $filter->filter_id; ?>" data-alias="<?php echo $this->escape($filterAlias); ?>" data-group-alias="<?php echo $this->escape($groupAlias); ?>" data-count="<?php echo $filterCount; ?>"<?php echo $checked ? ' checked' : ''; ?><?php echo $filterUnavailable ? ' disabled' : ''; ?> />
                                                 <label class="form-check-label small" for="j2commerce-pfilter-<?php echo $filterScriptId; ?>-<?php echo $filter->filter_id; ?>">
                                                     <?php echo $this->escape(Text::_($filter->filter_name)); ?>
                                                 </label>
+                                                <?php // Outside the label on purpose: the active-filter chips read the label textContent. ?>
+                                                <span class="j2commerce-filter-count text-body-secondary">(<?php echo $filterCount; ?>)</span>
                                             </div>
                                         <?php endforeach; ?>
                                     </div>

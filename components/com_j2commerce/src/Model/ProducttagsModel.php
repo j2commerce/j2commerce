@@ -501,11 +501,15 @@ class ProducttagsModel extends ListModel
             $query->whereIn($db->quoteName('p.vendor_id'), array_map('intval', $vendorIds));
         }
 
-        // Filter by product filter IDs (custom attributes), AND or OR per the menu item
+        // Filter by product filter IDs (custom attributes): OR within a group, AND between
         $productfilterIds = $this->getState('filter.productfilter_ids', []);
         if (!empty($productfilterIds)) {
-            $subQueryPf = ProductFilterRequestHelper::matchSubQuery($db, $productfilterIds, $this->getState('params'));
-            $query->where($db->quoteName('p.j2commerce_product_id') . ' IN (' . $subQueryPf . ')');
+            ProductFilterRequestHelper::applyToQuery(
+                $query,
+                $db,
+                ProductFilterRequestHelper::groupSelectedIds($db, $productfilterIds),
+                $this->getState('params')
+            );
         }
 
         // Filter by price range (considers advanced/special pricing)
@@ -615,6 +619,10 @@ class ProducttagsModel extends ListModel
         // computed from the listing's own query; a 0/0 range hides the slider.
         $filters['pricefilters'] = $this->getPriceRangeForListing();
 
+        // ProductHelper::getProductFilters() was handed one pagination page of products and
+        // offered only the values those carried. Override with the whole listing's values.
+        $filters['productfilters'] = $this->getProductFilterFacets();
+
         return $filters;
     }
 
@@ -658,6 +666,36 @@ class ProducttagsModel extends ListModel
         }
 
         return ['min_price' => 0.0, 'max_price' => 0.0];
+    }
+
+    /**
+     * Get the product-filter values available across the whole current listing, with counts.
+     *
+     * The visitor's own filter selection is blanked before getListQuery() is taken; the
+     * helper re-applies it group by group so each group can be counted without its own
+     * selection narrowing it.
+     *
+     * @return  array<int, array{group_name: string, filters: object[]}>
+     *
+     * @since   6.5.0
+     */
+    public function getProductFilterFacets(): array
+    {
+        return ProductFilterRequestHelper::facetsForListing(
+            $this->getDatabase(),
+            function (): QueryInterface {
+                $saved = $this->getState('filter.productfilter_ids', []);
+                $this->setState('filter.productfilter_ids', []);
+
+                try {
+                    return $this->getListQuery();
+                } finally {
+                    $this->setState('filter.productfilter_ids', $saved);
+                }
+            },
+            $this->getState('filter.productfilter_ids', []),
+            $this->getState('params')
+        );
     }
 
     /**

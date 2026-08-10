@@ -166,12 +166,18 @@ $filtersCollapsed = ((int) $this->params->get('list_filter_category_toggle', 1) 
                                         <?php
                                         $checked = (!empty($sessionProductfilterIds) && in_array($filter->filter_id, $sessionProductfilterIds));
                                         $filterAlias = \Joomla\CMS\Filter\OutputFilter::stringURLSafe(Text::_($filter->filter_name));
+                                        $filterCount = (int) ($filter->product_count ?? 0);
+                                        // A ticked value stays operable at zero, or the selection that emptied
+                                        // the listing could not be undone from here.
+                                        $filterUnavailable = $filterCount === 0 && !$checked;
                                         ?>
-                                        <div class="uk-margin-small-bottom">
+                                        <div class="uk-margin-small-bottom<?php echo $filterUnavailable ? ' j2commerce-filter-unavailable' : ''; ?>">
                                             <label class="uk-text-small">
-                                                <input type="checkbox" class="uk-checkbox j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" name="productfilter_ids[]" id="j2commerce-pfilter-<?php echo $filterScriptId; ?>-<?php echo $filter->filter_id; ?>" value="<?php echo $filter->filter_id; ?>" data-alias="<?php echo $this->escape($filterAlias); ?>"<?php echo $checked ? ' checked' : ''; ?> />
+                                                <input type="checkbox" class="uk-checkbox j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" name="productfilter_ids[]" id="j2commerce-pfilter-<?php echo $filterScriptId; ?>-<?php echo $filter->filter_id; ?>" value="<?php echo $filter->filter_id; ?>" data-alias="<?php echo $this->escape($filterAlias); ?>" data-count="<?php echo $filterCount; ?>"<?php echo $checked ? ' checked' : ''; ?><?php echo $filterUnavailable ? ' disabled' : ''; ?> />
                                                 <?php echo $this->escape(Text::_($filter->filter_name)); ?>
                                             </label>
+                                            <?php // Outside the label on purpose: the active-filter chips read the label textContent. ?>
+                                            <span class="j2commerce-filter-count uk-text-meta">(<?php echo $filterCount; ?>)</span>
                                         </div>
                                     <?php endforeach; ?>
                                 </div>
@@ -315,12 +321,18 @@ $filtersCollapsed = ((int) $this->params->get('list_filter_category_toggle', 1) 
                                     <?php
                                     $checked = (!empty($sessionProductfilterIds) && in_array($filter->filter_id, $sessionProductfilterIds));
                                     $filterAlias = \Joomla\CMS\Filter\OutputFilter::stringURLSafe(Text::_($filter->filter_name));
+                                    $filterCount = (int) ($filter->product_count ?? 0);
+                                    // A ticked value stays operable at zero, or the selection that emptied
+                                    // the listing could not be undone from here.
+                                    $filterUnavailable = $filterCount === 0 && !$checked;
                                     ?>
-                                    <div class="uk-margin-small-bottom">
+                                    <div class="uk-margin-small-bottom<?php echo $filterUnavailable ? ' j2commerce-filter-unavailable' : ''; ?>">
                                         <label class="uk-text-small">
-                                            <input type="checkbox" class="uk-checkbox j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" name="productfilter_ids[]" id="j2commerce-pfilter-<?php echo $filterScriptId; ?>-<?php echo $filter->filter_id; ?>" value="<?php echo $filter->filter_id; ?>" data-alias="<?php echo $this->escape($filterAlias); ?>"<?php echo $checked ? ' checked' : ''; ?> />
+                                            <input type="checkbox" class="uk-checkbox j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" name="productfilter_ids[]" id="j2commerce-pfilter-<?php echo $filterScriptId; ?>-<?php echo $filter->filter_id; ?>" value="<?php echo $filter->filter_id; ?>" data-alias="<?php echo $this->escape($filterAlias); ?>" data-count="<?php echo $filterCount; ?>"<?php echo $checked ? ' checked' : ''; ?><?php echo $filterUnavailable ? ' disabled' : ''; ?> />
                                             <?php echo $this->escape(Text::_($filter->filter_name)); ?>
                                         </label>
+                                        <?php // Outside the label on purpose: the active-filter chips read the label textContent. ?>
+                                        <span class="j2commerce-filter-count uk-text-meta">(<?php echo $filterCount; ?>)</span>
                                     </div>
                                 <?php endforeach; ?>
                             </div>

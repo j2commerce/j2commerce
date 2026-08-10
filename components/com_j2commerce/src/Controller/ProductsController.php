@@ -225,6 +225,9 @@ class ProductsController extends AdminProductsController
                 'total'      => $pagination->total,
                 'start'      => $pagination->limitstart,
                 'limit'      => $pagination->limit,
+                // Without this the sidebar keeps the counts of whatever the last full page
+                // render produced, which stop describing the listing on the first tick.
+                'filterCounts' => $this->filterCounts($model),
             ];
 
             $app->setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -287,6 +290,31 @@ class ProductsController extends AdminProductsController
         $app->getDocument()->setMimeEncoding('application/json');
         echo json_encode(['success' => false, 'message' => $message]);
         $app->close();
+    }
+
+    /**
+     * How many products each sidebar filter value still reaches, keyed by filter ID.
+     *
+     * The value list itself is a superset the full page render already emitted, so only the
+     * counts travel: the sidebar updates in place and keeps its accordion and focus state.
+     *
+     * @return array<int, int>
+     */
+    protected function filterCounts(ListModel $model): array
+    {
+        if (!method_exists($model, 'getProductFilterFacets')) {
+            return [];
+        }
+
+        $counts = [];
+
+        foreach ($model->getProductFilterFacets() as $group) {
+            foreach ($group['filters'] as $filter) {
+                $counts[(int) $filter->filter_id] = (int) $filter->product_count;
+            }
+        }
+
+        return $counts;
     }
 
     protected function renderProducts(array $items, Registry $params, int $catid): string
