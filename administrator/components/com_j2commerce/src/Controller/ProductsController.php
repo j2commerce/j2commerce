@@ -768,6 +768,17 @@ class ProductsController extends AdminController
         $this->checkToken();
 
         $redirect = $this->listRedirect();
+        $user     = $this->app->getIdentity();
+
+        // The same actions HtmlView::addToolbar() tests before it offers the dialog, so the screen
+        // and the server describe one rule. Mirrors the core.edit.state assertion further down,
+        // which holds assetgroup_id to its own view-side rule the same way.
+        if (!$user->authorise('core.edit', 'com_j2commerce') || !$user->authorise('core.edit', 'com_content')) {
+            $this->setRedirect($redirect, Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 'error');
+
+            return;
+        }
+
         $cid      = array_filter((array) $this->input->post->get('cid', [], 'int'));
         $commands = $this->filterBatchCommands(
             (array) $this->input->post->get('batch', [], 'array')
