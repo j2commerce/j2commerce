@@ -18,6 +18,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use J2Commerce\Component\J2commerce\Administrator\Service\ProductService;
 use J2Commerce\Component\J2commerce\Site\Helper\ProductVisibilityHelper;
+use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 use Joomla\CMS\Cache\CacheControllerFactoryInterface;
 use Joomla\CMS\Component\ComponentHelper;
@@ -264,7 +265,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
                             continue;
                         }
 
-                        $savedText    = $article->text ?? '';
+                        $savedText     = $article->text ?? '';
                         $article->text = $article->$prop;
                     }
 
@@ -1178,17 +1179,21 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
     {
         $html = '';
 
-        // Determine settings based on context
+        // Determine settings based on context. Only list surfaces (category/featured)
+        // link the image to the product — on a single-article view the image belongs
+        // to the article's own product, so a link would point at the current page.
         if (\in_array($context, ['com_content.category', 'com_content.featured'], true)) {
             $showImage     = $this->params->get('category_display_j2commerce_images', 1);
             $imageType     = $this->params->get('category_image_type', 'thumbnail');
             $imageLocation = 'default';
             $mainWidth     = $this->params->get('list_image_thumbnail_width', 120);
+            $linkImage     = (int) $this->params->get('category_link_image_to_product', 1) === 1;
         } else {
             $showImage     = $this->params->get('item_display_j2commerce_images', 1);
             $imageType     = $this->params->get('item_image_type', 'main');
             $imageLocation = $this->params->get('item_image_placement', 'default');
             $mainWidth     = $this->params->get('item_product_main_image_width', 300);
+            $linkImage     = false;
         }
 
         if (!$showImage || $imageLocation !== 'default') {
@@ -1199,10 +1204,25 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         // example: array(1) { [0]=> object(stdClass)#1894 (2) { ["image_path"]=> string(0) "" ["thumb_image"]=> string(0) "" } }
 
         if (!empty($images)) {
+            $productLink = '';
+
+            if ($linkImage) {
+                // xhtml=false: escape() below handles attribute encoding.
+                $productLink = $product->product_link ?? Route::_(RouteHelper::getProductRoute(
+                    (int) $product->j2commerce_product_id,
+                    $product->alias ?? null,
+                    (int) ($product->catid ?? 0) ?: null
+                ), false);
+            }
+
             $html .= '<div class="j2commerce-product-images">';
             foreach ($images as $image) {
                 if (!empty($image->image_path)) {
-                    $html .= '<img src="' . $this->escape($image->image_path) . '" alt="" class="j2commerce-product-image" style="max-width: ' . (int) $mainWidth . 'px;">';
+                    $img = '<img src="' . $this->escape($image->image_path) . '" alt="" class="j2commerce-product-image" style="max-width: ' . (int) $mainWidth . 'px;">';
+
+                    $html .= $productLink !== ''
+                        ? '<a href="' . $this->escape($productLink) . '">' . $img . '</a>'
+                        : $img;
                 }
             }
             $html .= '</div>';
