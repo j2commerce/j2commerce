@@ -37,60 +37,68 @@ final class DownloadHelper
 
         $db = Factory::getContainer()->get(DatabaseInterface::class);
 
-        // Find downloadable items in this order
+        // Every item in the order, not only the ones whose own product_type says
+        // 'downloadable'. A composite type keeps its downloadable children in params,
+        // so its order row names the container; the product type itself is the only
+        // thing that can resolve those children, and it does so off the event below.
         $query = $db->getQuery(true)
-            ->select($db->quoteName('product_id'))
+            ->select($db->quoteName(['product_id', 'product_type']))
             ->from($db->quoteName('#__j2commerce_orderitems'))
             ->where($db->quoteName('order_id') . ' = :orderId')
-            ->where($db->quoteName('product_type') . ' = ' . $db->quote('downloadable'))
             ->bind(':orderId', $orderId);
 
         $db->setQuery($query);
-        $productIds = $db->loadColumn();
+        $items = $db->loadObjectList();
 
-        if (empty($productIds)) {
+        if (empty($items)) {
             return;
         }
 
-        $now      = Factory::getDate()->toSql();
         $nullDate = $db->getNullDate();
+        $order    = (object) [
+            'order_id'   => $orderId,
+            'user_id'    => $userId,
+            'user_email' => $userEmail,
+        ];
 
-        foreach ($productIds as $productId) {
-            $productId = (int) $productId;
+        foreach ($items as $item) {
+            $productId = (int) $item->product_id;
 
-            // Skip if record already exists (order resume scenario)
-            $existsQuery = $db->getQuery(true)
-                ->select('COUNT(*)')
-                ->from($db->quoteName('#__j2commerce_orderdownloads'))
-                ->where($db->quoteName('order_id') . ' = :orderId')
-                ->where($db->quoteName('product_id') . ' = :productId')
-                ->bind(':orderId', $orderId)
-                ->bind(':productId', $productId, ParameterType::INTEGER);
+            if ($item->product_type === 'downloadable') {
+                // Skip if record already exists (order resume scenario)
+                $existsQuery = $db->getQuery(true)
+                    ->select('COUNT(*)')
+                    ->from($db->quoteName('#__j2commerce_orderdownloads'))
+                    ->where($db->quoteName('order_id') . ' = :orderId')
+                    ->where($db->quoteName('product_id') . ' = :productId')
+                    ->bind(':orderId', $orderId)
+                    ->bind(':productId', $productId, ParameterType::INTEGER);
 
-            $db->setQuery($existsQuery);
+                $db->setQuery($existsQuery);
 
-            if ((int) $db->loadResult() > 0) {
-                continue;
+                if ((int) $db->loadResult() === 0) {
+                    $columns = ['order_id', 'product_id', 'user_email', 'user_id', 'limit_count', 'access_granted', 'access_expires'];
+                    $values  = [
+                        $db->quote($orderId),
+                        $productId,
+                        $db->quote($userEmail),
+                        $userId,
+                        0,
+                        $db->quote($nullDate),
+                        $db->quote($nullDate),
+                    ];
+
+                    $insertQuery = $db->getQuery(true)
+                        ->insert($db->quoteName('#__j2commerce_orderdownloads'))
+                        ->columns($db->quoteName($columns))
+                        ->values(implode(',', $values));
+
+                    $db->setQuery($insertQuery);
+                    $db->execute();
+                }
             }
 
-            $columns = ['order_id', 'product_id', 'user_email', 'user_id', 'limit_count', 'access_granted', 'access_expires'];
-            $values  = [
-                $db->quote($orderId),
-                $productId,
-                $db->quote($userEmail),
-                $userId,
-                0,
-                $db->quote($nullDate),
-                $db->quote($nullDate),
-            ];
-
-            $insertQuery = $db->getQuery(true)
-                ->insert($db->quoteName('#__j2commerce_orderdownloads'))
-                ->columns($db->quoteName($columns))
-                ->values(implode(',', $values));
-
-            $db->setQuery($insertQuery);
-            $db->execute();
+            J2CommerceHelper::plugin()->event('SaveOrderFiles', [$order, &$item]);
         }
     }
 
