@@ -1153,12 +1153,20 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             );
         }
 
-        $categoryOptions = $this->params->get('category_product_options', 1);
-        $showOptions     = !(\in_array($context, ['com_content.category', 'com_content.featured'], true)
-            && \in_array($categoryOptions, [2, 3], true));
-
         $allOptions  = ['full', 'price', 'cart', 'options', 'sku', 'stock'];
         $displayData = $this->buildDisplayData($product, 'full', $allOptions);
+
+        // The list layouts already implement the three add-to-cart modes, keyed on the
+        // component's list_show_cart, so map this plugin's own setting onto that key.
+        // List surfaces only — the setting lives in the categoryview fieldset and must
+        // not reach a single article. buildArticleParams() hands back a fresh clone per
+        // call, so shortcodes elsewhere keep the component default.
+        if (\in_array($context, ['com_content.category', 'com_content.featured'], true)) {
+            $displayData['params']->set(
+                'list_show_cart',
+                (int) $this->params->get('category_product_options', 1)
+            );
+        }
 
         $displayData['showCart']    = true;
         $displayData['showPrice']   = true;
@@ -1169,7 +1177,6 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         // products is populated from exactly that text, rendering it here would cause
         // it to appear as a duplicate (double introtext).
         $displayData['showDescription'] = false;
-        $displayData['showOptions']     = $showOptions;
 
         return ProductLayoutService::renderLayout('list.category.item', $displayData);
     }
