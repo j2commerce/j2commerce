@@ -789,6 +789,17 @@ class StrapperHelper
                 'media/com_j2commerce/css/site/j2commerce-j2store.css'
             );
         }
+
+        // Font Awesome (if enabled in config). Uses the core 'fontawesome' asset name so a template
+        // already loading it under that name is reused rather than duplicated. The core vendor
+        // registration carries the icon classes only, hence the companion @font-face sheet.
+        if ((int) $this->getParam('load_fontawesome', 0)) {
+            $wa->useStyle('fontawesome');
+            $wa->registerAndUseStyle(
+                'com_j2commerce.fontawesome-faces',
+                'media/com_j2commerce/css/site/fontawesome-faces.css'
+            );
+        }
     }
 
     /**
