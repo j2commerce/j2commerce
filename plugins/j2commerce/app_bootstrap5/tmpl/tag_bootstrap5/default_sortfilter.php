@@ -12,7 +12,6 @@ declare(strict_types=1);
 defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
-use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Session\Session;
 use Joomla\CMS\Uri\Uri;
@@ -32,7 +31,7 @@ $currentSefPath = Uri::getInstance()->getPath();
 
 ?>
 
-<form class="form-inline" id="productFilters" name="productfilters" action="<?php echo htmlspecialchars($currentSefPath, ENT_QUOTES, 'UTF-8'); ?>" data-sef-path="<?php echo htmlspecialchars($currentSefPath, ENT_QUOTES, 'UTF-8'); ?>" method="post">
+<form class="form-inline" id="productFilters" name="productfilters" action="<?php echo htmlspecialchars($currentSefPath, ENT_QUOTES, 'UTF-8'); ?>" data-sef-path="<?php echo htmlspecialchars($currentSefPath, ENT_QUOTES, 'UTF-8'); ?>" method="get">
     <input type="hidden" name="filter_catid" id="sort_filter_catid" value="<?php echo $this->escape($filterCatid); ?>" />
 
     <div class="j2commerce-sortbar-filter d-flex justify-content-between align-items-center my-3 py-3 border-top flex-wrap gap-2">
@@ -79,7 +78,6 @@ $currentSefPath = Uri::getInstance()->getPath();
     <input type="hidden" name="view" value="producttags" />
     <input type="hidden" name="task" value="browse" />
     <input type="hidden" name="Itemid" value="<?php echo $app->getInput()->getUint('Itemid', 0); ?>" />
-    <?php echo HTMLHelper::_('form.token'); ?>
 </form>
 
 <script>

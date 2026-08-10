@@ -105,7 +105,7 @@ HTMLHelper::_('bootstrap.collapse');
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="<?php echo Text::_('JCLOSE'); ?>"></button>
     </div>
     <div class="offcanvas-body p-md-0">
-        <form action="<?php echo htmlspecialchars($currentSefPath, ENT_QUOTES, 'UTF-8'); ?>" method="post" class="form-horizontal w-100" id="productsideFilters" name="productsideFilters" enctype="multipart/form-data">
+        <form action="<?php echo htmlspecialchars($currentSefPath, ENT_QUOTES, 'UTF-8'); ?>" method="get" class="form-horizontal w-100" id="productsideFilters" name="productsideFilters">
             <input type="hidden" name="filter_catid" id="filter_catid" value="<?php echo $this->escape($filterCatid); ?>" />
 
             <?php if ($hasFilterGroups) : ?>
@@ -274,7 +274,6 @@ HTMLHelper::_('bootstrap.collapse');
             <input type="hidden" name="view" value="products" />
             <input type="hidden" name="task" value="browse" />
             <input type="hidden" name="Itemid" value="<?php echo $itemId; ?>" />
-            <?php echo HTMLHelper::_('form.token'); ?>
         </form>
 
     </div>

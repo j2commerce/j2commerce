@@ -28,6 +28,83 @@ class J2CommerceFilters {
         this.bindActiveFilterTiles();
         this.bindMobileFooter();
         this.buildActiveFilterTiles();
+        this.bindHistory();
+    }
+
+    bindHistory() {
+        // Seed the entry the page loaded on. Without this, stepping back to the landing
+        // state arrives with a null state and the handler has nothing to restore from.
+        window.history.replaceState(this.captureState(this.currentStart()), '', window.location.href);
+
+        window.addEventListener('popstate', (event) => {
+            if (!event.state || !event.state.j2commerce) return;
+
+            this.restoreState(event.state);
+            this.applyFilters(event.state.start || 0, true);
+        });
+    }
+
+    currentStart() {
+        const params = new URLSearchParams(window.location.search);
+
+        return parseInt(params.get('start') || params.get('limitstart') || '0', 10) || 0;
+    }
+
+    /** Snapshot of the controls, stored on the history entry so Back restores without re-parsing the URL. */
+    captureState(limitstart = 0) {
+        const checkedValues = selector => [...new Set(
+            Array.from(document.querySelectorAll(`${selector}:checked`)).map(cb => cb.value)
+        )];
+
+        return {
+            j2commerce: true,
+            brands: checkedValues('.j2commerce-brand-checkboxes'),
+            vendors: checkedValues('.j2commerce-vendor-checkboxes'),
+            pfilters: checkedValues('[class*="j2commerce-pfilter-checkboxes"]'),
+            search: document.getElementById('j2commerce-search')?.value || '',
+            sortby: document.getElementById('j2commerce-sortby')?.value || '',
+            priceFrom: document.getElementById('min_price_input')?.value || '',
+            priceTo: document.getElementById('max_price_input')?.value || '',
+            rangeMin: document.getElementById('j2commerce-range-min')?.value || '',
+            rangeMax: document.getElementById('j2commerce-range-max')?.value || '',
+            start: limitstart
+        };
+    }
+
+    restoreState(state) {
+        const applyChecked = (selector, wanted) => {
+            const values = new Set(wanted || []);
+            // Every matching control, so the mirrored mobile and desktop copies land together.
+            document.querySelectorAll(selector).forEach(cb => {
+                cb.checked = values.has(cb.value);
+            });
+        };
+
+        applyChecked('.j2commerce-brand-checkboxes', state.brands);
+        applyChecked('.j2commerce-vendor-checkboxes', state.vendors);
+        applyChecked('[class*="j2commerce-pfilter-checkboxes"]', state.pfilters);
+
+        const searchInput = document.getElementById('j2commerce-search');
+        if (searchInput) searchInput.value = state.search || '';
+
+        const sortSelect = document.getElementById('j2commerce-sortby');
+        if (sortSelect) sortSelect.value = state.sortby || sortSelect.options[0]?.value || '';
+
+        const rangeMin = document.getElementById('j2commerce-range-min');
+        const rangeMax = document.getElementById('j2commerce-range-max');
+        if (rangeMin) rangeMin.value = state.rangeMin !== '' ? state.rangeMin : rangeMin.min;
+        if (rangeMax) rangeMax.value = state.rangeMax !== '' ? state.rangeMax : rangeMax.max;
+
+        // Same idiom as resetAllFilters(): non-bubbling so the sliderContainer delegation
+        // listener does not fire another filter run.
+        if (rangeMin) rangeMin.dispatchEvent(new Event('input', { bubbles: false }));
+
+        // updateDisplays() above rewrites the hidden inputs from the slider positions, so the
+        // recorded prices go back afterwards rather than before.
+        const minPriceInput = document.getElementById('min_price_input');
+        const maxPriceInput = document.getElementById('max_price_input');
+        if (minPriceInput) minPriceInput.value = state.priceFrom || '0';
+        if (maxPriceInput) maxPriceInput.value = state.priceTo || '0';
     }
 
     bindCheckboxFilters() {
@@ -271,7 +348,7 @@ class J2CommerceFilters {
         return data;
     }
 
-    async applyFilters(limitstart = 0) {
+    async applyFilters(limitstart = 0, fromHistory = false) {
         if (!this.enabled) {
             this.fallbackSubmit();
             return;
@@ -301,7 +378,7 @@ class J2CommerceFilters {
             }
 
             this.updateProducts(result.data || result);
-            this.updateUrl(data, limitstart);
+            this.updateUrl(data, limitstart, fromHistory);
             this.updateClearButtonVisibility();
             this.buildActiveFilterTiles();
 
@@ -388,7 +465,7 @@ class J2CommerceFilters {
         el.replaceChildren(document.createRange().createContextualFragment(str.replace(/%d/, total)));
     }
 
-    updateUrl(formData, limitstart) {
+    updateUrl(formData, limitstart, replace = false) {
         const params = new URLSearchParams();
 
         // Use comma-separated values for cleaner SEF-friendly URLs
@@ -454,7 +531,18 @@ class J2CommerceFilters {
         // Keep the composite group:filter token readable as `?filters=caliber:9mm`.
         const queryString = params.toString().replace(/%2C/gi, ',').replace(/%3A/gi, ':');
         const newUrl = window.location.pathname + (queryString ? '?' + queryString : '');
-        window.history.replaceState({ j2commerce: true }, '', newUrl);
+        const state = this.captureState(limitstart);
+
+        // Replaying history, or landing on the URL we are already on: overwrite the current
+        // entry. Pushing an identical URL would cost the visitor a Back press that appears
+        // to do nothing.
+        if (replace || newUrl === window.location.pathname + window.location.search) {
+            window.history.replaceState(state, '', newUrl);
+
+            return;
+        }
+
+        window.history.pushState(state, '', newUrl);
     }
 
     resetAllFilters() {

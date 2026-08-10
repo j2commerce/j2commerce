@@ -14,7 +14,6 @@ defined('_JEXEC') or die;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Factory;
-use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Session\Session;
 use Joomla\CMS\Uri\Uri;
@@ -91,7 +90,7 @@ $filtersCollapsed = ((int) $this->params->get('list_filter_category_toggle', 1) 
         <button class="uk-offcanvas-close" type="button" uk-close></button>
         <h3 class="uk-offcanvas-bar-title"><?php echo Text::_('COM_J2COMMERCE_FILTER_ACTIVE_TITLE'); ?></h3>
 
-        <form action="<?php echo htmlspecialchars($currentSefPath, ENT_QUOTES, 'UTF-8'); ?>" method="post" class="uk-width-1-1" id="productsideFiltersMobile" name="productsideFilters" enctype="multipart/form-data">
+        <form action="<?php echo htmlspecialchars($currentSefPath, ENT_QUOTES, 'UTF-8'); ?>" method="get" class="uk-width-1-1" id="productsideFiltersMobile" name="productsideFilters">
             <input type="hidden" name="filter_catid" id="filter_catid_mobile" value="<?php echo $this->escape($filterCatid); ?>" />
 
             <?php if ($hasFilterGroups) : ?>
@@ -242,7 +241,6 @@ $filtersCollapsed = ((int) $this->params->get('list_filter_category_toggle', 1) 
             <input type="hidden" name="view" value="products" />
             <input type="hidden" name="task" value="browse" />
             <input type="hidden" name="Itemid" value="<?php echo $itemId; ?>" />
-            <?php echo HTMLHelper::_('form.token'); ?>
         </form>
 
         <div class="uk-margin-top">
@@ -260,7 +258,7 @@ $filtersCollapsed = ((int) $this->params->get('list_filter_category_toggle', 1) 
 
 <?php if ($this->params->get('list_show_filter', 1)) : ?>
 <div class="uk-visible@m">
-    <form action="<?php echo htmlspecialchars($currentSefPath, ENT_QUOTES, 'UTF-8'); ?>" method="post" class="uk-width-1-1" id="productsideFilters" name="productsideFilters" enctype="multipart/form-data">
+    <form action="<?php echo htmlspecialchars($currentSefPath, ENT_QUOTES, 'UTF-8'); ?>" method="get" class="uk-width-1-1" id="productsideFilters" name="productsideFilters">
         <input type="hidden" name="filter_catid" id="filter_catid" value="<?php echo $this->escape($filterCatid); ?>" />
 
         <?php if ($hasFilterGroups) : ?>
@@ -396,7 +394,6 @@ $filtersCollapsed = ((int) $this->params->get('list_filter_category_toggle', 1) 
         <input type="hidden" name="view" value="products" />
         <input type="hidden" name="task" value="browse" />
         <input type="hidden" name="Itemid" value="<?php echo $itemId; ?>" />
-        <?php echo HTMLHelper::_('form.token'); ?>
     </form>
 </div>
 <?php endif; ?>
