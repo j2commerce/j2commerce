@@ -137,4 +137,66 @@ class FiltergroupTable extends Table
         return parent::store($updateNulls);
     }
 
+    /**
+     * Method to delete a row from the database table by primary key value.
+     *
+     * @param   integer  $pk  The primary key of the row to delete.
+     *
+     * @return  boolean  True on success.
+     *
+     * @throws  \Exception
+     * @since   6.5.1
+     */
+    public function delete($pk = null)
+    {
+        $pk = (int) ($pk ?: $this->j2commerce_filtergroup_id);
+
+        if (!$pk) {
+            return parent::delete($pk);
+        }
+
+        $db = $this->getDbo();
+
+        // Neither table carries a foreign key, so the group's values and their product
+        // associations have to come out alongside the group row itself.
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('j2commerce_filter_id'))
+            ->from($db->quoteName('#__j2commerce_filters'))
+            ->where($db->quoteName('group_id') . ' = :groupId')
+            ->bind(':groupId', $pk, ParameterType::INTEGER);
+
+        $db->setQuery($query);
+        $filterIds = array_map('intval', (array) $db->loadColumn());
+
+        $db->transactionStart();
+
+        try {
+            if ($filterIds) {
+                $deleteLinksQuery = $db->getQuery(true)
+                    ->delete($db->quoteName('#__j2commerce_product_filters'))
+                    ->whereIn($db->quoteName('filter_id'), $filterIds);
+
+                $db->setQuery($deleteLinksQuery);
+                $db->execute();
+
+                $deleteFiltersQuery = $db->getQuery(true)
+                    ->delete($db->quoteName('#__j2commerce_filters'))
+                    ->whereIn($db->quoteName('j2commerce_filter_id'), $filterIds);
+
+                $db->setQuery($deleteFiltersQuery);
+                $db->execute();
+            }
+
+            $result = parent::delete($pk);
+
+            $db->transactionCommit();
+
+            return $result;
+        } catch (\Exception $e) {
+            $db->transactionRollback();
+
+            throw $e;
+        }
+    }
+
 }
