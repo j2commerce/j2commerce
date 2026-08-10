@@ -1454,7 +1454,14 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
                 }
 
                 $displayData = $this->buildDisplayData($product, $option, $options);
-                $rendered    = ProductLayoutService::renderLayout($layoutId, $displayData);
+
+                // Shortcode surfaces only — buildDisplayData() also serves the article
+                // product block, which follows the component's own settings. 'cartonly'
+                // routes to the bare cart partial and carries no option block either way.
+                $displayData['showOptions'] = $option !== 'cartonly'
+                    && (int) $this->params->get('shortcode_show_cart_options', 1) === 1;
+
+                $rendered = ProductLayoutService::renderLayout($layoutId, $displayData);
 
                 // 'cart'/'cartonly' render the bare cart-button partial, which has no
                 // <form> of its own (unlike 'full'/'card', which route through the full
@@ -1678,7 +1685,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             'shortcodeOption' => $option,
             'priceMode'       => $this->resolvePriceMode($option),
             'imageMode'       => $this->resolveImageMode($option),
-            'showOptions'     => $option !== 'cartonly' && (int) $this->params->get('shortcode_show_cart_options', 1) === 1,
+            'showOptions'     => true,
             'sourceContext'   => 'article',
         ];
     }

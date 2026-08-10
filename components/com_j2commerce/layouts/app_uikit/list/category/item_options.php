@@ -17,6 +17,11 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 extract($displayData);
 
+// Defaults to on, so callers that pass no opinion keep rendering the option block.
+if (!($displayData['showOptions'] ?? true)) {
+    return;
+}
+
 $options = $product->options ?? [];
 
 if (empty($options)) {
