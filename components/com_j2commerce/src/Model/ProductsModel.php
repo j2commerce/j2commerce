@@ -515,14 +515,10 @@ class ProductsModel extends ListModel
             $query->whereIn($db->quoteName('p.vendor_id'), array_map('intval', $vendorIds));
         }
 
-        // Filter by product filter IDs (custom attributes)
+        // Filter by product filter IDs (custom attributes), AND or OR per the menu item
         $productfilterIds = $this->getState('filter.productfilter_ids', []);
         if (!empty($productfilterIds)) {
-            $sanitizedFilterIds = implode(',', array_map('intval', $productfilterIds));
-            $subQueryPf         = $db->getQuery(true);
-            $subQueryPf->select('DISTINCT ' . $db->quoteName('pf.product_id'))
-                ->from($db->quoteName('#__j2commerce_product_filters', 'pf'))
-                ->where($db->quoteName('pf.filter_id') . ' IN (' . $sanitizedFilterIds . ')');
+            $subQueryPf = ProductFilterRequestHelper::matchSubQuery($db, $productfilterIds, $this->getState('params'));
             $query->where($db->quoteName('p.j2commerce_product_id') . ' IN (' . $subQueryPf . ')');
         }
 

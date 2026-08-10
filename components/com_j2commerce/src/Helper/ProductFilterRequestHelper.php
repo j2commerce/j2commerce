@@ -17,7 +17,9 @@ namespace J2Commerce\Component\J2commerce\Site\Helper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Filter\OutputFilter;
 use Joomla\Database\DatabaseInterface;
+use Joomla\Database\QueryInterface;
 use Joomla\Input\Input;
+use Joomla\Registry\Registry;
 
 /**
  * Single source of truth for parsing product-list filter state from an HTTP request.
@@ -53,6 +55,42 @@ class ProductFilterRequestHelper
             'price_from'        => $input->getFloat('pricefrom', 0.0),
             'price_to'          => $input->getFloat('priceto', 0.0),
         ];
+    }
+
+    /**
+     * Product IDs matching the selected filters, honouring the menu item's Product Filter
+     * Logic. OR is plain membership. AND means the product carries every filter asked for,
+     * so the grouped row count has to reach the number selected.
+     *
+     * The ID list is interpolated rather than bound: these are cast integers, and a bound
+     * parameter would live on this subquery object rather than on the outer query it is
+     * embedded in, so it would never reach the driver.
+     */
+    public static function matchSubQuery(DatabaseInterface $db, array $filterIds, ?Registry $params = null): QueryInterface
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $filterIds))));
+
+        // Filters were asked for but none resolved: match nothing rather than emit IN ().
+        $idList = $ids === [] ? '0' : implode(',', $ids);
+
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('pf.product_id'))
+            ->from($db->quoteName('#__j2commerce_product_filters', 'pf'))
+            ->where($db->quoteName('pf.filter_id') . ' IN (' . $idList . ')')
+            ->group($db->quoteName('pf.product_id'));
+
+        if ($ids !== [] && self::wantsAllFilters($params)) {
+            $query->having('COUNT(DISTINCT ' . $db->quoteName('pf.filter_id') . ') = ' . \count($ids));
+        }
+
+        return $query;
+    }
+
+    public static function wantsAllFilters(?Registry $params = null): bool
+    {
+        $params ??= Factory::getApplication()->getParams();
+
+        return strtoupper((string) $params->get('list_product_filter_search_logic_rel', 'OR')) === 'AND';
     }
 
     public static function resolveAliasesToIds(array $tokens): array
