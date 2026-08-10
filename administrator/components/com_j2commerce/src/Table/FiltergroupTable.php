@@ -26,6 +26,15 @@ use Joomla\Database\ParameterType;
 class FiltergroupTable extends Table
 {
     /**
+     * Controls a group may render its values with. Anything else falls back to a checkbox
+     * list, which is what every group rendered as before the column existed.
+     *
+     * @var    string[]
+     * @since  6.5.1
+     */
+    public const INPUT_TYPES = ['checkbox', 'multiselect', 'select', 'radio', 'color'];
+
+    /**
      * Constructor
      *
      * @param   DatabaseDriver  $db  Database connector object
@@ -57,6 +66,10 @@ class FiltergroupTable extends Table
         // Check for a group name.
         if (trim($this->group_name) == '') {
             throw new \InvalidArgumentException(Text::_('COM_J2COMMERCE_FILTERGROUP_ERROR_NAME'));
+        }
+
+        if (!\in_array($this->filter_input_type ?? '', self::INPUT_TYPES, true)) {
+            $this->filter_input_type = 'checkbox';
         }
 
         // Verify that the group name is unique

@@ -243,6 +243,7 @@ class FiltergroupModel extends AdminModel
                 $db->quoteName('j2commerce_filter_id'),
                 $db->quoteName('group_id'),
                 $db->quoteName('filter_name'),
+                $db->quoteName('filter_color'),
                 $db->quoteName('ordering'),
             ])
             ->from($db->quoteName('#__j2commerce_filters'))
@@ -499,6 +500,14 @@ class FiltergroupModel extends AdminModel
                         continue;
                     }
 
+                    // Swatch colour, read only by the 'color' input type. Anything that is not
+                    // a hex literal is stored as empty rather than reaching a style attribute.
+                    $filterColor = trim($filterData['filter_color'] ?? '');
+
+                    if (!preg_match('/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', $filterColor)) {
+                        $filterColor = '';
+                    }
+
                     // A posted ID only counts if it belongs to this group and was
                     // not already claimed earlier in the payload: save2copy posts
                     // the source group's IDs, and the repeatable-row duplicate
@@ -509,9 +518,11 @@ class FiltergroupModel extends AdminModel
                         $updateQuery = $db->getQuery(true)
                             ->update($db->quoteName('#__j2commerce_filters'))
                             ->set($db->quoteName('filter_name') . ' = :filterName')
+                            ->set($db->quoteName('filter_color') . ' = :filterColor')
                             ->set($db->quoteName('ordering') . ' = :ordering')
                             ->where($db->quoteName('j2commerce_filter_id') . ' = :filterId')
                             ->bind(':filterName', $filterName, ParameterType::STRING)
+                            ->bind(':filterColor', $filterColor, ParameterType::STRING)
                             ->bind(':ordering', $orderingCounter, ParameterType::INTEGER)
                             ->bind(':filterId', $filterId, ParameterType::INTEGER);
 
@@ -525,11 +536,13 @@ class FiltergroupModel extends AdminModel
                             ->columns([
                                 $db->quoteName('group_id'),
                                 $db->quoteName('filter_name'),
+                                $db->quoteName('filter_color'),
                                 $db->quoteName('ordering'),
                             ])
-                            ->values(':groupId, :filterName, :ordering')
+                            ->values(':groupId, :filterName, :filterColor, :ordering')
                             ->bind(':groupId', $groupId, ParameterType::INTEGER)
                             ->bind(':filterName', $filterName, ParameterType::STRING)
+                            ->bind(':filterColor', $filterColor, ParameterType::STRING)
                             ->bind(':ordering', $orderingCounter, ParameterType::INTEGER);
 
                         $db->setQuery($insertQuery);

@@ -401,6 +401,7 @@ VALUES
 CREATE TABLE IF NOT EXISTS `#__j2commerce_filtergroups` (
   `j2commerce_filtergroup_id` int NOT NULL AUTO_INCREMENT,
   `group_name` varchar(255) NOT NULL,
+  `filter_input_type` varchar(20) NOT NULL DEFAULT 'checkbox',
   `ordering` int NOT NULL DEFAULT 0,
   `enabled` tinyint NOT NULL DEFAULT 0,
   `access` int UNSIGNED NOT NULL DEFAULT '0',
@@ -424,6 +425,7 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_filters` (
   `j2commerce_filter_id` int NOT NULL AUTO_INCREMENT,
   `group_id` int NOT NULL,
   `filter_name` varchar(255) DEFAULT NULL,
+  `filter_color` varchar(20) NOT NULL DEFAULT '',
   `ordering` int NOT NULL DEFAULT 0,
   PRIMARY KEY (`j2commerce_filter_id`),
   KEY `group_id` (`group_id`)

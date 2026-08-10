@@ -675,7 +675,7 @@ class ProducttagsModel extends ListModel
      * helper re-applies it group by group so each group can be counted without its own
      * selection narrowing it.
      *
-     * @return  array<int, array{group_name: string, filters: object[]}>
+     * @return  array<int, array{group_name: string, filter_input_type: string, filters: object[]}>
      *
      * @since   6.5.0
      */

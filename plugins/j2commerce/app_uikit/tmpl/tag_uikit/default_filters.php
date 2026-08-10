@@ -78,6 +78,16 @@ $filtersCollapsed = ((int) $this->params->get('list_filter_category_toggle', 1) 
     }
     .j2commerce-dual-range input[type="range"]::-moz-range-thumb:hover { transform: scale(1.1); }
     .j2commerce-dual-range input[type="range"]::-moz-range-track { background: transparent; border: none; }
+    .j2commerce-filter-swatches { display: flex; flex-wrap: wrap; gap: .5rem; }
+    .j2commerce-swatch-input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+    .j2commerce-swatch { display: inline-block; width: 1.75rem; height: 1.75rem; border-radius: 50%; border: 1px solid #e5e5e5; cursor: pointer; }
+    .j2commerce-swatch-text { display: inline-block; padding: .15rem .6rem; border-radius: 2rem; border: 1px solid #e5e5e5; cursor: pointer; font-size: .875rem; }
+    .j2commerce-swatch-input:checked + .j2commerce-swatch,
+    .j2commerce-swatch-input:checked + .j2commerce-swatch-text { outline: 2px solid #333; outline-offset: 2px; }
+    .j2commerce-swatch-input:focus-visible + .j2commerce-swatch,
+    .j2commerce-swatch-input:focus-visible + .j2commerce-swatch-text { outline: 2px solid #1e87f0; outline-offset: 2px; }
+    .j2commerce-filter-unavailable .j2commerce-swatch,
+    .j2commerce-filter-unavailable .j2commerce-swatch-text { opacity: .35; cursor: not-allowed; }
 </style>
 
 <button class="uk-button uk-button-default uk-width-1-1 uk-hidden@m uk-margin-small-bottom" type="button" uk-toggle="target: #j2commerceFilterOffcanvas">
@@ -152,6 +162,13 @@ $filtersCollapsed = ((int) $this->params->get('list_filter_category_toggle', 1) 
                         if ($hasSelectedFilters) {
                             $pfShowExpanded = true;
                         }
+                        $pfInputType = $filtergroup['filter_input_type'] ?? 'checkbox';
+                        $pfIsList    = $pfInputType === 'select' || $pfInputType === 'multiselect';
+                        // A radio set needs a name of its own, or every group on the page would
+                        // form one exclusive set and picking a colour would clear the size.
+                        $pfInputName = $pfInputType === 'radio'
+                            ? 'productfilter_group[' . (int) $pfKey . ']'
+                            : 'productfilter_ids[]';
                         ?>
                         <li<?php echo $pfShowExpanded ? ' class="uk-open"' : ''; ?>>
                             <a class="uk-accordion-title" href="#"><?php echo $this->escape(Text::_($filtergroup['group_name'])); ?></a>
@@ -161,25 +178,72 @@ $filtersCollapsed = ((int) $this->params->get('list_filter_category_toggle', 1) 
                                         <?php echo Text::_('COM_J2COMMERCE_CLEAR'); ?>
                                     </a>
                                 </div>
-                                <div id="j2commerce-pf-filter-<?php echo $filterScriptId; ?>" class="j2commerce-productfilter-list">
-                                    <?php foreach ($filtergroup['filters'] as $filter) : ?>
-                                        <?php
-                                        $checked = (!empty($sessionProductfilterIds) && in_array($filter->filter_id, $sessionProductfilterIds));
-                                        $filterAlias = \Joomla\CMS\Filter\OutputFilter::stringURLSafe(Text::_($filter->filter_name));
-                                        $filterCount = (int) ($filter->product_count ?? 0);
-                                        // A ticked value stays operable at zero, or the selection that emptied
-                                        // the listing could not be undone from here.
-                                        $filterUnavailable = $filterCount === 0 && !$checked;
-                                        ?>
-                                        <div class="uk-margin-small-bottom<?php echo $filterUnavailable ? ' j2commerce-filter-unavailable' : ''; ?>">
-                                            <label class="uk-text-small">
-                                                <input type="checkbox" class="uk-checkbox j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" name="productfilter_ids[]" id="j2commerce-pfilter-<?php echo $filterScriptId; ?>-<?php echo $filter->filter_id; ?>" value="<?php echo $filter->filter_id; ?>" data-alias="<?php echo $this->escape($filterAlias); ?>" data-count="<?php echo $filterCount; ?>"<?php echo $checked ? ' checked' : ''; ?><?php echo $filterUnavailable ? ' disabled' : ''; ?> />
-                                                <?php echo $this->escape(Text::_($filter->filter_name)); ?>
-                                            </label>
-                                            <?php // Outside the label on purpose: the active-filter chips read the label textContent. ?>
-                                            <span class="j2commerce-filter-count uk-text-meta">(<?php echo $filterCount; ?>)</span>
-                                        </div>
-                                    <?php endforeach; ?>
+                                <div id="j2commerce-pf-filter-<?php echo $filterScriptId; ?>" class="j2commerce-productfilter-list<?php echo $pfInputType === 'color' ? ' j2commerce-filter-swatches' : ''; ?>">
+                                    <?php if ($pfIsList) : ?>
+                                        <select class="uk-select uk-form-small j2commerce-pfilter-select j2commerce-pfilter-select-<?php echo $filterScriptId; ?>" name="productfilter_ids[]" aria-label="<?php echo $this->escape(Text::_($filtergroup['group_name'])); ?>"<?php echo $pfInputType === 'multiselect' ? ' multiple size="' . min(count($filtergroup['filters']), 8) . '"' : ''; ?>>
+                                            <?php if ($pfInputType === 'select') : ?>
+                                                <option class="j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" value=""><?php echo $this->escape(Text::_('COM_J2COMMERCE_FILTER_ANY')); ?></option>
+                                            <?php endif; ?>
+                                            <?php foreach ($filtergroup['filters'] as $filter) : ?>
+                                                <?php
+                                                $checked = (!empty($sessionProductfilterIds) && in_array($filter->filter_id, $sessionProductfilterIds));
+                                                $filterAlias = \Joomla\CMS\Filter\OutputFilter::stringURLSafe(Text::_($filter->filter_name));
+                                                $filterCount = (int) ($filter->product_count ?? 0);
+                                                $filterLabel = Text::_($filter->filter_name);
+                                                ?>
+                                                <option class="j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" value="<?php echo $filter->filter_id; ?>" data-alias="<?php echo $this->escape($filterAlias); ?>" data-count="<?php echo $filterCount; ?>" data-label="<?php echo $this->escape($filterLabel); ?>"<?php echo $checked ? ' selected' : ''; ?><?php echo $filterCount === 0 && !$checked ? ' disabled' : ''; ?>><?php echo $this->escape($filterLabel); ?> (<?php echo $filterCount; ?>)</option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    <?php else : ?>
+                                        <?php if ($pfInputType === 'radio') : ?>
+                                            <div class="uk-margin-small-bottom">
+                                                <label>
+                                                    <input type="radio" class="uk-radio j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" name="<?php echo $pfInputName; ?>" id="j2commerce-pfilter-<?php echo $filterScriptId; ?>-any" value=""<?php echo $hasSelectedFilters ? '' : ' checked'; ?> />
+                                                    <span class="uk-text-small uk-margin-small-left"><?php echo $this->escape(Text::_('COM_J2COMMERCE_FILTER_ANY')); ?></span>
+                                                </label>
+                                            </div>
+                                        <?php endif; ?>
+                                        <?php foreach ($filtergroup['filters'] as $filter) : ?>
+                                            <?php
+                                            $checked = (!empty($sessionProductfilterIds) && in_array($filter->filter_id, $sessionProductfilterIds));
+                                            $filterAlias = \Joomla\CMS\Filter\OutputFilter::stringURLSafe(Text::_($filter->filter_name));
+                                            $filterCount = (int) ($filter->product_count ?? 0);
+                                            $filterLabel = Text::_($filter->filter_name);
+                                            // A ticked value stays operable at zero, or the selection that emptied
+                                            // the listing could not be undone from here.
+                                            $filterUnavailable = $filterCount === 0 && !$checked;
+                                            $filterId = 'j2commerce-pfilter-' . $filterScriptId . '-' . $filter->filter_id;
+                                            // Re-checked at render: only a hex literal ever reaches the style attribute.
+                                            $swatchColor = preg_match('/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', (string) ($filter->filter_color ?? ''))
+                                                ? $filter->filter_color
+                                                : '';
+                                            ?>
+                                            <?php if ($pfInputType === 'color') : ?>
+                                                <div class="<?php echo $filterUnavailable ? 'j2commerce-filter-unavailable' : ''; ?>">
+                                                    <input type="checkbox" class="j2commerce-swatch-input j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" name="<?php echo $pfInputName; ?>" id="<?php echo $filterId; ?>" value="<?php echo $filter->filter_id; ?>" data-alias="<?php echo $this->escape($filterAlias); ?>" data-count="<?php echo $filterCount; ?>" data-label="<?php echo $this->escape($filterLabel); ?>"<?php echo $checked ? ' checked' : ''; ?><?php echo $filterUnavailable ? ' disabled' : ''; ?> />
+                                                    <?php if ($swatchColor !== '') : ?>
+                                                        <label class="j2commerce-swatch" for="<?php echo $filterId; ?>" style="background-color: <?php echo $this->escape($swatchColor); ?>" title="<?php echo $this->escape($filterLabel); ?>">
+                                                            <span class="uk-hidden"><?php echo $this->escape($filterLabel); ?></span>
+                                                        </label>
+                                                    <?php else : ?>
+                                                        <label class="j2commerce-swatch-text" for="<?php echo $filterId; ?>" title="<?php echo $this->escape($filterLabel); ?>">
+                                                            <?php echo $this->escape($filterLabel); ?>
+                                                        </label>
+                                                    <?php endif; ?>
+                                                    <span class="j2commerce-filter-count uk-hidden">(<?php echo $filterCount; ?>)</span>
+                                                </div>
+                                            <?php else : ?>
+                                                <div class="uk-margin-small-bottom<?php echo $filterUnavailable ? ' j2commerce-filter-unavailable' : ''; ?>">
+                                                    <label>
+                                                        <input type="<?php echo $pfInputType === 'radio' ? 'radio' : 'checkbox'; ?>" class="<?php echo $pfInputType === 'radio' ? 'uk-radio' : 'uk-checkbox'; ?> j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" name="<?php echo $pfInputName; ?>" id="<?php echo $filterId; ?>" value="<?php echo $filter->filter_id; ?>" data-alias="<?php echo $this->escape($filterAlias); ?>" data-count="<?php echo $filterCount; ?>" data-label="<?php echo $this->escape($filterLabel); ?>"<?php echo $checked ? ' checked' : ''; ?><?php echo $filterUnavailable ? ' disabled' : ''; ?> />
+                                                        <span class="uk-text-small uk-margin-small-left"><?php echo $this->escape($filterLabel); ?></span>
+                                                    </label>
+                                                    <?php // Outside the label on purpose: the active-filter chips read the label textContent. ?>
+                                                    <span class="j2commerce-filter-count uk-text-small uk-text-meta">(<?php echo $filterCount; ?>)</span>
+                                                </div>
+                                            <?php endif; ?>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </li>
@@ -307,6 +371,13 @@ $filtersCollapsed = ((int) $this->params->get('list_filter_category_toggle', 1) 
                     if ($hasSelectedFilters) {
                         $pfShowExpanded = true;
                     }
+                    $pfInputType = $filtergroup['filter_input_type'] ?? 'checkbox';
+                    $pfIsList    = $pfInputType === 'select' || $pfInputType === 'multiselect';
+                    // A radio set needs a name of its own, or every group on the page would
+                    // form one exclusive set and picking a colour would clear the size.
+                    $pfInputName = $pfInputType === 'radio'
+                        ? 'productfilter_group[' . (int) $pfKey . ']'
+                        : 'productfilter_ids[]';
                     ?>
                     <li<?php echo $pfShowExpanded ? ' class="uk-open"' : ''; ?>>
                         <a class="uk-accordion-title" href="#"><?php echo $this->escape(Text::_($filtergroup['group_name'])); ?></a>
@@ -316,25 +387,72 @@ $filtersCollapsed = ((int) $this->params->get('list_filter_category_toggle', 1) 
                                     <?php echo Text::_('COM_J2COMMERCE_CLEAR'); ?>
                                 </a>
                             </div>
-                            <div id="j2commerce-pf-filter-<?php echo $filterScriptId; ?>" class="j2commerce-productfilter-list">
-                                <?php foreach ($filtergroup['filters'] as $filter) : ?>
-                                    <?php
-                                    $checked = (!empty($sessionProductfilterIds) && in_array($filter->filter_id, $sessionProductfilterIds));
-                                    $filterAlias = \Joomla\CMS\Filter\OutputFilter::stringURLSafe(Text::_($filter->filter_name));
-                                    $filterCount = (int) ($filter->product_count ?? 0);
-                                    // A ticked value stays operable at zero, or the selection that emptied
-                                    // the listing could not be undone from here.
-                                    $filterUnavailable = $filterCount === 0 && !$checked;
-                                    ?>
-                                    <div class="uk-margin-small-bottom<?php echo $filterUnavailable ? ' j2commerce-filter-unavailable' : ''; ?>">
-                                        <label class="uk-text-small">
-                                            <input type="checkbox" class="uk-checkbox j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" name="productfilter_ids[]" id="j2commerce-pfilter-<?php echo $filterScriptId; ?>-<?php echo $filter->filter_id; ?>" value="<?php echo $filter->filter_id; ?>" data-alias="<?php echo $this->escape($filterAlias); ?>" data-count="<?php echo $filterCount; ?>"<?php echo $checked ? ' checked' : ''; ?><?php echo $filterUnavailable ? ' disabled' : ''; ?> />
-                                            <?php echo $this->escape(Text::_($filter->filter_name)); ?>
-                                        </label>
-                                        <?php // Outside the label on purpose: the active-filter chips read the label textContent. ?>
-                                        <span class="j2commerce-filter-count uk-text-meta">(<?php echo $filterCount; ?>)</span>
-                                    </div>
-                                <?php endforeach; ?>
+                            <div id="j2commerce-pf-filter-<?php echo $filterScriptId; ?>" class="j2commerce-productfilter-list<?php echo $pfInputType === 'color' ? ' j2commerce-filter-swatches' : ''; ?>">
+                                <?php if ($pfIsList) : ?>
+                                    <select class="uk-select uk-form-small j2commerce-pfilter-select j2commerce-pfilter-select-<?php echo $filterScriptId; ?>" name="productfilter_ids[]" aria-label="<?php echo $this->escape(Text::_($filtergroup['group_name'])); ?>"<?php echo $pfInputType === 'multiselect' ? ' multiple size="' . min(count($filtergroup['filters']), 8) . '"' : ''; ?>>
+                                        <?php if ($pfInputType === 'select') : ?>
+                                            <option class="j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" value=""><?php echo $this->escape(Text::_('COM_J2COMMERCE_FILTER_ANY')); ?></option>
+                                        <?php endif; ?>
+                                        <?php foreach ($filtergroup['filters'] as $filter) : ?>
+                                            <?php
+                                            $checked = (!empty($sessionProductfilterIds) && in_array($filter->filter_id, $sessionProductfilterIds));
+                                            $filterAlias = \Joomla\CMS\Filter\OutputFilter::stringURLSafe(Text::_($filter->filter_name));
+                                            $filterCount = (int) ($filter->product_count ?? 0);
+                                            $filterLabel = Text::_($filter->filter_name);
+                                            ?>
+                                            <option class="j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" value="<?php echo $filter->filter_id; ?>" data-alias="<?php echo $this->escape($filterAlias); ?>" data-count="<?php echo $filterCount; ?>" data-label="<?php echo $this->escape($filterLabel); ?>"<?php echo $checked ? ' selected' : ''; ?><?php echo $filterCount === 0 && !$checked ? ' disabled' : ''; ?>><?php echo $this->escape($filterLabel); ?> (<?php echo $filterCount; ?>)</option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                <?php else : ?>
+                                    <?php if ($pfInputType === 'radio') : ?>
+                                        <div class="uk-margin-small-bottom">
+                                            <label>
+                                                <input type="radio" class="uk-radio j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" name="<?php echo $pfInputName; ?>" id="j2commerce-pfilter-<?php echo $filterScriptId; ?>-any" value=""<?php echo $hasSelectedFilters ? '' : ' checked'; ?> />
+                                                <span class="uk-text-small uk-margin-small-left"><?php echo $this->escape(Text::_('COM_J2COMMERCE_FILTER_ANY')); ?></span>
+                                            </label>
+                                        </div>
+                                    <?php endif; ?>
+                                    <?php foreach ($filtergroup['filters'] as $filter) : ?>
+                                        <?php
+                                        $checked = (!empty($sessionProductfilterIds) && in_array($filter->filter_id, $sessionProductfilterIds));
+                                        $filterAlias = \Joomla\CMS\Filter\OutputFilter::stringURLSafe(Text::_($filter->filter_name));
+                                        $filterCount = (int) ($filter->product_count ?? 0);
+                                        $filterLabel = Text::_($filter->filter_name);
+                                        // A ticked value stays operable at zero, or the selection that emptied
+                                        // the listing could not be undone from here.
+                                        $filterUnavailable = $filterCount === 0 && !$checked;
+                                        $filterId = 'j2commerce-pfilter-' . $filterScriptId . '-' . $filter->filter_id;
+                                        // Re-checked at render: only a hex literal ever reaches the style attribute.
+                                        $swatchColor = preg_match('/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', (string) ($filter->filter_color ?? ''))
+                                            ? $filter->filter_color
+                                            : '';
+                                        ?>
+                                        <?php if ($pfInputType === 'color') : ?>
+                                            <div class="<?php echo $filterUnavailable ? 'j2commerce-filter-unavailable' : ''; ?>">
+                                                <input type="checkbox" class="j2commerce-swatch-input j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" name="<?php echo $pfInputName; ?>" id="<?php echo $filterId; ?>" value="<?php echo $filter->filter_id; ?>" data-alias="<?php echo $this->escape($filterAlias); ?>" data-count="<?php echo $filterCount; ?>" data-label="<?php echo $this->escape($filterLabel); ?>"<?php echo $checked ? ' checked' : ''; ?><?php echo $filterUnavailable ? ' disabled' : ''; ?> />
+                                                <?php if ($swatchColor !== '') : ?>
+                                                    <label class="j2commerce-swatch" for="<?php echo $filterId; ?>" style="background-color: <?php echo $this->escape($swatchColor); ?>" title="<?php echo $this->escape($filterLabel); ?>">
+                                                        <span class="uk-hidden"><?php echo $this->escape($filterLabel); ?></span>
+                                                    </label>
+                                                <?php else : ?>
+                                                    <label class="j2commerce-swatch-text" for="<?php echo $filterId; ?>" title="<?php echo $this->escape($filterLabel); ?>">
+                                                        <?php echo $this->escape($filterLabel); ?>
+                                                    </label>
+                                                <?php endif; ?>
+                                                <span class="j2commerce-filter-count uk-hidden">(<?php echo $filterCount; ?>)</span>
+                                            </div>
+                                        <?php else : ?>
+                                            <div class="uk-margin-small-bottom<?php echo $filterUnavailable ? ' j2commerce-filter-unavailable' : ''; ?>">
+                                                <label>
+                                                    <input type="<?php echo $pfInputType === 'radio' ? 'radio' : 'checkbox'; ?>" class="<?php echo $pfInputType === 'radio' ? 'uk-radio' : 'uk-checkbox'; ?> j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" name="<?php echo $pfInputName; ?>" id="<?php echo $filterId; ?>" value="<?php echo $filter->filter_id; ?>" data-alias="<?php echo $this->escape($filterAlias); ?>" data-count="<?php echo $filterCount; ?>" data-label="<?php echo $this->escape($filterLabel); ?>"<?php echo $checked ? ' checked' : ''; ?><?php echo $filterUnavailable ? ' disabled' : ''; ?> />
+                                                    <span class="uk-text-small uk-margin-small-left"><?php echo $this->escape($filterLabel); ?></span>
+                                                </label>
+                                                <?php // Outside the label on purpose: the active-filter chips read the label textContent. ?>
+                                                <span class="j2commerce-filter-count uk-text-small uk-text-meta">(<?php echo $filterCount; ?>)</span>
+                                            </div>
+                                        <?php endif; ?>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </li>
@@ -399,6 +517,13 @@ $filtersCollapsed = ((int) $this->params->get('list_filter_category_toggle', 1) 
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+    // A group may render as checkboxes, swatches, radios or a <select>; the value carrier is an
+    // <option> in the last case and has .selected rather than .checked. The empty value is the
+    // "Any" control of a single-value group and never counts as a selection.
+    const pfPicked = el => (el.tagName === 'OPTION' ? el.selected : el.checked);
+    const pfPick = (el, on) => { if (el.tagName === 'OPTION') { el.selected = on; } else { el.checked = on; } };
+    const pfValued = el => el.value !== '';
+
     const ajaxEnabled = document.querySelector('.j2commerce-product-list')?.dataset.ajaxFilters === 'true';
     if (ajaxEnabled && typeof J2CommerceFilters !== 'undefined') {
         initClearButtonVisibility();
@@ -431,7 +556,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.addEventListener('click', () => {
             const filterClass = btn.dataset.filterClass;
             if (filterClass) {
-                document.querySelectorAll('.' + filterClass).forEach(cb => cb.checked = false);
+                document.querySelectorAll('.' + filterClass).forEach(cb => pfPick(cb, !pfValued(cb)));
                 submitWithLoading();
             }
         });
@@ -465,14 +590,19 @@ document.addEventListener('DOMContentLoaded', () => {
             if (cb) cb.checked = false;
         } else if (type === 'productfilter') {
             const cb = findByValue('[class*="j2commerce-pfilter-checkboxes"]');
-            if (cb) cb.checked = false;
+            if (cb) {
+                pfPick(cb, false);
+                const list = cb.closest('.j2commerce-productfilter-list');
+                const any = list?.querySelector('[class*="j2commerce-pfilter-checkboxes"][value=""]');
+                if (any) pfPick(any, true);
+            }
         }
         submitWithLoading();
     });
 
     document.getElementById('j2commerce-clear-all-filters')?.addEventListener('click', (e) => {
         e.preventDefault();
-        document.querySelectorAll('.j2commerce-brand-checkboxes, .j2commerce-vendor-checkboxes, [class*="j2commerce-pfilter-checkboxes"]').forEach(cb => cb.checked = false);
+        document.querySelectorAll('.j2commerce-brand-checkboxes, .j2commerce-vendor-checkboxes, [class*="j2commerce-pfilter-checkboxes"]').forEach(cb => pfPick(cb, !pfValued(cb)));
         submitWithLoading();
     });
 
@@ -485,7 +615,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const tiles = [];
         document.querySelectorAll('.j2commerce-brand-checkboxes:checked, .j2commerce-vendor-checkboxes:checked, [class*="j2commerce-pfilter-checkboxes"]:checked').forEach(cb => {
-            const label = cb.closest('label')?.textContent?.trim();
+            if (!pfValued(cb)) return;
+
+            const label = cb.dataset.label?.trim() || cb.closest('label')?.textContent?.trim();
             if (!label) return;
 
             const type = cb.classList.contains('j2commerce-brand-checkboxes') ? 'brand'
@@ -503,8 +635,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function initClearButtonVisibility() {
         document.querySelectorAll('.j2commerce-productfilter-list').forEach(container => {
-            const checkboxes = container.querySelectorAll('input[type="checkbox"]');
-            const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+            const controls = container.querySelectorAll('[class*="j2commerce-pfilter-checkboxes"]');
+            const checkedCount = Array.from(controls).filter(cb => pfValued(cb) && pfPicked(cb)).length;
             if (checkedCount > 0) {
                 const filterId = container.id.replace('j2commerce-pf-filter-', '');
                 const clearBtn = document.getElementById('product-filter-group-clear-' + filterId);
@@ -515,7 +647,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function bindMobileFooter() {
         document.getElementById('j2commerce-mobile-clear-all')?.addEventListener('click', () => {
-            document.querySelectorAll('.j2commerce-brand-checkboxes, .j2commerce-vendor-checkboxes, [class*="j2commerce-pfilter-checkboxes"]').forEach(cb => cb.checked = false);
+            document.querySelectorAll('.j2commerce-brand-checkboxes, .j2commerce-vendor-checkboxes, [class*="j2commerce-pfilter-checkboxes"]').forEach(cb => pfPick(cb, !pfValued(cb)));
             const searchInput = document.getElementById('j2commerce-search');
             if (searchInput) searchInput.value = '';
             UIkit.offcanvas('#j2commerceFilterOffcanvas').hide();

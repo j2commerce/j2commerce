@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Site\Helper;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Table\FiltergroupTable;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Filter\OutputFilter;
 use Joomla\Database\DatabaseInterface;
@@ -159,7 +160,7 @@ class ProductFilterRequestHelper
      *
      * @param  callable():QueryInterface  $listingQuery
      *
-     * @return array<int, array{group_name: string, filters: object[]}>
+     * @return array<int, array{group_name: string, filter_input_type: string, filters: object[]}>
      */
     public static function facetsForListing(
         DatabaseInterface $db,
@@ -177,11 +178,18 @@ class ProductFilterRequestHelper
             $groupId  = (int) $row->j2commerce_filtergroup_id;
             $filterId = (int) $row->j2commerce_filter_id;
 
-            $groups[$groupId] ??= ['group_name' => $row->group_name, 'filters' => []];
+            $groups[$groupId] ??= [
+                'group_name'        => $row->group_name,
+                'filter_input_type' => \in_array($row->filter_input_type ?? '', FiltergroupTable::INPUT_TYPES, true)
+                    ? $row->filter_input_type
+                    : 'checkbox',
+                'filters' => [],
+            ];
 
             $groups[$groupId]['filters'][] = (object) [
                 'filter_id'     => $filterId,
                 'filter_name'   => $row->filter_name,
+                'filter_color'  => $row->filter_color ?? '',
                 'product_count' => $counts[$filterId] ?? 0,
             ];
         }
@@ -260,9 +268,11 @@ class ProductFilterRequestHelper
             ->select([
                 $db->quoteName('fg.j2commerce_filtergroup_id'),
                 $db->quoteName('fg.group_name'),
+                $db->quoteName('fg.filter_input_type'),
                 $db->quoteName('fg.ordering', 'group_ordering'),
                 $db->quoteName('f.j2commerce_filter_id'),
                 $db->quoteName('f.filter_name'),
+                $db->quoteName('f.filter_color'),
                 $db->quoteName('f.ordering', 'filter_ordering'),
                 'COUNT(DISTINCT ' . $db->quoteName('p.j2commerce_product_id') . ') AS ' . $db->quoteName('product_count'),
             ])
@@ -285,9 +295,11 @@ class ProductFilterRequestHelper
             ->group($db->quoteName([
                 'fg.j2commerce_filtergroup_id',
                 'fg.group_name',
+                'fg.filter_input_type',
                 'fg.ordering',
                 'f.j2commerce_filter_id',
                 'f.filter_name',
+                'f.filter_color',
                 'f.ordering',
             ]))
             ->order([
@@ -372,9 +384,22 @@ class ProductFilterRequestHelper
 
     private static function readProductFilterIds(Input $input): array
     {
-        $ids = $input->get('productfilter_ids', [], 'array');
+        // A radio group needs a name of its own or every group on the page would form one
+        // exclusive set, so it posts under productfilter_group[<group id>] instead. Both keys
+        // are read, and both are flattened: the group-keyed form arrives one level deep.
+        $ids = array_merge(
+            $input->get('productfilter_ids', [], 'array'),
+            $input->get('productfilter_group', [], 'array')
+        );
+
         if (!empty($ids)) {
-            return array_values(array_filter(array_map('intval', $ids)));
+            $flat = [];
+
+            array_walk_recursive($ids, static function ($value) use (&$flat): void {
+                $flat[] = (int) $value;
+            });
+
+            return array_values(array_unique(array_filter($flat)));
         }
 
         $filtersParam = $input->getString('filters', '');

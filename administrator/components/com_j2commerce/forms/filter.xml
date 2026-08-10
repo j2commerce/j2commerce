@@ -24,6 +24,15 @@
         />
 
         <field
+            name="filter_color"
+            type="color"
+            label="COM_J2COMMERCE_FILTER_COLOR"
+            description="COM_J2COMMERCE_FILTER_COLOR_DESC"
+            class="form-control"
+            default=""
+        />
+
+        <field
             name="ordering"
             type="hidden"
             default="0"

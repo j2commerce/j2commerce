@@ -16,6 +16,22 @@
             maxlength="255"
             class="form-control"
         />
+
+        <field
+            name="filter_input_type"
+            type="list"
+            label="COM_J2COMMERCE_FILTERGROUP_INPUT_TYPE"
+            description="COM_J2COMMERCE_FILTERGROUP_INPUT_TYPE_DESC"
+            default="checkbox"
+            validate="options"
+            class="form-select"
+            >
+            <option value="checkbox">COM_J2COMMERCE_FILTERGROUP_INPUT_TYPE_CHECKBOX</option>
+            <option value="multiselect">COM_J2COMMERCE_FILTERGROUP_INPUT_TYPE_MULTISELECT</option>
+            <option value="select">COM_J2COMMERCE_FILTERGROUP_INPUT_TYPE_SELECT</option>
+            <option value="radio">COM_J2COMMERCE_FILTERGROUP_INPUT_TYPE_RADIO</option>
+            <option value="color">COM_J2COMMERCE_FILTERGROUP_INPUT_TYPE_COLOR</option>
+        </field>
     </fieldset>
 
     <fieldset name="global">
