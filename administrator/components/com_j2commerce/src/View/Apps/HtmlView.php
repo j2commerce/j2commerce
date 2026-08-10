@@ -108,10 +108,7 @@ class HtmlView extends BaseHtmlView
 
                 $childBar->publish('apps.publish')->listCheck(true);
                 $childBar->unpublish('apps.unpublish')->listCheck(true);
-
-                if ($canDo->get('core.admin')) {
-                    $childBar->checkin('apps.checkin')->listCheck(true);
-                }
+                $childBar->checkin('apps.checkin')->listCheck(true);
             }
         }
 

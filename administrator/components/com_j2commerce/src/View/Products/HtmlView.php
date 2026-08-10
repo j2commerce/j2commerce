@@ -192,7 +192,7 @@ class HtmlView extends BaseHtmlView
                 ->icon('icon-plus');
         }
 
-        if ($canDo->get('core.edit.state') || $this->canBatch) {
+        if (!$this->isEmptyState && ($canDo->get('core.edit.state') || $this->canBatch)) {
             $dropdown = $toolbar->dropdownButton('status-group', 'COM_J2COMMERCE_ACTIONS')
                 ->toggleSplit(false)
                 ->icon('icon-ellipsis-h')
@@ -204,6 +204,7 @@ class HtmlView extends BaseHtmlView
             if ($canDo->get('core.edit.state')) {
                 $childBar->publish('products.publish')->listCheck(true);
                 $childBar->unpublish('products.unpublish')->listCheck(true);
+                $childBar->checkin('products.checkin')->listCheck(true);
             }
 
             if ($this->canBatchState) {

@@ -165,7 +165,7 @@ class HtmlView extends BaseHtmlView
 
         ToolbarHelper::title(Text::_('COM_J2COMMERCE_PAYMENT_METHODS_TITLE'), 'fa-solid fa-credit-card');
 
-        if ($canDo->get('core.edit.state')) {
+        if (!$this->isEmptyState && $canDo->get('core.edit.state')) {
             $dropdown = $toolbar->dropdownButton('status-group')
                 ->text('JTOOLBAR_CHANGE_STATUS')
                 ->toggleSplit(false)
