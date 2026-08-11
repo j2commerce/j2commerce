@@ -47,8 +47,8 @@ class AjaxController extends BaseController
         $countryId      = $app->getInput()->getInt('country_id', 0);
         $selectedZoneId = $app->getInput()->getInt('zone_id', 0);
 
-        // Build zone options HTML
-        $html = '<option value="">' . Text::sprintf('COM_J2COMMERCE_SELECT_PLACEHOLDER', Text::_('COM_J2COMMERCE_ZONE')) . '</option>';
+        $placeholder = Text::sprintf('COM_J2COMMERCE_SELECT_PLACEHOLDER', Text::_('COM_J2COMMERCE_ZONE'));
+        $zones       = [];
 
         if ($countryId > 0) {
             $db    = Factory::getContainer()->get('DatabaseDriver');
@@ -62,19 +62,40 @@ class AjaxController extends BaseController
                 ->order($db->quoteName('zone_name') . ' ASC');
 
             $db->setQuery($query);
-            $zones = $db->loadObjectList();
-
-            if ($zones) {
-                foreach ($zones as $zone) {
-                    $selected = ($zone->j2commerce_zone_id == $selectedZoneId) ? ' selected="selected"' : '';
-                    $html .= '<option value="' . (int) $zone->j2commerce_zone_id . '"' . $selected . '>'
-                        . htmlspecialchars($zone->zone_name, ENT_QUOTES, 'UTF-8')
-                        . '</option>';
-                }
-            }
+            $zones = $db->loadObjectList() ?: [];
         }
 
-        // Output raw HTML (not JSON) for direct select population
+        // Callers that build their own options ask for the data. The markup
+        // branch below stays for anything still populating a select directly.
+        // Not keyed on `format`, which is Joomla's own document-type switch.
+        if ($app->getInput()->getWord('response', '') === 'json') {
+            $app->setHeader('Content-Type', 'application/json', true);
+            $app->sendHeaders();
+
+            echo json_encode([
+                'placeholder' => $placeholder,
+                'selected'    => $selectedZoneId,
+                'zones'       => array_map(
+                    static fn (object $zone): array => [
+                        'id'   => (int) $zone->j2commerce_zone_id,
+                        'name' => $zone->zone_name,
+                    ],
+                    $zones
+                ),
+            ]);
+
+            $app->close();
+        }
+
+        $html = '<option value="">' . $placeholder . '</option>';
+
+        foreach ($zones as $zone) {
+            $selected = ($zone->j2commerce_zone_id == $selectedZoneId) ? ' selected="selected"' : '';
+            $html .= '<option value="' . (int) $zone->j2commerce_zone_id . '"' . $selected . '>'
+                . htmlspecialchars($zone->zone_name, ENT_QUOTES, 'UTF-8')
+                . '</option>';
+        }
+
         echo $html;
         $app->close();
     }

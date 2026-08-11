@@ -1114,8 +1114,18 @@ document.addEventListener('DOMContentLoaded', () => {
                         `${addrOpts.zonesUrl}&country_id=${encodeURIComponent(country.value)}&zone_id=0`,
                         { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } }
                     );
-                    const html = resp.ok ? await resp.text() : '';
-                    if (html) zone.replaceChildren(document.createRange().createContextualFragment(html));
+                    if (!resp.ok) return;
+
+                    const data = await resp.json();
+                    const options = [new Option(data.placeholder, '')];
+
+                    (data.zones || []).forEach((z) => {
+                        const option = new Option(z.name, z.id);
+                        option.selected = String(z.id) === String(data.selected);
+                        options.push(option);
+                    });
+
+                    zone.replaceChildren(...options);
                 } catch (err) {
                     // Keep the existing zone options on failure.
                 }

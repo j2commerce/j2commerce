@@ -43,7 +43,7 @@ $this->getDocument()->addScriptOptions('com_j2commerce.customer_addresses', [
     'saveUrl'       => $baseUri . '/index.php?option=com_j2commerce&task=customer.ajaxSaveAddress&format=raw',
     'deleteUrl'     => $baseUri . '/index.php?option=com_j2commerce&task=customer.ajaxDeleteAddress&format=raw',
     'relinkUrl'     => $baseUri . '/index.php?option=com_j2commerce&task=customer.ajaxRelinkUser&format=raw',
-    'zonesUrl'      => $baseUri . '/index.php?option=com_j2commerce&task=manufacturer.getZones',
+    'zonesUrl'      => $baseUri . '/index.php?option=com_j2commerce&task=ajax.getZones&response=json',
     'userId'        => $targetUser,
     'currentId'     => $currentId,
     'cardMode'      => $this->useCardMode,

@@ -128,11 +128,21 @@
             credentials: 'same-origin',
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         })
-            .then(function (resp) { return resp.ok ? resp.text() : ''; })
-            .then(function (html) {
-                if (html) {
-                    zoneSelect.replaceChildren(document.createRange().createContextualFragment(html));
+            .then(function (resp) { return resp.ok ? resp.json() : null; })
+            .then(function (data) {
+                if (!data) {
+                    return;
                 }
+
+                var options = [new Option(data.placeholder, '')];
+
+                (data.zones || []).forEach(function (zone) {
+                    var option = new Option(zone.name, zone.id);
+                    option.selected = String(zone.id) === String(data.selected);
+                    options.push(option);
+                });
+
+                zoneSelect.replaceChildren.apply(zoneSelect, options);
             });
     }
 

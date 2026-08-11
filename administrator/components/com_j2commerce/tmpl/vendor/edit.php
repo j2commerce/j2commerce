@@ -123,15 +123,23 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         try {
-            const url = 'index.php?option=com_j2commerce&task=vendor.getZones&country_id=' + countryId + '&zone_id=' + selectedZoneId;
+            const url = 'index.php?option=com_j2commerce&task=ajax.getZones&response=json&country_id=' + countryId + '&zone_id=' + selectedZoneId;
             const response = await fetch(url);
 
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
 
-            const html = await response.text();
-            zoneSelect.innerHTML = html;
+            const data = await response.json();
+            const options = [new Option(data.placeholder, '')];
+
+            (data.zones || []).forEach(function (zone) {
+                const option = new Option(zone.name, zone.id);
+                option.selected = String(zone.id) === String(data.selected);
+                options.push(option);
+            });
+
+            zoneSelect.replaceChildren(...options);
             zoneSelect.disabled = false;
         } catch (error) {
             console.error('Error loading zones:', error);

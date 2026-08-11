@@ -263,12 +263,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const url      = `${zoneAjaxUrl}&country_id=${encodeURIComponent(countryId)}&zone_id=${encodeURIComponent(savedZoneId || 0)}`;
             const response = await fetch(url);
             if (!response.ok) return;
-            const html = await response.text();
+            const data = await response.json();
             const zoneEl = modal.querySelector('#ob-zone');
             if (zoneEl) {
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(`<select>${html}</select>`, 'text/html');
-                const newOptions = doc.querySelectorAll('option');
+                const newOptions = [new Option(data.placeholder, '')];
+
+                (data.zones || []).forEach((zone) => {
+                    newOptions.push(new Option(zone.name, zone.id));
+                });
+
                 zoneEl.replaceChildren(...newOptions);
 
                 // Explicitly set the zone value after replacing options

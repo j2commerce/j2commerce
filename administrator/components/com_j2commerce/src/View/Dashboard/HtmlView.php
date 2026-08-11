@@ -471,7 +471,7 @@ JS);
             $this->getDocument()->addScriptOptions('com_j2commerce.onboarding', [
                 'currencyMeta'    => $currencyMeta,
                 'countryDefaults' => $countryDefaults,
-                'zoneAjaxUrl'     => 'index.php?option=com_j2commerce&task=ajax.getZones',
+                'zoneAjaxUrl'     => 'index.php?option=com_j2commerce&task=ajax.getZones&response=json',
                 'resumeStep'      => $resumeStep,
                 'savedZoneId'     => $savedZoneId,
             ]);

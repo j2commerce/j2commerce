@@ -179,19 +179,46 @@ document.addEventListener('DOMContentLoaded', function() {
             // Create new table row
             const newRow = document.createElement('tr');
             newRow.id = 'j2commerce-flexivar-op-tr-' + optionKey;
-            newRow.innerHTML = `
-                <td class="addedOption">${optionName}</td>
-                <td>
-                    <input class="form-control" name="${formPrefix}[item_options][${optionKey}][ordering]" value="0">
-                </td>
-                <td class="text-end">
-                    <span class="optionRemove btn btn-danger btn-sm" role="button" title="<?php echo Text::_('COM_J2COMMERCE_OPTION_REMOVE'); ?>">
-                        <span class="icon icon-trash"></span>
-                    </span>
-                    <input type="hidden" value="${optionValue}" name="${formPrefix}[item_options][${optionKey}][option_id]">
-                    <input type="hidden" value="" name="${formPrefix}[item_options][${optionKey}][j2commerce_productoption_id]">
-                </td>
-            `;
+            // The field names carry this row into the product save, so they are built
+            // from one place rather than repeated per input.
+            const fieldName = (suffix) => formPrefix + '[item_options][' + optionKey + '][' + suffix + ']';
+
+            const nameCell = document.createElement('td');
+            nameCell.className = 'addedOption';
+            nameCell.textContent = optionName;
+
+            const orderingCell = document.createElement('td');
+            const orderingInput = document.createElement('input');
+            orderingInput.className = 'form-control';
+            orderingInput.name = fieldName('ordering');
+            orderingInput.value = '0';
+            orderingCell.append(orderingInput);
+
+            const actionsCell = document.createElement('td');
+            actionsCell.className = 'text-end';
+
+            const removeButton = document.createElement('span');
+            removeButton.className = 'optionRemove btn btn-danger btn-sm';
+            removeButton.setAttribute('role', 'button');
+            removeButton.title = <?php echo json_encode(Text::_('COM_J2COMMERCE_OPTION_REMOVE')); ?>;
+
+            const removeIcon = document.createElement('span');
+            removeIcon.className = 'icon icon-trash';
+            removeButton.append(removeIcon);
+
+            const optionIdInput = document.createElement('input');
+            optionIdInput.type = 'hidden';
+            optionIdInput.name = fieldName('option_id');
+            optionIdInput.value = optionValue;
+
+            const productOptionIdInput = document.createElement('input');
+            productOptionIdInput.type = 'hidden';
+            productOptionIdInput.name = fieldName('j2commerce_productoption_id');
+            productOptionIdInput.value = '';
+
+            actionsCell.append(removeButton, optionIdInput, productOptionIdInput);
+
+            newRow.append(nameCell, orderingCell, actionsCell);
 
             // Insert before the add options row
             const insertBeforeRow = document.querySelector('#flexivariable_options_table .j2commerce_a_options');
@@ -266,7 +293,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             // Show loading state
-            const origText = createVariantsBtn.innerHTML;
+            const origContent = [...createVariantsBtn.childNodes];
             createVariantsBtn.disabled = true;
             setSpinnerLabel(createVariantsBtn, <?php echo json_encode(Text::_('COM_J2COMMERCE_LOADING')); ?>, 'spinner-border spinner-border-sm me-1');
 
@@ -329,7 +356,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 Joomla.renderMessages({error: [error.message || '<?php echo Text::_('COM_J2COMMERCE_ERROR', true); ?>']});
             } finally {
                 createVariantsBtn.disabled = false;
-                createVariantsBtn.innerHTML = origText;
+                createVariantsBtn.replaceChildren(...origContent);
             }
         });
     }

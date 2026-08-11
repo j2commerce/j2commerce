@@ -218,7 +218,7 @@ class HtmlView extends BaseHtmlView
                     'token'    => Session::getFormToken(),
                     'formUrl'  => $baseUri . '/index.php?option=com_j2commerce&task=customer.ajaxGetAddressForm&format=raw',
                     'saveUrl'  => $baseUri . '/index.php?option=com_j2commerce&task=customer.ajaxSaveAddress&format=raw',
-                    'zonesUrl' => $baseUri . '/index.php?option=com_j2commerce&task=manufacturer.getZones',
+                    'zonesUrl' => $baseUri . '/index.php?option=com_j2commerce&task=ajax.getZones&response=json',
                 ]);
             }
 

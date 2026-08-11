@@ -494,7 +494,8 @@ $ajaxBase    = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
                         accordion.innerHTML = data.html;
                         self.setupCheckboxHandlers();
                         initVariantItemHandlers();
-                        try { document.dispatchEvent(new CustomEvent('joomla:updated')); } catch (e) { /* showon.js may throw when AJAX-injected fields reference missing controls */ }
+                        // Dispatched on the container, not document: core showon.js reads event.target.classList.
+                        accordion.dispatchEvent(new CustomEvent('joomla:updated', { bubbles: true }));
                     }
                     if (typeof data.total !== 'undefined') {
                         self.updateVariantCount(data.total);
