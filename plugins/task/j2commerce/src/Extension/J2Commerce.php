@@ -230,7 +230,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         foreach ($items as $item) {
             $queueId = (int) $item->j2commerce_queue_id;
 
-            $processEvent = new GenericEvent('onJ2CommerceQueueProcess', ['item' => $item]);
+            $processEvent = new GenericEvent('onJ2CommerceQueueProcess', ['queue' => $item, 'item' => $item]);
             $dispatcher->dispatch('onJ2CommerceQueueProcess', $processEvent);
 
             $currentItem = QueueHelper::getQueueById($queueId);
@@ -251,7 +251,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             // eventually mark it 'dead', silently destroying valid queued work.
             QueueHelper::release($queueId);
             $skipped++;
-            $details[] = ['id' => $queueId, 'status' => 'skipped', 'note' => 'No handler processed this item (released)'];
+            $details[] = ['id' => $queueId, 'status' => 'skipped', 'error' => 'No handler processed this item (released)', 'note' => 'No handler processed this item (released)'];
         }
 
         $endMs       = (int) (microtime(true) * 1000);

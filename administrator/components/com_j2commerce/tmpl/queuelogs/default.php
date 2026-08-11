@@ -196,10 +196,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const titleEl = document.getElementById('queuelogDetailsModalLabel');
     const bodyEl = document.getElementById('queuelogDetailsModalBody');
 
+    // Translations are emitted jsSafe: an apostrophe in a translated string closes the
+    // quoted literal it sits in and takes the whole inline script down with it.
     const statusMap = {
-        completed: '<?php echo Text::_('COM_J2COMMERCE_QUEUE_LOG_STATUS_COMPLETED'); ?>',
-        failed:    '<?php echo Text::_('COM_J2COMMERCE_QUEUE_LOG_STATUS_FAILED'); ?>',
-        skipped:   '<?php echo Text::_('COM_J2COMMERCE_QUEUE_LOG_STATUS_SKIPPED'); ?>'
+        completed: '<?php echo Text::_('COM_J2COMMERCE_QUEUE_LOG_STATUS_COMPLETED', true); ?>',
+        failed:    '<?php echo Text::_('COM_J2COMMERCE_QUEUE_LOG_STATUS_FAILED', true); ?>',
+        skipped:   '<?php echo Text::_('COM_J2COMMERCE_QUEUE_LOG_STATUS_SKIPPED', true); ?>'
     };
 
     const filterToStatuses = {
@@ -239,12 +241,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const esc = (v) => String(v ?? '').replace(/</g, '&lt;');
             let html = '<table class="table table-sm">';
             html += '<thead><tr>';
-            html += '<th><?php echo Text::_('COM_J2COMMERCE_HEADING_QUEUE_ID'); ?></th>';
-            html += '<th><?php echo Text::_('COM_J2COMMERCE_HEADING_ITEM_TYPE'); ?></th>';
-            html += '<th><?php echo Text::_('COM_J2COMMERCE_HEADING_RELATION_ID'); ?></th>';
-            html += '<th><?php echo Text::_('JSTATUS'); ?></th>';
+            html += '<th><?php echo Text::_('COM_J2COMMERCE_HEADING_QUEUE_ID', true); ?></th>';
+            html += '<th><?php echo Text::_('COM_J2COMMERCE_HEADING_ITEM_TYPE', true); ?></th>';
+            html += '<th><?php echo Text::_('COM_J2COMMERCE_HEADING_RELATION_ID', true); ?></th>';
+            html += '<th><?php echo Text::_('JSTATUS', true); ?></th>';
             if (showError) {
-                html += '<th><?php echo Text::_('COM_J2COMMERCE_HEADING_ERROR_MESSAGE'); ?></th>';
+                html += '<th><?php echo Text::_('COM_J2COMMERCE_HEADING_ERROR_MESSAGE', true); ?></th>';
             }
             html += '</tr></thead><tbody>';
 
@@ -255,7 +257,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 html += '<td>' + esc(item.relation_id) + '</td>';
                 html += '<td><span class="badge ' + (item.status === 'completed' ? '<?php echo J2htmlHelper::badgeClass('text-bg-success'); ?>' : item.status === 'failed' ? '<?php echo J2htmlHelper::badgeClass('text-bg-danger'); ?>' : '<?php echo J2htmlHelper::badgeClass('text-bg-warning'); ?>') + '">' + esc(statusMap[item.status] || item.status) + '</span></td>';
                 if (showError) {
-                    html += '<td><small class="text-danger">' + esc(item.error || '&mdash;') + '</small></td>';
+                    html += '<td><small class="text-danger">' + esc(item.error || item.note || '&mdash;') + '</small></td>';
                 }
                 html += '</tr>';
             }

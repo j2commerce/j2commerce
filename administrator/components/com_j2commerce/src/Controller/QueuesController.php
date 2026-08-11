@@ -164,7 +164,7 @@ class QueuesController extends AdminController
 
         foreach ($items as $item) {
             $queueId      = (int) $item->j2commerce_queue_id;
-            $processEvent = new GenericEvent('onJ2CommerceQueueProcess', ['item' => $item]);
+            $processEvent = new GenericEvent('onJ2CommerceQueueProcess', ['queue' => $item, 'item' => $item]);
             $dispatcher->dispatch('onJ2CommerceQueueProcess', $processEvent);
 
             $currentItem = QueueHelper::getQueueById($queueId);
@@ -201,6 +201,7 @@ class QueuesController extends AdminController
                 'status'      => 'skipped',
                 'relation_id' => $item->relation_id ?? '',
                 'item_type'   => $item->item_type ?? '',
+                'error'       => 'No handler processed this item (released)',
                 'note'        => 'No handler processed this item (released)',
             ];
         }
