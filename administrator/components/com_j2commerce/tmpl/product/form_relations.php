@@ -218,7 +218,7 @@ document.addEventListener('DOMContentLoaded', function() {
         input.addEventListener('input', function() {
             var term = this.value;
             if (term.length < 2) {
-                autocompleteList.innerHTML = '';
+                autocompleteList.replaceChildren();
                 updateAutocompleteListState();
                 return;
             }
@@ -243,7 +243,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(function(response) { return response.json(); })
             .then(function(data) {
                 input.classList.remove('optionsLoading');
-                autocompleteList.innerHTML = '';
+                autocompleteList.replaceChildren();
 
                 if (data.products && data.products.length > 0) {
                     data.products.forEach(function(item) {
@@ -288,7 +288,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                             document.getElementById(tbodyId).appendChild(newRow);
                             input.value = '';
-                            autocompleteList.innerHTML = '';
+                            autocompleteList.replaceChildren();
                             updateAutocompleteListState();
                         });
 
@@ -307,7 +307,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Close autocomplete when clicking outside
         document.addEventListener('click', function(e) {
             if (!input.contains(e.target) && !autocompleteList.contains(e.target)) {
-                autocompleteList.innerHTML = '';
+                autocompleteList.replaceChildren();
                 updateAutocompleteListState();
             }
         });

@@ -126,7 +126,11 @@ document.addEventListener("DOMContentLoaded", function() {
             const token = Joomla.getOptions("csrf.token") || document.querySelector("input[type=hidden][name][value=\"1\"]")?.name || "";
 
             printBtn.disabled = true;
-            printBtn.innerHTML = "<div class=\"spinner-border text-light\" aria-hidden=\"true\"></div> " + Joomla.Text._("COM_J2COMMERCE_INVOICETEMPLATE_LOADING");
+            const printSpinner = document.createElement("div");
+            printSpinner.className = "spinner-border text-light";
+            printSpinner.setAttribute("aria-hidden", "true");
+            printBtn.replaceChildren(printSpinner);
+            printBtn.append(" " + Joomla.Text._("COM_J2COMMERCE_INVOICETEMPLATE_LOADING"));
 
             try {
                 const formData = new FormData();
@@ -167,7 +171,10 @@ document.addEventListener("DOMContentLoaded", function() {
             }
 
             printBtn.disabled = false;
-            printBtn.innerHTML = "<span class=\"icon-print\"></span> " + Joomla.Text._("COM_J2COMMERCE_INVOICETEMPLATE_PRINT_TEST");
+            const printIcon = document.createElement("span");
+            printIcon.className = "icon-print";
+            printBtn.replaceChildren(printIcon);
+            printBtn.append(" " + Joomla.Text._("COM_J2COMMERCE_INVOICETEMPLATE_PRINT_TEST"));
         });
     }
 

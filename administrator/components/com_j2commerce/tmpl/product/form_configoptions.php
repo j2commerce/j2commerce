@@ -168,6 +168,38 @@ $csrfToken = \Joomla\CMS\Session\Session::getFormToken();
 document.addEventListener('DOMContentLoaded', () => {
     'use strict';
 
+    // Button content swaps. Each builds the same DOM the markup strings used to,
+    // so a button keeps its icon, spacing and assistive-text behaviour.
+    function setIconLabel(el, iconClass, label) {
+        const icon = document.createElement('span');
+        icon.className = iconClass;
+        el.replaceChildren(icon);
+
+        if (label) {
+            el.append(' ' + label);
+        }
+    }
+    // Decorative spinner with the label visible beside it.
+    function setSpinnerLabel(el, label, spinnerClass = 'spinner-border spinner-border-sm') {
+        const spinner = document.createElement('span');
+        spinner.className = spinnerClass;
+        spinner.setAttribute('aria-hidden', 'true');
+        el.replaceChildren(spinner);
+        el.append(' ' + label);
+    }
+    // Spinner carrying the label for assistive tech only.
+    function setSpinnerOnly(el, label) {
+        const spinner = document.createElement('span');
+        spinner.className = 'spinner-border spinner-border-sm';
+        spinner.setAttribute('role', 'status');
+
+        const srLabel = document.createElement('span');
+        srLabel.className = 'visually-hidden';
+        srLabel.textContent = label;
+        spinner.append(srLabel);
+        el.replaceChildren(spinner);
+    }
+
     const formPrefix = '<?php echo $formPrefix; ?>';
     let optionKey = <?php echo $key; ?>;
     const csrfToken = '<?php echo $csrfToken; ?>';
@@ -337,7 +369,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (createBtn) {
             createBtn.addEventListener('click', async () => {
                 createBtn.disabled = true;
-                createBtn.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span> ' + <?php echo json_encode(Text::_('COM_J2COMMERCE_SAVING')); ?>;
+                setSpinnerLabel(createBtn, <?php echo json_encode(Text::_('COM_J2COMMERCE_SAVING')); ?>);
 
                 const formData = new FormData();
                 formData.append('option', 'com_j2commerce');
@@ -374,13 +406,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else {
                         showModalMessage(data.message, 'danger');
                         createBtn.disabled = false;
-                        createBtn.innerHTML = '<span class="icon-plus"></span> ' + <?php echo json_encode(Text::_('COM_J2COMMERCE_PAO_CREATE_OPTION')); ?>;
+                        setIconLabel(createBtn, 'icon-plus', <?php echo json_encode(Text::_('COM_J2COMMERCE_PAO_CREATE_OPTION')); ?>);
                     }
                 } catch (error) {
                     console.error('Error creating option value:', error);
                     showModalMessage(<?php echo json_encode(Text::_('COM_J2COMMERCE_ERROR_SAVING')); ?>, 'danger');
                     createBtn.disabled = false;
-                    createBtn.innerHTML = '<span class="icon-plus"></span> ' + <?php echo json_encode(Text::_('COM_J2COMMERCE_PAO_CREATE_OPTION')); ?>;
+                    setIconLabel(createBtn, 'icon-plus', <?php echo json_encode(Text::_('COM_J2COMMERCE_PAO_CREATE_OPTION')); ?>);
                 }
             });
         }
@@ -389,7 +421,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (addAllBtn) {
             addAllBtn.addEventListener('click', async () => {
                 addAllBtn.disabled = true;
-                addAllBtn.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span> ' + <?php echo json_encode(Text::_('COM_J2COMMERCE_LOADING')); ?>;
+                setSpinnerLabel(addAllBtn, <?php echo json_encode(Text::_('COM_J2COMMERCE_LOADING')); ?>);
 
                 const formData = new FormData();
                 formData.append('option', 'com_j2commerce');
@@ -412,13 +444,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else {
                         showModalMessage(data.message || <?php echo json_encode(Text::_('COM_J2COMMERCE_ERROR_OCCURRED')); ?>, 'danger');
                         addAllBtn.disabled = false;
-                        addAllBtn.innerHTML = '<span class="icon-list"></span> ' + <?php echo json_encode(Text::_('COM_J2COMMERCE_ADD_ALL_OPTION_VALUE')); ?>;
+                        setIconLabel(addAllBtn, 'icon-list', <?php echo json_encode(Text::_('COM_J2COMMERCE_ADD_ALL_OPTION_VALUE')); ?>);
                     }
                 } catch (error) {
                     console.error('Error adding all option values:', error);
                     showModalMessage(<?php echo json_encode(Text::_('COM_J2COMMERCE_ERROR_OCCURRED')); ?>, 'danger');
                     addAllBtn.disabled = false;
-                    addAllBtn.innerHTML = '<span class="icon-list"></span> ' + <?php echo json_encode(Text::_('COM_J2COMMERCE_ADD_ALL_OPTION_VALUE')); ?>;
+                    setIconLabel(addAllBtn, 'icon-list', <?php echo json_encode(Text::_('COM_J2COMMERCE_ADD_ALL_OPTION_VALUE')); ?>);
                 }
             });
         }
@@ -427,7 +459,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (saveBtn) {
             saveBtn.addEventListener('click', async () => {
                 saveBtn.disabled = true;
-                saveBtn.innerHTML = <?php echo json_encode(Text::_('COM_J2COMMERCE_SAVING')); ?>;
+                saveBtn.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_SAVING')); ?>;
 
                 const formData = new FormData();
                 formData.append('option', 'com_j2commerce');
@@ -469,7 +501,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 saveBtn.disabled = false;
-                saveBtn.innerHTML = <?php echo json_encode(Text::_('COM_J2COMMERCE_SAVE_CHANGES')); ?>;
+                saveBtn.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_SAVE_CHANGES')); ?>;
             });
         }
 
@@ -481,7 +513,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const povId = btn.dataset.povId;
                 btn.disabled = true;
-                btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">' + <?php echo json_encode(Text::_('COM_J2COMMERCE_LOADING')); ?> + '</span></span>';
+                setSpinnerOnly(btn, <?php echo json_encode(Text::_('COM_J2COMMERCE_LOADING')); ?>);
 
                 const formData = new FormData();
                 formData.append('option', 'com_j2commerce');
@@ -518,13 +550,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else {
                         showModalMessage(data.message, 'danger');
                         btn.disabled = false;
-                        btn.innerHTML = '<span class="icon-trash"></span>';
+                        setIconLabel(btn, 'icon-trash');
                     }
                 } catch (error) {
                     console.error('Error deleting option value:', error);
                     showModalMessage(<?php echo json_encode(Text::_('COM_J2COMMERCE_ERROR_OCCURRED')); ?>, 'danger');
                     btn.disabled = false;
-                    btn.innerHTML = '<span class="icon-trash"></span>';
+                    setIconLabel(btn, 'icon-trash');
                 }
             });
         });

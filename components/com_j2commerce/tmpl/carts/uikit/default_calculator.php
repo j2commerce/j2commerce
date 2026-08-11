@@ -113,7 +113,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Reset zone dropdown when no country selected
             if (!countryId || countryId <= 0) {
-                zoneSelect.innerHTML = '';
+                zoneSelect.replaceChildren();
                 const defaultOpt = document.createElement('option');
                 defaultOpt.value = '';
                 defaultOpt.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_SELECT_OPTION')); ?>;
@@ -141,7 +141,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(data => {
                 // Build zone options using DOM API (textContent auto-escapes HTML)
-                zoneSelect.innerHTML = '';
+                zoneSelect.replaceChildren();
 
                 const defaultOpt = document.createElement('option');
                 defaultOpt.value = '';
@@ -199,7 +199,11 @@ document.addEventListener('DOMContentLoaded', function() {
             buttonQuote.disabled = true;
             buttonQuote.classList.add('disabled');
             const originalText = buttonQuote.innerHTML;
-            buttonQuote.innerHTML = '<span uk-spinner="ratio: 0.6" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_LOADING'); ?>';
+            const quoteSpinner = document.createElement('span');
+            quoteSpinner.setAttribute('uk-spinner', 'ratio: 0.6');
+            quoteSpinner.setAttribute('aria-hidden', 'true');
+            buttonQuote.replaceChildren(quoteSpinner);
+            buttonQuote.append(' ' + <?php echo json_encode(Text::_('COM_J2COMMERCE_LOADING')); ?>);
 
             try {
                 // Use POST for the estimate task with AJAX flag

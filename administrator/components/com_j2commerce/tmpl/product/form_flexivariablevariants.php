@@ -99,6 +99,27 @@ $ajaxBase   = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
 (function() {
     'use strict';
 
+    // Decorative spinner with the label visible beside it.
+    function setSpinnerLabel(el, label, spinnerClass = 'spinner-border spinner-border-sm') {
+        const spinner = document.createElement('span');
+        spinner.className = spinnerClass;
+        spinner.setAttribute('aria-hidden', 'true');
+        el.replaceChildren(spinner);
+        el.append(' ' + label);
+    }
+    // Spinner carrying the label for assistive tech only.
+    function setSpinnerOnly(el, label) {
+        const spinner = document.createElement('span');
+        spinner.className = 'spinner-border spinner-border-sm';
+        spinner.setAttribute('role', 'status');
+
+        const srLabel = document.createElement('span');
+        srLabel.className = 'visually-hidden';
+        srLabel.textContent = label;
+        spinner.append(srLabel);
+        el.replaceChildren(spinner);
+    }
+
     var J2COMMERCE_AJAX_BASE = <?php echo $ajaxBase; ?>;
 
     /**
@@ -124,7 +145,7 @@ $ajaxBase   = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
             if (loading) {
                 button.setAttribute('data-original-text', button.innerHTML);
                 button.disabled = true;
-                button.innerHTML = '<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_LOADING'); ?>';
+                setSpinnerLabel(button, <?php echo json_encode(Text::_('COM_J2COMMERCE_LOADING')); ?>, 'spinner-border spinner-border-sm me-1');
             } else {
                 button.disabled = false;
                 var originalText = button.getAttribute('data-original-text');
@@ -200,7 +221,7 @@ $ajaxBase   = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
             var paginationList = document.querySelector('.j2commerce-variant-pagination .pagination-list');
             if (!paginationList) return;
 
-            paginationList.innerHTML = '';
+            paginationList.replaceChildren();
             var numPages = Math.ceil(this.config.totalVariants / this.config.limit);
             if (numPages <= 1) return;
 
@@ -403,7 +424,10 @@ $ajaxBase   = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
                 if (data.success) {
                     var accordion = document.getElementById('accordion');
                     if (accordion) {
-                        accordion.innerHTML = '<div class="alert alert-info"><?php echo Text::_('COM_J2COMMERCE_NO_VARIANTS'); ?></div>';
+                        const emptyNotice = document.createElement('div');
+                        emptyNotice.className = 'alert alert-info';
+                        emptyNotice.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_NO_VARIANTS')); ?>;
+                        accordion.replaceChildren(emptyNotice);
                     }
                     self.cleanupAllVariantSyncInputs();
                     self.updateVariantCount(0);
@@ -615,7 +639,7 @@ $ajaxBase   = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
 
         var originalContent = button.innerHTML;
         button.classList.add('disabled');
-        button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_LOADING'); ?></span></span>';
+        setSpinnerOnly(button, <?php echo json_encode(Text::_('COM_J2COMMERCE_LOADING')); ?>);
 
         var controllerTask = task === 'setDefault' ? 'products.setDefaultVariantAjax' : 'products.unsetDefaultVariantAjax';
         var starIcon = 'far fa-regular fa-star';
@@ -653,7 +677,10 @@ $ajaxBase   = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
                     });
                     button.setAttribute('title', unsetDefaultTitle);
                     button.setAttribute('onclick', 'return listVariableItemTask(' + variantId + ', \'unsetDefault\', ' + productId + ')');
-                    button.innerHTML = '<span class="icon-featured" aria-hidden="true"></span>';
+                    const featuredIcon = document.createElement('span');
+                    featuredIcon.className = 'icon-featured';
+                    featuredIcon.setAttribute('aria-hidden', 'true');
+                    button.replaceChildren(featuredIcon);
                     button.classList.remove('disabled');
                     var hi = document.getElementById('isdefault_' + variantId);
                     if (hi) hi.value = '1';

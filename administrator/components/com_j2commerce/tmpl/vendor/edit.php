@@ -113,11 +113,11 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     async function loadZones(countryId, selectedZoneId = 0) {
         // Show loading state
-        zoneSelect.innerHTML = '<option value=""><?php echo Text::_('COM_J2COMMERCE_LOADING', true); ?></option>';
+        zoneSelect.replaceChildren(new Option(<?php echo json_encode(Text::_('COM_J2COMMERCE_LOADING')); ?>, ''));
         zoneSelect.disabled = true;
 
         if (!countryId || countryId === '0' || countryId === '') {
-            zoneSelect.innerHTML = '<option value=""><?php echo Text::_('COM_J2COMMERCE_SELECT_ZONE', true); ?></option>';
+            zoneSelect.replaceChildren(new Option(<?php echo json_encode(Text::_('COM_J2COMMERCE_SELECT_ZONE')); ?>, ''));
             zoneSelect.disabled = false;
             return;
         }
@@ -135,7 +135,7 @@ document.addEventListener('DOMContentLoaded', function() {
             zoneSelect.disabled = false;
         } catch (error) {
             console.error('Error loading zones:', error);
-            zoneSelect.innerHTML = '<option value=""><?php echo Text::_('COM_J2COMMERCE_SELECT_ZONE', true); ?></option>';
+            zoneSelect.replaceChildren(new Option(<?php echo json_encode(Text::_('COM_J2COMMERCE_SELECT_ZONE')); ?>, ''));
             zoneSelect.disabled = false;
         }
     }

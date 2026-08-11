@@ -134,7 +134,11 @@ document.addEventListener("DOMContentLoaded", function() {
             const token = Joomla.getOptions("csrf.token") || document.querySelector("input[type=hidden][name][value=\"1\"]")?.name || "";
 
             previewBtn.disabled = true;
-            previewBtn.innerHTML = "<span class=\"spinner-border spinner-border-sm\" aria-hidden=\"true\"></span> " + Joomla.Text._("COM_J2COMMERCE_EMAILTEMPLATE_LOADING");
+            const previewSpinner = document.createElement("span");
+            previewSpinner.className = "spinner-border spinner-border-sm";
+            previewSpinner.setAttribute("aria-hidden", "true");
+            previewBtn.replaceChildren(previewSpinner);
+            previewBtn.append(" " + Joomla.Text._("COM_J2COMMERCE_EMAILTEMPLATE_LOADING"));
 
             try {
                 const formData = new FormData();
@@ -163,7 +167,10 @@ document.addEventListener("DOMContentLoaded", function() {
             }
 
             previewBtn.disabled = false;
-            previewBtn.innerHTML = "<span class=\"icon-loop\"></span> ' . Text::_('COM_J2COMMERCE_EMAILTEMPLATE_REFRESH_PREVIEW', true) . '";
+            const previewIcon = document.createElement("span");
+            previewIcon.className = "icon-loop";
+            previewBtn.replaceChildren(previewIcon);
+            previewBtn.append(" ' . Text::_('COM_J2COMMERCE_EMAILTEMPLATE_REFRESH_PREVIEW', true) . '");
         });
     }
 
@@ -183,7 +190,11 @@ document.addEventListener("DOMContentLoaded", function() {
             const token = Joomla.getOptions("csrf.token") || document.querySelector("input[type=hidden][name][value=\"1\"]")?.name || "";
 
             confirmSendBtn.disabled = true;
-            confirmSendBtn.innerHTML = "<span class=\"spinner-border spinner-border-sm\" aria-hidden=\"true\"></span> " + Joomla.Text._("COM_J2COMMERCE_EMAILTEMPLATE_SENDING");
+            const sendSpinner = document.createElement("span");
+            sendSpinner.className = "spinner-border spinner-border-sm";
+            sendSpinner.setAttribute("aria-hidden", "true");
+            confirmSendBtn.replaceChildren(sendSpinner);
+            confirmSendBtn.append(" " + Joomla.Text._("COM_J2COMMERCE_EMAILTEMPLATE_SENDING"));
 
             try {
                 const formData = new FormData();
@@ -211,7 +222,10 @@ document.addEventListener("DOMContentLoaded", function() {
             }
 
             confirmSendBtn.disabled = false;
-            confirmSendBtn.innerHTML = "<span class=\"icon-envelope\"></span> ' . Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SEND_TEST', true) . '";
+            const sendIcon = document.createElement("span");
+            sendIcon.className = "icon-envelope";
+            confirmSendBtn.replaceChildren(sendIcon);
+            confirmSendBtn.append(" ' . Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SEND_TEST', true) . '");
         });
     }
 

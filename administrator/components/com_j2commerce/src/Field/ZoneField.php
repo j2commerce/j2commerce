@@ -165,8 +165,10 @@ class ZoneField extends ListField
         $zoneFieldId    = $this->id;
 
         // Get language strings (JS-safe via htmlspecialchars)
-        $loadingText    = htmlspecialchars(Text::_('COM_J2COMMERCE_LOADING'), ENT_QUOTES, 'UTF-8');
-        $selectZoneText = htmlspecialchars(Text::sprintf('COM_J2COMMERCE_SELECT_PLACEHOLDER', Text::_('COM_J2COMMERCE_ZONE')), ENT_QUOTES, 'UTF-8');
+        // JSON-encoded: these are read as JavaScript string literals below and set
+        // as option text, so HTML escaping would surface entities to the shopper.
+        $loadingText    = json_encode(Text::_('COM_J2COMMERCE_LOADING'));
+        $selectZoneText = json_encode(Text::sprintf('COM_J2COMMERCE_SELECT_PLACEHOLDER', Text::_('COM_J2COMMERCE_ZONE')));
 
         $script = <<<JS
 <script>
@@ -189,11 +191,11 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     async function loadZones(countryId, selectedZoneId = 0) {
         // Show loading state
-        zoneSelect.innerHTML = '<option value="">{$loadingText}</option>';
+        zoneSelect.replaceChildren(new Option({$loadingText}, ''));
         zoneSelect.disabled = true;
 
         if (!countryId || countryId === '0' || countryId === '') {
-            zoneSelect.innerHTML = '<option value="">{$selectZoneText}</option>';
+            zoneSelect.replaceChildren(new Option({$selectZoneText}, ''));
             zoneSelect.disabled = false;
             return;
         }
@@ -211,7 +213,7 @@ document.addEventListener('DOMContentLoaded', function() {
             zoneSelect.disabled = false;
         } catch (error) {
             console.error('Error loading zones:', error);
-            zoneSelect.innerHTML = '<option value="">{$selectZoneText}</option>';
+            zoneSelect.replaceChildren(new Option({$selectZoneText}, ''));
             zoneSelect.disabled = false;
         }
     }

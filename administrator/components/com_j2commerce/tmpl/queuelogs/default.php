@@ -230,7 +230,10 @@ document.addEventListener('DOMContentLoaded', () => {
         titleEl.textContent = title;
 
         if (!filtered.length) {
-            bodyEl.innerHTML = '<p class="text-body-secondary"><?php echo Text::_('JGLOBAL_NO_MATCHING_RESULTS'); ?></p>';
+            const emptyMessage = document.createElement('p');
+            emptyMessage.className = 'text-body-secondary';
+            emptyMessage.textContent = <?php echo json_encode(Text::_('JGLOBAL_NO_MATCHING_RESULTS')); ?>;
+            bodyEl.replaceChildren(emptyMessage);
         } else {
             const showError = filter === 'failed' || filter === 'skipped';
             const esc = (v) => String(v ?? '').replace(/</g, '&lt;');

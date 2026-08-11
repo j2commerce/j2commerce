@@ -128,6 +128,15 @@ $key = 0;
 document.addEventListener('DOMContentLoaded', function() {
     'use strict';
 
+    // Decorative spinner with the label visible beside it.
+    function setSpinnerLabel(el, label, spinnerClass = 'spinner-border spinner-border-sm') {
+        const spinner = document.createElement('span');
+        spinner.className = spinnerClass;
+        spinner.setAttribute('aria-hidden', 'true');
+        el.replaceChildren(spinner);
+        el.append(' ' + label);
+    }
+
     const formPrefix = '<?php echo $formPrefix; ?>';
     let optionKey = <?php echo $key; ?>;
     const createVariantsBtn = document.getElementById('j2commerce-create-variants-btn');
@@ -259,7 +268,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Show loading state
             const origText = createVariantsBtn.innerHTML;
             createVariantsBtn.disabled = true;
-            createVariantsBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_LOADING'); ?>';
+            setSpinnerLabel(createVariantsBtn, <?php echo json_encode(Text::_('COM_J2COMMERCE_LOADING')); ?>, 'spinner-border spinner-border-sm me-1');
 
             try {
                 const formData = new FormData();

@@ -188,7 +188,7 @@ class ProductMultiselectField extends ModalMultiselectField
                     }
 
                     // Clear previous content
-                    tableContainer.innerHTML = '';
+                    tableContainer.replaceChildren();
 
                     if (selectedItems && selectedItems.length > 0) {
                         // Create table structure

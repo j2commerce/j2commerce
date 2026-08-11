@@ -250,7 +250,7 @@ $ajaxBase = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
             productFilterInput.addEventListener('input', function () {
                 var term = this.value;
                 if (term.length < 2) {
-                    autocompleteList.innerHTML = '';
+                    autocompleteList.replaceChildren();
                     updateAutocompleteListState();
                     return;
                 }
@@ -272,7 +272,7 @@ $ajaxBase = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
                     .then(response => response.json())
                     .then(data => {
                         productFilterInput.classList.remove('optionsLoading');
-                        autocompleteList.innerHTML = '';
+                        autocompleteList.replaceChildren();
 
                         data.forEach(item => {
                             var option = document.createElement('div');
@@ -298,7 +298,7 @@ $ajaxBase = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
                         `;
                                 document.querySelector('.j2commerce_a_filter').insertAdjacentHTML('beforebegin', newRow);
                                 productFilterInput.value = '';
-                                autocompleteList.innerHTML = '';
+                                autocompleteList.replaceChildren();
                                 updateAutocompleteListState();
                             });
                             autocompleteList.appendChild(option);
@@ -314,7 +314,7 @@ $ajaxBase = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
 
             document.addEventListener('click', function (e) {
                 if (!productFilterInput.contains(e.target) && !autocompleteList.contains(e.target)) {
-                    autocompleteList.innerHTML = '';
+                    autocompleteList.replaceChildren();
                     updateAutocompleteListState();
                 }
             });
