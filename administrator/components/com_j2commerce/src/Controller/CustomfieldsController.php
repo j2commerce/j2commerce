@@ -105,29 +105,26 @@ class CustomfieldsController extends AdminController
 
         $db = Factory::getContainer()->get(DatabaseInterface::class);
 
-        // Core display areas — map to direct DB columns
-        $coreAreas   = ['billing', 'shipping', 'payment', 'register', 'guest', 'guest_shipping'];
-        $coreUpdates = [];
+        // Read through the same form the dialog renders, so the field list and its filters have
+        // one definition. An empty value means "leave this area alone", which is why the controls
+        // filter as strings: an integer filter would read it as 0 and switch the area off.
+        $form     = CustomFieldHelper::getBatchForm();
+        $commands = (array) ($form->filter([
+            'batch' => (array) $this->input->post->get('batch', [], 'array'),
+        ])['batch'] ?? []);
 
-        foreach ($coreAreas as $area) {
-            $val = $this->input->post->getString('batch_display_' . $area, '');
-            if ($val !== '') {
-                $coreUpdates['field_display_' . $area] = (int) $val;
-            }
-        }
-
-        // Plugin display areas — stored in field_display JSON
-        $pluginAreas   = CustomFieldHelper::getRegisteredAreas();
+        $coreUpdates   = [];
         $pluginUpdates = [];
 
-        foreach ($pluginAreas as $area) {
-            $key = $area['key'] ?? '';
-            if ($key === '') {
+        foreach ($commands as $name => $value) {
+            if ((string) $value === '') {
                 continue;
             }
-            $val = $this->input->post->getString('batch_plugin_' . $key, '');
-            if ($val !== '') {
-                $pluginUpdates[$key] = (int) $val;
+
+            if (str_starts_with($name, 'display_')) {
+                $coreUpdates['field_display_' . substr($name, 8)] = (int) $value;
+            } elseif (str_starts_with($name, 'plugin_')) {
+                $pluginUpdates[substr($name, 7)] = (int) $value;
             }
         }
 

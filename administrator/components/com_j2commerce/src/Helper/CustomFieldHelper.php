@@ -15,6 +15,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
+use Joomla\CMS\Form\Form;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Session\Session;
@@ -134,6 +135,62 @@ class CustomFieldHelper
         $areas = [];
         J2CommerceHelper::plugin()->event('GetCustomFieldDisplayAreas', [&$areas]);
         return $areas;
+    }
+
+    /**
+     * Batch controls for the Custom Fields list, built per request rather than read from a file:
+     * the plugin areas come from GetCustomFieldDisplayAreas, so the field list is only known once
+     * the plugins have answered. The view renders this and the controller filters through it, so
+     * both see one definition.
+     *
+     * Every control filters as a string, not an integer: an empty value means "leave this area
+     * alone", and an integer filter would turn it into 0 and switch the area off instead.
+     */
+    public static function getBatchForm(): Form
+    {
+        $xml    = new \SimpleXMLElement('<form/>');
+        $fields = $xml->addChild('fields');
+        $fields->addAttribute('name', 'batch');
+
+        foreach (self::CORE_AREAS as $area) {
+            self::addBatchDisplayField(
+                $fields,
+                'display_' . $area,
+                'COM_J2COMMERCE_FIELD_DISPLAY_' . strtoupper($area)
+            );
+        }
+
+        foreach (self::getRegisteredAreas() as $plugin) {
+            $key = (string) ($plugin['key'] ?? '');
+
+            // The key is spliced into a field name that becomes a form control and a JSON object
+            // key, so it is held to an allow-list rather than escaped after the fact. A plugin
+            // offering anything else contributes no control.
+            if (!preg_match('/^[a-z0-9_]+$/', $key)) {
+                continue;
+            }
+
+            self::addBatchDisplayField($fields, 'plugin_' . $key, (string) ($plugin['label'] ?? $key));
+        }
+
+        $form = new Form('com_j2commerce.batch.customfields', ['control' => '']);
+        $form->load($xml->asXML());
+
+        return $form;
+    }
+
+    private static function addBatchDisplayField(\SimpleXMLElement $fields, string $name, string $label): void
+    {
+        $field = $fields->addChild('field');
+        $field->addAttribute('name', $name);
+        $field->addAttribute('type', 'list');
+        $field->addAttribute('label', $label);
+        $field->addAttribute('filter', 'string');
+
+        foreach (['' => 'COM_J2COMMERCE_BATCH_NOCHANGE', '1' => 'JYES', '0' => 'JNO'] as $value => $text) {
+            $option = $field->addChild('option', $text);
+            $option->addAttribute('value', (string) $value);
+        }
     }
 
     /** Core field types handled by the built-in switch statement. */

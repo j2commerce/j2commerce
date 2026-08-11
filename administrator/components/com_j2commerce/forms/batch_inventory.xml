@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+    <!--
+        Batch controls for the Inventory list. `<fields name="batch">` matches the convention
+        forms/batch_products.xml established; the controls previously posted apply_quantity /
+        batch_quantity and their two siblings as bare names.
+
+        Each setting is a pair: the apply_* checkbox decides whether the value below it is written
+        at all, so leaving a value at its default is not the same as leaving the setting alone.
+        FormHelper::parseShowOnConditions() resolves showon against the group, so these read as
+        batch[apply_quantity] and match the posted control names.
+    -->
+    <fields name="batch">
+        <field
+            name="apply_quantity"
+            type="radio"
+            layout="joomla.form.field.radio.switcher"
+            label="COM_J2COMMERCE_INVENTORY_BATCH_APPLY_QUANTITY"
+            default="0"
+            filter="integer"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+        <field
+            name="quantity"
+            type="number"
+            label="COM_J2COMMERCE_INVENTORY_BATCH_APPLY_QUANTITY"
+            hiddenLabel="true"
+            default="0"
+            min="0"
+            step="1"
+            filter="integer"
+            showon="apply_quantity:1"
+        />
+
+        <field
+            name="apply_manage_stock"
+            type="radio"
+            layout="joomla.form.field.radio.switcher"
+            label="COM_J2COMMERCE_INVENTORY_BATCH_APPLY_MANAGE_STOCK"
+            default="0"
+            filter="integer"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+        <field
+            name="manage_stock"
+            type="radio"
+            layout="joomla.form.field.radio.switcher"
+            label="COM_J2COMMERCE_INVENTORY_MANAGE_STOCK"
+            hiddenLabel="true"
+            default="0"
+            filter="integer"
+            showon="apply_manage_stock:1"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+        <field
+            name="apply_availability"
+            type="radio"
+            layout="joomla.form.field.radio.switcher"
+            label="COM_J2COMMERCE_INVENTORY_BATCH_APPLY_STOCK_STATUS"
+            default="0"
+            filter="integer"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+        <field
+            name="availability"
+            type="list"
+            label="COM_J2COMMERCE_INVENTORY_BATCH_APPLY_STOCK_STATUS"
+            hiddenLabel="true"
+            default="1"
+            filter="integer"
+            showon="apply_availability:1"
+        >
+            <option value="1">COM_J2COMMERCE_STOCK_IN_STOCK</option>
+            <option value="0">COM_J2COMMERCE_STOCK_OUT_OF_STOCK</option>
+        </field>
+    </fields>
+</form>

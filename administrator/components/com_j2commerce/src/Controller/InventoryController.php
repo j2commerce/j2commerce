@@ -13,6 +13,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
+use Joomla\CMS\Form\Form;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\AdminController;
 use Joomla\CMS\Response\JsonResponse;
@@ -138,18 +139,18 @@ class InventoryController extends AdminController
                 throw new \Exception(Text::_('COM_J2COMMERCE_INVENTORY_BATCH_NO_SELECTION'));
             }
 
+            $commands = $this->filterBatchCommands(
+                (array) $input->post->get('batch', [], 'array')
+            );
+
             $fields = [];
 
-            if ($input->post->getInt('apply_quantity', 0) === 1) {
-                $fields['quantity'] = $input->post->getInt('batch_quantity', 0);
-            }
-
-            if ($input->post->getInt('apply_manage_stock', 0) === 1) {
-                $fields['manage_stock'] = $input->post->getInt('batch_manage_stock', 0);
-            }
-
-            if ($input->post->getInt('apply_availability', 0) === 1) {
-                $fields['availability'] = $input->post->getInt('batch_availability', 1);
+            // The apply_* flag decides whether the value below it is written at all: leaving a
+            // value at its default is not the same as leaving the setting alone.
+            foreach (['quantity', 'manage_stock', 'availability'] as $key) {
+                if ((int) ($commands['apply_' . $key] ?? 0) === 1) {
+                    $fields[$key] = (int) ($commands[$key] ?? 0);
+                }
             }
 
             if (empty($fields)) {
@@ -166,6 +167,18 @@ class InventoryController extends AdminController
         }
 
         $app->close();
+    }
+
+    /** Applies each control's filter attribute; it does not authorise the values. */
+    private function filterBatchCommands(array $commands): array
+    {
+        $form = Form::getInstance(
+            'com_j2commerce.batch.inventory',
+            JPATH_COMPONENT_ADMINISTRATOR . '/forms/batch_inventory.xml',
+            ['control' => '']
+        );
+
+        return (array) ($form->filter(['batch' => $commands])['batch'] ?? []);
     }
 
     /**

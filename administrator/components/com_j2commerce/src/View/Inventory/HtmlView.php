@@ -77,6 +77,11 @@ class HtmlView extends BaseHtmlView
      */
     private $isEmptyState = false;
 
+    /** Batch dialog controls; see forms/batch_inventory.xml. */
+    public ?Form $batchForm = null;
+
+    protected bool $canBatch = false;
+
     /**
      * Display the view.
      *
@@ -114,6 +119,15 @@ class HtmlView extends BaseHtmlView
         // We don't need toolbar in the modal window.
         if ($this->getLayout() !== 'modal') {
             $this->addToolbar();
+
+            // addToolbar() resolves canBatch, so the form is only built once the dialog is known to render.
+            if ($this->canBatch) {
+                $this->batchForm = Form::getInstance(
+                    'com_j2commerce.batch.inventory',
+                    JPATH_COMPONENT_ADMINISTRATOR . '/forms/batch_inventory.xml',
+                    ['control' => '']
+                );
+            }
 
             // We do not need to filter by language when multilingual is disabled
             if (!Factory::getApplication()->isClient('site')) {
@@ -172,6 +186,8 @@ class HtmlView extends BaseHtmlView
         ToolbarHelper::title(Text::_('COM_J2COMMERCE_INVENTORY_MANAGER_TITLE'), 'fa-solid fa-barcode');
 
         if (!$this->isEmptyState && $canDo->get('core.edit')) {
+            $this->canBatch = true;
+
             $toolbar->popupButton('batch', 'COM_J2COMMERCE_INVENTORY_BATCH_UPDATE')
                 ->popupType('inline')
                 ->textHeader(Text::_('COM_J2COMMERCE_INVENTORY_BATCH_TITLE'))

@@ -5,7 +5,7 @@
  *
  * Batch modal for bulk-updating custom field display settings.
  * Core areas (billing, shipping, etc.) update DB columns directly.
- * Plugin areas (via GetCustomFieldDisplayAreas event) update field_display JSON.
+ * Plugin areas (via GetCustomFieldDisplayAreas) update field_display JSON.
  *
  * @copyright   (C)2024-2026 J2Commerce, LLC <https://www.j2commerce.com>
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
@@ -15,23 +15,20 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
-use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
 use Joomla\CMS\Language\Text;
 
-// Core display areas — these map to direct DB columns
-$coreAreas = [
-    'billing'         => 'COM_J2COMMERCE_FIELD_DISPLAY_BILLING',
-    'shipping'        => 'COM_J2COMMERCE_FIELD_DISPLAY_SHIPPING',
-    'payment'         => 'COM_J2COMMERCE_FIELD_DISPLAY_PAYMENT',
-    'register'        => 'COM_J2COMMERCE_FIELD_DISPLAY_REGISTER',
-    'guest'           => 'COM_J2COMMERCE_FIELD_DISPLAY_GUEST',
-    'guest_shipping'  => 'COM_J2COMMERCE_FIELD_DISPLAY_GUEST_SHIPPING',
-];
+/** @var \J2Commerce\Component\J2commerce\Administrator\View\Customfields\HtmlView $this */
 
-// Plugin-registered display areas (e.g., vendor_application from vendormanagement)
-$pluginAreas = CustomFieldHelper::getRegisteredAreas();
+// The form is built per request, so the two groups are told apart by field name rather than by
+// two lists this template would have to keep in step with the helper.
+$coreFields   = [];
+$pluginFields = [];
 
-$noChange = Text::_('COM_J2COMMERCE_BATCH_NOCHANGE');
+foreach ($this->batchForm->getGroup('batch') as $field) {
+    str_starts_with($field->fieldname, 'plugin_')
+        ? $pluginFields[] = $field->fieldname
+        : $coreFields[]   = $field->fieldname;
+}
 ?>
 
 <div class="modal fade" id="collapseModal" tabindex="-1" aria-labelledby="collapseModalLabel" aria-hidden="true">
@@ -42,50 +39,24 @@ $noChange = Text::_('COM_J2COMMERCE_BATCH_NOCHANGE');
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?php echo Text::_('JCLOSE'); ?>"></button>
             </div>
             <div class="modal-body px-4 pt-4 pb-2">
-                <p class="text-muted small mb-3"><?php echo Text::_('COM_J2COMMERCE_BATCH_DISPLAY_DESC'); ?></p>
+                <p class="text-body-secondary small mb-3"><?php echo Text::_('COM_J2COMMERCE_BATCH_DISPLAY_DESC'); ?></p>
 
                 <h3 class="fw-bold mb-2 fs-6"><?php echo Text::_('COM_J2COMMERCE_BATCH_DISPLAY_CORE_HEADING'); ?></h3>
                 <div class="row">
-                    <?php foreach ($coreAreas as $areaKey => $labelKey) : ?>
-                        <?php $safeKey = htmlspecialchars($areaKey, ENT_QUOTES, 'UTF-8'); ?>
+                    <?php foreach ($coreFields as $name) : ?>
                         <div class="form-group col-md-6 col-lg-4 mb-3">
-                            <label for="batch_display_<?php echo $safeKey; ?>">
-                                <?php echo Text::_($labelKey); ?>
-                            </label>
-                            <select name="batch_display_<?php echo $safeKey; ?>"
-                                    id="batch_display_<?php echo $safeKey; ?>"
-                                    class="form-select form-select-sm">
-                                <option value=""><?php echo $noChange; ?></option>
-                                <option value="1"><?php echo Text::_('JYES'); ?></option>
-                                <option value="0"><?php echo Text::_('JNO'); ?></option>
-                            </select>
+                            <?php echo $this->batchForm->renderField($name, 'batch'); ?>
                         </div>
                     <?php endforeach; ?>
                 </div>
 
-                <?php if (!empty($pluginAreas)) : ?>
+                <?php if (!empty($pluginFields)) : ?>
                     <hr class="my-3">
                     <h3 class="fw-bold mb-2 fs-6"><?php echo Text::_('COM_J2COMMERCE_BATCH_DISPLAY_PLUGIN_HEADING'); ?></h3>
                     <div class="row">
-                        <?php foreach ($pluginAreas as $area) : ?>
-                            <?php
-                            $areaKey  = $area['key'] ?? '';
-                            $areaName = $area['label'] ?? $areaKey;
-                            if ($areaKey === '') {
-                                continue;
-                            }
-                            ?>
+                        <?php foreach ($pluginFields as $name) : ?>
                             <div class="form-group col-md-6 col-lg-4 mb-3">
-                                <label for="batch_plugin_<?php echo htmlspecialchars($areaKey, ENT_QUOTES, 'UTF-8'); ?>">
-                                    <?php echo Text::_($areaName); ?>
-                                </label>
-                                <select name="batch_plugin_<?php echo htmlspecialchars($areaKey, ENT_QUOTES, 'UTF-8'); ?>"
-                                        id="batch_plugin_<?php echo htmlspecialchars($areaKey, ENT_QUOTES, 'UTF-8'); ?>"
-                                        class="form-select form-select-sm">
-                                    <option value=""><?php echo $noChange; ?></option>
-                                    <option value="1"><?php echo Text::_('JYES'); ?></option>
-                                    <option value="0"><?php echo Text::_('JNO'); ?></option>
-                                </select>
+                                <?php echo $this->batchForm->renderField($name, 'batch'); ?>
                             </div>
                         <?php endforeach; ?>
                     </div>

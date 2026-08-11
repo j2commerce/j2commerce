@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\View\Customfields;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\MenuHelper;
 use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
@@ -92,6 +93,11 @@ class HtmlView extends BaseHtmlView
      */
     private $isEmptyState = false;
 
+    /** Batch dialog controls; built per request by CustomFieldHelper::getBatchForm(). */
+    public ?Form $batchForm = null;
+
+    protected bool $canBatch = false;
+
     /**
      * Display the view.
      *
@@ -130,6 +136,11 @@ class HtmlView extends BaseHtmlView
 
         if (!$this->isModal) {
             $this->addToolbar();
+
+            // addToolbar() resolves canBatch, so the form is only built once the dialog is known to render.
+            if ($this->canBatch) {
+                $this->batchForm = CustomFieldHelper::getBatchForm();
+            }
         }
 
         parent::display($tpl);
@@ -186,6 +197,8 @@ class HtmlView extends BaseHtmlView
                 }
 
                 if ($canDo->get('core.edit')) {
+                    $this->canBatch = true;
+
                     $childBar->standardButton('batch')
                         ->text('JTOOLBAR_BATCH')
                         ->icon('icon-square')

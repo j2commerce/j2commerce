@@ -7,6 +7,8 @@
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
+declare(strict_types=1);
+
 defined('_JEXEC') or die;
 
 use Joomla\CMS\Language\Text;
@@ -20,45 +22,19 @@ use Joomla\CMS\Language\Text;
         <?php echo Text::_('COM_J2COMMERCE_INVENTORY_BATCH_CASCADE_NOTE'); ?>
     </p>
 
-    <!-- Quantity -->
     <div class="mb-4">
-        <div class="form-check mb-2">
-            <input type="checkbox" class="form-check-input" id="batch_apply_quantity" name="apply_quantity" value="1">
-            <label class="form-check-label fw-bold" for="batch_apply_quantity">
-                <?php echo Text::_('COM_J2COMMERCE_INVENTORY_BATCH_APPLY_QUANTITY'); ?>
-            </label>
-        </div>
-        <input type="number" class="form-control" id="batch_quantity" name="batch_quantity" value="0" min="0" step="1">
+        <?php echo $this->batchForm->renderField('apply_quantity', 'batch'); ?>
+        <?php echo $this->batchForm->renderField('quantity', 'batch'); ?>
     </div>
 
-    <!-- Manage Stock -->
     <div class="mb-4">
-        <div class="form-check mb-2">
-            <input type="checkbox" class="form-check-input" id="batch_apply_manage_stock" name="apply_manage_stock" value="1">
-            <label class="form-check-label fw-bold" for="batch_apply_manage_stock">
-                <?php echo Text::_('COM_J2COMMERCE_INVENTORY_BATCH_APPLY_MANAGE_STOCK'); ?>
-            </label>
-        </div>
-        <div class="btn-group" role="group" aria-label="<?php echo $this->escape(Text::_('COM_J2COMMERCE_INVENTORY_MANAGE_STOCK')); ?>">
-            <input type="radio" class="btn-check" name="batch_manage_stock" id="batch_manage_stock_no" value="0" checked>
-            <label class="btn btn-outline-primary" for="batch_manage_stock_no"><?php echo Text::_('JNO'); ?></label>
-            <input type="radio" class="btn-check" name="batch_manage_stock" id="batch_manage_stock_yes" value="1">
-            <label class="btn btn-outline-primary" for="batch_manage_stock_yes"><?php echo Text::_('JYES'); ?></label>
-        </div>
+        <?php echo $this->batchForm->renderField('apply_manage_stock', 'batch'); ?>
+        <?php echo $this->batchForm->renderField('manage_stock', 'batch'); ?>
     </div>
 
-    <!-- Stock Status -->
     <div class="mb-4">
-        <div class="form-check mb-2">
-            <input type="checkbox" class="form-check-input" id="batch_apply_availability" name="apply_availability" value="1">
-            <label class="form-check-label fw-bold" for="batch_apply_availability">
-                <?php echo Text::_('COM_J2COMMERCE_INVENTORY_BATCH_APPLY_STOCK_STATUS'); ?>
-            </label>
-        </div>
-        <select class="form-select" id="batch_availability" name="batch_availability">
-            <option value="1"><?php echo Text::_('COM_J2COMMERCE_STOCK_IN_STOCK'); ?></option>
-            <option value="0"><?php echo Text::_('COM_J2COMMERCE_STOCK_OUT_OF_STOCK'); ?></option>
-        </select>
+        <?php echo $this->batchForm->renderField('apply_availability', 'batch'); ?>
+        <?php echo $this->batchForm->renderField('availability', 'batch'); ?>
     </div>
 
     <button type="button" class="btn btn-primary" id="j2c-batch-apply">

@@ -183,11 +183,18 @@
                 return;
             }
 
-            const applyQty = document.getElementById('batch_apply_quantity');
-            const applyMs  = document.getElementById('batch_apply_manage_stock');
-            const applyAv  = document.getElementById('batch_apply_availability');
+            // The controls come from forms/batch_inventory.xml, so read whatever it renders
+            // rather than naming ids here: the form owns the field list, this only serialises it.
+            const controls = Array.from(document.querySelectorAll('[name^="batch["]'));
 
-            if (!(applyQty && applyQty.checked) && !(applyMs && applyMs.checked) && !(applyAv && applyAv.checked)) {
+            // The apply_* controls are switchers, so one of the pair is always checked - the
+            // value decides, not the checked state. Testing checked alone would report every
+            // setting as applied and never reach the "nothing selected" message below.
+            const applied = controls.filter(function (el) {
+                return /^batch\[apply_/.test(el.name) && el.checked && el.value === '1';
+            });
+
+            if (!applied.length) {
                 showSystemMessage(t('COM_J2COMMERCE_INVENTORY_BATCH_NO_FIELDS'), 'error');
                 return;
             }
@@ -195,21 +202,13 @@
             const body = new URLSearchParams();
             checked.forEach(function (cb) { body.append('cid[]', cb.value); });
 
-            if (applyQty && applyQty.checked) {
-                const q = document.getElementById('batch_quantity');
-                body.set('apply_quantity', '1');
-                body.set('batch_quantity', q ? q.value : '0');
-            }
-            if (applyMs && applyMs.checked) {
-                const r = document.querySelector('input[name="batch_manage_stock"]:checked');
-                body.set('apply_manage_stock', '1');
-                body.set('batch_manage_stock', r ? r.value : '0');
-            }
-            if (applyAv && applyAv.checked) {
-                const s = document.getElementById('batch_availability');
-                body.set('apply_availability', '1');
-                body.set('batch_availability', s ? s.value : '1');
-            }
+            controls.forEach(function (el) {
+                if ((el.type === 'checkbox' || el.type === 'radio') && !el.checked) {
+                    return;
+                }
+                body.set(el.name, el.value);
+            });
+
             if (csrfToken) {
                 body.set(csrfToken, '1');
             }
