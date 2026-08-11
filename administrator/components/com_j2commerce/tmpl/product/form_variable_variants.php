@@ -136,6 +136,14 @@ $ajaxBase    = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
         el.replaceChildren(spinner);
     }
 
+    // A single decorative icon, the shape the star toggles use.
+    function setDecorativeIcon(el, iconClass) {
+        const icon = document.createElement('span');
+        icon.className = iconClass;
+        icon.setAttribute('aria-hidden', 'true');
+        el.replaceChildren(icon);
+    }
+
     var J2COMMERCE_AJAX_BASE = <?php echo $ajaxBase; ?>;
     var csrfToken = '<?php echo $csrfToken; ?>';
     var starIconEmpty = 'far fa-regular fa-star';
@@ -155,7 +163,7 @@ $ajaxBase    = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
             return false;
         }
 
-        var originalContent = button.innerHTML;
+        var originalContent = [...button.childNodes];
         button.classList.add('disabled');
         setSpinnerOnly(button, <?php echo json_encode(Text::_('COM_J2COMMERCE_LOADING')); ?>);
 
@@ -188,7 +196,7 @@ $ajaxBase    = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
                         if (btnVariantId !== variantId.toString()) {
                             btn.setAttribute('title', txtSetDefault);
                             btn.setAttribute('onclick', 'return listVariableItemTask(' + btnVariantId + ', \'setDefault\', ' + productId + ')');
-                            btn.innerHTML = '<span class="' + starIconEmpty + '" aria-hidden="true"></span>';
+                            setDecorativeIcon(btn, starIconEmpty);
                             var hiddenInput = document.getElementById('isdefault_' + btnVariantId);
                             if (hiddenInput) { hiddenInput.value = '0'; }
                         }
@@ -196,7 +204,7 @@ $ajaxBase    = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
 
                     button.setAttribute('title', txtUnsetDefault);
                     button.setAttribute('onclick', 'return listVariableItemTask(' + variantId + ', \'unsetDefault\', ' + productId + ')');
-                    button.innerHTML = '<span class="' + starIconFilled + '" aria-hidden="true"></span>';
+                    setDecorativeIcon(button, starIconFilled);
                     button.classList.remove('disabled');
 
                     var hiddenInput = document.getElementById('isdefault_' + variantId);
@@ -204,7 +212,7 @@ $ajaxBase    = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
                 } else {
                     button.setAttribute('title', txtSetDefault);
                     button.setAttribute('onclick', 'return listVariableItemTask(' + variantId + ', \'setDefault\', ' + productId + ')');
-                    button.innerHTML = '<span class="' + starIconEmpty + '" aria-hidden="true"></span>';
+                    setDecorativeIcon(button, starIconEmpty);
                     button.classList.remove('disabled');
 
                     var hiddenInput2 = document.getElementById('isdefault_' + variantId);
@@ -220,7 +228,7 @@ $ajaxBase    = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
         } catch (error) {
             console.error('Error setting default variant:', error);
             button.classList.remove('disabled');
-            button.innerHTML = originalContent;
+            button.replaceChildren(...originalContent);
 
             if (typeof Joomla !== 'undefined' && Joomla.renderMessages) {
                 Joomla.renderMessages({ 'error': [error.message || txtError] });
@@ -273,7 +281,7 @@ $ajaxBase    = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
     });
 
     async function deleteVariantAjax(variantId, button, productId) {
-        var originalContent = button.innerHTML;
+        var originalContent = [...button.childNodes];
         button.disabled = true;
         setSpinnerOnly(button, <?php echo json_encode(Text::_('COM_J2COMMERCE_LOADING')); ?>);
 
@@ -314,7 +322,10 @@ $ajaxBase    = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
                         if (document.querySelectorAll('.variant-item').length === 0) {
                             var accordion = document.getElementById('accordion');
                             if (accordion) {
-                                accordion.innerHTML = '<div class="alert alert-info">' + txtNoResults + '</div>';
+                                var emptyNotice = document.createElement('div');
+                                emptyNotice.className = 'alert alert-info';
+                                emptyNotice.textContent = txtNoResults;
+                                accordion.replaceChildren(emptyNotice);
                             }
                         }
                     }, 300);
@@ -325,7 +336,7 @@ $ajaxBase    = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
         } catch (error) {
             console.error('Error deleting variant:', error);
             button.disabled = false;
-            button.innerHTML = originalContent;
+            button.replaceChildren(...originalContent);
 
             if (typeof Joomla !== 'undefined' && Joomla.renderMessages) {
                 Joomla.renderMessages({ 'error': [error.message || txtErrorDeleting] });
@@ -346,14 +357,14 @@ $ajaxBase    = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
         setButtonLoading: function (button, loading) {
             if (!button) return;
             if (loading) {
-                button.setAttribute('data-original-text', button.innerHTML);
+                button._j2cOriginalContent = [...button.childNodes];
                 button.disabled = true;
                 setSpinnerLabel(button, <?php echo json_encode(Text::_('COM_J2COMMERCE_LOADING')); ?>, 'spinner-border spinner-border-sm me-1');
             } else {
                 button.disabled = false;
-                var originalText = button.getAttribute('data-original-text');
-                if (originalText) {
-                    button.innerHTML = originalText;
+                if (button._j2cOriginalContent) {
+                    button.replaceChildren(...button._j2cOriginalContent);
+                    delete button._j2cOriginalContent;
                 }
             }
         },
@@ -409,8 +420,18 @@ $ajaxBase    = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
                 paginationWrapper = document.createElement('nav');
                 paginationWrapper.className = 'pagination__wrapper j2commerce-variant-pagination';
                 paginationWrapper.setAttribute('aria-label', '<?php echo Text::_('JLIB_HTML_PAGINATION'); ?>');
-                paginationWrapper.innerHTML = '<div class="text-end">' + this.config.totalVariants + ' <?php echo Text::_('COM_J2COMMERCE_PRODUCT_TAB_VARIANTS'); ?></div>'
-                    + '<div class="j2commerce-variant-nav text-center mt-0 mx-0"><ul class="pagination pagination-toolbar pagination-list text-center mt-0 mx-0"></ul></div>';
+                var countRow = document.createElement('div');
+                countRow.className = 'text-end';
+                countRow.textContent = this.config.totalVariants + ' ' + <?php echo json_encode(Text::_('COM_J2COMMERCE_PRODUCT_TAB_VARIANTS')); ?>;
+
+                var navRow = document.createElement('div');
+                navRow.className = 'j2commerce-variant-nav text-center mt-0 mx-0';
+
+                var navList = document.createElement('ul');
+                navList.className = 'pagination pagination-toolbar pagination-list text-center mt-0 mx-0';
+                navRow.append(navList);
+
+                paginationWrapper.replaceChildren(countRow, navRow);
                 accordion.parentNode.insertBefore(paginationWrapper, accordion.nextSibling);
             }
             this.rebuildPagination();

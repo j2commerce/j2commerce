@@ -192,40 +192,82 @@ document.addEventListener('DOMContentLoaded', () => {
     const csrfToken = '<?php echo $csrfToken; ?>';
     const variantTypes = ['select', 'radio', 'checkbox', 'color'];
 
-    function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
+    // Returns the row element itself, so the caller inserts it directly.
     function buildOptionRow(poId, optionId, optionName, uniqueName, optionType, ordering) {
-        const showSetValues = variantTypes.includes(optionType);
-        const setValuesBtn = showSetValues
-            ? `<button type="button" class="small ms-2 ms-lg-3 btn btn-soft-dark btn-sm j2commerce-variable-option-values-link"
-                    data-product-id="${productId}"
-                    data-option-id="${poId}"
-                    data-option-name="${escHtml(optionName)}">
-                    <span class="icon-cog"></span> <?php echo Text::_('COM_J2COMMERCE_OPTION_SET_VALUES'); ?>
-                </button>`
-            : '';
+        const fieldName = (suffix) => formPrefix + '[item_options][' + poId + '][' + suffix + ']';
 
-        return `<tr id="pao_variable_option_${poId}">
-            <td>
-                ${escHtml(optionName)}
-                <input type="hidden" name="${formPrefix}[item_options][${poId}][j2commerce_productoption_id]" value="${poId}">
-                <input type="hidden" name="${formPrefix}[item_options][${poId}][option_id]" value="${optionId}">
-                <small>(${escHtml(uniqueName)})</small>
-                <small class="text-capitalize"><?php echo Text::_('COM_J2COMMERCE_OPTION_TYPE'); ?> ${escHtml(optionType)}</small>
-                ${setValuesBtn}
-            </td>
-            <td>
-                <input type="text" class="form-control" name="${formPrefix}[item_options][${poId}][ordering]" value="${ordering}">
-            </td>
-            <td class="text-end">
-                <span class="optionRemove btn btn-soft-danger btn-sm"
-                      data-option-id="${poId}"
-                      role="button"
-                      title="<?php echo Text::_('COM_J2COMMERCE_OPTION_REMOVE'); ?>">
-                    <span class="icon icon-trash"></span>
-                </span>
-            </td>
-        </tr>`;
+        const hidden = (suffix, value) => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = fieldName(suffix);
+            input.value = value;
+
+            return input;
+        };
+
+        const row = document.createElement('tr');
+        row.id = 'pao_variable_option_' + poId;
+
+        const nameCell = document.createElement('td');
+
+        const uniqueLabel = document.createElement('small');
+        uniqueLabel.textContent = '(' + uniqueName + ')';
+
+        const typeLabel = document.createElement('small');
+        typeLabel.className = 'text-capitalize';
+        typeLabel.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_OPTION_TYPE')); ?> + ' ' + optionType;
+
+        nameCell.append(
+            optionName,
+            hidden('j2commerce_productoption_id', poId),
+            hidden('option_id', optionId),
+            ' ',
+            uniqueLabel,
+            ' ',
+            typeLabel
+        );
+
+        if (variantTypes.includes(optionType)) {
+            const setValuesButton = document.createElement('button');
+            setValuesButton.type = 'button';
+            setValuesButton.className = 'small ms-2 ms-lg-3 btn btn-soft-dark btn-sm j2commerce-variable-option-values-link';
+            setValuesButton.dataset.productId = productId;
+            setValuesButton.dataset.optionId = poId;
+            setValuesButton.dataset.optionName = optionName;
+
+            const cogIcon = document.createElement('span');
+            cogIcon.className = 'icon-cog';
+            setValuesButton.append(cogIcon, ' ' + <?php echo json_encode(Text::_('COM_J2COMMERCE_OPTION_SET_VALUES')); ?>);
+
+            nameCell.append(' ', setValuesButton);
+        }
+
+        const orderingCell = document.createElement('td');
+        const orderingInput = document.createElement('input');
+        orderingInput.type = 'text';
+        orderingInput.className = 'form-control';
+        orderingInput.name = fieldName('ordering');
+        orderingInput.value = ordering;
+        orderingCell.append(orderingInput);
+
+        const actionsCell = document.createElement('td');
+        actionsCell.className = 'text-end';
+
+        const removeButton = document.createElement('span');
+        removeButton.className = 'optionRemove btn btn-soft-danger btn-sm';
+        removeButton.dataset.optionId = poId;
+        removeButton.setAttribute('role', 'button');
+        removeButton.title = <?php echo json_encode(Text::_('COM_J2COMMERCE_OPTION_REMOVE')); ?>;
+
+        const removeIcon = document.createElement('span');
+        removeIcon.className = 'icon icon-trash';
+        removeButton.append(removeIcon);
+        actionsCell.append(removeButton);
+
+        row.append(nameCell, orderingCell, actionsCell);
+
+        return row;
     }
 
     // AJAX Add option button handler
@@ -255,8 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.success) {
                     const insertBeforeRow = document.querySelector('#variable_options_table .j2commerce_variable_a_options');
                     if (insertBeforeRow) {
-                        const temp = document.createElement('tbody');
-                        temp.innerHTML = buildOptionRow(
+                        const newRow = buildOptionRow(
                             data.productoption_id,
                             optionId,
                             data.option_name,
@@ -264,7 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             data.option_type,
                             data.ordering
                         );
-                        insertBeforeRow.parentNode.insertBefore(temp.firstElementChild, insertBeforeRow);
+                        insertBeforeRow.parentNode.insertBefore(newRow, insertBeforeRow);
                     }
                 } else {
                     Joomla.renderMessages({warning: [data.message || <?php echo json_encode(Text::_('COM_J2COMMERCE_ERROR_OCCURRED')); ?>]});
@@ -326,30 +367,60 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalLabel = document.getElementById('variableOptionValuesModalLabel');
     let modalInstance = null;
 
-    const loadingHtml = `<div class="text-center py-5">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_LOADING'); ?></span>
-        </div>
-        <p class="mt-2 text-body-secondary"><?php echo Text::_('COM_J2COMMERCE_LOADING'); ?></p>
-    </div>`;
+    function buildLoadingIndicator() {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'text-center py-5';
+
+        const spinner = document.createElement('div');
+        spinner.className = 'spinner-border text-primary';
+        spinner.setAttribute('role', 'status');
+
+        const spinnerLabel = document.createElement('span');
+        spinnerLabel.className = 'visually-hidden';
+        spinnerLabel.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_LOADING')); ?>;
+        spinner.append(spinnerLabel);
+
+        const caption = document.createElement('p');
+        caption.className = 'mt-2 text-body-secondary';
+        caption.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_LOADING')); ?>;
+
+        wrapper.append(spinner, caption);
+
+        return wrapper;
+    }
 
     function showModalLoading() {
-        optionValuesModalBody.innerHTML = loadingHtml;
+        optionValuesModalBody.replaceChildren(buildLoadingIndicator());
     }
 
     function showModalError(message) {
-        optionValuesModalBody.innerHTML = `<div class="alert alert-danger"><span class="icon-warning"></span> ${escHtml(message)}</div>`;
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-danger';
+
+        const icon = document.createElement('span');
+        icon.className = 'icon-warning';
+        alert.append(icon, ' ' + message);
+
+        optionValuesModalBody.replaceChildren(alert);
     }
 
     function showModalMessage(message, type = 'success') {
         const messagesContainer = document.getElementById('j2commerce-optionvalues-messages');
         if (messagesContainer) {
             const safeType = ['success', 'danger', 'warning', 'info'].includes(type) ? type : 'info';
-            messagesContainer.innerHTML = `
-                <div class="alert alert-${safeType} alert-dismissible fade show" role="alert">
-                    ${escHtml(message)}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>`;
+            const alertBox = document.createElement('div');
+            alertBox.className = 'alert alert-' + safeType + ' alert-dismissible fade show';
+            alertBox.setAttribute('role', 'alert');
+            alertBox.append(message);
+
+            const dismissButton = document.createElement('button');
+            dismissButton.type = 'button';
+            dismissButton.className = 'btn-close';
+            dismissButton.setAttribute('data-bs-dismiss', 'alert');
+            dismissButton.setAttribute('aria-label', 'Close');
+            alertBox.append(dismissButton);
+
+            messagesContainer.replaceChildren(alertBox);
             setTimeout(() => {
                 const alert = messagesContainer.querySelector('.alert');
                 if (alert) {
@@ -542,11 +613,16 @@ document.addEventListener('DOMContentLoaded', () => {
                             row.remove();
                             const tbody = document.getElementById('j2commerce-optionvalues-tbody');
                             if (tbody && tbody.querySelectorAll('tr[data-pov-id]').length === 0) {
-                                tbody.innerHTML = `<tr class="j2commerce-no-values-row">
-                                    <td colspan="10" class="text-center text-body-secondary py-4">
-                                        <?php echo Text::_('COM_J2COMMERCE_NO_OPTION_VALUES_ASSIGNED'); ?>
-                                    </td>
-                                </tr>`;
+                                const emptyRow = document.createElement('tr');
+                                emptyRow.className = 'j2commerce-no-values-row';
+
+                                const emptyCell = document.createElement('td');
+                                emptyCell.colSpan = 10;
+                                emptyCell.className = 'text-center text-body-secondary py-4';
+                                emptyCell.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_NO_OPTION_VALUES_ASSIGNED')); ?>;
+
+                                emptyRow.append(emptyCell);
+                                tbody.replaceChildren(emptyRow);
                             }
                         }, 300);
                         showModalMessage(data.message, 'success');
@@ -629,7 +705,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Reset modal content on hide
     optionValuesModal?.addEventListener('hidden.bs.modal', () => {
-        optionValuesModalBody.innerHTML = loadingHtml;
+        optionValuesModalBody.replaceChildren(buildLoadingIndicator());
     });
 });
 </script>
