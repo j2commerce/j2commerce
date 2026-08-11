@@ -24,6 +24,13 @@ $textFieldDefaults = ['value' => '', 'onchange' => '', 'disabled' => false, 'rea
 
 $productOptionList = J2CommerceHelper::product()->getProductOptionList($item->product_type);
 
+// Options already on the product are offered as disabled entries rather than omitted,
+// so the reason they cannot be picked again is visible in the list itself.
+$assignedOptionIds = array_flip(array_map(
+    static fn($poption): int => (int) $poption->option_id,
+    (array) ($item->product_options ?? [])
+));
+
 $key        = 0;
 $csrfToken  = Session::getFormToken();
 ?>
@@ -106,12 +113,16 @@ $csrfToken  = Session::getFormToken();
                                         <div class="controls">
                                             <div class="input-group">
                                                 <select name="variable_option_select_id" id="j2commerce_variable_option_select" class="form-select">
-                                                    <?php foreach ($productOptionList as $option_list) : ?>
-                                                        <option value="<?php echo $option_list->j2commerce_option_id; ?>"><?php echo $this->escape($option_list->option_name) . ' (' . $this->escape($option_list->option_unique_name) . ')'; ?></option>
+                                                    <?php foreach ($productOptionList as $option_list) :
+                                                        $optionLabel = $option_list->option_name . ' (' . $option_list->option_unique_name . ')';
+                                                        $optionAssigned = isset($assignedOptionIds[(int) $option_list->j2commerce_option_id]);
+                                                        ?>
+                                                        <option value="<?php echo $option_list->j2commerce_option_id; ?>" data-option-label="<?php echo $this->escape($optionLabel); ?>"<?php echo $optionAssigned ? ' disabled' : ''; ?>><?php echo $this->escape($optionAssigned ? Text::sprintf('COM_J2COMMERCE_OPTION_LABEL_ALREADY_ADDED', $optionLabel) : $optionLabel); ?></option>
                                                     <?php endforeach; ?>
                                                 </select>
                                                 <button type="button" id="j2commerce_variable_add_option_btn" class="btn btn-primary"><?php echo Text::_('COM_J2COMMERCE_OPTIONS_ADD'); ?></button>
                                             </div>
+                                            <div id="j2commerce-variable-option-notice" class="alert alert-warning mt-2 d-none" role="alert"></div>
                                         </div>
                                     </div>
                                 <?php endif; ?>
@@ -191,6 +202,59 @@ document.addEventListener('DOMContentLoaded', () => {
     const productId = <?php echo (int) ($item->j2commerce_product_id ?? 0); ?>;
     const csrfToken = '<?php echo $csrfToken; ?>';
     const variantTypes = ['select', 'radio', 'checkbox', 'color'];
+    const optionSelect = document.getElementById('j2commerce_variable_option_select');
+    const optionNotice = document.getElementById('j2commerce-variable-option-notice');
+    const addOptionBtn = document.getElementById('j2commerce_variable_add_option_btn');
+    const addedLabelFormat = <?php echo json_encode(Text::_('COM_J2COMMERCE_OPTION_LABEL_ALREADY_ADDED')); ?>;
+
+    // Feedback belongs beside the control that produced it — the options block sits far
+    // enough down the form that the page-top message container is off screen.
+    function showOptionNotice(message) {
+        if (!optionNotice) return;
+        optionNotice.textContent = message;
+        optionNotice.classList.remove('d-none');
+    }
+
+    function clearOptionNotice() {
+        if (!optionNotice) return;
+        optionNotice.textContent = '';
+        optionNotice.classList.add('d-none');
+    }
+
+    function selectedOptionEl() {
+        return optionSelect && optionSelect.selectedIndex >= 0
+            ? optionSelect.options[optionSelect.selectedIndex]
+            : null;
+    }
+
+    // The table is the single source of truth for what is on the product, so the dropdown
+    // is derived from it after every change rather than toggled entry by entry.
+    function syncOptionSelect() {
+        if (!optionSelect) return;
+
+        const usedIds = new Set(
+            Array.from(document.querySelectorAll('#variable_options_table input[name$="[option_id]"]'))
+                .map(input => input.value)
+        );
+
+        Array.from(optionSelect.options).forEach(option => {
+            const label = option.dataset.optionLabel || option.textContent;
+            const isUsed = usedIds.has(option.value);
+            option.disabled = isUsed;
+            // Function replacement so a '$' in an option name is not read as a substitution.
+            option.textContent = isUsed ? addedLabelFormat.replace('%s', () => label) : label;
+        });
+
+        const firstAvailable = Array.from(optionSelect.options).find(option => !option.disabled);
+        if (firstAvailable && (selectedOptionEl() === null || selectedOptionEl().disabled)) {
+            optionSelect.value = firstAvailable.value;
+        }
+        if (addOptionBtn) {
+            addOptionBtn.disabled = !firstAvailable;
+        }
+    }
+
+    syncOptionSelect();
 
 
     // Returns the row element itself, so the caller inserts it directly.
@@ -271,15 +335,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // AJAX Add option button handler
-    const addOptionBtn = document.getElementById('j2commerce_variable_add_option_btn');
     if (addOptionBtn) {
         addOptionBtn.addEventListener('click', async () => {
-            const selectEl = document.getElementById('j2commerce_variable_option_select');
-            if (!selectEl) return;
+            if (!optionSelect) return;
 
-            const optionId = selectEl.value;
+            const optionId = optionSelect.value;
             if (!optionId) return;
 
+            clearOptionNotice();
             addOptionBtn.disabled = true;
             setSpinnerOnly(addOptionBtn, <?php echo json_encode(Text::_('COM_J2COMMERCE_LOADING')); ?>);
 
@@ -308,15 +371,17 @@ document.addEventListener('DOMContentLoaded', () => {
                         insertBeforeRow.parentNode.insertBefore(newRow, insertBeforeRow);
                     }
                 } else {
-                    Joomla.renderMessages({warning: [data.message || <?php echo json_encode(Text::_('COM_J2COMMERCE_ERROR_OCCURRED')); ?>]});
+                    // The server rejects a duplicate on its own; surface that beside the control.
+                    showOptionNotice(data.message || <?php echo json_encode(Text::_('COM_J2COMMERCE_ERROR_OCCURRED')); ?>);
                 }
             } catch (error) {
                 console.error('Error adding option:', error);
-                Joomla.renderMessages({error: [<?php echo json_encode(Text::_('COM_J2COMMERCE_ERROR_OCCURRED')); ?>]});
+                showOptionNotice(<?php echo json_encode(Text::_('COM_J2COMMERCE_ERROR_OCCURRED')); ?>);
             }
 
-            addOptionBtn.disabled = false;
             addOptionBtn.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_OPTIONS_ADD')); ?>;
+            addOptionBtn.disabled = false;
+            syncOptionSelect();
         });
     }
 
@@ -332,6 +397,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const optionId = removeBtn.getAttribute('data-option-id');
         if (!optionId) {
             row.remove();
+            clearOptionNotice();
+            syncOptionSelect();
             return;
         }
 
@@ -350,9 +417,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.success) {
                 row.style.transition = 'opacity 0.3s';
                 row.style.opacity = '0';
-                setTimeout(() => row.remove(), 300);
+                setTimeout(() => {
+                    row.remove();
+                    // Re-offer the option only once the row is really gone, so the dropdown
+                    // and the server's own duplicate check never disagree during the fade.
+                    clearOptionNotice();
+                    syncOptionSelect();
+                }, 300);
             } else {
-                Joomla.renderMessages({warning: [data.message || <?php echo json_encode(Text::_('COM_J2COMMERCE_ERROR_OCCURRED')); ?>]});
+                showOptionNotice(data.message || <?php echo json_encode(Text::_('COM_J2COMMERCE_ERROR_OCCURRED')); ?>);
                 setIconLabel(removeBtn, 'icon icon-trash');
             }
         } catch (error) {
