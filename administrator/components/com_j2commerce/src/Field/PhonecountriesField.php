@@ -169,7 +169,7 @@ class PhonecountriesField extends CheckboxesField
                     . $isChecked . ' '
                     . 'data-continent="' . $esc($continentName) . '">'
                     . '<label class="form-check-label" for="' . $esc($optId) . '">'
-                    . $esc($countryName) . ' <span class="text-muted">+' . $esc($dialCode) . '</span>'
+                    . $esc($countryName) . ' <span class="text-body-secondary">+' . $esc($dialCode) . '</span>'
                     . '</label>'
                     . '</div>';
 

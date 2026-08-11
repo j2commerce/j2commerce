@@ -1044,7 +1044,7 @@ class CategoryWizard {
             if (addBtn) addBtn.classList.add('d-none');
 
             const note = document.createElement('p');
-            note.className   = 'text-muted';
+            note.className   = 'text-body-secondary';
             note.textContent = Joomla.Text._('COM_J2COMMERCE_WIZARD_CATEGORY_10_PLUS_NOTE') || "We'll create a root 'Shop' category. You can add subcategories later.";
             container.appendChild(note);
 
@@ -1139,37 +1139,37 @@ class CategoryWizard {
         };
 
         if (this.flow === 'single') {
-            addItem('fa-solid fa-folder text-muted',
+            addItem('fa-solid fa-folder text-body-secondary',
                 Joomla.Text._('COM_J2COMMERCE_WIZARD_CONFIRM_SUMMARY_SHOP_CATEGORY'));
-            addItem('fa-solid fa-file-alt text-muted',
+            addItem('fa-solid fa-file-alt text-body-secondary',
                 (Joomla.Text._('COM_J2COMMERCE_WIZARD_CONFIRM_SUMMARY_ARTICLE'))
                     .replace('%s', this.data.productName));
-            addItem('fa-solid fa-box text-muted',
+            addItem('fa-solid fa-box text-body-secondary',
                 (Joomla.Text._('COM_J2COMMERCE_WIZARD_CONFIRM_SUMMARY_PRODUCT'))
                     .replace('%s', this.data.productType || 'simple'));
 
             if (this.data.optionTitles.length > 0) {
                 const totalValues = Object.values(this.data.optionValues)
                     .reduce((sum, vals) => sum + vals.length, 0);
-                addItem('fa-solid fa-list text-muted',
+                addItem('fa-solid fa-list text-body-secondary',
                     (Joomla.Text._('COM_J2COMMERCE_WIZARD_CONFIRM_SUMMARY_OPTIONS'))
                         .replace(/%1\$d|%d/, String(this.data.optionTitles.length))
                         .replace(/%2\$d|%d/, String(totalValues)));
             }
 
-            addItem('fa-solid fa-link text-muted',
+            addItem('fa-solid fa-link text-body-secondary',
                 Joomla.Text._('COM_J2COMMERCE_WIZARD_CONFIRM_SUMMARY_MENU_SINGLE'));
         } else {
             if (this.data.categorySource === 'existing') {
                 const selectedCount = this.data.existingCategoryIds.length;
 
-                addItem('fa-solid fa-folder-open text-muted',
+                addItem('fa-solid fa-folder-open text-body-secondary',
                     (Joomla.Text._('COM_J2COMMERCE_WIZARD_CONFIRM_SUMMARY_EXISTING_CATEGORIES'))
                         .replace('%d', String(selectedCount)));
 
                 const menuItemCount = this.data.menuType === 'products' && selectedCount > 0 ? selectedCount : 1;
                 const menuLabel     = this.data.menuType === 'categories' ? 'Product Categories' : 'Product Category';
-                addItem('fa-solid fa-link text-muted',
+                addItem('fa-solid fa-link text-body-secondary',
                     (Joomla.Text._('COM_J2COMMERCE_WIZARD_CONFIRM_SUMMARY_MENU_MULTI'))
                         .replace(/%1\$d|%d/, String(menuItemCount))
                         .replace(/%2\$s|%s/, menuLabel));
@@ -1177,19 +1177,19 @@ class CategoryWizard {
                 const catNames = this.data.categoryNames.filter((n) => n !== '');
                 const catCount = catNames.length;
 
-                addItem('fa-solid fa-folder text-muted',
+                addItem('fa-solid fa-folder text-body-secondary',
                     (Joomla.Text._('COM_J2COMMERCE_WIZARD_CONFIRM_SUMMARY_ROOT_CATEGORY'))
                         .replace('%s', 'Shop'));
 
                 if (catCount > 0) {
-                    addItem('fa-solid fa-folder-open text-muted',
+                    addItem('fa-solid fa-folder-open text-body-secondary',
                         (Joomla.Text._('COM_J2COMMERCE_WIZARD_CONFIRM_SUMMARY_SUBCATEGORIES'))
                             .replace('%d', String(catCount)));
                 }
 
                 const menuItemCount = this.data.menuType === 'products' && catCount > 0 ? catCount : 1;
                 const menuLabel     = this.data.menuType === 'categories' ? 'Product Categories' : 'Product Category';
-                addItem('fa-solid fa-link text-muted',
+                addItem('fa-solid fa-link text-body-secondary',
                     (Joomla.Text._('COM_J2COMMERCE_WIZARD_CONFIRM_SUMMARY_MENU_MULTI'))
                         .replace(/%1\$d|%d/, String(menuItemCount))
                         .replace(/%2\$s|%s/, menuLabel));

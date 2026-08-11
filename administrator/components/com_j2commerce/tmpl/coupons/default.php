@@ -157,7 +157,7 @@ if ($saveOrder && !empty($this->items)) {
                                     <?php if ($item->valid_from_formatted) : ?>
                                         <small><?php echo HTMLHelper::_('date', $item->valid_from, Text::_('DATE_FORMAT_LC4')); ?></small>
                                     <?php else : ?>
-                                        <span class="text-muted">—</span>
+                                        <span class="text-body-secondary">—</span>
                                     <?php endif; ?>
                                 </td>
                                 <td class="d-none d-lg-table-cell">
@@ -166,7 +166,7 @@ if ($saveOrder && !empty($this->items)) {
                                             <?php echo HTMLHelper::_('date', $item->valid_to, Text::_('DATE_FORMAT_LC4')); ?>
                                         </small>
                                     <?php else : ?>
-                                        <span class="text-muted">—</span>
+                                        <span class="text-body-secondary">—</span>
                                     <?php endif; ?>
                                 </td>
                                 <td class="d-none d-md-table-cell">

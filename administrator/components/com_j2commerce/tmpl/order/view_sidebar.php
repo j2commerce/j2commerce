@@ -106,7 +106,7 @@ if ($orderInfo) {
                 <span class="icon-location j2c-address-icon text-primary me-2" aria-hidden="true"></span>
                 <div>
                     <strong><?php echo Text::_('COM_J2COMMERCE_ORDER_BILLING'); ?></strong>
-                    <div class="text-muted small"><?php echo $this->escape(($orderInfo->billing_first_name ?? '') . ' ' . ($orderInfo->billing_last_name ?? '')); ?></div>
+                    <div class="text-body-secondary small"><?php echo $this->escape(($orderInfo->billing_first_name ?? '') . ' ' . ($orderInfo->billing_last_name ?? '')); ?></div>
                 </div>
             </div>
             <button class="btn btn-sm btn-primary" type="button"
@@ -150,7 +150,7 @@ if ($orderInfo) {
                     <span class="icon-location j2c-address-icon text-primary" aria-hidden="true"></span>
                     <div>
                         <strong><?php echo Text::_('COM_J2COMMERCE_ORDER_SHIPPING'); ?></strong>
-                        <div class="text-muted small"><?php echo $this->escape(($orderInfo->shipping_first_name ?? '') . ' ' . ($orderInfo->shipping_last_name ?? '')); ?></div>
+                        <div class="text-body-secondary small"><?php echo $this->escape(($orderInfo->shipping_first_name ?? '') . ' ' . ($orderInfo->shipping_last_name ?? '')); ?></div>
                     </div>
                 </div>
                 <button class="btn btn-sm btn-primary" type="button"

@@ -82,10 +82,10 @@ class StoreLogoCheck extends AbstractSetupCheck
             . '<p>' . Text::_('COM_J2COMMERCE_SETUP_GUIDE_CHECK_STORE_LOGO_DESC') . '</p>';
 
         if ($logoPath !== '') {
-            $html .= '<p class="text-muted small mb-2">' . Text::_('COM_J2COMMERCE_SETUP_GUIDE_CURRENT_VALUE') . '</p>'
+            $html .= '<p class="text-body-secondary small mb-2">' . Text::_('COM_J2COMMERCE_SETUP_GUIDE_CURRENT_VALUE') . '</p>'
                 . '<p><img src="' . htmlspecialchars($logoPath) . '" alt="" style="max-width:120px;max-height:60px;" class="border rounded p-1"></p>';
         } else {
-            $html .= '<p class="text-muted small">' . Text::_('COM_J2COMMERCE_SETUP_GUIDE_CHECK_STORE_LOGO_OPTIONAL') . '</p>';
+            $html .= '<p class="text-body-secondary small">' . Text::_('COM_J2COMMERCE_SETUP_GUIDE_CHECK_STORE_LOGO_OPTIONAL') . '</p>';
         }
 
         $html .= '<a href="' . $configUrl . '" class="btn btn-secondary w-100">'

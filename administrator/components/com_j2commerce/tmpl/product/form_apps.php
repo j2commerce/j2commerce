@@ -55,7 +55,7 @@ if (empty($apps)): ?>
                         <div>
                             <?php echo htmlspecialchars(Text::_($nameKey), ENT_QUOTES, 'UTF-8'); ?>
                         </div>
-                        <div class="small d-none d-md-block text-muted"><?php echo htmlspecialchars(Text::_($description), ENT_QUOTES, 'UTF-8'); ?></div>
+                        <div class="small d-none d-md-block text-body-secondary"><?php echo htmlspecialchars(Text::_($description), ENT_QUOTES, 'UTF-8'); ?></div>
                     </div>
                 </div>
             </button>

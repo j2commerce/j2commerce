@@ -130,7 +130,7 @@ if ($saveOrder && !empty($this->items)) {
                                     <?php endif; ?>
                                 </th>
                                 <td class="d-none d-md-table-cell">
-                                    <span class="small text-muted"><?php echo $this->escape($item->option_unique_name); ?></span>
+                                    <span class="small text-body-secondary"><?php echo $this->escape($item->option_unique_name); ?></span>
                                 </td>
                                 <td>
                                     <?php

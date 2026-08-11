@@ -109,7 +109,7 @@ class BoxpackerField extends FormField
         $html .= '</tbody></table></div>';
 
         if (empty($boxes)) {
-            $html .= '<p class="text-muted boxpacker-no-boxes">' . Text::_('COM_J2COMMERCE_BOXPACKER_NO_BOXES') . '</p>';
+            $html .= '<p class="text-body-secondary boxpacker-no-boxes">' . Text::_('COM_J2COMMERCE_BOXPACKER_NO_BOXES') . '</p>';
         }
 
         // === Packing Preview Section ===

@@ -141,7 +141,7 @@ $coreFields = [
                         <div class="form-grid">
                             <?php echo $this->form->renderField('user_id'); ?>
                         </div>
-                        <p class="form-text small text-muted mt-2">
+                        <p class="form-text small text-body-secondary mt-2">
                             <?php echo Text::_('COM_J2COMMERCE_CUSTOMER_USER_RELINK_NOTE'); ?>
                         </p>
                     </fieldset>

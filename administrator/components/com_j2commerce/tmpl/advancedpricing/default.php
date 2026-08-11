@@ -93,7 +93,7 @@ $wa->useScript('keepalive');
                                     <td>
                                         <?php echo (int) $item->variant_id; ?>
                                         <?php if (!empty($item->sku)) : ?>
-                                            <small class="text-muted">(<?php echo $this->escape($item->sku); ?>)</small>
+                                            <small class="text-body-secondary">(<?php echo $this->escape($item->sku); ?>)</small>
                                         <?php endif; ?>
                                     </td>
                                     <td class="text-center">
@@ -108,15 +108,15 @@ $wa->useScript('keepalive');
                                         } elseif ($qtyTo !== '') {
                                             echo '&le; ' . $this->escape($qtyTo);
                                         } else {
-                                            echo '<span class="text-muted">&mdash;</span>';
+                                            echo '<span class="text-body-secondary">&mdash;</span>';
                                         }
                                         ?>
                                     </td>
                                     <td>
-                                        <?php echo !empty($item->date_from) ? HTMLHelper::_('date', $item->date_from, Text::_('DATE_FORMAT_LC4')) : '<span class="text-muted">&mdash;</span>'; ?>
+                                        <?php echo !empty($item->date_from) ? HTMLHelper::_('date', $item->date_from, Text::_('DATE_FORMAT_LC4')) : '<span class="text-body-secondary">&mdash;</span>'; ?>
                                     </td>
                                     <td>
-                                        <?php echo !empty($item->date_to) ? HTMLHelper::_('date', $item->date_to, Text::_('DATE_FORMAT_LC4')) : '<span class="text-muted">&mdash;</span>'; ?>
+                                        <?php echo !empty($item->date_to) ? HTMLHelper::_('date', $item->date_to, Text::_('DATE_FORMAT_LC4')) : '<span class="text-body-secondary">&mdash;</span>'; ?>
                                     </td>
                                     <td>
                                         <?php echo $this->escape($item->group_name ?? ''); ?>

@@ -104,7 +104,7 @@ class ShippingMethodCheck extends AbstractSetupCheck
             . '<p>' . Text::_('COM_J2COMMERCE_SETUP_GUIDE_CHECK_SHIPPING_METHOD_DESC') . '</p>';
 
         if ($plugins) {
-            $html .= '<p class="text-muted small mb-1">' . Text::_('COM_J2COMMERCE_SETUP_GUIDE_ENABLED_SHIPPING_METHODS') . '</p>'
+            $html .= '<p class="text-body-secondary small mb-1">' . Text::_('COM_J2COMMERCE_SETUP_GUIDE_ENABLED_SHIPPING_METHODS') . '</p>'
                 . '<ul class="list-unstyled mb-3">';
 
             $lang = \Joomla\CMS\Factory::getApplication()->getLanguage();

@@ -48,7 +48,7 @@ $showLogin = (int) $this->params->get('show_login_form', 1);
         <?php endif; ?>
 
         <?php if ($allowRegistration) : ?>
-        <p class="text-muted mt-2">
+        <p class="text-body-secondary mt-2">
             <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_REGISTER_ACCOUNT_HELP_TEXT'); ?>
         </p>
         <?php endif; ?>

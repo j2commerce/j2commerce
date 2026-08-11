@@ -110,7 +110,7 @@ abstract class AbstractMenuItemCheck extends AbstractSetupCheck
 
             if ($item) {
                 $editUrl = 'index.php?option=com_menus&task=item.edit&id=' . (int) $item->id;
-                $html .= '<p class="text-muted small mb-1">' . Text::_('COM_J2COMMERCE_SETUP_GUIDE_MENU_ITEM_INFO') . '</p>'
+                $html .= '<p class="text-body-secondary small mb-1">' . Text::_('COM_J2COMMERCE_SETUP_GUIDE_MENU_ITEM_INFO') . '</p>'
                     . '<p class="small"><strong>' . htmlspecialchars($item->title) . '</strong> (ID: ' . (int) $item->id . ')</p>'
                     . '<a href="' . $editUrl . '" class="btn btn-outline-primary w-100 mb-2">'
                     . Text::_('COM_J2COMMERCE_SETUP_GUIDE_EDIT_MENU_ITEM')

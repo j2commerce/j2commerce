@@ -157,7 +157,7 @@ $csrfToken = \Joomla\CMS\Session\Session::getFormToken();
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_LOADING'); ?></span>
                     </div>
-                    <p class="mt-2 text-muted"><?php echo Text::_('COM_J2COMMERCE_LOADING'); ?></p>
+                    <p class="mt-2 text-body-secondary"><?php echo Text::_('COM_J2COMMERCE_LOADING'); ?></p>
                 </div>
             </div>
         </div>
@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
             newRow.innerHTML = `
                 <td class="addedOption">${escHtml(optionName)}</td>
                 <td>
-                    <span class="text-muted small"><?php echo Text::_('COM_J2COMMERCE_PARENT_OPTION_SAVE_FIRST'); ?></span>
+                    <span class="text-body-secondary small"><?php echo Text::_('COM_J2COMMERCE_PARENT_OPTION_SAVE_FIRST'); ?></span>
                     <input type="hidden" value="0" name="${formPrefix}[item_options][${optionKey}][parent_id]">
                 </td>
                 <td>
@@ -261,7 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="spinner-border text-primary" role="status">
                     <span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_LOADING'); ?></span>
                 </div>
-                <p class="mt-2 text-muted"><?php echo Text::_('COM_J2COMMERCE_LOADING'); ?></p>
+                <p class="mt-2 text-body-secondary"><?php echo Text::_('COM_J2COMMERCE_LOADING'); ?></p>
             </div>
         `;
     }
@@ -507,7 +507,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (tbody && tbody.querySelectorAll('tr[data-pov-id]').length === 0) {
                                 tbody.innerHTML = `
                                     <tr class="j2commerce-no-values-row">
-                                        <td colspan="10" class="text-center text-muted py-4">
+                                        <td colspan="10" class="text-center text-body-secondary py-4">
                                             <?php echo Text::_('COM_J2COMMERCE_NO_OPTION_VALUES_ASSIGNED'); ?>
                                         </td>
                                     </tr>
@@ -553,13 +553,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (data.success) {
                         document.querySelectorAll('.j2commerce-set-default-btn').forEach(b => {
                             b.classList.remove('text-warning');
-                            b.classList.add('text-muted');
+                            b.classList.add('text-body-secondary');
                             const icon = b.querySelector('span');
                             if (icon) {
                                 icon.className = 'icon-star-empty';
                             }
                         });
-                        btn.classList.remove('text-muted');
+                        btn.classList.remove('text-body-secondary');
                         btn.classList.add('text-warning');
                         const selectedIcon = btn.querySelector('span');
                         if (selectedIcon) {
@@ -671,7 +671,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="spinner-border text-primary" role="status">
                     <span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_LOADING'); ?></span>
                 </div>
-                <p class="mt-2 text-muted"><?php echo Text::_('COM_J2COMMERCE_LOADING'); ?></p>
+                <p class="mt-2 text-body-secondary"><?php echo Text::_('COM_J2COMMERCE_LOADING'); ?></p>
             </div>
         `;
         currentProductId = null;

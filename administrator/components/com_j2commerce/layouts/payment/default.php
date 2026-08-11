@@ -44,7 +44,7 @@ $is_pro = $versionHelper->isPro();
                         <div class="mt-auto">
                             <span class="fa-4x mb-2 fa-solid fa-circle-info" aria-hidden="true"></span>
                             <h2 class="fs-1 fw-bold"><?php echo Text::_('COM_J2COMMERCE_PAYMENT_LAYOUT_CARDS_HELP_TITLE');?></h2>
-                            <p class="text-muted mb-5"><?php echo Text::_('COM_J2COMMERCE_PAYMENT_LAYOUT_CARDS_HELP_DESC');?></p>
+                            <p class="text-body-secondary mb-5"><?php echo Text::_('COM_J2COMMERCE_PAYMENT_LAYOUT_CARDS_HELP_DESC');?></p>
                         </div>
                         <div class="text-center mt-auto mb-4">
                             <a class="btn btn-outline-primary app-button-open" href="https://www.j2commerce.com/support/technical-support" target="_blank" title="<?php echo Text::_('COM_J2COMMERCE_PAYMENT_LAYOUT_CARDS_HELP_BTN2_TITLE');?>"><span class="ps-1"><?php echo Text::_('COM_J2COMMERCE_PAYMENT_LAYOUT_CARDS_HELP_BTN2_TITLE');?></span></a>
@@ -61,7 +61,7 @@ $is_pro = $versionHelper->isPro();
                         <div class="mt-auto">
                             <span class="fa-4x mb-2 fa-solid fa-credit-card" aria-hidden="true"></span>
                             <h2 class="fs-1 fw-bold"><?php echo Text::_('COM_J2COMMERCE_PAYMENT_LAYOUT_CARDS_ADD_TITLE');?></h2>
-                            <p class="text-muted mb-5"><?php echo Text::_('COM_J2COMMERCE_PAYMENT_LAYOUT_CARDS_ADD_DESC');?></p>
+                            <p class="text-body-secondary mb-5"><?php echo Text::_('COM_J2COMMERCE_PAYMENT_LAYOUT_CARDS_ADD_DESC');?></p>
                         </div>
                         <div class="text-center mt-auto mb-4">
                             <a class="btn btn-primary app-button-open" href="https://www.j2commerce.com/extensions/payment-plugins" target="_blank" title="<?php echo Text::_('COM_J2COMMERCE_PAYMENT_LAYOUT_CARDS_ADD_BTN1_TITLE');?>"><span class="ps-1"><?php echo Text::_('COM_J2COMMERCE_PAYMENT_LAYOUT_CARDS_ADD_BTN1_TITLE');?></span></a>

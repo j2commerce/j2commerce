@@ -230,7 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
         titleEl.textContent = title;
 
         if (!filtered.length) {
-            bodyEl.innerHTML = '<p class="text-muted"><?php echo Text::_('JGLOBAL_NO_MATCHING_RESULTS'); ?></p>';
+            bodyEl.innerHTML = '<p class="text-body-secondary"><?php echo Text::_('JGLOBAL_NO_MATCHING_RESULTS'); ?></p>';
         } else {
             const showError = filter === 'failed' || filter === 'skipped';
             const esc = (v) => String(v ?? '').replace(/</g, '&lt;');

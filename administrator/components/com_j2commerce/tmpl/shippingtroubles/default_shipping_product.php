@@ -221,7 +221,7 @@ function getProductStatusBadge($status) {
                                     <td>
                                         <strong><?php echo $this->escape($product->product_name); ?></strong>
                                         <?php if (!empty($product->shipping_issues) || !empty($product->shipping_warnings)): ?>
-                                            <div class="small text-muted mt-1">
+                                            <div class="small text-body-secondary mt-1">
                                                 <?php foreach ($product->shipping_issues as $issue): ?>
                                                     <div class="text-danger">
                                                         <span class="fa-solid fa-times-circle me-1" aria-hidden="true"></span>

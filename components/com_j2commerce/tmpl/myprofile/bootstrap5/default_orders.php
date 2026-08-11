@@ -103,7 +103,7 @@ $limit      = isset($this->pagination) ? $this->pagination->limit : 20;
                 </ul>
             </nav>
             <?php endif; ?>
-            <span class="text-muted small ms-3 align-self-center" id="j2c-orders-count">
+            <span class="text-body-secondary small ms-3 align-self-center" id="j2c-orders-count">
                 <?php echo $start . ' - ' . $end . ' / ' . $total . ' ' . Text::_('COM_J2COMMERCE_ITEMS'); ?>
             </span>
         </div>

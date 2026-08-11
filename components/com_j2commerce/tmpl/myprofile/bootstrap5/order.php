@@ -174,7 +174,7 @@ $statusName = !empty($order->orderstatus_name) ? Text::_($order->orderstatus_nam
                     <td>
                         <?php echo $this->escape($lineItem->orderitem_name); ?>
                         <?php if (!empty($lineItem->orderitem_sku)): ?>
-                        <br><small class="text-muted"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_SKU'); ?>: <?php echo $this->escape($lineItem->orderitem_sku); ?></small>
+                        <br><small class="text-body-secondary"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_SKU'); ?>: <?php echo $this->escape($lineItem->orderitem_sku); ?></small>
                         <?php endif; ?>
                         <?php if (!empty($lineItem->orderitemattributes)): ?>
                         <br><?php echo LayoutHelper::render('orderitem.attributes', [

@@ -89,7 +89,7 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
                                             <?php echo $this->escape($item->customer_name); ?>
                                         </a>
                                         <?php if (!empty($item->company)) : ?>
-                                            <br><small class="text-muted"><?php echo $this->escape($item->company); ?></small>
+                                            <br><small class="text-body-secondary"><?php echo $this->escape($item->company); ?></small>
                                         <?php endif; ?>
                                     </th>
                                     <td>
@@ -106,7 +106,7 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
                                     <td class="d-none d-md-table-cell">
                                         <?php echo $this->escape($item->city); ?>
                                         <?php if (!empty($item->zip)) : ?>
-                                            <br><small class="text-muted"><?php echo $this->escape($item->zip); ?></small>
+                                            <br><small class="text-body-secondary"><?php echo $this->escape($item->zip); ?></small>
                                         <?php endif; ?>
                                     </td>
                                     <td class="d-none d-lg-table-cell">

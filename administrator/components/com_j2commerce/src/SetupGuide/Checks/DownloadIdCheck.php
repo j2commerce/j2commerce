@@ -92,7 +92,7 @@ class DownloadIdCheck extends AbstractSetupCheck
                 . '</div>';
         }
 
-        $html .= '<a href="https://www.j2commerce.com/my-account/my-downloads" target="_blank" rel="noopener noreferrer" class="text-muted small">'
+        $html .= '<a href="https://www.j2commerce.com/my-account/my-downloads" target="_blank" rel="noopener noreferrer" class="text-body-secondary small">'
             . $findLabel
             . '</a>';
 

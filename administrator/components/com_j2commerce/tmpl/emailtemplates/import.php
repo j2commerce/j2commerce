@@ -19,7 +19,7 @@ use Joomla\CMS\Router\Route;
     <div class="main-card">
         <div class="card-body p-4">
             <h2><?php echo Text::_('COM_J2COMMERCE_EMAILTEMPLATE_IMPORT'); ?></h2>
-            <p class="text-muted"><?php echo Text::_('COM_J2COMMERCE_EMAILTEMPLATE_IMPORT_DESC'); ?></p>
+            <p class="text-body-secondary"><?php echo Text::_('COM_J2COMMERCE_EMAILTEMPLATE_IMPORT_DESC'); ?></p>
 
             <div class="mb-3" style="max-width: 500px;">
                 <label for="import_file" class="form-label"><?php echo Text::_('COM_J2COMMERCE_EMAILTEMPLATE_IMPORT_FILE'); ?></label>

@@ -63,7 +63,7 @@ class AdminEmailCheck extends AbstractSetupCheck
             . '<p>' . Text::_('COM_J2COMMERCE_SETUP_GUIDE_CHECK_ADMIN_EMAIL_DESC') . '</p>';
 
         if ($email !== '') {
-            $html .= '<p class="text-muted small mb-1">' . Text::_('COM_J2COMMERCE_SETUP_GUIDE_CURRENT_VALUE') . '</p>'
+            $html .= '<p class="text-body-secondary small mb-1">' . Text::_('COM_J2COMMERCE_SETUP_GUIDE_CURRENT_VALUE') . '</p>'
                 . '<p class="fw-semibold">' . htmlspecialchars($email) . '</p>';
         } else {
             $html .= '<p class="small text-danger">' . Text::_('COM_J2COMMERCE_SETUP_GUIDE_NOT_SET') . '</p>';

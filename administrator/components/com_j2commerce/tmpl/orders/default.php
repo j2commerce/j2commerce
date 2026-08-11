@@ -211,11 +211,11 @@ $dateFormat = ComponentHelper::getParams('com_j2commerce')->get('date_format', '
                                         </div>
                                         <div class="form-check form-switch mt-1 d-flex align-items-center justify-content-center gap-1">
                                             <input type="checkbox" class="form-check-input order-notify-check me-2" role="switch" id="notify_<?php echo (int) $item->j2commerce_order_id; ?>" data-order-id="<?php echo (int) $item->j2commerce_order_id; ?>" style="position: relative;top: -3px;" />
-                                            <label class="form-check-label small text-muted me-1" for="notify_<?php echo (int) $item->j2commerce_order_id; ?>">
+                                            <label class="form-check-label small text-body-secondary me-1" for="notify_<?php echo (int) $item->j2commerce_order_id; ?>">
                                                 <?php echo Text::_('COM_J2COMMERCE_NOTIFY_CUSTOMER'); ?>
                                             </label>
                                             <span class="clickTooltip" role="button" tabindex="0" style="cursor:pointer;" data-bs-toggle="tooltip" data-bs-trigger="click" data-bs-placement="top" title="<?php echo $this->escape(Text::_('COM_J2COMMERCE_NOTIFY_CUSTOMER_DESC')); ?>">
-                                                <span class="icon-info-circle text-muted small" style="top:-1px;position:relative;"></span>
+                                                <span class="icon-info-circle text-body-secondary small" style="top:-1px;position:relative;"></span>
                                             </span>
                                         </div>
                                     </div>

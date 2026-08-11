@@ -146,7 +146,7 @@ $getImagePath = function (?string $imagePath): string {
                                     <a class="select-link fw-semibold" href="javascript:void(0)" <?php echo $attribs; ?>>
                                         <?php echo $this->escape($productName); ?>
                                     </a>
-                                    <div class="small text-muted">
+                                    <div class="small text-body-secondary">
                                         <div><?php echo Text::_('COM_J2COMMERCE_PRODUCT_TYPE'); ?>: <strong><?php echo $this->escape($productTypeLabel); ?></strong></div>
                                         <div><?php echo Text::_('COM_J2COMMERCE_VISIBLE_IN_STOREFRONT'); ?>: <strong><?php echo $item->visibility ? Text::_('JYES') : Text::_('JNO'); ?></strong></div>
                                         <div><?php echo Text::_('COM_J2COMMERCE_TAX_PROFILE'); ?>: <strong><?php echo $taxProfileText; ?></strong></div>
@@ -156,7 +156,7 @@ $getImagePath = function (?string $imagePath): string {
                         </td>
                         <td class="d-none d-md-table-cell">
                             <?php if ($item->has_options == 1) : ?>
-                                <small class="text-muted"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_HAS_VARIANTS'); ?></small>
+                                <small class="text-body-secondary"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_HAS_VARIANTS'); ?></small>
                             <?php else : ?>
                                 <span class="font-monospace"><?php echo $this->escape($item->sku ?? '-'); ?></span>
                             <?php endif; ?>

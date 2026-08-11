@@ -400,7 +400,7 @@ $e = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
                     <span class="j2c-card-check fa-solid fa-circle-check" aria-hidden="true"></span>
                     <span class="fa-solid <?php echo $info['icon']; ?> d-block" aria-hidden="true"></span>
                     <strong class="d-block mt-2"><?php echo Text::_($info['label']); ?></strong>
-                    <small class="text-muted"><?php echo Text::_($info['desc']); ?></small>
+                    <small class="text-body-secondary"><?php echo Text::_($info['desc']); ?></small>
                   </div>
                 </div>
               </div>

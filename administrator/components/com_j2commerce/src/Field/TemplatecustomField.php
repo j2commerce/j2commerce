@@ -41,7 +41,7 @@ class TemplatecustomField extends FormField
         // Billing Custom Fields Section
         $html[] = '<fieldset class="adminform mb-4">';
         $html[] = '<legend class="text-primary">' . Text::_('COM_J2COMMERCE_TEMPLATE_CUSTOM_FIELD_BILLING_TITLE') . '</legend>';
-        $html[] = '<p class="text-muted mb-3">' . Text::_('COM_J2COMMERCE_TEMPLATE_CUSTOM_FIELD_BILLING_DESCRIPTION') . '</p>';
+        $html[] = '<p class="text-body-secondary mb-3">' . Text::_('COM_J2COMMERCE_TEMPLATE_CUSTOM_FIELD_BILLING_DESCRIPTION') . '</p>';
 
         $html[] = '<div class="table-responsive">';
         $html[] = '<table class="table">';
@@ -64,7 +64,7 @@ class TemplatecustomField extends FormField
             $html[] = '<tr>';
             $html[] = '<td><code>[CUSTOM_BILLING_FIELD:' . strtoupper($fieldName) . ']</code></td>';
             $html[] = '<td>' . $description . '</td>';
-            $html[] = '<td><small class="text-muted">' . Text::sprintf('COM_J2COMMERCE_TEMPLATE_CUSTOM_FIELD_EXAMPLE_OUTPUT', $fieldName) . '</small></td>';
+            $html[] = '<td><small class="text-body-secondary">' . Text::sprintf('COM_J2COMMERCE_TEMPLATE_CUSTOM_FIELD_EXAMPLE_OUTPUT', $fieldName) . '</small></td>';
             $html[] = '</tr>';
         }
 
@@ -76,7 +76,7 @@ class TemplatecustomField extends FormField
         // Shipping Custom Fields Section
         $html[] = '<fieldset class="adminform mb-4">';
         $html[] = '<legend class="text-success">' . Text::_('COM_J2COMMERCE_TEMPLATE_CUSTOM_FIELD_SHIPPING_TITLE') . '</legend>';
-        $html[] = '<p class="text-muted mb-3">' . Text::_('COM_J2COMMERCE_TEMPLATE_CUSTOM_FIELD_SHIPPING_DESCRIPTION') . '</p>';
+        $html[] = '<p class="text-body-secondary mb-3">' . Text::_('COM_J2COMMERCE_TEMPLATE_CUSTOM_FIELD_SHIPPING_DESCRIPTION') . '</p>';
 
         $html[] = '<div class="table-responsive">';
         $html[] = '<table class="table table-striped table-hover">';
@@ -99,7 +99,7 @@ class TemplatecustomField extends FormField
             $html[] = '<tr>';
             $html[] = '<td><code>[CUSTOM_SHIPPING_FIELD:' . strtoupper($fieldName) . ']</code></td>';
             $html[] = '<td>' . $description . '</td>';
-            $html[] = '<td><small class="text-muted">' . Text::sprintf('COM_J2COMMERCE_TEMPLATE_CUSTOM_FIELD_EXAMPLE_OUTPUT', $fieldName) . '</small></td>';
+            $html[] = '<td><small class="text-body-secondary">' . Text::sprintf('COM_J2COMMERCE_TEMPLATE_CUSTOM_FIELD_EXAMPLE_OUTPUT', $fieldName) . '</small></td>';
             $html[] = '</tr>';
         }
 
@@ -111,7 +111,7 @@ class TemplatecustomField extends FormField
         // Payment Custom Fields Section
         $html[] = '<fieldset class="adminform mb-4">';
         $html[] = '<legend class="text-warning">' . Text::_('COM_J2COMMERCE_TEMPLATE_CUSTOM_FIELD_PAYMENT_TITLE') . '</legend>';
-        $html[] = '<p class="text-muted mb-3">' . Text::_('COM_J2COMMERCE_TEMPLATE_CUSTOM_FIELD_PAYMENT_DESCRIPTION') . '</p>';
+        $html[] = '<p class="text-body-secondary mb-3">' . Text::_('COM_J2COMMERCE_TEMPLATE_CUSTOM_FIELD_PAYMENT_DESCRIPTION') . '</p>';
 
         $html[] = '<div class="table-responsive">';
         $html[] = '<table class="table">';
@@ -134,7 +134,7 @@ class TemplatecustomField extends FormField
             $html[] = '<tr>';
             $html[] = '<td><code>[CUSTOM_PAYMENT_FIELD:' . strtoupper($fieldName) . ']</code></td>';
             $html[] = '<td>' . $description . '</td>';
-            $html[] = '<td><small class="text-muted">' . Text::sprintf('COM_J2COMMERCE_TEMPLATE_CUSTOM_FIELD_EXAMPLE_OUTPUT', $fieldName) . '</small></td>';
+            $html[] = '<td><small class="text-body-secondary">' . Text::sprintf('COM_J2COMMERCE_TEMPLATE_CUSTOM_FIELD_EXAMPLE_OUTPUT', $fieldName) . '</small></td>';
             $html[] = '</tr>';
         }
 

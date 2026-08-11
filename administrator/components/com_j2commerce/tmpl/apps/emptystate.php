@@ -27,7 +27,7 @@ J2CommerceHelper::strapper()->addCSS();
         <div class="col-md-12">
             <div class="text-center">
                 <div class="mb-3">
-                    <span class="fa-8x mb-4 fa fa-puzzle-piece text-muted" aria-hidden="true"></span>
+                    <span class="fa-8x mb-4 fa fa-puzzle-piece text-body-secondary" aria-hidden="true"></span>
                 </div>
                 <h2 class="mb-3">
                     <?php echo Text::_('COM_J2COMMERCE_APPS_EMPTYSTATE_TITLE'); ?>

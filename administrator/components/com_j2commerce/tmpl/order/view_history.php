@@ -45,7 +45,7 @@ $currentUserId = (int) (Factory::getApplication()->getIdentity()?->id ?? 0);
         </div>
         <div class="card-body">
             <textarea class="form-control" id="adminOrderNote" rows="2" placeholder="<?php echo Text::_('COM_J2COMMERCE_ORDER_NOTE_PLACEHOLDER'); ?>" aria-label="<?php echo Text::_('COM_J2COMMERCE_ORDER_NOTE'); ?>"></textarea>
-            <small class="text-muted d-block mt-1"><?php echo Text::_('COM_J2COMMERCE_ORDER_NOTE_INTERNAL_ONLY'); ?></small>
+            <small class="text-body-secondary d-block mt-1"><?php echo Text::_('COM_J2COMMERCE_ORDER_NOTE_INTERNAL_ONLY'); ?></small>
         </div>
     </div>
     <div class="py-3">

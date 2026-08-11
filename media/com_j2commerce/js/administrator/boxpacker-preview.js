@@ -220,7 +220,7 @@ function initPreview(container) {
             // Card header
             const header = el('div', { className: 'card-header py-2 d-flex justify-content-between align-items-center' });
             header.appendChild(el('strong', { textContent: boxTitle }));
-            header.appendChild(el('span', { className: 'text-muted', textContent: dimText }));
+            header.appendChild(el('span', { className: 'text-body-secondary', textContent: dimText }));
             card.appendChild(header);
 
             // Card body
@@ -230,11 +230,11 @@ function initPreview(container) {
             const weightDiv = el('div', { className: 'mb-2' });
             if (box.maxWeight > 0) {
                 const weightLabel = sprintf(t('COM_J2COMMERCE_BOXPACKER_PREVIEW_WEIGHT_USED', 'Weight: %s / %s'), box.totalWeight, box.maxWeight);
-                weightDiv.appendChild(el('small', { className: 'text-muted', textContent: weightLabel }));
+                weightDiv.appendChild(el('small', { className: 'text-body-secondary', textContent: weightLabel }));
                 weightDiv.appendChild(buildProgressBar(weightPct, weightColor));
             } else {
                 weightDiv.appendChild(el('small', {
-                    className: 'text-muted',
+                    className: 'text-body-secondary',
                     textContent: t('COM_J2COMMERCE_BOXPACKER_PREVIEW_WEIGHT', 'Weight') + ': ' + box.totalWeight
                 }));
             }
@@ -243,7 +243,7 @@ function initPreview(container) {
             // Volume row
             const volDiv = el('div', { className: 'mb-2' });
             volDiv.appendChild(el('small', {
-                className: 'text-muted',
+                className: 'text-body-secondary',
                 textContent: t('COM_J2COMMERCE_BOXPACKER_PREVIEW_VOLUME_USED', 'Volume Used') + ': ' + box.volumeUtilisation.toFixed(1) + '%'
             }));
             volDiv.appendChild(buildProgressBar(box.volumeUtilisation, volColor));

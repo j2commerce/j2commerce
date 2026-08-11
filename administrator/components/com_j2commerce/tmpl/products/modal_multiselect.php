@@ -235,7 +235,7 @@ $canChangeState = $user->authorise('core.edit.state', 'com_content');
                         </td>
                         <td class="d-none d-md-table-cell">
                             <?php if ($item->has_options == 1) : ?>
-                                <small class="text-muted"><?php echo Text::_('COM_J2COMMERCE_VARIANTS'); ?></small>
+                                <small class="text-body-secondary"><?php echo Text::_('COM_J2COMMERCE_VARIANTS'); ?></small>
                             <?php else : ?>
                                 <span class="font-monospace"><?php echo $this->escape($item->sku ?? '-'); ?></span>
                             <?php endif; ?>
@@ -315,7 +315,7 @@ $canChangeState = $user->authorise('core.edit.state', 'com_content');
                                         $taxProfileText = !empty($item->tax_profile_name) ? $this->escape($item->tax_profile_name) : Text::_('JNONE');
                                         */?>
                                         <br>
-                                        <small class="text-muted">
+                                        <small class="text-body-secondary">
                                             <strong><?php /*echo Text::_('COM_J2COMMERCE_PRODUCT_TYPE'); */?>:</strong> <?php /*echo Text::_($productTypeKey); */?><br>
                                             <strong><?php /*echo Text::_('COM_J2COMMERCE_VISIBLE_IN_STOREFRONT'); */?>:</strong> <?php /*echo $item->visibility ? Text::_('JYES') : Text::_('JNO'); */?><br>
                                             <strong><?php /*echo Text::_('COM_J2COMMERCE_TAX_PROFILE'); */?>:</strong> <?php /*echo $taxProfileText; */?>
@@ -326,7 +326,7 @@ $canChangeState = $user->authorise('core.edit.state', 'com_content');
                         </th>
                         <td class="d-none d-md-table-cell">
                             <?php /*if ($item->has_options == 1) : */?>
-                                <small class="text-muted"><?php /*echo Text::_('COM_J2COMMERCE_VARIANTS'); */?></small>
+                                <small class="text-body-secondary"><?php /*echo Text::_('COM_J2COMMERCE_VARIANTS'); */?></small>
                             <?php /*else : */?>
                                 <span class="font-monospace"><?php /*echo $this->escape($item->sku ?? ''); */?></span>
                             <?php /*endif; */?>
@@ -335,14 +335,14 @@ $canChangeState = $user->authorise('core.edit.state', 'com_content');
                             <?php /*if (!empty($item->price)) : */?>
                                 <?php /*echo number_format((float) $item->price, 2); */?>
                             <?php /*else : */?>
-                                <span class="text-muted">-</span>
+                                <span class="text-body-secondary">-</span>
                             <?php /*endif; */?>
                         </td>
                         <td class="d-none d-lg-table-cell">
                             <?php /*if (!empty($item->product_source)) : */?>
                                 <?php /*echo $this->escape($item->product_source); */?>
                             <?php /*else : */?>
-                                <span class="text-muted">-</span>
+                                <span class="text-body-secondary">-</span>
                             <?php /*endif; */?>
                         </td>
                         <td class="d-none d-lg-table-cell">

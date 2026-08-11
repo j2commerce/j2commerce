@@ -429,7 +429,7 @@ $wa->addInlineScript($script);
                     <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="5" class="text-center text-muted">
+                            <td colspan="5" class="text-center text-body-secondary">
                                 <?php echo Text::_('COM_J2COMMERCE_NO_PRICES_FOUND'); ?>
                             </td>
                         </tr>

@@ -24,11 +24,11 @@ use Joomla\CMS\Router\Route;
                 <div class="col-md-6 text-center">
 
                     <div class="mb-4">
-                        <span class="fa-solid fa-magnifying-glass fa-3x text-muted" aria-hidden="true"></span>
+                        <span class="fa-solid fa-magnifying-glass fa-3x text-body-secondary" aria-hidden="true"></span>
                     </div>
 
                     <h2><?php echo Text::_('COM_J2COMMERCE_CONFIRMATION_ENTER_TOKEN'); ?></h2>
-                    <p class="text-muted mb-4"><?php echo Text::_('COM_J2COMMERCE_CONFIRMATION_TOKEN_HELP'); ?></p>
+                    <p class="text-body-secondary mb-4"><?php echo Text::_('COM_J2COMMERCE_CONFIRMATION_TOKEN_HELP'); ?></p>
 
                     <form action="<?php echo Route::_('index.php?option=com_j2commerce&view=confirmation'); ?>" method="get" class="mb-4">
                         <input type="hidden" name="option" value="com_j2commerce">

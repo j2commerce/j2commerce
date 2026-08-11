@@ -252,7 +252,7 @@ function debounce(fn, delay) {
         blocksPanel.textContent = '';
 
         const heading = document.createElement('div');
-        heading.className = 'fw-semibold small text-muted mb-2 border-bottom pb-1';
+        heading.className = 'fw-semibold small text-body-secondary mb-2 border-bottom pb-1';
         heading.textContent = messages.insertElement || 'Insert Element';
         blocksPanel.appendChild(heading);
 
@@ -596,7 +596,7 @@ function debounce(fn, delay) {
             if (propertiesPanel) {
                 propertiesPanel.textContent = '';
                 const placeholder = document.createElement('div');
-                placeholder.className = 'text-muted small text-center py-3';
+                placeholder.className = 'text-body-secondary small text-center py-3';
                 placeholder.textContent = messages.selectElement || 'Select an element';
                 propertiesPanel.appendChild(placeholder);
             }
@@ -669,7 +669,7 @@ function debounce(fn, delay) {
 
         if (descText) {
             const descEl = document.createElement('small');
-            descEl.className = 'form-text text-muted';
+            descEl.className = 'form-text text-body-secondary';
             descEl.textContent = descText;
             controlsDiv.appendChild(descEl);
         }
@@ -761,7 +761,7 @@ function debounce(fn, delay) {
 
         if (blockConfig && blockConfig.settings && Object.keys(blockConfig.settings).length > 0) {
             const heading = document.createElement('div');
-            heading.className = 'fw-semibold small text-muted mb-2 border-bottom pb-1';
+            heading.className = 'fw-semibold small text-body-secondary mb-2 border-bottom pb-1';
             heading.textContent = blockConfig.label || blockSlug;
             propertiesPanel.appendChild(heading);
 
@@ -1091,7 +1091,7 @@ function debounce(fn, delay) {
             const col = document.createElement('div');
             col.className = 'col-12';
             const p = document.createElement('p');
-            p.className = 'text-muted text-center';
+            p.className = 'text-body-secondary text-center';
             p.textContent = messages.noPresets || 'No presets available.';
             col.appendChild(p);
             presetsGrid.appendChild(col);
@@ -1124,7 +1124,7 @@ function debounce(fn, delay) {
             title.textContent = preset.name;
 
             const desc = document.createElement('p');
-            desc.className = 'card-text small text-muted';
+            desc.className = 'card-text small text-body-secondary';
             desc.textContent = preset.description || '';
 
             body.appendChild(icon);

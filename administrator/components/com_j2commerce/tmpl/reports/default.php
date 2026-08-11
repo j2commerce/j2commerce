@@ -210,7 +210,7 @@ HTMLHelper::_('bootstrap.tooltip', '[data-bs-toggle="tooltip"]', ['placement' =>
                                             <?php echo Text::_('COM_J2COMMERCE_REPORT_VIEW'); ?>
                                         </a>
                                     <?php else : ?>
-                                        <span class="text-muted">—</span>
+                                        <span class="text-body-secondary">—</span>
                                     <?php endif; ?>
                                 </td>
                                 <td class="d-none d-md-table-cell">

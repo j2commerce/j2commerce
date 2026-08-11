@@ -256,7 +256,7 @@ $wa->addInlineStyle($style, [], []);
                                         </td>
                                         <?php if (in_array($product->product_type, ['simple', 'advancedvariable', 'booking', 'configurable'])): ?>
                                             <td class="text-center">
-                                                <button type="button" class="btn btn-sm j2commerce-set-default-btn btn-link <?php echo ($poptionvalue->product_optionvalue_default ?? 0) ? 'text-warning' : 'text-muted'; ?>" data-pov-id="<?php echo $poptionvalue->j2commerce_product_optionvalue_id; ?>" title="<?php echo Text::_('COM_J2COMMERCE_SET_AS_DEFAULT'); ?>">
+                                                <button type="button" class="btn btn-sm j2commerce-set-default-btn btn-link <?php echo ($poptionvalue->product_optionvalue_default ?? 0) ? 'text-warning' : 'text-body-secondary'; ?>" data-pov-id="<?php echo $poptionvalue->j2commerce_product_optionvalue_id; ?>" title="<?php echo Text::_('COM_J2COMMERCE_SET_AS_DEFAULT'); ?>">
                                                     <span class="icon-star<?php echo ($poptionvalue->product_optionvalue_default ?? 0) ? '' : '-empty'; ?>"></span>
                                                 </button>
                                             </td>
@@ -276,7 +276,7 @@ $wa->addInlineStyle($style, [], []);
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr class="j2commerce-no-values-row">
-                            <td colspan="10" class="text-center text-muted py-4">
+                            <td colspan="10" class="text-center text-body-secondary py-4">
                                 <?php echo Text::_('COM_J2COMMERCE_NO_OPTION_VALUES_ASSIGNED'); ?>
                             </td>
                         </tr>

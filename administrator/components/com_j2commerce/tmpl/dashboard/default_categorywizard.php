@@ -55,7 +55,7 @@ $sefRewrite = (bool) $app->get('sef_rewrite', false);
                                 <input type="radio" name="product_count" value="1" class="visually-hidden">
                                 <div class="j2c-wizard-card-body">
                                     <div class="fw-bold"><?php echo Text::_('COM_J2COMMERCE_WIZARD_STEP1_OPT_1'); ?></div>
-                                    <div class="text-muted small"><?php echo Text::_('COM_J2COMMERCE_WIZARD_STEP1_OPT_1_DESC'); ?></div>
+                                    <div class="text-body-secondary small"><?php echo Text::_('COM_J2COMMERCE_WIZARD_STEP1_OPT_1_DESC'); ?></div>
                                 </div>
                             </label>
                         </div>
@@ -64,7 +64,7 @@ $sefRewrite = (bool) $app->get('sef_rewrite', false);
                                 <input type="radio" name="product_count" value="2-10" class="visually-hidden">
                                 <div class="j2c-wizard-card-body">
                                     <div class="fw-bold"><?php echo Text::_('COM_J2COMMERCE_WIZARD_STEP1_OPT_2_10'); ?></div>
-                                    <div class="text-muted small"><?php echo Text::_('COM_J2COMMERCE_WIZARD_STEP1_OPT_2_10_DESC'); ?></div>
+                                    <div class="text-body-secondary small"><?php echo Text::_('COM_J2COMMERCE_WIZARD_STEP1_OPT_2_10_DESC'); ?></div>
                                 </div>
                             </label>
                         </div>
@@ -73,7 +73,7 @@ $sefRewrite = (bool) $app->get('sef_rewrite', false);
                                 <input type="radio" name="product_count" value="11-50" class="visually-hidden">
                                 <div class="j2c-wizard-card-body">
                                     <div class="fw-bold"><?php echo Text::_('COM_J2COMMERCE_WIZARD_STEP1_OPT_11_50'); ?></div>
-                                    <div class="text-muted small"><?php echo Text::_('COM_J2COMMERCE_WIZARD_STEP1_OPT_11_50_DESC'); ?></div>
+                                    <div class="text-body-secondary small"><?php echo Text::_('COM_J2COMMERCE_WIZARD_STEP1_OPT_11_50_DESC'); ?></div>
                                 </div>
                             </label>
                         </div>
@@ -82,7 +82,7 @@ $sefRewrite = (bool) $app->get('sef_rewrite', false);
                                 <input type="radio" name="product_count" value="50+" class="visually-hidden">
                                 <div class="j2c-wizard-card-body">
                                     <div class="fw-bold"><?php echo Text::_('COM_J2COMMERCE_WIZARD_STEP1_OPT_50_PLUS'); ?></div>
-                                    <div class="text-muted small"><?php echo Text::_('COM_J2COMMERCE_WIZARD_STEP1_OPT_50_PLUS_DESC'); ?></div>
+                                    <div class="text-body-secondary small"><?php echo Text::_('COM_J2COMMERCE_WIZARD_STEP1_OPT_50_PLUS_DESC'); ?></div>
                                 </div>
                             </label>
                         </div>
@@ -112,7 +112,7 @@ $sefRewrite = (bool) $app->get('sef_rewrite', false);
                                         <span class="fa-solid fa-download fa-lg me-3 text-primary" aria-hidden="true"></span>
                                         <div>
                                             <div class="fw-bold"><?php echo Text::_('COM_J2COMMERCE_WIZARD_PRODUCT_TYPE_DOWNLOADABLE'); ?></div>
-                                            <div class="text-muted small"><?php echo Text::_('COM_J2COMMERCE_WIZARD_PRODUCT_TYPE_DOWNLOADABLE_DESC'); ?></div>
+                                            <div class="text-body-secondary small"><?php echo Text::_('COM_J2COMMERCE_WIZARD_PRODUCT_TYPE_DOWNLOADABLE_DESC'); ?></div>
                                         </div>
                                     </div>
                                 </div>
@@ -126,7 +126,7 @@ $sefRewrite = (bool) $app->get('sef_rewrite', false);
                                         <span class="fa-solid fa-box fa-lg me-3 text-success" aria-hidden="true"></span>
                                         <div>
                                             <div class="fw-bold"><?php echo Text::_('COM_J2COMMERCE_WIZARD_PRODUCT_TYPE_SIMPLE'); ?></div>
-                                            <div class="text-muted small"><?php echo Text::_('COM_J2COMMERCE_WIZARD_PRODUCT_TYPE_SIMPLE_DESC'); ?></div>
+                                            <div class="text-body-secondary small"><?php echo Text::_('COM_J2COMMERCE_WIZARD_PRODUCT_TYPE_SIMPLE_DESC'); ?></div>
                                         </div>
                                     </div>
                                 </div>
@@ -140,7 +140,7 @@ $sefRewrite = (bool) $app->get('sef_rewrite', false);
                                         <span class="fa-solid fa-layer-group fa-lg me-3 text-warning" aria-hidden="true"></span>
                                         <div>
                                             <div class="fw-bold"><?php echo Text::_('COM_J2COMMERCE_WIZARD_PRODUCT_TYPE_VARIABLE'); ?></div>
-                                            <div class="text-muted small"><?php echo Text::_('COM_J2COMMERCE_WIZARD_PRODUCT_TYPE_VARIABLE_DESC'); ?></div>
+                                            <div class="text-body-secondary small"><?php echo Text::_('COM_J2COMMERCE_WIZARD_PRODUCT_TYPE_VARIABLE_DESC'); ?></div>
                                         </div>
                                     </div>
                                 </div>
@@ -182,7 +182,7 @@ $sefRewrite = (bool) $app->get('sef_rewrite', false);
                                 <input type="radio" name="category_count" value="1" class="visually-hidden">
                                 <div class="j2c-wizard-card-body">
                                     <div class="fw-bold"><?php echo Text::_('COM_J2COMMERCE_WIZARD_CATEGORY_1'); ?></div>
-                                    <div class="text-muted small"><?php echo Text::_('COM_J2COMMERCE_WIZARD_CATEGORY_1_DESC'); ?></div>
+                                    <div class="text-body-secondary small"><?php echo Text::_('COM_J2COMMERCE_WIZARD_CATEGORY_1_DESC'); ?></div>
                                 </div>
                             </label>
                         </div>
@@ -225,7 +225,7 @@ $sefRewrite = (bool) $app->get('sef_rewrite', false);
                                         <span class="fa-solid fa-folder-open fa-lg me-3 text-primary" aria-hidden="true"></span>
                                         <div>
                                             <div class="fw-bold"><?php echo Text::_('COM_J2COMMERCE_WIZARD_CATEGORY_SOURCE_EXISTING'); ?></div>
-                                            <div class="text-muted small"><?php echo Text::_('COM_J2COMMERCE_WIZARD_CATEGORY_SOURCE_EXISTING_DESC'); ?></div>
+                                            <div class="text-body-secondary small"><?php echo Text::_('COM_J2COMMERCE_WIZARD_CATEGORY_SOURCE_EXISTING_DESC'); ?></div>
                                         </div>
                                     </div>
                                 </div>
@@ -239,7 +239,7 @@ $sefRewrite = (bool) $app->get('sef_rewrite', false);
                                         <span class="fa-solid fa-folder-plus fa-lg me-3 text-success" aria-hidden="true"></span>
                                         <div>
                                             <div class="fw-bold"><?php echo Text::_('COM_J2COMMERCE_WIZARD_CATEGORY_SOURCE_CREATE'); ?></div>
-                                            <div class="text-muted small"><?php echo Text::_('COM_J2COMMERCE_WIZARD_CATEGORY_SOURCE_CREATE_DESC'); ?></div>
+                                            <div class="text-body-secondary small"><?php echo Text::_('COM_J2COMMERCE_WIZARD_CATEGORY_SOURCE_CREATE_DESC'); ?></div>
                                         </div>
                                     </div>
                                 </div>
@@ -251,7 +251,7 @@ $sefRewrite = (bool) $app->get('sef_rewrite', false);
                 <!-- Step: Select existing categories (fancy-select) -->
                 <div class="j2c-wizard-step d-none" inert data-step="category-select">
                     <h3 class="mb-4 fs-5"><?php echo Text::_('COM_J2COMMERCE_WIZARD_CATEGORY_SELECT_TITLE'); ?></h3>
-                    <p class="text-muted"><?php echo Text::_('COM_J2COMMERCE_WIZARD_CATEGORY_SELECT_DESC'); ?></p>
+                    <p class="text-body-secondary"><?php echo Text::_('COM_J2COMMERCE_WIZARD_CATEGORY_SELECT_DESC'); ?></p>
                     <div id="j2c-category-select-container">
                         <!-- Populated by JS with a fancy-select multi-select -->
                     </div>
@@ -266,7 +266,7 @@ $sefRewrite = (bool) $app->get('sef_rewrite', false);
                                 <input type="radio" name="menu_type" value="categories" class="visually-hidden">
                                 <div class="j2c-wizard-card-body">
                                     <div class="fw-bold"><?php echo Text::_('COM_J2COMMERCE_WIZARD_DISPLAY_SAME'); ?></div>
-                                    <div class="text-muted small"><?php echo Text::_('COM_J2COMMERCE_WIZARD_DISPLAY_SAME_DESC'); ?></div>
+                                    <div class="text-body-secondary small"><?php echo Text::_('COM_J2COMMERCE_WIZARD_DISPLAY_SAME_DESC'); ?></div>
                                 </div>
                             </label>
                         </div>
@@ -275,7 +275,7 @@ $sefRewrite = (bool) $app->get('sef_rewrite', false);
                                 <input type="radio" name="menu_type" value="products" class="visually-hidden">
                                 <div class="j2c-wizard-card-body">
                                     <div class="fw-bold"><?php echo Text::_('COM_J2COMMERCE_WIZARD_DISPLAY_DIFFERENT'); ?></div>
-                                    <div class="text-muted small"><?php echo Text::_('COM_J2COMMERCE_WIZARD_DISPLAY_DIFFERENT_DESC'); ?></div>
+                                    <div class="text-body-secondary small"><?php echo Text::_('COM_J2COMMERCE_WIZARD_DISPLAY_DIFFERENT_DESC'); ?></div>
                                 </div>
                             </label>
                         </div>
@@ -352,7 +352,7 @@ $sefRewrite = (bool) $app->get('sef_rewrite', false);
 
             <!-- Footer -->
             <div class="modal-footer d-flex justify-content-between align-items-center">
-                <div class="text-muted small" id="j2c-wizard-step-indicator"></div>
+                <div class="text-body-secondary small" id="j2c-wizard-step-indicator"></div>
                 <div class="d-flex gap-2">
                     <button type="button" class="btn btn-sm btn-secondary d-none" id="j2c-wizard-back">
                         <span class="fa-solid fa-arrow-left me-1" aria-hidden="true"></span>

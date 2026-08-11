@@ -314,7 +314,7 @@ $changeHtml = function (array $change): string {
                             </thead>
                             <tbody>
                                 <?php if (empty($this->topProducts)) : ?>
-                                    <tr><td colspan="4" class="text-center text-muted"><?php echo Text::_('COM_J2COMMERCE_ANALYTICS_NO_DATA'); ?></td></tr>
+                                    <tr><td colspan="4" class="text-center text-body-secondary"><?php echo Text::_('COM_J2COMMERCE_ANALYTICS_NO_DATA'); ?></td></tr>
                                 <?php else : ?>
                                     <?php foreach ($this->topProducts as $i => $product) : ?>
                                         <tr>

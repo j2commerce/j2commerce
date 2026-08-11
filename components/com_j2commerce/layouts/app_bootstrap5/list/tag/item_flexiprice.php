@@ -40,7 +40,7 @@ $basePrice = $pricing->base_price ?? 0;
 $salePrice = $pricing->price ?? 0;
 ?>
 <?php if ($hasRange && $showRange): ?>
-    <div class="price-range text-muted small">
+    <div class="price-range text-body-secondary small">
             <?php echo $currency->format($minPrice); ?> - <?php echo $currency->format($maxPrice); ?>
     </div>
 <?php endif; ?>

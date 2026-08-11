@@ -81,13 +81,13 @@ class StoreAddressCheck extends AbstractSetupCheck
 
         $html = '<h5>' . Text::_('COM_J2COMMERCE_SETUP_GUIDE_CHECK_STORE_ADDRESS') . '</h5>'
             . '<p>' . Text::_('COM_J2COMMERCE_SETUP_GUIDE_CHECK_STORE_ADDRESS_DESC') . '</p>'
-            . '<p class="text-muted small mb-1">' . Text::_('COM_J2COMMERCE_SETUP_GUIDE_CURRENT_VALUES') . '</p>'
+            . '<p class="text-body-secondary small mb-1">' . Text::_('COM_J2COMMERCE_SETUP_GUIDE_CURRENT_VALUES') . '</p>'
             . '<table class="table table-sm table-bordered mb-3"><tbody>';
 
         foreach (self::REQUIRED_FIELDS as $param => $langKey) {
             $value = $params->get($param, '');
             $html .= '<tr><td class="small fw-semibold">' . Text::_($langKey) . '</td>'
-                . '<td class="small">' . ($value !== '' ? htmlspecialchars($value) : '<em class="text-muted">' . Text::_('COM_J2COMMERCE_SETUP_GUIDE_NOT_SET') . '</em>') . '</td></tr>';
+                . '<td class="small">' . ($value !== '' ? htmlspecialchars($value) : '<em class="text-body-secondary">' . Text::_('COM_J2COMMERCE_SETUP_GUIDE_NOT_SET') . '</em>') . '</td></tr>';
         }
 
         $html .= '</tbody></table>'

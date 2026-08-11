@@ -85,9 +85,9 @@ $doc->getWebAssetManager()
     <?php if (!$this->hasProducts && !$this->hasSampleData) : ?>
     <div class="card mb-4">
         <div class="card-body text-center py-5">
-            <span class="fa-solid fa-box-open fa-3x text-muted d-block mb-3" aria-hidden="true"></span>
+            <span class="fa-solid fa-box-open fa-3x text-body-secondary d-block mb-3" aria-hidden="true"></span>
             <h2 class="fs-5"><?php echo Text::_('COM_J2COMMERCE_DASHBOARD_EMPTY_STORE_TITLE'); ?></h2>
-            <p class="text-muted"><?php echo Text::_('COM_J2COMMERCE_DASHBOARD_EMPTY_STORE_DESC'); ?></p>
+            <p class="text-body-secondary"><?php echo Text::_('COM_J2COMMERCE_DASHBOARD_EMPTY_STORE_DESC'); ?></p>
             <button type="button" class="btn btn-primary" id="j2c-load-sampledata">
                 <span class="fa-solid fa-database me-1" aria-hidden="true"></span>
                 <?php echo Text::_('COM_J2COMMERCE_DASHBOARD_LOAD_SAMPLEDATA'); ?>

@@ -150,16 +150,16 @@ Text::script('COM_J2COMMERCE_INVENTORY_BATCH_NO_FIELDS');
                                 <?php if ($isVariantProduct) : ?>
                                     <!-- Product has variants - empty cells for quantity, stock management, stock status, and actions -->
                                     <td class="text-center">
-                                        <span class="text-muted">—</span>
+                                        <span class="text-body-secondary">—</span>
                                     </td>
                                     <td class="text-center">
-                                        <span class="text-muted">—</span>
+                                        <span class="text-body-secondary">—</span>
                                     </td>
                                     <td class="text-center">
-                                        <span class="text-muted">—</span>
+                                        <span class="text-body-secondary">—</span>
                                     </td>
                                     <td class="text-center">
-                                        <span class="text-muted">—</span>
+                                        <span class="text-body-secondary">—</span>
                                     </td>
                                 <?php else : ?>
                                     <!-- Single variant product - show regular fields -->

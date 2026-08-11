@@ -261,9 +261,9 @@ body.com_j2commerce #content,
 }
 
 html[data-bs-theme="light"] body.com_j2commerce {
-    .text-muted {
-        --text-muted-color : #495057;
-        color: var(--text-muted-color)!important;
+    .text-body-secondary {
+        --text-body-secondary-color : #495057;
+        color: var(--text-body-secondary-color)!important;
         opacity: 1!important;
     }
 }

@@ -82,7 +82,7 @@ $nullDate   = '0000-00-00 00:00:00';
                             <?php if (!empty($displayName)): ?>
                                 <small class="fw-medium"><?php echo $this->escape($displayName); ?></small>
                             <?php else: ?>
-                                <span class="text-muted fst-italic"><?php echo Text::_('COM_J2COMMERCE_FILE_UNAVAILABLE'); ?></span>
+                                <span class="text-body-secondary fst-italic"><?php echo Text::_('COM_J2COMMERCE_FILE_UNAVAILABLE'); ?></span>
                             <?php endif; ?>
                         </td>
                         <td>
@@ -140,7 +140,7 @@ $nullDate   = '0000-00-00 00:00:00';
                 </ul>
             </nav>
             <?php endif; ?>
-            <span class="text-muted small ms-3 align-self-center" id="j2c-downloads-count">
+            <span class="text-body-secondary small ms-3 align-self-center" id="j2c-downloads-count">
                 <?php echo $start . ' - ' . $end . ' / ' . $total . ' ' . Text::_('COM_J2COMMERCE_ITEMS'); ?>
             </span>
         </div>

@@ -97,7 +97,7 @@ foreach ($translationKeys as $key) {
                         <?php echo Text::_('COM_J2COMMERCE_FIELD_PREVIEW'); ?>
                     </div>
                     <div class="card-body pt-0" id="customfield-preview">
-                        <p class="text-muted small"><?php echo Text::_('COM_J2COMMERCE_FIELD_PREVIEW_DESC'); ?></p>
+                        <p class="text-body-secondary small"><?php echo Text::_('COM_J2COMMERCE_FIELD_PREVIEW_DESC'); ?></p>
                         <div id="customfield-preview-content"></div>
                     </div>
                 </div>
@@ -296,7 +296,7 @@ document.addEventListener('DOMContentLoaded', function() {
                          + '<label class="form-check-label" for="preview_radio_' + i + '">' + esc(o.name) + '</label>'
                          + '</div>';
                 });
-                if (!opts.length) html += '<p class="text-muted small fst-italic mb-0"><?php echo $this->escape(Text::_('COM_J2COMMERCE_FIELD_PREVIEW_ADD_OPTIONS')); ?></p>';
+                if (!opts.length) html += '<p class="text-body-secondary small fst-italic mb-0"><?php echo $this->escape(Text::_('COM_J2COMMERCE_FIELD_PREVIEW_ADD_OPTIONS')); ?></p>';
                 break;
             }
 
@@ -309,7 +309,7 @@ document.addEventListener('DOMContentLoaded', function() {
                          + '<label class="form-check-label" for="preview_check_' + i + '">' + esc(o.name) + '</label>'
                          + '</div>';
                 });
-                if (!opts.length) html += '<p class="text-muted small fst-italic mb-0"><?php echo $this->escape(Text::_('COM_J2COMMERCE_FIELD_PREVIEW_ADD_OPTIONS')); ?></p>';
+                if (!opts.length) html += '<p class="text-body-secondary small fst-italic mb-0"><?php echo $this->escape(Text::_('COM_J2COMMERCE_FIELD_PREVIEW_ADD_OPTIONS')); ?></p>';
                 break;
             }
 
@@ -332,7 +332,7 @@ document.addEventListener('DOMContentLoaded', function() {
             case 'wysiwyg':
                 html = '<label class="form-label">' + label + requiredMark + '</label>'
                      + '<textarea class="form-control" rows="4" disabled' + placeholderAttr + '>' + defaultValue + '</textarea>'
-                     + '<p class="text-muted small fst-italic mb-0"><?php echo $this->escape(Text::_('COM_J2COMMERCE_FIELD_PREVIEW_WYSIWYG')); ?></p>';
+                     + '<p class="text-body-secondary small fst-italic mb-0"><?php echo $this->escape(Text::_('COM_J2COMMERCE_FIELD_PREVIEW_WYSIWYG')); ?></p>';
                 break;
 
             case 'customtext':
