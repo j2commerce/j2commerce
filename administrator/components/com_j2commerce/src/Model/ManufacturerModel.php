@@ -263,7 +263,25 @@ class ManufacturerModel extends AdminModel
             unset($data[$field->field_namekey]);
         }
 
+        $data = $this->filterManufacturerData($data);
+
         return parent::save($data);
+    }
+
+    private function filterManufacturerData(array $data): array
+    {
+        $table  = $this->getTable();
+        $fields = $table->getFields();
+
+        $allowKeys = ['tags', 'rules', 'asset_id'];
+
+        foreach (array_keys($data) as $key) {
+            if (!isset($fields[$key]) && !\in_array($key, $allowKeys, true)) {
+                unset($data[$key]);
+            }
+        }
+
+        return $data;
     }
 
     /**
@@ -279,63 +297,56 @@ class ManufacturerModel extends AdminModel
      */
     protected function saveAddress(array $addressData): int
     {
-        $db    = $this->getDatabase();
-        $isNew = empty($addressData['j2commerce_address_id']);
+        $profileKeys = ['marketplace_store_name', 'marketplace_store_description', 'marketplace_store_logo', 'marketplace_store_slug'];
+        foreach ($profileKeys as $k) {
+            unset($addressData[$k]);
+        }
 
-        if ($isNew) {
-            // Insert new address
-            $columns = [];
-            $values  = [];
-            $binds   = [];
-
-            foreach ($addressData as $key => $value) {
-                $columns[]           = $db->quoteName($key);
-                $placeholder         = ':' . $key;
-                $values[]            = $placeholder;
-                $binds[$placeholder] = $value;
+        $addressTable = $this->getTable('Address', 'Administrator');
+        $fields       = $addressTable->getFields();
+        $extra        = [];
+        foreach (array_keys($addressData) as $key) {
+            if (!isset($fields[$key])) {
+                $extra[$key] = $addressData[$key];
+                unset($addressData[$key]);
             }
+        }
 
-            $query = $db->getQuery(true);
-            $query->insert($db->quoteName('#__j2commerce_addresses'))
-                ->columns($columns)
-                ->values(implode(', ', $values));
-
-            foreach ($binds as $placeholder => $value) {
-                $query->bind($placeholder, $binds[$placeholder]);
+        if ($extra !== []) {
+            $params = [];
+            if (!empty($addressData['params'])) {
+                $decoded = json_decode((string) $addressData['params'], true);
+                if (\is_array($decoded)) {
+                    $params = $decoded;
+                }
+            } elseif (!empty($addressData['j2commerce_address_id'])) {
+                $existing = $this->getTable('Address', 'Administrator');
+                if ($existing->load((int) $addressData['j2commerce_address_id']) && !empty($existing->params)) {
+                    $decoded = json_decode((string) $existing->params, true);
+                    if (\is_array($decoded)) {
+                        $params = $decoded;
+                    }
+                }
             }
-
-            $db->setQuery($query);
-            $db->execute();
-
-            return (int) $db->insertid();
-        }
-        // Update existing address
-        $addressId = (int) $addressData['j2commerce_address_id'];
-        unset($addressData['j2commerce_address_id']);
-
-        $fields = [];
-        $binds  = [];
-
-        foreach ($addressData as $key => $value) {
-            $placeholder         = ':' . $key;
-            $fields[]            = $db->quoteName($key) . ' = ' . $placeholder;
-            $binds[$placeholder] = $value;
+            foreach ($extra as $k => $v) {
+                $params[$k] = $v;
+            }
+            $addressData['params'] = json_encode($params, JSON_UNESCAPED_UNICODE);
         }
 
-        $query = $db->getQuery(true);
-        $query->update($db->quoteName('#__j2commerce_addresses'))
-            ->set($fields)
-            ->where($db->quoteName('j2commerce_address_id') . ' = :address_id')
-            ->bind(':address_id', $addressId, \Joomla\Database\ParameterType::INTEGER);
-
-        foreach ($binds as $placeholder => $value) {
-            $query->bind($placeholder, $binds[$placeholder]);
+        if (!$addressTable->bind($addressData)) {
+            throw new \RuntimeException($addressTable->getError() ?: 'Address bind failed.');
         }
 
-        $db->setQuery($query);
-        $db->execute();
+        if (!$addressTable->check()) {
+            throw new \RuntimeException($addressTable->getError() ?: 'Address validation failed.');
+        }
 
-        return $addressId;
+        if (!$addressTable->store()) {
+            throw new \RuntimeException($addressTable->getError() ?: 'Address store failed.');
+        }
+
+        return (int) $addressTable->j2commerce_address_id;
 
     }
 

@@ -263,7 +263,31 @@ class VendorModel extends AdminModel
             unset($data[$field->field_namekey]);
         }
 
+        // Defensive: strip any remaining keys that are not vendor table columns
+        // (e.g. marketplace_* custom fields injected via onContentPrepareForm
+        // when the customfields query was stale or the field has no dedicated
+        // address column). Without this, Table::bind would carry the key into
+        // the UPDATE and trigger "Unknown column 'marketplace_store_name'".
+        $data = $this->filterVendorData($data);
+
         return parent::save($data);
+    }
+
+    private function filterVendorData(array $data): array
+    {
+        $table  = $this->getTable();
+        $fields = $table->getFields();
+
+        // Always keep Joomla admin model bookkeeping keys even if not table columns
+        $allowKeys = ['tags', 'rules', 'asset_id'];
+
+        foreach (array_keys($data) as $key) {
+            if (!isset($fields[$key]) && !\in_array($key, $allowKeys, true)) {
+                unset($data[$key]);
+            }
+        }
+
+        return $data;
     }
 
     /**
@@ -279,63 +303,66 @@ class VendorModel extends AdminModel
      */
     protected function saveAddress(array $addressData): int
     {
-        $db    = $this->getDatabase();
+        // Use AddressTable so unknown custom-field keys (e.g. marketplace_store_name
+        // when the field has no dedicated column) are filtered against the real
+        // table schema instead of throwing "Unknown column" via a raw UPDATE.
+        // Marketplace profile fields (store_name/description/logo) map to
+        // #__j2commerce_appmarketplace_profiles, not addresses, so exclude them
+        // from the address row entirely.
+        $profileKeys = ['marketplace_store_name', 'marketplace_store_description', 'marketplace_store_logo', 'marketplace_store_slug'];
+        foreach ($profileKeys as $k) {
+            unset($addressData[$k]);
+        }
+
+        $addressTable = $this->getTable('Address', 'Administrator');
+
+        // Filter to real address columns; stash extras in params JSON.
+        $fields = $addressTable->getFields();
+        $extra  = [];
+        foreach (array_keys($addressData) as $key) {
+            if (!isset($fields[$key])) {
+                $extra[$key] = $addressData[$key];
+                unset($addressData[$key]);
+            }
+        }
+
+        if ($extra !== []) {
+            $params = [];
+            if (!empty($addressData['params'])) {
+                $decoded = json_decode((string) $addressData['params'], true);
+                if (\is_array($decoded)) {
+                    $params = $decoded;
+                }
+            } elseif (!empty($addressData['j2commerce_address_id'])) {
+                $existing = $this->getTable('Address', 'Administrator');
+                if ($existing->load((int) $addressData['j2commerce_address_id']) && !empty($existing->params)) {
+                    $decoded = json_decode((string) $existing->params, true);
+                    if (\is_array($decoded)) {
+                        $params = $decoded;
+                    }
+                }
+            }
+            foreach ($extra as $k => $v) {
+                $params[$k] = $v;
+            }
+            $addressData['params'] = json_encode($params, JSON_UNESCAPED_UNICODE);
+        }
+
         $isNew = empty($addressData['j2commerce_address_id']);
 
-        if ($isNew) {
-            // Insert new address
-            $columns = [];
-            $values  = [];
-            $binds   = [];
-
-            foreach ($addressData as $key => $value) {
-                $columns[]           = $db->quoteName($key);
-                $placeholder         = ':' . $key;
-                $values[]            = $placeholder;
-                $binds[$placeholder] = $value;
-            }
-
-            $query = $db->getQuery(true);
-            $query->insert($db->quoteName('#__j2commerce_addresses'))
-                ->columns($columns)
-                ->values(implode(', ', $values));
-
-            foreach ($binds as $placeholder => $value) {
-                $query->bind($placeholder, $binds[$placeholder]);
-            }
-
-            $db->setQuery($query);
-            $db->execute();
-
-            return (int) $db->insertid();
-        }
-        // Update existing address
-        $addressId = (int) $addressData['j2commerce_address_id'];
-        unset($addressData['j2commerce_address_id']);
-
-        $fields = [];
-        $binds  = [];
-
-        foreach ($addressData as $key => $value) {
-            $placeholder         = ':' . $key;
-            $fields[]            = $db->quoteName($key) . ' = ' . $placeholder;
-            $binds[$placeholder] = $value;
+        if (!$addressTable->bind($addressData)) {
+            throw new \RuntimeException($addressTable->getError() ?: 'Address bind failed.');
         }
 
-        $query = $db->getQuery(true);
-        $query->update($db->quoteName('#__j2commerce_addresses'))
-            ->set($fields)
-            ->where($db->quoteName('j2commerce_address_id') . ' = :address_id')
-            ->bind(':address_id', $addressId, \Joomla\Database\ParameterType::INTEGER);
-
-        foreach ($binds as $placeholder => $value) {
-            $query->bind($placeholder, $binds[$placeholder]);
+        if (!$addressTable->check()) {
+            throw new \RuntimeException($addressTable->getError() ?: 'Address validation failed.');
         }
 
-        $db->setQuery($query);
-        $db->execute();
+        if (!$addressTable->store()) {
+            throw new \RuntimeException($addressTable->getError() ?: 'Address store failed.');
+        }
 
-        return $addressId;
+        return (int) $addressTable->j2commerce_address_id;
 
     }
 
