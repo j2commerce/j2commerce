@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\CsvHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Application\CMSApplication;
@@ -579,58 +580,45 @@ class OrdersController extends AdminController
             (string) ($order->invoice ?? ''),
             (string) $order->created_on,
             Text::_($order->orderstatus_name ?? 'COM_J2COMMERCE_UNKNOWN'),
-            $this->sanitizeCsvCell(strip_tags($paymentDisplay)),
+            CsvHelper::sanitizeCell(strip_tags($paymentDisplay)),
             number_format((float) $order->order_subtotal, 2, '.', ''),
             number_format((float) $order->order_shipping, 2, '.', ''),
             number_format((float) $order->order_tax, 2, '.', ''),
             number_format((float) $order->order_discount, 2, '.', ''),
             number_format((float) $order->order_total, 2, '.', ''),
-            $this->sanitizeCsvCell((string) $order->currency_code),
-            $this->sanitizeCsvCell((string) ($order->discount_code ?? '')),
-            $this->sanitizeCsvCell($customerName),
-            $this->sanitizeCsvCell((string) $order->user_email),
-            $this->sanitizeCsvCell((string) ($order->billing_company ?? '')),
-            $this->sanitizeCsvCell((string) ($order->billing_address_1 ?? '')),
-            $this->sanitizeCsvCell((string) ($order->billing_address_2 ?? '')),
-            $this->sanitizeCsvCell((string) ($order->billing_city ?? '')),
-            $this->sanitizeCsvCell((string) ($order->billing_zone_name ?? '')),
-            $this->sanitizeCsvCell((string) ($order->billing_country_name ?? '')),
-            $this->sanitizeCsvCell((string) ($order->billing_zip ?? '')),
-            $this->sanitizeCsvCell((string) ($order->billing_phone_1 ?? '')),
-            $this->sanitizeCsvCell((string) ($order->shipping_company ?? '')),
-            $this->sanitizeCsvCell((string) ($order->shipping_first_name ?? '')),
-            $this->sanitizeCsvCell((string) ($order->shipping_last_name ?? '')),
-            $this->sanitizeCsvCell((string) ($order->shipping_address_1 ?? '')),
-            $this->sanitizeCsvCell((string) ($order->shipping_address_2 ?? '')),
-            $this->sanitizeCsvCell((string) ($order->shipping_city ?? '')),
-            $this->sanitizeCsvCell((string) ($order->shipping_zone_name ?? '')),
-            $this->sanitizeCsvCell((string) ($order->shipping_country_name ?? '')),
-            $this->sanitizeCsvCell((string) ($order->shipping_zip ?? '')),
+            CsvHelper::sanitizeCell((string) $order->currency_code),
+            CsvHelper::sanitizeCell((string) ($order->discount_code ?? '')),
+            CsvHelper::sanitizeCell($customerName),
+            CsvHelper::sanitizeCell((string) $order->user_email),
+            CsvHelper::sanitizeCell((string) ($order->billing_company ?? '')),
+            CsvHelper::sanitizeCell((string) ($order->billing_address_1 ?? '')),
+            CsvHelper::sanitizeCell((string) ($order->billing_address_2 ?? '')),
+            CsvHelper::sanitizeCell((string) ($order->billing_city ?? '')),
+            CsvHelper::sanitizeCell((string) ($order->billing_zone_name ?? '')),
+            CsvHelper::sanitizeCell((string) ($order->billing_country_name ?? '')),
+            CsvHelper::sanitizeCell((string) ($order->billing_zip ?? '')),
+            CsvHelper::sanitizeCell((string) ($order->billing_phone_1 ?? '')),
+            CsvHelper::sanitizeCell((string) ($order->shipping_company ?? '')),
+            CsvHelper::sanitizeCell((string) ($order->shipping_first_name ?? '')),
+            CsvHelper::sanitizeCell((string) ($order->shipping_last_name ?? '')),
+            CsvHelper::sanitizeCell((string) ($order->shipping_address_1 ?? '')),
+            CsvHelper::sanitizeCell((string) ($order->shipping_address_2 ?? '')),
+            CsvHelper::sanitizeCell((string) ($order->shipping_city ?? '')),
+            CsvHelper::sanitizeCell((string) ($order->shipping_zone_name ?? '')),
+            CsvHelper::sanitizeCell((string) ($order->shipping_country_name ?? '')),
+            CsvHelper::sanitizeCell((string) ($order->shipping_zip ?? '')),
         ];
 
         for ($i = 0; $i < $maxItems; $i++) {
             $item = $items[$i] ?? null;
 
-            $row[] = $this->sanitizeCsvCell((string) ($item->orderitem_name ?? ''));
-            $row[] = $this->sanitizeCsvCell((string) ($item->orderitem_sku ?? ''));
+            $row[] = CsvHelper::sanitizeCell((string) ($item->orderitem_name ?? ''));
+            $row[] = CsvHelper::sanitizeCell((string) ($item->orderitem_sku ?? ''));
             $row[] = $item !== null ? number_format((float) $item->orderitem_price, 2, '.', '') : '';
-            $row[] = $this->sanitizeCsvCell((string) ($item->orderitem_quantity ?? ''));
+            $row[] = CsvHelper::sanitizeCell((string) ($item->orderitem_quantity ?? ''));
             $row[] = $item !== null ? number_format((float) $item->orderitem_finalprice, 2, '.', '') : '';
         }
 
         return $row;
-    }
-
-    /**
-     * Neutralizes CSV formula injection (Excel/Sheets DDE attack) by prefixing
-     * cells that start with =, +, -, or @ with a leading tab.
-     */
-    private function sanitizeCsvCell(string $value): string
-    {
-        if ($value !== '' && \in_array($value[0], ['=', '+', '-', '@'], true)) {
-            return "\t" . $value;
-        }
-
-        return $value;
     }
 }

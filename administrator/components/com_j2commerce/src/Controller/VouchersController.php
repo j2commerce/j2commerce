@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\CsvHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -106,7 +107,7 @@ class VouchersController extends AdminController
         ]);
 
         foreach ($items as $item) {
-            fputcsv($fp, array_map(self::guardCsvCell(...), [
+            fputcsv($fp, array_map(CsvHelper::sanitizeCell(...), [
                 $item->j2commerce_voucher_id,
                 $item->voucher_code,
                 $item->email_to ?: $item->recipient_name,
@@ -124,13 +125,4 @@ class VouchersController extends AdminController
         $app->close();
     }
 
-    /**
-     * Prefixes cells starting with =+-@ with a quote to defuse CSV formula injection.
-     */
-    private static function guardCsvCell(mixed $value): string
-    {
-        $value = (string) $value;
-
-        return preg_match('/^[=+\-@]/', $value) === 1 ? "'" . $value : $value;
-    }
 }

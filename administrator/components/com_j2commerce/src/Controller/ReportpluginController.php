@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\CsvHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -181,7 +182,7 @@ class ReportpluginController extends BaseController
             // Header row from object keys
             $firstItem = reset($items);
             $keys      = array_keys((array) $firstItem);
-            fputcsv($output, $keys, ',', '"', '\\');
+            fputcsv($output, array_map(CsvHelper::sanitizeCell(...), $keys), ',', '"', '\\');
 
             // Data rows
             foreach ($items as $item) {
@@ -196,7 +197,7 @@ class ReportpluginController extends BaseController
                         $value = 'Object';
                     }
 
-                    $row[] = $value;
+                    $row[] = CsvHelper::sanitizeCell($value);
                 }
 
                 fputcsv($output, $row, ',', '"', '\\');
