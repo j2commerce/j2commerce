@@ -1073,7 +1073,10 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.type = 'button';
             btn.className = 'btn btn-sm btn-link text-danger shadow-none';
             btn.dataset.action = 'remove-rate';
-            btn.replaceChildren(document.createRange().createContextualFragment('<span class="fa-solid fa-trash-can" aria-hidden="true"></span>'));
+            const btnIcon = document.createElement('span');
+            btnIcon.className = 'fa-solid fa-trash-can';
+            btnIcon.setAttribute('aria-hidden', 'true');
+            btn.replaceChildren(btnIcon);
             lastCell.appendChild(btn);
         }
 

@@ -56,7 +56,9 @@ function initBoxPackerField(container) {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'btn btn-sm btn-danger btn-remove-box';
-        btn.replaceChildren(document.createRange().createContextualFragment('<span class="fa-solid fa-times"></span>'));
+        const btnIcon = document.createElement('span');
+        btnIcon.className = 'fa-solid fa-times';
+        btn.replaceChildren(btnIcon);
         tdBtn.appendChild(btn);
         tr.appendChild(tdBtn);
 
@@ -130,7 +132,9 @@ function initBoxPackerField(container) {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'btn btn-sm btn-danger btn-remove-box';
-        btn.replaceChildren(document.createRange().createContextualFragment('<span class="fa-solid fa-times"></span>'));
+        const btnIcon = document.createElement('span');
+        btnIcon.className = 'fa-solid fa-times';
+        btn.replaceChildren(btnIcon);
         tdBtn.appendChild(btn);
         tr.appendChild(tdBtn);
 

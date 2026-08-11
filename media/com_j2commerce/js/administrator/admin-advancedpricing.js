@@ -11,6 +11,14 @@
 document.addEventListener('DOMContentLoaded', () => {
     const token = Joomla.getOptions('csrf.token', '') || '';
 
+    const iconSpan = (className) => {
+        const span = document.createElement('span');
+        span.className = className;
+        span.setAttribute('aria-hidden', 'true');
+
+        return span;
+    };
+
     document.getElementById('advancedPricingList')?.addEventListener('click', async (e) => {
         const saveBtn = e.target.closest('.price-save-btn');
         if (!saveBtn) return;
@@ -32,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Disable button and show spinner
         saveBtn.disabled = true;
         const origNodes = [...saveBtn.childNodes];
-        saveBtn.replaceChildren(document.createRange().createContextualFragment('<span class="icon-spinner icon-spin" aria-hidden="true"></span>'));
+        saveBtn.replaceChildren(iconSpan('icon-spinner icon-spin'));
 
         try {
             const formData = new FormData();
@@ -56,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 input.dataset.original = newPrice.toFixed(decimals);
 
                 // Show success feedback
-                saveBtn.replaceChildren(document.createRange().createContextualFragment('<span class="icon-check" aria-hidden="true"></span>'));
+                saveBtn.replaceChildren(iconSpan('icon-check'));
                 saveBtn.classList.remove('btn-success');
                 saveBtn.classList.add('btn-outline-success');
                 setTimeout(() => {

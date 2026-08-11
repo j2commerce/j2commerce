@@ -165,8 +165,10 @@
         if (!ctx) return;
 
         if (!data || !data.length) {
-            ctx.parentElement.replaceChildren(document.createRange().createContextualFragment('<p class="text-center text-body-secondary py-4">' +
-                (Joomla.Text._('COM_J2COMMERCE_ANALYTICS_NO_DATA')) + '</p>'));
+            const noData = document.createElement('p');
+            noData.className = 'text-center text-body-secondary py-4';
+            noData.textContent = Joomla.Text._('COM_J2COMMERCE_ANALYTICS_NO_DATA');
+            ctx.parentElement.replaceChildren(noData);
             return;
         }
 
@@ -240,8 +242,10 @@
         if (!ctx) return;
 
         if (!data || !data.length) {
-            ctx.parentElement.replaceChildren(document.createRange().createContextualFragment('<p class="text-center text-body-secondary py-4">' +
-                (Joomla.Text._('COM_J2COMMERCE_ANALYTICS_NO_DATA')) + '</p>'));
+            const noData = document.createElement('p');
+            noData.className = 'text-center text-body-secondary py-4';
+            noData.textContent = Joomla.Text._('COM_J2COMMERCE_ANALYTICS_NO_DATA');
+            ctx.parentElement.replaceChildren(noData);
             return;
         }
 

@@ -201,7 +201,10 @@ class SetupGuide {
             this.groupsList.classList.remove('d-none');
         } catch (err) {
             this.showLoading(false);
-            this.groupsList.replaceChildren(document.createRange().createContextualFragment(`<div class="alert alert-danger m-3">${this.escHtml(err.message)}</div>`));
+            const error = document.createElement('div');
+            error.className = 'alert alert-danger m-3';
+            error.textContent = err.message;
+            this.groupsList.replaceChildren(error);
             this.groupsList.classList.remove('d-none');
         } finally {
             this.groupsList?.setAttribute('aria-busy', 'false');
@@ -337,7 +340,7 @@ class SetupGuide {
         }
 
         btn.disabled = true;
-        btn.replaceChildren(document.createRange().createContextualFragment('<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></span>'));
+        btn.replaceChildren(this.loadingSpinner());
 
         try {
             const body = new URLSearchParams();
@@ -375,7 +378,7 @@ class SetupGuide {
 
         const originalText = btn.textContent;
         btn.disabled       = true;
-        btn.replaceChildren(document.createRange().createContextualFragment('<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></span>'));
+        btn.replaceChildren(this.loadingSpinner());
 
         try {
             const body = new URLSearchParams();
@@ -407,7 +410,7 @@ class SetupGuide {
         const origBtn = btn.cloneNode(true);
 
         btn.disabled  = true;
-        btn.replaceChildren(document.createRange().createContextualFragment('<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></span>'));
+        btn.replaceChildren(this.loadingSpinner());
 
         try {
             const body = new URLSearchParams();
@@ -652,6 +655,19 @@ class SetupGuide {
         }
 
         focusable[targetIndex].focus({ preventScroll: true });
+    }
+
+    loadingSpinner() {
+        const spinner = document.createElement('span');
+        spinner.className = 'spinner-border spinner-border-sm';
+        spinner.setAttribute('role', 'status');
+
+        const label = document.createElement('span');
+        label.className = 'visually-hidden';
+        label.textContent = Joomla.Text._('COM_J2COMMERCE_LOADING');
+        spinner.appendChild(label);
+
+        return spinner;
     }
 
     escHtml(str) {

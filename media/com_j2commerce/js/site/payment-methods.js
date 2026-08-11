@@ -18,6 +18,27 @@
         initPaymentMethodsHandlers();
     });
 
+    function iconSpan(className) {
+        const span = document.createElement('span');
+        span.className = className;
+        span.setAttribute('aria-hidden', 'true');
+
+        return span;
+    }
+
+    function loadingSpinner(className) {
+        const spinner = document.createElement('span');
+        spinner.className = className;
+        spinner.setAttribute('role', 'status');
+
+        const label = document.createElement('span');
+        label.className = 'visually-hidden';
+        label.textContent = Joomla.Text._('COM_J2COMMERCE_LOADING');
+        spinner.appendChild(label);
+
+        return spinner;
+    }
+
     /**
      * Initialize event handlers for payment method actions
      */
@@ -72,7 +93,7 @@
 
         try {
             button.disabled = true;
-            button.replaceChildren(document.createRange().createContextualFragment('<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span> ' + Joomla.Text._('COM_J2COMMERCE_LOADING')));
+            button.replaceChildren(iconSpan('spinner-border spinner-border-sm me-1'), ' ' + Joomla.Text._('COM_J2COMMERCE_LOADING'));
 
             // task= is what plugin onAjax handlers dispatch on; provider-specific id param
             // names are mirrored so every provider's handler finds the one it reads.
@@ -119,7 +140,7 @@
             console.error('Delete card error:', error);
             showErrorMessage(error.message || Joomla.Text._('COM_J2COMMERCE_PAYMENT_METHODS_ERROR'));
             button.disabled = false;
-            button.replaceChildren(document.createRange().createContextualFragment('<span class="fa-solid fa-trash me-1" aria-hidden="true"></span>' + Joomla.Text._('JACTION_DELETE')));
+            button.replaceChildren(iconSpan('fa-solid fa-trash me-1'), Joomla.Text._('JACTION_DELETE'));
         }
     }
 
@@ -142,7 +163,7 @@
 
         try {
             button.disabled = true;
-            button.replaceChildren(document.createRange().createContextualFragment('<span class="spinner-border spinner-border-sm me-1" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></span>'));
+            button.replaceChildren(loadingSpinner('spinner-border spinner-border-sm me-1'));
 
             const response = await fetch('index.php?option=com_ajax&plugin=' + provider + '&group=j2commerce&task=setDefaultCard&format=json', {
                 method: 'POST',
@@ -198,7 +219,7 @@
             console.error('Set default card error:', error);
             showErrorMessage(error.message || Joomla.Text._('COM_J2COMMERCE_PAYMENT_METHODS_ERROR'));
             button.disabled = false;
-            button.replaceChildren(document.createRange().createContextualFragment('<span class="fa-solid fa-star me-1" aria-hidden="true"></span>' + Joomla.Text._('COM_J2COMMERCE_PAYMENT_METHODS_SET_DEFAULT')));
+            button.replaceChildren(iconSpan('fa-solid fa-star me-1'), Joomla.Text._('COM_J2COMMERCE_PAYMENT_METHODS_SET_DEFAULT'));
         }
     }
 
@@ -279,11 +300,11 @@
         const remainingCards = container.querySelectorAll('.j2commerce-payment-card');
 
         if (remainingCards.length === 0) {
-            container.replaceChildren(document.createRange().createContextualFragment(
-                '<div class="alert alert-info" role="alert">' +
-                '<span class="fa-solid fa-info-circle me-2" aria-hidden="true"></span>' +
-                Joomla.Text._('COM_J2COMMERCE_PAYMENT_METHODS_NO_SAVED') +
-                '</div>'));
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-info';
+            alert.setAttribute('role', 'alert');
+            alert.append(iconSpan('fa-solid fa-info-circle me-2'), Joomla.Text._('COM_J2COMMERCE_PAYMENT_METHODS_NO_SAVED'));
+            container.replaceChildren(alert);
         }
     }
 })();

@@ -46,6 +46,14 @@ document.addEventListener('click', (e) => {
 document.addEventListener('DOMContentLoaded', () => {
     const token = Joomla.getOptions('csrf.token', '') || '';
 
+    const iconSpan = (className) => {
+        const span = document.createElement('span');
+        span.className = className;
+        span.setAttribute('aria-hidden', 'true');
+
+        return span;
+    };
+
     document.getElementById('ordersList')?.addEventListener('click', async (e) => {
         const saveBtn = e.target.closest('.order-status-save');
         if (!saveBtn) return;
@@ -66,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Disable save button and show spinner
         saveBtn.disabled = true;
         const origNodes = [...saveBtn.childNodes];
-        saveBtn.replaceChildren(document.createRange().createContextualFragment('<span class="icon-spinner icon-spin" aria-hidden="true"></span>'));
+        saveBtn.replaceChildren(iconSpan('icon-spinner icon-spin'));
 
         try {
             const formData = new FormData();
@@ -94,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 // Show success feedback on button
-                saveBtn.replaceChildren(document.createRange().createContextualFragment('<span class="icon-check" aria-hidden="true"></span>'));
+                saveBtn.replaceChildren(iconSpan('icon-check'));
                 saveBtn.classList.remove('btn-success');
                 saveBtn.classList.add('btn-outline-success');
                 setTimeout(() => {

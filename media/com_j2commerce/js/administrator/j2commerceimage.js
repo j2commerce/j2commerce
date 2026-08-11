@@ -198,8 +198,11 @@
             if (addFilesEl) {
                 const inner = addFilesEl.querySelector('.uppy-Dashboard-AddFiles-title');
                 if (inner) {
-                    inner.replaceChildren(document.createRange().createContextualFragment(`<span class="uppymedia-uppy-btn"><span class="fa-solid fa-images" aria-hidden="true"></span> ${this.escapeHtml(this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_ADD_PRODUCT_IMAGES'))}</span>`
-                        + `<p class="uppymedia-uppy-hint">${this.escapeHtml(this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_DRAG_DROP_NOTE'))}</p>`));
+                    inner.replaceChildren(...this.addFilesPrompt(
+                        'fa-solid fa-images',
+                        this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_ADD_PRODUCT_IMAGES'),
+                        this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_DRAG_DROP_NOTE')
+                    ));
                 }
                 // Wire browse button to Uppy's hidden file input
                 const browseSpan = addFilesEl.querySelector('.uppymedia-uppy-btn');
@@ -447,11 +450,11 @@
                     this.renderBrowserGrid(data.data.folders || [], data.data.files || []);
                     if (this.uppy) this.uppy.setMeta({ path: this.currentFolder });
                 } else {
-                    grid.replaceChildren(document.createRange().createContextualFragment(`<div class="text-center text-body-secondary p-3" style="grid-column:1/-1">${this.escapeHtml(data.message || 'Error loading folder')}</div>`));
+                    grid.replaceChildren(this.gridMessage(data.message || 'Error loading folder'));
                 }
             } catch {
                 if (loading) loading.classList.add('d-none');
-                grid.replaceChildren(document.createRange().createContextualFragment('<div class="text-center text-danger p-3" style="grid-column:1/-1">Failed to load images</div>'));
+                grid.replaceChildren(this.gridMessage('Failed to load images', 'text-danger'));
             }
         }
 
@@ -535,7 +538,7 @@
             });
 
             if (folders.length === 0 && files.length === 0) {
-                grid.replaceChildren(document.createRange().createContextualFragment('<div class="text-center text-body-secondary p-3" style="grid-column:1/-1">No images in this folder</div>'));
+                grid.replaceChildren(this.gridMessage('No images in this folder'));
             }
         }
 
@@ -617,6 +620,31 @@
             }
             // Prepend site root for relative paths (needed in admin context)
             return this.siteRoot + path.replace(/^\/+/, '');
+        }
+
+        gridMessage(text, className = 'text-body-secondary') {
+            const message = document.createElement('div');
+            message.className = `text-center ${className} p-3`;
+            message.style.gridColumn = '1/-1';
+            message.textContent = text;
+
+            return message;
+        }
+
+        addFilesPrompt(iconClass, label, hint) {
+            const button = document.createElement('span');
+            button.className = 'uppymedia-uppy-btn';
+
+            const icon = document.createElement('span');
+            icon.className = iconClass;
+            icon.setAttribute('aria-hidden', 'true');
+            button.append(icon, ' ' + label);
+
+            const note = document.createElement('p');
+            note.className = 'uppymedia-uppy-hint';
+            note.textContent = hint;
+
+            return [button, note];
         }
 
         escapeHtml(text) {
