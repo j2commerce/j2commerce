@@ -18,6 +18,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\DownloadHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\InventoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderUploadHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Plugin\PluginHelper;
@@ -217,6 +218,22 @@ class OrderTable extends Table
         // this transition
         if (!$isNew && ($oldStatusId === $newStatusId || !$statusClaimed)) {
             return true;
+        }
+
+        // An order can be confirmed while a later, abandoned order for the same cart holds
+        // the customer's uploads: the shopper reaches a gateway, comes back, changes the
+        // cart, and the confirm step persists a second order that takes them. Whichever
+        // order is actually paid is the one they belong to, so they are reclaimed as it
+        // leaves the unpaid state — before the event below, so listeners see them.
+        //
+        // Only where the order starts holding: cancelling or failing one must not pull the
+        // files off a sibling that is still live, which would strand them on a row that can
+        // never give them back.
+        if (!$isNew && $oldStatusId === 5 && InventoryHelper::statusHoldsStock($newStatusId)) {
+            OrderUploadHelper::attachUploadsToOrder(
+                (int) $this->j2commerce_order_id,
+                (string) $this->order_id
+            );
         }
 
         // Move the stock before announcing the change, matching OrderModel::updateOrderStatus().

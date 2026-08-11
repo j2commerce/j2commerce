@@ -1607,15 +1607,7 @@ class CheckoutController extends BaseController
             return;
         } // end isOwningRequest() block
 
-        if ($session->has('payment_values', 'j2commerce')) {
-            $paymentValues = $session->get('payment_values', [], 'j2commerce');
-
-            foreach ($paymentValues as $name => $value) {
-                if (\is_string($value)) {
-                    $this->input->set($name, $value);
-                }
-            }
-        }
+        $this->replayPaymentValues();
 
         try {
             $order = $this->getCartOrder();
@@ -1944,6 +1936,16 @@ class CheckoutController extends BaseController
                     return;
                 }
             }
+        }
+
+        // The cart order is rebuilt below (veto re-assert, and the re-check against the
+        // stored row), and a fee plugin that reads a step-4 field out of the request
+        // computes from whatever confirm() gave it. Without the same replay here the two
+        // builds disagree on every request, which the shopper meets as a checkout that
+        // never completes rather than a one-off bounce. An off-site gateway return has
+        // proven no shopper intent, and a context order was never built from a cart.
+        if (!$tokenlessGatewayReturn && !$wasContextActivated) {
+            $this->replayPaymentValues();
         }
 
         // Re-assert the app-plugin veto at submit time. confirm() dispatches AfterOrderValidate
@@ -2729,6 +2731,28 @@ class CheckoutController extends BaseController
     // =========================================================================
     // Helpers
     // =========================================================================
+
+    /**
+     * Replay the step-4 payment selection out of the session into the request, so a
+     * plugin that reads those fields sees them on the later steps that no longer post
+     * them. Only keys the request does not already carry are injected: the stored copy
+     * is one pass behind, and shadowing a value the shopper just submitted would charge
+     * the gateway they deselected.
+     */
+    private function replayPaymentValues(): void
+    {
+        $session = $this->app->getSession();
+
+        if (!$session->has('payment_values', 'j2commerce')) {
+            return;
+        }
+
+        foreach ($session->get('payment_values', [], 'j2commerce') as $name => $value) {
+            if (\is_string($value) && $this->input->get($name, null, 'raw') === null) {
+                $this->input->set($name, $value);
+            }
+        }
+    }
 
     protected function getCartOrder(): ?object
     {

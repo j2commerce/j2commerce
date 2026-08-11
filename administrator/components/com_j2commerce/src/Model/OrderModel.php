@@ -24,6 +24,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderItemAttributeHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderUploadHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\TaxHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UserHelper;
@@ -1078,6 +1079,13 @@ class OrderModel extends AdminModel
 
         if ($db->getAffectedRows() !== 1) {
             return true;
+        }
+
+        // Reclaim any customer uploads a later, abandoned order for the same cart took —
+        // see the matching call in OrderTable::store(). Runs on the winner of the
+        // compare-and-swap above, before the status event, so listeners see them.
+        if ($oldStatusId === 5 && InventoryHelper::statusHoldsStock($newStatusId)) {
+            OrderUploadHelper::attachUploadsToOrder($orderId, (string) $order->order_id);
         }
 
         // Inventory. This model writes order_state_id directly rather than through
