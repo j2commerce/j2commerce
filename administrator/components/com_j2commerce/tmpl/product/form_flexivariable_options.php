@@ -26,6 +26,13 @@ $textFieldDefaults = ['value' => '', 'onchange' => '', 'disabled' => false, 'rea
 // Now we can safely use $item->product_type
 $productOptionList = J2CommerceHelper::product()->getProductOptionList($item->product_type);
 
+// Options already on the product are offered as disabled entries rather than omitted,
+// so the reason they cannot be picked again is visible in the list itself.
+$assignedOptionIds = array_flip(array_map(
+    static fn($poption): int => (int) $poption->option_id,
+    (array) ($item->product_options ?? [])
+));
+
 // Initialize key counter for options
 $key = 0;
 
@@ -89,12 +96,16 @@ $key = 0;
                                 <div class="controls">
                                     <div class="input-group">
                                         <select name="option_select_id" id="j2commerce_flexivar_option_select" class="form-select">
-                                            <?php foreach ($productOptionList as $option_list):?>
-                                                <option value="<?php echo $option_list->j2commerce_option_id?>"><?php echo $this->escape($option_list->option_name) .' ('.$this->escape($option_list->option_unique_name).')';?></option>
+                                            <?php foreach ($productOptionList as $option_list):
+                                                $optionLabel = $option_list->option_name . ' (' . $option_list->option_unique_name . ')';
+                                                $optionAssigned = isset($assignedOptionIds[(int) $option_list->j2commerce_option_id]);
+                                                ?>
+                                                <option value="<?php echo $option_list->j2commerce_option_id?>" data-option-label="<?php echo $this->escape($optionLabel);?>"<?php echo $optionAssigned ? ' disabled' : '';?>><?php echo $this->escape($optionAssigned ? Text::sprintf('COM_J2COMMERCE_OPTION_LABEL_ALREADY_ADDED', $optionLabel) : $optionLabel);?></option>
                                             <?php endforeach; ?>
                                         </select>
                                         <button type="button" id="j2commerce_flexivar_add_option_btn" class="btn btn-primary"><?php echo Text::_('COM_J2COMMERCE_OPTIONS_ADD')?></button>
                                     </div>
+                                    <div id="j2commerce-flexivar-option-notice" class="alert alert-warning mt-2 d-none" role="alert"></div>
                                 </div>
                             </div>
                         </td>
@@ -141,6 +152,57 @@ document.addEventListener('DOMContentLoaded', function() {
     let optionKey = <?php echo $key; ?>;
     const createVariantsBtn = document.getElementById('j2commerce-create-variants-btn');
     const productId = <?php echo (int) ($item->j2commerce_product_id ?? 0); ?>;
+    const optionSelect = document.getElementById('j2commerce_flexivar_option_select');
+    const optionNotice = document.getElementById('j2commerce-flexivar-option-notice');
+    const addOptionBtn = document.getElementById('j2commerce_flexivar_add_option_btn');
+    const addedLabelFormat = <?php echo json_encode(Text::_('COM_J2COMMERCE_OPTION_LABEL_ALREADY_ADDED')); ?>;
+
+    // Feedback belongs beside the control that produced it — the options block sits far
+    // enough down the form that the page-top message container is off screen.
+    function showOptionNotice(message) {
+        if (!optionNotice) return;
+        optionNotice.textContent = message;
+        optionNotice.classList.remove('d-none');
+    }
+
+    function clearOptionNotice() {
+        if (!optionNotice) return;
+        optionNotice.textContent = '';
+        optionNotice.classList.add('d-none');
+    }
+
+    // The table is the single source of truth for what is on the product, so the dropdown
+    // is derived from it after every change rather than toggled entry by entry.
+    function syncOptionSelect() {
+        if (!optionSelect) return;
+
+        const usedIds = new Set(
+            Array.from(document.querySelectorAll('#flexivariable_options_table input[name$="[option_id]"]'))
+                .map(input => input.value)
+        );
+
+        Array.from(optionSelect.options).forEach(option => {
+            const label = option.dataset.optionLabel || option.textContent;
+            const isUsed = usedIds.has(option.value);
+            option.disabled = isUsed;
+            // Function replacement so a '$' in an option name is not read as a substitution.
+            option.textContent = isUsed ? addedLabelFormat.replace('%s', () => label) : label;
+        });
+
+        const firstAvailable = Array.from(optionSelect.options).find(option => !option.disabled);
+        if (firstAvailable && (selectedOptionEl() === null || selectedOptionEl().disabled)) {
+            optionSelect.value = firstAvailable.value;
+        }
+        if (addOptionBtn) {
+            addOptionBtn.disabled = !firstAvailable;
+        }
+    }
+
+    function selectedOptionEl() {
+        return optionSelect && optionSelect.selectedIndex >= 0
+            ? optionSelect.options[optionSelect.selectedIndex]
+            : null;
+    }
 
     function updateCreateVariantsBtnVisibility() {
         if (!createVariantsBtn) return;
@@ -158,23 +220,26 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Add option button handler
-    const addOptionBtn = document.getElementById('j2commerce_flexivar_add_option_btn');
     if (addOptionBtn) {
         addOptionBtn.addEventListener('click', function() {
-            const selectEl = document.getElementById('j2commerce_flexivar_option_select');
-            if (!selectEl) return;
+            if (!optionSelect) return;
 
-            const optionValue = selectEl.value;
-            const selectedOption = selectEl.options[selectEl.selectedIndex];
-            const optionName = selectedOption ? selectedOption.textContent : '';
+            const optionValue = optionSelect.value;
+            const selectedOption = selectedOptionEl();
+            const optionName = selectedOption ? (selectedOption.dataset.optionLabel || selectedOption.textContent) : '';
 
-            // Check if option already added (prevent duplicates)
-            const existingInput = document.querySelector('input[name="' + formPrefix + '[item_options][' + optionValue + '][option_id]"]');
-            if (existingInput) {
-                Joomla.renderMessages({warning: ['<?php echo Text::_('COM_J2COMMERCE_OPTION_ALREADY_ADDED', true); ?>']});
+            // Rows are keyed by record id when rendered by the server and by a counter when
+            // added here, so the option is matched on the value it carries rather than the key.
+            const alreadyAdded = Array.from(
+                document.querySelectorAll('#flexivariable_options_table input[name$="[option_id]"]')
+            ).some(input => input.value === optionValue);
+            if (alreadyAdded) {
+                showOptionNotice(<?php echo json_encode(Text::_('COM_J2COMMERCE_OPTION_ALREADY_ADDED')); ?>);
+                syncOptionSelect();
                 return;
             }
+
+            clearOptionNotice();
 
             // Create new table row
             const newRow = document.createElement('tr');
@@ -227,6 +292,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             optionKey++;
+            syncOptionSelect();
             updateCreateVariantsBtnVisibility();
         });
     }
@@ -258,6 +324,10 @@ document.addEventListener('DOMContentLoaded', function() {
             row.style.opacity = '0';
             setTimeout(function() {
                 row.remove();
+                // Re-offer the option only once the row is really gone, so the dropdown and
+                // the duplicate guard never disagree during the fade.
+                clearOptionNotice();
+                syncOptionSelect();
                 updateCreateVariantsBtnVisibility();
             }, 300);
         }
@@ -330,6 +400,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             if (addRow) {
                                 addRow.insertAdjacentHTML('beforebegin', result.options_table_html);
                             }
+                            syncOptionSelect();
                         }
                     }
 
@@ -362,6 +433,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Initial visibility check
+    syncOptionSelect();
     updateCreateVariantsBtnVisibility();
 });
 </script>
