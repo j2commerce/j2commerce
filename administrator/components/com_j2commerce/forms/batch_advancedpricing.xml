@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+    <!--
+        Batch controls for the Advanced Pricing list. `<fields name="batch">` matches the
+        convention forms/batch_products.xml established; the controls previously posted
+        batch_customer_group_id / batch_date_from / batch_date_to.
+
+        The dates are filtered as plain strings rather than user_utc: the controller hands them to
+        Factory::getDate()->toSql(), so filtering them here as a timezone-aware value would shift
+        what an operator outside UTC has stored up to now.
+    -->
+    <fields name="batch">
+        <field
+            name="customer_group_id"
+            type="usergrouplist"
+            label="COM_J2COMMERCE_BATCH_USER_GROUP"
+            filter="integer"
+        >
+            <option value="">COM_J2COMMERCE_SELECT_USER_GROUP</option>
+        </field>
+
+        <field
+            name="date_from"
+            type="calendar"
+            label="COM_J2COMMERCE_BATCH_DATE_FROM"
+            format="%Y-%m-%d %H:%M:%S"
+            showtime="true"
+            filter="string"
+        />
+
+        <field
+            name="date_to"
+            type="calendar"
+            label="COM_J2COMMERCE_BATCH_DATE_TO"
+            format="%Y-%m-%d %H:%M:%S"
+            showtime="true"
+            filter="string"
+        />
+    </fields>
+</form>

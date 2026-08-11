@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+    <!--
+        Batch controls for the Orders list. `<fields name="batch">` matches the convention
+        forms/batch_products.xml established; the controls previously posted bare names, which
+        collided in shape with the order_state_id[] the export form reads.
+
+        The labels are declared and then hidden: the dialog identifies each control from its card
+        heading and its placeholder, so a visible label would repeat what the card already says,
+        but the control still needs a real <label for> bound to its id.
+    -->
+    <fields name="batch">
+        <field
+            name="order_state_id"
+            type="Orderstatus"
+            addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field"
+            label="COM_J2COMMERCE_FIELD_ORDER_STATUS"
+            hiddenLabel="true"
+            filter="integer"
+        >
+            <option value="">COM_J2COMMERCE_SELECT_ORDER_STATUS</option>
+        </field>
+
+        <field
+            name="notify_customer"
+            type="radio"
+            layout="joomla.form.field.radio.switcher"
+            label="COM_J2COMMERCE_NOTIFY_CUSTOMER"
+            default="0"
+            filter="integer"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+        <field
+            name="status_comment"
+            type="textarea"
+            label="COM_J2COMMERCE_FIELD_STATUS_COMMENT"
+            hint="COM_J2COMMERCE_FIELD_STATUS_COMMENT"
+            hiddenLabel="true"
+            rows="2"
+            filter="string"
+        />
+    </fields>
+</form>

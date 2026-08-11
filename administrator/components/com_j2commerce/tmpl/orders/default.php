@@ -242,7 +242,9 @@ $dateFormat = ComponentHelper::getParams('com_j2commerce')->get('date_format', '
     <?php // Must stay inside the form: for popupType=inline, joomla-dialog appends the dialog to
           // this template's parentElement, so a template outside the form leaves the batch fields
           // outside it too and they are never submitted. ?>
-    <template id="joomla-dialog-batch"><?php echo $this->loadTemplate('batch_body'); ?></template>
+    <?php if ($this->canBatch) : ?>
+        <template id="joomla-dialog-batch"><?php echo $this->loadTemplate('batch_body'); ?></template>
+    <?php endif; ?>
 </form>
 
 <?php echo $this->loadTemplate('export_offcanvas'); ?>

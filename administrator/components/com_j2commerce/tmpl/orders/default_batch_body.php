@@ -14,61 +14,74 @@ defined('_JEXEC') or die;
 use Joomla\CMS\Language\Text;
 
 /** @var \J2Commerce\Component\J2commerce\Administrator\View\Orders\HtmlView $this */
-?>
 
-<div class="p-3">
-    <!-- Change Status Section -->
-    <div class="mb-4">
-        <h2 class="fw-bold fs-5"><?php echo Text::_('COM_J2COMMERCE_CHANGE_ORDER_STATUS'); ?></h2>
-        <div class="mb-2">
-            <select name="order_state_id" id="batch_order_state_id" class="form-select">
-                <option value=""><?php echo Text::_('COM_J2COMMERCE_SELECT_ORDER_STATUS'); ?></option>
-                <?php foreach ($this->orderStatuses as $status) : ?>
-                    <option value="<?php echo (int) $status->j2commerce_orderstatus_id; ?>">
-                        <?php echo Text::_($status->orderstatus_name); ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
+$tint = static fn(string $token): string => sprintf(
+    'background-color: rgba(var(--%1$s-rgb), .06); background-color: color-mix(in srgb, var(--%1$s) 6%%, transparent);',
+    $token
+);
+
+
+$iconTile = 'd-flex align-items-center justify-content-center flex-shrink-0 rounded-3';
+?>
+<div class="p-3 d-grid gap-3">
+    <div class="card border border-primary-subtle" style="<?php echo $tint('primary'); ?>">
+        <div class="card-body d-grid gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="<?php echo $iconTile; ?> bg-primary text-white" style="width: 2.5rem; height: 2.5rem;">
+                    <span class="fa-solid fa-right-left" aria-hidden="true"></span>
+                </div>
+                <div class="flex-grow-1">
+                    <h2 class="mb-0 fw-bold fs-6"><?php echo Text::_('COM_J2COMMERCE_CHANGE_ORDER_STATUS'); ?></h2>
+                    <small class="text-secondary"><?php echo Text::_('COM_J2COMMERCE_BATCH_STATUS_DESC'); ?></small>
+                </div>
+            </div>
+            <?php echo $this->batchForm->renderField('order_state_id', 'batch'); ?>
+            <?php echo $this->batchForm->renderField('notify_customer', 'batch'); ?>
+            <?php echo $this->batchForm->renderField('status_comment', 'batch'); ?>
+            <div class="text-end">
+                <joomla-toolbar-button task="orders.updatestatus">
+                    <button type="button" class="btn btn-primary btn-sm">
+                        <span class="fa-solid fa-check me-1" aria-hidden="true"></span>
+                        <?php echo Text::_('COM_J2COMMERCE_BATCH_APPLY_STATUS'); ?>
+                    </button>
+                </joomla-toolbar-button>
+            </div>
         </div>
-        <div class="form-check mb-2">
-            <input type="checkbox" class="form-check-input" id="batch_notify_customer" name="notify_customer" value="1">
-            <label class="form-check-label" for="batch_notify_customer"><?php echo Text::_('COM_J2COMMERCE_NOTIFY_CUSTOMER'); ?></label>
-        </div>
-        <div class="mb-2">
-            <textarea name="status_comment" id="batch_status_comment" class="form-control" rows="2"
-                      placeholder="<?php echo Text::_('COM_J2COMMERCE_FIELD_STATUS_COMMENT'); ?>"></textarea>
-        </div>
-        <joomla-toolbar-button task="orders.updatestatus">
-            <button type="button" class="btn btn-primary btn-sm">
-                <span class="icon-checkmark" aria-hidden="true"></span>
-                <?php echo Text::_('COM_J2COMMERCE_CHANGE_ORDER_STATUS'); ?>
-            </button>
-        </joomla-toolbar-button>
     </div>
 
     <?php if ($this->hasPackingSlipTemplate) : ?>
-    <!-- Print Packing Slips Section -->
-    <div class="mb-4">
-        <h2 class="fw-bold fs-5"><?php echo Text::_('COM_J2COMMERCE_PRINT_PACKING_SLIPS'); ?></h2>
-        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.j2cPrintPackingSlips();">
-            <span class="icon-print" aria-hidden="true"></span>
-            <?php echo Text::_('COM_J2COMMERCE_PRINT_PACKING_SLIPS'); ?>
-        </button>
-    </div>
+        <div class="card border">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="<?php echo $iconTile; ?> bg-primary-subtle text-primary" style="width: 2.5rem; height: 2.5rem;">
+                    <span class="fa-solid fa-print" aria-hidden="true"></span>
+                </div>
+                <div class="flex-grow-1">
+                    <h2 class="mb-0 fs-6"><?php echo Text::_('COM_J2COMMERCE_PRINT_PACKING_SLIPS'); ?></h2>
+                    <small class="text-secondary"><?php echo Text::_('COM_J2COMMERCE_BATCH_PACKING_SLIPS_DESC'); ?></small>
+                </div>
+                <button type="button" class="btn btn-outline-primary btn-sm" data-j2c-action="print-packing-slips">
+                    <?php echo Text::_('COM_J2COMMERCE_PRINT'); ?>
+                </button>
+            </div>
+        </div>
     <?php endif; ?>
 
     <?php if ($this->canDelete) : ?>
-    <!-- Delete Section -->
-    <div class="mb-2">
-        <h2 class="fw-bold text-danger fs-5"><?php echo Text::_('COM_J2COMMERCE_DELETE_SELECTED_ORDERS'); ?></h2>
-        <p class="text-muted small"><?php echo Text::_('COM_J2COMMERCE_DELETE_ORDERS_WARNING'); ?></p>
-        <joomla-toolbar-button task="orders.delete">
-            <button type="button" class="btn btn-danger btn-sm"
-                    onclick="if(!confirm('<?php echo $this->escape(Text::_('COM_J2COMMERCE_CONFIRM_DELETE_ORDERS')); ?>')) { event.stopImmediatePropagation(); return false; }">
-                <span class="icon-times" aria-hidden="true"></span>
-                <?php echo Text::_('COM_J2COMMERCE_DELETE_SELECTED_ORDERS'); ?>
-            </button>
-        </joomla-toolbar-button>
-    </div>
+        <div class="card border border-danger-subtle" style="<?php echo $tint('danger'); ?>">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="<?php echo $iconTile; ?> bg-danger-subtle text-danger" style="width: 2.5rem; height: 2.5rem;">
+                    <span class="fa-solid fa-triangle-exclamation" aria-hidden="true"></span>
+                </div>
+                <div class="flex-grow-1">
+                    <h2 class="mb-1 fw-bold fs-6 text-danger-emphasis"><?php echo Text::_('COM_J2COMMERCE_DELETE_SELECTED_ORDERS'); ?></h2>
+                    <small class="text-danger-emphasis opacity-75" style="line-height:1.4;display:block;"><?php echo Text::_('COM_J2COMMERCE_DELETE_ORDERS_WARNING'); ?></small>
+                </div>
+                <joomla-toolbar-button task="orders.delete">
+                    <button type="button" class="btn btn-danger btn-sm" data-j2c-confirm="COM_J2COMMERCE_CONFIRM_DELETE_ORDERS">
+                        <?php echo Text::_('JTOOLBAR_DELETE'); ?>
+                    </button>
+                </joomla-toolbar-button>
+            </div>
+        </div>
     <?php endif; ?>
 </div>

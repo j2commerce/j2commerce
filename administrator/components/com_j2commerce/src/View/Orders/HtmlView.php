@@ -40,10 +40,14 @@ class HtmlView extends BaseHtmlView
     private $isEmptyState = false;
     public string $navbar;
     public array $orderStatuses         = [];
+
+    /** Batch dialog controls; see forms/batch_orders.xml. */
+    public ?Form $batchForm             = null;
     public ?Form $exportForm            = null;
     public int $exportCount             = 0;
     public bool $hasPackingSlipTemplate = false;
     public bool $canDelete              = false;
+    protected bool $canBatch            = false;
 
     public function display($tpl = null): void
     {
@@ -83,6 +87,15 @@ class HtmlView extends BaseHtmlView
             $this->addToolbar();
         }
 
+        // addToolbar() resolves canBatch, so the form is only built once the dialog is known to render.
+        if ($this->canBatch) {
+            $this->batchForm = Form::getInstance(
+                'com_j2commerce.batch.orders',
+                JPATH_COMPONENT_ADMINISTRATOR . '/forms/batch_orders.xml',
+                ['control' => '']
+            );
+        }
+
         // Load payment plugin language files so Text::_() can translate plugin names
         $this->loadPaymentPluginLanguages();
 
@@ -103,6 +116,9 @@ class HtmlView extends BaseHtmlView
             [],
             ['version' => '6.0.8']
         );
+
+        // Read by the [data-j2c-confirm] handler in admin-order-list.js.
+        Text::script('COM_J2COMMERCE_CONFIRM_DELETE_ORDERS');
 
         if (!$this->isModal && !$this->isEmptyState) {
             $wa->registerAndUseScript(
@@ -150,11 +166,16 @@ class HtmlView extends BaseHtmlView
         if (!$this->isEmptyState) {
             // Bulk Actions popup (Change Status, Print Packing Slips, Delete)
             if ($canEditOrders && $canDo->get('core.edit.state')) {
+                $this->canBatch = true;
+
                 $toolbar->popupButton('batch', 'COM_J2COMMERCE_BULK_ACTIONS')
                     ->popupType('inline')
                     ->textHeader(Text::_('COM_J2COMMERCE_BATCH_TITLE'))
                     ->url('#joomla-dialog-batch')
-                    ->modalWidth('800px')
+                    // 560px matches the design, but Atum renders the notify switcher at a fixed
+                    // 288px, which overhangs a 560px dialog. 580px clears it; 600px leaves room
+                    // for a longer translation of the switcher's label.
+                    ->modalWidth('600px')
                     ->modalHeight('fit-content')
                     ->listCheck(true)
                     ->icon('icon-ellipsis-h');

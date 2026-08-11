@@ -18,6 +18,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Application\CMSApplication;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Form\Form;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\AdminController;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
@@ -83,9 +84,12 @@ class OrdersController extends AdminController
 
         $pks      = (array) $this->input->post->get('cid', [], 'int');
         $pks      = array_filter($pks);
-        $statusId = $this->input->post->getInt('order_state_id', 0);
-        $notify   = $this->input->post->getInt('notify_customer', 0) === 1;
-        $comment  = $this->input->post->getString('status_comment', '');
+        $commands = $this->filterBatchCommands(
+            (array) $this->input->post->get('batch', [], 'array')
+        );
+        $statusId = (int) ($commands['order_state_id'] ?? 0);
+        $notify   = (int) ($commands['notify_customer'] ?? 0) === 1;
+        $comment  = (string) ($commands['status_comment'] ?? '');
 
         try {
             if (empty($pks)) {
@@ -142,6 +146,18 @@ class OrdersController extends AdminController
         }
 
         $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=orders' . $this->getRedirectToListAppend(), false));
+    }
+
+    /** Applies each control's filter attribute; it does not authorise the values. */
+    private function filterBatchCommands(array $commands): array
+    {
+        $form = Form::getInstance(
+            'com_j2commerce.batch.orders',
+            JPATH_COMPONENT_ADMINISTRATOR . '/forms/batch_orders.xml',
+            ['control' => '']
+        );
+
+        return (array) ($form->filter(['batch' => $commands])['batch'] ?? []);
     }
 
     /**

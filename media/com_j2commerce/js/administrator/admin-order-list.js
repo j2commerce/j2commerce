@@ -24,6 +24,25 @@ window.j2cPrintPackingSlips = function () {
     window.open('index.php?option=com_j2commerce&task=order.printPackingSlips&' + ids.join('&') + '&' + token + '=1', '_blank');
 };
 
+// Capture phase: joomla-toolbar-button wraps the button and submits on its own click listener,
+// so a bubble-phase handler would run after the form had already gone.
+document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-j2c-confirm]');
+    if (!btn) return;
+
+    if (!window.confirm(Joomla.Text._(btn.dataset.j2cConfirm))) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+    }
+}, true);
+
+document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-j2c-action="print-packing-slips"]')) {
+        e.preventDefault();
+        window.j2cPrintPackingSlips();
+    }
+});
+
 document.addEventListener('DOMContentLoaded', () => {
     const token = Joomla.getOptions('csrf.token', '') || '';
 

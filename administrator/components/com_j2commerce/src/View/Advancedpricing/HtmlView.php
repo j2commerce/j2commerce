@@ -17,6 +17,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\View\Advancedpricing;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\MenuHelper;
 use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
+use Joomla\CMS\Form\Form;
 use Joomla\CMS\Helper\ContentHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -35,6 +36,9 @@ class HtmlView extends BaseHtmlView
     protected $state;
     public $filterForm;
     public $activeFilters;
+
+    /** Batch dialog controls; see forms/batch_advancedpricing.xml. */
+    public ?Form $batchForm = null;
 
     public function display($tpl = null): void
     {
@@ -72,6 +76,12 @@ class HtmlView extends BaseHtmlView
         $this->getDocument()->addScriptOptions('csrf.token', Session::getFormToken());
 
         HTMLHelper::_('bootstrap.modal', 'collapseModal');
+
+        $this->batchForm = Form::getInstance(
+            'com_j2commerce.batch.advancedpricing',
+            JPATH_COMPONENT_ADMINISTRATOR . '/forms/batch_advancedpricing.xml',
+            ['control' => '']
+        );
 
         $this->addToolbar();
         parent::display($tpl);

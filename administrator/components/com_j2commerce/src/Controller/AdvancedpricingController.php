@@ -15,6 +15,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
+use Joomla\CMS\Form\Form;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\AdminController;
 use Joomla\CMS\Router\Route;
@@ -52,13 +53,15 @@ class AdvancedpricingController extends AdminController
         $db = Factory::getContainer()->get('DatabaseDriver');
 
         try {
-            $batchGroupId  = $this->input->post->getString('batch_customer_group_id', '');
-            $batchDateFrom = $this->input->post->getString('batch_date_from', '');
-            $batchDateTo   = $this->input->post->getString('batch_date_to', '');
+            $commands      = $this->filterBatchCommands(
+                (array) $this->input->post->get('batch', [], 'array')
+            );
+            $groupId       = (int) ($commands['customer_group_id'] ?? 0);
+            $batchDateFrom = (string) ($commands['date_from'] ?? '');
+            $batchDateTo   = (string) ($commands['date_to'] ?? '');
 
-            if ($batchGroupId !== '') {
-                $groupId = (int) $batchGroupId;
-                $query   = $db->getQuery(true)
+            if ($groupId > 0) {
+                $query = $db->getQuery(true)
                     ->update($db->quoteName('#__j2commerce_product_prices'))
                     ->set($db->quoteName('customer_group_id') . ' = :groupId')
                     ->bind(':groupId', $groupId, ParameterType::INTEGER)
@@ -132,6 +135,18 @@ class AdvancedpricingController extends AdminController
         }
 
         $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=advancedpricing', false));
+    }
+
+    /** Applies each control's filter attribute; it does not authorise the values. */
+    private function filterBatchCommands(array $commands): array
+    {
+        $form = Form::getInstance(
+            'com_j2commerce.batch.advancedpricing',
+            JPATH_COMPONENT_ADMINISTRATOR . '/forms/batch_advancedpricing.xml',
+            ['control' => '']
+        );
+
+        return (array) ($form->filter(['batch' => $commands])['batch'] ?? []);
     }
 
     public function ajaxSavePrice(): void
