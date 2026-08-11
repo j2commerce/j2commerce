@@ -14,10 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
 \defined('_JEXEC') or die;
 
-use Joomla\CMS\Factory;
-use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\FormController;
-use Joomla\Database\ParameterType;
 
 /**
  * Manufacturer item controller class.
@@ -37,7 +34,6 @@ class ManufacturerController extends FormController
     {
         return [
             'display',
-            'getZones',
         ];
     }
 
@@ -119,54 +115,5 @@ class ManufacturerController extends FormController
     public function cancel($key = 'id')
     {
         return parent::cancel($key);
-    }
-
-    /**
-     * AJAX: Get zones for a given country.
-     *
-     * Returns HTML <option> elements for the zone dropdown.
-     *
-     * @return  void
-     *
-     * @since   6.0.6
-     */
-    public function getZones(): void
-    {
-        $app = Factory::getApplication();
-
-        // Get country ID from request
-        $countryId      = $app->getInput()->getInt('country_id', 0);
-        $selectedZoneId = $app->getInput()->getInt('zone_id', 0);
-
-        // Build zone options HTML
-        $html = '<option value="">' . Text::sprintf('COM_J2COMMERCE_SELECT_PLACEHOLDER', Text::_('COM_J2COMMERCE_ZONE')) . '</option>';
-
-        if ($countryId > 0) {
-            $db    = Factory::getContainer()->get('DatabaseDriver');
-            $query = $db->getQuery(true);
-
-            $query->select($db->quoteName(['j2commerce_zone_id', 'zone_name']))
-                ->from($db->quoteName('#__j2commerce_zones'))
-                ->where($db->quoteName('country_id') . ' = :country_id')
-                ->where($db->quoteName('enabled') . ' = 1')
-                ->bind(':country_id', $countryId, ParameterType::INTEGER)
-                ->order($db->quoteName('zone_name') . ' ASC');
-
-            $db->setQuery($query);
-            $zones = $db->loadObjectList();
-
-            if ($zones) {
-                foreach ($zones as $zone) {
-                    $selected = ($zone->j2commerce_zone_id == $selectedZoneId) ? ' selected="selected"' : '';
-                    $html .= '<option value="' . (int) $zone->j2commerce_zone_id . '"' . $selected . '>'
-                        . htmlspecialchars($zone->zone_name, ENT_QUOTES, 'UTF-8')
-                        . '</option>';
-                }
-            }
-        }
-
-        // Output raw HTML (not JSON) for direct select population
-        echo $html;
-        $app->close();
     }
 }

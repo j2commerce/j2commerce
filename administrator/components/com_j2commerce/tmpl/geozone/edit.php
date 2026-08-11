@@ -201,7 +201,7 @@ document.addEventListener('DOMContentLoaded', function() {
             zoneSelect.disabled = true;
 
             try {
-                const url = 'index.php?option=com_j2commerce&task=geozone.getZones'
+                const url = 'index.php?option=com_j2commerce&task=ajax.getZones&response=json'
                     + '&country_id=' + encodeURIComponent(countryId);
                 const response = await fetch(url, {headers: {'X-Requested-With': 'XMLHttpRequest'}});
 
@@ -211,13 +211,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 const payload = await response.json();
 
-                if (!payload.success) {
-                    throw new Error(payload.message || 'Request failed');
-                }
-
                 zoneSelect.replaceChildren(
                     new Option(strings.allZones, '0'),
-                    ...payload.data.map((zone) => new Option(zone.name, String(zone.id)))
+                    ...payload.zones.map((zone) => new Option(zone.name, String(zone.id)))
                 );
             } catch (error) {
                 console.error('Error loading zones:', error);

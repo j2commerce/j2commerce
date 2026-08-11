@@ -550,45 +550,6 @@ class GeozoneController extends FormController
     }
 
     /**
-     * AJAX: Get zones for a specific country.
-     *
-     * Returns JSON: [{"id": 12, "name": "Alberta"}, ...]. Names are encoded by
-     * JsonResponse, so this is the only place zone output is escaped.
-     *
-     * @return  void
-     *
-     * @since   6.0.3
-     */
-    public function getZones(): void
-    {
-        $app  = Factory::getApplication();
-        $user = $app->getIdentity();
-
-        $this->prepareJsonResponse($app);
-
-        // Feeds the geozone edit form, so it answers to the same permissions that form does.
-        if ($user->guest
-            || (!$user->authorise('core.edit', 'com_j2commerce') && !$user->authorise('core.create', 'com_j2commerce'))
-        ) {
-            $app->setHeader('status', 403, true);
-            $app->sendHeaders();
-            echo new JsonResponse(null, Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), true);
-            $app->close();
-        }
-
-        $countryId = $app->getInput()->getInt('country_id', 0);
-        $zones     = $this->getModel('Geozone')->getZonesByCountry([$countryId])[$countryId] ?? [];
-
-        $app->sendHeaders();
-        echo new JsonResponse(array_map(
-            static fn ($zone): array => ['id' => (int) $zone->j2commerce_zone_id, 'name' => $zone->zone_name],
-            $zones
-        ));
-
-        $app->close();
-    }
-
-    /**
      * AJAX: Remove a geozone rule.
      *
      * @return  void

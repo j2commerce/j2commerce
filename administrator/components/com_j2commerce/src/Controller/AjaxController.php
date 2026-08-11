@@ -32,8 +32,10 @@ class AjaxController extends BaseController
     /**
      * AJAX: Get zones for a given country.
      *
-     * Returns HTML <option> elements for the zone dropdown.
-     * Used by ZoneField when `country_field` attribute is set.
+     * Returns JSON when asked for it, HTML <option> elements otherwise. The
+     * geozone, manufacturer and vendor copies were folded into this one.
+     * OrderController::ajaxGetZones() remains separate — it is POST-only and
+     * gated on the order edit permission rather than this one.
      *
      * @return  void
      *
@@ -41,7 +43,19 @@ class AjaxController extends BaseController
      */
     public function getZones(): void
     {
-        $app = Factory::getApplication();
+        $app  = Factory::getApplication();
+        $user = $app->getIdentity();
+
+        // Feeds the create and edit forms, so it answers to the same permissions those forms do.
+        if (
+            !$user
+            || $user->guest
+            || (!$user->authorise('core.edit', 'com_j2commerce') && !$user->authorise('core.create', 'com_j2commerce'))
+        ) {
+            $app->setHeader('status', 403, true);
+            $this->sendJsonResponse(false, Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), null);
+            return;
+        }
 
         // Get country ID from request
         $countryId      = $app->getInput()->getInt('country_id', 0);
@@ -70,6 +84,7 @@ class AjaxController extends BaseController
         // Not keyed on `format`, which is Joomla's own document-type switch.
         if ($app->getInput()->getWord('response', '') === 'json') {
             $app->setHeader('Content-Type', 'application/json', true);
+            $app->setHeader('X-Content-Type-Options', 'nosniff', true);
             $app->sendHeaders();
 
             echo json_encode([
@@ -239,6 +254,11 @@ class AjaxController extends BaseController
         }
 
         $app->setHeader('Content-Type', 'application/json; charset=utf-8');
+
+        // close() is exit(), so the stored headers have to be flushed here or the
+        // caller reads a 200 and its response.ok check never trips.
+        $app->sendHeaders();
+
         echo json_encode($response);
         $app->close();
     }
