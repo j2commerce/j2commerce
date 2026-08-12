@@ -14,9 +14,11 @@ namespace J2Commerce\Component\J2commerce\Administrator\Table;
 
 \defined('_JEXEC') or die;
 
+use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Table\Table;
 use Joomla\Database\DatabaseDriver;
+use Joomla\Database\ParameterType;
 
 /**
  * Product Option Table class.
@@ -84,7 +86,40 @@ class ProductoptionTable extends Table
             $this->parent_id = 0;
         }
 
+        // A product carries an option once. The editors keep a second row from being offered,
+        // but a stale form or a direct caller can still post one, and every product type saves
+        // these rows through here.
+        if ($this->hasSiblingForSameOption()) {
+            $this->setError(Text::_('COM_J2COMMERCE_OPTION_ALREADY_ADDED'));
+            Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_OPTION_ALREADY_ADDED'), 'warning');
+
+            return false;
+        }
+
         return true;
+    }
+
+    private function hasSiblingForSameOption(): bool
+    {
+        $db        = $this->getDatabase();
+        $productId = (int) $this->product_id;
+        $optionId  = (int) $this->option_id;
+        $pk        = (int) $this->j2commerce_productoption_id;
+
+        $query = $db->getQuery(true)
+            ->select('COUNT(*)')
+            ->from($db->quoteName('#__j2commerce_product_options'))
+            ->where($db->quoteName('product_id') . ' = :productId')
+            ->where($db->quoteName('option_id') . ' = :optionId')
+            ->bind(':productId', $productId, ParameterType::INTEGER)
+            ->bind(':optionId', $optionId, ParameterType::INTEGER);
+
+        if ($pk) {
+            $query->where($db->quoteName($this->getKeyName()) . ' <> :pk')
+                ->bind(':pk', $pk, ParameterType::INTEGER);
+        }
+
+        return (int) $db->setQuery($query)->loadResult() > 0;
     }
 
     /**
