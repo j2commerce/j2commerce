@@ -1414,12 +1414,16 @@ class CustomFieldHelper
     }
 
     /**
-     * Re-apply a multiuploader field's own extension and size limits server-side; the render
-     * step publishes them only as data-* attributes for Uppy. Returns a translated error, or
-     * null when the upload is acceptable — including when the id matches no enabled
-     * multiuploader field, so embeds that supply none keep their previous behaviour.
+     * A multiuploader field's own upload limits, or null when the id matches no enabled
+     * multiuploader field. Separating the lookup from the check below lets the caller
+     * decide what an unresolved id means on its own route — the upload endpoint requires
+     * one, so for it "no field" is a refusal rather than an acceptance.
+     *
+     * @return  array<string, mixed>|null
+     *
+     * @since   6.5.2
      */
-    public static function validateMultiuploaderFile(int $fieldId, array $file): ?string
+    public static function multiuploaderOptions(int $fieldId): ?array
     {
         if ($fieldId <= 0) {
             return null;
@@ -1443,8 +1447,19 @@ class CustomFieldHelper
         }
 
         $decoded = json_decode((string) $options, true);
-        $decoded = \is_array($decoded) ? $decoded : [];
 
+        return \is_array($decoded) ? $decoded : [];
+    }
+
+    /**
+     * Re-apply a multiuploader field's own extension and size limits server-side; the render
+     * step publishes them only as data-* attributes for Uppy. Returns a translated error, or
+     * null when the upload is acceptable.
+     *
+     * @param   array<string, mixed>  $decoded  Options from multiuploaderOptions().
+     */
+    public static function validateMultiuploaderFile(array $decoded, array $file): ?string
+    {
         $allowed = trim((string) ($decoded['upload_allowed_types'] ?? ''));
 
         if ($allowed !== '') {

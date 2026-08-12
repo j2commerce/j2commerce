@@ -281,6 +281,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
         $this->seedCustomAclActions();
         $this->seedStockCommitted();
         $this->repairVariantAvailability();
+        $this->repairUploadsClientIp();
         $this->removeLegacyDebugLog();
 
         $this->debugLog("=== POSTFLIGHT END ===");
@@ -323,6 +324,54 @@ class Com_J2commerceInstallerScript extends InstallerScript
         } catch (\Throwable $e) {
             $this->debugLog('AVAILABILITY: repair failed (see the j2commerce log)');
             Log::add('Variant availability repair failed: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
+        }
+    }
+
+    /**
+     * Restore #__j2commerce_uploads.client_ip when the 6.5.0-2026-07-30 delta skipped it.
+     * That ALTER is marked CAN FAIL, so a site can pass the update with the column absent —
+     * and the column is the upload throttle's whole counter: without it the cap answers
+     * "under the limit" to every request and no caller can tell that apart from a real
+     * count. Idempotent; the delta is left in place for sites where it did land.
+     */
+    private function repairUploadsClientIp(): void
+    {
+        $db = Factory::getContainer()->get(DatabaseInterface::class);
+
+        try {
+            if (isset($db->getTableColumns('#__j2commerce_uploads', true)['client_ip'])) {
+                return;
+            }
+
+            $db->setQuery(
+                'ALTER TABLE ' . $db->quoteName('#__j2commerce_uploads')
+                . ' ADD COLUMN ' . $db->quoteName('client_ip') . ' varchar(64) NOT NULL DEFAULT ' . $db->quote('')
+                . " COMMENT 'Salted SHA-256 throttle key — u: user id, i: client IP; not reversible'"
+                . ' AFTER ' . $db->quoteName('file_size')
+            )->execute();
+
+            // Separate statement: an install that somehow carries the index but not the
+            // column must not lose the column to the index failing.
+            try {
+                $db->setQuery(
+                    'ALTER TABLE ' . $db->quoteName('#__j2commerce_uploads')
+                    . ' ADD INDEX ' . $db->quoteName('idx_client_ip')
+                    . ' (' . $db->quoteName('client_ip') . ', ' . $db->quoteName('created_on') . ')'
+                )->execute();
+            } catch (\Throwable $e) {
+                $this->debugLog('UPLOADS CLIENT_IP: column added, index already present');
+            }
+
+            $this->debugLog('UPLOADS CLIENT_IP: column restored — the upload throttle can count again');
+        } catch (\Throwable $e) {
+            // Left to the runtime warning hasClientIpColumn() already logs on every probe.
+            $this->debugLog('UPLOADS CLIENT_IP: repair failed (see the j2commerce log)');
+            Log::add(
+                'Could not add #__j2commerce_uploads.client_ip; the upload rate limit stays off: '
+                    . $e->getMessage(),
+                Log::WARNING,
+                'j2commerce'
+            );
         }
     }
 
