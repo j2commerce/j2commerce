@@ -123,12 +123,12 @@
       <td>Subtotal</td>
       <td class="right">[SUBTOTAL]</td>
     </tr>
-    [IF:SHIPPING_AMOUNT]
+    [IF:SHIPPING_METHOD]
     <tr>
-      <td>Shipping</td>
-      <td class="right">[SHIPPING_AMOUNT]</td>
+      <td>Shipping ([SHIPPING_METHOD])</td>
+      <td class="right">[IF:SHIPPING_AMOUNT][SHIPPING_AMOUNT][/IF:SHIPPING_AMOUNT][IFNOT:SHIPPING_AMOUNT]Free[/IFNOT:SHIPPING_AMOUNT]</td>
     </tr>
-    [/IF:SHIPPING_AMOUNT]
+    [/IF:SHIPPING_METHOD]
     [IF:TAX_AMOUNT]
     <tr>
       <td>Tax</td>

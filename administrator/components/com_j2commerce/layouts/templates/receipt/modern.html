@@ -103,12 +103,12 @@
                       <td style="padding: 10px 0; font-size: 13px; color: #6b7280;">Subtotal</td>
                       <td style="padding: 10px 0; font-size: 13px; color: #1f2937; text-align: right;">[SUBTOTAL]</td>
                     </tr>
-                    [IF:SHIPPING_AMOUNT]
+                    [IF:SHIPPING_METHOD]
                     <tr>
-                      <td style="padding: 6px 0; font-size: 13px; color: #6b7280;">Shipping</td>
-                      <td style="padding: 6px 0; font-size: 13px; color: #1f2937; text-align: right;">[SHIPPING_AMOUNT]</td>
+                      <td style="padding: 6px 0; font-size: 13px; color: #6b7280;">Shipping ([SHIPPING_METHOD])</td>
+                      <td style="padding: 6px 0; font-size: 13px; color: #1f2937; text-align: right;">[IF:SHIPPING_AMOUNT][SHIPPING_AMOUNT][/IF:SHIPPING_AMOUNT][IFNOT:SHIPPING_AMOUNT]Free[/IFNOT:SHIPPING_AMOUNT]</td>
                     </tr>
-                    [/IF:SHIPPING_AMOUNT]
+                    [/IF:SHIPPING_METHOD]
                     [IF:TAX_AMOUNT]
                     <tr>
                       <td style="padding: 6px 0; font-size: 13px; color: #6b7280;">Tax</td>
