@@ -28,6 +28,9 @@ $wa = $this->getDocument()->getWebAssetManager();
 $wa->useScript('keepalive')
     ->useScript('form.validate');
 
+// Adopts the shortcode sidebar this view fetches. Deferred, so it has run before any fetch callback.
+$wa->registerAndUseScript('com_j2commerce.dom', 'media/com_j2commerce/js/site/j2commerce-dom.js', [], ['defer' => true]);
+
 $bodySource = $this->item->body_source ?? 'visual';
 $isVisual = ($bodySource === 'visual');
 $isEditor = ($bodySource === 'editor');
@@ -290,7 +293,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     // Update inline sidebar
                     const sidebarContent = document.querySelector("#shortcodes-sidebar-col .options-form > div[style]");
                     if (sidebarContent) {
-                        sidebarContent.innerHTML = json.html;
+                        J2CommerceDom.adopt(sidebarContent, json.html);
                         bindShortcodeButtons(sidebarContent);
                     }
 

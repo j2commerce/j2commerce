@@ -10,6 +10,32 @@
     'use strict';
 
     /**
+     * Ancestry a fragment has to be parsed inside to survive.
+     *
+     * A document parse puts the fragment in body context, and there the parser discards a
+     * table-section start tag outright — a bare <tr> response parses to nothing at all.
+     * Parsing it under the elements the tag requires keeps the rows. Nothing else needs this:
+     * <option> and <li> are inserted in body context, so they come through a plain parse.
+     */
+    const PARSE_CONTEXT = {
+        caption: ['table'],
+        col: ['table', 'colgroup'],
+        colgroup: ['table'],
+        tbody: ['table'],
+        td: ['table', 'tbody', 'tr'],
+        tfoot: ['table'],
+        th: ['table', 'tbody', 'tr'],
+        thead: ['table'],
+        tr: ['table', 'tbody'],
+    };
+
+    function contextFor(html) {
+        const first = /^\s*<([a-zA-Z]+)/.exec(html);
+
+        return first ? PARSE_CONTEXT[first[1].toLowerCase()] || null : null;
+    }
+
+    /**
      * Parse server-rendered HTML into a fragment with every <script> removed.
      *
      * This is deliberate parity with the innerHTML assignments it replaces: plugin markup
@@ -21,7 +47,12 @@
      * or <link> lands in head where innerHTML's fragment parse would have kept it inline.
      */
     function parse(html) {
-        const doc = new DOMParser().parseFromString(html || '', 'text/html');
+        const context = contextFor(html || '');
+        const source  = context
+            ? context.map(tag => '<' + tag + '>').join('') + html
+            : (html || '');
+
+        const doc = new DOMParser().parseFromString(source, 'text/html');
 
         doc.querySelectorAll('script').forEach(script => script.remove());
         // querySelectorAll does not descend into template.content — sweep those separately.
@@ -30,7 +61,14 @@
         });
 
         const fragment = document.createDocumentFragment();
-        fragment.append(...doc.head.childNodes, ...doc.body.childNodes);
+
+        if (context) {
+            // Unwrap back to the level the caller passed, leaving the scaffolding behind.
+            const parent = doc.querySelector(context[context.length - 1]);
+            fragment.append(...(parent ? parent.childNodes : []));
+        } else {
+            fragment.append(...doc.head.childNodes, ...doc.body.childNodes);
+        }
 
         return fragment;
     }

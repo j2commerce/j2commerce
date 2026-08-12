@@ -13,8 +13,13 @@
 // phpcs:enable PSR1.Files.SideEffects
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
+
+// Adopts the option rows and variant block this view fetches. Deferred, so it has run before any fetch callback.
+Factory::getApplication()->getDocument()->getWebAssetManager()
+    ->registerAndUseScript('com_j2commerce.dom', 'media/com_j2commerce/js/site/j2commerce-dom.js', [], ['defer' => true]);
 
 // Extract display data - MUST set $item BEFORE using it
 $item = $displayData['product'];
@@ -401,7 +406,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             tbody.querySelectorAll('tr:not(.j2commerce_a_options)').forEach(function(r) { r.remove(); });
                             // Insert new rows before the add row
                             if (addRow) {
-                                addRow.insertAdjacentHTML('beforebegin', result.options_table_html);
+                                addRow.before(J2CommerceDom.parse(result.options_table_html));
                             }
                             syncOptionSelect();
                         }
@@ -410,7 +415,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Update the variant_add_block with the returned HTML
                     const variantAddBlock = document.getElementById('variant_add_block');
                     if (variantAddBlock && result.variant_add_block_html) {
-                        variantAddBlock.innerHTML = result.variant_add_block_html;
+                        J2CommerceDom.adopt(variantAddBlock, result.variant_add_block_html);
                     }
 
                     // Update J2CommerceVariants productId if needed

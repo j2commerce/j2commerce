@@ -306,10 +306,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // Also replace shipping methods section if returned
                 if (data.shipping_html !== undefined) {
-                    const shippingWrapper = document.getElementById('j2commerce-cart-shipping-wrapper');
-                    if (shippingWrapper) {
-                        shippingWrapper.innerHTML = data.shipping_html;
-                    }
+                    J2CommerceDom.adopt(document.getElementById('j2commerce-cart-shipping-wrapper'), data.shipping_html);
                 }
             }
         } catch (error) {

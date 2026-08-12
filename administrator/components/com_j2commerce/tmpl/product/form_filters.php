@@ -27,6 +27,8 @@ $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
 $style = '.autocomplete-list{background: var(--form-control-bg);max-height: 200px;overflow-y: auto;width: 100%;}.autocomplete-list.autocomplete-active{border: var(--form-control-border);}.autocomplete-item{padding: 8px;cursor: pointer;font-size: .8rem;}.autocomplete-item:hover {background-color: var(--template-bg-dark-5, #f0f0f0);}';
 $wa->addInlineStyle($style, [], []);
 
+// Adopts the filter list this view fetches. Deferred, so it has run before any fetch callback.
+$wa->registerAndUseScript('com_j2commerce.dom', 'media/com_j2commerce/js/site/j2commerce-dom.js', [], ['defer' => true]);
 
 $item = $displayData['product'];
 $formPrefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
@@ -135,7 +137,7 @@ $ajaxBase = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
                 try {
                     var json = JSON.parse(xhr.responseText);
                     if(json['html']){
-                        document.getElementById('j2commerce-product-filters').innerHTML = json['html'];
+                        J2CommerceDom.adopt(document.getElementById('j2commerce-product-filters'), json['html']);
                     }
                 } catch (error) {
                     console.error('Error parsing JSON response:', error);

@@ -200,7 +200,7 @@ $clearCartUrl = J2CommerceHelper::platform()->getCartUrl(['task' => 'clearCart']
                 }
                 if (data.shipping_html !== undefined) {
                     var shipping = document.getElementById('j2commerce-cart-shipping-wrapper');
-                    if (shipping) shipping.innerHTML = data.shipping_html;
+                    J2CommerceDom.adopt(shipping, data.shipping_html);
                 }
             })
             .catch(function() { window.location.reload(); });

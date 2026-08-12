@@ -12,9 +12,14 @@
 // phpcs:enable PSR1.Files.SideEffects
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Session\Session;
+
+// Adopts the option-values markup this view fetches. Deferred, so it has run before any fetch callback.
+Factory::getApplication()->getDocument()->getWebAssetManager()
+    ->registerAndUseScript('com_j2commerce.dom', 'media/com_j2commerce/js/site/j2commerce-dom.js', [], ['defer' => true]);
 
 $item        = $displayData['product'];
 $formPrefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
@@ -528,7 +533,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
 
             if (data.success) {
-                optionValuesModalBody.innerHTML = data.html;
+                J2CommerceDom.adopt(optionValuesModalBody, data.html);
                 modalLabel.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_PAO_SET_OPTIONS_FOR')); ?> + ': ' + data.optionName;
                 initOptionValuesHandlers();
             } else {
