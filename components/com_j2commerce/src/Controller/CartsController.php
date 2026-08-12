@@ -490,7 +490,7 @@ class CartsController extends BaseController
         if ($model->deleteItem()) {
             $msg = Text::_('COM_J2COMMERCE_CART_UPDATED_SUCCESSFULLY');
         } else {
-            $msg = $model->getError();
+            $msg = Text::_('COM_J2COMMERCE_CART_DELETE_ERROR');
         }
 
         $url = $model->getCartUrl();
@@ -1064,8 +1064,6 @@ class CartsController extends BaseController
             }
 
             if (!$couponModel->isValid($orderContext)) {
-                Log::add('carts.applyCouponAjax rejected: ' . $couponModel->getError(), Log::INFO, 'com_j2commerce');
-
                 $this->sendJsonResponse([
                     'success' => false,
                     'message' => Text::_('COM_J2COMMERCE_COUPON_NOT_VALID'),
@@ -1158,11 +1156,14 @@ class CartsController extends BaseController
             $voucherModel->voucher = $voucherModel->getVoucherByCode($voucher);
 
             if (!$voucherModel->isValid()) {
-                Log::add('carts.applyVoucherAjax rejected: ' . $voucherModel->getError(), Log::INFO, 'com_j2commerce');
-
+                // Safe to carry: isValid() relays a DomainException as given and
+                // collapses every other throwable to a generic string, so nothing
+                // the query or date layers wrote can arrive here. The enqueued copy
+                // does not arrive at all — the queue is persisted in redirect()
+                // alone, and this path closes instead.
                 $this->sendJsonResponse([
                     'success' => false,
-                    'message' => Text::_('COM_J2COMMERCE_VOUCHER_NOT_VALID'),
+                    'message' => $voucherModel->getError() ?: Text::_('COM_J2COMMERCE_VOUCHER_NOT_VALID'),
                 ]);
             }
 

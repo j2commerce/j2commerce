@@ -928,11 +928,26 @@ class VoucherModel extends AdminModel
             $results = J2CommerceHelper::plugin()->eventWithArray('VoucherIsValid', [$this]);
 
             if (\in_array(false, $results, false)) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_VOUCHER_NOT_APPLICABLE'));
+                throw new \DomainException(Text::_('COM_J2COMMERCE_VOUCHER_NOT_APPLICABLE'));
             }
-        } catch (\Exception $e) {
+        } catch (\DomainException $e) {
+            // A rejection this model raised itself: the message is one of its own
+            // constants naming the shopper's voucher, so it is the answer.
+            Log::add(\sprintf('Voucher "%s" rejected: %s', $this->voucher->voucher_code ?? '', $e->getMessage()), Log::INFO, 'com_j2commerce');
+
             $this->setError($e->getMessage());
             Factory::getApplication()->enqueueMessage($e->getMessage(), 'warning');
+            $this->removeVoucher();
+
+            return false;
+        } catch (\Exception $e) {
+            // Anything else came from a query, a date parse or a subscriber, and
+            // carries text this model cannot vouch for.
+            Log::add('Voucher validation failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+
+            $generic = Text::_('COM_J2COMMERCE_VOUCHER_NOT_VALID');
+            $this->setError($generic);
+            Factory::getApplication()->enqueueMessage($generic, 'warning');
             $this->removeVoucher();
 
             return false;
@@ -962,11 +977,22 @@ class VoucherModel extends AdminModel
             $results = J2CommerceHelper::plugin()->eventWithArray('VoucherIsValid', [$this]);
 
             if (\in_array(false, $results, false)) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_VOUCHER_NOT_APPLICABLE'));
+                throw new \DomainException(Text::_('COM_J2COMMERCE_VOUCHER_NOT_APPLICABLE'));
             }
-        } catch (\Exception $e) {
+        } catch (\DomainException $e) {
+            Log::add(\sprintf('Voucher "%s" rejected: %s', $this->voucher->voucher_code ?? '', $e->getMessage()), Log::INFO, 'com_j2commerce');
+
             $this->setError($e->getMessage());
             Factory::getApplication()->enqueueMessage($e->getMessage(), 'warning');
+            $this->removeVoucher();
+
+            return false;
+        } catch (\Exception $e) {
+            Log::add('Voucher validation failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+
+            $generic = Text::_('COM_J2COMMERCE_VOUCHER_NOT_VALID');
+            $this->setError($generic);
+            Factory::getApplication()->enqueueMessage($generic, 'warning');
             $this->removeVoucher();
 
             return false;
@@ -980,7 +1006,7 @@ class VoucherModel extends AdminModel
      *
      * @return  void
      *
-     * @throws  \Exception  If vouchers are not enabled.
+     * @throws  \DomainException  If vouchers are not enabled.
      *
      * @since   6.0.6
      */
@@ -989,7 +1015,7 @@ class VoucherModel extends AdminModel
         $params = J2CommerceHelper::config();
 
         if ($params->get('enable_voucher', 0) == 0) {
-            throw new \Exception(Text::_('COM_J2COMMERCE_VOUCHER_NOT_ENABLED'));
+            throw new \DomainException(Text::_('COM_J2COMMERCE_VOUCHER_NOT_ENABLED'));
         }
     }
 
@@ -998,14 +1024,14 @@ class VoucherModel extends AdminModel
      *
      * @return  void
      *
-     * @throws  \Exception  If voucher does not exist.
+     * @throws  \DomainException  If voucher does not exist.
      *
      * @since   6.0.6
      */
     private function validateExists(): void
     {
         if (!$this->voucher) {
-            throw new \Exception(Text::_('COM_J2COMMERCE_VOUCHER_DOES_NOT_EXIST'));
+            throw new \DomainException(Text::_('COM_J2COMMERCE_VOUCHER_DOES_NOT_EXIST'));
         }
     }
 
@@ -1014,7 +1040,7 @@ class VoucherModel extends AdminModel
      *
      * @return  void
      *
-     * @throws  \Exception  If usage limit has been reached.
+     * @throws  \DomainException  If usage limit has been reached.
      *
      * @since   6.0.6
      */
@@ -1023,7 +1049,7 @@ class VoucherModel extends AdminModel
         $amount = $this->getRemainingBalance($this->voucher->j2commerce_voucher_id);
 
         if ($amount <= 0) {
-            throw new \Exception(Text::_('COM_J2COMMERCE_VOUCHER_USAGE_LIMIT_HAS_REACHED'));
+            throw new \DomainException(Text::_('COM_J2COMMERCE_VOUCHER_USAGE_LIMIT_HAS_REACHED'));
         }
     }
 
@@ -1034,7 +1060,7 @@ class VoucherModel extends AdminModel
      *
      * @return  void
      *
-     * @throws  \Exception  If usage limit has been reached.
+     * @throws  \DomainException  If usage limit has been reached.
      *
      * @since   6.0.6
      */
@@ -1044,7 +1070,7 @@ class VoucherModel extends AdminModel
         $amount  = $this->getRemainingBalance($this->voucher->j2commerce_voucher_id, $orderId);
 
         if ($amount <= 0) {
-            throw new \Exception(Text::_('COM_J2COMMERCE_VOUCHER_USAGE_LIMIT_HAS_REACHED'));
+            throw new \DomainException(Text::_('COM_J2COMMERCE_VOUCHER_USAGE_LIMIT_HAS_REACHED'));
         }
     }
 
@@ -1053,7 +1079,7 @@ class VoucherModel extends AdminModel
      *
      * @return  void
      *
-     * @throws  \Exception  If voucher has expired or is not yet valid.
+     * @throws  \DomainException  If voucher has expired or is not yet valid.
      *
      * @since   6.0.6
      */
@@ -1071,7 +1097,7 @@ class VoucherModel extends AdminModel
         $toValid   = ($this->voucher->valid_to == $nullDate || empty($this->voucher->valid_to) || $validTo >= $now);
 
         if (!$fromValid || !$toValid) {
-            throw new \Exception(Text::_('COM_J2COMMERCE_VOUCHER_HAS_EXPIRED'));
+            throw new \DomainException(Text::_('COM_J2COMMERCE_VOUCHER_HAS_EXPIRED'));
         }
     }
 
