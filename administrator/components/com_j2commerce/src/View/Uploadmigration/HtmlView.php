@@ -32,7 +32,7 @@ class HtmlView extends BaseHtmlView
 
     protected string $navbar = '';
 
-    /** @var array{root: ?string, root_display: string, legacy: ?string, entries: array<int, array<string, mixed>>, counts: array<string, int>} */
+    /** @var array{root: ?string, root_display: string, folders: array<string, string>, entries: array<int, array<string, mixed>>, counts: array<string, int>} */
     protected array $scan = [];
 
     public function display($tpl = null)
@@ -63,10 +63,10 @@ class HtmlView extends BaseHtmlView
 
         $toolbar = $this->getDocument()->getToolbar();
 
-        if (
-            ($this->scan['counts'][UploadmigrationModel::STATE_MOVABLE] ?? 0) > 0
-            && Factory::getApplication()->getIdentity()->authorise('core.admin', 'com_j2commerce')
-        ) {
+        $actionable = ($this->scan['counts'][UploadmigrationModel::STATE_REASSOCIATE] ?? 0)
+            + ($this->scan['counts'][UploadmigrationModel::STATE_MOVABLE] ?? 0);
+
+        if ($actionable > 0 && Factory::getApplication()->getIdentity()->authorise('core.admin', 'com_j2commerce')) {
             $toolbar->confirmButton('move', 'COM_J2COMMERCE_UPLOAD_MIGRATION_TOOLBAR_MOVE', 'uploadmigration.migrate')
                 ->message('COM_J2COMMERCE_UPLOAD_MIGRATION_CONFIRM')
                 ->icon('fa-solid fa-truck-ramp-box')

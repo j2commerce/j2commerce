@@ -25,10 +25,12 @@ $counts  = $scan['counts'];
 $entries = $scan['entries'];
 
 $stateLabels = [
-    UploadmigrationModel::STATE_MOVABLE    => ['COM_J2COMMERCE_UPLOAD_MIGRATION_STATE_MOVABLE', 'success'],
-    UploadmigrationModel::STATE_PRESENT    => ['COM_J2COMMERCE_UPLOAD_MIGRATION_STATE_PRESENT', 'info'],
-    UploadmigrationModel::STATE_ORPHAN     => ['COM_J2COMMERCE_UPLOAD_MIGRATION_STATE_ORPHAN', 'secondary'],
-    UploadmigrationModel::STATE_UNRESOLVED => ['COM_J2COMMERCE_UPLOAD_MIGRATION_STATE_UNRESOLVED', 'warning'],
+    UploadmigrationModel::STATE_REASSOCIATE => ['COM_J2COMMERCE_UPLOAD_MIGRATION_STATE_REASSOCIATE', 'success'],
+    UploadmigrationModel::STATE_MOVABLE     => ['COM_J2COMMERCE_UPLOAD_MIGRATION_STATE_MOVABLE', 'success'],
+    UploadmigrationModel::STATE_PRESENT     => ['COM_J2COMMERCE_UPLOAD_MIGRATION_STATE_PRESENT', 'info'],
+    UploadmigrationModel::STATE_UNMATCHED   => ['COM_J2COMMERCE_UPLOAD_MIGRATION_STATE_UNMATCHED', 'secondary'],
+    UploadmigrationModel::STATE_ORPHAN      => ['COM_J2COMMERCE_UPLOAD_MIGRATION_STATE_ORPHAN', 'secondary'],
+    UploadmigrationModel::STATE_UNRESOLVED  => ['COM_J2COMMERCE_UPLOAD_MIGRATION_STATE_UNRESOLVED', 'warning'],
 ];
 ?>
 <?php echo $this->navbar; ?>
@@ -47,10 +49,10 @@ $stateLabels = [
                     </div>
                 </div>
 
-                <?php if ($scan['legacy'] === null) : ?>
+                <?php if ($scan['folders'] === []) : ?>
                     <div class="alert alert-success">
                         <span class="icon-check-circle" aria-hidden="true"></span>
-                        <?php echo Text::sprintf('COM_J2COMMERCE_UPLOAD_MIGRATION_NOTHING_TO_DO', $this->escape(UploadmigrationModel::LEGACY_RELATIVE_PATH)); ?>
+                        <?php echo Text::sprintf('COM_J2COMMERCE_UPLOAD_MIGRATION_NOTHING_TO_DO', $this->escape(implode(', ', UploadmigrationModel::LEGACY_RELATIVE_PATHS))); ?>
                     </div>
                 <?php else : ?>
                     <?php if ($scan['root'] === null) : ?>
@@ -64,7 +66,11 @@ $stateLabels = [
                         <div class="card-body">
                             <dl class="row mb-0">
                                 <dt class="col-sm-3"><?php echo Text::_('COM_J2COMMERCE_UPLOAD_MIGRATION_LEGACY_FOLDER'); ?></dt>
-                                <dd class="col-sm-9"><code><?php echo $this->escape(UploadmigrationModel::LEGACY_RELATIVE_PATH); ?></code></dd>
+                                <dd class="col-sm-9">
+                                    <?php foreach (array_keys($scan['folders']) as $folder) : ?>
+                                        <code class="d-block"><?php echo $this->escape($folder); ?></code>
+                                    <?php endforeach; ?>
+                                </dd>
                                 <dt class="col-sm-3"><?php echo Text::_('COM_J2COMMERCE_UPLOAD_MIGRATION_ATTACHMENT_ROOT'); ?></dt>
                                 <dd class="col-sm-9 mb-0">
                                     <code><?php echo $this->escape($scan['root_display'] !== '' ? $scan['root_display'] : Text::_('COM_J2COMMERCE_UPLOAD_MIGRATION_UNAVAILABLE')); ?></code>
@@ -75,7 +81,7 @@ $stateLabels = [
 
                     <div class="row mb-4">
                         <?php foreach ($stateLabels as $state => [$label, $variant]) : ?>
-                            <div class="col-6 col-lg-3 mb-3 mb-lg-0">
+                            <div class="col-6 col-lg-2 mb-3 mb-lg-0">
                                 <div class="alert alert-<?php echo $variant; ?> my-0 w-100 border-0">
                                     <div class="display-6 mb-2"><?php echo (int) ($counts[$state] ?? 0); ?></div>
                                     <div><?php echo Text::_($label); ?></div>
@@ -95,6 +101,7 @@ $stateLabels = [
                             <thead>
                                 <tr>
                                     <th scope="col"><?php echo Text::_('COM_J2COMMERCE_UPLOAD_MIGRATION_HEADING_FILE'); ?></th>
+                                    <th scope="col" class="d-none d-md-table-cell"><?php echo Text::_('COM_J2COMMERCE_UPLOAD_MIGRATION_HEADING_SOURCE'); ?></th>
                                     <th scope="col" class="w-10 d-none d-md-table-cell"><?php echo Text::_('COM_J2COMMERCE_UPLOAD_MIGRATION_HEADING_SIZE'); ?></th>
                                     <th scope="col" class="w-10 d-none d-md-table-cell"><?php echo Text::_('COM_J2COMMERCE_UPLOAD_MIGRATION_HEADING_ROW_STATUS'); ?></th>
                                     <th scope="col"><?php echo Text::_('COM_J2COMMERCE_UPLOAD_MIGRATION_HEADING_DESTINATION'); ?></th>
@@ -106,6 +113,7 @@ $stateLabels = [
                                     <?php [$label, $variant] = $stateLabels[$entry['state']]; ?>
                                     <tr>
                                         <th scope="row"><?php echo $this->escape($entry['name']); ?></th>
+                                        <td class="d-none d-md-table-cell"><code><?php echo $this->escape($entry['folder']); ?></code></td>
                                         <td class="d-none d-md-table-cell"><?php echo HTMLHelper::_('number.bytes', $entry['size']); ?></td>
                                         <td class="d-none d-md-table-cell"><?php echo $entry['status'] !== '' ? $this->escape($entry['status']) : '&mdash;'; ?></td>
                                         <td>

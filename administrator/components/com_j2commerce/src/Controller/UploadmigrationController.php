@@ -40,8 +40,10 @@ class UploadmigrationController extends BaseController
         $this->app->enqueueMessage(
             Text::sprintf(
                 'COM_J2COMMERCE_UPLOAD_MIGRATION_RESULT',
+                $result['reassociated'],
                 $result['moved'],
                 $result['skipped'],
+                $result['unmatched'],
                 $result['orphan'],
                 $result['failed']
             ),
