@@ -7,7 +7,7 @@
     <license>GNU General Public License v2 or later</license>
     <authorEmail>support@j2commerce.com</authorEmail>
     <authorUrl>https://www.j2commerce.com</authorUrl>
-    <version>6.2.2</version>
+    <version>6.5.1</version>
     <description>MOD_J2COMMERCE_QUICKICONS_DESC</description>
     <namespace path="src">J2Commerce\Module\J2commerceQuickicons</namespace>
 
@@ -50,6 +50,8 @@
         <language tag="nl-NL">nl-NL/mod_j2commerce_quickicons.sys.ini</language>
         <language tag="pl-PL">pl-PL/mod_j2commerce_quickicons.ini</language>
         <language tag="pl-PL">pl-PL/mod_j2commerce_quickicons.sys.ini</language>
+        <language tag="pt-BR">pt-BR/mod_j2commerce_quickicons.ini</language>
+        <language tag="pt-BR">pt-BR/mod_j2commerce_quickicons.sys.ini</language>
         <language tag="pt-PT">pt-PT/mod_j2commerce_quickicons.ini</language>
         <language tag="pt-PT">pt-PT/mod_j2commerce_quickicons.sys.ini</language>
         <language tag="ru-RU">ru-RU/mod_j2commerce_quickicons.ini</language>
@@ -66,6 +68,21 @@
         <fields name="params">
             <fieldset name="basic">
                 <field
+                    name="context"
+                    type="text"
+                    default="j2commerce_cpanel"
+                    label="MOD_J2COMMERCE_QUICKICONS_CONTEXT"
+                    description="MOD_J2COMMERCE_QUICKICONS_CONTEXT_DESC"
+                />
+                <field
+                    name="header_icon"
+                    type="text"
+                    hint="fa-solid fa-cart-shopping"
+                    default=""
+                    label="MOD_J2COMMERCE_QUICKICONS_HEADER_ICON"
+                    description="MOD_J2COMMERCE_QUICKICONS_HEADER_ICON_DESC"
+                />
+                <field
                     name="show_dashboard"
                     type="radio"
                     layout="joomla.form.field.radio.switcher"
@@ -73,17 +90,6 @@
                     default="1"
                     label="MOD_J2COMMERCE_QUICKICONS_SHOW_DASHBOARD"
                     description="MOD_J2COMMERCE_QUICKICONS_SHOW_DASHBOARD_DESC"
-                >
-                    <option value="0">JNO</option>
-                    <option value="1">JYES</option>
-                </field>
-                <field
-                    name="show_orders"
-                    type="radio"
-                    layout="joomla.form.field.radio.switcher"
-                    filter="integer"
-                    default="1"
-                    label="MOD_J2COMMERCE_QUICKICONS_SHOW_ORDERS"
                 >
                     <option value="0">JNO</option>
                     <option value="1">JYES</option>
@@ -100,6 +106,61 @@
                     <option value="1">JYES</option>
                 </field>
                 <field
+                    name="show_inventory"
+                    type="radio"
+                    layout="joomla.form.field.radio.switcher"
+                    filter="integer"
+                    default="0"
+                    label="MOD_J2COMMERCE_QUICKICONS_SHOW_INVENTORY"
+                >
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                <field
+                    name="show_vendors"
+                    type="radio"
+                    layout="joomla.form.field.radio.switcher"
+                    filter="integer"
+                    default="0"
+                    label="MOD_J2COMMERCE_QUICKICONS_SHOW_VENDORS"
+                >
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                <field
+                    name="show_manufacturers"
+                    type="radio"
+                    layout="joomla.form.field.radio.switcher"
+                    filter="integer"
+                    default="0"
+                    label="MOD_J2COMMERCE_QUICKICONS_SHOW_MANUFACTURERS"
+                >
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                <field
+                    name="show_filters"
+                    type="radio"
+                    layout="joomla.form.field.radio.switcher"
+                    filter="integer"
+                    default="0"
+                    label="MOD_J2COMMERCE_QUICKICONS_SHOW_FILTERS"
+                >
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                <field
+                    name="show_orders"
+                    type="radio"
+                    layout="joomla.form.field.radio.switcher"
+                    filter="integer"
+                    default="1"
+                    label="MOD_J2COMMERCE_QUICKICONS_SHOW_ORDERS"
+                >
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                <field
                     name="show_customers"
                     type="radio"
                     layout="joomla.form.field.radio.switcher"
@@ -111,12 +172,111 @@
                     <option value="1">JYES</option>
                 </field>
                 <field
-                    name="show_apps"
+                    name="show_coupons"
                     type="radio"
                     layout="joomla.form.field.radio.switcher"
                     filter="integer"
-                    default="1"
-                    label="MOD_J2COMMERCE_QUICKICONS_SHOW_APPS"
+                    default="0"
+                    label="MOD_J2COMMERCE_QUICKICONS_SHOW_COUPONS"
+                >
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                <field
+                    name="show_vouchers"
+                    type="radio"
+                    layout="joomla.form.field.radio.switcher"
+                    filter="integer"
+                    default="0"
+                    label="MOD_J2COMMERCE_QUICKICONS_SHOW_VOUCHERS"
+                >
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                <field
+                    name="show_countries"
+                    type="radio"
+                    layout="joomla.form.field.radio.switcher"
+                    filter="integer"
+                    default="0"
+                    label="MOD_J2COMMERCE_QUICKICONS_SHOW_COUNTRIES"
+                >
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                <field
+                    name="show_zones"
+                    type="radio"
+                    layout="joomla.form.field.radio.switcher"
+                    filter="integer"
+                    default="0"
+                    label="MOD_J2COMMERCE_QUICKICONS_SHOW_ZONES"
+                >
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                <field
+                    name="show_geozones"
+                    type="radio"
+                    layout="joomla.form.field.radio.switcher"
+                    filter="integer"
+                    default="0"
+                    label="MOD_J2COMMERCE_QUICKICONS_SHOW_GEOZONES"
+                >
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                <field
+                    name="show_taxrates"
+                    type="radio"
+                    layout="joomla.form.field.radio.switcher"
+                    filter="integer"
+                    default="0"
+                    label="MOD_J2COMMERCE_QUICKICONS_SHOW_TAXRATES"
+                >
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                <field
+                    name="show_taxprofiles"
+                    type="radio"
+                    layout="joomla.form.field.radio.switcher"
+                    filter="integer"
+                    default="0"
+                    label="MOD_J2COMMERCE_QUICKICONS_SHOW_TAXPROFILES"
+                >
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                <field
+                    name="show_emailtemplates"
+                    type="radio"
+                    layout="joomla.form.field.radio.switcher"
+                    filter="integer"
+                    default="0"
+                    label="MOD_J2COMMERCE_QUICKICONS_SHOW_EMAILTEMPLATES"
+                >
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                <field
+                    name="show_invoicetemplates"
+                    type="radio"
+                    layout="joomla.form.field.radio.switcher"
+                    filter="integer"
+                    default="0"
+                    label="MOD_J2COMMERCE_QUICKICONS_SHOW_INVOICETEMPLATES"
+                >
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                <field
+                    name="show_customfields"
+                    type="radio"
+                    layout="joomla.form.field.radio.switcher"
+                    filter="integer"
+                    default="0"
+                    label="MOD_J2COMMERCE_QUICKICONS_SHOW_CUSTOMFIELDS"
                 >
                     <option value="0">JNO</option>
                     <option value="1">JYES</option>
@@ -144,6 +304,17 @@
                     <option value="1">JYES</option>
                 </field>
                 <field
+                    name="show_queues"
+                    type="radio"
+                    layout="joomla.form.field.radio.switcher"
+                    filter="integer"
+                    default="0"
+                    label="MOD_J2COMMERCE_QUICKICONS_SHOW_QUEUES"
+                >
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                <field
                     name="show_statistics"
                     type="radio"
                     layout="joomla.form.field.radio.switcher"
@@ -161,6 +332,17 @@
                     filter="integer"
                     default="1"
                     label="MOD_J2COMMERCE_QUICKICONS_SHOW_REPORTS"
+                >
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                <field
+                    name="show_apps"
+                    type="radio"
+                    layout="joomla.form.field.radio.switcher"
+                    filter="integer"
+                    default="1"
+                    label="MOD_J2COMMERCE_QUICKICONS_SHOW_APPS"
                 >
                     <option value="0">JNO</option>
                     <option value="1">JYES</option>

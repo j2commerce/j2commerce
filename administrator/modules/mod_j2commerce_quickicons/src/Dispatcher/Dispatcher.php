@@ -15,7 +15,6 @@ namespace J2Commerce\Module\J2commerceQuickicons\Administrator\Dispatcher;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Dispatcher\AbstractModuleDispatcher;
-use Joomla\CMS\Factory;
 use Joomla\CMS\Helper\HelperFactoryAwareInterface;
 use Joomla\CMS\Helper\HelperFactoryAwareTrait;
 
@@ -27,13 +26,15 @@ class Dispatcher extends AbstractModuleDispatcher implements HelperFactoryAwareI
     {
         $data = parent::getLayoutData();
 
-        // Load component language — button labels use COM_J2COMMERCE_* keys
-        // which aren't available when this module renders outside com_j2commerce context
-        Factory::getApplication()->getLanguage()->load('com_j2commerce', JPATH_ADMINISTRATOR);
-
         $data['buttons'] = $this->getHelperFactory()
             ->getHelper('QuickIconsHelper')
             ->getButtons($data['params']);
+
+        // Button labels use COM_J2COMMERCE_* keys, which are not loaded when this
+        // module renders outside a com_j2commerce request.
+        if ($data['buttons'] !== []) {
+            $this->app->getLanguage()->load('com_j2commerce', JPATH_ADMINISTRATOR);
+        }
 
         return $data;
     }
