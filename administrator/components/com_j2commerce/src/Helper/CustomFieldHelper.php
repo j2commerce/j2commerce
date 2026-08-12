@@ -1363,7 +1363,6 @@ class CustomFieldHelper
         }
         $maxFileSize  = (int) ($maxFileSizeMB * 1024 * 1024); // Convert MB to bytes
         $allowedTypes = trim($options['upload_allowed_types'] ?? '');
-        $directory    = trim($options['upload_directory'] ?? 'images/checkout-uploads');
 
         // Build the upload endpoint URL. customfield_id lets the controller re-read
         // these same limits server-side instead of trusting the browser.
@@ -1401,7 +1400,6 @@ class CustomFieldHelper
             . ' data-max-file-size="' . $maxFileSize . '"'
             . ' data-allowed-types="' . htmlspecialchars($allowedTypes, ENT_QUOTES, 'UTF-8') . '"'
             . ' data-upload-url="' . htmlspecialchars($uploadUrl, ENT_QUOTES, 'UTF-8') . '"'
-            . ' data-directory="' . htmlspecialchars($directory, ENT_QUOTES, 'UTF-8') . '"'
             . ' data-required="' . ((int) $field->field_required) . '"'
             . '>'
             . '<input type="hidden" name="' . $namekey . '" id="' . $id . '" value="' . htmlspecialchars($value ?: '[]', ENT_QUOTES, 'UTF-8') . '"' . $requiredAttr . '>'

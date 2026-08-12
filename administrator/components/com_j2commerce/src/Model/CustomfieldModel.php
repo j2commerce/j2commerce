@@ -209,9 +209,6 @@ class CustomfieldModel extends AdminModel
                     if (isset($options['upload_allowed_types'])) {
                         $data->upload_allowed_types = $options['upload_allowed_types'];
                     }
-                    if (isset($options['upload_directory'])) {
-                        $data->upload_directory = $options['upload_directory'];
-                    }
                 }
             }
 
@@ -358,7 +355,6 @@ class CustomfieldModel extends AdminModel
             $fieldOptionsData['upload_max_files']     = (int) ($data['upload_max_files'] ?? 5);
             $fieldOptionsData['upload_max_file_size'] = (float) ($data['upload_max_file_size'] ?? 10);
             $fieldOptionsData['upload_allowed_types'] = trim($data['upload_allowed_types'] ?? '');
-            $fieldOptionsData['upload_directory']     = trim($data['upload_directory'] ?? 'images/checkout-uploads');
         }
 
         // Collapse-behind-Add-link toggle (any field type). A required field can
@@ -381,7 +377,7 @@ class CustomfieldModel extends AdminModel
 
         // Remove virtual fields before save
         unset($data['field_zonetype'], $data['phone_all_countries'], $data['phone_country_mode'], $data['phone_countries'],
-            $data['upload_max_files'], $data['upload_max_file_size'], $data['upload_allowed_types'], $data['upload_directory'],
+            $data['upload_max_files'], $data['upload_max_file_size'], $data['upload_allowed_types'],
             $data['field_collapse_toggle']);
 
         // Encode field_value subform data to JSON for dropdown/radio/checkbox options

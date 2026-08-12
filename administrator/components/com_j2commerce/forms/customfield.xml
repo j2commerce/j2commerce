@@ -260,16 +260,6 @@
             hint="pdf,jpg,png,doc,docx"
             showon="field_type:multiuploader"
         />
-
-        <field
-            name="upload_directory"
-            type="text"
-            label="COM_J2COMMERCE_FIELD_UPLOAD_DIRECTORY"
-            description="COM_J2COMMERCE_FIELD_UPLOAD_DIRECTORY_DESC"
-            default="images/checkout-uploads"
-            filter="path"
-            showon="field_type:multiuploader"
-        />
     </fieldset>
 
     <fieldset

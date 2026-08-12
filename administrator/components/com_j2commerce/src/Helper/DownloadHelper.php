@@ -293,7 +293,7 @@ final class DownloadHelper
         );
 
         $attach = $segments === [] || \in_array('..', $segments, true)
-            ? AttachmentDenyFileHelper::DEFAULT_PATH
+            ? AttachmentDenyFileHelper::defaultPath()
             : implode('/', $segments);
 
         foreach (array_unique([$attach, 'images']) as $root) {

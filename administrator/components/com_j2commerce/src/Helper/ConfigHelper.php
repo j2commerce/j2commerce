@@ -359,7 +359,7 @@ class ConfigHelper
         $value = trim((string) self::get('attachmentfolderpath', ''));
         $value = trim(str_replace('\\', '/', $value), '/');
 
-        return $value !== '' ? $value : AttachmentDenyFileHelper::DEFAULT_PATH;
+        return $value !== '' ? $value : AttachmentDenyFileHelper::defaultPath();
     }
 
     /**
@@ -412,7 +412,7 @@ class ConfigHelper
         if ($created || !is_file($real . '/.htaccess')) {
             AttachmentDenyFileHelper::writeDenyPair(
                 $real,
-                AttachmentDenyFileHelper::ownsTree($real, $created, $relative === AttachmentDenyFileHelper::DEFAULT_PATH)
+                AttachmentDenyFileHelper::ownsTree($real, $created, $relative === AttachmentDenyFileHelper::defaultPath())
             );
         }
 

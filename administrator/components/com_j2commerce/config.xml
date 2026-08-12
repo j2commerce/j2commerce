@@ -190,7 +190,7 @@
             type="text"
             label="COM_J2COMMERCE_CONFIG_ATTACHMENT_PATH"
             description="COM_J2COMMERCE_CONFIG_ATTACHMENT_PATH_DESC"
-            default="files/com_j2commerce"
+            default=""
             validate="filePath"
             exclude="administrator|api|cache|cli|components|includes|language|layouts|libraries|media|modules|plugins|templates|tmp|logs"
             class="w-100"

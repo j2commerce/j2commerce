@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 
 \defined('_JEXEC') or die;
 
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Log\Log;
 
 /**
@@ -26,6 +27,7 @@ use Joomla\CMS\Log\Log;
  */
 final class AttachmentDenyFileHelper
 {
+    /** Storage root of an install that predates the file_path-derived default below. */
     public const DEFAULT_PATH = 'files/com_j2commerce';
 
     /** Marker both deny payloads carry, identifying a file as one J2Commerce wrote. */
@@ -76,6 +78,40 @@ HTACCESS;
     </system.webServer>
 </configuration>
 WEBCONFIG;
+
+    /**
+     * Storage root used when the component names no path of its own: a com_j2commerce
+     * folder inside the file storage location Joomla itself was configured with — the
+     * com_media 'file_path' param behind Global Configuration → Media, 'files' by default —
+     * so a site that moved that location is followed here rather than hard-coded past. An
+     * install already holding the legacy tree keeps it: a site that moved file_path after
+     * uploads existed must not lose sight of them.
+     *
+     * A file_path carrying a traversal segment or a drive letter is not resolvable inside
+     * the site root, so the legacy default is used rather than handing the callers a path
+     * their own confinement tests would reject, leaving the site nowhere to store.
+     *
+     * @since  6.5.0
+     */
+    public static function defaultPath(): string
+    {
+        if (is_dir(JPATH_ROOT . '/' . self::DEFAULT_PATH)) {
+            return self::DEFAULT_PATH;
+        }
+
+        $configured = (string) ComponentHelper::getParams('com_media')->get('file_path', 'files');
+        $configured = trim(str_replace('\\', '/', $configured), '/');
+        $segments   = array_filter(
+            explode('/', $configured),
+            static fn (string $segment): bool => $segment !== '' && $segment !== '.'
+        );
+
+        if ($segments === [] || \in_array('..', $segments, true) || preg_match('#^[a-zA-Z]:#', $configured)) {
+            return self::DEFAULT_PATH;
+        }
+
+        return implode('/', $segments) . '/com_j2commerce';
+    }
 
     /**
      * A tree is J2Commerce's when this request created it, when it is the default path

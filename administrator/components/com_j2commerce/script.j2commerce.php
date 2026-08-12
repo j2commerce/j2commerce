@@ -816,7 +816,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
         // fallback for a value that normalises away entirely (a lone '/'), so the installer
         // and the runtime never disagree about which directory the config names.
         $relative = trim(str_replace('\\', '/', $this->readAttachmentFolderPath()), '/');
-        $relative = $relative !== '' ? $relative : AttachmentDenyFileHelper::DEFAULT_PATH;
+        $relative = $relative !== '' ? $relative : AttachmentDenyFileHelper::defaultPath();
         $resolved = $this->resolveAttachmentRoot($relative);
 
         // Nothing is written for a path that will not confine. Returning here leaves the tree
@@ -840,7 +840,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
         $owned = AttachmentDenyFileHelper::ownsTree(
             $root,
             $createdNow,
-            $relative === AttachmentDenyFileHelper::DEFAULT_PATH
+            $relative === AttachmentDenyFileHelper::defaultPath()
         );
 
         foreach (['', '/tmp', '/orders'] as $sub) {
@@ -964,7 +964,7 @@ README;
     /** Read attachmentfolderpath from com_j2commerce params with safe fallback. */
     private function readAttachmentFolderPath(): string
     {
-        $default = AttachmentDenyFileHelper::DEFAULT_PATH;
+        $default = AttachmentDenyFileHelper::defaultPath();
         $db      = Factory::getContainer()->get(DatabaseInterface::class);
 
         $query = $db->getQuery(true)
