@@ -1156,9 +1156,10 @@ class CartsController extends BaseController
             $voucherModel->voucher = $voucherModel->getVoucherByCode($voucher);
 
             if (!$voucherModel->isValid()) {
-                // Safe to carry: isValid() relays a DomainException as given and
-                // collapses every other throwable to a generic string, so nothing
-                // the query or date layers wrote can arrive here. The enqueued copy
+                // Safe to carry: isValid() relays a VoucherRejection as given and collapses
+                // every other throwable to a generic string. Only this component throws that
+                // type, so nothing the query, date or plugin layers wrote can arrive here —
+                // a subscriber raising \DomainException lands in the second arm. The enqueued copy
                 // does not arrive at all — the queue is persisted in redirect()
                 // alone, and this path closes instead.
                 $this->sendJsonResponse([
