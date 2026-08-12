@@ -135,6 +135,14 @@ class InvoicetemplateModel extends AdminModel
             return false;
         }
 
+        // Parity with EmailtemplateModel: a file-based body source is held to core.admin
+        if (($validData['body_source'] ?? '') === 'file'
+            && !Factory::getApplication()->getIdentity()->authorise('core.admin')
+        ) {
+            $this->setError(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'));
+            return false;
+        }
+
         return $validData;
     }
 

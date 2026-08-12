@@ -461,11 +461,24 @@ class EmailtemplatesController extends AdminController
         $userId        = (int) $this->app->getIdentity()->id;
         $now           = Factory::getDate()->toSql();
 
+        // The edit form holds a file-based body source to core.admin; an import writes the same field
+        $canUseFileSource = $this->app->getIdentity()->authorise('core.admin');
+
         foreach ($data['templates'] as $template) {
             $row = new \stdClass();
             foreach ($allowedFields as $field) {
                 $row->$field = $template[$field] ?? '';
             }
+
+            // Clear on the privilege, not on the pairing — body_source has more than one file-ish value
+            if (!$canUseFileSource) {
+                $row->body_source_file = '';
+
+                if ($row->body_source === 'file') {
+                    $row->body_source = 'visual';
+                }
+            }
+
             $row->j2commerce_emailtemplate_id = 0;
             $row->created_on                  = $now;
             $row->created_by                  = $userId;

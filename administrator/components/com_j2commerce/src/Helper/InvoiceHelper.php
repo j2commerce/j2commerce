@@ -14,7 +14,6 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Filesystem\File;
-use Joomla\CMS\Filesystem\Path;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Uri\Uri;
 use Joomla\Database\DatabaseInterface;
@@ -200,8 +199,8 @@ class InvoiceHelper
      *   - "plg:<group>.<name>:<relative/path.html>" → JPATH_PLUGINS/<group>/<name>/tmpl/<invoice_type>/<relative/path.html>
      *   - "<file.html>" (standard)                  → component layouts/templates/<invoice_type>/<file.html>
      *
-     * Falls back to $template->body when the source is not a file, the path is empty,
-     * contains a traversal sequence, or the file is missing/unreadable.
+     * Falls back to $template->body when the source is not a file, the path is empty, or the
+     * reference does not resolve to a readable template file inside the directory that owns it.
      *
      * @param   object  $template  The invoice template row
      * @param   object  $order     The order object (in scope for the included layout)
@@ -222,11 +221,6 @@ class InvoiceHelper
 
         $fileName = $template->body_source_file;
 
-        // Reject path traversal in any caller-supplied segment
-        if (str_contains($fileName, '..')) {
-            return $template->body ?? '';
-        }
-
         // Subfolder per print type: invoice, packingslip, receipt
         $invoiceType = preg_replace('/[^a-z0-9_]/i', '', (string) ($template->invoice_type ?? 'invoice')) ?: 'invoice';
 
@@ -237,27 +231,21 @@ class InvoiceHelper
             [$pluginRef, $relPath] = array_pad(explode(':', $rest, 2), 2, '');
             [$group, $name]        = array_pad(explode('.', $pluginRef, 2), 2, '');
 
-            if ($group === '' || $name === '' || $relPath === '') {
+            if (!preg_match('/^[A-Za-z0-9_-]+$/', $group) || !preg_match('/^[A-Za-z0-9_-]+$/', $name) || $relPath === '') {
                 return $template->body ?? '';
             }
 
-            $filePath = Path::clean(
-                JPATH_PLUGINS . '/' . $group . '/' . $name . '/tmpl/' . $invoiceType . '/' . $relPath
-            );
+            $root    = JPATH_PLUGINS . '/' . $group . '/' . $name . '/tmpl/' . $invoiceType;
+            $relFile = $relPath;
         } else {
             // Standard path: resolves under component layouts/templates/<invoice_type>/
-            $filePath = Path::clean(
-                JPATH_ADMINISTRATOR . '/components/com_j2commerce/layouts/templates/' . $invoiceType . '/' . $fileName
-            );
+            $root    = JPATH_ADMINISTRATOR . '/components/com_j2commerce/layouts/templates/' . $invoiceType;
+            $relFile = $fileName;
         }
 
-        if (!file_exists($filePath)) {
-            return $template->body ?? '';
-        }
+        $filePath = TemplatePathHelper::confine($root, $relFile);
 
-        Path::setPermissions($filePath, '0644');
-
-        if (!is_readable($filePath)) {
+        if ($filePath === null || !is_readable($filePath)) {
             return $template->body ?? '';
         }
 

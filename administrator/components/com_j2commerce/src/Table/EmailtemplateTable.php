@@ -12,12 +12,12 @@ namespace J2Commerce\Component\J2commerce\Administrator\Table;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\TemplatePathHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Table\Table;
 use Joomla\Database\DatabaseDriver;
 use Joomla\Database\ParameterType;
-use Joomla\Filesystem\Path;
 
 /**
  * Emailtemplate Table class.
@@ -136,23 +136,31 @@ class EmailtemplateTable extends Table
             return false;
         }
 
-        // If using file source, validate that file exists (if provided)
+        // If using file source, resolve it exactly as EmailHelper does when it reads the template back
         if ($this->body_source === 'file' && !empty($this->body_source_file)) {
             $sourceFile = $this->body_source_file;
+            $resolved   = null;
 
             if (str_starts_with($sourceFile, 'plg:')) {
                 // Plugin-prefixed path: resolve to plugin tmpl/email directory
                 $rest                  = substr($sourceFile, 4);
                 [$pluginRef, $relPath] = array_pad(explode(':', $rest, 2), 2, '');
                 [$group, $name]        = array_pad(explode('.', $pluginRef, 2), 2, '');
-                $filePath              = Path::clean(
-                    JPATH_PLUGINS . '/' . $group . '/' . $name . '/tmpl/email/' . $relPath
-                );
+
+                if (preg_match('/^[A-Za-z0-9_-]+$/', $group) && preg_match('/^[A-Za-z0-9_-]+$/', $name)) {
+                    $resolved = TemplatePathHelper::confine(
+                        JPATH_PLUGINS . '/' . $group . '/' . $name . '/tmpl/email',
+                        $relPath
+                    );
+                }
             } else {
-                $filePath = JPATH_ROOT . '/' . ltrim($sourceFile, '/');
+                $resolved = TemplatePathHelper::confine(
+                    JPATH_ADMINISTRATOR . '/components/com_j2commerce/layouts/templates/email',
+                    $sourceFile
+                );
             }
 
-            if (!file_exists($filePath)) {
+            if ($resolved === null) {
                 $this->setError(Text::_('COM_J2COMMERCE_ERROR_EMAILTEMPLATE_FILE_NOT_FOUND'));
                 return false;
             }

@@ -15,7 +15,6 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Filesystem\File;
-use Joomla\CMS\Filesystem\Path;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Language;
 use Joomla\CMS\Language\Text;
@@ -1517,28 +1516,21 @@ class EmailHelper
             [$pluginRef, $relPath] = array_pad(explode(':', $rest, 2), 2, '');
             [$group, $name]        = array_pad(explode('.', $pluginRef, 2), 2, '');
 
-            if ($group === '' || $name === '' || $relPath === '') {
+            if (!preg_match('/^[A-Za-z0-9_-]+$/', $group) || !preg_match('/^[A-Za-z0-9_-]+$/', $name) || $relPath === '') {
                 return $template->body ?? '';
             }
 
-            $filePath = Path::clean(
-                JPATH_PLUGINS . '/' . $group . '/' . $name . '/tmpl/email/' . $relPath
-            );
+            $root    = JPATH_PLUGINS . '/' . $group . '/' . $name . '/tmpl/email';
+            $relFile = $relPath;
         } else {
             // Standard path: resolves under component layouts/templates/email/
-            $filePath = Path::clean(
-                JPATH_ADMINISTRATOR . '/components/com_j2commerce/layouts/templates/email/' . $fileName
-            );
+            $root    = JPATH_ADMINISTRATOR . '/components/com_j2commerce/layouts/templates/email';
+            $relFile = $fileName;
         }
 
-        if (!file_exists($filePath)) {
-            return $template->body ?? '';
-        }
+        $filePath = TemplatePathHelper::confine($root, $relFile);
 
-        // Try to make the template file readable
-        Path::setPermissions($filePath, '0644');
-
-        if (!is_readable($filePath)) {
+        if ($filePath === null || !is_readable($filePath)) {
             return $template->body ?? '';
         }
 
