@@ -48,8 +48,6 @@ use Joomla\Registry\Registry;
 
 class CheckoutController extends BaseController
 {
-    protected string $lastAddressError = '';
-
     public function display($cachable = false, $urlparams = []): static
     {
         UtilitiesHelper::sendNoCacheHeaders();
@@ -196,22 +194,22 @@ class CheckoutController extends BaseController
         $addressTable = $this->getMvcFactory()->createTable('Address', 'Administrator');
 
         if (!$addressTable) {
-            $this->lastAddressError = 'Could not create Address table instance.';
+            Log::add('checkout.saveAddress could not create the Address table instance.', Log::ERROR, 'com_j2commerce');
             return false;
         }
 
         if (!$addressTable->bind($addressData)) {
-            $this->lastAddressError = 'Bind failed: ' . $addressTable->getError();
+            Log::add('checkout.saveAddress bind failed: ' . $addressTable->getError(), Log::ERROR, 'com_j2commerce');
             return false;
         }
 
         if (!$addressTable->check()) {
-            $this->lastAddressError = 'Validation failed: ' . $addressTable->getError();
+            Log::add('checkout.saveAddress validation failed: ' . $addressTable->getError(), Log::ERROR, 'com_j2commerce');
             return false;
         }
 
         if (!$addressTable->store()) {
-            $this->lastAddressError = 'Store failed: ' . $addressTable->getError();
+            Log::add('checkout.saveAddress store failed: ' . $addressTable->getError(), Log::ERROR, 'com_j2commerce');
             return false;
         }
 
@@ -785,9 +783,7 @@ class CheckoutController extends BaseController
                 $session->set('billing_address_id', $newAddressId, 'j2commerce');
                 $this->setBillingSession($addressData);
             } else {
-                $errorDetail              = $this->lastAddressError ?? '';
-                $json['error']['warning'] = Text::_('COM_J2COMMERCE_ADDRESS_SAVE_ERROR')
-                    . ($errorDetail ? ' (' . $errorDetail . ')' : '');
+                $json['error']['warning'] = Text::_('COM_J2COMMERCE_ADDRESS_SAVE_ERROR');
                 $this->jsonResponse($json);
 
                 return;
