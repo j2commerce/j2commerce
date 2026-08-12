@@ -37,7 +37,10 @@ class HtmlView extends BaseHtmlView
 
     public function display($tpl = null)
     {
-        if (!J2CommerceHelper::canAccess('j2commerce.viewsetup')) {
+        // The same level the action carries (UploadmigrationController::migrate). The report
+        // names the stored files themselves, so reading it is the weightier half of the screen,
+        // not the lighter one.
+        if (!Factory::getApplication()->getIdentity()->authorise('core.admin', 'com_j2commerce')) {
             J2CommerceHelper::denyAccess();
             return;
         }

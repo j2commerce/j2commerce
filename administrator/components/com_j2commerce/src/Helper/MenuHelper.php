@@ -272,14 +272,16 @@ class MenuHelper
                 'icon'  => 'fa-solid fa-list-check',
             ];
 
-            // Only on a site that still has one of the pre-6.3 upload folders — there is
-            // nothing for this screen to say anywhere else.
-            $legacyFolders = array_filter(
-                UploadmigrationModel::LEGACY_RELATIVE_PATHS,
-                static fn (string $relative): bool => is_dir(JPATH_ROOT . '/' . $relative)
-            );
-
-            if ($legacyFolders !== []) {
+            // Same level as the screen and the action it launches, and only on a site that
+            // still has one of the pre-6.3 upload folders — there is nothing for this screen
+            // to say anywhere else.
+            if (
+                $user->authorise('core.admin', 'com_j2commerce')
+                && array_filter(
+                    UploadmigrationModel::LEGACY_RELATIVE_PATHS,
+                    static fn (string $relative): bool => is_dir(JPATH_ROOT . '/' . $relative)
+                ) !== []
+            ) {
                 $setupChildren[] = [
                     'title' => 'COM_J2COMMERCE_UPLOAD_MIGRATION',
                     'view'  => 'uploadmigration',
