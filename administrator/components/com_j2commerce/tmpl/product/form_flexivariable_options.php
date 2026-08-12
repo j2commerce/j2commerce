@@ -244,9 +244,12 @@ document.addEventListener('DOMContentLoaded', function() {
             // Create new table row
             const newRow = document.createElement('tr');
             newRow.id = 'j2commerce-flexivar-op-tr-' + optionKey;
-            // The field names carry this row into the product save, so they are built
-            // from one place rather than repeated per input.
-            const fieldName = (suffix) => formPrefix + '[item_options][' + optionKey + '][' + suffix + ']';
+            // The field names carry this row into the product save, so they are built from
+            // one place rather than repeated per input. The key is prefixed because the
+            // server-rendered rows key this same array by record id, and a bare counter can
+            // land on one of those ids — whichever row posts last then wins and the other is
+            // dropped. The save reads each row's j2commerce_productoption_id, never the key.
+            const fieldName = (suffix) => formPrefix + '[item_options][new_' + optionKey + '][' + suffix + ']';
 
             const nameCell = document.createElement('td');
             nameCell.className = 'addedOption';
