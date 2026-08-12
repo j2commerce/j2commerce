@@ -24,6 +24,11 @@ $wa->addInlineStyle($style, [], []);
 // Adopts the option-values markup this view fetches. Deferred, so it has run before any fetch callback.
 $wa->registerAndUseScript('com_j2commerce.dom', 'media/com_j2commerce/js/site/j2commerce-dom.js', [], ['defer' => true]);
 
+// Drag-ordering for the fetched option-values table. Registered here because the fragment is
+// adopted as markup only - its own asset registrations and scripts never reach the page.
+$wa->registerAndUseScript('com_j2commerce.optionvalues-sortable', 'media/com_j2commerce/js/administrator/optionvalues-sortable.js', [], ['defer' => true]);
+$wa->registerAndUseStyle('com_j2commerce.optionvalues-sortable', 'media/com_j2commerce/css/administrator/optionvalues-sortable.css');
+
 $item = $displayData['product'];
 $formPrefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
 
@@ -509,7 +514,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const productId = container.dataset.productId;
         const productOptionId = container.dataset.productoptionId;
 
-        initOptionValuesSortable();
+        // The tbody is replaced on every load, so the hidden ordering inputs are restamped here.
+        window.J2CommerceOptionValuesSortable?.renumber();
 
         const createBtn = document.getElementById('j2commerce-create-optionvalue-btn');
         if (createBtn) {
@@ -527,7 +533,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 formData.append('product_optionvalue_prefix', document.getElementById('j2commerce_new_price_prefix')?.value || '+');
                 formData.append('product_optionvalue_weight', document.getElementById('j2commerce_new_weight')?.value || '0');
                 formData.append('product_optionvalue_weight_prefix', document.getElementById('j2commerce_new_weight_prefix')?.value || '+');
-                formData.append('ordering', document.getElementById('j2commerce_new_ordering')?.value || '0');
+                // Drag position owns ordering, so a new value lands after the ones already listed.
+                formData.append('ordering', window.J2CommerceOptionValuesSortable?.count() ?? 0);
                 formData.append('product_optionvalue_attribs', document.getElementById('j2commerce_new_attribs')?.value || '');
                 formData.append(csrfToken, 1);
 
@@ -757,68 +764,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 btn.disabled = false;
             });
-        });
-    }
-
-    // Drag-to-reorder for the current option values table. Native HTML5 DnD,
-    // restricted to the .j2commerce-ov-drag-handle. On drop the visible
-    // [ordering] inputs are renumbered so "Save Changes" persists the new order.
-    function initOptionValuesSortable() {
-        const tbody = document.getElementById('j2commerce-optionvalues-tbody');
-        if (!tbody) return;
-
-        let dragRow = null;
-
-        tbody.addEventListener('pointerdown', (e) => {
-            const handle = e.target.closest('.j2commerce-ov-drag-handle');
-            const row = e.target.closest('tr[data-pov-id]');
-            if (handle && row) {
-                row.setAttribute('draggable', 'true');
-            }
-        });
-
-        tbody.addEventListener('dragstart', (e) => {
-            const row = e.target.closest('tr[data-pov-id]');
-            if (!row || row.getAttribute('draggable') !== 'true') {
-                e.preventDefault();
-                return;
-            }
-            dragRow = row;
-            row.classList.add('j2commerce-ov-dragging');
-            e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/plain', row.dataset.povId || '');
-        });
-
-        tbody.addEventListener('dragover', (e) => {
-            if (!dragRow) return;
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-            const target = e.target.closest('tr[data-pov-id]');
-            if (!target || target === dragRow) return;
-            const rect = target.getBoundingClientRect();
-            const after = (e.clientY - rect.top) > rect.height / 2;
-            tbody.insertBefore(dragRow, after ? target.nextSibling : target);
-        });
-
-        tbody.addEventListener('drop', (e) => {
-            if (dragRow) e.preventDefault();
-        });
-
-        tbody.addEventListener('dragend', () => {
-            if (!dragRow) return;
-            dragRow.classList.remove('j2commerce-ov-dragging');
-            dragRow.removeAttribute('draggable');
-            dragRow = null;
-            renumberOptionValueOrdering();
-        });
-    }
-
-    function renumberOptionValueOrdering() {
-        const tbody = document.getElementById('j2commerce-optionvalues-tbody');
-        if (!tbody) return;
-        tbody.querySelectorAll('tr[data-pov-id]').forEach((row, idx) => {
-            const orderingInput = row.querySelector('input[name$="[ordering]"]');
-            if (orderingInput) orderingInput.value = idx + 1;
         });
     }
 

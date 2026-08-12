@@ -18,8 +18,12 @@ use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Session\Session;
 
 // Adopts the option-values markup this view fetches. Deferred, so it has run before any fetch callback.
+// Drag-ordering is registered here too: the fragment is adopted as markup only, so its own asset
+// registrations and scripts never reach the page.
 Factory::getApplication()->getDocument()->getWebAssetManager()
-    ->registerAndUseScript('com_j2commerce.dom', 'media/com_j2commerce/js/site/j2commerce-dom.js', [], ['defer' => true]);
+    ->registerAndUseScript('com_j2commerce.dom', 'media/com_j2commerce/js/site/j2commerce-dom.js', [], ['defer' => true])
+    ->registerAndUseScript('com_j2commerce.optionvalues-sortable', 'media/com_j2commerce/js/administrator/optionvalues-sortable.js', [], ['defer' => true])
+    ->registerAndUseStyle('com_j2commerce.optionvalues-sortable', 'media/com_j2commerce/css/administrator/optionvalues-sortable.css');
 
 $item        = $displayData['product'];
 $formPrefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
@@ -552,6 +556,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const containerProductId = container.dataset.productId;
         const containerProductOptionId = container.dataset.productoptionId;
 
+        // The tbody is replaced on every load, so the hidden ordering inputs are restamped here.
+        window.J2CommerceOptionValuesSortable?.renumber();
+
         // Create option value
         const createBtn = document.getElementById('j2commerce-create-optionvalue-btn');
         if (createBtn) {
@@ -569,7 +576,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 formData.append('product_optionvalue_prefix', document.getElementById('j2commerce_new_price_prefix')?.value || '+');
                 formData.append('product_optionvalue_weight', document.getElementById('j2commerce_new_weight')?.value || '0');
                 formData.append('product_optionvalue_weight_prefix', document.getElementById('j2commerce_new_weight_prefix')?.value || '+');
-                formData.append('ordering', document.getElementById('j2commerce_new_ordering')?.value || '0');
+                // Drag position owns ordering, so a new value lands after the ones already listed.
+                formData.append('ordering', window.J2CommerceOptionValuesSortable?.count() ?? 0);
                 formData.append('product_optionvalue_attribs', document.getElementById('j2commerce_new_attribs')?.value || '');
                 formData.append(csrfToken, 1);
 

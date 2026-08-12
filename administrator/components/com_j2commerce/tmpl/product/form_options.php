@@ -24,6 +24,11 @@ $wa->addInlineStyle($style, [], []);
 // Adopts the option-values markup this view fetches. Deferred, so it has run before any fetch callback.
 $wa->registerAndUseScript('com_j2commerce.dom', 'media/com_j2commerce/js/site/j2commerce-dom.js', [], ['defer' => true]);
 
+// Drag-ordering for the fetched option-values table. Registered here because the fragment is
+// adopted as markup only - its own asset registrations and scripts never reach the page.
+$wa->registerAndUseScript('com_j2commerce.optionvalues-sortable', 'media/com_j2commerce/js/administrator/optionvalues-sortable.js', [], ['defer' => true]);
+$wa->registerAndUseStyle('com_j2commerce.optionvalues-sortable', 'media/com_j2commerce/css/administrator/optionvalues-sortable.css');
+
 $item = $displayData['product'];
 $formPrefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
 
@@ -500,6 +505,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const productId = container.dataset.productId;
         const productOptionId = container.dataset.productoptionId;
 
+        // The tbody is replaced on every load, so the hidden ordering inputs are restamped here.
+        window.J2CommerceOptionValuesSortable?.renumber();
+
         // Create new option value
         const createBtn = document.getElementById('j2commerce-create-optionvalue-btn');
         if (createBtn) {
@@ -517,7 +525,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 formData.append('product_optionvalue_prefix', document.getElementById('j2commerce_new_price_prefix')?.value || '+');
                 formData.append('product_optionvalue_weight', document.getElementById('j2commerce_new_weight')?.value || '0');
                 formData.append('product_optionvalue_weight_prefix', document.getElementById('j2commerce_new_weight_prefix')?.value || '+');
-                formData.append('ordering', document.getElementById('j2commerce_new_ordering')?.value || '0');
+                // Drag position owns ordering, so a new value lands after the ones already listed.
+                formData.append('ordering', window.J2CommerceOptionValuesSortable?.count() ?? 0);
                 formData.append('product_optionvalue_attribs', document.getElementById('j2commerce_new_attribs')?.value || '');
                 formData.append(csrfToken, 1);
 
