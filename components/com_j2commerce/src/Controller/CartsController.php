@@ -1064,9 +1064,11 @@ class CartsController extends BaseController
             }
 
             if (!$couponModel->isValid($orderContext)) {
+                Log::add('carts.applyCouponAjax rejected: ' . $couponModel->getError(), Log::INFO, 'com_j2commerce');
+
                 $this->sendJsonResponse([
                     'success' => false,
-                    'message' => $couponModel->getError() ?: Text::_('COM_J2COMMERCE_COUPON_NOT_VALID'),
+                    'message' => Text::_('COM_J2COMMERCE_COUPON_NOT_VALID'),
                 ]);
             }
 
@@ -1156,9 +1158,11 @@ class CartsController extends BaseController
             $voucherModel->voucher = $voucherModel->getVoucherByCode($voucher);
 
             if (!$voucherModel->isValid()) {
+                Log::add('carts.applyVoucherAjax rejected: ' . $voucherModel->getError(), Log::INFO, 'com_j2commerce');
+
                 $this->sendJsonResponse([
                     'success' => false,
-                    'message' => $voucherModel->getError() ?: Text::_('COM_J2COMMERCE_VOUCHER_NOT_VALID'),
+                    'message' => Text::_('COM_J2COMMERCE_VOUCHER_NOT_VALID'),
                 ]);
             }
 

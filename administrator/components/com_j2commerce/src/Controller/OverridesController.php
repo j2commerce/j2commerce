@@ -16,6 +16,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
@@ -50,7 +51,8 @@ class OverridesController extends BaseController
                 )
             );
         } else {
-            $this->setMessage(Text::_('COM_J2COMMERCE_OVERRIDE_CREATE_FAILED') . ': ' . $model->getError(), 'error');
+            Log::add('overrides.createOverride failed: ' . $model->getError(), Log::ERROR, 'com_j2commerce');
+            $this->setMessage(Text::_('COM_J2COMMERCE_OVERRIDE_CREATE_FAILED'), 'error');
             $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=overrides', false));
         }
     }
@@ -69,7 +71,8 @@ class OverridesController extends BaseController
         if ($model->revertOverride($plugin, $file)) {
             $this->setMessage(Text::_('COM_J2COMMERCE_OVERRIDE_REVERTED'));
         } else {
-            $this->setMessage(Text::_('COM_J2COMMERCE_OVERRIDE_REVERT_FAILED') . ': ' . $model->getError(), 'error');
+            Log::add('overrides.revertOverride failed: ' . $model->getError(), Log::ERROR, 'com_j2commerce');
+            $this->setMessage(Text::_('COM_J2COMMERCE_OVERRIDE_REVERT_FAILED'), 'error');
         }
 
         $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=overrides', false));
@@ -105,7 +108,8 @@ class OverridesController extends BaseController
         if ($saved) {
             $this->setMessage(Text::_('COM_J2COMMERCE_OVERRIDE_SAVED'));
         } else {
-            $this->setMessage(Text::_('COM_J2COMMERCE_OVERRIDE_SAVE_FAILED') . ': ' . $model->getError(), 'error');
+            Log::add('overrides.save failed: ' . $model->getError(), Log::ERROR, 'com_j2commerce');
+            $this->setMessage(Text::_('COM_J2COMMERCE_OVERRIDE_SAVE_FAILED'), 'error');
         }
 
         $redirect = 'index.php?option=com_j2commerce&view=overrides&tab=editor';

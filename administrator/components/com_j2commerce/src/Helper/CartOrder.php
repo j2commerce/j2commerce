@@ -884,7 +884,7 @@ class CartOrder
                                 'discount'    => 0.0,
                                 'coupon_name' => $coupon->coupon_name ?? $couponCode,
                                 'is_expired'  => true,
-                                'error'       => $couponModel->getError(),
+                                'error'       => Text::_('COM_J2COMMERCE_COUPON_NOT_VALID'),
                             ];
 
                             return;
@@ -1790,8 +1790,10 @@ class CartOrder
         ];
 
         if (!$orderTable->bind($orderData) || !$orderTable->check() || !$orderTable->store()) {
+            Log::add('CartOrder order create failed: ' . $orderTable->getError(), Log::ERROR, 'com_j2commerce');
+
             throw new \RuntimeException(
-                Text::sprintf('COM_J2COMMERCE_ORDER_SAVE_ERROR', $orderTable->getError())
+                Text::sprintf('COM_J2COMMERCE_ORDER_SAVE_ERROR', Text::_('COM_J2COMMERCE_ERR_GENERIC'))
             );
         }
 
@@ -1806,8 +1808,10 @@ class CartOrder
         }
 
         if (!$orderTable->store()) {
+            Log::add('CartOrder order id/token store failed: ' . $orderTable->getError(), Log::ERROR, 'com_j2commerce');
+
             throw new \RuntimeException(
-                Text::sprintf('COM_J2COMMERCE_ORDER_SAVE_ERROR', $orderTable->getError())
+                Text::sprintf('COM_J2COMMERCE_ORDER_SAVE_ERROR', Text::_('COM_J2COMMERCE_ERR_GENERIC'))
             );
         }
 
