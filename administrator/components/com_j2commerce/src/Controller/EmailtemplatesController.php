@@ -155,7 +155,8 @@ class EmailtemplatesController extends AdminController
             if ($model->delete($cid)) {
                 $this->setMessage(Text::plural($this->text_prefix . '_N_ITEMS_DELETED', \count($cid)));
             } else {
-                $this->setMessage($model->getError(), 'error');
+                Log::add('emailtemplates.delete failed: ' . $model->getError(), Log::ERROR, 'com_j2commerce');
+                $this->setMessage(Text::_('COM_J2COMMERCE_ERR_GENERIC'), 'error');
             }
 
             // Invoke the postDelete method to allow for the child class to access the model.
@@ -218,7 +219,8 @@ class EmailtemplatesController extends AdminController
 
         if ($return === false) {
             // Checkin failed.
-            $message = Text::sprintf('JLIB_APPLICATION_ERROR_CHECKIN_FAILED', $model->getError());
+            Log::add('emailtemplates.checkin failed: ' . $model->getError(), Log::ERROR, 'com_j2commerce');
+            $message = Text::sprintf('JLIB_APPLICATION_ERROR_CHECKIN_FAILED', Text::_('COM_J2COMMERCE_ERR_GENERIC'));
             $this->setRedirect(Route::_('index.php?option=' . $this->option . '&view=' . $this->view_list, false), $message, 'error');
 
             return false;
@@ -284,7 +286,8 @@ class EmailtemplatesController extends AdminController
 
         if ($return === false) {
             // Reorder failed.
-            $message = Text::sprintf('JLIB_APPLICATION_ERROR_REORDER_FAILED', $model->getError());
+            Log::add('emailtemplates.reorder failed: ' . $model->getError(), Log::ERROR, 'com_j2commerce');
+            $message = Text::sprintf('JLIB_APPLICATION_ERROR_REORDER_FAILED', Text::_('COM_J2COMMERCE_ERR_GENERIC'));
             $this->setRedirect(Route::_('index.php?option=' . $this->option . '&view=' . $this->view_list, false), $message, 'error');
 
             return false;

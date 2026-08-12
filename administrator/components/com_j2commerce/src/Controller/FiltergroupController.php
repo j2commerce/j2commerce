@@ -13,6 +13,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Controller\FormController;
 use Joomla\CMS\Router\Route;
 
@@ -135,7 +136,8 @@ class FiltergroupController extends FormController
             $model = $this->getModel();
             if (method_exists($model, 'checkout')) {
                 if (!$model->checkout($recordId)) {
-                    $this->setMessage(Text::sprintf('JLIB_APPLICATION_ERROR_CHECKOUT_FAILED', $model->getError()), 'error');
+                    Log::add('filtergroup.checkout failed: ' . $model->getError(), Log::ERROR, 'com_j2commerce');
+                    $this->setMessage(Text::sprintf('JLIB_APPLICATION_ERROR_CHECKOUT_FAILED', Text::_('COM_J2COMMERCE_ERR_GENERIC')), 'error');
                     $listUrl = 'index.php?option=' . $this->option . '&view=' . $this->view_list . $this->getRedirectToListAppend();
                     $this->setRedirect(Route::_($listUrl, false));
                     return;

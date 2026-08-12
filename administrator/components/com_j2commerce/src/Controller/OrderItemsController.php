@@ -12,6 +12,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
 \defined('_JEXEC') or die;
 
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Controller\FormController;
 use Joomla\CMS\Router\Route;
 
@@ -247,7 +248,8 @@ class OrderItemsController extends FormController
         if ($model->addOrderHistory($id, $status, $comment, $notify)) {
             $this->app->enqueueMessage(\Joomla\CMS\Language\Text::_('COM_J2COMMERCE_ORDER_HISTORY_ADDED'), 'success');
         } else {
-            $this->app->enqueueMessage($model->getError(), 'error');
+            Log::add('orderitems.addOrderHistory failed: ' . $model->getError(), Log::ERROR, 'com_j2commerce');
+            $this->app->enqueueMessage(\Joomla\CMS\Language\Text::_('COM_J2COMMERCE_ERR_GENERIC'), 'error');
         }
 
         $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=order&id=' . $id, false));

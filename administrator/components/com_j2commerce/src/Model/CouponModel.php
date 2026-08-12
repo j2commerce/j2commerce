@@ -762,8 +762,12 @@ class CouponModel extends AdminModel
                 throw new \Exception(Text::_('COM_J2COMMERCE_COUPON_NOT_APPLICABLE'));
             }
         } catch (\Exception $e) {
-            $this->setError($e->getMessage());
-            Factory::getApplication()->enqueueMessage($e->getMessage(), 'warning');
+            // Collapse every failure into one generic message; the detail goes to the log.
+            Log::add(\sprintf('Coupon "%s" rejected: %s', $this->coupon->coupon_code ?? '', $e->getMessage()), Log::INFO, 'com_j2commerce');
+
+            $generic = Text::_('COM_J2COMMERCE_COUPON_NOT_VALID');
+            $this->setError($generic);
+            Factory::getApplication()->enqueueMessage($generic, 'warning');
             $this->removeCoupon();
 
             return false;

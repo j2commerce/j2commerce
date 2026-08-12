@@ -171,7 +171,8 @@ class ProductsController extends AdminController
 
             // Delete the product (cascades child records via ProductTable::delete)
             if (!$table->delete($productId)) {
-                $this->app->enqueueMessage($table->getError(), 'error');
+                Log::add('products.delete failed: ' . $table->getError(), Log::ERROR, 'com_j2commerce');
+                $this->app->enqueueMessage(Text::_('COM_J2COMMERCE_ERR_GENERIC'), 'error');
                 $errors++;
                 continue;
             }

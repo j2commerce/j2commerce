@@ -16,6 +16,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Controller\FormController;
 use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Session\Session;
@@ -147,7 +148,8 @@ class TaxprofileController extends FormController
         $form = $model->getForm($data, false);
 
         if (!$form) {
-            $app->enqueueMessage($model->getError(), 'error');
+            Log::add('taxprofile.getForm failed: ' . $model->getError(), Log::ERROR, 'com_j2commerce');
+            $app->enqueueMessage(Text::_('COM_J2COMMERCE_ERR_GENERIC'), 'error');
             return false;
         }
 
@@ -192,7 +194,8 @@ class TaxprofileController extends FormController
             $app->setUserState($context . '.data', $validData);
 
             // Redirect back to the edit screen
-            $this->setMessage(Text::sprintf('JLIB_APPLICATION_ERROR_SAVE_FAILED', $model->getError()), 'error');
+            Log::add('taxprofile.save failed: ' . $model->getError(), Log::ERROR, 'com_j2commerce');
+            $this->setMessage(Text::sprintf('JLIB_APPLICATION_ERROR_SAVE_FAILED', Text::_('COM_J2COMMERCE_ERR_GENERIC')), 'error');
             $this->setRedirect(
                 \Joomla\CMS\Router\Route::_(
                     'index.php?option=' . $this->option . '&view=' . $this->view_item

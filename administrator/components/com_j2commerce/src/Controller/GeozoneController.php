@@ -168,7 +168,8 @@ class GeozoneController extends FormController
         $form = $model->getForm($data, false);
 
         if (!$form) {
-            $app->enqueueMessage($model->getError(), 'error');
+            Log::add('geozone.getForm failed: ' . $model->getError(), Log::ERROR, 'com_j2commerce');
+            $app->enqueueMessage(Text::_('COM_J2COMMERCE_ERR_GENERIC'), 'error');
             return false;
         }
 
@@ -213,7 +214,8 @@ class GeozoneController extends FormController
             $app->setUserState($context . '.data', $validData);
 
             // Redirect back to the edit screen
-            $this->setMessage(Text::sprintf('JLIB_APPLICATION_ERROR_SAVE_FAILED', $model->getError()), 'error');
+            Log::add('geozone.save failed: ' . $model->getError(), Log::ERROR, 'com_j2commerce');
+            $this->setMessage(Text::sprintf('JLIB_APPLICATION_ERROR_SAVE_FAILED', Text::_('COM_J2COMMERCE_ERR_GENERIC')), 'error');
             $this->setRedirect(
                 \Joomla\CMS\Router\Route::_(
                     'index.php?option=' . $this->option . '&view=' . $this->view_item
@@ -325,7 +327,8 @@ class GeozoneController extends FormController
         $form = $model->getForm($data, false);
 
         if (!$form) {
-            $this->setRedirect($redirect, $model->getError(), 'error');
+            Log::add('geozone.addallcountries getForm failed: ' . $model->getError(), Log::ERROR, 'com_j2commerce');
+            $this->setRedirect($redirect, Text::_('COM_J2COMMERCE_ERR_GENERIC'), 'error');
 
             return;
         }
@@ -356,7 +359,8 @@ class GeozoneController extends FormController
 
         if (!$model->save($validData)) {
             $app->setUserState($context . '.data', $validData);
-            $this->setRedirect($redirect, Text::sprintf('JLIB_APPLICATION_ERROR_SAVE_FAILED', $model->getError()), 'error');
+            Log::add('geozone.addallcountries save failed: ' . $model->getError(), Log::ERROR, 'com_j2commerce');
+            $this->setRedirect($redirect, Text::sprintf('JLIB_APPLICATION_ERROR_SAVE_FAILED', Text::_('COM_J2COMMERCE_ERR_GENERIC')), 'error');
 
             return;
         }

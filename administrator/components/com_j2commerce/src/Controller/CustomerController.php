@@ -18,6 +18,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\CustomerModel;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Controller\FormController;
 use Joomla\CMS\Session\Session;
 
@@ -183,9 +184,10 @@ class CustomerController extends FormController
         $row   = $model->saveAddressRow($data);
 
         if (!$row) {
+            Log::add('customer.saveAddressRow failed: ' . $model->getError(), Log::ERROR, 'com_j2commerce');
             echo json_encode([
                 'success' => false,
-                'message' => $model->getError() ?: Text::_('COM_J2COMMERCE_CUSTOMER_ADDRESSES_SAVE_ERROR'),
+                'message' => Text::_('COM_J2COMMERCE_CUSTOMER_ADDRESSES_SAVE_ERROR'),
             ]);
             $app->close();
         }
@@ -239,9 +241,10 @@ class CustomerController extends FormController
         $model = $this->getModel('Customer');
 
         if (!$model->relinkUser($oldUserId, $newUserId)) {
+            Log::add('customer.relinkUser failed: ' . $model->getError(), Log::ERROR, 'com_j2commerce');
             echo json_encode([
                 'success' => false,
-                'message' => $model->getError() ?: Text::_('COM_J2COMMERCE_CUSTOMER_USER_RELINK_ERROR'),
+                'message' => Text::_('COM_J2COMMERCE_CUSTOMER_USER_RELINK_ERROR'),
             ]);
             $app->close();
         }
@@ -281,9 +284,10 @@ class CustomerController extends FormController
         $model = $this->getModel('Customer');
 
         if (!$model->deleteAddressRow($addressId)) {
+            Log::add('customer.deleteAddressRow failed: ' . $model->getError(), Log::ERROR, 'com_j2commerce');
             echo json_encode([
                 'success' => false,
-                'message' => $model->getError() ?: Text::_('COM_J2COMMERCE_CUSTOMER_ADDRESSES_DELETE_ERROR'),
+                'message' => Text::_('COM_J2COMMERCE_CUSTOMER_ADDRESSES_DELETE_ERROR'),
             ]);
             $app->close();
         }
