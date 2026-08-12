@@ -53,8 +53,6 @@
 
     <media folder="media" destination="plg_j2commerce_report_products">
         <folder>images</folder>
-        <folder>js</folder>
-        <folder>css</folder>
     </media>
 
     <config>

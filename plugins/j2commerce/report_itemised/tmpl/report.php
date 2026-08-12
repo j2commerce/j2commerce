@@ -87,7 +87,7 @@ $listDirn    = $vars->listDirn;
                             <td>
                                 <?php echo htmlspecialchars($item->orderitem_name, ENT_QUOTES, 'UTF-8'); ?>
                                 <?php if (!empty($item->orderitem_sku)) : ?>
-                                    <small class="text-muted d-block lh-1">
+                                    <small class="text-body-secondary d-block lh-1">
                                         <?php echo Text::_('PLG_J2COMMERCE_REPORT_ITEMISED_COL_SKU'); ?>: <?php echo htmlspecialchars($item->orderitem_sku, ENT_QUOTES, 'UTF-8'); ?>
                                     </small>
                                 <?php endif; ?>
@@ -140,13 +140,13 @@ document.addEventListener('DOMContentLoaded', function() {
     new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: <?php echo json_encode($chartLabels, JSON_HEX_TAG | JSON_HEX_AMP); ?>,
+            labels: <?php echo json_encode($chartLabels, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>,
             datasets: [{
                 label: <?php echo json_encode(
                     Text::_('PLG_J2COMMERCE_REPORT_ITEMISED_COL_QUANTITY'),
-                    JSON_HEX_TAG | JSON_HEX_AMP
+                    JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
                 ); ?>,
-                data: <?php echo json_encode($chartValues, JSON_HEX_TAG | JSON_HEX_AMP); ?>,
+                data: <?php echo json_encode($chartValues, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>,
                 backgroundColor: 'rgba(56, 142, 60, 0.8)',
                 borderColor: 'rgba(56, 142, 60, 1)',
                 borderWidth: 1
@@ -160,7 +160,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     display: true,
                     text: <?php echo json_encode(
                         Text::_('PLG_J2COMMERCE_REPORT_ITEMISED_CHART_TITLE'),
-                        JSON_HEX_TAG | JSON_HEX_AMP
+                        JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
                     ); ?>,
                     font: { size: 16 }
                 },

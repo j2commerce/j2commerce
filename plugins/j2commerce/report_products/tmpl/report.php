@@ -82,7 +82,7 @@ $listDirn    = $vars->listDirn;
                         <tr>
                             <td>
                                 <?php echo htmlspecialchars($product->orderitem_name, ENT_QUOTES, 'UTF-8'); ?>
-                                <small class="text-muted d-block lh-1"><?php echo Text::_('PLG_J2COMMERCE_REPORT_PRODUCTS_SKU'); ?>: <?php echo htmlspecialchars($product->orderitem_sku, ENT_QUOTES, 'UTF-8'); ?></small>
+                                <small class="text-body-secondary d-block lh-1"><?php echo Text::_('PLG_J2COMMERCE_REPORT_PRODUCTS_SKU'); ?>: <?php echo htmlspecialchars($product->orderitem_sku, ENT_QUOTES, 'UTF-8'); ?></small>
                             </td>
                             <td class="text-start d-none d-md-table-cell"><?php echo (int) $product->total_qty; ?></td>
                             <td class="text-start d-none d-md-table-cell"><?php echo $currency->format((float) $product->total_item_discount + (float) $product->total_item_discount_tax); ?></td>
@@ -123,10 +123,10 @@ document.addEventListener('DOMContentLoaded', function() {
     new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: <?php echo json_encode($chartLabels, JSON_HEX_TAG | JSON_HEX_AMP); ?>,
+            labels: <?php echo json_encode($chartLabels, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>,
             datasets: [{
-                label: <?php echo json_encode(Text::_('PLG_J2COMMERCE_REPORT_PRODUCTS_WITH_TAX'), JSON_HEX_TAG | JSON_HEX_AMP); ?>,
-                data: <?php echo json_encode($chartValues, JSON_HEX_TAG | JSON_HEX_AMP); ?>,
+                label: <?php echo json_encode(Text::_('PLG_J2COMMERCE_REPORT_PRODUCTS_WITH_TAX'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>,
+                data: <?php echo json_encode($chartValues, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>,
                 backgroundColor: 'rgba(25, 118, 210, 0.8)',
                 borderColor: 'rgba(25, 118, 210, 1)',
                 borderWidth: 1
@@ -138,7 +138,7 @@ document.addEventListener('DOMContentLoaded', function() {
             plugins: {
                 title: {
                     display: true,
-                    text: <?php echo json_encode(Text::_('PLG_J2COMMERCE_REPORT_PRODUCTS_CHART_TITLE'), JSON_HEX_TAG | JSON_HEX_AMP); ?>,
+                    text: <?php echo json_encode(Text::_('PLG_J2COMMERCE_REPORT_PRODUCTS_CHART_TITLE'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>,
                     font: { size: 16 }
                 },
                 legend: { display: false }
