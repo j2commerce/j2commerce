@@ -33,6 +33,9 @@ final class AttachmentDenyFileHelper
     /** Marker both deny payloads carry, identifying a file as one J2Commerce wrote. */
     public const MARKER = 'J2Commerce file storage';
 
+    /** Heading identifying a README as one J2Commerce wrote. */
+    public const README_HEADING = 'J2Commerce Customer Upload Storage';
+
     private const HTACCESS = <<<'HTACCESS'
 # J2Commerce file storage
 # Disable directory browsing
@@ -125,9 +128,9 @@ WEBCONFIG;
             return true;
         }
 
-        // The README heading the installer writes, and the marker both deny payloads carry.
+        // The README heading, and the marker both deny payloads carry.
         $evidence = [
-            '/README.md'  => 'J2Commerce Customer Upload Storage',
+            '/README.md'  => self::README_HEADING,
             '/.htaccess'  => self::MARKER,
             '/web.config' => self::MARKER,
         ];
@@ -143,11 +146,85 @@ WEBCONFIG;
         return false;
     }
 
-    /** Write the .htaccess + web.config deny pair into an upload tree root. */
-    public static function writeDenyPair(string $root, bool $owned, ?callable $trace = null): void
+    /**
+     * Write the .htaccess + web.config deny pair into an upload tree root, and the README
+     * that documents them. All three come from here so a tree the runtime creates carries
+     * the same guidance as one the installer created, and so the nginx snippet in the README
+     * always names $relative — the path this tree actually sits at, which since 6.5.0 is not
+     * necessarily the legacy default.
+     */
+    public static function writeDenyPair(string $root, string $relative, bool $owned, ?callable $trace = null): void
     {
         self::writeDenyFile($root . '/.htaccess', self::HTACCESS, $owned, $trace);
         self::writeDenyFile($root . '/web.config', self::WEB_CONFIG, $owned, $trace);
+        self::writeReadme($root, $relative, $owned, $trace);
+    }
+
+    /**
+     * Written only into an owned tree — marking a foreign directory as J2Commerce's would
+     * make ownsTree() claim it on every later run. An existing README is replaced only when
+     * it carries our heading, so a stale path in the nginx snippet is corrected while a
+     * site's own README is left alone.
+     */
+    private static function writeReadme(string $root, string $relative, bool $owned, ?callable $trace): void
+    {
+        $path   = $root . '/README.md';
+        $exists = file_exists($path);
+
+        if ($exists && !str_contains((string) @file_get_contents($path), self::README_HEADING)) {
+            return;
+        }
+
+        if (!$exists && !$owned) {
+            return;
+        }
+
+        if (@file_put_contents($path, self::readme($relative)) === false) {
+            self::warn($trace, 'failed to write ' . $path, 'Failed to write ' . $path);
+        }
+    }
+
+    private static function readme(string $relative): string
+    {
+        $heading  = self::README_HEADING;
+        $location = '/' . trim(str_replace('\\', '/', $relative), '/');
+
+        return <<<README
+# {$heading}
+
+This directory holds customer-supplied files attached to orders (product-option uploads and checkout uploads).
+
+- `tmp/{cart_id}/` — uploads bound to in-progress carts; cleaned by the `j2commerce.cleanupOrderUploads` scheduled task once `expires_on` passes.
+- `orders/{order_id}/` — uploads attached to a placed order; cleaned by the same task per configured retention.
+
+## Web access
+
+Nothing in this tree is meant to be fetched by URL. Files are streamed by PHP after an
+authorisation check — `OrderfileController` for admin order attachments, `MyprofileController`
+for a customer's own downloads.
+
+- `.htaccess` denies every request under this tree on Apache (`Require all denied`, with the
+  pre-2.4 `Order allow,deny` form for older servers), and separately blocks executable
+  extensions in case the blanket rule is overridden by the vhost.
+- `web.config` denies every request under this tree on IIS and disables handlers.
+
+Both files only take effect if the web server is configured to honour them — Apache needs
+`AllowOverride` to permit `Limit`/`AuthConfig` in this path, and IIS needs the URL
+Authorization feature installed. Verify by requesting a known filename in a browser: you
+should get 403, not the file.
+
+## Nginx equivalent
+
+Nginx reads neither file. If your site is served by Nginx, add this to your server block,
+adjusting the location for any prefix your site is installed under:
+
+```nginx
+location ~ ^{$location} { deny all; return 403; }
+```
+
+Do not store anything in this tree manually — admin order views look up files by
+`#__j2commerce_uploads` row, not by filesystem scan.
+README;
     }
 
     /**

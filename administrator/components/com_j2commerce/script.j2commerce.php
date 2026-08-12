@@ -855,7 +855,13 @@ class Com_J2commerceInstallerScript extends InstallerScript
         }
 
         // Deny the whole tree: every legitimate read is streamed by PHP, nothing links to a URL here.
-        AttachmentDenyFileHelper::writeDenyPair($root, $owned, fn (string $message) => $this->debugLog($message));
+        AttachmentDenyFileHelper::writeDenyPair($root, $relative, $owned, fn (string $message) => $this->debugLog($message));
+
+        // Recorded once the tree is known to resolve, so the site keeps naming this directory
+        // instead of re-deriving it: the derived default follows Joomla's own file storage
+        // location and the presence of the legacy tree, either of which can move afterwards
+        // and leave already-stored files unresolvable and outside the retention cleanup.
+        $this->persistAttachmentFolderPath($relative);
 
         if (!$owned) {
             // The tree stays usable for uploads but carries no deny pair, and the README is
@@ -872,45 +878,48 @@ class Com_J2commerceInstallerScript extends InstallerScript
             return;
         }
 
-        $readme = <<<'README'
-# J2Commerce Customer Upload Storage
-
-This directory holds customer-supplied files attached to orders (product-option uploads and checkout uploads).
-
-- `tmp/{cart_id}/` — uploads bound to in-progress carts; cleaned by the `j2commerce.cleanupOrderUploads` scheduled task once `expires_on` passes.
-- `orders/{order_id}/` — uploads attached to a placed order; cleaned by the same task per configured retention.
-
-## Web access
-
-Nothing in this tree is meant to be fetched by URL. Files are streamed by PHP after an
-authorisation check — `OrderfileController` for admin order attachments, `MyprofileController`
-for a customer's own downloads.
-
-- `.htaccess` denies every request under this tree on Apache (`Require all denied`, with the
-  pre-2.4 `Order allow,deny` form for older servers), and separately blocks executable
-  extensions in case the blanket rule is overridden by the vhost.
-- `web.config` denies every request under this tree on IIS and disables handlers.
-
-Both files only take effect if the web server is configured to honour them — Apache needs
-`AllowOverride` to permit `Limit`/`AuthConfig` in this path, and IIS needs the URL
-Authorization feature installed. Verify by requesting a known filename in a browser: you
-should get 403, not the file.
-
-## Nginx equivalent
-
-Nginx reads neither file. If your site is served by Nginx, add this to your server block:
-
-```nginx
-location ~ ^/files/com_j2commerce { deny all; return 403; }
-```
-
-Do not store anything in this tree manually — admin order views look up files by
-`#__j2commerce_uploads` row, not by filesystem scan.
-README;
-
-        $this->writeFileIfMissing($root . '/README.md', $readme);
-
         $this->debugLog("ENSURE FILES FOLDER: tree at {$root} ready");
+    }
+
+    /**
+     * Pin the resolved storage root into the attachmentfolderpath param when the component
+     * names none of its own, merged into the stored params rather than replacing them. The
+     * value written is the one every consumer resolves to right now, so nothing already on
+     * disk moves; what changes is that a later Global Configuration edit, or the legacy tree
+     * appearing or disappearing, no longer moves the root out from under stored files.
+     *
+     * @since  6.5.0
+     */
+    private function persistAttachmentFolderPath(string $relative): void
+    {
+        $db = Factory::getContainer()->get(DatabaseInterface::class);
+
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('params'))
+            ->from($db->quoteName('#__extensions'))
+            ->where($db->quoteName('element') . ' = ' . $db->quote('com_j2commerce'))
+            ->where($db->quoteName('type') . ' = ' . $db->quote('component'));
+        $db->setQuery($query);
+
+        $registry = new Registry((string) ($db->loadResult() ?: ''));
+
+        if (trim((string) $registry->get('attachmentfolderpath', '')) !== '') {
+            return;
+        }
+
+        $registry->set('attachmentfolderpath', $relative);
+        $params = $registry->toString();
+
+        $update = $db->getQuery(true)
+            ->update($db->quoteName('#__extensions'))
+            ->set($db->quoteName('params') . ' = :params')
+            ->where($db->quoteName('element') . ' = ' . $db->quote('com_j2commerce'))
+            ->where($db->quoteName('type') . ' = ' . $db->quote('component'))
+            ->bind(':params', $params);
+        $db->setQuery($update);
+        $db->execute();
+
+        $this->debugLog("ENSURE FILES FOLDER: recorded attachmentfolderpath = {$relative}");
     }
 
     /**

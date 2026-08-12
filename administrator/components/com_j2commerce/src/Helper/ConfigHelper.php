@@ -412,6 +412,7 @@ class ConfigHelper
         if ($created || !is_file($real . '/.htaccess')) {
             AttachmentDenyFileHelper::writeDenyPair(
                 $real,
+                $relative,
                 AttachmentDenyFileHelper::ownsTree($real, $created, $relative === AttachmentDenyFileHelper::defaultPath())
             );
         }
