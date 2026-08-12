@@ -14,7 +14,6 @@ defined('_JEXEC') or die;
 use J2Commerce\Component\J2commerce\Administrator\Helper\PackingSlipHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
-use Joomla\Database\DatabaseInterface;
 
 /** @var \J2Commerce\Component\J2commerce\Site\View\Myprofile\HtmlView $this */
 
@@ -29,7 +28,8 @@ $helper          = PackingSlipHelper::getInstance();
 $packingSlipHtml = $helper->getFormattedPackingSlip($order);
 
 // Extract <style> blocks from the template body and move them to <head>. The closing pattern
-// mirrors the HTML tokenizer, which ends the element at "</style" plus any of > / whitespace.
+// is a best effort at the element boundary, not the tokenizer's exact rule; whatever it leaves
+// behind is neutralised with the CSS below.
 $extractedStyles = '';
 $bodyHtml        = preg_replace_callback(
     '#<style\b[^>]*>(.*?)</\s*style\b[^>]*>#si',
@@ -40,22 +40,14 @@ $bodyHtml        = preg_replace_callback(
     $packingSlipHtml
 );
 
-// Load custom CSS from the matched packing slip template record
-$db          = Factory::getContainer()->get(DatabaseInterface::class);
-$invoiceType = 'packingslip';
-$query       = $db->getQuery(true)
-    ->select($db->quoteName('custom_css'))
-    ->from($db->quoteName('#__j2commerce_invoicetemplates'))
-    ->where($db->quoteName('invoice_type') . ' = :invoice_type')
-    ->where($db->quoteName('enabled') . ' = 1')
-    ->order($db->quoteName('ordering') . ' ASC')
-    ->bind(':invoice_type', $invoiceType);
-$db->setQuery($query, 0, 1);
-$customCss = trim((string) $db->loadResult());
+// Custom CSS from the record the body came from
+$customCss = trim((string) ($helper->getSelectedTemplate($order)?->custom_css ?? ''));
 
-// custom_css is stored with filter="raw", so a "</style" in it would close the element and
-// let the remainder be parsed as markup.
-$safeCss = preg_replace('#</\s*style#i', '', $extractedStyles . "\n" . $customCss);
+// custom_css is stored with filter="raw" and the extracted blocks come from the template body,
+// so both reach this element unfiltered. CSS has no syntax that needs "<", and dropping a
+// character cannot spell it again, so the combined text cannot end the element or open a tag.
+// A pattern that removes only "</style" is single-pass and can be reassembled around itself.
+$safeCss = str_replace('<', '', $extractedStyles . "\n" . $customCss);
 
 // Fetched into the order-view modal and reprinted from there: emit only the slip, in the
 // wrapper the print handler looks for. The CSS rides along in an inert <template> so it

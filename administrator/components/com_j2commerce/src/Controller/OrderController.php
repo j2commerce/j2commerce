@@ -650,17 +650,8 @@ class OrderController extends FormController
         $helper      = PackingSlipHelper::getInstance();
         $emailHelper = EmailHelper::getInstance();
 
-        $db       = Factory::getContainer()->get(DatabaseInterface::class);
-        $cssQuery = $db->getQuery(true)
-            ->select($db->quoteName('custom_css'))
-            ->from($db->quoteName('#__j2commerce_invoicetemplates'))
-            ->where($db->quoteName('invoice_type') . ' = ' . $db->quote('packingslip'))
-            ->where($db->quoteName('enabled') . ' = 1')
-            ->order($db->quoteName('ordering') . ' ASC');
-        $db->setQuery($cssQuery, 0, 1);
-        $customCss = trim((string) $db->loadResult());
-
         $slipBodies = [];
+        $cssBlocks  = [];
 
         foreach ($cid as $id) {
             $order = $model->getItem($id);
@@ -669,11 +660,19 @@ class OrderController extends FormController
                 continue;
             }
 
+            // The batch can span orders that match different templates, so collect the CSS of
+            // every matched record rather than assuming one stylesheet covers all of them.
+            $css = trim((string) ($helper->getSelectedTemplate($order)?->custom_css ?? ''));
+
+            if ($css !== '' && !\in_array($css, $cssBlocks, true)) {
+                $cssBlocks[] = $css;
+            }
+
             $packingSlipHtml = $helper->getFormattedPackingSlip($order);
 
-            // Extract <style> blocks from each slip
-            $packingSlipHtml = preg_replace('/<style\b[^>]*>.*?<\/style>/si', '', $packingSlipHtml);
-            $slipBodies[]    = $packingSlipHtml;
+            // Extract <style> blocks from each slip. The closing pattern is a best effort at the
+            // element boundary, not the tokenizer's exact rule.
+            $slipBodies[] = preg_replace('#<style\b[^>]*>.*?</\s*style\b[^>]*>#si', '', $packingSlipHtml) ?? '';
         }
 
         if (empty($slipBodies)) {
@@ -689,7 +688,7 @@ class OrderController extends FormController
         if ($firstOrder && !empty($firstOrder->order_id)) {
             $fullHtml = $helper->getFormattedPackingSlip($firstOrder);
             preg_replace_callback(
-                '/<style\b[^>]*>(.*?)<\/style>/si',
+                '#<style\b[^>]*>(.*?)</\s*style\b[^>]*>#si',
                 function (array $m) use (&$extractedStyles): string {
                     $extractedStyles .= $m[1] . "\n";
                     return '';
@@ -698,7 +697,14 @@ class OrderController extends FormController
             );
         }
 
-        $body = implode("\n<div style=\"page-break-before: always;\"></div>\n", $slipBodies);
+        $body      = implode("\n<div style=\"page-break-before: always;\"></div>\n", $slipBodies);
+        $customCss = implode("\n", $cssBlocks);
+
+        // custom_css is stored with filter="raw" and the extracted blocks come from the template
+        // body, so both reach this element unfiltered. CSS has no syntax that needs "<", and
+        // dropping a character cannot spell it again, so the combined text cannot end the element
+        // or open a tag. Removing only "</style" is single-pass and can be reassembled around.
+        $safeCss = str_replace('<', '', $extractedStyles . "\n" . $customCss);
 
         $html = '<!DOCTYPE html><html><head>'
             . '<meta charset="utf-8">'
@@ -710,8 +716,7 @@ class OrderController extends FormController
             . '.no-print{margin-bottom:20px;display:flex;gap:8px;justify-content:center;align-items:center;}'
             . '.no-print button{padding:10px 24px;border:1px solid #d1d5db;border-radius:6px;background:#fff;color:#333;cursor:pointer;font-size:14px;font-family:inherit;line-height:1.5;-webkit-appearance:none;appearance:none;}'
             . '.no-print button:hover{background:#f3f4f6;}'
-            . $extractedStyles
-            . ($customCss !== '' ? $customCss : '')
+            . $safeCss
             . '@media print{.no-print{display:none!important;}body{margin:0;padding:0;background:#fff;}*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important;}}'
             . '</style>'
             . '</head><body>'
@@ -735,9 +740,11 @@ class OrderController extends FormController
         $helper          = PackingSlipHelper::getInstance();
         $packingSlipHtml = $helper->getFormattedPackingSlip($order);
 
+        // The closing pattern is a best effort at the element boundary, not the tokenizer's
+        // exact rule; whatever it leaves behind is neutralised with the CSS below.
         $extractedStyles = '';
         $bodyHtml        = preg_replace_callback(
-            '/<style\b[^>]*>(.*?)<\/style>/si',
+            '#<style\b[^>]*>(.*?)</\s*style\b[^>]*>#si',
             function (array $m) use (&$extractedStyles): string {
                 $extractedStyles .= $m[1] . "\n";
                 return '';
@@ -745,15 +752,13 @@ class OrderController extends FormController
             $packingSlipHtml
         );
 
-        $db    = Factory::getContainer()->get(DatabaseInterface::class);
-        $query = $db->getQuery(true)
-            ->select($db->quoteName('custom_css'))
-            ->from($db->quoteName('#__j2commerce_invoicetemplates'))
-            ->where($db->quoteName('invoice_type') . ' = ' . $db->quote('packingslip'))
-            ->where($db->quoteName('enabled') . ' = 1')
-            ->order($db->quoteName('ordering') . ' ASC');
-        $db->setQuery($query, 0, 1);
-        $customCss = trim((string) $db->loadResult());
+        $customCss = trim((string) ($helper->getSelectedTemplate($order)?->custom_css ?? ''));
+
+        // custom_css is stored with filter="raw" and the extracted blocks come from the template
+        // body, so both reach this element unfiltered. CSS has no syntax that needs "<", and
+        // dropping a character cannot spell it again, so the combined text cannot end the element
+        // or open a tag. Removing only "</style" is single-pass and can be reassembled around.
+        $safeCss = str_replace('<', '', $extractedStyles . "\n" . $customCss);
 
         return '<!DOCTYPE html><html><head>'
             . '<meta charset="utf-8">'
@@ -765,8 +770,7 @@ class OrderController extends FormController
             . '.no-print{margin-bottom:20px;display:flex;gap:8px;justify-content:center;}'
             . '.no-print button{padding:10px 24px;border:1px solid #d1d5db;border-radius:6px;background:#fff;color:#333;cursor:pointer;font-size:14px;font-family:inherit;line-height:1.5;-webkit-appearance:none;appearance:none;}'
             . '.no-print button:hover{background:#f3f4f6;}'
-            . $extractedStyles
-            . ($customCss !== '' ? $customCss : '')
+            . $safeCss
             . '@media print{.no-print{display:none!important;}body{margin:0;padding:0;background:#fff;}*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important;}}'
             . '</style>'
             . '</head><body>'
@@ -1867,7 +1871,7 @@ class OrderController extends FormController
 
     private function getStatusInfo(int $statusId): ?object
     {
-        $db    = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $db    = Factory::getContainer()->get(DatabaseInterface::class);
         $query = $db->getQuery(true)
             ->select([
                 $db->quoteName('orderstatus_name'),

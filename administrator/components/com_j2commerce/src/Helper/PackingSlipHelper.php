@@ -24,6 +24,12 @@ class PackingSlipHelper
     private static ?DatabaseInterface $db       = null;
     private static ?PackingSlipHelper $instance = null;
 
+    /** Candidate rows per order, so body and custom_css cannot be resolved from different queries. */
+    private array $templateCache = [];
+
+    /** Winning row per order — body and CSS are read separately, and the pick loads a user. */
+    private array $selectedCache = [];
+
     private static function getDatabase(): DatabaseInterface
     {
         return self::$db ??= Factory::getContainer()->get(DatabaseInterface::class);
@@ -36,6 +42,22 @@ class PackingSlipHelper
 
     public function loadPackingSlipTemplate(object $order): string
     {
+        if (\count($this->getPackingSlipTemplates($order)) === 0) {
+            return Text::_('COM_J2COMMERCE_DEFAULT_PACKINGSLIP_TEMPLATE_TEXT');
+        }
+
+        return $this->getSelectedTemplate($order)?->body ?? '';
+    }
+
+    /** The record loadPackingSlipTemplate() takes its body from — read custom_css from this, never a second query. */
+    public function getSelectedTemplate(object $order): ?object
+    {
+        $cacheKey = $this->getCacheKey($order);
+
+        if (\array_key_exists($cacheKey, $this->selectedCache)) {
+            return $this->selectedCache[$cacheKey];
+        }
+
         $jLang    = Factory::getLanguage();
         $userLang = $order->customer_language ?? '';
 
@@ -48,17 +70,11 @@ class PackingSlipHelper
             }
         }
 
-        $languages    = [$userLang, $jLang->getTag(), $jLang->getDefault(), 'en-GB', '*'];
-        $allTemplates = $this->getPackingSlipTemplates($order);
-
-        if (\count($allTemplates) === 0) {
-            return Text::_('COM_J2COMMERCE_DEFAULT_PACKINGSLIP_TEMPLATE_TEXT');
-        }
-
-        $templateText   = '';
+        $languages      = [$userLang, $jLang->getTag(), $jLang->getDefault(), 'en-GB', '*'];
+        $selected       = null;
         $preferredScore = 0;
 
-        foreach ($allTemplates as $template) {
+        foreach ($this->getPackingSlipTemplates($order) as $template) {
             $myLang  = $template->language ?? '*';
             $langPos = array_search($myLang, $languages, true);
 
@@ -69,16 +85,27 @@ class PackingSlipHelper
             $langScore = 5 - $langPos;
 
             if ($langScore > $preferredScore) {
-                $templateText   = $template->body ?? '';
+                $selected       = $template;
                 $preferredScore = $langScore;
             }
         }
 
-        return $templateText;
+        return $this->selectedCache[$cacheKey] = $selected;
+    }
+
+    private function getCacheKey(object $order): string
+    {
+        return !empty($order->order_id) ? 'id:' . $order->order_id : 'obj:' . spl_object_id($order);
     }
 
     public function getPackingSlipTemplates(object $order): array
     {
+        $cacheKey = $this->getCacheKey($order);
+
+        if (isset($this->templateCache[$cacheKey])) {
+            return $this->templateCache[$cacheKey];
+        }
+
         $db           = self::getDatabase();
         $query        = $db->getQuery(true);
         $orderStateId = (string) ($order->order_state_id ?? '');
@@ -114,9 +141,9 @@ class PackingSlipHelper
         $db->setQuery($query);
 
         try {
-            return $db->loadObjectList() ?: [];
+            return $this->templateCache[$cacheKey] = $db->loadObjectList() ?: [];
         } catch (\Exception $e) {
-            return [];
+            return $this->templateCache[$cacheKey] = [];
         }
     }
 

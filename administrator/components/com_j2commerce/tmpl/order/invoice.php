@@ -27,10 +27,12 @@ if (!$order || empty($order->order_id)) {
 $helper     = InvoiceHelper::getInstance();
 $invoiceHtml = $helper->getFormattedInvoice($order);
 
-// Extract <style> blocks from the template body and move them to <head>
+// Extract <style> blocks from the template body and move them to <head>. The closing pattern
+// is a best effort at the element boundary, not the tokenizer's exact rule; whatever it leaves
+// behind is neutralised with the CSS below.
 $extractedStyles = '';
 $bodyHtml        = preg_replace_callback(
-    '/<style\b[^>]*>(.*?)<\/style>/si',
+    '#<style\b[^>]*>(.*?)</\s*style\b[^>]*>#si',
     function (array $m) use (&$extractedStyles): string {
         $extractedStyles .= $m[1] . "\n";
         return '';
@@ -49,6 +51,12 @@ $query = $db->getQuery(true)
     ->order($db->quoteName('ordering') . ' ASC');
 $db->setQuery($query, 0, 1);
 $customCss = trim((string) $db->loadResult());
+
+// custom_css is stored with filter="raw" and the extracted blocks come from the template body,
+// so both reach this element unfiltered. CSS has no syntax that needs "<", and dropping a
+// character cannot spell it again, so the combined text cannot end the element or open a tag.
+// A pattern that removes only "</style" is single-pass and can be reassembled around itself.
+$safeCss = str_replace('<', '', $extractedStyles . "\n" . $customCss);
 ?>
 <!DOCTYPE html>
 <html>
@@ -88,11 +96,8 @@ $customCss = trim((string) $db->loadResult());
         }
         .no-print button:hover { background: #f3f4f6; }
 
-        /* Template-extracted styles */
-        <?php echo $extractedStyles; ?>
-
-        /* Custom CSS from template record */
-        <?php if ($customCss !== '') echo $customCss; ?>
+        /* Template-extracted styles and the custom CSS */
+        <?php echo $safeCss; ?>
 
         /* Print-specific styles */
         @media print {
