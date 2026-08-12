@@ -449,7 +449,7 @@ function registerCustomComponentTypes(editor) {
         view: {
             onRender() {
                 const tag = this.model.getAttributes()['data-j2c-tag'] || '[TAG]';
-                this.el.replaceChildren(document.createRange().createContextualFragment(tag));
+                this.el.textContent = tag;
                 this.el.contentEditable = 'false';
             },
         },
@@ -543,8 +543,14 @@ function registerCustomComponentTypes(editor) {
         view: {
             onRender() {
                 const pos = this.model.getAttributes()['data-j2c-hook'] || 'AFTER_HEADER';
+
                 // Render as a styled table cell inside the <tr>
-                this.el.replaceChildren(document.createRange().createContextualFragment(`<td style="border:2px dashed #8b5cf6;padding:8px;text-align:center;color:#8b5cf6;font-size:12px;font-family:monospace;background:#f5f3ff;" colspan="1">[HOOK:${pos}]</td>`));
+                const cell = document.createElement('td');
+                cell.style.cssText = 'border:2px dashed #8b5cf6;padding:8px;text-align:center;color:#8b5cf6;font-size:12px;font-family:monospace;background:#f5f3ff;';
+                cell.setAttribute('colspan', '1');
+                cell.textContent = `[HOOK:${pos}]`;
+
+                this.el.replaceChildren(cell);
                 this.el.contentEditable = 'false';
             },
         },
@@ -674,7 +680,17 @@ function setupPreviewIntegration(editor, options) {
 
         previewBtn.disabled = true;
         const origNodes = [...previewBtn.childNodes];
-        previewBtn.replaceChildren(document.createRange().createContextualFragment('<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></span>'));
+
+        const spinnerLabel = document.createElement('span');
+        spinnerLabel.className = 'visually-hidden';
+        spinnerLabel.textContent = Joomla.Text._('COM_J2COMMERCE_LOADING');
+
+        const spinner = document.createElement('span');
+        spinner.className = 'spinner-border spinner-border-sm';
+        spinner.setAttribute('role', 'status');
+        spinner.append(spinnerLabel);
+
+        previewBtn.replaceChildren(spinner);
 
         try {
             const formData = new FormData();

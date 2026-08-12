@@ -1063,48 +1063,26 @@
             this.element.classList.toggle('has-images', hasImages);
 
             const isFileMode = this.options.fileMode;
-            let html = this.selectedFiles.map((file, index) => {
-                const isImage = this.isImageFile(file.name);
-                let mediaHtml;
-                if (isFileMode) {
-                    mediaHtml = `<div class="uppymedia-file-icon"><span class="fa-solid ${this.getFileIcon(file.name)}" aria-hidden="true"></span></div>`;
-                } else if (isImage) {
-                    mediaHtml = `<img src="${this.escapeHtml(file.thumb_url || file.url)}" alt="${this.escapeHtml(file.alt_text || '')}">`;
-                } else {
-                    mediaHtml = `<div class="uppymedia-file-icon"><span class="fa-solid ${this.getFileIcon(file.name)}" aria-hidden="true"></span></div>`;
-                }
-                const altHtml = isFileMode ? '' : `
-                    <input type="text" class="form-control form-control-sm mt-0"
-                           placeholder="${this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_ALT_TEXT_PLACEHOLDER')}"
-                           value="${this.escapeHtml(file.alt_text || '')}"
-                           data-action="alt-text" data-index="${index}"
-                           aria-label="${this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_ALT_TEXT')}">`;
-                return `
-                <div class="uppymedia-image ${index === 0 && !isFileMode ? 'main-image' : ''}" data-index="${index}">
-                    ${mediaHtml}
-                    <label class="uppymedia-select-check" title="${this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_SELECT_IMAGE')}">
-                        <input type="checkbox" class="uppymedia-image-checkbox" data-index="${index}">
-                        <span class="uppymedia-checkmark"></span>
-                    </label>
-                    ${total > 1 ? `<div class="uppymedia-move-arrows">
-                        ${index > 0 ? `<button type="button" class="uppymedia-move-btn" data-action="move-left" data-index="${index}" title="${this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_MOVE_LEFT')}"><span class="fa-solid fa-chevron-left" aria-hidden="true"></span></button>` : ''}
-                        ${index < total - 1 ? `<button type="button" class="uppymedia-move-btn" data-action="move-right" data-index="${index}" title="${this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_MOVE_RIGHT')}"><span class="fa-solid fa-chevron-right" aria-hidden="true"></span></button>` : ''}
-                    </div>` : ''}
-                    ${isFileMode ? `<div class="uppymedia-file-name">${this.escapeHtml(file.name)}</div>` : ''}
-                    ${altHtml}
-                </div>`;
-            }).join('');
+            const tiles = this.selectedFiles.map(
+                (file, index) => this.previewTile(file, index, total, isFileMode)
+            );
 
             // Append "+" add-more card when images exist and field is editable
             if (hasImages && !this.element.hasAttribute('disabled') && !this.element.hasAttribute('readonly')) {
-                html += `
-                    <div class="uppymedia-add-more" data-bs-toggle="modal" data-bs-target="#${this.modalEl.id}">
-                        <span class="uppymedia-add-more-icon">+</span>
-                    </div>
-                `;
+                const addIcon = document.createElement('span');
+                addIcon.className = 'uppymedia-add-more-icon';
+                addIcon.textContent = '+';
+
+                const addMore = document.createElement('div');
+                addMore.className = 'uppymedia-add-more';
+                addMore.dataset.bsToggle = 'modal';
+                addMore.dataset.bsTarget = '#' + this.modalEl.id;
+                addMore.appendChild(addIcon);
+
+                tiles.push(addMore);
             }
 
-            preview.replaceChildren(document.createRange().createContextualFragment(html));
+            preview.replaceChildren(...tiles);
 
             // Reset bulk action bar since checkboxes are cleared on re-render
             this.updateBulkBar();
@@ -1289,6 +1267,104 @@
             ];
         }
 
+        moveButton(action, index, iconClass, title) {
+            const icon = document.createElement('span');
+            icon.className = 'fa-solid ' + iconClass;
+            icon.setAttribute('aria-hidden', 'true');
+
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'uppymedia-move-btn';
+            button.dataset.action = action;
+            button.dataset.index = index;
+            button.title = title;
+            button.appendChild(icon);
+
+            return button;
+        }
+
+        previewTile(file, index, total, isFileMode) {
+            let media;
+
+            if (!isFileMode && this.isImageFile(file.name)) {
+                media = document.createElement('img');
+                media.src = file.thumb_url || file.url;
+                media.alt = file.alt_text || '';
+            } else {
+                const icon = document.createElement('span');
+                icon.className = 'fa-solid ' + this.getFileIcon(file.name);
+                icon.setAttribute('aria-hidden', 'true');
+
+                media = document.createElement('div');
+                media.className = 'uppymedia-file-icon';
+                media.appendChild(icon);
+            }
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'uppymedia-image-checkbox';
+            checkbox.dataset.index = index;
+
+            const checkmark = document.createElement('span');
+            checkmark.className = 'uppymedia-checkmark';
+
+            const check = document.createElement('label');
+            check.className = 'uppymedia-select-check';
+            check.title = this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_SELECT_IMAGE');
+            check.append(checkbox, checkmark);
+
+            const tile = document.createElement('div');
+            tile.className = 'uppymedia-image' + (index === 0 && !isFileMode ? ' main-image' : '');
+            tile.dataset.index = index;
+            tile.append(media, check);
+
+            if (total > 1) {
+                const arrows = document.createElement('div');
+                arrows.className = 'uppymedia-move-arrows';
+
+                if (index > 0) {
+                    arrows.appendChild(this.moveButton(
+                        'move-left',
+                        index,
+                        'fa-chevron-left',
+                        this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_MOVE_LEFT')
+                    ));
+                }
+
+                if (index < total - 1) {
+                    arrows.appendChild(this.moveButton(
+                        'move-right',
+                        index,
+                        'fa-chevron-right',
+                        this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_MOVE_RIGHT')
+                    ));
+                }
+
+                tile.appendChild(arrows);
+            }
+
+            if (isFileMode) {
+                const name = document.createElement('div');
+                name.className = 'uppymedia-file-name';
+                name.textContent = file.name;
+                tile.appendChild(name);
+
+                return tile;
+            }
+
+            const altText = document.createElement('input');
+            altText.type = 'text';
+            altText.className = 'form-control form-control-sm mt-0';
+            altText.placeholder = this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_ALT_TEXT_PLACEHOLDER');
+            altText.value = file.alt_text || '';
+            altText.dataset.action = 'alt-text';
+            altText.dataset.index = index;
+            altText.setAttribute('aria-label', this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_ALT_TEXT'));
+            tile.appendChild(altText);
+
+            return tile;
+        }
+
         gridMessage(text, className = 'text-body-secondary') {
             const message = document.createElement('div');
             message.className = `text-center ${className} p-3`;
@@ -1312,13 +1388,6 @@
             note.textContent = hint;
 
             return [button, note];
-        }
-
-        escapeHtml(text) {
-            return String(text || '').replace(/[&<>"']/g, c => ({
-                '&': '&amp;', '<': '&lt;', '>': '&gt;',
-                '"': '&quot;', "'": '&#039;'
-            })[c]);
         }
 
         getText(key) {
