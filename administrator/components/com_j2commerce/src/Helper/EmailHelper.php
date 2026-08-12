@@ -1672,16 +1672,16 @@ class EmailHelper
      * @param   string  $templateText  The template text
      * @param   Mail    $mailer        The mailer instance
      *
-     * @return  void
+     * @return  string  The template text with local image sources rewritten to cid: references
      *
      * @since   6.0.0
      */
-    public function processInlineImages(string $templateText, Mail &$mailer): void
+    public function processInlineImages(string $templateText, Mail &$mailer): string
     {
         $baseURL = str_replace('/administrator', '', Uri::base());
         $baseURL = ltrim($baseURL, '/');
 
-        $this->processInlineImagesInternal($templateText, $mailer, $baseURL);
+        return $this->processInlineImagesInternal($templateText, $mailer, $baseURL);
     }
 
     /**
