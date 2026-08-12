@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Site\Controller;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\CartHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UploadHelper;
@@ -44,8 +45,10 @@ class CheckoutuploaderController extends BaseController
             return;
         }
 
-        $session = $this->app->getSession();
-        $cartId  = (int) $session->get('j2commerce.cart_id', 0);
+        // Resolve the caller's own cart the way the rest of the cart path does — by user
+        // id, then session id, then signed cookie. Never create one from an upload.
+        $cart   = CartHelper::getInstance()->getCart(0, false);
+        $cartId = (int) ($cart->j2commerce_cart_id ?? 0);
 
         if ($cartId <= 0) {
             $this->sendJson(false, 'No active checkout session');
