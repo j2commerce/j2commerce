@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Exception\CouponRejection;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CartOrder;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Component\ComponentHelper;
@@ -722,11 +723,23 @@ class CouponModel extends AdminModel
             $results = J2CommerceHelper::plugin()->eventWithArray('CouponIsValid', [$this, $order]);
 
             if (\in_array(false, $results, true)) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_COUPON_NOT_APPLICABLE'));
+                throw new CouponRejection(Text::_('COM_J2COMMERCE_COUPON_NOT_APPLICABLE'));
             }
-        } catch (\Exception $e) {
-            // Collapse every failure into one generic message; the detail goes to the log.
+        } catch (CouponRejection $e) {
+            // A rejection this model raised itself — nothing else can throw this type — so
+            // the message is one of its own constants naming the shopper's coupon.
             Log::add(\sprintf('Coupon "%s" rejected: %s', $this->coupon->coupon_code ?? '', $e->getMessage()), Log::INFO, 'com_j2commerce');
+
+            $this->setError($e->getMessage());
+            Factory::getApplication()->enqueueMessage($e->getMessage(), 'warning');
+            $this->removeCoupon();
+
+            return false;
+        } catch (\Throwable $e) {
+            // Anything else came from a query, a date parse or a subscriber, and carries text
+            // this model cannot vouch for. \Throwable rather than \Exception: a non-scalar
+            // valid_from/valid_to raises a TypeError, which is still a refused coupon.
+            Log::add('Coupon validation failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
 
             $generic = Text::_('COM_J2COMMERCE_COUPON_NOT_VALID');
             $this->setError($generic);
@@ -759,11 +772,18 @@ class CouponModel extends AdminModel
 
             $results = J2CommerceHelper::plugin()->eventWithArray('CouponIsValid', [$this, $order]);
             if (\in_array(false, $results, true)) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_COUPON_NOT_APPLICABLE'));
+                throw new CouponRejection(Text::_('COM_J2COMMERCE_COUPON_NOT_APPLICABLE'));
             }
-        } catch (\Exception $e) {
-            // Collapse every failure into one generic message; the detail goes to the log.
+        } catch (CouponRejection $e) {
             Log::add(\sprintf('Coupon "%s" rejected: %s', $this->coupon->coupon_code ?? '', $e->getMessage()), Log::INFO, 'com_j2commerce');
+
+            $this->setError($e->getMessage());
+            Factory::getApplication()->enqueueMessage($e->getMessage(), 'warning');
+            $this->removeCoupon();
+
+            return false;
+        } catch (\Throwable $e) {
+            Log::add('Coupon validation failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
 
             $generic = Text::_('COM_J2COMMERCE_COUPON_NOT_VALID');
             $this->setError($generic);
@@ -860,7 +880,7 @@ class CouponModel extends AdminModel
      *
      * @return  void
      *
-     * @throws  \Exception
+     * @throws  CouponRejection
      * @since   6.0.6
      */
     private function validateEnabled(): void
@@ -868,7 +888,7 @@ class CouponModel extends AdminModel
         $params = ComponentHelper::getParams('com_j2commerce');
 
         if ($params->get('enable_coupon', 0) == 0) {
-            throw new \Exception(Text::_('COM_J2COMMERCE_COUPON_NOT_EXIST'));
+            throw new CouponRejection(Text::_('COM_J2COMMERCE_COUPON_NOT_EXIST'));
         }
     }
 
@@ -877,13 +897,13 @@ class CouponModel extends AdminModel
      *
      * @return  void
      *
-     * @throws  \Exception
+     * @throws  CouponRejection
      * @since   6.0.6
      */
     private function validateExists(): void
     {
         if (!$this->coupon) {
-            throw new \Exception(Text::_('COM_J2COMMERCE_COUPON_NOT_EXIST'));
+            throw new CouponRejection(Text::_('COM_J2COMMERCE_COUPON_NOT_EXIST'));
         }
     }
 
@@ -894,7 +914,7 @@ class CouponModel extends AdminModel
      *
      * @return  void
      *
-     * @throws  \Exception
+     * @throws  CouponRejection
      * @since   6.0.6
      */
     private function validateUsageLimit(object $order): void
@@ -902,7 +922,7 @@ class CouponModel extends AdminModel
         $total = $this->getCouponHistory($this->coupon->j2commerce_coupon_id, '', (string) ($order->order_id ?? ''));
 
         if ($this->coupon->max_uses > 0 && ($total >= $this->coupon->max_uses)) {
-            throw new \Exception(Text::_('COM_J2COMMERCE_COUPON_USAGE_LIMIT_REACHED'));
+            throw new CouponRejection(Text::_('COM_J2COMMERCE_COUPON_USAGE_LIMIT_REACHED'));
         }
     }
 
@@ -911,7 +931,7 @@ class CouponModel extends AdminModel
      *
      * @return  void
      *
-     * @throws  \Exception
+     * @throws  CouponRejection
      * @since   6.0.6
      */
     private function validateUserLogged(): void
@@ -919,7 +939,7 @@ class CouponModel extends AdminModel
         $user = Factory::getApplication()->getIdentity();
 
         if ($this->coupon->logged && !$user->id) {
-            throw new \Exception(Text::_('COM_J2COMMERCE_COUPON_LOGIN_REQUIRED'));
+            throw new CouponRejection(Text::_('COM_J2COMMERCE_COUPON_LOGIN_REQUIRED'));
         }
     }
 
@@ -928,7 +948,7 @@ class CouponModel extends AdminModel
      *
      * @return  void
      *
-     * @throws  \Exception
+     * @throws  CouponRejection
      * @since   6.0.6
      */
     private function validateUsers(): void
@@ -937,13 +957,13 @@ class CouponModel extends AdminModel
 
         if (!empty($this->coupon->users)) {
             if ($user->id <= 0) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_COUPON_NOT_APPLICABLE'));
+                throw new CouponRejection(Text::_('COM_J2COMMERCE_COUPON_NOT_APPLICABLE'));
             }
 
             $users = explode(',', $this->coupon->users);
 
             if (\count($users) && !\in_array($user->id, $users)) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_COUPON_NOT_APPLICABLE'));
+                throw new CouponRejection(Text::_('COM_J2COMMERCE_COUPON_NOT_APPLICABLE'));
             }
         }
     }
@@ -953,7 +973,7 @@ class CouponModel extends AdminModel
      *
      * @return  void
      *
-     * @throws  \Exception
+     * @throws  CouponRejection
      * @since   6.0.6
      */
     private function validateUserGroup(): void
@@ -964,7 +984,7 @@ class CouponModel extends AdminModel
             $allowedGroups = explode(',', $this->coupon->user_group);
 
             if (!\count(array_intersect($allowedGroups, $user->groups))) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_COUPON_NOT_APPLICABLE'));
+                throw new CouponRejection(Text::_('COM_J2COMMERCE_COUPON_NOT_APPLICABLE'));
             }
         }
     }
@@ -974,7 +994,7 @@ class CouponModel extends AdminModel
      *
      * @return  void
      *
-     * @throws  \Exception
+     * @throws  CouponRejection
      * @since   6.0.6
      */
     private function validateUserUsageLimit(object $order): void
@@ -989,7 +1009,7 @@ class CouponModel extends AdminModel
         if ($user->id) {
             if ($maxUses > 0
                 && $this->getCouponHistory($this->coupon->j2commerce_coupon_id, (string) $user->id, $currentOrderId) >= $maxUses) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_COUPON_USER_USAGE_LIMIT_REACHED'));
+                throw new CouponRejection(Text::_('COM_J2COMMERCE_COUPON_USER_USAGE_LIMIT_REACHED'));
             }
 
             // The account id only counts redemptions made while signed in, so a
@@ -1004,7 +1024,7 @@ class CouponModel extends AdminModel
 
             if ($maxUses > 0 && $accountEmail !== ''
                 && $this->getCouponHistoryByEmail($this->coupon->j2commerce_coupon_id, $accountEmail, $currentOrderId) >= $maxUses) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_COUPON_USER_USAGE_LIMIT_REACHED'));
+                throw new CouponRejection(Text::_('COM_J2COMMERCE_COUPON_USER_USAGE_LIMIT_REACHED'));
             }
 
             return;
@@ -1031,7 +1051,7 @@ class CouponModel extends AdminModel
 
             if ($email !== ''
                 && $this->getCouponHistoryByEmail($this->coupon->j2commerce_coupon_id, $email, $currentOrderId) >= $maxUses) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_COUPON_USER_USAGE_LIMIT_REACHED'));
+                throw new CouponRejection(Text::_('COM_J2COMMERCE_COUPON_USER_USAGE_LIMIT_REACHED'));
             }
         }
     }
@@ -1041,7 +1061,7 @@ class CouponModel extends AdminModel
      *
      * @return  void
      *
-     * @throws  \Exception
+     * @throws  CouponRejection
      * @since   6.0.6
      */
     private function validateExpiryDate(): void
@@ -1060,7 +1080,7 @@ class CouponModel extends AdminModel
         $isValidTo   = (empty($validTo) || $validTo === $nullDate || Factory::getDate($validTo)->toSql() >= $now);
 
         if (!$isValidFrom || !$isValidTo) {
-            throw new \Exception(Text::_('COM_J2COMMERCE_COUPON_HAS_EXPIRED'));
+            throw new CouponRejection(Text::_('COM_J2COMMERCE_COUPON_HAS_EXPIRED'));
         }
     }
 
@@ -1071,7 +1091,7 @@ class CouponModel extends AdminModel
      *
      * @return  void
      *
-     * @throws  \Exception
+     * @throws  CouponRejection
      * @since   6.0.6
      */
     private function validateMinimumAmount(object $order): void
@@ -1081,7 +1101,7 @@ class CouponModel extends AdminModel
 
             if ((float) $this->coupon->min_subtotal > (float) $subtotal) {
                 // The threshold here is deliberate shopper guidance, not a leak — do not genericise.
-                throw new \Exception(Text::sprintf('COM_J2COMMERCE_COUPON_MINIMUM_NOT_MET', $this->coupon->min_subtotal));
+                throw new CouponRejection(Text::sprintf('COM_J2COMMERCE_COUPON_MINIMUM_NOT_MET', $this->coupon->min_subtotal));
             }
         }
     }
@@ -1091,7 +1111,7 @@ class CouponModel extends AdminModel
      *
      * @return  void
      *
-     * @throws  \Exception
+     * @throws  CouponRejection
      * @since   6.0.6
      */
     private function validateProductIds(): void
@@ -1170,14 +1190,18 @@ class CouponModel extends AdminModel
                 }
 
                 if (!$validForCart) {
-                    throw new \Exception(Text::_('COM_J2COMMERCE_COUPON_NOT_VALID_FOR_PRODUCT'));
+                    throw new CouponRejection(Text::_('COM_J2COMMERCE_COUPON_NOT_VALID_FOR_PRODUCT'));
                 }
             }
+        } catch (CouponRejection $e) {
+            // This method's own refusal, told apart by type rather than by comparing the
+            // message to a Text::_() call that resolves differently per site language.
+            throw $e;
         } catch (\Exception $e) {
-            if ($e->getMessage() === Text::_('COM_J2COMMERCE_COUPON_NOT_VALID_FOR_PRODUCT')) {
-                throw $e;
-            }
-            // If cart model fails, skip validation
+            // The cart model could not answer, which is not the shopper's coupon being wrong.
+            // \Exception rather than \Throwable deliberately: this is the one arm that lets
+            // validation continue, so an \Error must pass to isValid(), which refuses.
+            Log::add('Coupon product validation skipped: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
         }
     }
 
@@ -1188,7 +1212,7 @@ class CouponModel extends AdminModel
      *
      * @return  void
      *
-     * @throws  \Exception  If coupon is not valid for any order products.
+     * @throws  CouponRejection  If coupon is not valid for any order products.
      *
      * @since   6.0.6
      */
@@ -1286,7 +1310,7 @@ class CouponModel extends AdminModel
         }
 
         if (!$validForCart) {
-            throw new \Exception(Text::_('COM_J2COMMERCE_COUPON_NOT_VALID_FOR_PRODUCT'));
+            throw new CouponRejection(Text::_('COM_J2COMMERCE_COUPON_NOT_VALID_FOR_PRODUCT'));
         }
     }
 

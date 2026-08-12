@@ -1064,9 +1064,15 @@ class CartsController extends BaseController
             }
 
             if (!$couponModel->isValid($orderContext)) {
+                // Safe to carry: isValid() relays a CouponRejection as given and collapses
+                // every other throwable to a generic string. Only this component throws that
+                // type, so nothing the query, date or plugin layers wrote can arrive here —
+                // a subscriber raising \DomainException lands in the second arm. The enqueued
+                // copy does not arrive at all — the queue is persisted in redirect() alone,
+                // and this path closes instead.
                 $this->sendJsonResponse([
                     'success' => false,
-                    'message' => Text::_('COM_J2COMMERCE_COUPON_NOT_VALID'),
+                    'message' => $couponModel->getError() ?: Text::_('COM_J2COMMERCE_COUPON_NOT_VALID'),
                 ]);
             }
 

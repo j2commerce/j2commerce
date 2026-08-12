@@ -877,14 +877,16 @@ class CartOrder
                         $couponModel->init();
 
                         if (!$couponModel->isValid($this)) {
-                            // Flag as expired — defer session removal to checkout validation
+                            // Flag as expired — defer session removal to checkout validation.
+                            // The reason is safe to carry: isValid() only relays its own
+                            // CouponRejection and answers everything else generically.
                             $this->coupons[] = (object) [
                                 'coupon_code' => $couponCode,
                                 'coupon_id'   => $coupon->j2commerce_coupon_id ?? 0,
                                 'discount'    => 0.0,
                                 'coupon_name' => $coupon->coupon_name ?? $couponCode,
                                 'is_expired'  => true,
-                                'error'       => Text::_('COM_J2COMMERCE_COUPON_NOT_VALID'),
+                                'error'       => $couponModel->getError() ?: Text::_('COM_J2COMMERCE_COUPON_NOT_VALID'),
                             ];
 
                             return;
