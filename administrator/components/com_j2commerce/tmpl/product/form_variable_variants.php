@@ -486,6 +486,7 @@ $ajaxBase    = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
             formData.append('limit', this.config.limit);
             formData.append('form_prefix', this.config.formPrefix);
             formData.append('variant_layout', 'form_ajax_avoptions');
+            formData.append(csrfToken, '1');
 
             fetch(J2COMMERCE_AJAX_BASE, { method: 'POST', body: formData })
                 .then(function (response) { return response.json(); })

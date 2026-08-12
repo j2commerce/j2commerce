@@ -451,7 +451,7 @@ document.addEventListener('DOMContentLoaded', () => {
             dismissButton.type = 'button';
             dismissButton.className = 'btn-close';
             dismissButton.setAttribute('data-bs-dismiss', 'alert');
-            dismissButton.setAttribute('aria-label', 'Close');
+            dismissButton.setAttribute('aria-label', <?php echo json_encode(Text::_('JCLOSE')); ?>);
             alertBox.append(dismissButton);
 
             messagesContainer.replaceChildren(alertBox);

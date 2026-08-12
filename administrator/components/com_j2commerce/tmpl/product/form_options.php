@@ -341,8 +341,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Remove option handler (event delegation for both existing and dynamically added rows)
-    document.addEventListener('click', (e) => {
+    // Remove option handler (event delegation for both existing and dynamically added rows).
+    // Scoped to this fieldset like the sibling editors. Only one editor renders per page, so
+    // this is parity rather than a fix: the narrowest listener that can serve every row.
+    document.getElementById('j2commerce-product-options')?.addEventListener('click', (e) => {
         const removeBtn = e.target.closest('.optionRemove');
         if (!removeBtn) return;
 
@@ -435,7 +437,7 @@ document.addEventListener('DOMContentLoaded', () => {
             dismissButton.type = 'button';
             dismissButton.className = 'btn-close';
             dismissButton.setAttribute('data-bs-dismiss', 'alert');
-            dismissButton.setAttribute('aria-label', 'Close');
+            dismissButton.setAttribute('aria-label', <?php echo json_encode(Text::_('JCLOSE')); ?>);
             alertBox.append(dismissButton);
 
             messagesContainer.replaceChildren(alertBox);

@@ -275,21 +275,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const nameCell = document.createElement('td');
 
+        // Mirrors the server-rendered row above: name in a flex line, type on its own line.
+        // A row added here has to survive a reload without changing shape.
+        const nameLine = document.createElement('div');
+        nameLine.className = 'd-flex align-items-center';
+
+        const nameLabel = document.createElement('strong');
+        nameLabel.textContent = optionName;
+
         const uniqueLabel = document.createElement('small');
+        uniqueLabel.className = 'ms-1';
         uniqueLabel.textContent = '(' + uniqueName + ')';
 
-        const typeLabel = document.createElement('small');
-        typeLabel.className = 'text-capitalize';
-        typeLabel.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_OPTION_TYPE')); ?> + ' ' + optionType;
-
-        nameCell.append(
-            optionName,
+        nameLine.append(
+            nameLabel,
             hidden('j2commerce_productoption_id', poId),
             hidden('option_id', optionId),
-            ' ',
-            uniqueLabel,
-            ' ',
-            typeLabel
+            uniqueLabel
         );
 
         if (variantTypes.includes(optionType)) {
@@ -301,11 +303,19 @@ document.addEventListener('DOMContentLoaded', () => {
             setValuesButton.dataset.optionName = optionName;
 
             const cogIcon = document.createElement('span');
-            cogIcon.className = 'icon-cog';
-            setValuesButton.append(cogIcon, ' ' + <?php echo json_encode(Text::_('COM_J2COMMERCE_OPTION_SET_VALUES')); ?>);
+            cogIcon.className = 'icon-cog me-1';
+            setValuesButton.append(cogIcon, <?php echo json_encode(Text::_('COM_J2COMMERCE_OPTION_SET_VALUES')); ?>);
 
-            nameCell.append(' ', setValuesButton);
+            nameLine.append(setValuesButton);
         }
+
+        const typeLine = document.createElement('div');
+        const typeLabel = document.createElement('small');
+        typeLabel.className = 'text-capitalize';
+        typeLabel.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_OPTION_TYPE')); ?> + ': ' + optionType;
+        typeLine.append(typeLabel);
+
+        nameCell.append(nameLine, typeLine);
 
         const orderingCell = document.createElement('td');
         const orderingInput = document.createElement('input');
@@ -490,7 +500,7 @@ document.addEventListener('DOMContentLoaded', () => {
             dismissButton.type = 'button';
             dismissButton.className = 'btn-close';
             dismissButton.setAttribute('data-bs-dismiss', 'alert');
-            dismissButton.setAttribute('aria-label', 'Close');
+            dismissButton.setAttribute('aria-label', <?php echo json_encode(Text::_('JCLOSE')); ?>);
             alertBox.append(dismissButton);
 
             messagesContainer.replaceChildren(alertBox);
