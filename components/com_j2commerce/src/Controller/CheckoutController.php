@@ -217,6 +217,36 @@ class CheckoutController extends BaseController
     }
 
     /**
+     * Decide what a failed User::save() is allowed to tell the shopper.
+     *
+     * Joomla funnels two unrelated things through User::getError(): the messages
+     * UserTable::check() raises, which name the field the shopper has to correct,
+     * and whatever the catch in User::save() picked up, which is the driver's own
+     * text. Only the first set is answerable by retyping, so only it travels back.
+     */
+    protected function shopperSafeUserError(string $error): string
+    {
+        $answerable = [
+            Text::_('JLIB_DATABASE_ERROR_PLEASE_ENTER_YOUR_NAME'),
+            Text::_('JLIB_DATABASE_ERROR_PLEASE_ENTER_A_USER_NAME'),
+            Text::sprintf('JLIB_DATABASE_ERROR_VALID_AZ09', 2),
+            Text::_('JLIB_DATABASE_ERROR_VALID_MAIL'),
+            Text::_('JLIB_DATABASE_ERROR_USERNAME_INUSE'),
+            Text::_('JLIB_DATABASE_ERROR_EMAIL_INUSE'),
+        ];
+
+        if ($error !== '' && \in_array($error, $answerable, true)) {
+            return $error;
+        }
+
+        if ($error !== '') {
+            Log::add('checkout.registerValidate user save failed: ' . $error, Log::ERROR, 'com_j2commerce');
+        }
+
+        return Text::_('COM_J2COMMERCE_CHECKOUT_REGISTER_ERROR');
+    }
+
+    /**
      * Set billing session values from address data.
      */
     protected function setBillingSession(array $data): void
@@ -491,7 +521,10 @@ class CheckoutController extends BaseController
             $user = new \Joomla\CMS\User\User();
 
             if (!$user->bind($userData)) {
-                $json['error']['warning'] = $user->getError() ?: Text::_('COM_J2COMMERCE_CHECKOUT_REGISTER_ERROR');
+                // A new user reaches none of bind()'s setError() calls — they all sit in
+                // the branch that updates an existing one — so there is nothing here to
+                // pass on. The password pair is settled above either way.
+                $json['error']['warning'] = Text::_('COM_J2COMMERCE_CHECKOUT_REGISTER_ERROR');
                 $this->jsonResponse($json);
 
                 return;
@@ -514,7 +547,7 @@ class CheckoutController extends BaseController
 
             try {
                 if (!$user->save()) {
-                    $json['error']['warning'] = $user->getError() ?: Text::_('COM_J2COMMERCE_CHECKOUT_REGISTER_ERROR');
+                    $json['error']['warning'] = $this->shopperSafeUserError((string) $user->getError());
                     $this->jsonResponse($json);
 
                     return;
@@ -581,6 +614,26 @@ class CheckoutController extends BaseController
             $session->clear('guest', 'j2commerce');
             $session->clear('payment_method', 'j2commerce');
             $session->clear('payment_methods', 'j2commerce');
+
+            if (!$newAddressId) {
+                // The billing step answers COM_J2COMMERCE_ADDRESS_SAVE_ERROR and stops, and
+                // stopping is right here too: the order reads its address from the saved row
+                // or from the guest keys cleared just above, so the country/zone/postcode
+                // copies setBillingSession() holds do not stand in for one.
+                //
+                // It cannot stop in place, though. The account exists and the shopper is
+                // logged in by this point, so the register form is no longer theirs to
+                // resubmit — it would only answer COM_J2COMMERCE_CHECKOUT_EMAIL_EXISTS, and
+                // the refreshed token below never reaches the page. Send them back into
+                // checkout as the logged-in shopper they now are, where the address step
+                // takes the address again.
+                $this->app->enqueueMessage(Text::_('COM_J2COMMERCE_ADDRESS_SAVE_ERROR'), 'warning');
+
+                $json['redirect'] = $this->getCheckoutUrl();
+                $this->jsonResponse($json);
+
+                return;
+            }
         } catch (\Throwable $e) {
             // Plugin-enforced registration rules (privacy consent, terms) are caught
             // as InvalidArgumentException above with their own translated message.
@@ -934,9 +987,14 @@ class CheckoutController extends BaseController
 
             $newAddressId = $this->saveAddress($addressData);
 
-            if ($newAddressId) {
-                $session->set('shipping_address_id', $newAddressId, 'j2commerce');
+            if (!$newAddressId) {
+                $json['error']['warning'] = Text::_('COM_J2COMMERCE_ADDRESS_SAVE_ERROR');
+                $this->jsonResponse($json);
+
+                return;
             }
+
+            $session->set('shipping_address_id', $newAddressId, 'j2commerce');
 
             $this->setShippingSession($addressData);
             $session->clear('shipping_method', 'j2commerce');
@@ -1764,9 +1822,22 @@ class CheckoutController extends BaseController
 
                 $order = $savedOrder;
             } catch (\Exception $e) {
-                // Order persistence + PrePayment plugin rendering. Gateway setup
-                // failures carry API keys and SQL in their messages.
-                Log::add('checkout.confirm saveOrder/PrePayment failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+                // Order persistence + PrePayment plugin rendering. Gateway setup failures
+                // carry API keys and SQL in their messages, and com_j2commerce.log.php
+                // outlives the request that wrote it, so the entry keeps what locates the
+                // failure — type, code, throw site, order — and not what caused it.
+                Log::add(
+                    \sprintf(
+                        'checkout.confirm saveOrder/PrePayment failed: %s (code %s) at %s:%d, order %s',
+                        $e::class,
+                        $e->getCode(),
+                        $e->getFile(),
+                        $e->getLine(),
+                        $savedOrder->order_id ?? 'none'
+                    ),
+                    Log::ERROR,
+                    'com_j2commerce'
+                );
 
                 $errors[] = Text::_('COM_J2COMMERCE_ERR_GENERIC');
             }
