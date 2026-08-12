@@ -161,6 +161,8 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             return;
         }
 
+        $this->registerLogger();
+
         // Import all j2commerce group plugins so they can subscribe to
         // system events (onContentAfterSave, onAfterPayment, etc.).
         PluginHelper::importPlugin('j2commerce');
@@ -176,6 +178,55 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             $this->runInventoryControl();
         }
 
+    }
+
+    /**
+     * Gives the com_j2commerce log category somewhere to write.
+     *
+     * Log::addLogEntry() only reaches loggers registered for the entry's category, so
+     * without one every Log::add(..., 'com_j2commerce') call is discarded silently.
+     *
+     * Global Configuration wins where it says anything: if the site logs almost
+     * everything, or names this category under Log Categories, those settings already
+     * cover us and their priorities and mode apply untouched. This only fills the gap
+     * they leave, so a default install still has something to read after a failure --
+     * logs are not retroactive, and the setting is otherwise turned on after the fact.
+     */
+    private function registerLogger(): void
+    {
+        $app = $this->getApplication();
+
+        if ($app->get('log_everything')) {
+            return;
+        }
+
+        // Same split core uses on the setting, so the two read the value identically.
+        // An empty list means core registers no custom logger at all, and the mode is moot.
+        $categories = preg_split('/[^\w.-]+/', (string) $app->get('log_categories', ''), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        if ($categories) {
+            // Category mode is core's exclude flag. In exclude mode the site is already
+            // logging every category it did not name, so either we are covered or we are
+            // the one it named -- and being named there is an instruction, not a gap.
+            if ((bool) $app->get('log_category_mode', false)) {
+                return;
+            }
+
+            if (\in_array(self::COMPONENT_NAME, $categories, true)) {
+                return;
+            }
+        }
+
+        // Same priority policy core gives its own always-on logger: errors always, the
+        // rest only under Site Debug. Some entries are written before a request has been
+        // accepted -- carts.shippingUpdate records a missing token to name the stale
+        // template override behind it -- so recording every priority by default would let
+        // a caller grow the file at will, and Joomla rotates logs only when asked to.
+        $priorities = $app->get('debug')
+            ? Log::ALL
+            : Log::ERROR | Log::CRITICAL | Log::ALERT | Log::EMERGENCY;
+
+        Log::addLogger(['text_file' => 'com_j2commerce.log.php'], $priorities, [self::COMPONENT_NAME]);
     }
 
     /**
