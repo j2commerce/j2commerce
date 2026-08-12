@@ -1421,10 +1421,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(function(data) {
                 if (data.success && data.html) {
                     var container = document.getElementById('checkout-sidecart-content');
-                    if (container) {
-                        var parsed = new DOMParser().parseFromString(data.html, 'text/html');
-                        container.replaceChildren.apply(container, Array.from(parsed.body.childNodes));
-                    }
+                    J2CommerceDom.adopt(container, data.html);
                     updateMobileTotal();
                 }
             })

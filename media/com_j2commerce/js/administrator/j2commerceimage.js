@@ -353,14 +353,32 @@
             const previewStyle = this.options.previewStyle || 'square';
             const isEditable = !this.element.hasAttribute('disabled') && !this.element.hasAttribute('readonly');
 
-            container.replaceChildren(document.createRange().createContextualFragment(this.selectedPaths.map(path => `
-                <div class="j2commerce-image-thumb ${previewStyle === 'contain' ? 'preview-contain' : ''}" data-path="${this.escapeHtml(path)}">
-                    <img src="${this.escapeHtml(this.resolveImageUrl(path))}" alt="" loading="lazy">
-                    ${isEditable ? `<button type="button" class="j2commerce-image-remove" aria-label="${this.getText('JACTION_DELETE')}">
-                        <span class="fa-solid fa-xmark" aria-hidden="true"></span>
-                    </button>` : ''}
-                </div>
-            `).join('')));
+            container.replaceChildren(...this.selectedPaths.map(path => {
+                const thumb = document.createElement('div');
+                thumb.className = 'j2commerce-image-thumb' + (previewStyle === 'contain' ? ' preview-contain' : '');
+                thumb.dataset.path = path;
+
+                const img = document.createElement('img');
+                img.src = this.resolveImageUrl(path);
+                img.alt = '';
+                img.loading = 'lazy';
+                thumb.appendChild(img);
+
+                if (isEditable) {
+                    const icon = document.createElement('span');
+                    icon.className = 'fa-solid fa-xmark';
+                    icon.setAttribute('aria-hidden', 'true');
+
+                    const remove = document.createElement('button');
+                    remove.type = 'button';
+                    remove.className = 'j2commerce-image-remove';
+                    remove.setAttribute('aria-label', this.getText('JACTION_DELETE'));
+                    remove.appendChild(icon);
+                    thumb.appendChild(remove);
+                }
+
+                return thumb;
+            }));
         }
 
         updateChooseButton() {
@@ -468,10 +486,7 @@
 
                 const folderEl = document.createElement('div');
                 folderEl.className = 'uppymedia-browser-folder';
-                folderEl.replaceChildren(document.createRange().createContextualFragment(`
-                    <span class="fa-solid fa-folder-open" aria-hidden="true"></span>
-                    <span class="uppymedia-folder-name">${this.escapeHtml(folderName)}</span>
-                `));
+                folderEl.replaceChildren(...this.folderTile(folderName));
 
                 folderEl.addEventListener('click', () => {
                     const newPath = this.currentFolder + '/' + folderName;
@@ -504,11 +519,7 @@
                     imageEl.classList.add('selected');
                 }
 
-                imageEl.replaceChildren(document.createRange().createContextualFragment(`
-                    <img src="${this.escapeHtml(file.thumb_url || file.url)}" alt="${this.escapeHtml(file.name)}" loading="lazy">
-                    <div class="uppymedia-check"></div>
-                    <div class="uppymedia-browser-name">${this.escapeHtml(file.name)}</div>
-                `));
+                imageEl.replaceChildren(...this.imageTile(file));
 
                 imageEl.addEventListener('click', () => {
                     if (!this.multiple) {
@@ -556,11 +567,7 @@
             imageEl.dataset.thumbUrl = file.thumb_url || file.url;
             imageEl.dataset.name = file.name;
 
-            imageEl.replaceChildren(document.createRange().createContextualFragment(`
-                <img src="${this.escapeHtml(file.thumb_url || file.url)}" alt="${this.escapeHtml(file.name)}" loading="lazy">
-                <div class="uppymedia-check"></div>
-                <div class="uppymedia-browser-name">${this.escapeHtml(file.name)}</div>
-            `));
+            imageEl.replaceChildren(...this.imageTile(file));
 
             this.browserSelections.add(file.path);
 
@@ -622,6 +629,34 @@
             return this.siteRoot + path.replace(/^\/+/, '');
         }
 
+        imageTile(file) {
+            const img = document.createElement('img');
+            img.src = file.thumb_url || file.url;
+            img.alt = file.name;
+            img.loading = 'lazy';
+
+            const check = document.createElement('div');
+            check.className = 'uppymedia-check';
+
+            const name = document.createElement('div');
+            name.className = 'uppymedia-browser-name';
+            name.textContent = file.name;
+
+            return [img, check, name];
+        }
+
+        folderTile(folderName) {
+            const icon = document.createElement('span');
+            icon.className = 'fa-solid fa-folder-open';
+            icon.setAttribute('aria-hidden', 'true');
+
+            const name = document.createElement('span');
+            name.className = 'uppymedia-folder-name';
+            name.textContent = folderName;
+
+            return [icon, name];
+        }
+
         gridMessage(text, className = 'text-body-secondary') {
             const message = document.createElement('div');
             message.className = `text-center ${className} p-3`;
@@ -645,13 +680,6 @@
             note.textContent = hint;
 
             return [button, note];
-        }
-
-        escapeHtml(text) {
-            return String(text || '').replace(/[&<>"']/g, c => ({
-                '&': '&amp;', '<': '&lt;', '>': '&gt;',
-                '"': '&quot;', "'": '&#039;'
-            })[c]);
         }
 
         getText(key) {

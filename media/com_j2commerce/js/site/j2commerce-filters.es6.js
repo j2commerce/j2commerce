@@ -592,6 +592,9 @@ class J2CommerceFilters {
         total = parseInt(total, 10) || 0;
         const key = total === 1 ? 'COM_J2COMMERCE_SHOWING_1_ITEM' : 'COM_J2COMMERCE_SHOWING_N_ITEMS';
         const str = Joomla.Text._(key) || `Showing <strong>${total}</strong> Items`;
+        // Deliberate parse: this language string carries its own markup (the count is bolded),
+        // and the only interpolated value is an integer from parseInt above. Rendering it as
+        // text would drop the emphasis the translation is written around.
         el.replaceChildren(document.createRange().createContextualFragment(str.replace(/%d/, total)));
     }
 
@@ -901,19 +904,19 @@ class J2CommerceFilters {
 
         document.querySelectorAll('.j2commerce-brand-checkboxes:checked').forEach(cb => {
             const label = getCheckboxLabel(cb);
-            if (label) tiles.push(this.createTileHtml('brand', cb.value, label));
+            if (label) tiles.push(this.createTile('brand', cb.value, label));
         });
 
         document.querySelectorAll('.j2commerce-vendor-checkboxes:checked').forEach(cb => {
             const label = getCheckboxLabel(cb);
-            if (label) tiles.push(this.createTileHtml('vendor', cb.value, label));
+            if (label) tiles.push(this.createTile('vendor', cb.value, label));
         });
 
         document.querySelectorAll('[class*="j2commerce-pfilter-checkboxes"]:checked').forEach(cb => {
             if (!pfilterValued(cb)) return;
 
             const label = getCheckboxLabel(cb);
-            if (label) tiles.push(this.createTileHtml('productfilter', cb.value, label));
+            if (label) tiles.push(this.createTile('productfilter', cb.value, label));
         });
 
         // Price range tile (only when customized from defaults)
@@ -930,21 +933,22 @@ class J2CommerceFilters {
             if (isCustomPrice) {
                 const minDisplay = document.getElementById('min_price_display')?.textContent?.trim() || rangeMin.value;
                 const maxDisplay = document.getElementById('max_price_display')?.textContent?.trim() || rangeMax.value;
-                tiles.push(this.createTileHtml('price', 'price', `${minDisplay} – ${maxDisplay}`));
+                tiles.push(this.createTile('price', 'price', `${minDisplay} – ${maxDisplay}`));
             }
         }
 
         // Search tile
         const searchValue = document.getElementById('j2commerce-search')?.value?.trim();
         if (searchValue) {
-            tiles.push(this.createTileHtml('search', 'search', `"${searchValue}"`));
+            tiles.push(this.createTile('search', 'search', `"${searchValue}"`));
         }
 
         // Update only the tiles content and "Clear all" visibility — wrapper stays visible
         containers.forEach(container => {
             container.replaceChildren();
             if (tiles.length > 0) {
-                container.append(document.createRange().createContextualFragment(tiles.join('')));
+                // Clone per container: appending the same node twice would move it out of the first.
+                container.append(...tiles.map(tile => tile.cloneNode(true)));
             }
         });
         clearAllButtons.forEach(btn => {
@@ -952,13 +956,28 @@ class J2CommerceFilters {
         });
     }
 
-    createTileHtml(type, id, displayLabel) {
-        const escaped = this.escapeHtml(displayLabel);
-        const dataAttrs = `data-type="${this.escapeHtml(type)}" data-id="${this.escapeHtml(String(id))}"`;
-        if (typeof UIkit !== 'undefined') {
-            return `<span class="filter-chip uk-label" ${dataAttrs}>${escaped}<button type="button" class="j2commerce-filter-chip-remove uk-close uk-margin-small-left" aria-label="Remove"></button></span>`;
+    createTile(type, id, displayLabel) {
+        const uikit = typeof UIkit !== 'undefined';
+
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = uikit
+            ? 'j2commerce-filter-chip-remove uk-close uk-margin-small-left'
+            : 'j2commerce-filter-chip-remove btn-close text-danger ms-1';
+        remove.setAttribute('aria-label', 'Remove');
+        if (!uikit) {
+            remove.style.fontSize = '.5rem';
         }
-        return `<span class="filter-chip badge bg-light text-dark border d-flex align-items-center gap-1 p-2" ${dataAttrs}>${escaped}<button type="button" class="j2commerce-filter-chip-remove btn-close text-danger ms-1" style="font-size:.5rem" aria-label="Remove"></button></span>`;
+
+        const chip = document.createElement('span');
+        chip.className = uikit
+            ? 'filter-chip uk-label'
+            : 'filter-chip badge bg-light text-dark border d-flex align-items-center gap-1 p-2';
+        chip.dataset.type = type;
+        chip.dataset.id = String(id);
+        chip.append(displayLabel, remove);
+
+        return chip;
     }
 
     bindActiveFilterTiles() {
@@ -1039,14 +1058,6 @@ class J2CommerceFilters {
             }
         }
         this.applyFilters();
-    }
-
-    // textContent → innerHTML is TEXT-node serialisation: it leaves " and ' intact, and the
-    // chip builder puts the result in quoted attributes. Escape the full ENT_QUOTES set.
-    escapeHtml(str) {
-        const escapes = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-
-        return String(str ?? '').replace(/[&<>"']/g, ch => escapes[ch]);
     }
 
     disable() {

@@ -31,6 +31,9 @@ $wa->useScript('bootstrap.collapse');
 // Load cart AJAX script using registerAndUseScript
 $wa->registerAndUseScript('com_j2commerce.cart-ajax', 'media/com_j2commerce/js/site/cart-ajax.js', [], ['defer' => true], ['core']);
 
+// Safe DOM construction helpers for this template's inline JS and the calculator sub-template.
+$wa->registerAndUseScript('com_j2commerce.dom', 'media/com_j2commerce/js/site/j2commerce-dom.js', [], ['defer' => true]);
+
 // Pass configuration to JavaScript
 $document->addScriptOptions('j2commerce.cart', [
     'csrfToken' => Session::getFormToken(),
@@ -192,7 +195,7 @@ $clearCartUrl = J2CommerceHelper::platform()->getCartUrl(['task' => 'clearCart']
             .then(function(data) {
                 if (data.success && data.html) {
                     var totals = document.querySelector('.cart-totals-block');
-                    if (totals) totals.outerHTML = data.html;
+                    if (totals) totals.replaceWith(J2CommerceDom.parse(data.html));
                 }
                 if (data.shipping_html !== undefined) {
                     var shipping = document.getElementById('j2commerce-cart-shipping-wrapper');

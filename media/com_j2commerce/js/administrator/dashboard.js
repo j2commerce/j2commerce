@@ -324,27 +324,39 @@
         return { pct: Math.abs(Math.round(pct * 10) / 10), dir };
     }
 
-    function changeHtml(change) {
-        if (change.dir === 'flat') return '<span class="text-body-secondary">\u2014</span>';
-        const icon = change.dir === 'up' ? 'fa-arrow-up' : 'fa-arrow-down';
-        return '<span><span class="fa-solid ' + icon + '" aria-hidden="true"></span> ' + change.pct + '%</span>';
+    function changeNode(change) {
+        const wrapper = document.createElement('span');
+
+        if (change.dir === 'flat') {
+            wrapper.className = 'text-body-secondary';
+            wrapper.textContent = '\u2014';
+
+            return wrapper;
+        }
+
+        const icon = document.createElement('span');
+        icon.className = 'fa-solid ' + (change.dir === 'up' ? 'fa-arrow-up' : 'fa-arrow-down');
+        icon.setAttribute('aria-hidden', 'true');
+        wrapper.append(icon, ' ' + change.pct + '%');
+
+        return wrapper;
     }
 
     function updateKPIs(data) {
         const prev = data.previousPeriod || {};
 
         const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-        const setHtml = (id, html) => { const el = document.getElementById(id); if (el) el.replaceChildren(document.createRange().createContextualFragment(html)); };
+        const setChange = (id, change) => { const el = document.getElementById(id); if (el) el.replaceChildren(changeNode(change)); };
 
         setEl('kpi-revenue', data.formattedRevenue || formatCurrency(data.totalRevenue));
         setEl('kpi-orders', String(parseInt(data.orderCount || 0, 10)));
         setEl('kpi-conversion', parseFloat(data.conversionRate || 0).toFixed(1) + '%');
         setEl('kpi-sessions', String(parseInt(data.totalSessions || 0, 10)));
 
-        setHtml('kpi-revenue-change', changeHtml(calcChange(data.totalRevenue, prev.totalRevenue)));
-        setHtml('kpi-orders-change', changeHtml(calcChange(data.orderCount, prev.orderCount)));
-        setHtml('kpi-conversion-change', changeHtml(calcChange(data.conversionRate, prev.conversionRate)));
-        setHtml('kpi-sessions-change', changeHtml(calcChange(data.totalSessions, prev.totalSessions)));
+        setChange('kpi-revenue-change', calcChange(data.totalRevenue, prev.totalRevenue));
+        setChange('kpi-orders-change', calcChange(data.orderCount, prev.orderCount));
+        setChange('kpi-conversion-change', calcChange(data.conversionRate, prev.conversionRate));
+        setChange('kpi-sessions-change', calcChange(data.totalSessions, prev.totalSessions));
 
         updateDateRangeLabel();
     }
@@ -357,9 +369,14 @@
         if (!from || !to) return;
         const days = Math.round((new Date(to) - new Date(from)) / 86400000) + 1;
         const unit = Joomla.Text._(days === 1 ? 'COM_J2COMMERCE_DASHBOARD_DAY' : 'COM_J2COMMERCE_DASHBOARD_DAYS');
-        el.replaceChildren(document.createRange().createContextualFragment(Joomla.Text._('COM_J2COMMERCE_DASHBOARD_DATA_BASED_ON')
-            .replace(/%1\$s|%s/, days)
-            .replace(/%2\$s|%s/, unit)));
+        // Deliberate parse: this language string carries its own markup (the period is bolded),
+        // and both interpolated values are locally derived - an integer and another language
+        // string. Rendering it as text would print the tags.
+        el.replaceChildren(document.createRange().createContextualFragment(
+            Joomla.Text._('COM_J2COMMERCE_DASHBOARD_DATA_BASED_ON')
+                .replace(/%1\$s|%s/, days)
+                .replace(/%2\$s|%s/, unit)
+        ));
     }
 
     // ─── AJAX Refresh (date-filtered only) ───

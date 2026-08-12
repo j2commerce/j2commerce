@@ -428,12 +428,25 @@ class SetupGuide {
             if (!json.success) throw new Error(json.message || 'Clear failed');
 
             const container = btn.closest('[data-setup-param-form]');
-            const placeholder = this.escHtml(Joomla.Text._('COM_J2COMMERCE_SETUP_GUIDE_CHECK_DOWNLOAD_ID_PLACEHOLDER'));
-            const saveLabel   = this.escHtml(Joomla.Text._('COM_J2COMMERCE_SETUP_GUIDE_CHECK_DOWNLOAD_ID_SAVE'));
-            container.replaceChildren(document.createRange().createContextualFragment(`<div class="input-group mb-3">
-    <input type="text" class="form-control" name="param_value" placeholder="${placeholder}" />
-    <button type="button" class="btn btn-primary" data-setup-save-param data-param-name="${this.escHtml(paramName)}">${saveLabel}</button>
-</div>`));
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'form-control';
+            input.name = 'param_value';
+            input.placeholder = Joomla.Text._('COM_J2COMMERCE_SETUP_GUIDE_CHECK_DOWNLOAD_ID_PLACEHOLDER');
+
+            const save = document.createElement('button');
+            save.type = 'button';
+            save.className = 'btn btn-primary';
+            save.dataset.setupSaveParam = '';
+            save.dataset.paramName = paramName;
+            save.textContent = Joomla.Text._('COM_J2COMMERCE_SETUP_GUIDE_CHECK_DOWNLOAD_ID_SAVE');
+
+            const group = document.createElement('div');
+            group.className = 'input-group mb-3';
+            group.append(input, save);
+
+            container.replaceChildren(group);
 
             this.loadStatus();
         } catch (err) {
@@ -489,83 +502,147 @@ class SetupGuide {
         this.progressFill.className = 'setup-progress-fill rounded-0';
 
         if (progress.passed === progress.total) {
-            this.groupsList.replaceChildren(document.createRange().createContextualFragment(`
-                <div class="setup-all-complete text-center py-5 px-3">
-                    <div class="setup-all-complete-icon mx-auto mb-3">
-                        <span class="fa-solid fa-check" aria-hidden="true"></span>
-                    </div>
-                    <h5>${Joomla.Text._('COM_J2COMMERCE_SETUP_GUIDE_ALL_COMPLETE')}</h5>
-                    <p class="text-body-secondary">${Joomla.Text._('COM_J2COMMERCE_SETUP_GUIDE_ALL_COMPLETE_DESC')}</p>
-                </div>`));
+            const tick = document.createElement('span');
+            tick.className = 'fa-solid fa-check';
+            tick.setAttribute('aria-hidden', 'true');
+
+            const tickWrap = document.createElement('div');
+            tickWrap.className = 'setup-all-complete-icon mx-auto mb-3';
+            tickWrap.appendChild(tick);
+
+            const heading = document.createElement('h5');
+            heading.textContent = Joomla.Text._('COM_J2COMMERCE_SETUP_GUIDE_ALL_COMPLETE');
+
+            const description = document.createElement('p');
+            description.className = 'text-body-secondary';
+            description.textContent = Joomla.Text._('COM_J2COMMERCE_SETUP_GUIDE_ALL_COMPLETE_DESC');
+
+            const complete = document.createElement('div');
+            complete.className = 'setup-all-complete text-center py-5 px-3';
+            complete.append(tickWrap, heading, description);
+
+            this.groupsList.replaceChildren(complete);
             this.groupsList.classList.remove('d-none');
         }
     }
 
     renderGroups(groups) {
-        let html = '';
+        this.groupsList.replaceChildren(...groups.map(group => this.groupNode(group)));
+    }
 
-        for (const group of groups) {
-            const allPassed = group.passed === group.total;
-            const collapsed = allPassed ? ' is-collapsed' : '';
-            const hidden = allPassed ? ' d-none' : '';
-            const checksId = `setup-group-checks-${this.escHtml(group.id)}`;
+    groupNode(group) {
+        const allPassed = group.passed === group.total;
+        const checksId  = `setup-group-checks-${group.id}`;
 
-            html += `<div class="setup-group" data-group="${group.id}">`;
-            html += `<div class="setup-group-header${collapsed}" role="button" tabindex="0" aria-controls="${checksId}" aria-expanded="${allPassed ? 'false' : 'true'}">
-                <span class="setup-group-chevron icon-chevron-down" aria-hidden="true"></span>
-                <span class="setup-group-label flex-grow-1">${this.escHtml(group.label)}</span>
-                <span class="badge ${allPassed ? 'bg-success' : 'bg-warning'}">${group.passed}/${group.total}</span>
-            </div>`;
-            html += `<div id="${checksId}" class="setup-group-checks${hidden}">`;
+        const chevron = document.createElement('span');
+        chevron.className = 'setup-group-chevron icon-chevron-down';
+        chevron.setAttribute('aria-hidden', 'true');
 
-            for (const check of group.checks) {
-                const statusClass = check.dismissed ? 'dismissed' : check.status;
+        const label = document.createElement('span');
+        label.className = 'setup-group-label flex-grow-1';
+        label.textContent = group.label;
 
-                const iconMap = {
-                    pass: 'fa-regular fa-circle-check text-success',
-                    fail: 'fa-regular fa-circle-xmark text-danger',
-                    warning: 'fa-regular fa-circle text-warning',
-                    dismissed: 'fa-regular fa-circle-minus text-body-secondary',
-                };
-                const iconClass = iconMap[statusClass] || iconMap.fail;
+        const badge = document.createElement('span');
+        badge.className = `badge ${allPassed ? 'bg-success' : 'bg-warning'}`;
+        badge.textContent = `${group.passed}/${group.total}`;
 
-                html += `<div class="setup-check-item" data-setup-check="${this.escHtml(check.id)}" role="button" tabindex="0" aria-label="${this.escHtml(check.label)}">
-                    <span class="${iconClass} setup-check-icon" aria-hidden="true"></span>
-                    <span class="setup-check-label flex-grow-1">${this.escHtml(check.label)}</span>`;
+        const header = document.createElement('div');
+        header.className = 'setup-group-header' + (allPassed ? ' is-collapsed' : '');
+        header.setAttribute('role', 'button');
+        header.tabIndex = 0;
+        header.setAttribute('aria-controls', checksId);
+        header.setAttribute('aria-expanded', allPassed ? 'false' : 'true');
+        header.append(chevron, label, badge);
 
-                if (check.actions.length > 0 && check.status !== 'pass' && !check.dismissed) {
-                    const act = check.actions[0];
-                    const actLabel = Joomla.Text._(act.label) || act.label;
-                    html += `<button type="button" class="btn btn-sm btn-primary setup-action-btn"
-                        data-setup-action="${this.escHtml(check.id)}"
-                        data-action="${this.escHtml(act.action)}"
-                        data-params='${JSON.stringify(act.params || {})}'
-                        data-label="${this.escHtml(actLabel)}">
-                        ${this.escHtml(actLabel)}</button>`;
-                }
+        const checks = document.createElement('div');
+        checks.id = checksId;
+        checks.className = 'setup-group-checks' + (allPassed ? ' d-none' : '');
+        checks.append(...group.checks.map(check => this.checkNode(check)));
 
-                if (check.dismissible && check.status !== 'pass' && !check.dismissed) {
-                    html += `<button type="button" class="btn btn-sm btn-link text-danger setup-dismiss-btn"
-                        data-setup-dismiss="${this.escHtml(check.id)}"
-                        aria-label="${this.escHtml(Joomla.Text._('COM_J2COMMERCE_SETUP_GUIDE_DISMISS'))}"
-                        title="${Joomla.Text._('COM_J2COMMERCE_SETUP_GUIDE_DISMISS')}">
-                        <span class="icon-times" aria-hidden="true"></span></button>`;
-                }
+        const wrapper = document.createElement('div');
+        wrapper.className = 'setup-group';
+        wrapper.dataset.group = group.id;
+        wrapper.append(header, checks);
 
-                if (check.guidedTourUid) {
-                    html += `<button type="button" class="btn btn-sm btn-outline-info button-start-guidedtour ms-1"
-                        aria-label="${this.escHtml(Joomla.Text._('COM_J2COMMERCE_SETUP_GUIDE_START_GUIDED_TOUR'))}"
-                        data-gt-uid="${this.escHtml(check.guidedTourUid)}">
-                        <span class="icon-map-signs" aria-hidden="true"></span></button>`;
-                }
+        return wrapper;
+    }
 
-                html += `</div>`;
-            }
+    checkNode(check) {
+        const iconMap = {
+            pass: 'fa-regular fa-circle-check text-success',
+            fail: 'fa-regular fa-circle-xmark text-danger',
+            warning: 'fa-regular fa-circle text-warning',
+            dismissed: 'fa-regular fa-circle-minus text-body-secondary',
+        };
+        const statusClass = check.dismissed ? 'dismissed' : check.status;
 
-            html += `</div></div>`;
+        const icon = document.createElement('span');
+        icon.className = `${iconMap[statusClass] || iconMap.fail} setup-check-icon`;
+        icon.setAttribute('aria-hidden', 'true');
+
+        const label = document.createElement('span');
+        label.className = 'setup-check-label flex-grow-1';
+        label.textContent = check.label;
+
+        const item = document.createElement('div');
+        item.className = 'setup-check-item';
+        item.dataset.setupCheck = check.id;
+        item.setAttribute('role', 'button');
+        item.tabIndex = 0;
+        item.setAttribute('aria-label', check.label);
+        item.append(icon, label);
+
+        const outstanding = check.status !== 'pass' && !check.dismissed;
+
+        if (check.actions.length > 0 && outstanding) {
+            const act      = check.actions[0];
+            const actLabel = Joomla.Text._(act.label) || act.label;
+
+            const action = document.createElement('button');
+            action.type = 'button';
+            action.className = 'btn btn-sm btn-primary setup-action-btn';
+            action.dataset.setupAction = check.id;
+            action.dataset.action = act.action;
+            action.dataset.params = JSON.stringify(act.params || {});
+            action.dataset.label = actLabel;
+            action.textContent = actLabel;
+            item.appendChild(action);
         }
 
-        this.groupsList.replaceChildren(document.createRange().createContextualFragment(html));
+        if (check.dismissible && outstanding) {
+            const dismissLabel = Joomla.Text._('COM_J2COMMERCE_SETUP_GUIDE_DISMISS');
+
+            const dismiss = this.iconButton('btn btn-sm btn-link text-danger setup-dismiss-btn', 'icon-times', dismissLabel);
+            dismiss.dataset.setupDismiss = check.id;
+            dismiss.title = dismissLabel;
+            item.appendChild(dismiss);
+        }
+
+        if (check.guidedTourUid) {
+            const tour = this.iconButton(
+                'btn btn-sm btn-outline-info button-start-guidedtour ms-1',
+                'icon-map-signs',
+                Joomla.Text._('COM_J2COMMERCE_SETUP_GUIDE_START_GUIDED_TOUR')
+            );
+            tour.dataset.gtUid = check.guidedTourUid;
+            item.appendChild(tour);
+        }
+
+        return item;
+    }
+
+    iconButton(className, iconClass, ariaLabel) {
+        const icon = document.createElement('span');
+        icon.className = iconClass;
+        icon.setAttribute('aria-hidden', 'true');
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = className;
+        button.setAttribute('aria-label', ariaLabel);
+        button.appendChild(icon);
+
+        return button;
     }
 
     showDetail() {
@@ -668,11 +745,5 @@ class SetupGuide {
         spinner.appendChild(label);
 
         return spinner;
-    }
-
-    escHtml(str) {
-        const div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
     }
 }

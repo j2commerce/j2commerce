@@ -36,12 +36,20 @@
     }
 
     function showLoading() {
-        modalBody.replaceChildren(document.createRange().createContextualFragment(
-            '<div class="text-center py-5">' +
-            '<span class="spinner-border" role="status" aria-hidden="true"></span>' +
-            '<p class="mt-2 mb-0">' + (opts.strings && opts.strings.loading ? opts.strings.loading : 'Loading...') + '</p>' +
-            '</div>'
-        ));
+        var spinner = document.createElement('span');
+        spinner.className = 'spinner-border';
+        spinner.setAttribute('role', 'status');
+        spinner.setAttribute('aria-hidden', 'true');
+
+        var label = document.createElement('p');
+        label.className = 'mt-2 mb-0';
+        label.textContent = (opts.strings && opts.strings.loading) || 'Loading...';
+
+        var loading = document.createElement('div');
+        loading.className = 'text-center py-5';
+        loading.append(spinner, label);
+
+        modalBody.replaceChildren(loading);
     }
 
     function showError(message) {
@@ -168,24 +176,10 @@
 
         var regionLine = '';
         if (address.zone_name) {
-            regionLine += escapeHtml(address.zone_name) + ', ';
+            regionLine += address.zone_name + ', ';
         }
         if (address.country_name) {
-            regionLine += escapeHtml(address.country_name);
-        }
-
-        var phoneHtml = '';
-        if (address.phone_1) {
-            phoneHtml =
-                '<br><span class="icon-phone" aria-hidden="true"></span> ' +
-                '<a href="tel:' + escapeHtml(address.phone_1) + '">' + escapeHtml(address.phone_1) + '</a>';
-        }
-
-        var emailHtml = '';
-        if (address.email) {
-            emailHtml =
-                '<br><span class="icon-envelope" aria-hidden="true"></span> ' +
-                '<a href="mailto:' + escapeHtml(address.email) + '">' + escapeHtml(address.email) + '</a>';
+            regionLine += address.country_name;
         }
 
         var typeLabel    = (opts.strings && opts.strings.typeLabel) || 'Address Type';
@@ -193,51 +187,94 @@
         var editLabel    = ((opts.strings && opts.strings.editAria)    || 'Edit address for {name}').replace('{name}', displayName);
         var deleteLabel  = ((opts.strings && opts.strings.deleteAria)  || 'Delete address for {name}').replace('{name}', displayName);
 
-        wrapper.replaceChildren(document.createRange().createContextualFragment(
-            '<article class="card h-100 rounded-1 shadow-sm border" aria-labelledby="' + headingId + '">' +
-                '<header class="card-header d-flex justify-content-between align-items-center">' +
-                    '<span class="badge text-bg-info text-uppercase">' +
-                        '<span class="visually-hidden">' + escapeHtml(typeLabel) + ': </span>' +
-                        escapeHtml(type) +
-                    '</span>' +
-                    '<div class="btn-group btn-group-sm" role="group" aria-label="' + escapeHtml(actionsLabel) + '">' +
-                        '<button type="button" class="btn btn-outline-secondary j2commerce-address-edit" data-address-id="' + cardId + '" aria-label="' + escapeHtml(editLabel) + '">' +
-                            '<span class="icon-edit" aria-hidden="true"></span>' +
-                        '</button>' +
-                        '<button type="button" class="btn btn-outline-danger j2commerce-address-delete" data-address-id="' + cardId + '" aria-label="' + escapeHtml(deleteLabel) + '">' +
-                            '<span class="icon-trash" aria-hidden="true"></span>' +
-                        '</button>' +
-                    '</div>' +
-                '</header>' +
-                '<div class="card-body">' +
-                    '<h3 class="card-title h6 mb-2" id="' + headingId + '">' + escapeHtml(displayName) + '</h3>' +
-                    '<address class="mb-0">' +
-                        (address.company ? escapeHtml(address.company) + '<br>' : '') +
-                        escapeHtml(address.address_1 || '') + '<br>' +
-                        (address.address_2 ? escapeHtml(address.address_2) + '<br>' : '') +
-                        escapeHtml(cityLine) + '<br>' +
-                        regionLine +
-                        phoneHtml +
-                        emailHtml +
-                    '</address>' +
-                '</div>' +
-            '</article>'
-        ));
+        var typeSr = document.createElement('span');
+        typeSr.className = 'visually-hidden';
+        typeSr.textContent = typeLabel + ': ';
+
+        var badge = document.createElement('span');
+        badge.className = 'badge text-bg-info text-uppercase';
+        badge.append(typeSr, type);
+
+        var actions = document.createElement('div');
+        actions.className = 'btn-group btn-group-sm';
+        actions.setAttribute('role', 'group');
+        actions.setAttribute('aria-label', actionsLabel);
+        actions.append(
+            addressActionButton('btn btn-outline-secondary j2commerce-address-edit', 'icon-edit', editLabel, cardId),
+            addressActionButton('btn btn-outline-danger j2commerce-address-delete', 'icon-trash', deleteLabel, cardId)
+        );
+
+        var header = document.createElement('header');
+        header.className = 'card-header d-flex justify-content-between align-items-center';
+        header.append(badge, actions);
+
+        var heading = document.createElement('h3');
+        heading.className = 'card-title h6 mb-2';
+        heading.id = headingId;
+        heading.textContent = displayName;
+
+        var lines = document.createElement('address');
+        lines.className = 'mb-0';
+
+        if (address.company) {
+            lines.append(address.company, document.createElement('br'));
+        }
+        lines.append(address.address_1 || '', document.createElement('br'));
+        if (address.address_2) {
+            lines.append(address.address_2, document.createElement('br'));
+        }
+        lines.append(cityLine, document.createElement('br'), regionLine);
+
+        if (address.phone_1) {
+            lines.append(document.createElement('br'), contactLink('icon-phone', 'tel:', address.phone_1));
+        }
+        if (address.email) {
+            lines.append(document.createElement('br'), contactLink('icon-envelope', 'mailto:', address.email));
+        }
+
+        var cardBody = document.createElement('div');
+        cardBody.className = 'card-body';
+        cardBody.append(heading, lines);
+
+        var card = document.createElement('article');
+        card.className = 'card h-100 rounded-1 shadow-sm border';
+        card.setAttribute('aria-labelledby', headingId);
+        card.append(header, cardBody);
+
+        wrapper.replaceChildren(card);
 
         return wrapper;
     }
 
-    function escapeHtml(str) {
-        if (str === null || str === undefined) {
-            return '';
-        }
+    function addressActionButton(className, iconClass, ariaLabel, addressId) {
+        var icon = document.createElement('span');
+        icon.className = iconClass;
+        icon.setAttribute('aria-hidden', 'true');
 
-        return String(str)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
+        var button = document.createElement('button');
+        button.type = 'button';
+        button.className = className;
+        button.dataset.addressId = addressId;
+        button.setAttribute('aria-label', ariaLabel);
+        button.appendChild(icon);
+
+        return button;
+    }
+
+    // Returns the icon and the link as a fragment so both land inside <address> in one append.
+    function contactLink(iconClass, scheme, value) {
+        var icon = document.createElement('span');
+        icon.className = iconClass;
+        icon.setAttribute('aria-hidden', 'true');
+
+        var link = document.createElement('a');
+        link.href = scheme + value;
+        link.textContent = value;
+
+        var fragment = document.createDocumentFragment();
+        fragment.append(icon, ' ', link);
+
+        return fragment;
     }
 
     // --- Event delegation ---

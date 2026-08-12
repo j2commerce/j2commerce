@@ -301,7 +301,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Find and replace the totals container
                 const totalsContainer = document.querySelector('.cart-totals-block');
                 if (totalsContainer) {
-                    totalsContainer.outerHTML = data.html;
+                    totalsContainer.replaceWith(J2CommerceDom.parse(data.html));
                 }
 
                 // Also replace shipping methods section if returned

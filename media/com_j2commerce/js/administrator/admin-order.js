@@ -314,7 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const histResult = await postAjax('ajaxGetHistory', { page: 1 });
         if (!histResult.success) return;
 
-        itemsEl.replaceChildren(document.createRange().createContextualFragment(renderHistoryItems(histResult.items)));
+        itemsEl.replaceChildren(...renderHistoryRows(histResult.items));
         historyContainer.dataset.currentPage = '1';
         historyContainer.dataset.totalPages = histResult.totalPages;
 
@@ -353,7 +353,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const result = await postAjax('ajaxGetHistory', { page: targetPage });
 
                     if (result.success) {
-                        itemsEl.replaceChildren(document.createRange().createContextualFragment(renderHistoryItems(result.items)));
+                        itemsEl.replaceChildren(...renderHistoryRows(result.items));
                         historyContainer.dataset.currentPage = targetPage;
                         historyContainer.dataset.totalPages = result.totalPages;
                         updatePagination(historyNav, targetPage, result.totalPages);
@@ -371,15 +371,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // === Shared history rendering functions (used by pagination and admin note) ===
-    function escHtml(str) {
-        const div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
+    function el(tag, className, ...children) {
+        const node = document.createElement(tag);
+        if (className) node.className = className;
+        if (children.length) node.append(...children);
+
+        return node;
     }
 
-    function renderHistoryItems(items) {
-        return items.map((item, idx) => {
-            const color = escHtml(item.color);
+    function renderHistoryRows(items) {
+        return items.map(item => {
+            const color = item.color;
             const col1 = item.isFirst ? '' : ' border-end';
             const col2 = item.isLast ? '' : ' border-end';
 
@@ -402,53 +404,50 @@ document.addEventListener('DOMContentLoaded', () => {
                 icon = item.pluginIcon;
             }
 
-            const statusHtml = item.order_state_id
-                ? `<h4 class="card-title small mb-1"><span class="badge rounded-2 px-2 text-bg-${color}">${escHtml(item.orderstatus_name)}</span></h4>`
-                : '';
+            const meta = el(
+                'div',
+                'float-end text-end text-body-secondary small fw-bold',
+                el('div', '', item.date),
+                el('div', 'fw-normal', item.time)
+            );
 
-            const noteLabelHtml = item.isAdminNote
-                ? `<strong>${escHtml(Joomla.Text._('COM_J2COMMERCE_ORDER_NOTE'))}</strong>`
-                : '';
+            if (item.isAdminNote && item.createdBy === currentUserId) {
+                const deleteLabel = Joomla.Text._('JACTION_DELETE');
 
-            const commentHtml = item.comment
-                ? `<p class="card-text text-body-secondary small mb-0">${escHtml(item.comment)}</p>`
-                : '';
+                const trash = el('span', 'icon-trash small');
+                trash.setAttribute('aria-hidden', 'true');
 
-            const deleteBtn = (item.isAdminNote && item.createdBy === currentUserId)
-                ? `<button type="button" class="btn btn-sm btn-link text-danger p-0 mt-0 j2c-delete-note" data-history-id="${item.id}" title="${escHtml(Joomla.Text._('JACTION_DELETE'))}">
-                            <span class="icon-trash small" aria-hidden="true"></span>
-                            <span class="visually-hidden">${escHtml(Joomla.Text._('JACTION_DELETE'))}</span>
-                        </button>`
-                : '';
+                const remove = el('button', 'btn btn-sm btn-link text-danger p-0 mt-0 j2c-delete-note', trash, el('span', 'visually-hidden', deleteLabel));
+                remove.type = 'button';
+                remove.dataset.historyId = item.id;
+                remove.title = deleteLabel;
+                meta.appendChild(remove);
+            }
 
-            return `<div class="row j2c-history-row">
-                <div class="col-auto text-center flex-column d-none d-lg-flex">
-                    <div class="row h-50 mb-n1">
-                        <div class="col${col1}"></div>
-                        <div class="col"></div>
-                    </div>
-                    <h5 class="m-2"><span class="${escHtml(icon)}"></span></h5>
-                    <div class="row h-50">
-                        <div class="col${col2}"></div>
-                        <div class="col"></div>
-                    </div>
-                </div>
-                <div class="col px-2 py-3">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="float-end text-end text-body-secondary small fw-bold">
-                                <div>${escHtml(item.date)}</div>
-                                <div class="fw-normal">${escHtml(item.time)}</div>
-                                ${deleteBtn}
-                            </div>
-                            ${statusHtml}
-                            ${noteLabelHtml}
-                            ${commentHtml}
-                        </div>
-                    </div>
-                </div>
-            </div>`;
-        }).join('');
+            const body = el('div', 'card-body', meta);
+
+            if (item.order_state_id) {
+                body.appendChild(el('h4', 'card-title small mb-1', el('span', `badge rounded-2 px-2 text-bg-${color}`, item.orderstatus_name)));
+            }
+
+            if (item.isAdminNote) {
+                body.appendChild(el('strong', '', Joomla.Text._('COM_J2COMMERCE_ORDER_NOTE')));
+            }
+
+            if (item.comment) {
+                body.appendChild(el('p', 'card-text text-body-secondary small mb-0', item.comment));
+            }
+
+            const marker = el(
+                'div',
+                'col-auto text-center flex-column d-none d-lg-flex',
+                el('div', 'row h-50 mb-n1', el('div', `col${col1}`), el('div', 'col')),
+                el('h5', 'm-2', el('span', icon)),
+                el('div', 'row h-50', el('div', `col${col2}`), el('div', 'col'))
+            );
+
+            return el('div', 'row j2c-history-row', marker, el('div', 'col px-2 py-3', el('div', 'card', body)));
+        });
     }
 
     function updatePagination(nav, currentPage, totalPages) {

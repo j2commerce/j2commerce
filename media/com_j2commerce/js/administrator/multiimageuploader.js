@@ -503,13 +503,7 @@
 
                 const folderEl = document.createElement('div');
                 folderEl.className = 'uppymedia-browser-folder';
-                folderEl.replaceChildren(document.createRange().createContextualFragment(`
-                    <button type="button" class="uppymedia-folder-delete" title="${this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_DELETE_FOLDER')}">
-                        <span class="fa-solid fa-trash-can" aria-hidden="true"></span>
-                    </button>
-                    <span class="fa-solid fa-folder-open" aria-hidden="true"></span>
-                    <span class="uppymedia-folder-name">${this.escapeHtml(folderName)}</span>
-                `));
+                folderEl.replaceChildren(...this.folderTile(folderName));
 
                 // Click folder to navigate into it (but not if clicking delete)
                 folderEl.addEventListener('click', (e) => {
@@ -583,19 +577,7 @@
                 imageEl.classList.add('selected');
             }
 
-            const isImage = this.isImageFile(file.name);
-            const mediaHtml = isImage
-                ? `<img src="${this.escapeHtml(file.thumb_url || file.url)}" alt="${this.escapeHtml(file.name)}" loading="lazy">`
-                : `<div class="uppymedia-file-icon"><span class="fa-solid ${this.getFileIcon(file.name)}" aria-hidden="true"></span></div>`;
-
-            imageEl.replaceChildren(document.createRange().createContextualFragment(`
-                ${mediaHtml}
-                <div class="uppymedia-check"></div>
-                <button type="button" class="uppymedia-browser-delete" title="${this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_DELETE_FROM_SERVER')}">
-                    <span class="fa-solid fa-trash-can" aria-hidden="true"></span>
-                </button>
-                <div class="uppymedia-browser-name">${this.escapeHtml(file.name)}</div>
-            `));
+            imageEl.replaceChildren(...this.fileTile(file));
 
             // Click image area to toggle selection (but not if clicking delete btn)
             imageEl.addEventListener('click', (e) => {
@@ -1242,6 +1224,69 @@
                 js: 'fa-file-code', css: 'fa-file-code', html: 'fa-file-code', php: 'fa-file-code', json: 'fa-file-code',
             };
             return iconMap[ext] || 'fa-file';
+        }
+
+        deleteButton(className, title) {
+            const icon = document.createElement('span');
+            icon.className = 'fa-solid fa-trash-can';
+            icon.setAttribute('aria-hidden', 'true');
+
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = className;
+            button.title = title;
+            button.appendChild(icon);
+
+            return button;
+        }
+
+        folderTile(folderName) {
+            const icon = document.createElement('span');
+            icon.className = 'fa-solid fa-folder-open';
+            icon.setAttribute('aria-hidden', 'true');
+
+            const name = document.createElement('span');
+            name.className = 'uppymedia-folder-name';
+            name.textContent = folderName;
+
+            return [
+                this.deleteButton('uppymedia-folder-delete', this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_DELETE_FOLDER')),
+                icon,
+                name,
+            ];
+        }
+
+        fileTile(file) {
+            let media;
+
+            if (this.isImageFile(file.name)) {
+                media = document.createElement('img');
+                media.src = file.thumb_url || file.url;
+                media.alt = file.name;
+                media.loading = 'lazy';
+            } else {
+                const icon = document.createElement('span');
+                icon.className = 'fa-solid ' + this.getFileIcon(file.name);
+                icon.setAttribute('aria-hidden', 'true');
+
+                media = document.createElement('div');
+                media.className = 'uppymedia-file-icon';
+                media.appendChild(icon);
+            }
+
+            const check = document.createElement('div');
+            check.className = 'uppymedia-check';
+
+            const name = document.createElement('div');
+            name.className = 'uppymedia-browser-name';
+            name.textContent = file.name;
+
+            return [
+                media,
+                check,
+                this.deleteButton('uppymedia-browser-delete', this.getText('COM_J2COMMERCE_MULTIIMAGEUPLOADER_DELETE_FROM_SERVER')),
+                name,
+            ];
         }
 
         gridMessage(text, className = 'text-body-secondary') {
