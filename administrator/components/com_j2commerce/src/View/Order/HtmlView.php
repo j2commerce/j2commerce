@@ -137,10 +137,17 @@ class HtmlView extends BaseHtmlView
         if ($layout === 'edit') {
             $this->setLayout('edit');
             $wa->registerAndUseScript(
+                'com_j2commerce.dom',
+                'media/com_j2commerce/js/site/j2commerce-dom.js',
+                [],
+                ['defer' => true]
+            );
+            $wa->registerAndUseScript(
                 'com_j2commerce.admin-order-edit',
                 'media/com_j2commerce/js/administrator/admin-order-edit.js',
                 [],
-                ['defer' => true]
+                ['defer' => true],
+                ['com_j2commerce.dom']
             );
             $wa->registerAndUseStyle(
                 'com_j2commerce.order-wizard',

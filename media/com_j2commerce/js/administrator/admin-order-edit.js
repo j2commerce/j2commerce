@@ -1146,7 +1146,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } }
                 );
                 if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-                addrBody.replaceChildren(document.createRange().createContextualFragment(await resp.text()));
+                J2CommerceDom.adopt(addrBody, await resp.text());
                 bindAddrZones();
             } catch (err) {
                 getAddrModal()?.hide();

@@ -95,7 +95,7 @@
                 return resp.text();
             })
             .then(function (html) {
-                modalBody.replaceChildren(document.createRange().createContextualFragment(html));
+                J2CommerceDom.adopt(modalBody, html);
                 bindCountryZoneSync();
             })
             .catch(function (err) {

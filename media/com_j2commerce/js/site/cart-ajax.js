@@ -16,12 +16,6 @@
  */
 (function() {
 
-    // Parse server-rendered HTML into an inert fragment (no innerHTML sink, no script
-    // execution) so adopted nodes never re-run injected <script> tags.
-    function parseFragment(html) {
-        return document.createRange().createContextualFragment(html || '');
-    }
-
     /**
      * Initialize cart AJAX functionality
      */
@@ -66,14 +60,14 @@
                     // Find and replace the totals container
                     const totalsContainer = document.querySelector('.cart-totals-block');
                     if (totalsContainer) {
-                        totalsContainer.replaceWith(parseFragment(data.html));
+                        totalsContainer.replaceWith(J2CommerceDom.parse(data.html));
                     }
 
                     // Also update shipping methods display
                     if (data.shipping_html !== undefined) {
                         const shippingWrapper = document.getElementById('j2commerce-cart-shipping-wrapper');
                         if (shippingWrapper) {
-                            shippingWrapper.replaceChildren(parseFragment(data.shipping_html));
+                            shippingWrapper.replaceChildren(J2CommerceDom.parse(data.shipping_html));
                         }
                     }
                 }

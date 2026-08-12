@@ -26,9 +26,10 @@ use Joomla\Registry\Registry;
 $app = Factory::getApplication();
 $wa = $app->getDocument()->getWebAssetManager();
 $wa->registerAndUseStyle('com_j2commerce.site,css', 'media/com_j2commerce/css/site/j2commerce.css');
-$wa->registerAndUseScript('com_j2commerce.site', 'media/com_j2commerce/js/site/j2commerce.js', [], ['defer' => true], []);
+$wa->registerAndUseScript('com_j2commerce.dom', 'media/com_j2commerce/js/site/j2commerce-dom.js', [], ['defer' => true]);
+$wa->registerAndUseScript('com_j2commerce.site', 'media/com_j2commerce/js/site/j2commerce.js', [], ['defer' => true], ['com_j2commerce.dom']);
 $wa->registerAndUseScript('com_j2commerce.a11y', 'media/com_j2commerce/js/site/j2commerce-a11y.js', [], ['defer' => true]);
-$wa->registerAndUseScript('com_j2commerce.filters', 'media/com_j2commerce/js/site/j2commerce-filters.es6.js', [], ['defer' => true], []);
+$wa->registerAndUseScript('com_j2commerce.filters', 'media/com_j2commerce/js/site/j2commerce-filters.es6.js', [], ['defer' => true], ['com_j2commerce.dom']);
 
 $itemId = isset($this->active_menu->id) ? (int) $this->active_menu->id : 0;
 $activeLink = Route::_(RouteHelper::getProductsRoute(!empty($this->filter_catid) ? (int) $this->filter_catid : null));

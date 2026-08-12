@@ -46,10 +46,17 @@ class Dispatcher extends AbstractModuleDispatcher
         // without it, add-to-cart forms fall back to server-side redirect and mini-cart only refreshes on reload.
         $app->getDocument()->getWebAssetManager()
             ->registerAndUseScript(
+                'com_j2commerce.dom',
+                'media/com_j2commerce/js/site/j2commerce-dom.js',
+                [],
+                ['defer' => true]
+            )
+            ->registerAndUseScript(
                 'com_j2commerce.site',
                 'media/com_j2commerce/js/site/j2commerce.js',
                 [],
-                ['defer' => true]
+                ['defer' => true],
+                ['com_j2commerce.dom']
             );
 
         // Fallback load from component path — root language/ may not have com_j2commerce.ini.

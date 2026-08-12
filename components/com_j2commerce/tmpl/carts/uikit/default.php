@@ -26,10 +26,11 @@ $app = Factory::getApplication();
 // Load cart AJAX script using registerAndUseScript
 $document = $app->getDocument();
 $wa = $document->getWebAssetManager();
-$wa->registerAndUseScript('com_j2commerce.cart-ajax', 'media/com_j2commerce/js/site/cart-ajax.js', [], ['defer' => true], ['core']);
-
-// Safe DOM construction helpers for this template's inline JS and the calculator sub-template.
+// Safe DOM construction helpers for this template's inline JS, the calculator sub-template
+// and cart-ajax.js.
 $wa->registerAndUseScript('com_j2commerce.dom', 'media/com_j2commerce/js/site/j2commerce-dom.js', [], ['defer' => true]);
+
+$wa->registerAndUseScript('com_j2commerce.cart-ajax', 'media/com_j2commerce/js/site/cart-ajax.js', [], ['defer' => true], ['core', 'com_j2commerce.dom']);
 
 // Pass configuration to JavaScript
 $document->addScriptOptions('j2commerce.cart', [

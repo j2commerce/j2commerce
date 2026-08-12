@@ -512,10 +512,10 @@ const J2Commerce = {
             && matchMedia('(prefers-reduced-motion: reduce)').matches;
     },
 
-    // Parse server-rendered option HTML into an inert fragment (no innerHTML, no script
-    // execution; inline onchange attributes are preserved as the child layout expects).
+    // Parse server-rendered option HTML into an inert fragment. Scripts are dropped and
+    // inline onchange attributes preserved, which is what the child layout expects.
     parseHtmlFragment(html) {
-        return document.createRange().createContextualFragment(html);
+        return J2CommerceDom.parse(html);
     },
 
     // Mark a child-options container as loading without shifting layout: hold its current

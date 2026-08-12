@@ -26,10 +26,17 @@ $wa->useScript('keepalive')
 HTMLHelper::_('bootstrap.modal');
 
 $wa->registerAndUseScript(
+    'com_j2commerce.dom',
+    'media/com_j2commerce/js/site/j2commerce-dom.js',
+    [],
+    ['defer' => true]
+);
+$wa->registerAndUseScript(
     'com_j2commerce.customer-addresses',
     'com_j2commerce/administrator/customer-addresses.js',
     [],
-    ['defer' => true]
+    ['defer' => true],
+    ['com_j2commerce.dom']
 );
 
 $baseUri     = Uri::base(true);

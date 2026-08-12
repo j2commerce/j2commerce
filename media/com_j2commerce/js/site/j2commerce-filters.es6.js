@@ -558,7 +558,7 @@ class J2CommerceFilters {
         const insertPoint = sortFilter || contentArea.firstChild;
 
         const tempDiv = document.createElement('div');
-        tempDiv.append(document.createRange().createContextualFragment(data.products));
+        tempDiv.append(J2CommerceDom.parse(data.products));
 
         while (tempDiv.firstChild) {
             if (insertPoint && insertPoint.parentNode === contentArea) {
@@ -570,7 +570,7 @@ class J2CommerceFilters {
 
         if (data.pagination) {
             const paginationDiv = document.createElement('div');
-            paginationDiv.append(document.createRange().createContextualFragment(data.pagination));
+            paginationDiv.append(J2CommerceDom.parse(data.pagination));
             contentArea.appendChild(paginationDiv.firstChild || paginationDiv);
         }
 

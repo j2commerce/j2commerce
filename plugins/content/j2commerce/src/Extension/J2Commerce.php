@@ -1131,10 +1131,17 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         // this on J2Commerce component pages, but never runs on category blog pages.
         $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
         $wa->registerAndUseScript(
+            'com_j2commerce.dom',
+            'media/com_j2commerce/js/site/j2commerce-dom.js',
+            [],
+            ['defer' => true]
+        );
+        $wa->registerAndUseScript(
             'com_j2commerce.site',
             'media/com_j2commerce/js/site/j2commerce.js',
             [],
-            ['defer' => true]
+            ['defer' => true],
+            ['com_j2commerce.dom']
         );
 
         $wa->registerAndUseScript(
@@ -1356,10 +1363,17 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
 
         $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
         $wa->registerAndUseScript(
+            'com_j2commerce.dom',
+            'media/com_j2commerce/js/site/j2commerce-dom.js',
+            [],
+            ['defer' => true]
+        );
+        $wa->registerAndUseScript(
             'com_j2commerce.site',
             'media/com_j2commerce/js/site/j2commerce.js',
             [],
-            ['defer' => true]
+            ['defer' => true],
+            ['com_j2commerce.dom']
         );
         $wa->registerAndUseScript(
             'com_j2commerce.a11y',

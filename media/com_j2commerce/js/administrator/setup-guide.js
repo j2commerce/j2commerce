@@ -237,9 +237,7 @@ class SetupGuide {
 
             if (!json.success) throw new Error(json.message || 'Error');
 
-            const tpl = document.createElement('div');
-            tpl.replaceChildren(document.createRange().createContextualFragment(json.data.html));
-            this.detailView.replaceChildren(...Array.from(tpl.childNodes));
+            J2CommerceDom.adopt(this.detailView, json.data.html);
             this.initTimezoneClocks();
 
             requestAnimationFrame(() => {
