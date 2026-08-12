@@ -58,6 +58,11 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             'method'          => 'cleanupOrderUploads',
             'form'            => 'cleanupOrderUploads',
         ],
+        'j2commerce.scheduledTick' => [
+            'langConstPrefix' => 'PLG_TASK_J2COMMERCE_SCHEDULED_TICK',
+            'method'          => 'scheduledTick',
+            'form'            => 'scheduledTick',
+        ],
     ];
 
     protected $autoloadLanguage = true;
@@ -387,6 +392,49 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         return $result['failed'] > 0 && $result['updated'] === 0
             ? Status::KNOCKOUT
             : Status::OK;
+    }
+
+    private function scheduledTick(ExecuteTaskEvent $event): int
+    {
+        $params  = $event->getArgument('params');
+        $context = trim((string) ($params->context ?? ''));
+
+        // Register j2commerce-group subscribers before dispatching to them below. The console
+        // application never fires onAfterInitialise, so nothing else imports the group under cron.
+        PluginHelper::importPlugin('j2commerce');
+
+        $dispatcher = Factory::getApplication()->getDispatcher();
+        $listeners  = $dispatcher->getListeners('onJ2CommerceScheduledTick');
+
+        if (empty($listeners)) {
+            $this->logTask('No subscribers listening for onJ2CommerceScheduledTick.');
+            return Status::NO_RUN;
+        }
+
+        $tick   = new GenericEvent('onJ2CommerceScheduledTick', ['context' => $context, 'params' => $params]);
+        $ran    = 0;
+        $failed = 0;
+
+        // Invoked one listener at a time rather than through dispatch() so a subscriber that
+        // throws cannot abort the tick for the ones queued behind it.
+        foreach ($listeners as $listener) {
+            try {
+                $listener($tick);
+                $ran++;
+            } catch (\Throwable $e) {
+                $failed++;
+                $this->logTask(\sprintf('Subscriber failed: %s', $e->getMessage()));
+            }
+        }
+
+        $this->logTask(\sprintf(
+            'Scheduled tick%s: %d subscriber(s) ran, %d failed.',
+            $context !== '' ? ' (context: ' . $context . ')' : '',
+            $ran,
+            $failed
+        ));
+
+        return $ran === 0 ? Status::KNOCKOUT : Status::OK;
     }
 
     private function cleanupOrderUploads(ExecuteTaskEvent $event): int

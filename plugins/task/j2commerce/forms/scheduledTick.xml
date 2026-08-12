@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form>
+    <fields name="params">
+        <fieldset name="task_params">
+            <field
+                name="context"
+                type="text"
+                label="PLG_TASK_J2COMMERCE_SCHEDULED_TICK_FIELD_CONTEXT"
+                description="PLG_TASK_J2COMMERCE_SCHEDULED_TICK_FIELD_CONTEXT_DESC"
+                hint="PLG_TASK_J2COMMERCE_SCHEDULED_TICK_FIELD_CONTEXT_HINT"
+            />
+        </fieldset>
+    </fields>
+</form>
