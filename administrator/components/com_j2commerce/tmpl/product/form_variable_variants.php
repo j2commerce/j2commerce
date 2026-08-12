@@ -33,6 +33,9 @@ $style = '.com_j2commerce .fa-stack.small{width:1.25rem;height:1.25rem;line-heig
     . '.com_j2commerce .fa-stack.small .fa-stack-1x{font-size:0.5rem;top:50%;left:50%;transform:translate(-50%,-50%);}';
 $wa->addInlineStyle($style, [], []);
 
+// Adopts the variant list this view fetches. Deferred, so it has run before any fetch callback.
+$wa->registerAndUseScript('com_j2commerce.dom', 'media/com_j2commerce/js/site/j2commerce-dom.js', [], ['defer' => true]);
+
 $item        = $displayData['product'];
 $formPrefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
 
@@ -492,7 +495,7 @@ $ajaxBase    = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
                 .then(function (response) { return response.json(); })
                 .then(function (data) {
                     if (data.html) {
-                        accordion.innerHTML = data.html;
+                        J2CommerceDom.adopt(accordion, data.html);
                         self.setupCheckboxHandlers();
                         initVariantItemHandlers();
                         // Dispatched on the container, not document: core showon.js reads event.target.classList.

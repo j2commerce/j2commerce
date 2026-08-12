@@ -29,6 +29,9 @@ $wa  = Factory::getApplication()->getDocument()->getWebAssetManager();
 $style = '.com_j2commerce .fa-stack.small {width: 1.25rem;height: 1.25rem;line-height: 1.25rem;}.com_j2commerce .fa-stack.small .fa-stack-2x {font-size:1rem;}.com_j2commerce .fa-stack.small .fa-stack-1x {font-size:0.5rem;top: 50%;left: 50%;transform: translate(-50%, -50%);}';
 $wa->addInlineStyle($style, [], []);
 
+// Adopts the variant list this view fetches. Deferred, so it has run before any fetch callback.
+$wa->registerAndUseScript('com_j2commerce.dom', 'media/com_j2commerce/js/site/j2commerce-dom.js', [], ['defer' => true]);
+
 $item = $displayData['product'];
 $formPrefix = $displayData['form_prefix'];
 $ajaxBase   = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
@@ -298,7 +301,7 @@ $ajaxBase   = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
             .then(function(response) { return response.json(); })
             .then(function(data) {
                 if (data.html) {
-                    accordion.innerHTML = data.html;
+                    J2CommerceDom.adopt(accordion, data.html);
                     self.setupCheckboxHandlers();
                     initConfigToggles();
                     // Dispatched on the container, not document: core showon.js reads event.target.classList.
@@ -652,7 +655,7 @@ $ajaxBase   = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
 
     /**
      * Default variant star button handler — defined here (parent template)
-     * so it survives innerHTML replacement from AJAX-loaded variant lists.
+     * so it survives the AJAX-loaded variant list replacing the accordion.
      */
     window.listVariableItemTask = async function(variantId, task, productId) {
         var button = document.getElementById('default-variant-' + variantId);
