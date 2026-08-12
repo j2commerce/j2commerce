@@ -64,6 +64,15 @@
                 <option value="0">JHIDE</option>
                 <option value="1">JSHOW</option>
             </field>
+
+            <field name="collapsed_options" type="radio" default="1"
+                   layout="joomla.form.field.radio.switcher" filter="integer"
+                   label="COM_J2COMMERCE_CATEGORY_COLLAPSED_OPTIONS"
+                   description="COM_J2COMMERCE_CATEGORY_COLLAPSED_OPTIONS_DESC"
+                   showon="elements_use_global:0">
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
         </fieldset>
     </fields>
 </form>

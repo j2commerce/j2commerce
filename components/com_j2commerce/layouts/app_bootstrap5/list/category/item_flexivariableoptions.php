@@ -18,8 +18,6 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 extract($displayData);
 
-HTMLHelper::_('bootstrap.collapse');
-
 $options = isset($product->options) && !empty($product->options) ? $product->options : [];
 
 if (empty($options)) {
@@ -32,12 +30,22 @@ $platform = J2CommerceHelper::platform();
 $showOptionImages = (int) ($params->get('image_for_product_options', 0) ?? 0);
 $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
 $optionsSummary = $productHelper::getOptionsSummary($options);
+$collapsedOptions = (bool) $params->get('list_collapsed_options', $params->get('collapsed_options', 1));
+
+if ($collapsedOptions) {
+    HTMLHelper::_('bootstrap.collapse');
+}
+
 ?>
 <div class="j2commerce-flexivariable-options py-2" id="variable-options-<?php echo $productId; ?>">
+    <?php if ($collapsedOptions) : ?>
     <button class="btn btn-link btn-sm p-0 text-decoration-none j2commerce-configurable-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOptions<?php echo $productId; ?>" aria-expanded="false" aria-controls="collapseOptions<?php echo $productId; ?>">
         <?php echo $esc($optionsSummary); ?><span class="ms-2 fa-solid fa-chevron-down fs-xs"></span>
     </button>
-    <div class="collapse pt-2" id="collapseOptions<?php echo $productId; ?>">
+    <?php else : ?>
+    <div class="j2commerce-options-summary fw-semibold pb-1"><?php echo $esc($optionsSummary); ?></div>
+    <?php endif; ?>
+    <div class="<?php echo $collapsedOptions ? 'collapse ' : ''; ?>pt-2" id="collapseOptions<?php echo $productId; ?>">
         <?php foreach ($options as $option) : ?>
             <?php $optionId = (int) $option['productoption_id']; ?>
             <?php $defaultOptionValueId = $product->default_option_selections[$optionId] ?? ''; ?>

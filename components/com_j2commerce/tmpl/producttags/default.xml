@@ -373,6 +373,19 @@
 				</field>
 
 				<field
+					name="list_collapsed_options"
+					type="radio"
+					label="COM_J2COMMERCE_PRODUCT_LIST_COLLAPSED_OPTIONS_LABEL"
+					description="COM_J2COMMERCE_PRODUCT_LIST_COLLAPSED_OPTIONS_DESC"
+					default="1"
+					layout="joomla.form.field.radio.switcher"
+					filter="integer"
+				>
+					<option value="0">JNO</option>
+					<option value="1">JYES</option>
+				</field>
+
+				<field
 					name="list_show_cart"
 					type="list"
 					label="COM_J2COMMERCE_PRODUCT_LIST_SHOW_CART"
