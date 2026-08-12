@@ -52,40 +52,7 @@ final class OrderUploadHelper
 
         $db = Factory::getContainer()->get(DatabaseInterface::class);
 
-        // Load each orderitem's attributes blob (JSON-encoded in orderitems.orderitem_attributes).
-        $query = $db->getQuery(true)
-            ->select($db->quoteName(['product_id', 'orderitem_attributes']))
-            ->from($db->quoteName('#__j2commerce_orderitems'))
-            ->where($db->quoteName('order_id') . ' = :orderVarchar')
-            ->bind(':orderVarchar', $orderVarchar);
-        $db->setQuery($query);
-        $itemRows = $db->loadObjectList() ?: [];
-
-        // Extract mangled→attribute-type mapping for file/image-typed attributes via the shared parser.
-        $mangledTypeMap = [];
-
-        foreach ($itemRows as $itemRow) {
-            $raw = (string) ($itemRow->orderitem_attributes ?? '');
-
-            if ($raw === '') {
-                continue;
-            }
-
-            $attrs = OrderItemAttributeHelper::parseRawAttributes($raw, (int) ($itemRow->product_id ?? 0));
-
-            foreach ($attrs as $attr) {
-                $type  = $attr->orderitemattribute_type ?? '';
-                $value = $attr->orderitemattribute_value ?? '';
-
-                if (($type === 'file' || $type === 'image') && $value !== '') {
-                    $mangledTypeMap[(string) $value] = $type;
-                }
-            }
-        }
-
-        if (empty($mangledTypeMap)) {
-            return ['moved' => 0, 'failed' => 0];
-        }
+        $mangledTypeMap = self::productOptionTokenMap($db, $orderVarchar);
 
         // The cart this order was built from. It scopes the reclaim below, and a cart-less
         // order (admin-created, migrated) simply takes the pending rows and nothing else.
@@ -96,6 +63,12 @@ final class OrderUploadHelper
             ->bind(':orderVarchar', $orderVarchar);
         $db->setQuery($cartQuery);
         $cartId = (int) $db->loadResult();
+
+        // Nothing to look for: no product-option token on the order, and no cart whose own
+        // pending uploads could belong to it.
+        if (empty($mangledTypeMap) && $cartId <= 0) {
+            return ['moved' => 0, 'failed' => 0];
+        }
 
         // Pending rows are the first save's work. The rest is a reclaim: one cart can
         // produce more than one order — the confirm step re-persists whenever the cart
@@ -128,14 +101,35 @@ final class OrderUploadHelper
                 'u.cart_id',
                 'u.order_id',
                 'u.status',
+                'u.mime_type',
             ]))
             ->from($db->quoteName('#__j2commerce_uploads', 'u'))
             ->leftJoin(
                 $db->quoteName('#__j2commerce_orders', 'o')
                 . ' ON ' . $db->quoteName('o.order_id') . ' = ' . $db->quoteName('u.order_id')
             )
-            ->whereIn($db->quoteName('u.mangled_name'), array_keys($mangledTypeMap), ParameterType::STRING)
             ->where($statusClause);
+
+        // Two ways a row belongs to this order. A product-option upload happens on the
+        // product page before a cart exists, so its row carries cart_id 0 and the mangled
+        // token preserved in the order line is the only link. A checkout custom-field
+        // upload is the other shape: it can only happen once the shopper has a cart, its
+        // row carries that cart_id, and no order line ever quotes its token, so nothing
+        // but the cart identifies it. Neither source alone covers both — and cart_id is
+        // read from the orders row, never from the request.
+        $ownership = [];
+
+        if (!empty($mangledTypeMap)) {
+            $ownership[] = $db->quoteName('u.mangled_name') . ' IN ('
+                . implode(',', $uploadQuery->bindArray(array_keys($mangledTypeMap), ParameterType::STRING)) . ')';
+        }
+
+        if ($cartId > 0) {
+            $ownership[] = $db->quoteName('u.cart_id') . ' = :ownedCartId';
+            $uploadQuery->bind(':ownedCartId', $cartId, ParameterType::INTEGER);
+        }
+
+        $uploadQuery->where('(' . implode(' OR ', $ownership) . ')');
 
         if ($cartId > 0) {
             $uploadQuery->bind(':ownVarchar', $orderVarchar)
@@ -182,7 +176,10 @@ final class OrderUploadHelper
                 $tmpDirsTouched[$tmpDir] = true;
             }
 
-            $attrType = $mangledTypeMap[$row->mangled_name] ?? 'file';
+            // A checkout upload has no order line to take a type from, so the stored MIME
+            // decides. The column is an enum of exactly these two.
+            $attrType = $mangledTypeMap[$row->mangled_name]
+                ?? (str_starts_with((string) ($row->mime_type ?? ''), 'image/') ? 'image' : 'file');
             $update   = $db->getQuery(true)
                 ->update($db->quoteName('#__j2commerce_uploads'))
                 ->set($db->quoteName('order_id') . ' = :orderId')
@@ -212,6 +209,83 @@ final class OrderUploadHelper
         }
 
         return ['moved' => $moved, 'failed' => $failed];
+    }
+
+    /**
+     * mangled token → attribute type for every file/image option on an order's lines.
+     * These are the uploads an order line quotes; anything attached to the order and
+     * absent from this map arrived through a checkout custom field instead.
+     *
+     * @return  array<string, string>
+     */
+    private static function productOptionTokenMap(DatabaseInterface $db, string $orderVarchar): array
+    {
+        $query = $db->getQuery(true)
+            ->select($db->quoteName(['product_id', 'orderitem_attributes']))
+            ->from($db->quoteName('#__j2commerce_orderitems'))
+            ->where($db->quoteName('order_id') . ' = :orderVarchar')
+            ->bind(':orderVarchar', $orderVarchar);
+        $db->setQuery($query);
+
+        $map = [];
+
+        foreach ($db->loadObjectList() ?: [] as $itemRow) {
+            $raw = (string) ($itemRow->orderitem_attributes ?? '');
+
+            if ($raw === '') {
+                continue;
+            }
+
+            $attrs = OrderItemAttributeHelper::parseRawAttributes($raw, (int) ($itemRow->product_id ?? 0));
+
+            foreach ($attrs as $attr) {
+                $type  = $attr->orderitemattribute_type ?? '';
+                $value = $attr->orderitemattribute_value ?? '';
+
+                if (($type === 'file' || $type === 'image') && $value !== '') {
+                    $map[(string) $value] = $type;
+                }
+            }
+        }
+
+        return $map;
+    }
+
+    /**
+     * Uploads attached to an order that no order line quotes — what a shopper sent through
+     * a checkout custom field. The admin order view lists these on their own, since the
+     * product-option ones are already rendered against the line they belong to.
+     *
+     * @return  list<object>
+     */
+    public static function getCheckoutUploads(string $orderVarchar): array
+    {
+        if ($orderVarchar === '') {
+            return [];
+        }
+
+        $db    = Factory::getContainer()->get(DatabaseInterface::class);
+        $query = $db->getQuery(true)
+            ->select($db->quoteName(['j2commerce_upload_id', 'original_name', 'mangled_name', 'file_size', 'mime_type']))
+            ->from($db->quoteName('#__j2commerce_uploads'))
+            ->where($db->quoteName('order_id') . ' = :orderVarchar')
+            ->where($db->quoteName('status') . ' = ' . $db->quote('attached'))
+            ->order($db->quoteName('j2commerce_upload_id') . ' ASC')
+            ->bind(':orderVarchar', $orderVarchar);
+        $db->setQuery($query);
+
+        $rows = $db->loadObjectList() ?: [];
+
+        if ($rows === []) {
+            return [];
+        }
+
+        $productOptionTokens = self::productOptionTokenMap($db, $orderVarchar);
+
+        return array_values(array_filter(
+            $rows,
+            static fn (object $row): bool => !isset($productOptionTokens[(string) $row->mangled_name])
+        ));
     }
 
     /** Fetch an attached-upload row by mangled token; null if not found or not attached. */
