@@ -136,14 +136,13 @@ class InventoryModel extends ListModel
         // From j2commerce_products table
         $query->from($db->quoteName('#__j2commerce_products', 'p'));
 
-        // Join with variants table to get the master variant
-        $query->join('LEFT', $db->quoteName('#__j2commerce_variants', 'v') . ' ON (' .
-            $db->quoteName('v.product_id') . ' = ' . $db->quoteName('p.j2commerce_product_id') .
-            ' AND ' . $db->quoteName('v.is_master') . ' = 1)');
+        // Join with variants table, resolved to exactly one variant per product
+        $query->join('LEFT', $db->quoteName('#__j2commerce_variants', 'v') . ' ON ' .
+            $db->quoteName('v.j2commerce_variant_id') . ' = (' . $this->getSingleVariantSubQuery() . ')');
 
-        // Join with productquantities table
-        $query->join('LEFT', $db->quoteName('#__j2commerce_productquantities', 'pq') . ' ON (' .
-            $db->quoteName('pq.variant_id') . ' = ' . $db->quoteName('v.j2commerce_variant_id') . ')');
+        // Join with productquantities table, resolved to one row per variant
+        $query->join('LEFT', $db->quoteName('#__j2commerce_productquantities', 'pq') . ' ON ' .
+            $db->quoteName('pq.j2commerce_productquantity_id') . ' = (' . $this->getSingleQuantitySubQuery() . ')');
 
         // Join with content table to get product names
         $query->join('LEFT', $db->quoteName('#__content', 'a') . ' ON (' .
@@ -201,6 +200,32 @@ class InventoryModel extends ListModel
         }
 
         return $query;
+    }
+
+    /** Lowest master variant of `p`, else its lowest variant — no key holds a product to one master. */
+    private function getSingleVariantSubQuery(): string
+    {
+        $db = $this->getDatabase();
+
+        return (string) $db->getQuery(true)
+            ->select(
+                'COALESCE(MIN(CASE WHEN ' . $db->quoteName('vm.is_master') . ' = 1 THEN '
+                . $db->quoteName('vm.j2commerce_variant_id') . ' END), MIN('
+                . $db->quoteName('vm.j2commerce_variant_id') . '))'
+            )
+            ->from($db->quoteName('#__j2commerce_variants', 'vm'))
+            ->where($db->quoteName('vm.product_id') . ' = ' . $db->quoteName('p.j2commerce_product_id'));
+    }
+
+    /** Lowest quantity row of `v` — current installs hold UNIQUE(variant_id), J2Store-era tables need not. */
+    private function getSingleQuantitySubQuery(): string
+    {
+        $db = $this->getDatabase();
+
+        return (string) $db->getQuery(true)
+            ->select('MIN(' . $db->quoteName('pqm.j2commerce_productquantity_id') . ')')
+            ->from($db->quoteName('#__j2commerce_productquantities', 'pqm'))
+            ->where($db->quoteName('pqm.variant_id') . ' = ' . $db->quoteName('v.j2commerce_variant_id'));
     }
 
     /**
@@ -633,11 +658,10 @@ class InventoryModel extends ListModel
         ]);
 
         $query->from($db->quoteName('#__j2commerce_products', 'p'))
-            ->join('LEFT', $db->quoteName('#__j2commerce_variants', 'v') . ' ON (' .
-                $db->quoteName('v.product_id') . ' = ' . $db->quoteName('p.j2commerce_product_id') .
-                ' AND ' . $db->quoteName('v.is_master') . ' = 1)')
-            ->join('LEFT', $db->quoteName('#__j2commerce_productquantities', 'pq') . ' ON (' .
-                $db->quoteName('pq.variant_id') . ' = ' . $db->quoteName('v.j2commerce_variant_id') . ')')
+            ->join('LEFT', $db->quoteName('#__j2commerce_variants', 'v') . ' ON ' .
+                $db->quoteName('v.j2commerce_variant_id') . ' = (' . $this->getSingleVariantSubQuery() . ')')
+            ->join('LEFT', $db->quoteName('#__j2commerce_productquantities', 'pq') . ' ON ' .
+                $db->quoteName('pq.j2commerce_productquantity_id') . ' = (' . $this->getSingleQuantitySubQuery() . ')')
             ->join('LEFT', $db->quoteName('#__content', 'a') . ' ON (' .
                 $db->quoteName('a.id') . ' = ' . $db->quoteName('p.product_source_id') . ')');
 
