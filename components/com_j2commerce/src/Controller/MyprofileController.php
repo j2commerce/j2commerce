@@ -20,6 +20,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\DownloadHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Site\Helper\ProductVisibilityHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Rule\PasswordRule;
 use Joomla\CMS\HTML\HTMLHelper;
@@ -776,7 +777,9 @@ class MyprofileController extends BaseController
             $variantId = (int) $item->variant_id;
             $quantity  = (float) $item->orderitem_quantity;
 
-            // Validate product exists and is enabled
+            // Replaying an order of arbitrary age holds to the same predicates as the
+            // add path: enabled here, since the helper waives it for users who may edit
+            // content, and the article and category conditions the listings carry.
             $productQuery = $db->getQuery(true)
                 ->select($db->quoteName('j2commerce_product_id'))
                 ->from($db->quoteName('#__j2commerce_products'))
@@ -788,7 +791,7 @@ class MyprofileController extends BaseController
             $db->setQuery($productQuery);
             $productExists = $db->loadResult();
 
-            if (!$productExists) {
+            if (!$productExists || !ProductVisibilityHelper::isViewable($productId)) {
                 $errors[] = Text::sprintf('COM_J2COMMERCE_REORDER_PRODUCT_NOT_AVAILABLE', $item->orderitem_name);
                 continue;
             }
