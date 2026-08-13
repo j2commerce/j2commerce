@@ -20,7 +20,7 @@ use Joomla\CMS\Language\Text;
 
 $platform    = J2CommerceHelper::platform();
 $productId   = (int) $this->product->j2commerce_product_id;
-$productName = $this->escape($this->product->product_name);
+$productName = $this->product->product_name;
 $enableZoom  = (int) $this->params->get('item_enable_image_zoom', 1);
 $main_width  = (int) $this->params->get('item_product_main_image_width', 700);
 $additional_width  = (int) $this->params->get('item_product_additional_image_width', 100);
@@ -40,9 +40,9 @@ if ($this->params->get('item_show_product_main_image', 1) && !empty($this->produ
     $mainImagePath = $platform->getImagePath($this->product->main_image);
     if (!empty($mainImagePath)) {
         $slides[] = [
-            'src' => $this->escape($mainImagePath),
+            'src' => $mainImagePath,
             'alt' => !empty($this->product->main_image_alt)
-                ? $this->escape($this->product->main_image_alt)
+                ? $this->product->main_image_alt
                 : $productName,
         ];
     }
@@ -69,9 +69,9 @@ if ($this->params->get('item_show_product_additional_image', 1) && !empty($this-
         $imagePath = $platform->getImagePath($image);
         if (!empty($imagePath)) {
             $slides[] = [
-                'src' => $this->escape($imagePath),
+                'src' => $imagePath,
                 'alt' => !empty($additionalImagesAlt[$key])
-                    ? $this->escape($additionalImagesAlt[$key])
+                    ? $additionalImagesAlt[$key]
                     : $productName,
             ];
         }
@@ -109,7 +109,7 @@ $thumbsId  = 'product-gallery-thumbs-' . $productId;
         <div class="swiper-wrapper">
             <?php foreach ($slides as $slide) : ?>
                 <div class="swiper-slide">
-                    <img src="<?php echo ImageHelper::getProductImage($slide['src'], $main_width, 'raw'); ?>" alt="<?php echo $slide['alt']; ?>" class="j2commerce-product-main-image" <?php if ($enableZoom) : ?>data-action="zoom"<?php endif; ?> width="<?php echo $main_width; ?>" height="<?php echo $main_width; ?>" />
+                    <img src="<?php echo $this->escape(ImageHelper::getProductImage($slide['src'], $main_width, 'raw')); ?>" alt="<?php echo $this->escape($slide['alt']); ?>" class="j2commerce-product-main-image" <?php if ($enableZoom) : ?>data-action="zoom"<?php endif; ?> width="<?php echo $main_width; ?>" height="<?php echo $main_width; ?>" />
                     <?php if ($enableZoom) : ?>
                         <span class="product-zoom-icon" aria-hidden="true">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
