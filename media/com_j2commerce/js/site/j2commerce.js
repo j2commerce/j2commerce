@@ -1112,7 +1112,7 @@ const J2Commerce = {
     },
 
     restoreOriginalGallery(mainEl, thumbsEl, enableZoom) {
-        const originalMain = mainEl.dataset.originalSlides;
+        const originalMain = mainEl._originalSlides ?? mainEl.dataset.originalSlides;
         if (!originalMain) return;
 
         const mainSwiper = mainEl._swiper;
@@ -1121,9 +1121,11 @@ const J2Commerce = {
         if (mainSwiper) mainSwiper.destroy(true, true);
         if (thumbSwiper) thumbSwiper.destroy(true, true);
 
-        mainEl.querySelector('.swiper-wrapper').replaceChildren(this.parseHtmlFragment(originalMain));
-        if (thumbsEl?.dataset.originalSlides) {
-            thumbsEl.querySelector('.swiper-wrapper').replaceChildren(this.parseHtmlFragment(thumbsEl.dataset.originalSlides));
+        mainEl.querySelector('.swiper-wrapper').replaceChildren(this.cloneOriginalSlides(originalMain));
+
+        const originalThumbs = thumbsEl && (thumbsEl._originalSlides ?? thumbsEl.dataset.originalSlides);
+        if (originalThumbs) {
+            thumbsEl.querySelector('.swiper-wrapper').replaceChildren(this.cloneOriginalSlides(originalThumbs));
         }
 
         const slideCount = mainEl.querySelectorAll('.swiper-slide').length;
@@ -1134,6 +1136,16 @@ const J2Commerce = {
         if (thumbsEl) thumbsEl.style.display = slideCount > 1 ? '' : 'none';
 
         this.reinitSwipers(mainEl, thumbsEl, enableZoom);
+    },
+
+    /** String branch serves template overrides still snapshotting into data-original-slides. */
+    cloneOriginalSlides(original) {
+        if (typeof original === 'string') return this.parseHtmlFragment(original);
+
+        const fragment = document.createDocumentFragment();
+        Array.from(original.children).forEach(node => fragment.appendChild(node.cloneNode(true)));
+
+        return fragment;
     },
 
     reinitSwipers(mainEl, thumbsEl, enableZoom) {

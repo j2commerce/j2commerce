@@ -145,11 +145,13 @@ $thumbsId  = 'product-gallery-thumbs-' . $productId;
         const thumbsEl = document.getElementById('<?php echo $thumbsId; ?>');
         if (!mainEl) return;
 
-        // Store original slides for variant gallery restoration
-        mainEl.dataset.originalSlides = mainEl.querySelector('.swiper-wrapper').innerHTML;
-        if (thumbsEl) {
-            thumbsEl.dataset.originalSlides = thumbsEl.querySelector('.swiper-wrapper').innerHTML;
-        }
+        // Hold the pristine slides as nodes for variant gallery restoration
+        [mainEl, thumbsEl].forEach(function (el) {
+            const wrapper = el && el.querySelector('.swiper-wrapper');
+            if (!wrapper || !wrapper.children.length) return;
+            el._originalSlides = document.createDocumentFragment();
+            Array.from(wrapper.children).forEach(node => el._originalSlides.appendChild(node.cloneNode(true)));
+        });
 
         let thumbSwiper = null;
         <?php if ($hasMultipleSlides) : ?>
