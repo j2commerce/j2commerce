@@ -624,6 +624,10 @@ class StrapperHelper
         $wa->registerAndUseStyle('com_j2commerce.option-upload-fields', 'media/com_j2commerce/css/site/option-upload-fields.css');
         $wa->registerAndUseScript('com_j2commerce.option-upload-fields', 'media/com_j2commerce/js/site/option-upload-fields.js', [], ['defer' => true]);
 
+        if ($this->stickyColumnsEnabled()) {
+            $wa->registerAndUseScript('com_j2commerce.product-sticky-columns', 'media/com_j2commerce/js/site/product-sticky-columns.js', [], ['defer' => true]);
+        }
+
         \Joomla\CMS\Language\Text::script('COM_J2COMMERCE_LOADING');
         \Joomla\CMS\Language\Text::script('COM_J2COMMERCE_UPLOAD_ERR_GENERIC_ERROR');
         \Joomla\CMS\Language\Text::script('COM_J2COMMERCE_UPLOAD_ERR_TOO_LARGE');
@@ -826,6 +830,16 @@ class StrapperHelper
         if ($loadSwiper) {
             $wa->registerAndUseStyle('com_j2commerce.vendor.swiper.css', 'media/com_j2commerce/vendor/swiper/css/swiper-bundle.min.css');
         }
+
+        if ($this->stickyColumnsEnabled()) {
+            $wa->registerAndUseStyle('com_j2commerce.product-sticky-columns', 'media/com_j2commerce/css/site/product-sticky-columns.css');
+        }
+    }
+
+    /** Menu parameter, so it comes from the merged active-menu params the detail layouts read. */
+    protected function stickyColumnsEnabled(): bool
+    {
+        return (int) Factory::getApplication()->getParams()->get('item_sticky_columns', 0) === 1;
     }
 
     /**

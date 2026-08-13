@@ -19,8 +19,8 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
     <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductDetail', [$this->product, $this->context])->getArgument('html', ''); ?>
 
-    <div class="row g-4 g-lg-5 mb-5">
-        <div class="col-lg-6">
+    <div class="row g-4 g-lg-5 mb-5<?php echo $this->params->get('item_sticky_columns', 0) ? ' j2c-product-detail-row j2c-sticky-enabled' : ' j2c-product-detail-row'; ?>">
+        <div class="col-lg-6 j2c-product-detail-media">
             <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductImages', [$this->product, $this->context])->getArgument('html', ''); ?>
             <?php
             $images = $this->loadTemplate('images');
@@ -30,7 +30,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
             <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductImages', [$this->product, $this->context])->getArgument('html', ''); ?>
         </div>
 
-        <div class="col-lg-6">
+        <div class="col-lg-6 j2c-product-detail-info">
             <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductTitle', [$this->product, $this->context])->getArgument('html', ''); ?>
             <?php echo $this->loadTemplate('title'); ?>
             <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductTitle', [$this->product, $this->context])->getArgument('html', ''); ?>

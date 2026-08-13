@@ -19,8 +19,8 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
     <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductDetail', [$this->product, $this->context])->getArgument('html', ''); ?>
 
-    <div class="uk-grid uk-grid-large uk-margin-large-bottom" uk-grid>
-        <div class="uk-width-1-2@l">
+    <div class="uk-grid uk-grid-large uk-margin-large-bottom<?php echo $this->params->get('item_sticky_columns', 0) ? ' j2c-product-detail-row j2c-sticky-enabled' : ' j2c-product-detail-row'; ?>" uk-grid>
+        <div class="uk-width-1-2@l j2c-product-detail-media">
             <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductImages', [$this->product, $this->context])->getArgument('html', ''); ?>
             <?php
             $images = $this->loadTemplate('images');
@@ -30,7 +30,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
             <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductImages', [$this->product, $this->context])->getArgument('html', ''); ?>
         </div>
 
-        <div class="uk-width-1-2@l">
+        <div class="uk-width-1-2@l j2c-product-detail-info">
             <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductTitle', [$this->product, $this->context])->getArgument('html', ''); ?>
             <?php echo $this->loadTemplate('title'); ?>
             <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductTitle', [$this->product, $this->context])->getArgument('html', ''); ?>

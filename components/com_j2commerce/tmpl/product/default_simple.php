@@ -14,18 +14,18 @@
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Language\Text;
 ?>
-<div class="row">
+<div class="row<?php echo $this->params->get('item_sticky_columns', 0) ? ' j2c-product-detail-row j2c-sticky-enabled' : ' j2c-product-detail-row'; ?>">
     <div class="col-12 mb-3 d-lg-none">
         <?php echo $this->loadTemplate('title'); ?>
     </div>
-    <div class="col-lg-5">
+    <div class="col-lg-5 j2c-product-detail-media">
         <?php
         $images = $this->loadTemplate('images');
         J2CommerceHelper::plugin()->event('BeforeDisplayImages', [&$images, $this, 'com_j2commerce.products.view.bootstrap']);
         echo $images;
         ?>
     </div>
-    <div id="productDetails" class="col-lg-6 ms-lg-auto">
+    <div id="productDetails" class="col-lg-6 ms-lg-auto j2c-product-detail-info">
         <div class="d-none d-lg-block">
             <?php echo $this->loadTemplate('title'); ?>
         </div>
