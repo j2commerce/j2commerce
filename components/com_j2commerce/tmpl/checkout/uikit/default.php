@@ -952,7 +952,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function proceedAfterBilling() {
         var sameAsBilling = document.getElementById('shipping-same-as-billing');
-        var skipShippingAddress = sameAsBilling && sameAsBilling.checked;
+        // A hidden field stands in for the checkbox when the store has turned the
+        // shipping address off — it carries the same value but never reports .checked.
+        var skipShippingAddress = !!sameAsBilling && (sameAsBilling.type === 'hidden' || sameAsBilling.checked);
 
         if (showShipping && !skipShippingAddress) {
             var shipEl = document.getElementById('shipping-address');

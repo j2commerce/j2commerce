@@ -11,6 +11,7 @@
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Factory;
@@ -22,9 +23,10 @@ use Joomla\Database\ParameterType;
 
 /** @var \J2Commerce\Component\J2commerce\Site\View\Checkout\HtmlView $this */
 
-$showShipping     = $this->showShipping ?? false;
-$fields           = $this->fields ?? [];
-$registrationForm = $this->registrationForm ?? null;
+$showShipping        = $this->showShipping ?? false;
+$showShippingAddress = ConfigHelper::showShippingAddress();
+$fields              = $this->fields ?? [];
+$registrationForm    = $this->registrationForm ?? null;
 
 $config = J2CommerceHelper::config();
 $requiredIndicator = $config->get('checkout_required_indicator', 'asterisk');
@@ -73,7 +75,7 @@ $asterisk = ($requiredIndicator === 'asterisk') ? ' <span class="text-danger">*<
         </div>
     </div>
 
-    <?php if ($showShipping) : ?>
+    <?php if ($showShipping && $showShippingAddress) : ?>
         <div class="mt-3 mb-3">
             <div class="form-check">
                 <input class="form-check-input" type="checkbox" name="shipping_address" value="1" id="shipping-same-as-billing" checked>
@@ -82,6 +84,8 @@ $asterisk = ($requiredIndicator === 'asterisk') ? ' <span class="text-danger">*<
                 </label>
             </div>
         </div>
+    <?php elseif ($showShipping) : ?>
+        <input type="hidden" name="shipping_address" value="1" id="shipping-same-as-billing">
     <?php endif; ?>
 
     <?php echo J2CommerceHelper::plugin()->eventWithHtml('CheckoutRegister', [$this]); ?>
