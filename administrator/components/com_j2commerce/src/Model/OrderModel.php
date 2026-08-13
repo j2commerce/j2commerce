@@ -2430,8 +2430,15 @@ class OrderModel extends AdminModel
         $this->getDatabase()->insertObject('#__j2commerce_orderdiscounts', $row, 'j2commerce_orderdiscount_id');
     }
 
-    /** Resync orders.order_discount with the sum of the orderdiscounts rows. */
-    private function syncOrderDiscountTotal(string $orderId): void
+    /**
+     * Resync orders.order_discount with the sum of the orderdiscounts rows.
+     *
+     * Public because checkout calls it too: CartOrder::saveOrder() writes one row per
+     * discount code but only ever knew the coupon/voucher half of the column, so a
+     * plugin cart-discount left it at 0 and every later recalculateOrderTotals() rebuilt
+     * the total without it. The rows are the record; this column mirrors them.
+     */
+    public function syncOrderDiscountTotal(string $orderId): void
     {
         $db    = $this->getDatabase();
         $query = $db->getQuery(true)
@@ -2442,6 +2449,9 @@ class OrderModel extends AdminModel
         $db->setQuery($query);
         $total = number_format((float) $db->loadResult(), 5, '.', '');
 
+        // order_discount_tax is deliberately left alone. It has no core reader, but two shipped
+        // extensions fold it into a discount base, and it has been NULL on every checkout order —
+        // populating it here would move renewal pricing and vendor commission without warning.
         $update = $db->getQuery(true)
             ->update($db->quoteName('#__j2commerce_orders'))
             ->set($db->quoteName('order_discount') . ' = :total')

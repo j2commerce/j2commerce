@@ -585,6 +585,11 @@ class CartOrder
                     $this, // $order - the CartOrder object
                 ]);
 
+                // The price the subtotal is built from, after any plugin reduced it. saveOrderItems()
+                // reads it back so the persisted line cannot silently revert to the undiscounted
+                // pricing->price and leave SUM(orderitem_finalprice) above order_subtotal.
+                $item->orderitem_effective_price = $itemPrice;
+
                 $subtotal += $itemPrice * $quantity;
 
                 // Calculate tax using taxprofile_id and customer geozone
@@ -659,6 +664,8 @@ class CartOrder
                     $this,
                 ]);
 
+                $item->orderitem_effective_price = $itemPrice;
+
                 $subtotal += $itemPrice * $quantity;
                 $item->orderitem_tax         = 0.0;
                 $item->orderitem_tax_percent = 0.0;
@@ -690,16 +697,31 @@ class CartOrder
      */
     protected function recalculateTaxAfterDiscounts(): void
     {
-        // Combine order_discount (coupons/vouchers) and discount_cart (bulk discounts)
-        $totalDiscount = $this->order_discount + $this->discount_cart;
+        // A voucher is a payment instrument, not a price reduction: it settles part of what is
+        // owed and leaves the goods valued — and taxed — in full. Coupons and plugin cart
+        // discounts do reduce the price, so only those shrink the taxable base.
+        $voucherDiscount = 0.0;
+
+        foreach ($this->vouchers as $voucher) {
+            $voucherDiscount += (float) ($voucher->discount ?? 0);
+        }
+
+        $totalDiscount   = $this->order_discount + $this->discount_cart;
+        $taxableDiscount = max(0.0, $totalDiscount - $voucherDiscount);
+
+        // loadCoupons()/loadVouchers() already took their own discount off order_total the
+        // moment they applied it, so only the cart-discount half is still owed here. The tax
+        // ratio below uses the price-reducing figure — subtracting the full one from the total
+        // charged the coupon twice.
+        $pendingDiscount = $this->discount_cart;
 
         // No discounts or no subtotal — nothing to adjust
         if ($totalDiscount <= 0 || $this->order_subtotal <= 0) {
             return;
         }
 
-        // Net taxable amount after all discounts (floored at zero)
-        $netTaxable = max(0.0, $this->order_subtotal - $totalDiscount);
+        // Net taxable amount after the price-reducing discounts (floored at zero)
+        $netTaxable = max(0.0, $this->order_subtotal - $taxableDiscount);
         $ratio      = $netTaxable / $this->order_subtotal;
 
         // Scale each tax rate entry proportionally
@@ -721,12 +743,17 @@ class CartOrder
             // For inclusive pricing, order_total = subtotal (tax is embedded).
             // Only the discount reduces the total; the tax reduction is already
             // captured proportionally within that discount amount.
-            $this->order_total -= $totalDiscount;
+            $this->order_total -= $pendingDiscount;
         } else {
             // For exclusive pricing, order_total = subtotal + tax.
             // Both the discount and the proportional tax reduction must be subtracted.
-            $this->order_total -= ($totalDiscount + $taxReduction);
+            $this->order_total -= ($pendingDiscount + $taxReduction);
         }
+
+        // Discounts worth more than the cart floor the order at zero, the same as
+        // OrderModel::recalculateOrderTotals(). Left negative, OrderTable::check() refuses the row
+        // and the shopper meets a generic failure at the moment of paying.
+        $this->order_total = max(0.0, $this->order_total);
     }
 
     private function getCustomerGeozones(): array
@@ -1836,8 +1863,21 @@ class CartOrder
         // Save order shipping
         $this->saveOrderShipping($db, $orderId);
 
-        // Save order discounts (coupons + vouchers)
+        // Save order discounts (coupons + vouchers + plugin cart discounts)
         $this->saveOrderDiscounts($db, $orderId, $userId, $userEmail);
+
+        // orders.order_discount is a mirror of those rows, and it is the only discount input
+        // OrderModel::recalculateOrderTotals() reads. $this->order_discount carries the coupon
+        // and voucher half alone — a discount booked through increase_coupon_discount_amount()
+        // lives in $discount_cart — so writing the property would leave every plugin discount
+        // out of the column and any later recompute would rebuild order_total without it.
+        // Summing the persisted rows instead is also immune to a discount that was booked into
+        // both accumulators: saveOrderDiscounts() emits one row per code either way.
+        $discountSyncModel = $mvcFactory->createModel('Order', 'Administrator', ['ignore_request' => true]);
+
+        if ($discountSyncModel) {
+            $discountSyncModel->syncOrderDiscountTotal($orderId);
+        }
 
         // Save order fees (surcharges with names)
         $this->saveOrderFees($db, $orderId);
@@ -1880,7 +1920,8 @@ class CartOrder
      */
     protected function saveOrderItems(DatabaseInterface $db, string $orderId, int $userId): void
     {
-        $now = Factory::getDate()->toSql();
+        $now  = Factory::getDate()->toSql();
+        $rows = [];
 
         foreach ($this->items as $item) {
             // product_type must come from the cartitem. Never default to 'simple' —
@@ -1894,14 +1935,41 @@ class CartOrder
                 );
             }
 
-            $pricing           = $item->pricing ?? null;
-            $quantity          = (int) ($item->product_qty ?? 1);
-            $basePrice         = (float) ($pricing->price ?? $item->variant_price ?? 0);
-            $optionPrice       = (float) ($item->option_price ?? 0);
-            $perItemTax        = (float) ($pricing->tax ?? 0);
-            $itemTax           = $perItemTax * $quantity;
-            $finalPrice        = ($basePrice + $optionPrice) * $quantity;
-            $finalPriceWithTax = $finalPrice + $itemTax;
+            $pricing     = $item->pricing ?? null;
+            $quantity    = (int) ($item->product_qty ?? 1);
+            // Same fallback chain calculateTotals() used to build the price it handed the plugins,
+            // so an item without a pricing object cannot read as discounted here when it is not.
+            $basePrice   = (float) ($pricing->price ?? $item->price ?? $item->variant_price ?? 0);
+            $optionPrice = (float) ($item->option_price ?? 0);
+            $grossUnit   = $basePrice + $optionPrice;
+
+            // Only the discount a plugin baked into the price is a LINE discount. One booked
+            // through increase_coupon_discount_amount() is order-level money — it has its own
+            // orderdiscounts row and its own column, and subtracting it here as well would take
+            // it off the order twice.
+            $effectiveUnit = isset($item->orderitem_effective_price)
+                ? (float) $item->orderitem_effective_price
+                : $grossUnit;
+            $lineDiscount  = max(0.0, ($grossUnit - $effectiveUnit) * $quantity);
+            $finalPrice    = $grossUnit * $quantity - $lineDiscount;
+
+            // calculateTotals() already resolved this line's tax against the customer's geozone
+            // and the price the plugins left behind; pricing->tax is the pre-plugin per-unit
+            // figure and disagrees with order_tax whenever either applies.
+            $itemTax = isset($item->orderitem_tax)
+                ? (float) $item->orderitem_tax
+                : (float) ($pricing->tax ?? 0) * $quantity;
+
+            $lineDiscountTax = 0.0;
+
+            if ($lineDiscount > 0.0 && $finalPrice > 0.0 && $itemTax > 0.0) {
+                $lineDiscountTax = $lineDiscount * ($itemTax / $finalPrice);
+            }
+
+            $perItemTax        = $quantity > 0 ? $itemTax / $quantity : $itemTax;
+            $finalPriceWithTax = (int) J2CommerceHelper::config()->get('config_including_tax', 0)
+                ? $finalPrice
+                : $finalPrice + $itemTax;
 
             // Serialize item attributes for storage
             $attributes = '';
@@ -1927,8 +1995,8 @@ class CartOrder
                 'orderitem_taxprofile_id'          => (int) ($item->taxprofile_id ?? $pricing->taxprofile_id ?? 0),
                 'orderitem_per_item_tax'           => $perItemTax,
                 'orderitem_tax'                    => $itemTax,
-                'orderitem_discount'               => 0,
-                'orderitem_discount_tax'           => 0,
+                'orderitem_discount'               => $lineDiscount,
+                'orderitem_discount_tax'           => $lineDiscountTax,
                 'orderitem_price'                  => $basePrice,
                 'orderitem_option_price'           => $optionPrice,
                 'orderitem_finalprice'             => $finalPrice,
@@ -1941,6 +2009,12 @@ class CartOrder
                 'orderitem_weight_total'           => (string) (($item->weight ?? 0) * $quantity),
             ];
 
+            $rows[] = [$row, $item];
+        }
+
+        $this->scaleLineTaxToOrderTax($rows);
+
+        foreach ($rows as [$row, $item]) {
             // Storefront counterpart to the dispatch in OrderModel::addOrderItemFromVariant() — same event,
             // same by-reference contract, so one handler serves both write paths. The cart item travels with
             // the row because the shopper's selections live there, not on the order item being built.
@@ -1952,6 +2026,73 @@ class CartOrder
 
             $db->insertObject('#__j2commerce_orderitems', $row, 'j2commerce_orderitem_id');
         }
+    }
+
+    /**
+     * Bring the per-line tax in step with the order-level tax before the rows are written.
+     *
+     * recalculateTaxAfterDiscounts() scales order_tax down to the discounted base but leaves the
+     * per-line figures alone, and OrderModel::recalculateOrderTotals() prefers SUM(orderitem_tax)
+     * whenever it is positive — so without this, any later recompute of a discounted order rebuilds
+     * order_total with the undiscounted tax. The largest taxed line absorbs the rounding remainder,
+     * so the sum matches the stored order_tax exactly and no line can be driven negative by it.
+     *
+     * @param  array<int, array{0: object, 1: object}>  $rows  Row/item pairs, mutated in place.
+     */
+    private function scaleLineTaxToOrderTax(array $rows): void
+    {
+        $scale     = CurrencyHelper::getDecimalPlace(ConfigHelper::getDefaultCurrency());
+        $tolerance = 10 ** -$scale / 2;
+        $target    = round($this->order_tax, $scale);
+        $rawSum    = 0.0;
+
+        foreach ($rows as [$row]) {
+            $rawSum += (float) $row->orderitem_tax;
+        }
+
+        if ($rawSum <= 0.0 || abs($rawSum - $target) < $tolerance) {
+            return;
+        }
+
+        $ratio       = $target / $rawSum;
+        $assigned    = 0.0;
+        $largestKey  = null;
+        $largestTax  = 0.0;
+
+        foreach ($rows as $key => [$row]) {
+            if ((float) $row->orderitem_tax <= 0.0) {
+                continue;
+            }
+
+            $lineTax = round((float) $row->orderitem_tax * $ratio, $scale);
+            $this->setRowTax($row, $lineTax, $scale);
+            $assigned += $lineTax;
+
+            if ($lineTax > $largestTax) {
+                $largestTax = $lineTax;
+                $largestKey = $key;
+            }
+        }
+
+        if ($largestKey === null || abs($assigned - $target) < $tolerance) {
+            return;
+        }
+
+        $this->setRowTax($rows[$largestKey][0], max(0.0, round($largestTax + ($target - $assigned), $scale)), $scale);
+    }
+
+    /** Writes a line's tax and the two columns derived from it. */
+    private function setRowTax(object $row, float $lineTax, int $scale): void
+    {
+        $quantity = (int) $row->orderitem_quantity;
+
+        $row->orderitem_tax          = $lineTax;
+        $row->orderitem_per_item_tax = $quantity > 0 ? round($lineTax / $quantity, $scale + 2) : $lineTax;
+        // Tax-inclusive stores keep the tax inside the line price already; adding it again would
+        // report the line at price + tax.
+        $row->orderitem_finalprice_with_tax = (int) J2CommerceHelper::config()->get('config_including_tax', 0)
+            ? (float) $row->orderitem_finalprice
+            : (float) $row->orderitem_finalprice + $lineTax;
     }
 
     /**
@@ -2683,11 +2824,10 @@ class CartOrder
         $amount = (float) ($discount->discount_amount ?? 0);
         $tax    = (float) ($discount->discount_tax ?? 0);
 
+        // increase_coupon_discount_amount() already books the amount into $discount_cart,
+        // which recalculateTaxAfterDiscounts() subtracts. Adding it to $order_discount here
+        // as well put the same money in both accumulators and took it off order_total twice.
         $this->increase_coupon_discount_amount($code, $amount, $tax);
-
-        // Add to order_discount for tax recalculation
-        $this->order_discount += $amount;
-        $this->order_discount_tax += $tax;
     }
 
     /**
@@ -2705,8 +2845,9 @@ class CartOrder
         // Allow plugins to add discount totals (bulk discounts, volume discounts, etc.)
         J2CommerceHelper::plugin()->event('CalculateDiscountTotals', [$this]);
 
-        // If plugins added discounts, recalculate tax on discounted amount
-        if ($this->discount_cart > 0) {
+        // Any discount shrinks the taxable base, so a coupon-only cart needs this pass too —
+        // gating it on the plugin half alone left those carts taxed on the undiscounted subtotal.
+        if (($this->order_discount + $this->discount_cart) > 0) {
             $this->recalculateTaxAfterDiscounts();
         }
     }
