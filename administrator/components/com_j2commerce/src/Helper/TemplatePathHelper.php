@@ -32,24 +32,28 @@ class TemplatePathHelper
      */
     public const ALLOWED_EXTENSIONS = ['html', 'php'];
 
+    /** Inline image references the email pipeline embeds. */
+    public const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif'];
+
     /**
      * Resolve $relFile beneath $root.
      *
-     * @param   string  $root     Absolute directory the reference is allowed to resolve within
-     * @param   string  $relFile  Stored reference, relative to $root
+     * @param   string    $root        Absolute directory the reference is allowed to resolve within
+     * @param   string    $relFile     Stored reference, relative to $root
+     * @param   string[]  $extensions  Extensions the reference must carry
      *
-     * @return  string|null  The resolved absolute path, or null when it does not resolve to a
-     *                       template file inside $root
+     * @return  string|null  The resolved absolute path, or null when it does not resolve to an
+     *                       accepted file inside $root
      *
      * @since   6.0.0
      */
-    public static function confine(string $root, string $relFile): ?string
+    public static function confine(string $root, string $relFile, array $extensions = self::ALLOWED_EXTENSIONS): ?string
     {
         if ($relFile === '' || str_contains($relFile, '..') || str_contains($relFile, "\0")) {
             return null;
         }
 
-        if (!\in_array(strtolower(File::getExt($relFile)), self::ALLOWED_EXTENSIONS, true)) {
+        if (!\in_array(strtolower(File::getExt($relFile)), $extensions, true)) {
             return null;
         }
 

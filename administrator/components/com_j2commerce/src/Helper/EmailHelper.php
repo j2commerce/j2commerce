@@ -14,7 +14,6 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
-use Joomla\CMS\Filesystem\File;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Language;
 use Joomla\CMS\Language\Text;
@@ -42,6 +41,9 @@ use Joomla\Registry\Registry;
  */
 class EmailHelper
 {
+    /** Site directories an inline image reference may resolve within, relative to JPATH_ROOT. */
+    private const INLINE_IMAGE_ROOTS = ['images', 'media'];
+
     /**
      * Tags whose values are markup by design and must reach the template unencoded:
      * server-generated tables, merchant-authored config HTML, URLs, style values, and
@@ -1711,25 +1713,19 @@ class EmailHelper
                     // External link, skip
                     $temp .= $url;
                 } else {
-                    $ext = strtolower(File::getExt($url));
+                    $imagePath = $this->resolveInlineImage($url);
 
-                    if (!file_exists($url)) {
-                        // Relative path, make absolute
-                        $url = $baseURL . ltrim($url, '/');
-                    }
-
-                    if (!file_exists($url) || !\in_array($ext, ['jpg', 'jpeg', 'png', 'gif'])) {
-                        // Not an image or non-existent file
-                        $temp .= $url;
+                    if ($imagePath === null) {
+                        // Nothing to embed — carry the reference as an absolute URL
+                        $temp .= $baseURL . ltrim($url, '/');
                     } else {
-                        // Image found, substitute
-                        if (!\array_key_exists($url, $imageSubs)) {
+                        if (!\array_key_exists($imagePath, $imageSubs)) {
                             $imgIdx++;
-                            $mailer->AddEmbeddedImage($url, 'img' . $imgIdx, basename($url));
-                            $imageSubs[$url] = $imgIdx;
+                            $mailer->AddEmbeddedImage($imagePath, 'img' . $imgIdx, basename($imagePath));
+                            $imageSubs[$imagePath] = $imgIdx;
                         }
 
-                        $temp .= 'cid:img' . $imageSubs[$url];
+                        $temp .= 'cid:img' . $imageSubs[$imagePath];
                     }
                 }
 
@@ -1745,6 +1741,35 @@ class EmailHelper
         }
 
         return $templateText;
+    }
+
+    /**
+     * Resolve an inline image reference to a path under a directory the site owns.
+     *
+     * @param   string  $reference  The stored `src` value, relative to the site root
+     *
+     * @return  string|null  The resolved absolute path, or null when the reference is not an
+     *                       embeddable image beneath the site image roots
+     *
+     * @since   6.0.0
+     */
+    private function resolveInlineImage(string $reference): ?string
+    {
+        $imagePath = TemplatePathHelper::confine(JPATH_ROOT, $reference, TemplatePathHelper::IMAGE_EXTENSIONS);
+
+        if ($imagePath === null) {
+            return null;
+        }
+
+        foreach (self::INLINE_IMAGE_ROOTS as $dir) {
+            $root = realpath(JPATH_ROOT . '/' . $dir);
+
+            if ($root !== false && str_starts_with($imagePath, $root . \DIRECTORY_SEPARATOR)) {
+                return $imagePath;
+            }
+        }
+
+        return null;
     }
 
     /**
