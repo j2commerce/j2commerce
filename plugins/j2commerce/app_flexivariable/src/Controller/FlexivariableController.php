@@ -39,6 +39,22 @@ class FlexivariableController extends BaseController
         $lang->load('plg_j2commerce_' . $this->_element, JPATH_ADMINISTRATOR);
     }
 
+    /** Emits the JSON refusal and closes the app when it returns false. */
+    private function authoriseVariantWrite(string $action): bool
+    {
+        $app  = Factory::getApplication();
+        $user = $app->getIdentity();
+
+        if ($user && !$user->guest && $user->authorise($action, 'com_j2commerce')) {
+            return true;
+        }
+
+        echo json_encode(['success' => false, 'message' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
+        $app->close();
+
+        return false;
+    }
+
     public function addFlexiVariant(): void
     {
         $app = Factory::getApplication();
@@ -48,6 +64,11 @@ class FlexivariableController extends BaseController
             $json = ['success' => false, 'message' => Text::_('JINVALID_TOKEN')];
             echo json_encode($json);
             $app->close();
+            return;
+        }
+
+        // Same core.edit ProductsController::addVariantAjax takes.
+        if (!$this->authoriseVariantWrite('core.edit')) {
             return;
         }
 
@@ -156,6 +177,12 @@ class FlexivariableController extends BaseController
             return;
         }
 
+        // deleteSingleVariant() destroys rows across five tables, so it takes the
+        // core.delete its core twin deleteVariantAjax takes, not core.edit.
+        if (!$this->authoriseVariantWrite('core.delete')) {
+            return;
+        }
+
         $variantId = $app->getInput()->getInt('variant_id', 0);
 
         $json = ['success' => false];
@@ -177,6 +204,10 @@ class FlexivariableController extends BaseController
             $json = ['success' => false, 'message' => Text::_('JINVALID_TOKEN')];
             echo json_encode($json);
             $app->close();
+            return;
+        }
+
+        if (!$this->authoriseVariantWrite('core.delete')) {
             return;
         }
 

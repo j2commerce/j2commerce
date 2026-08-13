@@ -173,6 +173,15 @@ class ProductController extends FormController
         $app       = Factory::getApplication();
         $productId = $app->getInput()->getInt('id', 0);
 
+        // Takes the same core.edit as the AJAX twin in ProductsController.
+        $user = $app->getIdentity();
+
+        if (!$user || $user->guest || !$user->authorise('core.edit', 'com_j2commerce')) {
+            $app->enqueueMessage(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 'error');
+            $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=products', false));
+            return;
+        }
+
         if (empty($productId)) {
             $app->enqueueMessage(Text::_('COM_J2COMMERCE_ERROR_NO_PRODUCT_SELECTED'), 'error');
             $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=products', false));
@@ -362,6 +371,18 @@ class ProductController extends FormController
 
         $app       = Factory::getApplication();
         $articleId = $app->getInput()->getInt('article_id', 0);
+
+        // Writing a product record takes the same core.create the product form takes.
+        $user = $app->getIdentity();
+
+        if (!$user || $user->guest || !$user->authorise('core.create', 'com_j2commerce')) {
+            echo json_encode([
+                'success' => false,
+                'message' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'),
+            ]);
+
+            return;
+        }
 
         if (empty($articleId)) {
             echo json_encode([

@@ -1456,11 +1456,15 @@ class ProductHelper
 
         $db = self::getDatabase();
 
-        $values = self::normaliseOptionvalueKey($productOptions);
+        $optionValues = self::normaliseOptionvalueIds($productOptions);
 
-        if ($values === '') {
+        // A selection member that is not a positive id would shorten the key and resolve a
+        // narrower combination than the shopper chose. Refuse rather than match on a subset.
+        if (\count($optionValues) !== \count($productOptions)) {
             return null;
         }
+
+        $values = implode(',', $optionValues);
 
         $query = $db->getQuery(true)
             ->select($db->quoteName('variant_id'))
