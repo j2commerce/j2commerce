@@ -169,7 +169,10 @@ if ($orderInfo) {
                     <?php if (!empty($orderInfo->shipping_address_2)) : ?>
                         <?php echo $this->escape($orderInfo->shipping_address_2); ?><br>
                     <?php endif; ?>
-                    <?php echo $this->escape($orderInfo->shipping_city ?? ''); ?>, <?php echo $this->escape($orderInfo->shipping_zone_name ?? ''); ?> <?php echo $this->escape($orderInfo->shipping_zip ?? ''); ?><br>
+                    <?php $shippingLocality = implode(', ', array_filter([$orderInfo->shipping_city ?? '', trim(($orderInfo->shipping_zone_name ?? '') . ' ' . ($orderInfo->shipping_zip ?? ''))], 'strlen')); ?>
+                    <?php if ($shippingLocality !== '') : ?>
+                        <?php echo $this->escape($shippingLocality); ?><br>
+                    <?php endif; ?>
                     <?php echo $this->escape($orderInfo->shipping_country_name ?? ''); ?>
                     <?php if (!empty($orderInfo->shipping_phone_1)) : ?>
                         <br><span class="icon-phone me-1 fa-fw" aria-hidden="true" title="<?php echo Text::_('COM_J2COMMERCE_PHONE'); ?>"></span><?php echo $this->escape($orderInfo->shipping_phone_1); ?>

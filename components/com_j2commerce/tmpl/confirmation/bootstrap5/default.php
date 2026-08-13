@@ -267,7 +267,10 @@ if ($info) {
                                                 <?php if (!empty($info->shipping_address_2)) : ?>
                                                     <br><?php echo $this->escape($info->shipping_address_2); ?>
                                                 <?php endif; ?>
-                                                <br><?php echo $this->escape(trim(($info->shipping_city ?? '') . ', ' . ($info->shipping_zone_name ?? '') . ' ' . ($info->shipping_zip ?? ''))); ?>
+                                                <?php $shippingLocality = implode(', ', array_filter([$info->shipping_city ?? '', trim(($info->shipping_zone_name ?? '') . ' ' . ($info->shipping_zip ?? ''))], 'strlen')); ?>
+                                                <?php if ($shippingLocality !== '') : ?>
+                                                    <br><?php echo $this->escape($shippingLocality); ?>
+                                                <?php endif; ?>
                                                 <?php if (!empty($info->shipping_country_name)) : ?>
                                                     <br><?php echo $this->escape($info->shipping_country_name); ?>
                                                 <?php endif; ?>
@@ -291,7 +294,10 @@ if ($info) {
                                             <?php if (!empty($info->billing_address_2)) : ?>
                                                 <br><?php echo $this->escape($info->billing_address_2); ?>
                                             <?php endif; ?>
-                                            <br><?php echo $this->escape(trim(($info->billing_city ?? '') . ', ' . ($info->billing_zone_name ?? '') . ' ' . ($info->billing_zip ?? ''))); ?>
+                                            <?php $billingLocality = implode(', ', array_filter([$info->billing_city ?? '', trim(($info->billing_zone_name ?? '') . ' ' . ($info->billing_zip ?? ''))], 'strlen')); ?>
+                                            <?php if ($billingLocality !== '') : ?>
+                                                <br><?php echo $this->escape($billingLocality); ?>
+                                            <?php endif; ?>
                                             <?php if (!empty($info->billing_country_name)) : ?>
                                                 <br><?php echo $this->escape($info->billing_country_name); ?>
                                             <?php endif; ?>

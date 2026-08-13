@@ -606,8 +606,14 @@ class CheckoutController extends BaseController
 
             $this->setBillingSession($addressData);
 
-            // If shipping same as billing
+            // If shipping same as billing. The shopper is logged in with a saved
+            // row by this point, so mirror the id the way the billing step does —
+            // the order resolves a member's ship-to from `shipping_address_id`.
             if ($this->input->getInt('shipping_address', 0)) {
+                if ($newAddressId) {
+                    $session->set('shipping_address_id', $newAddressId, 'j2commerce');
+                }
+
                 $this->setShippingSession($addressData);
             }
 
@@ -704,9 +710,15 @@ class CheckoutController extends BaseController
 
         $this->setBillingSession($addressData);
 
-        // If shipping same as billing
+        // If shipping same as billing. The order reads a guest's ship-to from
+        // `guest_shipping` and nowhere else, and the shipping step that normally
+        // writes it is skipped on this branch — so assert it here or the order
+        // persists an empty shipping address.
         if ($this->input->getInt('shipping_address', 0)) {
+            $session->set('guest_shipping', $addressData, 'j2commerce');
             $this->setShippingSession($addressData);
+        } else {
+            $session->clear('guest_shipping', 'j2commerce');
         }
 
         $session->clear('payment_method', 'j2commerce');
