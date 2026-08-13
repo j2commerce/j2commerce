@@ -2067,6 +2067,13 @@ class CartOrder
             $addressTable = $mvcFactory->createTable('Address', 'Administrator');
 
             if ($addressTable && $addressTable->load($addressId)) {
+                // Hold the row to the account the resolver was called for, matching
+                // TaxHelper::getCustomerAddress() and ShippingStandard::getShippingGeozones().
+                // Guest rows carry user_id = 0, so the match is only meaningful for a real account.
+                if ($userId > 0 && (int) ($addressTable->user_id ?? 0) !== $userId) {
+                    return [];
+                }
+
                 $data = [
                     'first_name' => $addressTable->first_name ?? '',
                     'last_name'  => $addressTable->last_name ?? '',
