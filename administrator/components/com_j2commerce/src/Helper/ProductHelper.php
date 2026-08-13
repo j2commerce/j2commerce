@@ -749,7 +749,7 @@ class ProductHelper
             // Reentrant call: initialize only if the properties have not been set yet
             // (preserves any already-processed values written by the outer loop).
             $product->product_short_desc ??= $articleData->introtext ?? '';
-            $product->product_long_desc  ??= $articleData->fulltext  ?? '';
+            $product->product_long_desc  ??= $articleData->fulltext ?? '';
         }
 
         // Expose catid and alias at top level for routing
@@ -1401,6 +1401,44 @@ class ProductHelper
     }
 
     /**
+     * Normalise product option value IDs to the canonical order used as the variant identity key.
+     *
+     * #__j2commerce_product_variant_optionvalues.product_optionvalue_ids carries no index and no
+     * product_id column — the numerically sorted CSV is the whole contract by which a variant is
+     * resolved from a shopper's option selection. Every reader and writer of that column, core or
+     * third-party, must produce its key through here.
+     *
+     * @param   array|string  $optionvalueIds  Option value IDs, as an array or a stored CSV.
+     *
+     * @return  array  Positive integer IDs in ascending order.
+     *
+     * @since   6.0.10
+     */
+    public static function normaliseOptionvalueIds(array|string $optionvalueIds): array
+    {
+        $ids = \is_string($optionvalueIds) ? explode(',', $optionvalueIds) : $optionvalueIds;
+        $ids = array_values(array_filter(array_map('intval', $ids), static fn (int $id): bool => $id > 0));
+
+        sort($ids);
+
+        return $ids;
+    }
+
+    /**
+     * Build the exact string stored in and matched against product_optionvalue_ids.
+     *
+     * @param   array|string  $optionvalueIds  Option value IDs, as an array or a stored CSV.
+     *
+     * @return  string  Normalised CSV key.
+     *
+     * @since   6.0.10
+     */
+    public static function normaliseOptionvalueKey(array|string $optionvalueIds): string
+    {
+        return implode(',', self::normaliseOptionvalueIds($optionvalueIds));
+    }
+
+    /**
      * Get variant by selected options.
      *
      * @param   array  $productOptions  Associative array of productoption_id => optionvalue_id.
@@ -1418,15 +1456,11 @@ class ProductHelper
 
         $db = self::getDatabase();
 
-        // Build CSV of option values sorted numerically
-        $optionValues = [];
+        $values = self::normaliseOptionvalueKey($productOptions);
 
-        foreach ($productOptions as $optionValue) {
-            $optionValues[] = (int) $optionValue;
+        if ($values === '') {
+            return null;
         }
-
-        sort($optionValues);
-        $values = implode(',', $optionValues);
 
         $query = $db->getQuery(true)
             ->select($db->quoteName('variant_id'))
@@ -2087,13 +2121,17 @@ class ProductHelper
             }
         }
 
-        // getCombinations() returns array of arrays — convert to CSV strings for comparison
-        $csvArray = array_map(fn (array $combo) => implode(',', $combo), self::getCombinations($traits));
+        // getCombinations() returns array of arrays — convert to normalised CSV keys for comparison
+        $csvArray = array_map(
+            static fn (array $combo): string => self::normaliseOptionvalueKey($combo),
+            self::getCombinations($traits)
+        );
 
         foreach ($variants as $variant) {
             // Use variant_name_ids (original CSV) if available, fall back to variant_name
-            $variantCsv = $variant->variant_name_ids ?? $variant->variant_name ?? '';
-            if (!\in_array($variantCsv, $csvArray)) {
+            $variantCsv = self::normaliseOptionvalueKey($variant->variant_name_ids ?? $variant->variant_name ?? '');
+
+            if (!\in_array($variantCsv, $csvArray, true)) {
                 return false;
             }
         }

@@ -2224,7 +2224,7 @@ class ProductsController extends AdminController
                 // Create product variant optionvalues mapping
                 $productVariantOptionValue                          = new \stdClass();
                 $productVariantOptionValue->variant_id              = $variantId;
-                $productVariantOptionValue->product_optionvalue_ids = implode(',', $productOptionvalueIds);
+                $productVariantOptionValue->product_optionvalue_ids = ProductHelper::normaliseOptionvalueKey($productOptionvalueIds);
 
                 $db->insertObject('#__j2commerce_product_variant_optionvalues', $productVariantOptionValue);
 
@@ -2539,9 +2539,7 @@ class ProductsController extends AdminController
         // Normalize existing CSVs for comparison
         $existingNormalized = [];
         foreach ($existingCsvs as $csv) {
-            $ids = explode(',', $csv);
-            sort($ids);
-            $existingNormalized[] = implode(',', $ids);
+            $existingNormalized[] = ProductHelper::normaliseOptionvalueKey($csv);
         }
 
         // Check if any existing variant is already set as default
@@ -2575,14 +2573,11 @@ class ProductsController extends AdminController
             }
 
             // Skip combinations with missing/invalid option value IDs
-            $povIds = array_filter($povIds, static fn (int $id): bool => $id > 0);
+            $povIdsCsv = ProductHelper::normaliseOptionvalueKey($povIds);
 
-            if (empty($povIds)) {
+            if ($povIdsCsv === '') {
                 continue;
             }
-
-            sort($povIds);
-            $povIdsCsv = implode(',', $povIds);
 
             // Check for existing variant with same option combination
             if (\in_array($povIdsCsv, $existingNormalized, true)) {
@@ -2788,14 +2783,12 @@ class ProductsController extends AdminController
             }
 
             // Skip combinations with missing/invalid option value IDs
-            $povIds = array_filter($povIds, static fn (int $id): bool => $id > 0);
+            $povIdsCsv = ProductHelper::normaliseOptionvalueKey($povIds);
 
-            if (empty($povIds)) {
+            if ($povIdsCsv === '') {
                 continue;
             }
 
-            sort($povIds);
-            $povIdsCsv  = implode(',', $povIds);
             $variantSku = $baseSku . (!empty($skuParts) ? '-' . implode('-', $skuParts) : '-V' . ($createdCount + 1));
 
             $variantData = (object) [

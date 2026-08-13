@@ -14,6 +14,7 @@ namespace J2Commerce\Plugin\J2Commerce\AppFlexivariable\Controller;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\BaseController;
@@ -127,7 +128,7 @@ class FlexivariableController extends BaseController
                 // Create product variant optionvalues record
                 $productVariantOptionValue                          = new \stdClass();
                 $productVariantOptionValue->variant_id              = $variantId;
-                $productVariantOptionValue->product_optionvalue_ids = implode(',', $productOptionvalueIds);
+                $productVariantOptionValue->product_optionvalue_ids = ProductHelper::normaliseOptionvalueKey($productOptionvalueIds);
 
                 $db->insertObject('#__j2commerce_product_variant_optionvalues', $productVariantOptionValue);
 

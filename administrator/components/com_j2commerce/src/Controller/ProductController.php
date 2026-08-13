@@ -252,9 +252,7 @@ class ProductController extends FormController
 
         $existingNormalized = [];
         foreach ($existingCsvs as $csv) {
-            $ids = explode(',', $csv);
-            sort($ids);
-            $existingNormalized[] = implode(',', $ids);
+            $existingNormalized[] = ProductHelper::normaliseOptionvalueKey($csv);
         }
 
         foreach ($combinations as $combination) {
@@ -274,14 +272,11 @@ class ProductController extends FormController
             }
 
             // Skip combinations with missing/invalid option value IDs
-            $povIds = array_filter($povIds, static fn (int $id): bool => $id > 0);
+            $povIdsCsv = ProductHelper::normaliseOptionvalueKey($povIds);
 
-            if (empty($povIds)) {
+            if ($povIdsCsv === '') {
                 continue;
             }
-
-            sort($povIds);
-            $povIdsCsv = implode(',', $povIds);
 
             // Check for existing variant with same option combination
             if (\in_array($povIdsCsv, $existingNormalized, true)) {
