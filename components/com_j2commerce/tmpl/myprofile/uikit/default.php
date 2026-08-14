@@ -126,7 +126,7 @@ $user   = $this->user;
         <div class="uk-modal-footer uk-text-right">
             <button type="button" class="uk-button uk-button-default uk-modal-close"><?php echo Text::_('JCLOSE'); ?></button>
             <button type="button" class="uk-button uk-button-primary" id="j2commerceOrderPrintBtn">
-                <span class="icon-print" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_ORDER_PRINT'); ?>
+                <span uk-icon="icon: print" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_ORDER_PRINT'); ?>
             </button>
         </div>
     </div>

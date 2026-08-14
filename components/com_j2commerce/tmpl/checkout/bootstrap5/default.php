@@ -188,9 +188,9 @@ Text::script('COM_J2COMMERCE_CHECKOUT_ERROR_AGREE_TERMS');
                             aria-expanded="false"
                             aria-controls="checkoutSidecartCollapse">
                         <span class="d-flex align-items-center gap-2">
-                            <span class="icon-cart" aria-hidden="true"></span>
+                            <span class="fa-solid fa-cart-shopping" aria-hidden="true"></span>
                             <span class="j2commerce-sidecart-toggle-text"><?php echo Text::_('COM_J2COMMERCE_SHOW_ORDER_SUMMARY'); ?></span>
-                            <span class="icon-chevron-down small j2commerce-sidecart-chevron" aria-hidden="true"></span>
+                            <span class="fa-solid fa-chevron-down small j2commerce-sidecart-chevron" aria-hidden="true"></span>
                         </span>
                         <span class="fw-bold fs-5 j2commerce-sidecart-toggle-total"><?php echo $grandTotal; ?></span>
                     </button>

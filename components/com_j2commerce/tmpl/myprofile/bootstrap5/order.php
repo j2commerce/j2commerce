@@ -58,11 +58,11 @@ $statusName = !empty($order->orderstatus_name) ? Text::_($order->orderstatus_nam
         </a>
         <div>
             <button type="button" class="btn btn-outline-secondary btn-sm j2commerce-order-print ms-2" data-url="<?php echo Route::_('index.php?option=com_j2commerce&view=myprofile&layout=order&order_id=' . urlencode($order->order_id) . '&tmpl=component'); ?>">
-                <span class="icon-print" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_ORDER_PRINT'); ?>
+                <span class="fa-solid fa-print" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_ORDER_PRINT'); ?>
             </button>
             <?php if ($params->get('show_packingslip', 0)): ?>
                 <button type="button" class="btn btn-outline-secondary btn-sm j2commerce-packingslip-print ms-2" data-url="<?php echo Route::_('index.php?option=com_j2commerce&view=myprofile&layout=packingslip&order_id=' . urlencode($order->order_id) . '&tmpl=component'); ?>">
-                    <span class="icon-box" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_ORDER_PRINT_PACKING_SLIP'); ?>
+                    <span class="fa-solid fa-box" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_ORDER_PRINT_PACKING_SLIP'); ?>
                 </button>
             <?php endif; ?>
         </div>
@@ -389,7 +389,7 @@ $statusName = !empty($order->orderstatus_name) ? Text::_($order->orderstatus_nam
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo Text::_('JCLOSE'); ?></button>
                 <button type="button" class="btn btn-primary" id="j2commerceOrderPrintBtn">
-                    <span class="icon-print" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_ORDER_PRINT'); ?>
+                    <span class="fa-solid fa-print" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_ORDER_PRINT'); ?>
                 </button>
             </div>
         </div>

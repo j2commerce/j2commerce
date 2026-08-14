@@ -140,11 +140,11 @@ $checkoutPriceDisplay = $this->params->get('checkout_price_display_options', 0);
                             <div class="j2commerce-qty-controls uk-flex uk-flex-middle" data-cartitem-id="<?php echo $cartitemId; ?>" data-min-qty="<?php echo $minQty; ?>" data-max-qty="<?php echo $maxQty; ?>">
                                 <div class="uk-inline">
                                     <button type="button" class="uk-button uk-button-small uk-button-link j2commerce-qty-minus" aria-label="<?php echo Text::_('COM_J2COMMERCE_DECREASE_QUANTITY'); ?>" <?php if ($currentQty <= $minQty): ?>disabled<?php endif; ?>>
-                                        <span class="icon-minus" aria-hidden="true"></span>
+                                        <span uk-icon="icon: minus" aria-hidden="true"></span>
                                     </button>
                                     <input type="text" name="qty[<?php echo $cartitemId; ?>]" value="<?php echo $currentQty; ?>" min="<?php echo $minQty; ?>" <?php if ($maxQty > 0): ?>max="<?php echo $maxQty; ?>"<?php endif; ?> step="1" pattern="[0-9]*" inputmode="numeric" class="uk-input uk-form-small uk-text-center j2commerce-qty-input" style="width: 50px; max-width: 50px;" aria-label="<?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_QUANTITY'); ?>" />
                                     <button type="button" class="uk-button uk-button-small uk-button-link j2commerce-qty-plus" aria-label="<?php echo Text::_('COM_J2COMMERCE_INCREASE_QUANTITY'); ?>" <?php if ($maxQty > 0 && $currentQty >= $maxQty): ?>disabled<?php endif; ?>>
-                                        <span class="icon-plus" aria-hidden="true"></span>
+                                        <span uk-icon="icon: plus" aria-hidden="true"></span>
                                     </button>
                                 </div>
                             </div>
@@ -178,7 +178,7 @@ $checkoutPriceDisplay = $this->params->get('checkout_price_display_options', 0);
                     </td>
                     <td class="cart-line-remove uk-text-right uk-padding-small" style="width:36px;">
                         <button type="button" class="uk-button uk-button-small uk-button-link uk-text-danger j2commerce-remove-ajax" data-cartitem-id="<?php echo $cartitemId; ?>" title="<?php echo Text::_('COM_J2COMMERCE_REMOVE'); ?>" aria-label="<?php echo Text::_('COM_J2COMMERCE_REMOVE'); ?>">
-                            <span class="icon-trash" aria-hidden="true"></span>
+                            <span uk-icon="icon: trash" aria-hidden="true"></span>
                         </button>
                     </td>
                 </tr>

@@ -67,10 +67,10 @@ $limit      = isset($this->pagination) ? $this->pagination->limit : 20;
                                class="uk-button uk-button-small uk-button-default"
                                aria-label="<?php echo Text::sprintf('COM_J2COMMERCE_ORDER_VIEW_X', $this->escape($item->order_id)); ?>"
                                title="<?php echo Text::sprintf('COM_J2COMMERCE_ORDER_VIEW_X', $this->escape($item->order_id)); ?>">
-                                <span class="icon-eye" aria-hidden="true"></span>
+                                <span uk-icon="icon: eye" aria-hidden="true"></span>
                             </a>
                             <button type="button" class="uk-button uk-button-small uk-button-default j2commerce-order-print" data-url="<?php echo Route::_('index.php?option=com_j2commerce&view=myprofile&layout=order&order_id=' . urlencode($item->order_id) . '&tmpl=component'); ?>" title="<?php echo Text::_('COM_J2COMMERCE_ORDER_PRINT'); ?>">
-                                <span class="icon-print" aria-hidden="true"></span>
+                                <span uk-icon="icon: print" aria-hidden="true"></span>
                             </button>
                             <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterDisplayOrder', [$item])->getArgument('html', ''); ?>
                         </td>

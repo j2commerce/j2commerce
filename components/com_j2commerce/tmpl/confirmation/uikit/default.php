@@ -70,10 +70,10 @@ $tierCircleClass = match ($statusTier) {
     default   => 'j2c-cancel-circle',
 };
 $tierIcon = match ($statusTier) {
-    'success' => 'icon-check',
-    'pending' => 'icon-info-circle',
-    'failed'  => 'icon-warning',
-    default   => 'icon-times',
+    'success' => 'check',
+    'pending' => 'info',
+    'failed'  => 'warning',
+    default   => 'close',
 };
 $tierMessage = match ($statusTier) {
     'success'   => 'COM_J2COMMERCE_ORDER_CONFIRMED_MESSAGE',
@@ -150,7 +150,7 @@ if ($info) {
                 <div class="j2c-block-status-banner uk-alert <?php echo $tierAlertClass; ?> uk-margin-bottom" uk-alert>
                     <div class="uk-flex uk-flex-middle" style="gap: 12px;">
                         <div class="<?php echo $tierCircleClass; ?> uk-border-circle uk-flex uk-flex-middle uk-flex-center uk-flex-none">
-                            <span class="<?php echo $tierIcon; ?>" style="color:#fff; font-size: 1.5rem;" aria-hidden="true"></span>
+                            <span uk-icon="icon: <?php echo $tierIcon; ?>; ratio: 1.5" style="color:#fff;" aria-hidden="true"></span>
                         </div>
                         <div>
                             <?php if ($statusTier === 'cancelled') : ?>
@@ -209,7 +209,7 @@ if ($info) {
                     <?php if (!empty($order->user_email)) : ?>
                         <div class="j2c-block-email-updates uk-card uk-card-default uk-margin-bottom">
                             <div class="uk-card-body uk-flex uk-flex-middle" style="gap: 12px;">
-                                <span class="icon-envelope uk-text-meta" style="font-size: 1.25rem;" aria-hidden="true"></span>
+                                <span uk-icon="icon: mail; ratio: 1.25" class="uk-text-meta" aria-hidden="true"></span>
                                 <div>
                                     <h3 class="uk-h6 uk-margin-small-bottom"><?php echo Text::_('COM_J2COMMERCE_ORDER_UPDATES'); ?></h3>
                                     <p class="uk-text-meta uk-margin-remove uk-text-small">
@@ -406,7 +406,7 @@ if ($info) {
                                                  class="j2c-order-item-img uk-border-rounded uk-border" loading="lazy">
                                         <?php else : ?>
                                             <div class="j2c-item-placeholder uk-border-rounded uk-border uk-flex uk-flex-middle uk-flex-center">
-                                                <span class="icon-image uk-text-muted" aria-hidden="true"></span>
+                                                <span uk-icon="icon: image" class="uk-text-muted" aria-hidden="true"></span>
                                             </div>
                                         <?php endif; ?>
                                         <?php if ($qty > 1) : ?>
@@ -447,7 +447,7 @@ if ($info) {
                             <?php foreach ($discounts as $disc) : ?>
                                 <?php if (!empty($disc->discount_code)) : ?>
                                     <span class="uk-badge uk-margin-small-right uk-margin-small-bottom">
-                                        <span class="icon-tag uk-margin-small-right" aria-hidden="true"></span>
+                                        <span uk-icon="icon: tag" class="uk-margin-small-right" aria-hidden="true"></span>
                                         <?php echo $this->escape($disc->discount_code); ?>
                                     </span>
                                 <?php endif; ?>

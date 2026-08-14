@@ -101,7 +101,7 @@ $nullDate   = '0000-00-00 00:00:00';
                             <?php if ($canDownload): ?>
                             <a href="<?php echo Route::_('index.php?option=com_j2commerce&task=myprofile.download&order_id=' . urlencode($dl->order_id) . '&fid=' . (int) $dl->j2commerce_productfile_id); ?>"
                                class="uk-button uk-button-small uk-button-primary" title="<?php echo Text::_('COM_J2COMMERCE_DOWNLOAD'); ?>">
-                                <span class="icon-download" aria-hidden="true"></span>
+                                <span uk-icon="icon: download" aria-hidden="true"></span>
                             </a>
                             <?php elseif ($notGranted): ?>
                             <span class="uk-badge"><?php echo Text::_('COM_J2COMMERCE_DOWNLOAD_PENDING'); ?></span>

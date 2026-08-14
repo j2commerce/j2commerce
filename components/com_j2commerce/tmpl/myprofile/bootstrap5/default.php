@@ -137,7 +137,7 @@ $user   = $this->user;
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo Text::_('JCLOSE'); ?></button>
                 <button type="button" class="btn btn-primary" id="j2commerceOrderPrintBtn">
-                    <span class="icon-print" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_ORDER_PRINT'); ?>
+                    <span class="fa-solid fa-print" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_ORDER_PRINT'); ?>
                 </button>
             </div>
         </div>

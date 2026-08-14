@@ -66,10 +66,10 @@ $tierCircleClass = match ($statusTier) {
     default   => 'j2c-cancel-circle',
 };
 $tierIcon = match ($statusTier) {
-    'success' => 'icon-check',
-    'pending' => 'icon-info-circle',
-    'failed'  => 'icon-warning',
-    default   => 'icon-times',
+    'success' => 'fa-solid fa-circle-check',
+    'pending' => 'fa-solid fa-circle-info',
+    'failed'  => 'fa-solid fa-triangle-exclamation',
+    default   => 'fa-solid fa-xmark',
 };
 $tierMessage = match ($statusTier) {
     'success'   => 'COM_J2COMMERCE_ORDER_CONFIRMED_MESSAGE',
@@ -205,7 +205,7 @@ if ($info) {
                     <?php if (!empty($order->user_email)) : ?>
                         <div class="j2c-block-email-updates card mb-4">
                             <div class="card-body d-flex align-items-center gap-3">
-                                <span class="icon-envelope text-body-secondary" style="font-size: 1.25rem;" aria-hidden="true"></span>
+                                <span class="fa-solid fa-envelope text-body-secondary" style="font-size: 1.25rem;" aria-hidden="true"></span>
                                 <div>
                                     <h3 class="h6 mb-1"><?php echo Text::_('COM_J2COMMERCE_ORDER_UPDATES'); ?></h3>
                                     <p class="text-body-secondary mb-0 small">
@@ -402,7 +402,7 @@ if ($info) {
                                                  class="j2c-order-item-img rounded border" loading="lazy">
                                         <?php else : ?>
                                             <div class="j2c-item-placeholder rounded border d-flex align-items-center justify-content-center">
-                                                <span class="icon-image text-body-tertiary" aria-hidden="true"></span>
+                                                <span class="fa-solid fa-image text-body-tertiary" aria-hidden="true"></span>
                                             </div>
                                         <?php endif; ?>
                                         <?php if ($qty > 1) : ?>
@@ -442,7 +442,7 @@ if ($info) {
                             <?php foreach ($discounts as $disc) : ?>
                                 <?php if (!empty($disc->discount_code)) : ?>
                                     <span class="badge bg-dark text-white me-1 mb-1">
-                                        <span class="icon-tag me-1" aria-hidden="true"></span>
+                                        <span class="fa-solid fa-tag me-1" aria-hidden="true"></span>
                                         <?php echo $this->escape($disc->discount_code); ?>
                                     </span>
                                 <?php endif; ?>

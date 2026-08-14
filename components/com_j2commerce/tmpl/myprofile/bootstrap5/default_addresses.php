@@ -38,10 +38,10 @@ $addresses = $this->addresses;
                     <span class="badge text-bg-info"><?php echo $this->escape(ucfirst($addr->type)); ?></span>
                     <div>
                         <a href="<?php echo Route::_('index.php?option=com_j2commerce&view=myprofile&layout=address&address_id=' . (int) $addr->j2commerce_address_id); ?>" class="btn btn-sm btn-soft-dark me-2" title="<?php echo Text::_('JACTION_EDIT'); ?>">
-                            <span class="icon-pencil" aria-hidden="true"></span>
+                            <span class="fa-solid fa-pencil" aria-hidden="true"></span>
                         </a>
                         <button type="button" class="btn btn-sm btn-soft-danger j2commerce-address-delete" data-address-id="<?php echo (int) $addr->j2commerce_address_id; ?>" title="<?php echo Text::_('JACTION_DELETE'); ?>">
-                            <span class="icon-trash" aria-hidden="true"></span>
+                            <span class="fa-solid fa-trash" aria-hidden="true"></span>
                         </button>
                     </div>
                 </div>
