@@ -1048,7 +1048,7 @@ class Flexivariable
         if ($productHelper->managingStock($variant)) {
             if ($variant->availability) {
                 $displayStock           = $productHelper->displayStock($variant, $config);
-                $return['stock_status'] = $displayStock ?: 'Available';
+                $return['stock_status'] = $displayStock ?: Text::_('COM_J2COMMERCE_AVAILABLE');
             } else {
                 $return['stock_status'] = Text::_('COM_J2COMMERCE_STOCK_OUT_OF_STOCK');
             }
