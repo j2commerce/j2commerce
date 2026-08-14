@@ -17,6 +17,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Language;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\Mail\Mail;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Uri\Uri;
@@ -44,6 +45,20 @@ class EmailHelper
     /** Site directories an inline image reference may resolve within, relative to JPATH_ROOT. */
     private const INLINE_IMAGE_ROOTS = ['images', 'media'];
 
+    /** Nesting depth [IF:]/[IFNOT:] blocks are resolved to — one pass per level. */
+    private const MAX_CONDITIONAL_PASSES = 10;
+
+    /**
+     * Per-order row caches. A send renders subject, body and totals off the same order, and a
+     * bulk status change renders one order per recipient; the rows do not change under either.
+     *
+     * @var array<string, list<object>>
+     */
+    private array $discountCache = [];
+
+    /** @var array<string, object> */
+    private array $shippingCache = [];
+
     /**
      * Tags whose values are markup by design and must reach the template unencoded:
      * server-generated tables, merchant-authored config HTML, URLs, style values, and
@@ -59,6 +74,7 @@ class EmailHelper
         '[PACKING_ITEMS]',
         '[TOTALS]',
         '[TAX_LINES]',
+        '[DISCOUNT_LINES]',
         '[ORDER_EXTRA_ROWS]',
         '[CUSTOMER_NOTE]',
         '[BANK_TRANSFER_INFORMATION]',
@@ -505,6 +521,33 @@ class EmailHelper
             $couponCode = $orderCoupon[0]->discount_code ?? '';
         }
 
+        // Every discount carries its own title (`Vendor Discount (Gold - 15%)`, a coupon name,
+        // a bulk-discount label); only coupons also carry a code. Checkout's confirmation view
+        // and the admin order view both label the row from the title, so the email does too.
+        // Sourced only when order_discount is what the order was actually built from: a row can
+        // outlive the discount it recorded, and a labelled row the customer was never charged
+        // for reads as money taken off.
+        $discountRows = ((float) ($order->order_discount ?? 0)) > 0
+            ? array_values(array_filter(
+                $this->getOrderDiscountRows($order),
+                static fn (object $row): bool => (float) ($row->discount_amount ?? 0) > 0
+            ))
+            : [];
+
+        // One discount that accounts for the whole reduction can be named on the single summary
+        // line; two cannot, because [DISCOUNT_AMOUNT] beside it is their sum — naming one of them
+        // credits it with the other's money. Multi-discount orders fall back to the templates'
+        // generic label, or use [DISCOUNT_LINES] for a row each.
+        $discountLabel = \count($discountRows) === 1
+            ? (string) ($discountRows[0]->discount_title ?: ($discountRows[0]->discount_code ?? ''))
+            : '';
+
+        // A named method with no charge (pickup, free shipping) is still a method the customer
+        // chose: the row is present whenever the order carries one, priced at zero if that is
+        // what it cost. Gating on the amount alone drops the method from the email entirely.
+        $shippingName   = trim((string) ($shipping->ordershipping_name ?? ''));
+        $shippingAmount = (float) ($order->order_shipping ?? 0);
+
         // Get invoice number
         $invoiceNumber = $this->getInvoiceNumber($order);
 
@@ -591,9 +634,10 @@ class EmailHelper
             '[MYPROFILE_URL]'             => $myprofileURL,
             '[GUEST_ORDER_URL]'           => $guestOrderURL,
             '[COUPON_CODE]'               => $couponCode,
+            '[DISCOUNT_LABEL]'            => $language->_($discountLabel),
             '[BANK_TRANSFER_INFORMATION]' => $bankTransferInfo,
             '[SHIPPING_TOTAL_WEIGHT]'     => $this->getTotalShippingWeight($order),
-            '[SHIPPING_AMOUNT]'           => ((float) ($order->order_shipping ?? 0)) > 0 ? CurrencyHelper::format((float) $order->order_shipping, $order->currency_code ?? '', (float) ($order->currency_value ?? 1)) : '',
+            '[SHIPPING_AMOUNT]'           => ($shippingName !== '' || $shippingAmount > 0) ? CurrencyHelper::format($shippingAmount, $order->currency_code ?? '', (float) ($order->currency_value ?? 1)) : '',
             '[DISCOUNT_AMOUNT]'           => ((float) ($order->order_discount ?? 0)) > 0 ? CurrencyHelper::format((float) $order->order_discount, $order->currency_code ?? '', (float) ($order->currency_value ?? 1)) : '',
             '[TAX_AMOUNT]'                => ((float) ($order->order_tax ?? 0)) > 0 ? CurrencyHelper::format((float) $order->order_tax, $order->currency_code ?? '', (float) ($order->currency_value ?? 1)) : '',
             '[SUBTOTAL]'                  => CurrencyHelper::format((float) ($order->order_subtotal ?? 0), $order->currency_code ?? '', (float) ($order->currency_value ?? 1)),
@@ -649,6 +693,9 @@ class EmailHelper
 
         // Tax line items with profile names (from ordertaxes table)
         $tags['[TAX_LINES]'] = $this->buildTaxLines($order);
+
+        // Discount line items with their own titles (from orderdiscounts table)
+        $tags['[DISCOUNT_LINES]'] = $this->buildDiscountLines($order, $discountRows, $language);
 
         // Encode every tag value that is not deliberately HTML; a tag added later is escaped by default.
         if ($escapeHtml) {
@@ -737,8 +784,43 @@ class EmailHelper
         return $text;
     }
 
-    /** Process [IF:TAG]...[/IF:TAG] and [IFNOT:TAG]...[/IFNOT:TAG] conditional blocks. */
+    /**
+     * Process [IF:TAG]...[/IF:TAG] and [IFNOT:TAG]...[/IFNOT:TAG] conditional blocks.
+     *
+     * A single pass only resolves the outermost level: preg_replace_callback resumes scanning
+     * after the text the callback returned, so a nested block inside a kept outer block is never
+     * evaluated and survives to the unprocessed-tag sweep, which strips the markers and leaves
+     * the inner content unconditionally (`Discount ()` for an empty [COUPON_CODE]). Repeat until
+     * the text stops changing so each nesting level is resolved in turn.
+     */
     private function processConditionalBlocks(string $text, array $tags): string
+    {
+        for ($pass = 0; $pass < self::MAX_CONDITIONAL_PASSES; $pass++) {
+            $processed = $this->processConditionalPass($text, $tags);
+
+            if ($processed === $text) {
+                return $text;
+            }
+
+            $text = $processed;
+        }
+
+        // Anything still nested deeper than this falls through to the unprocessed-tag sweep,
+        // which strips the markers and keeps the content unconditionally — say so, or a template
+        // nested that deep is just quietly wrong.
+        if ($this->processConditionalPass($text, $tags) !== $text) {
+            Log::add(
+                'Email template conditionals nested deeper than ' . self::MAX_CONDITIONAL_PASSES . ' levels were left unresolved.',
+                Log::WARNING,
+                'com_j2commerce'
+            );
+        }
+
+        return $text;
+    }
+
+    /** Resolve one nesting level of [IF:TAG] / [IFNOT:TAG] blocks. */
+    private function processConditionalPass(string $text, array $tags): string
     {
         // Process [IF:TAG] — keep content if tag value is non-empty, remove if empty
         // Skip ITEM_* tags — those are per-item tags processed inside processItemsLoop
@@ -983,6 +1065,36 @@ class EmailHelper
         return '<table width="100%" cellpadding="0" cellspacing="0" border="0">' . $rows . '</table>';
     }
 
+    /**
+     * Build nested table for discount line items, each labelled with its own title.
+     *
+     * @param   list<object>  $discountRows  From getOrderDiscountRows().
+     */
+    private function buildDiscountLines(object $order, array $discountRows, Language $language): string
+    {
+        if (empty($discountRows)) {
+            return '';
+        }
+
+        $currencyCode  = $order->currency_code ?? '';
+        $currencyValue = (float) ($order->currency_value ?? 1);
+        $rows          = '';
+
+        foreach ($discountRows as $discount) {
+            $amount = (float) $discount->discount_amount;
+            $label  = (string) ($discount->discount_title ?: ($discount->discount_code ?? ''));
+            $label  = $label === '' ? $language->_('COM_J2COMMERCE_CART_DISCOUNT') : $language->_($label);
+
+            $rows .= '<tr>'
+                . '<td style="padding: 6px 20px; font-size: 13px; color: #059669;">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</td>'
+                . '<td style="padding: 6px 20px; font-size: 13px; color: #059669; text-align: right;">-'
+                . htmlspecialchars(CurrencyHelper::format($amount, $currencyCode, $currencyValue), ENT_QUOTES, 'UTF-8') . '</td>'
+                . '</tr>';
+        }
+
+        return $rows === '' ? '' : '<table width="100%" cellpadding="0" cellspacing="0" border="0">' . $rows . '</table>';
+    }
+
     /** @return list<array{label: string, value: string}> */
     private function getOrderSummaryExtraRows(object $order): array
     {
@@ -1109,8 +1221,16 @@ class EmailHelper
 
         $rows = $this->totalsRow(Text::_('COM_J2COMMERCE_CART_SUBTOTAL'), $fmt($subtotal));
 
-        if ($shippingAmount > 0) {
-            $rows .= $this->totalsRow(Text::_('COM_J2COMMERCE_CART_SHIPPING'), $fmt($shippingAmount));
+        // A zero-priced named method (pickup, free shipping) still gets a row — the customer
+        // chose it, and checkout's confirmation view lists it the same way.
+        $shippingName = trim((string) ($this->getOrderShipping($order)->ordershipping_name ?? ''));
+
+        if ($shippingAmount > 0 || $shippingName !== '') {
+            $shippingLabel = $shippingName === ''
+                ? Text::_('COM_J2COMMERCE_CART_SHIPPING')
+                : Text::_('COM_J2COMMERCE_CART_SHIPPING') . ' (' . Text::_($shippingName) . ')';
+
+            $rows .= $this->totalsRow($shippingLabel, $fmt($shippingAmount));
         }
 
         if ($surchargeAmount > 0) {
@@ -1122,7 +1242,32 @@ class EmailHelper
         }
 
         if ($discountAmount > 0) {
-            $rows .= $this->totalsRow(Text::_('COM_J2COMMERCE_CART_DISCOUNT'), '-' . $fmt($discountAmount));
+            // Per-discount rows carry their own titles, but only when they foot to the column
+            // order_total was built from — otherwise a single reconciled row beats an itemised
+            // breakdown that leaves the block failing to sum.
+            // Summed over the rows that will actually be printed — a row excluded from the
+            // output but counted in the guard passes reconciliation and then prints a block
+            // that no longer foots.
+            $discountRows = array_values(array_filter(
+                $this->getOrderDiscountRows($order),
+                static fn (object $row): bool => (float) ($row->discount_amount ?? 0) > 0
+            ));
+            $discountSum  = array_sum(array_map(
+                static fn (object $row): float => (float) $row->discount_amount,
+                $discountRows
+            ));
+
+            if (!empty($discountRows) && round($discountSum, $decimals) === round($discountAmount, $decimals)) {
+                foreach ($discountRows as $discount) {
+                    $label = (string) ($discount->discount_title ?: ($discount->discount_code ?? ''));
+                    $rows .= $this->totalsRow(
+                        $label === '' ? Text::_('COM_J2COMMERCE_CART_DISCOUNT') : Text::_($label),
+                        '-' . $fmt((float) $discount->discount_amount)
+                    );
+                }
+            } else {
+                $rows .= $this->totalsRow(Text::_('COM_J2COMMERCE_CART_DISCOUNT'), '-' . $fmt($discountAmount));
+            }
         }
 
         // Printed as well as subtracted above: a credit that reduces the grand total without
@@ -2007,10 +2152,14 @@ class EmailHelper
      */
     protected function getOrderShipping(object $order): object
     {
+        $orderId = $order->order_id ?? '';
+
+        if (isset($this->shippingCache[$orderId])) {
+            return $this->shippingCache[$orderId];
+        }
+
         $db    = self::getDatabase();
         $query = $db->getQuery(true);
-
-        $orderId = $order->order_id ?? '';
 
         $query->select('*')
             ->from($db->quoteName('#__j2commerce_ordershippings'))
@@ -2019,7 +2168,7 @@ class EmailHelper
 
         $db->setQuery($query);
 
-        return $db->loadObject() ?: new \stdClass();
+        return $this->shippingCache[$orderId] = $db->loadObject() ?: new \stdClass();
     }
 
     /**
@@ -2033,22 +2182,39 @@ class EmailHelper
      */
     protected function getOrderCoupons(object $order): array
     {
+        return array_values(array_filter(
+            $this->getOrderDiscountRows($order),
+            static fn (object $row): bool => ($row->discount_type ?? '') === 'coupon'
+        ));
+    }
+
+    /**
+     * Every discount on the order, whatever applied it — coupon, voucher, cart discount,
+     * bulk discount, a plugin's own. Each row carries the title the other order surfaces label
+     * their discount rows with.
+     *
+     * @return list<object>
+     */
+    protected function getOrderDiscountRows(object $order): array
+    {
+        $orderId = $order->order_id ?? '';
+
+        if ($orderId === '') {
+            return [];
+        }
+
+        if (isset($this->discountCache[$orderId])) {
+            return $this->discountCache[$orderId];
+        }
+
         $db    = self::getDatabase();
-        $query = $db->getQuery(true);
-
-        $orderId      = $order->order_id ?? '';
-        $discountType = 'coupon';
-
-        $query->select('*')
+        $query = $db->getQuery(true)
+            ->select('*')
             ->from($db->quoteName('#__j2commerce_orderdiscounts'))
             ->where($db->quoteName('order_id') . ' = :order_id')
-            ->where($db->quoteName('discount_type') . ' = :discount_type')
-            ->bind(':order_id', $orderId)
-            ->bind(':discount_type', $discountType);
+            ->bind(':order_id', $orderId);
 
-        $db->setQuery($query);
-
-        return $db->loadObjectList() ?: [];
+        return $this->discountCache[$orderId] = $db->setQuery($query)->loadObjectList() ?: [];
     }
 
     /**

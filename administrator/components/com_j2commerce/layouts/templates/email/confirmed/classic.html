@@ -112,11 +112,10 @@
               </tr>
               <tr>
                 <td style="padding: 6px 0; border-bottom: 1px solid #eeeeee;">[IF:SHIPPING_METHOD]Shipping ([SHIPPING_METHOD]):[/IF:SHIPPING_METHOD]</td>
-                <td style="padding: 6px 0; border-bottom: 1px solid #eeeeee; text-align: right;">[IF:SHIPPING_METHOD][IF:SHIPPING_AMOUNT][SHIPPING_AMOUNT][/IF:SHIPPING_AMOUNT][IFNOT:SHIPPING_AMOUNT]Free[/IFNOT:SHIPPING_AMOUNT][/IF:SHIPPING_METHOD]</td>
+                <td style="padding: 6px 0; border-bottom: 1px solid #eeeeee; text-align: right;">[IF:SHIPPING_METHOD][SHIPPING_AMOUNT][/IF:SHIPPING_METHOD]</td>
               </tr>
               <tr>
-                <td style="padding: 6px 0; border-bottom: 1px solid #eeeeee;">[IF:DISCOUNT_AMOUNT]Discount [IF:COUPON_CODE]([COUPON_CODE])[/IF:COUPON_CODE]:[/IF:DISCOUNT_AMOUNT]</td>
-                <td style="padding: 6px 0; border-bottom: 1px solid #eeeeee; text-align: right; color: #2e7d32;">[IF:DISCOUNT_AMOUNT]-[DISCOUNT_AMOUNT][/IF:DISCOUNT_AMOUNT]</td>
+                <td colspan="2" style="padding: 0;">[DISCOUNT_LINES]</td>
               </tr>
               <tr>
                 <td colspan="2" style="padding: 0;">[TAX_LINES]</td>

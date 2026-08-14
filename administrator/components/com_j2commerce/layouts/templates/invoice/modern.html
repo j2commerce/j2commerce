@@ -145,12 +145,12 @@
                     [IF:SHIPPING_METHOD]
                     <tr>
                       <td style="padding: 6px 0; font-size: 13px; color: #6b7280;">Shipping ([SHIPPING_METHOD])</td>
-                      <td style="padding: 6px 0; font-size: 13px; color: #1f2937; text-align: right;">[IF:SHIPPING_AMOUNT][SHIPPING_AMOUNT][/IF:SHIPPING_AMOUNT][IFNOT:SHIPPING_AMOUNT]Free[/IFNOT:SHIPPING_AMOUNT]</td>
+                      <td style="padding: 6px 0; font-size: 13px; color: #1f2937; text-align: right;">[SHIPPING_AMOUNT]</td>
                     </tr>
                     [/IF:SHIPPING_METHOD]
                     [IF:DISCOUNT_AMOUNT]
                     <tr>
-                      <td style="padding: 6px 0; font-size: 13px; color: #16a34a;">Discount</td>
+                      <td style="padding: 6px 0; font-size: 13px; color: #16a34a;">[IF:DISCOUNT_LABEL][DISCOUNT_LABEL][/IF:DISCOUNT_LABEL][IFNOT:DISCOUNT_LABEL]Discount[/IFNOT:DISCOUNT_LABEL]</td>
                       <td style="padding: 6px 0; font-size: 13px; color: #16a34a; text-align: right;">-[DISCOUNT_AMOUNT]</td>
                     </tr>
                     [/IF:DISCOUNT_AMOUNT]

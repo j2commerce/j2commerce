@@ -126,7 +126,7 @@
     [IF:SHIPPING_METHOD]
     <tr>
       <td>Shipping ([SHIPPING_METHOD])</td>
-      <td class="right">[IF:SHIPPING_AMOUNT][SHIPPING_AMOUNT][/IF:SHIPPING_AMOUNT][IFNOT:SHIPPING_AMOUNT]Free[/IFNOT:SHIPPING_AMOUNT]</td>
+      <td class="right">[SHIPPING_AMOUNT]</td>
     </tr>
     [/IF:SHIPPING_METHOD]
     [IF:TAX_AMOUNT]
@@ -137,7 +137,7 @@
     [/IF:TAX_AMOUNT]
     [IF:DISCOUNT_AMOUNT]
     <tr>
-      <td>Discount</td>
+      <td>[IF:DISCOUNT_LABEL][DISCOUNT_LABEL][/IF:DISCOUNT_LABEL][IFNOT:DISCOUNT_LABEL]Discount[/IFNOT:DISCOUNT_LABEL]</td>
       <td class="right">-[DISCOUNT_AMOUNT]</td>
     </tr>
     [/IF:DISCOUNT_AMOUNT]
