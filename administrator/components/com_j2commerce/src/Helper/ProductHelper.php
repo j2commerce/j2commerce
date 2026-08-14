@@ -2584,7 +2584,7 @@ class ProductHelper
         $max           = (float) ($variant->max_sale_qty ?? 0);
 
         if ($max > 0 && $quantityTotal > $max) {
-            $error = Text::sprintf('COM_J2COMMERCE_MAX_QUANTITY_FOR_PRODUCT', $max, $cartTotalQty);
+            $error = Text::sprintf('COM_J2COMMERCE_MAX_QUANTITY_FOR_PRODUCT', $max);
         }
 
         if ($min > 0 && $quantityTotal < $min) {
