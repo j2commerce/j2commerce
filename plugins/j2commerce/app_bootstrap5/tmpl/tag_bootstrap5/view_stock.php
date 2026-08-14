@@ -20,8 +20,9 @@ use Joomla\CMS\Language\Text;
 <div class="j2commerce-product-stock-container">
     <?php if (J2CommerceHelper::product()->managing_stock($this->product->variant)) : ?>
         <?php if ($this->product->variant->availability) : ?>
-            <span class="<?php echo $this->product->variant->availability ? 'in-stock' : 'out-of-stock'; ?>">
-                <?php echo J2CommerceHelper::product()->displayStock($this->product->variant, $this->params); ?>
+            <?php $stockText = J2CommerceHelper::product()->displayStock($this->product->variant, $this->params); ?>
+            <span class="<?php echo $stockText !== '' ? 'in-stock' : 'd-none'; ?>">
+                <?php echo $stockText; ?>
             </span>
         <?php else : ?>
             <span class="out-of-stock">
