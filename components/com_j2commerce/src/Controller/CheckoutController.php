@@ -1104,6 +1104,7 @@ class CheckoutController extends BaseController
             $shippingRates = $filterEvent->getArgument('rates', $shippingRates);
 
             $shippingRates = CartOrder::sortShippingRates($shippingRates, ConfigHelper::autoApplyShippingRate());
+            $shippingRates = array_values(array_filter($shippingRates, [CartOrder::class, 'rateChargesAreValid']));
 
             // Auto-select the first rate if no selection exists or previous selection is no longer available
             if (!empty($shippingRates)) {

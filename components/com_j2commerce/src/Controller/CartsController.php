@@ -165,6 +165,7 @@ class CartsController extends BaseController
         $methods = J2CommerceHelper::plugin()->eventWithArray('GetShippingRates', [$order]);
 
         $methods = CartOrder::sortShippingRates($methods, ConfigHelper::autoApplyShippingRate());
+        $methods = array_values(array_filter($methods, [CartOrder::class, 'rateChargesAreValid']));
 
         $session->set('shipping_methods', $methods, 'j2commerce');
 
@@ -1399,6 +1400,7 @@ class CartsController extends BaseController
                 $methods = J2CommerceHelper::plugin()->eventWithArray('GetShippingRates', [$order]);
 
                 $methods = CartOrder::sortShippingRates($methods, ConfigHelper::autoApplyShippingRate());
+                $methods = array_values(array_filter($methods, [CartOrder::class, 'rateChargesAreValid']));
 
                 $session->set('shipping_methods', $methods, 'j2commerce');
 
@@ -1467,7 +1469,7 @@ class CartsController extends BaseController
         $model   = $this->getCartModel();
         $session = $this->app->getSession();
 
-        // Rates are resolved server-side from the identifier; an unmatched selection leaves session values as they are.
+        // Rates are resolved server-side from the identifier; an unmatched selection is rejected, not silently kept.
         $selectedPlugin = $this->input->getString('shipping_plugin', '');
         $cartsModel     = $this->getModel('Carts');
         $order          = $cartsModel ? $cartsModel->getOrder() : null;
@@ -1480,9 +1482,14 @@ class CartsController extends BaseController
             )
             : null;
 
-        if ($resolved !== null) {
-            $session->set('shipping_values', $resolved, 'j2commerce');
+        if ($selectedPlugin !== '' && $resolved === null) {
+            $json['success'] = false;
+            $json['message'] = Text::_('COM_J2COMMERCE_CHECKOUT_SELECT_A_SHIPPING_METHOD');
+
+            $this->sendJsonResponse($json);
         }
+
+        $session->set('shipping_values', $resolved ?? CartOrder::emptyShippingValues(), 'j2commerce');
 
         $redirect         = $model->getCartUrl();
         $json['redirect'] = $redirect;

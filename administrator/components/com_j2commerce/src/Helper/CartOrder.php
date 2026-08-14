@@ -1137,6 +1137,20 @@ class CartOrder
     }
 
     /**
+     * A plugin returning a negative price, tax, or extra is broken — refuse to bind it.
+     * Takes mixed so filtering a rate list cannot fatal on a malformed member.
+     *
+     * @since   6.1.0
+     */
+    public static function rateChargesAreValid(mixed $rate): bool
+    {
+        return \is_array($rate)
+            && (float) ($rate['price'] ?? 0) >= 0
+            && (float) ($rate['tax'] ?? 0) >= 0
+            && (float) ($rate['extra'] ?? 0) >= 0;
+    }
+
+    /**
      * Re-resolve a shipping selection against a fresh GetShippingRates dispatch; monetary
      * values always come from the plugin's rate, never from request input. Null on no match.
      *
@@ -1176,23 +1190,18 @@ class CartOrder
                 continue;
             }
 
-            $price = (float) ($rate['price'] ?? 0);
-            $tax   = (float) ($rate['tax'] ?? 0);
-            $extra = (float) ($rate['extra'] ?? 0);
-
-            // A plugin returning a negative charge is broken — refuse to bind it.
-            if ($price < 0 || $tax < 0 || $extra < 0) {
+            if (!self::rateChargesAreValid($rate)) {
                 continue;
             }
 
             return [
                 'shipping_plugin'       => (string) ($rate['element'] ?? ''),
                 'shipping_name'         => (string) ($rate['name'] ?? ''),
-                'shipping_price'        => (string) $price,
+                'shipping_price'        => (string) (float) ($rate['price'] ?? 0),
                 'shipping_code'         => $rateCode,
-                'shipping_tax'          => (string) $tax,
+                'shipping_tax'          => (string) (float) ($rate['tax'] ?? 0),
                 'shipping_tax_class_id' => (int) ($rate['tax_class_id'] ?? 0),
-                'shipping_extra'        => (string) $extra,
+                'shipping_extra'        => (string) (float) ($rate['extra'] ?? 0),
             ];
         }
 
