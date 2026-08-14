@@ -1065,10 +1065,31 @@ class CartOrder
             $this->order_shipping     = $shippingPrice + $shippingExtra;
             $this->order_shipping_tax = $shippingTax;
 
+            $isIncludingTax = (int) ComponentHelper::getParams('com_j2commerce')->get('config_including_tax', 0);
+
+            // A carrier that prices its rate remotely returns no tax and passes the method's
+            // tax class through instead, leaving shipping the one charge on the order whose
+            // class nothing resolves. Put it through the same rate lookup the product lines
+            // use, so one source answers for both and the figure shown here is the figure
+            // saveOrderShipping() writes.
+            if ($shippingTax <= 0.0 && $this->order_shipping > 0) {
+                $shippingTaxClassId = $this->getShippingTaxClassId();
+
+                if ($shippingTaxClassId > 0) {
+                    $this->order_shipping_tax = TaxHelper::computeTax(
+                        $this->order_shipping,
+                        $shippingTaxClassId,
+                        $this->getCustomerGeozones(),
+                        (bool) $isIncludingTax
+                    )->taxtotal;
+
+                    $this->shippingRate->ordershipping_tax = $this->order_shipping_tax;
+                }
+            }
+
             // For inclusive pricing, the shipping price already embeds the tax so we must
             // not add order_shipping_tax again — doing so would double-count and inflate
             // the order total by the VAT amount.
-            $isIncludingTax = (int) ComponentHelper::getParams('com_j2commerce')->get('config_including_tax', 0);
 
             if ($isIncludingTax) {
                 $this->order_total += $this->order_shipping;
