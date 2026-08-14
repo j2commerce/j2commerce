@@ -1674,10 +1674,8 @@ class CheckoutController extends BaseController
             return;
         } // end isOwningRequest() block
 
-        $this->replayPaymentValues();
-
         try {
-            $order = $this->getCartOrder();
+            $order = $this->buildCartOrder();
 
             // Stock is enforced at add-to-cart and quantity-update, but time passes
             // before confirm — re-check here so two shoppers cannot both buy the last
@@ -1750,8 +1748,7 @@ class CheckoutController extends BaseController
         $vouchers   = [];
 
         if (!$errors && $order) {
-            $order->orderpayment_type = $orderpaymentType;
-            $order->applyPaymentSurcharge();
+            $this->applyPaymentTo($order, $orderpaymentType);
 
             try {
                 // Idempotency guard: a prior confirm() for this cart in this session
@@ -2121,29 +2118,46 @@ class CheckoutController extends BaseController
             && (int) ($orderTable->order_state_id ?? 0) === 5
         ) {
             try {
-                $currentOrder = $this->getCartOrder();
+                // Built through the same two steps the confirm step used to produce the
+                // row on disk, so the two sides of the comparison cannot drift apart by
+                // being assembled differently.
+                $currentOrder = $this->buildCartOrder();
 
-                if ($currentOrder instanceof CartOrder && $currentOrder->getItems()) {
-                    $currentOrder->orderpayment_type = (string) ($orderTable->orderpayment_type ?? '');
-                    $currentOrder->applyPaymentSurcharge();
+                if ($currentOrder && $currentOrder->getItems()) {
+                    $this->applyPaymentTo($currentOrder, (string) ($orderTable->orderpayment_type ?? ''));
+                } else {
+                    $currentOrder = null;
+                }
 
-                    if (!$this->orderMatchesCart($orderTable, $currentOrder)) {
-                        $message = Text::_('COM_J2COMMERCE_CHECKOUT_ERROR_ORDER_OUT_OF_DATE');
-                        $paction = $this->input->getString('paction', '');
-                        $isAjax  = $paction === 'process'
-                            || strtolower($this->input->server->getString('HTTP_X_REQUESTED_WITH', '')) === 'xmlhttprequest';
+                if ($currentOrder && !$this->orderMatchesCart($orderTable, $currentOrder)) {
+                    // Re-running the confirm step is what puts this right: it declines the
+                    // stale row, persists one built from the cart as it stands, and hands
+                    // the payment plugin the amount that comes out of it. So the step is
+                    // re-fetched rather than leaving the shopper holding a row that cannot
+                    // be paid for and no way to replace it.
+                    //
+                    // The shopper is told either way. Reaching here means the amount about
+                    // to be charged is not the amount on screen, and a redraw that says
+                    // nothing is indistinguishable from a button that did nothing.
+                    $message = Text::_('COM_J2COMMERCE_CHECKOUT_ERROR_ORDER_OUT_OF_DATE');
+                    $paction = $this->input->getString('paction', '');
+                    $isAjax  = $paction === 'process'
+                        || strtolower($this->input->server->getString('HTTP_X_REQUESTED_WITH', '')) === 'xmlhttprequest';
 
-                        if ($isAjax) {
-                            $this->jsonResponse(['success' => false, 'error' => $message]);
-
-                            return;
-                        }
-
-                        $this->app->enqueueMessage($message, 'warning');
-                        $this->app->redirect($this->getCheckoutUrl());
+                    if ($isAjax) {
+                        $this->jsonResponse([
+                            'success'         => false,
+                            'error'           => $message,
+                            'refresh_confirm' => true,
+                        ]);
 
                         return;
                     }
+
+                    $this->app->enqueueMessage($message, 'warning');
+                    $this->app->redirect($this->getCheckoutUrl());
+
+                    return;
                 }
             } catch (\Throwable $e) {
                 // The comparison could not be made. Refusing on that would strand a
@@ -2399,6 +2413,28 @@ class CheckoutController extends BaseController
     }
 
     /**
+     * Turn the current cart into an order.
+     *
+     * The payment values are replayed first because a fee a plugin calculates from
+     * them belongs to the total this produces.
+     */
+    private function buildCartOrder(): ?CartOrder
+    {
+        $this->replayPaymentValues();
+
+        $order = $this->getCartOrder();
+
+        return $order instanceof CartOrder ? $order : null;
+    }
+
+    /** Attach the payment method and fold in its surcharge. */
+    private function applyPaymentTo(CartOrder $order, string $orderpaymentType): void
+    {
+        $order->orderpayment_type = $orderpaymentType;
+        $order->applyPaymentSurcharge();
+    }
+
+    /**
      * Whether a persisted order still describes the cart being confirmed.
      *
      * Compares the money the shopper would be charged and the lines that money is
@@ -2411,9 +2447,11 @@ class CheckoutController extends BaseController
         $scale  = CurrencyHelper::getDecimalPlace(ConfigHelper::getDefaultCurrency());
         $factor = 10 ** $scale;
 
-        // Compared in the currency's own minor units: saveOrder() rounds to the same
-        // scale before storing, so equal purchases compare exactly and no float
-        // tolerance has to be invented.
+        // Compared in the currency's own minor units. The stored side was rounded to
+        // this scale by saveOrder() and the cart's carries whatever precision the tax
+        // and fee arithmetic produced (an 8.25% tax on 6.75 is 0.556875), so rounding
+        // both to scale is what puts them on the same footing — the cart total is not
+        // compared raw.
         $storedTotal  = (int) round(((float) ($priorOrder->order_total ?? 0)) * $factor);
         $currentTotal = (int) round(((float) ($cartOrder->order_total ?? 0)) * $factor);
 

@@ -1107,7 +1107,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function goToConfirm() {
-        fetchStep('confirm', 'confirm').then(function() {
+        return fetchStep('confirm', 'confirm').then(function() {
             hideAllContents();
             slideDown(getContent('confirm'));
             removeEditLinks();
@@ -1282,6 +1282,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Clear previous error/warning messages
             form.querySelectorAll('.j2error, .j2success, .j2warning, .warning, .uk-alert-danger, .uk-alert-success').forEach(function(el) { el.remove(); });
+
+            // The persisted order no longer describes the cart. Re-fetching the step
+            // rebuilds and re-persists it and re-initialises the payment plugin with
+            // the amount that comes out, so the corrected figures are on screen by the
+            // time the notice lands and the order can be placed again.
+            if (json.refresh_confirm) {
+                var refreshMsg = typeof json.error === 'string' ? json.error : '';
+
+                // Left disabled until the corrected step is on screen, so a second click
+                // cannot place the order against figures that are still being replaced.
+                goToConfirm().then(function() {
+                    var refreshed = getContent('confirm');
+                    if (refreshed && refreshMsg) {
+                        showWarning(refreshed, refreshMsg);
+                    }
+                }).catch(function() {
+                    btn.disabled = false;
+                });
+
+                return;
+            }
 
             if (json.error) {
                 var confirmContent = document.getElementById('confirm') && document.getElementById('confirm').querySelector('.checkout-content');
