@@ -1167,6 +1167,11 @@ class CartModel extends BaseDatabaseModel
     /**
      * Get behavior class name for product type.
      *
+     * A type with no behavior of its own deliberately gets none: CartDefault recomputes
+     * pricing from the master variant, which would overwrite a price an unhandled type
+     * computed for itself. Product-level data such as taxprofile_id reaches those lines
+     * from the CartItems query instead.
+     *
      * @param   string  $productType  Product type (simple, variable, etc.).
      *
      * @return  string|null  Fully qualified class name or null.

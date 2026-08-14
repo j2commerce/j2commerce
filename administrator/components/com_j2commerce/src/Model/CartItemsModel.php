@@ -129,12 +129,18 @@ class CartItemsModel extends ListModel
         );
         $query->from($db->quoteName('#__j2commerce_cartitems', 'a'));
 
-        // Join with products table to get product information
+        // Join with products table to get product information. taxprofile_id is carried here
+        // rather than left to each Cart{Type} behavior: CartOrder::calculateTotals() taxes a
+        // line only when the item holds one, so a type whose behavior never assigns it — or
+        // has no behavior at all — would otherwise contribute nothing to the tax while still
+        // counting toward the subtotal. A behavior that assigns its own value still wins,
+        // and so does an app plugin overriding it on GetDiscountedPrice.
         $query->select([
-            'p.product_type AS product_type_name',
-            'p.vendor_id    AS product_vendor_id',
-            'p.enabled      AS product_enabled',
-            'c.title        AS product_name',
+            'p.product_type   AS product_type_name',
+            'p.vendor_id      AS product_vendor_id',
+            'p.enabled        AS product_enabled',
+            'p.taxprofile_id  AS taxprofile_id',
+            'c.title          AS product_name',
         ])
             ->join(
                 'LEFT',

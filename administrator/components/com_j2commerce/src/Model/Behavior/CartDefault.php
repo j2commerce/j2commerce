@@ -291,9 +291,11 @@ class CartDefault
                     $existingParams['back_order_item'] = 'COM_J2COMMERCE_CART_BACKORDER_ITEM';
                 }
             }
-            // Set taxprofile_id from variant
-            $item->taxprofile_id = (int) ($variant->taxprofile_id ?? 0);
         }
+
+        // Set taxprofile_id from product (column is on products table, not variants), and
+        // outside the variant branch — a line with no resolvable variant is taxed the same.
+        $item->taxprofile_id = (int) ($product->taxprofile_id ?? 0);
 
         $item->cartitem_params = json_encode($existingParams);
 
