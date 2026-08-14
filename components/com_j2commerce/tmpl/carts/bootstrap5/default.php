@@ -204,9 +204,6 @@ $clearCartUrl = J2CommerceHelper::platform()->getCartUrl(['task' => 'clearCart']
                 }
             })
             .catch(function() { window.location.reload(); });
-
-        // Also update the mini-cart module
-        document.dispatchEvent(new CustomEvent('j2commerce:cart:updated', { bubbles: true }));
     }
 
     document.addEventListener('j2commerce:coupon:applied', refreshCartTotals);

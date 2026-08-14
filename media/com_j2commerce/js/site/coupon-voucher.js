@@ -231,6 +231,19 @@
         element.dispatchEvent(new CustomEvent(name, { bubbles: true, detail: detail }));
     }
 
+    /**
+     * Announce the cart money change on the signal every cart surface listens to.
+     *
+     * The coupon/voucher events above are consumed by the pages that host this
+     * form (cart, checkout). Surfaces that host it without owning the page — the
+     * mini-cart module, the cart drawer, third-party totals displays — refresh on
+     * j2commerce:cart:updated, the same signal a quantity change or an item
+     * removal sends. A coupon moves the same money, so it sends it too.
+     */
+    function notifyCartUpdated() {
+        document.dispatchEvent(new CustomEvent('j2commerce:cart:updated', { bubbles: true }));
+    }
+
     // --- Apply Coupon ---
 
     document.addEventListener('click', function (e) {
@@ -258,6 +271,7 @@
                     dispatchEvent(form, 'j2commerce:coupon:applied', {
                         code: code, message: data.message || '', formId: form.id
                     });
+                    notifyCartUpdated();
                 } else {
                     showInputError(input, data.message || 'Invalid coupon code.');
                     btn.disabled = false;
@@ -290,6 +304,7 @@
                 dispatchEvent(form, 'j2commerce:coupon:removed', {
                     message: data.message || '', formId: form.id
                 });
+                notifyCartUpdated();
             })
             .catch(function () {
                 btn.disabled = false;
@@ -323,6 +338,7 @@
                     dispatchEvent(form, 'j2commerce:voucher:applied', {
                         code: code, message: data.message || '', formId: form.id
                     });
+                    notifyCartUpdated();
                 } else {
                     showInputError(input, data.message || 'Invalid voucher code.');
                     btn.disabled = false;
@@ -355,6 +371,7 @@
                 dispatchEvent(form, 'j2commerce:voucher:removed', {
                     message: data.message || '', formId: form.id
                 });
+                notifyCartUpdated();
             })
             .catch(function () {
                 btn.disabled = false;
