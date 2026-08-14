@@ -158,6 +158,16 @@ class HtmlView extends BaseHtmlView
             $toolbar->standardButton('addallcountries', 'COM_J2COMMERCE_GEOZONE_ADD_ALL_COUNTRIES', 'geozone.addAllCountries')
                 ->icon('fa-solid fa-earth-americas')
                 ->listCheck(false);
+
+            // Handled in the page rather than by a form submit: the rule rows are cleared the same
+            // way the per-row Delete button clears one, so the record is never re-saved to lose them.
+            // Rendered disabled: the page enables it once a row is ticked, so the button never
+            // offers an action that has nothing to act on.
+            $toolbar->confirmButton('delete', 'COM_J2COMMERCE_GEOZONE_DELETE_SELECTED_COUNTRIES', 'geozone.removeSelectedRules')
+                ->message('COM_J2COMMERCE_GEOZONE_CONFIRM_DELETE_SELECTED_COUNTRIES')
+                ->icon('fa-solid fa-trash')
+                ->attributes(['disabled' => 'disabled'])
+                ->listCheck(false);
         }
 
         $toolbar->cancel('geozone.cancel', $isNew ? 'JTOOLBAR_CANCEL' : 'JTOOLBAR_CLOSE');

@@ -24,8 +24,11 @@ $wa->useScript('keepalive')
     ->useScript('form.validate');
 
 Text::script('COM_J2COMMERCE_GEOZONE_ERR_NAME_REQUIRED_FOR_ADD_ALL');
+Text::script('COM_J2COMMERCE_GEOZONE_ERR_NO_COUNTRIES_SELECTED');
+Text::script('COM_J2COMMERCE_ERROR_DELETE_FAILED');
 Text::script('JACTION_DELETE');
 Text::script('JCLOSE');
+Text::script('JSELECT');
 
 // Encodes PHP values for the inline <script>: the hex flags stop a country or zone
 // name containing </script> or a quote from breaking out of the block.
@@ -59,8 +62,11 @@ $token = Session::getFormToken();
                     <table id="geozone-rules-table" class="table table-striped">
                         <thead>
                             <tr>
-                                <th style="width: 40%"><?php echo Text::_('COM_J2COMMERCE_FIELD_COUNTRY'); ?></th>
-                                <th style="width: 40%"><?php echo Text::_('COM_J2COMMERCE_FIELD_ZONE'); ?></th>
+                                <th style="width: 5%" class="text-center align-middle">
+                                    <input type="checkbox" class="form-check-input" id="geozone-rules-checkall" aria-label="<?php echo Text::_('JGLOBAL_CHECK_ALL'); ?>">
+                                </th>
+                                <th style="width: 37%"><?php echo Text::_('COM_J2COMMERCE_FIELD_COUNTRY'); ?></th>
+                                <th style="width: 38%"><?php echo Text::_('COM_J2COMMERCE_FIELD_ZONE'); ?></th>
                                 <th style="width: 20%" class="text-end"><?php echo Text::_('JACTION_DELETE'); ?></th>
                             </tr>
                         </thead>
@@ -69,6 +75,11 @@ $token = Session::getFormToken();
                             <?php if ($geozonerules): ?>
                                 <?php foreach ($geozonerules as $rule): ?>
                                     <tr id="rule-row-<?php echo $rowIndex; ?>">
+                                        <?php // Deliberately unnamed: a named checkbox would add a POST variable per ?>
+                                        <?php // row, and this form already runs at the host's max_input_vars ceiling. ?>
+                                        <td class="text-center align-middle">
+                                            <input type="checkbox" class="form-check-input" data-action="select-rule" data-rule-id="<?php echo (int) $rule->j2commerce_geozonerule_id; ?>" data-row-index="<?php echo $rowIndex; ?>" aria-label="<?php echo Text::_('JSELECT'); ?>">
+                                        </td>
                                         <td>
                                             <select name="geozonerules[<?php echo $rowIndex; ?>][country_id]" id="country-<?php echo $rowIndex; ?>" class="form-select" data-role="country" data-row-index="<?php echo $rowIndex; ?>">
                                                 <option value=""><?php echo Text::_('COM_J2COMMERCE_SELECT_COUNTRY'); ?></option>
@@ -104,7 +115,7 @@ $token = Session::getFormToken();
                         </tbody>
                         <tfoot>
                             <tr>
-                                <td colspan="3">
+                                <td colspan="4">
                                     <button type="button" class="btn btn-primary" data-action="add-rule">
                                         <span class="icon-plus" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_GEOZONE_ADD_RULE'); ?>
                                     </button>
@@ -152,6 +163,15 @@ document.addEventListener('DOMContentLoaded', function() {
             );
         }
 
+        // Clearing rules is the per-row Delete button applied to a selection, so it stays in the
+        // page: submitting would re-save the record and the toolbar is only the place to click it.
+        if (task === 'geozone.removeSelectedRules') {
+            J2CommerceGeozone.removeSelected()
+                .catch((error) => console.error('Error removing rules:', error));
+
+            return false;
+        }
+
         if (task === 'geozone.addAllCountries') {
             const nameField = document.getElementById('jform_geozone_name');
 
@@ -183,6 +203,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // CSRF token
     const token = <?php echo $toJs($token); ?>;
+
+    const geozoneId = <?php echo (int) $this->item->j2commerce_geozone_id; ?>;
 
     // Current row index
     let rowIndex = <?php echo $rowIndex; ?>;
@@ -234,6 +256,19 @@ document.addEventListener('DOMContentLoaded', function() {
             const newRow = document.createElement('tr');
             newRow.id = 'rule-row-' + index;
 
+            const selectCell = document.createElement('td');
+            selectCell.className = 'text-center align-middle';
+
+            // Unnamed, like the rendered rows: selection must not cost a POST variable.
+            const selectBox = document.createElement('input');
+            selectBox.type = 'checkbox';
+            selectBox.className = 'form-check-input';
+            selectBox.dataset.action = 'select-rule';
+            selectBox.dataset.ruleId = '0';
+            selectBox.dataset.rowIndex = String(index);
+            selectBox.setAttribute('aria-label', Joomla.Text._('JSELECT'));
+            selectCell.appendChild(selectBox);
+
             const countryCell = document.createElement('td');
             const countrySelect = document.createElement('select');
             countrySelect.name = 'geozonerules[' + index + '][country_id]';
@@ -276,7 +311,7 @@ document.addEventListener('DOMContentLoaded', function() {
             deleteButton.append(icon, ' ' + Joomla.Text._('JACTION_DELETE'));
             deleteCell.appendChild(deleteButton);
 
-            newRow.append(countryCell, zoneCell, deleteCell);
+            newRow.append(selectCell, countryCell, zoneCell, deleteCell);
             tbody.appendChild(newRow);
             rowIndex++;
         },
@@ -314,7 +349,92 @@ document.addEventListener('DOMContentLoaded', function() {
             row.style.opacity = '0';
             setTimeout(function() {
                 row.remove();
+                J2CommerceGeozone.syncDeleteButton();
             }, 300);
+        },
+
+        /**
+         * The toolbar Delete Selected button stays disabled while nothing is ticked
+         */
+        syncDeleteButton: function() {
+            const button = document.querySelector('joomla-toolbar-button[task="geozone.removeSelectedRules"] button');
+
+            if (!button) {
+                return;
+            }
+
+            button.disabled = document.querySelector('#geozone-rules-body input[data-action="select-rule"]:checked') === null;
+        },
+
+        /**
+         * Delete every checked rule: one request for the saved ones, DOM removal for the rest
+         */
+        removeSelected: async function() {
+            const boxes = Array.from(
+                document.querySelectorAll('#geozone-rules-body input[data-action="select-rule"]:checked')
+            );
+
+            if (boxes.length === 0) {
+                Joomla.renderMessages({
+                    warning: [Joomla.Text._('COM_J2COMMERCE_GEOZONE_ERR_NO_COUNTRIES_SELECTED')]
+                });
+
+                return;
+            }
+
+            const savedIds = boxes
+                .map((box) => Number(box.dataset.ruleId))
+                .filter((id) => id > 0);
+
+            // Rows that were never saved exist only here, so they need no round trip.
+            if (savedIds.length > 0) {
+                const body = new FormData();
+                body.append('rule_ids', savedIds.join(','));
+                body.append('geozone_id', String(geozoneId));
+                body.append(token, '1');
+
+                try {
+                    const response = await fetch('index.php?option=com_j2commerce&task=geozone.removeRules', {
+                        method: 'POST',
+                        headers: {'X-Requested-With': 'XMLHttpRequest'},
+                        body: body
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('HTTP ' + response.status);
+                    }
+
+                    const payload = await response.json();
+
+                    if (!payload.data || !payload.data.success) {
+                        throw new Error(payload.message || 'delete failed');
+                    }
+
+                    this.showAlert('success', payload.data.message);
+                } catch (error) {
+                    // The rows stay on screen: they are still in the database.
+                    console.error('Error removing rules:', error);
+                    this.showAlert('error', Joomla.Text._('COM_J2COMMERCE_ERROR_DELETE_FAILED'));
+
+                    return;
+                }
+            }
+
+            boxes.forEach(function(box) {
+                const row = document.getElementById('rule-row-' + box.dataset.rowIndex);
+
+                if (row) {
+                    row.remove();
+                }
+            });
+
+            const checkAll = document.getElementById('geozone-rules-checkall');
+
+            if (checkAll) {
+                checkAll.checked = false;
+            }
+
+            this.syncDeleteButton();
         },
 
         /**
@@ -352,6 +472,30 @@ document.addEventListener('DOMContentLoaded', function() {
     const rulesTable = document.getElementById('geozone-rules-table');
 
     rulesTable.addEventListener('change', function(e) {
+        if (e.target.id === 'geozone-rules-checkall') {
+            document.querySelectorAll('#geozone-rules-body input[data-action="select-rule"]')
+                .forEach((box) => {
+                    box.checked = e.target.checked;
+                });
+
+            J2CommerceGeozone.syncDeleteButton();
+
+            return;
+        }
+
+        if (e.target.matches('input[data-action="select-rule"]')) {
+            const boxes    = document.querySelectorAll('#geozone-rules-body input[data-action="select-rule"]');
+            const checkAll = document.getElementById('geozone-rules-checkall');
+
+            if (checkAll) {
+                checkAll.checked = boxes.length > 0 && Array.from(boxes).every((box) => box.checked);
+            }
+
+            J2CommerceGeozone.syncDeleteButton();
+
+            return;
+        }
+
         const select = e.target.closest('select[data-role="country"]');
 
         if (!select) {

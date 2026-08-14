@@ -270,6 +270,35 @@ class GeozoneModel extends AdminModel
     }
 
     /**
+     * Delete several rules in one statement and report how many rows went.
+     *
+     * Scoped to the geozone as well as the ids so a stale id from the browser can only ever
+     * reach the record being edited.
+     *
+     * @since   6.5.0
+     */
+    public function deleteRules(int $geozoneId, array $ruleIds): int
+    {
+        $ruleIds = array_values(array_filter(array_map('intval', $ruleIds), static fn (int $id): bool => $id > 0));
+
+        if ($ruleIds === [] || $geozoneId <= 0) {
+            return 0;
+        }
+
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true)
+            ->delete($db->quoteName('#__j2commerce_geozonerules'))
+            ->whereIn($db->quoteName('j2commerce_geozonerule_id'), $ruleIds, ParameterType::INTEGER)
+            ->where($db->quoteName('geozone_id') . ' = :geozone_id')
+            ->bind(':geozone_id', $geozoneId, ParameterType::INTEGER);
+
+        $db->setQuery($query);
+        $db->execute();
+
+        return (int) $db->getAffectedRows();
+    }
+
+    /**
      * Method to get the data that should be injected in the form.
      *
      * @return  mixed  The data for the form.

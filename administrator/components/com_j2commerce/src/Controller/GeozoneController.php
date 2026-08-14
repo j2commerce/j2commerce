@@ -609,4 +609,77 @@ class GeozoneController extends FormController
         echo new JsonResponse($response);
         $app->close();
     }
+
+    /**
+     * AJAX: Remove every selected geozone rule in one request.
+     *
+     * The ids travel as a single comma-separated value rather than one variable per id. The rule
+     * table already spends three POST variables a row and a full zone runs to 239 rows, so this
+     * screen sits close enough to max_input_vars that a per-id array would be the thing that
+     * pushes it over.
+     *
+     * @since   6.5.0
+     */
+    public function removeRules(): void
+    {
+        $app  = Factory::getApplication();
+        $user = $app->getIdentity();
+
+        $this->prepareJsonResponse($app);
+
+        // Same gate as removeRule: clearing rules edits an existing record. A CSRF token proves
+        // the request came from our form, not that the caller may delete.
+        if ($user->guest || !$user->authorise('core.edit', 'com_j2commerce')) {
+            $app->setHeader('status', 403, true);
+            $app->sendHeaders();
+            echo new JsonResponse(null, Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), true);
+            $app->close();
+        }
+
+        if (!Session::checkToken()) {
+            $app->setHeader('status', 403, true);
+            $app->sendHeaders();
+            echo new JsonResponse(null, Text::_('JINVALID_TOKEN'), true);
+            $app->close();
+        }
+
+        $input     = $app->getInput();
+        $geozoneId = $input->post->getInt('geozone_id', 0);
+        $ruleIds   = array_filter(
+            array_map('intval', explode(',', $input->post->getString('rule_ids', ''))),
+            static fn (int $id): bool => $id > 0
+        );
+
+        // Rows added in the browser but never saved have no PK yet — the page drops them itself.
+        if ($ruleIds === []) {
+            $app->sendHeaders();
+            echo new JsonResponse([
+                'success' => true,
+                'deleted' => 0,
+                'message' => Text::sprintf('COM_J2COMMERCE_GEOZONE_N_COUNTRIES_DELETED', 0),
+            ]);
+            $app->close();
+        }
+
+        try {
+            $deleted = $this->getModel('Geozone')->deleteRules($geozoneId, $ruleIds);
+
+            $response = [
+                'success' => true,
+                'deleted' => $deleted,
+                'message' => Text::sprintf('COM_J2COMMERCE_GEOZONE_N_COUNTRIES_DELETED', $deleted),
+            ];
+        } catch (\Throwable $e) {
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+
+            $app->setHeader('status', 500, true);
+            $app->sendHeaders();
+
+            $response = ['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_DELETE_FAILED')];
+        }
+
+        $app->sendHeaders();
+        echo new JsonResponse($response);
+        $app->close();
+    }
 }
