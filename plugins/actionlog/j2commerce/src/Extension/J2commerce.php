@@ -19,6 +19,7 @@ namespace J2Commerce\Plugin\Actionlog\J2commerce\Extension;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Mail\Exception\MailDisabledException;
+use Joomla\CMS\Mail\MailerFactoryInterface;
 use Joomla\CMS\User\UserFactoryAwareTrait;
 use Joomla\Component\Actionlogs\Administrator\Helper\ActionlogsHelper;
 use Joomla\Component\Actionlogs\Administrator\Plugin\ActionLogPlugin;
@@ -786,7 +787,7 @@ final class J2commerce extends ActionLogPlugin implements SubscriberInterface
 
         foreach ($emails as $email) {
             try {
-                $mailer = Factory::getMailer();
+                $mailer = Factory::getContainer()->get(MailerFactoryInterface::class)->createMailer();
                 $mailer->addRecipient($email);
                 $mailer->setSubject($subject);
                 $mailer->setBody($body);

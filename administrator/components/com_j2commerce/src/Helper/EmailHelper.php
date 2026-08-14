@@ -19,6 +19,7 @@ use Joomla\CMS\Language\Language;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\Mail\Mail;
+use Joomla\CMS\Mail\MailerFactoryInterface;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Uri\Uri;
 use Joomla\Database\DatabaseInterface;
@@ -404,8 +405,9 @@ class EmailHelper
         $mailfrom = $config->get('mailfrom');
         $fromname = $config->get('fromname');
 
-        // Set the sender information
-        $mailer->setSender([$mailfrom, $fromname]);
+        // Third element false leaves PHPMailer's Sender empty, so mail() is called
+        // without a -f envelope-sender argument, mirroring core's MailTemplate.
+        $mailer->setSender([$mailfrom, $fromname, false]);
 
         // Set encoding information
         $mailer->CharSet  = 'utf-8';
@@ -1487,7 +1489,7 @@ class EmailHelper
      */
     private function getMailer(bool $isHTML = true): Mail
     {
-        $mailer = clone Factory::getMailer();
+        $mailer = Factory::getContainer()->get(MailerFactoryInterface::class)->createMailer();
         $mailer->IsHTML($isHTML);
         $mailer->CharSet = 'UTF-8';
 
@@ -1507,7 +1509,7 @@ class EmailHelper
         $mailer   = $this->getMailer();
         $mailfrom = $config->get('mailfrom');
         $fromname = $config->get('fromname');
-        $mailer->setSender([$mailfrom, $fromname]);
+        $mailer->setSender([$mailfrom, $fromname, false]);
 
         return $mailer;
     }

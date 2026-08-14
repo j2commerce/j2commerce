@@ -15,8 +15,11 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 use J2Commerce\Component\J2commerce\Administrator\Helper\EmailHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\MessageHelper;
 use Joomla\CMS\Event\GenericEvent;
+use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
+use Joomla\CMS\Mail\Exception\MailDisabledException;
+use Joomla\CMS\Mail\MailerFactoryInterface;
 use Joomla\CMS\MVC\Controller\FormController;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 use Joomla\CMS\Plugin\PluginHelper;
@@ -324,6 +327,10 @@ class EmailtemplateController extends FormController
             return;
         }
 
+        // Built before the try so the transport is known even if sending throws.
+        $mailer    = Factory::getContainer()->get(MailerFactoryInterface::class)->createMailer();
+        $transport = $mailer->Mailer;
+
         try {
             $emailHelper = EmailHelper::getInstance();
             $order       = $emailHelper->getSampleOrderData();
@@ -345,8 +352,11 @@ class EmailtemplateController extends FormController
                 . '</head><body>' . $processedBody . '</body></html>';
 
             $config = $this->app->getConfig();
-            $mailer = \Joomla\CMS\Factory::getMailer();
-            $mailer->setSender([$config->get('mailfrom'), $config->get('fromname')]);
+
+            // Third element false leaves PHPMailer's Sender empty, so mail() is called
+            // without a -f envelope-sender argument. Mirrors MailTemplate, which core
+            // uses everywhere; hosts that refuse the envelope sender fail mail() outright.
+            $mailer->setSender([$config->get('mailfrom'), $config->get('fromname'), false]);
             $mailer->addRecipient($recipient);
             $mailer->setSubject('[TEST] ' . $processedSubject);
             $mailer->isHTML(true);
@@ -358,10 +368,14 @@ class EmailtemplateController extends FormController
                 $json['success'] = true;
                 $json['message'] = Text::sprintf('COM_J2COMMERCE_EMAILTEMPLATE_TEST_SENT', $recipient);
             } else {
-                $json['message'] = Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TEST_FAILED');
+                $json['message'] = Text::sprintf('COM_J2COMMERCE_EMAILTEMPLATE_TEST_FAILED_TRANSPORT', $transport);
             }
+        } catch (MailDisabledException $e) {
+            Log::add('emailtemplate.sendTest blocked: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
+            $json['message'] = Text::_('JLIB_MAIL_FUNCTION_OFFLINE');
         } catch (\Throwable $e) {
-            $json['message'] = $e->getMessage();
+            Log::add('emailtemplate.sendTest failed via ' . $transport . ': ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $json['message'] = Text::sprintf('COM_J2COMMERCE_EMAILTEMPLATE_TEST_FAILED_TRANSPORT', $transport);
         }
 
         header('Content-Type: application/json');

@@ -412,7 +412,7 @@ class UserHelper
             $mailer->addRecipient($email);
             $mailer->setSubject($subject);
             $mailer->setBody($message);
-            $mailer->setSender([$mailfrom, $fromname]);
+            $mailer->setSender([$mailfrom, $fromname, false]);
 
             return (bool) $mailer->send();
         } catch (\Exception $e) {

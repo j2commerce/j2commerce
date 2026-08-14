@@ -14,10 +14,14 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
+use Joomla\CMS\Mail\MailerFactoryInterface;
+use Joomla\CMS\Mail\MailHelper;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\Plugin\PluginHelper;
+use Joomla\CMS\Session\Session;
 use Joomla\CMS\Version;
 use Joomla\Database\DatabaseAwareTrait;
+use Joomla\Event\Event;
 use Joomla\Event\SubscriberInterface;
 
 // phpcs:disable PSR1.Files.SideEffects
@@ -41,6 +45,136 @@ final class AppDiagnostics extends CMSPlugin implements SubscriberInterface
     {
         return [
             'onJ2CommerceProcessCron' => 'onJ2CommerceProcessCron',
+            'onAjaxApp_diagnostics'   => 'onAjaxAppDiagnostics',
+        ];
+    }
+
+    /**
+     * Reports the mail transport Joomla builds from the SAVED configuration — the one
+     * every component email uses. Global Configuration's "Send Test Mail" does NOT test
+     * this: it builds a throwaway Registry from the values currently in the form.
+     *
+     * @return  array<string, mixed>
+     *
+     * @since   6.2.3
+     */
+    public function getMailInfo(): array
+    {
+        $config = $this->getApplication()->getConfig();
+        $mailer = Factory::getContainer()->get(MailerFactoryInterface::class)->createMailer();
+
+        $saved    = (string) $config->get('mailer', '');
+        $built    = (string) $mailer->Mailer;
+        $mailfrom = (string) $config->get('mailfrom', '');
+        $fromname = (string) $config->get('fromname', '');
+
+        // Measures what the shipped send path actually produces rather than asserting it:
+        // a non-empty Sender here means mail() is handed a -f envelope-sender argument,
+        // which some hosts refuse outright.
+        $probe = Factory::getContainer()->get(MailerFactoryInterface::class)->createMailer();
+
+        if (MailHelper::isEmailAddress($mailfrom)) {
+            $probe->setSender([$mailfrom, $fromname, false]);
+        }
+
+        return [
+            'mailonline'      => (bool) $config->get('mailonline', 1),
+            'saved_mailer'    => $saved,
+            'built_mailer'    => $built,
+            'silent_fallback' => $saved === 'smtp' && $built !== 'smtp',
+            'mailfrom'        => $mailfrom,
+            'fromname'        => $fromname,
+            'smtphost'        => (string) $config->get('smtphost', ''),
+            'smtpport'        => (string) $config->get('smtpport', ''),
+            'smtpsecure'      => (string) $config->get('smtpsecure', ''),
+            'smtpauth'        => (bool) $config->get('smtpauth', 0),
+            'smtpuser_set'    => (string) $config->get('smtpuser', '') !== '',
+            'smtppass_set'    => (string) $config->get('smtppass', '') !== '',
+            'sendmail_path'   => (string) \ini_get('sendmail_path'),
+            'force_extra'     => (string) \ini_get('mail.force_extra_parameters'),
+            'envelope_sender' => (string) $probe->Sender,
+        ];
+    }
+
+    /**
+     * Admin-only AJAX surface. Every task independently passes all three gates: CSRF token,
+     * administrator client, and core.admin — a token is anti-forgery, never authorisation.
+     *
+     * @since   6.2.3
+     */
+    public function onAjaxAppDiagnostics(Event $event): void
+    {
+        $app  = $this->getApplication();
+        $task = $app->getInput()->getCmd('task', '');
+
+        if (!Session::checkToken()) {
+            $event->addResult(['success' => false, 'message' => Text::_('JINVALID_TOKEN')]);
+
+            return;
+        }
+
+        $user = $app->getIdentity();
+
+        if (!$app->isClient('administrator') || $user === null || $user->guest || !$user->authorise('core.admin')) {
+            $event->addResult(['success' => false, 'message' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
+
+            return;
+        }
+
+        $event->addResult(match ($task) {
+            'mailtest' => $this->ajaxMailTest(),
+            default    => ['success' => false, 'message' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')],
+        });
+    }
+
+    /**
+     * Sends two probes through PHP's mail() — one with the -f envelope-sender argument and
+     * one without — to establish whether this host refuses it. Both go to the signed-in
+     * administrator's own address, so the endpoint can never relay to a chosen recipient.
+     *
+     * @return  array<string, mixed>
+     *
+     * @since   6.2.3
+     */
+    private function ajaxMailTest(): array
+    {
+        $info = $this->getMailInfo();
+
+        if ($info['built_mailer'] !== 'mail') {
+            return [
+                'success' => false,
+                'skipped' => true,
+                'message' => Text::sprintf('PLG_J2COMMERCE_APP_DIAGNOSTICS_MAIL_TEST_NOT_APPLICABLE', $info['built_mailer']),
+            ];
+        }
+
+        $to   = (string) $this->getApplication()->getIdentity()->email;
+        $from = $info['mailfrom'];
+
+        if (!MailHelper::isEmailAddress($to) || !MailHelper::isEmailAddress($from)) {
+            return ['success' => false, 'message' => Text::_('PLG_J2COMMERCE_APP_DIAGNOSTICS_MAIL_TEST_NO_ADDRESS')];
+        }
+
+        $headers = 'From: ' . $from . "\r\n" . 'Content-Type: text/plain; charset=utf-8';
+
+        $withoutF = mail($to, '[A] ' . Text::_('PLG_J2COMMERCE_APP_DIAGNOSTICS_MAIL_TEST_SUBJECT_A'), 'A', $headers);
+        $withF    = mail($to, '[B] ' . Text::_('PLG_J2COMMERCE_APP_DIAGNOSTICS_MAIL_TEST_SUBJECT_B'), 'B', $headers, '-f' . $from);
+
+        $verdict = match (true) {
+            $withoutF && !$withF  => 'rejects_f',
+            $withoutF && $withF   => 'both_ok',
+            !$withoutF && !$withF => 'both_fail',
+            default               => 'only_f',
+        };
+
+        Log::add(\sprintf('app_diagnostics mail test: without-f=%s with-f=%s', $withoutF ? 'ok' : 'fail', $withF ? 'ok' : 'fail'), Log::INFO, 'com_j2commerce');
+
+        return [
+            'success'   => true,
+            'without_f' => $withoutF,
+            'with_f'    => $withF,
+            'verdict'   => Text::_('PLG_J2COMMERCE_APP_DIAGNOSTICS_MAIL_TEST_VERDICT_' . strtoupper($verdict)),
+            'sent_to'   => $to,
         ];
     }
 
