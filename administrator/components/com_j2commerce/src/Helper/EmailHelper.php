@@ -1045,19 +1045,37 @@ class EmailHelper
         $currencyCode  = $order->currency_code ?? '';
         $currencyValue = (float) ($order->currency_value ?? 1);
         $rows          = '';
+        $profileSum    = 0.0;
+
+        $line = static function (string $label, float $amount) use ($currencyCode, $currencyValue): string {
+            return '<tr>'
+                . '<td style="padding: 6px 20px; font-size: 13px; color: #6b7280;">' . $label . '</td>'
+                . '<td style="padding: 6px 20px; font-size: 13px; color: #6b7280; text-align: right;">'
+                . CurrencyHelper::format($amount, $currencyCode, $currencyValue) . '</td>'
+                . '</tr>';
+        };
 
         foreach ($taxes as $tax) {
+            $profileSum += (float) $tax->ordertax_amount;
+
             if ((float) $tax->ordertax_amount <= 0) {
                 continue;
             }
             $title   = htmlspecialchars($tax->ordertax_title);
             $percent = (float) $tax->ordertax_percent;
-            $amount  = CurrencyHelper::format((float) $tax->ordertax_amount, $currencyCode, $currencyValue);
             $label   = $title . ($percent > 0 ? ' (' . rtrim(rtrim(number_format($percent, 2), '0'), '.') . '%)' : '');
-            $rows .= '<tr>'
-                . '<td style="padding: 6px 20px; font-size: 13px; color: #6b7280;">' . $label . '</td>'
-                . '<td style="padding: 6px 20px; font-size: 13px; color: #6b7280; text-align: right;">' . $amount . '</td>'
-                . '</tr>';
+            $rows .= $line($label, (float) $tax->ordertax_amount);
+        }
+
+        // Shipping tax sits outside these rows whenever the store shows it on its own line —
+        // without this the tag reports less tax than the order was charged.
+        $remainder = round(
+            (float) ($order->order_tax ?? 0) + (float) ($order->order_shipping_tax ?? 0) - $profileSum,
+            CurrencyHelper::getDecimalPlace($currencyCode)
+        );
+
+        if ($remainder > 0) {
+            $rows .= $line(Text::_('COM_J2COMMERCE_FIELD_SHIPPING_TAX'), $remainder);
         }
 
         if ($rows === '') {

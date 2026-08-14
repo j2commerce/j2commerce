@@ -2653,6 +2653,7 @@ class OrderModel extends AdminModel
                 'order_credit',
                 'order_tax',
                 'is_including_tax',
+                'currency_code',
             ]))
             ->from($db->quoteName('#__j2commerce_orders'))
             ->where($db->quoteName('order_id') . ' = :orderId')
@@ -2664,7 +2665,13 @@ class OrderModel extends AdminModel
             return [];
         }
 
-        $subtotal    = round((float) ($itemTotals->subtotal ?? 0), 2);
+        // The order's own currency decides the precision, not a hardcoded two places: a
+        // 0-decimal currency (JPY) rebuilt at 2dp reintroduces the fractions checkout had
+        // already settled, and a 3-decimal one (BHD, KWD) loses a digit of a real charge.
+        // This is the same scale CartOrder::quantizeTotals() used when the order was placed,
+        // so an admin recalculation lands on the figure the shopper was charged.
+        $scale       = CurrencyHelper::getDecimalPlace((string) ($order->currency_code ?? ''));
+        $subtotal    = round((float) ($itemTotals->subtotal ?? 0), $scale);
         // Same authoritative-store question the fee component answers below. orderitem_tax is
         // written only by recomputeOrderTax(), which checkout never calls, so an order placed
         // through the storefront can carry its item tax solely in orders.order_tax with every
@@ -2680,10 +2687,10 @@ class OrderModel extends AdminModel
         // leaves the stored tax standing. Accepted deliberately — it errs toward preserving a
         // real charge rather than destroying it, and only legacy orders reach this branch;
         // checkout now populates the per-line column, which makes the sum authoritative again.
-        $itemTaxSum  = round((float) ($itemTotals->tax ?? 0), 2);
-        $tax         = $itemTaxSum > 0 ? $itemTaxSum : round((float) $order->order_tax, 2);
-        $shipping    = round((float) ($shippingTotals->shipping ?? 0), 2);
-        $shippingTax = round((float) ($shippingTotals->shipping_tax ?? 0), 2);
+        $itemTaxSum  = round((float) ($itemTotals->tax ?? 0), $scale);
+        $tax         = $itemTaxSum > 0 ? $itemTaxSum : round((float) $order->order_tax, $scale);
+        $shipping    = round((float) ($shippingTotals->shipping ?? 0), $scale);
+        $shippingTax = round((float) ($shippingTotals->shipping_tax ?? 0), $scale);
         // Re-cap the applied discount if items were removed/reduced after it was applied.
         $discount    = min((float) $order->order_discount, $subtotal);
         // order_surcharge and the #__j2commerce_orderfees rows are the same money, not two
@@ -2700,8 +2707,8 @@ class OrderModel extends AdminModel
         // (zero) row sum as authoritative there would drop a real charge off order_total and
         // then overwrite the one column that still remembered it.
         $feeRows      = (int) ($feeTotals->fee_rows ?? 0);
-        $fees         = round((float) ($feeTotals->fee_amount ?? 0) + (float) ($feeTotals->fee_tax ?? 0), 2);
-        $surcharge    = round((float) $order->order_surcharge, 2);
+        $fees         = round((float) ($feeTotals->fee_amount ?? 0) + (float) ($feeTotals->fee_tax ?? 0), $scale);
+        $surcharge    = round((float) $order->order_surcharge, $scale);
         $feeComponent = $feeRows > 0 ? $fees : $surcharge;
         $credit       = (float) $order->order_credit;
 
@@ -2710,10 +2717,10 @@ class OrderModel extends AdminModel
 
         $total = round(
             $subtotal + $itemTaxComponent + $shipping + $shippingTax + $feeComponent - $discount - $credit,
-            2
+            $scale
         );
 
-        $subtotalEx = ((int) $order->is_including_tax === 1) ? round($subtotal - $tax, 2) : $subtotal;
+        $subtotalEx = ((int) $order->is_including_tax === 1) ? round($subtotal - $tax, $scale) : $subtotal;
 
         $subtotalStr   = number_format($subtotal, 5, '.', '');
         $subtotalExStr = number_format($subtotalEx, 5, '.', '');
@@ -2765,9 +2772,9 @@ class OrderModel extends AdminModel
             'tax'          => $tax,
             'shipping'     => $shipping,
             'shipping_tax' => $shippingTax,
-            'discount'     => round($discount, 2),
+            'discount'     => round($discount, $scale),
             'surcharge'    => $feeRows > 0 ? 0.0 : $surcharge,
-            'fees'         => round($feeRows > 0 ? $fees : 0.0, 2),
+            'fees'         => round($feeRows > 0 ? $fees : 0.0, $scale),
             'total'        => max(0.0, $total),
         ];
     }

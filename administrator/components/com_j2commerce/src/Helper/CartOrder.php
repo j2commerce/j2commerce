@@ -275,6 +275,7 @@ class CartOrder
         $this->calculateDiscountTotals();
         $this->loadShipping();
         $this->loadFees();
+        $this->quantizeTotals();
     }
 
     /**
@@ -756,6 +757,114 @@ class CartOrder
         $this->order_total = max(0.0, $this->order_total);
     }
 
+    /**
+     * The single point at which money on this order acquires its final precision.
+     *
+     * Every component is rounded to the base currency's scale, and the total is then derived
+     * as the exact sum of those rounded components rather than rounded independently from the
+     * running float. Without this the total and the rows beneath it are rounded separately —
+     * six roundings against one — and are under no obligation to agree, so the figure quoted
+     * could differ by a cent from both the lines printed above it and the figure saveOrder()
+     * stores. Deriving the total from the parts makes those three the same number by
+     * construction, which is also what the confirm-time guard compares.
+     *
+     * Idempotent: re-running it on already-rounded components changes nothing, so callers that
+     * adjust the order after construction (applyPaymentSurcharge) can simply call it again.
+     *
+     * @return  void
+     *
+     * @since   6.1.0
+     */
+    public function quantizeTotals(): void
+    {
+        $scale = CurrencyHelper::getDecimalPlace(ConfigHelper::getDefaultCurrency());
+        $round = static fn (float $value): float => round($value, $scale);
+
+        // Per-profile tax rows are what the customer reads; order_tax is their sum, so that the
+        // tax lines displayed foot to the tax carried in the total.
+        if (!empty($this->taxRates)) {
+            $taxTotal = 0.0;
+
+            foreach ($this->taxRates as $taxRate) {
+                $taxRate->tax_amount = $round((float) ($taxRate->tax_amount ?? 0));
+                $taxTotal += $taxRate->tax_amount;
+            }
+
+            $this->order_tax = $taxTotal;
+        } else {
+            $this->order_tax = $round($this->order_tax);
+        }
+
+        // Same treatment for the discount lines: each coupon, voucher and plugin cart discount
+        // is rounded where it is displayed, and the two aggregate columns are rebuilt from them.
+        $couponVoucherTotal = 0.0;
+
+        foreach ($this->coupons as $coupon) {
+            $coupon->discount = $round((float) ($coupon->discount ?? 0));
+            $couponVoucherTotal += $coupon->discount;
+        }
+
+        foreach ($this->vouchers as $voucher) {
+            $voucher->discount = $round((float) ($voucher->discount ?? 0));
+            $couponVoucherTotal += $voucher->discount;
+        }
+
+        $this->order_discount = $couponVoucherTotal;
+
+        $cartDiscountTotal = 0.0;
+        $renderedCodes     = false;
+
+        foreach ($this->coupon_discount_amounts as $code => $amount) {
+            if (!\is_string($code) || str_ends_with($code, '_title') || !is_numeric($amount)) {
+                continue;
+            }
+
+            $this->coupon_discount_amounts[$code] = $round((float) $amount);
+            $cartDiscountTotal += $this->coupon_discount_amounts[$code];
+            $renderedCodes = true;
+        }
+
+        // A legacy plugin may bump discount_cart without writing a per-code entry; keep its
+        // figure rather than zeroing a discount the shopper was given.
+        $this->discount_cart = $renderedCodes ? $cartDiscountTotal : $round($this->discount_cart);
+
+        $this->order_subtotal     = $round($this->order_subtotal);
+        $this->order_shipping     = $round($this->order_shipping);
+        $this->order_shipping_tax = $round($this->order_shipping_tax);
+
+        if ($this->shippingRate !== null) {
+            $this->shippingRate->ordershipping_price = $round((float) ($this->shippingRate->ordershipping_price ?? 0));
+            $this->shippingRate->ordershipping_extra = $round((float) ($this->shippingRate->ordershipping_extra ?? 0));
+            $this->shippingRate->ordershipping_tax   = $this->order_shipping_tax;
+        }
+
+        // Fees live in the session and are read fresh on every call, so they are rounded here
+        // rather than written back — order_surcharge is the sum of what each fee row displays.
+        $surcharge = 0.0;
+
+        foreach ($this->get_fees() as $fee) {
+            $surcharge += $round((float) ($fee->amount ?? 0)) + $round((float) ($fee->tax ?? 0));
+        }
+
+        $this->order_surcharge = $surcharge;
+
+        // Tax-inclusive prices already carry the tax inside the subtotal and the shipping price,
+        // so neither tax component is added again.
+        $isIncludingTax = (int) J2CommerceHelper::config()->get('config_including_tax', 0);
+
+        $total = $this->order_subtotal
+            + $this->order_shipping
+            + $this->order_surcharge
+            - $this->order_discount
+            - $this->discount_cart;
+
+        if (!$isIncludingTax) {
+            $total += $this->order_tax + $this->order_shipping_tax;
+        }
+
+        $this->order_total = max(0.0, $round($total));
+    }
+
     private function getCustomerGeozones(): array
     {
         $address = TaxHelper::getCustomerAddress();
@@ -876,6 +985,65 @@ class CartOrder
         }
 
         return $this->getTaxRateForGeozone($taxClassId, $geozoneIds);
+    }
+
+    /**
+     * The tax rows this order presents, as opposed to the rates it was calculated from.
+     *
+     * With `combine_tax_calculations` on, shipping tax joins the product tax entry that shares
+     * its profile (or takes an entry of its own where the profile differs) and there is one
+     * tax figure per profile. With it off, shipping tax stays out of these rows and is shown
+     * on its own line from order_shipping_tax.
+     *
+     * One method answers for the live cart, the persisted #__j2commerce_ordertaxes rows and
+     * the confirmation page, so a store cannot be quoted a split total and sent a combined one.
+     *
+     * @return  array<int, object>
+     *
+     * @since   6.1.0
+     */
+    private function buildDisplayTaxRates(): array
+    {
+        $displayRates = [];
+
+        foreach ($this->taxRates as $taxRate) {
+            $displayRates[] = \is_object($taxRate) ? clone $taxRate : (object) $taxRate;
+        }
+
+        $combineTax = (int) J2CommerceHelper::config()->get('combine_tax_calculations', 1);
+
+        if (!$combineTax || $this->order_shipping_tax <= 0 || !$this->shippingRate) {
+            return $displayRates;
+        }
+
+        $shippingTaxClassId = $this->getShippingTaxClassId();
+
+        if ($shippingTaxClassId <= 0) {
+            return $displayRates;
+        }
+
+        foreach ($displayRates as $rate) {
+            if ((int) ($rate->taxprofile_id ?? 0) === $shippingTaxClassId) {
+                $rate->tax_amount += $this->order_shipping_tax;
+
+                return $displayRates;
+            }
+        }
+
+        // Shipping uses a different tax profile — give it an entry of its own
+        $profileInfo = $this->getTaxProfileInfo($shippingTaxClassId);
+
+        if ($profileInfo) {
+            $displayRates[] = (object) [
+                'taxprofile_id'   => $shippingTaxClassId,
+                'taxprofile_name' => $profileInfo->taxprofile_name ?? '',
+                'taxrate_name'    => $profileInfo->taxrate_name ?? '',
+                'tax_amount'      => $this->order_shipping_tax,
+                'tax_percent'     => (float) ($profileInfo->tax_percent ?? 0),
+            ];
+        }
+
+        return $displayRates;
     }
 
     /**
@@ -1304,34 +1472,24 @@ class CartOrder
         $session = Factory::getApplication()->getSession();
         $fees    = $session->get('order_fees', [], 'j2commerce');
 
-        // Roll back ALL prior payment_* fees from the live total + drop from session
+        // Drop ALL prior payment_* fees from the session
         foreach ($fees as $key => $fee) {
             if (str_starts_with((string) $key, 'payment_')) {
-                $this->order_surcharge -= (float) ($fee['amount'] ?? 0) + (float) ($fee['tax'] ?? 0);
-                $this->order_total -= (float) ($fee['amount'] ?? 0) + (float) ($fee['tax'] ?? 0);
                 unset($fees[$key]);
             }
         }
 
         $session->set('order_fees', $fees, 'j2commerce');
 
-        if ($this->orderpayment_type === '') {
-            return;
+        if ($this->orderpayment_type !== '') {
+            // Selected payment plugin's onCalculateFees() calls $order->add_fee() → session
+            J2CommerceHelper::plugin()->event('CalculateFees', [$this->orderpayment_type, $this]);
         }
 
-        // Selected payment plugin's onCalculateFees() calls $order->add_fee() → session
-        J2CommerceHelper::plugin()->event('CalculateFees', [$this->orderpayment_type, $this]);
-
-        // Fold the freshly-added payment fee into the total (match by ->plugin key)
-        $key = 'payment_' . $this->orderpayment_type;
-
-        foreach ($this->get_fees() as $fee) {
-            if (($fee->plugin ?? '') === $key) {
-                $this->order_surcharge += (float) $fee->amount + (float) $fee->tax;
-                $this->order_total += (float) $fee->amount + (float) $fee->tax;
-                break;
-            }
-        }
+        // The surcharge and the total are rebuilt from the fees now in the session rather than
+        // adjusted by hand, so switching payment method cannot leave a stale half of a fee
+        // behind and the total stays the sum of the parts the customer is shown.
+        $this->quantizeTotals();
     }
 
     /**
@@ -1766,6 +1924,10 @@ class CartOrder
      */
     public function saveOrder(): self
     {
+        // Settle the figures before any of them is written, so the row stored is the row the
+        // customer was shown. Idempotent — the constructor has already run it.
+        $this->quantizeTotals();
+
         $app     = Factory::getApplication();
         $session = $app->getSession();
         $user    = $app->getIdentity();
@@ -1809,15 +1971,15 @@ class CartOrder
         // Create the order record via OrderTable
         $orderTable = $mvcFactory->createTable('Order', 'Administrator');
 
-        // Round every stored money field to the base currency's decimal scale so the
-        // total is never over-precise (e.g. a 9.25% shipping tax yields 0.925 → a
-        // 3-decimal 39.925 total for a 2-decimal currency). Each field is rounded to
-        // the currency's own scale — 2 for USD/EUR, 0 for JPY, 3 for BHD/KWD — so the
-        // stored total matches what the gateway charges and every downstream sum
-        // (Balance Due, refunds, reports) reconciles exactly.
+        // Backstop only: quantizeTotals() has already rounded every one of these to the base
+        // currency's scale, so $money() is a no-op on anything it settled. It stays because a
+        // plugin may write one of these fields directly between that call and this bind.
         $moneyScale = CurrencyHelper::getDecimalPlace(ConfigHelper::getDefaultCurrency());
         $money      = static fn (float $value): float => round($value, $moneyScale);
 
+        // order_discount is written from the coupon and voucher half alone; a plugin discount
+        // lives in discount_cart and reaches the column through syncOrderDiscountTotal() below,
+        // which sums the persisted rows.
         $orderData = [
             'user_id'               => $userId,
             'user_email'            => $userEmail,
@@ -2326,46 +2488,10 @@ class CartOrder
      */
     protected function saveOrderTaxes(DatabaseInterface $db, string $orderId): void
     {
-        // Build display rates that include shipping tax merged in (mirrors the live-cart display
-        // logic in get_formatted_order_totals) so invoices, confirmation pages, and email
-        // templates show the full VAT amount including shipping VAT.
-        $displayRates = [];
-
-        foreach ($this->taxRates as $taxRate) {
-            $displayRates[] = clone $taxRate;
-        }
-
-        if ($this->order_shipping_tax > 0 && $this->shippingRate) {
-            $shippingTaxClassId = $this->getShippingTaxClassId();
-
-            if ($shippingTaxClassId > 0) {
-                $merged = false;
-
-                foreach ($displayRates as $rate) {
-                    if ((int) ($rate->taxprofile_id ?? 0) === $shippingTaxClassId) {
-                        $rate->tax_amount += $this->order_shipping_tax;
-                        $merged = true;
-                        break;
-                    }
-                }
-
-                if (!$merged) {
-                    $profileInfo = $this->getTaxProfileInfo($shippingTaxClassId);
-
-                    if ($profileInfo) {
-                        $displayRates[] = (object) [
-                            'taxprofile_id'   => $shippingTaxClassId,
-                            'taxprofile_name' => $profileInfo->taxprofile_name ?? '',
-                            'taxrate_name'    => $profileInfo->taxrate_name ?? '',
-                            'tax_amount'      => $this->order_shipping_tax,
-                            'tax_percent'     => (float) ($profileInfo->tax_percent ?? 0),
-                        ];
-                    }
-                }
-            }
-        }
-
-        foreach ($displayRates as $taxRate) {
+        // The persisted rows are the ones the confirmation page, the invoice and the order
+        // emails read back, so they are built by the same method the live cart displays from —
+        // including whether shipping tax belongs inside them or on a line of its own.
+        foreach ($this->buildDisplayTaxRates() as $taxRate) {
             $taxAmount = (float) ($taxRate->tax_amount ?? 0);
 
             if ($taxAmount <= 0) {
@@ -2679,50 +2805,9 @@ class CartOrder
         }
 
         // Tax totals — always show Tax Profile Name; combine shipping tax when enabled
-        if (!empty($this->taxRates) || ($combineTax && $this->order_shipping_tax > 0)) {
-            // Clone taxRates for display to avoid mutating calculated values
-            $displayRates = [];
+        $displayRates = $this->buildDisplayTaxRates();
 
-            foreach ($this->taxRates as $taxRate) {
-                if (\is_object($taxRate)) {
-                    $displayRates[] = clone $taxRate;
-                } else {
-                    $displayRates[] = (object) $taxRate;
-                }
-            }
-
-            // Combine shipping tax into matching product tax entry when enabled
-            if ($combineTax && $this->order_shipping_tax > 0 && $this->shippingRate) {
-                $shippingTaxClassId = $this->getShippingTaxClassId();
-
-                if ($shippingTaxClassId > 0) {
-                    $merged = false;
-
-                    foreach ($displayRates as $rate) {
-                        if ((int) ($rate->taxprofile_id ?? 0) === $shippingTaxClassId) {
-                            $rate->tax_amount += $this->order_shipping_tax;
-                            $merged = true;
-                            break;
-                        }
-                    }
-
-                    // Shipping uses a different tax profile — create a new entry
-                    if (!$merged) {
-                        $profileInfo = $this->getTaxProfileInfo($shippingTaxClassId);
-
-                        if ($profileInfo) {
-                            $displayRates[] = (object) [
-                                'taxprofile_id'   => $shippingTaxClassId,
-                                'taxprofile_name' => $profileInfo->taxprofile_name ?? '',
-                                'taxrate_name'    => $profileInfo->taxrate_name ?? '',
-                                'tax_amount'      => $this->order_shipping_tax,
-                                'tax_percent'     => (float) ($profileInfo->tax_percent ?? 0),
-                            ];
-                        }
-                    }
-                }
-            }
-
+        if (!empty($displayRates)) {
             foreach ($displayRates as $key => $taxRate) {
                 $taxAmount = (float) ($taxRate->tax_amount ?? 0);
                 // Use Tax Profile Name with Tax Rate Name as fallback
