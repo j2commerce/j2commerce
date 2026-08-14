@@ -10,6 +10,16 @@
             />
 
         <field
+            name="state"
+            type="status"
+            label="JOPTION_SELECT_PUBLISHED"
+            optionsFilter="*,-2,0,1,2"
+            class="js-select-submit-on-change"
+        >
+            <option value="">JOPTION_SELECT_PUBLISHED</option>
+        </field>
+
+        <field
             name="manage_stock"
             type="list"
             label="COM_J2COMMERCE_FILTER_MANAGE_STOCK_LABEL"
@@ -56,6 +66,8 @@
             validate="options"
             >
             <option value="">JGLOBAL_SORT_BY</option>
+            <option value="a.state ASC">COM_J2COMMERCE_HEADING_STATUS_ASC</option>
+            <option value="a.state DESC">COM_J2COMMERCE_HEADING_STATUS_DESC</option>
             <option value="p.j2commerce_product_id ASC">COM_J2COMMERCE_INVENTORY_PRODUCT_ID_ASC</option>
             <option value="p.j2commerce_product_id DESC">COM_J2COMMERCE_INVENTORY_PRODUCT_ID_DESC</option>
             <option value="a.title ASC">COM_J2COMMERCE_INVENTORY_PRODUCT_NAME_ASC</option>

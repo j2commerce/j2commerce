@@ -75,6 +75,9 @@ Text::script('COM_J2COMMERCE_INVENTORY_BATCH_NO_FIELDS');
                                 <td class="w-1 text-center">
                                     <?php echo HTMLHelper::_('grid.checkall'); ?>
                                 </td>
+                                <th scope="col" class="w-1 text-center">
+                                    <?php echo HTMLHelper::_('searchtools.sort', 'JSTATUS', 'a.state', $listDirn, $listOrder); ?>
+                                </th>
                                 <th scope="col" class="w-10 d-none d-lg-table-cell">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_INVENTORY_PRODUCT_ID', 'p.j2commerce_product_id', $listDirn, $listOrder); ?>
                                 </th>
@@ -118,10 +121,21 @@ Text::script('COM_J2COMMERCE_INVENTORY_BATCH_NO_FIELDS');
                                 }
                                 $isVariantProduct = $item->has_options == 1
                                     && \in_array($item->product_type ?? '', ['variable', 'flexivariable'], true);
+
+                                // Article state, reported only — publishing stays with com_content.
+                                $articleState = match ((int) ($item->article_state ?? 0)) {
+                                    1       => ['class' => 'text-bg-success', 'text' => 'JPUBLISHED'],
+                                    2       => ['class' => 'text-bg-info', 'text' => 'JARCHIVED'],
+                                    -2      => ['class' => 'text-bg-dark', 'text' => 'JTRASHED'],
+                                    default => ['class' => 'text-bg-danger', 'text' => 'JUNPUBLISHED'],
+                                };
                             ?>
                             <tr class="row<?php echo $i % 2; ?> inventory-row align-items-center" id="inventory-row-<?php echo $item->j2commerce_product_id; ?>">
                                 <td class="text-center">
                                     <?php echo HTMLHelper::_('grid.id', $i, $item->j2commerce_product_id, false, 'cid', 'cb', $item->product_name); ?>
+                                </td>
+                                <td class="text-center">
+                                    <span class="<?php echo J2htmlHelper::badgeClass('badge ' . $articleState['class']); ?>"><?php echo Text::_($articleState['text']); ?></span>
                                 </td>
                                 <td class="d-none d-lg-table-cell">
                                     <?php echo $this->escape($item->j2commerce_product_id); ?>
@@ -245,7 +259,7 @@ Text::script('COM_J2COMMERCE_INVENTORY_BATCH_NO_FIELDS');
                             <?php if ($isVariantProduct && !empty($item->variants)) : ?>
                                 <!-- Collapsible variants row -->
                                 <tr id="variants-<?php echo $item->j2commerce_product_id; ?>" class="collapse variants-row">
-                                    <td colspan="8">
+                                    <td colspan="9">
                                         <div class="variants-container">
 
                                             <?php foreach ($item->variants as $vIndex => $variant) :

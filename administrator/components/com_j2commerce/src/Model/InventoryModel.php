@@ -44,6 +44,7 @@ class InventoryModel extends ListModel
                 'manage_stock', 'v.manage_stock',
                 'availability', 'v.availability',
                 'product_type', 'p.product_type',
+                'state', 'a.state',
             ];
         }
 
@@ -75,6 +76,9 @@ class InventoryModel extends ListModel
         $product_type = $this->getUserStateFromRequest($this->context . '.filter.product_type', 'filter_product_type', '');
         $this->setState('filter.product_type', $product_type);
 
+        $state = $this->getUserStateFromRequest($this->context . '.filter.state', 'filter_state', '', 'string');
+        $this->setState('filter.state', $state);
+
         // List state information.
         parent::populateState($ordering, $direction);
     }
@@ -95,6 +99,7 @@ class InventoryModel extends ListModel
         $id .= ':' . $this->getState('filter.manage_stock');
         $id .= ':' . $this->getState('filter.availability');
         $id .= ':' . $this->getState('filter.product_type');
+        $id .= ':' . $this->getState('filter.state');
 
         return parent::getStoreId($id);
     }
@@ -121,6 +126,7 @@ class InventoryModel extends ListModel
                 'p.product_type, ' .
                 'p.has_options, ' .
                 'a.title as product_name, ' .
+                'a.state as article_state, ' .
                 'pq.quantity, ' .
                 'pq.on_hold, ' .
                 'pq.sold, ' .
@@ -186,6 +192,14 @@ class InventoryModel extends ListModel
         if (!empty($productType)) {
             $query->where($db->quoteName('p.product_type') . ' = :productType')
                 ->bind(':productType', $productType, ParameterType::STRING);
+        }
+
+        // Filter by the article state shown in the Status column
+        $state = $this->getState('filter.state');
+        if (is_numeric($state)) {
+            $stateInt = (int) $state;
+            $query->where($db->quoteName('a.state') . ' = :state')
+                ->bind(':state', $stateInt, ParameterType::INTEGER);
         }
 
         // Only show products that have content articles
