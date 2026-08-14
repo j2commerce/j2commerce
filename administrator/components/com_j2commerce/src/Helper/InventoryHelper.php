@@ -99,6 +99,28 @@ class InventoryHelper
     }
 
     /**
+     * Has the store owner marked this variant out of stock?
+     *
+     * `availability` is the owner-authored Stock Status select, and it used to be read only
+     * inside validateStock() — which unmanaged variants never reach. That made the control
+     * inert for them: it stored the choice and nothing consulted it. It is authoritative now,
+     * whether or not stock is managed.
+     *
+     * Only an explicit 0 counts. NULL means the row predates the column being maintained, and
+     * empty()/!$value would read those as out of stock and strand every one of them.
+     *
+     * @param   object  $variant  The variant object with an availability property.
+     *
+     * @return  bool  True when the owner set Stock Status to Out of Stock.
+     *
+     * @since   6.6.0
+     */
+    public static function isMarkedOutOfStock(object $variant): bool
+    {
+        return isset($variant->availability) && (int) $variant->availability === 0;
+    }
+
+    /**
      * Check if backorders are allowed for a variant.
      *
      * Backorder values:
@@ -298,6 +320,11 @@ class InventoryHelper
      */
     public static function checkStockStatus(object $variant, int $quantity): bool
     {
+        // The owner's own switch outranks every rule below it.
+        if (self::isMarkedOutOfStock($variant)) {
+            return false;
+        }
+
         // If not managing stock, always available
         if (!self::isManagingStock($variant)) {
             return true;

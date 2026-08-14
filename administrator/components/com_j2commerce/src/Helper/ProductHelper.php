@@ -2414,6 +2414,11 @@ class ProductHelper
      */
     public static function checkStockStatus(object $variant, int $quantity): bool
     {
+        // The owner's own switch outranks every rule below it.
+        if (InventoryHelper::isMarkedOutOfStock($variant)) {
+            return false;
+        }
+
         if (self::managingStock($variant) && !self::backordersAllowed($variant)) {
             return self::validateStock($variant, $quantity);
         }
@@ -2767,6 +2772,11 @@ class ProductHelper
 
         if (\in_array($product->product_type, $variableTypes)) {
             return empty($product->all_sold_out);
+        }
+
+        // The owner's own switch outranks every rule below it.
+        if (InventoryHelper::isMarkedOutOfStock($product->variant)) {
+            return false;
         }
 
         // For non-variable products: if stock management is disabled, always in stock
@@ -3819,6 +3829,11 @@ class ProductHelper
      */
     public function check_stock_status(object $variant, int $quantity): bool
     {
+        // The owner's own switch outranks every rule below it.
+        if (InventoryHelper::isMarkedOutOfStock($variant)) {
+            return false;
+        }
+
         if ($this->managing_stock($variant) && !$this->backorders_allowed($variant)) {
             return self::validateStock($variant, $quantity);
         }
