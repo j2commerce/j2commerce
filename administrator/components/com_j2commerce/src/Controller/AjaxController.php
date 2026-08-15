@@ -16,6 +16,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
+use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\Database\ParameterType;
@@ -227,6 +228,167 @@ class AjaxController extends BaseController
         } catch (\Exception $e) {
             $this->sendJsonResponse(false, Text::sprintf('COM_J2COMMERCE_ERROR_REGENERATING_QUEUE_KEY', $e->getMessage()), null);
         }
+    }
+
+    /**
+     * AJAX: report the checked-out state of a batch of com_content articles.
+     *
+     * Answers one request for a whole screen so a view with many product rows does not
+     * make one call per row.
+     */
+    public function articleCheckedOutState(): void
+    {
+        if (!$this->checkToken('post', false)) {
+            $this->sendJsonResponse(false, Text::_('JINVALID_TOKEN'), null);
+            return;
+        }
+
+        if (!$this->authoriseArticleCheckout()) {
+            $this->sendJsonResponse(false, Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), null);
+            return;
+        }
+
+        $ids = $this->requestedArticleIds();
+
+        if ($ids === []) {
+            $this->sendJsonResponse(true, '', ['articles' => []]);
+            return;
+        }
+
+        $user             = Factory::getApplication()->getIdentity();
+        $userId           = (int) $user->id;
+        $canManageCheckin = $user->authorise('core.manage', 'com_checkin');
+
+        // Kept apart so the sentence that reports them can put its own word between the two;
+        // the formats themselves are the component's, the same pair J2htmlHelper::checkedOut() reads.
+        $params     = ComponentHelper::getParams('com_j2commerce');
+        $dateFormat = (string) $params->get('date_format', 'Y-m-d');
+        $timeFormat = (string) $params->get('time_format', 'H:i:s');
+
+        $db    = Factory::getContainer()->get('DatabaseDriver');
+        $query = $db->getQuery(true)
+            ->select([
+                $db->quoteName('c.id'),
+                $db->quoteName('c.checked_out'),
+                $db->quoteName('c.checked_out_time'),
+                $db->quoteName('u.name', 'editor'),
+            ])
+            ->from($db->quoteName('#__content', 'c'))
+            ->join('LEFT', $db->quoteName('#__users', 'u') . ' ON ' . $db->quoteName('u.id') . ' = ' . $db->quoteName('c.checked_out'))
+            ->whereIn($db->quoteName('c.id'), $ids, ParameterType::INTEGER)
+            ->where($db->quoteName('c.checked_out') . ' > 0')
+            ->where($db->quoteName('c.id') . ' IN (' . $this->productArticleQuery($db) . ')');
+
+        $db->setQuery($query);
+
+        $articles = [];
+
+        foreach ($db->loadObjectList() ?: [] as $row) {
+            $articles[] = [
+                'id'          => (int) $row->id,
+                'editor'      => (string) ($row->editor ?? ''),
+                'date'        => $row->checked_out_time ? HTMLHelper::_('date', $row->checked_out_time, $dateFormat) : '',
+                'time'        => $row->checked_out_time ? HTMLHelper::_('date', $row->checked_out_time, $timeFormat) : '',
+                'can_checkin' => $canManageCheckin || (int) $row->checked_out === $userId,
+            ];
+        }
+
+        $this->sendJsonResponse(true, '', ['articles' => $articles]);
+    }
+
+    /**
+     * AJAX: release a single com_content article held by a check-out.
+     *
+     * The id is read from the request, but it only reaches the update after the same test
+     * ProductsController::checkin() applies has confirmed this caller may release that row.
+     */
+    public function checkinArticle(): void
+    {
+        if (!$this->checkToken('post', false)) {
+            $this->sendJsonResponse(false, Text::_('JINVALID_TOKEN'), null);
+            return;
+        }
+
+        if (!$this->authoriseArticleCheckout()) {
+            $this->sendJsonResponse(false, Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), null);
+            return;
+        }
+
+        $app       = Factory::getApplication();
+        $articleId = $app->getInput()->getInt('article_id', 0);
+
+        if ($articleId < 1) {
+            $this->sendJsonResponse(false, Text::_('COM_J2COMMERCE_NO_ITEM_SELECTED'), null);
+            return;
+        }
+
+        $user   = $app->getIdentity();
+        $userId = (int) $user->id;
+
+        $db    = Factory::getContainer()->get('DatabaseDriver');
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('id'))
+            ->from($db->quoteName('#__content'))
+            ->where($db->quoteName('id') . ' = :articleId')
+            ->where($db->quoteName('checked_out') . ' > 0')
+            ->where($db->quoteName('id') . ' IN (' . $this->productArticleQuery($db) . ')')
+            ->bind(':articleId', $articleId, ParameterType::INTEGER);
+
+        if (!$user->authorise('core.manage', 'com_checkin')) {
+            $query->where($db->quoteName('checked_out') . ' = :userId')
+                ->bind(':userId', $userId, ParameterType::INTEGER);
+        }
+
+        $db->setQuery($query);
+
+        if ((int) $db->loadResult() !== $articleId) {
+            $this->sendJsonResponse(false, Text::_('JLIB_APPLICATION_ERROR_CHECKIN_USER_MISMATCH'), null);
+            return;
+        }
+
+        $update = $db->getQuery(true)
+            ->update($db->quoteName('#__content'))
+            ->set($db->quoteName('checked_out') . ' = NULL')
+            ->set($db->quoteName('checked_out_time') . ' = NULL')
+            ->where($db->quoteName('id') . ' = :articleId')
+            ->bind(':articleId', $articleId, ParameterType::INTEGER);
+
+        $db->setQuery($update);
+        $db->execute();
+
+        $this->sendJsonResponse(true, Text::plural('COM_J2COMMERCE_N_ITEMS_CHECKED_IN', 1), null);
+    }
+
+    /**
+     * The article ids J2Commerce products are built from. Both endpoints confine themselves to
+     * this set, so neither answers for an article the component has no business speaking about.
+     * Literal source value — a bound parameter here would collide with the outer query's names.
+     */
+    private function productArticleQuery($db): string
+    {
+        return (string) $db->getQuery(true)
+            ->select($db->quoteName('product_source_id'))
+            ->from($db->quoteName('#__j2commerce_products'))
+            ->where($db->quoteName('product_source') . ' = ' . $db->quote('com_content'))
+            ->where($db->quoteName('product_source_id') . ' > 0');
+    }
+
+    /** Both article endpoints answer to whoever may be in the J2Commerce backend at all. */
+    private function authoriseArticleCheckout(): bool
+    {
+        $user = Factory::getApplication()->getIdentity();
+
+        return $user && !$user->guest && $user->authorise('core.manage', 'com_j2commerce');
+    }
+
+    /** The article ids this request asks about, de-duplicated and capped. */
+    private function requestedArticleIds(): array
+    {
+        $raw = (array) Factory::getApplication()->getInput()->post->get('article_ids', [], 'array');
+
+        $ids = array_values(array_unique(array_filter(array_map('intval', $raw))));
+
+        return \array_slice($ids, 0, 500);
     }
 
     /**

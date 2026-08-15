@@ -532,8 +532,46 @@ class OrderModel extends AdminModel
         }
 
         $this->enrichItemStock($items);
+        $this->enrichItemArticles($items);
 
         return $items;
+    }
+
+    /**
+     * Attach the linked com_content article id to each order item (one batched query, no N+1).
+     * Items whose product row is gone, is not sourced from com_content, or carries no source id
+     * resolve to 0 so the caller renders them without a link.
+     */
+    private function enrichItemArticles(array $items): void
+    {
+        $productIds = array_values(array_unique(array_filter(array_map(
+            static fn ($it): int => (int) ($it->product_id ?? 0),
+            $items
+        ))));
+
+        $map = [];
+
+        if (!empty($productIds)) {
+            $contentOption = 'com_content';
+            $db            = $this->getDatabase();
+            $query         = $db->getQuery(true)
+                ->select($db->quoteName(['j2commerce_product_id', 'product_source_id']))
+                ->from($db->quoteName('#__j2commerce_products'))
+                ->whereIn($db->quoteName('j2commerce_product_id'), $productIds, ParameterType::INTEGER)
+                ->where($db->quoteName('product_source') . ' = :source')
+                ->where($db->quoteName('product_source_id') . ' > 0')
+                ->bind(':source', $contentOption, ParameterType::STRING);
+
+            $db->setQuery($query);
+
+            foreach ($db->loadObjectList() ?: [] as $row) {
+                $map[(int) $row->j2commerce_product_id] = (int) $row->product_source_id;
+            }
+        }
+
+        foreach ($items as $item) {
+            $item->article_id = $map[(int) ($item->product_id ?? 0)] ?? 0;
+        }
     }
 
     /** Attach live stock_quantity + manages_stock to each order item (one batched query, no N+1). */

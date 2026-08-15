@@ -20,6 +20,7 @@ use Joomla\CMS\Uri\Uri;
 $item = $this->item;
 $orderItems = $item->orderitems ?? [];
 $currencyCode = $item->currency_code ?? '';
+$returnUrl = 'index.php?option=com_j2commerce&view=order&layout=view&id=' . (int) ($item->j2commerce_order_id ?? 0);
 
 ?>
 <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeAdminOrderItems', array($item))->getArgument('html', ''); ?>
@@ -49,7 +50,11 @@ $currencyCode = $item->currency_code ?? '';
                             </td>
                             <td class="order-items-cell order-items-cell-info ps-2">
                                 <div class="cart-product-info">
-                                    <h3 class="cart-product-name mb-1 fs-5"><?php echo $this->escape($orderItem->orderitem_name); ?></h3>
+                                    <h3 class="cart-product-name mb-1 fs-5"><?php echo LayoutHelper::render('product.article_edit_link', [
+                                        'article_id' => (int) ($orderItem->article_id ?? 0),
+                                        'title'      => $orderItem->orderitem_name,
+                                        'return'     => $returnUrl,
+                                    ], JPATH_ADMINISTRATOR . '/components/com_j2commerce/layouts'); ?></h3>
                                     <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterDisplayLineItemTitle', array($orderItem, $item, $this->params))->getArgument('html', ''); ?>
                                     <div class="small d-flex align-items-center">
                                         <div class="item-option item-option-name"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_SKU'); ?>:</div>
