@@ -780,9 +780,31 @@ class CartOrder
         $scale = CurrencyHelper::getDecimalPlace(ConfigHelper::getDefaultCurrency());
         $round = static fn (float $value): float => round($value, $scale);
 
-        // Per-profile tax rows are what the customer reads; order_tax is their sum, so that the
-        // tax lines displayed foot to the tax carried in the total.
-        if (!empty($this->taxRates)) {
+        // A line's tax is rounded where it is charged, saveOrderItems() persists it at that
+        // scale, and OrderModel::recalculateOrderTotals() sums those stored rows back into
+        // order_tax. So the cart settles on the same basis: round each line, then add. Rounding
+        // the per-rate total once instead gave the same cart two answers a cent apart depending
+        // on which side asked, and the confirm-step guard that compares a saved order against
+        // the cart it came from read that cent as a changed cart.
+        $lineTaxTotal = 0.0;
+        $hasLineTax   = false;
+
+        foreach ($this->items as $item) {
+            $lineTax             = $round((float) ($item->orderitem_tax ?? 0));
+            $item->orderitem_tax = $lineTax;
+            $lineTaxTotal += $lineTax;
+
+            if ($lineTax > 0.0) {
+                $hasLineTax = true;
+            }
+        }
+
+        // Per-profile tax rows are what the customer reads, so they are settled onto the same
+        // figure the total carries rather than rounded independently of it.
+        if ($hasLineTax) {
+            $this->order_tax = $lineTaxTotal;
+            $this->settleTaxRatesTo($lineTaxTotal, $scale);
+        } elseif (!empty($this->taxRates)) {
             $taxTotal = 0.0;
 
             foreach ($this->taxRates as $taxRate) {
@@ -863,6 +885,38 @@ class CartOrder
         }
 
         $this->order_total = max(0.0, $round($total));
+    }
+
+    /**
+     * Round the displayed tax rows and put the rounding residual on the largest of them, so the
+     * rows the customer reads add up to the tax the total carries.
+     */
+    private function settleTaxRatesTo(float $target, int $scale): void
+    {
+        if (empty($this->taxRates)) {
+            return;
+        }
+
+        $assigned   = 0.0;
+        $largestKey = null;
+        $largestAmt = -1.0;
+
+        foreach ($this->taxRates as $key => $taxRate) {
+            $amount              = round((float) ($taxRate->tax_amount ?? 0), $scale);
+            $taxRate->tax_amount = $amount;
+            $assigned += $amount;
+
+            if ($amount > $largestAmt) {
+                $largestAmt = $amount;
+                $largestKey = $key;
+            }
+        }
+
+        $residual = round($target - $assigned, $scale);
+
+        if ($largestKey !== null && abs($residual) >= 10 ** -$scale / 2) {
+            $this->taxRates[$largestKey]->tax_amount = max(0.0, round($largestAmt + $residual, $scale));
+        }
     }
 
     private function getCustomerGeozones(): array
