@@ -573,104 +573,33 @@ class CartOrder
                 $item->orderitem_discount_tax = 0.0;
             }
 
-            if ($pricing) {
-                $itemPrice = (float) ($pricing->price ?? 0) + (float) ($item->option_price ?? 0);
+            // A product type with no cart behaviour of its own reaches here with no pricing
+            // object, so the stored variant price stands in for it. That line is charged like
+            // any other, so it is taxed like any other: the tax below runs off taxprofile_id,
+            // which the cart-items query carries for every line whatever its type.
+            $itemPrice = $pricing
+                ? (float) ($pricing->price ?? 0)
+                : (float) ($item->price ?? $item->variant_price ?? 0);
 
-                // Allow plugins to modify item price and add discounts
-                // onJ2CommerceGetDiscountedPrice signature: (&$price, &$item, $add_totals, &$order)
-                // Plugins can modify $price by reference and set $item->orderitem_discount
-                J2CommerceHelper::plugin()->event('GetDiscountedPrice', [
-                    &$itemPrice,
-                    &$item,
-                    true, // $add_totals - accumulate discount totals
-                    $this, // $order - the CartOrder object
-                ]);
+            $itemPrice += (float) ($item->option_price ?? 0);
 
-                // The price the subtotal is built from, after any plugin reduced it. saveOrderItems()
-                // reads it back so the persisted line cannot silently revert to the undiscounted
-                // pricing->price and leave SUM(orderitem_finalprice) above order_subtotal.
-                $item->orderitem_effective_price = $itemPrice;
+            // Allow plugins to modify item price and add discounts
+            // onJ2CommerceGetDiscountedPrice signature: (&$price, &$item, $add_totals, &$order)
+            // Plugins can modify $price by reference and set $item->orderitem_discount
+            J2CommerceHelper::plugin()->event('GetDiscountedPrice', [
+                &$itemPrice,
+                &$item,
+                true, // $add_totals - accumulate discount totals
+                $this, // $order - the CartOrder object
+            ]);
 
-                $subtotal += $itemPrice * $quantity;
+            // The price the subtotal is built from, after any plugin reduced it. saveOrderItems()
+            // reads it back so the persisted line cannot silently revert to the undiscounted
+            // pricing->price and leave SUM(orderitem_finalprice) above order_subtotal.
+            $item->orderitem_effective_price = $itemPrice;
 
-                // Calculate tax using taxprofile_id and customer geozone
-                $taxprofileId = (int) ($item->taxprofile_id ?? 0);
-
-                if ($taxprofileId > 0 && !empty($customerGeozones)) {
-                    $ratesets = $this->getTaxRatesForProfile($taxprofileId, $customerGeozones);
-
-                    if (!empty($ratesets)) {
-                        $itemTaxTotal = 0.0;
-                        $effectivePct = 0.0;
-
-                        // Sum total rate percent for inclusive extraction
-                        $totalRatePct = 0.0;
-                        foreach ($ratesets as $rate) {
-                            $totalRatePct += (float) ($rate->rate ?? $rate->tax_percent ?? 0);
-                        }
-
-                        // Total tax for this line (inclusive extraction or exclusive addition)
-                        $lineTotal    = $itemPrice * $quantity;
-                        $lineTaxTotal = $isIncludingTax
-                            ? ($totalRatePct > 0 ? $lineTotal * $totalRatePct / (100 + $totalRatePct) : 0.0)
-                            : $lineTotal * ($totalRatePct / 100);
-
-                        foreach ($ratesets as $rate) {
-                            $rateName    = (string) ($rate->name ?? $rate->taxrate_name ?? '');
-                            $ratePercent = (float) ($rate->rate ?? $rate->tax_percent ?? 0);
-                            $rateId      = (int) ($rate->j2commerce_taxrate_id ?? 0);
-
-                            // Distribute total tax proportionally across rates
-                            $rateAmount = $totalRatePct > 0
-                                ? $lineTaxTotal * ($ratePercent / $totalRatePct)
-                                : 0.0;
-
-                            $itemTaxTotal += $rateAmount;
-                            $effectivePct += $ratePercent;
-
-                            $rateKey = $rateName . '_' . $rateId;
-
-                            if (!isset($taxRates[$rateKey])) {
-                                $taxRates[$rateKey] = (object) [
-                                    'taxprofile_id'   => $taxprofileId,
-                                    'taxprofile_name' => (string) ($rate->taxprofile_name ?? ''),
-                                    'taxrate_name'    => $rateName,
-                                    'tax_amount'      => 0.0,
-                                    'tax_percent'     => $ratePercent,
-                                ];
-                            }
-
-                            $taxRates[$rateKey]->tax_amount += $rateAmount;
-                        }
-
-                        $taxTotal += $itemTaxTotal;
-                        $item->orderitem_tax         = $itemTaxTotal;
-                        $item->orderitem_tax_percent = $effectivePct;
-                    } else {
-                        $item->orderitem_tax         = 0.0;
-                        $item->orderitem_tax_percent = 0.0;
-                    }
-                } else {
-                    $item->orderitem_tax         = 0.0;
-                    $item->orderitem_tax_percent = 0.0;
-                }
-            } else {
-                $itemPrice = (float) ($item->price ?? $item->variant_price ?? 0) + (float) ($item->option_price ?? 0);
-
-                // Allow plugins to modify item price even for items without pricing object
-                J2CommerceHelper::plugin()->event('GetDiscountedPrice', [
-                    &$itemPrice,
-                    &$item,
-                    true,
-                    $this,
-                ]);
-
-                $item->orderitem_effective_price = $itemPrice;
-
-                $subtotal += $itemPrice * $quantity;
-                $item->orderitem_tax         = 0.0;
-                $item->orderitem_tax_percent = 0.0;
-            }
+            $subtotal += $itemPrice * $quantity;
+            $taxTotal += $this->applyLineTax($item, $itemPrice * $quantity, $customerGeozones, (bool) $isIncludingTax, $taxRates);
         }
 
         $this->order_subtotal = $subtotal;
@@ -679,6 +608,88 @@ class CartOrder
         // When prices are stored inclusive of tax the subtotal already contains the tax;
         // adding taxTotal again would double-count it.
         $this->order_total = $isIncludingTax ? $subtotal : $subtotal + $taxTotal;
+    }
+
+    /**
+     * Resolve one line's tax, accumulate it into the per-rate rows and return its total.
+     *
+     * @param   object  $item              The cart line (orderitem_tax and orderitem_tax_percent are set on it).
+     * @param   float   $lineTotal         The line's charged amount, quantity included.
+     * @param   array   $customerGeozones  Geozones resolved once for the whole order.
+     * @param   bool    $isIncludingTax    Whether stored prices already contain the tax.
+     * @param   array   $taxRates          Per-rate rows, keyed by rate name and id, accumulated by reference.
+     *
+     * @return  float  The tax owed on this line.
+     *
+     * @since   6.5.2
+     */
+    private function applyLineTax(
+        object $item,
+        float $lineTotal,
+        array $customerGeozones,
+        bool $isIncludingTax,
+        array &$taxRates
+    ): float {
+        $taxprofileId = (int) ($item->taxprofile_id ?? 0);
+
+        $ratesets = $taxprofileId > 0 && !empty($customerGeozones)
+            ? $this->getTaxRatesForProfile($taxprofileId, $customerGeozones)
+            : [];
+
+        if (empty($ratesets)) {
+            $item->orderitem_tax         = 0.0;
+            $item->orderitem_tax_percent = 0.0;
+
+            return 0.0;
+        }
+
+        // Sum total rate percent for inclusive extraction
+        $totalRatePct = 0.0;
+
+        foreach ($ratesets as $rate) {
+            $totalRatePct += (float) ($rate->rate ?? $rate->tax_percent ?? 0);
+        }
+
+        // Total tax for this line (inclusive extraction or exclusive addition)
+        $lineTaxTotal = $isIncludingTax
+            ? ($totalRatePct > 0 ? $lineTotal * $totalRatePct / (100 + $totalRatePct) : 0.0)
+            : $lineTotal * ($totalRatePct / 100);
+
+        $itemTaxTotal = 0.0;
+        $effectivePct = 0.0;
+
+        foreach ($ratesets as $rate) {
+            $rateName    = (string) ($rate->name ?? $rate->taxrate_name ?? '');
+            $ratePercent = (float) ($rate->rate ?? $rate->tax_percent ?? 0);
+            $rateId      = (int) ($rate->j2commerce_taxrate_id ?? 0);
+
+            // Distribute total tax proportionally across rates
+            $rateAmount = $totalRatePct > 0
+                ? $lineTaxTotal * ($ratePercent / $totalRatePct)
+                : 0.0;
+
+            $itemTaxTotal += $rateAmount;
+            $effectivePct += $ratePercent;
+
+            $rateKey = $rateName . '_' . $rateId;
+
+            if (!isset($taxRates[$rateKey])) {
+                $taxRates[$rateKey] = (object) [
+                    'taxprofile_id'   => $taxprofileId,
+                    'taxprofile_name' => (string) ($rate->taxprofile_name ?? ''),
+                    'taxrate_name'    => $rateName,
+                    'tax_amount'      => 0.0,
+                    'tax_percent'     => $ratePercent,
+                ];
+            }
+
+            $taxRates[$rateKey]->tax_amount += $rateAmount;
+        }
+
+        $item->orderitem_tax         = $itemTaxTotal;
+        $item->orderitem_tax_percent = $effectivePct;
+
+        return $itemTaxTotal;
     }
 
     /**
