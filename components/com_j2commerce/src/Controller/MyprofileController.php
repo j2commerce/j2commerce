@@ -913,7 +913,16 @@ class MyprofileController extends BaseController
             return true;
         }
 
-        return false;
+        // A link followed out of the order email arrives in a browser that never went through
+        // checkout, so it carries none of the session above. It presents the same order token
+        // and address pair guestEntry() asks for, matched against this order's own row.
+        $requestToken = trim($this->input->getString('order_token', ''));
+        $requestEmail = trim($this->input->getString('order_email', ''));
+
+        return $requestToken !== '' && $requestEmail !== ''
+            && !empty($order->token)
+            && hash_equals((string) $order->token, $requestToken)
+            && strcasecmp((string) $order->user_email, $requestEmail) === 0;
     }
 
     private function collectFormData(): array

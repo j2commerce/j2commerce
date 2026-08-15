@@ -16,6 +16,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\Database\DatabaseInterface;
@@ -240,6 +241,111 @@ final class DownloadHelper
             orderId: $orderId,
             comment: Text::_('COM_J2COMMERCE_ORDER_DOWNLOAD_ACCESS_RESET'),
         );
+    }
+
+    /**
+     * One row per downloadable file in an order, carrying the same availability rules the
+     * download endpoint enforces. Every surface that offers a link reads them from here, so
+     * an offered link and the endpoint that answers it can never disagree.
+     *
+     * @return  list<object>
+     */
+    public static function getOrderDownloads(string $orderId): array
+    {
+        if ($orderId === '') {
+            return [];
+        }
+
+        $db    = Factory::getContainer()->get(DatabaseInterface::class);
+        $query = $db->getQuery(true)
+            ->select($db->quoteName([
+                'd.j2commerce_orderdownload_id',
+                'd.order_id',
+                'd.product_id',
+                'd.limit_count',
+                'd.access_granted',
+                'd.access_expires',
+                'f.j2commerce_productfile_id',
+                'f.product_file_display_name',
+                'f.product_file_save_name',
+            ]))
+            ->select($db->quoteName('p.params', 'product_params'))
+            ->from($db->quoteName('#__j2commerce_orderdownloads', 'd'))
+            ->join('INNER', $db->quoteName('#__j2commerce_productfiles', 'f')
+                . ' ON ' . $db->quoteName('f.product_id') . ' = ' . $db->quoteName('d.product_id'))
+            ->join('INNER', $db->quoteName('#__j2commerce_orders', 'o')
+                . ' ON ' . $db->quoteName('o.order_id') . ' = ' . $db->quoteName('d.order_id'))
+            ->join('LEFT', $db->quoteName('#__j2commerce_products', 'p')
+                . ' ON ' . $db->quoteName('p.j2commerce_product_id') . ' = ' . $db->quoteName('d.product_id'))
+            ->where($db->quoteName('d.order_id') . ' = :orderId')
+            ->bind(':orderId', $orderId)
+            ->order($db->quoteName('f.j2commerce_productfile_id') . ' ASC');
+
+        // Same order-status gate the account Downloads list applies, so a link is never
+        // offered for an order the endpoint would refuse to serve.
+        $statusIds = self::allowedDownloadStatuses();
+
+        if ($statusIds !== []) {
+            $placeholders = [];
+
+            // bind() takes its value by reference, so each placeholder must name its own
+            // array slot rather than a loop variable every iteration would overwrite.
+            foreach (array_keys($statusIds) as $i) {
+                $placeholders[] = ':dlStatus' . $i;
+                $query->bind(':dlStatus' . $i, $statusIds[$i], ParameterType::INTEGER);
+            }
+
+            $query->where($db->quoteName('o.order_state_id') . ' IN (' . implode(',', $placeholders) . ')');
+        }
+
+        $db->setQuery($query);
+        $rows = $db->loadObjectList() ?: [];
+
+        $nullDate = $db->getNullDate();
+        $now      = time();
+
+        foreach ($rows as $row) {
+            $granted = (string) ($row->access_granted ?? '');
+            $expires = (string) ($row->access_expires ?? '');
+
+            $row->pending = $granted === '' || $granted === $nullDate || $granted === '0000-00-00 00:00:00';
+            $row->expired = !$row->pending
+                && $expires !== '' && $expires !== $nullDate && $expires !== '0000-00-00 00:00:00'
+                && strtotime($expires) < $now;
+
+            $limit      = empty($row->product_params)
+                ? 0
+                : (int) (new Registry($row->product_params))->get('download_limit', 0);
+            $limitCount = (int) ($row->limit_count ?? 0);
+
+            $row->limit_reached = $limit > 0 && $limitCount >= $limit;
+            $row->remaining     = $limit > 0 ? max(0, $limit - $limitCount) : -1;
+            $row->can_download  = !$row->pending && !$row->expired && !$row->limit_reached
+                && !empty($row->product_file_save_name);
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Order states downloads are released in, from `limit_orderstatuses`.
+     * An empty list means the setting places no restriction.
+     *
+     * @return  list<int>
+     */
+    private static function allowedDownloadStatuses(): array
+    {
+        $configured = ComponentHelper::getParams('com_j2commerce')->get('limit_orderstatuses', '');
+
+        if (empty($configured)) {
+            return [];
+        }
+
+        $statusIds = \is_array($configured)
+            ? array_map('intval', $configured)
+            : array_map('intval', explode(',', (string) $configured));
+
+        return array_values(array_filter($statusIds, static fn (int $id): bool => $id > 0));
     }
 
     /**

@@ -216,6 +216,12 @@ if ($info) {
                         </div>
                     <?php endif; ?>
 
+                    <?php echo LayoutHelper::render('download.list', [
+                        'downloads'  => $this->downloads,
+                        'framework'  => 'bootstrap5',
+                        'dateFormat' => $this->params->get('date_format', 'Y-m-d'),
+                    ], JPATH_ROOT . '/components/com_j2commerce/layouts'); ?>
+
                     <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeConfirmationOrderDetails', array($this, $order, 'onJ2Commerce'))->getArgument('html', ''); ?>
 
                     <?php // Customer information grid ?>

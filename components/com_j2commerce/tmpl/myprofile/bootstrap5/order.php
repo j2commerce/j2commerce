@@ -368,6 +368,14 @@ $statusName = !empty($order->orderstatus_name) ? Text::_($order->orderstatus_nam
         </div>
     </div>
     <?php endif; ?>
+
+    <?php if (!$isPrint): ?>
+        <?php echo LayoutHelper::render('download.list', [
+            'downloads'  => $this->downloads,
+            'framework'  => 'bootstrap5',
+            'dateFormat' => $dateFormat,
+        ], JPATH_ROOT . '/components/com_j2commerce/layouts'); ?>
+    <?php endif; ?>
 </div>
 
 <?php if (!$isPrint): ?>

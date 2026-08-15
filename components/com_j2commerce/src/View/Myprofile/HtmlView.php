@@ -15,6 +15,7 @@ namespace J2Commerce\Component\J2commerce\Site\View\Myprofile;
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\DownloadHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\PaymentMethodsHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
@@ -105,6 +106,10 @@ class HtmlView extends BaseHtmlView
                 $this->orderShippings = $model->getOrderShippings($orderId);
                 $this->orderTaxes     = $model->getOrderTaxes($orderId);
                 $this->orderFees      = $model->getOrderFees($orderId);
+
+                if ($this->params->get('download_area', 1)) {
+                    $this->downloads = DownloadHelper::getOrderDownloads((string) $this->order->order_id);
+                }
             }
         } elseif ($layout === 'address') {
             $addressId = $app->getInput()->getInt('address_id', 0);
