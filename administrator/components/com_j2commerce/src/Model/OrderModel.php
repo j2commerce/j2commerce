@@ -2648,14 +2648,21 @@ class OrderModel extends AdminModel
             $db->insertObject('#__j2commerce_ordertaxes', $row, 'j2commerce_ordertax_id');
         }
 
-        return $this->recalculateOrderTotals($orderId);
+        // Every line above was rewritten, zeros included, so the sum is this order's tax even
+        // when it comes to nothing — an order recomputed into a geozone that taxes none of it
+        // has to be able to reach zero.
+        return $this->recalculateOrderTotals($orderId, true);
     }
 
     /**
      * Recalculate and persist order totals from the current line items,
      * shipping, fees, surcharge and discounts. Returns the stored totals.
+     *
+     * @param  bool  $itemTaxIsAuthoritative  The caller has just written orderitem_tax for every
+     *                                        line, so an all-zero sum is recorded data rather than
+     *                                        an absent value. See the tax note below.
      */
-    public function recalculateOrderTotals(string $orderId): array
+    public function recalculateOrderTotals(string $orderId, bool $itemTaxIsAuthoritative = false): array
     {
         $db = $this->getDatabase();
 
@@ -2730,13 +2737,17 @@ class OrderModel extends AdminModel
         // also carries the shipping tax, which $shippingTax adds separately, so it would
         // double-count it.
         //
-        // Known limit: "no per-line tax was ever recorded" and "per-line tax is genuinely zero"
-        // are indistinguishable in the data, so removing every taxable line from such an order
-        // leaves the stored tax standing. Accepted deliberately — it errs toward preserving a
-        // real charge rather than destroying it, and only legacy orders reach this branch;
-        // checkout now populates the per-line column, which makes the sum authoritative again.
+        // The stored value cannot answer that question on its own: orderitem_tax is NOT NULL and
+        // legacy rows hold 0.00000 rather than NULL, so "never recorded" and "genuinely zero"
+        // read identically. Inferring it from the sum therefore errs toward preserving a real
+        // charge — which in turn leaves a caller that has deliberately recalculated the tax down
+        // to zero with no way to record that. $itemTaxIsAuthoritative is that way: a caller that
+        // has just written every line's tax takes the sum whatever it is. The inference stays the
+        // default for the legacy paths that still rely on it.
         $itemTaxSum  = round((float) ($itemTotals->tax ?? 0), $scale);
-        $tax         = $itemTaxSum > 0 ? $itemTaxSum : round((float) $order->order_tax, $scale);
+        $tax         = ($itemTaxIsAuthoritative || $itemTaxSum > 0)
+            ? $itemTaxSum
+            : round((float) $order->order_tax, $scale);
         $shipping    = round((float) ($shippingTotals->shipping ?? 0), $scale);
         $shippingTax = round((float) ($shippingTotals->shipping_tax ?? 0), $scale);
         // Re-cap the applied discount if items were removed/reduced after it was applied.
