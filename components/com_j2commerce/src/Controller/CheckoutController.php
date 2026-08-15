@@ -352,7 +352,7 @@ class CheckoutController extends BaseController
                     $addressInfo = $this->getUserFirstAddress((int) $loggedUser->id);
 
                     if ($addressInfo) {
-                        $taxDefault = $params->get('config_tax_default', '');
+                        $taxDefault = $params->get('config_tax_default', 'billing');
 
                         if ($taxDefault === 'shipping') {
                             $session->set('shipping_country_id', (int) $addressInfo->country_id, 'j2commerce');

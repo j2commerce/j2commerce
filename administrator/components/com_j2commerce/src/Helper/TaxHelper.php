@@ -31,18 +31,46 @@ use Joomla\Database\ParameterType;
 final class TaxHelper
 {
     /**
-     * Resolve the active customer shipping address from the J2Commerce session.
+     * Resolve the active customer address from the J2Commerce session.
      *
-     * Lookup order mirrors CartOrder:
-     *   1. saved shipping_address_id      → `#__j2commerce_addresses`
-     *   2. guest_shipping array           → session
-     *   3. flat shipping_country_id keys  → estimate-shipping flow
+     * The address basis follows the store's "Tax based on" setting
+     * (`config_tax_default`), so the same cascade runs against either side:
+     *   1. saved {basis}_address_id      → `#__j2commerce_addresses`
+     *   2. guest address array           → session (`guest` / `guest_shipping`)
+     *   3. flat {basis}_country_id keys  → estimate/checkout flow
      *
-     * @return  \stdClass  { country_id:int, zone_id:int, postcode:string }
+     * The other basis is tried when the selected one resolves nothing, so a store
+     * that only ever captures one of the two addresses keeps its tax figures.
+     *
+     * @param   string|null  $basis  'billing' | 'shipping'; null → ConfigHelper::getTaxBasis().
+     *
+     * @return  \stdClass  { country_id:int, zone_id:int, postcode:string, basis:string }
      *
      * @since   6.3.0
      */
-    public static function getCustomerAddress(): \stdClass
+    public static function getCustomerAddress(?string $basis = null): \stdClass
+    {
+        $basis   = self::normaliseBasis($basis ?? ConfigHelper::getTaxBasis());
+        $address = self::resolveAddressForBasis($basis);
+
+        if ((int) $address->country_id === 0) {
+            $fallback = self::resolveAddressForBasis($basis === 'billing' ? 'shipping' : 'billing');
+
+            if ((int) $fallback->country_id > 0) {
+                $address = $fallback;
+            }
+        }
+
+        return $address;
+    }
+
+    /** Anything outside the config_tax_default option list reads as the manifest default. */
+    private static function normaliseBasis(string $basis): string
+    {
+        return $basis === 'shipping' ? 'shipping' : 'billing';
+    }
+
+    private static function resolveAddressForBasis(string $basis): \stdClass
     {
         $app       = Factory::getApplication();
         $session   = $app->getSession();
@@ -50,12 +78,12 @@ final class TaxHelper
         $zoneId    = 0;
         $postcode  = '';
 
-        $addressId = (int) $session->get('shipping_address_id', 0, 'j2commerce');
+        $addressId = (int) $session->get($basis . '_address_id', 0, 'j2commerce');
         $userId    = (int) ($app->getIdentity()?->id ?? 0);
 
         // Constrain to the current user: the session id is only ever written for a logged-in
         // shopper, so a row that does not belong to them must not resolve. Guests never hold this
-        // key and fall through to the guest_shipping array below.
+        // key and fall through to the guest address array below.
         if ($addressId > 0 && $userId > 0) {
             $db    = Factory::getContainer()->get(DatabaseInterface::class);
             $query = $db->getQuery(true)
@@ -77,25 +105,27 @@ final class TaxHelper
         }
 
         if ($countryId === 0) {
-            $guestShipping = $session->get('guest_shipping', [], 'j2commerce');
+            // A guest's ship-to lives under `guest_shipping`, their bill-to under `guest`.
+            $guestAddress = $session->get($basis === 'shipping' ? 'guest_shipping' : 'guest', [], 'j2commerce');
 
-            if (!empty($guestShipping) && \is_array($guestShipping)) {
-                $countryId = (int) ($guestShipping['country_id'] ?? 0);
-                $zoneId    = (int) ($guestShipping['zone_id'] ?? 0);
-                $postcode  = (string) ($guestShipping['zip'] ?? $guestShipping['postcode'] ?? '');
+            if (!empty($guestAddress) && \is_array($guestAddress)) {
+                $countryId = (int) ($guestAddress['country_id'] ?? 0);
+                $zoneId    = (int) ($guestAddress['zone_id'] ?? 0);
+                $postcode  = (string) ($guestAddress['zip'] ?? $guestAddress['postcode'] ?? '');
             }
         }
 
         if ($countryId === 0) {
-            $countryId = (int) $session->get('shipping_country_id', 0, 'j2commerce');
-            $zoneId    = (int) $session->get('shipping_zone_id', 0, 'j2commerce');
-            $postcode  = (string) $session->get('shipping_postcode', '', 'j2commerce');
+            $countryId = (int) $session->get($basis . '_country_id', 0, 'j2commerce');
+            $zoneId    = (int) $session->get($basis . '_zone_id', 0, 'j2commerce');
+            $postcode  = (string) $session->get($basis . '_postcode', '', 'j2commerce');
         }
 
         return (object) [
             'country_id' => $countryId,
             'zone_id'    => $zoneId,
             'postcode'   => $postcode,
+            'basis'      => $basis,
         ];
     }
 
@@ -249,7 +279,7 @@ final class TaxHelper
 
         $event = J2CommerceHelper::plugin()->event('AfterGetTaxRateItems', [
             'result'        => $ratesets,
-            'address_type'  => 'shipping',
+            'address_type'  => self::normaliseBasis((string) ($address->basis ?? ConfigHelper::getTaxBasis())),
             'country_id'    => (int) ($address->country_id ?? 0),
             'zone_id'       => (int) ($address->zone_id ?? 0),
             'postcode'      => (string) ($address->postcode ?? ''),
