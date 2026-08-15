@@ -314,33 +314,16 @@ class CouponModel extends AdminModel
             $table->value = 0;
         }
 
-        // Determine user timezone offset – mirrors CalendarField's USER_UTC filter logic.
-        // The calendar widget displays stored UTC dates in the user's timezone and submits
-        // values in user-local time, so we must convert back to UTC before storing.
-        $app    = Factory::getApplication();
-        $offset = $app->getIdentity()->getParam('timezone', $app->get('offset'));
+        // The form's user_utc filter has already converted both dates to UTC, so only
+        // the empty/null-date normalisation is left to do here.
+        $nullDate = $this->getDatabase()->getNullDate();
 
-        // Ensure dates are properly set
-        if (empty($table->valid_from) || $table->valid_from === '0000-00-00 00:00:00') {
+        if (empty($table->valid_from) || $table->valid_from === $nullDate) {
             $table->valid_from = null;
-        } else {
-            try {
-                // Treat the submitted value as user-local time and store as UTC
-                $table->valid_from  = Factory::getDate($table->valid_from, $offset)->toSql();
-            } catch (\Exception $e) {
-                $table->valid_from  = null;
-            }
         }
 
-        if (empty($table->valid_to) || $table->valid_to === '0000-00-00 00:00:00') {
+        if (empty($table->valid_to) || $table->valid_to === $nullDate) {
             $table->valid_to = null;
-        } else {
-            try {
-                // Treat the submitted value as user-local time and store as UTC
-                $table->valid_to  = Factory::getDate($table->valid_to, $offset)->toSql();
-            } catch (\Exception $e) {
-                $table->valid_to  = null;
-            }
         }
     }
 
