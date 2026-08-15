@@ -133,7 +133,7 @@ $esc            = static fn(string $value): string => htmlspecialchars($value, E
                     <?php $checkboxValueId = (int) $option_value['product_optionvalue_id']; ?>
                     <?php $childOptionValueInputId = 'child-option-value-' . $product_id . '-' . $optionId . '-' . $checkboxValueId; ?>
                     <label class="uk-flex uk-flex-middle" style="gap:.5rem;">
-                        <input type="checkbox"
+                        <input<?php echo !empty($option_value['product_optionvalue_default']) ? ' checked="checked"' : ''; ?> type="checkbox"
                             class="uk-checkbox"
                             name="product_option[<?php echo $optionId; ?>][]"
                             value="<?php echo $checkboxValueId; ?>"

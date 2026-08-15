@@ -135,7 +135,7 @@ $esc            = static fn(string $value): string => htmlspecialchars($value, E
                 <?php foreach ($option['optionvalue'] as $option_value) : ?>
                     <?php $checkboxValueId = (int) $option_value['product_optionvalue_id']; ?>
                     <?php $childOptionValueInputId = 'child-option-value-' . $product_id . '-' . $optionId . '-' . $checkboxValueId; ?>
-                    <input type="checkbox"
+                    <input<?php echo !empty($option_value['product_optionvalue_default']) ? ' checked="checked"' : ''; ?> type="checkbox"
                         name="product_option[<?php echo $optionId; ?>][]"
                         value="<?php echo $checkboxValueId; ?>"
                         id="<?php echo $childOptionValueInputId; ?>" />

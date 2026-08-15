@@ -256,9 +256,10 @@ $currentSpan = $conSpan + 1 + (!$isVariableType && $hasPriceFields && $hasDefaul
                                             <input type="text" name="<?php echo $prefix . '[' . $poptionvalue->j2commerce_product_optionvalue_id . '][product_optionvalue_weight]'; ?>" class="form-control" value="<?php echo htmlspecialchars($poptionvalue->product_optionvalue_weight ?? '0', ENT_QUOTES, 'UTF-8'); ?>" style="width: 80px;">
                                         </td>
                                         <?php if ($hasDefaultField): ?>
+                                            <?php $isDefault = (int) ($poptionvalue->product_optionvalue_default ?? 0); ?>
                                             <td class="text-center">
-                                                <button type="button" class="btn btn-sm j2commerce-set-default-btn btn-link <?php echo ($poptionvalue->product_optionvalue_default ?? 0) ? 'text-warning' : 'text-body-secondary'; ?>" data-pov-id="<?php echo $poptionvalue->j2commerce_product_optionvalue_id; ?>" title="<?php echo Text::_('COM_J2COMMERCE_SET_AS_DEFAULT'); ?>">
-                                                    <span class="icon-star<?php echo ($poptionvalue->product_optionvalue_default ?? 0) ? '' : '-empty'; ?>"></span>
+                                                <button type="button" class="btn btn-sm j2commerce-set-default-btn btn-link <?php echo $isDefault ? 'text-warning' : 'text-body-secondary'; ?>" data-pov-id="<?php echo $poptionvalue->j2commerce_product_optionvalue_id; ?>" data-is-default="<?php echo $isDefault; ?>" title="<?php echo Text::_($isDefault ? 'COM_J2COMMERCE_UNSET_DEFAULT' : 'COM_J2COMMERCE_SET_AS_DEFAULT'); ?>">
+                                                    <span class="icon-star<?php echo $isDefault ? '' : '-empty'; ?>"></span>
                                                 </button>
                                             </td>
                                         <?php endif; ?>

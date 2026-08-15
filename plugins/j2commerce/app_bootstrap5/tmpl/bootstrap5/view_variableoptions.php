@@ -167,7 +167,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                 <div class="d-flex flex-wrap gap-2">
                     <?php foreach ($option['optionvalue'] as $optionValue) : ?>
                         <div class="form-check">
-                            <input type="checkbox"
+                            <input<?php echo !empty($optionValue['product_optionvalue_default']) ? ' checked="checked"' : ''; ?> type="checkbox"
                                    name="product_option[<?php echo (int) $option['productoption_id']; ?>][]"
                                    value="<?php echo (int) $optionValue['product_optionvalue_id']; ?>"
                                    id="option-value-<?php echo (int) $optionValue['product_optionvalue_id']; ?>"

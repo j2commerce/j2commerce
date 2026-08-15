@@ -23,6 +23,9 @@ const J2Commerce = {
         this.initColorOptionLabels();
         this.initRadioOptionLabels();
         this.initShippingSameAsBilling();
+        // Server-rendered checkbox options need the same binding the swapped-in
+        // child containers get, or a listing card's boxes answer to nothing.
+        this.initConfigCheckboxes(document);
         this.initConfigurableDefaults();
         this.initVariantDeepLink();
         this.equalizeHeights();
@@ -413,7 +416,7 @@ const J2Commerce = {
         // Convert FormData to object, excluding task and view
         for (const [key, value] of formData.entries()) {
             if (key !== 'task' && key !== 'view') {
-                values[key] = value;
+                this.collectValue(values, key, value);
             }
         }
         values.product_id = productId;
@@ -453,7 +456,7 @@ const J2Commerce = {
             element.appendChild(wait);
         }
 
-        const params = new URLSearchParams(values);
+        const params = this.buildParams(values);
         const url = `${this.baseUrl}index.php?option=com_j2commerce&view=product&task=product.update&po_id=${poId}&pov_id=${povId}&product_id=${productId}`;
 
         try {
@@ -748,6 +751,34 @@ const J2Commerce = {
         return base + (query ? '?' + query : '') + hash;
     },
 
+    // Record one form entry. A multi-select control (a checkbox option) submits
+    // the same name once per selected value, so the repeats are kept as a list
+    // rather than each one displacing the one before it.
+    collectValue(values, key, value) {
+        if (!(key in values)) {
+            values[key] = value;
+            return;
+        }
+
+        values[key] = Array.isArray(values[key]) ? [...values[key], value] : [values[key], value];
+    },
+
+    // Turn the collected form entries into a query string, emitting one pair per
+    // value so a list arrives at the server as the list it was.
+    buildParams(values) {
+        const params = new URLSearchParams();
+
+        Object.entries(values).forEach(([key, value]) => {
+            if (Array.isArray(value)) {
+                value.forEach(entry => params.append(key, entry));
+            } else {
+                params.append(key, value);
+            }
+        });
+
+        return params;
+    },
+
     /**
      * Handle AJAX price update
      * @param {number} productId - Product ID
@@ -768,7 +799,7 @@ const J2Commerce = {
 
         for (const [key, value] of formData.entries()) {
             if (key !== 'task' && key !== 'view') {
-                values[key] = value;
+                this.collectValue(values, key, value);
             }
         }
         values.product_id = productId;
@@ -811,7 +842,7 @@ const J2Commerce = {
         const notifications = document.querySelector('.j2commerce-notifications .j2error');
         if (notifications) notifications.replaceChildren();
 
-        const params = new URLSearchParams(values);
+        const params = this.buildParams(values);
         if (!this.baseUrl) this.baseUrl = this.getBaseUrl();
         const url = `${this.baseUrl}index.php?option=com_j2commerce&view=product&task=product.update`;
 

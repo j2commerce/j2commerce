@@ -1937,7 +1937,8 @@ class ProductHelper
      *
      * @param   array  $options  Processed option data from getProductOptions().
      *
-     * @return  array  Associative array of productoption_id => product_optionvalue_id.
+     * @return  array  Associative array of productoption_id => product_optionvalue_id,
+     *                 or productoption_id => list of ids for multi-select checkbox options.
      *
      * @since   6.0.3
      */
@@ -1951,7 +1952,13 @@ class ProductHelper
             if (\in_array($type, ['select', 'radio', 'checkbox', 'color'])) {
                 foreach ($option['optionvalue'] as $optionValue) {
                     if (!empty($optionValue['product_optionvalue_default']) && $optionValue['product_optionvalue_default'] == 1) {
-                        $default[$option['productoption_id']] = $optionValue['product_optionvalue_id'];
+                        // A checkbox option carries every default it holds; the single-choice
+                        // types carry the one value the control can submit.
+                        if ($type === 'checkbox') {
+                            $default[$option['productoption_id']][] = $optionValue['product_optionvalue_id'];
+                        } else {
+                            $default[$option['productoption_id']] = $optionValue['product_optionvalue_id'];
+                        }
                     }
                 }
             }

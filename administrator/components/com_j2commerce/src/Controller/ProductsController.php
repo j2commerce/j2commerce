@@ -2003,13 +2003,7 @@ class ProductsController extends AdminController
         $app->close();
     }
 
-    /**
-     * Set default product option value.
-     *
-     * @return  void
-     *
-     * @since   6.0.3
-     */
+    /** Clear (via the unsetDefault task) or pin one option value as the option's default. */
     public function setDefault(): void
     {
         $this->checkToken('request');
@@ -2030,8 +2024,26 @@ class ProductsController extends AdminController
         $cid   = ArrayHelper::toInteger($cid);
         $povId = !empty($cid) ? (int) $cid[0] : 0;
 
-        if ($povId && $productOptionId) {
-            // Reset all defaults for this product option
+        // getTask() reports the task in the casing the request used, so settle on one.
+        $value = strtolower((string) $this->getTask()) === 'unsetdefault' ? 0 : 1;
+
+        // Resolves the option only where the product named alongside it holds that
+        // option, so a pairing the product does not have decides nothing here.
+        $productOption = ProductHelper::getCartProductOptions($productOptionId, $productId);
+
+        if (!$povId || !$productOption) {
+            echo json_encode(['success' => false]);
+            $app->close();
+
+            return;
+        }
+
+        $isMultiSelect = ($productOption->type ?? '') === 'checkbox';
+
+        // A single-choice control can only carry one default, so pinning one value
+        // releases its siblings. A checkbox option submits every value it holds, so
+        // its defaults stand alongside each other.
+        if ($value === 1 && !$isMultiSelect) {
             $query = $db->getQuery(true);
             $query->update($db->quoteName('#__j2commerce_product_optionvalues'))
                 ->set($db->quoteName('product_optionvalue_default') . ' = 0')
@@ -2040,20 +2052,25 @@ class ProductsController extends AdminController
 
             $db->setQuery($query);
             $db->execute();
-
-            // Set the selected one as default
-            $query = $db->getQuery(true);
-            $query->update($db->quoteName('#__j2commerce_product_optionvalues'))
-                ->set($db->quoteName('product_optionvalue_default') . ' = 1')
-                ->where($db->quoteName('j2commerce_product_optionvalue_id') . ' = :povId')
-                ->bind(':povId', $povId, ParameterType::INTEGER);
-
-            $db->setQuery($query);
-            $db->execute();
         }
 
-        echo json_encode(['success' => true]);
+        $query = $db->getQuery(true);
+        $query->update($db->quoteName('#__j2commerce_product_optionvalues'))
+            ->set($db->quoteName('product_optionvalue_default') . ' = :value')
+            ->where($db->quoteName('j2commerce_product_optionvalue_id') . ' = :povId')
+            ->bind(':value', $value, ParameterType::INTEGER)
+            ->bind(':povId', $povId, ParameterType::INTEGER);
+
+        $db->setQuery($query);
+        $db->execute();
+
+        echo json_encode(['success' => true, 'is_default' => $value, 'exclusive' => !$isMultiSelect]);
         $app->close();
+    }
+
+    public function unsetDefault(): void
+    {
+        $this->setDefault();
     }
 
     /**

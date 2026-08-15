@@ -717,48 +717,49 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
+        // Paint one star from the state the server just confirmed.
+        const applyDefaultState = (button, isDefault) => {
+            button.dataset.isDefault = isDefault ? '1' : '0';
+            button.classList.toggle('text-warning', isDefault);
+            button.classList.toggle('text-body-secondary', !isDefault);
+            button.title = isDefault ? <?php echo json_encode(Text::_('COM_J2COMMERCE_UNSET_DEFAULT')); ?> : <?php echo json_encode(Text::_('COM_J2COMMERCE_SET_AS_DEFAULT')); ?>;
+            const icon = button.querySelector('span');
+            if (icon) icon.className = isDefault ? 'icon-star' : 'icon-star-empty';
+        };
+
         document.querySelectorAll('.j2commerce-set-default-btn').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const povId = btn.dataset.povId;
+                const wasDefault = btn.dataset.isDefault === '1';
                 btn.disabled = true;
 
                 const formData = new FormData();
                 formData.append('option', 'com_j2commerce');
-                formData.append('task', 'products.setDefault');
+                formData.append('task', wasDefault ? 'products.unsetDefault' : 'products.setDefault');
                 formData.append('product_id', productId);
                 formData.append('productoption_id', productOptionId);
                 formData.append('cid[]', povId);
                 formData.append(csrfToken, 1);
 
                 try {
-                    const response = await fetch('index.php', {
-                        method: 'POST',
-                        body: formData
-                    });
-
+                    const response = await fetch('index.php', { method: 'POST', body: formData });
                     const data = await response.json();
 
                     if (data.success) {
-                        document.querySelectorAll('.j2commerce-set-default-btn').forEach(b => {
-                            b.classList.remove('text-warning');
-                            b.classList.add('text-body-secondary');
-                            const icon = b.querySelector('span');
-                            if (icon) {
-                                icon.className = 'icon-star-empty';
-                            }
-                        });
-                        btn.classList.remove('text-body-secondary');
-                        btn.classList.add('text-warning');
-                        const selectedIcon = btn.querySelector('span');
-                        if (selectedIcon) {
-                            selectedIcon.className = 'icon-star';
+                        // A single-choice option carries one default, so the star this
+                        // click claimed was released from whichever value held it.
+                        if (data.is_default && data.exclusive) {
+                            document.querySelectorAll('.j2commerce-set-default-btn').forEach(b => applyDefaultState(b, false));
                         }
-                        showModalMessage(<?php echo json_encode(Text::_('COM_J2COMMERCE_DEFAULT_SET_SUCCESSFULLY')); ?>, 'success');
+                        applyDefaultState(btn, !!data.is_default);
+                        if (data.is_default) {
+                            showModalMessage(<?php echo json_encode(Text::_('COM_J2COMMERCE_DEFAULT_SET_SUCCESSFULLY')); ?>, 'success');
+                        }
                     } else {
                         showModalMessage(data.message || <?php echo json_encode(Text::_('COM_J2COMMERCE_ERROR_OCCURRED')); ?>, 'danger');
                     }
                 } catch (error) {
-                    console.error('Error setting default:', error);
+                    console.error('Error changing default:', error);
                     showModalMessage(<?php echo json_encode(Text::_('COM_J2COMMERCE_ERROR_OCCURRED')); ?>, 'danger');
                 }
 

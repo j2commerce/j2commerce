@@ -149,7 +149,7 @@ $collapsedOptions = (bool) $params->get('list_collapsed_options', $params->get('
                 <b><?php echo $esc(Text::_($option['option_name'])); ?>:</b><br>
                 <?php foreach ($option['optionvalue'] as $option_value) : ?>
                     <?php $optionValueInputId = 'option-value-' . (int) $productId . '-' . $optionId . '-' . (int) $option_value['product_optionvalue_id']; ?>
-                    <input type="checkbox"
+                    <input<?php echo !empty($option_value['product_optionvalue_default']) ? ' checked="checked"' : ''; ?> type="checkbox"
                            name="product_option[<?php echo $optionId; ?>][]"
                            value="<?php echo (int) $option_value['product_optionvalue_id']; ?>"
                            id="<?php echo $optionValueInputId; ?>" />
