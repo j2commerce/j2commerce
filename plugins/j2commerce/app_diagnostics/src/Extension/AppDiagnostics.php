@@ -272,14 +272,11 @@ final class AppDiagnostics extends CMSPlugin implements SubscriberInterface
     {
         Log::addLogger(['text_file' => 'com_j2commerce.php'], Log::ALL, ['com_j2commerce']);
 
-        $app       = $this->getApplication();
-        $clearTime = $app->getInput()->getInt('clear_time', 0);
+        $app = $this->getApplication();
 
-        if ($clearTime <= 0) {
-            $j2params  = J2CommerceHelper::config();
-            $daysOld   = (int) $j2params->get('clear_outdated_cart_data_term', 90);
-            $clearTime = $daysOld * 1440; // Convert days to minutes
-        }
+        // Retention is an administrative setting, so the configured term is the only source.
+        $daysOld   = (int) J2CommerceHelper::config()->get('clear_outdated_cart_data_term', 90);
+        $clearTime = $daysOld * 1440; // Convert days to minutes
 
         $tz         = $app->get('offset');
         $cutoffDate = Factory::getDate('now -' . $clearTime . ' minutes', $tz)->toSql(true);
@@ -326,17 +323,6 @@ final class AppDiagnostics extends CMSPlugin implements SubscriberInterface
             $db->setQuery($query)->execute();
         } catch (\Exception $e) {
             Log::add('clear_cart: delete carts failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
-        }
-
-        // Prune orphaned cartitem rows whose parent cart no longer exists
-        $query = $db->getQuery(true)
-            ->delete($db->quoteName('#__j2commerce_cartitems'))
-            ->where($db->quoteName('cart_id') . ' NOT IN (SELECT ' . $db->quoteName('j2commerce_cart_id') . ' FROM ' . $db->quoteName('#__j2commerce_carts') . ')');
-
-        try {
-            $db->setQuery($query)->execute();
-        } catch (\Exception $e) {
-            Log::add('clear_cart: prune orphan cartitems failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
         }
     }
 }

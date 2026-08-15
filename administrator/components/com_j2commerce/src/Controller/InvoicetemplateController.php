@@ -186,8 +186,12 @@ class InvoicetemplateController extends FormController
     {
         Session::checkToken() or jexit(Text::_('JINVALID_TOKEN'));
 
-        $body      = $this->input->post->getRaw('body', '');
-        $customCss = trim($this->input->post->getRaw('custom_css', ''));
+        $body = $this->input->post->getRaw('body', '');
+
+        // Dropping '<' outright: a single pass at '</style' can be reassembled by a nested
+        // sequence, so the character the element cannot survive goes instead. The preview
+        // opens in a window rather than a frame, which cannot carry a sandbox attribute.
+        $customCss = trim(str_replace('<', '', $this->input->post->getRaw('custom_css', '')));
 
         // Restore data-j2c-src placeholders back to src (editor injects these to prevent 404s)
         // GrapesJS may reorder attributes, so data-j2c-src may not be adjacent to src
@@ -216,7 +220,9 @@ class InvoicetemplateController extends FormController
         $processedBody   = preg_replace_callback(
             '/<style\b[^>]*>(.*?)<\/style>/si',
             function (array $m) use (&$extractedStyles): string {
-                $extractedStyles .= $m[1] . "\n";
+                // The pattern only ends on a literal '</style>', so a bare '</style ' would
+                // survive extraction and close the element it is re-emitted into.
+                $extractedStyles .= str_replace('<', '', $m[1]) . "\n";
                 return '';
             },
             $processedBody

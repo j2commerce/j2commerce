@@ -80,13 +80,22 @@ class DiagnosticField extends FormField
             $html[] = '</tr>';
         }
 
-        // Cron URL row
-        $cronUrl = rtrim(Uri::root(), '/') . '/index.php?option=com_j2commerce&view=crons&task=cron&cron_secret='
-            . $cronKey . '&command=clear_cart&clear_time=1440';
+        // Cron URL row. ComponentDispatcher routes on a dotted task, so cron.execute is the
+        // form that reaches CronController; the retention window comes from the store settings.
+        $esc      = static fn ($v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+        $cronBase = rtrim(Uri::root(), '/')
+            . '/index.php?option=com_j2commerce&task=cron.execute&command=clear_cart&cron_secret=';
+        $maskedUrl = $cronBase . ($cronKey === '' ? '' : str_repeat('*', 12));
 
         $html[] = '<tr>';
         $html[] = '<th scope="row">' . Text::_('PLG_J2COMMERCE_APP_DIAGNOSTICS_CLEAR_CART_CRON') . '</th>';
-        $html[] = '<td><code>' . htmlspecialchars($cronUrl, ENT_QUOTES, 'UTF-8') . '</code></td>';
+        $html[] = '<td class="d-flex align-items-center gap-2 flex-wrap">';
+        $html[] = '<code id="j2c-diag-cron-url" data-cron-url="' . $esc($cronBase . $cronKey)
+            . '" data-cron-masked="' . $esc($maskedUrl) . '">' . $esc($maskedUrl) . '</code>';
+        $html[] = '<button type="button" class="btn btn-sm btn-secondary" id="j2c-diag-cron-toggle"'
+            . ' data-label-show="' . $esc(Text::_('JSHOW')) . '"'
+            . ' data-label-hide="' . $esc(Text::_('JHIDE')) . '">' . $esc(Text::_('JSHOW')) . '</button>';
+        $html[] = '</td>';
         $html[] = '</tr>';
 
         $html[] = '</tbody>';
@@ -94,6 +103,28 @@ class DiagnosticField extends FormField
         $html[] = '</div>';
 
         $html[] = $this->renderMailSection();
+        $html[] = <<<'HTML'
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    'use strict';
+
+    const url = document.getElementById('j2c-diag-cron-url');
+    const btn = document.getElementById('j2c-diag-cron-toggle');
+
+    if (!url || !btn) {
+        return;
+    }
+
+    btn.addEventListener('click', function () {
+        const revealed = btn.dataset.state === 'shown';
+
+        url.textContent = revealed ? url.dataset.cronMasked : url.dataset.cronUrl;
+        btn.textContent = revealed ? btn.dataset.labelShow : btn.dataset.labelHide;
+        btn.dataset.state = revealed ? 'hidden' : 'shown';
+    });
+});
+</script>
+HTML;
 
         return implode("\n", $html);
     }

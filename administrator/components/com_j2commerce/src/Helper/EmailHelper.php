@@ -77,6 +77,7 @@ class EmailHelper
         '[TAX_LINES]',
         '[DISCOUNT_LINES]',
         '[ORDER_EXTRA_ROWS]',
+        '[DOWNLOAD_LINKS]',
         '[CUSTOMER_NOTE]',
         '[BANK_TRANSFER_INFORMATION]',
         '[FOOTER_TEXT]',
@@ -169,24 +170,30 @@ class EmailHelper
         return self::$instance;
     }
 
-    /** Get the most recent order or sample data for email preview/test. */
+    /**
+     * Sample order for email preview/test. A stored order is used only where the caller
+     * already holds the order-viewing level; everyone else renders the synthetic row.
+     */
     public function getSampleOrderData(): object
     {
-        $db = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $user = Factory::getApplication()->getIdentity();
 
-        // Try to load the most recent order
-        $query = $db->getQuery(true)
-            ->select('*')
-            ->from($db->quoteName('#__j2commerce_orders'))
-            ->order($db->quoteName('j2commerce_order_id') . ' DESC');
-        $db->setQuery($query, 0, 1);
-        $order = $db->loadObject();
+        if ($user && $user->authorise('j2commerce.vieworders', 'com_j2commerce')) {
+            $db = Factory::getContainer()->get(DatabaseInterface::class);
 
-        if ($order) {
-            return $order;
+            $query = $db->getQuery(true)
+                ->select('*')
+                ->from($db->quoteName('#__j2commerce_orders'))
+                ->order($db->quoteName('j2commerce_order_id') . ' DESC');
+            $db->setQuery($query, 0, 1);
+            $order = $db->loadObject();
+
+            if ($order) {
+                return $order;
+            }
         }
 
-        // Fallback sample data when no orders exist
+        // Synthetic sample data
         return (object) [
             'j2commerce_order_id' => 0,
             'order_id'            => 'J2C-1001',
@@ -425,9 +432,10 @@ class EmailHelper
             $htmlExtra = ' dir="rtl"';
         }
 
-        // Inject custom CSS into <head>
+        // Inject custom CSS into <head>. The '<' strip matches the preview and test-send
+        // paths, so what a test send renders is what the customer receives.
         $headStyles = '';
-        $customCss  = trim($template->custom_css ?? '');
+        $customCss  = trim(str_replace('<', '', $template->custom_css ?? ''));
         if ($customCss !== '') {
             $headStyles = '<style type="text/css">' . $customCss . '</style>';
         }
@@ -696,6 +704,22 @@ class EmailHelper
         // Tax line items with profile names (from ordertaxes table)
         $tags['[TAX_LINES]'] = $this->buildTaxLines($order);
 
+        // Download links for the order's digital files
+        $downloadLinks           = $receiverType === 'admin'
+            ? ''
+            : $this->buildDownloadLinks($order, $siteRoot, $subpathURL, $language);
+        $tags['[DOWNLOAD_LINKS]'] = $downloadLinks;
+
+        // Templates saved before this tag existed carry no placeholder for it, so a store that
+        // sells downloads would still mail an order with no way to reach the files. Append the
+        // block only when the template did not place it itself, and only into an HTML body.
+        // Case-insensitive, and curly braces too: both forms are normalised to the canonical
+        // tag further down, so testing only the canonical spelling here would append a second
+        // copy to a template that does carry the tag.
+        $appendDownloadLinks = $escapeHtml
+            && $downloadLinks !== ''
+            && !preg_match('/[\[{]DOWNLOAD_LINKS[\]}]/i', $text);
+
         // Discount line items with their own titles (from orderdiscounts table)
         $tags['[DISCOUNT_LINES]'] = $this->buildDiscountLines($order, $discountRows, $language);
 
@@ -782,6 +806,10 @@ class EmailHelper
 
         // Collapse consecutive <br> tags separated only by whitespace (leftover from removed conditionals)
         $text = preg_replace('/(<br\s*\/?>)(\s*<br\s*\/?>)+/', '$1', $text);
+
+        if ($appendDownloadLinks) {
+            $text .= $downloadLinks;
+        }
 
         return $text;
     }
@@ -1113,6 +1141,64 @@ class EmailHelper
         }
 
         return $rows === '' ? '' : '<table width="100%" cellpadding="0" cellspacing="0" border="0">' . $rows . '</table>';
+    }
+
+    /**
+     * Download block for an order's digital files. Each link carries the order's own token so it
+     * resolves for the recipient of this email, who is reading it in a browser that never went
+     * through checkout and so holds none of the session the account pages rely on.
+     */
+    private function buildDownloadLinks(object $order, string $siteRoot, string $subpathURL, Language $language): string
+    {
+        $downloads = DownloadHelper::getOrderDownloads((string) ($order->order_id ?? ''));
+
+        if ($downloads === []) {
+            return '';
+        }
+
+        $orderToken = (string) ($order->token ?? '');
+        $orderEmail = (string) ($order->user_email ?? '');
+        $rows       = '';
+
+        foreach ($downloads as $download) {
+            if (empty($download->can_download)) {
+                continue;
+            }
+
+            $url = $this->buildSiteUrl(
+                'index.php?option=com_j2commerce&task=myprofile.download'
+                    . '&order_id=' . urlencode((string) $download->order_id)
+                    . '&fid=' . (int) $download->j2commerce_productfile_id
+                    . '&order_token=' . urlencode($orderToken)
+                    . '&order_email=' . urlencode($orderEmail),
+                $siteRoot,
+                $subpathURL
+            );
+
+            $name = (string) ($download->product_file_display_name ?? '');
+            $name = $name === '' ? $language->_('COM_J2COMMERCE_DOWNLOAD') : $name;
+
+            $rows .= '<tr>'
+                . '<td style="padding: 6px 20px; font-size: 13px;">'
+                . htmlspecialchars($name, ENT_QUOTES, 'UTF-8')
+                . '</td>'
+                . '<td style="padding: 6px 20px; font-size: 13px; text-align: right;">'
+                . '<a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '">'
+                . htmlspecialchars($language->_('COM_J2COMMERCE_DOWNLOAD'), ENT_QUOTES, 'UTF-8')
+                . '</a></td>'
+                . '</tr>';
+        }
+
+        if ($rows === '') {
+            return '';
+        }
+
+        return '<table width="100%" cellpadding="0" cellspacing="0" border="0">'
+            . '<tr><td colspan="2" style="padding: 12px 20px 6px; font-size: 14px; font-weight: bold;">'
+            . htmlspecialchars($language->_('COM_J2COMMERCE_MYPROFILE_DOWNLOADS'), ENT_QUOTES, 'UTF-8')
+            . '</td></tr>'
+            . $rows
+            . '</table>';
     }
 
     /** @return list<array{label: string, value: string}> */

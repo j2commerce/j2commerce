@@ -263,6 +263,10 @@ class EmailtemplateController extends FormController
     {
         Session::checkToken() or jexit(Text::_('JINVALID_TOKEN'));
 
+        if (!$this->app->getIdentity()->authorise('core.manage', 'com_j2commerce')) {
+            jexit(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'));
+        }
+
         $body      = $this->input->post->getRaw('body', '');
         $subject   = $this->input->post->getString('subject', '');
         $customCss = $this->input->post->getRaw('custom_css', '');
@@ -287,8 +291,10 @@ class EmailtemplateController extends FormController
         $processedSubject = EmailHelper::processTypeTags($emailType, $context, $order, $subject);
 
         // Build full HTML with custom CSS
+        // Dropping '<' outright: a single pass at '</style' can be reassembled by a
+        // nested sequence, so the character the element cannot survive goes instead.
         $headStyles = '';
-        $customCss  = trim($customCss);
+        $customCss  = trim(str_replace('<', '', $customCss));
         if ($customCss !== '') {
             $headStyles = '<style type="text/css">' . $customCss . '</style>';
         }
@@ -310,12 +316,20 @@ class EmailtemplateController extends FormController
     {
         Session::checkToken() or jexit(Text::_('JINVALID_TOKEN'));
 
+        $user = $this->app->getIdentity();
+
+        if (!$user->authorise('core.manage', 'com_j2commerce')) {
+            jexit(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'));
+        }
+
         $body      = $this->input->post->getRaw('body', '');
         $subject   = $this->input->post->getString('subject', '');
         $customCss = $this->input->post->getRaw('custom_css', '');
-        $recipient = $this->input->post->getString('recipient', '');
         $emailType = $this->input->post->getCmd('email_type', 'transactional');
         $context   = $this->input->post->getCmd('context', 'test');
+
+        // A test send goes to the account that asked for it, the way the diagnostics mail probe does.
+        $recipient = (string) $user->email;
 
         $json = ['success' => false, 'message' => ''];
 
@@ -340,7 +354,7 @@ class EmailtemplateController extends FormController
 
             // Build full HTML
             $headStyles = '';
-            $customCss  = trim($customCss);
+            $customCss  = trim(str_replace('<', '', $customCss));
             if ($customCss !== '') {
                 $headStyles = '<style type="text/css">' . $customCss . '</style>';
             }
@@ -365,6 +379,11 @@ class EmailtemplateController extends FormController
             $mailer->setBody($htmlBody);
 
             if ($mailer->Send()) {
+                Log::add(
+                    'emailtemplate.sendTest sent via ' . $transport . ' by user ' . $user->id,
+                    Log::INFO,
+                    'com_j2commerce'
+                );
                 $json['success'] = true;
                 $json['message'] = Text::sprintf('COM_J2COMMERCE_EMAILTEMPLATE_TEST_SENT', $recipient);
             } else {

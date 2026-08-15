@@ -145,24 +145,38 @@ document.addEventListener("DOMContentLoaded", function() {
                 });
 
                 if (response.ok) {
-                    const html = await response.text();
-                    const win = window.open("", "_blank");
-                    win.document.write(html);
-                    win.document.close();
-                    win.focus();
+                    // A hidden sandboxed frame rather than window.open: a window opened on
+                    // "" inherits this origin and cannot carry a sandbox attribute, while a
+                    // frame renders the same output with scripting switched off.
+                    // NEVER add allow-scripts here. Without it nothing in the frame executes,
+                    // whatever its origin. allow-same-origin only makes contentWindow.print
+                    // reachable from this page - print is not on the cross-origin safelist,
+                    // so reading it across an opaque origin throws. The pair is only
+                    // dangerous together, because content could then drop its own sandbox.
+                    const frame = document.createElement("iframe");
+                    frame.setAttribute("sandbox", "allow-modals allow-same-origin");
+                    frame.setAttribute("aria-hidden", "true");
+                    // Off-screen rather than 0x0: a collapsed frame never puts an image in a
+                    // viewport, so lazy images would never load and never delay the load event.
+                    frame.style.position = "fixed";
+                    frame.style.left = "-10000px";
+                    frame.style.top = "0";
+                    frame.style.width = "1000px";
+                    frame.style.height = "1400px";
+                    frame.style.border = "0";
 
-                    // Wait for all images to load before printing
-                    const imgs = win.document.querySelectorAll("img");
-                    if (imgs.length > 0) {
-                        await Promise.all(Array.from(imgs).map(img => {
-                            if (img.complete) return Promise.resolve();
-                            return new Promise(resolve => {
-                                img.addEventListener("load", resolve, {once: true});
-                                img.addEventListener("error", resolve, {once: true});
-                            });
-                        }));
-                    }
-                    win.print();
+                    frame.addEventListener("load", function() {
+                        // The load event already waits on images, so no counting is needed.
+                        frame.contentWindow.addEventListener("afterprint", function() {
+                            frame.remove();
+                        }, {once: true});
+                        frame.contentWindow.print();
+                    }, {once: true});
+
+                    document.getElementById("j2c-print-test-frame")?.remove();
+                    frame.id = "j2c-print-test-frame";
+                    frame.srcdoc = await response.text();
+                    document.body.append(frame);
                 } else {
                     Joomla.renderMessages({error: [Joomla.Text._("COM_J2COMMERCE_INVOICETEMPLATE_PREVIEW_FAILED")]});
                 }

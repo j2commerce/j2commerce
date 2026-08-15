@@ -702,13 +702,11 @@ function setupPreviewIntegration(editor, options) {
 
             const response = await fetch(options.previewUrl, { method: 'POST', body: formData });
             if (response.ok) {
-                const html = await response.text();
                 const iframe = document.getElementById('email-preview-iframe');
                 if (iframe) {
-                    const doc = iframe.contentDocument || iframe.contentWindow.document;
-                    doc.open();
-                    doc.write(html);
-                    doc.close();
+                    // srcdoc, not document.write: the frame is sandboxed, so its document
+                    // is not reachable from here and script never runs in it.
+                    iframe.srcdoc = await response.text();
                 }
             }
         } catch (err) {
