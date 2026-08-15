@@ -61,7 +61,7 @@
   <hr class="double-dashed" />
 
   <div class="center bold" style="font-size: 14px; letter-spacing: 2px;">
-    RECEIPT
+    [LANG:COM_J2COMMERCE_EMAIL_RECEIPT_2]
   </div>
 
   <hr class="dashed" />
@@ -69,15 +69,15 @@
   <!-- Order Info -->
   <table>
     <tr>
-      <td>Order #</td>
+      <td>[LANG:COM_J2COMMERCE_EMAIL_ORDER_2]</td>
       <td class="right bold">[ORDERID]</td>
     </tr>
     <tr>
-      <td>Date</td>
+      <td>[LANG:COM_J2COMMERCE_EMAIL_DATE]</td>
       <td class="right">[ORDERDATE]</td>
     </tr>
     <tr>
-      <td>Status</td>
+      <td>[LANG:COM_J2COMMERCE_EMAIL_STATUS]</td>
       <td class="right">[ORDERSTATUS]</td>
     </tr>
   </table>
@@ -85,7 +85,7 @@
   <hr class="dashed" />
 
   <!-- Customer -->
-  <div style="font-size: 11px; color: #555; text-transform: uppercase; margin-bottom: 2px;">Customer</div>
+  <div style="font-size: 11px; color: #555; text-transform: uppercase; margin-bottom: 2px;">[LANG:COM_J2COMMERCE_EMAIL_CUSTOMER_3]</div>
   <div>[BILLING_FIRSTNAME] [BILLING_LASTNAME]</div>
   [IF:BILLING_EMAIL]
   <div style="font-size: 11px;">[BILLING_EMAIL]</div>
@@ -120,24 +120,24 @@
   <!-- Totals -->
   <table class="total-row">
     <tr>
-      <td>Subtotal</td>
+      <td>[LANG:COM_J2COMMERCE_EMAIL_SUBTOTAL]</td>
       <td class="right">[SUBTOTAL]</td>
     </tr>
     [IF:SHIPPING_METHOD]
     <tr>
-      <td>Shipping ([SHIPPING_METHOD])</td>
+      <td>[LANG:COM_J2COMMERCE_EMAIL_SHIPPING_3]</td>
       <td class="right">[SHIPPING_AMOUNT]</td>
     </tr>
     [/IF:SHIPPING_METHOD]
     [IF:TAX_AMOUNT]
     <tr>
-      <td>Tax</td>
+      <td>[LANG:COM_J2COMMERCE_EMAIL_TAX]</td>
       <td class="right">[TAX_AMOUNT]</td>
     </tr>
     [/IF:TAX_AMOUNT]
     [IF:DISCOUNT_AMOUNT]
     <tr>
-      <td>[IF:DISCOUNT_LABEL][DISCOUNT_LABEL][/IF:DISCOUNT_LABEL][IFNOT:DISCOUNT_LABEL]Discount[/IFNOT:DISCOUNT_LABEL]</td>
+      <td>[LANG:COM_J2COMMERCE_EMAIL_DISCOUNT]</td>
       <td class="right">-[DISCOUNT_AMOUNT]</td>
     </tr>
     [/IF:DISCOUNT_AMOUNT]
@@ -147,7 +147,7 @@
 
   <table class="grand-total">
     <tr>
-      <td>TOTAL</td>
+      <td>[LANG:COM_J2COMMERCE_EMAIL_TOTAL_2]</td>
       <td class="right">[ORDERAMOUNT]</td>
     </tr>
   </table>
@@ -158,7 +158,7 @@
   [IF:PAYMENT_METHOD]
   <table>
     <tr>
-      <td>Paid via</td>
+      <td>[LANG:COM_J2COMMERCE_EMAIL_PAID_VIA]</td>
       <td class="right">[PAYMENT_METHOD]</td>
     </tr>
   </table>
@@ -170,7 +170,7 @@
 
   <!-- Footer -->
   <div class="center" style="margin-top: 12px; font-size: 13px;">
-    Thank you for your purchase!
+    [LANG:COM_J2COMMERCE_EMAIL_THANK_YOU_FOR_PURCHASE]
   </div>
   <div class="center" style="margin-top: 8px; font-size: 10px; color: #999;">
     &copy; [CURRENT_YEAR] [SITENAME]

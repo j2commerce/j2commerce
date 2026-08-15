@@ -32,6 +32,7 @@ use Joomla\CMS\Access\Access;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
+use Joomla\CMS\Language\LanguageHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\Mail\Mail;
@@ -191,9 +192,10 @@ class OrderModel extends AdminModel
                 throw new \RuntimeException(Text::_('COM_J2COMMERCE_ERROR_GUEST_EMAIL_REQUIRED'));
             }
 
-            $customerId    = 0;
-            $customerEmail = $email;
-            $customerGroup = (string) (int) ComponentHelper::getParams('com_users')->get('guest_usergroup', 1);
+            $customerId       = 0;
+            $customerEmail    = $email;
+            $customerGroup    = (string) (int) ComponentHelper::getParams('com_users')->get('guest_usergroup', 1);
+            $customerLanguage = '';
         } else {
             $customerId = (int) ($data['user_id'] ?? 0);
 
@@ -207,8 +209,16 @@ class OrderModel extends AdminModel
                 throw new \RuntimeException(Text::_('COM_J2COMMERCE_ERROR_CUSTOMER_REQUIRED'));
             }
 
-            $customerEmail = (string) $customer->email;
-            $customerGroup = implode(',', Access::getGroupsByUser($customerId, false));
+            $customerEmail    = (string) $customer->email;
+            $customerGroup    = implode(',', Access::getGroupsByUser($customerId, false));
+            $customerLanguage = (string) $customer->getParam('language', '');
+        }
+
+        // The order records the language the CUSTOMER reads it back in. Taking the current
+        // request's tag would stamp the backend operator's locale onto someone else's order,
+        // and every notification about it would then go out in the wrong language.
+        if ($customerLanguage === '' || !LanguageHelper::exists($customerLanguage)) {
+            $customerLanguage = EmailHelper::siteDefaultLanguage();
         }
 
         $currencyCode  = ConfigHelper::getDefaultCurrency();
@@ -225,7 +235,7 @@ class OrderModel extends AdminModel
             'currency_id'       => CurrencyHelper::getId($currencyCode),
             'currency_value'    => 1,
             'invoice_prefix'    => $invoicePrefix,
-            'customer_language' => $app->getLanguage()->getTag(),
+            'customer_language' => $customerLanguage,
             'customer_note'     => (string) ($data['customer_note'] ?? ''),
             'customer_group'    => $customerGroup,
             'ip_address'        => '',

@@ -1,4 +1,4 @@
-<!--@subject: Thanks for your order, [BILLING_FIRSTNAME]! - #[ORDERID] -->
+<!--@subject: [LANG:COM_J2COMMERCE_EMAIL_THANKS_FOR_YOUR_ORDER] -->
 <!-- J2Commerce Order Confirmed — Modern Template -->
 <style>
   @media only screen and (max-width: 620px) {
@@ -44,9 +44,9 @@
                 </td>
               </tr>
             </table>
-            <h1 style="margin: 16px 0 6px 0; font-size: 26px; font-weight: bold; color: #ffffff;">Order Confirmed</h1>
+            <h1 style="margin: 16px 0 6px 0; font-size: 26px; font-weight: bold; color: #ffffff;">[LANG:COM_J2COMMERCE_EMAIL_ORDER_CONFIRMED_2]</h1>
             <p style="margin: 0; font-size: 15px; color: #d1fae5;">
-              Thank you, [CUSTOMER_NAME]! Your order #[ORDERID] has been confirmed.
+              [LANG:COM_J2COMMERCE_EMAIL_THANK_YOU_YOUR_ORDER_CONFIRMED]
             </p>
           </td>
         </tr>
@@ -69,7 +69,7 @@
                       </td>
                     </tr>
                     <tr>
-                      <td style="padding-top: 6px; font-size: 11px; font-weight: bold; color: #059669; text-align: center;">Ordered</td>
+                      <td style="padding-top: 6px; font-size: 11px; font-weight: bold; color: #059669; text-align: center;">[LANG:COM_J2COMMERCE_EMAIL_ORDERED]</td>
                     </tr>
                   </table>
                 </td>
@@ -86,7 +86,7 @@
                       </td>
                     </tr>
                     <tr>
-                      <td style="padding-top: 6px; font-size: 11px; color: #9ca3af; text-align: center;">Processing</td>
+                      <td style="padding-top: 6px; font-size: 11px; color: #9ca3af; text-align: center;">[LANG:COM_J2COMMERCE_EMAIL_PROCESSING]</td>
                     </tr>
                   </table>
                 </td>
@@ -103,7 +103,7 @@
                       </td>
                     </tr>
                     <tr>
-                      <td style="padding-top: 6px; font-size: 11px; color: #9ca3af; text-align: center;">Shipped</td>
+                      <td style="padding-top: 6px; font-size: 11px; color: #9ca3af; text-align: center;">[LANG:COM_J2COMMERCE_EMAIL_SHIPPED]</td>
                     </tr>
                   </table>
                 </td>
@@ -129,9 +129,8 @@
             <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f0fdf4; border-radius: 8px; margin-bottom: 4px;">
               <tr>
                 <td style="padding: 14px 20px; font-size: 13px; color: #374151;">
-                  <strong>Order #[ORDERID]</strong>&nbsp;&nbsp;&bull;&nbsp;&nbsp;[ORDERDATE]
-                  [IF:INVOICENO]&nbsp;&nbsp;&bull;&nbsp;&nbsp;Invoice: [INVOICENO][/IF:INVOICENO]
-                  <br>[IF:ORDER_TOKEN]<span style="font-size: 12px; color: #6b7280;">Order Token: [ORDER_TOKEN]</span>[/IF:ORDER_TOKEN]
+                  <strong>[LANG:COM_J2COMMERCE_EMAIL_ORDER]</strong>[LANG:COM_J2COMMERCE_EMAIL_INVOICE]
+                  <br>[IF:ORDER_TOKEN]<span style="font-size: 12px; color: #6b7280;">[LANG:COM_J2COMMERCE_EMAIL_ORDER_TOKEN_2]</span>[/IF:ORDER_TOKEN]
                 </td>
               </tr>
             </table>
@@ -147,14 +146,14 @@
               <!-- Card Header -->
               <tr>
                 <td colspan="4" style="padding: 16px 20px; border-bottom: 1px solid #f3f4f6;">
-                  <span style="font-size: 15px; font-weight: bold; color: [TEXT_COLOR];">Items Ordered</span>
+                  <span style="font-size: 15px; font-weight: bold; color: [TEXT_COLOR];">[LANG:COM_J2COMMERCE_EMAIL_ITEMS_ORDERED]</span>
                 </td>
               </tr>
               <!-- Column Headers -->
               <tr>
-                <td style="padding: 10px 20px; font-size: 11px; font-weight: bold; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px;" colspan="2">Product</td>
-                <td style="padding: 10px 10px; font-size: 11px; font-weight: bold; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; width: 45px;">Qty</td>
-                <td style="padding: 10px 20px; font-size: 11px; font-weight: bold; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; text-align: right; width: 90px;">Total</td>
+                <td style="padding: 10px 20px; font-size: 11px; font-weight: bold; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px;" colspan="2">[LANG:COM_J2COMMERCE_EMAIL_PRODUCT]</td>
+                <td style="padding: 10px 10px; font-size: 11px; font-weight: bold; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; width: 45px;">[LANG:COM_J2COMMERCE_EMAIL_QTY]</td>
+                <td style="padding: 10px 20px; font-size: 11px; font-weight: bold; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; text-align: right; width: 90px;">[LANG:COM_J2COMMERCE_EMAIL_TOTAL]</td>
               </tr>
               <!-- Items -->
               [ITEMS_LOOP]
@@ -166,9 +165,9 @@
                 </td>
                 <td style="padding: 12px 10px; border-top: 1px solid #f3f4f6; vertical-align: top;">
                   <span style="font-size: 14px; font-weight: 600; color: [TEXT_COLOR];">[ITEM_NAME]</span>
-                  [IF:ITEM_SKU]<br /><span style="font-size: 12px; color: #9ca3af;">SKU: [ITEM_SKU]</span>[/IF:ITEM_SKU]
+                  [IF:ITEM_SKU]<br /><span style="font-size: 12px; color: #9ca3af;">[LANG:COM_J2COMMERCE_EMAIL_SKU_2]</span>[/IF:ITEM_SKU]
                   [IF:ITEM_OPTIONS]<br /><span style="font-size: 12px; color: #6b7280;">[ITEM_OPTIONS]</span>[/IF:ITEM_OPTIONS]
-                  <br /><span style="font-size: 12px; color: #6b7280;">[ITEM_PRICE] each</span>
+                  <br /><span style="font-size: 12px; color: #6b7280;">[LANG:COM_J2COMMERCE_EMAIL_EACH]</span>
                   [ITEM_ANNOTATIONS]
                 </td>
                 <td style="padding: 12px 10px; border-top: 1px solid #f3f4f6; text-align: center; vertical-align: top; font-size: 14px; color: [TEXT_COLOR];">[ITEM_QTY]</td>
@@ -180,11 +179,11 @@
                 <td colspan="4" style="padding: 0;">
                   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f9fafb; border-top: 1px solid #e5e7eb;">
                     <tr>
-                      <td style="padding: 10px 20px 2px 20px; font-size: 13px; color: #6b7280;">Subtotal</td>
+                      <td style="padding: 10px 20px 2px 20px; font-size: 13px; color: #6b7280;">[LANG:COM_J2COMMERCE_EMAIL_SUBTOTAL]</td>
                       <td style="padding: 10px 20px 2px 20px; font-size: 13px; color: #6b7280; text-align: right;">[SUBTOTAL]</td>
                     </tr>
                     <tr>
-                      <td style="padding: 6px 20px; font-size: 13px; color: #6b7280;">[IF:SHIPPING_METHOD]Shipping ([SHIPPING_METHOD])[/IF:SHIPPING_METHOD]</td>
+                      <td style="padding: 6px 20px; font-size: 13px; color: #6b7280;">[LANG:COM_J2COMMERCE_EMAIL_SHIPPING]</td>
                       <td style="padding: 6px 20px; font-size: 13px; color: #6b7280; text-align: right;">[IF:SHIPPING_METHOD][SHIPPING_AMOUNT][/IF:SHIPPING_METHOD]</td>
                     </tr>
                     <tr>
@@ -194,7 +193,7 @@
                       <td colspan="2" style="padding: 0;">[TAX_LINES]</td>
                     </tr>
                     <tr>
-                      <td style="padding: 14px 20px; font-size: 16px; font-weight: bold; color: [TEXT_COLOR]; border-top: 2px solid #e5e7eb;">Total</td>
+                      <td style="padding: 14px 20px; font-size: 16px; font-weight: bold; color: [TEXT_COLOR]; border-top: 2px solid #e5e7eb;">[LANG:COM_J2COMMERCE_EMAIL_TOTAL]</td>
                       <td style="padding: 14px 20px; font-size: 16px; font-weight: bold; color: [TEXT_COLOR]; text-align: right; border-top: 2px solid #e5e7eb;">[ORDERAMOUNT]</td>
                     </tr>
                   </table>
@@ -217,7 +216,7 @@
                 <td class="address-col" style="width: 50%; vertical-align: top; padding-right: 8px;">
                   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 10px;">
                     <tr>
-                      <td style="padding: 14px 18px; border-bottom: 1px solid #f3f4f6; font-size: 13px; font-weight: bold; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">Billing Address</td>
+                      <td style="padding: 14px 18px; border-bottom: 1px solid #f3f4f6; font-size: 13px; font-weight: bold; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">[LANG:COM_J2COMMERCE_EMAIL_BILLING_ADDRESS]</td>
                     </tr>
                     <tr>
                       <td style="padding: 14px 18px; font-size: 14px; color: [TEXT_COLOR]; line-height: 1.6;">
@@ -234,7 +233,7 @@
                   [IF:SHIPPING_FIRSTNAME]
                   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 10px;">
                     <tr>
-                      <td style="padding: 14px 18px; border-bottom: 1px solid #f3f4f6; font-size: 13px; font-weight: bold; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">Shipping Address</td>
+                      <td style="padding: 14px 18px; border-bottom: 1px solid #f3f4f6; font-size: 13px; font-weight: bold; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">[LANG:COM_J2COMMERCE_EMAIL_SHIPPING_ADDRESS]</td>
                     </tr>
                     <tr>
                       <td style="padding: 14px 18px; font-size: 14px; color: [TEXT_COLOR]; line-height: 1.6;">
@@ -257,12 +256,12 @@
           <td class="mobile-padding" style="padding: 0 20px 16px 20px;">
             <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 10px;">
               <tr>
-                <td style="padding: 14px 18px; border-bottom: 1px solid #f3f4f6; font-size: 13px; font-weight: bold; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">Payment Information</td>
+                <td style="padding: 14px 18px; border-bottom: 1px solid #f3f4f6; font-size: 13px; font-weight: bold; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">[LANG:COM_J2COMMERCE_EMAIL_PAYMENT_INFORMATION]</td>
               </tr>
               <tr>
                 <td style="padding: 14px 18px; font-size: 14px; color: [TEXT_COLOR];">
-                  <strong>Method:</strong> [PAYMENT_TYPE]
-                  [IF:SHIPPING_TRACKING_ID]<br /><strong>Tracking ID:</strong> [SHIPPING_TRACKING_ID][/IF:SHIPPING_TRACKING_ID]
+                  <strong>[LANG:COM_J2COMMERCE_EMAIL_METHOD]:</strong> [PAYMENT_TYPE]
+                  [IF:SHIPPING_TRACKING_ID]<br /><strong>[LANG:COM_J2COMMERCE_EMAIL_TRACKING_ID_2]:</strong> [SHIPPING_TRACKING_ID][/IF:SHIPPING_TRACKING_ID]
                 </td>
               </tr>
             </table>
@@ -280,7 +279,7 @@
                 <td style="padding: 0 20px 16px 20px;">
                   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 10px;">
                     <tr>
-                      <td style="padding: 14px 18px; font-size: 13px; font-weight: bold; color: #92400e;">Your Note</td>
+                      <td style="padding: 14px 18px; font-size: 13px; font-weight: bold; color: #92400e;">[LANG:COM_J2COMMERCE_EMAIL_YOUR_NOTE]</td>
                     </tr>
                     <tr>
                       <td style="padding: 0 18px 14px 18px; font-size: 14px; color: #78350f; line-height: 1.5;">[CUSTOMER_NOTE]</td>
@@ -299,7 +298,7 @@
             <table cellpadding="0" cellspacing="0" border="0" align="center">
               <tr>
                 <td style="background-color: [ACCENT_COLOR]; border-radius: 8px; text-align: center;">
-                  <a href="[INVOICE_URL]" style="display: inline-block; padding: 14px 36px; color: #ffffff; text-decoration: none; font-size: 15px; font-weight: bold; letter-spacing: 0.3px;">View Your Order</a>
+                  <a href="[INVOICE_URL]" style="display: inline-block; padding: 14px 36px; color: #ffffff; text-decoration: none; font-size: 15px; font-weight: bold; letter-spacing: 0.3px;">[LANG:COM_J2COMMERCE_EMAIL_VIEW_YOUR_ORDER]</a>
                 </td>
               </tr>
             </table>
@@ -312,8 +311,8 @@
             <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f9fafb; border-radius: 10px;">
               <tr>
                 <td style="padding: 18px 20px; text-align: center; font-size: 13px; color: #6b7280; line-height: 1.6;">
-                  <strong style="color: [TEXT_COLOR];">Need help?</strong><br />
-                  If you have any questions about your order, reply to this email or contact us at
+                  <strong style="color: [TEXT_COLOR];">[LANG:COM_J2COMMERCE_EMAIL_NEED_HELP]</strong><br />
+                  [LANG:COM_J2COMMERCE_EMAIL_IF_YOU_HAVE_ANY_QUESTIONS_ABOUT_ORDER_RE]
                   <a href="mailto:[BILLING_EMAIL]" style="color: [ACCENT_COLOR]; text-decoration: none;">[SITENAME]</a>.
                 </td>
               </tr>
@@ -336,7 +335,7 @@
             </table>
             <p style="font-size: 12px; color: #9ca3af; margin: 0; line-height: 1.6;">[FOOTER_TEXT]</p>
             <p style="font-size: 12px; color: #9ca3af; margin: 8px 0 0 0;">
-              &copy; [CURRENT_YEAR] <a href="[SITEURL]" style="color: #9ca3af; text-decoration: underline;">[SITENAME]</a>. All rights reserved.
+              &copy; [CURRENT_YEAR] <a href="[SITEURL]" style="color: #9ca3af; text-decoration: underline;">[SITENAME]</a>. [LANG:COM_J2COMMERCE_EMAIL_ALL_RIGHTS_RESERVED]
             </p>
           </td>
         </tr>

@@ -21,9 +21,9 @@
         <!-- Header -->
         <tr>
           <td style="padding: 10px 40px 20px;">
-            <h1 style="font-family: Arial, Helvetica, sans-serif; font-size: 24px; font-weight: bold; color: [TEXT_COLOR]; margin: 0 0 8px;">Your order has shipped!</h1>
+            <h1 style="font-family: Arial, Helvetica, sans-serif; font-size: 24px; font-weight: bold; color: [TEXT_COLOR]; margin: 0 0 8px;">[LANG:COM_J2COMMERCE_EMAIL_YOUR_ORDER_HAS_SHIPPED]</h1>
             <p style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; color: #555555; line-height: 1.5; margin: 0;">
-              Hi [CUSTOMER_NAME], great news — your order <strong>#[ORDERID]</strong> is on its way.
+              [LANG:COM_J2COMMERCE_EMAIL_HI_GREAT_NEWS_ORDER] <strong>#[ORDERID]</strong> [LANG:COM_J2COMMERCE_EMAIL_IS_ON_ITS_WAY]
             </p>
           </td>
         </tr>
@@ -40,7 +40,7 @@
                   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f7f7f7; border-radius: 4px;">
                     <tr>
                       <td style="padding: 20px;">
-                        <p style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: #888888; margin: 0 0 4px; text-transform: uppercase; letter-spacing: 0.5px;">Tracking Number</p>
+                        <p style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: #888888; margin: 0 0 4px; text-transform: uppercase; letter-spacing: 0.5px;">[LANG:COM_J2COMMERCE_EMAIL_TRACKING_NUMBER]</p>
                         <p style="font-family: Arial, Helvetica, sans-serif; font-size: 18px; font-weight: bold; color: [TEXT_COLOR]; margin: 0;">[SHIPPING_TRACKING_ID]</p>
                       </td>
                     </tr>
@@ -56,7 +56,7 @@
         <tr>
           <td style="padding: 0 40px 20px;">
             <p style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #555555; margin: 0;">
-              <strong>Shipping method:</strong> [SHIPPING_METHOD]
+              <strong>[LANG:COM_J2COMMERCE_EMAIL_SHIPPING_METHOD_3]:</strong> [SHIPPING_METHOD]
             </p>
           </td>
         </tr>
@@ -66,7 +66,7 @@
         <!-- Items Header -->
         <tr>
           <td style="padding: 0 40px 10px;">
-            <h2 style="font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold; color: [TEXT_COLOR]; margin: 0; border-bottom: 1px solid #eeeeee; padding-bottom: 8px;">Items Shipped</h2>
+            <h2 style="font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold; color: [TEXT_COLOR]; margin: 0; border-bottom: 1px solid #eeeeee; padding-bottom: 8px;">[LANG:COM_J2COMMERCE_EMAIL_ITEMS_SHIPPED]</h2>
           </td>
         </tr>
 
@@ -84,12 +84,12 @@
                 <td valign="top" style="padding: 12px 0;">
                   <p style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; font-weight: bold; color: [TEXT_COLOR]; margin: 0;">[ITEM_NAME]</p>
                   [IF:ITEM_SKU]
-                  <p style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #999999; margin: 2px 0 0;">SKU: [ITEM_SKU]</p>
+                  <p style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #999999; margin: 2px 0 0;">[LANG:COM_J2COMMERCE_EMAIL_SKU_2]</p>
                   [/IF:ITEM_SKU]
                   [IF:ITEM_OPTIONS]
                   <p style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #777777; margin: 2px 0 0;">[ITEM_OPTIONS]</p>
                   [/IF:ITEM_OPTIONS]
-                  <p style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: #555555; margin: 4px 0 0;">Qty: [ITEM_QTY]</p>
+                  <p style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: #555555; margin: 4px 0 0;">[LANG:COM_J2COMMERCE_EMAIL_QTY_2]</p>
                 </td>
                 <td width="80" valign="top" align="right" style="padding: 12px 0;">
                   <p style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; font-weight: bold; color: [TEXT_COLOR]; margin: 0;">[ITEM_TOTAL]</p>
@@ -107,7 +107,7 @@
           <td style="padding: 12px 40px 20px;">
             <table width="100%" cellpadding="0" cellspacing="0" border="0">
               <tr>
-                <td style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; font-weight: bold; color: [TEXT_COLOR];">Order Total</td>
+                <td style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; font-weight: bold; color: [TEXT_COLOR];">[LANG:COM_J2COMMERCE_EMAIL_ORDER_TOTAL]</td>
                 <td align="right" style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; font-weight: bold; color: [TEXT_COLOR];">[ORDERAMOUNT]</td>
               </tr>
             </table>
@@ -120,7 +120,7 @@
         [IF:SHIPPING_FIRSTNAME]
         <tr>
           <td style="padding: 0 40px 20px;">
-            <h2 style="font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold; color: [TEXT_COLOR]; margin: 0 0 8px; border-bottom: 1px solid #eeeeee; padding-bottom: 8px;">Shipping Address</h2>
+            <h2 style="font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold; color: [TEXT_COLOR]; margin: 0 0 8px; border-bottom: 1px solid #eeeeee; padding-bottom: 8px;">[LANG:COM_J2COMMERCE_EMAIL_SHIPPING_ADDRESS]</h2>
             <p style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #555555; line-height: 1.6; margin: 0;">
               [SHIPPING_FIRSTNAME]<br />
               [SHIPPING_ADDRESS_1]<br />
@@ -138,7 +138,7 @@
             <table cellpadding="0" cellspacing="0" border="0">
               <tr>
                 <td align="center" style="background-color: [ACCENT_COLOR]; border-radius: 4px;">
-                  <a href="[INVOICE_URL]" target="_blank" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; font-weight: bold; color: #ffffff; text-decoration: none; display: inline-block; padding: 12px 30px;">View Order Details</a>
+                  <a href="[INVOICE_URL]" target="_blank" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; font-weight: bold; color: #ffffff; text-decoration: none; display: inline-block; padding: 12px 30px;">[LANG:COM_J2COMMERCE_EMAIL_VIEW_ORDER_DETAILS]</a>
                 </td>
               </tr>
             </table>
@@ -156,13 +156,13 @@
             <!-- Social Links -->
             <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin-top: 12px;">
               <tr>
-                <td style="padding: 0 6px;">[IF:SOCIAL_FACEBOOK]<a href="[SOCIAL_FACEBOOK]" target="_blank" style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: [ACCENT_COLOR]; text-decoration: none;">Facebook</a>[/IF:SOCIAL_FACEBOOK]</td>
-                <td style="padding: 0 6px;">[IF:SOCIAL_INSTAGRAM]<a href="[SOCIAL_INSTAGRAM]" target="_blank" style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: [ACCENT_COLOR]; text-decoration: none;">Instagram</a>[/IF:SOCIAL_INSTAGRAM]</td>
-                <td style="padding: 0 6px;">[IF:SOCIAL_TWITTER]<a href="[SOCIAL_TWITTER]" target="_blank" style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: [ACCENT_COLOR]; text-decoration: none;">Twitter</a>[/IF:SOCIAL_TWITTER]</td>
+                <td style="padding: 0 6px;">[IF:SOCIAL_FACEBOOK]<a href="[SOCIAL_FACEBOOK]" target="_blank" style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: [ACCENT_COLOR]; text-decoration: none;">[LANG:COM_J2COMMERCE_EMAIL_FACEBOOK]</a>[/IF:SOCIAL_FACEBOOK]</td>
+                <td style="padding: 0 6px;">[IF:SOCIAL_INSTAGRAM]<a href="[SOCIAL_INSTAGRAM]" target="_blank" style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: [ACCENT_COLOR]; text-decoration: none;">[LANG:COM_J2COMMERCE_EMAIL_INSTAGRAM]</a>[/IF:SOCIAL_INSTAGRAM]</td>
+                <td style="padding: 0 6px;">[IF:SOCIAL_TWITTER]<a href="[SOCIAL_TWITTER]" target="_blank" style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: [ACCENT_COLOR]; text-decoration: none;">[LANG:COM_J2COMMERCE_EMAIL_TWITTER]</a>[/IF:SOCIAL_TWITTER]</td>
               </tr>
             </table>
             <p style="font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #bbbbbb; margin: 12px 0 0; text-align: center;">
-              Order #[ORDERID] &bull; [ORDERDATE] &bull; &copy; [CURRENT_YEAR] <a href="[INVOICE_URL]" target="_blank" style="color: #bbbbbb;">[SITENAME]</a>. All rights reserved.
+              [LANG:COM_J2COMMERCE_EMAIL_ORDER_4] <a href="[INVOICE_URL]" target="_blank" style="color: #bbbbbb;">[SITENAME]</a>. [LANG:COM_J2COMMERCE_EMAIL_ALL_RIGHTS_RESERVED]
             </p>
           </td>
         </tr>

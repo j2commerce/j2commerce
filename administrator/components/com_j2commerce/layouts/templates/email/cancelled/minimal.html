@@ -23,12 +23,12 @@
         <!-- Cancellation Notice -->
         <tr>
           <td style="padding: 30px 40px 10px 40px;">
-            <h1 style="margin: 0 0 10px 0; font-size: 22px; font-weight: bold; color: [TEXT_COLOR];">Order Cancelled</h1>
+            <h1 style="margin: 0 0 10px 0; font-size: 22px; font-weight: bold; color: [TEXT_COLOR];">[LANG:COM_J2COMMERCE_EMAIL_ORDER_CANCELLED]</h1>
             <p style="margin: 0 0 15px 0; font-size: 15px; line-height: 1.6; color: #555555;">
-              Hi [CUSTOMER_NAME],
+              [LANG:COM_J2COMMERCE_EMAIL_HI]
             </p>
             <p style="margin: 0 0 15px 0; font-size: 15px; line-height: 1.6; color: #555555;">
-              We're writing to let you know that your order <strong>#[ORDERID]</strong> placed on [ORDERDATE] has been cancelled. We understand this may be disappointing, and we're sorry for any inconvenience.
+              [LANG:COM_J2COMMERCE_EMAIL_WE_RE_WRITING_LET_KNOW_ORDER] <strong>#[ORDERID]</strong> [LANG:COM_J2COMMERCE_EMAIL_PLACED_ON_HAS_CANCELLED_UNDERSTAND_MAY_D]
             </p>
           </td>
         </tr>
@@ -38,19 +38,19 @@
           <td style="padding: 10px 40px;">
             <table width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size: 14px; color: #555555;">
               <tr>
-                <td style="padding: 5px 0;"><strong>Order Number:</strong></td>
+                <td style="padding: 5px 0;"><strong>[LANG:COM_J2COMMERCE_EMAIL_ORDER_NUMBER]:</strong></td>
                 <td style="padding: 5px 0; text-align: right;">#[ORDERID]</td>
               </tr>
               <tr>
-                <td style="padding: 5px 0;"><strong>Order Date:</strong></td>
+                <td style="padding: 5px 0;"><strong>[LANG:COM_J2COMMERCE_EMAIL_ORDER_DATE]:</strong></td>
                 <td style="padding: 5px 0; text-align: right;">[ORDERDATE]</td>
               </tr>
               <tr>
-                <td style="padding: 5px 0;"><strong>Status:</strong></td>
+                <td style="padding: 5px 0;"><strong>[LANG:COM_J2COMMERCE_EMAIL_STATUS]:</strong></td>
                 <td style="padding: 5px 0; text-align: right;">[ORDERSTATUS]</td>
               </tr>
               <tr>
-                <td style="padding: 5px 0;">[IF:PAYMENT_TYPE]<strong>Payment Method:</strong>[/IF:PAYMENT_TYPE]</td>
+                <td style="padding: 5px 0;">[IF:PAYMENT_TYPE]<strong>[LANG:COM_J2COMMERCE_EMAIL_PAYMENT_METHOD_2]:</strong>[/IF:PAYMENT_TYPE]</td>
                 <td style="padding: 5px 0; text-align: right;">[IF:PAYMENT_TYPE][PAYMENT_TYPE][/IF:PAYMENT_TYPE]</td>
               </tr>
             </table>
@@ -71,15 +71,15 @@
         <!-- Items -->
         <tr>
           <td style="padding: 10px 40px;">
-            <h2 style="margin: 0 0 15px 0; font-size: 16px; font-weight: bold; color: [TEXT_COLOR];">Cancelled Items</h2>
+            <h2 style="margin: 0 0 15px 0; font-size: 16px; font-weight: bold; color: [TEXT_COLOR];">[LANG:COM_J2COMMERCE_EMAIL_CANCELLED_ITEMS]</h2>
 
             <!-- Items Header -->
             <table width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size: 13px; color: #888888;">
               <tr>
-                <td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;" width="50%">Item</td>
-                <td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0; text-align: center;" width="15%">Qty</td>
-                <td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0; text-align: right;" width="15%">Price</td>
-                <td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0; text-align: right;" width="20%">Total</td>
+                <td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;" width="50%">[LANG:COM_J2COMMERCE_EMAIL_ITEM]</td>
+                <td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0; text-align: center;" width="15%">[LANG:COM_J2COMMERCE_EMAIL_QTY]</td>
+                <td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0; text-align: right;" width="15%">[LANG:COM_J2COMMERCE_EMAIL_PRICE]</td>
+                <td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0; text-align: right;" width="20%">[LANG:COM_J2COMMERCE_EMAIL_TOTAL]</td>
               </tr>
             </table>
 
@@ -88,7 +88,7 @@
               <tr>
                 <td style="padding: 10px 0; border-bottom: 1px solid #f0f0f0;" width="50%">
                   <strong>[ITEM_NAME]</strong>
-                  [IF:ITEM_SKU]<br /><span style="font-size: 12px; color: #999999;">SKU: [ITEM_SKU]</span>[/IF:ITEM_SKU]
+                  [IF:ITEM_SKU]<br /><span style="font-size: 12px; color: #999999;">[LANG:COM_J2COMMERCE_EMAIL_SKU_2]</span>[/IF:ITEM_SKU]
                   [IF:ITEM_OPTIONS]<br /><span style="font-size: 12px; color: #999999;">[ITEM_OPTIONS]</span>[/IF:ITEM_OPTIONS]
                 </td>
                 <td style="padding: 10px 0; border-bottom: 1px solid #f0f0f0; text-align: center;" width="15%">[ITEM_QTY]</td>
@@ -101,7 +101,7 @@
             <!-- Order Total -->
             <table width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size: 15px; color: [TEXT_COLOR];">
               <tr>
-                <td style="padding: 12px 0; text-align: right;"><strong>Order Total: [ORDERAMOUNT]</strong></td>
+                <td style="padding: 12px 0; text-align: right;"><strong>[LANG:COM_J2COMMERCE_EMAIL_ORDER_TOTAL_2]</strong></td>
               </tr>
             </table>
           </td>
@@ -112,9 +112,9 @@
         <!-- Refund Info -->
         <tr>
           <td style="padding: 10px 40px 20px 40px;">
-            <p style="margin: 0 0 10px 0; font-size: 15px; font-weight: bold; color: [TEXT_COLOR];">Refund Information</p>
+            <p style="margin: 0 0 10px 0; font-size: 15px; font-weight: bold; color: [TEXT_COLOR];">[LANG:COM_J2COMMERCE_EMAIL_REFUND_INFORMATION]</p>
             <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #555555;">
-              If you were charged for this order, a refund will be processed to your original payment method. Please allow 5-10 business days for the refund to appear on your statement. If you have questions about your refund, please don't hesitate to contact us.
+              [LANG:COM_J2COMMERCE_EMAIL_IF_YOU_WERE_CHARGED_ORDER_REFUND_WILL_PR]
             </p>
           </td>
         </tr>
@@ -128,7 +128,7 @@
               <tr>
                 <td style="padding: 0 40px 20px 40px;">
                   <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #555555;">
-                    Your coupon code <strong>[COUPON_CODE]</strong> has been restored and is available for future use.
+                    [LANG:COM_J2COMMERCE_EMAIL_YOUR_COUPON_CODE] <strong>[COUPON_CODE]</strong> [LANG:COM_J2COMMERCE_EMAIL_HAS_BEEN_RESTORED_AVAILABLE_FUTURE_USE]
                   </p>
                 </td>
               </tr>
@@ -140,8 +140,8 @@
         <!-- Continue Shopping -->
         <tr>
           <td style="padding: 10px 40px 30px 40px; text-align: center;">
-            <p style="margin: 0 0 15px 0; font-size: 14px; color: #555555;">We'd love to help you find what you're looking for.</p>
-            <a href="[SITEURL]" style="display: inline-block; padding: 12px 30px; background-color: [ACCENT_COLOR]; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: bold; border-radius: 4px;">Continue Shopping</a>
+            <p style="margin: 0 0 15px 0; font-size: 14px; color: #555555;">[LANG:COM_J2COMMERCE_EMAIL_WE_D_LOVE_HELP_FIND_WHAT_RE_LOOKING]</p>
+            <a href="[SITEURL]" style="display: inline-block; padding: 12px 30px; background-color: [ACCENT_COLOR]; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: bold; border-radius: 4px;">[LANG:COM_J2COMMERCE_EMAIL_CONTINUE_SHOPPING]</a>
           </td>
         </tr>
 
@@ -151,7 +151,7 @@
         <tr>
           <td style="padding: 20px 40px; background-color: #f5f5f5; text-align: center; font-size: 12px; color: #999999; line-height: 1.6;">
             [FOOTER_TEXT]<br />
-            &copy; [CURRENT_YEAR] <a href="[SITEURL]" style="color: [ACCENT_COLOR]; text-decoration: none;">[SITENAME]</a>. All rights reserved.
+            &copy; [CURRENT_YEAR] <a href="[SITEURL]" style="color: [ACCENT_COLOR]; text-decoration: none;">[SITENAME]</a>. [LANG:COM_J2COMMERCE_EMAIL_ALL_RIGHTS_RESERVED]
           </td>
         </tr>
 

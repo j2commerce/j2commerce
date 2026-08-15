@@ -21,9 +21,9 @@
         <!-- Header -->
         <tr>
           <td style="padding: 10px 40px 20px;">
-            <h1 style="font-family: Arial, Helvetica, sans-serif; font-size: 24px; font-weight: bold; color: [TEXT_COLOR]; margin: 0 0 8px;">You've received a gift!</h1>
+            <h1 style="font-family: Arial, Helvetica, sans-serif; font-size: 24px; font-weight: bold; color: [TEXT_COLOR]; margin: 0 0 8px;">[LANG:COM_J2COMMERCE_EMAIL_YOU_VE_RECEIVED_GIFT_2]</h1>
             <p style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; color: #555555; line-height: 1.5; margin: 0;">
-              Hi [GIFT_RECEIVER_FULL_NAME], <strong>[GIFT_SENDER_FULL_NAME]</strong> has sent you a gift certificate.
+              [LANG:COM_J2COMMERCE_EMAIL_HI_2] <strong>[GIFT_SENDER_FULL_NAME]</strong> [LANG:COM_J2COMMERCE_EMAIL_HAS_SENT_YOU_GIFT_CERTIFICATE]
             </p>
           </td>
         </tr>
@@ -36,11 +36,11 @@
             <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f7f7f7; border-radius: 4px;">
               <tr>
                 <td style="padding: 24px; text-align: center;">
-                  <p style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: #888888; margin: 0 0 4px; text-transform: uppercase; letter-spacing: 0.5px;">Voucher Code</p>
+                  <p style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: #888888; margin: 0 0 4px; text-transform: uppercase; letter-spacing: 0.5px;">[LANG:COM_J2COMMERCE_EMAIL_VOUCHER_CODE]</p>
                   <p style="font-family: 'Courier New', Courier, monospace; font-size: 22px; font-weight: bold; color: [TEXT_COLOR]; margin: 0 0 12px; letter-spacing: 2px;">[VOUCHER_CODE]</p>
-                  <p style="font-family: Arial, Helvetica, sans-serif; font-size: 18px; font-weight: bold; color: [ACCENT_COLOR]; margin: 0;">Value: [VOUCHER_VALUE]</p>
+                  <p style="font-family: Arial, Helvetica, sans-serif; font-size: 18px; font-weight: bold; color: [ACCENT_COLOR]; margin: 0;">[LANG:COM_J2COMMERCE_EMAIL_VALUE_2]</p>
                   [IF:EXPIRATION_DATE]
-                  <p style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #888888; margin: 8px 0 0;">Expires: [EXPIRATION_DATE]</p>
+                  <p style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #888888; margin: 8px 0 0;">[LANG:COM_J2COMMERCE_EMAIL_EXPIRES_2]</p>
                   [/IF:EXPIRATION_DATE]
                 </td>
               </tr>
@@ -57,7 +57,7 @@
             <table width="100%" cellpadding="0" cellspacing="0" border="0">
               <tr>
                 <td style="padding: 0 40px 20px;">
-                  <p style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; font-weight: bold; color: #888888; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 8px;">Personal Message</p>
+                  <p style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; font-weight: bold; color: #888888; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 8px;">[LANG:COM_J2COMMERCE_EMAIL_PERSONAL_MESSAGE]</p>
                   <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #555555; line-height: 1.6; margin: 0; font-style: italic; border-left: 3px solid [ACCENT_COLOR]; padding-left: 16px;">&ldquo;[GIFT_NOTE]&rdquo;</p>
                   <p style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: #888888; margin: 8px 0 0;">&mdash; [GIFT_SENDER_FULL_NAME]</p>
                 </td>
@@ -70,23 +70,23 @@
         <!-- Gift Details -->
         <tr>
           <td style="padding: 0 40px 10px;">
-            <h2 style="font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold; color: [TEXT_COLOR]; margin: 0; border-bottom: 1px solid #eeeeee; padding-bottom: 8px;">Gift Details</h2>
+            <h2 style="font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold; color: [TEXT_COLOR]; margin: 0; border-bottom: 1px solid #eeeeee; padding-bottom: 8px;">[LANG:COM_J2COMMERCE_EMAIL_GIFT_DETAILS]</h2>
           </td>
         </tr>
         <tr>
           <td style="padding: 0 40px 20px;">
             <table width="100%" cellpadding="0" cellspacing="0" border="0">
               <tr>
-                <td style="padding: 6px 0; font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #555555;"><strong>Product:</strong> [PRODUCT_NAME]</td>
+                <td style="padding: 6px 0; font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #555555;"><strong>[LANG:COM_J2COMMERCE_EMAIL_PRODUCT]:</strong> [PRODUCT_NAME]</td>
               </tr>
               <tr>
-                <td style="padding: 6px 0; font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #555555;"><strong>From:</strong> [GIFT_SENDER_FULL_NAME]</td>
+                <td style="padding: 6px 0; font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #555555;"><strong>[LANG:COM_J2COMMERCE_EMAIL_FROM]:</strong> [GIFT_SENDER_FULL_NAME]</td>
               </tr>
               <tr>
-                <td style="padding: 6px 0; font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #555555;"><strong>To:</strong> [GIFT_RECEIVER_FULL_NAME]</td>
+                <td style="padding: 6px 0; font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #555555;"><strong>[LANG:COM_J2COMMERCE_EMAIL_TO]:</strong> [GIFT_RECEIVER_FULL_NAME]</td>
               </tr>
               <tr>
-                <td style="padding: 6px 0; font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #555555;"><strong>Date:</strong> [VOUCHER_PURCHASE_DATE]</td>
+                <td style="padding: 6px 0; font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #555555;"><strong>[LANG:COM_J2COMMERCE_EMAIL_DATE]:</strong> [VOUCHER_PURCHASE_DATE]</td>
               </tr>
             </table>
           </td>
@@ -117,7 +117,7 @@
             <table cellpadding="0" cellspacing="0" border="0">
               <tr>
                 <td align="center" style="background-color: [ACCENT_COLOR]; border-radius: 4px;">
-                  <a href="[SITEURL]" target="_blank" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; font-weight: bold; color: #ffffff; text-decoration: none; display: inline-block; padding: 12px 30px;">Redeem Your Gift</a>
+                  <a href="[SITEURL]" target="_blank" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; font-weight: bold; color: #ffffff; text-decoration: none; display: inline-block; padding: 12px 30px;">[LANG:COM_J2COMMERCE_EMAIL_REDEEM_YOUR_GIFT]</a>
                 </td>
               </tr>
             </table>
@@ -135,13 +135,13 @@
             <!-- Social Links -->
             <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin-top: 12px;">
               <tr>
-                <td style="padding: 0 6px;">[IF:SOCIAL_FACEBOOK]<a href="[SOCIAL_FACEBOOK]" target="_blank" style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: [ACCENT_COLOR]; text-decoration: none;">Facebook</a>[/IF:SOCIAL_FACEBOOK]</td>
-                <td style="padding: 0 6px;">[IF:SOCIAL_INSTAGRAM]<a href="[SOCIAL_INSTAGRAM]" target="_blank" style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: [ACCENT_COLOR]; text-decoration: none;">Instagram</a>[/IF:SOCIAL_INSTAGRAM]</td>
-                <td style="padding: 0 6px;">[IF:SOCIAL_TWITTER]<a href="[SOCIAL_TWITTER]" target="_blank" style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: [ACCENT_COLOR]; text-decoration: none;">Twitter</a>[/IF:SOCIAL_TWITTER]</td>
+                <td style="padding: 0 6px;">[IF:SOCIAL_FACEBOOK]<a href="[SOCIAL_FACEBOOK]" target="_blank" style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: [ACCENT_COLOR]; text-decoration: none;">[LANG:COM_J2COMMERCE_EMAIL_FACEBOOK]</a>[/IF:SOCIAL_FACEBOOK]</td>
+                <td style="padding: 0 6px;">[IF:SOCIAL_INSTAGRAM]<a href="[SOCIAL_INSTAGRAM]" target="_blank" style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: [ACCENT_COLOR]; text-decoration: none;">[LANG:COM_J2COMMERCE_EMAIL_INSTAGRAM]</a>[/IF:SOCIAL_INSTAGRAM]</td>
+                <td style="padding: 0 6px;">[IF:SOCIAL_TWITTER]<a href="[SOCIAL_TWITTER]" target="_blank" style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: [ACCENT_COLOR]; text-decoration: none;">[LANG:COM_J2COMMERCE_EMAIL_TWITTER]</a>[/IF:SOCIAL_TWITTER]</td>
               </tr>
             </table>
             <p style="font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #bbbbbb; margin: 12px 0 0; text-align: center;">
-              &copy; [CURRENT_YEAR] <a href="[SITEURL]" target="_blank" style="color: #bbbbbb;">[SITENAME]</a>. All rights reserved.
+              &copy; [CURRENT_YEAR] <a href="[SITEURL]" target="_blank" style="color: #bbbbbb;">[SITENAME]</a>. [LANG:COM_J2COMMERCE_EMAIL_ALL_RIGHTS_RESERVED]
             </p>
           </td>
         </tr>
