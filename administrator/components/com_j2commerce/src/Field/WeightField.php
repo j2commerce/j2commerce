@@ -42,36 +42,40 @@ class WeightField extends ListField
         return $result;
     }
 
+    /** Weight classes are request-stable; a variant list renders this field once per row. */
+    private static array $cache = [];
+
     public function getOptions(): array
     {
         $options = parent::getOptions();
 
         try {
-            $db = Factory::getContainer()->get(DatabaseInterface::class);
+            if (!\array_key_exists($this->filterUnits, self::$cache)) {
+                $db = Factory::getContainer()->get(DatabaseInterface::class);
 
-            $query = $db->getQuery(true)
-                ->select([
-                    $db->quoteName('j2commerce_weight_id', 'value'),
-                    $db->quoteName('weight_title', 'text'),
-                ])
-                ->from($db->quoteName('#__j2commerce_weights'))
-                ->where($db->quoteName('enabled') . ' = 1')
-                ->order($db->quoteName('weight_title') . ' ASC');
+                $query = $db->getQuery(true)
+                    ->select([
+                        $db->quoteName('j2commerce_weight_id', 'value'),
+                        $db->quoteName('weight_title', 'text'),
+                    ])
+                    ->from($db->quoteName('#__j2commerce_weights'))
+                    ->where($db->quoteName('enabled') . ' = 1')
+                    ->order($db->quoteName('weight_title') . ' ASC');
 
-            // Apply unit filter if specified (e.g. filter_units="lb,kg")
-            if ($this->filterUnits !== '') {
-                $units  = array_map('trim', explode(',', $this->filterUnits));
-                $quoted = array_map([$db, 'quote'], $units);
-                $query->where($db->quoteName('weight_unit') . ' IN (' . implode(',', $quoted) . ')');
+                // Apply unit filter if specified (e.g. filter_units="lb,kg")
+                if ($this->filterUnits !== '') {
+                    $units  = array_map('trim', explode(',', $this->filterUnits));
+                    $quoted = array_map([$db, 'quote'], $units);
+                    $query->where($db->quoteName('weight_unit') . ' IN (' . implode(',', $quoted) . ')');
+                }
+
+                $db->setQuery($query);
+
+                self::$cache[$this->filterUnits] = $db->loadObjectList() ?: [];
             }
 
-            $db->setQuery($query);
-            $weights = $db->loadObjectList();
-
-            if ($weights) {
-                foreach ($weights as $weight) {
-                    $options[] = HTMLHelper::_('select.option', $weight->value, $weight->text);
-                }
+            foreach (self::$cache[$this->filterUnits] as $weight) {
+                $options[] = HTMLHelper::_('select.option', $weight->value, $weight->text);
             }
         } catch (\Exception $e) {
             Factory::getApplication()->enqueueMessage(

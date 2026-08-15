@@ -42,36 +42,40 @@ class LengthField extends ListField
         return $result;
     }
 
+    /** Length classes are request-stable; a variant list renders this field once per row. */
+    private static array $cache = [];
+
     public function getOptions(): array
     {
         $options = parent::getOptions();
 
         try {
-            $db = Factory::getContainer()->get(DatabaseInterface::class);
+            if (!\array_key_exists($this->filterUnits, self::$cache)) {
+                $db = Factory::getContainer()->get(DatabaseInterface::class);
 
-            $query = $db->getQuery(true)
-                ->select([
-                    $db->quoteName('j2commerce_length_id', 'value'),
-                    $db->quoteName('length_title', 'text'),
-                ])
-                ->from($db->quoteName('#__j2commerce_lengths'))
-                ->where($db->quoteName('enabled') . ' = 1')
-                ->order($db->quoteName('length_title') . ' ASC');
+                $query = $db->getQuery(true)
+                    ->select([
+                        $db->quoteName('j2commerce_length_id', 'value'),
+                        $db->quoteName('length_title', 'text'),
+                    ])
+                    ->from($db->quoteName('#__j2commerce_lengths'))
+                    ->where($db->quoteName('enabled') . ' = 1')
+                    ->order($db->quoteName('length_title') . ' ASC');
 
-            // Apply unit filter if specified (e.g. filter_units="in,cm")
-            if ($this->filterUnits !== '') {
-                $units  = array_map('trim', explode(',', $this->filterUnits));
-                $quoted = array_map([$db, 'quote'], $units);
-                $query->where($db->quoteName('length_unit') . ' IN (' . implode(',', $quoted) . ')');
+                // Apply unit filter if specified (e.g. filter_units="in,cm")
+                if ($this->filterUnits !== '') {
+                    $units  = array_map('trim', explode(',', $this->filterUnits));
+                    $quoted = array_map([$db, 'quote'], $units);
+                    $query->where($db->quoteName('length_unit') . ' IN (' . implode(',', $quoted) . ')');
+                }
+
+                $db->setQuery($query);
+
+                self::$cache[$this->filterUnits] = $db->loadObjectList() ?: [];
             }
 
-            $db->setQuery($query);
-            $lengths = $db->loadObjectList();
-
-            if ($lengths) {
-                foreach ($lengths as $length) {
-                    $options[] = HTMLHelper::_('select.option', $length->value, $length->text);
-                }
+            foreach (self::$cache[$this->filterUnits] as $length) {
+                $options[] = HTMLHelper::_('select.option', $length->value, $length->text);
             }
         } catch (\Exception $e) {
             Factory::getApplication()->enqueueMessage(

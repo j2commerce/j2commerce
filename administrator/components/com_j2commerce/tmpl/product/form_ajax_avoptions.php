@@ -33,9 +33,10 @@ $variantPagination = $displayData['variant_pagination'] ?? null;
 $weights           = $displayData['weights'] ?? [];
 $lengths           = $displayData['lengths'] ?? [];
 
-// Early return if no variants
+// No rows to render. The caller distinguishes "none exist" from "none on this page" and
+// renders the notice itself, so emitting one here would report an empty product from a
+// page that merely ran past the end of the list.
 if (empty($variantList)) {
-    echo '<div class="alert alert-info">' . $this->escape(Text::_('COM_J2COMMERCE_NO_RESULTS_FOUND')) . '</div>';
     return;
 }
 

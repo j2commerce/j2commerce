@@ -688,21 +688,32 @@ class Flexivariable
                 // Use variant_name_ids (original CSV of product_optionvalue_ids) if available,
                 // fall back to variant_name for backward compatibility
                 $availableOptionValues = [];
-                foreach ($product->variants as $pVariant) {
-                    $variantCsv       = $pVariant->variant_name_ids ?? $pVariant->variant_name ?? '';
-                    $variantNameParts = explode(',', $variantCsv);
-                    if (!empty($variantNameParts) && \is_array($variantNameParts)) {
-                        foreach ($variantNameParts as $proOptionValue) {
-                            $productOptionValue = $this->mvcFactory->createTable('Productoptionvalue', 'Administrator');
-                            $productOptionValue->load((int) $proOptionValue);
+                $variantCsvs           = [];
+                $optionValueIds        = [];
 
-                            if (!isset($availableOptionValues[$productOptionValue->productoption_id])
-                                || !\in_array('*', $availableOptionValues[$productOptionValue->productoption_id])) {
-                                if ($productOptionValue->optionvalue_id == 0) {
-                                    $availableOptionValues[$productOptionValue->productoption_id][] = '*';
-                                } else {
-                                    $availableOptionValues[$productOptionValue->productoption_id][] = $productOptionValue->optionvalue_id;
-                                }
+                foreach ($product->variants as $pVariant) {
+                    $variantCsv    = $pVariant->variant_name_ids ?? $pVariant->variant_name ?? '';
+                    $variantCsvs[] = $variantCsv;
+
+                    foreach (explode(',', $variantCsv) as $proOptionValue) {
+                        $optionValueIds[] = (int) $proOptionValue;
+                    }
+                }
+
+                // One query for the whole list, not a table load per value per variant.
+                $optionValueRows = $this->loadProductOptionvalues($optionValueIds);
+
+                foreach ($variantCsvs as $variantCsv) {
+                    foreach (explode(',', $variantCsv) as $proOptionValue) {
+                        $productOptionValue = $optionValueRows[(int) $proOptionValue]
+                            ?? (object) ['productoption_id' => null, 'optionvalue_id' => null];
+
+                        if (!isset($availableOptionValues[$productOptionValue->productoption_id])
+                            || !\in_array('*', $availableOptionValues[$productOptionValue->productoption_id])) {
+                            if ($productOptionValue->optionvalue_id == 0) {
+                                $availableOptionValues[$productOptionValue->productoption_id][] = '*';
+                            } else {
+                                $availableOptionValues[$productOptionValue->productoption_id][] = $productOptionValue->optionvalue_id;
                             }
                         }
                     }
@@ -883,6 +894,30 @@ class Flexivariable
             }
         }
         return $variant;
+    }
+
+    /** Product option values keyed by id, for the ids a variant list actually references. */
+    private function loadProductOptionvalues(array $ids): array
+    {
+        $ids = array_values(array_unique(array_filter($ids, static fn (int $id): bool => $id > 0)));
+
+        if (empty($ids)) {
+            return [];
+        }
+
+        $db    = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $query = $db->getQuery(true)
+            ->select($db->quoteName([
+                'j2commerce_product_optionvalue_id',
+                'productoption_id',
+                'optionvalue_id',
+            ]))
+            ->from($db->quoteName('#__j2commerce_product_optionvalues'))
+            ->whereIn($db->quoteName('j2commerce_product_optionvalue_id'), $ids);
+
+        $db->setQuery($query);
+
+        return $db->loadObjectList('j2commerce_product_optionvalue_id') ?: [];
     }
 
     /**

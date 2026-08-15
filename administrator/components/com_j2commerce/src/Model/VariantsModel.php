@@ -38,6 +38,9 @@ class VariantsModel extends ListModel
      */
     protected bool $ignoreRequest = false;
 
+    /** Resolved option-value labels, keyed by product_optionvalue_id. */
+    private array $variantNameParts = [];
+
     /**
      * Constructor.
      *
@@ -278,11 +281,19 @@ class VariantsModel extends ListModel
             return '';
         }
 
+        // A variant list resolves the same handful of ids on every row.
+        $missing = array_values(array_diff($ids, array_keys($this->variantNameParts)));
+
+        if (empty($missing)) {
+            return $this->joinVariantNameParts($ids, $csv);
+        }
+
         $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
         // Get option values with their parent option names for "Any" handling
         $query->select([
+                $db->quoteName('pov.j2commerce_product_optionvalue_id'),
                 $db->quoteName('pov.optionvalue_id'),
                 $db->quoteName('ov.optionvalue_name'),
                 $db->quoteName('o.option_name'),
@@ -300,26 +311,47 @@ class VariantsModel extends ListModel
                 $db->quoteName('#__j2commerce_options', 'o') .
                 ' ON ' . $db->quoteName('po.option_id') . ' = ' . $db->quoteName('o.j2commerce_option_id')
             )
-            ->whereIn($db->quoteName('pov.j2commerce_product_optionvalue_id'), $ids);
+            ->whereIn($db->quoteName('pov.j2commerce_product_optionvalue_id'), $missing);
 
         $db->setQuery($query);
-        $rows = $db->loadObjectList();
+        $rows = $db->loadObjectList('j2commerce_product_optionvalue_id') ?: [];
 
-        if (empty($rows)) {
-            return $csv; // Return original CSV if lookup fails
+        foreach ($missing as $id) {
+            $row = $rows[$id] ?? null;
+
+            // null records "no such row", which is what the CSV fallback keys off.
+            $this->variantNameParts[$id] = $row === null
+                ? null
+                : ((int) $row->optionvalue_id === 0
+                    // "Any" option selected - show "Any [Option Name]"
+                    ? Text::_('COM_J2COMMERCE_ANY') . ' ' . ($row->option_name ?? '')
+                    : (string) ($row->optionvalue_name ?? ''));
         }
 
-        $names = [];
-        foreach ($rows as $row) {
-            if ((int) $row->optionvalue_id === 0) {
-                // "Any" option selected - show "Any [Option Name]"
-                $names[] = Text::_('COM_J2COMMERCE_ANY') . ' ' . ($row->option_name ?? '');
-            } elseif (!empty($row->optionvalue_name)) {
-                $names[] = $row->optionvalue_name;
+        return $this->joinVariantNameParts($ids, $csv);
+    }
+
+    /** Falls back to the raw CSV when no id resolved, the way the lookup always has. */
+    private function joinVariantNameParts(array $ids, string $csv): string
+    {
+        $names    = [];
+        $resolved = false;
+
+        foreach ($ids as $id) {
+            $label = $this->variantNameParts[$id] ?? null;
+
+            if ($label === null) {
+                continue;
+            }
+
+            $resolved = true;
+
+            if ($label !== '') {
+                $names[] = $label;
             }
         }
 
-        return implode(', ', $names);
+        return $resolved ? implode(', ', $names) : $csv;
     }
 
     /**

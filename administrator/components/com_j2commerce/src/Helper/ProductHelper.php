@@ -61,6 +61,9 @@ class ProductHelper
      */
     private static string $taxInfo = '';
 
+    /** Resolved once per request — a variant list asks for the same handful of ids on every row. */
+    private static array $optionValueNames = [];
+
     /**
      * State object for instance-based operations
      *
@@ -1591,11 +1594,14 @@ class ProductHelper
             return '';
         }
 
-        $productOptionValues = explode(',', $csv);
-        $names               = [];
+        $ids = array_map('intval', explode(',', $csv));
 
-        foreach ($productOptionValues as $productOptionValueId) {
-            $optionValueName = self::getOptionValueName((int) $productOptionValueId);
+        self::primeOptionValueNames($ids);
+
+        $names = [];
+
+        foreach ($ids as $productOptionValueId) {
+            $optionValueName = self::$optionValueNames[$productOptionValueId] ?? '';
 
             if (empty($optionValueName)) {
                 $optionValueName = Text::_('COM_J2COMMERCE_ALL_OPTIONVALUE');
@@ -1605,6 +1611,41 @@ class ProductHelper
         }
 
         return implode(',', $names);
+    }
+
+    /** Resolves every id not already known in a single query. */
+    private static function primeOptionValueNames(array $ids): void
+    {
+        $missing = array_values(array_unique(array_filter(
+            $ids,
+            static fn (int $id): bool => $id > 0 && !\array_key_exists($id, self::$optionValueNames)
+        )));
+
+        if (empty($missing)) {
+            return;
+        }
+
+        $db    = self::getDatabase();
+        $query = $db->getQuery(true)
+            ->select([
+                $db->quoteName('pov.j2commerce_product_optionvalue_id'),
+                $db->quoteName('ov.optionvalue_name'),
+            ])
+            ->from($db->quoteName('#__j2commerce_product_optionvalues', 'pov'))
+            ->join(
+                'INNER',
+                $db->quoteName('#__j2commerce_optionvalues', 'ov') . ' ON ' .
+                $db->quoteName('pov.optionvalue_id') . ' = ' . $db->quoteName('ov.j2commerce_optionvalue_id')
+            )
+            ->whereIn($db->quoteName('pov.j2commerce_product_optionvalue_id'), $missing);
+
+        $db->setQuery($query);
+
+        $rows = $db->loadObjectList('j2commerce_product_optionvalue_id') ?: [];
+
+        foreach ($missing as $id) {
+            self::$optionValueNames[$id] = (string) ($rows[$id]->optionvalue_name ?? '');
+        }
     }
 
     /**
@@ -1618,21 +1659,13 @@ class ProductHelper
      */
     public static function getOptionValueName(int $productOptionValueId): string
     {
-        $db    = self::getDatabase();
-        $query = $db->getQuery(true)
-            ->select($db->quoteName('ov.optionvalue_name'))
-            ->from($db->quoteName('#__j2commerce_product_optionvalues', 'pov'))
-            ->join(
-                'INNER',
-                $db->quoteName('#__j2commerce_optionvalues', 'ov') . ' ON ' .
-                $db->quoteName('pov.optionvalue_id') . ' = ' . $db->quoteName('ov.j2commerce_optionvalue_id')
-            )
-            ->where($db->quoteName('pov.j2commerce_product_optionvalue_id') . ' = :povId')
-            ->bind(':povId', $productOptionValueId, ParameterType::INTEGER);
+        if ($productOptionValueId <= 0) {
+            return '';
+        }
 
-        $db->setQuery($query);
+        self::primeOptionValueNames([$productOptionValueId]);
 
-        return $db->loadResult() ?: '';
+        return self::$optionValueNames[$productOptionValueId] ?? '';
     }
 
     // =========================================================================
