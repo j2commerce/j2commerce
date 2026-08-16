@@ -369,6 +369,11 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
 
     private function updateCurrencyRates(ExecuteTaskEvent $event): int
     {
+        if (!ConfigHelper::isCurrencyAutoUpdateEnabled()) {
+            $this->logTask('Automatic currency updates are disabled in the component options.');
+            return Status::NO_RUN;
+        }
+
         PluginHelper::importPlugin('j2commerce');
 
         $dispatcher  = Factory::getApplication()->getDispatcher();
