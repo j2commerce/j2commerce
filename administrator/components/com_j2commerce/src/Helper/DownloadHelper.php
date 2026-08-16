@@ -210,40 +210,6 @@ final class DownloadHelper
     }
 
     /**
-     * Reset download access (re-grant with new expiry) for all downloads in an order.
-     */
-    public static function resetDownloadAccess(string $orderId): void
-    {
-        if (empty($orderId)) {
-            return;
-        }
-
-        $db       = Factory::getContainer()->get(DatabaseInterface::class);
-        $nullDate = $db->getNullDate();
-
-        // Reset access_granted to null so grantDownloads() will re-process them
-        $query = $db->getQuery(true)
-            ->update($db->quoteName('#__j2commerce_orderdownloads'))
-            ->set($db->quoteName('access_granted') . ' = :nullDate')
-            ->set($db->quoteName('access_expires') . ' = :nullDate2')
-            ->where($db->quoteName('order_id') . ' = :orderId')
-            ->bind(':nullDate', $nullDate)
-            ->bind(':nullDate2', $nullDate)
-            ->bind(':orderId', $orderId);
-
-        $db->setQuery($query);
-        $db->execute();
-
-        // Re-grant with fresh dates
-        self::grantDownloads($orderId);
-
-        OrderHistoryHelper::add(
-            orderId: $orderId,
-            comment: Text::_('COM_J2COMMERCE_ORDER_DOWNLOAD_ACCESS_RESET'),
-        );
-    }
-
-    /**
      * One row per downloadable file in an order, carrying the same availability rules the
      * download endpoint enforces. Every surface that offers a link reads them from here, so
      * an offered link and the endpoint that answers it can never disagree.
