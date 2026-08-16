@@ -73,8 +73,10 @@ class Dispatcher extends AbstractModuleDispatcher implements HelperFactoryAwareI
             );
         }
 
-        $subtemplate = $moduleParams->get('subtemplate', '');
-        if ($subtemplate !== '') {
+        // 'auto' and an empty value mean "inherit the component's Subtemplate
+        // setting"; forwarding them would resolve to a non-existent app_auto folder.
+        $subtemplate = (string) $moduleParams->get('subtemplate', 'auto');
+        if ($subtemplate !== '' && $subtemplate !== 'auto') {
             ProductLayoutService::setSubtemplateOverride($subtemplate);
         }
 

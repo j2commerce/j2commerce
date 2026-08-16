@@ -74,9 +74,13 @@ class Dispatcher extends AbstractModuleDispatcher implements HelperFactoryAwareI
             );
         }
 
-        // Override subtemplate if module specifies one different from global config
-        $subtemplate = $moduleParams->get('subtemplate', '');
-        if ($subtemplate !== '') {
+        // Override the subtemplate only when the module names a real one. 'auto'
+        // (the field's default) and an empty value both mean "inherit the
+        // component's Subtemplate setting", which ProductLayoutService already
+        // reads when no override is set. Forwarding them verbatim would resolve
+        // to the non-existent app_auto folder and render every item empty.
+        $subtemplate = (string) $moduleParams->get('subtemplate', 'auto');
+        if ($subtemplate !== '' && $subtemplate !== 'auto') {
             ProductLayoutService::setSubtemplateOverride($subtemplate);
         }
 
