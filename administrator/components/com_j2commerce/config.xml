@@ -778,7 +778,7 @@
                 label="COM_J2COMMERCE_CONFIG_VOUCHER_TO_SHIPPING"
                 description="COM_J2COMMERCE_CONFIG_VOUCHER_TO_SHIPPING_DESC"
                 layout="joomla.form.field.radio.switcher"
-                default="1"
+                default="0"
                 filter="integer"
                 showon="enable_voucher:1"
             >
@@ -1558,7 +1558,7 @@
             multiple="true"
             layout="joomla.form.field.subform.repeatable-table"
             buttons="add,remove,move"
-            default='[{"directory":"images/products","thumbs":"1"}]'
+            default='[{"directory":"images/products"}]'
         >
             <form>
                 <field
@@ -1567,17 +1567,6 @@
                     default="images"
                     label="COM_J2COMMERCE_CONFIG_IMAGE_DIRECTORY"
                 />
-                <field
-                    name="thumbs"
-                    type="radio"
-                    label="COM_J2COMMERCE_CONFIG_IMAGE_AUTO_THUMBNAILS"
-                    layout="joomla.form.field.radio.switcher"
-                    default="1"
-                    filter="integer"
-                >
-                    <option value="0">JNO</option>
-                    <option value="1">JYES</option>
-                </field>
             </form>
         </field>
 

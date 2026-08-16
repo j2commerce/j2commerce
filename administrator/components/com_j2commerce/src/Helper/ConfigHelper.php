@@ -58,9 +58,9 @@ class ConfigHelper
      *
      * @param   array<int, array<string, mixed>>  $default  Fallback rows when config is empty/invalid.
      *
-     * @return  array<int, array{directory: string, thumbs: int}>
+     * @return  array<int, array{directory: string}>
      */
-    public static function getImageDirectories(array $default = [['directory' => 'images/products', 'thumbs' => 1]]): array
+    public static function getImageDirectories(array $default = [['directory' => 'images/products']]): array
     {
         $normalized = self::normalizeImageDirectories(self::get('image_directories', $default));
 
@@ -70,7 +70,7 @@ class ConfigHelper
 
         $fallback = self::normalizeImageDirectories($default);
 
-        return $fallback !== [] ? $fallback : [['directory' => 'images/products', 'thumbs' => 1]];
+        return $fallback !== [] ? $fallback : [['directory' => 'images/products']];
     }
 
     /**
@@ -88,11 +88,11 @@ class ConfigHelper
             $directory = trim((string) $directory, '/');
 
             if ($directory !== '') {
-                $defaultRows[] = ['directory' => $directory, 'thumbs' => 1];
+                $defaultRows[] = ['directory' => $directory];
             }
         }
 
-        $directories = self::getImageDirectories($defaultRows ?: [['directory' => 'images', 'thumbs' => 1]]);
+        $directories = self::getImageDirectories($defaultRows ?: [['directory' => 'images']]);
         $paths       = [];
 
         foreach ($directories as $directory) {
@@ -121,7 +121,7 @@ class ConfigHelper
     }
 
     /**
-     * @return  array<int, array{directory: string, thumbs: int}>
+     * @return  array<int, array{directory: string}>
      */
     private static function normalizeImageDirectories(mixed $value): array
     {
@@ -163,10 +163,7 @@ class ConfigHelper
                 continue;
             }
 
-            $normalized[] = [
-                'directory' => $directory,
-                'thumbs'    => (int) ($row['thumbs'] ?? 0),
-            ];
+            $normalized[] = ['directory' => $directory];
         }
 
         return $normalized;
@@ -769,7 +766,7 @@ class ConfigHelper
      */
     public static function canApplyVoucherToShipping(): bool
     {
-        return (int) self::get('backend_voucher_to_shipping', 1) === 1;
+        return (int) self::get('backend_voucher_to_shipping', 0) === 1;
     }
 
     // =========================================================================

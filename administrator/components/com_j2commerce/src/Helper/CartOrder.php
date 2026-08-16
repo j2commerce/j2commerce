@@ -274,6 +274,7 @@ class CartOrder
         $this->loadVouchers();
         $this->calculateDiscountTotals();
         $this->loadShipping();
+        $this->applyVoucherToShipping();
         $this->loadFees();
         $this->quantizeTotals();
     }
@@ -943,7 +944,11 @@ class CartOrder
         // No shipping address entered yet — fall back to the store's own address so that
         // tax rates (and the tax line in the cart totals) are visible from the first page load,
         // consistent with how displayPrice() computes tax on product/category pages.
-        if (empty($geozones)) {
+        //
+        // A store set to "No Address" asks for the opposite: nothing is taxed until the shopper
+        // says where the order is going. ProductHelper::getTaxRateForProfile() reads the same
+        // setting, so the catalogue and the cart answer the same way on the same request.
+        if (empty($geozones) && ConfigHelper::getTaxDefaultAddress() !== 'noaddress') {
             $storeAddress            = TaxHelper::getStoreAddress();
             $this->customerCountryId = (int) $storeAddress->country_id;
             $this->customerZoneId    = (int) $storeAddress->zone_id;
@@ -1334,6 +1339,52 @@ class CartOrder
                 $this->order_total += $this->order_shipping;
             } else {
                 $this->order_total += $this->order_shipping + $this->order_shipping_tax;
+            }
+        }
+    }
+
+    /**
+     * Credit whatever the voucher has left against the postage, when the store allows it.
+     *
+     * loadVouchers() runs before the shipping charge exists, so it can only cap the voucher at
+     * the goods. This second pass is what the "Apply Voucher to Shipping" option turns on: the
+     * balance the goods did not consume settles the postage too, still capped by that balance
+     * and by the postage itself. With the option off — the default — the voucher stops at the
+     * goods, which is what the cart has always done.
+     *
+     * A voucher is a payment instrument, so the figure it settles never reduces the taxable
+     * base; recalculateTaxAfterDiscounts() subtracts voucher money out of that calculation and
+     * is unaffected by anything credited here.
+     */
+    protected function applyVoucherToShipping(): void
+    {
+        if ($this->vouchers === [] || !ConfigHelper::canApplyVoucherToShipping()) {
+            return;
+        }
+
+        $isIncludingTax = (int) J2CommerceHelper::config()->get('config_including_tax', 0);
+        $shippingCharge = $this->order_shipping + ($isIncludingTax ? 0.0 : $this->order_shipping_tax);
+
+        if ($shippingCharge <= 0.0) {
+            return;
+        }
+
+        foreach ($this->vouchers as $voucher) {
+            $applied   = (float) ($voucher->discount ?? 0);
+            $remaining = max(0.0, (float) ($voucher->balance ?? 0) - $applied);
+            $credit    = min($remaining, $shippingCharge);
+
+            if ($credit <= 0.0) {
+                continue;
+            }
+
+            $voucher->discount = $applied + $credit;
+            $this->order_discount += $credit;
+            $this->order_total = max(0.0, $this->order_total - $credit);
+            $shippingCharge -= $credit;
+
+            if ($shippingCharge <= 0.0) {
+                break;
             }
         }
     }

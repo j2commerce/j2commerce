@@ -64,6 +64,9 @@ class ProductHelper
     /** Resolved once per request — a variant list asks for the same handful of ids on every row. */
     private static array $optionValueNames = [];
 
+    /** Resolved once per request — see taxSuppressedUntilAddressKnown(). */
+    private static ?bool $taxSuppressed = null;
+
     /**
      * State object for instance-based operations
      *
@@ -4195,6 +4198,24 @@ class ProductHelper
     }
 
     /**
+     * A store set to "No Address" quotes no tax until the shopper says where the order is going.
+     *
+     * CartOrder::getCustomerGeozones() reads the same setting and skips its store-address
+     * fallback on the same terms, so the catalogue and the cart never quote different tax on
+     * the same request. Resolved once per request: the address lookup can reach the database,
+     * and displayPrice() runs on every row of a category listing.
+     */
+    private static function taxSuppressedUntilAddressKnown(): bool
+    {
+        if (self::$taxSuppressed === null) {
+            self::$taxSuppressed = ConfigHelper::getTaxDefaultAddress() === 'noaddress'
+                && (int) TaxHelper::getCustomerAddress()->country_id === 0;
+        }
+
+        return self::$taxSuppressed;
+    }
+
+    /**
      * Get tax rate for a tax profile.
      *
      * @param   int  $taxProfileId  The tax profile ID.
@@ -4205,7 +4226,7 @@ class ProductHelper
      */
     protected function getTaxRateForProfile(int $taxProfileId): float
     {
-        if ($taxProfileId <= 0) {
+        if ($taxProfileId <= 0 || self::taxSuppressedUntilAddressKnown()) {
             return 0.0;
         }
 
