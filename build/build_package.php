@@ -109,10 +109,20 @@ $excludePatterns = [
     'package.json', 'package-lock.json',
     '.editorconfig', '.php-cs-fixer.php', 'phpunit.xml', 'phpcs.xml',
     '.env', 'docs', 'build',
+    // Installer output from non-core extensions that happens to sit inside the
+    // core component tree on a dev site. Each is deployed by its owning plugin's
+    // installer (and removed on uninstall), so bundling the dev machine's copies
+    // ships menu item types for extensions the customer never bought.
     'vendorapply',
     'wishlistsave',
     'tmpl/products/wishlist.php',
     'tmpl/products/wishlist.xml',
+    'marketplace_apply',
+    'marketplace_dashboard',
+    'marketplace_store',
+    'marketplace_vendors',
+    'tmpl/products/searchresults.php',
+    'tmpl/products/searchresults.xml',
 ];
 
 // ── Sub-extension definitions ─────────────────────────────────────────────────

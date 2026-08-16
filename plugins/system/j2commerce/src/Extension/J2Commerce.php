@@ -27,6 +27,7 @@ use Joomla\CMS\Cache\CacheControllerFactoryInterface;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Component\Router\RouterViewConfiguration;
 use Joomla\CMS\Document\HtmlDocument;
+use Joomla\CMS\Event\Menu\AfterGetMenuTypeOptionsEvent;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -120,7 +121,108 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             'onJ2CommerceGetDashboardMessages'   => 'onGetDashboardMessages',
             'onJ2CommerceResolveCheckoutContext' => 'onResolveCheckoutContext',
             'onAjaxJ2commerce'                   => 'onAjaxJ2commerce',
+            'onAfterGetMenuTypeOptions'          => 'onAfterGetMenuTypeOptions',
         ];
+    }
+
+    /**
+     * Menu item types are discovered by scanning `components/com_j2commerce/tmpl/*` for
+     * layout XML, which is pure filesystem work: no component code runs, and the only
+     * language file loaded is com_j2commerce.sys. J2Commerce app plugins deploy their own
+     * layout XML into that tree, so their types are offered whether or not the owning
+     * plugin is installed, and their PLG_* labels render as raw keys because nothing ever
+     * loads a plugin language file on a com_menus screen. This is the one hook Joomla
+     * gives us to correct both.
+     */
+    public function onAfterGetMenuTypeOptions(AfterGetMenuTypeOptionsEvent $event): void
+    {
+        $items    = $event->getItems();
+        $language = $this->getApplication()->getLanguage();
+        $loaded   = [];
+        $changed  = false;
+
+        foreach ($items as $componentName => $options) {
+            $kept = [];
+
+            foreach ($options as $option) {
+                $request = (array) ($option->request ?? []);
+                $title   = (string) ($option->title ?? '');
+
+                // Only J2Commerce's own entries are ours to judge.
+                if (($request['option'] ?? '') !== self::COMPONENT_NAME || !str_starts_with($title, 'PLG_J2COMMERCE_')) {
+                    $kept[] = $option;
+                    continue;
+                }
+
+                $element = $this->resolveMenuTypeOwner($title);
+
+                // No enabled owner: the files are left over from an extension this site
+                // does not run, so the type must not be offered.
+                if ($element === null) {
+                    $changed = true;
+                    continue;
+                }
+
+                if (!isset($loaded[$element])) {
+                    $language->load('plg_j2commerce_' . $element, JPATH_ADMINISTRATOR)
+                        || $language->load('plg_j2commerce_' . $element, JPATH_PLUGINS . '/j2commerce/' . $element);
+                    $loaded[$element] = true;
+                }
+
+                $kept[] = $option;
+            }
+
+            if (\count($kept) === \count($options)) {
+                continue;
+            }
+
+            if ($kept === []) {
+                unset($items[$componentName]);
+            } else {
+                $items[$componentName] = array_values($kept);
+            }
+        }
+
+        if ($changed) {
+            $event->updateItems($items);
+        }
+    }
+
+    /**
+     * Maps a PLG_J2COMMERCE_<GROUP>_<NAME>_… label back to the j2commerce plugin element
+     * that owns it, returning null when no candidate is an enabled plugin. Candidates are
+     * built up segment by segment because an element may itself contain an underscore
+     * (app_localization_data), and the filesystem is never consulted — a leaked layout
+     * whose plugin was never installed has no folder to find.
+     */
+    private function resolveMenuTypeOwner(string $title): ?string
+    {
+        $segments   = explode('_', strtolower(substr($title, \strlen('PLG_J2COMMERCE_'))));
+        $candidates = [];
+        $candidate  = '';
+
+        foreach ($segments as $index => $segment) {
+            $candidate = $candidate === '' ? $segment : $candidate . '_' . $segment;
+
+            // A bare group name ('app', 'payment') is never an element.
+            if ($index === 0) {
+                continue;
+            }
+
+            $candidates[] = $candidate;
+        }
+
+        // Longest first: shipping_ups and shipping_ups_global_checkout both exist, and
+        // the shorter name is a prefix of the longer one. Matching shortest-first would
+        // hand the longer plugin's entry to its neighbour — wrong language file, and the
+        // entry kept alive on the strength of a sibling being enabled.
+        foreach (array_reverse($candidates) as $element) {
+            if (PluginHelper::isEnabled('j2commerce', $element)) {
+                return $element;
+            }
+        }
+
+        return null;
     }
 
     /**
