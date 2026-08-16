@@ -473,18 +473,6 @@ class ConfigHelper
     }
 
     /**
-     * Check if manufacturer should be displayed
-     *
-     * @return  bool  True to show manufacturer
-     *
-     * @since   6.0.0
-     */
-    public static function showManufacturer(): bool
-    {
-        return (int) self::get('show_manufacturer', 0) === 1;
-    }
-
-    /**
      * Check if quantity field should be displayed
      *
      * @return  bool  True to show quantity field
@@ -506,18 +494,6 @@ class ConfigHelper
     public static function showPrice(): bool
     {
         return (int) self::get('show_price_field', 1) === 1;
-    }
-
-    /**
-     * Check if base price should be displayed (when special price exists)
-     *
-     * @return  bool  True to show base price
-     *
-     * @since   6.0.0
-     */
-    public static function showBasePrice(): bool
-    {
-        return (int) self::get('show_base_price', 1) === 1;
     }
 
     /**
@@ -554,18 +530,6 @@ class ConfigHelper
     public static function showOptionImage(): bool
     {
         return (int) self::get('image_for_product_options', 0) === 1;
-    }
-
-    /**
-     * Get the number of columns for related products
-     *
-     * @return  int  Number of columns (1-6)
-     *
-     * @since   6.0.0
-     */
-    public static function getRelatedProductColumns(): int
-    {
-        return (int) self::get('related_product_columns', 3);
     }
 
     /**
@@ -982,18 +946,6 @@ class ConfigHelper
     public static function allowRegistration(): bool
     {
         return (int) self::get('allow_registration', 1) === 1;
-    }
-
-    /**
-     * Check if password validation is required during registration
-     *
-     * @return  bool  True if required
-     *
-     * @since   6.0.0
-     */
-    public static function requirePasswordValidation(): bool
-    {
-        return (int) self::get('allow_password_validation', 1) === 1;
     }
 
     /**

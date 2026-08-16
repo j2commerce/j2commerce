@@ -357,19 +357,6 @@
         </field>
 
         <field
-            name="show_manufacturer"
-            type="radio"
-            label="COM_J2COMMERCE_CONFIG_SHOW_MANUFACTURER"
-            description="COM_J2COMMERCE_CONFIG_SHOW_MANUFACTURER_DESC"
-            layout="joomla.form.field.radio.switcher"
-            default="0"
-            filter="integer"
-        >
-            <option value="0">JHIDE</option>
-            <option value="1">JSHOW</option>
-        </field>
-
-        <field
             name="show_qty_field"
             type="radio"
             label="COM_J2COMMERCE_CONFIG_SHOW_QTY_FIELD"
@@ -390,20 +377,6 @@
             layout="joomla.form.field.radio.switcher"
             default="1"
             filter="integer"
-        >
-            <option value="0">JHIDE</option>
-            <option value="1">JSHOW</option>
-        </field>
-
-        <field
-            name="show_base_price"
-            type="radio"
-            label="COM_J2COMMERCE_CONFIG_SHOW_BASE_PRICE"
-            description="COM_J2COMMERCE_CONFIG_SHOW_BASE_PRICE_DESC"
-            layout="joomla.form.field.radio.switcher"
-            default="1"
-            filter="integer"
-            showon="show_price_field:1"
         >
             <option value="0">JHIDE</option>
             <option value="1">JSHOW</option>
@@ -454,17 +427,6 @@
             <option value="0">JHIDE</option>
             <option value="1">JSHOW</option>
         </field>
-
-        <field
-            name="related_product_columns"
-            type="number"
-            label="COM_J2COMMERCE_CONFIG_RELATED_COLUMNS"
-            description="COM_J2COMMERCE_CONFIG_RELATED_COLUMNS_DESC"
-            default="3"
-            min="1"
-            max="6"
-            filter="integer"
-        />
 
         <field
             name="record_hits"
@@ -1101,20 +1063,6 @@
                 layout="joomla.form.field.radio.switcher"
                 default="1"
                 filter="integer"
-            >
-                <option value="0">JNO</option>
-                <option value="1">JYES</option>
-            </field>
-
-            <field
-                name="allow_password_validation"
-                type="radio"
-                label="COM_J2COMMERCE_CONFIG_VALIDATE_PASSWORD"
-                description="COM_J2COMMERCE_CONFIG_VALIDATE_PASSWORD_DESC"
-                layout="joomla.form.field.radio.switcher"
-                default="1"
-                filter="integer"
-                showon="allow_registration:1"
             >
                 <option value="0">JNO</option>
                 <option value="1">JYES</option>
@@ -1781,15 +1729,6 @@
             min="1"
             max="100"
             hint="MB"
-        />
-
-        <field
-            name="image_allowed_extensions"
-            type="text"
-            label="COM_J2COMMERCE_CONFIG_IMAGE_ALLOWED_EXTENSIONS"
-            description="COM_J2COMMERCE_CONFIG_IMAGE_ALLOWED_EXTENSIONS_DESC"
-            default="jpg,jpeg,png,gif,webp,avif"
-            filter="string"
         />
 
         <field

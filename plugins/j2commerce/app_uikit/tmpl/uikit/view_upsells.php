@@ -44,7 +44,7 @@ if ($total === 0) {
     return;
 }
 
-$columns = (int) $this->params->get('item_related_product_columns', 4);
+$columns = (int) $this->params->get('item_related_product_columns', 3);
 $counter = 0;
 ?>
 <div class="j2commerce-upsells-container uk-margin-large-top uk-padding-small" style="border-top:1px solid #e5e5e5;">

@@ -44,7 +44,7 @@ if ($total === 0) {
     return;
 }
 
-$columns  = (int) $this->params->get('item_related_product_columns', 4);
+$columns  = (int) $this->params->get('item_related_product_columns', 3);
 $colClass = 'col-md-' . (int) round(12 / $columns);
 $counter  = 0;
 ?>
