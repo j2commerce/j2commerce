@@ -475,4 +475,97 @@ final class DownloadHelper
 
         return false;
     }
+
+    /**
+     * Deny direct web access to stored downloadable files, one rule set per directory.
+     *
+     * The attachment root is denied wholesale by the installer, but 'images' is an allowed
+     * download root too, and the Files tab defaults its upload folder to the first
+     * configured image directory — so a download routinely lands in the very directory the
+     * storefront serves its product images from. The rules therefore name the files
+     * individually rather than denying the tree, which is what lets a shared directory be
+     * covered at all. Reads are unaffected: the endpoint streams the file through PHP and
+     * never over HTTP.
+     *
+     * @param   list<string>  $storedPaths  Site-relative stored paths.
+     *
+     * @since  6.6.0
+     */
+    public static function protectStoredFiles(array $storedPaths, ?callable $trace = null): void
+    {
+        $byDir = [];
+
+        foreach ($storedPaths as $storedPath) {
+            if ($resolved = self::resolveStoredFile((string) $storedPath)) {
+                $byDir[$resolved[0]][$resolved[1]] = $resolved[1];
+            }
+        }
+
+        if ($byDir === []) {
+            return;
+        }
+
+        // A rule file names every downloadable file in its directory, so one built from
+        // this save alone would drop the siblings already recorded beside them.
+        foreach (self::recordedFilePaths() as $recorded) {
+            $resolved = self::resolveStoredFile($recorded);
+
+            if ($resolved !== null && isset($byDir[$resolved[0]])) {
+                $byDir[$resolved[0]][$resolved[1]] = $resolved[1];
+            }
+        }
+
+        foreach ($byDir as $dir => $names) {
+            AttachmentDenyFileHelper::writeDownloadFileDeny($dir, array_values($names), $trace);
+        }
+    }
+
+    /**
+     * Cover every file already recorded, for directories that predate the save-side write.
+     *
+     * @since  6.6.0
+     */
+    public static function protectRecordedFiles(?callable $trace = null): void
+    {
+        self::protectStoredFiles(self::recordedFilePaths(), $trace);
+    }
+
+    /**
+     * @return  array{0: string, 1: string}|null  Absolute directory and file name, or null
+     *                                            when the path names no local file under an allowed root.
+     */
+    private static function resolveStoredFile(string $storedPath): ?array
+    {
+        // A scheme URI is delivered by a plugin, not read off local disk.
+        if ($storedPath === '' || preg_match('#^[a-z][a-z0-9+.-]*://#i', $storedPath)) {
+            return null;
+        }
+
+        $realFile = @realpath(JPATH_SITE . '/' . str_replace('\\', '/', $storedPath));
+
+        if ($realFile === false || !is_file($realFile) || !self::isAllowedResolvedPath($realFile)) {
+            return null;
+        }
+
+        return [\dirname($realFile), basename($realFile)];
+    }
+
+    /** @return  list<string> */
+    private static function recordedFilePaths(): array
+    {
+        $db = Factory::getContainer()->get(DatabaseInterface::class);
+
+        try {
+            $query = $db->getQuery(true)
+                ->select('DISTINCT ' . $db->quoteName('product_file_save_name'))
+                ->from($db->quoteName('#__j2commerce_productfiles'));
+
+            $db->setQuery($query);
+
+            return array_map('strval', $db->loadColumn() ?: []);
+        } catch (\Throwable) {
+            // The table does not exist yet during a first install, and neither caller may die here.
+            return [];
+        }
+    }
 }

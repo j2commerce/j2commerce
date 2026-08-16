@@ -16,6 +16,7 @@ use J2Commerce\Component\J2commerce\Administrator\CliCommands\SeedOrderLedgerCom
 use J2Commerce\Component\J2commerce\Administrator\Helper\AclSeedHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\AttachmentDenyFileHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CoreTemplateSyncHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\DownloadHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\InventoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\StockCommittedSeedHelper;
 use Joomla\CMS\Access\Access;
@@ -145,6 +146,8 @@ class Com_J2commerceInstallerScript extends InstallerScript
 
         $this->ensureFilesFolder();
 
+        $this->protectStoredDownloadFiles();
+
         Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_INSTALL_SUCCESS'), 'success');
 
         $this->debugLog("=== INSTALL END ===");
@@ -162,6 +165,8 @@ class Com_J2commerceInstallerScript extends InstallerScript
         $this->debugLog("UPDATE: default ACL rules set (if empty)");
 
         $this->ensureFilesFolder();
+
+        $this->protectStoredDownloadFiles();
 
         $this->cleanupStaleCheckoutTemplates();
 
@@ -928,6 +933,41 @@ class Com_J2commerceInstallerScript extends InstallerScript
         }
 
         $this->debugLog("ENSURE FILES FOLDER: tree at {$root} ready");
+    }
+
+    /**
+     * Cover the downloadable product files that are already stored.
+     *
+     * ensureFilesFolder() denies the attachment root, but 'images' is an allowed download
+     * root too, and files recorded under it predate the save-side write — no later run
+     * would otherwise reach them until each product happens to be re-saved.
+     *
+     * @since  6.6.0
+     */
+    private function protectStoredDownloadFiles(): void
+    {
+        $helperFile = JPATH_ADMINISTRATOR . '/components/com_j2commerce/src/Helper/DownloadHelper.php';
+
+        if (!class_exists(DownloadHelper::class) && file_exists($helperFile)) {
+            require_once $helperFile;
+        }
+
+        if (!class_exists(DownloadHelper::class)) {
+            $this->debugLog('PROTECT DOWNLOAD FILES: DownloadHelper unavailable — skipped');
+
+            return;
+        }
+
+        // A fresh install has no table yet, and an update must not die here.
+        try {
+            DownloadHelper::protectRecordedFiles(fn (string $message) => $this->debugLog($message));
+        } catch (\Throwable) {
+            $this->debugLog('PROTECT DOWNLOAD FILES: skipped');
+
+            return;
+        }
+
+        $this->debugLog('PROTECT DOWNLOAD FILES: stored files checked');
     }
 
     /**

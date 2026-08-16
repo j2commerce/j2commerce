@@ -33,6 +33,18 @@ final class AttachmentDenyFileHelper
     /** Marker both deny payloads carry, identifying a file as one J2Commerce wrote. */
     public const MARKER = 'J2Commerce file storage';
 
+    /**
+     * Marker the per-file download rules carry. Deliberately shares no text with MARKER:
+     * those rules go into directories the store already owned, and ownsTree() must keep
+     * answering no for them however many rule files this component has left there.
+     *
+     * @since  6.6.0
+     */
+    public const DOWNLOAD_MARKER = 'J2Commerce download file rules';
+
+    /** Characters of names per FilesMatch pattern, well inside both the PCRE and the config-line ceilings. */
+    private const MAX_PATTERN_LENGTH = 1000;
+
     /** Heading identifying a README as one J2Commerce wrote. */
     public const README_HEADING = 'J2Commerce Customer Upload Storage';
 
@@ -161,6 +173,147 @@ WEBCONFIG;
     }
 
     /**
+     * Deny direct web access to named files only, in a directory the store points at
+     * rather than one this component laid out.
+     *
+     * The payloads above cannot be used there. They deny a whole tree, and the directory a
+     * downloadable file lands in is routinely the configured product-image directory — the
+     * one the storefront serves every product image from. So these rules name the files
+     * individually and leave everything else in the directory served.
+     *
+     * Carries DOWNLOAD_MARKER rather than MARKER: a rule file written here identifies its
+     * own rules for rewriting without telling ownsTree() that J2Commerce owns a merchant's
+     * directory. No README either — that text describes an order-upload tree. An existing
+     * rule file J2Commerce did not write is still left alone by writeDenyFile().
+     *
+     * @param   list<string>  $names  Base names, relative to $dir.
+     *
+     * @since  6.6.0
+     */
+    public static function writeDownloadFileDeny(string $dir, array $names, ?callable $trace = null): void
+    {
+        $usable = [];
+
+        foreach ($names as $name) {
+            // A quote, an angle bracket or a control character would break out of the
+            // directive it is written into, and none is a name this component stores.
+            if ($name === '' || preg_match('#["<>\r\n]|[\x00-\x1F]#', $name)) {
+                self::warn(
+                    $trace,
+                    'no rule written for a file name that cannot be quoted: ' . $name,
+                    'No deny rule was written for ' . $dir . '/' . $name
+                        . ' because its name cannot be expressed in a rule file.'
+                );
+
+                continue;
+            }
+
+            $usable[$name] = $name;
+        }
+
+        if ($usable === []) {
+            return;
+        }
+
+        // Sorted so a directory whose file set has not changed is rewritten to the
+        // same bytes, and writeDenyFile() can skip it.
+        ksort($usable);
+
+        self::writeDenyFile($dir . '/.htaccess', self::fileHtaccess($usable), true, $trace, self::DOWNLOAD_MARKER);
+        self::writeDenyFile($dir . '/web.config', self::fileWebConfig($usable), true, $trace, self::DOWNLOAD_MARKER);
+    }
+
+    /** @param  array<string, string>  $names */
+    private static function fileHtaccess(array $names): string
+    {
+        $out = '# ' . self::DOWNLOAD_MARKER . "\n"
+            . "# Deny direct web access to the downloadable files stored here. Downloads are\n"
+            . "# streamed by PHP. Every other file in this directory is left served.\n";
+
+        foreach (self::patternChunks($names) as $pattern) {
+            // (?i) because a case-insensitive filesystem will serve Ebook.PDF against a
+            // rule naming ebook.pdf, and IIS matches <location path> that way regardless.
+            $out .= '<FilesMatch "(?i)^(?:' . $pattern . ')$">' . "\n"
+                . "    <IfModule mod_authz_core.c>\n"
+                . "        Require all denied\n"
+                . "    </IfModule>\n"
+                . "\n"
+                . "    <IfModule !mod_authz_core.c>\n"
+                . "        Order allow,deny\n"
+                . "        Deny from all\n"
+                . "    </IfModule>\n"
+                . "</FilesMatch>\n";
+        }
+
+        return $out;
+    }
+
+    /**
+     * Split the names across as many patterns as it takes to keep each one short.
+     *
+     * A store can record more downloadable files in one directory than a single
+     * alternation will hold: past a few thousand characters PCRE refuses to compile the
+     * pattern, and Apache answers a directive it cannot parse by failing the whole
+     * directory — which here is the one the storefront serves its images from.
+     *
+     * @param   array<string, string>  $names
+     *
+     * @return  list<string>
+     */
+    private static function patternChunks(array $names): array
+    {
+        $chunks  = [];
+        $current = [];
+        $length  = 0;
+
+        foreach ($names as $name) {
+            $quoted = preg_quote($name, '#');
+
+            if ($current !== [] && $length + \strlen($quoted) > self::MAX_PATTERN_LENGTH) {
+                $chunks[] = implode('|', $current);
+                $current  = [];
+                $length   = 0;
+            }
+
+            $current[] = $quoted;
+            $length += \strlen($quoted) + 1;
+        }
+
+        if ($current !== []) {
+            $chunks[] = implode('|', $current);
+        }
+
+        return $chunks;
+    }
+
+    /** @param  array<string, string>  $names */
+    private static function fileWebConfig(array $names): string
+    {
+        $locations = '';
+
+        foreach ($names as $name) {
+            // ENT_SUBSTITUTE: without it a name that is not valid UTF-8 encodes to the empty
+            // string, and an empty path attribute widens the deny to the whole directory.
+            $locations .= '    <location path="' . htmlspecialchars($name, ENT_QUOTES | ENT_XML1 | ENT_SUBSTITUTE, 'UTF-8') . '">' . "\n"
+                . "        <system.webServer>\n"
+                . "            <security>\n"
+                . "                <authorization>\n"
+                . '                    <remove users="*" roles="" verbs="" />' . "\n"
+                . '                    <add accessType="Deny" users="*" />' . "\n"
+                . "                </authorization>\n"
+                . "            </security>\n"
+                . "        </system.webServer>\n"
+                . "    </location>\n";
+        }
+
+        return '<?xml version="1.0" encoding="utf-8"?>' . "\n"
+            . '<!-- ' . self::DOWNLOAD_MARKER . ': downloads are streamed by PHP. Other files here are left served. -->' . "\n"
+            . "<configuration>\n"
+            . $locations
+            . "</configuration>\n";
+    }
+
+    /**
      * Written only into an owned tree — marking a foreign directory as J2Commerce's would
      * make ownsTree() claim it on every later run. An existing README is replaced only when
      * it carries our heading, so a stale path in the nginx snippet is corrected while a
@@ -232,11 +385,17 @@ README;
      * tree: refusing to replace a foreign ruleset or to create one in a foreign directory is
      * what makes clobbering a site's own content impossible whatever the path resolves to.
      */
-    private static function writeDenyFile(string $path, string $contents, bool $owned, ?callable $trace): void
-    {
-        $exists = file_exists($path);
+    private static function writeDenyFile(
+        string $path,
+        string $contents,
+        bool $owned,
+        ?callable $trace,
+        string $marker = self::MARKER
+    ): void {
+        $exists   = file_exists($path);
+        $existing = $exists ? (string) @file_get_contents($path) : '';
 
-        if ($exists && !str_contains((string) @file_get_contents($path), self::MARKER)) {
+        if ($exists && !str_contains($existing, $marker)) {
             self::warn(
                 $trace,
                 'left existing non-J2Commerce file in place: ' . $path,
@@ -259,7 +418,16 @@ README;
             return;
         }
 
-        if (@file_put_contents($path, $contents) === false) {
+        // The per-file rules are rewritten on every product save; leave the untouched ones alone.
+        if ($existing === $contents) {
+            return;
+        }
+
+        // Locked because the per-file rules are rewritten on every save: this serialises
+        // two saves writing the same directory. It does not order this against the web
+        // server, which reads the file without a lock — only a temp file and a rename
+        // would close that, and a torn read fails the directory closed either way.
+        if (@file_put_contents($path, $contents, LOCK_EX) === false) {
             // Surfaced beyond the install trace: a failed deny-file write leaves the tree readable over HTTP.
             self::warn($trace, 'failed to write ' . $path, 'Failed to write ' . $path);
         }

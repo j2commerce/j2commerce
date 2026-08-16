@@ -389,6 +389,7 @@ class Downloadable
         $existingIds = array_map('intval', $db->loadColumn() ?: []);
 
         $submittedIds = [];
+        $storedPaths  = [];
 
         foreach ($files as $fileData) {
             $fileData    = (array) $fileData;
@@ -418,6 +419,8 @@ class Downloadable
 
                     continue;
                 }
+
+                $storedPaths[] = $path;
             }
 
             if (empty($displayName)) {
@@ -463,6 +466,11 @@ class Downloadable
                 $fileTable->delete($deleteId);
             }
         }
+
+        // Last, so the rules are built from what the product ended up with: an allowed root
+        // is not the same as a protected one, and a download routinely shares a directory
+        // with the storefront's own images. Named files are denied there, nothing else is.
+        DownloadHelper::protectStoredFiles($storedPaths);
     }
 
     /**
