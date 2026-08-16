@@ -764,11 +764,17 @@ const J2Commerce = {
     },
 
     // Turn the collected form entries into a query string, emitting one pair per
-    // value so a list arrives at the server as the list it was.
+    // value so a list arrives at the server as the list it was. The session token
+    // is a form field rather than a parameter of this request, so it is left out
+    // the same way task and view are.
     buildParams(values) {
         const params = new URLSearchParams();
 
         Object.entries(values).forEach(([key, value]) => {
+            if (this.isSessionToken(key)) {
+                return;
+            }
+
             if (Array.isArray(value)) {
                 value.forEach(entry => params.append(key, entry));
             } else {
@@ -777,6 +783,12 @@ const J2Commerce = {
         });
 
         return params;
+    },
+
+    // Joomla names the session token field after the token itself, so it is the
+    // 32-character hexadecimal name carrying a value of 1.
+    isSessionToken(key) {
+        return /^[0-9a-f]{32}$/.test(key);
     },
 
     /**
