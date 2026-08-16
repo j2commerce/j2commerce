@@ -1405,14 +1405,15 @@ class CartOrder
     }
 
     /**
-     * Re-resolve a shipping selection against a fresh GetShippingRates dispatch; monetary
-     * values always come from the plugin's rate, never from request input. Null on no match.
+     * What the plugins offer this order, after the exclusions the merchant configured. A
+     * carrier plugin answers this with a billed API call, so a caller that needs both the
+     * list and a selection out of it takes the list once and matches against it.
      *
-     * @return  array<string, mixed>|null  Canonical shipping_values, or null when no rate matches.
+     * @return  array<int, array<string, mixed>>
      *
      * @since   6.1.0
      */
-    public static function resolvePluginShippingRate(object $order, string $plugin, string $name, string $code): ?array
+    public static function collectShippingRates(object $order): array
     {
         $rates = [];
 
@@ -1431,9 +1432,40 @@ class CartOrder
             'order' => $order,
         ]);
         Factory::getContainer()->get(DispatcherInterface::class)->dispatch('onJ2CommerceFilterShippingRates', $filterEvent);
-        $rates = $filterEvent->getArgument('rates', $rates);
 
+        return $filterEvent->getArgument('rates', $rates);
+    }
+
+    /**
+     * Re-resolve a shipping selection against a fresh GetShippingRates dispatch; monetary
+     * values always come from the plugin's rate, never from request input. Null on no match.
+     *
+     * @return  array<string, mixed>|null  Canonical shipping_values, or null when no rate matches.
+     *
+     * @since   6.1.0
+     */
+    public static function resolvePluginShippingRate(object $order, string $plugin, string $name, string $code): ?array
+    {
+        return self::matchShippingRate(self::collectShippingRates($order), $plugin, $name, $code);
+    }
+
+    /**
+     * Bind a selection to a rate out of an offer list already in hand — the same match
+     * resolvePluginShippingRate() makes, for a caller that has paid for the dispatch.
+     *
+     * @param   array<int, mixed>  $rates  Offer list as collectShippingRates() returns it.
+     *
+     * @return  array<string, mixed>|null  Canonical shipping_values, or null when no rate matches.
+     *
+     * @since   6.1.0
+     */
+    public static function matchShippingRate(array $rates, string $plugin, string $name, string $code): ?array
+    {
         foreach ($rates as $rate) {
+            if (!\is_array($rate)) {
+                continue;
+            }
+
             if ((string) ($rate['element'] ?? '') !== $plugin || (string) ($rate['name'] ?? '') !== $name) {
                 continue;
             }

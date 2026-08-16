@@ -2454,7 +2454,8 @@ class CheckoutController extends BaseController
      * the checkout tasks, so confirm cannot assume it was the last step to run.
      *
      * @param   CartOrder|null  $order   Replaced when the fresh rate differs from the stored one.
-     * @param   array           $errors  Appended to when the selection cannot stand.
+     * @param   array           $errors  Appended to when the selection cannot stand and the
+     *                                   store requires one — see COM_J2COMMERCE_CONFIG_SHIPPING_REQUIRED.
      */
     private function repriceShippingSelection(?CartOrder &$order, array &$errors): void
     {
@@ -2467,26 +2468,39 @@ class CheckoutController extends BaseController
         $stored  = \is_array($stored) ? $stored : [];
         $plugin  = (string) ($stored['shipping_plugin'] ?? '');
 
-        // Nothing selected for a cart that has something to ship: either the shipping step was
-        // never reached, or an address change cleared the selection and it was never re-made.
-        if ($plugin === '') {
-            $errors[] = Text::_('COM_J2COMMERCE_CHECKOUT_SELECT_A_SHIPPING_METHOD');
-
-            return;
-        }
+        // One dispatch answers both questions this method asks — what is on offer for the
+        // destination, and whether the stored selection is still among it. A carrier plugin
+        // bills for the answer, so it is asked once.
+        $rates = array_values(array_filter(
+            CartOrder::collectShippingRates($order),
+            [CartOrder::class, 'rateChargesAreValid']
+        ));
 
         // Money comes from the rate the plugins offer now, never from what the session carried.
-        $resolved = CartOrder::resolvePluginShippingRate(
-            $order,
-            $plugin,
-            (string) ($stored['shipping_name'] ?? ''),
-            (string) ($stored['shipping_code'] ?? '')
-        );
+        $resolved = $plugin === ''
+            ? null
+            : CartOrder::matchShippingRate(
+                $rates,
+                $plugin,
+                (string) ($stored['shipping_name'] ?? ''),
+                (string) ($stored['shipping_code'] ?? '')
+            );
 
         if ($resolved === null) {
-            $errors[] = Text::_('COM_J2COMMERCE_CHECKOUT_SELECT_A_SHIPPING_METHOD');
+            // Nothing to bind: the shipping step was never reached, an address change cleared
+            // the selection and it was never re-made, or the rate it named is no longer offered
+            // here. A destination the plugins quote for demands a selection out of what they
+            // quoted. Where they quote nothing there is nothing to select, and the order stands
+            // on the store's own answer to whether shipping is required of it at all.
+            if ($rates !== [] || ConfigHelper::isShippingMandatory()) {
+                $errors[] = Text::_('COM_J2COMMERCE_CHECKOUT_SELECT_A_SHIPPING_METHOD');
 
-            return;
+                return;
+            }
+
+            $this->clearShippingSelection();
+
+            $resolved = CartOrder::emptyShippingValues();
         }
 
         // Re-pricing answers for the destination, not for the tax: where a tax source has
