@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\QueueHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
@@ -164,12 +165,14 @@ class QueueModel extends AdminModel
      *
      * Convenience method for programmatic queue insertion.
      *
-     * @param   string       $queueType   The type of queue item (e.g., 'email', 'webhook')
-     * @param   string       $relationId  Related entity ID (e.g., order_id, customer_id)
-     * @param   mixed        $data        Queue data (will be JSON encoded if array/object)
-     * @param   int          $priority    Priority level (higher = processed first)
-     * @param   string|null  $expired     Expiration datetime (null = no expiration)
-     * @param   array        $params      Additional parameters
+     * The retry ceiling is left to QueueTable::check(), which takes it from the store-wide
+     * Queue Repeat Count in Options.
+     *
+     * @param   string  $queueType   The type of queue item (e.g., 'email', 'webhook')
+     * @param   string  $relationId  Related entity ID (e.g., order_id, customer_id)
+     * @param   mixed   $data        Queue data (will be JSON encoded if array/object)
+     * @param   int     $priority    Priority level (higher = processed first)
+     * @param   array   $params      Additional parameters
      *
      * @return  int|false  The queue ID on success, false on failure
      *
@@ -180,22 +183,19 @@ class QueueModel extends AdminModel
         string $relationId,
         mixed $data,
         int $priority = 0,
-        ?string $expired = null,
         array $params = []
     ): int|false {
         $table = $this->getTable();
 
         $queueData = [
-            'queue_type'   => $queueType,
-            'relation_id'  => $relationId,
-            'queue_data'   => \is_array($data) || \is_object($data) ? json_encode($data) : (string) $data,
-            'params'       => !empty($params) ? json_encode($params) : '',
-            'priority'     => $priority,
-            'status'       => 'pending',
-            'repeat_count' => 0,
-            'expired'      => $expired,
-            'created_on'   => date('Y-m-d H:i:s'),
-            'modified_on'  => date('Y-m-d H:i:s'),
+            'queue_type'  => $queueType,
+            'relation_id' => $relationId,
+            'queue_data'  => \is_array($data) || \is_object($data) ? json_encode($data) : (string) $data,
+            'params'      => !empty($params) ? json_encode($params) : '',
+            'priority'    => $priority,
+            'status'      => 'pending',
+            'created_on'  => date('Y-m-d H:i:s'),
+            'modified_on' => date('Y-m-d H:i:s'),
         ];
 
         if (!$table->bind($queueData)) {
@@ -234,27 +234,26 @@ class QueueModel extends AdminModel
     }
 
     /**
-     * Mark a queue item as failed and increment retry count.
+     * Mark a queue item as failed. Delegates to QueueHelper so this path gets the same
+     * treatment the cron loop gets: one attempt burnt, the error recorded, a backoff window
+     * set, the lock released, and a terminal 'dead' state once the ceiling is reached.
      *
-     * @param   int  $queueId  The queue item ID
+     * @param   int     $queueId       The queue item ID
+     * @param   string  $errorMessage  Why the item failed
      *
      * @return  bool  True on success
      *
      * @since   6.0.0
      */
-    public function markFailed(int $queueId): bool
+    public function markFailed(int $queueId, string $errorMessage = ''): bool
     {
-        $table = $this->getTable();
-
-        if (!$table->load($queueId)) {
+        if (!$this->getTable()->load($queueId)) {
             return false;
         }
 
-        $table->status       = 'failed';
-        $table->repeat_count = (int) $table->repeat_count + 1;
-        $table->modified_on  = date('Y-m-d H:i:s');
+        QueueHelper::fail($queueId, $errorMessage);
 
-        return $table->store();
+        return true;
     }
 
     /**

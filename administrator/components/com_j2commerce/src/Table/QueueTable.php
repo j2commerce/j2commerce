@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Table;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\QueueHelper;
 use Joomla\CMS\Table\Table;
 use Joomla\Database\DatabaseDriver;
 
@@ -47,7 +48,7 @@ class QueueTable extends Table
         }
 
         if (empty($this->max_attempts)) {
-            $this->max_attempts = 10;
+            $this->max_attempts = QueueHelper::defaultMaxAttempts();
         }
 
         if (empty($this->item_type)) {

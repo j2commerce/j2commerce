@@ -27,19 +27,33 @@ final class QueueHelper
         return self::$db ??= Factory::getContainer()->get(DatabaseInterface::class);
     }
 
+    /**
+     * The store-wide Queue Repeat Count from Options, clamped to what the max_attempts column
+     * accepts. The field's min="1" is render-only and its integer filter keeps a leading minus,
+     * so a 0 or negative value would otherwise make every item terminal on its first failure.
+     */
+    public static function defaultMaxAttempts(): int
+    {
+        return max(1, min(65535, ConfigHelper::getQueueRepeatCount()));
+    }
+
+    /**
+     * A null $maxAttempts takes the store-wide ceiling; callers that state their own keep it.
+     */
     public static function enqueue(
         string $queueType,
         string $relationId,
         array $data,
         string $itemType = 'order',
         int $priority = 0,
-        int $maxAttempts = 10
+        ?int $maxAttempts = null
     ): int {
-        $db        = self::db();
-        $now       = (new \DateTimeImmutable())->format('Y-m-d H:i:s');
-        $queueData = json_encode($data, JSON_THROW_ON_ERROR);
-        $status    = 'pending';
-        $attempts  = 0;
+        $maxAttempts = $maxAttempts ?? self::defaultMaxAttempts();
+        $db          = self::db();
+        $now         = (new \DateTimeImmutable())->format('Y-m-d H:i:s');
+        $queueData   = json_encode($data, JSON_THROW_ON_ERROR);
+        $status      = 'pending';
+        $attempts    = 0;
 
         $query = $db->getQuery(true)
             ->insert($db->quoteName('#__j2commerce_queues'))
