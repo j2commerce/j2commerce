@@ -1274,7 +1274,7 @@ class CartsController extends BaseController
             $json['error']['zone_id'] = Text::_('COM_J2COMMERCE_ESTIMATE_ZONE_REQUIRED');
         }
 
-        if (($postalRequired || $params->get('postalcode_required', 0)) && empty($postcode)) {
+        if (($postalRequired || $params->get('postalcode_required', 1)) && empty($postcode)) {
             $json['error']['postcode'] = Text::_('COM_J2COMMERCE_ESTIMATE_POSTALCODE_REQUIRED');
         }
 
@@ -1361,7 +1361,7 @@ class CartsController extends BaseController
             $json['error']['zone_id'] = Text::_('COM_J2COMMERCE_ESTIMATE_ZONE_REQUIRED');
         }
 
-        if (($postalRequired || $params->get('postalcode_required', 0)) && empty($postcode)) {
+        if (($postalRequired || $params->get('postalcode_required', 1)) && empty($postcode)) {
             $json['error']['postcode'] = Text::_('COM_J2COMMERCE_ESTIMATE_POSTALCODE_REQUIRED');
         }
 

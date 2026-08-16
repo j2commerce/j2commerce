@@ -23,7 +23,7 @@ $currencyCode = $item->currency_code ?? '';
 
 $fmt = static fn(float $amount): string => CurrencyHelper::format($amount, $currencyCode);
 
-$checkoutPriceDisplay = (int) ComponentHelper::getParams('com_j2commerce')->get('checkout_price_display_options', 1);
+$checkoutPriceDisplay = (int) ComponentHelper::getParams('com_j2commerce')->get('checkout_price_display_options', 0);
 
 $taxes     = $item->ordertaxes ?? [];
 $discounts = $item->orderdiscounts ?? [];

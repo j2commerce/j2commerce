@@ -32,7 +32,7 @@ $canEdit   = $user->authorise('core.edit', 'com_j2commerce');
 $canEditState = $user->authorise('core.edit.state', 'com_j2commerce');
 $listOrder  = $this->escape($this->state->get('list.ordering'));
 $listDirn   = $this->escape($this->state->get('list.direction'));
-$dateFormat = ComponentHelper::getParams('com_j2commerce')->get('date_format', 'Y-m-d H:i:s');
+$dateFormat = ComponentHelper::getParams('com_j2commerce')->get('date_format', 'Y-m-d');
 
 ?>
 

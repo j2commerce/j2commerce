@@ -3014,7 +3014,7 @@ class CheckoutController extends BaseController
     {
         $params = J2CommerceHelper::config();
 
-        if ($params->get('show_shipping_address', 0)) {
+        if ($params->get('show_shipping_address', 1)) {
             return true;
         }
 

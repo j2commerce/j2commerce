@@ -153,7 +153,7 @@ class HtmlView extends BaseHtmlView
         $this->formattedRevenue = CurrencyHelper::format($this->totalRevenue);
 
         $params     = ComponentHelper::getParams('com_j2commerce');
-        $dateFormat = $params->get('date_format', 'Y-m-d H:i:s');
+        $dateFormat = $params->get('date_format', 'Y-m-d');
 
         // Pass data to JavaScript
         if ($this->canViewReports) {

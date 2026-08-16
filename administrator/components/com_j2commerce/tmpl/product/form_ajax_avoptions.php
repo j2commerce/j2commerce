@@ -97,7 +97,7 @@ $extractPath = function (string $imageValue) use ($stripBaseUrl): array {
 };
 
 
-$enableInventory = (int) J2CommerceHelper::config()->get('enable_inventory', 1);
+$enableInventory = (int) J2CommerceHelper::config()->get('enable_inventory', 0);
 
 
 $counter   = 0;

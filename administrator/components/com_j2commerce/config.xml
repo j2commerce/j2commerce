@@ -1329,7 +1329,7 @@
             label="COM_J2COMMERCE_CONFIG_DOWNLOAD_STATUSES"
             description="COM_J2COMMERCE_CONFIG_DOWNLOAD_STATUSES_DESC"
             multiple="true"
-            default="1"
+            default=""
             layout="joomla.form.field.list-fancy-select"
         />
 

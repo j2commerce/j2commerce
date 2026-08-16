@@ -60,7 +60,7 @@ class ConfigHelper
      *
      * @return  array<int, array{directory: string, thumbs: int}>
      */
-    public static function getImageDirectories(array $default = [['directory' => 'images', 'thumbs' => 1]]): array
+    public static function getImageDirectories(array $default = [['directory' => 'images/products', 'thumbs' => 1]]): array
     {
         $normalized = self::normalizeImageDirectories(self::get('image_directories', $default));
 
@@ -70,7 +70,7 @@ class ConfigHelper
 
         $fallback = self::normalizeImageDirectories($default);
 
-        return $fallback !== [] ? $fallback : [['directory' => 'images', 'thumbs' => 1]];
+        return $fallback !== [] ? $fallback : [['directory' => 'images/products', 'thumbs' => 1]];
     }
 
     /**
@@ -245,7 +245,7 @@ class ConfigHelper
      */
     public static function getStoreCountryId(): int
     {
-        return (int) self::get('country_id', 223);
+        return (int) self::get('country_id', 0);
     }
 
     /**
@@ -346,7 +346,7 @@ class ConfigHelper
      */
     public static function getDateFormat(): string
     {
-        return (string) self::get('date_format', 'Y-m-d H:i:s');
+        return (string) self::get('date_format', 'Y-m-d');
     }
 
     /**
@@ -869,7 +869,7 @@ class ConfigHelper
      */
     public static function showCartThumbnails(): bool
     {
-        return (int) self::get('show_thumb_cart', 0) === 1;
+        return (int) self::get('show_thumb_cart', 1) === 1;
     }
 
     /**
@@ -905,7 +905,7 @@ class ConfigHelper
      */
     public static function getClearCartTiming(): string
     {
-        return (string) self::get('clear_cart', 'order_placed');
+        return (string) self::get('clear_cart', 'order_confirmed');
     }
 
     /**
@@ -1097,7 +1097,13 @@ class ConfigHelper
     }
 
     /**
-     * Get the order statuses that allow downloads
+     * Get the order statuses that allow downloads.
+     *
+     * Callers gate a grant with `in_array($status, ...)`, so an empty list here would
+     * release downloads on no status at all. It falls back to Confirmed rather than the
+     * field's own empty default for that reason. `DownloadHelper::allowedDownloadStatuses()`
+     * reads the same key for the serve-time query, where an empty list means the setting
+     * adds no `WHERE` and so places no restriction.
      *
      * @return  array<int>  Array of order status IDs
      *
@@ -1127,7 +1133,7 @@ class ConfigHelper
      */
     public static function showEmailThumbnails(): bool
     {
-        return (int) self::get('show_thumb_email', 0) === 1;
+        return (int) self::get('show_thumb_email', 1) === 1;
     }
 
     /**
@@ -1167,7 +1173,7 @@ class ConfigHelper
      */
     public static function showTerms(): bool
     {
-        return (int) self::get('show_terms', 1) === 1;
+        return (int) self::get('show_terms', 0) === 1;
     }
 
     /**

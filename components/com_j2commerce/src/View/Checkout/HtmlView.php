@@ -154,7 +154,7 @@ class HtmlView extends BaseHtmlView
                 return;
             }
 
-            if ($this->params->get('show_shipping_address', 0)) {
+            if ($this->params->get('show_shipping_address', 1)) {
                 $this->showShipping = true;
             }
 

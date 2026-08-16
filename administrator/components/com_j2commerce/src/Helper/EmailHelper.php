@@ -656,7 +656,7 @@ class EmailHelper
         $tz   = $config->get('offset');
         $date = Factory::getDate($order->created_on ?? 'now');
         $date->setTimezone(new \DateTimeZone($tz));
-        $dateFormat = $params->get('date_format', $language->_('DATE_FORMAT_LC1'));
+        $dateFormat = $params->get('date_format', 'Y-m-d');
         $orderDate  = $date->format($dateFormat, true);
 
         // Get order info

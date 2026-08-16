@@ -130,7 +130,7 @@ class HtmlView extends BaseHtmlView
 
         // Get date format from config
         $params     = ComponentHelper::getParams('com_j2commerce');
-        $dateFormat = $params->get('date_format', 'Y-m-d H:i:s');
+        $dateFormat = $params->get('date_format', 'Y-m-d');
 
         // Pass data to JavaScript
         $this->getDocument()->addScriptOptions('com_j2commerce.analytics', [

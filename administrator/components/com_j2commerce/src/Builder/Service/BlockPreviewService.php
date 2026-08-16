@@ -142,7 +142,7 @@ final class BlockPreviewService
             'params'          => $params,
             'productLink'     => '#',
             'showTitle'       => true,
-            'showSku'         => (bool) $params->get('show_sku', 1),
+            'showSku'         => (bool) $params->get('show_sku', 0),
             'showUpc'         => (bool) $params->get('show_upc', 0),
             'showStock'       => (bool) $params->get('show_stock', 1),
             'showPrice'       => (bool) $params->get('show_price', 1),

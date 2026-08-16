@@ -769,7 +769,7 @@ class OrdersModel extends ListModel
     {
         $params = ComponentHelper::getParams('com_j2commerce');
 
-        $heldDuration     = (int) $params->get('hold_stock', 0);
+        $heldDuration     = (int) $params->get('hold_stock', 60);
         $inventoryEnabled = (int) $params->get('enable_inventory', 0);
 
         // Skip if hold stock is disabled or inventory management is off

@@ -458,7 +458,7 @@ class InventoryHelper
         // TODO: Get from J2Commerce StoreHelper when available
         $storeMinSaleQty = $storeConfig?->get('store_min_sale_qty', 1.0) ?? 1.0;
         $storeMaxSaleQty = $storeConfig?->get('store_max_sale_qty', 0.0) ?? 0.0;
-        $storeNotifyQty  = $storeConfig?->get('store_notify_qty', 5.0) ?? 5.0;
+        $storeNotifyQty  = $storeConfig?->get('store_notify_qty', 0.0) ?? 0.0;
 
         // Apply min sale quantity from store config
         if (!empty($variant->use_store_config_min_sale_qty) && $variant->use_store_config_min_sale_qty > 0) {
