@@ -258,7 +258,9 @@ class CheckoutController extends BaseController
     }
 
     /**
-     * Set shipping session values from address data.
+     * Set shipping session values from address data. Rates are quoted against these, so the
+     * offer list and the selection made from it are dropped here rather than at each caller —
+     * a destination writer added later inherits the invalidation instead of having to know.
      */
     protected function setShippingSession(array $data): void
     {
@@ -266,6 +268,8 @@ class CheckoutController extends BaseController
         $session->set('shipping_country_id', (int) ($data['country_id'] ?? 0), 'j2commerce');
         $session->set('shipping_zone_id', (int) ($data['zone_id'] ?? 0), 'j2commerce');
         $session->set('shipping_postcode', $data['zip'] ?? '', 'j2commerce');
+
+        $this->clearShippingSelection();
     }
 
     // =========================================================================
@@ -373,6 +377,10 @@ class CheckoutController extends BaseController
                         $session->clear('billing_zone_id', 'j2commerce');
                         $session->clear('billing_postcode', 'j2commerce');
                     }
+
+                    // Either arm moves where rates are quoted from, so anything quoted for
+                    // the pre-login destination goes with it.
+                    $this->clearShippingSelection();
                 }
 
                 $session->clear('guest', 'j2commerce');
@@ -869,6 +877,8 @@ class CheckoutController extends BaseController
             $session->set('shipping_country_id', $session->get('billing_country_id', 0, 'j2commerce'), 'j2commerce');
             $session->set('shipping_zone_id', $session->get('billing_zone_id', 0, 'j2commerce'), 'j2commerce');
             $session->set('shipping_postcode', $session->get('billing_postcode', '', 'j2commerce'), 'j2commerce');
+
+            $this->clearShippingSelection();
         }
 
         J2CommerceHelper::plugin()->event('CheckoutValidateBilling', [&$json]);
@@ -974,8 +984,7 @@ class CheckoutController extends BaseController
             $session->set('shipping_zone_id', (int) ($addressTable->zone_id ?? 0), 'j2commerce');
             $session->set('shipping_postcode', $addressTable->zip ?? '', 'j2commerce');
 
-            $session->clear('shipping_method', 'j2commerce');
-            $session->clear('shipping_methods', 'j2commerce');
+            $this->clearShippingSelection();
         } else {
             $formData = $this->collectFormData();
             $fields   = CustomFieldHelper::getFieldsByArea('shipping');
@@ -1009,8 +1018,6 @@ class CheckoutController extends BaseController
             $session->set('shipping_address_id', $newAddressId, 'j2commerce');
 
             $this->setShippingSession($addressData);
-            $session->clear('shipping_method', 'j2commerce');
-            $session->clear('shipping_methods', 'j2commerce');
         }
 
         J2CommerceHelper::plugin()->event('BeforeCheckoutValidateShipping', [&$json]);
@@ -1052,8 +1059,6 @@ class CheckoutController extends BaseController
         $session->set('guest_shipping', $addressData, 'j2commerce');
 
         $this->setShippingSession($addressData);
-        $session->clear('shipping_method', 'j2commerce');
-        $session->clear('shipping_methods', 'j2commerce');
 
         J2CommerceHelper::plugin()->event('BeforeCheckoutValidateGuestShipping', [&$json]);
 
@@ -1676,6 +1681,8 @@ class CheckoutController extends BaseController
 
         try {
             $order = $this->buildCartOrder();
+
+            $this->repriceShippingSelection($order, $errors);
 
             // Stock is enforced at add-to-cart and quantity-update, but time passes
             // before confirm — re-check here so two shoppers cannot both buy the last
@@ -2425,6 +2432,97 @@ class CheckoutController extends BaseController
         $order = $this->getCartOrder();
 
         return $order instanceof CartOrder ? $order : null;
+    }
+
+    /**
+     * Drop the shipping selection along with the offer list it was made from. A destination
+     * change invalidates both, and a selection that outlives its list is priced for an address
+     * the order is no longer going to.
+     */
+    private function clearShippingSelection(): void
+    {
+        $session = $this->app->getSession();
+
+        $session->clear('shipping_method', 'j2commerce');
+        $session->clear('shipping_methods', 'j2commerce');
+        $session->clear('shipping_values', 'j2commerce');
+    }
+
+    /**
+     * Re-price the stored shipping selection against a fresh dispatch before the order is built
+     * from it. The shipping step is where a selection is normally re-made, but nothing sequences
+     * the checkout tasks, so confirm cannot assume it was the last step to run.
+     *
+     * @param   CartOrder|null  $order   Replaced when the fresh rate differs from the stored one.
+     * @param   array           $errors  Appended to when the selection cannot stand.
+     */
+    private function repriceShippingSelection(?CartOrder &$order, array &$errors): void
+    {
+        if (!$order instanceof CartOrder || !$this->determineShowShippingMethods($order)) {
+            return;
+        }
+
+        $session = $this->app->getSession();
+        $stored  = $session->get('shipping_values', [], 'j2commerce');
+        $stored  = \is_array($stored) ? $stored : [];
+        $plugin  = (string) ($stored['shipping_plugin'] ?? '');
+
+        // Nothing selected for a cart that has something to ship: either the shipping step was
+        // never reached, or an address change cleared the selection and it was never re-made.
+        if ($plugin === '') {
+            $errors[] = Text::_('COM_J2COMMERCE_CHECKOUT_SELECT_A_SHIPPING_METHOD');
+
+            return;
+        }
+
+        // Money comes from the rate the plugins offer now, never from what the session carried.
+        $resolved = CartOrder::resolvePluginShippingRate(
+            $order,
+            $plugin,
+            (string) ($stored['shipping_name'] ?? ''),
+            (string) ($stored['shipping_code'] ?? '')
+        );
+
+        if ($resolved === null) {
+            $errors[] = Text::_('COM_J2COMMERCE_CHECKOUT_SELECT_A_SHIPPING_METHOD');
+
+            return;
+        }
+
+        // Re-pricing answers for the destination, not for the tax: where a tax source has
+        // already answered for this line, its figure stands, because the rate's own tax is
+        // the estimate that figure exists to replace. It stands only over the charge it was
+        // given for, though — a rate that re-quotes to a different amount invalidates the
+        // tax on it as surely as a different destination would, so the answer is dropped and
+        // the source is left to give one for the new charge.
+        $sameCharge = (float) ($stored['shipping_price'] ?? 0) === (float) ($resolved['shipping_price'] ?? 0)
+            && (float) ($stored['shipping_extra'] ?? 0) === (float) ($resolved['shipping_extra'] ?? 0);
+
+        if (!empty($stored['shipping_tax_resolved']) && $sameCharge) {
+            $resolved['shipping_tax']          = (string) (float) ($stored['shipping_tax'] ?? 0);
+            $resolved['shipping_tax_resolved'] = true;
+        }
+
+        $session->set('shipping_values', $resolved, 'j2commerce');
+
+        $charges = static fn (array $values): array => [
+            (float) ($values['shipping_price'] ?? 0),
+            (float) ($values['shipping_tax'] ?? 0),
+            (float) ($values['shipping_extra'] ?? 0),
+            (int) ($values['shipping_tax_class_id'] ?? 0),
+            !empty($values['shipping_tax_resolved']),
+        ];
+
+        if ($charges($stored) === $charges($resolved)) {
+            return;
+        }
+
+        // The order in hand was built from the superseded figures — build it again from these.
+        $rebuilt = $this->getCartOrder();
+
+        if ($rebuilt instanceof CartOrder) {
+            $order = $rebuilt;
+        }
     }
 
     /** Attach the payment method and fold in its surcharge. */
