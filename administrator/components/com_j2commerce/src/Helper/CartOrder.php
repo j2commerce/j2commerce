@@ -1305,7 +1305,13 @@ class CartOrder
             // class nothing resolves. Put it through the same rate lookup the product lines
             // use, so one source answers for both and the figure shown here is the figure
             // saveOrderShipping() writes.
-            if ($shippingTax <= 0.0 && $this->order_shipping > 0) {
+            //
+            // A source that priced shipping itself says so with shipping_tax_resolved, so a
+            // supply it taxed at exactly nothing keeps that nothing instead of collecting an
+            // estimate on top of it.
+            $taxResolved = !empty($shippingValues['shipping_tax_resolved']) || $shippingTax > 0.0;
+
+            if (!$taxResolved && $this->order_shipping > 0) {
                 $shippingTaxClassId = $this->getShippingTaxClassId();
 
                 if ($shippingTaxClassId > 0) {
@@ -1387,7 +1393,20 @@ class CartOrder
             'shipping_tax'          => '0',
             'shipping_tax_class_id' => 0,
             'shipping_extra'        => '',
+            'shipping_tax_resolved' => false,
         ];
+    }
+
+    /**
+     * Whether a rate's tax figure is the rate's own answer rather than a blank waiting to be
+     * filled. A rate states an exact zero by carrying tax_resolved; any other zero is silence.
+     *
+     * @since   6.1.0
+     */
+    public static function rateTaxIsResolved(mixed $rate): bool
+    {
+        return \is_array($rate)
+            && (!empty($rate['tax_resolved']) || (float) ($rate['tax'] ?? 0) > 0);
     }
 
     /**
@@ -1456,6 +1475,7 @@ class CartOrder
                 'shipping_tax'          => (string) (float) ($rate['tax'] ?? 0),
                 'shipping_tax_class_id' => (int) ($rate['tax_class_id'] ?? 0),
                 'shipping_extra'        => (string) (float) ($rate['extra'] ?? 0),
+                'shipping_tax_resolved' => self::rateTaxIsResolved($rate),
             ];
         }
 

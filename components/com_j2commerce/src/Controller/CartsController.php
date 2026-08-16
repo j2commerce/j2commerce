@@ -185,10 +185,12 @@ class CartsController extends BaseController
             if (($method['name'] ?? '') === $selectedName) {
                 $found = true;
 
-                // Sync tax data from fresh rate (amounts/class may have changed)
+                // Sync tax data from fresh rate (amounts/class may have changed). The resolved
+                // marker is rewritten alongside the amount so it always speaks for this rate.
                 $shippingValues['shipping_tax']          = $method['tax'] ?? 0;
                 $shippingValues['shipping_tax_class_id'] = $method['tax_class_id'] ?? 0;
                 $shippingValues['shipping_price']        = $method['price'] ?? 0;
+                $shippingValues['shipping_tax_resolved'] = CartOrder::rateTaxIsResolved($method);
                 $session->set('shipping_values', $shippingValues, 'j2commerce');
                 break;
             }
@@ -211,6 +213,7 @@ class CartsController extends BaseController
             'shipping_extra'        => $default['extra'],
             'shipping_code'         => $default['code'],
             'shipping_plugin'       => $default['element'],
+            'shipping_tax_resolved' => CartOrder::rateTaxIsResolved($default),
         ], 'j2commerce');
     }
 
@@ -1415,6 +1418,7 @@ class CartsController extends BaseController
                         'shipping_extra'        => $first['extra'],
                         'shipping_code'         => $first['code'],
                         'shipping_plugin'       => $first['element'],
+                        'shipping_tax_resolved' => CartOrder::rateTaxIsResolved($first),
                     ], 'j2commerce');
                 } else {
                     $session->clear('shipping_methods', 'j2commerce');

@@ -1128,6 +1128,7 @@ class CheckoutController extends BaseController
                     $shippingValues['shipping_tax']          = (string) ((float) ($matchedRate['tax'] ?? 0));
                     $shippingValues['shipping_tax_class_id'] = (int) ($matchedRate['tax_class_id'] ?? 0);
                     $shippingValues['shipping_price']        = (string) ((float) ($matchedRate['price'] ?? 0));
+                    $shippingValues['shipping_tax_resolved'] = CartOrder::rateTaxIsResolved($matchedRate);
                     $session->set('shipping_values', $shippingValues, 'j2commerce');
                 }
 
@@ -1141,6 +1142,7 @@ class CheckoutController extends BaseController
                         'shipping_tax'          => (string) ((float) ($defaultRate['tax'] ?? 0)),
                         'shipping_tax_class_id' => (int) ($defaultRate['tax_class_id'] ?? 0),
                         'shipping_extra'        => $defaultRate['extra'] ?? '',
+                        'shipping_tax_resolved' => CartOrder::rateTaxIsResolved($defaultRate),
                     ];
                     $session->set('shipping_values', $shippingValues, 'j2commerce');
                     $session->set('shipping_method', $shippingValues['shipping_plugin'], 'j2commerce');

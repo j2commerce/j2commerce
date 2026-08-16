@@ -366,6 +366,7 @@ class CartsModel extends BaseDatabaseModel
             'shipping_extra'        => $default['extra'],
             'shipping_code'         => $default['code'],
             'shipping_plugin'       => $default['element'],
+            'shipping_tax_resolved' => CartOrder::rateTaxIsResolved($default),
         ], 'j2commerce');
     }
 }
