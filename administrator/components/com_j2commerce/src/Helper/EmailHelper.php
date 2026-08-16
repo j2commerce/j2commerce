@@ -1072,16 +1072,21 @@ class EmailHelper
                     return '';
                 }
 
-                $currencyCode  = $order->currency_code ?? '';
-                $currencyValue = (float) ($order->currency_value ?? 1);
-                $params        = ComponentHelper::getParams('com_j2commerce');
-                $result        = '';
+                $currencyCode   = $order->currency_code ?? '';
+                $currencyValue  = (float) ($order->currency_value ?? 1);
+                $params         = ComponentHelper::getParams('com_j2commerce');
+                $showThumbnails = ConfigHelper::showEmailThumbnails();
+                $result         = '';
 
                 foreach ($items as $item) {
                     $optionText = $this->decodeOrderItemAttributes($item->orderitem_attributes ?? '');
 
-                    // Look up product image via ImageHelper for optimal size
-                    $imageUrl = $this->getProductImageForEmail((int) ($item->product_id ?? 0), $baseURL);
+                    // Look up product image via ImageHelper for optimal size. An empty tag is the
+                    // off-switch: [IF:ITEM_IMAGE] drops its block and [IFNOT:ITEM_IMAGE] keeps its
+                    // fallback, so the template collapses its own markup.
+                    $imageUrl = $showThumbnails
+                        ? $this->getProductImageForEmail((int) ($item->product_id ?? 0), $baseURL)
+                        : '';
 
                     $itemTags = [
                         '[ITEM_NAME]'        => htmlspecialchars($item->orderitem_name ?? ''),
@@ -2833,9 +2838,10 @@ class EmailHelper
             return '';
         }
 
-        $baseURL       = str_replace('/administrator', '', Uri::base());
-        $currencyCode  = $order->currency_code ?? '';
-        $currencyValue = (float) ($order->currency_value ?? 1);
+        $baseURL        = str_replace('/administrator', '', Uri::base());
+        $currencyCode   = $order->currency_code ?? '';
+        $currencyValue  = (float) ($order->currency_value ?? 1);
+        $showThumbnails = ConfigHelper::showEmailThumbnails();
 
         $html = '<table style="width:100%; border-collapse:collapse;">';
         $html .= '<thead>';
@@ -2849,7 +2855,9 @@ class EmailHelper
         $html .= '<tbody>';
 
         foreach ($items as $item) {
-            $imageUrl = $this->getProductImageForEmail((int) ($item->product_id ?? 0), $baseURL);
+            $imageUrl = $showThumbnails
+                ? $this->getProductImageForEmail((int) ($item->product_id ?? 0), $baseURL)
+                : '';
 
             $html .= '<tr>';
             $html .= '<td style="padding:8px; border:1px solid #ddd;">';
