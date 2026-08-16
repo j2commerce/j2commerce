@@ -3105,8 +3105,7 @@ class ProductHelper
             $allowDisplay = false;
         }
 
-        // TODO: Get catalog_mode from J2Commerce config when available
-        $catalogMode = 0;
+        $catalogMode = (int) $params->get('catalog_mode', 0);
 
         return $catalogMode == 0 && $allowDisplay;
     }
