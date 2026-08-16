@@ -203,7 +203,6 @@ $category_columns = (int) $params->get('category_columns', 4);
                 <?php echo J2CommerceHelper::modules()->loadPosition('j2commerce-categories-middle'); ?>
                 <?php if (!empty($this->trendingProducts)) : ?>
                     <?php $popularDisplayType = $params->get('popular_display_type', 'grid'); ?>
-                    <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeCategoriesTrendingProducts', array($this))->getArgument('html', ''); ?>
                     <<?php echo $htag; ?>><?php echo Text::_('COM_J2COMMERCE_TRENDING_PRODUCTS'); ?></<?php echo $htag; ?>>
 
                     <?php if ($popularDisplayType === 'scroller') : ?>

@@ -37,6 +37,7 @@ $childWidth = match ($category_columns) {
 };
 ?>
 <div class="j2commerce j2commerce-categories uikit <?php echo $this->escape($params->get('pageclass_sfx', '')); ?>">
+    <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeCategoriesView', array($this))->getArgument('html', ''); ?>
     <?php if ($params->get('show_category_root_title', 1)) : ?>
         <div class="uk-margin-medium-bottom">
             <h1><?php echo $this->escape($params->get('page_heading', '')); ?></h1>
@@ -181,6 +182,7 @@ $childWidth = match ($category_columns) {
             <?php endif; ?>
 
         <?php elseif ($displayMode === 'categories_popular') : ?>
+            <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeCategoriesTrendingProducts', array($this))->getArgument('html', ''); ?>
             <?php // Category cards + combined trending products ?>
             <?php if (!empty($this->items)) : ?>
                 <div class="j2commerce-category-grid <?php echo $childWidth; ?> uk-margin-medium-bottom" uk-grid>
@@ -228,6 +230,8 @@ $childWidth = match ($category_columns) {
                     <?php endforeach; ?>
                 </div>
             <?php endif; ?>
+
+            <?php echo J2CommerceHelper::modules()->loadPosition('j2commerce-categories-middle'); ?>
 
             <?php if (!empty($this->trendingProducts)) : ?>
                 <?php $popularDisplayType = $params->get('popular_display_type', 'grid'); ?>
@@ -339,6 +343,7 @@ $childWidth = match ($category_columns) {
                     </div>
                 <?php endif; ?>
             <?php endif; ?>
+            <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterCategoriesTrendingProducts', array($this))->getArgument('html', ''); ?>
 
         <?php endif; ?>
 
