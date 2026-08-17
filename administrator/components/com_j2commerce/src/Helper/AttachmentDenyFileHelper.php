@@ -222,6 +222,99 @@ WEBCONFIG;
 
         self::writeDenyFile($dir . '/.htaccess', self::fileHtaccess($usable), true, $trace, self::DOWNLOAD_MARKER);
         self::writeDenyFile($dir . '/web.config', self::fileWebConfig($usable), true, $trace, self::DOWNLOAD_MARKER);
+
+        self::reportUnreadRules($dir, $usable, $trace);
+    }
+
+    /**
+     * Name the directories where the rules just written are read by nothing.
+     *
+     * Both payloads are configuration for two web servers. A site served by nginx, by Caddy,
+     * or by an Apache whose vhost declines the directives gets a rule file that changes
+     * nothing, and until now got no indication of it. The tree-wide writer ships a README
+     * carrying the equivalent snippet; the per-file writer deliberately ships no README, so
+     * this is the only place that guidance can come from.
+     *
+     * Not reported for the attachment tree, which carries that README already, and not
+     * reported when the server is unnamed — a CLI install or a scheduled task states nothing
+     * about how the site is served, and guessing there would put a message in front of every
+     * cron run for no gain.
+     *
+     * @param  array<string, string>  $names
+     */
+    private static function reportUnreadRules(string $dir, array $names, ?callable $trace): void
+    {
+        static $reported = [];
+
+        if (isset($reported[$dir]) || self::serverReadsDenyFiles() || self::isAttachmentTree($dir)) {
+            return;
+        }
+
+        $reported[$dir] = true;
+
+        $site     = rtrim(str_replace('\\', '/', JPATH_SITE), '/');
+        $absolute = str_replace('\\', '/', $dir);
+        $location = str_starts_with($absolute, $site . '/') ? substr($absolute, \strlen($site)) : $absolute;
+
+        // The pattern names the files rather than the directory: this is routinely the
+        // directory the storefront serves its product images from, and denying the whole of
+        // it would take those with it. Quoted in the snippet because a stored name may carry
+        // a space, which ends the directive where it stands otherwise.
+        $pattern = implode('|', array_map(
+            static fn (string $name): string => preg_quote($name, '#'),
+            array_values($names)
+        ));
+
+        self::warn(
+            $trace,
+            'rules written for a server that reads neither file: ' . $dir,
+            'The downloadable files in ' . $dir . ' are denied direct web access by an .htaccess and a '
+                . 'web.config, and this server reports itself as one that reads neither. Add the equivalent '
+                . 'rule to your server configuration — for nginx or Caddy: location ~ "^'
+                . $location . '/(' . $pattern . ')$" { deny all; return 403; } — then request one of those '
+                . 'files in a browser and check you get 403 rather than the file. An Apache told not to '
+                . 'read .htaccess reports itself the same as one that does, so that check is the only proof '
+                . 'either way.'
+        );
+    }
+
+    /**
+     * Whether the running web server reads one of the two payloads. An unnamed server is
+     * treated as reading them: it is as likely to be a console run as a server that does not.
+     */
+    private static function serverReadsDenyFiles(): bool
+    {
+        $software = strtolower((string) ($_SERVER['SERVER_SOFTWARE'] ?? ''));
+
+        if ($software === '') {
+            return true;
+        }
+
+        // LiteSpeed reads .htaccess; IIS reads web.config.
+        foreach (['apache', 'litespeed', 'microsoft-iis'] as $reader) {
+            if (str_contains($software, $reader)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Params are read here rather than through ConfigHelper::getAttachmentPath(): the
+     * installer require_once's this class before the PSR-4 map for the namespace exists,
+     * so it must not reach for a sibling helper.
+     */
+    private static function isAttachmentTree(string $dir): bool
+    {
+        $configured = trim(
+            str_replace('\\', '/', (string) ComponentHelper::getParams('com_j2commerce')->get('attachmentfolderpath', '')),
+            '/'
+        );
+
+        $root = @realpath(JPATH_SITE . '/' . ($configured !== '' ? $configured : self::defaultPath()));
+
+        return $root !== false && str_starts_with($dir . \DIRECTORY_SEPARATOR, $root . \DIRECTORY_SEPARATOR);
     }
 
     /** @param  array<string, string>  $names */
