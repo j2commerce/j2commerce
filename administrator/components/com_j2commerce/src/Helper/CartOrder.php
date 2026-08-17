@@ -1601,8 +1601,13 @@ class CartOrder
     public function add_fee(string $name, float $amount, bool $taxable = false, $taxClassId = 0): void
     {
         $key = 'payment_' . $this->orderpayment_type;
-        // tax stays 0.0 for v1 (tax-free surcharge); taxClassId stored for forward use
-        self::addFee($key, $amount, $name, 0.0, (int) $taxClassId);
+        $tax = 0.0;
+
+        if ($taxable && (int) $taxClassId > 0) {
+            $tax = TaxHelper::computeTax($amount, (int) $taxClassId, $this->getCustomerGeozones())->taxtotal;
+        }
+
+        self::addFee($key, $amount, $name, $tax, (int) $taxClassId);
     }
 
     /** Legacy compatibility — called by payment plugins via $order->get_payment_method(). */
