@@ -110,7 +110,12 @@ const J2Commerce = {
             }
 
             if (json.error) {
-                window.location = json.product_url;
+                if (json.product_redirect) {
+                    window.location = json.product_redirect;
+                    return;
+                }
+
+                button.classList.remove('loading');
                 return;
             }
 
