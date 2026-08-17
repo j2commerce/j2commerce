@@ -246,7 +246,9 @@ final class DownloadHelper
     /**
      * One row per downloadable file in an order, carrying the same availability rules the
      * download endpoint enforces. Every surface that offers a link reads them from here, so
-     * an offered link and the endpoint that answers it can never disagree.
+     * an offered link and the endpoint that answers it can never disagree. The order-state
+     * half of that promise comes from allowedDownloadStatuses(), which the endpoint reads
+     * through isOrderStatusAllowed().
      *
      * @return  list<object>
      */
@@ -325,6 +327,18 @@ final class DownloadHelper
         }
 
         return $rows;
+    }
+
+    /**
+     * Whether an order in this state is inside the `limit_orderstatuses` window.
+     * The download endpoint asks this before serving so it applies the same predicate
+     * getOrderDownloads() filters the listing on.
+     */
+    public static function isOrderStatusAllowed(int $orderStateId): bool
+    {
+        $statusIds = self::allowedDownloadStatuses();
+
+        return $statusIds === [] || \in_array($orderStateId, $statusIds, true);
     }
 
     /**

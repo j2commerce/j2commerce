@@ -297,6 +297,15 @@ class MyprofileController extends BaseController
             return;
         }
 
+        // The grant is one-way, so the configured order states are the only rule that can
+        // withdraw a file again. The listing filters on them; answer for the same rule here.
+        if (!DownloadHelper::isOrderStatusAllowed((int) $order->order_state_id)) {
+            $this->app->enqueueMessage(Text::_('COM_J2COMMERCE_MYPROFILE_DOWNLOAD_NOT_FOUND'), 'error');
+            $this->app->redirect($redirectUrl);
+
+            return;
+        }
+
         // Load download record for this order + product
         $orderId   = $order->order_id;
         $productId = (int) $productFile->product_id;
