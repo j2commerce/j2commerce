@@ -256,7 +256,7 @@ class CartsController extends BaseController
             $this->startAjaxBuffer();
 
             if (!$this->validateAjaxToken()) {
-                $this->sendJsonResponse(['success' => false, 'message' => 'Invalid token']);
+                $this->sendJsonResponse(['success' => false, 'message' => Text::_('JINVALID_TOKEN')]);
             }
         } else {
             $this->checkToken();
