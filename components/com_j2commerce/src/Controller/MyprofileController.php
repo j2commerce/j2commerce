@@ -381,26 +381,38 @@ class MyprofileController extends BaseController
             return;
         }
 
-        // Increment download count on orderdownload + productfile
+        // Record the use before streaming. The database does the arithmetic and carries the
+        // limit in the same statement, so requests that overlap the read above cannot each
+        // write the same count back and record several uses as one.
         $downloadId = (int) $download->j2commerce_orderdownload_id;
-        $newCount   = (int) $download->limit_count + 1;
 
         $updateQuery = $db->getQuery(true)
             ->update($db->quoteName('#__j2commerce_orderdownloads'))
-            ->set($db->quoteName('limit_count') . ' = :newCount')
+            ->set($db->quoteName('limit_count') . ' = ' . $db->quoteName('limit_count') . ' + 1')
             ->where($db->quoteName('j2commerce_orderdownload_id') . ' = :downloadId')
-            ->bind(':newCount', $newCount, ParameterType::INTEGER)
             ->bind(':downloadId', $downloadId, ParameterType::INTEGER);
+
+        if ($downloadLimit > 0) {
+            $updateQuery->where($db->quoteName('limit_count') . ' < :downloadLimit')
+                ->bind(':downloadLimit', $downloadLimit, ParameterType::INTEGER);
+        }
+
         $db->setQuery($updateQuery);
         $db->execute();
 
-        $newTotal        = (int) $productFile->download_total + 1;
+        // Nothing updated means the limit was already spent, whoever spent it.
+        if ($downloadLimit > 0 && $db->getAffectedRows() === 0) {
+            $this->app->enqueueMessage(Text::_('COM_J2COMMERCE_MYPROFILE_DOWNLOAD_LIMIT_REACHED'), 'error');
+            $this->app->redirect($redirectUrl);
+
+            return;
+        }
+
         $pfId            = (int) $productFile->j2commerce_productfile_id;
         $updateFileQuery = $db->getQuery(true)
             ->update($db->quoteName('#__j2commerce_productfiles'))
-            ->set($db->quoteName('download_total') . ' = :newTotal')
+            ->set($db->quoteName('download_total') . ' = ' . $db->quoteName('download_total') . ' + 1')
             ->where($db->quoteName('j2commerce_productfile_id') . ' = :pfId')
-            ->bind(':newTotal', $newTotal, ParameterType::INTEGER)
             ->bind(':pfId', $pfId, ParameterType::INTEGER);
         $db->setQuery($updateFileQuery);
         $db->execute();
