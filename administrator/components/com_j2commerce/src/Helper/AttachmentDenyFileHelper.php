@@ -15,6 +15,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Component\ComponentHelper;
+use Joomla\CMS\Factory;
 use Joomla\CMS\Log\Log;
 
 /**
@@ -433,12 +434,50 @@ README;
         }
     }
 
-    private static function warn(?callable $trace, string $traceLine, string $logLine): void
+    /**
+     * The one place a protection failure is reported, so every caller reaches the same
+     * three surfaces. Public because DownloadHelper decides some of these on its own.
+     *
+     * The category is the one the system plugin registers a logger for, and ERROR is inside
+     * the priorities that logger records without Site Debug — at WARNING on a category no
+     * logger claims, every line written here went nowhere. The install trace only exists
+     * while the installer is running, and nobody reads a log to find out whether an ordinary
+     * save worked, so the message is also put in front of whoever performed it.
+     */
+    public static function warn(?callable $trace, string $traceLine, string $logLine): void
     {
         if ($trace !== null) {
             $trace('ENSURE FILES FOLDER: ' . $traceLine);
         }
 
-        Log::add($logLine, Log::WARNING, 'j2commerce');
+        Log::add($logLine, Log::ERROR, 'com_j2commerce');
+
+        Factory::getApplication()->enqueueMessage($logLine, 'warning');
+    }
+
+    /**
+     * Drop the per-file rules from a directory that no longer holds a recorded download.
+     * Only a file carrying DOWNLOAD_MARKER is removed, so a tree-wide pair or a ruleset
+     * the site wrote itself is never touched.
+     *
+     * @since  6.6.0
+     */
+    public static function removeDownloadFileDeny(string $dir, ?callable $trace = null): void
+    {
+        foreach (['/.htaccess', '/web.config'] as $file) {
+            $path = $dir . $file;
+
+            if (!is_file($path) || !str_contains((string) @file_get_contents($path), self::DOWNLOAD_MARKER)) {
+                continue;
+            }
+
+            if (!@unlink($path)) {
+                self::warn(
+                    $trace,
+                    'failed to remove ' . $path,
+                    'Failed to remove ' . $path . ', which no longer names a stored downloadable file.'
+                );
+            }
+        }
     }
 }

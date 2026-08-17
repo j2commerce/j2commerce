@@ -958,11 +958,24 @@ class Com_J2commerceInstallerScript extends InstallerScript
             return;
         }
 
-        // A fresh install has no table yet, and an update must not die here.
+        // A fresh install has no table yet, and an update must not die here. It must not pass
+        // silently either: whoever ran the update is the only one in a position to act on it.
         try {
             DownloadHelper::protectRecordedFiles(fn (string $message) => $this->debugLog($message));
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
             $this->debugLog('PROTECT DOWNLOAD FILES: skipped');
+
+            Log::add(
+                'Stored downloadable files were not checked for direct web access: ' . $e->getMessage(),
+                Log::ERROR,
+                'com_j2commerce'
+            );
+
+            Factory::getApplication()->enqueueMessage(
+                'J2Commerce could not check that the downloadable files already stored are denied direct '
+                    . 'web access. Open a product with downloadable files and save it to try again.',
+                'warning'
+            );
 
             return;
         }

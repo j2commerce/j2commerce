@@ -485,10 +485,24 @@ final class DownloadHelper
             return;
         }
 
+        $recorded = self::recordedFilePaths();
+
+        if ($recorded === null) {
+            AttachmentDenyFileHelper::warn(
+                $trace,
+                'left the existing rules in place: the recorded file list could not be read',
+                'The list of stored downloadable files could not be read, so the rules in '
+                    . implode(', ', array_keys($byDir)) . ' were left as they are. Rewriting them from '
+                    . 'this save alone would have dropped the other downloads they name.'
+            );
+
+            return;
+        }
+
         // A rule file names every downloadable file in its directory, so one built from
         // this save alone would drop the siblings already recorded beside them.
-        foreach (self::recordedFilePaths() as $recorded) {
-            $resolved = self::resolveStoredFile($recorded);
+        foreach ($recorded as $recordedPath) {
+            $resolved = self::resolveStoredFile($recordedPath);
 
             if ($resolved !== null && isset($byDir[$resolved[0]])) {
                 $byDir[$resolved[0]][$resolved[1]] = $resolved[1];
@@ -507,7 +521,103 @@ final class DownloadHelper
      */
     public static function protectRecordedFiles(?callable $trace = null): void
     {
-        self::protectStoredFiles(self::recordedFilePaths(), $trace);
+        $recorded = self::recordedFilePaths();
+
+        if ($recorded === null) {
+            AttachmentDenyFileHelper::warn(
+                $trace,
+                'stored downloadable files were not checked: the recorded file list could not be read',
+                'The list of stored downloadable files could not be read, so this run did not check that '
+                    . 'they are denied direct web access.'
+            );
+
+            return;
+        }
+
+        self::protectStoredFiles($recorded, $trace);
+    }
+
+    /**
+     * Rebuild the rules of the directories rows just deleted were stored in, so a name the
+     * component no longer records stops being named in them, and a directory left holding no
+     * recorded download loses the rule files this component put there rather than keeping
+     * them for good.
+     *
+     * A removed row does not remove the file from disk, so a name dropped here is a file
+     * that goes back to being served — the same outcome the next save in that directory
+     * already produced, arrived at when the row went rather than whenever something else
+     * happened to rewrite it.
+     *
+     * @param   list<string>  $removedPaths  Site-relative stored paths of the rows just deleted.
+     *
+     * @since  6.6.0
+     */
+    public static function releaseStoredFiles(array $removedPaths, ?callable $trace = null): void
+    {
+        $dirs = [];
+
+        foreach ($removedPaths as $removedPath) {
+            if ($dir = self::resolveStoredDir((string) $removedPath)) {
+                $dirs[$dir] = $dir;
+            }
+        }
+
+        if ($dirs === []) {
+            return;
+        }
+
+        $recorded = self::recordedFilePaths();
+
+        if ($recorded === null) {
+            AttachmentDenyFileHelper::warn(
+                $trace,
+                'left the existing rules in place: the recorded file list could not be read',
+                'The list of stored downloadable files could not be read, so the rules in '
+                    . implode(', ', $dirs) . ' still name a file that is no longer stored.'
+            );
+
+            return;
+        }
+
+        $byDir = [];
+
+        foreach ($recorded as $recordedPath) {
+            if ($resolved = self::resolveStoredFile($recordedPath)) {
+                $byDir[$resolved[0]][$resolved[1]] = $resolved[1];
+            }
+        }
+
+        foreach ($dirs as $dir) {
+            if (isset($byDir[$dir])) {
+                AttachmentDenyFileHelper::writeDownloadFileDeny($dir, array_values($byDir[$dir]), $trace);
+
+                continue;
+            }
+
+            AttachmentDenyFileHelper::removeDownloadFileDeny($dir, $trace);
+        }
+    }
+
+    /**
+     * The directory of a stored path, for a row whose file may already be gone.
+     *
+     * @return  string|null  Absolute directory, or null when it sits under no allowed root.
+     */
+    private static function resolveStoredDir(string $storedPath): ?string
+    {
+        if ($storedPath === '' || preg_match('#^[a-z][a-z0-9+.-]*://#i', $storedPath)) {
+            return null;
+        }
+
+        $dir = @realpath(\dirname(JPATH_SITE . '/' . str_replace('\\', '/', $storedPath)));
+
+        if ($dir === false || !is_dir($dir)) {
+            return null;
+        }
+
+        // isAllowedResolvedPath() judges a file inside a root, so it is asked about the rule
+        // file this directory would carry rather than about the directory itself.
+        return self::isAllowedResolvedPath($dir . \DIRECTORY_SEPARATOR . '.htaccess') ? $dir : null;
     }
 
     /**
@@ -530,8 +640,13 @@ final class DownloadHelper
         return [\dirname($realFile), basename($realFile)];
     }
 
-    /** @return  list<string> */
-    private static function recordedFilePaths(): array
+    /**
+     * @return  list<string>|null  Null when the rows could not be read, which is not the
+     *                             same answer as none being recorded: a rule file names
+     *                             every download in its directory, so an empty list read
+     *                             off a failure would rewrite a wide ruleset as a narrow one.
+     */
+    private static function recordedFilePaths(): ?array
     {
         $db = Factory::getContainer()->get(DatabaseInterface::class);
 
@@ -544,8 +659,8 @@ final class DownloadHelper
 
             return array_map('strval', $db->loadColumn() ?: []);
         } catch (\Throwable) {
-            // The table does not exist yet during a first install, and neither caller may die here.
-            return [];
+            // The table does not exist yet during a first install, and no caller may die here.
+            return null;
         }
     }
 }
