@@ -150,6 +150,20 @@ class ArticleHelper
             return '';
         }
 
+        // Published state and view level only — publish_up/publish_down and the
+        // parent category's own state and access are not consulted here.
+        if ((int) $article->state !== 1) {
+            return '';
+        }
+
+        $user = Factory::getApplication()->getIdentity();
+        // No identity resolved (CLI) → Public only, rather than skipping the check.
+        $viewLevels = $user ? $user->getAuthorisedViewLevels() : [1];
+
+        if (!\in_array((int) $article->access, $viewLevels, true)) {
+            return '';
+        }
+
         // Clean title ampersands
         $article->title = OutputFilter::ampReplace($article->title);
 

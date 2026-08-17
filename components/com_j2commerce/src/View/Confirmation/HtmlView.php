@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Site\View\Confirmation;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\ArticleHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\DownloadHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
@@ -21,6 +22,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Router\Route;
+use Joomla\Registry\Registry;
 
 class HtmlView extends BaseHtmlView
 {
@@ -38,6 +40,7 @@ class HtmlView extends BaseHtmlView
     public array $orderDiscounts     = [];
     public array $downloads          = [];
     public bool $showingRecent       = false;
+    public string $articleHtml       = '';
 
     public function display($tpl = null): void
     {
@@ -136,6 +139,14 @@ class HtmlView extends BaseHtmlView
         $this->orderFees      = $model->getOrderFees();
         $this->orderDiscounts = $model->getOrderDiscounts();
         $this->downloads      = DownloadHelper::getOrderDownloads((string) ($this->order->order_id ?? ''));
+
+        // Article attached to the order's payment method (the plugin's articleid param)
+        $paymentPlugin = J2CommerceHelper::plugin()->getPlugin((string) ($this->order->orderpayment_type ?? ''), 'j2commerce');
+
+        if ($paymentPlugin) {
+            $pluginParams             = new Registry($paymentPlugin->params ?? '{}');
+            $this->articleHtml        = ArticleHelper::display((int) $pluginParams->get('articleid', 0), true);
+        }
 
         $this->_prepareDocument();
 

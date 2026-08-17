@@ -216,6 +216,15 @@ if ($info) {
                         </div>
                     <?php endif; ?>
 
+                    <?php // Article linked to the order's payment method ?>
+                    <?php if ($this->articleHtml !== '') : ?>
+                        <div class="j2c-block-article-content card mb-4">
+                            <div class="card-body">
+                                <?php echo $this->articleHtml; ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
                     <?php echo LayoutHelper::render('download.list', [
                         'downloads'  => $this->downloads,
                         'framework'  => 'bootstrap5',
