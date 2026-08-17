@@ -289,7 +289,7 @@ class CartsController extends BaseController
             $cartUrl = $model->getCartUrl();
 
             if ($ajax) {
-                if (isset($json['success'])) {
+                if (!empty($json['success'])) {
                     if ($config->get('addtocart_action', 1) == 3) {
                         $json['redirect'] = $cartUrl;
                     }
