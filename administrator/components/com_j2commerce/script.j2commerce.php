@@ -170,6 +170,8 @@ class Com_J2commerceInstallerScript extends InstallerScript
 
         $this->cleanupStaleCheckoutTemplates();
 
+        $this->removeObsoleteSchemaUpdates($parent);
+
         $this->seedOrderLedgerOnce();
 
         Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_UPDATE_SUCCESS'), 'success');
@@ -193,6 +195,51 @@ class Com_J2commerceInstallerScript extends InstallerScript
             $path = $dir . $file;
             if (is_file($path) && @unlink($path)) {
                 $this->debugLog("UPDATE: removed stale checkout template {$file}");
+            }
+        }
+    }
+
+    /**
+     * Drop schema update files the installed package no longer ships. Joomla overwrites files on
+     * update but never deletes retired ones, and ChangeSet parses every .sql in the folder without
+     * consulting #__schemas — so a retired delta keeps being reported by Extensions -> Manage ->
+     * Database forever, and Fix re-executes its DDL every time it is clicked.
+     *
+     * MUST run after Installer::parseSchemaUpdates(), never in preflight: until that pass completes,
+     * the on-disk files are the live upgrade bridge — a site still at an old #__schemas version
+     * executes them from this same folder to reach the current schema.
+     *
+     * The shipped set is read from the extracted package rather than hardcoded, so re-adding a
+     * retired filename can never delete a live file.
+     */
+    private function removeObsoleteSchemaUpdates($parent): void
+    {
+        $installed = JPATH_ADMINISTRATOR . '/components/com_j2commerce/sql/updates/mysql';
+        $shipped   = $parent->getParent()->getPath('source')
+            . '/administrator/components/com_j2commerce/sql/updates/mysql';
+
+        if (!is_dir($installed) || !is_dir($shipped)) {
+            return;
+        }
+
+        $keep = array_flip(array_map('basename', glob($shipped . '/*.sql') ?: []));
+
+        // An unreadable source must never be read as "the package ships nothing".
+        if (!$keep) {
+            return;
+        }
+
+        foreach (glob($installed . '/*.sql') ?: [] as $path) {
+            $file = basename($path);
+
+            // Only names matching the generated delta pattern are ever removed, so an
+            // unrelated .sql dropped in this folder by hand is left alone.
+            if (isset($keep[$file]) || !preg_match('/^\d+\.\d+\.\d+(\.\d+)?(-\d{4}-\d{2}-\d{2})?(-\d+)?\.sql$/D', $file)) {
+                continue;
+            }
+
+            if (@unlink($path)) {
+                $this->debugLog("UPDATE: removed obsolete schema update file {$file}");
             }
         }
     }
