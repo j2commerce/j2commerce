@@ -324,18 +324,24 @@
     // --- Remove Coupon ---
 
     document.addEventListener('click', function (e) {
-        const btn = e.target.closest('.j2c-remove-coupon');
+        const btn = e.target.closest('.j2c-remove-coupon, .j2commerce-remove-coupon');
         if (!btn) return;
         e.preventDefault();
         btn.disabled = true;
 
-        const form = btn.closest('.j2c-coupon-form');
+        // The order-totals row renders its own remove link outside the form. The coupon
+        // is gone from the cart either way, so every form the page hosts goes back to
+        // its input state — a page can carry more than one (cart page plus drawer).
+        const owner = btn.closest('.j2c-coupon-form');
+        const forms = owner ? [owner] : Array.from(document.querySelectorAll('.j2c-coupon-form'));
 
         postAction('carts.removeCouponAjax')
             .then(function (data) {
-                showInputState(form, 'coupon');
-                dispatchEvent(form, 'j2commerce:coupon:removed', {
-                    message: data.message || '', formId: form.id
+                forms.forEach(function (f) {
+                    showInputState(f, 'coupon');
+                });
+                dispatchEvent(forms[0] || document, 'j2commerce:coupon:removed', {
+                    message: data.message || '', formId: forms[0] ? forms[0].id : ''
                 });
                 notifyCartUpdated();
             })
@@ -391,18 +397,21 @@
     // --- Remove Voucher ---
 
     document.addEventListener('click', function (e) {
-        const btn = e.target.closest('.j2c-remove-voucher');
+        const btn = e.target.closest('.j2c-remove-voucher, .j2commerce-remove-voucher');
         if (!btn) return;
         e.preventDefault();
         btn.disabled = true;
 
-        const form = btn.closest('.j2c-voucher-form');
+        const owner = btn.closest('.j2c-voucher-form');
+        const forms = owner ? [owner] : Array.from(document.querySelectorAll('.j2c-voucher-form'));
 
         postAction('carts.removeVoucherAjax')
             .then(function (data) {
-                showInputState(form, 'voucher');
-                dispatchEvent(form, 'j2commerce:voucher:removed', {
-                    message: data.message || '', formId: form.id
+                forms.forEach(function (f) {
+                    showInputState(f, 'voucher');
+                });
+                dispatchEvent(forms[0] || document, 'j2commerce:voucher:removed', {
+                    message: data.message || '', formId: forms[0] ? forms[0].id : ''
                 });
                 notifyCartUpdated();
             })
