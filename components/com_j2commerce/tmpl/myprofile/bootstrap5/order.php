@@ -46,7 +46,7 @@ $fmt = static function (float $amount) use ($currencyCode, $currencyValue): stri
 };
 
 $cssClass = !empty($order->orderstatus_cssclass) ? $order->orderstatus_cssclass : 'bg-secondary';
-$statusName = !empty($order->orderstatus_name) ? Text::_($order->orderstatus_name) : $this->escape($order->order_state ?? '');
+$statusName = Text::_($order->orderstatus_name ?? '');
 ?>
 
 <div class="j2commerce j2commerce-order-detail">

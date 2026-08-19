@@ -42,7 +42,6 @@ class MyprofileModel extends BaseDatabaseModel
                 'a.order_id',
                 'a.order_total',
                 'a.order_state_id',
-                'a.order_state',
                 'a.created_on',
                 'a.invoice_prefix',
                 'a.invoice_number',

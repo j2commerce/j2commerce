@@ -482,7 +482,7 @@ class MyprofileController extends BaseController
                 'order_id'    => $item->order_id,
                 'date'        => HTMLHelper::_('date', $item->created_on, $dateFormat),
                 'invoice'     => $item->order_id,
-                'status_name' => !empty($item->orderstatus_name) ? Text::_($item->orderstatus_name) : htmlspecialchars($item->order_state ?? '', ENT_QUOTES, 'UTF-8'),
+                'status_name' => Text::_($item->orderstatus_name ?? ''),
                 'status_css'  => !empty($item->orderstatus_cssclass) ? $item->orderstatus_cssclass : 'bg-secondary',
                 'amount'      => CurrencyHelper::format(
                     (float) $item->order_total,

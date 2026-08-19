@@ -137,7 +137,6 @@ class OrdersModel extends ListModel
             $db->quoteName('a.is_shippable'),
             $db->quoteName('a.customer_note'),
             $db->quoteName('a.order_state_id'),
-            $db->quoteName('a.order_state'),
             $db->quoteName('a.created_on'),
             $db->quoteName('a.modified_on'),
         ]);
@@ -434,7 +433,7 @@ class OrdersModel extends ListModel
                     $db->quoteName('a.order_id') . ' LIKE :search1 OR ' .
                     $db->quoteName('a.j2commerce_order_id') . ' LIKE :search2 OR ' .
                     $db->quoteName('a.user_email') . ' LIKE :search3 OR ' .
-                    $db->quoteName('a.order_state') . ' LIKE :search4 OR ' .
+                    $db->quoteName('os.orderstatus_name') . ' LIKE :search4 OR ' .
                     $db->quoteName('a.orderpayment_type') . ' LIKE :search5 OR ' .
                     'CONCAT(' . $db->quoteName('oi.billing_first_name') . ', ' . $db->quote(' ') . ', ' .
                     $db->quoteName('oi.billing_last_name') . ') LIKE :search6 OR ' .
@@ -492,6 +491,13 @@ class OrdersModel extends ListModel
             'LEFT',
             $db->quoteName('#__j2commerce_orderinfos', 'oi') .
             ' ON ' . $db->quoteName('a.order_id') . ' = ' . $db->quoteName('oi.order_id')
+        );
+
+        // The search predicate matches the status name, so this join is required too.
+        $query->join(
+            'LEFT',
+            $db->quoteName('#__j2commerce_orderstatuses', 'os') .
+            ' ON ' . $db->quoteName('a.order_state_id') . ' = ' . $db->quoteName('os.j2commerce_orderstatus_id')
         );
 
         $this->buildWhereClause($query);
@@ -560,6 +566,13 @@ class OrdersModel extends ListModel
             'LEFT',
             $db->quoteName('#__j2commerce_orderinfos', 'oi') .
             ' ON ' . $db->quoteName('a.order_id') . ' = ' . $db->quoteName('oi.order_id')
+        );
+
+        // The search predicate matches the status name, so this join is required too.
+        $query->join(
+            'LEFT',
+            $db->quoteName('#__j2commerce_orderstatuses', 'os') .
+            ' ON ' . $db->quoteName('a.order_state_id') . ' = ' . $db->quoteName('os.j2commerce_orderstatus_id')
         );
 
         $this->buildWhereClause($query);

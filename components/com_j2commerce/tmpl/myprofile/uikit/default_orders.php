@@ -52,7 +52,7 @@ $limit      = isset($this->pagination) ? $this->pagination->limit : 20;
                     <?php foreach ($orders as $item): ?>
                     <?php
                     $cssClass   = !empty($item->orderstatus_cssclass) ? $item->orderstatus_cssclass : 'uk-badge';
-                    $statusName = !empty($item->orderstatus_name) ? Text::_($item->orderstatus_name) : $this->escape($item->order_state ?? '');
+                    $statusName = Text::_($item->orderstatus_name ?? '');
                     ?>
                     <?php $orderViewUrl = Route::_('index.php?option=com_j2commerce&view=myprofile&layout=order&order_id=' . urlencode($item->order_id)); ?>
                     <tr>
