@@ -74,4 +74,19 @@ class JsonapiView extends J2CommerceJsonapiView
         'user_id',
         'order_state_id',
     ];
+
+    /** @deprecated order_state is served from the joined status name; use order_state_id or orderstatus_name. */
+    protected function prepareItem($item)
+    {
+        $item = parent::prepareItem($item);
+
+        // Core calls this before it tests the item, so a missing order arrives here as false.
+        if (!isset($item->{$this->pkField})) {
+            return $item;
+        }
+
+        $item->order_state = $item->orderstatus_name ?? '';
+
+        return $item;
+    }
 }

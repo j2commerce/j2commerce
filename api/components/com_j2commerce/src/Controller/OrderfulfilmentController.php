@@ -46,11 +46,13 @@ class OrderfulfilmentController extends J2CommerceApiController
         $info     = $order->orderinfo ?? null;
         $shipping = $order->ordershipping ?? null;
 
+        // order_state is deprecated: it is served from the joined status name, so it can no
+        // longer disagree with order_state_id. Integrators should read order_state_id.
         $data = (object) [
             'id'                        => (int) $order->j2commerce_order_id,
             'order_id'                  => $order->order_id,
             'order_state_id'            => (int) ($order->order_state_id ?? 0),
-            'order_state'               => $order->order_state ?? '',
+            'order_state'               => $order->orderstatus_name ?? '',
             'shipping_first_name'       => $info->shipping_first_name ?? '',
             'shipping_middle_name'      => $info->shipping_middle_name ?? '',
             'shipping_last_name'        => $info->shipping_last_name ?? '',
