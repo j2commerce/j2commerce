@@ -15,6 +15,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
+use Joomla\CMS\Language\Text;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
 use Joomla\Registry\Registry;
@@ -843,6 +844,39 @@ class CartHelper
         $stored = (new Registry($cartitemParams ?? ''))->get(self::CART_ITEM_SIGNATURE_PARAM, '');
 
         return \is_scalar($stored) ? (string) $stored : '';
+    }
+
+    /**
+     * Both the server-rendered form and the apply-by-AJAX response read the label from here,
+     * so the two paths cannot drift in wording or currency formatting.
+     *
+     * @since   6.5.1
+     */
+    public static function couponDiscountLabel(?object $coupon): string
+    {
+        if (!$coupon || !isset($coupon->value, $coupon->value_type)) {
+            return '';
+        }
+
+        return str_contains((string) $coupon->value_type, 'percentage')
+            ? Text::sprintf(
+                'COM_J2COMMERCE_COUPON_DISCOUNT_PERCENTAGE',
+                rtrim(rtrim(number_format((float) $coupon->value, 2), '0'), '.')
+            )
+            : Text::sprintf(
+                'COM_J2COMMERCE_COUPON_DISCOUNT_FIXED',
+                CurrencyHelper::format((float) $coupon->value)
+            );
+    }
+
+    /** Voucher twin of couponDiscountLabel() — takes the ledger balance object from VoucherModel::getVoucher(). */
+    public static function voucherBalanceLabel(?object $voucher): string
+    {
+        if (!$voucher || !isset($voucher->amount)) {
+            return '';
+        }
+
+        return Text::sprintf('COM_J2COMMERCE_VOUCHER_BALANCE', CurrencyHelper::format((float) $voucher->amount));
     }
 
     // =========================================================================

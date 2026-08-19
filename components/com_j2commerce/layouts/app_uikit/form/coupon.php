@@ -18,6 +18,7 @@ $formId       = $displayData['formId'] ?? 'j2c-coupon';
 $variant      = $displayData['variant'] ?? 'inline';
 $expanded     = !empty($displayData['expanded']);
 $discountLabel = $displayData['discountLabel'] ?? '';
+$showDiscount  = !empty($displayData['showDiscount']);
 $hasCoupon    = !empty($couponCode);
 
 ?>
@@ -28,14 +29,14 @@ $hasCoupon    = !empty($couponCode);
         <?php if ($hasCoupon) : ?>
             <span class="uk-label uk-label-success uk-margin-small-left j2c-coupon-badge"><?php echo htmlspecialchars($couponCode, ENT_QUOTES, 'UTF-8'); ?></span>
             <?php if ($discountLabel) : ?>
-                <small class="uk-text-muted uk-margin-small-left"><?php echo htmlspecialchars($discountLabel, ENT_QUOTES, 'UTF-8'); ?></small>
+                <small class="uk-text-muted uk-margin-small-left j2c-coupon-discount"><?php echo htmlspecialchars($discountLabel, ENT_QUOTES, 'UTF-8'); ?></small>
             <?php endif; ?>
         <?php endif; ?>
     </a>
     <div class="uk-accordion-content">
 <?php endif; ?>
 
-<div class="j2c-coupon-form" id="<?php echo $formId; ?>" data-type="coupon">
+<div class="j2c-coupon-form" id="<?php echo $formId; ?>" data-type="coupon" data-show-discount="<?php echo $showDiscount ? '1' : '0'; ?>">
     <?php if ($hasCoupon) : ?>
         <div class="uk-flex uk-flex-middle uk-flex-between uk-padding-small">
             <span>
@@ -43,7 +44,7 @@ $hasCoupon    = !empty($couponCode);
                     <span class="icon-tag uk-margin-small-right" aria-hidden="true"></span><?php echo htmlspecialchars($couponCode, ENT_QUOTES, 'UTF-8'); ?>
                 </span>
                 <?php if ($discountLabel) : ?>
-                    <small class="uk-text-muted uk-margin-small-left"><?php echo htmlspecialchars($discountLabel, ENT_QUOTES, 'UTF-8'); ?></small>
+                    <small class="uk-text-muted uk-margin-small-left j2c-coupon-discount"><?php echo htmlspecialchars($discountLabel, ENT_QUOTES, 'UTF-8'); ?></small>
                 <?php endif; ?>
             </span>
             <button type="button" class="uk-button uk-button-link uk-text-danger j2c-remove-coupon"

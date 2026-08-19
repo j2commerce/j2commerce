@@ -19,6 +19,7 @@ $variant      = $displayData['variant'] ?? 'inline';
 $accordionId  = $displayData['accordionId'] ?? '';
 $expanded     = !empty($displayData['expanded']);
 $discountLabel = $displayData['discountLabel'] ?? '';
+$showDiscount  = !empty($displayData['showDiscount']);
 $hasCoupon    = !empty($couponCode);
 
 ?>
@@ -35,7 +36,7 @@ $hasCoupon    = !empty($couponCode);
             <?php if ($hasCoupon) : ?>
                 <span class="badge bg-success ms-2 j2c-coupon-badge"><?php echo htmlspecialchars($couponCode, ENT_QUOTES, 'UTF-8'); ?></span>
                 <?php if ($discountLabel) : ?>
-                    <small class="text-body-tertiary ms-1"><?php echo htmlspecialchars($discountLabel, ENT_QUOTES, 'UTF-8'); ?></small>
+                    <small class="text-body-tertiary ms-1 j2c-coupon-discount"><?php echo htmlspecialchars($discountLabel, ENT_QUOTES, 'UTF-8'); ?></small>
                 <?php endif; ?>
             <?php endif; ?>
         </button>
@@ -46,7 +47,7 @@ $hasCoupon    = !empty($couponCode);
         <div class="accordion-body">
 <?php endif; ?>
 
-<div class="j2c-coupon-form" id="<?php echo $formId; ?>" data-type="coupon">
+<div class="j2c-coupon-form" id="<?php echo $formId; ?>" data-type="coupon" data-show-discount="<?php echo $showDiscount ? '1' : '0'; ?>">
     <?php if ($hasCoupon) : ?>
         <div class="d-flex align-items-center justify-content-between py-1">
             <span>
@@ -54,7 +55,7 @@ $hasCoupon    = !empty($couponCode);
                     <span class="icon-tag me-1" aria-hidden="true"></span><?php echo htmlspecialchars($couponCode, ENT_QUOTES, 'UTF-8'); ?>
                 </span>
                 <?php if ($discountLabel) : ?>
-                    <small class="text-body-tertiary ms-1"><?php echo htmlspecialchars($discountLabel, ENT_QUOTES, 'UTF-8'); ?></small>
+                    <small class="text-body-tertiary ms-1 j2c-coupon-discount"><?php echo htmlspecialchars($discountLabel, ENT_QUOTES, 'UTF-8'); ?></small>
                 <?php endif; ?>
             </span>
             <button type="button" class="btn btn-sm btn-link text-danger p-0 j2c-remove-coupon"

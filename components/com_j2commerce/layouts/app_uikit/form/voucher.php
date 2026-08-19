@@ -18,6 +18,7 @@ $formId       = $displayData['formId'] ?? 'j2c-voucher';
 $variant      = $displayData['variant'] ?? 'inline';
 $expanded     = !empty($displayData['expanded']);
 $discountLabel = $displayData['discountLabel'] ?? '';
+$showDiscount  = !empty($displayData['showDiscount']);
 $hasVoucher   = !empty($voucherCode);
 
 ?>
@@ -28,14 +29,14 @@ $hasVoucher   = !empty($voucherCode);
         <?php if ($hasVoucher) : ?>
             <span class="uk-label uk-label-success uk-margin-small-left j2c-voucher-badge"><?php echo htmlspecialchars($voucherCode, ENT_QUOTES, 'UTF-8'); ?></span>
             <?php if ($discountLabel) : ?>
-                <small class="uk-text-muted uk-margin-small-left"><?php echo htmlspecialchars($discountLabel, ENT_QUOTES, 'UTF-8'); ?></small>
+                <small class="uk-text-muted uk-margin-small-left j2c-voucher-discount"><?php echo htmlspecialchars($discountLabel, ENT_QUOTES, 'UTF-8'); ?></small>
             <?php endif; ?>
         <?php endif; ?>
     </a>
     <div class="uk-accordion-content">
 <?php endif; ?>
 
-<div class="j2c-voucher-form" id="<?php echo $formId; ?>" data-type="voucher">
+<div class="j2c-voucher-form" id="<?php echo $formId; ?>" data-type="voucher" data-show-discount="<?php echo $showDiscount ? '1' : '0'; ?>">
     <?php if ($hasVoucher) : ?>
         <div class="uk-flex uk-flex-middle uk-flex-between uk-padding-small">
             <span>
@@ -43,7 +44,7 @@ $hasVoucher   = !empty($voucherCode);
                     <span class="icon-tag uk-margin-small-right" aria-hidden="true"></span><?php echo htmlspecialchars($voucherCode, ENT_QUOTES, 'UTF-8'); ?>
                 </span>
                 <?php if ($discountLabel) : ?>
-                    <small class="uk-text-muted uk-margin-small-left"><?php echo htmlspecialchars($discountLabel, ENT_QUOTES, 'UTF-8'); ?></small>
+                    <small class="uk-text-muted uk-margin-small-left j2c-voucher-discount"><?php echo htmlspecialchars($discountLabel, ENT_QUOTES, 'UTF-8'); ?></small>
                 <?php endif; ?>
             </span>
             <button type="button" class="uk-button uk-button-link uk-text-danger j2c-remove-voucher"

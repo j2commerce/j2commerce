@@ -40,6 +40,7 @@
         applyBtnBase:   'btn btn-outline-secondary',
         fieldError:     'j2c-field-error text-danger small mt-1',
         accordionBadge: 'badge bg-success ms-2',
+        discountLabel:  'text-body-tertiary ms-1',
     };
 
     const classes = options.classes || {};
@@ -107,10 +108,21 @@
 
     // --- Form state switching ---
 
-    function showAppliedState(form, code, type) {
+    /** Build the "10% Discount" / "$25 Balance" note the server renders beside the badge. */
+    function buildDiscountLabel(text, type) {
+        const label = document.createElement('small');
+        label.className = cls('discountLabel') + ' j2c-' + type + '-discount';
+        label.textContent = text;
+        return label;
+    }
+
+    function showAppliedState(form, code, type, discountLabel) {
         const removeClass  = type === 'coupon' ? 'j2c-remove-coupon' : 'j2c-remove-voucher';
         const removeTitle  = type === 'coupon' ? (strings.removeCoupon || 'Remove Coupon') : (strings.removeVoucher || 'Remove Voucher');
         const removeText   = strings.remove || 'Remove';
+
+        // The label is a server string, and the form states whether this instance shows one.
+        const label = form.dataset.showDiscount === '0' ? '' : (discountLabel || '');
 
         // Badge: <span class="badge ..."><span class="icon-tag ..." aria-hidden></span> CODE</span>
         const iconSpan = document.createElement('span');
@@ -134,10 +146,18 @@
         removeBtn.appendChild(timesSpan);
         removeBtn.appendChild(document.createTextNode(' ' + removeText));
 
+        // Badge and label share a wrapper so the row still spaces them against the Remove button
+        const badgeWrap = document.createElement('span');
+        badgeWrap.appendChild(badge);
+
+        if (label) {
+            badgeWrap.appendChild(buildDiscountLabel(label, type));
+        }
+
         // Row wrapper
         const row = document.createElement('div');
         row.className = cls('appliedRow');
-        row.appendChild(badge);
+        row.appendChild(badgeWrap);
         row.appendChild(removeBtn);
 
         form.replaceChildren(row);
@@ -154,6 +174,17 @@
                     header.appendChild(existingBadge);
                 }
                 existingBadge.textContent = code;
+
+                let existingLabel = header.querySelector('.j2c-' + type + '-discount');
+                if (label) {
+                    if (!existingLabel) {
+                        existingLabel = buildDiscountLabel(label, type);
+                        existingBadge.insertAdjacentElement('afterend', existingLabel);
+                    }
+                    existingLabel.textContent = label;
+                } else if (existingLabel) {
+                    existingLabel.remove();
+                }
             }
         }
     }
@@ -197,11 +228,13 @@
 
         form.replaceChildren(container);
 
-        // Remove accordion header badge
+        // Remove accordion header badge and its discount note
         const item = form.closest(acc.itemSelector);
         if (item) {
             const badge = item.querySelector('.j2c-' + type + '-badge');
             if (badge) badge.remove();
+            const label = item.querySelector('.j2c-' + type + '-discount');
+            if (label) label.remove();
         }
     }
 
@@ -267,7 +300,7 @@
         postAction('carts.applyCouponAjax', { coupon: code })
             .then(function (data) {
                 if (data.success) {
-                    showAppliedState(form, code, 'coupon');
+                    showAppliedState(form, code, 'coupon', data.discountLabel);
                     dispatchEvent(form, 'j2commerce:coupon:applied', {
                         code: code, message: data.message || '', formId: form.id
                     });
@@ -334,7 +367,7 @@
         postAction('carts.applyVoucherAjax', { voucher: code })
             .then(function (data) {
                 if (data.success) {
-                    showAppliedState(form, code, 'voucher');
+                    showAppliedState(form, code, 'voucher', data.discountLabel);
                     dispatchEvent(form, 'j2commerce:voucher:applied', {
                         code: code, message: data.message || '', formId: form.id
                     });

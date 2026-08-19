@@ -11,7 +11,7 @@
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
-use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\CartHelper;
 use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -62,6 +62,7 @@ if (!$assetsRegistered) {
             'applyBtnBase'   => 'uk-button uk-button-default',
             'fieldError'     => 'j2c-field-error uk-text-danger uk-text-small uk-margin-small-top',
             'accordionBadge' => 'uk-label uk-label-success uk-margin-small-left',
+            'discountLabel'  => 'uk-text-muted uk-margin-small-left',
         ] : [
             'appliedRow'     => 'd-flex align-items-center justify-content-between py-1',
             'badge'          => 'badge bg-success',
@@ -73,6 +74,7 @@ if (!$assetsRegistered) {
             'applyBtnBase'   => 'btn btn-outline-secondary',
             'fieldError'     => 'j2c-field-error text-danger small mt-1',
             'accordionBadge' => 'badge bg-success ms-2',
+            'discountLabel'  => 'text-body-tertiary ms-1',
         ],
         'accordion' => $isUk
             ? ['itemSelector' => 'li', 'headerSelector' => '.uk-accordion-title']
@@ -97,14 +99,7 @@ if ($hasCoupon && $showDiscount) {
         $couponCache[$couponCode] = $couponModel?->getCouponByCode($couponCode);
     }
 
-    $couponRecord = $couponCache[$couponCode];
-
-    if ($couponRecord) {
-        $isPercentage = str_contains($couponRecord->value_type, 'percentage');
-        $discountLabel = $isPercentage
-            ? Text::sprintf('COM_J2COMMERCE_COUPON_DISCOUNT_PERCENTAGE', rtrim(rtrim(number_format((float) $couponRecord->value, 2), '0'), '.'))
-            : Text::sprintf('COM_J2COMMERCE_COUPON_DISCOUNT_FIXED', CurrencyHelper::format((float) $couponRecord->value));
-    }
+    $discountLabel = CartHelper::couponDiscountLabel($couponCache[$couponCode]);
 }
 
 $displayData['discountLabel'] = $discountLabel;
