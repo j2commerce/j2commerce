@@ -117,7 +117,7 @@ class OrderTable extends Table
             'invoice_prefix', 'orderpayment_type', 'transaction_id',
             'transaction_status', 'transaction_details', 'currency_code',
             'ip_address', 'customer_note', 'customer_language',
-            'customer_group', 'order_state',
+            'customer_group',
         ];
 
         foreach ($stringFields as $field) {
