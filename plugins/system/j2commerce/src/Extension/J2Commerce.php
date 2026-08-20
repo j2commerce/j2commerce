@@ -354,6 +354,16 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             return;
         }
 
+        $lang = $app->getLanguage();
+
+        // The component installs its language into its own folder, not administrator/language,
+        // so the first load only succeeds where a translation pack happens to have written a
+        // copy there -- never for English. Fall back the way ComponentDispatcher::loadLanguage()
+        // does, otherwise COM_J2COMMERCE_* keys used by plugin manifests render as raw keys on
+        // every admin page outside the component, the Plugins manager included.
+        $lang->load('com_j2commerce', JPATH_ADMINISTRATOR)
+            || $lang->load('com_j2commerce', JPATH_ADMINISTRATOR . '/components/com_j2commerce');
+
         $registryFile = JPATH_ADMINISTRATOR . '/components/com_j2commerce/language_registry.json';
 
         if (!is_file($registryFile)) {
@@ -365,10 +375,6 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         if (empty($extensions) || !\is_array($extensions)) {
             return;
         }
-
-        $lang = $app->getLanguage();
-
-        $lang->load('com_j2commerce', JPATH_ADMINISTRATOR);
 
         foreach ($extensions as $extension) {
             $lang->load($extension . '.sys', JPATH_ADMINISTRATOR);
