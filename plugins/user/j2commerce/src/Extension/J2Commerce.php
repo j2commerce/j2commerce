@@ -18,10 +18,12 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Document\HtmlDocument;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Filter\InputFilter;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\Router\Route;
+use Joomla\CMS\Session\Session;
 use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\User\UserFactoryInterface;
 use Joomla\Database\DatabaseAwareTrait;
@@ -47,8 +49,17 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
     /** AJAX validation of address fields during user registration. */
     public function onAjaxJ2commerce(Event $event): void
     {
-        $app  = $this->getApplication();
-        $post = $app->getInput()->get('j2reg', [], 'ARRAY');
+        $app = $this->getApplication();
+
+        // Registration is open to guests, so the token is the only caller check
+        // available here — every com_j2commerce AJAX surface carries one.
+        if (!Session::checkToken('request')) {
+            $event->setArgument('result', json_encode(['error' => ['token' => Text::_('JINVALID_TOKEN')]]));
+
+            return;
+        }
+
+        $post = $this->cleanFieldMap($app->getInput()->get('j2reg', [], 'ARRAY'));
 
         $app->getSession()->set('j2commerce.userregister', $post);
 
@@ -67,6 +78,31 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         $json = $errors ? ['error' => $errors] : ['success' => 1];
 
         $event->setArgument('result', json_encode($json));
+    }
+
+    /**
+     * The ARRAY input filter is a bare cast, so its elements arrive uncleaned.
+     * Every other address-write path in the component reads through getString().
+     */
+    private function cleanFieldMap(array $raw): array
+    {
+        $filter = InputFilter::getInstance();
+        $clean  = [];
+
+        foreach ($raw as $key => $value) {
+            if (\is_array($value)) {
+                $clean[$key] = array_map(
+                    static fn ($item): string => \is_scalar($item) ? $filter->clean((string) $item, 'string') : '',
+                    $value
+                );
+
+                continue;
+            }
+
+            $clean[$key] = \is_scalar($value) ? $filter->clean((string) $value, 'string') : '';
+        }
+
+        return $clean;
     }
 
     public function onContentPrepareForm(Event $event): void
@@ -103,8 +139,8 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             return;
         }
 
-        $app           = $this->getApplication();
-        $j2Fields      = $app->getInput()->get('j2reg', [], 'ARRAY');
+        $app      = $this->getApplication();
+        $j2Fields = $this->cleanFieldMap($app->getInput()->get('j2reg', [], 'ARRAY'));
 
         if (empty($j2Fields)) {
             return;
