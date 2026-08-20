@@ -17,6 +17,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 use Joomla\CMS\Access\Access;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Table\Table;
+use Joomla\CMS\User\UserHelper;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
 
@@ -1425,7 +1426,7 @@ final class SampleDataHelper
             $user->name         = $firstName . ' ' . $lastName;
             $user->username     = $username;
             $user->email        = $email;
-            $user->password     = password_hash('SamplePass123!', PASSWORD_DEFAULT);
+            $user->password     = UserHelper::hashPassword(UserHelper::genRandomPassword(32));
             $user->block        = 0;
             $user->sendEmail    = 0;
             $user->registerDate = $now;
@@ -1509,7 +1510,7 @@ final class SampleDataHelper
         $user->name         = $name;
         $user->username     = $username;
         $user->email        = $email;
-        $user->password     = password_hash('SamplePass123!', PASSWORD_DEFAULT);
+        $user->password     = UserHelper::hashPassword(UserHelper::genRandomPassword(32));
         $user->block        = 0;
         $user->sendEmail    = 0;
         $user->registerDate = $now;
