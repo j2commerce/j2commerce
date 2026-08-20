@@ -22,6 +22,7 @@ use Joomla\CMS\Layout\LayoutHelper;
 $platform = J2CommerceHelper::platform();
 $checkoutPriceDisplay = (int) $this->params->get('checkout_price_display_options', 0);
 $showThumbCart = (int) $this->params->get('show_thumb_cart', 1);
+$showCartItemLink = (int) $this->params->get('show_cart_item_link', 0);
 $enableCoupon = (int) $this->params->get('enable_coupon', 0);
 $enableVoucher = (int) $this->params->get('enable_voucher', 0);
 
@@ -70,6 +71,16 @@ $grandTotalValue = $totals['grandtotal']['value'] ?? '';
                     }
 
                     $qty = (int) ($item->orderitem_quantity ?? $item->product_qty ?? 1);
+                    $productLinkData = $showCartItemLink ? [
+                        'title'            => (string) ($item->orderitem_name ?? ''),
+                        'product_id'       => (int) ($item->product_id ?? 0),
+                        'linkable'         => !empty($item->product_row_id) && (int) ($item->product_enabled ?? 0) === 1,
+                        'article_id'       => ($item->product_source ?? '') === 'com_content' ? (int) ($item->product_source_id ?? 0) : 0,
+                        'article_alias'    => (string) ($item->product_article_alias ?? ''),
+                        'article_catid'    => (int) ($item->product_article_catid ?? 0),
+                        'article_language' => (string) ($item->product_article_language ?? ''),
+                        'attribs'          => ['target' => '_blank', 'rel' => 'noopener'],
+                    ] : [];
                     $lineTotal = ($this->order && method_exists($this->order, 'get_formatted_lineitem_total'))
                         ? $this->order->get_formatted_lineitem_total($item, $checkoutPriceDisplay)
                         : 0;
@@ -87,7 +98,9 @@ $grandTotalValue = $totals['grandtotal']['value'] ?? '';
                         <?php endif; ?>
 
                         <div class="uk-flex-1" style="min-width:0;">
-                            <div class="uk-text-bold uk-text-truncate"><?php echo $this->escape($item->orderitem_name); ?></div>
+                            <div class="uk-text-bold uk-text-truncate"><?php echo $showCartItemLink
+                                ? LayoutHelper::render('product.product_link', $productLinkData, JPATH_ROOT . '/components/com_j2commerce/layouts')
+                                : $this->escape($item->orderitem_name); ?></div>
                             <?php if ($this->params->get('show_sku', 1) && !empty($item->orderitem_sku)): ?>
                                 <div class="cart-product-sku uk-text-small">
                                     <span class="cart-item-title uk-text-meta"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_SKU'); ?>:</span>

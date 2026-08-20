@@ -24,6 +24,7 @@ $showThumbCart = (int) $this->params->get('show_thumb_cart', 1);
 $showPriceField = (int) $this->params->get('show_price_field', 1);
 $showSku = (int) $this->params->get('show_sku', 1);
 $checkoutPriceDisplay = (int) $this->params->get('checkout_price_display_options', 0);
+$showCartItemLink = (int) $this->params->get('show_cart_item_link', 0);
 
 // Column count for footer colspan
 $colspan = 2; // Product + Total always shown
@@ -65,6 +66,16 @@ if ($showItemTax && isset($this->taxes) && \count($this->taxes)) {
                         ? HTMLHelper::_('cleanImageURL', $platform->getImagePath($rawThumbImage))->url
                         : '';
                     $qty = (int) ($item->orderitem_quantity ?? $item->product_qty ?? 1);
+                    $productLinkData = $showCartItemLink ? [
+                        'title'            => (string) ($item->orderitem_name ?? ''),
+                        'product_id'       => (int) ($item->product_id ?? 0),
+                        'linkable'         => !empty($item->product_row_id) && (int) ($item->product_enabled ?? 0) === 1,
+                        'article_id'       => ($item->product_source ?? '') === 'com_content' ? (int) ($item->product_source_id ?? 0) : 0,
+                        'article_alias'    => (string) ($item->product_article_alias ?? ''),
+                        'article_catid'    => (int) ($item->product_article_catid ?? 0),
+                        'article_language' => (string) ($item->product_article_language ?? ''),
+                        'attribs'          => ['target' => '_blank', 'rel' => 'noopener'],
+                    ] : [];
                     ?>
                     <tr>
                         <td>
@@ -76,7 +87,9 @@ if ($showItemTax && isset($this->taxes) && \count($this->taxes)) {
                                          width="50">
                                 <?php endif; ?>
                                 <div>
-                                    <span class="fw-bold"><?php echo $this->escape($item->orderitem_name); ?></span>
+                                    <span class="fw-bold"><?php echo $showCartItemLink
+                                        ? LayoutHelper::render('product.product_link', $productLinkData, JPATH_ROOT . '/components/com_j2commerce/layouts')
+                                        : $this->escape($item->orderitem_name); ?></span>
                                     <?php if (!empty($item->orderitemattributes)) : ?>
                                         <div class="mt-1">
                                             <?php echo LayoutHelper::render('orderitem.attributes', [

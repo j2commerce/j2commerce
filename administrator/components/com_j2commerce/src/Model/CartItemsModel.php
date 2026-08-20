@@ -142,6 +142,17 @@ class CartItemsModel extends ListModel
             'p.taxprofile_id  AS taxprofile_id',
             'c.title          AS product_name',
         ])
+            // Everything the site-side product.product_link layout needs to build either surface
+            // URL without a per-row lookup. Both tables are already joined below for the title,
+            // so this costs nothing beyond the wider row.
+            ->select([
+                'p.j2commerce_product_id AS product_row_id',
+                'p.product_source        AS product_source',
+                'p.product_source_id     AS product_source_id',
+                'c.alias                 AS product_article_alias',
+                'c.catid                 AS product_article_catid',
+                'c.language              AS product_article_language',
+            ])
             ->join(
                 'LEFT',
                 $db->quoteName('#__j2commerce_products', 'p') .
