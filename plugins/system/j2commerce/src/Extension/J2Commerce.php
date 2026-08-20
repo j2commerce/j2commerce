@@ -2465,47 +2465,59 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         }
 
         try {
-            // variant_name contains comma-separated option value IDs
-            $optionValueIds = explode(',', $variant->variant_name);
+            // getProductVariants() aliases #__j2commerce_product_variant_optionvalues
+            // .product_optionvalue_ids to variant_name, so these are PRODUCT option
+            // value ids and have to be resolved through #__j2commerce_product_optionvalues
+            // — the same route ProductHelper::getVariantNamesByCSV() takes for the
+            // variant's display name. Reading them straight out of
+            // #__j2commerce_optionvalues is a different key space, so any row that
+            // happens to share the number answers instead.
+            $productOptionValueIds = array_values(array_unique(array_filter(
+                array_map('intval', explode(',', (string) $variant->variant_name)),
+                static fn (int $id): bool => $id > 0
+            )));
 
-            foreach ($optionValueIds as $optionValueId) {
-                $optionValueId = (int) trim($optionValueId);
+            if (empty($productOptionValueIds)) {
+                return $properties;
+            }
 
-                if ($optionValueId <= 0) {
+            $db    = $this->getDatabase();
+            $query = $db->getQuery(true)
+                ->select([
+                    $db->quoteName('o.option_unique_name'),
+                    $db->quoteName('ov.optionvalue_name'),
+                ])
+                ->from($db->quoteName('#__j2commerce_product_optionvalues', 'pov'))
+                ->join(
+                    'INNER',
+                    $db->quoteName('#__j2commerce_optionvalues', 'ov')
+                    . ' ON ' . $db->quoteName('pov.optionvalue_id') . ' = ' . $db->quoteName('ov.j2commerce_optionvalue_id')
+                )
+                ->join(
+                    'INNER',
+                    $db->quoteName('#__j2commerce_options', 'o')
+                    . ' ON ' . $db->quoteName('ov.option_id') . ' = ' . $db->quoteName('o.j2commerce_option_id')
+                )
+                ->whereIn($db->quoteName('pov.j2commerce_product_optionvalue_id'), $productOptionValueIds);
+
+            $db->setQuery($query);
+
+            foreach ($db->loadObjectList() ?: [] as $result) {
+                if (empty($result->option_unique_name) || empty($result->optionvalue_name)) {
                     continue;
                 }
 
-                // Get option value details
-                $db    = $this->getDatabase();
-                $query = $db->getQuery(true)
-                    ->select([
-                        $db->quoteName('o.option_unique_name'),
-                        $db->quoteName('ov.optionvalue_name'),
-                    ])
-                    ->from($db->quoteName('#__j2commerce_optionvalues', 'ov'))
-                    ->join(
-                        'LEFT',
-                        $db->quoteName('#__j2commerce_options', 'o')
-                        . ' ON ' . $db->quoteName('ov.option_id') . ' = ' . $db->quoteName('o.j2commerce_option_id')
-                    )
-                    ->where($db->quoteName('ov.j2commerce_optionvalue_id') . ' = ' . $optionValueId);
+                // Map common option names to schema.org properties
+                $optionName = strtolower($result->option_unique_name);
 
-                $db->setQuery($query);
-                $result = $db->loadObject();
-
-                if ($result && !empty($result->option_unique_name) && !empty($result->optionvalue_name)) {
-                    // Map common option names to schema.org properties
-                    $optionName = strtolower($result->option_unique_name);
-
-                    if (strpos($optionName, 'size') !== false) {
-                        $properties['size'] = $result->optionvalue_name;
-                    } elseif (strpos($optionName, 'color') !== false || strpos($optionName, 'colour') !== false) {
-                        $properties['color'] = $result->optionvalue_name;
-                    } elseif (strpos($optionName, 'material') !== false) {
-                        $properties['material'] = $result->optionvalue_name;
-                    } elseif (strpos($optionName, 'pattern') !== false) {
-                        $properties['pattern'] = $result->optionvalue_name;
-                    }
+                if (strpos($optionName, 'size') !== false) {
+                    $properties['size'] = $result->optionvalue_name;
+                } elseif (strpos($optionName, 'color') !== false || strpos($optionName, 'colour') !== false) {
+                    $properties['color'] = $result->optionvalue_name;
+                } elseif (strpos($optionName, 'material') !== false) {
+                    $properties['material'] = $result->optionvalue_name;
+                } elseif (strpos($optionName, 'pattern') !== false) {
+                    $properties['pattern'] = $result->optionvalue_name;
                 }
             }
         } catch (\Exception $e) {
