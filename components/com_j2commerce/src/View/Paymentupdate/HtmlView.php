@@ -182,7 +182,7 @@ class HtmlView extends BaseHtmlView
 
     private function _prepareDocument(): void
     {
-        $this->getDocument()->setTitle(Text::_('COM_J2COMMERCE_PAYMENTUPDATE_PAGE_TITLE'));
+        $this->setDocumentTitle(Text::_('COM_J2COMMERCE_PAYMENTUPDATE_PAGE_TITLE'));
         $this->getDocument()->setMetaData('robots', 'noindex, nofollow');
     }
 }

@@ -428,7 +428,7 @@ class HtmlView extends BaseHtmlView
         if (empty($pageTitle)) {
             $pageTitle = Text::_('COM_J2COMMERCE_CARTS_PAGE_TITLE');
         }
-        $this->getDocument()->setTitle($pageTitle);
+        $this->setDocumentTitle($pageTitle);
 
         $metaDesc = $this->params->get('menu-meta_description', '');
         if (empty($metaDesc)) {

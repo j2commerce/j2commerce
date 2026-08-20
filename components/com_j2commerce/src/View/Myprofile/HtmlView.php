@@ -337,7 +337,7 @@ class HtmlView extends BaseHtmlView
             $title = Text::_('COM_J2COMMERCE_MYPROFILE');
         }
 
-        $this->getDocument()->setTitle($title);
+        $this->setDocumentTitle($title);
 
         if ($this->params->get('menu-meta_description')) {
             $this->getDocument()->setDescription($this->params->get('menu-meta_description'));

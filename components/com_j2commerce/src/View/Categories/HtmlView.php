@@ -250,14 +250,9 @@ class HtmlView extends BaseHtmlView
         $title = $this->parent && $currentParentId !== $menuParentId
             ? $this->parent->title
             : $this->params->get('page_title', '');
-        if (empty($title)) {
-            $title = $app->get('sitename');
-        } elseif ($app->get('sitename_pagetitles', 0) == 1) {
-            $title = Text::sprintf('JPAGETITLE', $app->get('sitename'), $title);
-        } elseif ($app->get('sitename_pagetitles', 0) == 2) {
-            $title = Text::sprintf('JPAGETITLE', $title, $app->get('sitename'));
-        }
-
+        // setDocumentTitle() applies sitename_pagetitles itself, and falls back to
+        // the site name on an empty title. Doing it here as well appended the brand
+        // a second time.
         $this->setDocumentTitle($title);
 
         // Add breadcrumb items for ancestor categories between menu root and current parent

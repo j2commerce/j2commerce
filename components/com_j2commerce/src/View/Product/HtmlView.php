@@ -18,7 +18,6 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use J2Commerce\Component\J2commerce\Site\View\CustomSubtemplateTrait;
 use Joomla\CMS\Factory;
-use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Router\Route;
@@ -283,22 +282,9 @@ class HtmlView extends BaseHtmlView
             $title = $this->params->get('page_title', '');
         }
 
-        // Final fallback to site name
-        if (empty($title)) {
-            $title = $app->get('sitename');
-        } else {
-            // Handle sitename in page title based on Joomla configuration
-            $sitenameSetting = $app->get('sitename_pagetitles', 0);
-
-            if ($sitenameSetting == 1) {
-                // Sitename - Page Title
-                $title = Text::sprintf('JPAGETITLE', $app->get('sitename'), $title);
-            } elseif ($sitenameSetting == 2) {
-                // Page Title - Sitename
-                $title = Text::sprintf('JPAGETITLE', $title, $app->get('sitename'));
-            }
-        }
-
+        // setDocumentTitle() applies sitename_pagetitles itself, and falls back to
+        // the site name on an empty title. Doing it here as well appended the brand
+        // a second time.
         $this->setDocumentTitle($title);
 
         // =====================
