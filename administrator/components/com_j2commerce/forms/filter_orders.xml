@@ -86,6 +86,17 @@
         />
 
         <field
+            name="customer_language"
+            type="sql"
+            query="SELECT DISTINCT CASE WHEN o.customer_language = &apos;&apos; THEN &apos;*none*&apos; ELSE o.customer_language END AS value, CASE WHEN o.customer_language = &apos;&apos; THEN &apos;JUNDEFINED&apos; ELSE COALESCE(l.title, o.customer_language) END AS text FROM #__j2commerce_orders AS o LEFT JOIN #__languages AS l ON l.lang_code = o.customer_language ORDER BY text"
+            key_field="value"
+            value_field="text"
+            translate="true"
+            header="COM_J2COMMERCE_SELECT_LANGUAGE"
+            onchange="this.form.submit();"
+        />
+
+        <field
             name="order_state_id"
             type="sql"
             query="SELECT j2commerce_orderstatus_id AS value, orderstatus_name AS text FROM #__j2commerce_orderstatuses WHERE enabled = 1 ORDER BY ordering ASC"
@@ -125,6 +136,8 @@
             <option value="oi.billing_last_name DESC">COM_J2COMMERCE_HEADING_CUSTOMER_DESC</option>
             <option value="a.order_total ASC">COM_J2COMMERCE_HEADING_TOTAL_ASC</option>
             <option value="a.order_total DESC">COM_J2COMMERCE_HEADING_TOTAL_DESC</option>
+            <option value="a.customer_language ASC">COM_J2COMMERCE_HEADING_LANGUAGE_ASC</option>
+            <option value="a.customer_language DESC">COM_J2COMMERCE_HEADING_LANGUAGE_DESC</option>
             <option value="a.order_state_id ASC">COM_J2COMMERCE_HEADING_STATUS_ASC</option>
             <option value="a.order_state_id DESC">COM_J2COMMERCE_HEADING_STATUS_DESC</option>
             <option value="a.j2commerce_order_id ASC">COM_J2COMMERCE_HEADING_ID_ASC</option>

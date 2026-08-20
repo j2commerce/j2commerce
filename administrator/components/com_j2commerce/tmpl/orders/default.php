@@ -12,6 +12,7 @@ declare(strict_types=1);
 defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\HTML\HTMLHelper;
@@ -79,6 +80,9 @@ $dateFormat = ComponentHelper::getParams('com_j2commerce')->get('date_format', '
                                 <th scope="col" class="d-none d-md-table-cell">
                                     <?php echo Text::_('COM_J2COMMERCE_HEADING_PAYMENT'); ?>
                                 </th>
+                                <th scope="col" class="text-center d-none d-md-table-cell">
+                                    <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_LANGUAGE', 'a.customer_language', $listDirn, $listOrder); ?>
+                                </th>
                                 <th scope="col" class="text-center">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_STATUS', 'a.order_state_id', $listDirn, $listOrder); ?>
                                 </th>
@@ -101,6 +105,8 @@ $dateFormat = ComponentHelper::getParams('com_j2commerce')->get('date_format', '
                             $paymentDisplay = !empty($item->payment_plugin_name)
                                 ? Text::_($item->payment_plugin_name)
                                 : $this->escape($item->orderpayment_type ?? '');
+                            $orderLanguage     = trim((string) ($item->customer_language ?? ''));
+                            $orderLanguageFlag = ImageHelper::getLanguageFlag($orderLanguage);
                             $orderViewUrl = Route::_('index.php?option=com_j2commerce&view=order&layout=view&id=' . (int) $item->j2commerce_order_id);
                             $orderEditUrl = Route::_('index.php?option=com_j2commerce&view=order&layout=edit&id=' . (int) $item->j2commerce_order_id);
                         ?>
@@ -171,6 +177,17 @@ $dateFormat = ComponentHelper::getParams('com_j2commerce')->get('date_format', '
                                 </td>
                                 <td class="d-none d-md-table-cell">
                                     <small><?php echo $this->escape(strip_tags($paymentDisplay)); ?></small>
+                                </td>
+                                <td class="text-center d-none d-md-table-cell">
+                                    <?php if ($orderLanguage !== '') : ?>
+                                        <?php if ($orderLanguageFlag !== '') : ?>
+                                            <img src="<?php echo $this->escape(ImageHelper::getImageUrl($orderLanguageFlag)); ?>"
+                                                 alt="" width="16" height="11" class="me-1">
+                                        <?php endif; ?>
+                                        <small><?php echo $this->escape($orderLanguage); ?></small>
+                                    <?php else : ?>
+                                        <small class="text-body-secondary"><?php echo Text::_('JUNDEFINED'); ?></small>
+                                    <?php endif; ?>
                                 </td>
                                 <td class="text-center">
                                     <span class="order-status-badge <?php echo $this->escape(J2htmlHelper::badgeClass($item->orderstatus_cssclass ?? 'badge text-bg-secondary')); ?>">
