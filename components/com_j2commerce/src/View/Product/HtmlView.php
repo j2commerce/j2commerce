@@ -177,9 +177,11 @@ class HtmlView extends BaseHtmlView
      * based on the product data and linked Joomla article.
      *
      * Priority for metadata:
-     * 1. Menu item parameters (if set)
-     * 2. Article metadata fields (metadesc, metakey)
+     * 1. Article metadata fields (metadesc, metakey)
+     * 2. Menu item parameters, but only where the active menu item is this
+     *    product's own Single Product item
      * 3. Product data fallback (product_name, product_short_desc)
+     * 4. Menu item parameters inherited from a catalogue item, last of all
      *
      * @return  void
      *
@@ -304,15 +306,26 @@ class HtmlView extends BaseHtmlView
         // =====================
         // META DESCRIPTION
         // =====================
-        // Priority: Article metadesc > Product short description > Menu meta_description.
-        // The menu item is the fallback, not the winner -- one description entered on
-        // the menu item the catalogue routes through otherwise replaces the description
-        // of every product reached under it. This is the order com_content's article
-        // view uses (components/com_content/src/View/Article/HtmlView.php:331).
-        $metaDesc = '';
+        // menu-meta_description means two different things here. On this product's
+        // own Single Product menu item it describes this page, and an owner who
+        // typed it there meant it. Inherited from the catalogue item the product
+        // merely routes under, it describes the listing -- applying it would give
+        // every product beneath that item the same description.
+        //
+        // Priority: article metadesc > own menu item > product short description >
+        // inherited menu item. Tier one matches com_content's article view
+        // (components/com_content/src/View/Article/HtmlView.php:331); the split
+        // between tiers two and four is what keeps a shared catalogue item from
+        // overwriting the catalogue.
+        $menuMetaDesc = (string) $this->params->get('menu-meta_description', '');
+        $metaDesc     = '';
 
         if ($articleData && !empty($articleData->metadesc)) {
             $metaDesc = $articleData->metadesc;
+        }
+
+        if (empty($metaDesc) && $menuItemMatchesProduct) {
+            $metaDesc = $menuMetaDesc;
         }
 
         if (empty($metaDesc) && !empty($this->item->product_short_desc)) {
@@ -325,7 +338,7 @@ class HtmlView extends BaseHtmlView
         }
 
         if (empty($metaDesc)) {
-            $metaDesc = $this->params->get('menu-meta_description', '');
+            $metaDesc = $menuMetaDesc;
         }
 
         if (!empty($metaDesc)) {
@@ -335,7 +348,9 @@ class HtmlView extends BaseHtmlView
         // =====================
         // META KEYWORDS
         // =====================
-        // Priority: Article metakey > Menu meta_keywords, for the same reason.
+        // Priority: article metakey > own menu item > inherited menu item, for the
+        // same reason. There is no product-level keyword fallback, so tiers two and
+        // four collapse into one test.
         $metaKey = $articleData->metakey ?? '';
 
         if (empty($metaKey)) {
