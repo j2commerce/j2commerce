@@ -761,6 +761,26 @@ class CustomFieldHelper
         return $options;
     }
 
+    /** Falls back to the legacy phone_all_countries flag when the newer key is absent. */
+    private static function resolvePhoneCountryMode(object $field): string
+    {
+        $options = json_decode((string) ($field->field_options ?? ''), true);
+
+        if (!\is_array($options)) {
+            return 'all';
+        }
+
+        if (isset($options['phone_country_mode'])) {
+            return (string) $options['phone_country_mode'];
+        }
+
+        if (isset($options['phone_all_countries'])) {
+            return ((int) $options['phone_all_countries'] === 1) ? 'all' : 'selected';
+        }
+
+        return 'all';
+    }
+
     /**
      * Validate custom field data.
      */
@@ -787,15 +807,21 @@ class CustomFieldHelper
                 $normalized = PhoneHelper::normalize((string) $value);
                 $parsed     = PhoneHelper::parseE164($normalized);
                 $national   = $parsed['national'];
-                $iso        = $parsed['iso2'];
 
                 if (!preg_match('/^\d+$/', $national)) {
                     $errors[$namekey] = Text::sprintf('COM_J2COMMERCE_ERR_PHONE_DIGITS_ONLY', $label);
                     continue;
                 }
 
-                $lengths = PhoneHelper::getNationalLengths($iso);
-                $len     = \strlen($national);
+                // "none" mode renders a plain input with no country context, so
+                // parseE164() falls back to its default ISO. Holding the value to
+                // that country's lengths rejects valid local formats such as a
+                // trunk-prefixed national number; bound it by E.164 instead.
+                $lengths = self::resolvePhoneCountryMode($field) === 'none'
+                    ? ['min' => 1, 'max' => 15]
+                    : PhoneHelper::getNationalLengths($parsed['iso2']);
+
+                $len = \strlen($national);
                 if ($len < $lengths['min'] || $len > $lengths['max']) {
                     $errors[$namekey] = Text::sprintf(
                         'COM_J2COMMERCE_ERR_PHONE_LENGTH',
@@ -1110,14 +1136,7 @@ class CustomFieldHelper
             }
         }
 
-        // Resolve phone_country_mode with backward compat for legacy phone_all_countries
-        if (isset($fieldOptions['phone_country_mode'])) {
-            $phoneMode = $fieldOptions['phone_country_mode'];
-        } elseif (isset($fieldOptions['phone_all_countries'])) {
-            $phoneMode = ((int) $fieldOptions['phone_all_countries'] === 1) ? 'all' : 'selected';
-        } else {
-            $phoneMode = 'all';
-        }
+        $phoneMode = self::resolvePhoneCountryMode($field);
 
         // Handle "none" mode: plain tel input, no country dropdown
         if ($phoneMode === 'none') {
