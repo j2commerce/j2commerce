@@ -2484,6 +2484,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             $db    = $this->getDatabase();
             $query = $db->getQuery(true)
                 ->select([
+                    $db->quoteName('pov.j2commerce_product_optionvalue_id'),
                     $db->quoteName('o.option_unique_name'),
                     $db->quoteName('ov.optionvalue_name'),
                 ])
@@ -2502,8 +2503,16 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
 
             $db->setQuery($query);
 
-            foreach ($db->loadObjectList() ?: [] as $result) {
-                if (empty($result->option_unique_name) || empty($result->optionvalue_name)) {
+            $rows = $db->loadObjectList('j2commerce_product_optionvalue_id') ?: [];
+
+            // Walk the CSV, not the result set: where two of a variant's options map
+            // to the same schema property, the id listed last still wins, exactly as
+            // it did when this ran a query per id. An unordered result set would
+            // otherwise decide that.
+            foreach ($productOptionValueIds as $productOptionValueId) {
+                $result = $rows[$productOptionValueId] ?? null;
+
+                if ($result === null || empty($result->option_unique_name) || empty($result->optionvalue_name)) {
                     continue;
                 }
 
