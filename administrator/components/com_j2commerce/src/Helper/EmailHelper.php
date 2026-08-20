@@ -2297,23 +2297,20 @@ class EmailHelper
             $customFields = $this->getDecodedFields($row->$field);
 
             if (!empty($customFields)) {
+                $definitions = $this->getCustomFieldDefinitions($type);
+
                 foreach ($customFields as $namekey => $fieldData) {
                     if (
                         !property_exists($row, $type . '_' . $namekey)
                         && !property_exists($row, 'user_' . $namekey)
                         && !\in_array($namekey, ['country_id', 'zone_id', 'option', 'task', 'view'])
                     ) {
-                        if (\is_array($fieldData['value'] ?? null)) {
-                            $fieldData['value'] = implode(',', $fieldData['value']);
+                        if (!\is_array($fieldData)) {
+                            $fieldData = $this->describeCustomField((string) $namekey, $fieldData, $definitions);
                         }
 
-                        if (isset($fieldData['value'])) {
-                            // Shopper-entered checkout field values, landing in the same
-                            // invoice / packing-slip / admin-order sink as the tag map —
-                            // encode before nl2br(), exactly as [CUSTOMER_NOTE] does.
-                            $fieldData['value'] = nl2br(
-                                htmlspecialchars((string) $fieldData['value'], ENT_QUOTES, 'UTF-8')
-                            );
+                        if (\is_array($fieldData['value'] ?? null)) {
+                            $fieldData['value'] = implode(',', $fieldData['value']);
                         }
 
                         $fields[$namekey] = $fieldData;
@@ -2339,45 +2336,98 @@ class EmailHelper
 
                 if (\is_array($value)) {
                     foreach ($value as $val) {
-                        $string .= '-' . $language->_($val) . '\n';
+                        $string .= '-' . $this->renderCustomFieldValue($language, $val) . '\n';
                     }
                 } elseif (\is_object($value)) {
                     $objArray = (array) $value;
                     $string .= '\n';
 
                     foreach ($objArray as $val) {
-                        $string .= '- ' . $language->_($val) . '\n';
+                        $string .= '- ' . $this->renderCustomFieldValue($language, $val) . '\n';
                     }
                 } elseif (\is_string($value) && $this->isJson(stripcslashes($value))) {
                     $jsonValues = json_decode(stripcslashes($value));
 
                     if (\is_array($jsonValues)) {
                         foreach ($jsonValues as $val) {
-                            $string .= '-' . $language->_($val) . '\n';
+                            $string .= '-' . $this->renderCustomFieldValue($language, $val) . '\n';
                         }
                     } else {
-                        $string .= $language->_($value);
+                        $string .= $this->renderCustomFieldValue($language, $value);
                     }
                 } else {
-                    $string = $language->_((string) $value);
+                    $string = $this->renderCustomFieldValue($language, $value);
                 }
 
                 // Handle zone/country type fields
                 if (isset($fieldData['zone_type']) && !empty($value)) {
                     if ($fieldData['zone_type'] === 'zone') {
-                        $string = $language->_($this->getZoneName((int) $value));
+                        $string = $this->renderCustomFieldValue($language, $this->getZoneName((int) $value));
                     } elseif ($fieldData['zone_type'] === 'country') {
-                        $string = $language->_($this->getCountryName((int) $value));
+                        $string = $this->renderCustomFieldValue($language, $this->getCountryName((int) $value));
                     }
                 }
 
-                $formattedValue = $language->_($fieldData['label'] ?? '') . ' : ' . $string;
-                $tagValue       = '[CUSTOM_' . strtoupper($type) . '_FIELD:' . strtoupper($namekey) . ']';
+                $formattedValue = $this->renderCustomFieldValue($language, $fieldData['label'] ?? '')
+                    . ' : ' . $string;
+                $tagValue       = '[CUSTOM_' . strtoupper($type) . '_FIELD:' . strtoupper((string) $namekey) . ']';
                 $text           = str_replace($tagValue, $formattedValue, $text);
             }
         }
 
         return $text;
+    }
+
+    /**
+     * Translates one stored value and encodes it as it is emitted. The JSON branch
+     * of the render loop runs stripcslashes(), which undoes an encode applied
+     * before it, so emission is the only point where the encode holds. It does not
+     * take the caller's escapeHtml flag: callers that render an HTML body without
+     * passing one would otherwise receive these values unencoded.
+     */
+    private function renderCustomFieldValue(Language $language, mixed $value): string
+    {
+        if (!\is_scalar($value) && $value !== null) {
+            return '';
+        }
+
+        return nl2br(htmlspecialchars($language->_((string) $value), ENT_QUOTES, 'UTF-8'));
+    }
+
+    /** Keyed by field_namekey so a stored value can be paired with its label. */
+    private function getCustomFieldDefinitions(string $area): array
+    {
+        $definitions = [];
+
+        foreach (CustomFieldHelper::getFieldsByArea($area) as $definition) {
+            $definitions[$definition->field_namekey] = $definition;
+        }
+
+        return $definitions;
+    }
+
+    /**
+     * all_billing/all_shipping/all_payment hold a flat namekey => value map, while
+     * the tag renderer and the onJ2CommerceBeforeReplaceCustomFields event both
+     * expect a value/label pair.
+     */
+    private function describeCustomField(string $namekey, mixed $value, array $definitions): array
+    {
+        $definition = $definitions[$namekey] ?? null;
+        $entry      = [
+            'value' => $value,
+            'label' => $definition->field_name ?? $namekey,
+        ];
+
+        if (($definition->field_type ?? '') === 'zone') {
+            $options = json_decode((string) ($definition->field_options ?? ''), true);
+
+            if (\is_array($options) && !empty($options['zone_type'])) {
+                $entry['zone_type'] = $options['zone_type'];
+            }
+        }
+
+        return $entry;
     }
 
     /**
