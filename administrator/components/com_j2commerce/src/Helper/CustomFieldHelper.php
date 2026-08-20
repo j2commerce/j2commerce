@@ -432,7 +432,9 @@ class CustomFieldHelper
             $collapseOpt = \is_array($decodedOpts) && !empty($decodedOpts['field_collapse_toggle']);
         }
 
-        $collapse      = $collapseOpt && !$required && ($fieldValue === '');
+        // A multiuploader with nothing attached stores an empty JSON array, so
+        // the emptiness test has to admit both representations.
+        $collapse      = $collapseOpt && !$required && ($fieldValue === '' || $fieldValue === '[]');
         $outerColClass = $colClass;
 
         if ($collapse) {
