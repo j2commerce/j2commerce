@@ -304,10 +304,14 @@ class HtmlView extends BaseHtmlView
         // =====================
         // META DESCRIPTION
         // =====================
-        // Priority: Menu meta_description > Article metadesc > Product short description
-        $metaDesc = $this->params->get('menu-meta_description', '');
+        // Priority: Article metadesc > Product short description > Menu meta_description.
+        // The menu item is the fallback, not the winner -- one description entered on
+        // the menu item the catalogue routes through otherwise replaces the description
+        // of every product reached under it. This is the order com_content's article
+        // view uses (components/com_content/src/View/Article/HtmlView.php:331).
+        $metaDesc = '';
 
-        if (empty($metaDesc) && $articleData && !empty($articleData->metadesc)) {
+        if ($articleData && !empty($articleData->metadesc)) {
             $metaDesc = $articleData->metadesc;
         }
 
@@ -320,6 +324,10 @@ class HtmlView extends BaseHtmlView
             $metaDesc = preg_replace('/\s+/', ' ', trim($metaDesc));
         }
 
+        if (empty($metaDesc)) {
+            $metaDesc = $this->params->get('menu-meta_description', '');
+        }
+
         if (!empty($metaDesc)) {
             $document->setDescription($metaDesc);
         }
@@ -327,11 +335,11 @@ class HtmlView extends BaseHtmlView
         // =====================
         // META KEYWORDS
         // =====================
-        // Priority: Menu meta_keywords > Article metakey
-        $metaKey = $this->params->get('menu-meta_keywords', '');
+        // Priority: Article metakey > Menu meta_keywords, for the same reason.
+        $metaKey = $articleData->metakey ?? '';
 
-        if (empty($metaKey) && $articleData && !empty($articleData->metakey)) {
-            $metaKey = $articleData->metakey;
+        if (empty($metaKey)) {
+            $metaKey = $this->params->get('menu-meta_keywords', '');
         }
 
         if (!empty($metaKey)) {
