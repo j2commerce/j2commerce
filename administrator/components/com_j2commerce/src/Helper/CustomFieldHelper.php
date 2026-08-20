@@ -761,6 +761,13 @@ class CustomFieldHelper
         return $options;
     }
 
+    private static function getDefaultPhoneIso(): string
+    {
+        $defaultCountry = J2CommerceHelper::config()->get('default_country', '223');
+
+        return self::getCountryIso2((int) $defaultCountry) ?: 'US';
+    }
+
     /** Falls back to the legacy phone_all_countries flag when the newer key is absent. */
     private static function resolvePhoneCountryMode(object $field): string
     {
@@ -800,13 +807,16 @@ class CustomFieldHelper
                 continue;
             }
 
-            if ($field->field_type === 'telephone' && trim($value) !== '') {
+            if ($field->field_type === 'telephone' && trim((string) $value) !== '') {
                 // Normalize separators (space, dash, paren, dot) before
                 // validating so legacy values entered via admin forms don't
                 // trip digit-only checks.
                 $normalized = PhoneHelper::normalize((string) $value);
-                $parsed     = PhoneHelper::parseE164($normalized);
-                $national   = $parsed['national'];
+                // A value with no leading + carries no country, so parseE164()
+                // falls back to this ISO. Use the store default, the same
+                // reference renderTelephoneField() parses against.
+                $parsed   = PhoneHelper::parseE164($normalized, self::getDefaultPhoneIso());
+                $national = $parsed['national'];
 
                 if (!preg_match('/^\d+$/', $national)) {
                     $errors[$namekey] = Text::sprintf('COM_J2COMMERCE_ERR_PHONE_DIGITS_ONLY', $label);
@@ -972,8 +982,7 @@ class CustomFieldHelper
         $defaultIso   = (string) ($opts['defaultIso'] ?? '');
 
         if ($defaultIso === '') {
-            $defaultCountry = J2CommerceHelper::config()->get('default_country', '223');
-            $defaultIso     = self::getCountryIso2((int) $defaultCountry) ?: 'US';
+            $defaultIso = self::getDefaultPhoneIso();
         }
 
         $parsed        = PhoneHelper::parseE164($value, $defaultIso);
@@ -1119,12 +1128,10 @@ class CustomFieldHelper
     ): string {
         self::ensureTelephoneAssets($isUikit);
 
-        $defaultCountry = J2CommerceHelper::config()->get('default_country', '223');
-        $defaultIso     = self::getCountryIso2((int) $defaultCountry) ?: 'US';
-        $parsed         = PhoneHelper::parseE164($value, $defaultIso);
-        $selectedIso    = $parsed['iso2'];
-        $nationalValue  = $parsed['national'];
-        $dialCode       = $parsed['code'];
+        $parsed        = PhoneHelper::parseE164($value, self::getDefaultPhoneIso());
+        $selectedIso   = $parsed['iso2'];
+        $nationalValue = $parsed['national'];
+        $dialCode      = $parsed['code'];
 
         // Determine which countries to show based on field settings stored in field_options
         $allowedIso2  = null;
