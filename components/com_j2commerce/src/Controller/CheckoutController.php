@@ -1495,13 +1495,11 @@ class CheckoutController extends BaseController
                     if ($fieldErrors) {
                         $json['error'] = array_merge($json['error'] ?? [], $fieldErrors);
                     } else {
-                        $customValues = [];
-
-                        foreach ($paymentFields as $field) {
-                            $customValues[$field->field_namekey] = (string) ($formData[$field->field_namekey] ?? '');
-                        }
-
-                        $session->set('payment_custom_fields', $customValues, 'j2commerce');
+                        $session->set(
+                            'payment_custom_fields',
+                            CustomFieldHelper::collectAddressData($paymentFields, $formData),
+                            'j2commerce'
+                        );
                     }
                 }
             }
