@@ -2024,7 +2024,8 @@ class EmailHelper
 
         foreach ($tags as $langTag) {
             foreach ([JPATH_ADMINISTRATOR, JPATH_SITE] as $basePath) {
-                $jlang->load($extension, $basePath, $langTag, true);
+                $jlang->load($extension, $basePath, $langTag, true)
+                    || $jlang->load($extension, $basePath . '/components/' . $extension, $langTag, true);
                 $jlang->load($extension . '.override', $basePath, $langTag, true);
             }
         }
@@ -2745,7 +2746,12 @@ class EmailHelper
         $language = Language::getInstance($tag, (bool) Factory::getApplication()->getConfig()->get('debug_lang'));
 
         foreach ([JPATH_ADMINISTRATOR, JPATH_SITE] as $basePath) {
-            $language->load('com_j2commerce', $basePath);
+            // The mirror under {basePath}/language/{tag} is written at install time and may be
+            // absent, so fall back to the component's own language dir exactly as
+            // ComponentDispatcher::loadLanguage() does. Without this the email-only keys, which
+            // live solely in the admin component dir, resolve to their raw key names.
+            $language->load('com_j2commerce', $basePath)
+                || $language->load('com_j2commerce', $basePath . '/components/com_j2commerce');
             $language->load('com_j2commerce.override', $basePath);
         }
 
