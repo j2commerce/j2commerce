@@ -1298,6 +1298,18 @@
         </field>
 
         <field
+            name="order_email_link_target"
+            type="list"
+            label="COM_J2COMMERCE_CONFIG_ORDER_EMAIL_LINK_TARGET"
+            description="COM_J2COMMERCE_CONFIG_ORDER_EMAIL_LINK_TARGET_DESC"
+            default="myprofile"
+            class="form-select"
+        >
+            <option value="myprofile">COM_J2COMMERCE_CONFIG_ORDER_EMAIL_LINK_TARGET_MYPROFILE</option>
+            <option value="confirmation">COM_J2COMMERCE_CONFIG_ORDER_EMAIL_LINK_TARGET_CONFIRMATION</option>
+        </field>
+
+        <field
             name="download_area"
             type="radio"
             label="COM_J2COMMERCE_CONFIG_SHOW_DOWNLOADS"

@@ -232,6 +232,66 @@ class MyprofileController extends BaseController
         }
     }
 
+    /** Order-email entry point when order_email_link_target is `confirmation`. */
+    public function guestOrderLink(): void
+    {
+        // order_id is varchar in #__j2commerce_orders — never cast it to an integer.
+        $orderId    = trim($this->input->getString('order_id', ''));
+        $email      = trim($this->input->getString('order_email', ''));
+        $orderToken = trim($this->input->getString('order_token', ''));
+
+        $fallback = 'index.php?option=com_j2commerce&view=myprofile&layout=order'
+            . '&order_id=' . urlencode($orderId)
+            . '&order_token=' . urlencode($orderToken)
+            . '&order_email=' . urlencode($email);
+
+        if ($orderId === '' || $orderToken === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $this->app->redirect(Route::_($fallback, false));
+
+            return;
+        }
+
+        // Same match guestEntry() performs — token AND email AND order_type, so the link is no
+        // weaker than the form it replaces.
+        $db        = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $orderType = 'normal';
+        $query     = $db->getQuery(true)
+            ->select($db->quoteName('token'))
+            ->from($db->quoteName('#__j2commerce_orders'))
+            ->where($db->quoteName('order_id') . ' = :orderId')
+            ->where($db->quoteName('token') . ' = :token')
+            ->where($db->quoteName('user_email') . ' = :email')
+            ->where($db->quoteName('order_type') . ' = :orderType')
+            ->bind(':orderId', $orderId)
+            ->bind(':token', $orderToken)
+            ->bind(':email', $email)
+            ->bind(':orderType', $orderType)
+            ->setLimit(1);
+
+        $db->setQuery($query);
+        $matchedToken = (string) $db->loadResult();
+
+        if ($matchedToken === '') {
+            // No match — hand back to the pre-filled guest form, which is the pre-option behaviour.
+            $this->app->redirect(Route::_($fallback, false));
+
+            return;
+        }
+
+        $session = $this->app->getSession();
+        $session->set('guest_order_token', $matchedToken, 'j2commerce');
+        $session->set('guest_order_email', $email, 'j2commerce');
+
+        $this->app->redirect(
+            Route::_(
+                'index.php?option=com_j2commerce&view=confirmation'
+                    . '&order_id=' . urlencode($orderId)
+                    . '&token=' . urlencode($matchedToken),
+                false
+            )
+        );
+    }
+
     public function download(): void
     {
         // Public order identifier; validateOrderAccess() is the gate. Legacy links use `token`, so both names are accepted.

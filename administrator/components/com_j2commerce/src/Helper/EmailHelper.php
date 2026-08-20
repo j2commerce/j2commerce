@@ -634,10 +634,18 @@ class EmailHelper
         );
 
         // Guest order URL — deep link that pre-seeds the guest session via order_token + order_email
-        $orderToken    = (string) ($order->token ?? '');
-        $orderEmail    = (string) ($order->user_email ?? '');
+        $orderToken     = (string) ($order->token ?? '');
+        $orderEmail     = (string) ($order->user_email ?? '');
+        $guestOrderPath = 'index.php?option=com_j2commerce&view=myprofile&layout=order';
+
+        // The confirmation target routes through a handler that seeds the same guest session the
+        // My Profile form would, so session-gated controls (downloads, easylinks) keep working.
+        if ($params->get('order_email_link_target', 'myprofile') === 'confirmation') {
+            $guestOrderPath = 'index.php?option=com_j2commerce&task=myprofile.guestOrderLink';
+        }
+
         $guestOrderURL = $this->buildSiteUrl(
-            'index.php?option=com_j2commerce&view=myprofile&layout=order'
+            $guestOrderPath
                 . '&order_id=' . urlencode((string) $orderId)
                 . '&order_token=' . urlencode($orderToken)
                 . '&order_email=' . urlencode($orderEmail),
