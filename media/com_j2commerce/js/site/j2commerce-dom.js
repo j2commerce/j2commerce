@@ -99,5 +99,23 @@
         return node;
     }
 
+    /**
+     * Point a modal's iframe at its source the first time that modal opens.
+     *
+     * Variant rows are fetched over ajax, so a modal inside one is never registered
+     * with Joomla's modal script and nothing injects its frame. The frame is emitted
+     * with the address in data-src instead, and set here on first open — delegated
+     * from the document so rows added later are covered, and once per frame so
+     * reopening does not reload it.
+     */
+    document.addEventListener('show.bs.modal', event => {
+        const frame = event.target.querySelector ? event.target.querySelector('iframe[data-src]') : null;
+
+        if (frame) {
+            frame.src = frame.dataset.src;
+            frame.removeAttribute('data-src');
+        }
+    });
+
     window.J2CommerceDom = { parse, adopt, el };
 })(window, document);

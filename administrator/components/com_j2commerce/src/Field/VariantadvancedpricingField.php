@@ -78,20 +78,34 @@ class VariantadvancedpricingField extends FormField
             . htmlspecialchars(Text::_('COM_J2COMMERCE_PRODUCT_ADDITIONAL_PRICING'), ENT_COMPAT, 'UTF-8')
             . '</a>';
 
-        // Build modal HTML using Joomla's Bootstrap helper
+        // The iframe is emitted here rather than through the modal's `url` option.
+        // That option only carries a data-iframe attribute, which Joomla's modal
+        // script injects on show — and it binds that handler solely to selectors
+        // registered via addScriptOptions(). Variant rows are fetched over ajax,
+        // so any registration made while rendering them is discarded with the
+        // response and the injection never runs. Emitting the frame keeps the
+        // modal working regardless of which request rendered the row.
+        //
+        // The address goes in data-src, not src: this screen costs about a second
+        // to render, and a row carries one frame each, so loading them up front
+        // would put that cost back on opening the panel. j2commerce-dom.js moves
+        // it to src the first time the modal opens.
+        $iframeHtml = '<iframe class="iframe jviewport-height70" style="width: 100%;"'
+            . ' data-src="' . htmlspecialchars($modalUrl, ENT_COMPAT, 'UTF-8') . '"'
+            . ' title="' . htmlspecialchars(Text::_('COM_J2COMMERCE_PRODUCT_ADDITIONAL_PRICING'), ENT_COMPAT, 'UTF-8') . '">'
+            . '</iframe>';
+
         $modalHtml = HTMLHelper::_(
             'bootstrap.renderModal',
             $modalId,
             [
-                'url'        => $modalUrl,
                 'title'      => Text::_('COM_J2COMMERCE_PRODUCT_ADDITIONAL_PRICING'),
-                'height'     => '100%',
-                'width'      => '100%',
                 'modalWidth' => '95%',
                 'bodyHeight' => '95%',
-                'footer'     => '<button type="button" class="btn btn-primary" data-bs-dismiss="modal" aria-hidden="true">'
+                'footer'     => '<button type="button" class="btn btn-primary" data-bs-dismiss="modal">'
                     . Text::_('JLIB_HTML_BEHAVIOR_CLOSE') . '</button>',
-            ]
+            ],
+            $iframeHtml
         );
 
         return $buttonHtml . $modalHtml;

@@ -22,6 +22,7 @@ use Joomla\CMS\Helper\UserGroupsHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\ToolbarHelper;
+use Joomla\Database\ParameterType;
 
 /**
  * Product Price View
@@ -78,9 +79,10 @@ class HtmlView extends BaseHtmlView
         $app              = Factory::getApplication();
         $this->variant_id = $app->input->getInt('variant_id', 0);
 
+        // Returning here would leave the layout to render with no form, item or
+        // prices — a blank modal with no indication of what went wrong.
         if (!$this->variant_id) {
-            $app->enqueueMessage('Invalid variant ID', 'error');
-            return;
+            throw new \RuntimeException(Text::_('COM_J2COMMERCE_ERROR_INVALID_VARIANT'), 400);
         }
 
         // Get the model explicitly using MVC factory
@@ -140,10 +142,23 @@ class HtmlView extends BaseHtmlView
         $db = Factory::getContainer()->get('DatabaseDriver');
 
         $query = $db->getQuery(true)
-            ->select('*')
+            ->select(
+                $db->quoteName([
+                    'j2commerce_productprice_id',
+                    'variant_id',
+                    'quantity_from',
+                    'quantity_to',
+                    'date_from',
+                    'date_to',
+                    'customer_group_id',
+                    'price',
+                    'params',
+                ])
+            )
             ->from($db->quoteName('#__j2commerce_product_prices'))
-            ->where($db->quoteName('variant_id') . ' = '.$this->variant_id)
-            ->order($db->quoteName('j2commerce_productprice_id') . ' ASC ');
+            ->where($db->quoteName('variant_id') . ' = :variantId')
+            ->bind(':variantId', $variant_id, ParameterType::INTEGER)
+            ->order($db->quoteName('j2commerce_productprice_id') . ' ASC');
 
         $db->setQuery($query);
 
