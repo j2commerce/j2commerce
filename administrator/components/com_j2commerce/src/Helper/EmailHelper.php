@@ -873,13 +873,21 @@ class EmailHelper
         $tags['[DISCOUNT_LINES]'] = $this->buildDiscountLines($order, $discountRows, $language);
 
         // Encode every tag value that is not deliberately HTML; a tag added later is escaped by default.
+        // The delimiters go with it: htmlspecialchars() leaves [ and ] alone, and the replacement
+        // loop below plus processCustomFields(), processPositionalHooks() and the unmatched-tag
+        // sweep all read them, so a value carrying either one would be read as template syntax by
+        // whichever pass reached it next. Encoded, it still displays as typed.
         if ($escapeHtml) {
             foreach ($tags as $tagKey => $tagValue) {
                 if (\in_array($tagKey, self::RAW_HTML_TAGS, true) || !\is_scalar($tagValue)) {
                     continue;
                 }
 
-                $tags[$tagKey] = htmlspecialchars((string) $tagValue, ENT_QUOTES, 'UTF-8');
+                $tags[$tagKey] = str_replace(
+                    ['[', ']'],
+                    ['&#91;', '&#93;'],
+                    htmlspecialchars((string) $tagValue, ENT_QUOTES, 'UTF-8')
+                );
             }
         }
 
@@ -2396,7 +2404,13 @@ class EmailHelper
             return '';
         }
 
-        return nl2br(htmlspecialchars($language->_((string) $value), ENT_QUOTES, 'UTF-8'));
+        // Same delimiter encode the tag map applies, for the same reason: this renderer emits
+        // into $text after the tag loop but before the hook pass and the unmatched-tag sweep.
+        return str_replace(
+            ['[', ']'],
+            ['&#91;', '&#93;'],
+            nl2br(htmlspecialchars($language->_((string) $value), ENT_QUOTES, 'UTF-8'))
+        );
     }
 
     /** Keyed by field_namekey so a stored value can be paired with its label. */
