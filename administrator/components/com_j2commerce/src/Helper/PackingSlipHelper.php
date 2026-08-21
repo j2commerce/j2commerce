@@ -147,13 +147,13 @@ class PackingSlipHelper
         }
     }
 
-    public function getFormattedPackingSlip(object $order): string
+    public function getFormattedPackingSlip(object $order, string $receiverType = '*'): string
     {
         // Strip while the price tags are still placeholders — processTags() replaces them with
         // formatted amounts, leaving nothing for str_replace() to match afterwards.
         $text = $this->stripPricingFromItemsTable($this->loadPackingSlipTemplate($order));
 
-        return EmailHelper::getInstance()->processTags($text, $order, [], '*', true);
+        return EmailHelper::getInstance()->processTags($text, $order, [], $receiverType, true);
     }
 
     /** Expects raw template text: the tags must not have been through processTags() yet. */

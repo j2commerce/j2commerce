@@ -25,7 +25,7 @@ if (!$order || empty($order->order_id)) {
 }
 
 $helper     = InvoiceHelper::getInstance();
-$invoiceHtml = $helper->getFormattedInvoice($order);
+$invoiceHtml = $helper->getFormattedInvoice($order, 'admin');
 
 // Extract <style> blocks from the template body and move them to <head>. The closing pattern
 // is a best effort at the element boundary, not the tokenizer's exact rule; whatever it leaves

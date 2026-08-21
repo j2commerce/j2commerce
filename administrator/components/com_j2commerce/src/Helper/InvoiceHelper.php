@@ -375,18 +375,19 @@ class InvoiceHelper
      * Loads the appropriate invoice template and processes all template tags
      * using the EmailHelper's processTags method.
      *
-     * @param   object  $order  The order object with all order data
+     * @param   object  $order         The order object with all order data
+     * @param   string  $receiverType  Who the rendered document is for. 'admin' holds it to the
+     *                                 same rule an admin email copy follows.
      *
      * @return  string  The fully formatted invoice HTML
      *
      * @since   6.0.0
      */
-    public function getFormattedInvoice(object $order): string
+    public function getFormattedInvoice(object $order, string $receiverType = '*'): string
     {
-        $text     = $this->loadInvoiceTemplate($order);
-        $template = EmailHelper::getInstance()->processTags($text, $order, [], '*', true);
+        $text = $this->loadInvoiceTemplate($order);
 
-        return $template;
+        return EmailHelper::getInstance()->processTags($text, $order, [], $receiverType, true);
     }
 
     /**

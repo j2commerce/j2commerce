@@ -668,7 +668,7 @@ class OrderController extends FormController
                 $cssBlocks[] = $css;
             }
 
-            $packingSlipHtml = $helper->getFormattedPackingSlip($order);
+            $packingSlipHtml = $helper->getFormattedPackingSlip($order, 'admin');
 
             // Extract <style> blocks from each slip. The closing pattern is a best effort at the
             // element boundary, not the tokenizer's exact rule.
@@ -686,7 +686,7 @@ class OrderController extends FormController
         $extractedStyles = '';
 
         if ($firstOrder && !empty($firstOrder->order_id)) {
-            $fullHtml = $helper->getFormattedPackingSlip($firstOrder);
+            $fullHtml = $helper->getFormattedPackingSlip($firstOrder, 'admin');
             preg_replace_callback(
                 '#<style\b[^>]*>(.*?)</\s*style\b[^>]*>#si',
                 function (array $m) use (&$extractedStyles): string {
@@ -738,7 +738,7 @@ class OrderController extends FormController
     private function renderPackingSlipHtml(object $order): string
     {
         $helper          = PackingSlipHelper::getInstance();
-        $packingSlipHtml = $helper->getFormattedPackingSlip($order);
+        $packingSlipHtml = $helper->getFormattedPackingSlip($order, 'admin');
 
         // The closing pattern is a best effort at the element boundary, not the tokenizer's
         // exact rule; whatever it leaves behind is neutralised with the CSS below.
