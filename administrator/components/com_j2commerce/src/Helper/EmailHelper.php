@@ -780,8 +780,8 @@ class EmailHelper
         $extraRowsHtml  = '';
         foreach ($orderExtraRows as $extraRow) {
             $extraRowsHtml .= '<div class="j2c-order-extra-row"><strong>'
-                . htmlspecialchars((string) $extraRow['label'], ENT_QUOTES, 'UTF-8') . ':</strong> '
-                . htmlspecialchars((string) $extraRow['value'], ENT_QUOTES, 'UTF-8') . '</div>';
+                . self::encodeTagDelimiters(htmlspecialchars((string) $extraRow['label'], ENT_QUOTES, 'UTF-8')) . ':</strong> '
+                . self::encodeTagDelimiters(htmlspecialchars((string) $extraRow['value'], ENT_QUOTES, 'UTF-8')) . '</div>';
         }
 
         $tags = [
@@ -1304,7 +1304,7 @@ class EmailHelper
             if ((float) $tax->ordertax_amount <= 0) {
                 continue;
             }
-            $title   = htmlspecialchars($tax->ordertax_title);
+            $title   = self::encodeTagDelimiters(htmlspecialchars($tax->ordertax_title));
             $percent = (float) $tax->ordertax_percent;
             $label   = $title . ($percent > 0 ? ' (' . rtrim(rtrim(number_format($percent, 2), '0'), '.') . '%)' : '');
             $rows .= $line($label, (float) $tax->ordertax_amount);
@@ -1349,7 +1349,7 @@ class EmailHelper
             $label  = $label === '' ? $language->_('COM_J2COMMERCE_CART_DISCOUNT') : $language->_($label);
 
             $rows .= '<tr>'
-                . '<td style="padding: 6px 20px; font-size: 13px; color: #059669;">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</td>'
+                . '<td style="padding: 6px 20px; font-size: 13px; color: #059669;">' . self::encodeTagDelimiters(htmlspecialchars($label, ENT_QUOTES, 'UTF-8')) . '</td>'
                 . '<td style="padding: 6px 20px; font-size: 13px; color: #059669; text-align: right;">-'
                 . htmlspecialchars(CurrencyHelper::format($amount, $currencyCode, $currencyValue), ENT_QUOTES, 'UTF-8') . '</td>'
                 . '</tr>';
@@ -1395,7 +1395,7 @@ class EmailHelper
 
             $rows .= '<tr>'
                 . '<td style="padding: 6px 20px; font-size: 13px;">'
-                . htmlspecialchars($name, ENT_QUOTES, 'UTF-8')
+                . self::encodeTagDelimiters(htmlspecialchars($name, ENT_QUOTES, 'UTF-8'))
                 . '</td>'
                 . '<td style="padding: 6px 20px; font-size: 13px; text-align: right;">'
                 . '<a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '">'
@@ -1614,8 +1614,8 @@ class EmailHelper
     private function totalsRow(string $label, string $value): string
     {
         return '<tr>'
-            . '<td style="padding:8px; border:1px solid #ddd;">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</td>'
-            . '<td style="padding:8px; border:1px solid #ddd; text-align:right;">' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . '</td>'
+            . '<td style="padding:8px; border:1px solid #ddd;">' . self::encodeTagDelimiters(htmlspecialchars($label, ENT_QUOTES, 'UTF-8')) . '</td>'
+            . '<td style="padding:8px; border:1px solid #ddd; text-align:right;">' . self::encodeTagDelimiters(htmlspecialchars($value, ENT_QUOTES, 'UTF-8')) . '</td>'
             . '</tr>';
     }
 
