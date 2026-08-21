@@ -653,6 +653,11 @@ class EmailHelper
             $subpathURL
         );
 
+        // The order token and the address it is paired with are what MyprofileController::validateOrderAccess()
+        // accepts in place of a session, so every tag carrying that pair answers to one rule rather than to
+        // whichever tag the template happened to use. [DOWNLOAD_LINKS] below already states it.
+        $isAdminCopy = $receiverType === 'admin';
+
         // Bare myprofile URL — landing page with guest-login form
         $myprofileURL = $this->buildSiteUrl(
             'index.php?option=com_j2commerce&view=myprofile',
@@ -783,10 +788,10 @@ class EmailHelper
             '[SHIPPING_TRACKING_ID]'      => $shipping->ordershipping_tracking_id ?? '',
             '[CUSTOMER_NOTE]'             => nl2br(htmlspecialchars((string) ($order->customer_note ?? ''), ENT_QUOTES, 'UTF-8')),
             '[PAYMENT_TYPE]'              => $this->getPaymentMethodTitle($order->orderpayment_type ?? '', $language),
-            '[ORDER_TOKEN]'               => $order->token ?? '',
-            '[TOKEN]'                     => $order->token ?? '',
+            '[ORDER_TOKEN]'               => $isAdminCopy ? '' : $orderToken,
+            '[TOKEN]'                     => $isAdminCopy ? '' : $orderToken,
             '[MYPROFILE_URL]'             => $myprofileURL,
-            '[GUEST_ORDER_URL]'           => $guestOrderURL,
+            '[GUEST_ORDER_URL]'           => $isAdminCopy ? $invoiceURL : $guestOrderURL,
             '[COUPON_CODE]'               => $couponCode,
             '[DISCOUNT_LABEL]'            => $language->_($discountLabel),
             '[BANK_TRANSFER_INFORMATION]' => $bankTransferInfo,
@@ -849,7 +854,7 @@ class EmailHelper
         $tags['[TAX_LINES]'] = $this->buildTaxLines($order, $language);
 
         // Download links for the order's digital files
-        $downloadLinks           = $receiverType === 'admin'
+        $downloadLinks           = $isAdminCopy
             ? ''
             : $this->buildDownloadLinks($order, $siteRoot, $subpathURL, $language);
         $tags['[DOWNLOAD_LINKS]'] = $downloadLinks;
