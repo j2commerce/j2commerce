@@ -15,6 +15,7 @@ namespace J2Commerce\Plugin\J2Commerce\PaymentPaypal\Extension;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\TableSaveHelper;
 use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\Base;
 use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\Payment;
 use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\PluginLayoutTrait;
@@ -387,7 +388,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 $transactionDetails['refunded_at']   = date('Y-m-d H:i:s');
                 $transactionDetails['refund_amount'] = $amount;
                 $orderTable->transaction_details     = json_encode($transactionDetails);
-                $orderTable->store();
+                TableSaveHelper::store($orderTable, 'paypal.refund');
 
                 OrderHistoryHelper::add(
                     orderId: $orderTable->order_id,
@@ -761,7 +762,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             $details['created_at']         = date('Y-m-d H:i:s');
 
             $orderTable->transaction_details = json_encode($details);
-            $orderTable->store();
+            TableSaveHelper::store($orderTable, 'paypal.nvp_express_token');
 
             $approveUrl = $nvp->getApprovalUrl($token);
 
@@ -902,7 +903,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             $orderTable->transaction_id      = $transId;
             $orderTable->transaction_status  = 'Completed';
             $orderTable->transaction_details = json_encode($details);
-            $orderTable->store();
+            TableSaveHelper::store($orderTable, 'paypal.nvp_payment_completed');
 
             OrderHistoryHelper::add(
                 orderId: (string) $orderTable->order_id,
@@ -1071,7 +1072,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 'type'           => 'renewal_nvp',
                 'completed_at'   => date('Y-m-d H:i:s'),
             ]);
-            $orderTable->store();
+            TableSaveHelper::store($orderTable, 'paypal.nvp_renewal');
 
             OrderHistoryHelper::add(
                 orderId: (string) $orderTable->order_id,
@@ -1541,7 +1542,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             $details['created_at']             = date('Y-m-d H:i:s');
 
             $orderTable->transaction_details = json_encode($details);
-            $orderTable->store();
+            TableSaveHelper::store($orderTable, 'paypal.subscription_created');
 
             $this->log(\sprintf(
                 'createPayPalSubscriptionForOrder: order=%s paypal_sub=%s plan=%s product=%s',
@@ -1655,7 +1656,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             $details['approved_at']            = date('Y-m-d H:i:s');
 
             $orderTable->transaction_details = json_encode($details);
-            $orderTable->store();
+            TableSaveHelper::store($orderTable, 'paypal.subscription_approved');
 
             OrderHistoryHelper::add(
                 orderId: (string) $orderTable->order_id,
@@ -1954,7 +1955,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 $transactionDetails['paypal_order_id'] = $paypalOrderId;
                 $transactionDetails['created_at']      = date('Y-m-d H:i:s');
                 $orderTable->transaction_details       = json_encode($transactionDetails);
-                $orderTable->store();
+                TableSaveHelper::store($orderTable, 'paypal.order_created');
 
                 $this->log('createPayPalOrder: Success - paypal_order_id: ' . $paypalOrderId);
                 return ['success' => true, 'paypal_order_id' => $paypalOrderId];

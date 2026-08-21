@@ -19,6 +19,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model\Behavior;
 use J2Commerce\Component\J2commerce\Administrator\Helper\DownloadHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\TableSaveHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\ProductOptionsModel;
 use J2Commerce\Component\J2commerce\Administrator\Model\VariantsModel;
 use J2Commerce\Component\J2commerce\Administrator\Table\ProductfileTable;
@@ -301,8 +302,11 @@ class Downloadable
         $variant->is_master  = 1;
         $variant->product_id = $table->j2commerce_product_id;
         $variant->shipping   = 0;
-        $variant->check();
-        $variant->store();
+        // The master variant carries the product's price and stock. Rows written after it
+        // are keyed to it, so a refusal ends the save rather than orphaning them.
+        if (!TableSaveHelper::save($variant, 'product.save.downloadable.variant')) {
+            return;
+        }
 
         // Save item options
         if (isset($this->_rawData['item_options'])) {
@@ -440,7 +444,11 @@ class Downloadable
             $fileTable->product_file_save_name    = $path;
             $fileTable->download_total            = (int) ($fileData['download_total'] ?? $fileTable->download_total ?? 0);
 
-            $fileTable->store();
+            // store() only: ProductfileTable::check() raises rather than returns, and this
+            // path has never validated. Reading the result is the change here, not the rules.
+            if (!TableSaveHelper::store($fileTable, 'product.save.downloadable.file')) {
+                continue;
+            }
 
             $savedFileId = (int) $fileTable->j2commerce_productfile_id;
 

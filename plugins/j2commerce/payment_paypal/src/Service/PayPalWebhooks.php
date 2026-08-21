@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace J2Commerce\Plugin\J2Commerce\PaymentPaypal\Service;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\TableSaveHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\Database\DatabaseInterface;
@@ -289,13 +290,27 @@ final class PayPalWebhooks
             Text::sprintf('COM_J2COMMERCE_PAYPAL_PAYMENT_COMPLETED', $captureId)
         );
 
-        $order->transaction_id                      = $captureId;
-        $order->transaction_status                  = 'COMPLETED';
-        $transactionDetails                         = json_decode($order->transaction_details ?? '{}', true);
+        // loadOrderByPayPalId() returns a plain row, which cannot write itself. The
+        // capture identifiers go through the Order table the state change used.
+        $orderTable = Factory::getApplication()
+            ->bootComponent('com_j2commerce')
+            ->getMVCFactory()
+            ->createTable('Order', 'Administrator');
+
+        if (!$orderTable->load(['order_id' => $order->order_id])) {
+            return ['status' => 404, 'message' => 'Order not found'];
+        }
+
+        $orderTable->transaction_id                 = $captureId;
+        $orderTable->transaction_status             = 'COMPLETED';
+        $transactionDetails                         = json_decode($orderTable->transaction_details ?? '{}', true);
         $transactionDetails['webhook_event_id']     = $event['id'] ?? '';
         $transactionDetails['capture_completed_at'] = date('Y-m-d H:i:s');
-        $order->transaction_details                 = json_encode($transactionDetails);
-        $order->store();
+        $orderTable->transaction_details            = json_encode($transactionDetails);
+
+        if (!TableSaveHelper::store($orderTable, 'paypal.webhook.capture_completed')) {
+            return ['status' => 500, 'message' => 'Capture write failed'];
+        }
 
         return ['status' => 200, 'message' => 'Capture completed'];
     }
@@ -477,7 +492,10 @@ final class PayPalWebhooks
 
         $orderTable->load(['order_id' => $order->order_id]);
         $orderTable->order_state_id = $newStateId;
-        $orderTable->store();
+
+        if (!TableSaveHelper::store($orderTable, 'paypal.webhook.order_status')) {
+            return;
+        }
 
         OrderHistoryHelper::add(
             orderId: (string) $order->order_id,

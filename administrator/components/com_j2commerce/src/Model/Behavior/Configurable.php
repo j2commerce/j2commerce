@@ -18,6 +18,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model\Behavior;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\TableSaveHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\ProductOptionsModel;
 use J2Commerce\Component\J2commerce\Administrator\Model\VariantsModel;
 use J2Commerce\Component\J2commerce\Administrator\Table\ProductfilterTable;
@@ -211,8 +212,11 @@ class Configurable
         $variant->bind($this->_rawData);
         $variant->is_master  = 1;
         $variant->product_id = $table->j2commerce_product_id;
-        $variant->check();
-        $variant->store();
+        // The master variant carries the product's price and stock. Rows written after it
+        // are keyed to it, so a refusal ends the save rather than orphaning them.
+        if (!TableSaveHelper::save($variant, 'product.save.configurable.variant')) {
+            return;
+        }
 
         // Delete removed product options
         if (!empty($this->_rawData['deleted_options'])) {

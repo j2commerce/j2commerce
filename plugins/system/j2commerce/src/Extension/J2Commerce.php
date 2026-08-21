@@ -1650,7 +1650,10 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             $table = $app->bootComponent('com_menus')->getMVCFactory()->createTable('Menu', 'Administrator');
             $table->load($id);
             $table->published = 0;
-            $table->store();
+
+            if (!$table->store()) {
+                throw new \RuntimeException($table->getError());
+            }
 
             $app->enqueueMessage(Text::_('COM_J2COMMERCE_ORPHAN_MENU_UNPUBLISHED'));
         } catch (\Throwable $e) {

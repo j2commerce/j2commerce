@@ -20,6 +20,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\LengthHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\TableSaveHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\WeightHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\OptionvaluesModel;
 use J2Commerce\Component\J2commerce\Administrator\Model\ProductOptionsModel;
@@ -273,8 +274,11 @@ class Flexivariable
         $variant->bind($this->_rawData);
         $variant->is_master  = 1;
         $variant->product_id = $table->j2commerce_product_id;
-        $variant->check();
-        $variant->store();
+        // The master variant carries the product's price and stock. Rows written after it
+        // are keyed to it, so a refusal ends the save rather than orphaning them.
+        if (!TableSaveHelper::save($variant, 'product.save.flexivariable.variant')) {
+            return;
+        }
 
         // Delete removed product options first (before saving new/updated ones)
         if (isset($this->_rawData['deleted_options']) && !empty($this->_rawData['deleted_options'])) {

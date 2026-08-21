@@ -3529,7 +3529,9 @@ class ProductsController extends AdminController
         $poTable->parent_id  = 0;
 
         try {
-            $poTable->store();
+            if (!$poTable->store()) {
+                throw new \RuntimeException($poTable->getError());
+            }
         } catch (\Throwable $e) {
             Log::add('products.addProductOptionAjax failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
             $response['message'] = Text::_('COM_J2COMMERCE_ERR_GENERIC');
