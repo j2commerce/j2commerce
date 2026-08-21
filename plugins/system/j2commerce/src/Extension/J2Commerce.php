@@ -36,6 +36,7 @@ use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
+use Joomla\CMS\Table\Table;
 use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\User\UserFactoryInterface;
 use Joomla\CMS\User\UserHelper;
@@ -122,7 +123,42 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             'onJ2CommerceResolveCheckoutContext' => 'onResolveCheckoutContext',
             'onAjaxJ2commerce'                   => 'onAjaxJ2commerce',
             'onAfterGetMenuTypeOptions'          => 'onAfterGetMenuTypeOptions',
+            'onTableAfterReset'                  => 'onTableAfterReset',
         ];
+    }
+
+    /**
+     * Clear the literal default a reset leaves on a timestamp column.
+     *
+     * Table::reset() seeds every property from its column's declared default, so a column
+     * declared `DEFAULT CURRENT_TIMESTAMP` arrives holding that word as a string rather than
+     * a date. A reset runs before every load, and on a load that matches nothing the word is
+     * still there at store() time, where it goes into the INSERT and the server rejects it.
+     * Nothing reads the result of that store, so the row is simply never written.
+     *
+     * Clearing the property restores what a freshly constructed table already has: the column
+     * is left out of the INSERT entirely and the server applies the default itself. It also
+     * lets the `empty()` date stamping in the table classes run, which the word defeats.
+     *
+     * Matched on the value rather than a list of column names, because the columns carrying
+     * this default are not named consistently across the schema.
+     */
+    public function onTableAfterReset(Event $event): void
+    {
+        $table = $event->getArgument('subject');
+
+        if (!$table instanceof Table || !str_starts_with($table->getTableName(), '#__j2commerce')) {
+            return;
+        }
+
+        foreach (array_keys($table->getFields()) as $field) {
+            $value = $table->$field ?? null;
+
+            // MariaDB reports this as current_timestamp(); MySQL as CURRENT_TIMESTAMP.
+            if (\is_string($value) && preg_match('/^current_timestamp(\(\))?$/i', trim($value)) === 1) {
+                $table->$field = null;
+            }
+        }
     }
 
     /**
