@@ -187,20 +187,25 @@ class HtmlView extends BaseHtmlView
 
         $this->pluginQuickIcons = [];
 
-        foreach ($rawIcons as $entry) {
-            if (isset($entry['id'], $entry['link'], $entry['text'])) {
-                if (isset($entry['access'])) {
-                    $user = Factory::getApplication()->getIdentity();
+        foreach ((is_iterable($rawIcons) ? $rawIcons : []) as $entry) {
+            $entry = self::normalisePluginEntry($entry, ['text' => ['name', 'title'], 'image' => ['icon']], 'j2commerce-plugin-icon');
 
-                    // Take each pair of permission, context values.
-                    for ($i = 0, $n = \count($entry['access']); $i < $n; $i += 2) {
-                        if (!$user->authorise($entry['access'][$i], $entry['access'][$i + 1])) {
-                            continue 2; // Skip this icon if access check fails
-                        }
+            if ($entry === null || ($entry['link'] ?? '') === '') {
+                continue;
+            }
+
+            if (isset($entry['access']) && \is_array($entry['access'])) {
+                $user = Factory::getApplication()->getIdentity();
+
+                // Take each pair of permission, context values.
+                for ($i = 0, $n = \count($entry['access']); $i < $n; $i += 2) {
+                    if (!$user->authorise($entry['access'][$i], $entry['access'][$i + 1] ?? '')) {
+                        continue 2; // Skip this icon if access check fails
                     }
                 }
-                $this->pluginQuickIcons[] = $entry;
             }
+
+            $this->pluginQuickIcons[] = $entry;
         }
 
         if (!empty($this->pluginQuickIcons)) {
@@ -218,10 +223,19 @@ class HtmlView extends BaseHtmlView
 
         $this->dashboardMessages = [];
 
-        foreach ($rawMessages as $msg) {
-            if (isset($msg['id'], $msg['text'])) {
-                $this->dashboardMessages[] = $msg;
+        foreach ((is_iterable($rawMessages) ? $rawMessages : []) as $msg) {
+            $msg = self::normalisePluginEntry($msg, ['text' => ['message']], 'j2commerce-plugin-message');
+
+            if ($msg === null) {
+                continue;
             }
+
+            // The layout emits alert-<type>, and Bootstrap has no alert-error.
+            if (($msg['type'] ?? '') === 'error') {
+                $msg['type'] = 'danger';
+            }
+
+            $this->dashboardMessages[] = $msg;
         }
 
         usort($this->dashboardMessages, fn ($a, $b) => ($a['priority'] ?? 500) <=> ($b['priority'] ?? 500));
@@ -517,6 +531,39 @@ JS);
 
         $this->addToolbar();
         parent::display($tpl);
+    }
+
+    /**
+     * Plugins have contributed these entries as objects and under legacy key names since
+     * before the layouts settled on 'text'. Normalise both here: an object offset raises an
+     * Error in PHP 8, so an unnormalised entry took the whole dashboard down with it.
+     */
+    private static function normalisePluginEntry(mixed $entry, array $aliases, string $idPrefix): ?array
+    {
+        if (\is_object($entry)) {
+            $entry = get_object_vars($entry);
+        }
+
+        if (!\is_array($entry)) {
+            return null;
+        }
+
+        foreach ($aliases as $canonical => $legacyKeys) {
+            foreach ($legacyKeys as $legacyKey) {
+                if (!isset($entry[$canonical]) && isset($entry[$legacyKey])) {
+                    $entry[$canonical] = $entry[$legacyKey];
+                }
+            }
+        }
+
+        if (!\is_string($entry['text'] ?? null) || $entry['text'] === '') {
+            return null;
+        }
+
+        // Derived from the content so a dismissed message stays dismissed across requests.
+        $entry['id'] ??= $idPrefix . '-' . substr(md5(($entry['plugin'] ?? '') . $entry['text']), 0, 12);
+
+        return $entry;
     }
 
     protected function getNavbar(): string
