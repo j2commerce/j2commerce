@@ -42,6 +42,9 @@ if ($saveOrder && !empty($this->items)) {
 }
 
 HTMLHelper::_('bootstrap.tooltip', '[data-bs-toggle="tooltip"]', ['placement' => 'top']);
+// Rows link to com_plugins, which requires core.manage to reach and core.edit to open the form.
+$canEditPlugin = $user->authorise('core.manage', 'com_plugins') && $user->authorise('core.edit', 'com_plugins');
+
 $rawReturn = 'index.php?option=com_j2commerce&view=apps';
 $encodedReturn = base64_encode($rawReturn);
 $return = rawurlencode($encodedReturn);
@@ -92,7 +95,6 @@ $return = rawurlencode($encodedReturn);
                         <tbody <?php if ($saveOrder) : ?> class="js-draggable" data-url="<?php echo $saveOrderingUrl; ?>" data-direction="<?php echo strtolower($listDirn); ?>" data-nested="true"<?php endif; ?>>
                         <?php foreach ($this->items as $i => $item) :
                             $ordering   = ($listOrder == 'a.ordering');
-                            $canEdit    = $user->authorise('core.edit', 'com_j2commerce.app.' . $item->extension_id);
                             $canCheckin = $user->authorise('core.manage', 'com_checkin') || $item->checked_out == $userId || is_null($item->checked_out);
                             $canChange  = $user->authorise('core.edit.state', 'com_j2commerce.app.' . $item->extension_id) && $canCheckin;
 
@@ -143,7 +145,7 @@ $return = rawurlencode($encodedReturn);
                                 <th scope="row">
                                     <div class="d-block d-lg-flex">
                                         <div class="flex-shrink-0">
-                                            <?php if ($canEdit): ?>
+                                            <?php if ($canEditPlugin): ?>
                                             <a href="<?php echo Route::_($item->edit_link . '&return=' . $return); ?>" class="d-none d-lg-inline-block d-md-block">
                                                     <?php else: ?>
                                                     <span class="d-none d-lg-inline-block d-md-block">
@@ -158,7 +160,7 @@ $return = rawurlencode($encodedReturn);
                                             <?php else: ?>
                                                 <img src="<?php echo $this->escape(Uri::root(true) . '/media/com_j2commerce/images/default_app_j2commerce.webp'); ?>" class="img-fluid j2commerce-app-image" alt="<?php echo $this->escape($item->display_name); ?>"/>
                                             <?php endif; ?>
-                                        <?php if ($canEdit): ?>
+                                        <?php if ($canEditPlugin): ?>
                                             </a>
                                         <?php else: ?>
                                             </span>
@@ -169,10 +171,10 @@ $return = rawurlencode($encodedReturn);
                                                 <?php if (!empty($item->checked_out)): ?>
                                                     <?php echo J2htmlHelper::checkedOut($i, $item->editor, $item->checked_out_time, 'apps.', $canCheckin); ?>
                                                 <?php endif; ?>
-                                                <?php if ($canEdit): ?>
-                                                    <a href="<?php echo Route::_($item->edit_link . '&return=' . $return); ?>"><?php echo $item->display_name; ?></a>
+                                                <?php if ($canEditPlugin): ?>
+                                                    <a href="<?php echo Route::_($item->edit_link . '&return=' . $return); ?>"><?php echo $this->escape($item->display_name); ?></a>
                                                 <?php else: ?>
-                                                    <span class="text-dark"><?php echo $item->display_name; ?></span>
+                                                    <span class="text-dark"><?php echo $this->escape($item->display_name); ?></span>
                                                 <?php endif; ?>
                                                 <?php if ($item->folder !== 'j2commerce'): ?>
                                                     <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-info'); ?> ms-1"><?php echo $this->escape($item->folder); ?></span>
