@@ -225,6 +225,17 @@ class Router extends RouterView
             }
         }
 
+        // Menu links arrive as index.php?Itemid=N with no view, so the categoryalias rewrite
+        // below never saw them and emitted the alias URL, costing every visitor a 301.
+        if (empty($query['view']) && !empty($query['Itemid'])) {
+            $aliasItem = $this->menu->getItem((int) $query['Itemid']);
+
+            if ($aliasItem && ($aliasItem->query['view'] ?? '') === 'categoryalias' && !empty($aliasItem->query['id'])) {
+                $query['view'] = 'categoryalias';
+                $query['id']   = (int) $aliasItem->query['id'];
+            }
+        }
+
         // For categoryalias view, rewrite to products view with correct Itemid
         if (($query['view'] ?? '') === 'categoryalias' && !empty($query['id'])) {
             $catid    = (int) $query['id'];
