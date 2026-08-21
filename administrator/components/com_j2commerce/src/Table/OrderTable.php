@@ -330,11 +330,7 @@ class OrderTable extends Table
         return (string) (time() . $this->j2commerce_order_id);
     }
 
-    /**
-     * Generate secure token from order_id.
-     *
-     * Generate secure token: md5 hash of order_id + secret.
-     */
+    /** The entropy is the random suffix, not the order_id; no site secret is involved. */
     public function generateToken(): string
     {
         return md5($this->order_id . bin2hex(random_bytes(8)));
