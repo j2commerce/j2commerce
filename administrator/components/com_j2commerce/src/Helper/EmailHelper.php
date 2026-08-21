@@ -587,6 +587,27 @@ class EmailHelper
     }
 
     /**
+     * processTags() for a caller whose result becomes an HTML body.
+     *
+     * Same processing, with $escapeHtml already set. That flag cannot default to true --
+     * a caller rendering a mail SUBJECT wants the unencoded form, and several do -- so the
+     * safe path for an HTML sink is this name rather than remembering a fifth argument.
+     * Prefer this over processTags(..., true) in new code.
+     *
+     * @since 6.6.0
+     */
+    public function processTagsForHtml(
+        string $text,
+        object $order,
+        array $extras = [],
+        string $receiverType = '*',
+        ?Language $language = null,
+        bool $appendDownloadLinks = false
+    ): string {
+        return $this->processTags($text, $order, $extras, $receiverType, true, $language, $appendDownloadLinks);
+    }
+
+    /**
      * Process template tags and replace with order data
      *
      * @param   string               $text          The template text
@@ -2901,7 +2922,7 @@ class EmailHelper
         foreach ($items as $item) {
             $html .= '<tr>';
             $html .= '<td style="padding:8px; border:1px solid #ddd;">';
-            $html .= htmlspecialchars($item->orderitem_name ?? '');
+            $html .= self::encodeTagDelimiters(htmlspecialchars($item->orderitem_name ?? ''));
 
             $optionText = $this->decodeOrderItemAttributes($item->orderitem_attributes ?? '');
 
@@ -2910,7 +2931,7 @@ class EmailHelper
             }
 
             $html .= '</td>';
-            $html .= '<td style="padding:8px; border:1px solid #ddd;">' . htmlspecialchars($item->orderitem_sku ?? '') . '</td>';
+            $html .= '<td style="padding:8px; border:1px solid #ddd;">' . self::encodeTagDelimiters(htmlspecialchars($item->orderitem_sku ?? '')) . '</td>';
             $html .= '<td style="padding:8px; text-align:center; border:1px solid #ddd;">' . (int) ($item->orderitem_quantity ?? 0) . '</td>';
             $html .= '<td style="padding:8px; text-align:center; border:1px solid #ddd;">' . (float) ($item->orderitem_weight ?? 0) . '</td>';
             $html .= '</tr>';
@@ -2968,13 +2989,13 @@ class EmailHelper
             $html .= '<td style="padding:8px; border:1px solid #ddd;">';
 
             if (!empty($imageUrl)) {
-                $html .= '<img src="' . htmlspecialchars($imageUrl) . '" alt="' . htmlspecialchars($item->orderitem_name ?? '') . '" width="50" height="50" style="border-radius:4px; object-fit:cover; margin-right:8px; vertical-align:middle;" />';
+                $html .= '<img src="' . htmlspecialchars($imageUrl) . '" alt="' . self::encodeTagDelimiters(htmlspecialchars($item->orderitem_name ?? '')) . '" width="50" height="50" style="border-radius:4px; object-fit:cover; margin-right:8px; vertical-align:middle;" />';
             }
 
-            $html .= htmlspecialchars($item->orderitem_name ?? '');
+            $html .= self::encodeTagDelimiters(htmlspecialchars($item->orderitem_name ?? ''));
 
             if (!empty($item->orderitem_sku)) {
-                $html .= '<br><small>' . $language->_('COM_J2COMMERCE_EMAIL_SKU') . ': ' . htmlspecialchars($item->orderitem_sku) . '</small>';
+                $html .= '<br><small>' . $language->_('COM_J2COMMERCE_EMAIL_SKU') . ': ' . self::encodeTagDelimiters(htmlspecialchars($item->orderitem_sku)) . '</small>';
             }
 
             $html .= '</td>';
