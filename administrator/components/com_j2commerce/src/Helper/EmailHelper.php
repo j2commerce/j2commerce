@@ -533,7 +533,7 @@ class EmailHelper
         }
 
         // HTML body sink — opt in to tag encoding.
-        $templateText = $this->processTags($templateText, $order, $extras, $receiverType, true, $language);
+        $templateText = $this->processTags($templateText, $order, $extras, $receiverType, true, $language, true);
         // The subject is a plain-text header — entity encoding would be shown literally.
         $subject      = $this->processTags($template->subject ?? '', $order, $extras, $receiverType, false, $language);
 
@@ -600,18 +600,34 @@ class EmailHelper
      *                                              build mail SUBJECTS, where entity encoding
      *                                              would be shown literally in the inbox —
      *                                              keep their current output. Every core
-     *                                              HTML sink opts in explicitly.
+     *                                              HTML sink opts in explicitly. Encoding is all
+     *                                              this flag decides.
      * @param   Language|null        $language      Locale this copy is rendered in. Defaults to
      *                                              the order's own, which is what every
      *                                              customer-facing sink wants; the admin copy
      *                                              passes the recipient's admin language.
+     * @param   bool                 $appendDownloadLinks  True for a mail body, whose template may
+     *                                              predate [DOWNLOAD_LINKS] and so carry no
+     *                                              placeholder for it. Defaults to false: an
+     *                                              invoice, a packing slip and an admin preview
+     *                                              all render the same order without being a
+     *                                              delivery mechanism for its files, and each
+     *                                              template says for itself whether it wants the
+     *                                              block by carrying the tag.
      *
      * @return  string  The processed text
      *
      * @since   6.0.0
      */
-    public function processTags(string $text, object $order, array $extras = [], string $receiverType = '*', bool $escapeHtml = false, ?Language $language = null): string
-    {
+    public function processTags(
+        string $text,
+        object $order,
+        array $extras = [],
+        string $receiverType = '*',
+        bool $escapeHtml = false,
+        ?Language $language = null,
+        bool $appendDownloadLinks = false
+    ): string {
         $params    = ComponentHelper::getParams('com_j2commerce');
         $config    = Factory::getApplication()->getConfig();
         $sitename  = $config->get('sitename');
@@ -856,11 +872,11 @@ class EmailHelper
 
         // Templates saved before this tag existed carry no placeholder for it, so a store that
         // sells downloads would still mail an order with no way to reach the files. Append the
-        // block only when the template did not place it itself, and only into an HTML body.
+        // block only when the caller asked for it and the template did not place it itself.
         // Case-insensitive, and curly braces too: both forms are normalised to the canonical
         // tag further down, so testing only the canonical spelling here would append a second
         // copy to a template that does carry the tag.
-        $appendDownloadLinks = $escapeHtml
+        $appendDownloadLinks = $appendDownloadLinks
             && $downloadLinks !== ''
             && !preg_match('/[\[{]DOWNLOAD_LINKS[\]}]/i', $text);
 
@@ -1808,7 +1824,7 @@ class EmailHelper
         $this->loadLanguageOverrides($order);
 
         $extras       = [];
-        $templateText = $this->processTags($templateText, $order, $extras, '*', true);
+        $templateText = $this->processTags($templateText, $order, $extras, '*', true, null, true);
         $subject      = $this->processTags($subject, $order, $extras, '*', false);
 
         $baseURL = str_replace('/administrator', '', Uri::base());
