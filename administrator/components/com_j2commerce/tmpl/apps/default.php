@@ -143,7 +143,7 @@ $return = rawurlencode($encodedReturn);
                                 <th scope="row">
                                     <div class="d-block d-lg-flex">
                                         <div class="flex-shrink-0">
-                                            <?php if ($item->enabled): ?>
+                                            <?php if ($canEdit): ?>
                                             <a href="<?php echo Route::_($item->edit_link . '&return=' . $return); ?>" class="d-none d-lg-inline-block d-md-block">
                                                     <?php else: ?>
                                                     <span class="d-none d-lg-inline-block d-md-block">
@@ -158,7 +158,7 @@ $return = rawurlencode($encodedReturn);
                                             <?php else: ?>
                                                 <img src="<?php echo $this->escape(Uri::root(true) . '/media/com_j2commerce/images/default_app_j2commerce.webp'); ?>" class="img-fluid j2commerce-app-image" alt="<?php echo $this->escape($item->display_name); ?>"/>
                                             <?php endif; ?>
-                                        <?php if ($item->enabled): ?>
+                                        <?php if ($canEdit): ?>
                                             </a>
                                         <?php else: ?>
                                             </span>
@@ -169,7 +169,7 @@ $return = rawurlencode($encodedReturn);
                                                 <?php if (!empty($item->checked_out)): ?>
                                                     <?php echo J2htmlHelper::checkedOut($i, $item->editor, $item->checked_out_time, 'apps.', $canCheckin); ?>
                                                 <?php endif; ?>
-                                                <?php if ($item->enabled): ?>
+                                                <?php if ($canEdit): ?>
                                                     <a href="<?php echo Route::_($item->edit_link . '&return=' . $return); ?>"><?php echo $item->display_name; ?></a>
                                                 <?php else: ?>
                                                     <span class="text-dark"><?php echo $item->display_name; ?></span>
