@@ -228,13 +228,25 @@ class ShippingmethodModel extends AdminModel
 
         // Access checks.
         foreach ($pks as $i => $pk) {
-            if ($table->load($pk)) {
-                if (!$user->authorise('core.edit.state', 'com_j2commerce.shippingmethod.' . $pk)) {
-                    // Prune items that you can't change.
-                    unset($pks[$i]);
-                    Factory::getApplication()->enqueueMessage(Text::_('JLIB_APPLICATION_ERROR_EDITSTATE_NOT_PERMITTED'), 'error');
-                }
+            // Same confinement getItem() and save() declare: this model owns j2commerce plugin
+            // rows on the shared #__extensions table, and nothing else on it.
+            if (!$table->load($pk) || $table->type !== 'plugin' || $table->folder !== 'j2commerce') {
+                unset($pks[$i]);
+                Factory::getApplication()->enqueueMessage(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 'error');
+                continue;
             }
+
+            if (!$user->authorise('core.edit.state', 'com_j2commerce.shippingmethod.' . $pk)) {
+                // Prune items that you can't change.
+                unset($pks[$i]);
+                Factory::getApplication()->enqueueMessage(Text::_('JLIB_APPLICATION_ERROR_EDITSTATE_NOT_PERMITTED'), 'error');
+            }
+        }
+
+        // Every key was pruned. Table::publish() falls back to the row still loaded on the
+        // instance when it is handed an empty set, so it must not be called with one.
+        if (!$pks) {
+            return true;
         }
 
         // Attempt to change the state of the records.
