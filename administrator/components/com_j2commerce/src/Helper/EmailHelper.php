@@ -802,7 +802,7 @@ class EmailHelper
             '[SHIPPING_METHOD]'           => $language->_($shipping->ordershipping_name ?? ''),
             '[SHIPPING_TYPE]'             => $language->_($shipping->ordershipping_name ?? ''),
             '[SHIPPING_TRACKING_ID]'      => $shipping->ordershipping_tracking_id ?? '',
-            '[CUSTOMER_NOTE]'             => nl2br(htmlspecialchars((string) ($order->customer_note ?? ''), ENT_QUOTES, 'UTF-8')),
+            '[CUSTOMER_NOTE]'             => self::encodeTagDelimiters(nl2br(htmlspecialchars((string) ($order->customer_note ?? ''), ENT_QUOTES, 'UTF-8'))),
             '[PAYMENT_TYPE]'              => $this->getPaymentMethodTitle($order->orderpayment_type ?? '', $language),
             '[ORDER_TOKEN]'               => $isAdminCopy ? '' : $orderToken,
             '[TOKEN]'                     => $isAdminCopy ? '' : $orderToken,
@@ -899,9 +899,7 @@ class EmailHelper
                     continue;
                 }
 
-                $tags[$tagKey] = str_replace(
-                    ['[', ']'],
-                    ['&#91;', '&#93;'],
+                $tags[$tagKey] = self::encodeTagDelimiters(
                     htmlspecialchars((string) $tagValue, ENT_QUOTES, 'UTF-8')
                 );
             }
@@ -1126,8 +1124,8 @@ class EmailHelper
                         : '';
 
                     $itemTags = [
-                        '[ITEM_NAME]'        => htmlspecialchars($item->orderitem_name ?? ''),
-                        '[ITEM_SKU]'         => htmlspecialchars($item->orderitem_sku ?? ''),
+                        '[ITEM_NAME]'        => self::encodeTagDelimiters(htmlspecialchars($item->orderitem_name ?? '')),
+                        '[ITEM_SKU]'         => self::encodeTagDelimiters(htmlspecialchars($item->orderitem_sku ?? '')),
                         '[ITEM_QTY]'         => (string) (int) ($item->orderitem_quantity ?? 0),
                         '[ITEM_PRICE]'       => CurrencyHelper::format((float) ($item->orderitem_price ?? 0), $currencyCode, $currencyValue),
                         '[ITEM_TOTAL]'       => CurrencyHelper::format((float) ($item->orderitem_finalprice ?? 0), $currencyCode, $currencyValue),
@@ -2408,6 +2406,16 @@ class EmailHelper
     }
 
     /**
+     * Encodes the tag delimiters in an already-escaped value. htmlspecialchars() leaves [ and ]
+     * alone, and every pass that runs after a value is in $text reads them, so a value carrying
+     * either one would be taken for template syntax. Encoded, it still displays as typed.
+     */
+    private static function encodeTagDelimiters(string $value): string
+    {
+        return str_replace(['[', ']'], ['&#91;', '&#93;'], $value);
+    }
+
+    /**
      * Translates one stored value and encodes it as it is emitted. The JSON branch
      * of the render loop runs stripcslashes(), which undoes an encode applied
      * before it, so emission is the only point where the encode holds. It does not
@@ -2422,9 +2430,7 @@ class EmailHelper
 
         // Same delimiter encode the tag map applies, for the same reason: this renderer emits
         // into $text after the tag loop but before the hook pass and the unmatched-tag sweep.
-        return str_replace(
-            ['[', ']'],
-            ['&#91;', '&#93;'],
+        return self::encodeTagDelimiters(
             nl2br(htmlspecialchars($language->_((string) $value), ENT_QUOTES, 'UTF-8'))
         );
     }

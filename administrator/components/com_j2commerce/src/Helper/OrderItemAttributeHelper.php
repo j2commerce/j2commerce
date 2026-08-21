@@ -176,6 +176,20 @@ final class OrderItemAttributeHelper
         return $map;
     }
 
+    /**
+     * The email templates use [ and ] as tag delimiters, and the passes that run after this
+     * output is placed read them, so an option value carrying either one would be taken for
+     * template syntax. Encoded, it still displays as typed.
+     */
+    private static function escapeForEmail(string $value): string
+    {
+        return str_replace(
+            ['[', ']'],
+            ['&#91;', '&#93;'],
+            htmlspecialchars($value, ENT_QUOTES, 'UTF-8')
+        );
+    }
+
     /** Format attributes as HTML string for email context. */
     public static function formatForEmail(array $attributes): string
     {
@@ -189,14 +203,13 @@ final class OrderItemAttributeHelper
         foreach ($grouped as $group) {
             foreach ($group['items'] as $item) {
                 if ($group['type'] === 'product_children') {
-                    $qty   = (int) ($item['qty'] ?? 1);
-                    $label = $qty > 1
-                        ? '(' . $qty . ') ' . htmlspecialchars($item['name'], ENT_QUOTES, 'UTF-8')
-                        : htmlspecialchars($item['name'], ENT_QUOTES, 'UTF-8');
+                    $qty     = (int) ($item['qty'] ?? 1);
+                    $name    = self::escapeForEmail($item['name'] ?? '');
+                    $label   = $qty > 1 ? '(' . $qty . ') ' . $name : $name;
                     $parts[] = $label;
                 } else {
-                    $name    = htmlspecialchars($item['name'] ?? '', ENT_QUOTES, 'UTF-8');
-                    $value   = htmlspecialchars($item['value'] ?? '', ENT_QUOTES, 'UTF-8');
+                    $name    = self::escapeForEmail($item['name'] ?? '');
+                    $value   = self::escapeForEmail($item['value'] ?? '');
                     $parts[] = $value !== '' ? $name . ': ' . $value : $name;
                 }
             }
