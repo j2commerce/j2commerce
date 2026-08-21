@@ -46,6 +46,7 @@ class HtmlView extends BaseHtmlView
     // Analytics KPIs (date-filtered)
     public float $totalRevenue      = 0.0;
     public int $orderCount          = 0;
+    public int $excludedOrderCount  = 0;
     public float $conversionRate    = 0.0;
     public int $totalSessions       = 0;
     public array $revenueByDay      = [];
@@ -136,10 +137,11 @@ class HtmlView extends BaseHtmlView
                 ->getMVCFactory()->createModel('Analytics', 'Administrator', ['ignore_request' => true]);
 
             if ($analyticsModel) {
-                $this->totalRevenue   = $analyticsModel->getTotalRevenue($fromDateTime, $toDateTime);
-                $this->orderCount     = $analyticsModel->getOrderCount($fromDateTime, $toDateTime);
-                $this->revenueByDay   = $analyticsModel->getRevenueByDay($fromDateTime, $toDateTime);
-                $this->previousPeriod = $analyticsModel->getPreviousPeriodData($fromDateTime, $toDateTime);
+                $this->totalRevenue       = $analyticsModel->getTotalRevenue($fromDateTime, $toDateTime);
+                $this->orderCount         = $analyticsModel->getOrderCount($fromDateTime, $toDateTime);
+                $this->excludedOrderCount = $analyticsModel->getExcludedOrderCount($fromDateTime, $toDateTime);
+                $this->revenueByDay       = $analyticsModel->getRevenueByDay($fromDateTime, $toDateTime);
+                $this->previousPeriod     = $analyticsModel->getPreviousPeriodData($fromDateTime, $toDateTime);
 
                 $breakdown            = $analyticsModel->getConversionBreakdown($fromDateTime, $toDateTime);
                 $this->conversionRate = (float) ($breakdown['overallRate'] ?? 0.0);
@@ -338,6 +340,8 @@ JS);
         Text::script('COM_J2COMMERCE_DASHBOARD_DATA_BASED_ON');
         Text::script('COM_J2COMMERCE_DASHBOARD_DAY');
         Text::script('COM_J2COMMERCE_DASHBOARD_DAYS');
+        Text::script('COM_J2COMMERCE_ANALYTICS_N_ORDERS_EXCLUDED');
+        Text::script('COM_J2COMMERCE_ANALYTICS_N_ORDERS_EXCLUDED_1');
         Text::script('COM_J2COMMERCE_DASHBOARD_MSG_DISMISS_SESSION');
         Text::script('COM_J2COMMERCE_DASHBOARD_MSG_DISMISS_FOREVER');
         Text::script('COM_J2COMMERCE_LOADING');

@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
@@ -30,14 +31,6 @@ use Joomla\Database\ParameterType;
  */
 class AnalyticsModel extends BaseDatabaseModel
 {
-    /**
-     * Completed order state IDs (Confirmed, Processed, Shipped)
-     *
-     * @var    array
-     * @since  6.0.0
-     */
-    private const COMPLETED_STATES = [1, 2, 7];
-
     /**
      * Get total revenue for completed orders within a date range.
      *
@@ -64,7 +57,7 @@ class AnalyticsModel extends BaseDatabaseModel
     }
 
     /**
-     * Get order count (all states) within a date range.
+     * Get order count for the configured dashboard order statuses within a date range.
      *
      * @param   string  $from  Start date (inclusive)
      * @param   string  $to    End date (inclusive)
@@ -78,10 +71,39 @@ class AnalyticsModel extends BaseDatabaseModel
         $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
+        $query->select('COUNT(*)')
+            ->from($db->quoteName('#__j2commerce_orders', 'a'));
+
+        $this->addCompletedOrdersFilter($query, $from, $to, 'a');
+
+        $db->setQuery($query);
+
+        return (int) $db->loadResult();
+    }
+
+    /**
+     * Count orders in the range that the configured dashboard statuses exclude.
+     *
+     * Surfaces the remainder the KPI tiles no longer count, so a stuck or failed
+     * order is visible rather than simply absent from the totals.
+     *
+     * @param   string  $from  Start date (inclusive)
+     * @param   string  $to    End date (inclusive)
+     *
+     * @return  int  Number of excluded orders
+     *
+     * @since   6.6.0
+     */
+    public function getExcludedOrderCount(string $from, string $to): int
+    {
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true);
+
         $normalType = 'normal';
 
         $query->select('COUNT(*)')
             ->from($db->quoteName('#__j2commerce_orders', 'a'))
+            ->whereNotIn($db->quoteName('a.order_state_id'), ConfigHelper::getDashboardOrderStatuses(), ParameterType::INTEGER)
             ->where($db->quoteName('a.order_type') . ' = :orderType')
             ->where($db->quoteName('a.created_on') . ' >= :from')
             ->where($db->quoteName('a.created_on') . ' <= :to')
@@ -185,7 +207,7 @@ class AnalyticsModel extends BaseDatabaseModel
     }
 
     /**
-     * Get order count grouped by day (all states) within a date range.
+     * Get order count grouped by day for the configured dashboard order statuses.
      *
      * @param   string  $from  Start date (inclusive)
      * @param   string  $to    End date (inclusive)
@@ -200,21 +222,17 @@ class AnalyticsModel extends BaseDatabaseModel
         $query    = $db->getQuery(true);
         $tzOffset = $this->getStoreTimezoneOffset();
 
-        $normalType = 'normal';
-        $dateExpr   = 'DATE(CONVERT_TZ(' . $db->quoteName('a.created_on') . ', ' . $db->quote('+00:00') . ', ' . $db->quote($tzOffset) . '))';
+        $dateExpr = 'DATE(CONVERT_TZ(' . $db->quoteName('a.created_on') . ', ' . $db->quote('+00:00') . ', ' . $db->quote($tzOffset) . '))';
 
         $query->select([
                 $dateExpr . ' AS ' . $db->quoteName('day'),
                 'COUNT(*) AS ' . $db->quoteName('count'),
             ])
-            ->from($db->quoteName('#__j2commerce_orders', 'a'))
-            ->where($db->quoteName('a.order_type') . ' = :orderType')
-            ->where($db->quoteName('a.created_on') . ' >= :from')
-            ->where($db->quoteName('a.created_on') . ' <= :to')
-            ->bind(':orderType', $normalType, ParameterType::STRING)
-            ->bind(':from', $from, ParameterType::STRING)
-            ->bind(':to', $to, ParameterType::STRING)
-            ->group($dateExpr)
+            ->from($db->quoteName('#__j2commerce_orders', 'a'));
+
+        $this->addCompletedOrdersFilter($query, $from, $to, 'a');
+
+        $query->group($dateExpr)
             ->order($db->quoteName('day') . ' ASC');
 
         $db->setQuery($query);
@@ -704,7 +722,7 @@ class AnalyticsModel extends BaseDatabaseModel
      * Add completed orders filter to a query.
      *
      * Adds the following conditions:
-     * - order_state_id IN (1, 2, 7) (Confirmed, Processed, Shipped)
+     * - order_state_id IN (the configured dashboard order statuses)
      * - order_type = 'normal'
      * - created_on within the specified date range
      *
@@ -740,7 +758,7 @@ class AnalyticsModel extends BaseDatabaseModel
         $toParam        = ':to_' . $alias;
         $orderTypeParam = ':orderType_' . $alias;
 
-        $query->whereIn($db->quoteName($alias . '.order_state_id'), self::COMPLETED_STATES, ParameterType::INTEGER)
+        $query->whereIn($db->quoteName($alias . '.order_state_id'), ConfigHelper::getDashboardOrderStatuses(), ParameterType::INTEGER)
             ->where($db->quoteName($alias . '.order_type') . ' = ' . $orderTypeParam)
             ->where($db->quoteName($alias . '.created_on') . ' >= ' . $fromParam)
             ->where($db->quoteName($alias . '.created_on') . ' <= ' . $toParam)

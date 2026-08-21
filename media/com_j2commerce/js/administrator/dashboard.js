@@ -342,6 +342,20 @@
         return wrapper;
     }
 
+    function excludedText(count) {
+        const n = parseInt(count || 0, 10);
+
+        if (n <= 0) {
+            return '';
+        }
+
+        const key = n === 1
+            ? 'COM_J2COMMERCE_ANALYTICS_N_ORDERS_EXCLUDED_1'
+            : 'COM_J2COMMERCE_ANALYTICS_N_ORDERS_EXCLUDED';
+
+        return Joomla.Text._(key).replace('%d', n).replace('%s', n);
+    }
+
     function updateKPIs(data) {
         const prev = data.previousPeriod || {};
 
@@ -350,6 +364,7 @@
 
         setEl('kpi-revenue', data.formattedRevenue || formatCurrency(data.totalRevenue));
         setEl('kpi-orders', String(parseInt(data.orderCount || 0, 10)));
+        setEl('kpi-orders-excluded', excludedText(data.excludedOrderCount));
         setEl('kpi-conversion', parseFloat(data.conversionRate || 0).toFixed(1) + '%');
         setEl('kpi-sessions', String(parseInt(data.totalSessions || 0, 10)));
 

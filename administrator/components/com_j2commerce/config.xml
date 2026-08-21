@@ -274,6 +274,17 @@
             <option value="0">JNO</option>
             <option value="1">JYES</option>
         </field>
+
+        <field
+            name="dashboard_orderstatuses"
+            type="Orderstatus"
+            label="COM_J2COMMERCE_CONFIG_DASHBOARD_STATUSES"
+            description="COM_J2COMMERCE_CONFIG_DASHBOARD_STATUSES_DESC"
+            multiple="true"
+            default="1,2,7"
+            layout="joomla.form.field.list-fancy-select"
+        />
+
         <field
             name="spacer_misc_2"
             type="spacer"

@@ -155,6 +155,7 @@ $doc->getWebAssetManager()
                             <div class="quickicon-name d-flex align-items-center">
                                 <span class="j-links-link"><div class="text-capitalize"><?php echo Text::_('COM_J2COMMERCE_ANALYTICS_ORDER_COUNT'); ?></div></span>
                             </div>
+                            <div class="quickicon-note small text-body-secondary" id="kpi-orders-excluded"><?php echo $this->excludedOrderCount > 0 ? $this->escape(Text::plural('COM_J2COMMERCE_ANALYTICS_N_ORDERS_EXCLUDED', $this->excludedOrderCount)) : ''; ?></div>
                         </div>
                     </div>
                     <div class="quickicon quickicon-single col-12 col-md-6 col-lg-3 mb-3 mb-lg-0 border-0">

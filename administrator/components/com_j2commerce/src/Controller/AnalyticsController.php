@@ -90,6 +90,7 @@ class AnalyticsController extends BaseController
             $data = [
                 'totalRevenue'         => $totalRevenue,
                 'orderCount'           => $model->getOrderCount($fromDate, $toDate),
+                'excludedOrderCount'   => $model->getExcludedOrderCount($fromDate, $toDate),
                 'averageOrderValue'    => $averageOrderValue,
                 'itemsSold'            => $model->getItemsSold($fromDate, $toDate),
                 'revenueByDay'         => $model->getRevenueByDay($fromDate, $toDate),

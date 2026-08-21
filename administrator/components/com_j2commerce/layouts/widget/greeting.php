@@ -12,9 +12,11 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\Database\ParameterType;
 
 $app  = Factory::getApplication();
 $user = $app->getIdentity();
@@ -42,7 +44,7 @@ $firstName = explode(' ', trim($user->name))[0];
 $registeredCount = (int) ($displayData['registered'] ?? 0);
 $guestCount      = (int) ($displayData['guests'] ?? 0);
 
-// Today's sales total for confirmed/processed/shipped orders, scoped to store timezone
+// Today's sales total for the configured dashboard order statuses, scoped to store timezone
 // Convert store-local day boundaries to UTC for correct comparison against UTC created_on
 $utcTz      = new \DateTimeZone('UTC');
 $todayStart = (new \DateTimeImmutable($now->format('Y-m-d') . ' 00:00:00', $tz))
@@ -55,7 +57,7 @@ $db    = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class)
 $query = $db->getQuery(true)
     ->select('COALESCE(SUM(' . $db->quoteName('order_total') . '), 0)')
     ->from($db->quoteName('#__j2commerce_orders'))
-    ->whereIn($db->quoteName('order_state_id'), [1, 2, 7])
+    ->whereIn($db->quoteName('order_state_id'), ConfigHelper::getDashboardOrderStatuses(), ParameterType::INTEGER)
     ->where($db->quoteName('order_type') . ' = :order_type')
     ->where($db->quoteName('created_on') . ' >= :today_start')
     ->where($db->quoteName('created_on') . ' <= :today_end')

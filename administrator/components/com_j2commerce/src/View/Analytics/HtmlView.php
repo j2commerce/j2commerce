@@ -34,6 +34,7 @@ class HtmlView extends BaseHtmlView
     public string $navbar              = '';
     public float $totalRevenue         = 0.0;
     public int $orderCount             = 0;
+    public int $excludedOrderCount     = 0;
     public float $averageOrderValue    = 0.0;
     public int $itemsSold              = 0;
     public array $revenueByDay         = [];
@@ -96,6 +97,7 @@ class HtmlView extends BaseHtmlView
 
         $this->totalRevenue       = $model->getTotalRevenue($fromDateTime, $toDateTime);
         $this->orderCount         = $model->getOrderCount($fromDateTime, $toDateTime);
+        $this->excludedOrderCount = $model->getExcludedOrderCount($fromDateTime, $toDateTime);
         $this->averageOrderValue  = $model->getAverageOrderValue($fromDateTime, $toDateTime);
         $this->itemsSold          = $model->getItemsSold($fromDateTime, $toDateTime);
         $this->revenueByDay       = $model->getRevenueByDay($fromDateTime, $toDateTime);
@@ -176,6 +178,8 @@ class HtmlView extends BaseHtmlView
         Text::script('COM_J2COMMERCE_LIVE_USERS_JUST_NOW');
         Text::script('COM_J2COMMERCE_LIVE_USERS_MINUTES_AGO');
         Text::script('COM_J2COMMERCE_ANALYTICS_NO_DATA');
+        Text::script('COM_J2COMMERCE_ANALYTICS_N_ORDERS_EXCLUDED');
+        Text::script('COM_J2COMMERCE_ANALYTICS_N_ORDERS_EXCLUDED_1');
 
         // Dispatch plugin hooks
         PluginHelper::importPlugin('j2commerce');

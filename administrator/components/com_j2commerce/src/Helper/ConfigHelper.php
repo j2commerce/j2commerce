@@ -1094,6 +1094,30 @@ class ConfigHelper
     }
 
     /**
+     * Order states the dashboard and analytics screens count as revenue.
+     *
+     * An unticked multi-select submits no field at all, so an empty stored value is
+     * indistinguishable from an install that predates the setting. Both fall back to
+     * the historic Confirmed/Processed/Shipped set rather than reporting no revenue.
+     *
+     * @return  array<int>  Array of order status IDs
+     *
+     * @since   6.6.0
+     */
+    public static function getDashboardOrderStatuses(): array
+    {
+        $value = self::get('dashboard_orderstatuses', '1,2,7');
+        $raw   = \is_array($value) ? $value : explode(',', (string) $value);
+
+        $ids = array_values(array_unique(array_filter(
+            array_map('intval', $raw),
+            static fn (int $id): bool => $id > 0
+        )));
+
+        return $ids ?: [1, 2, 7];
+    }
+
+    /**
      * Get the order statuses that allow downloads.
      *
      * Callers gate a grant with `in_array($status, ...)`, so an empty list here would

@@ -119,6 +119,7 @@ $changeHtml = function (array $change): string {
                                     <div class="text-capitalize"><?php echo Text::_('COM_J2COMMERCE_ANALYTICS_ORDER_COUNT'); ?></div>
                                 </span>
                             </div>
+                            <div class="quickicon-note small text-body-secondary" id="kpi-orders-excluded"><?php echo $this->excludedOrderCount > 0 ? $this->escape(Text::plural('COM_J2COMMERCE_ANALYTICS_N_ORDERS_EXCLUDED', $this->excludedOrderCount)) : ''; ?></div>
                         </div>
                     </div>
 

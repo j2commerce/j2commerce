@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 use Joomla\Database\ParameterType;
@@ -23,8 +24,6 @@ use Joomla\Database\ParameterType;
  */
 class DashboardModel extends BaseDatabaseModel
 {
-    private const COMPLETED_STATES = [1, 2, 7];
-
     private function getStoreTimezoneOffset(): string
     {
         $tz     = Factory::getApplication()->getConfig()->get('offset', 'UTC');
@@ -176,7 +175,7 @@ class DashboardModel extends BaseDatabaseModel
                 'COUNT(*) AS ' . $db->quoteName('orders'),
             ])
             ->from($db->quoteName('#__j2commerce_orders', 'a'))
-            ->whereIn($db->quoteName('a.order_state_id'), self::COMPLETED_STATES, ParameterType::INTEGER)
+            ->whereIn($db->quoteName('a.order_state_id'), ConfigHelper::getDashboardOrderStatuses(), ParameterType::INTEGER)
             ->where($db->quoteName('a.order_type') . ' = :orderType')
             ->bind(':orderType', $normalType, ParameterType::STRING)
             ->group($monthExprA)
@@ -194,7 +193,7 @@ class DashboardModel extends BaseDatabaseModel
             ])
             ->from($db->quoteName('#__j2commerce_orderitems', 'oi'))
             ->join('INNER', $db->quoteName('#__j2commerce_orders', 'o'), $db->quoteName('oi.order_id') . ' = ' . $db->quoteName('o.order_id'))
-            ->whereIn($db->quoteName('o.order_state_id'), self::COMPLETED_STATES, ParameterType::INTEGER)
+            ->whereIn($db->quoteName('o.order_state_id'), ConfigHelper::getDashboardOrderStatuses(), ParameterType::INTEGER)
             ->where($db->quoteName('o.order_type') . ' = :orderType2')
             ->bind(':orderType2', $normalType, ParameterType::STRING)
             ->group($monthExprO)
@@ -224,7 +223,7 @@ class DashboardModel extends BaseDatabaseModel
                 'COUNT(*) AS ' . $db->quoteName('orders'),
             ])
             ->from($db->quoteName('#__j2commerce_orders', 'a'))
-            ->whereIn($db->quoteName('a.order_state_id'), self::COMPLETED_STATES, ParameterType::INTEGER)
+            ->whereIn($db->quoteName('a.order_state_id'), ConfigHelper::getDashboardOrderStatuses(), ParameterType::INTEGER)
             ->where($db->quoteName('a.order_type') . ' = :orderType')
             ->bind(':orderType', $normalType, ParameterType::STRING)
             ->group($yearExprA)
@@ -242,7 +241,7 @@ class DashboardModel extends BaseDatabaseModel
             ])
             ->from($db->quoteName('#__j2commerce_orderitems', 'oi'))
             ->join('INNER', $db->quoteName('#__j2commerce_orders', 'o'), $db->quoteName('oi.order_id') . ' = ' . $db->quoteName('o.order_id'))
-            ->whereIn($db->quoteName('o.order_state_id'), self::COMPLETED_STATES, ParameterType::INTEGER)
+            ->whereIn($db->quoteName('o.order_state_id'), ConfigHelper::getDashboardOrderStatuses(), ParameterType::INTEGER)
             ->where($db->quoteName('o.order_type') . ' = :orderType2')
             ->bind(':orderType2', $normalType, ParameterType::STRING)
             ->group($yearExprO)
