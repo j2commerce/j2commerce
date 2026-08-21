@@ -43,6 +43,8 @@ if ($saveOrder && !empty($this->items)) {
 }
 
 HTMLHelper::_('bootstrap.tooltip', '[data-bs-toggle="tooltip"]', ['placement' => 'top']);
+// Rows link to com_plugins, which requires core.manage to reach and core.edit to open the form.
+$canEditPlugin = $user->authorise('core.manage', 'com_plugins') && $user->authorise('core.edit', 'com_plugins');
 
 ?>
 
@@ -96,7 +98,6 @@ HTMLHelper::_('bootstrap.tooltip', '[data-bs-toggle="tooltip"]', ['placement' =>
                         <?php $returnUrl = base64_encode('index.php?option=com_j2commerce&view=reports'); ?>
                         <?php foreach ($this->items as $i => $item) :
                             $ordering   = ($listOrder == 'a.ordering');
-                            $canEdit    = $user->authorise('core.edit', 'com_j2commerce.report.' . $item->extension_id);
                             $canCheckin = $user->authorise('core.manage', 'com_checkin') || $item->checked_out == $userId || is_null($item->checked_out);
                             $canChange  = $user->authorise('core.edit.state', 'com_j2commerce.report.' . $item->extension_id) && $canCheckin;
 
@@ -165,13 +166,13 @@ HTMLHelper::_('bootstrap.tooltip', '[data-bs-toggle="tooltip"]', ['placement' =>
                                 <th scope="row">
                                     <div class="d-block d-lg-flex">
                                         <div class="flex-shrink-0">
-                                            <?php if ($canEdit) : ?>
+                                            <?php if ($canEditPlugin) : ?>
                                                 <a href="<?php echo Route::_('index.php?option=com_plugins&task=plugin.edit&extension_id=' . $item->extension_id . '&return=' . $returnUrl); ?>" class="d-none d-lg-inline-block d-md-block">
                                             <?php else : ?>
                                                 <span class="d-none d-lg-inline-block d-md-block">
                                             <?php endif; ?>
                                                 <img src="<?php echo $this->escape($imagePath); ?>" class="img-fluid j2commerce-report-image" alt="<?php echo $this->escape(Text::_($item->name)); ?>"/>
-                                            <?php if ($canEdit) : ?>
+                                            <?php if ($canEditPlugin) : ?>
                                                 </a>
                                             <?php else : ?>
                                                 </span>
@@ -182,12 +183,12 @@ HTMLHelper::_('bootstrap.tooltip', '[data-bs-toggle="tooltip"]', ['placement' =>
                                                 <?php if (!empty($item->checked_out)) : ?>
                                                     <?php echo J2htmlHelper::checkedOut($i, $item->editor, $item->checked_out_time, 'reports.', $canCheckin); ?>
                                                 <?php endif; ?>
-                                                <?php if ($canEdit) : ?>
+                                                <?php if ($canEditPlugin) : ?>
                                                     <a href="<?php echo Route::_('index.php?option=com_plugins&task=plugin.edit&extension_id=' . $item->extension_id . '&return=' . $returnUrl); ?>">
-                                                        <?php echo Text::_($item->name); ?>
+                                                        <?php echo $this->escape(Text::_($item->name)); ?>
                                                     </a>
                                                 <?php else : ?>
-                                                    <span><?php echo Text::_($item->name); ?></span>
+                                                    <span><?php echo $this->escape(Text::_($item->name)); ?></span>
                                                 <?php endif; ?>
                                             </div>
                                             <?php if ($desc) : ?>

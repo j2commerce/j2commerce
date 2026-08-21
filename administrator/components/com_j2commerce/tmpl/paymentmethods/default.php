@@ -45,6 +45,8 @@ if ($saveOrder && !empty($this->items)) {
 }
 
 HTMLHelper::_('bootstrap.tooltip', '[data-bs-toggle="tooltip"]', ['placement' => 'top']);
+// Rows link to com_plugins, which requires core.manage to reach and core.edit to open the form.
+$canEditPlugin = $user->authorise('core.manage', 'com_plugins') && $user->authorise('core.edit', 'com_plugins');
 
 $encodedReturn = base64_encode('index.php?option=com_j2commerce&view=paymentmethods');
 ?>
@@ -99,7 +101,6 @@ $encodedReturn = base64_encode('index.php?option=com_j2commerce&view=paymentmeth
                         <tbody <?php if ($saveOrder) : ?> class="js-draggable" data-url="<?php echo $saveOrderingUrl; ?>" data-direction="<?php echo strtolower($listDirn); ?>" data-nested="true"<?php endif; ?>>
                         <?php foreach ($this->items as $i => $item) :
                             $ordering   = ($listOrder == 'a.ordering');
-                            $canEdit    = $user->authorise('core.edit', 'com_j2commerce.paymentmethod.' . $item->extension_id);
                             $canCheckin = $user->authorise('core.manage', 'com_checkin') || $item->checked_out == $userId || is_null($item->checked_out);
                             $canChange  = $user->authorise('core.edit.state', 'com_j2commerce.paymentmethod.' . $item->extension_id) && $canCheckin;
 
@@ -171,13 +172,13 @@ $encodedReturn = base64_encode('index.php?option=com_j2commerce&view=paymentmeth
                                 <th scope="row">
                                     <div class="d-block d-lg-flex">
                                         <div class="flex-shrink-0">
-                                            <?php if ($canEdit) : ?>
+                                            <?php if ($canEditPlugin) : ?>
                                                 <a href="<?php echo $link; ?>" class="d-none d-lg-inline-block d-md-block">
                                             <?php else : ?>
                                                 <span class="d-none d-lg-inline-block d-md-block">
                                             <?php endif; ?>
                                                 <img src="<?php echo $this->escape($imagePath); ?>" class="img-fluid j2commerce-payment-image" alt="<?php echo $this->escape(Text::_($item->name)); ?>"/>
-                                            <?php if ($canEdit) : ?>
+                                            <?php if ($canEditPlugin) : ?>
                                                 </a>
                                             <?php else : ?>
                                                 </span>
@@ -188,12 +189,12 @@ $encodedReturn = base64_encode('index.php?option=com_j2commerce&view=paymentmeth
                                                 <?php if (!empty($item->checked_out)) : ?>
                                                     <?php echo J2htmlHelper::checkedOut($i, $item->editor, $item->checked_out_time, 'paymentmethods.', $canCheckin); ?>
                                                 <?php endif; ?>
-                                                <?php if ($canEdit) : ?>
+                                                <?php if ($canEditPlugin) : ?>
                                                     <a href="<?php echo $link; ?>">
-                                                        <?php echo Text::_($item->name); ?>
+                                                        <?php echo $this->escape(Text::_($item->name)); ?>
                                                     </a>
                                                 <?php else : ?>
-                                                    <span><?php echo Text::_($item->name); ?></span>
+                                                    <span><?php echo $this->escape(Text::_($item->name)); ?></span>
                                                 <?php endif; ?>
                                             </div>
                                             <?php if ($desc) : ?>
