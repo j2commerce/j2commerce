@@ -57,6 +57,11 @@ foreach ($argv as $i => $arg) {
     }
 }
 
+// ── Minified twins ───────────────────────────────────────────────────────────
+// Pass --no-minify to build a source-only package (identical to the pre-twin
+// output) for emergencies. Default: minify is on and esbuild is required.
+$minifyEnabled = !\in_array('--no-minify', $argv, true);
+
 $counterFile   = $buildDir . '/.devbuild.json';
 $buildCounters = [];
 
@@ -266,6 +271,68 @@ function formatSize(int $bytes): string
     return sprintf('%.1f KB', $bytes / 1024);
 }
 
+function findEsbuild(string $joomlaRoot): ?string
+{
+    $env = getenv('J2C_ESBUILD');
+
+    $candidates = array_filter([
+        $env !== false ? $env : null,
+        $joomlaRoot . '/node_modules/@esbuild/win32-x64/esbuild.exe',
+        $joomlaRoot . '/node_modules/.bin/esbuild',
+    ]);
+
+    foreach ($candidates as $bin) {
+        if (is_file($bin)) {
+            return $bin;
+        }
+    }
+
+    return null;
+}
+
+function minifyFile(string $esbuild, string $absPath): string
+{
+    $tmp = tempnam(sys_get_temp_dir(), 'j2cmin');
+    exec(
+        '"' . $esbuild . '" "' . $absPath . '" --minify --charset=utf8 --log-level=error --outfile="' . $tmp . '" 2>&1',
+        $output,
+        $code
+    );
+
+    if ($code !== 0 || filesize($tmp) === 0) {
+        @unlink($tmp);
+        die("\nERROR: esbuild failed on {$absPath}:\n  " . implode("\n  ", $output) . "\n(Use --no-minify to build without twins.)\n");
+    }
+
+    $minified = file_get_contents($tmp);
+    @unlink($tmp);
+
+    return $minified;
+}
+
+/** Adds foo.min.js|css beside an already-added media file. Vendor and pre-minified files are skipped. */
+function addMinifiedTwin(ZipArchive $zip, ?string $esbuild, string $absPath, string $zipRel): void
+{
+    if ($esbuild === null || !preg_match('/\.(js|css)$/', $zipRel) || preg_match('/\.min\.(js|css)$/', $zipRel)) {
+        return;
+    }
+
+    if (\in_array('vendor', explode('/', str_replace('\\', '/', $zipRel)), true)) {
+        return;
+    }
+
+    // A committed twin ships as-is (libraries/j2commerce/media/js has three).
+    $committedTwin = preg_replace('/\.(js|css)$/', '.min.$1', $absPath);
+    if (is_file($committedTwin)) {
+        if (filemtime($committedTwin) < filemtime($absPath)) {
+            echo "  WARNING: committed twin older than source: {$committedTwin}\n";
+        }
+        return;
+    }
+
+    $zip->addFromString(preg_replace('/\.(js|css)$/', '.min.$1', $zipRel), minifyFile($esbuild, $absPath));
+}
+
 function removeDir(string $dir): void
 {
     if (!is_dir($dir)) return;
@@ -316,7 +383,7 @@ function validateSqlAlignment(string $sqlDir, string $manifestVersion): void
 
 // ── Inner ZIP Builders ────────────────────────────────────────────────────────
 
-function buildComponentZip(string $joomlaRoot, string $tempDir, string $version, array $excludePatterns): string
+function buildComponentZip(string $joomlaRoot, string $tempDir, string $version, array $excludePatterns, ?string $esbuild): string
 {
     $zipPath = $tempDir . '/com_j2commerce.zip';
     $zip = new ZipArchive();
@@ -383,6 +450,7 @@ function buildComponentZip(string $joomlaRoot, string $tempDir, string $version,
     $mediaFiles = collectFiles($mediaDir, $excludePatterns);
     foreach ($mediaFiles as $rel => $absPath) {
         $zip->addFile($absPath, 'media/com_j2commerce/' . $rel);
+        addMinifiedTwin($zip, $esbuild, $absPath, 'media/com_j2commerce/' . $rel);
         $count++;
     }
 
@@ -417,7 +485,7 @@ function buildComponentZip(string $joomlaRoot, string $tempDir, string $version,
     return $zipPath;
 }
 
-function buildPluginZip(string $joomlaRoot, string $tempDir, string $group, string $element, string $version, array $excludePatterns): ?string
+function buildPluginZip(string $joomlaRoot, string $tempDir, string $group, string $element, string $version, array $excludePatterns, ?string $esbuild): ?string
 {
     $sourceDir = $joomlaRoot . '/plugins/' . $group . '/' . $element;
     if (!is_dir($sourceDir)) {
@@ -443,6 +511,9 @@ function buildPluginZip(string $joomlaRoot, string $tempDir, string $group, stri
             $zip->addFromString($rel, $content);
         } else {
             $zip->addFile($absPath, $rel);
+            if (str_starts_with($rel, 'media/')) {
+                addMinifiedTwin($zip, $esbuild, $absPath, $rel);
+            }
         }
         $count++;
     }
@@ -488,7 +559,7 @@ function buildModuleZip(string $joomlaRoot, string $tempDir, string $module, str
     return $zipPath;
 }
 
-function buildLibraryZip(string $joomlaRoot, string $tempDir, string $version, array $excludePatterns, string $libName = 'j2commerce'): string
+function buildLibraryZip(string $joomlaRoot, string $tempDir, string $version, array $excludePatterns, string $libName = 'j2commerce', ?string $esbuild = null): string
 {
     $sourceDir = $joomlaRoot . '/libraries/' . $libName;
     $zipPath = $tempDir . '/lib_' . $libName . '.zip';
@@ -511,6 +582,9 @@ function buildLibraryZip(string $joomlaRoot, string $tempDir, string $version, a
             $zip->addFromString($rel, $content);
         } else {
             $zip->addFile($absPath, $rel);
+            if (str_starts_with($rel, 'media/')) {
+                addMinifiedTwin($zip, $esbuild, $absPath, $rel);
+            }
         }
         $count++;
     }
@@ -680,6 +754,15 @@ if (!empty($conflictFiles)) {
 
 echo "Conflict marker check OK\n";
 
+$esbuild = null;
+if ($minifyEnabled) {
+    $esbuild = findEsbuild($joomlaRoot);
+    if ($esbuild === null) {
+        die("\nERROR: esbuild not found (npm install, or set J2C_ESBUILD, or pass --no-minify).\n");
+    }
+    echo "Minifying first-party assets with esbuild: {$esbuild}\n";
+}
+
 $finalZipName = ($releaseVersion !== null)
     ? "pkg_j2commerce_{$releaseVersionDashed}.zip"
     : "pkg_j2commerce_{$baseVersionDashed}-{$buildNum}.zip";
@@ -692,18 +775,18 @@ $totalFiles = 0;
 // ── 1. Build inner ZIPs ──────────────────────────────────────────────────────
 
 echo "Building component ZIP...\n";
-$innerZips[] = buildComponentZip($joomlaRoot, $tempDir, $version, $excludePatterns);
+$innerZips[] = buildComponentZip($joomlaRoot, $tempDir, $version, $excludePatterns, $esbuild);
 
 echo "\nBuilding library ZIP...\n";
-$innerZips[] = buildLibraryZip($joomlaRoot, $tempDir, $version, $excludePatterns);
+$innerZips[] = buildLibraryZip($joomlaRoot, $tempDir, $version, $excludePatterns, esbuild: $esbuild);
 
 echo "\nBuilding j2commerceflow library ZIP...\n";
-$innerZips[] = buildLibraryZip($joomlaRoot, $tempDir, $version, $excludePatterns, 'j2commerceflow');
+$innerZips[] = buildLibraryZip($joomlaRoot, $tempDir, $version, $excludePatterns, 'j2commerceflow', $esbuild);
 
 echo "\nBuilding plugin ZIPs...\n";
 $pluginZipCount = 0;
 foreach ($plugins as $plugin) {
-    $result = buildPluginZip($joomlaRoot, $tempDir, $plugin['group'], $plugin['element'], $version, $excludePatterns);
+    $result = buildPluginZip($joomlaRoot, $tempDir, $plugin['group'], $plugin['element'], $version, $excludePatterns, $esbuild);
     if ($result) {
         $innerZips[] = $result;
         $pluginZipCount++;

@@ -41,7 +41,9 @@ $wa->useScript('core')
 // Register and use the modal multi-select list script from library
 $wa->registerAndUseScript(
     'com_j2commerce.modal-products',
-    'com_j2commerce/administrator/modal-products.min.js'
+    'media/com_j2commerce/js/administrator/modal-products.js',
+    [],
+    ['defer' => true]
 );
 
 // Helper function to extract clean image path from Joomla image string
