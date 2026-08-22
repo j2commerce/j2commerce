@@ -3164,7 +3164,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             }
         }
 
-        return array_unique(array_filter($images));
+        return array_values(array_unique(array_filter($images)));
     }
 
     /**

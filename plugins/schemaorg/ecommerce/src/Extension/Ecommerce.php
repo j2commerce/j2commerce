@@ -373,7 +373,7 @@ final class Ecommerce extends CMSPlugin implements SubscriberInterface
             $images = array_merge($images, $this->getHelper()->getAllProductImages($product));
         }
 
-        return array_unique(array_filter($images));
+        return array_values(array_unique(array_filter($images)));
     }
 
     private function buildBrandSchema(array $entry, ?object $product): ?array

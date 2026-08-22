@@ -348,7 +348,7 @@ class ProductSchemaBuilder
             $images        = array_merge($images, $productImages);
         }
 
-        return array_unique(array_filter($images));
+        return array_values(array_unique(array_filter($images)));
     }
 
     /**
