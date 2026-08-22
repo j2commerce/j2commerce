@@ -773,7 +773,7 @@ class MultiimageuploaderController extends BaseController
             return false;
         }
 
-        $normalizedRoot = rtrim(str_replace('\\', '/', JPATH_ROOT), '/');
+        $normalizedRoot = rtrim(str_replace('\\', '/', JPATH_ROOT), '/') . '/';
         $normalizedPath = str_replace('\\', '/', $realPath);
 
         return str_starts_with($normalizedPath, $normalizedRoot);
