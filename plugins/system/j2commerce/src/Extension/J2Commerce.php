@@ -2316,11 +2316,11 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
      */
     private function hasExistingProductSchema(array $headData): bool
     {
-        // Check custom tags for existing JSON-LD with Product
+        // Check custom tags for existing JSON-LD with Product or ProductGroup
         if (!empty($headData['custom'])) {
             foreach ($headData['custom'] as $tag) {
                 if (\is_string($tag) && strpos($tag, 'application/ld+json') !== false) {
-                    if (strpos($tag, '"@type":"Product"') !== false || strpos($tag, '"@type": "Product"') !== false) {
+                    if (preg_match('/"@type"\s*:\s*"(?:Product|ProductGroup)"/', $tag)) {
                         return true;
                     }
                 }
@@ -2520,9 +2520,12 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         $productUrl    = $this->getProductUrl($product);
         $masterVariant = $this->getMasterVariant($variants);
 
+        // ProductGroup, not Product: hasVariant is a ProductGroup property, and a
+        // Product parent makes every nested variant an invalid object type.
         $schema = [
-            '@type' => 'Product',
-            '@id'   => $productUrl . '#product',
+            '@type'          => 'ProductGroup',
+            '@id'            => $productUrl . '#product',
+            'productGroupID' => 'pg-' . (int) $product->j2commerce_product_id,
         ];
 
         // Name
@@ -2538,6 +2541,11 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         // SKU from master variant
         if ($masterVariant && !empty($masterVariant->sku)) {
             $schema['sku'] = $masterVariant->sku;
+        }
+
+        // GTIN/UPC from master variant — the simple-product path already does this
+        if ($masterVariant && !empty($masterVariant->upc)) {
+            $schema['gtin'] = $masterVariant->upc;
         }
 
         // MPN from master variant
@@ -2584,7 +2592,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
                 continue;
             }
 
-            $variantSchema = $this->buildVariantSchema($product, $variant, $index);
+            $variantSchema = $this->buildVariantSchema($product, $variant, $index, $description);
 
             if (!empty($variantSchema)) {
                 $variantSchemas[] = $variantSchema;
@@ -2592,8 +2600,13 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         }
 
         if (!empty($variantSchemas)) {
-            // Add AggregateOffer for the parent product (shows price range across all variants)
-            $schema['offers'] = $this->buildAggregateOfferSchema($variants);
+            // No offers on the group itself: a ProductGroup's prices live on each
+            // variant Offer. Naming what varies is what makes the group readable.
+            $variesBy = $this->buildVariesByArray($variantSchemas);
+
+            if (!empty($variesBy)) {
+                $schema['variesBy'] = $variesBy;
+            }
 
             $schema['hasVariant'] = $variantSchemas;
         }
@@ -2625,18 +2638,47 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
     }
 
     /**
+     * Read variesBy off the built variants so it can never name a property they don't carry.
+     *
+     * @param   array  $variantSchemas  The already-built variant schemas
+     *
+     * @return  string[]
+     *
+     * @since   6.0.0
+     */
+    private function buildVariesByArray(array $variantSchemas): array
+    {
+        $properties = [];
+
+        foreach ($variantSchemas as $variantSchema) {
+            foreach (['size', 'color', 'material', 'pattern'] as $property) {
+                if (!empty($variantSchema[$property])) {
+                    $properties[$property] = 'https://schema.org/' . $property;
+                }
+            }
+        }
+
+        return array_values($properties);
+    }
+
+    /**
      * Build schema for a single variant
      *
-     * @param   object  $product  The parent product
-     * @param   object  $variant  The variant object
-     * @param   int     $index    The variant index
+     * @param   object  $product             The parent product
+     * @param   object  $variant             The variant object
+     * @param   int     $index               The variant index
+     * @param   string  $productDescription  The parent description, narrowed to this variant
      *
      * @return  array
      *
      * @since   6.0.0
      */
-    private function buildVariantSchema(object $product, object $variant, int $index): array
-    {
+    private function buildVariantSchema(
+        object $product,
+        object $variant,
+        int $index,
+        string $productDescription = ''
+    ): array {
         $productUrl        = $this->getProductUrl($product);
         $variantName       = $this->getVariantDisplayName($variant);
         $variantProperties = $this->getVariantProperties($variant);
@@ -2652,6 +2694,13 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         // Name - use variant name or product name
         $schema['name'] = $product->product_name . ($variantName ? ' - ' . $variantName : '');
 
+        // Description - the parent's, narrowed by the words that identify this variant
+        if ($productDescription !== '') {
+            $schema['description'] = $variantName !== ''
+                ? $productDescription . ' ' . $variantName
+                : $productDescription;
+        }
+
         // SKU
         if (!empty($variant->sku)) {
             $schema['sku'] = $variant->sku;
@@ -2660,6 +2709,17 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         // GTIN/UPC
         if (!empty($variant->upc)) {
             $schema['gtin'] = $variant->upc;
+        }
+
+        // MPN - same params source the simple-product path reads
+        if (isset($variant->params)) {
+            $variantParams = \is_string($variant->params)
+                ? json_decode($variant->params, true)
+                : (array) $variant->params;
+
+            if (!empty($variantParams['mpn'])) {
+                $schema['mpn'] = $variantParams['mpn'];
+            }
         }
 
         // Image - check for variant-specific image first
@@ -2873,80 +2933,68 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         // URL
         $offer['url'] = Uri::current();
 
-        return $offer;
+        return $this->addMerchantPolicies($offer);
     }
 
     /**
-     * Build AggregateOffer schema for variable products
+     * Both stay off until a store states its own terms — a default would publish a policy it never agreed to.
      *
-     * @param   array  $variants  Array of variant objects
+     * @param   array  $offer  The offer schema
      *
      * @return  array
      *
      * @since   6.0.0
      */
-    private function buildAggregateOfferSchema(array $variants): array
+    private function addMerchantPolicies(array $offer): array
     {
-        $prices         = [];
-        $availabilities = [];
-        $offerCount     = 0;
+        if ((int) $this->params->get('shipping_details_enabled', 0) === 1) {
+            $shippingCountry = trim((string) $this->params->get('ship_country', ''));
 
-        foreach ($variants as $variant) {
-            // Skip master variant
-            if ((int) ($variant->is_master ?? 0) === 1) {
-                continue;
+            if ($shippingCountry !== '') {
+                $offer['shippingDetails'] = [
+                    '@type'        => 'OfferShippingDetails',
+                    'shippingRate' => [
+                        '@type'    => 'MonetaryAmount',
+                        'value'    => number_format((float) $this->params->get('ship_rate', 0), 2, '.', ''),
+                        'currency' => $this->getCurrencyCode(),
+                    ],
+                    'shippingDestination' => [
+                        '@type'          => 'DefinedRegion',
+                        'addressCountry' => strtoupper($shippingCountry),
+                    ],
+                    'deliveryTime' => [
+                        '@type'        => 'ShippingDeliveryTime',
+                        'handlingTime' => [
+                            '@type'    => 'QuantitativeValue',
+                            'minValue' => 0,
+                            'maxValue' => (int) $this->params->get('ship_handling_days_max', 2),
+                            'unitCode' => 'DAY',
+                        ],
+                        'transitTime' => [
+                            '@type'    => 'QuantitativeValue',
+                            'minValue' => 0,
+                            'maxValue' => (int) $this->params->get('ship_transit_days_max', 7),
+                            'unitCode' => 'DAY',
+                        ],
+                    ],
+                ];
             }
+        }
 
-            $offerCount++;
+        if ((int) $this->params->get('return_policy_enabled', 0) === 1) {
+            $returnCountry = trim((string) $this->params->get('return_country', ''));
 
-            // Get price (use special price if available)
-            $price = (float) ($variant->price ?? 0);
-
-            if (isset($variant->special_price) && (float) $variant->special_price > 0) {
-                $price = (float) $variant->special_price;
+            if ($returnCountry !== '') {
+                $offer['hasMerchantReturnPolicy'] = [
+                    '@type'                => 'MerchantReturnPolicy',
+                    'applicableCountry'    => strtoupper($returnCountry),
+                    'returnPolicyCategory' => 'https://schema.org/MerchantReturnFiniteReturnWindow',
+                    'merchantReturnDays'   => (int) $this->params->get('return_days', 30),
+                    'returnMethod'         => 'https://schema.org/ReturnByMail',
+                    'returnFees'           => 'https://schema.org/' . $this->params->get('return_fees', 'FreeReturn'),
+                ];
             }
-
-            if ($price > 0) {
-                $prices[] = $price;
-            }
-
-            // Collect availability
-            $availabilities[] = $this->mapVariantAvailability($variant);
         }
-
-        $offer = [
-            '@type' => 'AggregateOffer',
-        ];
-
-        // Price range
-        if (!empty($prices)) {
-            $offer['lowPrice']  = number_format(min($prices), 2, '.', '');
-            $offer['highPrice'] = number_format(max($prices), 2, '.', '');
-        }
-
-        $offer['priceCurrency'] = $this->getCurrencyCode();
-        $offer['offerCount']    = $offerCount;
-
-        // Item Condition
-        $offer['itemCondition'] = $this->getItemConditionUrl();
-
-        // Price Valid Until
-        $priceValidUntil = $this->getPriceValidUntil();
-
-        if (!empty($priceValidUntil)) {
-            $offer['priceValidUntil'] = $priceValidUntil;
-        }
-
-        if (\in_array('https://schema.org/InStock', $availabilities, true)) {
-            $offer['availability'] = 'https://schema.org/InStock';
-        } elseif (\in_array('https://schema.org/BackOrder', $availabilities, true)) {
-            $offer['availability'] = 'https://schema.org/BackOrder';
-        } else {
-            $offer['availability'] = 'https://schema.org/OutOfStock';
-        }
-
-        // URL
-        $offer['url'] = Uri::current();
 
         return $offer;
     }
@@ -3229,11 +3277,16 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
      */
     private function buildBrandSchema(object $product): ?array
     {
-        // Check product manufacturer
-        if (isset($product->manufacturer) && !empty($product->manufacturer->company)) {
+        // ProductHelper::getFullProduct() sets manufacturer to the company NAME, not an
+        // object — reading ->company off a string yields null, so brand never resolved.
+        $manufacturer = \is_string($product->manufacturer ?? null)
+            ? trim($product->manufacturer)
+            : trim((string) ($product->manufacturer->company ?? ''));
+
+        if ($manufacturer !== '') {
             return [
                 '@type' => 'Brand',
-                'name'  => $product->manufacturer->company,
+                'name'  => $manufacturer,
             ];
         }
 
@@ -3484,7 +3537,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         // URL
         $offer['url'] = $this->getProductUrl($product);
 
-        return $offer;
+        return $this->addMerchantPolicies($offer);
     }
 
     /**

@@ -213,6 +213,104 @@
                         showon="price_valid_until:custom"
                     />
                 </fieldset>
+
+                <fieldset name="returns" label="PLG_SYSTEM_J2COMMERCE_FIELDSET_RETURNS_LABEL">
+                    <field
+                        name="return_policy_enabled"
+                        type="radio"
+                        layout="joomla.form.field.radio.switcher"
+                        filter="integer"
+                        label="PLG_SYSTEM_J2COMMERCE_FIELD_RETURN_POLICY_ENABLED_LABEL"
+                        description="PLG_SYSTEM_J2COMMERCE_FIELD_RETURN_POLICY_ENABLED_DESC"
+                        default="0"
+                    >
+                        <option value="0">JNO</option>
+                        <option value="1">JYES</option>
+                    </field>
+                    <field
+                        name="return_country"
+                        type="text"
+                        label="PLG_SYSTEM_J2COMMERCE_FIELD_RETURN_COUNTRY_LABEL"
+                        description="PLG_SYSTEM_J2COMMERCE_FIELD_RETURN_COUNTRY_DESC"
+                        maxlength="2"
+                        showon="return_policy_enabled:1"
+                    />
+                    <field
+                        name="return_days"
+                        type="number"
+                        label="PLG_SYSTEM_J2COMMERCE_FIELD_RETURN_DAYS_LABEL"
+                        description="PLG_SYSTEM_J2COMMERCE_FIELD_RETURN_DAYS_DESC"
+                        filter="integer"
+                        min="0"
+                        default="30"
+                        showon="return_policy_enabled:1"
+                    />
+                    <field
+                        name="return_fees"
+                        type="list"
+                        label="PLG_SYSTEM_J2COMMERCE_FIELD_RETURN_FEES_LABEL"
+                        description="PLG_SYSTEM_J2COMMERCE_FIELD_RETURN_FEES_DESC"
+                        default="FreeReturn"
+                        showon="return_policy_enabled:1"
+                    >
+                        <option value="FreeReturn">PLG_SYSTEM_J2COMMERCE_OPTION_FREE_RETURN</option>
+                        <option value="ReturnShippingFees">PLG_SYSTEM_J2COMMERCE_OPTION_RETURN_SHIPPING_FEES</option>
+                        <option value="ReturnFeesCustomerResponsibility">PLG_SYSTEM_J2COMMERCE_OPTION_RETURN_FEES_CUSTOMER</option>
+                    </field>
+                </fieldset>
+
+                <fieldset name="shipping" label="PLG_SYSTEM_J2COMMERCE_FIELDSET_SHIPPING_LABEL">
+                    <field
+                        name="shipping_details_enabled"
+                        type="radio"
+                        layout="joomla.form.field.radio.switcher"
+                        filter="integer"
+                        label="PLG_SYSTEM_J2COMMERCE_FIELD_SHIPPING_DETAILS_ENABLED_LABEL"
+                        description="PLG_SYSTEM_J2COMMERCE_FIELD_SHIPPING_DETAILS_ENABLED_DESC"
+                        default="0"
+                    >
+                        <option value="0">JNO</option>
+                        <option value="1">JYES</option>
+                    </field>
+                    <field
+                        name="ship_country"
+                        type="text"
+                        label="PLG_SYSTEM_J2COMMERCE_FIELD_SHIP_COUNTRY_LABEL"
+                        description="PLG_SYSTEM_J2COMMERCE_FIELD_SHIP_COUNTRY_DESC"
+                        maxlength="2"
+                        showon="shipping_details_enabled:1"
+                    />
+                    <field
+                        name="ship_rate"
+                        type="number"
+                        label="PLG_SYSTEM_J2COMMERCE_FIELD_SHIP_RATE_LABEL"
+                        description="PLG_SYSTEM_J2COMMERCE_FIELD_SHIP_RATE_DESC"
+                        step="0.01"
+                        min="0"
+                        default="0"
+                        showon="shipping_details_enabled:1"
+                    />
+                    <field
+                        name="ship_handling_days_max"
+                        type="number"
+                        label="PLG_SYSTEM_J2COMMERCE_FIELD_SHIP_HANDLING_DAYS_LABEL"
+                        description="PLG_SYSTEM_J2COMMERCE_FIELD_SHIP_HANDLING_DAYS_DESC"
+                        filter="integer"
+                        min="0"
+                        default="2"
+                        showon="shipping_details_enabled:1"
+                    />
+                    <field
+                        name="ship_transit_days_max"
+                        type="number"
+                        label="PLG_SYSTEM_J2COMMERCE_FIELD_SHIP_TRANSIT_DAYS_LABEL"
+                        description="PLG_SYSTEM_J2COMMERCE_FIELD_SHIP_TRANSIT_DAYS_DESC"
+                        filter="integer"
+                        min="0"
+                        default="7"
+                        showon="shipping_details_enabled:1"
+                    />
+                </fieldset>
             </fieldset>
 
         </fields>
