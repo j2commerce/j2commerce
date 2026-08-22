@@ -592,7 +592,7 @@ class MultiimageuploaderController extends BaseController
         return null;
     }
 
-    /** Validate CSRF token and user authentication. Returns false and sends error response on failure. */
+    /** CSRF, authentication and authorisation, each checked independently. */
     private function authorize(): bool
     {
         if (!Session::checkToken('request')) {
@@ -603,6 +603,11 @@ class MultiimageuploaderController extends BaseController
         $user = $this->app->getIdentity();
 
         if (!$user || $user->guest) {
+            $this->sendJson(false, 'Not authorized');
+            return false;
+        }
+
+        if (!$user->authorise('core.edit', 'com_j2commerce') && !$user->authorise('core.create', 'com_j2commerce')) {
             $this->sendJson(false, 'Not authorized');
             return false;
         }

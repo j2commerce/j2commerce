@@ -347,15 +347,27 @@ class ImageHelper
         $dir        = \dirname($normalized);
         $file       = basename($normalized);
 
+        $folders = [];
+
         if ($height <= $params['tiny_height']) {
-            $candidate = $dir . '/tiny/' . $file;
-            if (file_exists(JPATH_SITE . '/' . $candidate)) {
-                return $candidate;
-            }
-        } elseif ($height <= $params['thumb_height']) {
-            $candidate = $dir . '/thumbs/' . $file;
-            if (file_exists(JPATH_SITE . '/' . $candidate)) {
-                return $candidate;
+            $folders[] = 'tiny';
+        }
+
+        if ($height <= $params['thumb_height']) {
+            $folders[] = 'thumbs';
+        }
+
+        // Derivatives are always written as WebP, so a non-WebP source keeps its
+        // basename but changes extension.
+        $basenames = array_unique([$file, pathinfo($file, PATHINFO_FILENAME) . '.webp']);
+
+        foreach ($folders as $folder) {
+            foreach ($basenames as $basename) {
+                $candidate = $dir . '/' . $folder . '/' . $basename;
+
+                if (file_exists(JPATH_SITE . '/' . $candidate)) {
+                    return $candidate;
+                }
             }
         }
 

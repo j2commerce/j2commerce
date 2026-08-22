@@ -1769,6 +1769,13 @@
             <option value="1">JYES</option>
         </field>
 
+        <field
+            name="image_regenerate"
+            type="regenerateimages"
+            label="COM_J2COMMERCE_CONFIG_IMAGE_REGENERATE"
+            description="COM_J2COMMERCE_CONFIG_IMAGE_REGENERATE_DESC"
+        />
+
     </fieldset>
 
     <!-- ========================================== -->
