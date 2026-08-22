@@ -109,6 +109,12 @@
                       <td style="padding: 6px 0; font-size: 13px; color: #1f2937; text-align: right;">[SHIPPING_AMOUNT]</td>
                     </tr>
                     [/IF:SHIPPING_METHOD]
+                    [IF:SURCHARGE_AMOUNT]
+                    <tr>
+                      <td style="padding: 6px 0; font-size: 13px; color: #6b7280;">[LANG:COM_J2COMMERCE_CART_SURCHARGE]</td>
+                      <td style="padding: 6px 0; font-size: 13px; color: #1f2937; text-align: right;">[SURCHARGE_AMOUNT]</td>
+                    </tr>
+                    [/IF:SURCHARGE_AMOUNT]
                     [IF:TAX_AMOUNT]
                     <tr>
                       <td style="padding: 6px 0; font-size: 13px; color: #6b7280;">[LANG:COM_J2COMMERCE_EMAIL_TAX]</td>

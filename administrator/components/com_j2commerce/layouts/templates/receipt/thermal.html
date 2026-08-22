@@ -129,6 +129,12 @@
       <td class="right">[SHIPPING_AMOUNT]</td>
     </tr>
     [/IF:SHIPPING_METHOD]
+    [IF:SURCHARGE_AMOUNT]
+    <tr>
+      <td>[LANG:COM_J2COMMERCE_CART_SURCHARGE]</td>
+      <td class="right">[SURCHARGE_AMOUNT]</td>
+    </tr>
+    [/IF:SURCHARGE_AMOUNT]
     [IF:TAX_AMOUNT]
     <tr>
       <td>[LANG:COM_J2COMMERCE_EMAIL_TAX]</td>
