@@ -125,6 +125,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             'onJ2CommerceResolveCheckoutContext' => 'onResolveCheckoutContext',
             'onAjaxJ2commerce'                   => 'onAjaxJ2commerce',
             'onPageCacheIsExcluded'              => 'onPageCacheIsExcluded',
+            'onPageCacheGetKey'                  => 'onPageCacheGetKey',
             'onAfterGetMenuTypeOptions'          => 'onAfterGetMenuTypeOptions',
             'onTableAfterReset'                  => 'onTableAfterReset',
         ];
@@ -1612,6 +1613,27 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
      */
     private const UNCACHEABLE_VIEWS = ['carts', 'checkout', 'confirmation', 'myprofile', 'orders', 'paymentupdate'];
 
+    /**
+     * Adds the active currency to the page-cache key.
+     *
+     * Prices are rendered in the currency held in the visitor's session, so a single entry
+     * per URL would serve one visitor's currency to the next. Contributing the code gives
+     * each currency its own entry instead of excluding the page from caching altogether.
+     */
+    public function onPageCacheGetKey(Event $event): void
+    {
+        if (!($event instanceof ResultAwareInterface) || !ComponentHelper::isEnabled(self::COMPONENT_NAME)) {
+            return;
+        }
+
+        try {
+            // The event is string-typed: a non-string result throws.
+            $event->addResult('j2c.currency=' . (string) CurrencyHelper::getCode());
+        } catch (\Throwable $e) {
+            Log::add('Page cache key currency failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+        }
+    }
+
     public function onPageCacheIsExcluded(Event $event): void
     {
         if (!ComponentHelper::isEnabled(self::COMPONENT_NAME)) {
@@ -1636,7 +1658,12 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         // history even when the cart is empty, so a cart-only test would miss it entirely. The
         // views' own sendNoCacheHeaders() does not help — the page cache stores the body without
         // ever inspecting response headers.
-        if (\in_array($app->getInput()->getCmd('view', ''), self::UNCACHEABLE_VIEWS, true)
+        // Lowercased before comparison: the view name reaches the dispatcher through
+        // ucfirst(), so a request for Myprofile resolves the same class as myprofile and
+        // must be treated the same here.
+        $view = strtolower((string) $app->getInput()->getCmd('view', ''));
+
+        if (\in_array($view, self::UNCACHEABLE_VIEWS, true)
             && $app->getInput()->getCmd('option', '') === self::COMPONENT_NAME) {
             return true;
         }
@@ -1733,10 +1760,13 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         // caller AND lets the request complete normally, so the error response would be cached
         // under this URL and replayed to every guest, leaving hydration dead until expiry.
         // Reaching sendJsonAndClose() is what guarantees the exit() that keeps this uncacheable.
-        $data = ['cart' => ['count' => 0], 'currency' => ['code' => '', 'isUserSet' => false]];
+        $data = [];
 
+        // The cart key is omitted rather than reported as zero when the read fails: the
+        // hydrator treats a returned count as authoritative and would blank a real basket
+        // and announce it as empty. An absent key leaves the served markup alone.
         try {
-            $data['cart']['count'] = CartHelper::getCartItemCount();
+            $data['cart'] = ['count' => CartHelper::getCartItemCount()];
         } catch (\Throwable $e) {
             Log::add('Customer state cart count failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
         }
@@ -1750,7 +1780,15 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             Log::add('Customer state currency failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
         }
 
-        $data['token'] = Session::getFormToken();
+        // A4: the token read is the last unguarded statement before the response, and an
+        // escape here would be handed to the caller and cached under this URL.
+        try {
+            $data['token'] = Session::getFormToken();
+        } catch (\Throwable $e) {
+            Log::add('Customer state token failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $data['token'] = '';
+        }
+
 
         try {
             $collector = J2CommerceHelper::plugin()->event('CustomerState', ['context' => 'site.customer_state']);
