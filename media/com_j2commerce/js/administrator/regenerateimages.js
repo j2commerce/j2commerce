@@ -73,7 +73,7 @@ class RegenerateImages {
         header.append(title, headerCloseBtn);
 
         const body = document.createElement('div');
-        body.className = 'modal-body';
+        body.className = 'modal-body px-3 py-2';
 
         const statusText = document.createElement('p');
         statusText.className = 'j2c-regen-status mb-2';
