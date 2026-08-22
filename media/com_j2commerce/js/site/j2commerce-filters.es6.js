@@ -24,13 +24,50 @@ class J2CommerceFilters {
         this.paginationForm = document.getElementById(options.paginationFormId || 'j2commerce-pagination');
         this.loadingOverlay = document.getElementById('j2commerce-product-loading');
         this.endpoint = options.endpoint || 'index.php?option=com_j2commerce&task=products.filter&format=json';
-        this.csrfToken = Joomla.getOptions('csrf.token') || '';
         this.checkboxDebounce = options.checkboxDebounce || 300;
         this.searchDebounce = options.searchDebounce || 500;
         this.debounceTimer = null;
         this.enabled = true;
 
         this.init();
+    }
+
+    /**
+     * A hidden Joomla form-token input reproduces exactly `<input type="hidden"
+     * name="<32hex>" value="1">` — the shape core's page cache rewrites to the current
+     * visitor's token on every cached-page replay, unlike the csrf.token script option.
+     */
+    readFormToken() {
+        return (Array.from(document.querySelectorAll('input[type="hidden"][value="1"]'))
+            .find((el) => /^[0-9a-f]{32}$/.test(el.name)) || {}).name || '';
+    }
+
+    /**
+     * Resolve a CSRF token: DOM (freshest) -> endpoint -> the csrf.token script option. The
+     * script option is baked into the markup, so on a cached-page replay it carries whichever
+     * visitor primed the cache; putting it last means a stale value is used only when nothing
+     * fresher exists.
+     */
+    async resolveToken() {
+        const domToken = this.readFormToken();
+
+        if (domToken) {
+            return domToken;
+        }
+
+        if (window.J2CommerceToken && typeof window.J2CommerceToken.get === 'function') {
+            try {
+                const endpointToken = await window.J2CommerceToken.get();
+
+                if (endpointToken) {
+                    return endpointToken;
+                }
+            } catch (error) {
+                // Fall through to the legacy source.
+            }
+        }
+
+        return Joomla.getOptions('csrf.token') || '';
     }
 
     init() {
@@ -351,7 +388,7 @@ class J2CommerceFilters {
         });
     }
 
-    collectFilterData(limitstart = 0) {
+    collectFilterData(limitstart = 0, token = '') {
         const data = new FormData();
 
         const manufacturerIds = Array.from(document.querySelectorAll('.j2commerce-brand-checkboxes:checked'))
@@ -408,8 +445,8 @@ class J2CommerceFilters {
             data.append('Itemid', itemid);
         }
 
-        if (this.csrfToken) {
-            data.append(this.csrfToken, '1');
+        if (token) {
+            data.append(token, '1');
         }
 
         return data;
@@ -423,7 +460,8 @@ class J2CommerceFilters {
 
         this.showLoading();
 
-        const data = this.collectFilterData(limitstart);
+        const token = await this.resolveToken();
+        const data = this.collectFilterData(limitstart, token);
 
         try {
             const response = await fetch(this.endpoint, {

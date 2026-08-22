@@ -57,7 +57,8 @@ const J2Commerce = {
      * @returns {string}
      */
     getCsrfToken() {
-        const tokenInput = document.querySelector('input[name^="csrf.token"], input[name][value="1"][name*="token"]');
+        const tokenInput = Array.from(document.querySelectorAll('input[type="hidden"][value="1"]'))
+            .find((el) => /^[0-9a-f]{32}$/.test(el.name));
         if (tokenInput) return tokenInput.name;
         if (typeof Joomla !== 'undefined' && Joomla.getOptions) {
             const token = Joomla.getOptions('csrf.token');

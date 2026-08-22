@@ -15,6 +15,7 @@ namespace J2Commerce\Plugin\System\J2Commerce\Extension;
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CartHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\SetupGuide\SetupGuideHelper;
 use J2Commerce\Component\J2commerce\Site\Context\AdminOrderCheckoutContext;
@@ -28,6 +29,7 @@ use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Component\Router\RouterViewConfiguration;
 use Joomla\CMS\Document\HtmlDocument;
 use Joomla\CMS\Event\Menu\AfterGetMenuTypeOptionsEvent;
+use Joomla\CMS\Event\Result\ResultAwareInterface;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -122,6 +124,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             'onJ2CommerceGetDashboardMessages'   => 'onGetDashboardMessages',
             'onJ2CommerceResolveCheckoutContext' => 'onResolveCheckoutContext',
             'onAjaxJ2commerce'                   => 'onAjaxJ2commerce',
+            'onPageCacheIsExcluded'              => 'onPageCacheIsExcluded',
             'onAfterGetMenuTypeOptions'          => 'onAfterGetMenuTypeOptions',
             'onTableAfterReset'                  => 'onTableAfterReset',
         ];
@@ -1593,17 +1596,80 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
     }
 
     /**
-     * com_ajax handler that unpublishes a single orphaned com_j2commerce menu item.
+     * Keeps a shopper's own cart contents out of the shared page cache.
      *
-     * @param   Event  $event  The event object
+     * Joomla's page cache only stores guest responses, but every guest shares one cache entry per
+     * URL — so a basket rendered into the body by any cart layout would be replayed verbatim to
+     * the next visitor. URL and menu-item exclusions cannot cover this: a cart module can be
+     * published on the home page or a product listing, which are legitimately cacheable.
      *
-     * @return  void
+     * Excluding only non-empty carts keeps the common case cacheable. An empty-cart page may still
+     * be replayed to a shopper who has items, which is a stale render, not a disclosure — the
+     * minicart placeholders hydrate it back to the correct count.
      *
-     * @since   6.0.4
+     * Store-path only: core calls isExcluded() from onAfterRender, never when serving. Entries
+     * cached before this shipped keep being served, so the cache must be purged after upgrading.
      */
+    private const UNCACHEABLE_VIEWS = ['carts', 'checkout', 'confirmation', 'myprofile', 'orders', 'paymentupdate'];
+
+    public function onPageCacheIsExcluded(Event $event): void
+    {
+        if (!ComponentHelper::isEnabled(self::COMPONENT_NAME)) {
+            return;
+        }
+
+        if (!$this->requestCarriesShopperState()) {
+            return;
+        }
+
+        // Core reads this with in_array($results, true, true) — a strict boolean is required.
+        if ($event instanceof ResultAwareInterface) {
+            $event->addResult(true);
+        }
+    }
+
+    private function requestCarriesShopperState(): bool
+    {
+        $app = $this->getApplication();
+
+        // View first: the account surface renders a named customer's addresses, phone and order
+        // history even when the cart is empty, so a cart-only test would miss it entirely. The
+        // views' own sendNoCacheHeaders() does not help — the page cache stores the body without
+        // ever inspecting response headers.
+        if (\in_array($app->getInput()->getCmd('view', ''), self::UNCACHEABLE_VIEWS, true)
+            && $app->getInput()->getCmd('option', '') === self::COMPONENT_NAME) {
+            return true;
+        }
+
+        // A guest holding a looked-up order token can reach that same order detail from elsewhere.
+        if ((string) $app->getSession()->get('guest_order_token', '', self::SESSION_NAMESPACE) !== '') {
+            return true;
+        }
+
+        try {
+            return CartHelper::getCartItemCount() > 0;
+        } catch (\Throwable $e) {
+            Log::add('Page cache exclusion check failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+
+            // Fail closed — never cache a page whose shopper state could not be determined.
+            return true;
+        }
+    }
+
+    /** Site: the read-only customerState probe. Administrator: unpublishes one orphaned menu item. */
     public function onAjaxJ2commerce(Event $event): void
     {
         $app = $this->getApplication();
+
+        if ($app->isClient('site')) {
+            if ($app->getInput()->getCmd('j2c_task', '') === 'customerState'
+                && $app->getInput()->getMethod() === 'GET'
+                && ComponentHelper::isEnabled(self::COMPONENT_NAME)) {
+                $this->handleCustomerStateAjax();
+            }
+
+            return;
+        }
 
         if (!$app->isClient('administrator')) {
             return;
@@ -1661,6 +1727,91 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         $app->redirect($dashboardUrl);
     }
 
+    private function handleCustomerStateAjax(): void
+    {
+        // Nothing may escape to com_ajax: its handler returns $e->getMessage() to an anonymous
+        // caller AND lets the request complete normally, so the error response would be cached
+        // under this URL and replayed to every guest, leaving hydration dead until expiry.
+        // Reaching sendJsonAndClose() is what guarantees the exit() that keeps this uncacheable.
+        $data = ['cart' => ['count' => 0], 'currency' => ['code' => '', 'isUserSet' => false]];
+
+        try {
+            $data['cart']['count'] = CartHelper::getCartItemCount();
+        } catch (\Throwable $e) {
+            Log::add('Customer state cart count failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+        }
+
+        try {
+            $data['currency'] = [
+                'code'      => CurrencyHelper::getCode(),
+                'isUserSet' => (bool) $this->getApplication()->getSession()->get('j2commerce_currency_user_set', false),
+            ];
+        } catch (\Throwable $e) {
+            Log::add('Customer state currency failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+        }
+
+        $data['token'] = Session::getFormToken();
+
+        try {
+            $collector = J2CommerceHelper::plugin()->event('CustomerState', ['context' => 'site.customer_state']);
+            $slices    = $collector->getArgument('result', []);
+
+            foreach ($slices as $slice) {
+                if (
+                    !\is_array($slice)
+                    || !isset($slice['key'])
+                    || !\is_string($slice['key'])
+                    || !\array_key_exists('data', $slice)
+                    || !\is_array($slice['data'])
+                    || isset($data[$slice['key']])
+                    // Denied in PHP because the payload is consumed as a JS object: a slice keyed
+                    // __proto__/constructor/prototype would pollute Object.prototype in the first
+                    // consumer that merges it rather than assigning it.
+                    || \in_array($slice['key'], ['__proto__', 'constructor', 'prototype'], true)
+                ) {
+                    continue;
+                }
+
+                $data[$slice['key']] = $slice['data'];
+            }
+        } catch (\Throwable $e) {
+            Log::add('Customer state plugin collector failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+        }
+
+        $this->sendJsonAndClose(['success' => true, 'data' => $data]);
+    }
+
+    private function sendJsonAndClose(array $payload): void
+    {
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
+        if (!headers_sent()) {
+            header('Content-Type: application/json; charset=utf-8');
+            header('Cache-Control: no-store');
+            header('Vary: Cookie');
+            header('X-Content-Type-Options: nosniff');
+            header('X-Robots-Tag: noindex');
+        }
+
+        $json = json_encode($payload);
+
+        if ($json === false) {
+            Log::add('Customer state encode failed: ' . json_last_error_msg(), Log::ERROR, 'com_j2commerce');
+
+            $json = '{"success":false}';
+        }
+
+        echo $json;
+
+        // Deliberate exit(): close() skips onAfterRespond, the only point plg_system_cache stores a
+        // page. Its appStateSupportsCaching() gates solely on isSite && isGET && guest && empty
+        // message queue with no option/format/com_ajax exclusion — a plain return here would let a
+        // guest's token and cart count be cached and replayed to every other guest.
+        $this->getApplication()->close();
+    }
+
     private function getExtensionId(): int
     {
         $db = $this->getDatabase();
@@ -1673,6 +1824,34 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             ->where($db->quoteName('type') . ' = ' . $db->quote('plugin'));
 
         return (int) $db->setQuery($query)->loadResult();
+    }
+
+    private function registerCustomerStateAssets(HtmlDocument $document): void
+    {
+        // onBeforeCompileHead has no component check of its own. Without this the hydrator would
+        // register on a site whose component is disabled, where onAfterRoute never publishes
+        // window.j2commerceURL and the endpoint does not answer.
+        if (!ComponentHelper::isEnabled(self::COMPONENT_NAME)) {
+            return;
+        }
+
+        // Two paths on purpose: the site root's language/ mirror may not carry com_j2commerce.ini,
+        // and without the component-dir fallback Text::script() registers raw keys — which makes
+        // the announcement resolve to '' and never fire. Mirrors mod_j2commerce_cart's dispatcher.
+        $lang = $this->getApplication()->getLanguage();
+        $lang->load('com_j2commerce', JPATH_SITE)
+            || $lang->load('com_j2commerce', JPATH_SITE . '/components/com_j2commerce');
+
+        $document->getWebAssetManager()->registerAndUseScript(
+            'plg_system_j2commerce.customer-state',
+            'media/com_j2commerce/js/site/customer-state.js',
+            [],
+            ['defer' => true]
+        );
+
+        Text::script('COM_J2COMMERCE_CART_NO_ITEMS');
+        Text::script('COM_J2COMMERCE_N_CART_ITEMS_1');
+        Text::script('COM_J2COMMERCE_N_CART_ITEMS_MORE');
     }
 
     /**
@@ -1699,6 +1878,8 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         if (!($document instanceof HtmlDocument)) {
             return;
         }
+
+        $this->registerCustomerStateAssets($document);
 
         $debugMode = (bool) $this->params->get('debug_mode', 0);
         $debugInfo = ['System EcommerceSchema: onBeforeCompileHead'];

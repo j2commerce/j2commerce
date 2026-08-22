@@ -10,15 +10,13 @@
 
 declare(strict_types=1);
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
-use Joomla\CMS\Router\Route;
-use Joomla\CMS\Session\Session;
 use Joomla\CMS\Uri\Uri;
 use Joomla\Registry\Registry;
 
@@ -65,6 +63,10 @@ try {
 <div class="j2commerce-cart-module j2commerce-cart-module-<?php echo $moduleId; ?> <?php echo $moduleClassSfx; ?>">
 <?php endif; ?>
 
+<?php // Bare form.token shape: core's page cache rewrites this to the current visitor's
+      // token on every cached-page replay. Re-rendered on every AJAX refresh too.?>
+<?php echo HTMLHelper::_('form.token'); ?>
+
 <?php if (!$hide) : ?>
 
     <?php if (!empty($title)) : ?>
@@ -90,7 +92,7 @@ try {
 
                     if ($rawThumbImage !== '') {
                         $thumbSource = $platform ? $platform->getImagePath($rawThumbImage) : $rawThumbImage;
-                        $thumbImage = HTMLHelper::_('cleanImageURL', $thumbSource)->url;
+                        $thumbImage  = HTMLHelper::_('cleanImageURL', $thumbSource)->url;
                     }
                 }
 
@@ -106,7 +108,7 @@ try {
                     $unitPrice = (float) ($item->orderitem_price ?? 0);
                     $lineTotal = (float) ($item->orderitem_final_price ?? $unitPrice * $itemQty);
                 }
-            ?>
+                ?>
             <li class="list-group-item px-0 j2commerce-minicart-item" data-cartitem-id="<?php echo (int) $cartitemId; ?>">
                 <div class="d-flex align-items-start gap-2">
                     <?php if (!empty($thumbImage)) : ?>
@@ -138,12 +140,12 @@ try {
                         <?php if (!empty($item->orderitemattributes)) : ?>
                             <div class="cart-item-options mt-1">
                                 <?php echo LayoutHelper::render('orderitem.attributes', [
-                                    'attributes' => $item->orderitemattributes,
-                                    'item'       => $item,
-                                    'context'    => 'cart_module',
-                                    'variant'    => 'compact',
-                                    'framework'  => 'bootstrap5',
-                                ], JPATH_ROOT . '/components/com_j2commerce/layouts'); ?>
+                                        'attributes' => $item->orderitemattributes,
+                                        'item'       => $item,
+                                        'context'    => 'cart_module',
+                                        'variant'    => 'compact',
+                                        'framework'  => 'bootstrap5',
+                                    ], JPATH_ROOT . '/components/com_j2commerce/layouts'); ?>
                             </div>
                         <?php endif; ?>
 
@@ -166,7 +168,7 @@ try {
             <?php endforeach; ?>
         </ul>
 
-        <?php // label/value are raw — get_formatted_order_totals() returns pre-built HTML (coupon remove link, currency-formatted value). ?>
+        <?php // label/value are raw — get_formatted_order_totals() returns pre-built HTML (coupon remove link, currency-formatted value).?>
         <?php if ($order && method_exists($order, 'get_formatted_order_totals')) : ?>
             <?php $totals = $order->get_formatted_order_totals(); ?>
             <?php if (!empty($totals)) : ?>
@@ -192,8 +194,8 @@ try {
 
     <?php
         $showCheckoutBtn = $showCheckout && !empty($checkoutUrl);
-        $showViewCartBtn = $showViewCart && !empty($cartUrl);
-    ?>
+$showViewCartBtn         = $showViewCart && !empty($cartUrl);
+?>
     <?php if ($productCount > 0 && ($showCheckoutBtn || $showViewCartBtn)) : ?>
         <?php $viewCartClass = ($showCheckoutBtn && $showViewCartBtn) ? 'btn btn-link' : 'btn btn-success'; ?>
         <div class="j2commerce-minicart-button d-grid gap-2 mt-2">
@@ -229,7 +231,13 @@ try {
 document.addEventListener('DOMContentLoaded', function () {
     var ajaxUrl = <?php echo json_encode($ajaxUrl); ?>;
     var baseUrl = <?php echo json_encode(rtrim(Uri::base(true), '/') . '/index.php'); ?>;
-    var csrfToken = <?php echo json_encode(Session::getFormToken()); ?>;
+
+    // A hidden Joomla form-token input reproduces exactly the shape core's page cache
+    // rewrites to the current visitor's token on every cached-page replay, unlike a
+    // token baked into inline JS via json_encode() at first render.
+    const readFormToken = () =>
+        (Array.from(document.querySelectorAll('input[type="hidden"][value="1"]'))
+            .find((el) => /^[0-9a-f]{32}$/.test(el.name)) || {}).name || '';
 
     function replaceWithFragment(el, html) {
         var frag = document.createRange().createContextualFragment(html);
@@ -274,7 +282,7 @@ document.addEventListener('DOMContentLoaded', function () {
         formData.append('option', 'com_j2commerce');
         formData.append('task', 'carts.removeAjax');
         formData.append('cartitem_id', cartitemId);
-        formData.append(csrfToken, '1');
+        formData.append(readFormToken(), '1');
 
         fetch(baseUrl, {
             method: 'POST',

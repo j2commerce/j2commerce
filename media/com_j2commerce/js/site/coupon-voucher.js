@@ -23,7 +23,6 @@
 
     const options = Joomla.getOptions('j2commerce.couponVoucher') || {};
     const baseUrl = options.baseUrl || 'index.php';
-    const token   = options.csrfToken || '';
     const strings = options.strings || {};
     const fw      = options.framework || 'bootstrap5';
     const acc     = options.accordion || { itemSelector: '.accordion-item', headerSelector: '.accordion-button' };
@@ -240,12 +239,52 @@
 
     // --- AJAX helper ---
 
-    function postAction(task, extraData) {
+    /**
+     * A hidden Joomla form-token input reproduces exactly `<input type="hidden"
+     * name="<32hex>" value="1">` — the shape core's page cache rewrites to the current
+     * visitor's token on every cached-page replay, unlike the csrfToken script option.
+     */
+    function readFormToken() {
+        return (Array.from(document.querySelectorAll('input[type="hidden"][value="1"]'))
+            .find((el) => /^[0-9a-f]{32}$/.test(el.name)) || {}).name || '';
+    }
+
+    /**
+     * Resolve a CSRF token: DOM (freshest) -> endpoint -> the script-option fallback. The
+     * script option is baked into the markup, so on a cached-page replay it carries whichever
+     * visitor primed the cache; putting it last means a stale value is used only when nothing
+     * fresher exists.
+     */
+    async function resolveToken() {
+        const domToken = readFormToken();
+
+        if (domToken) {
+            return domToken;
+        }
+
+        if (window.J2CommerceToken && typeof window.J2CommerceToken.get === 'function') {
+            try {
+                const endpointToken = await window.J2CommerceToken.get();
+
+                if (endpointToken) {
+                    return endpointToken;
+                }
+            } catch (error) {
+                // Fall through to the legacy source.
+            }
+        }
+
+        return options.csrfToken || '';
+    }
+
+    async function postAction(task, extraData) {
         const formData = new FormData();
         formData.append('option', 'com_j2commerce');
         formData.append('task', task);
-        if (token) {
-            formData.append(token, '1');
+
+        const tok = await resolveToken();
+        if (tok) {
+            formData.append(tok, '1');
         }
         if (extraData) {
             Object.entries(extraData).forEach(function (entry) {
@@ -253,11 +292,17 @@
             });
         }
 
-        return fetch(baseUrl, {
+        const response = await fetch(baseUrl, {
             method: 'POST',
             body: formData,
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        }).then(function (r) { return r.json(); });
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        return response.json();
     }
 
     function dispatchEvent(element, name, detail) {

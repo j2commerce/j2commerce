@@ -9,23 +9,26 @@
 
 declare(strict_types=1);
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
-use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
-use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
+use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
 use Joomla\CMS\Uri\Uri;
 
 /** @var \J2Commerce\Component\J2commerce\Site\View\Products\HtmlView $this */
 
-$app = Factory::getApplication();
+$app         = Factory::getApplication();
 $filterCatid = $this->filter_catid ?? '';
-$search = htmlspecialchars($this->state->search ?? '', ENT_QUOTES, 'UTF-8');
+$search      = htmlspecialchars($this->state->search ?? '', ENT_QUOTES, 'UTF-8');
 
-// Pass CSRF token name to JavaScript for AJAX requests (required by J2CommerceFilters class)
+// Pass CSRF token name to JavaScript for AJAX requests (required by J2CommerceFilters class).
+// csrf.token is a shared Joomla-wide script option consumed by unrelated core/plugin JS
+// elsewhere on the page; kept for backward compatibility but NOT cache-safe (it bakes the
+// rendering visitor's live token into cacheable HTML). The hidden form.token input below is
+// the cache-safe source: Joomla's page cache rewrites its exact <input type="hidden"
+// name="32hex" value="1"> shape to the current visitor's token on every cached-page replay.
 $csrfTokenName = Session::getFormToken();
 $app->getDocument()->addScriptOptions('csrf.token', $csrfTokenName);
 Text::script('COM_J2COMMERCE_SHOWING_N_ITEMS');
@@ -43,10 +46,10 @@ $currentSefPath = Uri::getInstance()->getPath();
         <div class="d-flex align-items-center gap-2 j2commerce-sortbar-filter-left">
             <?php
             $totalItems = (int) ($this->pagination->total ?? 0);
-            $showingText = ($totalItems === 1)
-                ? Text::_('COM_J2COMMERCE_SHOWING_1_ITEM')
-                : Text::sprintf('COM_J2COMMERCE_SHOWING_N_ITEMS', $totalItems);
-            ?>
+$showingText            = ($totalItems === 1)
+    ? Text::_('COM_J2COMMERCE_SHOWING_1_ITEM')
+    : Text::sprintf('COM_J2COMMERCE_SHOWING_N_ITEMS', $totalItems);
+?>
             <p class="text-body-secondary mb-0" id="j2commerce-showing-count"><?php echo $showingText; ?></p>
         </div>
 
@@ -65,7 +68,7 @@ $currentSefPath = Uri::getInstance()->getPath();
 
             <?php if ($this->params->get('list_show_filter_sorting')) : ?>
                 <?php
-                $sortOptions = $this->filters['sorting'] ?? [];
+    $sortOptions             = $this->filters['sorting'] ?? [];
                 $currentSort = $this->state->sortby ?? '';
                 ?>
                 <select name="sortby" id="j2commerce-sortby" class="form-select" aria-label="<?php echo Text::_('COM_J2COMMERCE_FILTER_SORT_BY'); ?>">
@@ -83,7 +86,12 @@ $currentSefPath = Uri::getInstance()->getPath();
     <input type="hidden" name="view" value="products" />
     <input type="hidden" name="task" value="browse" />
     <input type="hidden" name="Itemid" value="<?php echo $app->getInput()->getUint('Itemid', 0); ?>" />
-</form>
+    </form>
+<?php // Deliberately OUTSIDE the form above: that form is method="get", so a hidden input
+     // inside it would be serialised into the query string on every submit and leak the
+     // token through referrers, logs and history. The JS token reader matches by shape
+     // across the whole document, so form membership is irrelevant.?>
+<?php echo HTMLHelper::_('form.token'); ?>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {

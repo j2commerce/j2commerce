@@ -84,7 +84,7 @@
         const methodId = button.dataset.methodId;
         const card = button.closest('.j2commerce-payment-card');
 
-        const csrfToken = getCsrfToken();
+        const csrfToken = await resolveCsrfToken();
 
         if (!csrfToken) {
             showErrorMessage(Joomla.Text._('COM_J2COMMERCE_PAYMENT_METHODS_ERROR'));
@@ -97,25 +97,7 @@
 
             // task= is what plugin onAjax handlers dispatch on; provider-specific id param
             // names are mirrored so every provider's handler finds the one it reads.
-            const response = await fetch('index.php?option=com_ajax&plugin=' + provider + '&group=j2commerce&task=deleteCard&format=json', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'X-CSRF-Token': csrfToken
-                },
-                body: new URLSearchParams({
-                    [csrfToken]: '1',
-                    method_id: methodId,
-                    payment_method_id: methodId,
-                    consent_id: methodId
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(Joomla.Text._('COM_J2COMMERCE_PAYMENT_METHODS_NETWORK_ERROR'));
-            }
-
-            const data = unwrapAjaxResult(await response.json());
+            const data = await requestCardAction('deleteCard', provider, methodId, csrfToken);
 
             if (data.success) {
                 // Remove card from UI with fade effect
@@ -154,7 +136,7 @@
         const methodId = button.dataset.methodId;
         const card = button.closest('.j2commerce-payment-card');
 
-        const csrfToken = getCsrfToken();
+        const csrfToken = await resolveCsrfToken();
 
         if (!csrfToken) {
             showErrorMessage(Joomla.Text._('COM_J2COMMERCE_PAYMENT_METHODS_ERROR'));
@@ -165,25 +147,7 @@
             button.disabled = true;
             button.replaceChildren(loadingSpinner('spinner-border spinner-border-sm me-1'));
 
-            const response = await fetch('index.php?option=com_ajax&plugin=' + provider + '&group=j2commerce&task=setDefaultCard&format=json', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'X-CSRF-Token': csrfToken
-                },
-                body: new URLSearchParams({
-                    [csrfToken]: '1',
-                    method_id: methodId,
-                    payment_method_id: methodId,
-                    consent_id: methodId
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(Joomla.Text._('COM_J2COMMERCE_PAYMENT_METHODS_NETWORK_ERROR'));
-            }
-
-            const data = unwrapAjaxResult(await response.json());
+            const data = await requestCardAction('setDefaultCard', provider, methodId, csrfToken);
 
             if (data.success) {
                 // Update UI - remove default badge from all cards in this provider group
@@ -224,11 +188,6 @@
     }
 
     /**
-     * Get CSRF token from container or Joomla options
-     *
-     * @returns {string|null} The CSRF token
-     */
-    /**
      * Normalize a com_ajax plugin response to a single result object.
      *
      * com_ajax wraps plugin event results as {success, data: [...]}; providers return
@@ -255,17 +214,79 @@
         return (result && typeof result === 'object') ? result : {};
     }
 
-    function getCsrfToken() {
+    /**
+     * A hidden Joomla form-token input reproduces exactly `<input type="hidden"
+     * name="<32hex>" value="1">` — the shape core's page cache rewrites to the current
+     * visitor's token on every cached-page replay, unlike a data attribute or script option.
+     */
+    function readFormToken() {
+        return (Array.from(document.querySelectorAll('input[type="hidden"][value="1"]'))
+            .find((el) => /^[0-9a-f]{32}$/.test(el.name)) || {}).name || '';
+    }
+
+    /**
+     * Resolve a CSRF token: DOM (freshest) -> endpoint -> the container dataset -> the
+     * myprofile script option. The last two are baked into markup at render time, so on a
+     * cached-page replay they can carry whichever visitor primed the cache; putting them
+     * last means a stale value is used only when nothing fresher exists.
+     */
+    async function resolveCsrfToken() {
+        const domToken = readFormToken();
+
+        if (domToken) {
+            return domToken;
+        }
+
+        if (window.J2CommerceToken && typeof window.J2CommerceToken.get === 'function') {
+            try {
+                const endpointToken = await window.J2CommerceToken.get();
+
+                if (endpointToken) {
+                    return endpointToken;
+                }
+            } catch (error) {
+                // Fall through to the legacy sources.
+            }
+        }
+
         const container = document.querySelector('.j2commerce-payment-methods');
 
         if (container && container.dataset.csrfToken) {
             return container.dataset.csrfToken;
         }
 
-        // Fallback to Joomla script options
-        const options = Joomla.getOptions('com_j2commerce.myprofile', {});
+        return Joomla.getOptions('com_j2commerce.myprofile', {}).csrfToken || '';
+    }
 
-        return options.csrfToken || null;
+    /**
+     * POST a card action.
+     */
+    async function requestCardAction(taskName, provider, methodId, token) {
+        const url = 'index.php?option=com_ajax&plugin=' + provider + '&group=j2commerce&task=' + taskName + '&format=json';
+
+        // task= is what plugin onAjax handlers dispatch on; provider-specific id param
+        // names are mirrored so every provider's handler finds the one it reads.
+        const body = new URLSearchParams({
+            [token]: '1',
+            method_id: methodId,
+            payment_method_id: methodId,
+            consent_id: methodId
+        });
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRF-Token': token
+            },
+            body
+        });
+
+        if (!response.ok) {
+            throw new Error(Joomla.Text._('COM_J2COMMERCE_PAYMENT_METHODS_NETWORK_ERROR'));
+        }
+
+        return unwrapAjaxResult(await response.json());
     }
 
     /**

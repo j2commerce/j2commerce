@@ -10,7 +10,7 @@
 
 declare(strict_types=1);
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 $moduleId       = (int) $module->id;
 $productCount   = (int) ($productCount ?? 0);
@@ -20,7 +20,21 @@ $isAjax         = !empty($isAjax ?? false);
 $iconClass      = htmlspecialchars($params->get('minicart_cart_icon_class', 'bi bi-cart3'), ENT_QUOTES, 'UTF-8');
 $moduleClassSfx = htmlspecialchars($params->get('moduleclass_sfx', ''), ENT_QUOTES, 'UTF-8');
 
-$hide = ((int) $params->get('check_empty', 0) === 1 && $productCount < 1);
+// The endpoint reports SUM(product_qty). When quantity_count is off this badge shows the
+// number of distinct lines instead, which the endpoint cannot supply — so the hydration
+// hooks are withheld and the server-rendered value stands (correct on a fresh render,
+// stale only on a cached replay, never silently rewritten to a different measure).
+$hydratable = ((int) $params->get('quantity_count', 1) === 1);
+$countAttr  = $hydratable ? ' data-j2c-cart-count' : '';
+$badgeAttr  = $hydratable ? ' data-j2c-cart-badge' : '';
+
+// check_empty bakes a hide/show decision into cacheable HTML. When the badge is hydratable
+// the wrapper is rendered hidden instead of omitted, so a shopper with items replaying a
+// cache primed by an empty cart still gets a cart icon once hydration runs.
+$emptyHidden = ((int) $params->get('check_empty', 0) === 1 && $productCount < 1);
+$hide        = ($emptyHidden && !$hydratable);
+$wrapAttr    = $hydratable ? ' data-j2c-cart-wrapper' : '';
+$wrapHidden  = $emptyHidden ? ' hidden style="display:none"' : '';
 
 $customCss = strip_tags((string) $params->get('custom_css', ''));
 if (!empty($customCss)) {
@@ -33,29 +47,27 @@ if (!empty($customCss)) {
 <?php endif; ?>
 
 <?php if (!$hide) : ?>
-    <div class="j2commerce-minicart">
-        <?php if ($productCount > 0 && !empty($cartUrl)) : ?>
+    <div class="j2commerce-minicart"<?php echo $wrapAttr; ?><?php echo $wrapHidden; ?>>
+        <?php if (!empty($cartUrl)) : ?>
             <a class="j2commerce-minicart-link uk-position-relative uk-display-inline-block"
                href="<?php echo htmlspecialchars($cartUrl, ENT_QUOTES, 'UTF-8'); ?>"
                aria-label="<?php echo htmlspecialchars(\Joomla\CMS\Language\Text::_('MOD_J2COMMERCE_CART_VIEW_CART'), ENT_QUOTES, 'UTF-8'); ?>">
                 <span class="<?php echo $iconClass; ?>" aria-hidden="true"></span>
                 <span class="uk-badge j2commerce-cart-badge"
-                      style="position:absolute;top:-8px;right:-12px;font-size:0.65rem;">
-                    <?php echo $productCount; ?>
+                      style="position:absolute;top:-8px;right:-12px;font-size:0.65rem;"
+                      <?php echo $badgeAttr; ?><?php echo $productCount > 0 ? '' : ' hidden style="display:none"'; ?>>
+                    <span<?php echo $countAttr; ?>><?php echo $productCount; ?></span>
                     <span class="uk-hidden"><?php echo \Joomla\CMS\Language\Text::_('MOD_J2COMMERCE_CART_VIEW_CART'); ?></span>
                 </span>
             </a>
-        <?php elseif ($productCount > 0) : ?>
-            <span class="j2commerce-minicart-link uk-position-relative uk-display-inline-block">
-                <span class="<?php echo $iconClass; ?>" aria-hidden="true"></span>
-                <span class="uk-badge j2commerce-cart-badge"
-                      style="position:absolute;top:-8px;right:-12px;font-size:0.65rem;">
-                    <?php echo $productCount; ?>
-                </span>
-            </span>
         <?php else : ?>
             <span class="j2commerce-minicart-link uk-position-relative uk-display-inline-block">
                 <span class="<?php echo $iconClass; ?>" aria-hidden="true"></span>
+                <span class="uk-badge j2commerce-cart-badge"
+                      style="position:absolute;top:-8px;right:-12px;font-size:0.65rem;"
+                      <?php echo $badgeAttr; ?><?php echo $productCount > 0 ? '' : ' hidden style="display:none"'; ?>>
+                    <span<?php echo $countAttr; ?>><?php echo $productCount; ?></span>
+                </span>
             </span>
         <?php endif; ?>
     </div>

@@ -9,7 +9,7 @@
 
 declare(strict_types=1);
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
@@ -21,26 +21,32 @@ use Joomla\CMS\Uri\Uri;
 
 /** @var \J2Commerce\Component\J2commerce\Site\View\Products\HtmlView $this */
 
-$app = Factory::getApplication();
+$app     = Factory::getApplication();
 $session = $app->getSession();
 
-$currency = J2CommerceHelper::currency();
-$currencySymbol = CurrencyHelper::getSymbol();
+$currency         = J2CommerceHelper::currency();
+$currencySymbol   = CurrencyHelper::getSymbol();
 $currencyPosition = CurrencyHelper::getSymbolPosition();
-$currencyValue = CurrencyHelper::getValue();
-$thousandSymbol = CurrencyHelper::getThousandsSeparator();
-$decimalPlace = CurrencyHelper::getDecimalPlace();
-$currencyCode = CurrencyHelper::getCode();
+$currencyValue    = CurrencyHelper::getValue();
+$thousandSymbol   = CurrencyHelper::getThousandsSeparator();
+$decimalPlace     = CurrencyHelper::getDecimalPlace();
+$currencyCode     = CurrencyHelper::getCode();
 
-$sessionManufacturerIds = $session->get('manufacturer_ids', [], 'j2commerce');
-$sessionVendorIds = $session->get('vendor_ids', [], 'j2commerce');
+$sessionManufacturerIds  = $session->get('manufacturer_ids', [], 'j2commerce');
+$sessionVendorIds        = $session->get('vendor_ids', [], 'j2commerce');
 $sessionProductfilterIds = $session->get('productfilter_ids', [], 'j2commerce');
 
 $filterCatid = $this->filter_catid ?? '';
-$itemId = $app->getInput()->getUint('Itemid', 0);
+$itemId      = $app->getInput()->getUint('Itemid', 0);
 
 $currentSefPath = Uri::getInstance()->getPath();
 
+// csrf.token is a shared Joomla-wide script option consumed by unrelated core/plugin
+// JS elsewhere on the page; kept for backward compatibility but NOT cache-safe (it
+// bakes the rendering visitor's live token into cacheable HTML). The hidden
+// form.token input below is the cache-safe source: Joomla's page cache rewrites its
+// exact <input type="hidden" name="32hex" value="1"> shape to the current visitor's
+// token on every cached-page replay.
 $csrfTokenName = Session::getFormToken();
 $app->getDocument()->addScriptOptions('csrf.token', $csrfTokenName);
 
@@ -48,7 +54,7 @@ $hasFilterGroups = (!empty($this->filters['manufacturers']) && $this->params->ge
     || (!empty($this->filters['vendors']) && $this->params->get('list_show_vendor_filter', 1))
     || (!empty($this->filters['productfilters']) && $this->params->get('list_show_product_filter', 1));
 
-$hasPriceFilter = $this->params->get('list_show_filter_price', 1) && !empty($this->filters['pricefilters']['max_price']);
+$hasPriceFilter   = $this->params->get('list_show_filter_price', 1) && !empty($this->filters['pricefilters']['max_price']);
 $filtersCollapsed = ((int) $this->params->get('list_filter_category_toggle', 1) === 2);
 
 HTMLHelper::_('bootstrap.offcanvas');
@@ -155,13 +161,13 @@ if ($hasFancySelect) {
 
                 <?php if ($hasPriceFilter) : ?>
                     <?php
-                    $minPrice = 0;
-                    $maxPrice = (float) $this->filters['pricefilters']['max_price'];
+                    $minPrice       = 0;
+                    $maxPrice       = (float) $this->filters['pricefilters']['max_price'];
                     $hasActivePrice = $this->state->get('filter.price_from', 0) > 0 || $this->state->get('filter.price_to', 0) > 0;
-                    $priceFrom = $hasActivePrice && $this->state->get('filter.price_from', 0) ? (float) $this->state->get('filter.price_from') : $minPrice;
-                    $priceTo   = $hasActivePrice && $this->state->get('filter.price_to', 0)   ? (float) $this->state->get('filter.price_to')   : $maxPrice;
-                    $dPriceFrom = CurrencyHelper::format($priceFrom, $currencyCode, $currencyValue, false);
-                    $dPriceTo = CurrencyHelper::format($priceTo, $currencyCode, $currencyValue, false);
+                    $priceFrom      = $hasActivePrice && $this->state->get('filter.price_from', 0) ? (float) $this->state->get('filter.price_from') : $minPrice;
+                    $priceTo        = $hasActivePrice && $this->state->get('filter.price_to', 0) ? (float) $this->state->get('filter.price_to') : $maxPrice;
+                    $dPriceFrom     = CurrencyHelper::format($priceFrom, $currencyCode, $currencyValue, false);
+                    $dPriceTo       = CurrencyHelper::format($priceTo, $currencyCode, $currencyValue, false);
                     ?>
                     <div class="accordion-item border-0 border-bottom">
                         <h3 class="accordion-header">
@@ -178,13 +184,21 @@ if ($hasFancySelect) {
                                         <div class="text-center small text-body-secondary w-100">
                                             <span id="min_price" style="display: none"><?php echo $priceFrom; ?></span>
                                             <span id="max_price" style="display: none"><?php echo $priceTo; ?></span>
-                                            <?php if ($currencyPosition === 'pre') echo '<span class="fw-semibold">' . $currencySymbol . '</span>'; ?>
+                                            <?php if ($currencyPosition === 'pre') {
+                                                echo '<span class="fw-semibold">' . $currencySymbol . '</span>';
+                                            } ?>
                                             <span id="min_price_display" class="fw-semibold"><?php echo $dPriceFrom; ?></span>
-                                            <?php if ($currencyPosition === 'post') echo '<span class="fw-semibold">' . $currencySymbol . '</span>'; ?>
+                                            <?php if ($currencyPosition === 'post') {
+                                                echo '<span class="fw-semibold">' . $currencySymbol . '</span>';
+                                            } ?>
                                             <span class="mx-1"><?php echo Text::_('COM_J2COMMERCE_TO_PRICE'); ?></span>
-                                            <?php if ($currencyPosition === 'pre') echo '<span class="fw-semibold">' . $currencySymbol . '</span>'; ?>
+                                            <?php if ($currencyPosition === 'pre') {
+                                                echo '<span class="fw-semibold">' . $currencySymbol . '</span>';
+                                            } ?>
                                             <span id="max_price_display" class="fw-semibold"><?php echo $dPriceTo; ?></span>
-                                            <?php if ($currencyPosition === 'post') echo '<span class="fw-semibold">' . $currencySymbol . '</span>'; ?>
+                                            <?php if ($currencyPosition === 'post') {
+                                                echo '<span class="fw-semibold">' . $currencySymbol . '</span>';
+                                            } ?>
                                             <input type="hidden" name="pricefrom" id="min_price_input" value="<?php echo $priceFrom; ?>" />
                                             <input type="hidden" name="priceto" id="max_price_input" value="<?php echo $priceTo; ?>" />
                                         </div>
@@ -198,11 +212,11 @@ if ($hasFancySelect) {
                 <?php if ($this->params->get('list_show_product_filter', 1) && !empty($this->filters['productfilters'])) : ?>
                     <?php foreach ($this->filters['productfilters'] as $pfKey => $filtergroup) : ?>
                         <?php
-                        $filterScriptId = J2CommerceHelper::utilities()->generateId($filtergroup['group_name']) . '_' . $pfKey;
-                        $groupAlias     = \Joomla\CMS\Filter\OutputFilter::stringURLSafe(Text::_($filtergroup['group_name']));
-                        $pfShowExpanded = !$filtersCollapsed;
-                        $groupFilterIds = array_map(fn($f) => $f->filter_id, $filtergroup['filters']);
-                        $hasSelectedFilters = !empty($sessionProductfilterIds) && count(array_intersect($sessionProductfilterIds, $groupFilterIds)) > 0;
+                        $filterScriptId     = J2CommerceHelper::utilities()->generateId($filtergroup['group_name']) . '_' . $pfKey;
+                        $groupAlias         = \Joomla\CMS\Filter\OutputFilter::stringURLSafe(Text::_($filtergroup['group_name']));
+                        $pfShowExpanded     = !$filtersCollapsed;
+                        $groupFilterIds     = array_map(fn ($f) => $f->filter_id, $filtergroup['filters']);
+                        $hasSelectedFilters = !empty($sessionProductfilterIds) && \count(array_intersect($sessionProductfilterIds, $groupFilterIds)) > 0;
                         if ($hasSelectedFilters) {
                             $pfShowExpanded = true;
                         }
@@ -238,7 +252,7 @@ if ($hasFancySelect) {
                                                 <?php endif; ?>
                                                 <?php foreach ($filtergroup['filters'] as $filter) : ?>
                                                     <?php
-                                                    $checked = (!empty($sessionProductfilterIds) && in_array($filter->filter_id, $sessionProductfilterIds));
+                                                    $checked     = (!empty($sessionProductfilterIds) && \in_array($filter->filter_id, $sessionProductfilterIds));
                                                     $filterAlias = \Joomla\CMS\Filter\OutputFilter::stringURLSafe(Text::_($filter->filter_name));
                                                     $filterCount = (int) ($filter->product_count ?? 0);
                                                     $filterLabel = Text::_($filter->filter_name);
@@ -260,14 +274,14 @@ if ($hasFancySelect) {
                                             <?php endif; ?>
                                             <?php foreach ($filtergroup['filters'] as $filter) : ?>
                                                 <?php
-                                                $checked = (!empty($sessionProductfilterIds) && in_array($filter->filter_id, $sessionProductfilterIds));
+                                                $checked     = (!empty($sessionProductfilterIds) && \in_array($filter->filter_id, $sessionProductfilterIds));
                                                 $filterAlias = \Joomla\CMS\Filter\OutputFilter::stringURLSafe(Text::_($filter->filter_name));
                                                 $filterCount = (int) ($filter->product_count ?? 0);
                                                 $filterLabel = Text::_($filter->filter_name);
                                                 // A ticked value stays operable at zero, or the selection that emptied
                                                 // the listing could not be undone from here.
                                                 $filterUnavailable = $filterCount === 0 && !$checked;
-                                                $filterId = 'j2commerce-pfilter-' . $filterScriptId . '-' . $filter->filter_id;
+                                                $filterId          = 'j2commerce-pfilter-' . $filterScriptId . '-' . $filter->filter_id;
                                                 // Re-checked at render: only a hex literal ever reaches the style attribute.
                                                 $swatchColor = preg_match('/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', (string) ($filter->filter_color ?? ''))
                                                     ? $filter->filter_color
@@ -293,7 +307,7 @@ if ($hasFancySelect) {
                                                         <label class="form-check-label small" for="<?php echo $filterId; ?>">
                                                             <?php echo $this->escape($filterLabel); ?>
                                                         </label>
-                                                        <?php // Outside the label on purpose: the active-filter chips read the label textContent. ?>
+                                                        <?php // Outside the label on purpose: the active-filter chips read the label textContent.?>
                                                         <span class="j2commerce-filter-count text-body-secondary">(<?php echo $filterCount; ?>)</span>
                                                     </div>
                                                 <?php endif; ?>
@@ -306,7 +320,7 @@ if ($hasFancySelect) {
                     <?php endforeach; ?>
                 <?php endif; ?>
 
-                <?php if ($this->params->get('list_show_manufacturer_filter', 1) && !empty($this->filters['manufacturers']) && count($this->filters['manufacturers'])) : ?>
+                <?php if ($this->params->get('list_show_manufacturer_filter', 1) && !empty($this->filters['manufacturers']) && \count($this->filters['manufacturers'])) : ?>
                     <div class="accordion-item border-0 border-bottom">
                         <h3 class="accordion-header">
                             <button class="accordion-button fw-semibold<?php echo $filtersCollapsed ? ' collapsed' : ''; ?>" type="button" data-bs-toggle="collapse" data-bs-target="#filterBrand">
@@ -322,7 +336,7 @@ if ($hasFancySelect) {
                                 </div>
                                 <div id="j2commerce-brand-filter-container">
                                     <?php foreach ($this->filters['manufacturers'] as $brand) : ?>
-                                        <?php $checked = (!empty($sessionManufacturerIds) && in_array($brand->j2commerce_manufacturer_id, $sessionManufacturerIds)); ?>
+                                        <?php $checked = (!empty($sessionManufacturerIds) && \in_array($brand->j2commerce_manufacturer_id, $sessionManufacturerIds)); ?>
                                         <div class="form-check mb-2">
                                             <input type="checkbox" class="form-check-input j2commerce-brand-checkboxes" name="manufacturer_ids[]" id="brand-input-<?php echo $brand->j2commerce_manufacturer_id; ?>" value="<?php echo $brand->j2commerce_manufacturer_id; ?>"<?php echo $checked ? ' checked' : ''; ?> />
                                             <label class="form-check-label small" for="brand-input-<?php echo $brand->j2commerce_manufacturer_id; ?>">
@@ -352,7 +366,7 @@ if ($hasFancySelect) {
                                 </div>
                                 <div id="j2commerce-vendor-filter-container">
                                     <?php foreach ($this->filters['vendors'] as $vendor) : ?>
-                                        <?php $checked = (!empty($sessionVendorIds) && in_array($vendor->j2commerce_vendor_id, $sessionVendorIds)); ?>
+                                        <?php $checked = (!empty($sessionVendorIds) && \in_array($vendor->j2commerce_vendor_id, $sessionVendorIds)); ?>
                                         <div class="form-check mb-2">
                                             <input type="checkbox" class="form-check-input j2commerce-vendor-checkboxes" name="vendor_ids[]" id="vendor-input-<?php echo $vendor->j2commerce_vendor_id; ?>" value="<?php echo $vendor->j2commerce_vendor_id; ?>"<?php echo $checked ? ' checked' : ''; ?> />
                                             <label class="form-check-label small" for="vendor-input-<?php echo $vendor->j2commerce_vendor_id; ?>">
@@ -371,7 +385,12 @@ if ($hasFancySelect) {
             <input type="hidden" name="view" value="products" />
             <input type="hidden" name="task" value="browse" />
             <input type="hidden" name="Itemid" value="<?php echo $itemId; ?>" />
-        </form>
+            </form>
+<?php // Deliberately OUTSIDE the form above: that form is method="get", so a hidden input
+     // inside it would be serialised into the query string on every submit and leak the
+     // token through referrers, logs and history. The JS token reader matches by shape
+     // across the whole document, so form membership is irrelevant.?>
+        <?php echo HTMLHelper::_('form.token'); ?>
 
     </div>
 

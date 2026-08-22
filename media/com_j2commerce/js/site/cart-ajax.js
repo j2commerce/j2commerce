@@ -17,44 +17,96 @@
 (function() {
 
     /**
+     * A hidden Joomla form-token input reproduces exactly `<input type="hidden"
+     * name="<32hex>" value="1">` — the shape core's page cache rewrites to the current
+     * visitor's token on every cached-page replay, unlike a script option.
+     */
+    function readFormToken() {
+        return (Array.from(document.querySelectorAll('input[type="hidden"][value="1"]'))
+            .find((el) => /^[0-9a-f]{32}$/.test(el.name)) || {}).name || '';
+    }
+
+    /**
      * Initialize cart AJAX functionality
      */
     function initCartAjax() {
         // Get configuration from Joomla options
         const options = Joomla.getOptions('j2commerce.cart') || {};
 
-        const csrfToken = options.csrfToken || '';
         const baseUrl = options.baseUrl || 'index.php';
         const strings = options.strings || {};
 
-        // Check if we have the required configuration
-        if (!csrfToken) {
-            console.warn('J2Commerce Cart: Missing CSRF token configuration');
-            return;
+        let updateDebounceTimer = null;
+
+        /**
+         * Freshest source first. The script option is last because it is baked into the
+         * markup: on a cached-page replay it carries whichever visitor primed the cache.
+         * The DOM input and the endpoint are always current, so no retry is needed.
+         */
+        async function resolveToken() {
+            const domToken = readFormToken();
+
+            if (domToken) {
+                return domToken;
+            }
+
+            if (window.J2CommerceToken && typeof window.J2CommerceToken.get === 'function') {
+                try {
+                    const endpointToken = await window.J2CommerceToken.get();
+
+                    if (endpointToken) {
+                        return endpointToken;
+                    }
+                } catch (error) {
+                    // Fall through to the script option.
+                }
+            }
+
+            return options.csrfToken || '';
         }
 
-        let updateDebounceTimer = null;
+        /**
+         * POST a cart task, resolving the token per call. Returns a failure-shaped object
+         * (never throws) so every caller's existing `if (data.success) {...} else {...show
+         * data.message...}` branch already surfaces it — no listener goes silently inert.
+         */
+        async function postCart(fields) {
+            const token = await resolveToken();
+
+            if (!token) {
+                console.warn('J2Commerce Cart: Missing CSRF token configuration');
+
+                return { success: false, message: strings.errorUpdating || '' };
+            }
+
+            const body = new FormData();
+            body.append('option', 'com_j2commerce');
+            Object.entries(fields).forEach(([key, value]) => body.append(key, value));
+            body.append(token, '1');
+
+            const response = await fetch(baseUrl, {
+                method: 'POST',
+                body,
+                headers: { 'Cache-Control': 'no-cache' }
+            });
+
+            // Throw rather than resolve: callers' existing catch blocks own the HTTP-failure
+            // recovery (refreshCartTotals reloads the page). Resolving a failure-shaped object
+            // here would silently leave stale totals on screen.
+            if (!response.ok) {
+                throw new Error('Cart request failed: ' + response.status);
+            }
+
+            return response.json();
+        }
 
         /**
          * Refresh the cart totals section via AJAX
          * Fetches updated totals HTML and replaces the totals container
          */
         async function refreshCartTotals() {
-            const formData = new FormData();
-            formData.append('option', 'com_j2commerce');
-            formData.append('task', 'carts.getTotalsAjax');
-            formData.append(csrfToken, '1');
-
             try {
-                const response = await fetch(baseUrl, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'Cache-Control': 'no-cache'
-                    }
-                });
-
-                const data = await response.json();
+                const data = await postCart({ task: 'carts.getTotalsAjax' });
 
                 if (data.success && data.html) {
                     // Find and replace the totals container
@@ -158,23 +210,12 @@
         async function updateQuantity(cartitemId, qty, container) {
             setLoadingState(container, true);
 
-            const formData = new FormData();
-            formData.append('option', 'com_j2commerce');
-            formData.append('task', 'carts.updateQuantityAjax');
-            formData.append('cartitem_id', cartitemId);
-            formData.append('qty', qty);
-            formData.append(csrfToken, '1');
-
             try {
-                const response = await fetch(baseUrl, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'Cache-Control': 'no-cache'
-                    }
+                const data = await postCart({
+                    task: 'carts.updateQuantityAjax',
+                    cartitem_id: cartitemId,
+                    qty: qty
                 });
-
-                const data = await response.json();
 
                 if (data.success) {
                     // Update the input value in case server adjusted it
@@ -237,22 +278,11 @@
             // Disable button during operation
             button.disabled = true;
 
-            const formData = new FormData();
-            formData.append('option', 'com_j2commerce');
-            formData.append('task', 'carts.removeAjax');
-            formData.append('cartitem_id', cartitemId);
-            formData.append(csrfToken, '1');
-
             try {
-                const response = await fetch(baseUrl, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'Cache-Control': 'no-cache'
-                    }
+                const data = await postCart({
+                    task: 'carts.removeAjax',
+                    cartitem_id: cartitemId
                 });
-
-                const data = await response.json();
 
                 if (data.success) {
                     // Fade out and remove the row
@@ -396,39 +426,29 @@
         });
 
         // Event delegation for shipping method radio selection
-        document.addEventListener('change', function(e) {
+        document.addEventListener('change', async function(e) {
             const radio = e.target.closest('.shipping-method-radio');
             if (!radio) return;
 
-            const formData = new FormData();
-            formData.append('option', 'com_j2commerce');
-            formData.append('task', 'carts.shippingUpdate');
-            formData.append('shipping_name', radio.dataset.name || '');
-            formData.append('shipping_price', radio.dataset.price || '0');
-            formData.append('shipping_tax', radio.dataset.tax || '0');
-            formData.append('shipping_extra', radio.dataset.extra || '0');
-            formData.append('shipping_code', radio.dataset.code || '');
-            formData.append('shipping_plugin', radio.dataset.element || '');
-            formData.append(csrfToken, '1');
+            try {
+                await postCart({
+                    task: 'carts.shippingUpdate',
+                    shipping_name: radio.dataset.name || '',
+                    shipping_price: radio.dataset.price || '0',
+                    shipping_tax: radio.dataset.tax || '0',
+                    shipping_extra: radio.dataset.extra || '0',
+                    shipping_code: radio.dataset.code || '',
+                    shipping_plugin: radio.dataset.element || ''
+                });
 
-            fetch(baseUrl, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'Cache-Control': 'no-cache'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
                 refreshCartTotals();
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error('Error updating shipping method:', error);
-            });
+            }
         });
 
         // Event delegation for clear cart button
-        document.addEventListener('click', function(e) {
+        document.addEventListener('click', async function(e) {
             const clearBtn = e.target.closest('.j2commerce-clear-cart-ajax');
             if (!clearBtn) return;
 
@@ -442,20 +462,9 @@
             clearBtn.disabled = true;
             clearBtn.classList.add('disabled');
 
-            const formData = new FormData();
-            formData.append('option', 'com_j2commerce');
-            formData.append('task', 'carts.clearCartAjax');
-            formData.append(csrfToken, '1');
+            try {
+                const data = await postCart({ task: 'carts.clearCartAjax' });
 
-            fetch(baseUrl, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'Cache-Control': 'no-cache'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
                 if (data.success) {
                     // Show empty cart message
                     showEmptyCartMessage();
@@ -477,12 +486,11 @@
                         }
                     }
                 }
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error('Error clearing cart:', error);
                 clearBtn.disabled = false;
                 clearBtn.classList.remove('disabled');
-            });
+            }
         });
     }
 

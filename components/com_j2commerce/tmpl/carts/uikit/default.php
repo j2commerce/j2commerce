@@ -17,7 +17,6 @@ use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Router\Route;
-use Joomla\CMS\Session\Session;
 
 /** @var \J2Commerce\Component\J2commerce\Site\View\Carts\HtmlView $this */
 
@@ -25,28 +24,31 @@ $app = Factory::getApplication();
 
 // Load cart AJAX script using registerAndUseScript
 $document = $app->getDocument();
-$wa = $document->getWebAssetManager();
+$wa       = $document->getWebAssetManager();
 // Safe DOM construction helpers for this template's inline JS, the calculator sub-template
 // and cart-ajax.js.
 $wa->registerAndUseScript('com_j2commerce.dom', 'media/com_j2commerce/js/site/j2commerce-dom.js', [], ['defer' => true]);
 
 $wa->registerAndUseScript('com_j2commerce.cart-ajax', 'media/com_j2commerce/js/site/cart-ajax.js', [], ['defer' => true], ['core', 'com_j2commerce.dom']);
 
-// Pass configuration to JavaScript
+// Pass configuration to JavaScript. csrfToken is intentionally NOT included here — baking
+// a live guest token into cacheable HTML via a script option is not cache-safe. Consumers
+// (cart-ajax.js, and this template's own inline script below) read the bare form.token
+// hidden input rendered inside #j2commerce-cart-form instead, which core's page cache
+// rewrites to the current visitor's token on every cached-page replay.
 $document->addScriptOptions('j2commerce.cart', [
-    'csrfToken' => Session::getFormToken(),
-    'baseUrl'   => Route::_('index.php', false),
-    'strings'   => [
-        'errorUpdating'       => Text::_('COM_J2COMMERCE_ERROR_UPDATING_CART'),
-        'errorRemoving'       => Text::_('COM_J2COMMERCE_ERROR_REMOVING_ITEM'),
-        'emptyCart'            => Text::_('COM_J2COMMERCE_CART_NO_ITEMS'),
-        'confirmClearCart'     => Text::_('COM_J2COMMERCE_CONFIRM_CLEAR_CART'),
+    'baseUrl' => Route::_('index.php', false),
+    'strings' => [
+        'errorUpdating'    => Text::_('COM_J2COMMERCE_ERROR_UPDATING_CART'),
+        'errorRemoving'    => Text::_('COM_J2COMMERCE_ERROR_REMOVING_ITEM'),
+        'emptyCart'        => Text::_('COM_J2COMMERCE_CART_NO_ITEMS'),
+        'confirmClearCart' => Text::_('COM_J2COMMERCE_CONFIRM_CLEAR_CART'),
     ],
 ]);
 
 
 // Get cart URL for form action
-$cartUrl = J2CommerceHelper::platform()->getCartUrl();
+$cartUrl      = J2CommerceHelper::platform()->getCartUrl();
 $clearCartUrl = J2CommerceHelper::platform()->getCartUrl(['task' => 'clearCart']);
 
 ?>
@@ -114,43 +116,43 @@ $clearCartUrl = J2CommerceHelper::platform()->getCartUrl(['task' => 'clearCart']
                         <?php
                         // Get coupon/voucher state for layout rendering
                         $enableCoupon = (int) $this->params->get('enable_coupon', 0);
-                        $enableVoucher = (int) $this->params->get('enable_voucher', 0);
-                        $couponCode = '';
-                        $voucherCode = '';
+$enableVoucher                        = (int) $this->params->get('enable_voucher', 0);
+$couponCode                           = '';
+$voucherCode                          = '';
 
-                        if ($enableCoupon) {
-                            $couponModel = Factory::getApplication()->bootComponent('com_j2commerce')
-                                ->getMVCFactory()->createModel('Coupon', 'Administrator', ['ignore_request' => true]);
-                            $couponCode = $couponModel ? $couponModel->getCoupon() : '';
-                        }
-                        if ($enableVoucher) {
-                            $voucherModel = Factory::getApplication()->bootComponent('com_j2commerce')
-                                ->getMVCFactory()->createModel('Voucher', 'Administrator', ['ignore_request' => true]);
-                            $voucherCode = $voucherModel ? $voucherModel->getVoucherCode() : '';
-                        }
-                        ?>
+if ($enableCoupon) {
+    $couponModel = Factory::getApplication()->bootComponent('com_j2commerce')
+        ->getMVCFactory()->createModel('Coupon', 'Administrator', ['ignore_request' => true]);
+    $couponCode = $couponModel ? $couponModel->getCoupon() : '';
+}
+if ($enableVoucher) {
+    $voucherModel = Factory::getApplication()->bootComponent('com_j2commerce')
+        ->getMVCFactory()->createModel('Voucher', 'Administrator', ['ignore_request' => true]);
+    $voucherCode = $voucherModel ? $voucherModel->getVoucherCode() : '';
+}
+?>
                         <ul uk-accordion id="cartToolsAccordion">
                             <?php if ($enableCoupon) : ?>
                                 <?php echo LayoutHelper::render('form.coupon', [
-                                    'couponCode'   => $couponCode,
-                                    'formId'       => 'cart-coupon',
-                                    'variant'      => 'accordion',
-                                    'accordionId'  => 'cartToolsAccordion',
-                                    'expanded'     => !empty($couponCode),
-                                    'showDiscount' => true,
-                                    'framework'    => 'uikit',
-                                ], JPATH_COMPONENT . '/layouts'); ?>
+            'couponCode'   => $couponCode,
+            'formId'       => 'cart-coupon',
+            'variant'      => 'accordion',
+            'accordionId'  => 'cartToolsAccordion',
+            'expanded'     => !empty($couponCode),
+            'showDiscount' => true,
+            'framework'    => 'uikit',
+        ], JPATH_COMPONENT . '/layouts'); ?>
                             <?php endif; ?>
                             <?php if ($enableVoucher) : ?>
                                 <?php echo LayoutHelper::render('form.voucher', [
-                                    'voucherCode'  => $voucherCode,
-                                    'formId'       => 'cart-voucher',
-                                    'variant'      => 'accordion',
-                                    'accordionId'  => 'cartToolsAccordion',
-                                    'expanded'     => !empty($voucherCode),
-                                    'showDiscount' => true,
-                                    'framework'    => 'uikit',
-                                ], JPATH_COMPONENT . '/layouts'); ?>
+            'voucherCode'  => $voucherCode,
+            'formId'       => 'cart-voucher',
+            'variant'      => 'accordion',
+            'accordionId'  => 'cartToolsAccordion',
+            'expanded'     => !empty($voucherCode),
+            'showDiscount' => true,
+            'framework'    => 'uikit',
+        ], JPATH_COMPONENT . '/layouts'); ?>
                             <?php endif; ?>
                             <?php echo $this->loadTemplate('calculator'); ?>
                         </ul>
@@ -181,14 +183,28 @@ $clearCartUrl = J2CommerceHelper::platform()->getCartUrl(['task' => 'clearCart']
 (function() {
     var cartOpts = Joomla.getOptions('j2commerce.cart') || {};
     var cvOpts   = Joomla.getOptions('j2commerce.couponVoucher') || {};
-    var csrfToken = cartOpts.csrfToken || cvOpts.csrfToken || '';
+
+    // A hidden Joomla form-token input reproduces exactly the shape core's page cache
+    // rewrites to the current visitor's token on every cached-page replay, unlike a
+    // token baked into a script option at first render.
+    const readFormToken = () =>
+        (Array.from(document.querySelectorAll('input[type="hidden"][value="1"]'))
+            .find((el) => /^[0-9a-f]{32}$/.test(el.name)) || {}).name || '';
+
     var ajaxUrl   = cartOpts.baseUrl || cvOpts.baseUrl || 'index.php';
 
     function refreshCartTotals() {
         var formData = new FormData();
         formData.append('option', 'com_j2commerce');
         formData.append('task', 'carts.getTotalsAjax');
-        if (csrfToken) formData.append(csrfToken, '1');
+
+        // Resolved per call, never captured at init: the DOM input is rewritten to the
+        // current visitor's token on a cached replay, so a one-time capture would go stale.
+        const csrfToken = readFormToken() || cvOpts.csrfToken || '';
+
+        if (csrfToken) {
+            formData.append(csrfToken, '1');
+        }
 
         fetch(ajaxUrl, { method: 'POST', body: formData, headers: { 'Cache-Control': 'no-cache' } })
             .then(function(r) { return r.json(); })

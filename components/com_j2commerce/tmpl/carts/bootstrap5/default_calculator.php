@@ -18,7 +18,6 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Uri\Uri;
 use Joomla\Database\DatabaseInterface;
-use Joomla\Database\ParameterType;
 
 /** @var \J2Commerce\Component\J2commerce\Site\View\Carts\HtmlView $this */
 
@@ -27,11 +26,11 @@ if (!$this->params->get('show_tax_calculator', 1)) {
 }
 
 $postcodeRequired = $this->params->get('postalcode_required', 1);
-$baseUrl = Route::_('index.php');
-$loaderImage = Uri::root(true) . '/media/com_j2commerce/images/loader.gif';
+$baseUrl          = Route::_('index.php');
+$loaderImage      = Uri::root(true) . '/media/com_j2commerce/images/loader.gif';
 
 // Build country select using native Joomla
-$db = Factory::getContainer()->get(DatabaseInterface::class);
+$db    = Factory::getContainer()->get(DatabaseInterface::class);
 $query = $db->getQuery(true)
     ->select([$db->quoteName('j2commerce_country_id', 'value'), $db->quoteName('country_name', 'text')])
     ->from($db->quoteName('#__j2commerce_countries'))
@@ -103,6 +102,11 @@ $countryList = HTMLHelper::_('select.genericlist', $countries, 'country_id', [
             <input type="hidden" name="view" value="carts" />
             <input type="hidden" name="task" value="estimate" />
         </form>
+<?php // Outside the form on purpose: it carries no method attribute, so it defaults to
+     // GET and a hidden input inside it would be serialised into the query string if the
+     // JS submit handler ever failed to intercept. The token reader matches by shape
+     // across the document, so form membership is irrelevant.?>
+<?php echo HTMLHelper::_('form.token'); ?>
         </div>
     </div>
 </div>
@@ -116,6 +120,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const baseUrl = '<?php echo $baseUrl; ?>';
     const loaderImage = '<?php echo $loaderImage; ?>';
     const currentZoneId = '<?php echo $this->zone_id; ?>';
+
+    // A hidden Joomla form-token input reproduces exactly the shape core's page cache
+    // rewrites to the current visitor's token on every cached-page replay, unlike a
+    // token baked directly into inline JS via PHP interpolation.
+    const readFormToken = () =>
+        (Array.from(document.querySelectorAll('input[type="hidden"][value="1"]'))
+            .find((el) => /^[0-9a-f]{32}$/.test(el.name)) || {}).name || '';
 
     // Handle country change to load zones
     if (countrySelect) {
@@ -219,7 +230,7 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 // Use POST for the estimate task with AJAX flag
                 formData.append('ajax', '1');
-                formData.append('<?php echo Factory::getApplication()->getSession()->getFormToken(); ?>', '1');
+                formData.append(readFormToken(), '1');
 
                 const response = await fetch(baseUrl + '?option=com_j2commerce&task=carts.estimateAjax', {
                     method: 'POST',
@@ -276,7 +287,7 @@ document.addEventListener('DOMContentLoaded', function() {
      * Refresh the cart totals section via AJAX
      */
     async function refreshCartTotals() {
-        const csrfToken = '<?php echo Factory::getApplication()->getSession()->getFormToken(); ?>';
+        const csrfToken = readFormToken();
         const formData = new FormData();
         formData.append('option', 'com_j2commerce');
         formData.append('task', 'carts.getTotalsAjax');
