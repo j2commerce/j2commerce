@@ -224,6 +224,13 @@
                         input.value = data.qty;
                     }
 
+                    // Show adjustment message if quantity was clamped to min/max
+                    if (data.message) {
+                        if (typeof Joomla !== 'undefined' && Joomla.renderMessages) {
+                            Joomla.renderMessages({ warning: [data.message] });
+                        }
+                    }
+
                     // Update line total for this item
                     const row = container.closest('.j2commerce-cart-item');
                     if (row && data.line_total) {
