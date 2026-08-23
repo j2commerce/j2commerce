@@ -111,11 +111,13 @@ const J2Commerce = {
             }
 
             if (json.error) {
-                if (json.product_redirect) {
-                    window.location = json.product_redirect;
-                    return;
+                const errorMsg = json.error.stock || json.error.general || json.error.product || '';
+                if (errorMsg) {
+                    if (typeof Joomla !== 'undefined' && Joomla.renderMessages) {
+                        Joomla.renderMessages({ error: [errorMsg] });
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
                 }
-
                 button.classList.remove('loading');
                 return;
             }
