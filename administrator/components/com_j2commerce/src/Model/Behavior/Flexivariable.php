@@ -797,6 +797,8 @@ class Flexivariable
                 }
             }
 
+            $productHelper->getQuantityRestriction($product->variant);
+
             // Promote to product top-level so displayQuantity() can read them
             if (!empty($product->variant->quantity_restriction)) {
                 $product->min_sale_qty = (float) ($product->variant->min_sale_qty ?? 0);
