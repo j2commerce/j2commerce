@@ -314,7 +314,7 @@
                     type="list"
                     label="PLG_CONTENT_J2COMMERCE_SHORTCODE_SUBTEMPLATE_LABEL"
                     description="PLG_CONTENT_J2COMMERCE_SHORTCODE_SUBTEMPLATE_DESC"
-                    default="app_bootstrap5"
+                    default=""
                 >
                     <option value="">JGLOBAL_USE_GLOBAL</option>
                     <option value="app_bootstrap5">Bootstrap 5</option>
