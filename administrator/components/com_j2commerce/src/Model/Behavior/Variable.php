@@ -818,6 +818,8 @@ class Variable
         $return['sku']              = $variant->sku;
         $return['upc']              = $variant->upc ?? '';
         $return['quantity']         = (float) $quantity;
+        $return['min_sale_qty']     = $variant->quantity_restriction ? (float) ($variant->min_sale_qty ?? 0) : 0;
+        $return['max_sale_qty']     = $variant->quantity_restriction ? (float) ($variant->max_sale_qty ?? 0) : 0;
         $return['price']            = $variant->price;
         $return['availability']     = $variant->availability;
         $return['manage_stock']     = $variant->manage_stock;

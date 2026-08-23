@@ -979,6 +979,21 @@ const J2Commerce = {
                 if (['variable', 'advancedvariable', 'variablesubscriptionproduct'].includes(productType)) {
                     qtyInput.setAttribute('value', response.quantity);
                 }
+
+                // Update min/max constraints when the selected variant changes
+                if (response.min_sale_qty !== undefined) {
+                    const minQty = parseInt(response.min_sale_qty, 10) || 1;
+                    qtyInput.setAttribute('min', minQty);
+                }
+                if (response.max_sale_qty !== undefined) {
+                    const maxQty = parseInt(response.max_sale_qty, 10) || 0;
+                    if (maxQty > 0) {
+                        qtyInput.setAttribute('max', maxQty);
+                    } else {
+                        qtyInput.removeAttribute('max');
+                    }
+                }
+
                 this.updateCountInputStates(qtyInput);
             }
         }
