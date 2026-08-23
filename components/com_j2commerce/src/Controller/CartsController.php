@@ -640,6 +640,7 @@ class CartsController extends BaseController
 
             $query = $db->getQuery(true)
                 ->select([
+                    'v.quantity_restriction',
                     'v.min_sale_qty',
                     'v.max_sale_qty',
                     'v.manage_stock',
@@ -654,17 +655,26 @@ class CartsController extends BaseController
             $db->setQuery($query);
             $productInfo = $db->loadObject();
 
-            $minQty = (int) ($productInfo->min_sale_qty ?? 0) ?: 1;
-            $maxQty = (int) ($productInfo->max_sale_qty ?? 0);
+            $hasRestriction = !empty($productInfo->quantity_restriction);
 
-            if ($newQty < $minQty) {
-                $newQty          = $minQty;
-                $json['message'] = Text::sprintf('COM_J2COMMERCE_MINIMUM_QUANTITY_REQUIRED', $minQty);
+            if ($hasRestriction) {
+                $restrictedMin = (int) ($productInfo->min_sale_qty ?? 0);
+                $restrictedMax = (int) ($productInfo->max_sale_qty ?? 0);
+
+                if ($restrictedMin > 1 && $newQty < $restrictedMin) {
+                    $newQty          = $restrictedMin;
+                    $json['message'] = Text::sprintf('COM_J2COMMERCE_MINIMUM_QUANTITY_REQUIRED', $restrictedMin);
+                }
+
+                if ($restrictedMax > 0 && $newQty > $restrictedMax) {
+                    $newQty          = $restrictedMax;
+                    $json['message'] = Text::sprintf('COM_J2COMMERCE_MAXIMUM_QUANTITY_ALLOWED', $restrictedMax);
+                }
             }
 
-            if ($maxQty > 0 && $newQty > $maxQty) {
-                $newQty          = $maxQty;
-                $json['message'] = Text::sprintf('COM_J2COMMERCE_MAXIMUM_QUANTITY_ALLOWED', $maxQty);
+            // Safety floor: quantity can never be less than 1
+            if ($newQty < 1) {
+                $newQty = 1;
             }
 
             if ($productInfo && $productInfo->manage_stock) {
