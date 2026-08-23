@@ -580,6 +580,12 @@ class Downloadable
         // Get quantity restrictions
         $productHelper->getQuantityRestriction($product->variant);
 
+        // Promote to product top-level so displayQuantity() can read them
+        if (!empty($product->variant->quantity_restriction)) {
+            $product->min_sale_qty = (float) ($product->variant->min_sale_qty ?? 0);
+            $product->max_sale_qty = (float) ($product->variant->max_sale_qty ?? 0);
+        }
+
         // Process quantity based on restrictions
         if ($product->variant->quantity_restriction && $product->variant->min_sale_qty > 0) {
             $product->quantity = $product->variant->min_sale_qty;
