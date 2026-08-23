@@ -980,7 +980,8 @@ const J2Commerce = {
                     qtyInput.setAttribute('value', response.quantity);
                 }
 
-                // Update min/max constraints when the selected variant changes
+                // Update min/max constraints when the selected variant changes.
+                // Note: gated on response.quantity because PHP always sends all three together.
                 if (response.min_sale_qty !== undefined) {
                     const minQty = parseInt(response.min_sale_qty, 10) || 1;
                     qtyInput.setAttribute('min', minQty);
