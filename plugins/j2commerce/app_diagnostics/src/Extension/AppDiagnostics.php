@@ -272,14 +272,12 @@ final class AppDiagnostics extends CMSPlugin implements SubscriberInterface
     {
         Log::addLogger(['text_file' => 'com_j2commerce.php'], Log::ALL, ['com_j2commerce']);
 
-        $app = $this->getApplication();
-
         // Retention is an administrative setting, so the configured term is the only source.
         $daysOld   = (int) J2CommerceHelper::config()->get('clear_outdated_cart_data_term', 90);
         $clearTime = $daysOld * 1440; // Convert days to minutes
 
-        $tz         = $app->get('offset');
-        $cutoffDate = Factory::getDate('now -' . $clearTime . ' minutes', $tz)->toSql(true);
+        // The cart columns are stored UTC, so the cutoff has to be UTC too.
+        $cutoffDate = Factory::getDate('now -' . $clearTime . ' minutes')->toSql();
 
         $db       = $this->getDatabase();
         $cartType = 'cart';
@@ -289,7 +287,7 @@ final class AppDiagnostics extends CMSPlugin implements SubscriberInterface
             ->select($db->quoteName('j2commerce_cart_id'))
             ->from($db->quoteName('#__j2commerce_carts'))
             ->where($db->quoteName('cart_type') . ' = :cartType')
-            ->where($db->quoteName('created_on') . ' <= :cutoff')
+            ->where($db->quoteName('modified_on') . ' <= :cutoff')
             ->bind(':cartType', $cartType)
             ->bind(':cutoff', $cutoffDate);
 
@@ -315,7 +313,7 @@ final class AppDiagnostics extends CMSPlugin implements SubscriberInterface
         $query = $db->getQuery(true)
             ->delete($db->quoteName('#__j2commerce_carts'))
             ->where($db->quoteName('cart_type') . ' = :cartType')
-            ->where($db->quoteName('created_on') . ' <= :cutoff')
+            ->where($db->quoteName('modified_on') . ' <= :cutoff')
             ->bind(':cartType', $cartType)
             ->bind(':cutoff', $cutoffDate);
 
