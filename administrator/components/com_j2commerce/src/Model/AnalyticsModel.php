@@ -245,16 +245,21 @@ class AnalyticsModel extends BaseDatabaseModel
      *
      * Note: orderitem_quantity is varchar(255) in the database, so CAST is required.
      *
-     * @param   string  $from   Start date (inclusive)
-     * @param   string  $to     End date (inclusive)
-     * @param   int     $limit  Maximum number of products to return
+     * @param   string  $from     Start date (inclusive)
+     * @param   string  $to       End date (inclusive)
+     * @param   int     $limit    Maximum number of products to return
+     * @param   string  $orderBy  Ranking metric: total_qty or total_revenue
      *
      * @return  array  Array of objects with ->name, ->product_id, ->total_qty, ->total_revenue
      *
      * @since   6.0.0
      */
-    public function getTopProducts(string $from, string $to, int $limit = 10): array
+    public function getTopProducts(string $from, string $to, int $limit = 10, string $orderBy = 'total_qty'): array
     {
+        // The ranking metric reaches an identifier position, where binding is not available.
+        // Anything outside the two computed aliases falls back to the quantity ranking.
+        $orderBy = \in_array($orderBy, ['total_qty', 'total_revenue'], true) ? $orderBy : 'total_qty';
+
         $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
@@ -276,7 +281,7 @@ class AnalyticsModel extends BaseDatabaseModel
                 $db->quoteName('oi.product_id'),
                 $db->quoteName('oi.orderitem_name'),
             ])
-            ->order($db->quoteName('total_qty') . ' DESC')
+            ->order($db->quoteName($orderBy) . ' DESC')
             ->setLimit($limit);
 
         $db->setQuery($query);
