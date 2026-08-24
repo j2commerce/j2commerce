@@ -150,20 +150,32 @@ class CustomersModel extends ListModel
             ->where($db->quoteName('o.user_email') . ' = ' . $db->quoteName('a.email'));
         $query->select('(' . $orderSubquery . ') AS ' . $db->quoteName('order_count'));
 
-        // Only show records with valid email and first name
-        $query->where($db->quoteName('a.email') . ' != ' . $db->quote(''))
-            ->where($db->quoteName('a.first_name') . ' != ' . $db->quote(''));
-
-        // Group by email to show each customer once
-        $query->group($db->quoteName('a.email'));
+        // Resolve one address per customer email.
+        //
+        // Grouping the outer query by email is rejected by ONLY_FULL_GROUP_BY (MySQL's
+        // default sql_mode since 5.7) because none of the selected columns are functionally
+        // dependent on email. Pick the lowest address id per email in a subquery and join
+        // the full row back instead — the same shape ProductsModel uses to resolve one image
+        // and one master variant per product.
+        //
+        // Every list filter belongs on the subquery alias `ax`, NOT on `a`: a customer must
+        // surface when ANY of their addresses matches, which is what filtering before the
+        // GROUP BY used to give us. Filtering `a` would hide a customer whose lowest-id
+        // address falls outside the filter.
+        $addressSubquery = $db->getQuery(true)
+            ->select('MIN(' . $db->quoteName('ax.j2commerce_address_id') . ')')
+            ->from($db->quoteName('#__j2commerce_addresses', 'ax'))
+            ->where($db->quoteName('ax.email') . ' != ' . $db->quote(''))
+            ->where($db->quoteName('ax.first_name') . ' != ' . $db->quote(''))
+            ->group($db->quoteName('ax.email'));
 
         // Filter by country
         $countryId = $this->getState('filter.country_id');
 
         if (is_numeric($countryId) && $countryId > 0) {
             $countryId = (int) $countryId;
-            $query->where($db->quoteName('a.country_id') . ' = :country_id')
-                ->bind(':country_id', $countryId, ParameterType::INTEGER);
+            $addressSubquery->where($db->quoteName('ax.country_id') . ' = :country_id');
+            $query->bind(':country_id', $countryId, ParameterType::INTEGER);
         }
 
         // Filter by search
@@ -172,21 +184,21 @@ class CustomersModel extends ListModel
         if (!empty($search)) {
             if (stripos($search, 'id:') === 0) {
                 $searchId = (int) substr($search, 3);
-                $query->where($db->quoteName('a.j2commerce_address_id') . ' = :searchId')
-                    ->bind(':searchId', $searchId, ParameterType::INTEGER);
+                $addressSubquery->where($db->quoteName('ax.j2commerce_address_id') . ' = :searchId');
+                $query->bind(':searchId', $searchId, ParameterType::INTEGER);
             } else {
                 $search = '%' . str_replace(' ', '%', trim($search)) . '%';
-                $query->where(
+                $addressSubquery->where(
                     '(' .
-                    $db->quoteName('a.first_name') . ' LIKE :search1 OR ' .
-                    $db->quoteName('a.last_name') . ' LIKE :search2 OR ' .
-                    'CONCAT(' . $db->quoteName('a.first_name') . ', ' . $db->quote(' ') . ', ' . $db->quoteName('a.last_name') . ') LIKE :search3 OR ' .
-                    $db->quoteName('a.email') . ' LIKE :search4 OR ' .
-                    $db->quoteName('a.company') . ' LIKE :search5 OR ' .
-                    $db->quoteName('a.city') . ' LIKE :search6' .
+                    $db->quoteName('ax.first_name') . ' LIKE :search1 OR ' .
+                    $db->quoteName('ax.last_name') . ' LIKE :search2 OR ' .
+                    'CONCAT(' . $db->quoteName('ax.first_name') . ', ' . $db->quote(' ') . ', ' . $db->quoteName('ax.last_name') . ') LIKE :search3 OR ' .
+                    $db->quoteName('ax.email') . ' LIKE :search4 OR ' .
+                    $db->quoteName('ax.company') . ' LIKE :search5 OR ' .
+                    $db->quoteName('ax.city') . ' LIKE :search6' .
                     ')'
-                )
-                    ->bind(':search1', $search)
+                );
+                $query->bind(':search1', $search)
                     ->bind(':search2', $search)
                     ->bind(':search3', $search)
                     ->bind(':search4', $search)
@@ -194,6 +206,8 @@ class CustomersModel extends ListModel
                     ->bind(':search6', $search);
             }
         }
+
+        $query->where($db->quoteName('a.j2commerce_address_id') . ' IN (' . $addressSubquery . ')');
 
         // Add ordering clause
         $orderCol  = $this->state->get('list.ordering', 'customer_name');
