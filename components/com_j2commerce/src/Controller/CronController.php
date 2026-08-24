@@ -52,25 +52,19 @@ class CronController extends BaseController
         $queueKey = $params->get('queue_key', '');
 
         if (empty($queueKey)) {
-            $app->setHeader('status', '503');
-            echo 'ERROR: Queue key not configured';
-            $app->close(503);
+            $this->respond(503, 'ERROR: Queue key not configured');
         }
 
         $secret = $app->getInput()->get('cron_secret', '', 'raw');
 
         if (!hash_equals($queueKey, $secret)) {
-            $app->setHeader('status', '403');
-            echo 'ERROR: Invalid cron secret';
-            $app->close(403);
+            $this->respond(403, 'ERROR: Invalid cron secret');
         }
 
         $command = trim(strtolower($app->getInput()->get('command', '', 'raw')));
 
         if ($command === '') {
-            $app->setHeader('status', '501');
-            echo 'ERROR: No command specified';
-            $app->close(501);
+            $this->respond(501, 'ERROR: No command specified');
         }
 
         // Record last trigger
@@ -90,8 +84,22 @@ class CronController extends BaseController
         $event = new Event('onJ2CommerceProcessCron', ['command' => $command]);
         $app->getDispatcher()->dispatch('onJ2CommerceProcessCron', $event);
 
-        echo "{$command} OK";
-        $app->close();
+        $this->respond(200, htmlspecialchars($command, ENT_QUOTES, 'UTF-8') . ' OK');
+    }
+
+    /**
+     * close() is a bare exit(), so queued headers are only written if sendHeaders() runs first.
+     */
+    private function respond(int $status, string $message): void
+    {
+        $app = Factory::getApplication();
+
+        $app->setHeader('status', (string) $status);
+        $app->sendHeaders();
+
+        echo $message;
+
+        $app->close($status === 200 ? 0 : $status);
     }
 
     private function saveConfigValue(string $key, string $value): void

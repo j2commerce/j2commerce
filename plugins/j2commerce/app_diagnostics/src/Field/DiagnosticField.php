@@ -87,14 +87,27 @@ class DiagnosticField extends FormField
             . '/index.php?option=com_j2commerce&task=cron.execute&command=clear_cart&cron_secret=';
         $maskedUrl = $cronBase . ($cronKey === '' ? '' : str_repeat('*', 12));
 
+        // The complete URL carries the queue key, which is configured on the component Options
+        // form. This block is reached at a different level, so the value is emitted only where
+        // the caller also holds that form's capability.
+        $user       = Factory::getApplication()->getIdentity();
+        $maySeeKey  = $user !== null && !$user->guest
+            && ($user->authorise('core.admin') || $user->authorise('core.options', 'com_j2commerce'));
+
         $html[] = '<tr>';
         $html[] = '<th scope="row">' . Text::_('PLG_J2COMMERCE_APP_DIAGNOSTICS_CLEAR_CART_CRON') . '</th>';
         $html[] = '<td class="d-flex align-items-center gap-2 flex-wrap">';
-        $html[] = '<code id="j2c-diag-cron-url" data-cron-url="' . $esc($cronBase . $cronKey)
-            . '" data-cron-masked="' . $esc($maskedUrl) . '">' . $esc($maskedUrl) . '</code>';
-        $html[] = '<button type="button" class="btn btn-sm btn-secondary" id="j2c-diag-cron-toggle"'
-            . ' data-label-show="' . $esc(Text::_('JSHOW')) . '"'
-            . ' data-label-hide="' . $esc(Text::_('JHIDE')) . '">' . $esc(Text::_('JSHOW')) . '</button>';
+
+        if ($maySeeKey) {
+            $html[] = '<code id="j2c-diag-cron-url" data-cron-url="' . $esc($cronBase . $cronKey)
+                . '" data-cron-masked="' . $esc($maskedUrl) . '">' . $esc($maskedUrl) . '</code>';
+            $html[] = '<button type="button" class="btn btn-sm btn-secondary" id="j2c-diag-cron-toggle"'
+                . ' data-label-show="' . $esc(Text::_('JSHOW')) . '"'
+                . ' data-label-hide="' . $esc(Text::_('JHIDE')) . '">' . $esc(Text::_('JSHOW')) . '</button>';
+        } else {
+            $html[] = '<code>' . $esc($maskedUrl) . '</code>';
+        }
+
         $html[] = '</td>';
         $html[] = '</tr>';
 
