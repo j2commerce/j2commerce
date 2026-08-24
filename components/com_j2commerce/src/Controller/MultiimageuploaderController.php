@@ -120,7 +120,10 @@ class MultiimageuploaderController extends BaseController
             return;
         }
 
-        if (!(new MediaHelper())->canUpload($file)) {
+        // In file mode the full allowlist + blocklist + MIME checks in validateUploadedFile()
+        // are sufficient. Joomla's MediaHelper only knows about image/media extensions, so
+        // calling it for archives, fonts, etc. would always reject them.
+        if ($fileMode === 0 && !(new MediaHelper())->canUpload($file)) {
             $this->sendJson(false, 'File type not allowed');
             return;
         }
@@ -144,8 +147,19 @@ class MultiimageuploaderController extends BaseController
         $fileName  = $baseName . '_' . uniqid() . '.' . $extension;
         $filePath  = $uploadPath . '/' . $fileName;
 
-        if (!File::upload($file['tmp_name'], $filePath)) {
-            $this->sendJson(false, 'Failed to save file');
+        // In file mode, pass allowUnsafe = true: File::upload() would otherwise scan
+        // archive contents for forbidden extensions (e.g. .php inside a zip), which is
+        // inappropriate for legitimate download products.  Our own validateUploadedFile()
+        // has already performed extension, blocklist, and MIME-type checks.
+        // Wrap in try-catch because File::upload() throws FilesystemException on failure
+        // instead of returning false.
+        try {
+            if (!File::upload($file['tmp_name'], $filePath, false, $fileMode === 1)) {
+                $this->sendJson(false, 'Failed to save file');
+                return;
+            }
+        } catch (\Joomla\Filesystem\Exception\FilesystemException $e) {
+            $this->sendJson(false, 'Failed to save file: ' . $e->getMessage());
             return;
         }
 
