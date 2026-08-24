@@ -227,7 +227,7 @@ if ($hasFancySelect) {
                                             <?php endif; ?>
                                     <?php else : ?>
                                         <?php if ($pfInputType === 'radio') : ?>
-                                            <div class="uk-margin-small-bottom">
+                                            <div class="uk-margin-small-bottom uk-flex uk-flex-middle uk-flex-between">
                                                 <label>
                                                     <input type="radio" class="uk-radio j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" name="<?php echo $pfInputName; ?>" id="j2commerce-pfilter-<?php echo $filterScriptId; ?>-any" value=""<?php echo $hasSelectedFilters ? '' : ' checked'; ?> />
                                                     <span class="uk-text-small uk-margin-small-left"><?php echo $this->escape(Text::_('COM_J2COMMERCE_FILTER_ANY')); ?></span>
@@ -250,7 +250,7 @@ if ($hasFancySelect) {
                                                 : '';
                                             ?>
                                             <?php if ($pfInputType === 'color') : ?>
-                                                <div class="<?php echo $filterUnavailable ? 'j2commerce-filter-unavailable' : ''; ?>">
+                                                <div class="<?php echo $filterUnavailable ? 'j2commerce-filter-unavailable' : ''; ?> uk-flex uk-flex-middle uk-flex-between">
                                                     <input type="checkbox" class="j2commerce-swatch-input j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" name="<?php echo $pfInputName; ?>" id="<?php echo $filterId; ?>" value="<?php echo $filter->filter_id; ?>" data-alias="<?php echo $this->escape($filterAlias); ?>" data-group-alias="<?php echo $this->escape($groupAlias); ?>" data-count="<?php echo $filterCount; ?>" data-label="<?php echo $this->escape($filterLabel); ?>"<?php echo $checked ? ' checked' : ''; ?><?php echo $filterUnavailable ? ' disabled' : ''; ?> />
                                                     <?php if ($swatchColor !== '') : ?>
                                                         <label class="btn-color" for="<?php echo $filterId; ?>" style="color: <?php echo $this->escape($swatchColor); ?>" title="<?php echo $this->escape($filterLabel); ?>" data-label="<?php echo $this->escape($filterLabel); ?>">
@@ -264,7 +264,7 @@ if ($hasFancySelect) {
                                                     <span class="j2commerce-filter-count uk-hidden">(<?php echo $filterCount; ?>)</span>
                                                 </div>
                                             <?php else : ?>
-                                                <div class="uk-margin-small-bottom<?php echo $filterUnavailable ? ' j2commerce-filter-unavailable' : ''; ?>">
+                                                <div class="uk-margin-small-bottom<?php echo $filterUnavailable ? ' j2commerce-filter-unavailable' : ''; ?> uk-flex uk-flex-middle uk-flex-between">
                                                     <label>
                                                         <input type="<?php echo $pfInputType === 'radio' ? 'radio' : 'checkbox'; ?>" class="<?php echo $pfInputType === 'radio' ? 'uk-radio' : 'uk-checkbox'; ?> j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" name="<?php echo $pfInputName; ?>" id="<?php echo $filterId; ?>" value="<?php echo $filter->filter_id; ?>" data-alias="<?php echo $this->escape($filterAlias); ?>" data-group-alias="<?php echo $this->escape($groupAlias); ?>" data-count="<?php echo $filterCount; ?>" data-label="<?php echo $this->escape($filterLabel); ?>"<?php echo $checked ? ' checked' : ''; ?><?php echo $filterUnavailable ? ' disabled' : ''; ?> />
                                                         <span class="uk-text-small uk-margin-small-left"><?php echo $this->escape($filterLabel); ?></span>
@@ -295,7 +295,7 @@ if ($hasFancySelect) {
                             <div id="j2commerce-brand-filter-container">
                                 <?php foreach ($this->filters['manufacturers'] as $brand) : ?>
                                     <?php $checked = (!empty($sessionManufacturerIds) && in_array($brand->j2commerce_manufacturer_id, $sessionManufacturerIds)); ?>
-                                    <div class="uk-margin-small-bottom">
+                                    <div class="uk-margin-small-bottom uk-flex uk-flex-middle uk-flex-between">
                                         <label>
                                             <input type="checkbox" class="uk-checkbox j2commerce-brand-checkboxes" name="manufacturer_ids[]" id="brand-input-<?php echo $brand->j2commerce_manufacturer_id; ?>" value="<?php echo $brand->j2commerce_manufacturer_id; ?>"<?php echo $checked ? ' checked' : ''; ?> />
                                             <span class="uk-text-small uk-margin-small-left"><?php echo $this->escape($brand->company); ?></span>
@@ -321,7 +321,7 @@ if ($hasFancySelect) {
                             <div id="j2commerce-vendor-filter-container">
                                 <?php foreach ($this->filters['vendors'] as $vendor) : ?>
                                     <?php $checked = (!empty($sessionVendorIds) && in_array($vendor->j2commerce_vendor_id, $sessionVendorIds)); ?>
-                                    <div class="uk-margin-small-bottom">
+                                    <div class="uk-margin-small-bottom uk-flex uk-flex-middle uk-flex-between">
                                         <label>
                                             <input type="checkbox" class="uk-checkbox j2commerce-vendor-checkboxes" name="vendor_ids[]" id="vendor-input-<?php echo $vendor->j2commerce_vendor_id; ?>" value="<?php echo $vendor->j2commerce_vendor_id; ?>"<?php echo $checked ? ' checked' : ''; ?> />
                                             <span class="uk-text-small uk-margin-small-left"><?php echo $this->escape($vendor->company); ?></span>
@@ -456,7 +456,7 @@ if ($hasFancySelect) {
                                         <?php endif; ?>
                                 <?php else : ?>
                                     <?php if ($pfInputType === 'radio') : ?>
-                                        <div class="uk-margin-small-bottom">
+                                        <div class="uk-margin-small-bottom uk-flex uk-flex-middle uk-flex-between">
                                             <label>
                                                 <input type="radio" class="uk-radio j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" name="<?php echo $pfInputName; ?>" id="j2commerce-pfilter-<?php echo $filterScriptId; ?>-any" value=""<?php echo $hasSelectedFilters ? '' : ' checked'; ?> />
                                                 <span class="uk-text-small uk-margin-small-left"><?php echo $this->escape(Text::_('COM_J2COMMERCE_FILTER_ANY')); ?></span>
@@ -493,7 +493,7 @@ if ($hasFancySelect) {
                                                 <span class="j2commerce-filter-count uk-hidden">(<?php echo $filterCount; ?>)</span>
                                             </div>
                                         <?php else : ?>
-                                            <div class="uk-margin-small-bottom<?php echo $filterUnavailable ? ' j2commerce-filter-unavailable' : ''; ?>">
+                                            <div class="uk-margin-small-bottom<?php echo $filterUnavailable ? ' j2commerce-filter-unavailable' : ''; ?> uk-flex uk-flex-middle uk-flex-between">
                                                 <label>
                                                     <input type="<?php echo $pfInputType === 'radio' ? 'radio' : 'checkbox'; ?>" class="<?php echo $pfInputType === 'radio' ? 'uk-radio' : 'uk-checkbox'; ?> j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" name="<?php echo $pfInputName; ?>" id="<?php echo $filterId; ?>" value="<?php echo $filter->filter_id; ?>" data-alias="<?php echo $this->escape($filterAlias); ?>" data-group-alias="<?php echo $this->escape($groupAlias); ?>" data-count="<?php echo $filterCount; ?>" data-label="<?php echo $this->escape($filterLabel); ?>"<?php echo $checked ? ' checked' : ''; ?><?php echo $filterUnavailable ? ' disabled' : ''; ?> />
                                                     <span class="uk-text-small uk-margin-small-left"><?php echo $this->escape($filterLabel); ?></span>
@@ -519,7 +519,7 @@ if ($hasFancySelect) {
                         <div id="j2commerce-brand-filter-container">
                             <?php foreach ($this->filters['manufacturers'] as $brand) : ?>
                                 <?php $checked = (!empty($sessionManufacturerIds) && in_array($brand->j2commerce_manufacturer_id, $sessionManufacturerIds)); ?>
-                                <div class="uk-margin-small-bottom">
+                                <div class="uk-margin-small-bottom uk-flex uk-flex-middle uk-flex-between">
                                     <label>
                                         <input type="checkbox" class="uk-checkbox j2commerce-brand-checkboxes" name="manufacturer_ids[]" id="brand-input-<?php echo $brand->j2commerce_manufacturer_id; ?>" value="<?php echo $brand->j2commerce_manufacturer_id; ?>"<?php echo $checked ? ' checked' : ''; ?> />
                                         <span class="uk-text-small uk-margin-small-left"><?php echo $this->escape($brand->company); ?></span>
@@ -540,7 +540,7 @@ if ($hasFancySelect) {
                         <div id="j2commerce-vendor-filter-container">
                             <?php foreach ($this->filters['vendors'] as $vendor) : ?>
                                 <?php $checked = (!empty($sessionVendorIds) && in_array($vendor->j2commerce_vendor_id, $sessionVendorIds)); ?>
-                                <div class="uk-margin-small-bottom">
+                                <div class="uk-margin-small-bottom uk-flex uk-flex-middle uk-flex-between">
                                     <label>
                                         <input type="checkbox" class="uk-checkbox j2commerce-vendor-checkboxes" name="vendor_ids[]" id="vendor-input-<?php echo $vendor->j2commerce_vendor_id; ?>" value="<?php echo $vendor->j2commerce_vendor_id; ?>"<?php echo $checked ? ' checked' : ''; ?> />
                                         <span class="uk-text-small uk-margin-small-left"><?php echo $this->escape($vendor->company); ?></span>

@@ -1442,6 +1442,31 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             $productType = $product->product_type ?? '';
             $html        = '<div class="com_j2commerce j2commerce-single-product j2commerce-shortcode j2commerce-shortcode-article">';
 
+            // Apply the shortcode-specific subtemplate override so that
+            // ProductLayoutService::renderLayout() picks up the correct layout
+            // paths for non-detail options (|full, |cart, |options, etc.).
+            // The |detail branch handles this independently via the view params.
+            //
+            // An inline token like |subtemplate:uikit takes precedence over the
+            // plugin-level shortcode_subtemplate param, letting each shortcode on
+            // the same page use a different subtemplate.
+            $inlineSubtemplate = null;
+            foreach ($options as $_opt) {
+                $_opt = strtolower(trim($_opt));
+                if (str_starts_with($_opt, 'subtemplate:')) {
+                    $inlineSubtemplate = substr($_opt, \strlen('subtemplate:'));
+                    break;
+                }
+            }
+
+            $shortcodeSubtemplate = $inlineSubtemplate !== null && $inlineSubtemplate !== ''
+                ? $inlineSubtemplate
+                : trim((string) $this->params->get('shortcode_subtemplate', ''));
+
+            if ($shortcodeSubtemplate !== '') {
+                ProductLayoutService::setSubtemplateOverride($shortcodeSubtemplate);
+            }
+
             foreach ($options as $option) {
                 $option = strtolower(trim($option));
 
@@ -1495,6 +1520,10 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
                 }
 
                 $html .= $rendered;
+            }
+
+            if ($shortcodeSubtemplate !== '') {
+                ProductLayoutService::clearSubtemplateOverride();
             }
 
             $html .= '</div>';

@@ -441,12 +441,8 @@ class CategoryWizard {
 
     getFlowSequence() {
         if (this.flow === 'single') {
-            const needsOptions = this.data.productType === 'variable' ||
-                (this.data.productType === 'simple' && this.data.productType !== 'downloadable');
-
-            // We decide at step 3a whether to include option steps
-            // The flow is determined once productType is set
-            const includeOptionSteps = this.data.productType === 'variable' || this.data.productType === 'simple';
+            // Only the variable product type collects option titles and values
+            const includeOptionSteps = this.data.productType === 'variable';
             const hasTemplate = this.templateInfo.yoothemeInstalled &&
                 this.templateInfo.availableSubtemplates.includes('uikit');
 
@@ -545,6 +541,11 @@ class CategoryWizard {
             case '3a': {
                 const checked = this.el.querySelector('input[name="product_type"]:checked');
                 this.data.productType = checked ? checked.value : 'simple';
+
+                if (this.data.productType !== 'variable') {
+                    this.data.optionTitles = [];
+                    this.data.optionValues = {};
+                }
                 break;
             }
 
