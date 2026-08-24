@@ -124,8 +124,8 @@ class CartVariable
         $cart = $model->getCart();
 
         if (empty($errors) && $variant && isset($cart->cart_type) && $cart->cart_type !== 'wishlist') {
-            // Stock is held by every live basket; the sale limits are per shopper, so they
-            // are measured against this shopper's own basket only.
+            // Both the stock check and the sale limits are measured against this
+            // shopper's own basket only; other shoppers' baskets never hold stock.
             $variantId    = (int) ($variant->j2commerce_variant_id ?? 0);
             $cartTotalQty = ProductHelper::getTotalCartQuantity($variantId);
             $shopperQty   = ProductHelper::getShopperCartQuantity($variantId, (int) ($cart->j2commerce_cart_id ?? 0));
@@ -393,8 +393,8 @@ class CartVariable
             throw new \Exception(Text::_('COM_J2COMMERCE_VARIANT_NOT_FOUND'));
         }
 
-        // Stock is held by every live basket; the sale limits are per shopper, so they
-        // are measured against this shopper's own basket only.
+        // Both the stock check and the sale limits are measured against this
+        // shopper's own basket only; other shoppers' baskets never hold stock.
         $variantId    = (int) ($variant->j2commerce_variant_id ?? 0);
         $cartTotalQty = ProductHelper::getTotalCartQuantity($variantId);
         $shopperQty   = ProductHelper::getShopperCartQuantity($variantId, (int) ($cartitem->cart_id ?? 0));

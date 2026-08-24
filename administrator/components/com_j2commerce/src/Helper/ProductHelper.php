@@ -2638,16 +2638,21 @@ class ProductHelper
     }
 
     /**
-     * Get total quantity held in live baskets for a variant.
+     * Get the quantity of a variant already held in the relevant basket.
      *
-     * Counts only rows belonging to an existing cart of type 'cart' that has been touched
-     * within the cart expiry term — wishlists, abandoned baskets and rows whose parent cart
-     * was deleted do not reserve stock.
+     * A shopper's add is gated only by what that shopper already holds — a cart row
+     * outlives the session that created it (no expiry sweep deletes it), so treating every
+     * live basket as a stock hold would let anyone park a variant's entire stock in a
+     * throwaway session and block it for other shoppers. Real stock is asserted at order
+     * build time by CartOrder::validate_order_stock(), so other baskets never need to hold
+     * stock here.
      *
      * @param   int  $variantId  The variant ID.
-     * @param   int  $cartId     Optional cart ID.
+     * @param   int  $cartId     Optional cart ID. When 0, resolves the current shopper's own
+     *                           basket on the site app; elsewhere (admin/CLI/webhook) there is
+     *                           no shopper basket, so nothing is held.
      *
-     * @return  int  Total quantity in cart.
+     * @return  int  Quantity of the variant in that basket.
      *
      * @since   6.0.3
      */
@@ -2657,38 +2662,21 @@ class ProductHelper
             return 0;
         }
 
-        $db       = self::getDatabase();
-        $cartType = 'cart';
+        if ($cartId < 1) {
+            if (!Factory::getApplication()->isClient('site')) {
+                return 0;
+            }
 
-        // CartHelper writes modified_on via Factory::getDate()->toSql(), so the cutoff is UTC too.
-        $cutoff = Factory::getDate('now -' . ConfigHelper::getCartExpiryDays() . ' days')->toSql();
+            $cart = CartHelper::getInstance()->getCart(0, false);
 
-        $query = $db->getQuery(true)
-            ->select('SUM(' . $db->quoteName('ci.product_qty') . ') AS total_cart_qty')
-            ->from($db->quoteName('#__j2commerce_cartitems', 'ci'))
-            // Inner join drops rows whose parent cart record is gone — no shopper can reach
-            // those, so they must not hold stock.
-            ->innerJoin(
-                $db->quoteName('#__j2commerce_carts', 'c')
-                . ' ON ' . $db->quoteName('c.j2commerce_cart_id') . ' = ' . $db->quoteName('ci.cart_id')
-            )
-            ->where($db->quoteName('ci.variant_id') . ' = :variantId')
-            // A wishlist is an intent to buy later, not a hold on stock.
-            ->where($db->quoteName('c.cart_type') . ' = :cartType')
-            // Past the cart expiry term a basket is abandoned and releases what it held.
-            ->where($db->quoteName('c.modified_on') . ' >= :cutoff')
-            ->bind(':variantId', $variantId, ParameterType::INTEGER)
-            ->bind(':cartType', $cartType)
-            ->bind(':cutoff', $cutoff);
+            if (!$cart || empty($cart->j2commerce_cart_id)) {
+                return 0;
+            }
 
-        if ($cartId > 0) {
-            $query->where($db->quoteName('ci.cart_id') . ' = :cartId')
-                ->bind(':cartId', $cartId, ParameterType::INTEGER);
+            $cartId = (int) $cart->j2commerce_cart_id;
         }
 
-        $db->setQuery($query);
-
-        return (int) $db->loadResult();
+        return self::getShopperCartQuantity($variantId, $cartId);
     }
 
     /**
