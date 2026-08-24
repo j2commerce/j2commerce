@@ -257,6 +257,7 @@ class VariantTable extends Table
         // Child tables to cascade delete
         $childTables = [
             '#__j2commerce_productquantities'            => 'variant_id',
+            '#__j2commerce_product_prices'               => 'variant_id',
             '#__j2commerce_product_variant_optionvalues' => 'variant_id',
         ];
 

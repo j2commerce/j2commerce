@@ -407,6 +407,14 @@ class VariantsModel extends ListModel
             $db->setQuery($query);
             $db->execute();
 
+            // Delete from product_prices
+            $query = $db->getQuery(true)
+                ->delete($db->quoteName('#__j2commerce_product_prices'))
+                ->where($db->quoteName('variant_id') . ' = :variantId')
+                ->bind(':variantId', $variantId, ParameterType::INTEGER);
+            $db->setQuery($query);
+            $db->execute();
+
             // Delete from product_variant_optionvalues
             $query = $db->getQuery(true)
                 ->delete($db->quoteName('#__j2commerce_product_variant_optionvalues'))

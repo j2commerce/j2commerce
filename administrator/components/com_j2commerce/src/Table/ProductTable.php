@@ -175,11 +175,12 @@ class ProductTable extends Table
 
         // Child tables to cascade delete
         $childTables = [
-            '#__j2commerce_variants'        => 'product_id',
-            '#__j2commerce_product_options' => 'product_id',
-            '#__j2commerce_productimages'   => 'product_id',
-            '#__j2commerce_productfiles'    => 'product_id',
-            '#__j2commerce_product_filters' => 'product_id',
+            '#__j2commerce_variants'           => 'product_id',
+            '#__j2commerce_product_options'    => 'product_id',
+            '#__j2commerce_productimages'      => 'product_id',
+            '#__j2commerce_productfiles'       => 'product_id',
+            '#__j2commerce_product_filters'    => 'product_id',
+            '#__j2commerce_productprice_index' => 'product_id',
         ];
 
         foreach ($childTables as $table => $column) {

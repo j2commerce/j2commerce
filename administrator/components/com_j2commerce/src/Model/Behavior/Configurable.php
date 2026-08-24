@@ -316,12 +316,16 @@ class Configurable
         }
 
         /** @var VariantsModel $variantModel */
-        $variantModel = $this->mvcFactory->createModel('Variants', 'Administrator');
+        $variantModel = $this->mvcFactory->createModel('Variants', 'Administrator', ['ignore_request' => true]);
         $variantModel->setState('filter.product_id', $id);
         $variantModel->setState('list.limit', 0);
         $variantModel->setState('list.start', 0);
 
         foreach ($variantModel->getItems() as $variant) {
+            if ((int) $variant->product_id !== (int) $id) {
+                continue;
+            }
+
             $variantModel->delete($variant->j2commerce_variant_id);
         }
     }
