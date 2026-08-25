@@ -326,6 +326,16 @@ if ($info) {
                         </div>
                     <?php endif; ?>
 
+                    <?php // Customer note card ?>
+                    <?php if ((int) J2CommerceHelper::config()->get('show_customer_note', 1) === 1 && trim((string) ($order->customer_note ?? '')) !== '') : ?>
+                        <div class="j2c-block-customer-note uk-card uk-card-default uk-margin-bottom">
+                            <div class="uk-card-body">
+                                <h3 class="uk-h6 uk-margin-bottom"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_CUSTOMER_NOTE'); ?></h3>
+                                <p class="uk-margin-remove-bottom uk-text-small"><?php echo nl2br($this->escape($order->customer_note)); ?></p>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
                     <?php // Shipping method card ?>
                     <?php if ((int) $order->is_shippable && !empty($shippings)) : ?>
                         <div class="j2c-block-shipping-method uk-card uk-card-default uk-margin-bottom">

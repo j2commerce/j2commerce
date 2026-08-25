@@ -11,6 +11,11 @@
 /* Utility: 40% width (not in Bootstrap) */
 .w-40 { width: 40%; }
 
+/* Anchor jump from the customer-note alert to the note itself. */
+@media (prefers-reduced-motion: no-preference) {
+    html:has(#j2c-order-view) { scroll-behavior: smooth; }
+}
+
 /* ============================
    ORDER HEADER BAR
    ============================ */

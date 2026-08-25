@@ -108,6 +108,15 @@ if (empty($customerName)) {
             </div>
         </div>
     </div>
+    <?php if (trim((string) ($item->customer_note ?? '')) !== '') : ?>
+        <div class="alert alert-info d-flex flex-wrap align-items-center gap-2 j2c-order-note-alert">
+            <span class="fa-solid fa-comment-dots" aria-hidden="true"></span>
+            <span><?php echo Text::_('COM_J2COMMERCE_ORDER_HAS_CUSTOMER_NOTE'); ?></span>
+            <a href="#customerNote" class="btn btn-sm btn-outline-info ms-auto">
+                <?php echo Text::_('COM_J2COMMERCE_ORDER_VIEW_CUSTOMER_NOTE'); ?>
+            </a>
+        </div>
+    <?php endif; ?>
     <?php // === TWO-COLUMN LAYOUT === ?>
     <div class="row">
         <?php // === MAIN CONTENT (left) === ?>

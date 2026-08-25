@@ -130,6 +130,14 @@ $dateFormat = ComponentHelper::getParams('com_j2commerce')->get('date_format', '
                                     <small><?php echo HTMLHelper::_('date', $item->created_on, $dateFormat); ?></small>
                                 </td>
                                 <td>
+                                    <?php
+                                    $fileCount    = (int) ($item->file_upload_count ?? 0);
+                                    $imageCount   = (int) ($item->image_upload_count ?? 0);
+                                    $hasNote      = trim((string) ($item->customer_note ?? '')) !== '';
+                                    $hasCoupon    = !empty($item->discount_code);
+                                    $showEmail    = !empty($item->user_email) && $customerName !== $item->user_email;
+                                    $hasIconRow   = $hasCoupon || $fileCount > 0 || $imageCount > 0 || $hasNote;
+                                    ?>
                                     <strong class="small"><?php echo $this->escape($customerName); ?></strong>
                                     <?php if ((int) ($item->user_id ?? 0) === 0) : ?>
                                         <span class="clickTooltip small guest-user ms-1" role="button" tabindex="0" style="cursor:pointer;" data-bs-toggle="tooltip" data-bs-trigger="click" data-bs-placement="top" title="<?php echo $this->escape(Text::_('COM_J2COMMERCE_GUEST')); ?>">
@@ -137,45 +145,36 @@ $dateFormat = ComponentHelper::getParams('com_j2commerce')->get('date_format', '
                                             <span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_GUEST'); ?></span>
                                         </span>
                                     <?php endif; ?>
-                                    <?php if (!empty($item->user_email) && $customerName !== $item->user_email) : ?>
+                                    <?php if ($showEmail || $hasIconRow) : ?>
                                         <div class="small text-break">
-                                            <?php echo $this->escape($item->user_email); ?>
-                                            <?php if (!empty($item->discount_code)) : ?>
+                                            <?php if ($showEmail) : ?>
+                                                <?php echo $this->escape($item->user_email); ?>
+                                            <?php endif; ?>
+                                            <?php if ($hasCoupon) : ?>
                                                 <span class="clickTooltip ms-1" role="button" tabindex="0" style="cursor:pointer;" data-bs-toggle="tooltip" data-bs-trigger="click" data-bs-placement="top" title="<?php echo $this->escape(Text::_('COM_J2COMMERCE_COUPON_CODE') . ': ' . $item->discount_code); ?>">
-                                                    <span class="fas fa-scissors fa-cut text-warning" aria-hidden="true"></span>
+                                                    <span class="fa-solid fa-scissors text-warning" aria-hidden="true"></span>
+                                                    <span class="visually-hidden"><?php echo $this->escape(Text::_('COM_J2COMMERCE_COUPON_CODE') . ': ' . $item->discount_code); ?></span>
                                                 </span>
                                             <?php endif; ?>
-                                            <?php $fileCount = (int) ($item->file_upload_count ?? 0); ?>
-                                            <?php $imageCount = (int) ($item->image_upload_count ?? 0); ?>
                                             <?php if ($fileCount > 0) : ?>
                                                 <span class="clickTooltip ms-1" role="button" tabindex="0" style="cursor:pointer;" data-bs-toggle="tooltip" data-bs-trigger="click" data-bs-placement="top" title="<?php echo $this->escape(Text::plural('COM_J2COMMERCE_ORDER_HAS_N_FILES', $fileCount)); ?>">
                                                     <span class="fa-solid fa-paperclip text-info" aria-hidden="true"></span>
+                                                    <span class="visually-hidden"><?php echo $this->escape(Text::plural('COM_J2COMMERCE_ORDER_HAS_N_FILES', $fileCount)); ?></span>
                                                 </span>
                                             <?php endif; ?>
                                             <?php if ($imageCount > 0) : ?>
                                                 <span class="clickTooltip ms-1" role="button" tabindex="0" style="cursor:pointer;" data-bs-toggle="tooltip" data-bs-trigger="click" data-bs-placement="top" title="<?php echo $this->escape(Text::plural('COM_J2COMMERCE_ORDER_HAS_N_IMAGES', $imageCount)); ?>">
                                                     <span class="fa-solid fa-image text-info" aria-hidden="true"></span>
+                                                    <span class="visually-hidden"><?php echo $this->escape(Text::plural('COM_J2COMMERCE_ORDER_HAS_N_IMAGES', $imageCount)); ?></span>
+                                                </span>
+                                            <?php endif; ?>
+                                            <?php if ($hasNote) : ?>
+                                                <span class="clickTooltip ms-1" role="button" tabindex="0" style="cursor:pointer;" data-bs-toggle="tooltip" data-bs-trigger="click" data-bs-placement="top" title="<?php echo $this->escape(Text::_('COM_J2COMMERCE_ORDER_HAS_CUSTOMER_NOTE')); ?>">
+                                                    <span class="fa-solid fa-comment-dots text-info" aria-hidden="true"></span>
+                                                    <span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_ORDER_HAS_CUSTOMER_NOTE'); ?></span>
                                                 </span>
                                             <?php endif; ?>
                                         </div>
-                                    <?php else : ?>
-                                        <?php if (!empty($item->discount_code)) : ?>
-                                            <span class="clickTooltip ms-1" role="button" tabindex="0" style="cursor:pointer;" data-bs-toggle="tooltip" data-bs-trigger="click" data-bs-placement="top" title="<?php echo $this->escape(Text::_('COM_J2COMMERCE_COUPON_CODE') . ': ' . $item->discount_code); ?>">
-                                                <span class="fas fa-scissors fa-cut text-warning" aria-hidden="true"></span>
-                                            </span>
-                                        <?php endif; ?>
-                                        <?php $fileCount = (int) ($item->file_upload_count ?? 0); ?>
-                                        <?php $imageCount = (int) ($item->image_upload_count ?? 0); ?>
-                                        <?php if ($fileCount > 0) : ?>
-                                            <span class="clickTooltip ms-1" role="button" tabindex="0" style="cursor:pointer;" data-bs-toggle="tooltip" data-bs-trigger="click" data-bs-placement="top" title="<?php echo $this->escape(Text::plural('COM_J2COMMERCE_ORDER_HAS_N_FILES', $fileCount)); ?>">
-                                                <span class="fa-solid fa-paperclip text-info" aria-hidden="true"></span>
-                                            </span>
-                                        <?php endif; ?>
-                                        <?php if ($imageCount > 0) : ?>
-                                            <span class="clickTooltip ms-1" role="button" tabindex="0" style="cursor:pointer;" data-bs-toggle="tooltip" data-bs-trigger="click" data-bs-placement="top" title="<?php echo $this->escape(Text::plural('COM_J2COMMERCE_ORDER_HAS_N_IMAGES', $imageCount)); ?>">
-                                                <span class="fa-solid fa-image text-info" aria-hidden="true"></span>
-                                            </span>
-                                        <?php endif; ?>
                                     <?php endif; ?>
                                 </td>
                                 <td class="text-end">

@@ -130,6 +130,16 @@ $statusName = Text::_($order->orderstatus_name ?? '');
     </div>
     <?php endif; ?>
 
+    <!-- Customer note -->
+    <?php if ((int) J2CommerceHelper::config()->get('show_customer_note', 1) === 1 && trim((string) ($order->customer_note ?? '')) !== ''): ?>
+    <div class="uk-card uk-card-default uk-margin-bottom">
+        <div class="uk-card-body">
+            <h5 class="uk-card-title uk-text-bold"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_CUSTOMER_NOTE'); ?></h5>
+            <p class="uk-margin-remove-bottom"><?php echo nl2br($this->escape($order->customer_note)); ?></p>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <!-- Order Summary: items table -->
     <?php if (!empty($items)): ?>
     <h4 class="uk-margin-bottom"><?php echo Text::_('COM_J2COMMERCE_ORDER_SUMMARY'); ?></h4>
