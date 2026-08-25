@@ -57,6 +57,19 @@
         />
 
         <field
+            name="customer_type"
+            type="list"
+            label="COM_J2COMMERCE_FIELD_CUSTOMER_TYPE"
+            filter="cmd"
+            validate="options"
+            onchange="this.form.submit();"
+        >
+            <option value="">JALL</option>
+            <option value="registered">COM_J2COMMERCE_CUSTOMER_TYPE_REGISTERED</option>
+            <option value="guest">COM_J2COMMERCE_GUEST</option>
+        </field>
+
+        <field
             name="amount_from"
             type="number"
             label="COM_J2COMMERCE_FILTER_AMOUNT_FROM"

@@ -131,6 +131,12 @@ $dateFormat = ComponentHelper::getParams('com_j2commerce')->get('date_format', '
                                 </td>
                                 <td>
                                     <strong class="small"><?php echo $this->escape($customerName); ?></strong>
+                                    <?php if ((int) ($item->user_id ?? 0) === 0) : ?>
+                                        <span class="clickTooltip small guest-user ms-1" role="button" tabindex="0" style="cursor:pointer;" data-bs-toggle="tooltip" data-bs-trigger="click" data-bs-placement="top" title="<?php echo $this->escape(Text::_('COM_J2COMMERCE_GUEST')); ?>">
+                                            <span class="fa-solid fa-user-slash text-body-secondary" aria-hidden="true"></span>
+                                            <span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_GUEST'); ?></span>
+                                        </span>
+                                    <?php endif; ?>
                                     <?php if (!empty($item->user_email) && $customerName !== $item->user_email) : ?>
                                         <div class="small text-break">
                                             <?php echo $this->escape($item->user_email); ?>

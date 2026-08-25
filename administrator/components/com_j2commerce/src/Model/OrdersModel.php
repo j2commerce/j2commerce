@@ -45,6 +45,7 @@ class OrdersModel extends ListModel
                 'invoice', 'invoice_number', 'a.invoice_number',
                 'user_email', 'a.user_email',
                 'user_id', 'a.user_id',
+                'customer_type',
                 'order_total', 'a.order_total',
                 'order_state_id', 'a.order_state_id',
                 'orderpayment_type', 'a.orderpayment_type',
@@ -95,6 +96,7 @@ class OrdersModel extends ListModel
         $id .= ':' . $this->getState('filter.customer_language');
         $id .= ':' . $this->getState('filter.user_id');
         $id .= ':' . serialize($this->getState('filter.user_ids', []));
+        $id .= ':' . $this->getState('filter.customer_type');
         $id .= ':' . $this->getState('filter.since');
         $id .= ':' . $this->getState('filter.until');
         $id .= ':' . $this->getState('filter.from_invoice');
@@ -331,6 +333,15 @@ class OrdersModel extends ListModel
             }
         }
 
+        // Customer type filter - a guest checkout carries no Joomla user id
+        $customerType = (string) $this->getState('filter.customer_type', '');
+
+        if ($customerType === 'guest') {
+            $query->where($db->quoteName('a.user_id') . ' = 0');
+        } elseif ($customerType === 'registered') {
+            $query->where($db->quoteName('a.user_id') . ' > 0');
+        }
+
         // Token filter (for guest order lookup)
         $token = $this->getState('filter.token');
         if (!empty($token)) {
@@ -548,6 +559,7 @@ class OrdersModel extends ListModel
         $this->setState('filter.from_invoice', 0);
         $this->setState('filter.to_invoice', 0);
         $this->setState('filter.customer_language', '');
+        $this->setState('filter.customer_type', '');
 
         $this->setState('filter.search', (string) ($filters['search'] ?? ''));
         $this->setState('filter.since', (string) ($filters['since'] ?? ''));
