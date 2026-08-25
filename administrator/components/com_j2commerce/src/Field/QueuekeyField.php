@@ -57,7 +57,7 @@ class QueuekeyField extends FormField
             $this->saveQueueKey($queueKey);
         }
 
-        // Build the regenerate URL
+        // The task rotates a stored value, so it is asked for over POST with the token in the body.
         $ajaxUrl = 'index.php?option=com_j2commerce&task=ajax.regenerateQueuekey&format=json';
 
         // Get language strings
@@ -95,12 +95,15 @@ document.addEventListener('DOMContentLoaded', function() {
         regenerateBtn.classList.add('disabled');
 
         try {
-            const url = '{$ajaxUrl}&' + Joomla.getOptions('csrf.token') + '=1';
-            const response = await fetch(url, {
-                method: 'GET',
+            const body = new FormData();
+            body.append(Joomla.getOptions('csrf.token'), '1');
+
+            const response = await fetch('{$ajaxUrl}', {
+                method: 'POST',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
-                }
+                },
+                body: body
             });
 
             if (!response.ok) {

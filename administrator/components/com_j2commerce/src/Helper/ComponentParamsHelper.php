@@ -16,6 +16,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Log\Log;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Registry\Registry;
 
@@ -26,12 +27,22 @@ use Joomla\Registry\Registry;
  * reverts every other member to whatever it held when this request first read it. These
  * writers re-read the stored value, set only their own members, and commit the result only
  * while the stored value still matches what was read.
+ *
+ * This is for the component's own bookkeeping members, not a general params setter: only the
+ * members named in self::ALLOWED can be written through it.
  */
 class ComponentParamsHelper
 {
     private const ELEMENT = 'com_j2commerce';
 
     private const TYPE = 'component';
+
+    /** The bookkeeping members this helper owns. Anything else belongs to the Options form. */
+    private const ALLOWED = [
+        'cron_last_trigger',
+        'queue_key',
+        'plg_j2commerce_inventory_control_timestamp',
+    ];
 
     /** Bounded so a busy row cannot hold a cron run open. */
     private const MAX_ATTEMPTS = 3;
@@ -48,6 +59,18 @@ class ComponentParamsHelper
     {
         if ($values === []) {
             return true;
+        }
+
+        $unknown = array_diff(array_keys($values), self::ALLOWED);
+
+        if ($unknown !== []) {
+            Log::add(
+                'Refused to write unowned component params member(s): ' . implode(', ', $unknown),
+                Log::WARNING,
+                'com_j2commerce'
+            );
+
+            return false;
         }
 
         $db = Factory::getContainer()->get(DatabaseInterface::class);

@@ -129,7 +129,19 @@ class AjaxController extends BaseController
      */
     public function getCountries(): void
     {
-        $app = Factory::getApplication();
+        $app  = Factory::getApplication();
+        $user = $app->getIdentity();
+
+        // Feeds the create and edit forms, so it answers to the same permissions those forms do.
+        if (
+            !$user
+            || $user->guest
+            || (!$user->authorise('core.edit', 'com_j2commerce') && !$user->authorise('core.create', 'com_j2commerce'))
+        ) {
+            $app->setHeader('status', 403, true);
+            $this->sendJsonResponse(false, Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), null);
+            return;
+        }
 
         // Get selected country ID from request
         $selectedCountryId = $app->getInput()->getInt('country_id', 0);
@@ -137,16 +149,21 @@ class AjaxController extends BaseController
         // Build country options HTML
         $html = '<option value="">' . Text::sprintf('COM_J2COMMERCE_SELECT_PLACEHOLDER', Text::_('COM_J2COMMERCE_COUNTRY')) . '</option>';
 
-        $db    = Factory::getContainer()->get('DatabaseDriver');
-        $query = $db->getQuery(true);
+        try {
+            $db    = Factory::getContainer()->get('DatabaseDriver');
+            $query = $db->getQuery(true);
 
-        $query->select($db->quoteName(['j2commerce_country_id', 'country_name']))
-            ->from($db->quoteName('#__j2commerce_countries'))
-            ->where($db->quoteName('enabled') . ' = 1')
-            ->order($db->quoteName('country_name') . ' ASC');
+            $query->select($db->quoteName(['j2commerce_country_id', 'country_name']))
+                ->from($db->quoteName('#__j2commerce_countries'))
+                ->where($db->quoteName('enabled') . ' = 1')
+                ->order($db->quoteName('country_name') . ' ASC');
 
-        $db->setQuery($query);
-        $countries = $db->loadObjectList();
+            $db->setQuery($query);
+            $countries = $db->loadObjectList();
+        } catch (\Exception $e) {
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $countries = [];
+        }
 
         if ($countries) {
             foreach ($countries as $country) {
@@ -177,7 +194,7 @@ class AjaxController extends BaseController
         $app = Factory::getApplication();
 
         // Check for CSRF token
-        if (!$this->checkToken('get')) {
+        if (!$this->checkToken('post', false)) {
             $this->sendJsonResponse(false, Text::_('JINVALID_TOKEN'), null);
             return;
         }
