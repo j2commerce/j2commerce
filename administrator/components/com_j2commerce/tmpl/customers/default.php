@@ -71,7 +71,10 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
                                     <?php echo Text::_('COM_J2COMMERCE_HEADING_PHONE'); ?>
                                 </th>
                                 <th scope="col" class="w-5 text-center">
-                                    <?php echo Text::_('COM_J2COMMERCE_HEADING_ORDER_COUNT'); ?>
+                                    <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_ORDER_COUNT', 'order_count', $listDirn, $listOrder); ?>
+                                </th>
+                                <th scope="col" class="d-none d-lg-table-cell">
+                                    <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_CUSTOMER_SINCE', 'first_order_on', $listDirn, $listOrder); ?>
                                 </th>
                                 <th scope="col" class="w-5 text-center d-none d-md-table-cell">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_ID', 'a.j2commerce_address_id', $listDirn, $listOrder); ?>
@@ -123,6 +126,13 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
                                             <span class="badge bg-success"><?php echo (int) $item->order_count; ?></span>
                                         <?php else : ?>
                                             <span class="badge bg-secondary">0</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="d-none d-lg-table-cell">
+                                        <?php if (!empty($item->first_order_on) && strpos((string) $item->first_order_on, '0000-00-00') !== 0) : ?>
+                                            <?php echo HTMLHelper::_('date', $item->first_order_on, Text::_('DATE_FORMAT_LC4')); ?>
+                                        <?php else : ?>
+                                            <?php echo Text::_('JNONE'); ?>
                                         <?php endif; ?>
                                     </td>
                                     <td class="text-center d-none d-md-table-cell">

@@ -18,6 +18,33 @@
         >
             <option value="">COM_J2COMMERCE_SELECT_COUNTRY</option>
         </field>
+
+        <field
+            name="min_orders"
+            type="number"
+            label="COM_J2COMMERCE_FILTER_MIN_ORDERS"
+            hint="COM_J2COMMERCE_FILTER_MIN_ORDERS_HINT"
+            step="1"
+            min="1"
+        />
+
+        <field
+            name="since"
+            type="calendar"
+            label="COM_J2COMMERCE_FILTER_FIRST_ORDER_FROM"
+            hint="COM_J2COMMERCE_FILTER_FIRST_ORDER_FROM"
+            format="%Y-%m-%d"
+            showtime="false"
+        />
+
+        <field
+            name="until"
+            type="calendar"
+            label="COM_J2COMMERCE_FILTER_FIRST_ORDER_TO"
+            hint="COM_J2COMMERCE_FILTER_FIRST_ORDER_TO"
+            format="%Y-%m-%d"
+            showtime="false"
+        />
     </fields>
 
     <fields name="list">
@@ -39,6 +66,10 @@
             <option value="c.country_name DESC">COM_J2COMMERCE_HEADING_COUNTRY_DESC</option>
             <option value="z.zone_name ASC">COM_J2COMMERCE_HEADING_ZONE_ASC</option>
             <option value="z.zone_name DESC">COM_J2COMMERCE_HEADING_ZONE_DESC</option>
+            <option value="order_count ASC">COM_J2COMMERCE_HEADING_ORDER_COUNT_ASC</option>
+            <option value="order_count DESC">COM_J2COMMERCE_HEADING_ORDER_COUNT_DESC</option>
+            <option value="first_order_on ASC">COM_J2COMMERCE_HEADING_CUSTOMER_SINCE_ASC</option>
+            <option value="first_order_on DESC">COM_J2COMMERCE_HEADING_CUSTOMER_SINCE_DESC</option>
             <option value="a.j2commerce_address_id ASC">COM_J2COMMERCE_HEADING_ID_ASC</option>
             <option value="a.j2commerce_address_id DESC">COM_J2COMMERCE_HEADING_ID_DESC</option>
         </field>

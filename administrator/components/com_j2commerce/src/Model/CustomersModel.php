@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 \defined('_JEXEC') or die;
 
+use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\Database\ParameterType;
 use Joomla\Database\QueryInterface;
@@ -53,6 +54,8 @@ class CustomersModel extends ListModel
                 'company', 'a.company',
                 'country_name', 'c.country_name',
                 'zone_name', 'z.zone_name',
+                'order_count',
+                'first_order_on',
             ];
         }
 
@@ -77,6 +80,15 @@ class CustomersModel extends ListModel
         $countryId = $this->getUserStateFromRequest($this->context . '.filter.country_id', 'filter_country_id', '', 'string');
         $this->setState('filter.country_id', $countryId);
 
+        $minOrders = $this->getUserStateFromRequest($this->context . '.filter.min_orders', 'filter_min_orders', '', 'string');
+        $this->setState('filter.min_orders', $minOrders);
+
+        $since = $this->getUserStateFromRequest($this->context . '.filter.since', 'filter_since', '', 'string');
+        $this->setState('filter.since', $since);
+
+        $until = $this->getUserStateFromRequest($this->context . '.filter.until', 'filter_until', '', 'string');
+        $this->setState('filter.until', $until);
+
         parent::populateState($ordering, $direction);
     }
 
@@ -93,6 +105,9 @@ class CustomersModel extends ListModel
     {
         $id .= ':' . $this->getState('filter.search');
         $id .= ':' . $this->getState('filter.country_id');
+        $id .= ':' . $this->getState('filter.min_orders');
+        $id .= ':' . $this->getState('filter.since');
+        $id .= ':' . $this->getState('filter.until');
 
         return parent::getStoreId($id);
     }
@@ -149,6 +164,14 @@ class CustomersModel extends ListModel
             ->from($db->quoteName('#__j2commerce_orders', 'o'))
             ->where($db->quoteName('o.user_email') . ' = ' . $db->quoteName('a.email'));
         $query->select('(' . $orderSubquery . ') AS ' . $db->quoteName('order_count'));
+
+        // Subquery for the date the customer first ordered. The addresses table has no created
+        // date, so acquisition date is derived from the earliest matching order.
+        $firstOrderSubquery = $db->getQuery(true)
+            ->select('MIN(' . $db->quoteName('o2.created_on') . ')')
+            ->from($db->quoteName('#__j2commerce_orders', 'o2'))
+            ->where($db->quoteName('o2.user_email') . ' = ' . $db->quoteName('a.email'));
+        $query->select('(' . $firstOrderSubquery . ') AS ' . $db->quoteName('first_order_on'));
 
         // Resolve one address per customer email.
         //
@@ -209,6 +232,35 @@ class CustomersModel extends ListModel
 
         $query->where($db->quoteName('a.j2commerce_address_id') . ' IN (' . $addressSubquery . ')');
 
+        // Order-derived filters key off the customer's email, which every address in the
+        // resolved group shares, so they belong on the outer query rather than on `ax`.
+        // The outer query has no GROUP BY to hang a HAVING on, so each computed column's
+        // subquery is repeated in the WHERE clause instead of referenced by its alias.
+
+        // Filter by minimum order count
+        $minOrders = $this->getState('filter.min_orders');
+
+        if (is_numeric($minOrders) && (int) $minOrders > 0) {
+            $minOrders = (int) $minOrders;
+            $query->where('(' . $orderSubquery . ') >= :minOrders')
+                ->bind(':minOrders', $minOrders, ParameterType::INTEGER);
+        }
+
+        // Date range on the first order
+        $since = $this->normaliseFilterDate($this->getState('filter.since', ''));
+
+        if ($since !== null) {
+            $query->where('(' . $firstOrderSubquery . ') >= :since')
+                ->bind(':since', $since);
+        }
+
+        $until = $this->normaliseFilterDate($this->getState('filter.until', ''), true);
+
+        if ($until !== null) {
+            $query->where('(' . $firstOrderSubquery . ') <= :until')
+                ->bind(':until', $until);
+        }
+
         // Add ordering clause
         $orderCol  = $this->state->get('list.ordering', 'customer_name');
         $orderDir  = $this->state->get('list.direction', 'ASC');
@@ -217,5 +269,45 @@ class CustomersModel extends ListModel
         $query->order($ordering);
 
         return $query;
+    }
+
+    /**
+     * ListModel::populateState() merges the request filter array into state unfiltered, so a
+     * filter date arrives as arbitrary text. Returns null when it is not usable, which drops
+     * the predicate rather than throwing out of getListQuery().
+     */
+    private function normaliseFilterDate(mixed $value, bool $endOfDay = false): ?string
+    {
+        if (!\is_string($value)) {
+            return null;
+        }
+
+        $value = trim($value);
+
+        if ($value === '' || str_starts_with($value, '0000-00-00')) {
+            return null;
+        }
+
+        // A date-only upper bound must cover the whole day, otherwise it excludes
+        // almost all of the day the user asked for.
+        if ($endOfDay && preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) === 1) {
+            $value .= ' 23:59:59';
+        }
+
+        try {
+            return $this->convertTimeToUtc($value);
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /** Filter dates are entered in the site timezone; created_on is stored in UTC. */
+    protected function convertTimeToUtc(string $datetime, string $format = 'Y-m-d H:i:s'): string
+    {
+        $tz   = Factory::getApplication()->get('offset', 'UTC');
+        $date = Factory::getDate($datetime, $tz);
+        $date->setTimezone(new \DateTimeZone('UTC'));
+
+        return $date->format($format);
     }
 }

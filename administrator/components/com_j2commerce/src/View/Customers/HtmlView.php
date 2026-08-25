@@ -111,7 +111,10 @@ class HtmlView extends BaseHtmlView
 
         $this->isEmptyState = empty($this->items)
             && trim((string) $this->state->get('filter.search', '')) === ''
-            && (string) $this->state->get('filter.country_id', '') === '';
+            && (string) $this->state->get('filter.country_id', '') === ''
+            && (string) $this->state->get('filter.min_orders', '') === ''
+            && (string) $this->state->get('filter.since', '') === ''
+            && (string) $this->state->get('filter.until', '') === '';
 
         if ($this->isEmptyState) {
             $this->setLayout('emptystate');
