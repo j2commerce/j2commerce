@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\ComponentParamsHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
@@ -198,31 +199,11 @@ class AjaxController extends BaseController
             $queueString = $siteName . time() . bin2hex(random_bytes(8));
             $queueKey    = md5($queueString);
 
-            // Save to component params
-            $db = Factory::getContainer()->get('DatabaseDriver');
+            if (!ComponentParamsHelper::set('queue_key', $queueKey)) {
+                $this->sendJsonResponse(false, Text::_('JERROR_AN_ERROR_HAS_OCCURRED'), null);
 
-            // Get the current params
-            $params = ComponentHelper::getParams('com_j2commerce');
-
-            // Set the queue_key
-            $params->set('queue_key', $queueKey);
-
-            // Convert to JSON
-            $paramsJson = $params->toString();
-
-            // Update the #__extensions table
-            $query = $db->getQuery(true)
-                ->update($db->quoteName('#__extensions'))
-                ->set($db->quoteName('params') . ' = :params')
-                ->where($db->quoteName('element') . ' = ' . $db->quote('com_j2commerce'))
-                ->where($db->quoteName('type') . ' = ' . $db->quote('component'))
-                ->bind(':params', $paramsJson);
-
-            $db->setQuery($query);
-            $db->execute();
-
-            // Clear the component params cache
-            ComponentHelper::getParams('com_j2commerce', true);
+                return;
+            }
 
             $this->sendJsonResponse(true, Text::_('COM_J2COMMERCE_QUEUE_KEY_REGENERATED'), ['queue_key' => $queueKey]);
         } catch (\Exception $e) {

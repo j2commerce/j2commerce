@@ -14,11 +14,11 @@ namespace J2Commerce\Component\J2commerce\Site\Controller;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\ComponentParamsHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\CMS\Uri\Uri;
-use Joomla\Database\DatabaseInterface;
 use Joomla\Event\Event;
 
 /**
@@ -83,7 +83,11 @@ class CronController extends BaseController
             'success' => true,
         ]);
 
-        $this->saveConfigValue('cron_last_trigger', $lastTrigger);
+        try {
+            ComponentParamsHelper::set('cron_last_trigger', $lastTrigger);
+        } catch (\Throwable) {
+            // Non-fatal — a missing trigger record must not break the cron run
+        }
 
         // Dispatch the cron event — any plugin can subscribe to onJ2CommerceProcessCron
         $event = new Event('onJ2CommerceProcessCron', ['command' => $command]);
@@ -105,27 +109,5 @@ class CronController extends BaseController
         echo $message;
 
         $app->close($status === 200 ? 0 : $status);
-    }
-
-    private function saveConfigValue(string $key, string $value): void
-    {
-        try {
-            $params = ComponentHelper::getParams('com_j2commerce');
-            $params->set($key, $value);
-
-            $db         = Factory::getContainer()->get(DatabaseInterface::class);
-            $paramsJson = $params->toString();
-
-            $query = $db->createQuery()
-                ->update($db->quoteName('#__extensions'))
-                ->set($db->quoteName('params') . ' = :params')
-                ->where($db->quoteName('element') . ' = ' . $db->quote('com_j2commerce'))
-                ->where($db->quoteName('type') . ' = ' . $db->quote('component'))
-                ->bind(':params', $paramsJson);
-
-            $db->setQuery($query)->execute();
-        } catch (\Throwable) {
-            // Non-fatal — don't break the cron run
-        }
     }
 }

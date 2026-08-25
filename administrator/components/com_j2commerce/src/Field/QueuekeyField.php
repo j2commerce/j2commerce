@@ -14,11 +14,11 @@ namespace J2Commerce\Component\J2commerce\Administrator\Field;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\ComponentParamsHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\FormField;
 use Joomla\CMS\Language\Text;
-use Joomla\Database\DatabaseInterface;
 
 /**
  * Queue Key field - displays the queue key with a regenerate button.
@@ -178,38 +178,18 @@ HTML;
     private function saveQueueKey(string $queueKey): bool
     {
         try {
-            $db = Factory::getContainer()->get(DatabaseInterface::class);
+            if (ComponentParamsHelper::set('queue_key', $queueKey)) {
+                return true;
+            }
 
-            // Get the current params
-            $params = ComponentHelper::getParams('com_j2commerce');
-
-            // Set the queue_key
-            $params->set('queue_key', $queueKey);
-
-            // Convert to JSON
-            $paramsJson = $params->toString();
-
-            // Update the #__extensions table
-            $query = $db->getQuery(true)
-                ->update($db->quoteName('#__extensions'))
-                ->set($db->quoteName('params') . ' = :params')
-                ->where($db->quoteName('element') . ' = ' . $db->quote('com_j2commerce'))
-                ->where($db->quoteName('type') . ' = ' . $db->quote('component'))
-                ->bind(':params', $paramsJson);
-
-            $db->setQuery($query);
-            $db->execute();
-
-            // Clear the component params cache
-            ComponentHelper::getParams('com_j2commerce', true);
-
-            return true;
+            Factory::getApplication()->enqueueMessage(Text::_('JERROR_AN_ERROR_HAS_OCCURRED'), 'error');
         } catch (\Exception $e) {
             Factory::getApplication()->enqueueMessage(
                 Text::sprintf('COM_J2COMMERCE_ERROR_SAVING_QUEUE_KEY', $e->getMessage()),
                 'error'
             );
-            return false;
         }
+
+        return false;
     }
 }

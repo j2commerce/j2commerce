@@ -15,6 +15,7 @@ namespace J2Commerce\Plugin\System\J2Commerce\Extension;
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CartHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ComponentParamsHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\SetupGuide\SetupGuideHelper;
@@ -1170,29 +1171,8 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
      */
     private function updateLastRunTimestamp(): void
     {
-        $lastRun = time();
-        $params  = ComponentHelper::getParams(self::COMPONENT_NAME);
-        $params->set(self::INVENTORY_TIMESTAMP_PARAM, $lastRun);
-
-        $db   = $this->getDatabase();
-        $data = $params->toString();
-
-        $element = self::COMPONENT_NAME;
-        $type    = 'component';
-
-        $query = $db->getQuery(true)
-            ->update($db->quoteName('#__extensions'))
-            ->set($db->quoteName('params') . ' = :params')
-            ->where($db->quoteName('element') . ' = :element')
-            ->where($db->quoteName('type') . ' = :type')
-            ->bind(':params', $data)
-            ->bind(':element', $element)
-            ->bind(':type', $type);
-
-        $db->setQuery($query);
-
         try {
-            $db->execute();
+            ComponentParamsHelper::set(self::INVENTORY_TIMESTAMP_PARAM, time());
         } catch (\Exception $e) {
             // Silently fail if unable to update timestamp
         }
