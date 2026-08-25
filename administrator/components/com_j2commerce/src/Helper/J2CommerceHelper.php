@@ -1118,6 +1118,45 @@ class J2CommerceHelper extends ContentHelper
     }
 
     /**
+     * Instructions a payment plugin stored for the shopper to read on this order.
+     *
+     * Returned ready to render unescaped, so the key is not taken on trust. `order_params` is a
+     * shared bag: around twenty unrelated plugins write their own keys into it, some of them
+     * carrying request-derived values, and `orderpayment_type` is only as trustworthy as
+     * whatever last wrote it. The value is therefore read only when the key names an installed
+     * j2commerce payment plugin, whose settings are merchant-authored behind `filter="safehtml"`.
+     *
+     * Deliberately not `customer_note`: that column also carries shopper-typed text and has to
+     * stay escaped wherever it appears.
+     *
+     * Costs one uncached query per call — fine for the single-order views that call it, an N+1
+     * if it is ever adopted by a list.
+     */
+    public static function getPaymentInstructions(object $order): string
+    {
+        $element = (string) ($order->orderpayment_type ?? '');
+        $raw     = (string) ($order->order_params ?? '');
+
+        if ($element === '' || $raw === '' || !str_starts_with($element, 'payment_')) {
+            return '';
+        }
+
+        // Existence, not enabled state: a merchant who stops offering a method must not strip the
+        // remittance details off the orders already placed through it.
+        if (!static::plugin()->pluginIsInstalled($element)) {
+            return '';
+        }
+
+        $params = json_decode($raw, true);
+
+        if (!\is_array($params) || !\is_string($params[$element] ?? null)) {
+            return '';
+        }
+
+        return trim($params[$element]);
+    }
+
+    /**
      * Get app image path with fallback logic
      *
      * Searches for app images in the following order:

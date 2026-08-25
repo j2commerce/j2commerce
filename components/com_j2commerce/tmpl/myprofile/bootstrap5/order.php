@@ -140,6 +140,17 @@ $statusName = Text::_($order->orderstatus_name ?? '');
     </div>
     <?php endif; ?>
 
+    <!-- Payment instructions: merchant-authored, so shown regardless of the customer-note option -->
+    <?php $paymentInstructions = J2CommerceHelper::getPaymentInstructions($order); ?>
+    <?php if ($paymentInstructions !== ''): ?>
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title fw-bold"><?php echo Text::_('COM_J2COMMERCE_PAYMENT_INSTRUCTIONS'); ?></h5>
+            <div class="mb-0"><?php echo $paymentInstructions; ?></div>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <!-- Order Summary: items table -->
     <?php if (!empty($items)): ?>
     <h4 class="mb-3"><?php echo Text::_('COM_J2COMMERCE_ORDER_SUMMARY'); ?></h4>

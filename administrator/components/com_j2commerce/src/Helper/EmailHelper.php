@@ -81,6 +81,7 @@ class EmailHelper
         '[DOWNLOAD_LINKS]',
         '[CUSTOMER_NOTE]',
         '[BANK_TRANSFER_INFORMATION]',
+        '[PAYMENT_INSTRUCTIONS]',
         '[FOOTER_TEXT]',
         '[SITEURL]',
         '[INVOICE_URL]',
@@ -759,10 +760,14 @@ class EmailHelper
         $billingZoneName     = $this->getZoneName((int) ($orderInfo->billing_zone_id ?? 0));
         $shippingZoneName    = $this->getZoneName((int) ($orderInfo->shipping_zone_id ?? 0));
 
-        // Get bank transfer info if present
-        $bankTransferInfo = '';
+        // [BANK_TRANSFER_INFORMATION] stays pinned to that one plugin for templates already
+        // using it; [PAYMENT_INSTRUCTIONS] carries whichever plugin took the order.
+        $bankTransferInfo    = '';
+        $paymentInstructions = J2CommerceHelper::getPaymentInstructions($order);
+
         if (isset($order->order_params) && !empty($order->order_params)) {
             $orderParams = json_decode($order->order_params);
+
             if (isset($orderParams->payment_banktransfer)) {
                 $bankTransferInfo = $orderParams->payment_banktransfer;
             }
@@ -832,6 +837,7 @@ class EmailHelper
             '[COUPON_CODE]'               => $couponCode,
             '[DISCOUNT_LABEL]'            => $language->_($discountLabel),
             '[BANK_TRANSFER_INFORMATION]' => $bankTransferInfo,
+            '[PAYMENT_INSTRUCTIONS]'      => $paymentInstructions,
             '[SHIPPING_TOTAL_WEIGHT]'     => $this->getTotalShippingWeight($order),
             '[SHIPPING_AMOUNT]'           => ($shippingName !== '' || $shippingAmount > 0) ? CurrencyHelper::format($shippingAmount, $order->currency_code ?? '', (float) ($order->currency_value ?? 1)) : '',
             '[DISCOUNT_AMOUNT]'           => ((float) ($order->order_discount ?? 0)) > 0 ? CurrencyHelper::format((float) $order->order_discount, $order->currency_code ?? '', (float) ($order->currency_value ?? 1)) : '',

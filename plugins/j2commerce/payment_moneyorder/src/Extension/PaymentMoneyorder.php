@@ -362,16 +362,18 @@ final class PaymentMoneyorder extends CMSPlugin implements SubscriberInterface
         $moneyorderInformation = $this->params->get('moneyorder_information', '');
 
         if (\strlen($moneyorderInformation) > 5) {
-            $html = '<br>';
-            $html .= '<strong>' . Text::_('PLG_J2COMMERCE_PAYMENT_MONEYORDER_INSTRUCTIONS') . '</strong>';
-            $html .= '<br>';
-            $html .= $moneyorderInformation;
+            // Content only: the render sites supply their own heading.
+            $html = $moneyorderInformation;
 
             if ($this->params->get('enable_strip_tags', 0)) {
                 $html = strip_tags(preg_replace('#<br\s*/?>#i', "\n", $html));
             }
 
-            $order->customer_note = $order->customer_note . $html;
+            // Instructions keep their own key rather than being appended to customer_note:
+            // that column also carries shopper-typed text, so every render site escapes it.
+            $array               = json_decode($order->order_params ?? '{}', true) ?: [];
+            $array[$this->_name] = $html;
+            $order->order_params = json_encode($array);
         }
 
         $orderStateId = (int) $this->params->get('payment_status', 4);

@@ -336,6 +336,15 @@ if ($info) {
                         </div>
                     <?php endif; ?>
 
+                    <?php // Payment instructions: merchant-authored, so not gated on the customer-note option ?>
+                    <?php $paymentInstructions = J2CommerceHelper::getPaymentInstructions($order); ?>
+                    <?php if ($paymentInstructions !== '') : ?>
+                        <div class="j2c-block-payment-instructions uk-card uk-card-default uk-card-body uk-margin-bottom">
+                            <h3 class="uk-h6 uk-margin-small-bottom"><?php echo Text::_('COM_J2COMMERCE_PAYMENT_INSTRUCTIONS'); ?></h3>
+                            <div class="uk-margin-remove-bottom uk-text-small"><?php echo $paymentInstructions; ?></div>
+                        </div>
+                    <?php endif; ?>
+
                     <?php // Shipping method card ?>
                     <?php if ((int) $order->is_shippable && !empty($shippings)) : ?>
                         <div class="j2c-block-shipping-method uk-card uk-card-default uk-margin-bottom">

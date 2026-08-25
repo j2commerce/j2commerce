@@ -296,17 +296,19 @@ final class PaymentBanktransfer extends CMSPlugin implements SubscriberInterface
         $bankDetails = $this->params->get('bank_details', '');
 
         if (\strlen($bankDetails) > 5) {
-            $sanitized              = htmlspecialchars($bankDetails, ENT_QUOTES, 'UTF-8');
-            $html                   = '<br>' . $sanitized;
-            $array                  = json_decode($order->order_params ?? '{}', true) ?: [];
-            $array[$this->_element] = $html;
-            $order->order_params    = json_encode($array);
+            // The parameter is filter="safehtml", and EmailHelper already carries this key
+            // unencoded, so it is stored as the markup the merchant wrote.
+            $html                   = $bankDetails;
 
             if ($this->params->get('enable_bank_transfer_strip_tags', 0)) {
                 $html = strip_tags(preg_replace('#<br\s*/?>#i', "\n", $html));
             }
 
-            $order->customer_note = ($order->customer_note ?? '') . $html;
+            // Instructions keep their own key rather than being appended to customer_note:
+            // that column also carries shopper-typed text, so every render site escapes it.
+            $array                  = json_decode($order->order_params ?? '{}', true) ?: [];
+            $array[$this->_element] = $html;
+            $order->order_params    = json_encode($array);
         }
 
         // Set status and save everything in a single store() call

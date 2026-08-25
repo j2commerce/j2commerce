@@ -218,6 +218,39 @@ class PluginHelper
     }
 
     /**
+     * Whether a plugin is installed, regardless of whether it is currently enabled.
+     *
+     * Selects one column deliberately: `getPlugin()` returns the whole row, and a payment
+     * plugin's `params` holds gateway credentials that a truthiness test has no business
+     * loading on a front-end request.
+     */
+    public function pluginIsInstalled(string $element, string $folder = 'j2commerce'): bool
+    {
+        if ($element === '' || $this->db === null) {
+            return false;
+        }
+
+        $folder = strtolower($folder);
+
+        try {
+            $query = $this->db->getQuery(true)
+                ->select($this->db->quoteName('extension_id'))
+                ->from($this->db->quoteName('#__extensions'))
+                ->where($this->db->quoteName('type') . ' = ' . $this->db->quote('plugin'))
+                ->where($this->db->quoteName('folder') . ' = :folder')
+                ->where($this->db->quoteName('element') . ' = :element')
+                ->bind(':folder', $folder)
+                ->bind(':element', $element);
+
+            $this->db->setQuery($query, 0, 1);
+
+            return (bool) $this->db->loadResult();
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
+    /**
      * Returns HTML content from plugin events
      *
      * @param string $event   The event name to trigger
