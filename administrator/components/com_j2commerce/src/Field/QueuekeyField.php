@@ -19,6 +19,7 @@ use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\FormField;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 
 /**
  * Queue Key field - displays the queue key with a regenerate button.
@@ -182,12 +183,10 @@ HTML;
                 return true;
             }
 
-            Factory::getApplication()->enqueueMessage(Text::_('JERROR_AN_ERROR_HAS_OCCURRED'), 'error');
+            Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_ERROR_SAVING_QUEUE_KEY'), 'error');
         } catch (\Exception $e) {
-            Factory::getApplication()->enqueueMessage(
-                Text::sprintf('COM_J2COMMERCE_ERROR_SAVING_QUEUE_KEY', $e->getMessage()),
-                'error'
-            );
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_ERROR_SAVING_QUEUE_KEY'), 'error');
         }
 
         return false;

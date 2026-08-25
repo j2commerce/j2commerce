@@ -19,6 +19,7 @@ use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\Database\ParameterType;
 
@@ -200,14 +201,15 @@ class AjaxController extends BaseController
             $queueKey    = md5($queueString);
 
             if (!ComponentParamsHelper::set('queue_key', $queueKey)) {
-                $this->sendJsonResponse(false, Text::_('JERROR_AN_ERROR_HAS_OCCURRED'), null);
+                $this->sendJsonResponse(false, Text::_('COM_J2COMMERCE_ERROR_REGENERATING_QUEUE_KEY'), null);
 
                 return;
             }
 
             $this->sendJsonResponse(true, Text::_('COM_J2COMMERCE_QUEUE_KEY_REGENERATED'), ['queue_key' => $queueKey]);
         } catch (\Exception $e) {
-            $this->sendJsonResponse(false, Text::sprintf('COM_J2COMMERCE_ERROR_REGENERATING_QUEUE_KEY', $e->getMessage()), null);
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $this->sendJsonResponse(false, Text::_('COM_J2COMMERCE_ERROR_REGENERATING_QUEUE_KEY'), null);
         }
     }
 
