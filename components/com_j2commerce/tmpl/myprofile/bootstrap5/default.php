@@ -37,6 +37,15 @@ $user   = $this->user;
             <?php echo HTMLHelper::_('form.token'); ?>
         </form>
     </div>
+    <?php elseif ($this->isGuest): ?>
+    <div class="d-flex justify-content-end mb-3">
+        <form action="<?php echo Route::_('index.php'); ?>" method="post">
+            <button type="submit" class="btn btn-outline-danger btn-sm"><?php echo Text::_('COM_J2COMMERCE_MYPROFILE_GUEST_EXIT'); ?></button>
+            <input type="hidden" name="option" value="com_j2commerce">
+            <input type="hidden" name="task" value="myprofile.guestExit">
+            <?php echo HTMLHelper::_('form.token'); ?>
+        </form>
+    </div>
     <?php endif; ?>
 
     <div class="j2commerce-myprofile">

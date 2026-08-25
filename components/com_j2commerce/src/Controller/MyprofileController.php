@@ -232,6 +232,24 @@ class MyprofileController extends BaseController
         }
     }
 
+    public function guestExit(): void
+    {
+        $redirect = Route::_('index.php?option=com_j2commerce&view=myprofile', false);
+
+        if (!Session::checkToken('post')) {
+            $this->app->enqueueMessage(Text::_('JINVALID_TOKEN'), 'error');
+            $this->app->redirect($redirect);
+
+            return;
+        }
+
+        $session = $this->app->getSession();
+        $session->clear('guest_order_token', 'j2commerce');
+        $session->clear('guest_order_email', 'j2commerce');
+
+        $this->app->redirect($redirect);
+    }
+
     /** Order-email entry point when order_email_link_target is `confirmation`. */
     public function guestOrderLink(): void
     {
