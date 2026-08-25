@@ -62,15 +62,17 @@ class QueuekeyField extends FormField
         // Get language strings
         $regenerateText = Text::_('COM_J2COMMERCE_STORE_REGENERATE');
 
+        $queueKeyEsc = htmlspecialchars($queueKey, ENT_QUOTES, 'UTF-8');
+
         // Build the HTML output with vanilla JavaScript
         $html = <<<HTML
 <div class="alert alert-success d-flex align-items-center gap-3 justify-content-between">
-    <strong id="j2commerce_queue_key">{$queueKey}</strong>
+    <strong id="j2commerce_queue_key">{$queueKeyEsc}</strong>
     <button type="button" class="btn btn-success btn-sm" id="j2commerce_regenerate_queuekey">
         {$regenerateText}
     </button>
 </div>
-<input type="hidden" name="{$this->name}" id="{$this->id}" value="{$queueKey}"/>
+<input type="hidden" name="{$this->name}" id="{$this->id}" value="{$queueKeyEsc}"/>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
