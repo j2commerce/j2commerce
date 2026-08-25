@@ -58,9 +58,11 @@ class CronlasthitField extends FormField
         } elseif ($this->isJson($cronHit)) {
             $data = json_decode($cronHit);
 
-            $date    = $data->date ?? '';
-            $url     = $data->url ?? '';
-            $ip      = $data->ip ?? '';
+            $esc = static fn ($v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+
+            $date    = $esc($data->date ?? '');
+            $url     = $esc($data->url ?? '');
+            $ip      = $esc($data->ip ?? '');
             $success = $data->success ?? false;
 
             $note  = Text::sprintf('COM_J2COMMERCE_CRON_LAST_TRIGGER_DETAILS', $date, $url, $ip);

@@ -17,6 +17,7 @@ namespace J2Commerce\Component\J2commerce\Site\Controller;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Controller\BaseController;
+use Joomla\CMS\Uri\Uri;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Event\Event;
 
@@ -47,6 +48,7 @@ class CronController extends BaseController
         // Prevent caching (SiteGround SuperCache, etc.)
         $app->setHeader('X-Cache-Control', 'False', true);
         $app->setHeader('Content-Type', 'text/plain; charset=utf-8', true);
+        $app->setHeader('X-Content-Type-Options', 'nosniff', true);
 
         $params   = ComponentHelper::getParams('com_j2commerce');
         $queueKey = $params->get('queue_key', '');
@@ -55,13 +57,16 @@ class CronController extends BaseController
             $this->respond(503, 'ERROR: Queue key not configured');
         }
 
-        $secret = $app->getInput()->get('cron_secret', '', 'raw');
+        // A bracketed parameter makes the filter hand back an array, so the type is checked
+        // before it reaches hash_equals().
+        $secret = $app->getInput()->getString('cron_secret', '');
 
-        if (!hash_equals($queueKey, $secret)) {
+        if (!\is_string($secret) || !hash_equals((string) $queueKey, $secret)) {
             $this->respond(403, 'ERROR: Invalid cron secret');
         }
 
-        $command = trim(strtolower($app->getInput()->get('command', '', 'raw')));
+        $command = $app->getInput()->getString('command', '');
+        $command = \is_string($command) ? trim(strtolower($command)) : '';
 
         if ($command === '') {
             $this->respond(501, 'ERROR: No command specified');
@@ -73,8 +78,8 @@ class CronController extends BaseController
         $lastTrigger = json_encode([
             'date'    => $nowDate->toSql(),
             'command' => $command,
-            'url'     => $_SERVER['REQUEST_URI'] ?? '',
-            'ip'      => $_SERVER['REMOTE_ADDR'] ?? '',
+            'url'     => Uri::getInstance()->toString(['scheme', 'host', 'port', 'path']),
+            'ip'      => $app->getInput()->server->getString('REMOTE_ADDR', ''),
             'success' => true,
         ]);
 
