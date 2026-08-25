@@ -213,14 +213,11 @@ class Payment extends CMSPlugin
 
     public function validateHash($order)
     {
-        $app            = J2CommerceHelper::platform()->application();
-        $hash           = $app->input->getString('hash', '');
-        $generator_hash = $this->generateHash($order);
-        $status         = true;
-        if ($hash != $generator_hash) {
-            $status = false;
-        }
-        return $status;
+        $hash = J2CommerceHelper::platform()->application()->input->getString('hash', '');
+
+        // A bracketed parameter makes the filter hand back an array, so the type is checked
+        // before it reaches hash_equals().
+        return \is_string($hash) && hash_equals($this->generateHash($order), $hash);
     }
 
     /**
