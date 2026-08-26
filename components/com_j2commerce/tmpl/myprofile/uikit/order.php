@@ -333,7 +333,12 @@ $statusName = Text::_($order->orderstatus_name ?? '');
                         <?php foreach ($shippings as $shipping): ?>
                             <?php if ((float) ($shipping->ordershipping_price ?? 0) > 0 || !empty($shipping->ordershipping_name)): ?>
                             <tr>
-                                <td class="uk-text-right"><?php echo $this->escape($shipping->ordershipping_name ?: Text::_('COM_J2COMMERCE_CART_SHIPPING')); ?></td>
+                                <td class="uk-text-right">
+                                    <?php echo $this->escape($shipping->ordershipping_name ?: Text::_('COM_J2COMMERCE_CART_SHIPPING')); ?>
+                                    <?php if (!empty($shipping->ordershipping_tracking_id)): ?>
+                                        <span class="uk-display-block uk-text-small uk-text-meta"><?php echo Text::sprintf('COM_J2COMMERCE_ORDER_TRACKING_NUMBER', nl2br($this->escape($shipping->ordershipping_tracking_id))); ?></span>
+                                    <?php endif; ?>
+                                </td>
                                 <td class="uk-text-right"><?php echo $fmt((float) ($shipping->ordershipping_price ?? 0)); ?></td>
                             </tr>
                             <?php endif; ?>
