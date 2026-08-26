@@ -245,6 +245,57 @@ class Com_J2commerceInstallerScript extends InstallerScript
     }
 
     /**
+     * The queue key is otherwise generated the first time an administrator renders component
+     * Options, so a store whose Options screen has never been opened has none — and both the
+     * cron endpoint and the payment hash read '' as a result. Seeding it here makes the value
+     * exist before either surface reads it. Idempotent: an existing 32-character key stands.
+     *
+     * @since  6.6.0
+     */
+    private function seedQueueKey(): void
+    {
+        $db      = Factory::getContainer()->get(DatabaseInterface::class);
+        $element = 'com_j2commerce';
+        $type    = 'component';
+
+        try {
+            $query = $db->getQuery(true)
+                ->select($db->quoteName('params'))
+                ->from($db->quoteName('#__extensions'))
+                ->where($db->quoteName('element') . ' = :element')
+                ->where($db->quoteName('type') . ' = :type')
+                ->bind(':element', $element)
+                ->bind(':type', $type);
+            $db->setQuery($query);
+            $registry = new Registry((string) ($db->loadResult() ?: ''));
+
+            if (preg_match('/^[a-f0-9]{32}$/', (string) $registry->get('queue_key', ''))) {
+                return;
+            }
+
+            $registry->set('queue_key', md5(Factory::getApplication()->get('sitename', 'J2Commerce') . time() . bin2hex(random_bytes(8))));
+            $params = $registry->toString();
+
+            $update = $db->getQuery(true)
+                ->update($db->quoteName('#__extensions'))
+                ->set($db->quoteName('params') . ' = :params')
+                ->where($db->quoteName('element') . ' = :element')
+                ->where($db->quoteName('type') . ' = :type')
+                ->bind(':params', $params)
+                ->bind(':element', $element)
+                ->bind(':type', $type);
+            $db->setQuery($update)->execute();
+
+            $this->debugLog('QUEUE KEY: seeded');
+        } catch (\Throwable $e) {
+            // Seeding must never abort a package install. Options still generates the key on
+            // first render, so the next Options view recovers.
+            $this->debugLog('QUEUE KEY: seed failed (see the j2commerce log)');
+            Log::add('Queue key seed failed: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
+        }
+    }
+
+    /**
      * One-time backfill of the order-transaction ledger (issue j2commerce#1184).
      * Guarded by a `#__extensions.params` flag so it only runs once per site; per-order
      * failures are already logged and skipped inside SeedOrderLedgerCommand::run(), and a
@@ -331,6 +382,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
         $this->setFinderPluginOrdering();
 
         $this->seedCustomAclActions();
+        $this->seedQueueKey();
         $this->seedStockCommitted();
         $this->repairVariantAvailability();
         $this->repairUploadsClientIp();

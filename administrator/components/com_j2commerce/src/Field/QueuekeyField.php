@@ -20,6 +20,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Form\FormField;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
+use Joomla\Registry\Registry;
 
 /**
  * Queue Key field - displays the queue key with a regenerate button.
@@ -38,6 +39,13 @@ class QueuekeyField extends FormField
      * @since  6.0.7
      */
     protected $type = 'Queuekey';
+
+    /**
+     * The shape both generators produce: a 32-character md5 digest.
+     *
+     * @since  6.6.0
+     */
+    private const KEY_PATTERN = '/^[a-f0-9]{32}$/';
 
     /**
      * Method to get the field input markup.
@@ -134,6 +142,32 @@ document.addEventListener('DOMContentLoaded', function() {
 HTML;
 
         return $html;
+    }
+
+    /**
+     * The field renders a hidden input and com_config rebuilds the params blob from what the form
+     * posts, so the form is a write path in its own right. Only the shape the two generators
+     * produce is stored; anything else leaves the current key in place.
+     *
+     * @param   mixed      $value  The submitted value.
+     * @param   string     $group  The optional dot-separated form group path.
+     * @param   ?Registry  $input  The entire data set to filter against.
+     *
+     * @return  string  A 32-character md5 digest.
+     *
+     * @since   6.6.0
+     */
+    public function filter($value, $group = null, ?Registry $input = null)
+    {
+        $value = parent::filter($value, $group, $input);
+
+        if (\is_string($value) && preg_match(self::KEY_PATTERN, $value)) {
+            return $value;
+        }
+
+        $stored = $this->getQueueKey();
+
+        return preg_match(self::KEY_PATTERN, $stored) ? $stored : $this->generateQueueKey();
     }
 
     /**

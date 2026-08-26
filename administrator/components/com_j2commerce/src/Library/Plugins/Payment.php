@@ -203,21 +203,34 @@ class Payment extends CMSPlugin
 
     public function generateHash($order)
     {
-        $secret_key  = J2CommerceHelper::config()->get('queue_key', '');
+        $secret_key = J2CommerceHelper::config()->get('queue_key', '');
+
+        // The cron endpoint declines to run when this value is absent. The payment hash reaches
+        // the same conclusion rather than deriving a digest whose every secret term is ''.
+        if (!\is_string($secret_key) || $secret_key === '') {
+            return '';
+        }
+
         $status      = $this->params->get('payment_status', 4);
-        $session     = J2CommerceHelper::platform()->application()->getSession();
-        $session_id  = $session->getId();
-        $hash_string = $order->order_id . $secret_key . $order->orderpayment_type . $secret_key . $status . $secret_key . $order->user_email . $secret_key . $session_id . $secret_key;
-        return md5($hash_string);
+        $session_id  = J2CommerceHelper::platform()->application()->getSession()->getId();
+        $hash_string = $order->order_id . '|' . $order->orderpayment_type . '|' . $status . '|' . $order->user_email . '|' . $session_id;
+
+        return hash_hmac('sha256', $hash_string, $secret_key);
     }
 
     public function validateHash($order)
     {
+        $generated = $this->generateHash($order);
+
+        if ($generated === '') {
+            return false;
+        }
+
         $hash = J2CommerceHelper::platform()->application()->input->getString('hash', '');
 
         // A bracketed parameter makes the filter hand back an array, so the type is checked
         // before it reaches hash_equals().
-        return \is_string($hash) && hash_equals($this->generateHash($order), $hash);
+        return \is_string($hash) && hash_equals($generated, $hash);
     }
 
     /**

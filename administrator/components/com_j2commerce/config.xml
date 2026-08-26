@@ -296,7 +296,7 @@
             type="queuekey"
             label="COM_J2COMMERCE_CONFIG_QUEUE_KEY"
             description="COM_J2COMMERCE_CONFIG_QUEUE_KEY_DESC"
-
+            filter="cmd"
         />
 
         <field
