@@ -1087,28 +1087,29 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         $productHtml = $imageHtml . $html;
 
         /*
-         * Which property does the current view actually write to?
-         *   - Blog / category / featured renders $article->introtext in blog_item.php
-         *   - The single-article view renders $article->text (introtext + fulltext)
+         * Always append to $article->text — never to introtext or fulltext.
          *
-         * Therefore write to the correct field depending on context, and ONLY append.
-         * Do not overwrite introtext/fulltext and do not reassemble text from
-         * introtext . fulltext — that caused the fulltext leak in the blog view.
+         * The list views (category, featured, archive) seed $item->text from
+         * introtext, dispatch onContentPrepare, then copy the result straight
+         * back with $item->introtext = $item->text. Anything written to
+         * introtext during the dispatch is therefore discarded before
+         * blog_item.php ever renders it, while ->text survives on every surface.
+         *
+         * ONLY append. Do not overwrite introtext/fulltext and do not reassemble
+         * text from introtext . fulltext — that caused the fulltext bleed in the
+         * blog view.
          *
          * top:    product  →  existing content
          * bottom: existing content  →  product
          */
-        $isListContext = \in_array($context, ['com_content.category', 'com_content.featured'], true);
-        $targetProp    = $isListContext ? 'introtext' : 'text';
-
-        if (!isset($article->$targetProp)) {
-            $article->$targetProp = '';
+        if (!isset($article->text)) {
+            $article->text = '';
         }
 
         if ($position === 'top') {
-            $article->$targetProp = $productHtml . $article->$targetProp;
+            $article->text = $productHtml . $article->text;
         } else {
-            $article->$targetProp .= $productHtml;
+            $article->text .= $productHtml;
         }
     }
 
