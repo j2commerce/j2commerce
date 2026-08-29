@@ -244,6 +244,7 @@ class MyprofileModel extends BaseDatabaseModel
                 'ordershipping_price',
                 'ordershipping_tax',
                 'ordershipping_type',
+                'ordershipping_tracking_id',
             ]))
             ->from($db->quoteName('#__j2commerce_ordershippings'))
             ->where($db->quoteName('order_id') . ' = :orderId')

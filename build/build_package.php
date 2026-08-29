@@ -277,6 +277,8 @@ function findEsbuild(string $joomlaRoot): ?string
 
     $candidates = array_filter([
         $env !== false ? $env : null,
+        $joomlaRoot . '/build/node_modules/@esbuild/win32-x64/esbuild.exe',
+        $joomlaRoot . '/build/node_modules/.bin/esbuild',
         $joomlaRoot . '/node_modules/@esbuild/win32-x64/esbuild.exe',
         $joomlaRoot . '/node_modules/.bin/esbuild',
     ]);

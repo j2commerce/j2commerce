@@ -54,6 +54,9 @@ class CartHelper
      */
     private static ?DatabaseInterface $db = null;
 
+    /** Per-request cart-count memo, keyed on the shopper identity the count query branches on. */
+    private static array $cartCountsCache = [];
+
     /**
      * Error message storage
      *
@@ -668,6 +671,8 @@ class CartHelper
             }
         }
 
+        self::flushCartCounts();
+
         // Clear cart cookie
         self::getInstance()->clearCartCookie();
 
@@ -910,6 +915,14 @@ class CartHelper
         $user    = $app->getIdentity();
         $session = $app->getSession();
 
+        // Keyed on identity rather than memoised flat, so the guest->user transition on login
+        // misses and re-reads instead of returning the pre-login basket.
+        $key = ($user && $user->id > 0) ? 'u:' . (int) $user->id : 's:' . $session->getId();
+
+        if (isset(self::$cartCountsCache[$key])) {
+            return self::$cartCountsCache[$key];
+        }
+
         $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
@@ -939,10 +952,22 @@ class CartHelper
 
         $row = $db->loadObject();
 
-        return [
+        return self::$cartCountsCache[$key] = [
             'count' => (int) ($row->item_count ?? 0),
             'lines' => (int) ($row->line_count ?? 0),
         ];
+    }
+
+    /**
+     * Drops the memo so the next read re-queries. Core cart mutations call this; a plugin that
+     * writes cart rows with its own query must call it too, or a later read in the same request
+     * still sees the pre-mutation counts.
+     *
+     * @since   6.6.0
+     */
+    public static function flushCartCounts(): void
+    {
+        self::$cartCountsCache = [];
     }
 
     /**

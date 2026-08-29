@@ -1091,7 +1091,7 @@ class CheckoutController extends BaseController
         $shippingValues = $session->get('shipping_values', [], 'j2commerce');
 
         if ($showShippingMethods && $order) {
-            $shippingResults = J2CommerceHelper::plugin()->eventWithArray('GetShippingRates', [$order]);
+            $shippingResults = J2CommerceHelper::plugin()->eventWithArray('GetShippingRates', [$order, 'checkout']);
 
             foreach ($shippingResults as $result) {
                 if (\is_array($result) && isset($result['element'])) {

@@ -110,6 +110,10 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
         $args  = $event->getArguments();
         $order = $args[0] ?? null;
 
+        // A cart-page estimate may quote before a destination is known; an order may not.
+        // Defaulting to 'checkout' keeps the strict path for any caller that omits it.
+        $isEstimate = ($args[1] ?? 'checkout') === 'estimate';
+
         if ($order === null) {
             return;
         }
@@ -125,7 +129,7 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
         }
 
         // Resolve geozones for the shipping address
-        $geozones = $this->getShippingGeozones();
+        $geozones = $this->getShippingGeozones($isEstimate);
 
         if (empty($geozones)) {
             return;
@@ -230,9 +234,11 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
      * Reads the shipping address from session, loads it from the addresses
      * table, and queries geozonerules for matching geozone IDs.
      *
+     * @param   bool  $isEstimate  Quoting for a cart-page estimate rather than an order.
+     *
      * @return  int[]  Array of matching geozone IDs.
      */
-    private function getShippingGeozones(): array
+    private function getShippingGeozones(bool $isEstimate = false): array
     {
         $app       = Factory::getApplication();
         $session   = $app->getSession();
@@ -276,8 +282,11 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
             $zoneId    = (int) $session->get('shipping_zone_id', 0, 'j2commerce');
         }
 
+        // Still no destination. An estimate is allowed to quote broadly so the cart page can
+        // show an indicative rate before an address exists; an order is not, because a rate
+        // matched against every geozone is a charge for a shipment with nowhere to go.
         if ($countryId === 0) {
-            return $this->getAllGeozoneIds();
+            return $isEstimate ? $this->getAllGeozoneIds() : [];
         }
 
         return $this->findGeozonesForAddress($countryId, $zoneId);
