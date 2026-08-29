@@ -20,20 +20,18 @@ $isAjax         = !empty($isAjax ?? false);
 $iconClass      = htmlspecialchars($params->get('minicart_cart_icon_class', 'bi bi-cart3'), ENT_QUOTES, 'UTF-8');
 $moduleClassSfx = htmlspecialchars($params->get('moduleclass_sfx', ''), ENT_QUOTES, 'UTF-8');
 
-// The endpoint reports SUM(product_qty). When quantity_count is off this badge shows the
-// number of distinct lines instead, which the endpoint cannot supply — so the hydration
-// hooks are withheld and the server-rendered value stands (correct on a fresh render,
-// stale only on a cached replay, never silently rewritten to a different measure).
-$hydratable = ((int) $params->get('quantity_count', 1) === 1);
-$countAttr  = $hydratable ? ' data-j2c-cart-count' : '';
-$badgeAttr  = $hydratable ? ' data-j2c-cart-badge' : '';
+// The endpoint reports both measures, so the badge names the one it rendered and the
+// hydrator applies the matching field. Without this a cached replay would leave the
+// priming visitor's number on screen in whichever mode the endpoint could not restate.
+$countMeasure = ((int) $params->get('quantity_count', 1) === 1) ? 'qty' : 'lines';
+$countAttr    = ' data-j2c-cart-count="' . $countMeasure . '"';
+$badgeAttr    = ' data-j2c-cart-badge';
 
-// check_empty bakes a hide/show decision into cacheable HTML. When the badge is hydratable
-// the wrapper is rendered hidden instead of omitted, so a shopper with items replaying a
-// cache primed by an empty cart still gets a cart icon once hydration runs.
+// check_empty bakes a hide/show decision into cacheable HTML, so the wrapper is rendered
+// hidden rather than omitted — a shopper with items replaying a cache primed by an empty
+// cart still gets a cart icon once hydration runs.
 $emptyHidden = ((int) $params->get('check_empty', 0) === 1 && $productCount < 1);
-$hide        = ($emptyHidden && !$hydratable);
-$wrapAttr    = $hydratable ? ' data-j2c-cart-wrapper' : '';
+$wrapAttr    = ' data-j2c-cart-wrapper';
 $wrapHidden  = $emptyHidden ? ' hidden style="display:none"' : '';
 
 $customCss = strip_tags((string) $params->get('custom_css', ''));
@@ -47,7 +45,6 @@ if (!empty($customCss)) {
 <div class="j2commerce-cart-module j2commerce-cart-module-<?php echo $moduleId; ?> <?php echo $moduleClassSfx; ?>">
 <?php endif; ?>
 
-<?php if (!$hide) : ?>
     <div class="j2commerce-minicart"<?php echo $wrapAttr; ?><?php echo $wrapHidden; ?>>
         <?php if (!empty($cartUrl)) : ?>
             <a class="j2commerce-minicart-link position-relative d-inline-block"
@@ -70,7 +67,6 @@ if (!empty($customCss)) {
             </span>
         <?php endif; ?>
     </div>
-<?php endif; ?>
 
 <?php if (!$isAjax) : ?>
 </div>

@@ -892,6 +892,20 @@ class CartHelper
      */
     public static function getCartItemCount(): int
     {
+        return self::getCartCounts()['count'];
+    }
+
+    /**
+     * Both measures a mini-cart badge can display, in one round trip: 'count' is the quantity
+     * total (SUM of product_qty), 'lines' the number of distinct cart lines. Both are zero for
+     * an empty cart, so either can gate visibility.
+     *
+     * @return  array{count: int, lines: int}
+     *
+     * @since   6.6.0
+     */
+    public static function getCartCounts(): array
+    {
         $app     = Factory::getApplication();
         $user    = $app->getIdentity();
         $session = $app->getSession();
@@ -899,7 +913,10 @@ class CartHelper
         $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
-        $query->select('SUM(' . $db->quoteName('ci.product_qty') . ') AS item_count')
+        $query->select(
+            'SUM(' . $db->quoteName('ci.product_qty') . ') AS item_count, '
+            . 'COUNT(' . $db->quoteName('ci.j2commerce_cartitem_id') . ') AS line_count'
+        )
             ->from($db->quoteName('#__j2commerce_carts', 'c'))
             ->join(
                 'LEFT',
@@ -920,7 +937,12 @@ class CartHelper
 
         $db->setQuery($query);
 
-        return (int) $db->loadResult();
+        $row = $db->loadObject();
+
+        return [
+            'count' => (int) ($row->item_count ?? 0),
+            'lines' => (int) ($row->line_count ?? 0),
+        ];
     }
 
     /**
