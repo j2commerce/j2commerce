@@ -624,6 +624,14 @@ class CheckoutController extends BaseController
                 }
 
                 $this->setShippingSession($addressData);
+            } else {
+                // Unticking must clear, not inherit. Without this the member keeps
+                // whatever `shipping_address_id` last held, so an order that never
+                // completes the shipping step ships to a stale address rather than
+                // stopping on a missing one. The guest arm in guestValidate() has
+                // always cleared; these two are now symmetric.
+                $session->clear('shipping_address_id', 'j2commerce');
+                $this->clearShippingSelection();
             }
 
             $session->clear('guest', 'j2commerce');
@@ -688,10 +696,16 @@ class CheckoutController extends BaseController
         // Retrieve previously-entered guest address from session for re-population
         $guestData = $session->get('guest', [], 'j2commerce');
 
+        // A stored `guest_shipping` that differs from billing means the shopper chose a
+        // distinct ship-to. The checkbox has to come back unticked or a re-submit of the
+        // billing step overwrites that address with the billing one, silently.
+        $guestShipping = $session->get('guest_shipping', [], 'j2commerce');
+
         $this->renderStep('guest', [
-            'showShipping' => $showShipping,
-            'fields'       => $fields,
-            'guestData'    => \is_array($guestData) ? $guestData : [],
+            'showShipping'      => $showShipping,
+            'fields'            => $fields,
+            'guestData'         => \is_array($guestData) ? $guestData : [],
+            'shipSameAsBilling' => !\is_array($guestShipping) || $guestShipping === [] || $guestShipping == $guestData,
         ]);
     }
 
@@ -774,11 +788,18 @@ class CheckoutController extends BaseController
         $showShipping = $this->determineShowShipping($order);
         $fields       = CustomFieldHelper::getFieldsByArea('billing');
 
+        // A `shipping_address_id` that differs from billing means the member chose a
+        // distinct ship-to. Same reason as the guest arm: a hard-coded `checked` here
+        // would silently discard it on a billing re-submit.
+        $shippingAddressId = $session->get('shipping_address_id', '', 'j2commerce');
+
         $this->renderStep('billing', [
-            'addresses'        => $addresses,
-            'billingAddressId' => $billingAddressId,
-            'showShipping'     => $showShipping,
-            'fields'           => $fields,
+            'addresses'         => $addresses,
+            'billingAddressId'  => $billingAddressId,
+            'showShipping'      => $showShipping,
+            'fields'            => $fields,
+            'shipSameAsBilling' => (string) $shippingAddressId === ''
+                || (string) $shippingAddressId === (string) $billingAddressId,
         ]);
     }
 
@@ -879,6 +900,10 @@ class CheckoutController extends BaseController
             $session->set('shipping_zone_id', $session->get('billing_zone_id', 0, 'j2commerce'), 'j2commerce');
             $session->set('shipping_postcode', $session->get('billing_postcode', '', 'j2commerce'), 'j2commerce');
 
+            $this->clearShippingSelection();
+        } else {
+            // See registerValidate(): the unticked arm clears rather than inheriting.
+            $session->clear('shipping_address_id', 'j2commerce');
             $this->clearShippingSelection();
         }
 
@@ -1661,6 +1686,7 @@ class CheckoutController extends BaseController
 
             $this->renderStep('confirm', [
                 'order'            => $existingOrder,
+                'orderInfo'        => $this->getOrderInfoFor($existingOrder),
                 'items'            => method_exists($existingOrder, 'getItems') ? $existingOrder->getItems() : [],
                 'taxes'            => method_exists($existingOrder, 'getOrderTaxrates') ? $existingOrder->getOrderTaxrates() : [],
                 'shipping'         => method_exists($existingOrder, 'getOrderShippingRate') ? $existingOrder->getOrderShippingRate() : null,
@@ -1873,6 +1899,7 @@ class CheckoutController extends BaseController
 
         $this->renderStep('confirm', [
             'order'            => $order,
+            'orderInfo'        => $this->getOrderInfoFor(\is_object($order) ? $order : null),
             'items'            => $orderItems,
             'taxes'            => $taxes,
             'shipping'         => $shipping,
@@ -2983,6 +3010,23 @@ class CheckoutController extends BaseController
                 $this->input->set($name, $value);
             }
         }
+    }
+
+    /**
+     * Persisted billing / ship-to for the confirm step's review block.
+     * Reads what was actually stored, not what the session believes.
+     */
+    protected function getOrderInfoFor(?object $order): ?object
+    {
+        $orderId = (string) ($order->order_id ?? '');
+
+        if ($orderId === '') {
+            return null;
+        }
+
+        $model = $this->getMvcFactory()->createModel('Order', 'Administrator', ['ignore_request' => true]);
+
+        return $model && method_exists($model, 'getOrderInfo') ? $model->getOrderInfo($orderId) : null;
     }
 
     protected function getCartOrder(): ?object

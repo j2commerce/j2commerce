@@ -67,6 +67,7 @@ $sessionExpiredFlatJs  = $jsString(Text::sprintf('COM_J2COMMERCE_ERROR_SESSION_E
 $unexpectedFlatJs      = $jsString(Text::sprintf('COM_J2COMMERCE_ERROR_UNEXPECTED_RESPONSE', $reloadLinkText));
 $serverErrorJs         = $jsString(Text::_('COM_J2COMMERCE_ERROR_SERVER'));
 $networkErrorJs        = $jsString(Text::_('COM_J2COMMERCE_ERROR_NETWORK'));
+$checkoutErrorJs       = $jsString(Text::_('COM_J2COMMERCE_CHECKOUT_ERROR'));
 
 // Pass language strings to JS via Joomla.Text (H1 — replaces addslashes inline)
 Text::script('COM_J2COMMERCE_CHECKOUT_ERROR_AGREE_TERMS');
@@ -269,6 +270,17 @@ document.addEventListener('DOMContentLoaded', function() {
         link.setAttribute('aria-label', modifyText + ' ' + stepName);
         heading.appendChild(link);
     }
+
+    // Confirm-step address blocks carry their own Change link. Forward it to the edit
+    // link the step heading already owns, so one code path drives step navigation.
+    document.addEventListener('click', function(e) {
+        var trigger = e.target.closest('[data-j2c-edit-step]');
+        if (!trigger) return;
+        e.preventDefault();
+        var stepId = trigger.getAttribute('data-j2c-edit-step');
+        var link = document.querySelector('#' + stepId + ' .checkout-heading a:not(.checkout-logout)');
+        if (link) link.click();
+    });
 
     // Utility: remove all edit links (preserves logout link)
     function removeEditLinks() {
@@ -878,7 +890,16 @@ document.addEventListener('DOMContentLoaded', function() {
             body: formData,
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         })
-        .then(function(r) { return r.json(); })
+        .then(function(r) {
+            // A failed request is not "this store has no custom steps". Custom steps are
+            // how a plugin collects something the order requires, so a 4xx/5xx must stop
+            // the shopper here rather than fall through to the advance callback.
+            if (!r.ok) {
+                throw new Error('custom steps request failed: ' + r.status);
+            }
+
+            return r.json();
+        })
         .then(function(json) {
             if (json.hasSteps) {
                 var sectionSuffix = position.replace(/_/g, '-');
@@ -932,7 +953,8 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(function(err) {
             console.error('Custom steps error:', err);
-            onComplete();
+            var host = document.querySelector('.checkout-content.active') || document.querySelector('.checkout-content');
+            showWarning(host, <?php echo $checkoutErrorJs; ?>);
         });
     }
 
@@ -954,7 +976,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var sameAsBilling = document.getElementById('shipping-same-as-billing');
         // A hidden field stands in for the checkbox when the store has turned the
         // shipping address off — it carries the same value but never reports .checked.
-        var skipShippingAddress = !!sameAsBilling && (sameAsBilling.type === 'hidden' || sameAsBilling.checked);
+        var skipShippingAddress = !!sameAsBilling && (sameAsBilling.type === 'hidden' ? sameAsBilling.value === '1' : sameAsBilling.checked);
 
         if (showShipping && !skipShippingAddress) {
             var shipEl = document.getElementById('shipping-address');

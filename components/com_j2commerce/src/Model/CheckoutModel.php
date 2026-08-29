@@ -16,7 +16,6 @@ namespace J2Commerce\Component\J2commerce\Site\Model;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHelper;
-use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\CartModel;
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
@@ -25,6 +24,9 @@ use Joomla\CMS\MVC\Model\BaseDatabaseModel;
  * Checkout Model for site frontend
  *
  * Provides checkout data by delegating to CartModel and OrderHelper.
+ *
+ * Country / zone / postcode state resolution is NOT here — it lives in
+ * CartsModel::populateState(), which is the model the checkout view actually builds.
  *
  * @since  6.0.0
  */
@@ -37,57 +39,6 @@ class CheckoutModel extends BaseDatabaseModel
     protected ?object $_order = null;
 
     protected ?CartModel $_cartModel = null;
-
-    protected function populateState(): void
-    {
-        $app     = Factory::getApplication();
-        $session = $app->getSession();
-
-        $params = $app->getParams();
-        $this->setState('params', $params);
-
-        $store = J2CommerceHelper::storeProfile();
-
-        // Country
-        $countryId = $app->getInput()->getInt('country_id', 0);
-
-        if ($countryId > 0) {
-            $session->set('billing_country_id', $countryId, 'j2commerce');
-            $session->set('shipping_country_id', $countryId, 'j2commerce');
-        } elseif ($session->has('shipping_country_id', 'j2commerce')) {
-            $countryId = (int) $session->get('shipping_country_id', 0, 'j2commerce');
-        } else {
-            $countryId = (int) $store->get('country_id', 0);
-        }
-
-        // Zone
-        $zoneId = $app->getInput()->getInt('zone_id', 0);
-
-        if ($zoneId > 0) {
-            $session->set('billing_zone_id', $zoneId, 'j2commerce');
-            $session->set('shipping_zone_id', $zoneId, 'j2commerce');
-        } elseif ($session->has('shipping_zone_id', 'j2commerce')) {
-            $zoneId = (int) $session->get('shipping_zone_id', 0, 'j2commerce');
-        } else {
-            $zoneId = (int) $store->get('zone_id', 0);
-        }
-
-        // Postcode
-        $postcode = $app->getInput()->getAlnum('postcode', '');
-        $postcode = UtilitiesHelper::textSanitize($postcode);
-
-        if (!empty($postcode)) {
-            $session->set('shipping_postcode', $postcode, 'j2commerce');
-        } elseif ($session->has('shipping_postcode', 'j2commerce')) {
-            $postcode = $session->get('shipping_postcode', '', 'j2commerce');
-        } else {
-            $postcode = $store->get('zip', '');
-        }
-
-        $this->setState('country_id', $countryId);
-        $this->setState('zone_id', $zoneId);
-        $this->setState('postcode', $postcode);
-    }
 
     protected function getCartModel(): CartModel
     {

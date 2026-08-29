@@ -31,6 +31,33 @@ $termsUrl         = $showTerms && $termsArticleId
     : '';
 $termsText        = trim((string) ($this->termsText ?? ''));
 $showCustomerNote = (bool) ($this->showCustomerNote ?? true);
+// Address review block. `$orderInfo` is the persisted orderinfos row — what the order
+// will actually ship to, not what the session currently believes.
+$info        = $this->orderInfo ?? null;
+$showShipTo  = $info !== null && (int) ($this->order->is_shippable ?? 0) === 1;
+$modifyLabel = Text::_('COM_J2COMMERCE_CHECKOUT_MODIFY');
+
+$addressLines = function (object $info, string $prefix): string {
+    $name     = trim(($info->{$prefix . '_first_name'} ?? '') . ' ' . ($info->{$prefix . '_last_name'} ?? ''));
+    $locality = implode(', ', array_filter([
+        $info->{$prefix . '_city'} ?? '',
+        trim(($info->{$prefix . '_zone_name'} ?? '') . ' ' . ($info->{$prefix . '_zip'} ?? '')),
+    ], 'strlen'));
+
+    $lines = array_filter([
+        $name,
+        $info->{$prefix . '_company'} ?? '',
+        $info->{$prefix . '_address_1'} ?? '',
+        $info->{$prefix . '_address_2'} ?? '',
+        $locality,
+        $info->{$prefix . '_country_name'} ?? '',
+    ], 'strlen');
+
+    return implode('<br>', array_map(
+        static fn (string $line): string => htmlspecialchars($line, ENT_QUOTES, 'UTF-8'),
+        $lines
+    ));
+};
 
 // bootstrap.modal is registered on the initial /checkout page load in HtmlView::display().
 
@@ -50,6 +77,30 @@ if ($showTerms && $termsArticleId) {
 <?php if (empty($errors)) : ?>
 
     <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeCheckoutConfirm', [$this]); ?>
+
+    <?php if ($info !== null) : ?>
+        <div class="j2commerce-confirm-addresses row g-3 mb-3">
+            <?php if ($showShipTo) : ?>
+                <div class="col-sm-6">
+                    <div class="j2c-address-heading d-flex justify-content-between align-items-baseline mb-2 fw-semibold">
+                        <span><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_SHIPPING_ADDRESS'); ?></span>
+                        <a href="#" role="button" data-j2c-edit-step="shipping-address"
+                           aria-label="<?php echo htmlspecialchars($modifyLabel . ' ' . Text::_('COM_J2COMMERCE_CHECKOUT_SHIPPING_ADDRESS'), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($modifyLabel, ENT_QUOTES, 'UTF-8'); ?></a>
+                    </div>
+                    <address class="mb-0 small"><?php echo $addressLines($info, 'shipping'); ?></address>
+                </div>
+            <?php endif; ?>
+
+            <div class="col-sm-6">
+                <div class="j2c-address-heading d-flex justify-content-between align-items-baseline mb-2 fw-semibold">
+                    <span><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_BILLING_ADDRESS'); ?></span>
+                    <a href="#" role="button" data-j2c-edit-step="billing-address"
+                       aria-label="<?php echo htmlspecialchars($modifyLabel . ' ' . Text::_('COM_J2COMMERCE_CHECKOUT_BILLING_ADDRESS'), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($modifyLabel, ENT_QUOTES, 'UTF-8'); ?></a>
+                </div>
+                <address class="mb-0 small"><?php echo $addressLines($info, 'billing'); ?></address>
+            </div>
+        </div>
+    <?php endif; ?>
 
     <?php if ($showTerms === 1 && $termsDisplayType === 'checkbox') : ?>
         <div class="j2commerce-terms-box mb-3">

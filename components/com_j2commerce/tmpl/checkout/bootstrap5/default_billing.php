@@ -24,6 +24,9 @@ $showShipping = $this->showShipping ?? false;
 $showShippingAddress = ConfigHelper::showShippingAddress();
 $fields = $this->fields ?? [];
 $hasAddresses = !empty($addresses);
+// Ticked only when there is no distinct ship-to on file. Hard-coding `checked`
+// meant a shopper who went back to edit billing silently lost their ship-to.
+$shipSameAsBilling = (bool) ($this->shipSameAsBilling ?? true);
 ?>
 <div class="j2commerce-billing-address">
 
@@ -91,7 +94,7 @@ $hasAddresses = !empty($addresses);
     <?php if ($showShipping && $showShippingAddress) : ?>
     <div class="mt-3 mb-3">
         <div class="form-check">
-            <input class="form-check-input" type="checkbox" name="shipping_address" value="1" id="shipping-same-as-billing" checked>
+            <input class="form-check-input" type="checkbox" name="shipping_address" value="1" id="shipping-same-as-billing"<?php echo $shipSameAsBilling ? ' checked' : ''; ?>>
             <label class="form-check-label" for="shipping-same-as-billing">
                 <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_SHIPPING_SAME_AS_BILLING'); ?>
             </label>
@@ -99,6 +102,10 @@ $hasAddresses = !empty($addresses);
     </div>
     <?php elseif ($showShipping) : ?>
     <input type="hidden" name="shipping_address" value="1" id="shipping-same-as-billing">
+    <?php else : ?>
+    <?php // Nothing in the cart ships. Say so explicitly rather than relying on an absent
+          // POST key defaulting to 0 in the validator. ?>
+    <input type="hidden" name="shipping_address" value="0" id="shipping-same-as-billing">
     <?php endif; ?>
 
     <?php echo J2CommerceHelper::plugin()->eventWithHtml('CheckoutBilling', [$this]); ?>
