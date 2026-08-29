@@ -15,8 +15,8 @@ defined('_JEXEC') or die;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Language\Text;
 
-$id      = empty($displayData['id']) ? '' : (' id="' . $displayData['id'] . '"');
-$target  = empty($displayData['target']) ? '' : (' target="' . $displayData['target'] . '"');
+$id      = empty($displayData['id']) ? '' : (' id="' . $this->escape($displayData['id']) . '"');
+$target  = empty($displayData['target']) ? '' : (' target="' . $this->escape($displayData['target']) . '"');
 $onclick = empty($displayData['onclick']) ? '' : (' onclick="' . $displayData['onclick'] . '"');
 
 if (isset($displayData['ajaxurl'])) {
@@ -28,8 +28,8 @@ if (isset($displayData['ajaxurl'])) {
 // The title for the link (a11y)
 $title = empty($displayData['title']) ? '' : (' title="' . $this->escape($displayData['title']) . '"');
 
-// The information
-$text = empty($displayData['text']) ? '' : ('<span class="j-links-link">' . $displayData['text'] . '</span>');
+// The information. Escaped: plugins pass an admin-entered label straight through here.
+$text = empty($displayData['text']) ? '' : ('<span class="j-links-link">' . $this->escape($displayData['text']) . '</span>');
 
 // Make the class string
 $class = empty($displayData['class']) ? '' : (' class="alert-' . $this->escape($displayData['class']) . '"');
@@ -48,7 +48,7 @@ if (isset($displayData['linkadd'])) : ?>
                 <div class="quickicon-info">
                     <?php if (isset($displayData['image'])) : ?>
                         <div class="quickicon-icon">
-                            <div class="<?php echo $displayData['image']; ?>" aria-hidden="true"></div>
+                            <div class="<?php echo $this->escape($displayData['image']); ?>" aria-hidden="true"></div>
                         </div>
                     <?php endif; ?>
                     <?php if (isset($displayData['ajaxurl'])) : ?>
