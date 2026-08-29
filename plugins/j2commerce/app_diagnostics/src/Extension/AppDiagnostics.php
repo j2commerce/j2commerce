@@ -10,6 +10,7 @@
 
 namespace J2Commerce\Plugin\J2Commerce\AppDiagnostics\Extension;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\CartHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -322,5 +323,7 @@ final class AppDiagnostics extends CMSPlugin implements SubscriberInterface
         } catch (\Exception $e) {
             Log::add('clear_cart: delete carts failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
         }
+
+        CartHelper::flushCartCounts();
     }
 }
