@@ -1487,7 +1487,7 @@ class CartOrder
     {
         $rates = [];
 
-        foreach (J2CommerceHelper::plugin()->eventWithArray('GetShippingRates', [$order]) as $result) {
+        foreach (J2CommerceHelper::plugin()->eventWithArray('GetShippingRates', [$order, 'checkout']) as $result) {
             if (\is_array($result) && isset($result['element'])) {
                 $rates[] = $result;
             } elseif (\is_array($result)) {

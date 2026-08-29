@@ -163,7 +163,7 @@ class CartsController extends BaseController
         }
 
         $order   = OrderHelper::getInstance()->populateOrder($items)->getOrder();
-        $methods = J2CommerceHelper::plugin()->eventWithArray('GetShippingRates', [$order]);
+        $methods = J2CommerceHelper::plugin()->eventWithArray('GetShippingRates', [$order, 'estimate']);
 
         $methods = CartOrder::sortShippingRates($methods, ConfigHelper::autoApplyShippingRate());
         $methods = array_values(array_filter($methods, [CartOrder::class, 'rateChargesAreValid']));
@@ -1414,7 +1414,7 @@ class CartsController extends BaseController
             if (!empty($items)) {
                 $order = OrderHelper::getInstance()->populateOrder($items)->getOrder();
 
-                $methods = J2CommerceHelper::plugin()->eventWithArray('GetShippingRates', [$order]);
+                $methods = J2CommerceHelper::plugin()->eventWithArray('GetShippingRates', [$order, 'estimate']);
 
                 $methods = CartOrder::sortShippingRates($methods, ConfigHelper::autoApplyShippingRate());
                 $methods = array_values(array_filter($methods, [CartOrder::class, 'rateChargesAreValid']));

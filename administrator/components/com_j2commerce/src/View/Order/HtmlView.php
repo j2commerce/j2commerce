@@ -453,7 +453,7 @@ class HtmlView extends BaseHtmlView
         try {
             $rates = [];
 
-            foreach (J2CommerceHelper::plugin()->eventWithArray('GetShippingRates', [$shippingOrder]) as $result) {
+            foreach (J2CommerceHelper::plugin()->eventWithArray('GetShippingRates', [$shippingOrder, 'checkout']) as $result) {
                 if (\is_array($result) && isset($result['element'])) {
                     $rates[] = $result;
                 } elseif (\is_array($result)) {
