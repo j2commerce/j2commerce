@@ -12,6 +12,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Table;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\TemplatePathHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Table\Table;
@@ -69,8 +70,8 @@ class InvoicetemplateTable extends Table
             return false;
         }
 
-        // Check for valid body content
-        if (empty($this->body)) {
+        // Check for valid body content (either body or body_source_file)
+        if (empty($this->body) && empty($this->body_source_file)) {
             $this->setError(Text::_('COM_J2COMMERCE_ERROR_INVOICETEMPLATE_BODY_REQUIRED'));
             return false;
         }
@@ -110,6 +111,43 @@ class InvoicetemplateTable extends Table
         if (!\in_array($this->invoice_type, $builtInTypes) && !preg_match('/^[a-z][a-z0-9_]{1,49}$/', $this->invoice_type)) {
             $this->setError(Text::_('COM_J2COMMERCE_ERROR_INVOICETEMPLATE_INVALID_TYPE'));
             return false;
+        }
+
+        // Validate body_source against allowed values ('html' kept as legacy J2Store alias for read-back)
+        $allowedBodySources = ['editor', 'visual', 'file', 'html'];
+        if (!\in_array($this->body_source, $allowedBodySources)) {
+            $this->setError(Text::_('COM_J2COMMERCE_ERROR_INVOICETEMPLATE_INVALID_BODY_SOURCE'));
+            return false;
+        }
+
+        // If using file source, resolve it exactly as InvoiceHelper does when it reads the template back
+        if ($this->body_source === 'file' && !empty($this->body_source_file)) {
+            $sourceFile = $this->body_source_file;
+            $resolved   = null;
+
+            if (str_starts_with($sourceFile, 'plg:')) {
+                // Plugin-prefixed path: resolve to the plugin's tmpl/<invoice_type> directory
+                $rest                  = substr($sourceFile, 4);
+                [$pluginRef, $relPath] = array_pad(explode(':', $rest, 2), 2, '');
+                [$group, $name]        = array_pad(explode('.', $pluginRef, 2), 2, '');
+
+                if (preg_match('/^[A-Za-z0-9_-]+$/', $group) && preg_match('/^[A-Za-z0-9_-]+$/', $name)) {
+                    $resolved = TemplatePathHelper::confine(
+                        JPATH_PLUGINS . '/' . $group . '/' . $name . '/tmpl/' . $this->invoice_type,
+                        $relPath
+                    );
+                }
+            } else {
+                $resolved = TemplatePathHelper::confine(
+                    JPATH_ADMINISTRATOR . '/components/com_j2commerce/layouts/templates/' . $this->invoice_type,
+                    $sourceFile
+                );
+            }
+
+            if ($resolved === null) {
+                $this->setError(Text::_('COM_J2COMMERCE_ERROR_INVOICETEMPLATE_FILE_NOT_FOUND'));
+                return false;
+            }
         }
 
         return true;

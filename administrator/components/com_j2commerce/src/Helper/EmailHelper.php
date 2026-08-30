@@ -1423,7 +1423,12 @@ class EmailHelper
             . '</table>';
     }
 
-    /** @return list<array{label: string, value: string}> */
+    /**
+     * Fee/surcharge rows contributed by plugins via onJ2CommerceGetOrderSummaryExtraRows($order),
+     * each returning ['label' => ..., 'value' => ...]. Feeds [ORDER_EXTRA_ROWS] and buildTotalsTable().
+     *
+     * @return list<array{label: string, value: string}>
+     */
     private function getOrderSummaryExtraRows(object $order): array
     {
         $rows = [];

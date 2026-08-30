@@ -393,6 +393,7 @@ $tmpl   = $input->get('tmpl', '', 'cmd') === 'component' ? '&tmpl=component' : '
                     <?php echo $this->form->renderField('show_custom_css'); ?>
                     <?php echo $this->form->renderField('custom_css'); ?>
                     <?php echo $this->form->renderField('body'); ?>
+                    <?php echo $this->form->renderField('body_source_file'); ?>
                     <?php echo $this->form->renderField('invoice_template_description'); ?>
                 </fieldset>
             </div>
