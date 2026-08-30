@@ -949,6 +949,23 @@ class EmailHelper
             );
         }
 
+        // Unwrap comment-carried structural markers: <!--[ITEMS_LOOP]--> → [ITEMS_LOOP].
+        //
+        // A loop or conditional marker has to sit in table element context — between </tr> and
+        // <tr> — but HTML5 foster parenting moves character data found there out of the table
+        // entirely (§13.2.6.4.9 "in table"), so a bare [ITEMS_LOOP] is relocated on every editor
+        // round-trip: the markers collapse together outside the table and the row they delimited
+        // is left unguarded. Comment tokens are inserted in place by that same insertion mode, so
+        // carrying the marker inside a comment is what keeps it where the template put it.
+        //
+        // Both spellings are accepted for as long as saved templates carry either: the shipped
+        // presets use the comment form, templates written before it stay on the bare form.
+        $text = preg_replace(
+            '/<!--\s*(\[\/?[A-Za-z][A-Za-z0-9_]*(?::[A-Za-z][A-Za-z0-9_]*)?\])\s*-->/',
+            '$1',
+            $text
+        ) ?? $text;
+
         // Normalize curly-brace shortcodes {TAG} → [TAG] (TinyMCE sometimes converts brackets)
         $text = preg_replace_callback('/\{([A-Z][A-Z0-9_]*)\}/', static function (array $m) use ($tags): string {
             $bracket = '[' . $m[1] . ']';
@@ -1102,17 +1119,32 @@ class EmailHelper
     /** Process [ITEMS_LOOP]...[/ITEMS_LOOP] with per-item shortcodes. */
     private function processItemsLoop(string $text, object $order): string
     {
-        if (!str_contains($text, '[ITEMS_LOOP]')) {
+        // [ITEM_NAME] alone is enough to enter: the repair below runs on templates whose loop
+        // markers the editor has already carried off, so there may be no [ITEMS_LOOP] left to
+        // recognise the template by.
+        if (!str_contains($text, '[ITEMS_LOOP]') && !str_contains($text, '[ITEM_NAME]')) {
             return $text;
         }
 
-        // Fix editor-mangled templates: empty [ITEMS_LOOP][/ITEMS_LOOP] with item row elsewhere.
-        // GrapesJS collapses the loop markers together and leaves the item <tr> outside.
-        // The item row may contain nested tables (e.g. IFNOT:ITEM_IMAGE fallback) with inner
-        // </tr> tags, so a simple regex can't find the correct outer <tr>. Use nesting-aware search.
-        if (preg_match('/\[ITEMS_LOOP\]\s*\[\/ITEMS_LOOP\]/s', $text) && str_contains($text, '[ITEM_NAME]')) {
-            $text = preg_replace('/\[ITEMS_LOOP\]\s*\[\/ITEMS_LOOP\]/', '', $text, 1);
+        // Repair editor-mangled templates, where foster parenting has moved the loop markers out
+        // of the table and left the item row unguarded. The markers land wherever the table's
+        // parent was, so they can come back collapsed together, split by other content, or with
+        // one of the pair dropped altogether — testing only for the collapsed spelling left the
+        // rest unrepaired, and an unrepaired row reaches the unprocessed-tag sweep, which strips
+        // every [ITEM_*] marker and renders one blank row in place of the order's items.
+        //
+        // The condition is the outcome rather than any one mangling: an item row that no marker
+        // pair encloses. The row may contain nested tables (the IFNOT:ITEM_IMAGE fallback) whose
+        // inner </tr> defeats a plain regex, so the rewrap walks <tr> nesting.
+        // Gated on [ITEM_NAME] because that is what wrapItemRowInLoop() locates the row by: a loop
+        // whose row names no item leaves the markers it still has alone rather than stripping them.
+        if (str_contains($text, '[ITEM_NAME]') && !$this->itemRowIsInsideLoop($text)) {
+            $text = preg_replace('/\[\/?ITEMS_LOOP\]/', '', $text) ?? $text;
             $text = $this->wrapItemRowInLoop($text);
+        }
+
+        if (!str_contains($text, '[ITEMS_LOOP]')) {
+            return $text;
         }
 
         $baseURL = str_replace('/administrator', '', Uri::base());
@@ -1201,6 +1233,15 @@ class EmailHelper
         );
 
         return $text;
+    }
+
+    /** True when a surviving [ITEMS_LOOP]…[/ITEMS_LOOP] pair encloses an [ITEM_NAME]. */
+    private function itemRowIsInsideLoop(string $text): bool
+    {
+        // === 1 rather than a bool cast: preg_match returns false on a backtrack-limit abort, and
+        // "the check failed" is not "no pair encloses it" — that would strip markers on a template
+        // too large to scan, which is the one case where they are most likely still correct.
+        return preg_match('/\[ITEMS_LOOP\](?:(?!\[ITEMS_LOOP\]).)*?\[ITEM_NAME\].*?\[\/ITEMS_LOOP\]/s', $text) === 1;
     }
 
     /** Find the outer <tr> containing [ITEM_NAME] using nesting-aware search and wrap in ITEMS_LOOP. */
