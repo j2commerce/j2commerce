@@ -703,12 +703,9 @@ class EmailHelper
             $subpathURL
         );
 
-        // Order date
-        $tz   = $config->get('offset');
-        $date = Factory::getDate($order->created_on ?? 'now');
-        $date->setTimezone(new \DateTimeZone($tz));
-        $dateFormat = $params->get('date_format', 'Y-m-d');
-        $orderDate  = $date->format($dateFormat, true);
+        // Order date. DateHelper carries the store timezone and this copy's language, so the
+        // day and month names land in the same language as the status and country beside them.
+        $orderDate = DateHelper::format($order->created_on ?? 'now', null, $language);
 
         // Get order info
         $orderInfo   = $this->getOrderInfo($order);
@@ -846,7 +843,7 @@ class EmailHelper
             '[SUBTOTAL]'                  => CurrencyHelper::format((float) ($order->order_subtotal ?? 0), $order->currency_code ?? '', (float) ($order->currency_value ?? 1)),
             '[ORDER_EXTRA_ROWS]'          => $extraRowsHtml,
             '[TOTALS]'                    => str_contains($text, '[TOTALS]') ? $this->buildTotalsTable($order, $orderExtraRows, $language) : '',
-            '[CURRENT_YEAR]'              => date('Y'),
+            '[CURRENT_YEAR]'              => DateHelper::currentYear($language),
             '[ITEMS]'                     => $items,
             '[PACKING_ITEMS]'             => $this->loadPackingItemsTemplate($order, $language),
         ];

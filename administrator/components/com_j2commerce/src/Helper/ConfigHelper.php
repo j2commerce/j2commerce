@@ -15,6 +15,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Component\ComponentHelper;
+use Joomla\CMS\Language\Language;
 use Joomla\Registry\Registry;
 
 class ConfigHelper
@@ -334,16 +335,10 @@ class ConfigHelper
         return (int) self::get('j2commerce_enable_css', 1) === 1;
     }
 
-    /**
-     * Get the date format string
-     *
-     * @return  string  PHP date format string
-     *
-     * @since   6.0.0
-     */
-    public static function getDateFormat(): string
+    /** Resolves a `DATE_FORMAT_*` language key as well as a literal format string. */
+    public static function getDateFormat(?Language $language = null): string
     {
-        return (string) self::get('date_format', 'Y-m-d');
+        return DateHelper::resolveFormat((string) self::get('date_format', 'Y-m-d'), $language);
     }
 
     /**
