@@ -2390,6 +2390,10 @@ class CartOrder
             OrderHelper::normalizeOrderItemRow($row, $baseline);
 
             $db->insertObject('#__j2commerce_orderitems', $row, 'j2commerce_orderitem_id');
+
+            // Fires once the row is persisted and carries its real j2commerce_orderitem_id,
+            // for extensions that need the finished record rather than the pre-insert draft.
+            J2CommerceHelper::plugin()->event('AfterAddOrderItem', [&$row, $item]);
         }
     }
 
