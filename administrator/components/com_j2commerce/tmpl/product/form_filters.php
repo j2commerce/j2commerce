@@ -66,7 +66,7 @@ $ajaxBase = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
             <div class="text-end">
                 <span class="me-1"><?php echo $item->productfilter_pagination->total ?? 0; ?></span><?php echo Text::_('COM_J2COMMERCE_PRODUCT_FILTERS'); ?>
             </div>
-            <div id="filterNav" class="pagination pagination-toolbar text-center mt-0 mx-0">
+            <div id="j2commerce_filterNav" class="pagination pagination-toolbar text-center mt-0 mx-0">
                 <ul class="pagination pagination-list text-center ms-auto me-0"></ul>
             </div>
         `;
@@ -79,7 +79,7 @@ $ajaxBase = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
     });
 
     function createFilterFooterList(numPages){
-        var paginationList = document.querySelector('#filterNav .pagination-list');
+        var paginationList = document.querySelector('#j2commerce_filterNav .pagination-list');
         if (!paginationList) {
             console.error("Pagination list element not found!");
             return;
@@ -98,7 +98,7 @@ $ajaxBase = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
             link.setAttribute('rel', i);
             link.textContent = pageNum;
             link.addEventListener('click', function () {
-                var paginationItems = document.querySelectorAll('#filterNav .pagination-list li');
+                var paginationItems = document.querySelectorAll('#j2commerce_filterNav .pagination-list li');
                 paginationItems.forEach(function (item) {
                     item.classList.remove('active');
                 });
@@ -205,7 +205,7 @@ $ajaxBase = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
                 }
 
                 // Add the notification message
-                var productFiltersTable = document.getElementById('product_filters_table');
+                var productFiltersTable = document.getElementById('j2commerce_product_filters_table');
                 if (productFiltersTable) {
                     var notificationDiv = document.createElement('div');
                     notificationDiv.className = 'j2notify alert alert-block';

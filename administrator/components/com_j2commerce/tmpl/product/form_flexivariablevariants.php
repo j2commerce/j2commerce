@@ -40,7 +40,7 @@ $ajaxBase   = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
     <fieldset class="options-form">
         <legend><?php echo Text::_('COM_J2COMMERCE_PRODUCT_VARIANTS');?></legend>
 
-        <div id="variant_add_block" class="mb-3">
+        <div id="j2commerce_variant_add_block" class="mb-3">
             <input type="hidden" name="flexi_product_id" value="<?php echo $item->j2commerce_product_id;?>"/>
             <?php if(isset($item->product_options) && !empty($item->product_options)):?>
                 <div class="input-group">
@@ -58,22 +58,22 @@ $ajaxBase   = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
                 </div>
             <?php endif;?>
         </div>
-        <div id="variant_display_block">
+        <div id="j2commerce_variant_display_block">
             <?php if(isset($item->variants) && count($item->variants)):?>
                 <div class="d-flex justify-content-start align-items-center mb-3">
                     <div class="form-check pt-0 me-2">
-                        <input class="form-check-input" type="checkbox" value="" id="toggleAllCheckboxes">
+                        <input class="form-check-input" type="checkbox" value="" id="j2commerce_toggleAllCheckboxes">
                     </div>
-                    <button type="button" class="btn btn-soft-danger btn-sm me-2" id="deleteCheckedVariants" data-bs-toggle="tooltip" title="<?php echo Text::_('COM_J2COMMERCE_PRODUCT_VARIANTS_DELETE_CHECKED');?>" disabled>
+                    <button type="button" class="btn btn-soft-danger btn-sm me-2" id="j2commerce_deleteCheckedVariants" data-bs-toggle="tooltip" title="<?php echo Text::_('COM_J2COMMERCE_PRODUCT_VARIANTS_DELETE_CHECKED');?>" disabled>
                         <span class="fas fa-solid fa-trash" aria-hidden="true"></span>
                     </button>
                     <button type="button" onclick="removeFlexiAllVariant(event);" class="btn btn-sm btn-soft-danger" id="deleteAllVariantsBtn">
                         <span class="fas fa-solid fa-trash me-2" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_DELETE_ALL_VARIANTS');?>
                     </button>
-                    <button type="button" id="openAll-panel" class="btn btn-soft-dark btn-sm ms-auto" onclick="setExpandAll();" data-bs-toggle="tooltip" title="<?php echo Text::_('COM_J2COMMERCE_OPEN_ALL');?>">
+                    <button type="button" id="j2commerce_openAll-panel" class="btn btn-soft-dark btn-sm ms-auto" onclick="setExpandAll();" data-bs-toggle="tooltip" title="<?php echo Text::_('COM_J2COMMERCE_OPEN_ALL');?>">
                         <span class="fas fa-solid fa-chevron-down" aria-hidden="true"></span>
                     </button>
-                    <button type="button" id="closeAll-panel" class="btn btn-soft-dark btn-sm ms-2" onclick="setCloseAll();" data-bs-toggle="tooltip" title="<?php echo Text::_('COM_J2COMMERCE_CLOSE_ALL');?>">
+                    <button type="button" id="j2commerce_closeAll-panel" class="btn btn-soft-dark btn-sm ms-2" onclick="setCloseAll();" data-bs-toggle="tooltip" title="<?php echo Text::_('COM_J2COMMERCE_CLOSE_ALL');?>">
                         <span class="fas fa-solid fa-chevron-up" aria-hidden="true"></span>
                     </button>
                 </div>
@@ -86,7 +86,7 @@ $ajaxBase   = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
             $variantTotal = (int) ($item->variant_pagination->total ?? 0);
             ?>
             <div class="j2commerce-advancedvariants-settings j2commerce-advancedvariants-settings">
-                <div class="accordion" id="accordion"
+                <div class="accordion" id="j2commerce_variants_accordion"
                      data-variant-total="<?php echo $variantTotal; ?>"
                      data-variant-deferred="<?php echo $variantTotal > 0 ? '1' : '0'; ?>">
                     <?php if ($variantTotal > 0) : ?>
@@ -204,7 +204,7 @@ $ajaxBase   = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
          * Show/hide the variant toolbar based on variant count
          */
         updateToolbarVisibility: function(total) {
-            var toolbar = document.querySelector('#variant_display_block > .d-flex');
+            var toolbar = document.querySelector('#j2commerce_variant_display_block > .d-flex');
             if (toolbar) {
                 toolbar.style.display = total > 0 ? 'flex' : 'none';
             }
@@ -214,7 +214,7 @@ $ajaxBase   = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
          * Setup pagination
          */
         setupPagination: function() {
-            var accordion = document.getElementById('accordion');
+            var accordion = document.getElementById('j2commerce_variants_accordion');
             if (!accordion) return;
 
             var paginationWrapper = accordion.parentNode.querySelector('.j2commerce-variant-pagination');
@@ -328,7 +328,7 @@ $ajaxBase   = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
 
         loadVariantList: function(limitstart) {
             limitstart = limitstart || 0;
-            var accordion = document.getElementById('accordion');
+            var accordion = document.getElementById('j2commerce_variants_accordion');
             if (!accordion) return;
 
             this.config.currentPage = Math.floor(limitstart / this.config.limit) + 1;
@@ -386,7 +386,7 @@ $ajaxBase   = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
          * Add a new variant via AJAX
          */
         addVariant: function() {
-            var addBlock = document.getElementById('variant_add_block');
+            var addBlock = document.getElementById('j2commerce_variant_add_block');
             var addBtn = addBlock ? addBlock.querySelector('button') : null;
             if (!addBlock) return;
 
@@ -511,7 +511,7 @@ $ajaxBase   = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
             .then(function(response) { return response.json(); })
             .then(function(data) {
                 if (data.success) {
-                    var accordion = document.getElementById('accordion');
+                    var accordion = document.getElementById('j2commerce_variants_accordion');
                     if (accordion) {
                         self.showEmptyNotice(accordion);
                     }
@@ -545,7 +545,7 @@ $ajaxBase   = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
                 return;
             }
 
-            var deleteBtn = document.getElementById('deleteCheckedVariants');
+            var deleteBtn = document.getElementById('j2commerce_deleteCheckedVariants');
             this.setButtonLoading(deleteBtn, true);
 
             var variantIds = Array.from(checkedVariants).map(function(cb) { return cb.value; });
@@ -595,7 +595,7 @@ $ajaxBase   = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
          * Setup checkbox event handlers
          */
         setupCheckboxHandlers: function() {
-            var toggleAll = document.getElementById('toggleAllCheckboxes');
+            var toggleAll = document.getElementById('j2commerce_toggleAllCheckboxes');
             if (!toggleAll) return;
 
             var self = this;
@@ -617,8 +617,8 @@ $ajaxBase   = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
          */
         updateCheckboxState: function() {
             var checkboxes = document.querySelectorAll('input[name="vid[]"]');
-            var toggleAll = document.getElementById('toggleAllCheckboxes');
-            var deleteBtn = document.getElementById('deleteCheckedVariants');
+            var toggleAll = document.getElementById('j2commerce_toggleAllCheckboxes');
+            var deleteBtn = document.getElementById('j2commerce_deleteCheckedVariants');
 
             var anyChecked = Array.from(checkboxes).some(function(cb) { return cb.checked; });
             var allChecked = checkboxes.length > 0 && Array.from(checkboxes).every(function(cb) { return cb.checked; });
@@ -637,7 +637,7 @@ $ajaxBase   = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
          * Setup delete checked button handler
          */
         setupDeleteCheckedHandler: function() {
-            var deleteBtn = document.getElementById('deleteCheckedVariants');
+            var deleteBtn = document.getElementById('j2commerce_deleteCheckedVariants');
             if (!deleteBtn) return;
 
             var self = this;
@@ -682,7 +682,7 @@ $ajaxBase   = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
 
             // The panel ships a skeleton, not the rows; fetch page 1 through the path
             // pagination already uses.
-            var accordion = document.getElementById('accordion');
+            var accordion = document.getElementById('j2commerce_variants_accordion');
             if (accordion && accordion.dataset.variantDeferred === '1') {
                 this.loadVariantList(0);
             }

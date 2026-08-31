@@ -52,9 +52,9 @@ $ajaxBase    = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
 
             <div class="<?php echo $hasVariants ? 'd-flex' : 'd-none'; ?> justify-content-start align-items-center mb-3" id="j2commerce-variant-toolbar">
                 <div class="form-check pt-0 me-2">
-                    <input class="form-check-input" type="checkbox" value="" id="toggleAllCheckboxes">
+                    <input class="form-check-input" type="checkbox" value="" id="j2commerce_toggleAllCheckboxes">
                 </div>
-                <button type="button" class="btn btn-soft-danger btn-sm me-2" id="deleteCheckedVariants"
+                <button type="button" class="btn btn-soft-danger btn-sm me-2" id="j2commerce_deleteCheckedVariants"
                         data-bs-toggle="tooltip" title="<?php echo Text::_('COM_J2COMMERCE_PRODUCT_VARIANTS_DELETE_CHECKED'); ?>"
                         disabled>
                     <span class="fas fa-solid fa-trash" aria-hidden="true"></span>
@@ -71,12 +71,12 @@ $ajaxBase    = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
                     <span class="fas fa-solid fa-trash me-2" aria-hidden="true"></span>
                     <?php echo Text::_('COM_J2COMMERCE_DELETE_ALL_VARIANTS'); ?>
                 </button>
-                <button type="button" id="openAll-panel" class="btn btn-soft-dark btn-sm ms-auto"
+                <button type="button" id="j2commerce_openAll-panel" class="btn btn-soft-dark btn-sm ms-auto"
                         onclick="setExpandAll();"
                         data-bs-toggle="tooltip" title="<?php echo Text::_('COM_J2COMMERCE_OPEN_ALL'); ?>">
                     <span class="fas fa-solid fa-chevron-down" aria-hidden="true"></span>
                 </button>
-                <button type="button" id="closeAll-panel" class="btn btn-soft-dark btn-sm ms-2"
+                <button type="button" id="j2commerce_closeAll-panel" class="btn btn-soft-dark btn-sm ms-2"
                         onclick="setCloseAll();"
                         data-bs-toggle="tooltip" title="<?php echo Text::_('COM_J2COMMERCE_CLOSE_ALL'); ?>">
                     <span class="fas fa-solid fa-chevron-up" aria-hidden="true"></span>
@@ -100,7 +100,7 @@ $ajaxBase    = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
         $variantTotal = (int) ($item->variant_pagination->total ?? 0);
         ?>
         <div class="j2commerce-advancedvariants-settings">
-            <div class="accordion" id="accordion"
+            <div class="accordion" id="j2commerce_variants_accordion"
                  data-variant-total="<?php echo $variantTotal; ?>"
                  data-variant-deferred="<?php echo $variantTotal > 0 ? '1' : '0'; ?>">
                 <?php if ($variantTotal > 0) : ?>
@@ -322,7 +322,7 @@ $ajaxBase    = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
                         }
 
                         if (document.querySelectorAll('.variant-item').length === 0) {
-                            var accordion = document.getElementById('accordion');
+                            var accordion = document.getElementById('j2commerce_variants_accordion');
                             if (accordion) {
                                 var emptyNotice = document.createElement('div');
                                 emptyNotice.className = 'alert alert-info';
@@ -414,7 +414,7 @@ $ajaxBase    = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
         },
 
         setupPagination: function () {
-            var accordion = document.getElementById('accordion');
+            var accordion = document.getElementById('j2commerce_variants_accordion');
             if (!accordion) return;
 
             var paginationWrapper = accordion.parentNode.querySelector('.j2commerce-variant-pagination');
@@ -523,7 +523,7 @@ $ajaxBase    = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
 
         loadVariantList: function (limitstart) {
             limitstart = limitstart || 0;
-            var accordion = document.getElementById('accordion');
+            var accordion = document.getElementById('j2commerce_variants_accordion');
             if (!accordion) return;
 
             this.config.currentPage = Math.floor(limitstart / this.config.limit) + 1;
@@ -664,7 +664,7 @@ $ajaxBase    = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
                 .then(function (data) {
                     if (data.success) {
                         self.cleanupAllVariantSyncInputs();
-                        var accordion = document.getElementById('accordion');
+                        var accordion = document.getElementById('j2commerce_variants_accordion');
                         if (accordion) {
                             self.showEmptyNotice(accordion);
                         }
@@ -694,7 +694,7 @@ $ajaxBase    = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
                 return;
             }
 
-            var deleteBtn = document.getElementById('deleteCheckedVariants');
+            var deleteBtn = document.getElementById('j2commerce_deleteCheckedVariants');
             this.setButtonLoading(deleteBtn, true);
 
             var variantIds = Array.from(checkedVariants).map(function (cb) { return cb.value; });
@@ -738,7 +738,7 @@ $ajaxBase    = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
         },
 
         setupCheckboxHandlers: function () {
-            var toggleAll = document.getElementById('toggleAllCheckboxes');
+            var toggleAll = document.getElementById('j2commerce_toggleAllCheckboxes');
             if (!toggleAll) return;
 
             var self = this;
@@ -755,8 +755,8 @@ $ajaxBase    = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
 
         updateCheckboxState: function () {
             var checkboxes = document.querySelectorAll('input[name="vid[]"]');
-            var toggleAll  = document.getElementById('toggleAllCheckboxes');
-            var deleteBtn  = document.getElementById('deleteCheckedVariants');
+            var toggleAll  = document.getElementById('j2commerce_toggleAllCheckboxes');
+            var deleteBtn  = document.getElementById('j2commerce_deleteCheckedVariants');
 
             var anyChecked = Array.from(checkboxes).some(function (cb) { return cb.checked; });
             var allChecked = checkboxes.length > 0 && Array.from(checkboxes).every(function (cb) { return cb.checked; });
@@ -799,7 +799,7 @@ $ajaxBase    = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
 
             var self = this;
 
-            var deleteBtn = document.getElementById('deleteCheckedVariants');
+            var deleteBtn = document.getElementById('j2commerce_deleteCheckedVariants');
             if (deleteBtn) {
                 deleteBtn.addEventListener('click', function (e) {
                     e.preventDefault();
@@ -833,7 +833,7 @@ $ajaxBase    = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
 
             // The panel ships a skeleton, not the rows; fetch page 1 through the path
             // pagination already uses.
-            var accordion = document.getElementById('accordion');
+            var accordion = document.getElementById('j2commerce_variants_accordion');
             if (accordion && accordion.dataset.variantDeferred === '1') {
                 this.loadVariantList(0);
             }

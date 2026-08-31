@@ -91,7 +91,7 @@ $textFieldDefaults = ['value' => '', 'onchange' => '', 'disabled' => false, 'rea
                     <th scope="col" class="text-center w-1"><?php echo Text::_('COM_J2COMMERCE_REMOVE');?></th>
                 </tr>
                 </thead>
-                <tbody id="addedProductUpsell">
+                <tbody id="j2commerce_addedProductUpsell">
                 <?php
                 if(isset($item->up_sells) && !empty($item->up_sells)):
                     $upsells = J2CommerceHelper::product()->getRelatedProducts($item->up_sells);
@@ -137,7 +137,7 @@ $textFieldDefaults = ['value' => '', 'onchange' => '', 'disabled' => false, 'rea
                     <th scope="col" class="text-center w-1"><?php echo Text::_('COM_J2COMMERCE_REMOVE');?></th>
                 </tr>
                 </thead>
-                <tbody id="addedProductCrosssell">
+                <tbody id="j2commerce_addedProductCrosssell">
                 <?php if(isset($item->cross_sells) && !empty($item->cross_sells)):
                     $crosssells = J2CommerceHelper::product()->getRelatedProducts($item->cross_sells);
 
@@ -314,10 +314,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Setup autocomplete for upsells
-    setupRelatedProductAutocomplete('J2CommerceupsellSelector', 'addedProductUpsell', 'upSell', 'up_sells');
+    setupRelatedProductAutocomplete('J2CommerceupsellSelector', 'j2commerce_addedProductUpsell', 'upSell', 'up_sells');
 
     // Setup autocomplete for cross-sells
-    setupRelatedProductAutocomplete('J2CommercecrossSellSelector', 'addedProductCrosssell', 'crossSell', 'cross_sells');
+    setupRelatedProductAutocomplete('J2CommercecrossSellSelector', 'j2commerce_addedProductCrosssell', 'crossSell', 'cross_sells');
 });
 
 /**

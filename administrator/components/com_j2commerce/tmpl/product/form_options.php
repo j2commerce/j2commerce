@@ -62,7 +62,7 @@ $csrfToken = \Joomla\CMS\Session\Session::getFormToken();
 
         <?php else : ?>
             <div class="table-responsive">
-                <table id="attribute_options_table" class="table itemList align-middle j2commerce">
+                <table id="j2commerce_attribute_options_table" class="table itemList align-middle j2commerce">
                     <thead>
                     <tr>
                         <th scope="col"><?php echo Text::_('COM_J2COMMERCE_OPTION_NAME');?></th>
@@ -103,7 +103,7 @@ $csrfToken = \Joomla\CMS\Session\Session::getFormToken();
                                 <td class="text-end">
                                     <span class="optionRemove btn btn-danger btn-sm"
                                           data-option-id="<?php echo $poption->j2commerce_productoption_id;?>"
-                                          data-product-type="<?php echo $item->product_type;?>"
+                                          data-product-type="<?php echo htmlspecialchars($item->product_type ?? '', ENT_QUOTES, 'UTF-8');?>"
                                           role="button" title="<?php echo Text::_('COM_J2COMMERCE_OPTION_REMOVE');?>">
                                         <span class="icon icon-trash"></span>
                                     </span>
@@ -116,11 +116,11 @@ $csrfToken = \Joomla\CMS\Session\Session::getFormToken();
                         <td colspan="4">
                             <div class="control-group align-items-center mt-4">
                                 <div class="control-label">
-                                    <label id="option_select_id-lbl" for="option_select_id"><?php echo Text::_('COM_J2COMMERCE_SEARCH_AND_ADD_VARIANT_OPTION');?></label>
+                                    <label id="j2commerce_option_select_id-lbl" for="j2commerce_option_select_id"><?php echo Text::_('COM_J2COMMERCE_SEARCH_AND_ADD_VARIANT_OPTION');?></label>
                                 </div>
                                 <div class="controls">
                                     <div class="input-group">
-                                        <select name="option_select_id" id="option_select_id" class="form-select">
+                                        <select name="option_select_id" id="j2commerce_option_select_id" class="form-select">
                                             <?php foreach ($productOptionList as $option_list):
                                                 $optionLabel = $option_list->option_name . ' (' . $option_list->option_unique_name . ')';
                                                 $optionAssigned = isset($assignedOptionIds[(int) $option_list->j2commerce_option_id]);
@@ -175,7 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const formPrefix = '<?php echo $formPrefix; ?>';
     let optionKey = <?php echo $key; ?>;
     const csrfToken = '<?php echo $csrfToken; ?>';
-    const optionSelect = document.getElementById('option_select_id');
+    const optionSelect = document.getElementById('j2commerce_option_select_id');
     const optionNotice = document.getElementById('j2commerce-option-notice');
     const addOptionBtn = document.getElementById('j2commerce-add-option-btn');
     const addedLabelFormat = <?php echo json_encode(Text::_('COM_J2COMMERCE_OPTION_LABEL_ALREADY_ADDED')); ?>;
@@ -206,7 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!optionSelect) return;
 
         const usedIds = new Set(
-            Array.from(document.querySelectorAll('#attribute_options_table input[name$="[option_id]"]'))
+            Array.from(document.querySelectorAll('#j2commerce_attribute_options_table input[name$="[option_id]"]'))
                 .map(input => input.value)
         );
 
@@ -274,7 +274,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Rows are keyed by record id when rendered by the server and by a counter when
             // added here, so the option is matched on the value it carries rather than the key.
             const alreadyAdded = Array.from(
-                document.querySelectorAll('#attribute_options_table input[name$="[option_id]"]')
+                document.querySelectorAll('#j2commerce_attribute_options_table input[name$="[option_id]"]')
             ).some(input => input.value === optionValue);
             if (alreadyAdded) {
                 showOptionNotice(<?php echo json_encode(Text::_('COM_J2COMMERCE_OPTION_ALREADY_ADDED')); ?>);

@@ -214,7 +214,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Show button when there are option rows in the table (excluding the "add options" row)
         // AND the variant_add_block has no dropdowns (options not yet saved to DB)
         const optionRows = document.querySelectorAll('#flexivariable_options_table tbody tr:not(.j2commerce_a_options)');
-        const variantAddBlock = document.getElementById('variant_add_block');
+        const variantAddBlock = document.getElementById('j2commerce_variant_add_block');
         const hasDropdowns = variantAddBlock && variantAddBlock.querySelector('select[name^="variant_combin"]');
 
         if (optionRows.length > 0 && !hasDropdowns) {
@@ -413,7 +413,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
 
                     // Update the variant_add_block with the returned HTML
-                    const variantAddBlock = document.getElementById('variant_add_block');
+                    const variantAddBlock = document.getElementById('j2commerce_variant_add_block');
                     if (variantAddBlock && result.variant_add_block_html) {
                         J2CommerceDom.adopt(variantAddBlock, result.variant_add_block_html);
                     }
