@@ -2682,13 +2682,21 @@ class ProductsController extends AdminController
         $db->setQuery($query);
         $variantIds = $db->loadColumn() ?: [];
 
-        // Delete mapping entries for these variants
+        // Delete everything these variants own, matching deleteSingleVariant()
         if (!empty($variantIds)) {
-            $query = $db->getQuery(true)
-                ->delete($db->quoteName('#__j2commerce_product_variant_optionvalues'))
-                ->whereIn($db->quoteName('variant_id'), ArrayHelper::toInteger($variantIds));
-            $db->setQuery($query);
-            $db->execute();
+            $ids = ArrayHelper::toInteger($variantIds);
+
+            foreach ([
+                '#__j2commerce_product_variant_optionvalues',
+                '#__j2commerce_productquantities',
+                '#__j2commerce_product_prices',
+            ] as $childTable) {
+                $query = $db->getQuery(true)
+                    ->delete($db->quoteName($childTable))
+                    ->whereIn($db->quoteName('variant_id'), $ids);
+                $db->setQuery($query);
+                $db->execute();
+            }
         }
 
         // Delete all existing non-master variants

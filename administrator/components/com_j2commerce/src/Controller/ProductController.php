@@ -22,6 +22,7 @@ use Joomla\CMS\MVC\Controller\FormController;
 use Joomla\CMS\Router\Route;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
+use Joomla\Utilities\ArrayHelper;
 
 /**
  * Product item controller class.
@@ -550,7 +551,7 @@ class ProductController extends FormController
         $db = Factory::getContainer()->get(DatabaseInterface::class);
 
         try {
-            // 1. Delete product_variant_optionvalues for non-master variants
+            // 1. Delete everything the non-master variants own
             $subQuery = $db->getQuery(true)
                 ->select($db->quoteName('j2commerce_variant_id'))
                 ->from($db->quoteName('#__j2commerce_variants'))
@@ -562,11 +563,19 @@ class ProductController extends FormController
             $variantIds = $db->loadColumn();
 
             if (!empty($variantIds)) {
-                $query = $db->getQuery(true)
-                    ->delete($db->quoteName('#__j2commerce_product_variant_optionvalues'))
-                    ->whereIn($db->quoteName('variant_id'), $variantIds);
-                $db->setQuery($query);
-                $db->execute();
+                $ids = ArrayHelper::toInteger($variantIds);
+
+                foreach ([
+                    '#__j2commerce_product_variant_optionvalues',
+                    '#__j2commerce_productquantities',
+                    '#__j2commerce_product_prices',
+                ] as $childTable) {
+                    $query = $db->getQuery(true)
+                        ->delete($db->quoteName($childTable))
+                        ->whereIn($db->quoteName('variant_id'), $ids);
+                    $db->setQuery($query);
+                    $db->execute();
+                }
             }
 
             // 2. Delete product_optionvalues via product_options
