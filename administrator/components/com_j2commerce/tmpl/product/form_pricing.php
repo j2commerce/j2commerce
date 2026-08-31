@@ -71,7 +71,7 @@ $link = $base_path . '/index.php?option=com_j2commerce&view=productprice&layout=
 
             <div class="control-group align-items-center">
                 <div class="control-label">
-                    <label id="j2commerce-product-price-field-lbl" for="j2commerce-product-price-field"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_SET_ADVANCED_PRICING');?></label>
+                    <span class="d-inline-block"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_SET_ADVANCED_PRICING');?></span>
                 </div>
                 <div class="controls">
                     <a href="<?php echo $link; ?>" class="btn btn-primary" rel="noopener noreferrer" data-bs-toggle="modal" data-bs-target="#priceModal">

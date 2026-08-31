@@ -48,12 +48,10 @@ $wa->registerAndUseScript(
 ?>
 
 <div class="header-item-content header-profile">
-    <button class="d-flex align-items-center ps-0 py-0 border-0 bg-transparent"
+    <button class="d-flex align-items-center ps-0 py-0 border-0 bg-transparent j2commerce-offcanvas-toggle"
             data-bs-toggle="offcanvas"
-            data-bs-target="#j2commerceOffcanvas"
             type="button"
-            title="<?php echo Text::_('COM_J2COMMERCE'); ?>"
-            aria-controls="j2commerceOffcanvas">
+            title="<?php echo Text::_('COM_J2COMMERCE'); ?>">
         <div class="header-item-icon">
             <span class="fa-solid fa-cart-shopping" aria-hidden="true"></span>
         </div>
@@ -63,17 +61,17 @@ $wa->registerAndUseScript(
     </button>
 </div>
 
-<div class="offcanvas offcanvas-end sidebar-wrapper" tabindex="-1" id="j2commerceOffcanvas"
-     aria-labelledby="j2commerceOffcanvasLabel">
+<div class="offcanvas offcanvas-end sidebar-wrapper j2commerce-offcanvas" tabindex="-1"
+     aria-label="<?php echo Text::_('COM_J2COMMERCE'); ?>">
     <div class="offcanvas-header">
-        <h5 class="offcanvas-title d-flex align-items-center gap-2" id="j2commerceOffcanvasLabel">
+        <h5 class="offcanvas-title d-flex align-items-center gap-2">
             <span class="fa-solid fa-cart-shopping" aria-hidden="true"></span>
             <?php echo Text::_('COM_J2COMMERCE'); ?>
         </h5>
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="<?php echo Text::_('JCLOSE'); ?>"></button>
     </div>
     <div class="offcanvas-body p-0">
-        <ul id="j2commerceNav" class="nav flex-column j2c-nav">
+        <ul class="nav flex-column j2c-nav j2commerce-nav">
             <?php foreach ($menuItems as $idx => $item) : ?>
                 <?php if (!empty($item['children'])) : ?>
                     <?php $isExpanded = ($activeSection === $idx); ?>

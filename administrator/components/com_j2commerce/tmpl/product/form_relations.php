@@ -102,10 +102,10 @@ $textFieldDefaults = ['value' => '', 'onchange' => '', 'disabled' => false, 'rea
                             <tr id="upSell-<?php echo $related_product->j2commerce_product_id;?>">
                                 <td class="addedProductUpsell">
                                     <?php if(Factory::getApplication()->isClient('site')):?>
-                                        <?php echo isset($related_product->sku) && !empty($related_product->sku) ? $this->escape($related_product->product_name)." (".$this->escape($related_product->sku).")" : $related_product->product_name;?>
+                                        <?php echo isset($related_product->sku) && !empty($related_product->sku) ? $this->escape($related_product->product_name)." (".$this->escape($related_product->sku).")" : $this->escape($related_product->product_name);?>
                                     <?php else: ?>
                                         <a href="<?php echo $related_product->product_edit_url; ?>" target="_blank">
-                                            <?php echo isset($related_product->sku) && !empty($related_product->sku) ? $this->escape($related_product->product_name)." (".$this->escape($related_product->sku).")" : $related_product->product_name;?>
+                                            <?php echo isset($related_product->sku) && !empty($related_product->sku) ? $this->escape($related_product->product_name)." (".$this->escape($related_product->sku).")" : $this->escape($related_product->product_name);?>
                                         </a>
                                     <?php endif; ?>
                                     <input type="hidden" value="<?php echo $related_product->j2commerce_product_id;?>"  name="<?php echo $formPrefix.'[up_sells]' ;?>[<?php echo $related_product->j2commerce_product_id;?>]" />
@@ -178,7 +178,7 @@ $textFieldDefaults = ['value' => '', 'onchange' => '', 'disabled' => false, 'rea
 <script type="text/javascript">
 document.addEventListener('DOMContentLoaded', function() {
     var productId = <?php echo (int) $item->j2commerce_product_id; ?>;
-    var formPrefix = '<?php echo $formPrefix; ?>';
+    var formPrefix = <?php echo json_encode($formPrefix, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
 
     /**
      * Setup autocomplete for related products (upsells/cross-sells)
@@ -266,25 +266,34 @@ document.addEventListener('DOMContentLoaded', function() {
                             var value = this.dataset.value;
                             var label = this.dataset.label;
 
-                            // Escape label for safe HTML insertion
-                            var escapedLabel = label.replace(/&/g, '&amp;')
-                                                    .replace(/</g, '&lt;')
-                                                    .replace(/>/g, '&gt;')
-                                                    .replace(/"/g, '&quot;')
-                                                    .replace(/'/g, '&#039;');
-
-                            // Create new row
                             var newRow = document.createElement('tr');
                             newRow.id = rowPrefix + '-' + value;
-                            newRow.innerHTML = '<td class="addedProduct' + rowPrefix.charAt(0).toUpperCase() + rowPrefix.slice(1) + '">' +
-                                escapedLabel +
-                                '<input type="hidden" value="' + value + '" name="' + formPrefix + '[' + fieldName + '][' + value + ']" />' +
-                                '</td>' +
-                                '<td class="text-center">' +
-                                '<a href="javascript:void(0);" onclick="removeThisRelatedRow(\'' + rowPrefix + '\',' + value + ')">' +
-                                '<span class="icon icon-trash text-danger"></span>' +
-                                '</a>' +
-                                '</td>';
+
+                            var nameCell = document.createElement('td');
+                            nameCell.className = 'addedProduct' + rowPrefix.charAt(0).toUpperCase() + rowPrefix.slice(1);
+                            nameCell.textContent = label;
+
+                            var hidden = document.createElement('input');
+                            hidden.type = 'hidden';
+                            hidden.value = value;
+                            hidden.name = formPrefix + '[' + fieldName + '][' + value + ']';
+                            nameCell.appendChild(hidden);
+
+                            var actionCell = document.createElement('td');
+                            actionCell.className = 'text-center';
+
+                            var remove = document.createElement('a');
+                            remove.href = 'javascript:void(0);';
+                            remove.addEventListener('click', function () {
+                                removeThisRelatedRow(rowPrefix, value);
+                            });
+
+                            var icon = document.createElement('span');
+                            icon.className = 'icon icon-trash text-danger';
+                            remove.appendChild(icon);
+                            actionCell.appendChild(remove);
+
+                            newRow.replaceChildren(nameCell, actionCell);
 
                             document.getElementById(tbodyId).appendChild(newRow);
                             input.value = '';

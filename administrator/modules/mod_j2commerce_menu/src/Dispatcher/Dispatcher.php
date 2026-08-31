@@ -40,7 +40,9 @@ class Dispatcher extends AbstractModuleDispatcher
         $wa = $this->getApplication()->getDocument()->getWebAssetManager();
         $wa->useScript('metismenujs');
 
-        HTMLHelper::_('bootstrap.offcanvas', '#j2commerceOffcanvas');
+        // No selector: Atum echoes this module twice, so the panel ids are assigned
+        // client-side in mod-menu.js and Bootstrap's delegated data-api opens them.
+        HTMLHelper::_('bootstrap.offcanvas');
 
         parent::dispatch();
     }

@@ -119,7 +119,7 @@ $csrfToken = \Joomla\CMS\Session\Session::getFormToken();
                                 <td class="text-end">
                                     <span class="optionRemove btn btn-danger btn-sm"
                                           data-option-id="<?php echo $poption->j2commerce_productoption_id; ?>"
-                                          data-product-type="<?php echo $item->product_type; ?>"
+                                          data-product-type="<?php echo htmlspecialchars($item->product_type ?? '', ENT_QUOTES, 'UTF-8'); ?>"
                                           role="button" title="<?php echo Text::_('COM_J2COMMERCE_OPTION_REMOVE'); ?>">
                                         <span class="icon icon-trash"></span>
                                     </span>
