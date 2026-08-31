@@ -683,71 +683,66 @@ class ProductsController extends AdminController
         // Remove zero values resulting from input filter
         $cid = array_filter($cid);
 
+        $redirect = Route::_('index.php?option=' . $this->option . '&view=' . $this->view_list, false);
+
         if (empty($cid)) {
             $this->app->getLogger()->warning(Text::_($this->text_prefix . '_NO_ITEM_SELECTED'), ['category' => 'jerror']);
-        } else {
-            // Get the article IDs for the selected products
-            $db    = Factory::getContainer()->get('DatabaseDriver');
-            $query = $db->getQuery(true);
+            $this->setRedirect($redirect);
 
-            $query->select($db->quoteName('product_source_id'))
-                ->from($db->quoteName('#__j2commerce_products'))
-                ->whereIn($db->quoteName('j2commerce_product_id'), $cid);
+            return;
+        }
 
-            $db->setQuery($query);
-            $articleIds = $db->loadColumn();
+        $articleIds = $this->resolveArticleIds($cid, $skipped);
 
-            // Filter out null/empty article IDs
-            $articleIds = array_filter($articleIds);
+        if ($skipped > 0) {
+            $this->app->enqueueMessage(
+                Text::sprintf('COM_J2COMMERCE_BATCH_SKIPPED_NON_ARTICLE_PRODUCTS', $skipped),
+                CMSWebApplicationInterface::MSG_WARNING
+            );
+        }
 
-            if (!empty($articleIds)) {
-                // Update the content table directly
-                $user      = $this->app->getIdentity();
-                $canChange = $user->authorise('core.edit.state', 'com_content');
+        $user = $this->app->getIdentity();
 
-                if ($canChange) {
-                    try {
-                        $updateQuery = $db->getQuery(true);
-                        $updateQuery->update($db->quoteName('#__content'))
-                            ->set($db->quoteName('state') . ' = :state')
-                            ->whereIn($db->quoteName('id'), $articleIds)
-                            ->bind(':state', $value, ParameterType::INTEGER);
-
-                        $db->setQuery($updateQuery);
-                        $db->execute();
-
-                        $ntext = null;
-                        if ($value === 1) {
-                            $ntext = $this->text_prefix . '_N_ITEMS_PUBLISHED';
-                        } elseif ($value === 0) {
-                            $ntext = $this->text_prefix . '_N_ITEMS_UNPUBLISHED';
-                        } elseif ($value === 2) {
-                            $ntext = $this->text_prefix . '_N_ITEMS_ARCHIVED';
-                        } else {
-                            $ntext = $this->text_prefix . '_N_ITEMS_TRASHED';
-                        }
-
-                        if (\count($cid)) {
-                            $this->setMessage(Text::plural($ntext, \count($cid)));
-                        }
-                    } catch (\Exception $e) {
-                        Log::add('products.publish failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
-                        $this->setMessage(Text::_('COM_J2COMMERCE_ERR_GENERIC'), 'error');
-                    }
-                } else {
-                    $this->app->enqueueMessage(Text::_('JLIB_APPLICATION_ERROR_EDITSTATE_NOT_PERMITTED'), CMSWebApplicationInterface::MSG_ERROR);
-                }
-            } else {
-                $this->app->enqueueMessage(Text::_('COM_J2COMMERCE_NO_ARTICLE_LINKED'), CMSWebApplicationInterface::MSG_WARNING);
+        // Authority over com_j2commerce is not authority over com_content, and a per-category
+        // or per-article deny is invisible to a component-level check.
+        foreach ($articleIds as $i => $articleId) {
+            if (!$user->authorise('core.edit.state', 'com_content.article.' . $articleId)) {
+                unset($articleIds[$i]);
+                $this->app->enqueueMessage(
+                    Text::_('JLIB_APPLICATION_ERROR_EDITSTATE_NOT_PERMITTED'),
+                    CMSWebApplicationInterface::MSG_WARNING
+                );
             }
         }
 
-        $this->setRedirect(
-            Route::_(
-                'index.php?option=' . $this->option . '&view=' . $this->view_list,
-                false
-            )
-        );
+        if (empty($articleIds)) {
+            $this->setRedirect($redirect, Text::_('COM_J2COMMERCE_NO_ARTICLE_LINKED'), 'warning');
+
+            return;
+        }
+
+        $articleIds = array_values($articleIds);
+
+        // ArticleModel::publish() runs the workflow transition, onContentChangeState, versioning
+        // and the checked-out guard that a raw UPDATE on #__content.state would step over.
+        $model = $this->app->bootComponent('com_content')->getMVCFactory()
+            ->createModel('Article', 'Administrator', ['ignore_request' => true]);
+
+        if (!$model->publish($articleIds, $value)) {
+            Log::add('products.publish failed: ' . $model->getError(), Log::ERROR, 'com_j2commerce');
+            $this->setRedirect($redirect, Text::_('JERROR_AN_ERROR_HAS_OCCURRED'), 'error');
+
+            return;
+        }
+
+        $ntext = match ($value) {
+            1       => $this->text_prefix . '_N_ITEMS_PUBLISHED',
+            0       => $this->text_prefix . '_N_ITEMS_UNPUBLISHED',
+            2       => $this->text_prefix . '_N_ITEMS_ARCHIVED',
+            default => $this->text_prefix . '_N_ITEMS_TRASHED',
+        };
+
+        $this->setRedirect($redirect, Text::plural($ntext, \count($articleIds)));
     }
 
     /**
@@ -1066,19 +1061,16 @@ class ProductsController extends AdminController
             return false;
         }
 
-        // Get the article IDs for the selected products
-        $db    = Factory::getContainer()->get('DatabaseDriver');
-        $query = $db->getQuery(true);
+        $articleIds = $this->resolveArticleIds($ids, $skipped);
 
-        $query->select($db->quoteName('product_source_id'))
-            ->from($db->quoteName('#__j2commerce_products'))
-            ->whereIn($db->quoteName('j2commerce_product_id'), $ids);
+        if ($skipped > 0) {
+            $this->app->enqueueMessage(
+                Text::sprintf('COM_J2COMMERCE_BATCH_SKIPPED_NON_ARTICLE_PRODUCTS', $skipped),
+                CMSWebApplicationInterface::MSG_WARNING
+            );
+        }
 
-        $db->setQuery($query);
-        $articleIds = $db->loadColumn();
-
-        // Filter out null/empty article IDs
-        $articleIds = array_filter($articleIds);
+        $db = Factory::getContainer()->get('DatabaseDriver');
 
         if (empty($articleIds)) {
             $this->setRedirect(
