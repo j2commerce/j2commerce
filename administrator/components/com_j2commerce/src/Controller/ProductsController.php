@@ -2660,6 +2660,40 @@ class ProductsController extends AdminController
             return;
         }
 
+        // Build the replacement set before anything is removed - an empty result leaves
+        // the existing variants in place instead of wiping a matrix it cannot rebuild.
+        $traits = ProductHelper::getTraits($productId);
+
+        if (empty($traits)) {
+            $response['message'] = Text::_('COM_J2COMMERCE_ERROR_NO_TRAITS_DEFINED');
+            $this->sendJson($response);
+            return;
+        }
+
+        $optionArrays = [];
+        foreach ($traits as $trait) {
+            if (!empty($trait->values)) {
+                $values = [];
+                foreach ($trait->values as $value) {
+                    $values[] = [
+                        'option_id'              => $trait->option_id,
+                        'product_optionvalue_id' => $value->j2commerce_product_optionvalue_id,
+                        'optionvalue_name'       => $value->optionvalue_name ?? '',
+                        'sku_suffix'             => $value->product_optionvalue_sku ?? '',
+                        'price_prefix'           => $value->product_optionvalue_prefix ?? '+',
+                        'price'                  => $value->product_optionvalue_price ?? 0,
+                    ];
+                }
+                $optionArrays[] = $values;
+            }
+        }
+
+        if (empty($optionArrays)) {
+            $response['message'] = Text::_('COM_J2COMMERCE_ERROR_NO_OPTION_VALUES');
+            $this->sendJson($response);
+            return;
+        }
+
         // Get existing non-master variant IDs for this product
         $query = $db->getQuery(true)
             ->select($db->quoteName('j2commerce_variant_id'))
@@ -2695,41 +2729,6 @@ class ProductsController extends AdminController
             ->bind(':pid2', $productId, ParameterType::INTEGER);
         $db->setQuery($query);
         $db->execute();
-
-        // Rebuild from traits
-        $traits = ProductHelper::getTraits($productId);
-
-        if (empty($traits)) {
-            $response['success'] = true;
-            $response['message'] = Text::_('COM_J2COMMERCE_ERROR_NO_TRAITS_DEFINED');
-            $this->sendJson($response);
-            return;
-        }
-
-        $optionArrays = [];
-        foreach ($traits as $trait) {
-            if (!empty($trait->values)) {
-                $values = [];
-                foreach ($trait->values as $value) {
-                    $values[] = [
-                        'option_id'              => $trait->option_id,
-                        'product_optionvalue_id' => $value->j2commerce_product_optionvalue_id,
-                        'optionvalue_name'       => $value->optionvalue_name ?? '',
-                        'sku_suffix'             => $value->product_optionvalue_sku ?? '',
-                        'price_prefix'           => $value->product_optionvalue_prefix ?? '+',
-                        'price'                  => $value->product_optionvalue_price ?? 0,
-                    ];
-                }
-                $optionArrays[] = $values;
-            }
-        }
-
-        if (empty($optionArrays)) {
-            $response['success'] = true;
-            $response['message'] = Text::_('COM_J2COMMERCE_ERROR_NO_OPTION_VALUES');
-            $this->sendJson($response);
-            return;
-        }
 
         $combinations         = ProductHelper::getCombinations($optionArrays);
         $masterVariant        = ProductHelper::getMasterVariant($productId);
