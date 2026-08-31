@@ -83,7 +83,7 @@ $statusName = Text::_($order->orderstatus_name ?? '');
                 <tr>
                     <td><?php echo $this->escape($order->order_id); ?></td>
                     <td><?php echo HTMLHelper::_('date', $order->created_on, $dateFormat); ?></td>
-                    <td><span class="badge <?php echo $this->escape($cssClass); ?>"><?php echo $statusName; ?></span></td>
+                    <td><span class="badge <?php echo $this->escape($cssClass); ?>"><?php echo $this->escape($statusName); ?></span></td>
                 </tr>
             </tbody>
         </table>
