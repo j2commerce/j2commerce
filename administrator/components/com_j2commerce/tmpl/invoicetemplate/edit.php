@@ -24,7 +24,8 @@ $input = $app->input;
 
 $wa = $this->getDocument()->getWebAssetManager();
 $wa->useScript('keepalive')
-    ->useScript('form.validate');
+    ->useScript('form.validate')
+    ->registerAndUseScript('com_j2commerce.dom', 'media/com_j2commerce/js/site/j2commerce-dom.js', [], ['defer' => true]);
 
 $bodySource    = $this->item->body_source ?? 'editor';
 $isVisual      = ($bodySource === 'visual');
@@ -293,32 +294,52 @@ document.addEventListener("DOMContentLoaded", function() {
             const grid = document.getElementById("template-grid");
             const token = Joomla.getOptions("csrf.token") || document.querySelector("input[type=hidden][name][value=\"1\"]")?.name || "";
 
-            grid.innerHTML = \'<div class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">\' + Joomla.Text._("COM_J2COMMERCE_LOADING") + \'</span></div></div>\';
+            const el = J2CommerceDom.el;
+
+            const spinner = el("div", {class: "spinner-border text-primary", role: "status"});
+            spinner.appendChild(el("span", {class: "visually-hidden"}, Joomla.Text._("COM_J2COMMERCE_LOADING")));
+            const spinnerWrap = el("div", {class: "text-center py-4"});
+            spinnerWrap.appendChild(spinner);
+            grid.replaceChildren(spinnerWrap);
 
             try {
                 const presetsUrl = Joomla.getOptions("com_j2commerce.emaileditor")?.getPresetsUrl || "";
                 const response = await fetch(presetsUrl + "&" + token + "=1&type=" + type);
+                if (!response.ok) throw new Error(response.status + " " + response.statusText);
                 const json = await response.json();
 
                 if (json.success && json.presets.length) {
-                    let html = \'<div class="row">\';
+                    const typeLabel = type.charAt(0).toUpperCase() + type.slice(1).replace("_", " ");
+                    const row = el("div", {class: "row"});
+
                     json.presets.forEach(function(preset) {
-                        html += \'<div class="col-md-4 mb-3">\'
-                            + \'<div class="card h-100 template-card" role="button" data-template-type="\' + preset.type + \'" data-template-design="\' + preset.design + \'">\'
-                            + \'<div class="card-body text-center p-3">\'
-                            + \'<span class="icon-print d-block mb-2" style="font-size:2rem;color:var(--gjs-text-muted,#6c757d);" aria-hidden="true"></span>\'
-                            + \'<h3 class="card-title mb-1 fs-6">\' + preset.label + \'</h3>\'
-                            + \'<small class="text-body-secondary">\' + type.charAt(0).toUpperCase() + type.slice(1).replace("_", " ") + \'</small>\'
-                            + \'</div></div></div>\';
+                        const body = el("div", {class: "card-body text-center p-3"});
+                        body.append(
+                            el("span", {class: "icon-print d-block mb-2", style: "font-size:2rem;color:var(--gjs-text-muted,#6c757d);", "aria-hidden": "true"}),
+                            el("h3", {class: "card-title mb-1 fs-6"}, preset.label),
+                            el("small", {class: "text-body-secondary"}, typeLabel)
+                        );
+
+                        const card = el("div", {
+                            class: "card h-100 template-card",
+                            role: "button",
+                            "data-template-type": preset.type,
+                            "data-template-design": preset.design
+                        });
+                        card.appendChild(body);
+
+                        const col = el("div", {class: "col-md-4 mb-3"});
+                        col.appendChild(card);
+                        row.appendChild(col);
                     });
-                    html += \'</div>\';
-                    grid.innerHTML = html;
+
+                    grid.replaceChildren(row);
                     grid.querySelectorAll(".template-card").forEach(bindTemplateCardClick);
                 } else {
-                    grid.innerHTML = \'<div class="alert alert-info">\' + Joomla.Text._("COM_J2COMMERCE_INVOICETEMPLATE_NO_PRESETS") + \'</div>\';
+                    grid.replaceChildren(el("div", {class: "alert alert-info"}, Joomla.Text._("COM_J2COMMERCE_INVOICETEMPLATE_NO_PRESETS")));
                 }
             } catch (err) {
-                grid.innerHTML = \'<div class="alert alert-danger">\' + err.message + \'</div>\';
+                grid.replaceChildren(el("div", {class: "alert alert-danger"}, err.message));
             }
         });
     }

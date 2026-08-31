@@ -44,6 +44,13 @@ window.j2cFilterShortcodes = function(shortcodes, strippedTags) {
     return filtered;
 };
 
+// GrapesJS renders BlockManager labels as markup, so registry values are escaped on the way in
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, ch => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;',
+    })[ch]);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const options = Joomla.getOptions('com_j2commerce.emaileditor');
     if (!options) return;
@@ -609,7 +616,7 @@ function setupShortcodeBlocks(editor, shortcodes) {
     flat.forEach(([tag, desc]) => {
         const cleanId = tag.replace(/[\[\]{}]/g, '');
         bm.add(`j2c-tag-${cleanId}`, {
-            label: `<span style="font-family:monospace;font-size:11px">${tag}</span><br><small>${desc}</small>`,
+            label: `<span style="font-family:monospace;font-size:11px">${escapeHtml(tag)}</span><br><small>${escapeHtml(desc)}</small>`,
             category: Joomla.Text._('COM_J2COMMERCE_EMAILTEMPLATE_CATEGORY_SHORTCODES'),
             media: '<span class="fa fa-tag" style="font-size:1.6em"></span>',
             content: { type: 'j2c-shortcode', attributes: { 'data-j2c-tag': tag } },

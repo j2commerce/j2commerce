@@ -28,7 +28,7 @@ $stripMark = static fn (string $tag): string => \in_array(strtoupper(trim($tag, 
             <div class="shortcode-category"><?php echo Text::_('COM_J2COMMERCE_' . strtoupper($key)); ?></div>
             <?php if (!empty($optionGroup)): ?>
                 <?php foreach ($optionGroup as $tagKey => $text): ?>
-                    <a href="#" class="shortcode-btn" data-shortcode="<?php echo $tagKey; ?>" title="<?php echo $tagKey; ?>"<?php echo $stripMark($tagKey); ?>><?php echo $text; ?></a>
+                    <a href="#" class="shortcode-btn" data-shortcode="<?php echo htmlspecialchars($tagKey, ENT_QUOTES, 'UTF-8'); ?>" title="<?php echo htmlspecialchars($tagKey, ENT_QUOTES, 'UTF-8'); ?>"<?php echo $stripMark($tagKey); ?>><?php echo htmlspecialchars($text, ENT_QUOTES, 'UTF-8'); ?></a>
                 <?php endforeach; ?>
             <?php endif; ?>
         </div>

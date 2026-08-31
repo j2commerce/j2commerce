@@ -39,17 +39,12 @@ if ($emailType !== 'transactional') {
 }
 ?>
 
-<?php
-if (!function_exists('j2c_esc')) {
-    function j2c_esc(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8'); }
-}
-?>
 <?php if (!empty($typeTags)): ?>
     <?php foreach ($typeTags as $group => $tags): ?>
         <div class="shortcode-group mb-2">
-            <div class="shortcode-category"><?php echo j2c_esc(ucfirst($group)); ?></div>
+            <div class="shortcode-category"><?php echo htmlspecialchars(ucfirst($group), ENT_QUOTES, 'UTF-8'); ?></div>
             <?php foreach ($tags as $tagKey => $text): ?>
-                <a href="#" class="shortcode-btn" data-shortcode="[<?php echo j2c_esc($tagKey); ?>]" title="[<?php echo j2c_esc($tagKey); ?>]"><?php echo j2c_esc($text); ?></a>
+                <a href="#" class="shortcode-btn" data-shortcode="[<?php echo htmlspecialchars($tagKey, ENT_QUOTES, 'UTF-8'); ?>]" title="[<?php echo htmlspecialchars($tagKey, ENT_QUOTES, 'UTF-8'); ?>]"><?php echo htmlspecialchars($text, ENT_QUOTES, 'UTF-8'); ?></a>
             <?php endforeach; ?>
         </div>
     <?php endforeach; ?>
@@ -61,7 +56,7 @@ if (!function_exists('j2c_esc')) {
             <div class="shortcode-category"><?php echo Text::_('COM_J2COMMERCE_' . strtoupper($key)); ?></div>
             <?php if (!empty($optionGroup)): ?>
                 <?php foreach ($optionGroup as $tagKey => $text): ?>
-                    <a href="#" class="shortcode-btn" data-shortcode="<?php echo $tagKey; ?>" title="<?php echo $tagKey; ?>"><?php echo $text; ?></a>
+                    <a href="#" class="shortcode-btn" data-shortcode="<?php echo htmlspecialchars($tagKey, ENT_QUOTES, 'UTF-8'); ?>" title="<?php echo htmlspecialchars($tagKey, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($text, ENT_QUOTES, 'UTF-8'); ?></a>
                 <?php endforeach; ?>
             <?php endif; ?>
         </div>
