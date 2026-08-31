@@ -960,9 +960,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Helper: advance from billing to next step
     function advanceFromBilling() {
+        // Read the shopper's answer BEFORE the re-fetch below re-renders the form.
+        // Unticking clears the ship-to server-side, and an empty ship-to is exactly what
+        // the re-rendered form draws as ticked — so reading it afterwards returns the
+        // opposite of what was just submitted and skips a step the shopper asked for.
+        var skipShippingAddress = shipSameAsBillingChecked();
+
         // Check for custom steps before proceeding
         checkCustomSteps('after_billing', function() {
-            proceedAfterBilling();
+            proceedAfterBilling(skipShippingAddress);
         });
 
         // Refresh the billing display using the same task that loaded it
@@ -972,11 +978,18 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function proceedAfterBilling() {
+    // A hidden field stands in for the checkbox when the store has turned the shipping
+    // address off — it carries the same value but never reports .checked.
+    function shipSameAsBillingChecked() {
         var sameAsBilling = document.getElementById('shipping-same-as-billing');
-        // A hidden field stands in for the checkbox when the store has turned the
-        // shipping address off — it carries the same value but never reports .checked.
-        var skipShippingAddress = !!sameAsBilling && (sameAsBilling.type === 'hidden' ? sameAsBilling.value === '1' : sameAsBilling.checked);
+
+        return !!sameAsBilling && (sameAsBilling.type === 'hidden' ? sameAsBilling.value === '1' : sameAsBilling.checked);
+    }
+
+    function proceedAfterBilling(skipShippingAddress) {
+        if (typeof skipShippingAddress === 'undefined') {
+            skipShippingAddress = shipSameAsBillingChecked();
+        }
 
         if (showShipping && !skipShippingAddress) {
             var shipEl = document.getElementById('shipping-address');

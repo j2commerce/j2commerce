@@ -27,6 +27,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\TableSaveHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\CheckoutContextHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\CheckoutStepsHelper;
+use J2Commerce\Component\J2commerce\Site\Helper\CheckoutStepStateHelper;
 use Joomla\CMS\Event\Model\PrepareFormEvent;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
@@ -245,6 +246,20 @@ class CheckoutController extends BaseController
         }
 
         return Text::_('COM_J2COMMERCE_CHECKOUT_REGISTER_ERROR');
+    }
+
+    /**
+     * The ticked "same as billing" arm writes the ship-to itself and the JS skips the shipping
+     * step entirely, so that arm satisfies it. The unticked arm clears the ship-to, and marking
+     * billing complete drops every downstream step with it.
+     */
+    private function markBillingStepComplete(): void
+    {
+        CheckoutStepStateHelper::markComplete(CheckoutStepStateHelper::BILLING);
+
+        if ($this->input->getInt('shipping_address', 0)) {
+            CheckoutStepStateHelper::markComplete(CheckoutStepStateHelper::SHIPPING);
+        }
     }
 
     /**
@@ -672,6 +687,9 @@ class CheckoutController extends BaseController
 
         // After login, the CSRF token changes — send it so the JS can update
         if (empty($json['error'])) {
+            // Written after login() so the regenerated session is the one that carries it.
+            $this->markBillingStepComplete();
+
             $json['token'] = Session::getFormToken();
         }
 
@@ -751,6 +769,8 @@ class CheckoutController extends BaseController
 
         // Actionlog: track billing complete (guest path)
         if (empty($json['error'])) {
+            $this->markBillingStepComplete();
+
             $this->app->getDispatcher()->dispatch(
                 'onJ2CommerceCheckoutBillingComplete',
                 new \Joomla\Event\Event('onJ2CommerceCheckoutBillingComplete', [])
@@ -911,6 +931,8 @@ class CheckoutController extends BaseController
 
         // Actionlog: track billing complete
         if (empty($json['error'])) {
+            $this->markBillingStepComplete();
+
             $this->app->getDispatcher()->dispatch(
                 'onJ2CommerceCheckoutBillingComplete',
                 new \Joomla\Event\Event('onJ2CommerceCheckoutBillingComplete', [])
@@ -1050,6 +1072,8 @@ class CheckoutController extends BaseController
 
         // Actionlog: track shipping complete
         if (empty($json['error'])) {
+            CheckoutStepStateHelper::markComplete(CheckoutStepStateHelper::SHIPPING);
+
             $this->app->getDispatcher()->dispatch(
                 'onJ2CommerceCheckoutShippingComplete',
                 new \Joomla\Event\Event('onJ2CommerceCheckoutShippingComplete', [])
@@ -1090,6 +1114,8 @@ class CheckoutController extends BaseController
 
         // Actionlog: track shipping complete (guest path)
         if (empty($json['error'])) {
+            CheckoutStepStateHelper::markComplete(CheckoutStepStateHelper::SHIPPING);
+
             $this->app->getDispatcher()->dispatch(
                 'onJ2CommerceCheckoutShippingComplete',
                 new \Joomla\Event\Event('onJ2CommerceCheckoutShippingComplete', [])
@@ -1537,6 +1563,10 @@ class CheckoutController extends BaseController
             }
         }
 
+        if (!$json) {
+            CheckoutStepStateHelper::markComplete(CheckoutStepStateHelper::PAYMENT);
+        }
+
         $this->jsonResponse($json);
     }
 
@@ -1728,6 +1758,26 @@ class CheckoutController extends BaseController
             Log::add('checkout.confirm order build failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
 
             $errors[] = Text::_('COM_J2COMMERCE_ERR_GENERIC');
+        }
+
+        // The step order otherwise lives only in the template JS, so every task is independently
+        // dispatchable and a step that never runs is a step whose rules never run. The required set
+        // is read from the cart here rather than cached at step time: the Modify links can add a
+        // shippable line to a cart whose shipping step was legitimately skipped. The context branch
+        // above has already returned — an admin-created order has no session step history to assert.
+        if ($order) {
+            $required = [CheckoutStepStateHelper::BILLING];
+
+            if ($this->determineShowShippingMethods($order)) {
+                $required[] = CheckoutStepStateHelper::SHIPPING;
+            }
+
+            foreach (CheckoutStepStateHelper::missing($required) as $step) {
+                $errors[] = Text::sprintf(
+                    'COM_J2COMMERCE_CHECKOUT_ERROR_STEP_INCOMPLETE',
+                    Text::_(CheckoutStepStateHelper::label($step))
+                );
+            }
         }
 
         try {
@@ -2442,6 +2492,10 @@ class CheckoutController extends BaseController
         $session->clear('customer_note', 'j2commerce');
         $session->clear('order_fees', 'j2commerce');
 
+        // The step flags describe the cart this just emptied. Leaving them behind would carry a
+        // completed checkout's answers into the next one.
+        CheckoutStepStateHelper::clear();
+
         J2CommerceHelper::plugin()->event('CheckoutCleanup', [$session]);
 
         return $cartCleared;
@@ -2842,6 +2896,13 @@ class CheckoutController extends BaseController
             $paymentPlugin = $this->input->getString('payment_plugin', '');
 
             $session->set('payment_method', $paymentPlugin, 'j2commerce');
+
+            // Writes what the payment step writes, so it records the same step. Recorded only —
+            // confirm() asserts billing and shipping, and enforces the payment method separately
+            // through isPaymentMethodAllowed(); this is not that check. The shipping twin
+            // has no equivalent: it selects a rate, and the shipping step this records is the
+            // ship-to address, which that task never touches.
+            CheckoutStepStateHelper::markComplete(CheckoutStepStateHelper::PAYMENT);
 
             $json['success'] = true;
         } catch (\Exception $e) {
