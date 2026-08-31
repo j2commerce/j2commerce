@@ -75,6 +75,18 @@ class CartsController extends AdminController
         return $this->app->bootComponent('com_j2commerce')->getMVCFactory();
     }
 
+    /** JSON exit for the AJAX tasks. close() is exit(), so the headers flush first. */
+    private function sendJson(mixed $data): void
+    {
+        $this->app->setHeader('Content-Type', 'application/json; charset=utf-8');
+        $this->app->setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+        $this->app->setHeader('X-Content-Type-Options', 'nosniff', true);
+        $this->app->sendHeaders();
+
+        echo json_encode($data);
+        $this->app->close();
+    }
+
     /**
      * Add product to order items (admin order editing).
      *
@@ -113,8 +125,7 @@ class CartsController extends AdminController
             $json['error'] = $e->getMessage();
         }
 
-        echo json_encode($json);
-        $this->app->close();
+        $this->sendJson($json);
     }
 
     /**
@@ -152,8 +163,7 @@ class CartsController extends AdminController
         $json['success']  = 1;
         $json['redirect'] = $url;
 
-        echo json_encode($json);
-        $this->app->close();
+        $this->sendJson($json);
     }
 
     /**
@@ -194,8 +204,7 @@ class CartsController extends AdminController
         $json['success']  = 1;
         $json['redirect'] = $url;
 
-        echo json_encode($json);
-        $this->app->close();
+        $this->sendJson($json);
     }
 
     /**
@@ -233,8 +242,7 @@ class CartsController extends AdminController
         $json['success']  = 1;
         $json['redirect'] = $url;
 
-        echo json_encode($json);
-        $this->app->close();
+        $this->sendJson($json);
     }
 
     /**
@@ -275,8 +283,7 @@ class CartsController extends AdminController
         $json['redirect'] = $url;
         $json['success']  = 1;
 
-        echo json_encode($json);
-        $this->app->close();
+        $this->sendJson($json);
     }
 
     /**
@@ -319,8 +326,7 @@ class CartsController extends AdminController
         $id  = $this->input->getInt('oid', 0);
         $url = 'index.php?option=com_j2commerce&view=orders&task=saveAdminOrder&layout=items&next_layout=items&oid=' . $id;
 
-        echo json_encode($json);
-        $this->app->close();
+        $this->sendJson($json);
     }
 
     /**

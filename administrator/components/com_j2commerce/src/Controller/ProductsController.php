@@ -2442,8 +2442,6 @@ class ProductsController extends AdminController
         $app = Factory::getApplication();
         $db  = Factory::getContainer()->get('DatabaseDriver');
 
-        header('Content-Type: application/json');
-
         $response = ['success' => false, 'message' => '', 'total' => 0];
 
         if (!\Joomla\CMS\Session\Session::checkToken('request')) {
@@ -2645,8 +2643,6 @@ class ProductsController extends AdminController
     {
         $app = Factory::getApplication();
         $db  = Factory::getContainer()->get('DatabaseDriver');
-
-        header('Content-Type: application/json');
 
         $response = ['success' => false, 'message' => '', 'total' => 0];
 
@@ -3417,8 +3413,6 @@ class ProductsController extends AdminController
         $app = Factory::getApplication();
         $db  = Factory::getContainer()->get('DatabaseDriver');
 
-        header('Content-Type: application/json');
-
         $response = ['success' => false, 'message' => ''];
 
         if (!\Joomla\CMS\Session\Session::checkToken('request')) {
@@ -3511,8 +3505,6 @@ class ProductsController extends AdminController
     {
         $app = Factory::getApplication();
         $db  = Factory::getContainer()->get('DatabaseDriver');
-
-        header('Content-Type: application/json');
 
         $response = ['success' => false, 'message' => ''];
 

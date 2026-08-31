@@ -258,9 +258,7 @@ class InvoicetemplateController extends FormController
 
         if (!$type || !preg_match('/^[a-z][a-z0-9_]{1,49}$/', $type)) {
             $json['message'] = Text::_('COM_J2COMMERCE_EMAILTEMPLATE_INVALID_SELECTION');
-            header('Content-Type: application/json');
-            echo json_encode($json);
-            $this->app->close();
+            $this->sendJson($json);
             return;
         }
 
@@ -284,9 +282,7 @@ class InvoicetemplateController extends FormController
         $json['success']  = true;
         $json['presets']  = $presets;
 
-        header('Content-Type: application/json');
-        echo json_encode($json);
-        $this->app->close();
+        $this->sendJson($json);
     }
 
     /** Load a pre-made template file and return its HTML content. */
@@ -301,9 +297,7 @@ class InvoicetemplateController extends FormController
 
         if (!$type || !$design || str_contains($type, '..') || str_contains($design, '..')) {
             $json['message'] = Text::_('COM_J2COMMERCE_EMAILTEMPLATE_INVALID_SELECTION');
-            header('Content-Type: application/json');
-            echo json_encode($json);
-            $this->app->close();
+            $this->sendJson($json);
             return;
         }
 
@@ -311,18 +305,14 @@ class InvoicetemplateController extends FormController
 
         if (!file_exists($filePath)) {
             $json['message'] = 'Template file not found.';
-            header('Content-Type: application/json');
-            echo json_encode($json);
-            $this->app->close();
+            $this->sendJson($json);
             return;
         }
 
         $json['success'] = true;
         $json['body']    = file_get_contents($filePath);
 
-        header('Content-Type: application/json');
-        echo json_encode($json);
-        $this->app->close();
+        $this->sendJson($json);
     }
 
     public function save($key = null, $urlVar = null)
@@ -507,5 +497,17 @@ class InvoicetemplateController extends FormController
         $this->postSaveHook($model, $validData);
 
         return true;
+    }
+
+    /** JSON exit for the AJAX tasks. close() is exit(), so the headers flush first. */
+    private function sendJson(mixed $data): void
+    {
+        $this->app->setHeader('Content-Type', 'application/json; charset=utf-8');
+        $this->app->setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+        $this->app->setHeader('X-Content-Type-Options', 'nosniff', true);
+        $this->app->sendHeaders();
+
+        echo json_encode($data);
+        $this->app->close();
     }
 }
