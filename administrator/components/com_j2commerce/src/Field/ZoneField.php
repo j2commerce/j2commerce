@@ -166,8 +166,8 @@ class ZoneField extends ListField
         // Get language strings (JS-safe via htmlspecialchars)
         // JSON-encoded: these are read as JavaScript string literals below and set
         // as option text, so HTML escaping would surface entities to the shopper.
-        $loadingText    = json_encode(Text::_('COM_J2COMMERCE_LOADING'));
-        $selectZoneText = json_encode(Text::sprintf('COM_J2COMMERCE_SELECT_PLACEHOLDER', Text::_('COM_J2COMMERCE_ZONE')));
+        $loadingText    = json_encode(Text::_('COM_J2COMMERCE_LOADING'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+        $selectZoneText = json_encode(Text::sprintf('COM_J2COMMERCE_SELECT_PLACEHOLDER', Text::_('COM_J2COMMERCE_ZONE')), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 
         $script = <<<JS
 <script>

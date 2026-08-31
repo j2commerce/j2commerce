@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 zoneSelect.replaceChildren();
                 const defaultOpt = document.createElement('option');
                 defaultOpt.value = '';
-                defaultOpt.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_SELECT_OPTION')); ?>;
+                defaultOpt.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_SELECT_OPTION'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
                 zoneSelect.appendChild(defaultOpt);
                 return;
             }
@@ -156,7 +156,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 const defaultOpt = document.createElement('option');
                 defaultOpt.value = '';
-                defaultOpt.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_SELECT_OPTION')); ?>;
+                defaultOpt.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_SELECT_OPTION'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
                 zoneSelect.appendChild(defaultOpt);
 
                 if (data.zone && data.zone.length > 0) {
@@ -173,7 +173,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const noneOpt = document.createElement('option');
                     noneOpt.value = '0';
                     noneOpt.selected = true;
-                    noneOpt.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_CHECKOUT_ZONE_NONE')); ?>;
+                    noneOpt.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_CHECKOUT_ZONE_NONE'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
                     zoneSelect.appendChild(noneOpt);
                 }
             })
@@ -214,7 +214,7 @@ document.addEventListener('DOMContentLoaded', function() {
             quoteSpinner.setAttribute('uk-spinner', 'ratio: 0.6');
             quoteSpinner.setAttribute('aria-hidden', 'true');
             buttonQuote.replaceChildren(quoteSpinner);
-            buttonQuote.append(' ' + <?php echo json_encode(Text::_('COM_J2COMMERCE_LOADING')); ?>);
+            buttonQuote.append(' ' + <?php echo json_encode(Text::_('COM_J2COMMERCE_LOADING'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>);
 
             try {
                 // Use POST for the estimate task with AJAX flag

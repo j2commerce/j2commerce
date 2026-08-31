@@ -177,7 +177,7 @@ foreach ($translationKeys as $key) {
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const translations = <?php echo json_encode($jsTranslations, JSON_UNESCAPED_UNICODE); ?>;
+    const translations = <?php echo json_encode($jsTranslations, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE); ?>;
     const preview = document.getElementById('customfield-preview-content');
     const form = document.getElementById('customfield-form');
 

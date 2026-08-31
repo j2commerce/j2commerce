@@ -234,7 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!filtered.length) {
             const emptyMessage = document.createElement('p');
             emptyMessage.className = 'text-body-secondary';
-            emptyMessage.textContent = <?php echo json_encode(Text::_('JGLOBAL_NO_MATCHING_RESULTS')); ?>;
+            emptyMessage.textContent = <?php echo json_encode(Text::_('JGLOBAL_NO_MATCHING_RESULTS'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
             bodyEl.replaceChildren(emptyMessage);
         } else {
             const showError = filter === 'failed' || filter === 'skipped';

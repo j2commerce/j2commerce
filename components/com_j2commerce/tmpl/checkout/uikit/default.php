@@ -216,7 +216,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var token = '<?php echo $token; ?>';
     var showShipping = <?php echo $this->showShipping ? 'true' : 'false'; ?>;
     var isLoggedIn = <?php echo $this->logged ? 'true' : 'false'; ?>;
-    var modifyText = <?php echo json_encode(Text::_('COM_J2COMMERCE_CHECKOUT_MODIFY')); ?>;
+    var modifyText = <?php echo json_encode(Text::_('COM_J2COMMERCE_CHECKOUT_MODIFY'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
     var billingTask = isLoggedIn ? 'billingAddress' : null;
 
     // Utility: slide content up (hide)
@@ -337,7 +337,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var btn = document.createElement('a');
         btn.className = 'uk-alert-close';
         btn.setAttribute('uk-close', '');
-        btn.setAttribute('aria-label', <?php echo json_encode(Text::_('JCLOSE')); ?>);
+        btn.setAttribute('aria-label', <?php echo json_encode(Text::_('JCLOSE'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>);
         div.prepend(btn);
         container.prepend(div);
         div.setAttribute('tabindex', '-1');
@@ -754,9 +754,9 @@ document.addEventListener('DOMContentLoaded', function() {
         var billingHeading = document.querySelector('#billing-address .checkout-heading span');
         if (!billingHeading) return;
         if (e.target.value === 'register') {
-            billingHeading.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_CHECKOUT_ACCOUNT')); ?>;
+            billingHeading.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_CHECKOUT_ACCOUNT'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
         } else {
-            billingHeading.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_CHECKOUT_BILLING_ADDRESS')); ?>;
+            billingHeading.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_CHECKOUT_BILLING_ADDRESS'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
         }
     });
 
@@ -779,7 +779,7 @@ document.addEventListener('DOMContentLoaded', function() {
             addEditLink('checkout');
             initCountryZoneFields(getContent('billing-address'));
             focusElement('#billing-address .checkout-heading');
-            announceToScreenReader(<?php echo json_encode(Text::_('COM_J2COMMERCE_CHECKOUT_BILLING_ADDRESS')); ?>);
+            announceToScreenReader(<?php echo json_encode(Text::_('COM_J2COMMERCE_CHECKOUT_BILLING_ADDRESS'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>);
         });
     });
 
@@ -1003,7 +1003,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 addEditLink('custom-steps-after-billing');
                 initCountryZoneFields(getContent('shipping-address'));
                 focusElement('#shipping-address .checkout-heading');
-                announceToScreenReader(<?php echo json_encode(Text::_('COM_J2COMMERCE_CHECKOUT_SHIPPING_ADDRESS')); ?>);
+                announceToScreenReader(<?php echo json_encode(Text::_('COM_J2COMMERCE_CHECKOUT_SHIPPING_ADDRESS'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>);
             });
         } else {
             var shipEl = document.getElementById('shipping-address');
@@ -1130,7 +1130,7 @@ document.addEventListener('DOMContentLoaded', function() {
             addEditLink('custom-steps-before-payment');
             autoSelectFirstShipping();
             focusElement('#shipping-payment-method .checkout-heading');
-            announceToScreenReader(<?php echo json_encode(Text::_('COM_J2COMMERCE_CHECKOUT_SHIPPING_PAYMENT_METHOD')); ?>);
+            announceToScreenReader(<?php echo json_encode(Text::_('COM_J2COMMERCE_CHECKOUT_SHIPPING_PAYMENT_METHOD'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>);
         });
     }
 
@@ -1155,7 +1155,7 @@ document.addEventListener('DOMContentLoaded', function() {
             addEditLink('shipping-payment-method');
             addEditLink('custom-steps-before-confirm');
             focusElement('#confirm .checkout-heading');
-            announceToScreenReader(<?php echo json_encode(Text::_('COM_J2COMMERCE_CHECKOUT_CONFIRM')); ?>);
+            announceToScreenReader(<?php echo json_encode(Text::_('COM_J2COMMERCE_CHECKOUT_CONFIRM'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>);
         });
     }
 
@@ -1531,13 +1531,13 @@ document.addEventListener('DOMContentLoaded', function() {
     if (sidecartCollapse) {
         UIkit.util.on(sidecartCollapse, 'shown', function() {
             var txt = document.querySelector('.j2commerce-sidecart-toggle-text');
-            if (txt) txt.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_HIDE_ORDER_SUMMARY')); ?>;
+            if (txt) txt.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_HIDE_ORDER_SUMMARY'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
             var chevron = document.querySelector('.j2commerce-sidecart-chevron');
             if (chevron) chevron.style.transform = 'rotate(180deg)';
         });
         UIkit.util.on(sidecartCollapse, 'hidden', function() {
             var txt = document.querySelector('.j2commerce-sidecart-toggle-text');
-            if (txt) txt.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_SHOW_ORDER_SUMMARY')); ?>;
+            if (txt) txt.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_SHOW_ORDER_SUMMARY'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
             var chevron = document.querySelector('.j2commerce-sidecart-chevron');
             if (chevron) chevron.style.transform = '';
         });
@@ -1589,7 +1589,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Guest only - skip checkout options, go straight to guest billing
     (function() {
         var billingHeading = document.querySelector('#billing-address .checkout-heading span');
-        if (billingHeading) billingHeading.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_CHECKOUT_BILLING_ADDRESS')); ?>;
+        if (billingHeading) billingHeading.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_CHECKOUT_BILLING_ADDRESS'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
         document.getElementById('checkout').style.display = 'none';
         fetchStep('guest', 'billing-address').then(function() {
             slideDown(getContent('billing-address'));
