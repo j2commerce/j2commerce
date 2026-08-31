@@ -44,7 +44,8 @@ window.j2cFilterShortcodes = function(shortcodes, strippedTags) {
     return filtered;
 };
 
-// GrapesJS renders BlockManager labels as markup, so registry values are escaped on the way in
+// GrapesJS renders both BlockManager labels and select-trait option labels as markup,
+// so registry values are escaped on the way in
 function escapeHtml(value) {
     return String(value ?? '').replace(/[&<>"']/g, ch => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;',
@@ -113,11 +114,11 @@ function initGrapesJSEditor(options) {
             if (val && typeof val === 'object' && !Array.isArray(val)) {
                 // Nested: key is category name, val is {tag: desc}
                 for (const [tag, desc] of Object.entries(val)) {
-                    j2cShortcodeOptions.push({ id: tag, name: `${tag} — ${desc}` });
+                    j2cShortcodeOptions.push({ id: tag, name: `${escapeHtml(tag)} — ${escapeHtml(desc)}` });
                 }
             } else {
                 // Flat: key is tag, val is description string
-                j2cShortcodeOptions.push({ id: key, name: `${key} — ${val}` });
+                j2cShortcodeOptions.push({ id: key, name: `${escapeHtml(key)} — ${escapeHtml(val)}` });
             }
         }
     }
@@ -641,10 +642,10 @@ window.updateJ2CShortcodeBlocks = function(shortcodes) {
     for (const [key, val] of Object.entries(shortcodes)) {
         if (val && typeof val === 'object' && !Array.isArray(val)) {
             for (const [tag, desc] of Object.entries(val)) {
-                j2cShortcodeOptions.push({ id: tag, name: `${tag} — ${desc}` });
+                j2cShortcodeOptions.push({ id: tag, name: `${escapeHtml(tag)} — ${escapeHtml(desc)}` });
             }
         } else {
-            j2cShortcodeOptions.push({ id: key, name: `${key} — ${val}` });
+            j2cShortcodeOptions.push({ id: key, name: `${escapeHtml(key)} — ${escapeHtml(val)}` });
         }
     }
 };
