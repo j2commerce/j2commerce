@@ -1050,13 +1050,12 @@ class OrderModel extends AdminModel
     /**
      * Update order status.
      *
-     * @param int $orderId The j2commerce_order_id.
-     * @param int $newStatusId The new order_state_id.
-     * @param bool $notify Whether to notify the customer.
-     * @param string $comment Optional comment for history.
+     * @param   int    $orderId The j2commerce_order_id.
+     * @param   int    $newStatusId The new order_state_id.
+     * @param   bool   $notify Whether to notify the customer.
+     * @param   string $comment Optional comment for history.
      *
      * @return  bool  True on success.
-     * @throws \Exception
      */
     public function updateOrderStatus(int $orderId, int $newStatusId, bool $notify = false, string $comment = ''): bool
     {
@@ -1079,7 +1078,8 @@ class OrderModel extends AdminModel
         $order = $db->loadObject();
 
         if (!$order) {
-            throw new \RuntimeException(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
+            $this->setError(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
+            return false;
         }
 
         $oldStatusId = (int) $order->order_state_id;
@@ -1092,7 +1092,8 @@ class OrderModel extends AdminModel
         // Get new status info
         $status = $this->getOrderStatus($newStatusId);
         if (!$status) {
-            throw new \RuntimeException(Text::_('COM_J2COMMERCE_ORDER_STATUS_NOT_FOUND'));
+            $this->setError(Text::_('COM_J2COMMERCE_ORDER_STATUS_NOT_FOUND'));
+            return false;
         }
 
         // Compare-and-swap on the status read above: the write only lands while the order
@@ -1119,7 +1120,8 @@ class OrderModel extends AdminModel
         $db->setQuery($updateQuery);
 
         if (!$db->execute()) {
-            throw new \RuntimeException(Text::_('COM_J2COMMERCE_ORDER_STATUS_UPDATE_FAILED'));
+            $this->setError(Text::_('COM_J2COMMERCE_ORDER_STATUS_UPDATE_FAILED'));
+            return false;
         }
 
         if ($db->getAffectedRows() !== 1) {
