@@ -40,7 +40,7 @@ $productFilters = (new ProductfiltersModel)->getFiltersByProduct($item->j2commer
 
 <input type="hidden" name="<?php echo $formPrefix.'[productfilter_ids]';?>" value="" />
 
-<table id="product_filters_table" class="table itemList j2commerce">
+<table id="j2commerce_product_filters_table" class="table itemList j2commerce">
     <thead>
     <tr>
         <th scope="col"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_FILTER_VALUE');?></th>

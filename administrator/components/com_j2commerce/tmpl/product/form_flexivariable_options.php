@@ -160,7 +160,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const optionSelect = document.getElementById('j2commerce_flexivar_option_select');
     const optionNotice = document.getElementById('j2commerce-flexivar-option-notice');
     const addOptionBtn = document.getElementById('j2commerce_flexivar_add_option_btn');
-    const addedLabelFormat = <?php echo json_encode(Text::_('COM_J2COMMERCE_OPTION_LABEL_ALREADY_ADDED')); ?>;
+    const addedLabelFormat = <?php echo json_encode(Text::_('COM_J2COMMERCE_OPTION_LABEL_ALREADY_ADDED'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
 
     // Feedback belongs beside the control that produced it — the options block sits far
     // enough down the form that the page-top message container is off screen.
@@ -214,7 +214,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Show button when there are option rows in the table (excluding the "add options" row)
         // AND the variant_add_block has no dropdowns (options not yet saved to DB)
         const optionRows = document.querySelectorAll('#flexivariable_options_table tbody tr:not(.j2commerce_a_options)');
-        const variantAddBlock = document.getElementById('variant_add_block');
+        const variantAddBlock = document.getElementById('j2commerce_variant_add_block');
         const hasDropdowns = variantAddBlock && variantAddBlock.querySelector('select[name^="variant_combin"]');
 
         if (optionRows.length > 0 && !hasDropdowns) {
@@ -239,7 +239,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.querySelectorAll('#flexivariable_options_table input[name$="[option_id]"]')
             ).some(input => input.value === optionValue);
             if (alreadyAdded) {
-                showOptionNotice(<?php echo json_encode(Text::_('COM_J2COMMERCE_OPTION_ALREADY_ADDED')); ?>);
+                showOptionNotice(<?php echo json_encode(Text::_('COM_J2COMMERCE_OPTION_ALREADY_ADDED'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>);
                 syncOptionSelect();
                 return;
             }
@@ -273,7 +273,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const removeButton = document.createElement('span');
             removeButton.className = 'optionRemove btn btn-danger btn-sm';
             removeButton.setAttribute('role', 'button');
-            removeButton.title = <?php echo json_encode(Text::_('COM_J2COMMERCE_OPTION_REMOVE')); ?>;
+            removeButton.title = <?php echo json_encode(Text::_('COM_J2COMMERCE_OPTION_REMOVE'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
 
             const removeIcon = document.createElement('span');
             removeIcon.className = 'icon icon-trash';
@@ -373,7 +373,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Show loading state
             const origContent = [...createVariantsBtn.childNodes];
             createVariantsBtn.disabled = true;
-            setSpinnerLabel(createVariantsBtn, <?php echo json_encode(Text::_('COM_J2COMMERCE_LOADING')); ?>, 'spinner-border spinner-border-sm me-1');
+            setSpinnerLabel(createVariantsBtn, <?php echo json_encode(Text::_('COM_J2COMMERCE_LOADING'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>, 'spinner-border spinner-border-sm me-1');
 
             try {
                 const formData = new FormData();
@@ -413,7 +413,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
 
                     // Update the variant_add_block with the returned HTML
-                    const variantAddBlock = document.getElementById('variant_add_block');
+                    const variantAddBlock = document.getElementById('j2commerce_variant_add_block');
                     if (variantAddBlock && result.variant_add_block_html) {
                         J2CommerceDom.adopt(variantAddBlock, result.variant_add_block_html);
                     }

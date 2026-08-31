@@ -130,7 +130,7 @@ class InvoicetemplateModel extends AdminModel
             return false;
         }
 
-        if (empty($validData['body'])) {
+        if (empty($validData['body']) && empty($validData['body_source_file'])) {
             $this->setError(Text::_('COM_J2COMMERCE_ERROR_INVOICETEMPLATE_BODY_REQUIRED'));
             return false;
         }
@@ -281,6 +281,13 @@ class InvoicetemplateModel extends AdminModel
      */
     protected function prepareTable($table)
     {
+        // Handle body source: the two modes are mutually exclusive, so keep only the one in use.
+        if ($table->body_source === 'file' && !empty($table->body_source_file)) {
+            $table->body = '';
+        } elseif ($table->body_source === 'editor' || $table->body_source === 'visual') {
+            $table->body_source_file = '';
+        }
+
         // Clean up GrapesJS data-j2c-src placeholders before saving
         if (!empty($table->body) && str_contains($table->body, 'data-j2c-src')) {
             $table->body = preg_replace_callback(

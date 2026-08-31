@@ -54,6 +54,9 @@ class CartHelper
      */
     private static ?DatabaseInterface $db = null;
 
+    /** Per-request cart-count memo, keyed on the shopper identity the count query branches on. */
+    private static array $cartCountsCache = [];
+
     /**
      * Error message storage
      *
@@ -668,6 +671,8 @@ class CartHelper
             }
         }
 
+        self::flushCartCounts();
+
         // Clear cart cookie
         self::getInstance()->clearCartCookie();
 
@@ -892,14 +897,39 @@ class CartHelper
      */
     public static function getCartItemCount(): int
     {
+        return self::getCartCounts()['count'];
+    }
+
+    /**
+     * Both measures a mini-cart badge can display, in one round trip: 'count' is the quantity
+     * total (SUM of product_qty), 'lines' the number of distinct cart lines. Both are zero for
+     * an empty cart, so either can gate visibility.
+     *
+     * @return  array{count: int, lines: int}
+     *
+     * @since   6.6.0
+     */
+    public static function getCartCounts(): array
+    {
         $app     = Factory::getApplication();
         $user    = $app->getIdentity();
         $session = $app->getSession();
 
+        // Keyed on identity rather than memoised flat, so the guest->user transition on login
+        // misses and re-reads instead of returning the pre-login basket.
+        $key = ($user && $user->id > 0) ? 'u:' . (int) $user->id : 's:' . $session->getId();
+
+        if (isset(self::$cartCountsCache[$key])) {
+            return self::$cartCountsCache[$key];
+        }
+
         $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
-        $query->select('SUM(' . $db->quoteName('ci.product_qty') . ') AS item_count')
+        $query->select(
+            'SUM(' . $db->quoteName('ci.product_qty') . ') AS item_count, '
+            . 'COUNT(' . $db->quoteName('ci.j2commerce_cartitem_id') . ') AS line_count'
+        )
             ->from($db->quoteName('#__j2commerce_carts', 'c'))
             ->join(
                 'LEFT',
@@ -920,7 +950,24 @@ class CartHelper
 
         $db->setQuery($query);
 
-        return (int) $db->loadResult();
+        $row = $db->loadObject();
+
+        return self::$cartCountsCache[$key] = [
+            'count' => (int) ($row->item_count ?? 0),
+            'lines' => (int) ($row->line_count ?? 0),
+        ];
+    }
+
+    /**
+     * Drops the memo so the next read re-queries. Core cart mutations call this; a plugin that
+     * writes cart rows with its own query must call it too, or a later read in the same request
+     * still sees the pre-mutation counts.
+     *
+     * @since   6.6.0
+     */
+    public static function flushCartCounts(): void
+    {
+        self::$cartCountsCache = [];
     }
 
     /**

@@ -282,12 +282,12 @@ class CustomfieldModel extends AdminModel
         }
 
         // Protect field_namekey from modification on existing records (server-side enforcement)
-        if (!empty($data['j2commerce_customfield_id'])) {
-            $existing = $this->getItem((int) $data['j2commerce_customfield_id']);
+        $existing = !empty($data['j2commerce_customfield_id'])
+            ? $this->getItem((int) $data['j2commerce_customfield_id'])
+            : null;
 
-            if ($existing && !empty($existing->field_namekey)) {
-                $data['field_namekey'] = $existing->field_namekey;
-            }
+        if ($existing && !empty($existing->field_namekey)) {
+            $data['field_namekey'] = $existing->field_namekey;
         }
 
         // For save2copy: generate a unique field_namekey to avoid UNIQUE constraint violation
@@ -417,10 +417,15 @@ class CustomfieldModel extends AdminModel
         $pluginAreas = CustomFieldHelper::getRegisteredAreas();
 
         if (!empty($pluginAreas)) {
+            // field_display is not a form field, so a normal save carries no value for it. Merging
+            // into the STORED JSON is what keeps this a toggle: rebuilding from an empty array
+            // resets every area to ordering 0 and drops the per-area ordering/width/fieldset/
+            // required overrides the plugin field-management screens own.
             $existingDisplay = [];
+            $storedDisplay   = $data['field_display'] ?? ($existing->field_display ?? '');
 
-            if (!empty($data['field_display'])) {
-                $decoded = json_decode($data['field_display'], true);
+            if (!empty($storedDisplay)) {
+                $decoded = json_decode((string) $storedDisplay, true);
                 if (\is_array($decoded)) {
                     $existingDisplay = $decoded;
                 }
@@ -431,7 +436,7 @@ class CustomfieldModel extends AdminModel
                 $formKey = 'plugin_area_' . $areaKey;
                 $enabled = (int) ($data[$formKey] ?? 0);
 
-                if (!isset($existingDisplay[$areaKey])) {
+                if (!isset($existingDisplay[$areaKey]) || !\is_array($existingDisplay[$areaKey])) {
                     $existingDisplay[$areaKey] = ['enabled' => 0, 'ordering' => 0];
                 }
 

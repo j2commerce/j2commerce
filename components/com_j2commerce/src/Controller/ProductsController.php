@@ -266,6 +266,11 @@ class ProductsController extends AdminProductsController
             ];
 
             $app->setHeader('Content-Type', 'application/json; charset=utf-8');
+            $app->setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+            $app->setHeader('X-Content-Type-Options', 'nosniff', true);
+            // close() is exit() — without this the queued headers never reach the client.
+            $app->sendHeaders();
+
             echo new JsonResponse($response);
             $app->close();
 
@@ -322,7 +327,12 @@ class ProductsController extends AdminProductsController
     private function sendVariantJsonError(string $message): void
     {
         $app = Factory::getApplication();
-        $app->getDocument()->setMimeEncoding('application/json');
+        $app->setHeader('Content-Type', 'application/json; charset=utf-8');
+        $app->setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+        $app->setHeader('X-Content-Type-Options', 'nosniff', true);
+        // close() is exit() — without this the queued headers never reach the client.
+        $app->sendHeaders();
+
         echo json_encode(['success' => false, 'message' => $message]);
         $app->close();
     }
@@ -456,6 +466,11 @@ class ProductsController extends AdminProductsController
         $app = Factory::getApplication();
         $app->setHeader('Status', (string) $code);
         $app->setHeader('Content-Type', 'application/json; charset=utf-8');
+        $app->setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+        $app->setHeader('X-Content-Type-Options', 'nosniff', true);
+        // close() is exit() — without this the queued headers never reach the client.
+        $app->sendHeaders();
+
         echo new JsonResponse(null, $message, true);
         $app->close();
     }

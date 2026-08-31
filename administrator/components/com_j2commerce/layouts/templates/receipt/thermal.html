@@ -99,16 +99,16 @@
     <tr>
       <td colspan="2" class="bold">[ITEM_NAME]</td>
     </tr>
-    [IF:ITEM_OPTIONS]
+    <!--[IF:ITEM_OPTIONS]-->
     <tr>
       <td colspan="2" style="font-size: 11px; color: #555; padding-left: 8px;">[ITEM_OPTIONS]</td>
     </tr>
-    [/IF:ITEM_OPTIONS]
-    [IF:ITEM_ANNOTATIONS]
+    <!--[/IF:ITEM_OPTIONS]-->
+    <!--[IF:ITEM_ANNOTATIONS]-->
     <tr>
       <td colspan="2" style="font-size: 11px; padding-left: 8px;">[ITEM_ANNOTATIONS]</td>
     </tr>
-    [/IF:ITEM_ANNOTATIONS]
+    <!--[/IF:ITEM_ANNOTATIONS]-->
     <tr>
       <td style="padding-left: 8px;">[ITEM_QTY] x [ITEM_PRICE]</td>
       <td class="right bold">[ITEM_TOTAL]</td>
@@ -123,30 +123,30 @@
       <td>[LANG:COM_J2COMMERCE_EMAIL_SUBTOTAL]</td>
       <td class="right">[SUBTOTAL]</td>
     </tr>
-    [IF:SHIPPING_METHOD]
+    <!--[IF:SHIPPING_METHOD]-->
     <tr>
       <td>[LANG:COM_J2COMMERCE_EMAIL_SHIPPING_3]</td>
       <td class="right">[SHIPPING_AMOUNT]</td>
     </tr>
-    [/IF:SHIPPING_METHOD]
-    [IF:SURCHARGE_AMOUNT]
+    <!--[/IF:SHIPPING_METHOD]-->
+    <!--[IF:SURCHARGE_AMOUNT]-->
     <tr>
       <td>[LANG:COM_J2COMMERCE_CART_SURCHARGE]</td>
       <td class="right">[SURCHARGE_AMOUNT]</td>
     </tr>
-    [/IF:SURCHARGE_AMOUNT]
-    [IF:TAX_AMOUNT]
+    <!--[/IF:SURCHARGE_AMOUNT]-->
+    <!--[IF:TAX_AMOUNT]-->
     <tr>
       <td>[LANG:COM_J2COMMERCE_EMAIL_TAX]</td>
       <td class="right">[TAX_AMOUNT]</td>
     </tr>
-    [/IF:TAX_AMOUNT]
-    [IF:DISCOUNT_AMOUNT]
+    <!--[/IF:TAX_AMOUNT]-->
+    <!--[IF:DISCOUNT_AMOUNT]-->
     <tr>
       <td>[LANG:COM_J2COMMERCE_EMAIL_DISCOUNT]</td>
       <td class="right">-[DISCOUNT_AMOUNT]</td>
     </tr>
-    [/IF:DISCOUNT_AMOUNT]
+    <!--[/IF:DISCOUNT_AMOUNT]-->
   </table>
 
   <hr class="double-dashed" />

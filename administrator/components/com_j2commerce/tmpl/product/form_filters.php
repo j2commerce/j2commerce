@@ -39,13 +39,11 @@ $ajaxBase = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
 
 ?>
 
-<fieldset id="j2commerce-product-filters" class="options-form">
+<fieldset class="options-form">
     <legend><?php echo Text::_('COM_J2COMMERCE_TITLE_FILTERGROUPS'); ?></legend>
-    <div class="j2commerce-product-filters">
-        <div class="j2commerce-product-filters" id="j2commerce-product-filters">
-            <?php echo (new FileLayout('form_ajax_avfilter', JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product'))->render(['product' => $item]);?>
-            <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductFiltersEdit', array($this, $item, $formPrefix))->getArgument('html', ''); ?>
-        </div>
+    <div class="j2commerce-product-filters" id="j2commerce-product-filters">
+        <?php echo (new FileLayout('form_ajax_avfilter', JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product'))->render(['product' => $item]);?>
+        <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductFiltersEdit', array($this, $item, $formPrefix))->getArgument('html', ''); ?>
     </div>
 </fieldset>
 
@@ -62,14 +60,24 @@ $ajaxBase = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
             var paginationWrapper = document.createElement('nav');
             paginationWrapper.className = 'pagination__wrapper';
             paginationWrapper.setAttribute('aria-label', '<?php echo Text::_('JLIB_HTML_PAGINATION'); ?>');
-            paginationWrapper.innerHTML = `
-            <div class="text-end">
-                <span class="me-1"><?php echo $item->productfilter_pagination->total ?? 0; ?></span><?php echo Text::_('COM_J2COMMERCE_PRODUCT_FILTERS'); ?>
-            </div>
-            <div id="filterNav" class="pagination pagination-toolbar text-center mt-0 mx-0">
-                <ul class="pagination pagination-list text-center ms-auto me-0"></ul>
-            </div>
-        `;
+            var totalWrap = document.createElement('div');
+            totalWrap.className = 'text-end';
+            var totalCount = document.createElement('span');
+            totalCount.className = 'me-1';
+            totalCount.textContent = String(total_variants);
+            totalWrap.appendChild(totalCount);
+            totalWrap.appendChild(document.createTextNode(
+                <?php echo json_encode(Text::_('COM_J2COMMERCE_PRODUCT_FILTERS'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>
+            ));
+
+            var filterNav = document.createElement('div');
+            filterNav.id = 'j2commerce_filterNav';
+            filterNav.className = 'pagination pagination-toolbar text-center mt-0 mx-0';
+            var filterNavList = document.createElement('ul');
+            filterNavList.className = 'pagination pagination-list text-center ms-auto me-0';
+            filterNav.appendChild(filterNavList);
+
+            paginationWrapper.replaceChildren(totalWrap, filterNav);
             filterBlock.parentNode.insertBefore(paginationWrapper, filterBlock.nextSibling);
             var numPages = Math.ceil(total_variants / limit);
             if(numPages > 1 ){
@@ -79,7 +87,7 @@ $ajaxBase = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
     });
 
     function createFilterFooterList(numPages){
-        var paginationList = document.querySelector('#filterNav .pagination-list');
+        var paginationList = document.querySelector('#j2commerce_filterNav .pagination-list');
         if (!paginationList) {
             console.error("Pagination list element not found!");
             return;
@@ -98,7 +106,7 @@ $ajaxBase = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
             link.setAttribute('rel', i);
             link.textContent = pageNum;
             link.addEventListener('click', function () {
-                var paginationItems = document.querySelectorAll('#filterNav .pagination-list li');
+                var paginationItems = document.querySelectorAll('#j2commerce_filterNav .pagination-list li');
                 paginationItems.forEach(function (item) {
                     item.classList.remove('active');
                 });
@@ -123,7 +131,7 @@ $ajaxBase = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
             limitstart: limitstart,
             product_id: product_id,
             limit: limit,
-            form_prefix: '<?php echo $formPrefix; ?>'
+            form_prefix: <?php echo json_encode($formPrefix, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>
         };
         var serializedData = Object.keys(data)
             .map(key => encodeURIComponent(key) + '=' + encodeURIComponent(data[key]))
@@ -205,7 +213,7 @@ $ajaxBase = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
                 }
 
                 // Add the notification message
-                var productFiltersTable = document.getElementById('product_filters_table');
+                var productFiltersTable = document.getElementById('j2commerce_product_filters_table');
                 if (productFiltersTable) {
                     var notificationDiv = document.createElement('div');
                     notificationDiv.className = 'j2notify alert alert-block';
@@ -248,6 +256,40 @@ $ajaxBase = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
                 }
             }
 
+            function createFilterRow(value, label) {
+                var row = document.createElement('tr');
+
+                var nameCell = document.createElement('td');
+                nameCell.className = 'addedFilter';
+                nameCell.textContent = label;
+
+                var actionCell = document.createElement('td');
+                actionCell.className = 'text-center';
+
+                // Same shape as the server-rendered rows in form_ajax_avfilter.php.
+                var remove = document.createElement('span');
+                remove.className = 'filterRemove';
+                remove.addEventListener('click', function () {
+                    row.remove();
+                });
+
+                var icon = document.createElement('span');
+                icon.className = 'icon icon-trash text-danger';
+                remove.appendChild(icon);
+
+                var hidden = document.createElement('input');
+                hidden.type = 'hidden';
+                hidden.value = value;
+                hidden.name = <?php echo json_encode($formPrefix . '[productfilter_ids][]', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+
+                actionCell.appendChild(remove);
+                actionCell.appendChild(hidden);
+                row.appendChild(nameCell);
+                row.appendChild(actionCell);
+
+                return row;
+            }
+
             createAutocompleteContainer();
             productFilterInput.addEventListener('input', function () {
                 var term = this.value;
@@ -277,31 +319,28 @@ $ajaxBase = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
                         autocompleteList.replaceChildren();
 
                         data.forEach(item => {
+                            var label = item.group_name + ' > ' + item.filter_name;
                             var option = document.createElement('div');
                             option.className = 'autocomplete-item';
-                            option.textContent = `${item.group_name} > ${item.filter_name}`;
+                            option.textContent = label;
                             option.dataset.value = item.j2commerce_filter_id;
+                            option.dataset.label = label;
 
                             // Handle item selection
                             option.addEventListener('click', function () {
-                                var label = this.textContent;
-                                var value = this.dataset.value;
+                                // The anchor row only exists once the AJAX partial has rendered.
+                                var anchor = document.querySelector('.j2commerce_a_filter');
+                                if (!anchor) {
+                                    return;
+                                }
 
-                                var newRow = `
-                            <tr>
-                                <td class="addedFilter">${label}</td>
-                                <td class="text-center">
-                                    <span class="filterRemove" onclick="this.closest('tr').remove();">
-                                        <span class="icon icon-trash text-danger"></span>
-                                    </span>
-                                    <input type="hidden" value="${value}" name="<?php echo $formPrefix.'[productfilter_ids]' ;?>[]">
-                                </td>
-                            </tr>
-                        `;
-                                document.querySelector('.j2commerce_a_filter').insertAdjacentHTML('beforebegin', newRow);
-                                productFilterInput.value = '';
                                 autocompleteList.replaceChildren();
                                 updateAutocompleteListState();
+                                anchor.parentNode.insertBefore(
+                                    createFilterRow(this.dataset.value, this.dataset.label),
+                                    anchor
+                                );
+                                productFilterInput.value = '';
                             });
                             autocompleteList.appendChild(option);
                         });

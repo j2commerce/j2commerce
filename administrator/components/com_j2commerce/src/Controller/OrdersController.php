@@ -264,11 +264,8 @@ class OrdersController extends AdminController
      */
     public function exportCount(): void
     {
-        header('Content-Type: application/json; charset=utf-8');
-
         if (!$this->validateAjaxToken()) {
-            echo json_encode(['success' => false, 'message' => Text::_('JINVALID_TOKEN')]);
-            $this->app->close();
+            $this->sendJson(['success' => false, 'message' => Text::_('JINVALID_TOKEN')]);
             return;
         }
 
@@ -281,16 +278,14 @@ class OrdersController extends AdminController
             || !J2CommerceHelper::canAccess('j2commerce.vieworders')
             || !J2CommerceHelper::canAccess('j2commerce.exportorders')
         ) {
-            echo json_encode(['success' => false, 'message' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
-            $this->app->close();
+            $this->sendJson(['success' => false, 'message' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
             return;
         }
 
         $model = $this->getModel('Orders', 'Administrator', ['ignore_request' => true]);
         $model->setExportFilters($this->getExportFiltersFromRequest());
 
-        echo json_encode(['success' => true, 'count' => (int) $model->getOrdersTotal()]);
-        $this->app->close();
+        $this->sendJson(['success' => true, 'count' => (int) $model->getOrdersTotal()]);
     }
 
     public function delete(): void
@@ -334,9 +329,7 @@ class OrdersController extends AdminController
     public function ajaxUpdateStatus(): void
     {
         if (!$this->validateAjaxToken()) {
-            header('Content-Type: application/json; charset=utf-8');
-            echo json_encode(['success' => false, 'message' => Text::_('JINVALID_TOKEN')]);
-            $this->app->close();
+            $this->sendJson(['success' => false, 'message' => Text::_('JINVALID_TOKEN')]);
             return;
         }
 
@@ -347,9 +340,7 @@ class OrdersController extends AdminController
             || $identity->guest
             || !$identity->authorise('core.edit', 'com_j2commerce')
             || !J2CommerceHelper::canAccess('j2commerce.editorders')) {
-            header('Content-Type: application/json; charset=utf-8');
-            echo json_encode(['success' => false, 'message' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
-            $this->app->close();
+            $this->sendJson(['success' => false, 'message' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
             return;
         }
 
@@ -408,9 +399,7 @@ class OrdersController extends AdminController
         // Discard any stray output from plugins/model operations
         ob_end_clean();
 
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($response);
-        $this->app->close();
+        $this->sendJson($response);
     }
 
     public function getQuickiconContent(): void
@@ -424,8 +413,7 @@ class OrdersController extends AdminController
             || !$identity->authorise('core.manage', 'com_j2commerce')
             || !J2CommerceHelper::canAccess('j2commerce.vieworders')
         ) {
-            echo new JsonResponse(null, Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), true);
-            $app->close();
+            $this->sendJson(new JsonResponse(null, Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), true));
             return;
         }
 
@@ -442,8 +430,7 @@ class OrdersController extends AdminController
                 : Text::_('COM_J2COMMERCE_ORDERS_NONE_PENDING'),
         ];
 
-        echo new JsonResponse($result);
-        $app->close();
+        $this->sendJson(new JsonResponse($result));
     }
 
     protected function validateAjaxToken(): bool
@@ -459,6 +446,18 @@ class OrdersController extends AdminController
         }
 
         return $this->input->post->get($token, '', 'alnum') === '1';
+    }
+
+    /** JSON exit for the AJAX tasks. close() is exit(), so the headers flush first. */
+    private function sendJson(mixed $data): void
+    {
+        $this->app->setHeader('Content-Type', 'application/json; charset=utf-8');
+        $this->app->setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+        $this->app->setHeader('X-Content-Type-Options', 'nosniff', true);
+        $this->app->sendHeaders();
+
+        echo json_encode($data);
+        $this->app->close();
     }
 
     private function getStatusInfo(int $statusId): ?object

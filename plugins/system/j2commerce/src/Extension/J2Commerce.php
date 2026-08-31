@@ -1748,8 +1748,15 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         // The cart key is omitted rather than reported as zero when the read fails: the
         // hydrator treats a returned count as authoritative and would blank a real basket
         // and announce it as empty. An absent key leaves the served markup alone.
+        // Both measures are reported so a badge counting distinct lines rather than the
+        // quantity total can hydrate too, instead of standing on cached server-rendered HTML.
         try {
-            $data['cart'] = ['count' => CartHelper::getCartItemCount()];
+            $counts = CartHelper::getCartCounts();
+
+            $data['cart'] = [
+                'count'     => $counts['count'],
+                'lineCount' => $counts['lines'],
+            ];
         } catch (\Throwable $e) {
             Log::add('Customer state cart count failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
         }

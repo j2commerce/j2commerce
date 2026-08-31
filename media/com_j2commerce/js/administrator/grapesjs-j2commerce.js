@@ -14,6 +14,44 @@ const J2C_IMG_PLACEHOLDER = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 // Shortcode options for the trait dropdown — populated before editor init
 let j2cShortcodeOptions = [];
 
+/**
+ * Drops the tags the target document type deletes at render, so no authoring route can offer a
+ * tag that vanishes on print. Takes and returns the nested {category: {tag: desc}} shape.
+ */
+window.j2cFilterShortcodes = function(shortcodes, strippedTags) {
+    if (!shortcodes || !Array.isArray(strippedTags) || !strippedTags.length) {
+        return shortcodes;
+    }
+
+    const bare = tag => String(tag).replace(/[[\]{}]/g, '').toUpperCase();
+    const drop = new Set(strippedTags.map(bare));
+    const filtered = {};
+
+    for (const [key, val] of Object.entries(shortcodes)) {
+        if (val && typeof val === 'object' && !Array.isArray(val)) {
+            const group = {};
+            for (const [tag, desc] of Object.entries(val)) {
+                if (!drop.has(bare(tag))) {
+                    group[tag] = desc;
+                }
+            }
+            filtered[key] = group;
+        } else if (!drop.has(bare(key))) {
+            filtered[key] = val;
+        }
+    }
+
+    return filtered;
+};
+
+// GrapesJS renders both BlockManager labels and select-trait option labels as markup,
+// so registry values are escaped on the way in
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, ch => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;',
+    })[ch]);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const options = Joomla.getOptions('com_j2commerce.emaileditor');
     if (!options) return;
@@ -29,6 +67,8 @@ function initGrapesJSEditor(options) {
     const container = document.getElementById('gjs-container');
     const gjsEl = document.getElementById('gjs');
     if (!container || !gjsEl) return;
+
+    const shortcodes = window.j2cFilterShortcodes(options.shortcodes, options.strippedTags);
 
     container.style.display = '';
     gjsEl.style.height = '700px';
@@ -68,17 +108,17 @@ function initGrapesJSEditor(options) {
 
     // Build shortcode options for the trait dropdown before editor init
     // shortcodes may be nested {billing: {tag: desc}, ...} or flat {tag: desc}
-    if (options.shortcodes && typeof options.shortcodes === 'object' && !Array.isArray(options.shortcodes)) {
+    if (shortcodes && typeof shortcodes === 'object' && !Array.isArray(shortcodes)) {
         j2cShortcodeOptions = [];
-        for (const [key, val] of Object.entries(options.shortcodes)) {
+        for (const [key, val] of Object.entries(shortcodes)) {
             if (val && typeof val === 'object' && !Array.isArray(val)) {
                 // Nested: key is category name, val is {tag: desc}
                 for (const [tag, desc] of Object.entries(val)) {
-                    j2cShortcodeOptions.push({ id: tag, name: `${tag} — ${desc}` });
+                    j2cShortcodeOptions.push({ id: tag, name: `${escapeHtml(tag)} — ${escapeHtml(desc)}` });
                 }
             } else {
                 // Flat: key is tag, val is description string
-                j2cShortcodeOptions.push({ id: key, name: `${key} — ${val}` });
+                j2cShortcodeOptions.push({ id: key, name: `${escapeHtml(key)} — ${escapeHtml(val)}` });
             }
         }
     }
@@ -177,7 +217,7 @@ function initGrapesJSEditor(options) {
     });
 
     setupFormSyncHandlers(editor);
-    setupShortcodeBlocks(editor, options.shortcodes);
+    setupShortcodeBlocks(editor, shortcodes);
     setupPreviewIntegration(editor, options);
     setupTemplateLoading(editor, options);
     setupModeSwitching(editor, options);
@@ -494,6 +534,14 @@ function registerCustomComponentTypes(editor) {
                 const tag = this.model.getAttributes()['data-j2c-condition'] || 'TAG';
                 const negate = this.model.getAttributes()['data-j2c-negate'] === '1';
                 const prefix = negate ? 'IFNOT' : 'IF';
+                // A <tbody>-based conditional cannot host a <div> badge — the canvas
+                // parser foster-parents it straight back out of the table.
+                if (this.el.tagName === 'TBODY') {
+                    this.el.style.outline = '2px dashed #f59e0b';
+                    this.el.title = `[${prefix}:${tag}]`;
+                    return;
+                }
+
                 this.el.style.position = 'relative';
                 let label = this.el.querySelector('.j2c-condition-label');
                 if (!label) {
@@ -577,7 +625,7 @@ function setupShortcodeBlocks(editor, shortcodes) {
     flat.forEach(([tag, desc]) => {
         const cleanId = tag.replace(/[\[\]{}]/g, '');
         bm.add(`j2c-tag-${cleanId}`, {
-            label: `<span style="font-family:monospace;font-size:11px">${tag}</span><br><small>${desc}</small>`,
+            label: `<span style="font-family:monospace;font-size:11px">${escapeHtml(tag)}</span><br><small>${escapeHtml(desc)}</small>`,
             category: Joomla.Text._('COM_J2COMMERCE_EMAILTEMPLATE_CATEGORY_SHORTCODES'),
             media: '<span class="fa fa-tag" style="font-size:1.6em"></span>',
             content: { type: 'j2c-shortcode', attributes: { 'data-j2c-tag': tag } },
@@ -602,10 +650,10 @@ window.updateJ2CShortcodeBlocks = function(shortcodes) {
     for (const [key, val] of Object.entries(shortcodes)) {
         if (val && typeof val === 'object' && !Array.isArray(val)) {
             for (const [tag, desc] of Object.entries(val)) {
-                j2cShortcodeOptions.push({ id: tag, name: `${tag} — ${desc}` });
+                j2cShortcodeOptions.push({ id: tag, name: `${escapeHtml(tag)} — ${escapeHtml(desc)}` });
             }
         } else {
-            j2cShortcodeOptions.push({ id: key, name: `${key} — ${val}` });
+            j2cShortcodeOptions.push({ id: key, name: `${escapeHtml(key)} — ${escapeHtml(val)}` });
         }
     }
 };
@@ -806,9 +854,23 @@ window.preprocessHtmlForImport = function preprocessHtmlForImport(html) {
     html = html.replace(/\[HOOK:(AFTER_HEADER|BEFORE_ITEMS|AFTER_ITEMS|BEFORE_SHIPPING|AFTER_PAYMENT|BEFORE_FOOTER)\]/g,
         '<tr data-j2c-hook="$1"><td style="border:2px dashed #8b5cf6;padding:8px;text-align:center;color:#8b5cf6;font-size:12px;font-family:monospace;background:#f5f3ff;" colspan="1">[HOOK:$1]</td></tr>');
 
-    // Wrap [IF:TAG]...[/IF:TAG] and [IFNOT:TAG]...[/IFNOT:TAG] as elements
+    // Wrap [IF:TAG]...[/IF:TAG] and [IFNOT:TAG]...[/IFNOT:TAG] as elements.
+    //
+    // The wrapper tag is chosen by what the block contains. A <div> is not permitted
+    // inside <table>, so the HTML parser foster-parents it out of the table and leaves
+    // it EMPTY while the rows it guarded reattach to the table unconditionally — the
+    // guard is silently lost on import and destroyed in the stored body on the next
+    // save. A conditional that wraps table rows therefore becomes a <tbody>, which is
+    // valid there and survives parsing (the same reason [ITEMS_LOOP] is a <tbody>
+    // below). Cell-level conditionals stay <div> and keep the dashed authoring badge.
     html = html.replace(/\[(IF|IFNOT):([A-Z0-9_]+)\]([\s\S]*?)\[\/\1:\2\]/g, (match, prefix, tag, inner) => {
-        return `<div data-j2c-condition="${tag}" data-j2c-negate="${prefix === 'IFNOT' ? '1' : '0'}" style="border:2px dashed #f59e0b;padding:10px;margin:5px 0;position:relative;min-height:40px;">${inner}</div>`;
+        const negate = prefix === 'IFNOT' ? '1' : '0';
+
+        if (/^\s*<tr[\s>]/i.test(inner)) {
+            return `<tbody data-j2c-condition="${tag}" data-j2c-negate="${negate}" style="outline:2px dashed #f59e0b;">${inner}</tbody>`;
+        }
+
+        return `<div data-j2c-condition="${tag}" data-j2c-negate="${negate}" style="border:2px dashed #f59e0b;padding:10px;margin:5px 0;position:relative;min-height:40px;">${inner}</div>`;
     });
 
     // Wrap [ITEMS_LOOP]...[/ITEMS_LOOP] as a <tbody> element (valid inside <table>, survives HTML parsing)
@@ -816,6 +878,64 @@ window.preprocessHtmlForImport = function preprocessHtmlForImport(html) {
         '<tbody data-j2c-loop="ITEMS">$1</tbody>');
 
     return html;
+}
+
+/** Index of the `<` opening the close tag that balances an element already open at `from`. */
+function findMatchingClose(html, name, from) {
+    const re = new RegExp('<(/?)' + name + '\\b', 'gi');
+    re.lastIndex = from;
+
+    for (let m = re.exec(html), depth = 1; m; m = re.exec(html)) {
+        depth += m[1] ? -1 : 1;
+
+        if (depth === 0) {
+            return m.index;
+        }
+    }
+
+    return -1;
+}
+
+/**
+ * Restore [IF:TAG]/[IFNOT:TAG] brackets from their wrapper elements.
+ *
+ * Locates each wrapper's close tag by counting depth rather than matching
+ * `([\s\S]*?)</div>`: that non-greedy form stops at the FIRST close tag, so a
+ * conditional holding any nested element of the same name was truncated —
+ * `<div data-j2c-condition="X"><div>inner</div>tail</div>` came back out as
+ * `[IF:X]<div>inner[/IF:X]tail</div>`. Handles both wrapper tags emitted by
+ * preprocessHtmlForImport() and recurses so nested conditionals survive.
+ */
+function unwrapConditionals(html) {
+    const open = /<(div|tbody)\b([^>]*\bdata-j2c-condition="([^"]*)"[^>]*)>/i;
+    let out  = '';
+    let rest = html;
+
+    for (let m = rest.match(open); m; m = rest.match(open)) {
+        const [tagHtml, name, attrs, tag] = m;
+        const start    = m.index + tagHtml.length;
+        const close    = findMatchingClose(rest, name, start);
+        const closeEnd = close < 0 ? -1 : rest.indexOf('>', close);
+
+        // Unbalanced markup: step past the open tag and leave it as-is rather than
+        // swallow the rest of the body into a conditional that never closes.
+        if (close < 0 || closeEnd < 0) {
+            out += rest.slice(0, start);
+            rest = rest.slice(start);
+            continue;
+        }
+
+        const prefix = /\bdata-j2c-negate="1"/i.test(attrs) ? 'IFNOT' : 'IF';
+
+        out += rest.slice(0, m.index)
+            + `[${prefix}:${tag}]`
+            + unwrapConditionals(rest.slice(start, close))
+            + `[/${prefix}:${tag}]`;
+
+        rest = rest.slice(closeEnd + 1);
+    }
+
+    return out + rest;
 }
 
 window.postprocessHtmlForExport = function postprocessHtmlForExport(html) {
@@ -829,20 +949,18 @@ window.postprocessHtmlForExport = function postprocessHtmlForExport(html) {
         return `<img${attrs} src="${shortcode}">`;
     });
 
-    // Convert <tr data-j2c-hook> wrappers back to TinyMCE-safe zero-height rows
-    html = html.replace(/<tr[^>]*data-j2c-hook="([^"]*)"[^>]*>[\s\S]*?<\/tr>/gi,
-        '<tr><td style="padding:0;border:0;font-size:0;line-height:0;height:0;overflow:hidden;">[HOOK:$1]</td></tr>');
-    // Fallback: any remaining div-based hook wrappers (from block manager drag-drop)
-    html = html.replace(/<div[^>]*data-j2c-hook="([^"]*)"[^>]*>[\s\S]*?<\/div>/gi, '[HOOK:$1]');
+    // Convert <tr data-j2c-hook> wrappers back to TinyMCE-safe zero-height rows, and any
+    // div-based ones (from block manager drag-drop) straight back to the bare marker.
+    html = unwrapMarkers(html, 'tr', 'data-j2c-hook', (attrs, pos) =>
+        `<tr><td style="padding:0;border:0;font-size:0;line-height:0;height:0;overflow:hidden;">[HOOK:${pos}]</td></tr>`);
+    html = unwrapMarkers(html, 'div', 'data-j2c-hook', (attrs, pos) => `[HOOK:${pos}]`);
 
     // Convert conditional elements back to [IF:TAG]...[/IF:TAG] or [IFNOT:TAG]...[/IFNOT:TAG]
-    html = html.replace(/<div[^>]*data-j2c-condition="([^"]*)"[^>]*data-j2c-negate="1"[^>]*>([\s\S]*?)<\/div>/g, '[IFNOT:$1]$2[/IFNOT:$1]');
-    html = html.replace(/<div[^>]*data-j2c-negate="1"[^>]*data-j2c-condition="([^"]*)"[^>]*>([\s\S]*?)<\/div>/g, '[IFNOT:$1]$2[/IFNOT:$1]');
-    html = html.replace(/<div[^>]*data-j2c-condition="([^"]*)"[^>]*>([\s\S]*?)<\/div>/g, '[IF:$1]$2[/IF:$1]');
+    html = unwrapConditionals(html);
 
     // Convert loop elements back to [ITEMS_LOOP]...[/ITEMS_LOOP] (tbody from block, div from legacy import)
-    html = html.replace(/<tbody[^>]*data-j2c-loop="ITEMS"[^>]*>([\s\S]*?)<\/tbody>/g, '[ITEMS_LOOP]$1[/ITEMS_LOOP]');
-    html = html.replace(/<div[^>]*data-j2c-loop="ITEMS"[^>]*>([\s\S]*?)<\/div>/g, '[ITEMS_LOOP]$1[/ITEMS_LOOP]');
+    html = unwrapMarkers(html, 'div|tbody', 'data-j2c-loop', (attrs, name, inner) =>
+        `[${name}_LOOP]${inner}[/${name}_LOOP]`);
 
     return html;
 }

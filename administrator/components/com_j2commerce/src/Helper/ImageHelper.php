@@ -248,25 +248,12 @@ class ImageHelper
         return $path;
     }
 
-    /**
-     * Generate a placeholder image URL
-     *
-     * Returns an empty string placeholder. Override this method or use a plugin
-     * to return actual placeholder images (e.g., from a service or local default).
-     *
-     * @param   int     $width   The desired width
-     * @param   int     $height  The desired height
-     * @param   string  $text    Optional text to display on placeholder
-     *
-     * @return  string  The placeholder image URL, or empty string for default behavior
-     *
-     * @since   6.0.0
-     */
+    /** Stand-in for an image whose file is missing. Scalable, so width/height only size the tag. */
     public static function getPlaceholderUrl(int $width = 150, int $height = 150, string $text = ''): string
     {
-        // Default implementation returns empty string
-        // Extensions can override this via plugins to provide actual placeholders
-        return '';
+        $relPath = 'media/com_j2commerce/images/placeholder.svg';
+
+        return is_file(JPATH_SITE . '/' . $relPath) ? Uri::root() . $relPath : '';
     }
 
     /**
@@ -405,8 +392,29 @@ class ImageHelper
         $resolved = self::resolveImageVersion($parsed['path'], $height);
         $url      = self::getImageUrl($resolved);
 
+        // A stored path outlives its file whenever an upload is deleted or a sync renames it.
+        // Emitting the dead path 404s; emitting an empty src is worse, because the browser reads
+        // that as the current document and re-requests the whole page. Fall back to neither.
+        // normalizePath() collapses separators but does not resolve '..', and the result is
+        // stat'ed verbatim — a traversal segment would answer whether an arbitrary server path
+        // exists. Such a path cannot be a product image, so treat it as missing without asking.
+        $relative = self::normalizePath($resolved);
+
+        if (
+            $relative !== ''
+            && !filter_var($relative, FILTER_VALIDATE_URL)
+            && (str_contains($relative, '..') || !is_file(JPATH_SITE . '/' . ltrim($relative, '/')))
+        ) {
+            $url = self::getPlaceholderUrl($width > 0 ? $width : 150, $height > 0 ? $height : 150);
+        }
+
         if ($output === 'raw') {
             return $url;
+        }
+
+        // No placeholder available either — emit nothing rather than <img src="">.
+        if ($url === '') {
+            return '';
         }
 
         // Auto-calculate missing dimension from original aspect ratio to prevent CLS

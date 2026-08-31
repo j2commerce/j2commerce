@@ -46,7 +46,7 @@ $conSpan = 0;
         <input type="hidden" name="tmpl" value="component">
         <input type="hidden" name="task" id="task" value="setDefault">
         <input type="hidden" name="optiontask" id="optiontask" value="">
-        <input type="hidden" name="product_id" id="product_id" value="<?php echo $productId; ?>">
+        <input type="hidden" name="product_id" id="j2commerce_product_id" value="<?php echo $productId; ?>">
         <input type="hidden" name="productoption_id" id="productoption_id" value="<?php echo $productOptionId; ?>">
         <input type="hidden" name="boxchecked" value="">
         <?php echo HTMLHelper::_('form.token'); ?>
@@ -144,7 +144,7 @@ $conSpan = 0;
                     <tfoot>
                     <tr>
                         <td colspan="<?php echo $conSpan + 1; ?>">
-                            <a class="btn btn-primary" id="add_all_option_value" href="#"><?php echo Text::_('COM_J2COMMERCE_ADD_ALL_OPTION_VALUE'); ?></a>
+                            <a class="btn btn-primary" id="j2commerce_add_all_option_value" href="#"><?php echo Text::_('COM_J2COMMERCE_ADD_ALL_OPTION_VALUE'); ?></a>
                         </td>
                     </tr>
                     </tfoot>
@@ -277,7 +277,7 @@ $conSpan = 0;
 document.addEventListener('DOMContentLoaded', () => {
     'use strict';
 
-    const addAllBtn = document.getElementById('add_all_option_value');
+    const addAllBtn = document.getElementById('j2commerce_add_all_option_value');
     if (addAllBtn) {
         addAllBtn.addEventListener('click', (e) => {
             e.preventDefault();

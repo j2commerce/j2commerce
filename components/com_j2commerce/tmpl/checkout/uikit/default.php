@@ -67,6 +67,7 @@ $sessionExpiredFlatJs  = $jsString(Text::sprintf('COM_J2COMMERCE_ERROR_SESSION_E
 $unexpectedFlatJs      = $jsString(Text::sprintf('COM_J2COMMERCE_ERROR_UNEXPECTED_RESPONSE', $reloadLinkText));
 $serverErrorJs         = $jsString(Text::_('COM_J2COMMERCE_ERROR_SERVER'));
 $networkErrorJs        = $jsString(Text::_('COM_J2COMMERCE_ERROR_NETWORK'));
+$checkoutErrorJs       = $jsString(Text::_('COM_J2COMMERCE_CHECKOUT_ERROR'));
 
 // Pass language strings to JS via Joomla.Text (H1 — replaces addslashes inline)
 Text::script('COM_J2COMMERCE_CHECKOUT_ERROR_AGREE_TERMS');
@@ -215,7 +216,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var token = '<?php echo $token; ?>';
     var showShipping = <?php echo $this->showShipping ? 'true' : 'false'; ?>;
     var isLoggedIn = <?php echo $this->logged ? 'true' : 'false'; ?>;
-    var modifyText = <?php echo json_encode(Text::_('COM_J2COMMERCE_CHECKOUT_MODIFY')); ?>;
+    var modifyText = <?php echo json_encode(Text::_('COM_J2COMMERCE_CHECKOUT_MODIFY'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
     var billingTask = isLoggedIn ? 'billingAddress' : null;
 
     // Utility: slide content up (hide)
@@ -269,6 +270,17 @@ document.addEventListener('DOMContentLoaded', function() {
         link.setAttribute('aria-label', modifyText + ' ' + stepName);
         heading.appendChild(link);
     }
+
+    // Confirm-step address blocks carry their own Change link. Forward it to the edit
+    // link the step heading already owns, so one code path drives step navigation.
+    document.addEventListener('click', function(e) {
+        var trigger = e.target.closest('[data-j2c-edit-step]');
+        if (!trigger) return;
+        e.preventDefault();
+        var stepId = trigger.getAttribute('data-j2c-edit-step');
+        var link = document.querySelector('#' + stepId + ' .checkout-heading a:not(.checkout-logout)');
+        if (link) link.click();
+    });
 
     // Utility: remove all edit links (preserves logout link)
     function removeEditLinks() {
@@ -325,7 +337,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var btn = document.createElement('a');
         btn.className = 'uk-alert-close';
         btn.setAttribute('uk-close', '');
-        btn.setAttribute('aria-label', <?php echo json_encode(Text::_('JCLOSE')); ?>);
+        btn.setAttribute('aria-label', <?php echo json_encode(Text::_('JCLOSE'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>);
         div.prepend(btn);
         container.prepend(div);
         div.setAttribute('tabindex', '-1');
@@ -742,9 +754,9 @@ document.addEventListener('DOMContentLoaded', function() {
         var billingHeading = document.querySelector('#billing-address .checkout-heading span');
         if (!billingHeading) return;
         if (e.target.value === 'register') {
-            billingHeading.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_CHECKOUT_ACCOUNT')); ?>;
+            billingHeading.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_CHECKOUT_ACCOUNT'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
         } else {
-            billingHeading.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_CHECKOUT_BILLING_ADDRESS')); ?>;
+            billingHeading.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_CHECKOUT_BILLING_ADDRESS'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
         }
     });
 
@@ -767,7 +779,7 @@ document.addEventListener('DOMContentLoaded', function() {
             addEditLink('checkout');
             initCountryZoneFields(getContent('billing-address'));
             focusElement('#billing-address .checkout-heading');
-            announceToScreenReader(<?php echo json_encode(Text::_('COM_J2COMMERCE_CHECKOUT_BILLING_ADDRESS')); ?>);
+            announceToScreenReader(<?php echo json_encode(Text::_('COM_J2COMMERCE_CHECKOUT_BILLING_ADDRESS'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>);
         });
     });
 
@@ -878,7 +890,16 @@ document.addEventListener('DOMContentLoaded', function() {
             body: formData,
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         })
-        .then(function(r) { return r.json(); })
+        .then(function(r) {
+            // A failed request is not "this store has no custom steps". Custom steps are
+            // how a plugin collects something the order requires, so a 4xx/5xx must stop
+            // the shopper here rather than fall through to the advance callback.
+            if (!r.ok) {
+                throw new Error('custom steps request failed: ' + r.status);
+            }
+
+            return r.json();
+        })
         .then(function(json) {
             if (json.hasSteps) {
                 var sectionSuffix = position.replace(/_/g, '-');
@@ -932,15 +953,22 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(function(err) {
             console.error('Custom steps error:', err);
-            onComplete();
+            var host = document.querySelector('.checkout-content.active') || document.querySelector('.checkout-content');
+            showWarning(host, <?php echo $checkoutErrorJs; ?>);
         });
     }
 
     // Helper: advance from billing to next step
     function advanceFromBilling() {
+        // Read the shopper's answer BEFORE the re-fetch below re-renders the form.
+        // Unticking clears the ship-to server-side, and an empty ship-to is exactly what
+        // the re-rendered form draws as ticked — so reading it afterwards returns the
+        // opposite of what was just submitted and skips a step the shopper asked for.
+        var skipShippingAddress = shipSameAsBillingChecked();
+
         // Check for custom steps before proceeding
         checkCustomSteps('after_billing', function() {
-            proceedAfterBilling();
+            proceedAfterBilling(skipShippingAddress);
         });
 
         // Refresh the billing display using the same task that loaded it
@@ -950,11 +978,18 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function proceedAfterBilling() {
+    // A hidden field stands in for the checkbox when the store has turned the shipping
+    // address off — it carries the same value but never reports .checked.
+    function shipSameAsBillingChecked() {
         var sameAsBilling = document.getElementById('shipping-same-as-billing');
-        // A hidden field stands in for the checkbox when the store has turned the
-        // shipping address off — it carries the same value but never reports .checked.
-        var skipShippingAddress = !!sameAsBilling && (sameAsBilling.type === 'hidden' || sameAsBilling.checked);
+
+        return !!sameAsBilling && (sameAsBilling.type === 'hidden' ? sameAsBilling.value === '1' : sameAsBilling.checked);
+    }
+
+    function proceedAfterBilling(skipShippingAddress) {
+        if (typeof skipShippingAddress === 'undefined') {
+            skipShippingAddress = shipSameAsBillingChecked();
+        }
 
         if (showShipping && !skipShippingAddress) {
             var shipEl = document.getElementById('shipping-address');
@@ -968,7 +1003,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 addEditLink('custom-steps-after-billing');
                 initCountryZoneFields(getContent('shipping-address'));
                 focusElement('#shipping-address .checkout-heading');
-                announceToScreenReader(<?php echo json_encode(Text::_('COM_J2COMMERCE_CHECKOUT_SHIPPING_ADDRESS')); ?>);
+                announceToScreenReader(<?php echo json_encode(Text::_('COM_J2COMMERCE_CHECKOUT_SHIPPING_ADDRESS'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>);
             });
         } else {
             var shipEl = document.getElementById('shipping-address');
@@ -1095,7 +1130,7 @@ document.addEventListener('DOMContentLoaded', function() {
             addEditLink('custom-steps-before-payment');
             autoSelectFirstShipping();
             focusElement('#shipping-payment-method .checkout-heading');
-            announceToScreenReader(<?php echo json_encode(Text::_('COM_J2COMMERCE_CHECKOUT_SHIPPING_PAYMENT_METHOD')); ?>);
+            announceToScreenReader(<?php echo json_encode(Text::_('COM_J2COMMERCE_CHECKOUT_SHIPPING_PAYMENT_METHOD'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>);
         });
     }
 
@@ -1120,7 +1155,7 @@ document.addEventListener('DOMContentLoaded', function() {
             addEditLink('shipping-payment-method');
             addEditLink('custom-steps-before-confirm');
             focusElement('#confirm .checkout-heading');
-            announceToScreenReader(<?php echo json_encode(Text::_('COM_J2COMMERCE_CHECKOUT_CONFIRM')); ?>);
+            announceToScreenReader(<?php echo json_encode(Text::_('COM_J2COMMERCE_CHECKOUT_CONFIRM'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>);
         });
     }
 
@@ -1496,13 +1531,13 @@ document.addEventListener('DOMContentLoaded', function() {
     if (sidecartCollapse) {
         UIkit.util.on(sidecartCollapse, 'shown', function() {
             var txt = document.querySelector('.j2commerce-sidecart-toggle-text');
-            if (txt) txt.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_HIDE_ORDER_SUMMARY')); ?>;
+            if (txt) txt.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_HIDE_ORDER_SUMMARY'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
             var chevron = document.querySelector('.j2commerce-sidecart-chevron');
             if (chevron) chevron.style.transform = 'rotate(180deg)';
         });
         UIkit.util.on(sidecartCollapse, 'hidden', function() {
             var txt = document.querySelector('.j2commerce-sidecart-toggle-text');
-            if (txt) txt.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_SHOW_ORDER_SUMMARY')); ?>;
+            if (txt) txt.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_SHOW_ORDER_SUMMARY'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
             var chevron = document.querySelector('.j2commerce-sidecart-chevron');
             if (chevron) chevron.style.transform = '';
         });
@@ -1554,7 +1589,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Guest only - skip checkout options, go straight to guest billing
     (function() {
         var billingHeading = document.querySelector('#billing-address .checkout-heading span');
-        if (billingHeading) billingHeading.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_CHECKOUT_BILLING_ADDRESS')); ?>;
+        if (billingHeading) billingHeading.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_CHECKOUT_BILLING_ADDRESS'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
         document.getElementById('checkout').style.display = 'none';
         fetchStep('guest', 'billing-address').then(function() {
             slideDown(getContent('billing-address'));

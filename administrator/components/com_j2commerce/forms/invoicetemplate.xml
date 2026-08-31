@@ -104,6 +104,7 @@
         >
             <option value="visual">COM_J2COMMERCE_INVOICETEMPLATE_BODY_SOURCE_VISUAL</option>
             <option value="editor">COM_J2COMMERCE_INVOICETEMPLATE_BODY_SOURCE_EDITOR</option>
+            <option value="file">COM_J2COMMERCE_INVOICETEMPLATE_BODY_SOURCE_FILE</option>
         </field>
 
         <field
@@ -112,12 +113,20 @@
             hiddenLabel="true"
             label="COM_J2COMMERCE_INVOICETEMPLATE_BODY"
             description="COM_J2COMMERCE_INVOICETEMPLATE_BODY_DESC"
-            required="true"
             filter="Joomla\CMS\Component\ComponentHelper::filterText"
             buttons="true"
             syntax="html"
             height="400"
             showon="body_source:editor"
+        />
+
+        <field
+            name="body_source_file"
+            type="file"
+            label="COM_J2COMMERCE_INVOICETEMPLATE_BODY_SOURCE_FILE_LABEL"
+            description="COM_J2COMMERCE_INVOICETEMPLATE_BODY_SOURCE_FILE_DESC"
+            accept=".php,.html,.htm,.txt"
+            showon="body_source:file"
         />
 
         <field

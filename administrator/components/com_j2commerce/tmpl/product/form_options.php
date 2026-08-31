@@ -62,7 +62,7 @@ $csrfToken = \Joomla\CMS\Session\Session::getFormToken();
 
         <?php else : ?>
             <div class="table-responsive">
-                <table id="attribute_options_table" class="table itemList align-middle j2commerce">
+                <table id="j2commerce_attribute_options_table" class="table itemList align-middle j2commerce">
                     <thead>
                     <tr>
                         <th scope="col"><?php echo Text::_('COM_J2COMMERCE_OPTION_NAME');?></th>
@@ -103,7 +103,7 @@ $csrfToken = \Joomla\CMS\Session\Session::getFormToken();
                                 <td class="text-end">
                                     <span class="optionRemove btn btn-danger btn-sm"
                                           data-option-id="<?php echo $poption->j2commerce_productoption_id;?>"
-                                          data-product-type="<?php echo $item->product_type;?>"
+                                          data-product-type="<?php echo htmlspecialchars($item->product_type ?? '', ENT_QUOTES, 'UTF-8');?>"
                                           role="button" title="<?php echo Text::_('COM_J2COMMERCE_OPTION_REMOVE');?>">
                                         <span class="icon icon-trash"></span>
                                     </span>
@@ -116,11 +116,11 @@ $csrfToken = \Joomla\CMS\Session\Session::getFormToken();
                         <td colspan="4">
                             <div class="control-group align-items-center mt-4">
                                 <div class="control-label">
-                                    <label id="option_select_id-lbl" for="option_select_id"><?php echo Text::_('COM_J2COMMERCE_SEARCH_AND_ADD_VARIANT_OPTION');?></label>
+                                    <label id="j2commerce_option_select_id-lbl" for="j2commerce_option_select_id"><?php echo Text::_('COM_J2COMMERCE_SEARCH_AND_ADD_VARIANT_OPTION');?></label>
                                 </div>
                                 <div class="controls">
                                     <div class="input-group">
-                                        <select name="option_select_id" id="option_select_id" class="form-select">
+                                        <select name="option_select_id" id="j2commerce_option_select_id" class="form-select">
                                             <?php foreach ($productOptionList as $option_list):
                                                 $optionLabel = $option_list->option_name . ' (' . $option_list->option_unique_name . ')';
                                                 $optionAssigned = isset($assignedOptionIds[(int) $option_list->j2commerce_option_id]);
@@ -175,10 +175,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const formPrefix = '<?php echo $formPrefix; ?>';
     let optionKey = <?php echo $key; ?>;
     const csrfToken = '<?php echo $csrfToken; ?>';
-    const optionSelect = document.getElementById('option_select_id');
+    const optionSelect = document.getElementById('j2commerce_option_select_id');
     const optionNotice = document.getElementById('j2commerce-option-notice');
     const addOptionBtn = document.getElementById('j2commerce-add-option-btn');
-    const addedLabelFormat = <?php echo json_encode(Text::_('COM_J2COMMERCE_OPTION_LABEL_ALREADY_ADDED')); ?>;
+    const addedLabelFormat = <?php echo json_encode(Text::_('COM_J2COMMERCE_OPTION_LABEL_ALREADY_ADDED'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
 
     // Feedback belongs beside the control that produced it — the options block sits far
     // enough down the form that the page-top message container is off screen.
@@ -206,7 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!optionSelect) return;
 
         const usedIds = new Set(
-            Array.from(document.querySelectorAll('#attribute_options_table input[name$="[option_id]"]'))
+            Array.from(document.querySelectorAll('#j2commerce_attribute_options_table input[name$="[option_id]"]'))
                 .map(input => input.value)
         );
 
@@ -274,10 +274,10 @@ document.addEventListener('DOMContentLoaded', () => {
             // Rows are keyed by record id when rendered by the server and by a counter when
             // added here, so the option is matched on the value it carries rather than the key.
             const alreadyAdded = Array.from(
-                document.querySelectorAll('#attribute_options_table input[name$="[option_id]"]')
+                document.querySelectorAll('#j2commerce_attribute_options_table input[name$="[option_id]"]')
             ).some(input => input.value === optionValue);
             if (alreadyAdded) {
-                showOptionNotice(<?php echo json_encode(Text::_('COM_J2COMMERCE_OPTION_ALREADY_ADDED')); ?>);
+                showOptionNotice(<?php echo json_encode(Text::_('COM_J2COMMERCE_OPTION_ALREADY_ADDED'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>);
                 syncOptionSelect();
                 return;
             }
@@ -303,8 +303,8 @@ document.addEventListener('DOMContentLoaded', () => {
             requiredSelect.className = 'form-select';
             requiredSelect.name = fieldName('required');
             requiredSelect.append(
-                new Option(<?php echo json_encode(Text::_('JNO')); ?>, '0'),
-                new Option(<?php echo json_encode(Text::_('JYES')); ?>, '1')
+                new Option(<?php echo json_encode(Text::_('JNO'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>, '0'),
+                new Option(<?php echo json_encode(Text::_('JYES'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>, '1')
             );
             requiredCell.append(requiredSelect);
 
@@ -321,7 +321,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const removeButton = document.createElement('span');
             removeButton.className = 'optionRemove btn btn-danger btn-sm';
             removeButton.setAttribute('role', 'button');
-            removeButton.title = <?php echo json_encode(Text::_('COM_J2COMMERCE_OPTION_REMOVE')); ?>;
+            removeButton.title = <?php echo json_encode(Text::_('COM_J2COMMERCE_OPTION_REMOVE'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
 
             const removeIcon = document.createElement('span');
             removeIcon.className = 'icon icon-trash';
@@ -409,12 +409,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const spinnerLabel = document.createElement('span');
         spinnerLabel.className = 'visually-hidden';
-        spinnerLabel.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_LOADING')); ?>;
+        spinnerLabel.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_LOADING'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
         spinner.append(spinnerLabel);
 
         const caption = document.createElement('p');
         caption.className = 'mt-2 text-body-secondary';
-        caption.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_LOADING')); ?>;
+        caption.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_LOADING'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
 
         wrapper.append(spinner, caption);
         optionValuesModalBody.replaceChildren(wrapper);
@@ -448,7 +448,7 @@ document.addEventListener('DOMContentLoaded', () => {
             dismissButton.type = 'button';
             dismissButton.className = 'btn-close';
             dismissButton.setAttribute('data-bs-dismiss', 'alert');
-            dismissButton.setAttribute('aria-label', <?php echo json_encode(Text::_('JCLOSE')); ?>);
+            dismissButton.setAttribute('aria-label', <?php echo json_encode(Text::_('JCLOSE'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>);
             alertBox.append(dismissButton);
 
             messagesContainer.replaceChildren(alertBox);
@@ -484,16 +484,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (data.success) {
                 J2CommerceDom.adopt(optionValuesModalBody, data.html);
-                modalLabel.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_PAO_SET_OPTIONS_FOR')); ?> + ': ' + data.optionName;
+                modalLabel.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_PAO_SET_OPTIONS_FOR'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?> + ': ' + data.optionName;
 
                 // Initialize event handlers for the injected content
                 initOptionValuesHandlers();
             } else {
-                showModalError(data.message || <?php echo json_encode(Text::_('COM_J2COMMERCE_ERROR_LOADING_CONTENT')); ?>);
+                showModalError(data.message || <?php echo json_encode(Text::_('COM_J2COMMERCE_ERROR_LOADING_CONTENT'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>);
             }
         } catch (error) {
             console.error('Error loading option values:', error);
-            showModalError(<?php echo json_encode(Text::_('COM_J2COMMERCE_ERROR_LOADING_CONTENT')); ?>);
+            showModalError(<?php echo json_encode(Text::_('COM_J2COMMERCE_ERROR_LOADING_CONTENT'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>);
         }
     }
 
@@ -513,7 +513,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (createBtn) {
             createBtn.addEventListener('click', async () => {
                 createBtn.disabled = true;
-                setSpinnerLabel(createBtn, <?php echo json_encode(Text::_('COM_J2COMMERCE_SAVING')); ?>);
+                setSpinnerLabel(createBtn, <?php echo json_encode(Text::_('COM_J2COMMERCE_SAVING'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>);
 
                 const formData = new FormData();
                 formData.append('option', 'com_j2commerce');
@@ -553,13 +553,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else {
                         showModalMessage(data.message, 'danger');
                         createBtn.disabled = false;
-                        setIconLabel(createBtn, 'icon-plus', <?php echo json_encode(Text::_('COM_J2COMMERCE_PAO_CREATE_OPTION')); ?>);
+                        setIconLabel(createBtn, 'icon-plus', <?php echo json_encode(Text::_('COM_J2COMMERCE_PAO_CREATE_OPTION'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>);
                     }
                 } catch (error) {
                     console.error('Error creating option value:', error);
-                    showModalMessage(<?php echo json_encode(Text::_('COM_J2COMMERCE_ERROR_SAVING')); ?>, 'danger');
+                    showModalMessage(<?php echo json_encode(Text::_('COM_J2COMMERCE_ERROR_SAVING'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>, 'danger');
                     createBtn.disabled = false;
-                    setIconLabel(createBtn, 'icon-plus', <?php echo json_encode(Text::_('COM_J2COMMERCE_PAO_CREATE_OPTION')); ?>);
+                    setIconLabel(createBtn, 'icon-plus', <?php echo json_encode(Text::_('COM_J2COMMERCE_PAO_CREATE_OPTION'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>);
                 }
             });
         }
@@ -569,7 +569,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (addAllBtn) {
             addAllBtn.addEventListener('click', async () => {
                 addAllBtn.disabled = true;
-                setSpinnerLabel(addAllBtn, <?php echo json_encode(Text::_('COM_J2COMMERCE_LOADING')); ?>);
+                setSpinnerLabel(addAllBtn, <?php echo json_encode(Text::_('COM_J2COMMERCE_LOADING'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>);
 
                 const formData = new FormData();
                 formData.append('option', 'com_j2commerce');
@@ -589,17 +589,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (data.success) {
                         // Reload the content
                         await loadOptionValuesContent(productId, productOptionId);
-                        showModalMessage(<?php echo json_encode(Text::_('COM_J2COMMERCE_ALL_OPTION_VALUES_ADDED')); ?>, 'success');
+                        showModalMessage(<?php echo json_encode(Text::_('COM_J2COMMERCE_ALL_OPTION_VALUES_ADDED'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>, 'success');
                     } else {
-                        showModalMessage(data.message || <?php echo json_encode(Text::_('COM_J2COMMERCE_ERROR_OCCURRED')); ?>, 'danger');
+                        showModalMessage(data.message || <?php echo json_encode(Text::_('COM_J2COMMERCE_ERROR_OCCURRED'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>, 'danger');
                         addAllBtn.disabled = false;
-                        setIconLabel(addAllBtn, 'icon-list', <?php echo json_encode(Text::_('COM_J2COMMERCE_ADD_ALL_OPTION_VALUE')); ?>);
+                        setIconLabel(addAllBtn, 'icon-list', <?php echo json_encode(Text::_('COM_J2COMMERCE_ADD_ALL_OPTION_VALUE'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>);
                     }
                 } catch (error) {
                     console.error('Error adding all option values:', error);
-                    showModalMessage(<?php echo json_encode(Text::_('COM_J2COMMERCE_ERROR_OCCURRED')); ?>, 'danger');
+                    showModalMessage(<?php echo json_encode(Text::_('COM_J2COMMERCE_ERROR_OCCURRED'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>, 'danger');
                     addAllBtn.disabled = false;
-                    setIconLabel(addAllBtn, 'icon-list', <?php echo json_encode(Text::_('COM_J2COMMERCE_ADD_ALL_OPTION_VALUE')); ?>);
+                    setIconLabel(addAllBtn, 'icon-list', <?php echo json_encode(Text::_('COM_J2COMMERCE_ADD_ALL_OPTION_VALUE'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>);
                 }
             });
         }
@@ -609,7 +609,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (saveBtn) {
             saveBtn.addEventListener('click', async () => {
                 saveBtn.disabled = true;
-                saveBtn.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_SAVING')); ?>;
+                saveBtn.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_SAVING'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
 
                 const formData = new FormData();
                 formData.append('option', 'com_j2commerce');
@@ -648,24 +648,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 } catch (error) {
                     console.error('Error saving option values:', error);
-                    showModalMessage(<?php echo json_encode(Text::_('COM_J2COMMERCE_ERROR_SAVING')); ?>, 'danger');
+                    showModalMessage(<?php echo json_encode(Text::_('COM_J2COMMERCE_ERROR_SAVING'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>, 'danger');
                 }
 
                 saveBtn.disabled = false;
-                saveBtn.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_SAVE_CHANGES')); ?>;
+                saveBtn.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_SAVE_CHANGES'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
             });
         }
 
         // Delete option value
         document.querySelectorAll('.j2commerce-delete-optionvalue-btn').forEach(btn => {
             btn.addEventListener('click', async () => {
-                if (!confirm(<?php echo json_encode(Text::_('COM_J2COMMERCE_CONFIRM_DELETE')); ?>)) {
+                if (!confirm(<?php echo json_encode(Text::_('COM_J2COMMERCE_CONFIRM_DELETE'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>)) {
                     return;
                 }
 
                 const povId = btn.dataset.povId;
                 btn.disabled = true;
-                setSpinnerOnly(btn, <?php echo json_encode(Text::_('COM_J2COMMERCE_LOADING')); ?>);
+                setSpinnerOnly(btn, <?php echo json_encode(Text::_('COM_J2COMMERCE_LOADING'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>);
 
                 const formData = new FormData();
                 formData.append('option', 'com_j2commerce');
@@ -697,7 +697,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 const emptyCell = document.createElement('td');
                                 emptyCell.colSpan = 10;
                                 emptyCell.className = 'text-center text-body-secondary py-4';
-                                emptyCell.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_NO_OPTION_VALUES_ASSIGNED')); ?>;
+                                emptyCell.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_NO_OPTION_VALUES_ASSIGNED'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
 
                                 emptyRow.append(emptyCell);
                                 tbody.replaceChildren(emptyRow);
@@ -711,7 +711,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 } catch (error) {
                     console.error('Error deleting option value:', error);
-                    showModalMessage(<?php echo json_encode(Text::_('COM_J2COMMERCE_ERROR_OCCURRED')); ?>, 'danger');
+                    showModalMessage(<?php echo json_encode(Text::_('COM_J2COMMERCE_ERROR_OCCURRED'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>, 'danger');
                     btn.disabled = false;
                     setIconLabel(btn, 'icon-trash');
                 }
@@ -723,7 +723,7 @@ document.addEventListener('DOMContentLoaded', () => {
             button.dataset.isDefault = isDefault ? '1' : '0';
             button.classList.toggle('text-warning', isDefault);
             button.classList.toggle('text-body-secondary', !isDefault);
-            button.title = isDefault ? <?php echo json_encode(Text::_('COM_J2COMMERCE_UNSET_DEFAULT')); ?> : <?php echo json_encode(Text::_('COM_J2COMMERCE_SET_AS_DEFAULT')); ?>;
+            button.title = isDefault ? <?php echo json_encode(Text::_('COM_J2COMMERCE_UNSET_DEFAULT'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?> : <?php echo json_encode(Text::_('COM_J2COMMERCE_SET_AS_DEFAULT'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
             const icon = button.querySelector('span');
             if (icon) icon.className = isDefault ? 'icon-star' : 'icon-star-empty';
         };
@@ -754,14 +754,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                         applyDefaultState(btn, !!data.is_default);
                         if (data.is_default) {
-                            showModalMessage(<?php echo json_encode(Text::_('COM_J2COMMERCE_DEFAULT_SET_SUCCESSFULLY')); ?>, 'success');
+                            showModalMessage(<?php echo json_encode(Text::_('COM_J2COMMERCE_DEFAULT_SET_SUCCESSFULLY'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>, 'success');
                         }
                     } else {
-                        showModalMessage(data.message || <?php echo json_encode(Text::_('COM_J2COMMERCE_ERROR_OCCURRED')); ?>, 'danger');
+                        showModalMessage(data.message || <?php echo json_encode(Text::_('COM_J2COMMERCE_ERROR_OCCURRED'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>, 'danger');
                     }
                 } catch (error) {
                     console.error('Error changing default:', error);
-                    showModalMessage(<?php echo json_encode(Text::_('COM_J2COMMERCE_ERROR_OCCURRED')); ?>, 'danger');
+                    showModalMessage(<?php echo json_encode(Text::_('COM_J2COMMERCE_ERROR_OCCURRED'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>, 'danger');
                 }
 
                 btn.disabled = false;
@@ -783,7 +783,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentProductOptionId = productOptionId;
 
         // Update modal title immediately
-        modalLabel.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_PAO_SET_OPTIONS_FOR')); ?> + ': ' + optionName;
+        modalLabel.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_PAO_SET_OPTIONS_FOR'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?> + ': ' + optionName;
 
         // Show modal
         if (!modalInstance) {

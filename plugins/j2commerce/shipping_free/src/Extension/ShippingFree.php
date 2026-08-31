@@ -88,12 +88,16 @@ final class ShippingFree extends CMSPlugin implements SubscriberInterface
         $args  = $event->getArguments();
         $order = $args[0] ?? null;
 
+        // A cart-page estimate may quote before a destination is known; an order may not.
+        // Defaulting to 'checkout' keeps the strict path for any caller that omits it.
+        $isEstimate = ($args[1] ?? 'checkout') === 'estimate';
+
         if ($order === null) {
             return;
         }
 
         // Check geozone availability
-        if (!$this->checkGeozones($order)) {
+        if (!$this->checkGeozones($order, $isEstimate)) {
             return;
         }
 
@@ -224,7 +228,7 @@ final class ShippingFree extends CMSPlugin implements SubscriberInterface
     /**
      * Check if shipping address matches any configured geozone.
      */
-    private function checkGeozones(object $order): bool
+    private function checkGeozones(object $order, bool $isEstimate = false): bool
     {
         $geozones = $this->params->get('geozones', []);
 
@@ -273,8 +277,11 @@ final class ShippingFree extends CMSPlugin implements SubscriberInterface
             return false;
         }
 
+        // No destination resolved. An estimate may still offer the method so the cart page can
+        // show it before an address exists; an order may not, because geozones are configured
+        // precisely to say where this method is and is not available.
         if (empty($address)) {
-            return true;
+            return $isEstimate;
         }
 
         // Check each configured geozone against the shipping address

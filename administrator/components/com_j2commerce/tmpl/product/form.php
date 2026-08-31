@@ -249,7 +249,7 @@ if ($app->isClient('administrator')) {
                         <div class="description-area">
                             <div class="d-flex align-items-center justify-content-between">
                                 <h2 class="fs-6"><?php echo Text::_('COM_J2COMMERCE_PLUGIN_SHORTCODE');?></h2>
-                                <button type="button" class="btn btn-sm btn-soft-dark fw-medium" id="j2commerceToggleShortcodes" data-bs-toggle="collapse" data-bs-target="#collapseShortcodes" aria-expanded="false" aria-controls="collapseShortcodes">
+                                <button type="button" class="btn btn-sm btn-soft-dark fw-medium" id="j2commerceToggleShortcodes" data-bs-toggle="collapse" data-bs-target="#j2commerce_collapseShortcodes" aria-expanded="false" aria-controls="j2commerce_collapseShortcodes">
                                     <?php echo Text::_('COM_J2COMMERCE_VIEW_ADDITIONAL_SHORTCODES'); ?>
                                 </button>
                             </div>
@@ -257,7 +257,7 @@ if ($app->isClient('administrator')) {
                                 <code>{j2commerce}<?php echo $item->j2commerce_product_id; ?>|cart{/j2commerce}</code>
                                 <div class="form-text"><?php echo Text::_('COM_J2COMMERCE_PLUGIN_SHORTCODE_HELP_TEXT');?></div>
                             </div>
-                            <div class="collapse" id="collapseShortcodes">
+                            <div class="collapse" id="j2commerce_collapseShortcodes">
                                 <div class="shortcode-item mb-3">
                                     <code>{j2commerce}<?php echo $item->j2commerce_product_id; ?>|upsells|crosssells{/j2commerce}</code>
                                     <div class="form-text"><?php echo Text::_('COM_J2COMMERCE_PLUGIN_SHORTCODE_HELP_TEXT_ADDITIONAL');?></div>
@@ -321,14 +321,14 @@ if ($app->isClient('administrator')) {
                         <div id="j2commerce-product-type-wrapper" class="d-none">
                         <div class="control-group">
                             <div class="control-label">
-                                <label for="product_type"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_TYPE');?></label>
+                                <label for="j2commerce_product_type"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_TYPE');?></label>
                             </div>
                             <div class="controls">
                                 <?php if(!empty($item->product_type)): ?>
                                     <span class="<?php echo $product_type_class;?>"><?php echo htmlspecialchars(ProducttypeField::getProductTypes()[$item->product_type] ?? $item->product_type, ENT_QUOTES, 'UTF-8'); ?></span>
-                                    <input type="hidden" name="<?php echo $formPrefix.'[product_type]'?>" value="<?php echo $item->product_type; ?>" />
+                                    <input type="hidden" name="<?php echo $formPrefix.'[product_type]'?>" value="<?php echo htmlspecialchars($item->product_type ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
                                 <?php else: ?>
-                                    <select name="<?php echo $formPrefix;?>[product_type]" id="product_type" class="form-select">
+                                    <select name="<?php echo $formPrefix;?>[product_type]" id="j2commerce_product_type" class="form-select">
                                         <option value=""><?php echo Text::_('COM_J2COMMERCE_SELECT_PRODUCT_TYPE'); ?></option>
                                         <?php foreach ($productTypes as $option) : ?>
                                             <option value="<?php echo $option->value; ?>"
@@ -359,7 +359,7 @@ if ($app->isClient('administrator')) {
 
                     <?php echo J2CommerceHelper::loadSubTemplate($item->product_type, ['product' => $item, 'form_prefix' => $formPrefix],'form',JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product'); ?>
 
-                    <input type="hidden" name="<?php echo $formPrefix.'[product_type]'?>" value="<?php echo $item->product_type; ?>" />
+                    <input type="hidden" name="<?php echo $formPrefix.'[product_type]'?>" value="<?php echo htmlspecialchars($item->product_type ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
 
                 </div>
             </div>

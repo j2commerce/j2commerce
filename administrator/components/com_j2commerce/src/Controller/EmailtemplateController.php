@@ -311,6 +311,18 @@ class EmailtemplateController extends FormController
         $this->app->close();
     }
 
+    /** JSON exit for the AJAX tasks. close() is exit(), so the headers flush first. */
+    private function sendJson(mixed $data): void
+    {
+        $this->app->setHeader('Content-Type', 'application/json; charset=utf-8');
+        $this->app->setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+        $this->app->setHeader('X-Content-Type-Options', 'nosniff', true);
+        $this->app->sendHeaders();
+
+        echo json_encode($data);
+        $this->app->close();
+    }
+
     /** Send a test email using sample order data. */
     public function sendTest(): void
     {
@@ -335,9 +347,7 @@ class EmailtemplateController extends FormController
 
         if (empty($recipient) || !filter_var($recipient, FILTER_VALIDATE_EMAIL)) {
             $json['message'] = Text::_('COM_J2COMMERCE_EMAILTEMPLATE_INVALID_EMAIL');
-            header('Content-Type: application/json');
-            echo json_encode($json);
-            $this->app->close();
+            $this->sendJson($json);
             return;
         }
 
@@ -397,9 +407,7 @@ class EmailtemplateController extends FormController
             $json['message'] = Text::sprintf('COM_J2COMMERCE_EMAILTEMPLATE_TEST_FAILED_TRANSPORT', $transport);
         }
 
-        header('Content-Type: application/json');
-        echo json_encode($json);
-        $this->app->close();
+        $this->sendJson($json);
     }
 
     /** Load a pre-made template file and return its HTML content. */
@@ -414,9 +422,7 @@ class EmailtemplateController extends FormController
 
         if (!$type || !$design || str_contains($type, '..') || str_contains($design, '..')) {
             $json['message'] = Text::_('COM_J2COMMERCE_EMAILTEMPLATE_INVALID_SELECTION');
-            header('Content-Type: application/json');
-            echo json_encode($json);
-            $this->app->close();
+            $this->sendJson($json);
             return;
         }
 
@@ -433,9 +439,7 @@ class EmailtemplateController extends FormController
         if (!empty($templateResult['body'])) {
             $json['success'] = true;
             $json['body']    = $templateResult['body'];
-            header('Content-Type: application/json');
-            echo json_encode($json);
-            $this->app->close();
+            $this->sendJson($json);
             return;
         }
 
@@ -443,18 +447,14 @@ class EmailtemplateController extends FormController
 
         if (!file_exists($filePath)) {
             $json['message'] = 'Template file not found.';
-            header('Content-Type: application/json');
-            echo json_encode($json);
-            $this->app->close();
+            $this->sendJson($json);
             return;
         }
 
         $json['success'] = true;
         $json['body']    = file_get_contents($filePath);
 
-        header('Content-Type: application/json');
-        echo json_encode($json);
-        $this->app->close();
+        $this->sendJson($json);
     }
 
     /** Return shortcode HTML and structured data for the given email type. */
@@ -521,9 +521,7 @@ class EmailtemplateController extends FormController
             'typeTags'   => $typeTags,
         ];
 
-        header('Content-Type: application/json');
-        echo json_encode($json);
-        $this->app->close();
+        $this->sendJson($json);
     }
 
     private static function getEmailTypeRegistry(): \J2Commerce\Component\J2commerce\Administrator\Service\EmailTypeRegistry

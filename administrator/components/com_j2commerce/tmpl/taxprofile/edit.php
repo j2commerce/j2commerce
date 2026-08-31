@@ -164,7 +164,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Store existing rule selections for pre-population
     const existingRules = <?php echo json_encode(array_map(function($r) {
         return ['taxrate_id' => $r->taxrate_id];
-    }, $taxrules)); ?>;
+    }, $taxrules), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
 
     // J2Commerce Tax namespace
     window.J2CommerceTax = {

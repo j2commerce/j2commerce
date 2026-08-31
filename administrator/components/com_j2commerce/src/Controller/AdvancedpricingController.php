@@ -200,10 +200,15 @@ class AdvancedpricingController extends AdminController
         return (bool) $this->input->post->get($token, '', 'alnum');
     }
 
+    /** JSON exit for the AJAX tasks. close() is exit(), so the headers flush first. */
     private function sendJsonResponse(bool $success, string $message, array $data = []): void
     {
-        header('Content-Type: application/json; charset=utf-8');
+        $this->app->setHeader('Content-Type', 'application/json; charset=utf-8');
+        $this->app->setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+        $this->app->setHeader('X-Content-Type-Options', 'nosniff', true);
+        $this->app->sendHeaders();
+
         echo json_encode(['success' => $success, 'message' => $message, 'data' => $data]);
-        Factory::getApplication()->close();
+        $this->app->close();
     }
 }

@@ -122,11 +122,11 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     async function loadZones(countryId, selectedZoneId = 0) {
         // Show loading state
-        zoneSelect.replaceChildren(new Option(<?php echo json_encode(Text::_('COM_J2COMMERCE_LOADING')); ?>, ''));
+        zoneSelect.replaceChildren(new Option(<?php echo json_encode(Text::_('COM_J2COMMERCE_LOADING'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>, ''));
         zoneSelect.disabled = true;
 
         if (!countryId || countryId === '0' || countryId === '') {
-            zoneSelect.replaceChildren(new Option(<?php echo json_encode(Text::_('COM_J2COMMERCE_SELECT_ZONE')); ?>, ''));
+            zoneSelect.replaceChildren(new Option(<?php echo json_encode(Text::_('COM_J2COMMERCE_SELECT_ZONE'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>, ''));
             zoneSelect.disabled = false;
             return;
         }
@@ -152,7 +152,7 @@ document.addEventListener('DOMContentLoaded', function() {
             zoneSelect.disabled = false;
         } catch (error) {
             console.error('Error loading zones:', error);
-            zoneSelect.replaceChildren(new Option(<?php echo json_encode(Text::_('COM_J2COMMERCE_SELECT_ZONE')); ?>, ''));
+            zoneSelect.replaceChildren(new Option(<?php echo json_encode(Text::_('COM_J2COMMERCE_SELECT_ZONE'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>, ''));
             zoneSelect.disabled = false;
         }
     }

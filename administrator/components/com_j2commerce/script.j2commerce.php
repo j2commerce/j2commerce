@@ -174,10 +174,111 @@ class Com_J2commerceInstallerScript extends InstallerScript
 
         $this->seedOrderLedgerOnce();
 
+        $this->migratePaymentDashboardIcons();
+
         Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_UPDATE_SUCCESS'), 'success');
 
         $this->debugLog("=== UPDATE END ===");
         return true;
+    }
+
+    /**
+     * Move the icon class that releases up to 6.6.1 saved into a payment plugin's
+     * dashboard_icon_label over to dashboard_icon_class, where the quick-icon tile now
+     * reads it — otherwise the class string renders as the tile's caption. Idempotent:
+     * a migrated row no longer matches. Retire in 6.6.3 along with the matching
+     * str_starts_with() fallback in each payment plugin's onGetQuickIcons().
+     */
+    private function migratePaymentDashboardIcons(): void
+    {
+        $db = Factory::getContainer()->get(DatabaseInterface::class);
+
+        try {
+            $query = $db->getQuery(true)
+                ->select($db->quoteName(['extension_id', 'params']))
+                ->from($db->quoteName('#__extensions'))
+                ->where($db->quoteName('type') . ' = ' . $db->quote('plugin'))
+                ->where($db->quoteName('folder') . ' = ' . $db->quote('j2commerce'))
+                // Escaped underscore: bare _ is a LIKE single-character wildcard.
+                ->where($db->quoteName('element') . ' LIKE ' . $db->quote('payment\_%'));
+
+            $moved = 0;
+
+            foreach ($db->setQuery($query)->loadObjectList() as $row) {
+                $params = new Registry($row->params);
+                $label  = trim((string) $params->get('dashboard_icon_label', ''));
+
+                if (!str_starts_with($label, 'fa-')) {
+                    continue;
+                }
+
+                if (trim((string) $params->get('dashboard_icon_class', '')) !== '') {
+                    continue;
+                }
+
+                // Some of those saved defaults were never real icons (fa-solid fa-elavon).
+                $params->set('dashboard_icon_class', $this->isKnownIconClass($label) ? $label : 'fa-solid fa-credit-card');
+                $params->set('dashboard_icon_label', '');
+
+                $json = $params->toString();
+                $id   = (int) $row->extension_id;
+
+                $update = $db->getQuery(true)
+                    ->update($db->quoteName('#__extensions'))
+                    ->set($db->quoteName('params') . ' = :params')
+                    ->where($db->quoteName('extension_id') . ' = :id')
+                    ->bind(':params', $json)
+                    ->bind(':id', $id, ParameterType::INTEGER);
+
+                $db->setQuery($update)->execute();
+                $moved++;
+            }
+
+            $this->debugLog('DASHBOARD ICONS: moved ' . $moved . ' payment plugin icon class(es) out of the label field');
+        } catch (\Throwable $e) {
+            $this->debugLog('DASHBOARD ICONS: migration failed (see the j2commerce log)');
+            Log::add('Payment dashboard icon migration failed: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
+        }
+    }
+
+    /**
+     * Whether every glyph token in a Font Awesome class string exists in the admin
+     * template's stylesheet. Unreadable stylesheet answers true, so a value is never
+     * discarded on a site whose admin template ships Font Awesome somewhere else.
+     * That permissive answer is only safe while layouts/dashboard/quickicon.php keeps
+     * escaping the class it renders — keep the two together.
+     */
+    private function isKnownIconClass(string $class): bool
+    {
+        static $icons = null;
+
+        if ($icons === null) {
+            $css = JPATH_ROOT . '/media/templates/administrator/atum/css/vendor/fontawesome-free/fontawesome.css';
+
+            if (!is_readable($css)) {
+                $icons = false;
+            } else {
+                preg_match_all('/^\.fa-[a-z0-9-]+(?:,\s*\.fa-[a-z0-9-]+)*\s*\{/m', (string) file_get_contents($css), $m);
+                preg_match_all('/\.(fa-[a-z0-9-]+)/', implode("\n", $m[0]), $names);
+                $icons = array_flip($names[1]);
+            }
+        }
+
+        if ($icons === false) {
+            return true;
+        }
+
+        // fa/fas/far/fab and fa-solid/fa-regular/fa-brands select the face, not a glyph.
+        $styles = ['fa', 'fas', 'far', 'fab', 'fa-solid', 'fa-regular', 'fa-brands'];
+        $glyphs = array_diff(preg_split('/\s+/', trim($class)) ?: [], $styles);
+
+        foreach ($glyphs as $glyph) {
+            if (!isset($icons[$glyph])) {
+                return false;
+            }
+        }
+
+        return $glyphs !== [];
     }
 
     /** Remove pre-subfolder checkout templates left behind on existing sites; harmless if absent. */

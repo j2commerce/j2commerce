@@ -403,10 +403,20 @@ $wa->addInlineStyle('
     border:2px solid var(--gjs-border, #dee2e6);
     cursor: pointer;
     transition: border-color 0.15s;
+    width: 100%;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    text-align: inherit;
 }
-.template-card:hover {
+.template-card:hover,
+.template-card:focus-visible {
     border-color: var(--gjs-accent, #0d6efd);
     box-shadow: none;
+}
+.template-card:focus-visible {
+    outline: 2px solid var(--gjs-accent, #0d6efd);
+    outline-offset: 2px;
 }
 ');
 
@@ -573,27 +583,27 @@ $tmpl = $input->get('tmpl', '', 'cmd') === 'component' ? '&tmpl=component' : '';
                                 $design = pathinfo($file, PATHINFO_FILENAME);
                         ?>
                         <div class="col-md-4 mb-3">
-                            <div class="card h-100 template-card" role="button" data-template-type="<?php echo $this->escape($dir); ?>" data-template-design="<?php echo $this->escape($design); ?>" data-email-type="<?php echo $this->escape($dirEmailType); ?>">
-                                <div class="card-body text-center p-3">
+                            <button type="button" class="card h-100 template-card" data-template-type="<?php echo $this->escape($dir); ?>" data-template-design="<?php echo $this->escape($design); ?>" data-email-type="<?php echo $this->escape($dirEmailType); ?>">
+                                <span class="card-body text-center p-3">
                                     <span class="icon-envelope d-block mb-2" style="font-size: 2rem; color: var(--gjs-text-muted, #6c757d);" aria-hidden="true"></span>
-                                    <h3 class="card-title mb-1 fs-6"><?php echo $this->escape(ucfirst($design)); ?></h3>
+                                    <span class="card-title d-block mb-1 fs-6 fw-medium"><?php echo $this->escape(ucfirst($design)); ?></span>
                                     <small class="text-body-secondary"><?php echo $this->escape(ucfirst($dir)); ?></small>
-                                </div>
-                            </div>
+                                </span>
+                            </button>
                         </div>
                         <?php endforeach; endforeach; ?>
                         <?php foreach ($this->pluginTemplateCards as $card): ?>
                         <div class="col-md-4 mb-3">
-                            <div class="card h-100 template-card" role="button"
+                            <button type="button" class="card h-100 template-card"
                                 data-template-type="<?php echo $this->escape($card['type'] ?? ''); ?>"
                                 data-template-design="<?php echo $this->escape($card['design'] ?? ''); ?>"
                                 data-email-type="<?php echo $this->escape($card['email_type'] ?? $card['type'] ?? ''); ?>">
-                                <div class="card-body text-center p-3">
+                                <span class="card-body text-center p-3">
                                     <span class="icon-envelope d-block mb-2" style="font-size: 2rem; color: var(--gjs-text-muted, #6c757d);" aria-hidden="true"></span>
-                                    <h3 class="card-title mb-1 fs-6"><?php echo $this->escape($card['label'] ?? ''); ?></h3>
+                                    <span class="card-title d-block mb-1 fs-6 fw-medium"><?php echo $this->escape($card['label'] ?? ''); ?></span>
                                     <small class="text-body-secondary"><?php echo $this->escape($card['category'] ?? ''); ?></small>
-                                </div>
-                            </div>
+                                </span>
+                            </button>
                         </div>
                         <?php endforeach; ?>
                     </div>

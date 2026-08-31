@@ -18,6 +18,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Table\Table;
 use Joomla\Database\DatabaseDriver;
 use Joomla\Database\ParameterType;
+use Joomla\Utilities\ArrayHelper;
 
 /**
  * Product table class.
@@ -172,6 +173,54 @@ class ProductTable extends Table
     protected function deleteChildRecords(int $productId): bool
     {
         $db = $this->getDatabase();
+
+        // The variant-owned tables and #__j2commerce_product_optionvalues key on ids the
+        // loop below is about to remove, so they have to be cleared while those ids still
+        // resolve. Master variants go too - the whole product is being deleted.
+        try {
+            $query = $db->getQuery(true)
+                ->select($db->quoteName('j2commerce_variant_id'))
+                ->from($db->quoteName('#__j2commerce_variants'))
+                ->where($db->quoteName('product_id') . ' = :productId')
+                ->bind(':productId', $productId, ParameterType::INTEGER);
+            $db->setQuery($query);
+            $variantIds = $db->loadColumn();
+
+            if (!empty($variantIds)) {
+                $ids = ArrayHelper::toInteger($variantIds);
+
+                foreach ([
+                    '#__j2commerce_product_variant_optionvalues',
+                    '#__j2commerce_productquantities',
+                    '#__j2commerce_product_prices',
+                ] as $childTable) {
+                    $query = $db->getQuery(true)
+                        ->delete($db->quoteName($childTable))
+                        ->whereIn($db->quoteName('variant_id'), $ids);
+                    $db->setQuery($query);
+                    $db->execute();
+                }
+            }
+
+            $query = $db->getQuery(true)
+                ->select($db->quoteName('j2commerce_productoption_id'))
+                ->from($db->quoteName('#__j2commerce_product_options'))
+                ->where($db->quoteName('product_id') . ' = :productId')
+                ->bind(':productId', $productId, ParameterType::INTEGER);
+            $db->setQuery($query);
+            $optionIds = $db->loadColumn();
+
+            if (!empty($optionIds)) {
+                $query = $db->getQuery(true)
+                    ->delete($db->quoteName('#__j2commerce_product_optionvalues'))
+                    ->whereIn($db->quoteName('productoption_id'), ArrayHelper::toInteger($optionIds));
+                $db->setQuery($query);
+                $db->execute();
+            }
+        } catch (\Exception $e) {
+            $this->setError($e->getMessage());
+            return false;
+        }
 
         // Child tables to cascade delete
         $childTables = [

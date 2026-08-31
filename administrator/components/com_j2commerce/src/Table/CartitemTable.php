@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Table;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\CartHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Table\Table;
 use Joomla\Database\DatabaseDriver;
@@ -120,6 +121,32 @@ class CartitemTable extends Table
      */
     public function store($updateNulls = true): bool
     {
-        return parent::store($updateNulls);
+        $result = parent::store($updateNulls);
+
+        if ($result) {
+            CartHelper::flushCartCounts();
+        }
+
+        return $result;
+    }
+
+    /**
+     * Overridden so every Table-based write drops the cart-count memo. CartsController mutates
+     * lines through this class rather than through CartModel, so the flush has to live here to
+     * cover both routes.
+     *
+     * @param   mixed  $pk  Primary key value to delete, or null for the instance's own key.
+     *
+     * @since   6.6.0
+     */
+    public function delete($pk = null): bool
+    {
+        $result = parent::delete($pk);
+
+        if ($result) {
+            CartHelper::flushCartCounts();
+        }
+
+        return $result;
     }
 }

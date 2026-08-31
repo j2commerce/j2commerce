@@ -16,6 +16,7 @@ namespace J2Commerce\Component\J2commerce\Site\Controller;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use Joomla\CMS\Application\CMSApplicationInterface;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\BaseController;
@@ -77,9 +78,7 @@ class AjaxController extends BaseController
             }
         }
 
-        $app->setHeader('Content-Type', 'text/html; charset=utf-8');
-        echo $html;
-        $app->close();
+        $this->sendHtml($app, $html);
     }
 
     /**
@@ -123,9 +122,7 @@ class AjaxController extends BaseController
             // Database error — return just the default option
         }
 
-        $app->setHeader('Content-Type', 'text/html; charset=utf-8');
-        echo $html;
-        $app->close();
+        $this->sendHtml($app, $html);
     }
 
     /**
@@ -147,37 +144,33 @@ class AjaxController extends BaseController
         $result = ['country_id' => 0, 'zone_id' => 0];
 
         if (empty($countryCode)) {
-            $app->setHeader('Content-Type', 'application/json');
-            echo json_encode($result);
-            $app->close();
+            $this->sendJson($app, $result);
         }
 
         try {
             $db = Factory::getContainer()->get(DatabaseInterface::class);
 
-            // Get country ID
-            $query = $db->getQuery(true)
+            // Get country ID. bind() takes its value by reference, so the normalised
+            // code needs a variable of its own.
+            $isoCode = strtoupper(trim($countryCode));
+            $query   = $db->getQuery(true)
                 ->select($db->quoteName('j2commerce_country_id'))
                 ->from($db->quoteName('#__j2commerce_countries'))
                 ->where($db->quoteName('country_isocode_2') . ' = :code')
                 ->where($db->quoteName('enabled') . ' = 1')
-                ->bind(':code', strtoupper(trim($countryCode)));
+                ->bind(':code', $isoCode);
 
             $db->setQuery($query);
             $countryId = (int) $db->loadResult();
 
             if (!$countryId) {
-                $app->setHeader('Content-Type', 'application/json');
-                echo json_encode($result);
-                $app->close();
+                $this->sendJson($app, $result);
             }
 
             $result['country_id'] = $countryId;
 
             if (empty($stateName)) {
-                $app->setHeader('Content-Type', 'application/json');
-                echo json_encode($result);
-                $app->close();
+                $this->sendJson($app, $result);
             }
 
             // Try to match zone
@@ -189,9 +182,7 @@ class AjaxController extends BaseController
             // Database error — return default result
         }
 
-        $app->setHeader('Content-Type', 'application/json');
-        echo json_encode($result);
-        $app->close();
+        $this->sendJson($app, $result);
     }
 
     /**
@@ -255,5 +246,28 @@ class AjaxController extends BaseController
         $result = $db->loadResult();
 
         return $result ? (int) $result : 0;
+    }
+
+    private function sendHtml(CMSApplicationInterface $app, string $html): void
+    {
+        $app->setHeader('Content-Type', 'text/html; charset=utf-8');
+        $this->sendAndClose($app, $html);
+    }
+
+    private function sendJson(CMSApplicationInterface $app, array $data): void
+    {
+        $app->setHeader('Content-Type', 'application/json; charset=utf-8');
+        $this->sendAndClose($app, (string) json_encode($data));
+    }
+
+    /** close() is exit() — without sendHeaders() the queued headers never reach the client. */
+    private function sendAndClose(CMSApplicationInterface $app, string $body): void
+    {
+        $app->setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+        $app->setHeader('X-Content-Type-Options', 'nosniff', true);
+        $app->sendHeaders();
+
+        echo $body;
+        $app->close();
     }
 }

@@ -24,7 +24,8 @@ $input = $app->input;
 
 $wa = $this->getDocument()->getWebAssetManager();
 $wa->useScript('keepalive')
-    ->useScript('form.validate');
+    ->useScript('form.validate')
+    ->registerAndUseScript('com_j2commerce.dom', 'media/com_j2commerce/js/site/j2commerce-dom.js', [], ['defer' => true]);
 
 $bodySource    = $this->item->body_source ?? 'editor';
 $isVisual      = ($bodySource === 'visual');
@@ -192,24 +193,53 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    // Shortcode search filter (sidebar)
+    // Shortcode filter (sidebar): the search term, plus the tags the selected document type
+    // deletes at render. A packing slip drops the totals tags, so the picker must not offer
+    // a tag that would silently vanish on print.
     const sidebarSearch = document.getElementById("shortcode-search-sidebar");
-    if (sidebarSearch) {
-        sidebarSearch.addEventListener("input", function() {
-            const term = this.value.toLowerCase();
-            document.querySelectorAll("#shortcodes-sidebar-col .shortcode-group").forEach(function(group) {
-                const btns = group.querySelectorAll(".shortcode-btn");
-                let hasVisible = false;
-                btns.forEach(function(btn) {
-                    const text = (btn.textContent + " " + (btn.getAttribute("data-shortcode") || "")).toLowerCase();
-                    const visible = !term || text.includes(term);
-                    btn.style.display = visible ? "" : "none";
-                    if (visible) hasVisible = true;
-                });
-                group.style.display = hasVisible ? "" : "none";
+    const invoiceTypeField = document.querySelector("select[name=\"jform[invoice_type]\"]");
+    const editorOptions = Joomla.getOptions("com_j2commerce.emaileditor") || {};
+
+    function isPackingSlip() {
+        return (invoiceTypeField ? invoiceTypeField.value : editorOptions.invoiceType) === "packingslip";
+    }
+
+    function filterShortcodes() {
+        const term = (sidebarSearch ? sidebarSearch.value : "").toLowerCase();
+        const stripped = isPackingSlip();
+
+        document.querySelectorAll("#shortcodes-sidebar-col .shortcode-group").forEach(function(group) {
+            let hasVisible = false;
+            group.querySelectorAll(".shortcode-btn").forEach(function(btn) {
+                const text = (btn.textContent + " " + (btn.getAttribute("data-shortcode") || "")).toLowerCase();
+                const visible = (!stripped || !btn.hasAttribute("data-packingslip-strip"))
+                    && (!term || text.includes(term));
+                btn.style.display = visible ? "" : "none";
+                if (visible) hasVisible = true;
             });
+            group.style.display = hasVisible ? "" : "none";
         });
     }
+
+    if (sidebarSearch) {
+        sidebarSearch.addEventListener("input", filterShortcodes);
+    }
+
+    if (invoiceTypeField) {
+        invoiceTypeField.addEventListener("change", function() {
+            filterShortcodes();
+
+            // Second authoring route: the visual builder block list has to agree with the picker.
+            if (typeof window.updateJ2CShortcodeBlocks === "function" && typeof window.j2cFilterShortcodes === "function") {
+                window.updateJ2CShortcodeBlocks(window.j2cFilterShortcodes(
+                    editorOptions.shortcodes || {},
+                    isPackingSlip() ? (editorOptions.packingSlipTags || []) : []
+                ));
+            }
+        });
+    }
+
+    filterShortcodes();
 
     // Template card click handler (named function for reuse after AJAX render)
     function bindTemplateCardClick(card) {
@@ -264,32 +294,52 @@ document.addEventListener("DOMContentLoaded", function() {
             const grid = document.getElementById("template-grid");
             const token = Joomla.getOptions("csrf.token") || document.querySelector("input[type=hidden][name][value=\"1\"]")?.name || "";
 
-            grid.innerHTML = \'<div class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">\' + Joomla.Text._("COM_J2COMMERCE_LOADING") + \'</span></div></div>\';
+            const el = J2CommerceDom.el;
+
+            const spinner = el("div", {class: "spinner-border text-primary", role: "status"});
+            spinner.appendChild(el("span", {class: "visually-hidden"}, Joomla.Text._("COM_J2COMMERCE_LOADING")));
+            const spinnerWrap = el("div", {class: "text-center py-4"});
+            spinnerWrap.appendChild(spinner);
+            grid.replaceChildren(spinnerWrap);
 
             try {
                 const presetsUrl = Joomla.getOptions("com_j2commerce.emaileditor")?.getPresetsUrl || "";
                 const response = await fetch(presetsUrl + "&" + token + "=1&type=" + type);
+                if (!response.ok) throw new Error(response.status + " " + response.statusText);
                 const json = await response.json();
 
                 if (json.success && json.presets.length) {
-                    let html = \'<div class="row">\';
+                    const typeLabel = type.charAt(0).toUpperCase() + type.slice(1).replace("_", " ");
+                    const row = el("div", {class: "row"});
+
                     json.presets.forEach(function(preset) {
-                        html += \'<div class="col-md-4 mb-3">\'
-                            + \'<div class="card h-100 template-card" role="button" data-template-type="\' + preset.type + \'" data-template-design="\' + preset.design + \'">\'
-                            + \'<div class="card-body text-center p-3">\'
-                            + \'<span class="icon-print d-block mb-2" style="font-size:2rem;color:var(--gjs-text-muted,#6c757d);" aria-hidden="true"></span>\'
-                            + \'<h3 class="card-title mb-1 fs-6">\' + preset.label + \'</h3>\'
-                            + \'<small class="text-body-secondary">\' + type.charAt(0).toUpperCase() + type.slice(1).replace("_", " ") + \'</small>\'
-                            + \'</div></div></div>\';
+                        const body = el("span", {class: "card-body text-center p-3"});
+                        body.append(
+                            el("span", {class: "icon-print d-block mb-2", style: "font-size:2rem;color:var(--gjs-text-muted,#6c757d);", "aria-hidden": "true"}),
+                            el("span", {class: "card-title d-block mb-1 fs-6 fw-medium"}, preset.label),
+                            el("small", {class: "text-body-secondary"}, typeLabel)
+                        );
+
+                        const card = el("button", {
+                            type: "button",
+                            class: "card h-100 template-card",
+                            "data-template-type": preset.type,
+                            "data-template-design": preset.design
+                        });
+                        card.appendChild(body);
+
+                        const col = el("div", {class: "col-md-4 mb-3"});
+                        col.appendChild(card);
+                        row.appendChild(col);
                     });
-                    html += \'</div>\';
-                    grid.innerHTML = html;
+
+                    grid.replaceChildren(row);
                     grid.querySelectorAll(".template-card").forEach(bindTemplateCardClick);
                 } else {
-                    grid.innerHTML = \'<div class="alert alert-info">\' + Joomla.Text._("COM_J2COMMERCE_INVOICETEMPLATE_NO_PRESETS") + \'</div>\';
+                    grid.replaceChildren(el("div", {class: "alert alert-info"}, Joomla.Text._("COM_J2COMMERCE_INVOICETEMPLATE_NO_PRESETS")));
                 }
             } catch (err) {
-                grid.innerHTML = \'<div class="alert alert-danger">\' + err.message + \'</div>\';
+                grid.replaceChildren(el("div", {class: "alert alert-danger"}, err.message));
             }
         });
     }
@@ -337,10 +387,20 @@ $wa->addInlineStyle('
     border: 2px solid var(--gjs-border, #dee2e6);
     cursor: pointer;
     transition: border-color 0.15s;
+    width: 100%;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    text-align: inherit;
 }
-.template-card:hover {
+.template-card:hover,
+.template-card:focus-visible {
     border-color: var(--gjs-accent, #0d6efd);
     box-shadow: none;
+}
+.template-card:focus-visible {
+    outline: 2px solid var(--gjs-accent, #0d6efd);
+    outline-offset: 2px;
 }
 ');
 
@@ -393,6 +453,7 @@ $tmpl   = $input->get('tmpl', '', 'cmd') === 'component' ? '&tmpl=component' : '
                     <?php echo $this->form->renderField('show_custom_css'); ?>
                     <?php echo $this->form->renderField('custom_css'); ?>
                     <?php echo $this->form->renderField('body'); ?>
+                    <?php echo $this->form->renderField('body_source_file'); ?>
                     <?php echo $this->form->renderField('invoice_template_description'); ?>
                 </fieldset>
             </div>

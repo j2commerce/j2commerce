@@ -801,9 +801,14 @@ class MultiimageuploaderController extends BaseController
         return str_starts_with($normalizedPath, $normalizedRoot);
     }
 
+    /** JSON exit for the AJAX tasks. close() is exit(), so the headers flush first. */
     private function sendJson(bool $success, string $message = '', mixed $data = null): void
     {
-        $this->app->getDocument()->setMimeEncoding('application/json');
+        $this->app->setHeader('Content-Type', 'application/json; charset=utf-8');
+        $this->app->setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+        $this->app->setHeader('X-Content-Type-Options', 'nosniff', true);
+        $this->app->sendHeaders();
+
         echo json_encode([
             'success' => $success,
             'message' => $message,

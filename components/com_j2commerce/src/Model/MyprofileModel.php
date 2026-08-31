@@ -225,7 +225,9 @@ class MyprofileModel extends BaseDatabaseModel
             ->join('LEFT', $db->quoteName('#__j2commerce_orderstatuses', 's')
                 . ' ON ' . $db->quoteName('s.j2commerce_orderstatus_id') . ' = ' . $db->quoteName('h.order_state_id'))
             ->where($db->quoteName('h.order_id') . ' = :orderId')
-            ->where($db->quoteName('h.params') . ' NOT LIKE ' . $db->quote('%"type":"admin_note"%'))
+            // Any typed row is internal. Naming one type made this a denylist of one,
+            // so system_note and every plugin-written type rendered to the shopper.
+            ->where($db->quoteName('h.params') . ' NOT LIKE ' . $db->quote('%"type":%'))
             ->bind(':orderId', $orderId, ParameterType::STRING)
             ->order($db->quoteName('h.created_on') . ' DESC');
 

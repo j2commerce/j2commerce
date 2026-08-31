@@ -159,10 +159,21 @@
         }
 
         const count = cart.count;
-        const nextText = String(count);
         let changed = false;
 
+        // A badge declares which measure it rendered: the quantity total (default, and what
+        // pre-6.6 markup carries as a valueless attribute) or the number of distinct lines.
+        // An endpoint that predates lineCount leaves that badge alone rather than rewriting
+        // it with a different measure.
         document.querySelectorAll('[data-j2c-cart-count]').forEach(function (el) {
+            const value = el.getAttribute('data-j2c-cart-count') === 'lines' ? cart.lineCount : count;
+
+            if (typeof value !== 'number') {
+                return;
+            }
+
+            const nextText = String(value);
+
             if (el.textContent.trim() !== nextText) {
                 changed = true;
             }

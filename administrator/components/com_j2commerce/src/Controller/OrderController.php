@@ -294,10 +294,20 @@ class OrderController extends FormController
         $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=order&layout=edit&id=' . $orderId, false));
     }
 
+    /** JSON exit for the AJAX tasks. close() is exit(), so the headers flush first. */
+    private function sendJson(mixed $data): void
+    {
+        $this->app->setHeader('Content-Type', 'application/json; charset=utf-8');
+        $this->app->setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+        $this->app->setHeader('X-Content-Type-Options', 'nosniff', true);
+        $this->app->sendHeaders();
+
+        echo json_encode($data);
+        $this->app->close();
+    }
+
     public function ajaxSaveTracking(): void
     {
-        header('Content-Type: application/json; charset=utf-8');
-
         if (!$this->checkOrderEditAccess()) {
             return;
         }
@@ -313,21 +323,17 @@ class OrderController extends FormController
             $model = $this->getModel();
 
             if ($model->saveTrackingNumber($orderId, $trackingId)) {
-                echo json_encode(['success' => true, 'message' => Text::_('COM_J2COMMERCE_TRACKING_NUMBER_SAVED')]);
+                $this->sendJson(['success' => true, 'message' => Text::_('COM_J2COMMERCE_TRACKING_NUMBER_SAVED')]);
             } else {
                 throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_SAVING_TRACKING'));
             }
         } catch (\Exception $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
         }
-
-        $this->app->close();
     }
 
     public function ajaxUpdateStatus(): void
     {
-        header('Content-Type: application/json; charset=utf-8');
-
         // The canonical order-edit gate: token, core.edit, and the editorders check the
         // non-AJAX twin and both Orders-list routes make. Calling it rather than repeating
         // it keeps this route from drifting away from the other sixteen again.
@@ -371,7 +377,7 @@ class OrderController extends FormController
 
             $status = $this->getStatusInfo($statusId);
 
-            echo json_encode([
+            $this->sendJson([
                 'success'     => true,
                 'message'     => $message,
                 'messageType' => $messageType,
@@ -381,16 +387,12 @@ class OrderController extends FormController
                 ],
             ]);
         } catch (\Exception $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
         }
-
-        $this->app->close();
     }
 
     public function ajaxResendEmail(): void
     {
-        header('Content-Type: application/json; charset=utf-8');
-
         if (!$this->checkOrderEditAccess()) {
             return;
         }
@@ -418,24 +420,20 @@ class OrderController extends FormController
                     $message .= ' (' . implode('; ', $result['errors']) . ')';
                 }
 
-                echo json_encode(['success' => true, 'message' => $message]);
+                $this->sendJson(['success' => true, 'message' => $message]);
             } else {
                 $errorMsg = !empty($result['errors'])
                     ? implode('; ', $result['errors'])
                     : Text::_('COM_J2COMMERCE_NO_EMAIL_TEMPLATES_FOUND');
-                echo json_encode(['success' => false, 'message' => $errorMsg]);
+                $this->sendJson(['success' => false, 'message' => $errorMsg]);
             }
         } catch (\Exception $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
         }
-
-        $this->app->close();
     }
 
     public function ajaxAddNote(): void
     {
-        header('Content-Type: application/json; charset=utf-8');
-
         if (!$this->checkOrderEditAccess()) {
             return;
         }
@@ -460,21 +458,17 @@ class OrderController extends FormController
             }
 
             if ($model->addAdminNote($order->order_id, (int) $order->order_state_id, $note)) {
-                echo json_encode(['success' => true, 'message' => Text::_('COM_J2COMMERCE_ORDER_NOTE_ADDED')]);
+                $this->sendJson(['success' => true, 'message' => Text::_('COM_J2COMMERCE_ORDER_NOTE_ADDED')]);
             } else {
                 throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_ADDING_NOTE'));
             }
         } catch (\Exception $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
         }
-
-        $this->app->close();
     }
 
     public function ajaxDeleteNote(): void
     {
-        header('Content-Type: application/json; charset=utf-8');
-
         if (!$this->checkOrderEditAccess()) {
             return;
         }
@@ -490,21 +484,17 @@ class OrderController extends FormController
             $currentUserId = Factory::getApplication()->getIdentity()?->id ?? 0;
 
             if ($model->deleteAdminNote($historyId, $currentUserId)) {
-                echo json_encode(['success' => true, 'message' => Text::_('COM_J2COMMERCE_ORDER_NOTE_DELETED')]);
+                $this->sendJson(['success' => true, 'message' => Text::_('COM_J2COMMERCE_ORDER_NOTE_DELETED')]);
             } else {
                 throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_DELETING_NOTE'));
             }
         } catch (\Exception $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
         }
-
-        $this->app->close();
     }
 
     public function ajaxGetHistory(): void
     {
-        header('Content-Type: application/json; charset=utf-8');
-
         // A read, so it gates on vieworders — the same action View/Order/HtmlView.php uses to
         // withhold this exact data. core.edit is the wrong question to ask of a timeline.
         if (!$this->checkOrderViewAccess()) {
@@ -584,7 +574,7 @@ class OrderController extends FormController
                 ];
             }
 
-            echo json_encode([
+            $this->sendJson([
                 'success'    => true,
                 'items'      => $items,
                 'page'       => $page,
@@ -592,10 +582,8 @@ class OrderController extends FormController
                 'total'      => $result['total'],
             ]);
         } catch (\Exception $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
         }
-
-        $this->app->close();
     }
 
     /** Render a single packing slip as a standalone HTML document. */
@@ -802,8 +790,6 @@ class OrderController extends FormController
      */
     public function ajaxSaveOrderEdit(): void
     {
-        header('Content-Type: application/json; charset=utf-8');
-
         $orderId = $this->input->post->getInt('order_id', 0);
 
         if (!$this->checkOrderEditAccess($orderId < 1 ? 'core.create' : 'core.edit')) {
@@ -822,7 +808,7 @@ class OrderController extends FormController
                 $order   = $model->getItem($created['id']);
                 $totals  = $model->recalculateOrderTotals($created['order_id']);
 
-                echo json_encode([
+                $this->sendJson([
                     'success'   => true,
                     'created'   => true,
                     'order_id'  => $created['id'],
@@ -833,8 +819,6 @@ class OrderController extends FormController
                     // Reveal the Take Payment button without a page reload.
                     'take_payment_url' => OrderPayGrantHelper::isPayable($order) ? OrderPayGrantHelper::buildUrl($created['id']) : '',
                 ]);
-                $this->app->close();
-
                 return;
             }
 
@@ -854,26 +838,22 @@ class OrderController extends FormController
 
             $totals = $model->recalculateOrderTotals($order->order_id);
 
-            echo json_encode([
+            $this->sendJson([
                 'success' => true,
                 'message' => Text::_('COM_J2COMMERCE_ORDER_CHANGES_SAVED'),
                 'totals'  => $this->totalsPayload($totals, (string) $order->currency_code),
             ]);
         } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
-            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
+            $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
         } catch (\Exception $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
         }
-
-        $this->app->close();
     }
 
     /** Create a Joomla customer account from the order editor's "New Customer" modal. */
     public function ajaxCreateCustomer(): void
     {
-        header('Content-Type: application/json; charset=utf-8');
-
         if (!$this->checkOrderEditAccess('core.create')) {
             return;
         }
@@ -882,9 +862,7 @@ class OrderController extends FormController
         // asks for the capability that owns accounts as well as the one that owns orders.
         // core.create on com_j2commerce is permission to build an order, not to mint a login.
         if (!$this->app->getIdentity()->authorise('core.create', 'com_users')) {
-            echo json_encode(['success' => false, 'message' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
-            $this->app->close();
-
+            $this->sendJson(['success' => false, 'message' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
             return;
         }
 
@@ -896,7 +874,7 @@ class OrderController extends FormController
         try {
             $customer = $this->getModel()->createCustomer($name, $email, $username, $sendEmail);
 
-            echo json_encode([
+            $this->sendJson([
                 'success' => true,
                 'id'      => $customer['id'],
                 'name'    => $customer['name'],
@@ -905,19 +883,15 @@ class OrderController extends FormController
             ]);
         } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
-            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
+            $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
         } catch (\Exception $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
         }
-
-        $this->app->close();
     }
 
     /** Search enabled product variants by SKU or title for the order editor. */
     public function ajaxSearchProducts(): void
     {
-        header('Content-Type: application/json; charset=utf-8');
-
         if (!$this->checkOrderEditAccess()) {
             return;
         }
@@ -952,7 +926,7 @@ class OrderController extends FormController
             $results    = $model->searchProductVariants($term, $limit, $excludeSubscription, $offset);
             $totalPages = $total > 0 ? (int) ceil($total / $limit) : 1;
 
-            echo json_encode([
+            $this->sendJson([
                 'success'    => true,
                 'page'       => $page,
                 'totalPages' => $totalPages,
@@ -968,19 +942,15 @@ class OrderController extends FormController
             ]);
         } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
-            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
+            $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
         } catch (\Exception $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
         }
-
-        $this->app->close();
     }
 
     /** Add a product variant as a new order line item and recalculate totals. */
     public function ajaxAddOrderItem(): void
     {
-        header('Content-Type: application/json; charset=utf-8');
-
         if (!$this->checkOrderEditAccess()) {
             return;
         }
@@ -1024,7 +994,7 @@ class OrderController extends FormController
 
             $currency = (string) $order->currency_code;
 
-            echo json_encode([
+            $this->sendJson([
                 'success' => true,
                 'message' => Text::_('COM_J2COMMERCE_ORDER_ITEM_ADDED'),
                 'totals'  => $this->totalsPayload($totals, $currency),
@@ -1044,19 +1014,15 @@ class OrderController extends FormController
             ]);
         } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
-            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
+            $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
         } catch (\Exception $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
         }
-
-        $this->app->close();
     }
 
     /** Update line quantities/prices and recalculate totals. */
     public function ajaxUpdateItems(): void
     {
-        header('Content-Type: application/json; charset=utf-8');
-
         if (!$this->checkOrderEditAccess()) {
             return;
         }
@@ -1094,7 +1060,7 @@ class OrderController extends FormController
                 ];
             }
 
-            echo json_encode([
+            $this->sendJson([
                 'success' => true,
                 'message' => Text::_('COM_J2COMMERCE_ORDER_CHANGES_SAVED'),
                 'totals'  => $this->totalsPayload($totals, (string) $order->currency_code),
@@ -1102,19 +1068,15 @@ class OrderController extends FormController
             ]);
         } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
-            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
+            $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
         } catch (\Exception $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
         }
-
-        $this->app->close();
     }
 
     /** Remove selected order items and recalculate totals. */
     public function ajaxRemoveItems(): void
     {
-        header('Content-Type: application/json; charset=utf-8');
-
         if (!$this->checkOrderEditAccess()) {
             return;
         }
@@ -1151,26 +1113,22 @@ class OrderController extends FormController
                 );
             }
 
-            echo json_encode([
+            $this->sendJson([
                 'success' => true,
                 'message' => Text::_('COM_J2COMMERCE_ORDER_ITEMS_REMOVED'),
                 'totals'  => $this->totalsPayload($totals, (string) $order->currency_code),
             ]);
         } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
-            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
+            $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
         } catch (\Exception $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
         }
-
-        $this->app->close();
     }
 
     /** Recalculate and persist order totals. */
     public function ajaxRecalculate(): void
     {
-        header('Content-Type: application/json; charset=utf-8');
-
         if (!$this->checkOrderEditAccess()) {
             return;
         }
@@ -1191,19 +1149,17 @@ class OrderController extends FormController
 
             $totals = $model->recomputeOrderTax($order->order_id);
 
-            echo json_encode([
+            $this->sendJson([
                 'success' => true,
                 'message' => Text::_('COM_J2COMMERCE_ORDER_TOTALS_RECALCULATED'),
                 'totals'  => $this->totalsPayload($totals, (string) $order->currency_code),
             ]);
         } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
-            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
+            $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
         } catch (\Exception $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
         }
-
-        $this->app->close();
     }
 
     /** Append CurrencyHelper-formatted strings to a totals array for the JS layer. */
@@ -1227,9 +1183,7 @@ class OrderController extends FormController
         $order   = $orderId > 0 ? $this->getModel()->getItem($orderId) : null;
 
         if (!$order || empty($order->order_id)) {
-            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND')]);
-            $this->app->close();
-
+            $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND')]);
             return null;
         }
 
@@ -1239,8 +1193,6 @@ class OrderController extends FormController
     /** Save the billing or shipping address block from the address edit form. */
     public function ajaxSaveAddress(): void
     {
-        header('Content-Type: application/json; charset=utf-8');
-
         if (!$this->checkOrderEditAccess()) {
             return;
         }
@@ -1261,22 +1213,18 @@ class OrderController extends FormController
                 throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED'));
             }
 
-            echo json_encode(['success' => true, 'message' => Text::_('COM_J2COMMERCE_ORDER_CHANGES_SAVED')]);
+            $this->sendJson(['success' => true, 'message' => Text::_('COM_J2COMMERCE_ORDER_CHANGES_SAVED')]);
         } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
-            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
+            $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
         } catch (\Exception $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
         }
-
-        $this->app->close();
     }
 
     /** List the customer's saved addresses for the choose-alternate dialog. */
     public function ajaxGetSavedAddresses(): void
     {
-        header('Content-Type: application/json; charset=utf-8');
-
         if (!$this->checkOrderEditAccess()) {
             return;
         }
@@ -1288,19 +1236,15 @@ class OrderController extends FormController
 
             $addresses = $this->getModel()->getSavedAddresses((int) $order->user_id);
 
-            echo json_encode(['success' => true, 'addresses' => $addresses]);
+            $this->sendJson(['success' => true, 'addresses' => $addresses]);
         } catch (\Exception $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
         }
-
-        $this->app->close();
     }
 
     /** Copy a saved customer address onto the order (billing or shipping). */
     public function ajaxApplySavedAddress(): void
     {
-        header('Content-Type: application/json; charset=utf-8');
-
         if (!$this->checkOrderEditAccess()) {
             return;
         }
@@ -1321,37 +1265,30 @@ class OrderController extends FormController
                 throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
             }
 
-            echo json_encode(['success' => true, 'message' => Text::_('COM_J2COMMERCE_ORDER_CHANGES_SAVED')]);
+            $this->sendJson(['success' => true, 'message' => Text::_('COM_J2COMMERCE_ORDER_CHANGES_SAVED')]);
         } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
-            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
+            $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
         } catch (\Exception $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
         }
-
-        $this->app->close();
     }
 
     /** Zones for a country (address form cascade). */
     public function ajaxGetZones(): void
     {
-        header('Content-Type: application/json; charset=utf-8');
-
         if (!$this->checkOrderEditAccess()) {
             return;
         }
 
         $countryId = $this->input->post->getInt('country_id', 0);
 
-        echo json_encode(['success' => true, 'zones' => $this->getModel()->getZones($countryId)]);
-        $this->app->close();
+        $this->sendJson(['success' => true, 'zones' => $this->getModel()->getZones($countryId)]);
     }
 
     /** Copy the billing address onto the shipping address ("same as billing"). */
     public function ajaxCopyBillingToShipping(): void
     {
-        header('Content-Type: application/json; charset=utf-8');
-
         if (!$this->checkOrderEditAccess()) {
             return;
         }
@@ -1365,15 +1302,13 @@ class OrderController extends FormController
                 throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED'));
             }
 
-            echo json_encode(['success' => true, 'message' => Text::_('COM_J2COMMERCE_ORDER_CHANGES_SAVED')]);
+            $this->sendJson(['success' => true, 'message' => Text::_('COM_J2COMMERCE_ORDER_CHANGES_SAVED')]);
         } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
-            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
+            $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
         } catch (\Exception $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
         }
-
-        $this->app->close();
     }
 
     /**
@@ -1383,8 +1318,6 @@ class OrderController extends FormController
      */
     public function ajaxRefundOrderPayment(): void
     {
-        header('Content-Type: application/json; charset=utf-8');
-
         if (!$this->checkOrderEditAccess()) {
             return;
         }
@@ -1461,15 +1394,13 @@ class OrderController extends FormController
                 'system_note'
             );
 
-            echo json_encode(['success' => true, 'message' => Text::_('COM_J2COMMERCE_REFUND_DONE')]);
+            $this->sendJson(['success' => true, 'message' => Text::_('COM_J2COMMERCE_REFUND_DONE')]);
         } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
-            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
+            $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
         } catch (\Exception $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
         }
-
-        $this->app->close();
     }
 
     /**
@@ -1479,8 +1410,6 @@ class OrderController extends FormController
      */
     public function ajaxChargeOrderBalance(): void
     {
-        header('Content-Type: application/json; charset=utf-8');
-
         if (!$this->checkOrderEditAccess()) {
             return;
         }
@@ -1577,22 +1506,18 @@ class OrderController extends FormController
                 'system_note'
             );
 
-            echo json_encode(['success' => true, 'message' => Text::_('COM_J2COMMERCE_CHARGE_DONE')]);
+            $this->sendJson(['success' => true, 'message' => Text::_('COM_J2COMMERCE_CHARGE_DONE')]);
         } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
-            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
+            $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
         } catch (\Exception $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
         }
-
-        $this->app->close();
     }
 
     /** Add a manual fee, recompute tax when taxable, and return fresh totals. */
     public function ajaxAddFee(): void
     {
-        header('Content-Type: application/json; charset=utf-8');
-
         if (!$this->checkOrderEditAccess()) {
             return;
         }
@@ -1618,26 +1543,22 @@ class OrderController extends FormController
 
             $totals = $model->recalculateOrderTotals($order->order_id);
 
-            echo json_encode([
+            $this->sendJson([
                 'success' => true,
                 'message' => Text::_('COM_J2COMMERCE_ORDER_FEE_ADDED'),
                 'totals'  => $this->totalsPayload($totals, (string) $order->currency_code),
             ]);
         } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
-            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
+            $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
         } catch (\Exception $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
         }
-
-        $this->app->close();
     }
 
     /** Remove a fee row and return fresh totals. */
     public function ajaxRemoveFee(): void
     {
-        header('Content-Type: application/json; charset=utf-8');
-
         if (!$this->checkOrderEditAccess()) {
             return;
         }
@@ -1657,26 +1578,22 @@ class OrderController extends FormController
 
             $totals = $model->recalculateOrderTotals($order->order_id);
 
-            echo json_encode([
+            $this->sendJson([
                 'success' => true,
                 'message' => Text::_('COM_J2COMMERCE_ORDER_FEE_REMOVED'),
                 'totals'  => $this->totalsPayload($totals, (string) $order->currency_code),
             ]);
         } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
-            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
+            $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
         } catch (\Exception $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
         }
-
-        $this->app->close();
     }
 
     /** Apply a coupon code to the order. */
     public function ajaxApplyCoupon(): void
     {
-        header('Content-Type: application/json; charset=utf-8');
-
         if (!$this->checkOrderEditAccess()) {
             return;
         }
@@ -1696,34 +1613,28 @@ class OrderController extends FormController
             [$success, $message] = $model->applyCouponToOrder($order, $code);
 
             if (!$success) {
-                echo json_encode(['success' => false, 'message' => $message]);
-                $this->app->close();
-
+                $this->sendJson(['success' => false, 'message' => $message]);
                 return;
             }
 
             $totals = $model->recalculateOrderTotals($order->order_id);
 
-            echo json_encode([
+            $this->sendJson([
                 'success' => true,
                 'message' => $message,
                 'totals'  => $this->totalsPayload($totals, (string) $order->currency_code),
             ]);
         } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
-            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
+            $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
         } catch (\Exception $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
         }
-
-        $this->app->close();
     }
 
     /** Apply a gift voucher code to the order. */
     public function ajaxApplyVoucher(): void
     {
-        header('Content-Type: application/json; charset=utf-8');
-
         if (!$this->checkOrderEditAccess()) {
             return;
         }
@@ -1743,34 +1654,28 @@ class OrderController extends FormController
             [$success, $message] = $model->applyVoucherToOrder($order, $code);
 
             if (!$success) {
-                echo json_encode(['success' => false, 'message' => $message]);
-                $this->app->close();
-
+                $this->sendJson(['success' => false, 'message' => $message]);
                 return;
             }
 
             $totals = $model->recalculateOrderTotals($order->order_id);
 
-            echo json_encode([
+            $this->sendJson([
                 'success' => true,
                 'message' => $message,
                 'totals'  => $this->totalsPayload($totals, (string) $order->currency_code),
             ]);
         } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
-            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
+            $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
         } catch (\Exception $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
         }
-
-        $this->app->close();
     }
 
     /** Remove an applied discount (coupon or voucher) from the order. */
     public function ajaxRemoveDiscount(): void
     {
-        header('Content-Type: application/json; charset=utf-8');
-
         if (!$this->checkOrderEditAccess()) {
             return;
         }
@@ -1790,19 +1695,17 @@ class OrderController extends FormController
 
             $totals = $model->recalculateOrderTotals($order->order_id);
 
-            echo json_encode([
+            $this->sendJson([
                 'success' => true,
                 'message' => Text::_('COM_J2COMMERCE_ORDER_DISCOUNT_REMOVED'),
                 'totals'  => $this->totalsPayload($totals, (string) $order->currency_code),
             ]);
         } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
-            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
+            $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
         } catch (\Exception $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
         }
-
-        $this->app->close();
     }
 
     protected function validateAjaxToken(): bool
@@ -1851,18 +1754,14 @@ class OrderController extends FormController
     private function checkAjaxAccess(string $action, string $j2Action): bool
     {
         if (!$this->validateAjaxToken()) {
-            echo json_encode(['success' => false, 'message' => Text::_('JINVALID_TOKEN')]);
-            $this->app->close();
-
+            $this->sendJson(['success' => false, 'message' => Text::_('JINVALID_TOKEN')]);
             return false;
         }
 
         $user = $this->app->getIdentity();
 
         if (!$user || $user->guest || !$user->authorise($action, 'com_j2commerce') || !J2CommerceHelper::canAccess($j2Action)) {
-            echo json_encode(['success' => false, 'message' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
-            $this->app->close();
-
+            $this->sendJson(['success' => false, 'message' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
             return false;
         }
 
@@ -1888,8 +1787,6 @@ class OrderController extends FormController
 
     public function ajaxQueueFaker(): void
     {
-        header('Content-Type: application/json; charset=utf-8');
-
         if (!$this->checkOrderEditAccess()) {
             return;
         }
@@ -1920,14 +1817,12 @@ class OrderController extends FormController
                 );
             }
 
-            echo json_encode([
+            $this->sendJson([
                 'success' => true,
                 'message' => Text::sprintf('COM_J2COMMERCE_QUEUE_ORDER_ADDED', $orderRef),
             ]);
         } catch (\Exception $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
         }
-
-        $this->app->close();
     }
 }

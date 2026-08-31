@@ -22,6 +22,7 @@ use Joomla\CMS\MVC\Controller\FormController;
 use Joomla\CMS\Router\Route;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
+use Joomla\Utilities\ArrayHelper;
 
 /**
  * Product item controller class.
@@ -355,6 +356,18 @@ class ProductController extends FormController
         $this->setRedirect(Route::_('index.php?option=com_j2commerce&task=product.edit&id=' . $productId, false));
     }
 
+    /** JSON exit for the AJAX tasks. close() is exit(), so the headers flush first. */
+    private function sendJson(mixed $data): void
+    {
+        $this->app->setHeader('Content-Type', 'application/json; charset=utf-8');
+        $this->app->setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+        $this->app->setHeader('X-Content-Type-Options', 'nosniff', true);
+        $this->app->sendHeaders();
+
+        echo json_encode($data);
+        $this->app->close();
+    }
+
     /**
      * Create a J2Commerce product from a Joomla article.
      *
@@ -376,16 +389,15 @@ class ProductController extends FormController
         $user = $app->getIdentity();
 
         if (!$user || $user->guest || !$user->authorise('core.create', 'com_j2commerce')) {
-            echo json_encode([
+            $this->sendJson([
                 'success' => false,
                 'message' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'),
             ]);
-
             return;
         }
 
         if (empty($articleId)) {
-            echo json_encode([
+            $this->sendJson([
                 'success' => false,
                 'message' => Text::_('COM_J2COMMERCE_ERROR_NO_ARTICLE_SELECTED'),
             ]);
@@ -405,7 +417,7 @@ class ProductController extends FormController
         $existingProductId = (int) $db->loadResult();
 
         if ($existingProductId > 0) {
-            echo json_encode([
+            $this->sendJson([
                 'success'    => true,
                 'product_id' => $existingProductId,
                 'message'    => Text::_('COM_J2COMMERCE_PRODUCT_ALREADY_EXISTS'),
@@ -423,7 +435,7 @@ class ProductController extends FormController
         $article = $db->loadObject();
 
         if (!$article) {
-            echo json_encode([
+            $this->sendJson([
                 'success' => false,
                 'message' => Text::_('COM_J2COMMERCE_ERROR_ARTICLE_NOT_FOUND'),
             ]);
@@ -498,13 +510,13 @@ class ProductController extends FormController
 
             $db->insertObject('#__j2commerce_variants', $variantData, 'j2commerce_variant_id');
 
-            echo json_encode([
+            $this->sendJson([
                 'success'    => true,
                 'product_id' => $productId,
                 'message'    => Text::_('COM_J2COMMERCE_PRODUCT_CREATED_SUCCESS'),
             ]);
         } catch (\Exception $e) {
-            echo json_encode([
+            $this->sendJson([
                 'success' => false,
                 'message' => Text::sprintf('COM_J2COMMERCE_ERROR_CREATING_PRODUCT', $e->getMessage()),
             ]);
@@ -525,8 +537,6 @@ class ProductController extends FormController
         $productId = $app->getInput()->getInt('product_id', 0);
         $newType   = $app->getInput()->getCmd('new_product_type', '');
 
-        header('Content-Type: application/json; charset=utf-8');
-
         // Takes the same core.edit + core.delete pair as the plural twin.
         $user = $app->getIdentity();
 
@@ -536,21 +546,19 @@ class ProductController extends FormController
             || !$user->authorise('core.edit', 'com_j2commerce')
             || !$user->authorise('core.delete', 'com_j2commerce')
         ) {
-            echo json_encode(['success' => false, 'message' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
-            $app->close();
+            $this->sendJson(['success' => false, 'message' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
             return;
         }
 
         if (!$productId || !$newType) {
-            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_INVALID_INPUT_FIELD')]);
-            $app->close();
+            $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_INVALID_INPUT_FIELD')]);
             return;
         }
 
         $db = Factory::getContainer()->get(DatabaseInterface::class);
 
         try {
-            // 1. Delete product_variant_optionvalues for non-master variants
+            // 1. Delete everything the non-master variants own
             $subQuery = $db->getQuery(true)
                 ->select($db->quoteName('j2commerce_variant_id'))
                 ->from($db->quoteName('#__j2commerce_variants'))
@@ -562,11 +570,19 @@ class ProductController extends FormController
             $variantIds = $db->loadColumn();
 
             if (!empty($variantIds)) {
-                $query = $db->getQuery(true)
-                    ->delete($db->quoteName('#__j2commerce_product_variant_optionvalues'))
-                    ->whereIn($db->quoteName('variant_id'), $variantIds);
-                $db->setQuery($query);
-                $db->execute();
+                $ids = ArrayHelper::toInteger($variantIds);
+
+                foreach ([
+                    '#__j2commerce_product_variant_optionvalues',
+                    '#__j2commerce_productquantities',
+                    '#__j2commerce_product_prices',
+                ] as $childTable) {
+                    $query = $db->getQuery(true)
+                        ->delete($db->quoteName($childTable))
+                        ->whereIn($db->quoteName('variant_id'), $ids);
+                    $db->setQuery($query);
+                    $db->execute();
+                }
             }
 
             // 2. Delete product_optionvalues via product_options
@@ -615,12 +631,10 @@ class ProductController extends FormController
             $db->setQuery($query);
             $db->execute();
 
-            echo json_encode(['success' => true]);
+            $this->sendJson(['success' => true]);
         } catch (\Throwable $e) {
             Log::add('changeProductType failed for product ' . $productId . ': ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
-            echo json_encode(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERR_GENERIC')]);
+            $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERR_GENERIC')]);
         }
-
-        $app->close();
     }
 }

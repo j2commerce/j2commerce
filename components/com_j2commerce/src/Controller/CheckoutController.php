@@ -27,6 +27,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\TableSaveHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\CheckoutContextHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\CheckoutStepsHelper;
+use J2Commerce\Component\J2commerce\Site\Helper\CheckoutStepStateHelper;
 use Joomla\CMS\Event\Model\PrepareFormEvent;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
@@ -245,6 +246,20 @@ class CheckoutController extends BaseController
         }
 
         return Text::_('COM_J2COMMERCE_CHECKOUT_REGISTER_ERROR');
+    }
+
+    /**
+     * The ticked "same as billing" arm writes the ship-to itself and the JS skips the shipping
+     * step entirely, so that arm satisfies it. The unticked arm clears the ship-to, and marking
+     * billing complete drops every downstream step with it.
+     */
+    private function markBillingStepComplete(): void
+    {
+        CheckoutStepStateHelper::markComplete(CheckoutStepStateHelper::BILLING);
+
+        if ($this->input->getInt('shipping_address', 0)) {
+            CheckoutStepStateHelper::markComplete(CheckoutStepStateHelper::SHIPPING);
+        }
     }
 
     /**
@@ -624,6 +639,14 @@ class CheckoutController extends BaseController
                 }
 
                 $this->setShippingSession($addressData);
+            } else {
+                // Unticking must clear, not inherit. Without this the member keeps
+                // whatever `shipping_address_id` last held, so an order that never
+                // completes the shipping step ships to a stale address rather than
+                // stopping on a missing one. The guest arm in guestValidate() has
+                // always cleared; these two are now symmetric.
+                $session->clear('shipping_address_id', 'j2commerce');
+                $this->clearShippingSelection();
             }
 
             $session->clear('guest', 'j2commerce');
@@ -664,6 +687,9 @@ class CheckoutController extends BaseController
 
         // After login, the CSRF token changes — send it so the JS can update
         if (empty($json['error'])) {
+            // Written after login() so the regenerated session is the one that carries it.
+            $this->markBillingStepComplete();
+
             $json['token'] = Session::getFormToken();
         }
 
@@ -688,10 +714,16 @@ class CheckoutController extends BaseController
         // Retrieve previously-entered guest address from session for re-population
         $guestData = $session->get('guest', [], 'j2commerce');
 
+        // A stored `guest_shipping` that differs from billing means the shopper chose a
+        // distinct ship-to. The checkbox has to come back unticked or a re-submit of the
+        // billing step overwrites that address with the billing one, silently.
+        $guestShipping = $session->get('guest_shipping', [], 'j2commerce');
+
         $this->renderStep('guest', [
-            'showShipping' => $showShipping,
-            'fields'       => $fields,
-            'guestData'    => \is_array($guestData) ? $guestData : [],
+            'showShipping'      => $showShipping,
+            'fields'            => $fields,
+            'guestData'         => \is_array($guestData) ? $guestData : [],
+            'shipSameAsBilling' => !\is_array($guestShipping) || $guestShipping === [] || $guestShipping == $guestData,
         ]);
     }
 
@@ -737,6 +769,8 @@ class CheckoutController extends BaseController
 
         // Actionlog: track billing complete (guest path)
         if (empty($json['error'])) {
+            $this->markBillingStepComplete();
+
             $this->app->getDispatcher()->dispatch(
                 'onJ2CommerceCheckoutBillingComplete',
                 new \Joomla\Event\Event('onJ2CommerceCheckoutBillingComplete', [])
@@ -774,11 +808,18 @@ class CheckoutController extends BaseController
         $showShipping = $this->determineShowShipping($order);
         $fields       = CustomFieldHelper::getFieldsByArea('billing');
 
+        // A `shipping_address_id` that differs from billing means the member chose a
+        // distinct ship-to. Same reason as the guest arm: a hard-coded `checked` here
+        // would silently discard it on a billing re-submit.
+        $shippingAddressId = $session->get('shipping_address_id', '', 'j2commerce');
+
         $this->renderStep('billing', [
-            'addresses'        => $addresses,
-            'billingAddressId' => $billingAddressId,
-            'showShipping'     => $showShipping,
-            'fields'           => $fields,
+            'addresses'         => $addresses,
+            'billingAddressId'  => $billingAddressId,
+            'showShipping'      => $showShipping,
+            'fields'            => $fields,
+            'shipSameAsBilling' => (string) $shippingAddressId === ''
+                || (string) $shippingAddressId === (string) $billingAddressId,
         ]);
     }
 
@@ -880,12 +921,18 @@ class CheckoutController extends BaseController
             $session->set('shipping_postcode', $session->get('billing_postcode', '', 'j2commerce'), 'j2commerce');
 
             $this->clearShippingSelection();
+        } else {
+            // See registerValidate(): the unticked arm clears rather than inheriting.
+            $session->clear('shipping_address_id', 'j2commerce');
+            $this->clearShippingSelection();
         }
 
         J2CommerceHelper::plugin()->event('CheckoutValidateBilling', [&$json]);
 
         // Actionlog: track billing complete
         if (empty($json['error'])) {
+            $this->markBillingStepComplete();
+
             $this->app->getDispatcher()->dispatch(
                 'onJ2CommerceCheckoutBillingComplete',
                 new \Joomla\Event\Event('onJ2CommerceCheckoutBillingComplete', [])
@@ -1025,6 +1072,8 @@ class CheckoutController extends BaseController
 
         // Actionlog: track shipping complete
         if (empty($json['error'])) {
+            CheckoutStepStateHelper::markComplete(CheckoutStepStateHelper::SHIPPING);
+
             $this->app->getDispatcher()->dispatch(
                 'onJ2CommerceCheckoutShippingComplete',
                 new \Joomla\Event\Event('onJ2CommerceCheckoutShippingComplete', [])
@@ -1065,6 +1114,8 @@ class CheckoutController extends BaseController
 
         // Actionlog: track shipping complete (guest path)
         if (empty($json['error'])) {
+            CheckoutStepStateHelper::markComplete(CheckoutStepStateHelper::SHIPPING);
+
             $this->app->getDispatcher()->dispatch(
                 'onJ2CommerceCheckoutShippingComplete',
                 new \Joomla\Event\Event('onJ2CommerceCheckoutShippingComplete', [])
@@ -1091,7 +1142,7 @@ class CheckoutController extends BaseController
         $shippingValues = $session->get('shipping_values', [], 'j2commerce');
 
         if ($showShippingMethods && $order) {
-            $shippingResults = J2CommerceHelper::plugin()->eventWithArray('GetShippingRates', [$order]);
+            $shippingResults = J2CommerceHelper::plugin()->eventWithArray('GetShippingRates', [$order, 'checkout']);
 
             foreach ($shippingResults as $result) {
                 if (\is_array($result) && isset($result['element'])) {
@@ -1512,6 +1563,10 @@ class CheckoutController extends BaseController
             }
         }
 
+        if (!$json) {
+            CheckoutStepStateHelper::markComplete(CheckoutStepStateHelper::PAYMENT);
+        }
+
         $this->jsonResponse($json);
     }
 
@@ -1661,6 +1716,7 @@ class CheckoutController extends BaseController
 
             $this->renderStep('confirm', [
                 'order'            => $existingOrder,
+                'orderInfo'        => $this->getOrderInfoFor($existingOrder),
                 'items'            => method_exists($existingOrder, 'getItems') ? $existingOrder->getItems() : [],
                 'taxes'            => method_exists($existingOrder, 'getOrderTaxrates') ? $existingOrder->getOrderTaxrates() : [],
                 'shipping'         => method_exists($existingOrder, 'getOrderShippingRate') ? $existingOrder->getOrderShippingRate() : null,
@@ -1736,6 +1792,34 @@ class CheckoutController extends BaseController
                 $orderpaymentType = $session->get('payment_method', '', 'j2commerce');
             } else {
                 $freeRedirect = Route::_('index.php?option=com_j2commerce&task=checkout.confirmPayment&' . Session::getFormToken() . '=1');
+            }
+        }
+
+        // The step order otherwise lives only in the template JS, so every task is independently
+        // dispatchable and a step that never runs is a step whose rules never run. The required set
+        // is read from the cart here rather than cached at step time: the Modify links can add a
+        // shippable line to a cart whose shipping step was legitimately skipped. The context branch
+        // above has already returned — an admin-created order has no session step history to assert.
+        //
+        // Asserted below the zero-total branch so the payment step is required on the same notion
+        // of payable the rest of confirm() reads — $showPayment, after the plugins that may
+        // overturn it have run — rather than on a second one that could disagree with it.
+        if ($order) {
+            $required = [CheckoutStepStateHelper::BILLING];
+
+            if ($this->determineShowShippingMethods($order)) {
+                $required[] = CheckoutStepStateHelper::SHIPPING;
+            }
+
+            if ($showPayment) {
+                $required[] = CheckoutStepStateHelper::PAYMENT;
+            }
+
+            foreach (CheckoutStepStateHelper::missing($required) as $step) {
+                $errors[] = Text::sprintf(
+                    'COM_J2COMMERCE_CHECKOUT_ERROR_STEP_INCOMPLETE',
+                    Text::_(CheckoutStepStateHelper::label($step))
+                );
             }
         }
 
@@ -1873,6 +1957,7 @@ class CheckoutController extends BaseController
 
         $this->renderStep('confirm', [
             'order'            => $order,
+            'orderInfo'        => $this->getOrderInfoFor(\is_object($order) ? $order : null),
             'items'            => $orderItems,
             'taxes'            => $taxes,
             'shipping'         => $shipping,
@@ -2415,6 +2500,10 @@ class CheckoutController extends BaseController
         $session->clear('customer_note', 'j2commerce');
         $session->clear('order_fees', 'j2commerce');
 
+        // The step flags describe the cart this just emptied. Leaving them behind would carry a
+        // completed checkout's answers into the next one.
+        CheckoutStepStateHelper::clear();
+
         J2CommerceHelper::plugin()->event('CheckoutCleanup', [$session]);
 
         return $cartCleared;
@@ -2813,10 +2902,23 @@ class CheckoutController extends BaseController
         try {
             $session       = $this->app->getSession();
             $paymentPlugin = $this->input->getString('payment_plugin', '');
+            $order         = $this->getCartOrder();
 
-            $session->set('payment_method', $paymentPlugin, 'j2commerce');
+            // Writes what the payment step writes, so it records the same step — and confirm()
+            // asserts that record, so it may only be marked against a selection that would
+            // survive the same availability pruning confirm() applies. The shipping twin has no
+            // equivalent: it selects a rate, and the shipping step this records is the ship-to
+            // address, which that task never touches.
+            if (!$order || !$this->isPaymentMethodAllowed($paymentPlugin, $order)) {
+                $json['success'] = false;
+                $json['message'] = Text::_('COM_J2COMMERCE_CHECKOUT_ERROR_PAYMENT_METHOD');
+            } else {
+                $session->set('payment_method', $paymentPlugin, 'j2commerce');
 
-            $json['success'] = true;
+                CheckoutStepStateHelper::markComplete(CheckoutStepStateHelper::PAYMENT);
+
+                $json['success'] = true;
+            }
         } catch (\Exception $e) {
             Log::add('checkout.savePaymentSelection failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
 
@@ -2983,6 +3085,23 @@ class CheckoutController extends BaseController
                 $this->input->set($name, $value);
             }
         }
+    }
+
+    /**
+     * Persisted billing / ship-to for the confirm step's review block.
+     * Reads what was actually stored, not what the session believes.
+     */
+    protected function getOrderInfoFor(?object $order): ?object
+    {
+        $orderId = (string) ($order->order_id ?? '');
+
+        if ($orderId === '') {
+            return null;
+        }
+
+        $model = $this->getMvcFactory()->createModel('Order', 'Administrator', ['ignore_request' => true]);
+
+        return $model && method_exists($model, 'getOrderInfo') ? $model->getOrderInfo($orderId) : null;
     }
 
     protected function getCartOrder(): ?object

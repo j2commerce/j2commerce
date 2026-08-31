@@ -83,7 +83,7 @@ $statusName = Text::_($order->orderstatus_name ?? '');
                 <tr>
                     <td><?php echo $this->escape($order->order_id); ?></td>
                     <td><?php echo HTMLHelper::_('date', $order->created_on, $dateFormat); ?></td>
-                    <td><span class="uk-badge <?php echo $this->escape($cssClass); ?>"><?php echo $statusName; ?></span></td>
+                    <td><span class="uk-badge <?php echo $this->escape($cssClass); ?>"><?php echo $this->escape($statusName); ?></span></td>
                 </tr>
             </tbody>
         </table>
@@ -129,6 +129,15 @@ $statusName = Text::_($order->orderstatus_name ?? '');
         </div>
     </div>
     <?php endif; ?>
+
+    <!-- Checkout custom fields captured on this order -->
+    <?php echo LayoutHelper::render('order.customfields', [
+        'info'          => $info,
+        'card_class'    => 'uk-card uk-card-default uk-margin-bottom',
+        'body_class'    => 'uk-card-body',
+        'heading_tag'   => 'h5',
+        'heading_class' => 'uk-card-title uk-text-bold',
+    ], JPATH_ROOT . '/components/com_j2commerce/layouts'); ?>
 
     <!-- Customer note -->
     <?php if ((int) J2CommerceHelper::config()->get('show_customer_note', 1) === 1 && trim((string) ($order->customer_note ?? '')) !== ''): ?>

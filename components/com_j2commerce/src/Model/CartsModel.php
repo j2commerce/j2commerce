@@ -80,49 +80,37 @@ class CartsModel extends BaseDatabaseModel
         $params = $app->getParams();
         $this->setState('params', $params);
 
-        // Get country/zone from input or session
-        $countryId = $app->getInput()->getInt('country_id', 0);
-        $zoneId    = $app->getInput()->getInt('zone_id', 0);
-        $postcode  = $app->getInput()->getAlnum('postcode', '');
+        // Request values pre-fill the estimate form and go no further. The keys below are the
+        // destination the checkout resolves against, shared with the address-step validators,
+        // so an ordinary page render is not the place they get written — CartsController's
+        // estimate() and estimateAjax() write them from a submitted estimate that has been
+        // through the country/zone/postcode requirements and the BeforeShippingEstimate event.
+        $requestCountryId = $app->getInput()->getInt('country_id', 0);
+        $requestZoneId    = $app->getInput()->getInt('zone_id', 0);
+        $requestPostcode  = UtilitiesHelper::textSanitize($app->getInput()->getAlnum('postcode', ''));
 
         // Get store profile for defaults
         $store = J2CommerceHelper::storeProfile();
 
-        // Handle country_id
-        if ($countryId > 0) {
-            $session->set('billing_country_id', $countryId, 'j2commerce');
-            $session->set('shipping_country_id', $countryId, 'j2commerce');
-        } elseif ($session->has('shipping_country_id', 'j2commerce')) {
-            $countryId = (int) $session->get('shipping_country_id', 0, 'j2commerce');
-        } else {
-            $countryId = (int) $store->get('country_id', 0);
-        }
+        $countryId = $session->has('shipping_country_id', 'j2commerce')
+            ? (int) $session->get('shipping_country_id', 0, 'j2commerce')
+            : (int) $store->get('country_id', 0);
 
-        // Handle zone_id
-        if ($zoneId > 0) {
-            $session->set('billing_zone_id', $zoneId, 'j2commerce');
-            $session->set('shipping_zone_id', $zoneId, 'j2commerce');
-        } elseif ($session->has('shipping_zone_id', 'j2commerce')) {
-            $zoneId = (int) $session->get('shipping_zone_id', 0, 'j2commerce');
-        } else {
-            $zoneId = (int) $store->get('zone_id', 0);
-        }
+        $zoneId = $session->has('shipping_zone_id', 'j2commerce')
+            ? (int) $session->get('shipping_zone_id', 0, 'j2commerce')
+            : (int) $store->get('zone_id', 0);
 
-        // Handle postcode
-        $postcode = UtilitiesHelper::textSanitize($postcode);
-        if (!empty($postcode)) {
-            $session->set('shipping_postcode', $postcode, 'j2commerce');
-        } elseif ($session->has('shipping_postcode', 'j2commerce')) {
-            $postcode = $session->get('shipping_postcode', '', 'j2commerce');
-        } else {
-            $postcode = $store->get('zip', '');
-        }
+        $postcode = $session->has('shipping_postcode', 'j2commerce')
+            ? (string) $session->get('shipping_postcode', '', 'j2commerce')
+            : (string) $store->get('zip', '');
 
-        $this->setState('country_id', $countryId);
-        $this->setState('zone_id', $zoneId);
-        $this->setState('postcode', $postcode);
+        $this->setState('country_id', $requestCountryId > 0 ? $requestCountryId : $countryId);
+        $this->setState('zone_id', $requestZoneId > 0 ? $requestZoneId : $zoneId);
+        $this->setState('postcode', $requestPostcode !== '' ? $requestPostcode : $postcode);
 
-        // Handle shipping calculation visibility
+        // Handle shipping calculation visibility. This seeds the destination so a rate can be
+        // shown before an address exists, and it seeds it from the session or the store profile
+        // — the request-scoped values above are deliberately not used here.
         $config = J2CommerceHelper::config();
         if ($config->get('hide_shipping_until_address_selection', 1) == 0) {
             $session->set('billing_country_id', $countryId, 'j2commerce');

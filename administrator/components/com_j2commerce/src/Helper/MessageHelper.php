@@ -106,10 +106,13 @@ class MessageHelper
      * - [ORDERID]: Order ID number
      * - [INVOICENO]: Invoice number
      * - [ORDERDATE]: Order creation date
+     * - [PRINT_DATE]: Date the document was generated
      * - [ORDERSTATUS]: Current order status
      * - [ORDERAMOUNT]: Order total amount (formatted)
      * - [ORDER_TOKEN]: Unique order token for verification
      * - [COUPON_CODE]: Applied coupon code(s)
+     * - [SURCHARGE_AMOUNT]: Order surcharge/fee amount (formatted)
+     * - [ORDER_EXTRA_ROWS]: Plugin-contributed fee rows, from getOrderSummaryExtraRows()
      * - [TOTALS]: Complete order totals table (Subtotal, Shipping, Discount, Tax, Grand Total)
      * - [ITEMS]: Order items table (HTML)
      *
@@ -123,33 +126,36 @@ class MessageHelper
     public static function getAdditionalTags(): array
     {
         $result = [
-            '[SITENAME]'        => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_SITENAME'),
-            '[SITEURL]'         => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_SITEURL'),
-            '[INVOICE_URL]'     => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_INVOICE_URL'),
-            '[MYPROFILE_URL]'   => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_MYPROFILE_URL'),
-            '[GUEST_ORDER_URL]' => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_GUEST_ORDER_URL'),
-            '[DOWNLOAD_LINKS]'  => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_DOWNLOAD_LINKS'),
-            '[CUSTOMER_NOTE]'   => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_CUSTOMER_NOTE'),
-            '[PAYMENT_TYPE]'    => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_PAYMENT_TYPE'),
-            '[SHIPPING_TYPE]'   => Text::_('COM_J2COMMERCE_SHIPM_SHIPPING_TYPE'),
-            '[ORDERID]'         => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_ORDERID'),
-            '[INVOICENO]'       => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_INVOICEID'),
-            '[ORDERDATE]'       => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_ORDERDATE'),
-            '[ORDERSTATUS]'     => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_ORDERSTATUS'),
-            '[ORDERAMOUNT]'     => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_ORDERAMOUNT'),
-            '[ORDER_TOKEN]'     => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_ORDER_TOKEN'),
-            '[COUPON_CODE]'     => Text::_('COM_J2COMMERCE_COUPON_CODE'),
-            '[SUBTOTAL]'        => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_SUBTOTAL'),
-            '[TAX_AMOUNT]'      => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_TAX_AMOUNT'),
-            '[SHIPPING_AMOUNT]' => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_SHIPPING_AMOUNT'),
-            '[DISCOUNT_AMOUNT]' => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_DISCOUNT_AMOUNT'),
-            '[CURRENT_YEAR]'    => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_CURRENT_YEAR'),
-            '[TAX_LINES]'       => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_TAX_LINES'),
-            '[DISCOUNT_LABEL]'  => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_DISCOUNT_LABEL'),
-            '[DISCOUNT_LINES]'  => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_DISCOUNT_LINES'),
-            '[TOTALS]'          => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_TOTALS'),
-            '[ITEMS]'           => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_ITEMS'),
-            '[PACKING_ITEMS]'   => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_PACKING_ITEMS'),
+            '[SITENAME]'         => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_SITENAME'),
+            '[SITEURL]'          => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_SITEURL'),
+            '[INVOICE_URL]'      => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_INVOICE_URL'),
+            '[MYPROFILE_URL]'    => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_MYPROFILE_URL'),
+            '[GUEST_ORDER_URL]'  => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_GUEST_ORDER_URL'),
+            '[DOWNLOAD_LINKS]'   => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_DOWNLOAD_LINKS'),
+            '[CUSTOMER_NOTE]'    => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_CUSTOMER_NOTE'),
+            '[PAYMENT_TYPE]'     => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_PAYMENT_TYPE'),
+            '[SHIPPING_TYPE]'    => Text::_('COM_J2COMMERCE_SHIPM_SHIPPING_TYPE'),
+            '[ORDERID]'          => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_ORDERID'),
+            '[INVOICENO]'        => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_INVOICEID'),
+            '[ORDERDATE]'        => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_ORDERDATE'),
+            '[ORDERSTATUS]'      => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_ORDERSTATUS'),
+            '[ORDERAMOUNT]'      => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_ORDERAMOUNT'),
+            '[ORDER_TOKEN]'      => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_ORDER_TOKEN'),
+            '[COUPON_CODE]'      => Text::_('COM_J2COMMERCE_COUPON_CODE'),
+            '[SUBTOTAL]'         => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_SUBTOTAL'),
+            '[TAX_AMOUNT]'       => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_TAX_AMOUNT'),
+            '[SHIPPING_AMOUNT]'  => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_SHIPPING_AMOUNT'),
+            '[DISCOUNT_AMOUNT]'  => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_DISCOUNT_AMOUNT'),
+            '[SURCHARGE_AMOUNT]' => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_SURCHARGE_AMOUNT'),
+            '[CURRENT_YEAR]'     => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_CURRENT_YEAR'),
+            '[PRINT_DATE]'       => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_PRINT_DATE'),
+            '[TAX_LINES]'        => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_TAX_LINES'),
+            '[DISCOUNT_LABEL]'   => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_DISCOUNT_LABEL'),
+            '[DISCOUNT_LINES]'   => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_DISCOUNT_LINES'),
+            '[ORDER_EXTRA_ROWS]' => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_ORDER_EXTRA_ROWS'),
+            '[TOTALS]'           => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_TOTALS'),
+            '[ITEMS]'            => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_ITEMS'),
+            '[PACKING_ITEMS]'    => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_PACKING_ITEMS'),
         ];
 
         // Dispatch plugin event to allow adding custom tags
