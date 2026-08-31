@@ -166,6 +166,11 @@ class InvoiceHelper
                 $langScore = (5 - $langPos);
 
                 if ($langScore > $preferredScore) {
+                    // Resolve a file body first so subscribers contribute to the same base in both modes.
+                    if (isset($template->body_source) && $template->body_source === 'file') {
+                        $template->body = $this->getTemplateFromFile($template, $order);
+                    }
+
                     // Dispatch plugin event for template customization
                     Factory::getApplication()->getDispatcher()->dispatch(
                         'onJ2CommerceInvoiceFileTemplate',
@@ -175,12 +180,7 @@ class InvoiceHelper
                         ])
                     );
 
-                    if (isset($template->body_source) && $template->body_source === 'file') {
-                        $templateText = $this->getTemplateFromFile($template, $order);
-                    } else {
-                        $templateText = $template->body ?? '';
-                    }
-
+                    $templateText   = $template->body ?? '';
                     $preferredScore = $langScore;
                 }
             }
