@@ -2183,6 +2183,72 @@ class CartOrder
             'modified_by'    => $userId,
         ];
 
+        // Everything from the order row to the fee rows is one write. A rejection part-way
+        // through — a blank ship-to, a refused item — otherwise leaves the order row and
+        // whatever items had already landed behind as a permanent orphan.
+        //
+        // The boundary closes before the uploads, the AfterSaveOrder event and the history
+        // entry: those move files, call external services and send mail, none of which a
+        // rollback can recall. It cannot close before the FIRST store() below, though —
+        // OrderTable::store() fires onJ2CommerceOrderStatusChange for a new row, so listener
+        // code runs inside this transaction. A listener that commits its own transaction ends
+        // ours early (MySQL does not nest); that is the known limit of this guard.
+        $db->transactionStart();
+
+        try {
+            $this->writeOrderRows($db, $orderTable, $orderData, $mvcFactory, $session, $userId, $userEmail, $isShippable);
+            $db->transactionCommit();
+        } catch (\Throwable $e) {
+            // A listener that committed our transaction leaves nothing to roll back; PDO
+            // throws on that. The original failure is the one worth reporting either way.
+            try {
+                $db->transactionRollback();
+            } catch (\Throwable) {
+            }
+
+            throw $e;
+        }
+
+        // Move customer-uploaded files from tmp/ to orders/{order_id}/
+        // Lookup is by mangled_name JOIN against orderitemattributes — cart_id alone is unreliable
+        // because product-option uploads happen before a cart exists (getCartId() returns 0).
+        OrderUploadHelper::attachUploadsToOrder(
+            $this->j2commerce_order_id,
+            $this->order_id
+        );
+
+        // Create download records for downloadable items (access not yet granted)
+        DownloadHelper::createOrderDownloads($this->order_id, $userId, $userEmail);
+
+        // Allow plugins to act after order save
+        J2CommerceHelper::plugin()->event('AfterSaveOrder', [$this]);
+
+        // Add order history entry
+        OrderHistoryHelper::add(
+            orderId: $this->order_id,
+            comment: Text::_('COM_J2COMMERCE_ORDER_HISTORY_NEW_ORDER_CREATED'),
+            orderStateId: (int) ($orderTable->order_state_id ?? 5),
+            createdBy: $userId,
+        );
+
+        return $this;
+    }
+
+    /**
+     * The seven-table row set, written as one unit inside saveOrder()'s transaction.
+     *
+     * @since   6.0.7
+     */
+    private function writeOrderRows(
+        DatabaseInterface $db,
+        object $orderTable,
+        array $orderData,
+        object $mvcFactory,
+        object $session,
+        int $userId,
+        string $userEmail,
+        int $isShippable
+    ): void {
         if (!$orderTable->bind($orderData) || !$orderTable->check() || !$orderTable->store()) {
             Log::add('CartOrder order create failed: ' . $orderTable->getError(), Log::ERROR, 'com_j2commerce');
 
@@ -2197,7 +2263,7 @@ class CartOrder
         $orderTable->order_id = $orderTable->generateOrderId();
         $orderTable->token    = $orderTable->generateToken();
 
-        if ($invoicePrefix !== '') {
+        if ((string) $orderData['invoice_prefix'] !== '') {
             $orderTable->invoice_number = (int) $orderTable->j2commerce_order_id;
         }
 
@@ -2217,10 +2283,10 @@ class CartOrder
         $orderId = $this->order_id;
 
         // Save order items
-        $this->saveOrderItems($db, $orderId, $userId);
+        $this->saveOrderItems($mvcFactory, $orderId, $userId);
 
         // Save order info (billing/shipping addresses)
-        $this->saveOrderInfo($db, $orderId, $session, $mvcFactory, $userId);
+        $this->saveOrderInfo($orderId, $session, $mvcFactory, $userId, $isShippable === 1);
 
         // Save order taxes
         $this->saveOrderTaxes($db, $orderId);
@@ -2246,44 +2312,20 @@ class CartOrder
 
         // Save order fees (surcharges with names)
         $this->saveOrderFees($db, $orderId);
-
-        // Move customer-uploaded files from tmp/ to orders/{order_id}/
-        // Lookup is by mangled_name JOIN against orderitemattributes — cart_id alone is unreliable
-        // because product-option uploads happen before a cart exists (getCartId() returns 0).
-        OrderUploadHelper::attachUploadsToOrder(
-            $this->j2commerce_order_id,
-            $this->order_id
-        );
-
-        // Create download records for downloadable items (access not yet granted)
-        DownloadHelper::createOrderDownloads($orderId, $userId, $userEmail);
-
-        // Allow plugins to act after order save
-        J2CommerceHelper::plugin()->event('AfterSaveOrder', [$this]);
-
-        // Add order history entry
-        OrderHistoryHelper::add(
-            orderId: $this->order_id,
-            comment: Text::_('COM_J2COMMERCE_ORDER_HISTORY_NEW_ORDER_CREATED'),
-            orderStateId: (int) ($orderTable->order_state_id ?? 5),
-            createdBy: $userId,
-        );
-
-        return $this;
     }
 
     /**
      * Save order items to the database.
      *
-     * @param   DatabaseInterface  $db       Database driver.
-     * @param   string             $orderId  The order_id string.
-     * @param   int                $userId   User ID.
+     * @param   object  $mvcFactory  MVC factory.
+     * @param   string  $orderId     The order_id string.
+     * @param   int     $userId      User ID.
      *
      * @return  void
      *
      * @since   6.0.6
      */
-    protected function saveOrderItems(DatabaseInterface $db, string $orderId, int $userId): void
+    protected function saveOrderItems(object $mvcFactory, string $orderId, int $userId): void
     {
         $now  = Factory::getDate()->toSql();
         $rows = [];
@@ -2389,7 +2431,23 @@ class CartOrder
 
             OrderHelper::normalizeOrderItemRow($row, $baseline);
 
-            $db->insertObject('#__j2commerce_orderitems', $row, 'j2commerce_orderitem_id');
+            // A fresh table per row: reset() keeps the primary key, so a reused instance
+            // would update the previous item instead of inserting this one.
+            $itemTable = $mvcFactory->createTable('Orderitem', 'Administrator');
+
+            if (!$itemTable->bind($row) || !$itemTable->check() || !$itemTable->store()) {
+                Log::add(
+                    'CartOrder order item save failed: ' . $itemTable->getError(),
+                    Log::ERROR,
+                    'com_j2commerce'
+                );
+
+                throw new \RuntimeException(
+                    Text::sprintf('COM_J2COMMERCE_ORDER_SAVE_ERROR', Text::_('COM_J2COMMERCE_ERR_GENERIC'))
+                );
+            }
+
+            $row->j2commerce_orderitem_id = (int) $itemTable->j2commerce_orderitem_id;
         }
     }
 
@@ -2463,22 +2521,22 @@ class CartOrder
     /**
      * Save billing and shipping address info to the orderinfos table.
      *
-     * @param   DatabaseInterface  $db         Database driver.
-     * @param   string             $orderId    The order_id string.
-     * @param   object             $session    Session object.
-     * @param   object             $mvcFactory MVC factory.
-     * @param   int                $userId     User ID.
+     * @param   string  $orderId           The order_id string.
+     * @param   object  $session           Session object.
+     * @param   object  $mvcFactory        MVC factory.
+     * @param   int     $userId            User ID.
+     * @param   bool    $requiresShipping  Whether the order needs a resolved destination.
      *
      * @return  void
      *
      * @since   6.0.6
      */
     protected function saveOrderInfo(
-        DatabaseInterface $db,
         string $orderId,
         object $session,
         object $mvcFactory,
-        int $userId
+        int $userId,
+        bool $requiresShipping = false
     ): void {
         $billing  = $this->loadAddressData('billing', $session, $mvcFactory, $userId);
         $shipping = $this->loadAddressData('shipping', $session, $mvcFactory, $userId);
@@ -2486,67 +2544,43 @@ class CartOrder
         // Payment-step custom field values captured by shippingPaymentMethodValidate()
         $paymentCustom = (array) $session->get('payment_custom_fields', [], 'j2commerce');
 
-        $columns = [
-            'order_id',
-            'billing_first_name', 'billing_last_name', 'billing_company',
-            'billing_address_1', 'billing_address_2', 'billing_city',
-            'billing_zip', 'billing_zone_id', 'billing_zone_name',
-            'billing_country_id', 'billing_country_name',
-            'billing_phone_1', 'billing_phone_2', 'billing_fax',
-            'billing_tax_number',
-            'shipping_first_name', 'shipping_last_name', 'shipping_company',
-            'shipping_address_1', 'shipping_address_2', 'shipping_city',
-            'shipping_zip', 'shipping_zone_id', 'shipping_zone_name',
-            'shipping_country_id', 'shipping_country_name',
-            'shipping_phone_1', 'shipping_phone_2', 'shipping_fax',
-            'shipping_tax_number',
-            'all_billing', 'all_shipping', 'all_payment',
-        ];
+        $data = ['order_id' => $orderId];
 
-        $values = [
-            $db->quote($orderId),
-            $db->quote($billing['first_name'] ?? ''),
-            $db->quote($billing['last_name'] ?? ''),
-            $db->quote($billing['company'] ?? ''),
-            $db->quote($billing['address_1'] ?? ''),
-            $db->quote($billing['address_2'] ?? ''),
-            $db->quote($billing['city'] ?? ''),
-            $db->quote($billing['zip'] ?? ''),
-            (int) ($billing['zone_id'] ?? 0),
-            $db->quote($billing['zone_name'] ?? ''),
-            (int) ($billing['country_id'] ?? 0),
-            $db->quote($billing['country_name'] ?? ''),
-            $db->quote($billing['phone_1'] ?? ''),
-            $db->quote($billing['phone_2'] ?? ''),
-            $db->quote($billing['fax'] ?? ''),
-            $db->quote($billing['tax_number'] ?? ''),
-            $db->quote($shipping['first_name'] ?? ''),
-            $db->quote($shipping['last_name'] ?? ''),
-            $db->quote($shipping['company'] ?? ''),
-            $db->quote($shipping['address_1'] ?? ''),
-            $db->quote($shipping['address_2'] ?? ''),
-            $db->quote($shipping['city'] ?? ''),
-            $db->quote($shipping['zip'] ?? ''),
-            (int) ($shipping['zone_id'] ?? 0),
-            $db->quote($shipping['zone_name'] ?? ''),
-            (int) ($shipping['country_id'] ?? 0),
-            $db->quote($shipping['country_name'] ?? ''),
-            $db->quote($shipping['phone_1'] ?? ''),
-            $db->quote($shipping['phone_2'] ?? ''),
-            $db->quote($shipping['fax'] ?? ''),
-            $db->quote($shipping['tax_number'] ?? ''),
-            $db->quote(json_encode($billing)),
-            $db->quote(json_encode($shipping)),
-            $db->quote($paymentCustom !== [] ? json_encode($paymentCustom) : '{}'),
-        ];
+        foreach (['billing' => $billing, 'shipping' => $shipping] as $type => $address) {
+            $data += [
+                $type . '_first_name'   => (string) ($address['first_name'] ?? ''),
+                $type . '_last_name'    => (string) ($address['last_name'] ?? ''),
+                $type . '_company'      => (string) ($address['company'] ?? ''),
+                $type . '_address_1'    => (string) ($address['address_1'] ?? ''),
+                $type . '_address_2'    => (string) ($address['address_2'] ?? ''),
+                $type . '_city'         => (string) ($address['city'] ?? ''),
+                $type . '_zip'          => (string) ($address['zip'] ?? ''),
+                $type . '_zone_id'      => (int) ($address['zone_id'] ?? 0),
+                $type . '_zone_name'    => (string) ($address['zone_name'] ?? ''),
+                $type . '_country_id'   => (int) ($address['country_id'] ?? 0),
+                $type . '_country_name' => (string) ($address['country_name'] ?? ''),
+                $type . '_phone_1'      => (string) ($address['phone_1'] ?? ''),
+                $type . '_phone_2'      => (string) ($address['phone_2'] ?? ''),
+                $type . '_fax'          => (string) ($address['fax'] ?? ''),
+                $type . '_tax_number'   => (string) ($address['tax_number'] ?? ''),
+            ];
+        }
 
-        $query = $db->getQuery(true)
-            ->insert($db->quoteName('#__j2commerce_orderinfos'))
-            ->columns($db->quoteName($columns))
-            ->values(implode(',', $values));
+        // check() normalises an empty payload to '{}', so all three columns carry one marker.
+        $data['all_billing']  = $billing !== [] ? json_encode($billing) : '{}';
+        $data['all_shipping'] = $shipping !== [] ? json_encode($shipping) : '{}';
+        $data['all_payment']  = $paymentCustom !== [] ? json_encode($paymentCustom) : '{}';
 
-        $db->setQuery($query);
-        $db->execute();
+        $infoTable                   = $mvcFactory->createTable('Orderinfo', 'Administrator');
+        $infoTable->requiresShipping = $requiresShipping;
+
+        if (!$infoTable->bind($data) || !$infoTable->check() || !$infoTable->store()) {
+            Log::add('CartOrder order info save failed: ' . $infoTable->getError(), Log::ERROR, 'com_j2commerce');
+
+            throw new \RuntimeException(
+                Text::sprintf('COM_J2COMMERCE_ORDER_SAVE_ERROR', Text::_('COM_J2COMMERCE_ERR_GENERIC'))
+            );
+        }
     }
 
     /**
