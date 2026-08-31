@@ -14,6 +14,7 @@ namespace J2Commerce\Module\Products\Site\Library;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Site\Helper\ProductVisibilityHelper;
 use Joomla\CMS\Categories\Categories;
 use Joomla\CMS\Factory;
 use Joomla\Database\DatabaseAwareInterface;
@@ -39,6 +40,7 @@ class ProductSourceJoomla implements DatabaseAwareInterface
             $staticData = [
                 'nowDate'    => $date->toSql(),
                 'viewLevels' => $user->getAuthorisedViewLevels(),
+                'isEditor'   => ProductVisibilityHelper::isEditor(),
             ];
         }
 
@@ -56,6 +58,7 @@ class ProductSourceJoomla implements DatabaseAwareInterface
                 'sort_by'    => $sort_by,
                 'viewLevels' => $staticData['viewLevels'],
                 'nowDate'    => $staticData['nowDate'],
+                'isEditor'   => $staticData['isEditor'],
             ]));
 
             // Return cached result if available
@@ -76,14 +79,18 @@ class ProductSourceJoomla implements DatabaseAwareInterface
 
             $query->where($db->quoteName('p.product_source') . ' = ' . $db->quote('com_content'));
             $query->where($db->quoteName('tag_map.type_alias') . ' = ' . $db->quote('com_content.article'));
-            $query->where($db->quoteName('a.state') . ' = 1');
             $query->group($db->quoteName('p.j2commerce_product_id'));
 
-            // Use pre-calculated static data
-            $nowDate = $db->quote($staticData['nowDate']);
+            // Users who may edit products keep the unpublished ones in the list so an
+            // upcoming release can be previewed, same as com_content does for articles.
+            if (!$staticData['isEditor']) {
+                // Use pre-calculated static data
+                $nowDate = $db->quote($staticData['nowDate']);
 
-            $query->where('(' . $query->isNullDatetime('a.publish_up') . ' OR ' . $db->quoteName('a.publish_up') . ' <= ' . $nowDate . ')');
-            $query->where('(' . $query->isNullDatetime('a.publish_down') . ' OR ' . $db->quoteName('a.publish_down') . ' >= ' . $nowDate . ')');
+                $query->where($db->quoteName('a.state') . ' = 1');
+                $query->where('(' . $query->isNullDatetime('a.publish_up') . ' OR ' . $db->quoteName('a.publish_up') . ' <= ' . $nowDate . ')');
+                $query->where('(' . $query->isNullDatetime('a.publish_down') . ' OR ' . $db->quoteName('a.publish_down') . ' >= ' . $nowDate . ')');
+            }
 
             $query->whereIn($db->quoteName('a.access'), $staticData['viewLevels']);
 
@@ -123,6 +130,7 @@ class ProductSourceJoomla implements DatabaseAwareInterface
             $staticData = [
                 'nowDate'    => $date->toSql(),
                 'viewLevels' => $user->getAuthorisedViewLevels(),
+                'isEditor'   => ProductVisibilityHelper::isEditor(),
             ];
         }
 
@@ -145,6 +153,7 @@ class ProductSourceJoomla implements DatabaseAwareInterface
                 'sort_by'    => $sort_by,
                 'viewLevels' => $staticData['viewLevels'],
                 'nowDate'    => $staticData['nowDate'],
+                'isEditor'   => $staticData['isEditor'],
             ]));
 
             // Return cached result if available
@@ -161,13 +170,17 @@ class ProductSourceJoomla implements DatabaseAwareInterface
             $query->join('LEFT', $db->quoteName('#__content', 'a'), $db->quoteName('a.id') . ' = ' . $db->quoteName('p.product_source_id'));
             $query->where($db->quoteName('p.product_source') . ' = ' . $db->quote('com_content'));
             $query->whereIn($db->quoteName('p.j2commerce_product_id'), $p_ids);
-            $query->where($db->quoteName('a.state') . ' = 1');
 
-            //default to the sql formatted date
-            $nowDate = $db->quote($staticData['nowDate']);
+            // Users who may edit products keep the unpublished ones in the list so an
+            // upcoming release can be previewed, same as com_content does for articles.
+            if (!$staticData['isEditor']) {
+                //default to the sql formatted date
+                $nowDate = $db->quote($staticData['nowDate']);
 
-            $query->where('(' . $query->isNullDatetime('a.publish_up') . ' OR ' . $db->quoteName('a.publish_up') . ' <= ' . $nowDate . ')');
-            $query->where('(' . $query->isNullDatetime('a.publish_down') . ' OR ' . $db->quoteName('a.publish_down') . ' >= ' . $nowDate . ')');
+                $query->where($db->quoteName('a.state') . ' = 1');
+                $query->where('(' . $query->isNullDatetime('a.publish_up') . ' OR ' . $db->quoteName('a.publish_up') . ' <= ' . $nowDate . ')');
+                $query->where('(' . $query->isNullDatetime('a.publish_down') . ' OR ' . $db->quoteName('a.publish_down') . ' >= ' . $nowDate . ')');
+            }
 
             $query->whereIn($db->quoteName('a.access'), $staticData['viewLevels']);
 
@@ -207,6 +220,7 @@ class ProductSourceJoomla implements DatabaseAwareInterface
             $staticData = [
                 'nowDate'    => $date->toSql(),
                 'viewLevels' => $user->getAuthorisedViewLevels(),
+                'isEditor'   => ProductVisibilityHelper::isEditor(),
             ];
         }
 
@@ -221,6 +235,7 @@ class ProductSourceJoomla implements DatabaseAwareInterface
             'sort_by'    => $sort_by,
             'viewLevels' => $staticData['viewLevels'],
             'nowDate'    => $staticData['nowDate'],
+            'isEditor'   => $staticData['isEditor'],
         ]));
 
         // Return cached result if available
@@ -242,13 +257,16 @@ class ProductSourceJoomla implements DatabaseAwareInterface
         $query->join('LEFT', $db->quoteName('#__content', 'a'), $db->quoteName('a.id') . ' = ' . $db->quoteName('p.product_source_id'));
         $query->where($db->quoteName('p.product_source') . ' = ' . $db->quote('com_content'));
 
-        $query->where($db->quoteName('a.state') . ' = 1');
+        // Users who may edit products keep the unpublished ones in the list so an
+        // upcoming release can be previewed, same as com_content does for articles.
+        if (!$staticData['isEditor']) {
+            // Use pre-calculated static data
+            $nowDate = $db->quote($staticData['nowDate']);
 
-        // Use pre-calculated static data
-        $nowDate = $db->quote($staticData['nowDate']);
-
-        $query->where('(' . $query->isNullDatetime('a.publish_up') . ' OR ' . $db->quoteName('a.publish_up') . ' <= ' . $nowDate . ')');
-        $query->where('(' . $query->isNullDatetime('a.publish_down') . ' OR ' . $db->quoteName('a.publish_down') . ' >= ' . $nowDate . ')');
+            $query->where($db->quoteName('a.state') . ' = 1');
+            $query->where('(' . $query->isNullDatetime('a.publish_up') . ' OR ' . $db->quoteName('a.publish_up') . ' <= ' . $nowDate . ')');
+            $query->where('(' . $query->isNullDatetime('a.publish_down') . ' OR ' . $db->quoteName('a.publish_down') . ' >= ' . $nowDate . ')');
+        }
 
         $query->whereIn($db->quoteName('a.access'), $staticData['viewLevels']);
 
@@ -287,6 +305,7 @@ class ProductSourceJoomla implements DatabaseAwareInterface
             $staticData = [
                 'nowDate'    => $date->toSql(),
                 'viewLevels' => $user->getAuthorisedViewLevels(),
+                'isEditor'   => ProductVisibilityHelper::isEditor(),
             ];
         }
 
@@ -306,6 +325,7 @@ class ProductSourceJoomla implements DatabaseAwareInterface
             'sort_by'           => $sort_by,
             'viewLevels'        => $staticData['viewLevels'],
             'nowDate'           => $staticData['nowDate'],
+            'isEditor'          => $staticData['isEditor'],
         ]));
 
         // Return cached result if available
@@ -322,7 +342,6 @@ class ProductSourceJoomla implements DatabaseAwareInterface
         $query->from($db->quoteName('#__j2commerce_products', 'p'));
         $query->join('LEFT', $db->quoteName('#__content', 'a'), $db->quoteName('a.id') . ' = ' . $db->quoteName('p.product_source_id'));
         $query->where($db->quoteName('p.product_source') . ' = ' . $db->quote('com_content'));
-        $query->where($db->quoteName('a.state') . ' = 1');
         if ($show_feature_only) {
             $query->where($db->quoteName('a.featured') . ' = 1');
         }
@@ -332,13 +351,18 @@ class ProductSourceJoomla implements DatabaseAwareInterface
         }
 
         $query->where($db->quoteName('p.visibility').' = 1');
-        $query->where($db->quoteName('p.enabled').' = 1');
 
-        // Use pre-calculated static data
-        $nowDate = $db->quote($staticData['nowDate']);
+        // Users who may edit products keep the unpublished ones in the list so an
+        // upcoming release can be previewed, same as com_content does for articles.
+        if (!$staticData['isEditor']) {
+            // Use pre-calculated static data
+            $nowDate = $db->quote($staticData['nowDate']);
 
-        $query->where('(' . $query->isNullDatetime('a.publish_up') . ' OR ' . $db->quoteName('a.publish_up') . ' <= ' . $nowDate . ')');
-        $query->where('(' . $query->isNullDatetime('a.publish_down') . ' OR ' . $db->quoteName('a.publish_down') . ' >= ' . $nowDate . ')');
+            $query->where($db->quoteName('p.enabled').' = 1');
+            $query->where($db->quoteName('a.state') . ' = 1');
+            $query->where('(' . $query->isNullDatetime('a.publish_up') . ' OR ' . $db->quoteName('a.publish_up') . ' <= ' . $nowDate . ')');
+            $query->where('(' . $query->isNullDatetime('a.publish_down') . ' OR ' . $db->quoteName('a.publish_down') . ' >= ' . $nowDate . ')');
+        }
 
         $query->whereIn($db->quoteName('a.access'), $staticData['viewLevels']);
 

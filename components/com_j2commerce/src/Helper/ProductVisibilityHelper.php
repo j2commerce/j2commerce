@@ -30,6 +30,19 @@ final class ProductVisibilityHelper
     private static array $cache = [];
 
     /**
+     * Whether the current identity may preview products the shop does not publish yet.
+     *
+     * Component scope, matching com_content's ArticlesModel::populateState(). core.edit.own
+     * is deliberately excluded — core grants an owner the edit button, not the preview.
+     */
+    public static function isEditor(): bool
+    {
+        $user = Factory::getApplication()->getIdentity();
+
+        return $user && ($user->authorise('core.edit', 'com_j2commerce') || $user->authorise('core.edit.state', 'com_j2commerce'));
+    }
+
+    /**
      * Carries the same predicates as the product listings, except p.visibility —
      * that hides a product from the catalog only, so a hidden product stays
      * reachable by direct link.
@@ -49,7 +62,7 @@ final class ProductVisibilityHelper
 
         $user     = Factory::getApplication()->getIdentity();
         $groups   = $user ? $user->getAuthorisedViewLevels() : [1];
-        $isEditor = $user && ($user->authorise('core.edit', 'com_j2commerce') || $user->authorise('core.edit.state', 'com_j2commerce'));
+        $isEditor = self::isEditor();
 
         $db    = Factory::getContainer()->get(DatabaseInterface::class);
         $query = $db->getQuery(true)

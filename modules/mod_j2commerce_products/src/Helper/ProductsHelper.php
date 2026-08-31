@@ -15,6 +15,7 @@ namespace J2Commerce\Module\Products\Site\Helper;
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
+use J2Commerce\Component\J2commerce\Site\Helper\ProductVisibilityHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\Database\DatabaseInterface;
@@ -118,16 +119,21 @@ class ProductsHelper
                 . ' ON ' . $db->quoteName('cat.id')
                 . ' = ' . $db->quoteName('c.catid')
             )
-            ->where($db->quoteName('a.enabled') . ' = 1')
             ->where($db->quoteName('a.visibility') . ' = 1')
-            ->where($db->quoteName('c.state') . ' = 1')
-            ->where($db->quoteName('cat.published') . ' = 1')
             ->whereIn($db->quoteName('c.access'), $groups)
-            ->whereIn($db->quoteName('cat.access'), $groups)
-            ->where('(' . $db->quoteName('c.publish_up') . ' IS NULL OR ' . $db->quoteName('c.publish_up') . ' <= :publishUp)')
-            ->where('(' . $db->quoteName('c.publish_down') . ' IS NULL OR ' . $db->quoteName('c.publish_down') . ' >= :publishDown)')
-            ->bind(':publishUp', $nowDate)
-            ->bind(':publishDown', $nowDate);
+            ->whereIn($db->quoteName('cat.access'), $groups);
+
+        // Users who may edit products keep the unpublished ones in the list so an
+        // upcoming release can be previewed, same as com_content does for articles.
+        if (!ProductVisibilityHelper::isEditor()) {
+            $query->where($db->quoteName('a.enabled') . ' = 1')
+                ->where($db->quoteName('c.state') . ' = 1')
+                ->where($db->quoteName('cat.published') . ' = 1')
+                ->where('(' . $db->quoteName('c.publish_up') . ' IS NULL OR ' . $db->quoteName('c.publish_up') . ' <= :publishUp)')
+                ->where('(' . $db->quoteName('c.publish_down') . ' IS NULL OR ' . $db->quoteName('c.publish_down') . ' >= :publishDown)')
+                ->bind(':publishUp', $nowDate)
+                ->bind(':publishDown', $nowDate);
+        }
 
         // Product type filter — [""] from empty multi-select must be filtered out
         $productTypes = $params->get('product_types', '');

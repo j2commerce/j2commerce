@@ -16,6 +16,7 @@ namespace J2Commerce\Component\J2commerce\Site\Model;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\ProductFilterRequestHelper;
+use J2Commerce\Component\J2commerce\Site\Helper\ProductVisibilityHelper;
 use Joomla\CMS\Categories\CategoryNode;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Multilanguage;
@@ -336,6 +337,7 @@ class ProductsModel extends ListModel
         $id .= ':' . $this->getState('filter.price_to', 0);
         $id .= ':' . $this->getState('list.ordering');
         $id .= ':' . $this->getState('list.direction');
+        $id .= ':' . (int) ProductVisibilityHelper::isEditor();
 
         return parent::getStoreId($id);
     }
@@ -415,25 +417,30 @@ class ProductsModel extends ListModel
                 . ' AND ' . $db->quoteName('v.is_master') . ' = 1'
         );
 
-        // Filter by enabled products
-        $query->where($db->quoteName('p.enabled') . ' = 1');
+        // Hides a product from the catalog only, so it applies to editors too.
         $query->where($db->quoteName('p.visibility') . ' = 1');
 
-        // Filter by published articles in a published category
-        $query->where($db->quoteName('a.state') . ' = 1');
-        $query->where($db->quoteName('c.published') . ' = 1');
+        // Users who may edit products keep the unpublished ones in the list so an
+        // upcoming release can be previewed, same as com_content does for articles.
+        if (!ProductVisibilityHelper::isEditor()) {
+            $query->where($db->quoteName('p.enabled') . ' = 1');
 
-        // Honour the article publish window — a future publish_up or an elapsed
-        // publish_down must hide the product, same as com_content does.
-        $nowDate = Factory::getDate()->toSql();
-        $query->where(
-            '(' . $db->quoteName('a.publish_up') . ' IS NULL OR ' . $db->quoteName('a.publish_up') . ' <= :publishUp)'
-        )
-            ->where(
-                '(' . $db->quoteName('a.publish_down') . ' IS NULL OR ' . $db->quoteName('a.publish_down') . ' >= :publishDown)'
+            // Filter by published articles in a published category
+            $query->where($db->quoteName('a.state') . ' = 1');
+            $query->where($db->quoteName('c.published') . ' = 1');
+
+            // Honour the article publish window — a future publish_up or an elapsed
+            // publish_down must hide the product, same as com_content does.
+            $nowDate = Factory::getDate()->toSql();
+            $query->where(
+                '(' . $db->quoteName('a.publish_up') . ' IS NULL OR ' . $db->quoteName('a.publish_up') . ' <= :publishUp)'
             )
-            ->bind(':publishUp', $nowDate)
-            ->bind(':publishDown', $nowDate);
+                ->where(
+                    '(' . $db->quoteName('a.publish_down') . ' IS NULL OR ' . $db->quoteName('a.publish_down') . ' >= :publishDown)'
+                )
+                ->bind(':publishUp', $nowDate)
+                ->bind(':publishDown', $nowDate);
+        }
 
         // Filter by access level
         $groups = $user->getAuthorisedViewLevels();
