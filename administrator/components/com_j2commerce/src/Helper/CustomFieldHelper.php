@@ -22,6 +22,7 @@ use Joomla\CMS\Session\Session;
 use Joomla\CMS\Uri\Uri;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
+use Joomla\Registry\Registry;
 
 class CustomFieldHelper
 {
@@ -719,6 +720,12 @@ class CustomFieldHelper
     /**
      * Parse field options from stored format.
      */
+    /** Option list of a select/radio/singledropdown field, as [[value, name], ...]. */
+    public static function getFieldOptions(object $field): array
+    {
+        return self::parseOptions((string) ($field->field_value ?? ''));
+    }
+
     private static function parseOptions(string $optionsStr): array
     {
         if ($optionsStr === '') {
@@ -868,6 +875,153 @@ class CustomFieldHelper
         }
 
         return $errors;
+    }
+
+    /**
+     * Checkout areas whose values a saved address row / guest session carries into an
+     * order's billing or shipping snapshot. `register` shares the billing address row.
+     */
+    public const ORDER_AREAS = [
+        'billing'  => ['billing', 'register', 'guest'],
+        'shipping' => ['shipping', 'guest_shipping'],
+        'payment'  => ['payment'],
+    ];
+
+    /** Every custom field an order's billing/shipping/payment snapshot may carry, by namekey. */
+    public static function getOrderFields(string $snapshot): array
+    {
+        $fields = [];
+
+        foreach (self::ORDER_AREAS[$snapshot] ?? [] as $area) {
+            foreach (self::getFieldsByArea($area) as $field) {
+                $namekey = (string) $field->field_namekey;
+
+                if ($namekey !== '' && !isset($fields[$namekey])) {
+                    $fields[$namekey] = $field;
+                }
+            }
+        }
+
+        return $fields;
+    }
+
+    public static function getOrderFieldNamekeys(string $snapshot): array
+    {
+        return array_keys(self::getOrderFields($snapshot));
+    }
+
+    /**
+     * Label/value pairs for the custom fields inside an order's all_billing,
+     * all_shipping or all_payment snapshot.
+     *
+     * Driven by the live field definitions rather than by "any key that is not a core
+     * column", so the address keys stored beside them (email, country_id, zone_id) never
+     * surface as pseudo custom fields.
+     */
+    public static function describeOrderFields(mixed $stored, string ...$areas): array
+    {
+        $values = self::decodeOrderSnapshot($stored);
+
+        if ($values === []) {
+            return [];
+        }
+
+        $rows = [];
+
+        foreach ($areas as $area) {
+            foreach (self::getFieldsByArea($area) as $field) {
+                $namekey = (string) $field->field_namekey;
+
+                if (isset($rows[$namekey]) || !\array_key_exists($namekey, $values)) {
+                    continue;
+                }
+
+                $value = self::formatStoredValue($field, $values[$namekey]);
+
+                if ($value === '') {
+                    continue;
+                }
+
+                $rows[$namekey] = [
+                    'label' => Text::_((string) ($field->field_name ?: $namekey)),
+                    'value' => $value,
+                ];
+            }
+        }
+
+        return array_values($rows);
+    }
+
+    /** all_billing/all_shipping/all_payment reach callers as JSON, Registry or array. */
+    public static function decodeOrderSnapshot(mixed $stored): array
+    {
+        if ($stored instanceof Registry) {
+            return $stored->toArray();
+        }
+
+        if (\is_array($stored)) {
+            return $stored;
+        }
+
+        if (!\is_string($stored) || trim($stored) === '') {
+            return [];
+        }
+
+        $decoded = json_decode($stored, true);
+
+        // Snapshots written by older releases can still carry escaping slashes. The
+        // fallback runs only once the straight decode has failed, so an escaped quote
+        // inside otherwise valid JSON is never stripped out from under it.
+        if (!\is_array($decoded)) {
+            $decoded = json_decode(stripslashes($stored), true);
+        }
+
+        return \is_array($decoded) ? $decoded : [];
+    }
+
+    /** One display string for a stored value, by field type. */
+    private static function formatStoredValue(object $field, mixed $value): string
+    {
+        $type = (string) ($field->field_type ?? '');
+
+        if ($type === 'checkbox') {
+            return Text::_(!empty($value) && $value !== '0' ? 'JYES' : 'JNO');
+        }
+
+        if (\is_array($value) || \is_object($value)) {
+            $value = self::joinScalars((array) $value);
+        }
+
+        $value = trim((string) $value);
+
+        if ($value === '' || $value === '[]') {
+            return '';
+        }
+
+        if ($type === 'multiuploader') {
+            $files = json_decode($value, true);
+
+            if (!\is_array($files)) {
+                return '';
+            }
+
+            return self::joinScalars(array_map(
+                static fn ($file): string => (string) (((array) $file)['name'] ?? ''),
+                $files
+            ));
+        }
+
+        // Several field types author their option values as language keys; Text::_()
+        // returns anything unmatched unchanged, so free text passes straight through.
+        return Text::_($value);
+    }
+
+    private static function joinScalars(array $values): string
+    {
+        return implode(', ', array_filter(
+            array_map(static fn ($v): string => \is_scalar($v) ? trim((string) $v) : '', $values),
+            'strlen'
+        ));
     }
 
     /**

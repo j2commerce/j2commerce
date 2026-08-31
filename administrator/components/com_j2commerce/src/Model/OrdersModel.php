@@ -182,6 +182,9 @@ class OrdersModel extends ListModel
             $db->quoteName('oi.billing_zone_name'),
             $db->quoteName('oi.shipping_first_name'),
             $db->quoteName('oi.shipping_last_name'),
+            $db->quoteName('oi.all_billing'),
+            $db->quoteName('oi.all_shipping'),
+            $db->quoteName('oi.all_payment'),
         ]);
         $query->join(
             'LEFT',

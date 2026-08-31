@@ -326,6 +326,14 @@ if ($info) {
                         </div>
                     <?php endif; ?>
 
+                    <?php // Checkout custom fields captured on this order ?>
+                    <?php echo LayoutHelper::render('order.customfields', [
+                        'info'          => $info,
+                        'card_class'    => 'uk-card uk-card-default uk-margin-bottom',
+                        'body_class'    => 'uk-card-body',
+                        'heading_class' => 'uk-card-title uk-text-bold',
+                    ], JPATH_ROOT . '/components/com_j2commerce/layouts'); ?>
+
                     <?php // Customer note card ?>
                     <?php if ((int) J2CommerceHelper::config()->get('show_customer_note', 1) === 1 && trim((string) ($order->customer_note ?? '')) !== '') : ?>
                         <div class="j2c-block-customer-note uk-card uk-card-default uk-margin-bottom">

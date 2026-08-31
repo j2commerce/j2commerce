@@ -130,6 +130,13 @@ $statusName = Text::_($order->orderstatus_name ?? '');
     </div>
     <?php endif; ?>
 
+    <!-- Checkout custom fields captured on this order -->
+    <?php echo LayoutHelper::render('order.customfields', [
+        'info'          => $info,
+        'heading_tag'   => 'h5',
+        'heading_class' => 'card-title fw-bold h5',
+    ], JPATH_ROOT . '/components/com_j2commerce/layouts'); ?>
+
     <!-- Customer note -->
     <?php if ((int) J2CommerceHelper::config()->get('show_customer_note', 1) === 1 && trim((string) ($order->customer_note ?? '')) !== ''): ?>
     <div class="card mb-4">
