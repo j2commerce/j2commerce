@@ -16,6 +16,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\DownloadHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\EmailHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
@@ -2113,12 +2114,13 @@ class OrderModel extends AdminModel
 
         $db    = $this->getDatabase();
         $query = $db->getQuery(true)
-            ->select($db->quoteName('j2commerce_orderinfo_id'))
+            ->select($db->quoteName(['j2commerce_orderinfo_id', 'all_' . $type]))
             ->from($db->quoteName('#__j2commerce_orderinfos'))
             ->where($db->quoteName('order_id') . ' = :orderId')
             ->bind(':orderId', $orderId);
         $db->setQuery($query);
-        $infoId = (int) $db->loadResult();
+        $existing = $db->loadObject();
+        $infoId   = (int) ($existing->j2commerce_orderinfo_id ?? 0);
 
         $countryId                = (int) ($data['country_id'] ?? 0);
         $zoneId                   = (int) ($data['zone_id'] ?? 0);
@@ -2140,16 +2142,33 @@ class OrderModel extends AdminModel
         $row->{$type . '_country_name'} = $countryName;
         $row->{$type . '_zone_name'}    = $zoneName;
 
+        // Custom field values live in the snapshot, not in columns. Merge rather than
+        // replace: the snapshot also carries the address keys the order was built from,
+        // and a field the admin cannot see here must not be dropped by an edit here.
+        $namekeys = CustomFieldHelper::getOrderFieldNamekeys($type);
+
+        if ($namekeys !== []) {
+            $snapshot = CustomFieldHelper::decodeOrderSnapshot($existing->{'all_' . $type} ?? null);
+
+            foreach ($namekeys as $namekey) {
+                if (\array_key_exists($namekey, $data)) {
+                    $snapshot[$namekey] = (string) $data[$namekey];
+                }
+            }
+
+            $row->{'all_' . $type} = json_encode($snapshot);
+        }
+
         if ($infoId > 0) {
             $row->j2commerce_orderinfo_id = $infoId;
 
             return (bool) $db->updateObject('#__j2commerce_orderinfos', $row, 'j2commerce_orderinfo_id');
         }
 
-        $row->order_id     = $orderId;
-        $row->all_billing  = '{}';
-        $row->all_shipping = '{}';
-        $row->all_payment  = '{}';
+        $row->order_id      = $orderId;
+        $row->all_billing  ??= '{}';
+        $row->all_shipping ??= '{}';
+        $row->all_payment  ??= '{}';
 
         // shipping_zip is NOT NULL without a DB default — seed it when only billing is saved.
         $row->shipping_zip ??= '';
@@ -2239,6 +2258,14 @@ class OrderModel extends AdminModel
 
         foreach (self::ADDRESS_FIELDS as $field) {
             $data[$field] = $address->{$field} ?? '';
+        }
+
+        // Each custom field is its own column on the addresses table, so a saved row
+        // answers them the same way it answers the fixed ones.
+        foreach (CustomFieldHelper::getOrderFieldNamekeys($type) as $namekey) {
+            if (property_exists($address, $namekey)) {
+                $data[$namekey] = $address->{$namekey};
+            }
         }
 
         return $this->saveOrderAddress($orderId, $type, $data);

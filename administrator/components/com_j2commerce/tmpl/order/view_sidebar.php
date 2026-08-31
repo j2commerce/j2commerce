@@ -14,6 +14,7 @@ defined('_JEXEC') or die;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Router\Route;
 
 $item = $this->item;
@@ -187,4 +188,11 @@ if ($orderInfo) {
     </div>
     <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterAdminOrderBillingAddress', array($item))->getArgument('html', ''); ?>
 <?php endif; ?>
+<?php // Checkout custom fields captured on this order ?>
+<?php echo LayoutHelper::render('order.customfields', [
+    'info'          => $orderInfo,
+    'card_class'    => 'card mb-3',
+    'heading_tag'   => 'h2',
+    'heading_class' => 'h6 mb-2',
+], JPATH_ROOT . '/components/com_j2commerce/layouts'); ?>
 <?php echo J2CommerceHelper::plugin()->eventWithHtml('AdminOrderAfterGeneralInformation', array($item))->getArgument('html', ''); ?>

@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
 use Joomla\CMS\Language\Text;
 
 /** Shared billing/shipping address editor; expects $this->addressFormType (billing|shipping). */
@@ -87,6 +88,52 @@ $zoneName = (string) ($orderInfo->{$type . '_zone_name'} ?? '');
                 <label class="form-label" for="<?php echo $type; ?>_phone_2"><?php echo Text::_('COM_J2COMMERCE_FIELD_ADDRESS_PHONE_2'); ?></label>
                 <input type="text" class="form-control" id="<?php echo $type; ?>_phone_2" data-address-field="phone_2" value="<?php echo $this->escape($value('phone_2')); ?>">
             </div>
+            <?php
+            // Checkout custom fields. `data-address-field` is the same hook the fixed
+            // inputs use, so admin-order-edit.js posts these without knowing about them
+            // and OrderModel::saveOrderAddress() merges them into the order's snapshot.
+            //
+            // Types whose value is not a plain answer are read-only here: multiuploader
+            // files are served from their own upload rows, and a zone needs the
+            // country-dependent lookup the fixed zone select already owns.
+            $snapshot     = CustomFieldHelper::decodeOrderSnapshot($orderInfo->{'all_' . $type} ?? null);
+            $skippedTypes = ['multiuploader', 'zone', 'customtext'];
+
+            foreach (CustomFieldHelper::getOrderFields($type) as $namekey => $field) :
+                if (\in_array($field->field_type ?? '', $skippedTypes, true)) {
+                    continue;
+                }
+
+                $fieldValue = (string) ($snapshot[$namekey] ?? '');
+                $fieldId    = $type . '_cf_' . $namekey;
+                $fieldLabel = Text::_((string) ($field->field_name ?: $namekey));
+                $options    = \in_array($field->field_type, ['select', 'singledropdown', 'radio'], true)
+                    ? CustomFieldHelper::getFieldOptions($field)
+                    : [];
+                ?>
+                <div class="col-md-6">
+                    <label class="form-label" for="<?php echo $this->escape($fieldId); ?>"><?php echo $this->escape($fieldLabel); ?></label>
+                    <?php if ($options !== []) : ?>
+                        <select class="form-select" id="<?php echo $this->escape($fieldId); ?>" data-address-field="<?php echo $this->escape($namekey); ?>">
+                            <option value=""><?php echo Text::_('JGLOBAL_SELECT_AN_OPTION'); ?></option>
+                            <?php foreach ($options as $option) : ?>
+                                <option value="<?php echo $this->escape($option['value']); ?>" <?php echo $fieldValue === $option['value'] ? 'selected' : ''; ?>>
+                                    <?php echo $this->escape(Text::_($option['name'])); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    <?php elseif ($field->field_type === 'checkbox') : ?>
+                        <select class="form-select" id="<?php echo $this->escape($fieldId); ?>" data-address-field="<?php echo $this->escape($namekey); ?>">
+                            <option value="0" <?php echo $fieldValue === '' || $fieldValue === '0' ? 'selected' : ''; ?>><?php echo Text::_('JNO'); ?></option>
+                            <option value="1" <?php echo $fieldValue !== '' && $fieldValue !== '0' ? 'selected' : ''; ?>><?php echo Text::_('JYES'); ?></option>
+                        </select>
+                    <?php elseif (\in_array($field->field_type, ['textarea', 'wysiwyg'], true)) : ?>
+                        <textarea class="form-control" rows="3" id="<?php echo $this->escape($fieldId); ?>" data-address-field="<?php echo $this->escape($namekey); ?>"><?php echo $this->escape($fieldValue); ?></textarea>
+                    <?php else : ?>
+                        <input type="text" class="form-control" id="<?php echo $this->escape($fieldId); ?>" data-address-field="<?php echo $this->escape($namekey); ?>" value="<?php echo $this->escape($fieldValue); ?>">
+                    <?php endif; ?>
+                </div>
+            <?php endforeach; ?>
         </div>
         <div class="mt-3 d-flex gap-2">
             <button type="button" class="btn btn-primary" data-j2c-address-save="<?php echo $type; ?>">

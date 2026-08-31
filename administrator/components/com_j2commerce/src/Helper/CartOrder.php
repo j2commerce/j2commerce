@@ -2630,6 +2630,13 @@ class CartOrder
                     'tax_number' => $addressTable->tax_number ?? '',
                     'email'      => $addressTable->email ?? '',
                 ];
+
+                // Custom checkout fields ride along with the fixed keys. The snapshot this
+                // array becomes (all_billing / all_shipping) is the only copy the order
+                // keeps, so a whitelist that stops at the fixed keys drops every custom
+                // value before the order exists. Union, not merge: on a namekey collision
+                // the core key wins, because the fixed columns are read from it.
+                $data += $this->loadCustomFieldValues($type, $addressTable, true);
             }
         } else {
             // Guest checkout — use session data
@@ -2653,6 +2660,13 @@ class CartOrder
                     'tax_number' => $guestData['tax_number'] ?? '',
                     'email'      => $guestData['email'] ?? '',
                 ];
+
+                // Custom checkout fields ride along with the fixed keys. The snapshot this
+                // array becomes (all_billing / all_shipping) is the only copy the order
+                // keeps, so a whitelist that stops at the fixed keys drops every custom
+                // value before the order exists. Union, not merge: on a namekey collision
+                // the core key wins, because the fixed columns are read from it.
+                $data += $this->loadCustomFieldValues($type, $guestData, false);
             }
         }
 
@@ -2681,6 +2695,54 @@ class CartOrder
         }
 
         return $data;
+    }
+
+    /**
+     * Values of the area's custom fields, read from the saved address row (each field is a
+     * column on #__j2commerce_addresses) or from the guest session array.
+     *
+     * Never throws: this runs on the order-write path, where losing the order costs more
+     * than losing one field definition.
+     */
+    private function loadCustomFieldValues(string $type, mixed $source, bool $isSavedAddress): array
+    {
+        if (empty($source)) {
+            return [];
+        }
+
+        $areas = $type === 'shipping'
+            ? ($isSavedAddress ? ['shipping'] : ['guest_shipping'])
+            : ($isSavedAddress ? ['billing', 'register'] : ['guest']);
+
+        $values = [];
+
+        try {
+            foreach ($areas as $area) {
+                foreach (CustomFieldHelper::getFieldsByArea($area) as $field) {
+                    $namekey = (string) $field->field_namekey;
+
+                    if ($namekey === '' || isset($values[$namekey])) {
+                        continue;
+                    }
+
+                    $value = \is_object($source) ? ($source->{$namekey} ?? null) : ($source[$namekey] ?? null);
+
+                    if ($value !== null && $value !== '') {
+                        $values[$namekey] = $value;
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::add(
+                'CartOrder::loadCustomFieldValues failed: ' . $e->getMessage(),
+                Log::WARNING,
+                'com_j2commerce'
+            );
+
+            return [];
+        }
+
+        return $values;
     }
 
     /**
