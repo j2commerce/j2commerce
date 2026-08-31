@@ -16,17 +16,16 @@ namespace J2Commerce\Component\J2commerce\Site\Controller;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
-use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\DownloadHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\ProductVisibilityHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Rule\PasswordRule;
-use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Controller\BaseController;
+use Joomla\CMS\Pagination\Pagination;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
@@ -547,35 +546,18 @@ class MyprofileController extends BaseController
         $model = $this->getModel('Myprofile');
         $data  = $model->getOrders($userId, $guestToken, $guestEmail, $limitStart, $limit, $search);
 
-        $params     = J2CommerceHelper::config();
-        $dateFormat = $params->get('date_format', 'Y-m-d');
+        /** @var \J2Commerce\Component\J2commerce\Site\View\Myprofile\HtmlView $view */
+        $view = $this->getView('Myprofile', 'html');
 
-        $rows = [];
-
-        foreach ($data['orders'] as $item) {
-            // AfterDisplayOrder markup is emitted as returned; the handler owns its encoding.
-            $afterDisplayHtml = J2CommerceHelper::plugin()->eventWithHtml('AfterDisplayOrder', [$item])->getArgument('html', '');
-
-            $rows[] = [
-                'order_id'    => $item->order_id,
-                'date'        => HTMLHelper::_('date', $item->created_on, $dateFormat),
-                'invoice'     => $item->order_id,
-                'status_name' => Text::_($item->orderstatus_name ?? ''),
-                'status_css'  => !empty($item->orderstatus_cssclass) ? $item->orderstatus_cssclass : 'bg-secondary',
-                'amount'      => CurrencyHelper::format(
-                    (float) $item->order_total,
-                    $item->currency_code ?? '',
-                    (float) ($item->currency_value ?? 1)
-                ),
-                'view_url'           => Route::_('index.php?option=com_j2commerce&view=myprofile&layout=order&order_id=' . urlencode($item->order_id)),
-                'print_url'          => Route::_('index.php?option=com_j2commerce&view=myprofile&layout=order&order_id=' . urlencode($item->order_id) . '&tmpl=component'),
-                'after_display_html' => $afterDisplayHtml,
-            ];
-        }
-
+        // The list is rendered server-side through the view's own template, so a template
+        // override keeps its markup across search and pagination.
         $this->jsonResponse([
-            'success'    => true,
-            'orders'     => $rows,
+            'success' => true,
+            'html'    => $view->renderOrdersList(
+                $data['orders'],
+                new Pagination($data['total'], $limitStart, $limit),
+                $search
+            ),
             'total'      => $data['total'],
             'limitStart' => $limitStart,
             'limit'      => $limit,
@@ -605,61 +587,18 @@ class MyprofileController extends BaseController
         $model = $this->getModel('Myprofile');
         $data  = $model->getDownloads($userId, $guestEmail, $limitStart, $limit, $search, (string) $guestToken);
 
-        $params     = J2CommerceHelper::config();
-        $dateFormat = $params->get('date_format', 'Y-m-d');
-        $nullDate   = '0000-00-00 00:00:00';
+        /** @var \J2Commerce\Component\J2commerce\Site\View\Myprofile\HtmlView $view */
+        $view = $this->getView('Myprofile', 'html');
 
-        $rows = [];
-
-        foreach ($data['downloads'] as $dl) {
-            $notGranted   = empty($dl->access_granted) || $dl->access_granted === $nullDate;
-            $expired      = false;
-            $limitReached = false;
-
-            if (!$notGranted && $dl->access_expires !== $nullDate && strtotime($dl->access_expires) < time()) {
-                $expired = true;
-            }
-
-            $downloadLimit = 0;
-            if (!empty($dl->product_params)) {
-                $downloadLimit = (int) (new \Joomla\Registry\Registry($dl->product_params))->get('download_limit', 0);
-            }
-
-            $limitCount = (int) ($dl->limit_count ?? 0);
-            if ($downloadLimit > 0 && $limitCount >= $downloadLimit) {
-                $limitReached = true;
-            }
-
-            $remaining   = $downloadLimit > 0 ? max(0, $downloadLimit - $limitCount) : -1;
-            $canDownload = !$notGranted && !$expired && !$limitReached && !empty($dl->product_file_save_name);
-
-            // Determine status badge
-            $statusBadge = '';
-            if ($notGranted) {
-                $statusBadge = 'pending';
-            } elseif ($expired) {
-                $statusBadge = 'expired';
-            } elseif ($limitReached) {
-                $statusBadge = 'limit_reached';
-            }
-
-            $rows[] = [
-                'order_id'       => $dl->order_id,
-                'order_url'      => Route::_('index.php?option=com_j2commerce&view=myprofile&layout=order&order_id=' . urlencode($dl->order_id)),
-                'file_name'      => $dl->product_file_display_name ?? '',
-                'access_granted' => $notGranted ? false : true,
-                'access_expires' => $notGranted ? '' : ($dl->access_expires === $nullDate ? '' : HTMLHelper::_('date', $dl->access_expires, $dateFormat)),
-                'never_expires'  => !$notGranted && $dl->access_expires === $nullDate,
-                'remaining'      => $remaining,
-                'can_download'   => $canDownload,
-                'status'         => $statusBadge,
-                'download_url'   => $canDownload ? Route::_('index.php?option=com_j2commerce&task=myprofile.download&order_id=' . urlencode($dl->order_id) . '&fid=' . (int) $dl->j2commerce_productfile_id) : '',
-            ];
-        }
-
+        // The list is rendered server-side through the view's own template, so a template
+        // override keeps its markup across search and pagination.
         $this->jsonResponse([
-            'success'    => true,
-            'downloads'  => $rows,
+            'success' => true,
+            'html'    => $view->renderDownloadsList(
+                $data['downloads'],
+                new Pagination($data['total'], $limitStart, $limit),
+                $search
+            ),
             'total'      => $data['total'],
             'limitStart' => $limitStart,
             'limit'      => $limit,

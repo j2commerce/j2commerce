@@ -30,10 +30,13 @@ use Joomla\CMS\Session\Session;
 class HtmlView extends BaseHtmlView
 {
     public array $orders                     = [];
+    public string $ordersSearch              = '';
     public ?Pagination $pagination           = null;
     public array $addresses                  = [];
     public array $downloads                  = [];
     public int $downloadsTotal               = 0;
+    public string $downloadsSearch           = '';
+    public ?Pagination $downloadsPagination  = null;
     public ?object $params                   = null;
     public $currency                         = null;
     public ?\Joomla\CMS\User\User $user      = null;
@@ -149,9 +152,10 @@ class HtmlView extends BaseHtmlView
 
             // Load downloads if enabled
             if ($this->params->get('download_area', 1)) {
-                $downloadData         = $model->getDownloads($userId, $guestEmail, 0, $limit, '', (string) $guestToken);
-                $this->downloads      = $downloadData['downloads'];
-                $this->downloadsTotal = $downloadData['total'];
+                $downloadData              = $model->getDownloads($userId, $guestEmail, 0, $limit, '', (string) $guestToken);
+                $this->downloads           = $downloadData['downloads'];
+                $this->downloadsTotal      = $downloadData['total'];
+                $this->downloadsPagination = new Pagination($this->downloadsTotal, 0, $limit);
             }
 
             // Unified Payment Methods tab - check first before dispatching legacy events
@@ -227,42 +231,59 @@ class HtmlView extends BaseHtmlView
             'baseUrl'   => Route::_('index.php?option=com_j2commerce', false),
             'csrfToken' => Session::getFormToken(),
             'listLimit' => (int) $app->get('list_limit', 20),
+            // The AJAX list renders through the same view, and the framework folder it picks
+            // comes from the menu item params -- without this the refresh can resolve a
+            // different framework than the first paint did.
+            'itemId' => (int) $app->getInput()->getInt('Itemid', 0),
         ]);
 
-        // Register language strings for JS (used in AJAX-rebuilt table headers)
-        Text::script('COM_J2COMMERCE_ORDER_DATE');
-        Text::script('COM_J2COMMERCE_INVOICE_NO');
-        Text::script('COM_J2COMMERCE_ORDER_STATUS');
-        Text::script('COM_J2COMMERCE_ORDER_AMOUNT');
-        Text::script('COM_J2COMMERCE_ACTIONS');
-        Text::script('COM_J2COMMERCE_NO_ORDERS');
-        Text::script('COM_J2COMMERCE_NO_ORDERS_MATCH_SEARCH');
-        Text::script('COM_J2COMMERCE_ITEMS');
         // Pre-compute sprintf string for JS since Text::script() doesn't support sprintf
         Text::script('COM_J2COMMERCE_SELECT_ZONE', Text::sprintf('COM_J2COMMERCE_SELECT_PLACEHOLDER', Text::_('COM_J2COMMERCE_ZONE')));
         Text::script('COM_J2COMMERCE_MYPROFILE_DELETE_CONFIRM');
         Text::script('COM_J2COMMERCE_MYPROFILE_DISCARD_CHANGES');
-        Text::script('COM_J2COMMERCE_ORDER_VIEW');
-        Text::script('COM_J2COMMERCE_ORDER_PRINT');
-        Text::script('JLIB_HTML_PAGINATION');
-
-        // Download-related language strings for JS
-        Text::script('COM_J2COMMERCE_ORDER');
-        Text::script('COM_J2COMMERCE_FILES');
-        Text::script('COM_J2COMMERCE_ACCESS_EXPIRES');
-        Text::script('COM_J2COMMERCE_DOWNLOADS_REMAINING');
-        Text::script('COM_J2COMMERCE_DOWNLOAD');
-        Text::script('COM_J2COMMERCE_DOWNLOAD_PENDING');
-        Text::script('COM_J2COMMERCE_EXPIRED');
-        Text::script('COM_J2COMMERCE_LIMIT_REACHED');
-        Text::script('COM_J2COMMERCE_NEVER_EXPIRES');
-        Text::script('COM_J2COMMERCE_NO_DOWNLOADS');
-        Text::script('COM_J2COMMERCE_FILE_UNAVAILABLE');
 
         Text::script('COM_J2COMMERCE_LOADING');
 
         $this->_prepareDocument();
         parent::display($tpl);
+    }
+
+    /**
+     * Renders the orders list on its own for the AJAX search and pagination responses, through
+     * the same overridable template the first paint used.
+     */
+    public function renderOrdersList(array $orders, Pagination $pagination, string $search = ''): string
+    {
+        $app = Factory::getApplication();
+
+        $this->params       = $app->getParams();
+        $this->currency     = J2CommerceHelper::currency();
+        $this->user         = $app->getIdentity();
+        $this->orders       = $orders;
+        $this->pagination   = $pagination;
+        $this->ordersSearch = $search;
+
+        $this->registerFrameworkTemplatePaths($app);
+
+        return $this->loadTemplate('orderslist');
+    }
+
+    /** Downloads twin of renderOrdersList(). */
+    public function renderDownloadsList(array $downloads, Pagination $pagination, string $search = ''): string
+    {
+        $app = Factory::getApplication();
+
+        $this->params              = $app->getParams();
+        $this->currency            = J2CommerceHelper::currency();
+        $this->user                = $app->getIdentity();
+        $this->downloads           = $downloads;
+        $this->downloadsTotal      = $pagination->total;
+        $this->downloadsPagination = $pagination;
+        $this->downloadsSearch     = $search;
+
+        $this->registerFrameworkTemplatePaths($app);
+
+        return $this->loadTemplate('downloadslist');
     }
 
     /**

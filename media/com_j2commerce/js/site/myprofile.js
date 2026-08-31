@@ -9,6 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const baseUrl = opts.baseUrl || 'index.php?option=com_j2commerce';
     const csrf = opts.csrfToken || '';
     const sep = baseUrl.includes('?') ? '&' : '?';
+    // The list partials are picked per menu item, so every AJAX refresh has to name the
+    // same menu item the first paint used.
+    const itemIdParam = opts.itemId ? `&Itemid=${opts.itemId}` : '';
 
     // Tab deep-linking via URL hash
     const hash = window.location.hash;
@@ -39,13 +42,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let searchTimer   = null;
     let currentPage   = 0;
 
-    // textContent → innerHTML is TEXT-node serialisation: it leaves " and ' intact, and every
-    // call site below interpolates into a quoted attribute. Escape the full ENT_QUOTES set so
-    // a stored value such as a status CSS class cannot close the attribute and add a handler.
-    const HTML_ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+    // 4.1.3 Status Messages: the replaced region cannot be the live region announcing its own
+    // replacement, so mirror the fresh result summary into the sibling role="status" node.
+    function announce(statusEl, container) {
+        if (!statusEl) return;
 
-    function escapeHtml(str) {
-        return String(str ?? '').replace(/[&<>"']/g, ch => HTML_ESCAPES[ch]);
+        const summary = container.querySelector('[id$="-count"], .alert, .uk-alert');
+        statusEl.textContent = summary ? summary.textContent.trim() : '';
     }
 
     // Parse server-rendered HTML into an inert fragment (no innerHTML sink) for adoption.
@@ -59,30 +62,11 @@ document.addEventListener('DOMContentLoaded', () => {
         return frag;
     }
 
-    // Capture the initial server-rendered HTML structure so AJAX rebuilds
-    // preserve any template override customisations (classes, attributes, etc.)
-    const wrap = document.getElementById('j2c-orders-table-wrap');
-    let snapshotTheadHtml = '';
-    let snapshotTableClass = 'table';
-    let snapshotPagUlClass = 'pagination my-0';
-    let snapshotPagDivClass = 'd-flex justify-content-end align-items-center';
-    let snapshotCountClass = 'text-body-secondary small ms-3 align-self-center';
-    let snapshotNoOrdersId = 'j2c-no-orders';
-
-    if (wrap) {
-        const initTable = wrap.querySelector('#j2c-orders-table');
-        if (initTable) {
-            const thead = initTable.querySelector('thead');
-            if (thead) snapshotTheadHtml = thead.outerHTML;
-            snapshotTableClass = initTable.className || snapshotTableClass;
-        }
-        const initPagDiv = wrap.querySelector('#j2c-orders-pagination');
-        if (initPagDiv) snapshotPagDivClass = initPagDiv.className || snapshotPagDivClass;
-        const initPagUl = wrap.querySelector('#j2c-pagination-list');
-        if (initPagUl) snapshotPagUlClass = initPagUl.className || snapshotPagUlClass;
-        const initCount = wrap.querySelector('#j2c-orders-count');
-        if (initCount) snapshotCountClass = initCount.className || snapshotCountClass;
-    }
+    // The list markup is owned by the server template (default_orderslist.php) and re-rendered
+    // there on every refresh, so a template override survives search and pagination. The only
+    // contracts JS holds are this container and the .j2c-page-link[data-page] links inside it.
+    const wrap   = document.getElementById('j2c-orders-table-wrap');
+    const status = document.getElementById('j2c-orders-status');
 
     async function loadOrders(page, search) {
         if (!wrap) return;
@@ -90,85 +74,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const limitStart = page * listLimit;
         const url = `${baseUrl}${sep}task=myprofile.loadOrders&format=json`
             + `&limitstart=${limitStart}`
+            + itemIdParam
             + (search ? `&search=${encodeURIComponent(search)}` : '');
 
         wrap.style.opacity = '0.5';
 
         try {
-            const res  = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
             const json = await res.json();
 
             if (!json.success) return;
 
-            const { orders, total, limit } = json;
-
-            if (!orders.length) {
-                const emptyKey = search ? 'COM_J2COMMERCE_NO_ORDERS_MATCH_SEARCH' : 'COM_J2COMMERCE_NO_ORDERS';
-                wrap.replaceChildren(parseFragment(`<div class="alert alert-info" id="${snapshotNoOrdersId}">`
-                    + (Joomla.Text._(emptyKey)) + '</div>'));
-                wrap.style.opacity = '1';
-                return;
-            }
-
-            // Build table rows
-            let rows = '';
-            for (const o of orders) {
-                rows += '<tr>'
-                    + `<td><a href="${escapeHtml(o.view_url)}">${escapeHtml(o.date)}</a></td>`
-                    + `<td><a href="${escapeHtml(o.view_url)}">${escapeHtml(o.invoice)}</a></td>`
-                    + `<td><span class="badge ${escapeHtml(o.status_css)}">${escapeHtml(o.status_name)}</span></td>`
-                    + `<td class="text-end">${escapeHtml(o.amount)}</td>`
-                    + '<td class="text-center text-nowrap">'
-                    +   `<a href="${escapeHtml(o.view_url)}" class="btn btn-sm btn-outline-primary" title="${Joomla.Text._('COM_J2COMMERCE_ORDER_VIEW')}"><span class="icon-eye" aria-hidden="true"></span></a> `
-                    +   `<button type="button" class="btn btn-sm btn-outline-secondary j2commerce-order-print" data-url="${escapeHtml(o.print_url)}" title="${Joomla.Text._('COM_J2COMMERCE_ORDER_PRINT')}"><span class="icon-print" aria-hidden="true"></span></button>`
-                    + '</td></tr>';
-            }
-
-            // Build pagination — reuse classes captured from the server-rendered template
-            const pages = Math.ceil(total / limit);
-            const start = limitStart + 1;
-            const end   = Math.min(limitStart + limit, total);
-            let pagHtml = '';
-
-            if (pages > 1) {
-                pagHtml += `<nav aria-label="${Joomla.Text._('JLIB_HTML_PAGINATION')}"><ul class="${escapeHtml(snapshotPagUlClass)}" id="j2c-pagination-list">`;
-                for (let p = 0; p < pages; p++) {
-                    const active = (p === page) ? ' active' : '';
-                    pagHtml += `<li class="page-item${active}"><a class="page-link j2c-page-link" href="#" data-page="${p}">${p + 1}</a></li>`;
-                }
-                pagHtml += '</ul></nav>';
-            }
-
-            const countText = `${start} - ${end} / ${total} ` + (Joomla.Text._('COM_J2COMMERCE_ITEMS'));
-
-            // Use the captured thead so template overrides are preserved on AJAX refresh
-            const theadHtml = snapshotTheadHtml
-                || '<thead><tr>'
-                + `<th scope="col">${Joomla.Text._('COM_J2COMMERCE_ORDER_DATE')}</th>`
-                + `<th scope="col">${Joomla.Text._('COM_J2COMMERCE_INVOICE_NO')}</th>`
-                + `<th scope="col">${Joomla.Text._('COM_J2COMMERCE_ORDER_STATUS')}</th>`
-                + `<th scope="col" class="text-end">${Joomla.Text._('COM_J2COMMERCE_ORDER_AMOUNT')}</th>`
-                + `<th scope="col" class="text-center" style="width:1%"><span class="visually-hidden">${Joomla.Text._('COM_J2COMMERCE_ACTIONS')}</span></th>`
-                + '</tr></thead>';
-
-            wrap.replaceChildren(parseFragment('<div class="table-responsive">'
-                + `<table class="${escapeHtml(snapshotTableClass)}" id="j2c-orders-table">`
-                + theadHtml
-                + '<tbody id="j2c-orders-body">' + rows + '</tbody></table></div>'
-                + `<div class="${escapeHtml(snapshotPagDivClass)}" id="j2c-orders-pagination">`
-                + pagHtml
-                + `<span class="${escapeHtml(snapshotCountClass)}" id="j2c-orders-count">${countText}</span>`
-                + '</div>'));
-
-            // AfterDisplayOrder markup is plugin-owned: insert it as its own fragment, not into the row string.
-            const actionCells = wrap.querySelectorAll('#j2c-orders-body > tr > td:last-child');
-            orders.forEach((o, i) => {
-                if (o.after_display_html && actionCells[i]) {
-                    actionCells[i].appendChild(parseFragment(o.after_display_html));
-                }
-            });
-
+            wrap.replaceChildren(parseFragment(json.html));
             currentPage = page;
+            announce(status, wrap);
         } catch (err) {
             console.error('Error loading orders:', err);
         } finally {
@@ -203,32 +125,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Downloads: AJAX search + pagination
     // =========================================================================
     const dlSearchInput = document.getElementById('j2c-download-search');
-    const dlWrap = document.getElementById('j2c-downloads-table-wrap');
+    const dlWrap   = document.getElementById('j2c-downloads-table-wrap');
+    const dlStatus = document.getElementById('j2c-downloads-status');
     let dlSearchTimer = null;
     let dlCurrentPage = 0;
-
-    // Capture the initial server-rendered HTML structure for downloads
-    let dlSnapshotTheadHtml = '';
-    let dlSnapshotTableClass = 'table';
-    let dlSnapshotPagUlClass = 'pagination my-0';
-    let dlSnapshotPagDivClass = 'd-flex justify-content-end align-items-center';
-    let dlSnapshotCountClass = 'text-body-secondary small ms-3 align-self-center';
-    let dlSnapshotNoDownloadsId = 'j2c-no-downloads';
-
-    if (dlWrap) {
-        const initTable = dlWrap.querySelector('#j2c-downloads-table');
-        if (initTable) {
-            const thead = initTable.querySelector('thead');
-            if (thead) dlSnapshotTheadHtml = thead.outerHTML;
-            dlSnapshotTableClass = initTable.className || dlSnapshotTableClass;
-        }
-        const initPagDiv = dlWrap.querySelector('#j2c-downloads-pagination');
-        if (initPagDiv) dlSnapshotPagDivClass = initPagDiv.className || dlSnapshotPagDivClass;
-        const initPagUl = dlWrap.querySelector('#j2c-downloads-pagination-list');
-        if (initPagUl) dlSnapshotPagUlClass = initPagUl.className || dlSnapshotPagUlClass;
-        const initCount = dlWrap.querySelector('#j2c-downloads-count');
-        if (initCount) dlSnapshotCountClass = initCount.className || dlSnapshotCountClass;
-    }
 
     async function loadDownloads(page, search) {
         if (!dlWrap) return;
@@ -236,109 +136,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const limitStart = page * listLimit;
         const url = `${baseUrl}${sep}task=myprofile.loadDownloads&format=json`
             + `&limitstart=${limitStart}`
+            + itemIdParam
             + (search ? `&search=${encodeURIComponent(search)}` : '');
 
         dlWrap.style.opacity = '0.5';
 
         try {
-            const res  = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
             const json = await res.json();
 
             if (!json.success) return;
 
-            const { downloads, total, limit } = json;
-
-            if (!downloads.length) {
-                dlWrap.replaceChildren(parseFragment(`<div class="alert alert-info" id="${dlSnapshotNoDownloadsId}">`
-                    + (Joomla.Text._('COM_J2COMMERCE_NO_DOWNLOADS')) + '</div>'));
-                dlWrap.style.opacity = '1';
-                return;
-            }
-
-            // Build table rows
-            let rows = '';
-            for (const d of downloads) {
-                // File name cell
-                let fileNameCell = '';
-                if (d.file_name) {
-                    fileNameCell = '<small class="fw-medium">' + escapeHtml(d.file_name) + '</small>';
-                } else {
-                    fileNameCell = '<span class="text-body-secondary fst-italic">' + (Joomla.Text._('COM_J2COMMERCE_FILE_UNAVAILABLE')) + '</span>';
-                }
-
-                // Expires cell
-                let expiresCell = '';
-                if (!d.access_granted) {
-                    expiresCell = '<span class="badge bg-secondary">' + (Joomla.Text._('COM_J2COMMERCE_DOWNLOAD_PENDING')) + '</span>';
-                } else if (d.never_expires) {
-                    expiresCell = Joomla.Text._('COM_J2COMMERCE_NEVER_EXPIRES');
-                } else {
-                    expiresCell = escapeHtml(d.access_expires);
-                }
-
-                // Remaining cell
-                const remainingCell = d.remaining >= 0 ? d.remaining : '&infin;';
-
-                // Action cell
-                let actionCell = '';
-                if (d.can_download) {
-                    actionCell = `<a href="${escapeHtml(d.download_url)}" class="btn btn-sm btn-soft-success" title="${Joomla.Text._('COM_J2COMMERCE_DOWNLOAD')}"><span class="icon-download" aria-hidden="true"></span></a>`;
-                } else if (d.status === 'pending') {
-                    actionCell = '<span class="badge text-bg-secondary">' + (Joomla.Text._('COM_J2COMMERCE_DOWNLOAD_PENDING')) + '</span>';
-                } else if (d.status === 'expired') {
-                    actionCell = '<span class="badge text-bg-danger">' + (Joomla.Text._('COM_J2COMMERCE_EXPIRED')) + '</span>';
-                } else if (d.status === 'limit_reached') {
-                    actionCell = '<span class="badge text-bg-warning">' + (Joomla.Text._('COM_J2COMMERCE_LIMIT_REACHED')) + '</span>';
-                } else {
-                    actionCell = '<span class="badge text-bg-secondary">' + (Joomla.Text._('COM_J2COMMERCE_FILE_UNAVAILABLE')) + '</span>';
-                }
-
-                rows += '<tr>'
-                    + `<td><a href="${escapeHtml(d.order_url)}" title="${escapeHtml(d.order_id)}">${escapeHtml(d.order_id)}</a></td>`
-                    + `<td>${fileNameCell}</td>`
-                    + `<td>${expiresCell}</td>`
-                    + `<td class="text-center">${remainingCell}</td>`
-                    + `<td class="text-center">${actionCell}</td>`
-                    + '</tr>';
-            }
-
-            // Build pagination
-            const pages = Math.ceil(total / limit);
-            const start = limitStart + 1;
-            const end   = Math.min(limitStart + limit, total);
-            let pagHtml = '';
-
-            if (pages > 1) {
-                pagHtml += `<nav aria-label="${Joomla.Text._('JLIB_HTML_PAGINATION')}"><ul class="${escapeHtml(dlSnapshotPagUlClass)}" id="j2c-downloads-pagination-list">`;
-                for (let p = 0; p < pages; p++) {
-                    const active = (p === page) ? ' active' : '';
-                    pagHtml += `<li class="page-item${active}"><a class="page-link j2c-download-page-link" href="#" data-page="${p}">${p + 1}</a></li>`;
-                }
-                pagHtml += '</ul></nav>';
-            }
-
-            const countText = `${start} - ${end} / ${total} ` + (Joomla.Text._('COM_J2COMMERCE_ITEMS'));
-
-            // Use the captured thead so template overrides are preserved on AJAX refresh
-            const theadHtml = dlSnapshotTheadHtml
-                || '<thead><tr>'
-                + `<th scope="col">${Joomla.Text._('COM_J2COMMERCE_ORDER')}</th>`
-                + `<th scope="col">${Joomla.Text._('COM_J2COMMERCE_FILES')}</th>`
-                + `<th scope="col">${Joomla.Text._('COM_J2COMMERCE_ACCESS_EXPIRES')}</th>`
-                + `<th scope="col" class="text-center">${Joomla.Text._('COM_J2COMMERCE_DOWNLOADS_REMAINING')}</th>`
-                + `<th scope="col" class="text-center" style="width:1%"><span class="visually-hidden">${Joomla.Text._('COM_J2COMMERCE_ACTIONS')}</span></th>`
-                + '</tr></thead>';
-
-            dlWrap.replaceChildren(parseFragment('<div class="table-responsive">'
-                + `<table class="${escapeHtml(dlSnapshotTableClass)}" id="j2c-downloads-table">`
-                + theadHtml
-                + '<tbody id="j2c-downloads-body">' + rows + '</tbody></table></div>'
-                + `<div class="${escapeHtml(dlSnapshotPagDivClass)}" id="j2c-downloads-pagination">`
-                + pagHtml
-                + `<span class="${escapeHtml(dlSnapshotCountClass)}" id="j2c-downloads-count">${countText}</span>`
-                + '</div>'));
-
+            dlWrap.replaceChildren(parseFragment(json.html));
             dlCurrentPage = page;
+            announce(dlStatus, dlWrap);
         } catch (err) {
             console.error('Error loading downloads:', err);
         } finally {
