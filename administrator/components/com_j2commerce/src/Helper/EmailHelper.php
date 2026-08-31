@@ -844,6 +844,7 @@ class EmailHelper
             '[ORDER_EXTRA_ROWS]'          => $extraRowsHtml,
             '[TOTALS]'                    => str_contains($text, '[TOTALS]') ? $this->buildTotalsTable($order, $orderExtraRows, $language) : '',
             '[CURRENT_YEAR]'              => DateHelper::currentYear($language),
+            '[PRINT_DATE]'                => DateHelper::format('now', null, $language),
             '[ITEMS]'                     => $items,
             '[PACKING_ITEMS]'             => $this->loadPackingItemsTemplate($order, $language),
         ];

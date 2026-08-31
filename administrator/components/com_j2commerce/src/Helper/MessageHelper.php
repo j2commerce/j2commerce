@@ -106,6 +106,7 @@ class MessageHelper
      * - [ORDERID]: Order ID number
      * - [INVOICENO]: Invoice number
      * - [ORDERDATE]: Order creation date
+     * - [PRINT_DATE]: Date the document was generated
      * - [ORDERSTATUS]: Current order status
      * - [ORDERAMOUNT]: Order total amount (formatted)
      * - [ORDER_TOKEN]: Unique order token for verification
@@ -147,6 +148,7 @@ class MessageHelper
             '[DISCOUNT_AMOUNT]'  => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_DISCOUNT_AMOUNT'),
             '[SURCHARGE_AMOUNT]' => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_SURCHARGE_AMOUNT'),
             '[CURRENT_YEAR]'     => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_CURRENT_YEAR'),
+            '[PRINT_DATE]'       => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_PRINT_DATE'),
             '[TAX_LINES]'        => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_TAX_LINES'),
             '[DISCOUNT_LABEL]'   => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_DISCOUNT_LABEL'),
             '[DISCOUNT_LINES]'   => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_TAG_DISCOUNT_LINES'),

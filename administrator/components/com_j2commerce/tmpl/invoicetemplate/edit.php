@@ -192,24 +192,53 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    // Shortcode search filter (sidebar)
+    // Shortcode filter (sidebar): the search term, plus the tags the selected document type
+    // deletes at render. A packing slip drops the totals tags, so the picker must not offer
+    // a tag that would silently vanish on print.
     const sidebarSearch = document.getElementById("shortcode-search-sidebar");
-    if (sidebarSearch) {
-        sidebarSearch.addEventListener("input", function() {
-            const term = this.value.toLowerCase();
-            document.querySelectorAll("#shortcodes-sidebar-col .shortcode-group").forEach(function(group) {
-                const btns = group.querySelectorAll(".shortcode-btn");
-                let hasVisible = false;
-                btns.forEach(function(btn) {
-                    const text = (btn.textContent + " " + (btn.getAttribute("data-shortcode") || "")).toLowerCase();
-                    const visible = !term || text.includes(term);
-                    btn.style.display = visible ? "" : "none";
-                    if (visible) hasVisible = true;
-                });
-                group.style.display = hasVisible ? "" : "none";
+    const invoiceTypeField = document.querySelector("select[name=\"jform[invoice_type]\"]");
+    const editorOptions = Joomla.getOptions("com_j2commerce.emaileditor") || {};
+
+    function isPackingSlip() {
+        return (invoiceTypeField ? invoiceTypeField.value : editorOptions.invoiceType) === "packingslip";
+    }
+
+    function filterShortcodes() {
+        const term = (sidebarSearch ? sidebarSearch.value : "").toLowerCase();
+        const stripped = isPackingSlip();
+
+        document.querySelectorAll("#shortcodes-sidebar-col .shortcode-group").forEach(function(group) {
+            let hasVisible = false;
+            group.querySelectorAll(".shortcode-btn").forEach(function(btn) {
+                const text = (btn.textContent + " " + (btn.getAttribute("data-shortcode") || "")).toLowerCase();
+                const visible = (!stripped || !btn.hasAttribute("data-packingslip-strip"))
+                    && (!term || text.includes(term));
+                btn.style.display = visible ? "" : "none";
+                if (visible) hasVisible = true;
             });
+            group.style.display = hasVisible ? "" : "none";
         });
     }
+
+    if (sidebarSearch) {
+        sidebarSearch.addEventListener("input", filterShortcodes);
+    }
+
+    if (invoiceTypeField) {
+        invoiceTypeField.addEventListener("change", function() {
+            filterShortcodes();
+
+            // Second authoring route: the visual builder block list has to agree with the picker.
+            if (typeof window.updateJ2CShortcodeBlocks === "function" && typeof window.j2cFilterShortcodes === "function") {
+                window.updateJ2CShortcodeBlocks(window.j2cFilterShortcodes(
+                    editorOptions.shortcodes || {},
+                    isPackingSlip() ? (editorOptions.packingSlipTags || []) : []
+                ));
+            }
+        });
+    }
+
+    filterShortcodes();
 
     // Template card click handler (named function for reuse after AJAX render)
     function bindTemplateCardClick(card) {

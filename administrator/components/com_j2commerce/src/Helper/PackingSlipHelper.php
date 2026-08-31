@@ -21,6 +21,18 @@ use Joomla\Database\DatabaseInterface;
 
 class PackingSlipHelper
 {
+    /**
+     * Tags a packing slip drops at render. [ORDERAMOUNT] is deliberately absent: a declared
+     * value is asked for by carriers and insurers, so a tag the author placed is honoured.
+     * The shipped presets carry no money tags, which is what keeps the default price-free.
+     * The authoring UI reads this list so it cannot offer what the renderer will delete.
+     */
+    public const STRIPPED_TAGS = [
+        'SUBTOTAL', 'TAX_AMOUNT', 'SHIPPING_AMOUNT',
+        'DISCOUNT_AMOUNT', 'TAX_LINES', 'COUPON_CODE', 'TOTALS',
+        'ORDER_EXTRA_ROWS', 'ITEM_PRICE', 'ITEM_TOTAL',
+    ];
+
     private static ?DatabaseInterface $db       = null;
     private static ?PackingSlipHelper $instance = null;
 
@@ -159,19 +171,13 @@ class PackingSlipHelper
     /** Expects raw template text: the tags must not have been through processTags() yet. */
     public function stripPricingFromItemsTable(string $html): string
     {
-        $priceTags = [
-            'ORDERAMOUNT', 'SUBTOTAL', 'TAX_AMOUNT', 'SHIPPING_AMOUNT',
-            'DISCOUNT_AMOUNT', 'TAX_LINES', 'COUPON_CODE', 'TOTALS',
-            'ORDER_EXTRA_ROWS', 'ITEM_PRICE', 'ITEM_TOTAL',
-        ];
-
         // Match the editor manglings processTags() normalises — {TAG} from TinyMCE, lowercase
         // from GrapesJS — because that normalisation runs after this strip, not before it.
         // [ITEMS] carries price and total columns; [PACKING_ITEMS] is its price-free twin.
-        $strip = static function (array $m) use ($priceTags): string {
+        $strip = static function (array $m): string {
             $tag = strtoupper($m[1] !== '' ? $m[1] : ($m[2] ?? ''));
 
-            if (\in_array($tag, $priceTags, true)) {
+            if (\in_array($tag, self::STRIPPED_TAGS, true)) {
                 return '';
             }
 

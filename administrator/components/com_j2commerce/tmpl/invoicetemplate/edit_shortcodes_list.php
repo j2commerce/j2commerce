@@ -10,9 +10,16 @@
 defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\PackingSlipHelper;
 use Joomla\CMS\Language\Text;
 
 $messageTags = J2CommerceHelper::message()->getMessageTags();
+
+// Marks a tag a packing slip deletes at render. edit.php hides these while that type is
+// selected, so the picker never offers a tag that would silently vanish on print.
+$stripMark = static fn (string $tag): string => \in_array(strtoupper(trim($tag, '[]')), PackingSlipHelper::STRIPPED_TAGS, true)
+    ? ' data-packingslip-strip="1"'
+    : '';
 ?>
 
 <?php if (!empty($messageTags)): ?>
@@ -21,7 +28,7 @@ $messageTags = J2CommerceHelper::message()->getMessageTags();
             <div class="shortcode-category"><?php echo Text::_('COM_J2COMMERCE_' . strtoupper($key)); ?></div>
             <?php if (!empty($optionGroup)): ?>
                 <?php foreach ($optionGroup as $tagKey => $text): ?>
-                    <a href="#" class="shortcode-btn" data-shortcode="<?php echo $tagKey; ?>" title="<?php echo $tagKey; ?>"><?php echo $text; ?></a>
+                    <a href="#" class="shortcode-btn" data-shortcode="<?php echo $tagKey; ?>" title="<?php echo $tagKey; ?>"<?php echo $stripMark($tagKey); ?>><?php echo $text; ?></a>
                 <?php endforeach; ?>
             <?php endif; ?>
         </div>
@@ -42,8 +49,8 @@ $messageTags = J2CommerceHelper::message()->getMessageTags();
     <a href="#" class="shortcode-btn" data-shortcode="[ITEM_NAME]">ITEM_NAME</a>
     <a href="#" class="shortcode-btn" data-shortcode="[ITEM_SKU]">ITEM_SKU</a>
     <a href="#" class="shortcode-btn" data-shortcode="[ITEM_QTY]">ITEM_QTY</a>
-    <a href="#" class="shortcode-btn" data-shortcode="[ITEM_PRICE]">ITEM_PRICE</a>
-    <a href="#" class="shortcode-btn" data-shortcode="[ITEM_TOTAL]">ITEM_TOTAL</a>
+    <a href="#" class="shortcode-btn" data-shortcode="[ITEM_PRICE]" data-packingslip-strip="1">ITEM_PRICE</a>
+    <a href="#" class="shortcode-btn" data-shortcode="[ITEM_TOTAL]" data-packingslip-strip="1">ITEM_TOTAL</a>
     <a href="#" class="shortcode-btn" data-shortcode="[ITEM_IMAGE]">ITEM_IMAGE</a>
     <a href="#" class="shortcode-btn" data-shortcode="[ITEM_OPTIONS]">ITEM_OPTIONS</a>
     <a href="#" class="shortcode-btn" data-shortcode="[ITEM_WEIGHT]">ITEM_WEIGHT</a>

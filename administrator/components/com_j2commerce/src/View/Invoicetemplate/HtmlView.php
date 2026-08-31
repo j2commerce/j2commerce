@@ -12,6 +12,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\View\Invoicetemplate;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\PackingSlipHelper;
 use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Helper\ContentHelper;
@@ -62,7 +63,8 @@ class HtmlView extends BaseHtmlView
 
         HTMLHelper::_('bootstrap.modal', '#loadTemplateModal');
 
-        $bodySource = $this->item->body_source ?? 'editor';
+        $bodySource  = $this->item->body_source ?? 'editor';
+        $invoiceType = $this->item->invoice_type ?? 'invoice';
 
         $wa = $this->getDocument()->getWebAssetManager();
         $wa->registerAndUseStyle('com_j2commerce.vendor.grapesjs.css', 'media/com_j2commerce/vendor/grapesjs/css/grapes.min.css');
@@ -71,11 +73,16 @@ class HtmlView extends BaseHtmlView
         $wa->registerAndUseStyle('com_j2commerce.grapes.j2commerce.css', 'media/com_j2commerce/css/administrator/grapesjs-j2commerce.css');
         $wa->registerAndUseScript('com_j2commerce.grapes.j2commerce.js', 'media/com_j2commerce/js/administrator/grapesjs-j2commerce.js', [], ['defer' => true]);
 
+        // 'strippedTags' is the filter in force at load; 'packingSlipTags' is the list the type
+        // switch re-applies without a reload, so both authoring routes drop the same tags.
         $this->getDocument()->addScriptOptions('com_j2commerce.emaileditor', [
             'bodySource'      => $bodySource,
             'bodyJson'        => $this->item->body_json ?? '',
             'bodyHtml'        => $this->item->body ?? '',
             'shortcodes'      => $this->shortcodes ?? [],
+            'invoiceType'     => $invoiceType,
+            'strippedTags'    => $invoiceType === 'packingslip' ? PackingSlipHelper::STRIPPED_TAGS : [],
+            'packingSlipTags' => PackingSlipHelper::STRIPPED_TAGS,
             'csrfToken'       => Session::getFormToken(),
             'previewUrl'      => 'index.php?option=com_j2commerce&task=invoicetemplate.preview&format=raw',
             'loadTemplateUrl' => 'index.php?option=com_j2commerce&task=invoicetemplate.loadTemplate&format=json',

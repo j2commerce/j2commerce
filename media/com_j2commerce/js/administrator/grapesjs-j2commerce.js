@@ -14,6 +14,36 @@ const J2C_IMG_PLACEHOLDER = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 // Shortcode options for the trait dropdown — populated before editor init
 let j2cShortcodeOptions = [];
 
+/**
+ * Drops the tags the target document type deletes at render, so no authoring route can offer a
+ * tag that vanishes on print. Takes and returns the nested {category: {tag: desc}} shape.
+ */
+window.j2cFilterShortcodes = function(shortcodes, strippedTags) {
+    if (!shortcodes || !Array.isArray(strippedTags) || !strippedTags.length) {
+        return shortcodes;
+    }
+
+    const bare = tag => String(tag).replace(/[[\]{}]/g, '').toUpperCase();
+    const drop = new Set(strippedTags.map(bare));
+    const filtered = {};
+
+    for (const [key, val] of Object.entries(shortcodes)) {
+        if (val && typeof val === 'object' && !Array.isArray(val)) {
+            const group = {};
+            for (const [tag, desc] of Object.entries(val)) {
+                if (!drop.has(bare(tag))) {
+                    group[tag] = desc;
+                }
+            }
+            filtered[key] = group;
+        } else if (!drop.has(bare(key))) {
+            filtered[key] = val;
+        }
+    }
+
+    return filtered;
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     const options = Joomla.getOptions('com_j2commerce.emaileditor');
     if (!options) return;
@@ -29,6 +59,8 @@ function initGrapesJSEditor(options) {
     const container = document.getElementById('gjs-container');
     const gjsEl = document.getElementById('gjs');
     if (!container || !gjsEl) return;
+
+    const shortcodes = window.j2cFilterShortcodes(options.shortcodes, options.strippedTags);
 
     container.style.display = '';
     gjsEl.style.height = '700px';
@@ -68,9 +100,9 @@ function initGrapesJSEditor(options) {
 
     // Build shortcode options for the trait dropdown before editor init
     // shortcodes may be nested {billing: {tag: desc}, ...} or flat {tag: desc}
-    if (options.shortcodes && typeof options.shortcodes === 'object' && !Array.isArray(options.shortcodes)) {
+    if (shortcodes && typeof shortcodes === 'object' && !Array.isArray(shortcodes)) {
         j2cShortcodeOptions = [];
-        for (const [key, val] of Object.entries(options.shortcodes)) {
+        for (const [key, val] of Object.entries(shortcodes)) {
             if (val && typeof val === 'object' && !Array.isArray(val)) {
                 // Nested: key is category name, val is {tag: desc}
                 for (const [tag, desc] of Object.entries(val)) {
@@ -177,7 +209,7 @@ function initGrapesJSEditor(options) {
     });
 
     setupFormSyncHandlers(editor);
-    setupShortcodeBlocks(editor, options.shortcodes);
+    setupShortcodeBlocks(editor, shortcodes);
     setupPreviewIntegration(editor, options);
     setupTemplateLoading(editor, options);
     setupModeSwitching(editor, options);
