@@ -1760,26 +1760,6 @@ class CheckoutController extends BaseController
             $errors[] = Text::_('COM_J2COMMERCE_ERR_GENERIC');
         }
 
-        // The step order otherwise lives only in the template JS, so every task is independently
-        // dispatchable and a step that never runs is a step whose rules never run. The required set
-        // is read from the cart here rather than cached at step time: the Modify links can add a
-        // shippable line to a cart whose shipping step was legitimately skipped. The context branch
-        // above has already returned — an admin-created order has no session step history to assert.
-        if ($order) {
-            $required = [CheckoutStepStateHelper::BILLING];
-
-            if ($this->determineShowShippingMethods($order)) {
-                $required[] = CheckoutStepStateHelper::SHIPPING;
-            }
-
-            foreach (CheckoutStepStateHelper::missing($required) as $step) {
-                $errors[] = Text::sprintf(
-                    'COM_J2COMMERCE_CHECKOUT_ERROR_STEP_INCOMPLETE',
-                    Text::_(CheckoutStepStateHelper::label($step))
-                );
-            }
-        }
-
         try {
             J2CommerceHelper::plugin()->event('AfterOrderValidate', [&$order]);
         } catch (ExecutionFailureException | ConnectionFailureException | PrepareStatementFailureException $e) {
@@ -1812,6 +1792,34 @@ class CheckoutController extends BaseController
                 $orderpaymentType = $session->get('payment_method', '', 'j2commerce');
             } else {
                 $freeRedirect = Route::_('index.php?option=com_j2commerce&task=checkout.confirmPayment&' . Session::getFormToken() . '=1');
+            }
+        }
+
+        // The step order otherwise lives only in the template JS, so every task is independently
+        // dispatchable and a step that never runs is a step whose rules never run. The required set
+        // is read from the cart here rather than cached at step time: the Modify links can add a
+        // shippable line to a cart whose shipping step was legitimately skipped. The context branch
+        // above has already returned — an admin-created order has no session step history to assert.
+        //
+        // Asserted below the zero-total branch so the payment step is required on the same notion
+        // of payable the rest of confirm() reads — $showPayment, after the plugins that may
+        // overturn it have run — rather than on a second one that could disagree with it.
+        if ($order) {
+            $required = [CheckoutStepStateHelper::BILLING];
+
+            if ($this->determineShowShippingMethods($order)) {
+                $required[] = CheckoutStepStateHelper::SHIPPING;
+            }
+
+            if ($showPayment) {
+                $required[] = CheckoutStepStateHelper::PAYMENT;
+            }
+
+            foreach (CheckoutStepStateHelper::missing($required) as $step) {
+                $errors[] = Text::sprintf(
+                    'COM_J2COMMERCE_CHECKOUT_ERROR_STEP_INCOMPLETE',
+                    Text::_(CheckoutStepStateHelper::label($step))
+                );
             }
         }
 
@@ -2894,17 +2902,23 @@ class CheckoutController extends BaseController
         try {
             $session       = $this->app->getSession();
             $paymentPlugin = $this->input->getString('payment_plugin', '');
+            $order         = $this->getCartOrder();
 
-            $session->set('payment_method', $paymentPlugin, 'j2commerce');
+            // Writes what the payment step writes, so it records the same step — and confirm()
+            // asserts that record, so it may only be marked against a selection that would
+            // survive the same availability pruning confirm() applies. The shipping twin has no
+            // equivalent: it selects a rate, and the shipping step this records is the ship-to
+            // address, which that task never touches.
+            if (!$order || !$this->isPaymentMethodAllowed($paymentPlugin, $order)) {
+                $json['success'] = false;
+                $json['message'] = Text::_('COM_J2COMMERCE_CHECKOUT_ERROR_PAYMENT_METHOD');
+            } else {
+                $session->set('payment_method', $paymentPlugin, 'j2commerce');
 
-            // Writes what the payment step writes, so it records the same step. Recorded only —
-            // confirm() asserts billing and shipping, and enforces the payment method separately
-            // through isPaymentMethodAllowed(); this is not that check. The shipping twin
-            // has no equivalent: it selects a rate, and the shipping step this records is the
-            // ship-to address, which that task never touches.
-            CheckoutStepStateHelper::markComplete(CheckoutStepStateHelper::PAYMENT);
+                CheckoutStepStateHelper::markComplete(CheckoutStepStateHelper::PAYMENT);
 
-            $json['success'] = true;
+                $json['success'] = true;
+            }
         } catch (\Exception $e) {
             Log::add('checkout.savePaymentSelection failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
 
