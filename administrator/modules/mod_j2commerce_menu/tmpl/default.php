@@ -14,7 +14,7 @@ use Joomla\CMS\Router\Route;
 
 $hideLinks = $app->getInput()->getBool('hidemainmenu');
 
-if ($hideLinks || $menuItems < 1) {
+if ($hideLinks || empty($menuItems)) {
     return;
 }
 
