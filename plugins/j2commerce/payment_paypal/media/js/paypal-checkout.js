@@ -21,6 +21,29 @@
         }
     };
 
+    /**
+     * The order is already charged by the time a capture response is read, so a stray
+     * PHP notice ahead of the payload must not read as a failed payment. Recovers the
+     * JSON object from whatever precedes it; returns null when there is none.
+     */
+    const parseJsonResponse = (text) => {
+        try {
+            return JSON.parse(text);
+        } catch {
+            const start = text.indexOf('{');
+
+            if (start < 1) {
+                return null;
+            }
+
+            try {
+                return JSON.parse(text.slice(start));
+            } catch {
+                return null;
+            }
+        }
+    };
+
     const loadPayPalSDK = (sdkUrl) => {
         debugLog('Loading PayPal SDK from:', sdkUrl);
         return new Promise((resolve, reject) => {
@@ -161,7 +184,12 @@
                             [csrfToken]: '1'
                         })
                     });
-                    const data = await response.json();
+                    const data = parseJsonResponse(await response.text());
+
+                    if (!data) {
+                        throw new Error('Unexpected server response');
+                    }
+
                     debugLog('NVP express checkout response:', { status: response.status, data });
 
                     if (!response.ok || !data.success || !data.redirect_url) {
@@ -239,7 +267,11 @@
                                 body: JSON.stringify(requestBody)
                             });
 
-                            const data = await response.json();
+                            const data = parseJsonResponse(await response.text());
+
+                            if (!data) {
+                                throw new Error('Unexpected server response');
+                            }
 
                             debugLog('createSubscription: Response:', { status: response.status, data });
 
@@ -273,7 +305,11 @@
                                 body: JSON.stringify(requestBody)
                             });
 
-                            const result = await response.json();
+                            const result = parseJsonResponse(await response.text());
+
+                            if (!result) {
+                                throw new Error('Unexpected server response');
+                            }
 
                             debugLog('onApprove (subscription): Finalize response:', { status: response.status, result });
 
@@ -311,7 +347,11 @@
                                 body: JSON.stringify(requestBody)
                             });
 
-                            const data = await response.json();
+                            const data = parseJsonResponse(await response.text());
+
+                            if (!data) {
+                                throw new Error('Unexpected server response');
+                            }
 
                             debugLog('createOrder: Response:', { status: response.status, data });
 
@@ -345,7 +385,11 @@
                                 body: JSON.stringify(requestBody)
                             });
 
-                            const result = await response.json();
+                            const result = parseJsonResponse(await response.text());
+
+                            if (!result) {
+                                throw new Error('Unexpected server response');
+                            }
 
                             debugLog('onApprove: Capture response:', { status: response.status, result });
 

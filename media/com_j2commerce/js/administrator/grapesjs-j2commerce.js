@@ -44,7 +44,8 @@ window.j2cFilterShortcodes = function(shortcodes, strippedTags) {
     return filtered;
 };
 
-// GrapesJS renders BlockManager labels as markup, so registry values are escaped on the way in
+// GrapesJS renders both BlockManager labels and select-trait option labels as markup,
+// so registry values are escaped on the way in
 function escapeHtml(value) {
     return String(value ?? '').replace(/[&<>"']/g, ch => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;',
@@ -113,11 +114,11 @@ function initGrapesJSEditor(options) {
             if (val && typeof val === 'object' && !Array.isArray(val)) {
                 // Nested: key is category name, val is {tag: desc}
                 for (const [tag, desc] of Object.entries(val)) {
-                    j2cShortcodeOptions.push({ id: tag, name: `${tag} — ${desc}` });
+                    j2cShortcodeOptions.push({ id: tag, name: `${escapeHtml(tag)} — ${escapeHtml(desc)}` });
                 }
             } else {
                 // Flat: key is tag, val is description string
-                j2cShortcodeOptions.push({ id: key, name: `${key} — ${val}` });
+                j2cShortcodeOptions.push({ id: key, name: `${escapeHtml(key)} — ${escapeHtml(val)}` });
             }
         }
     }
@@ -649,10 +650,10 @@ window.updateJ2CShortcodeBlocks = function(shortcodes) {
     for (const [key, val] of Object.entries(shortcodes)) {
         if (val && typeof val === 'object' && !Array.isArray(val)) {
             for (const [tag, desc] of Object.entries(val)) {
-                j2cShortcodeOptions.push({ id: tag, name: `${tag} — ${desc}` });
+                j2cShortcodeOptions.push({ id: tag, name: `${escapeHtml(tag)} — ${escapeHtml(desc)}` });
             }
         } else {
-            j2cShortcodeOptions.push({ id: key, name: `${key} — ${val}` });
+            j2cShortcodeOptions.push({ id: key, name: `${escapeHtml(key)} — ${escapeHtml(val)}` });
         }
     }
 };
@@ -896,40 +897,40 @@ function findMatchingClose(html, name, from) {
 }
 
 /**
- * Restore the bracket construct behind a marker element that preprocessHtmlForImport()
- * built — conditionals, the items loop, and hook rows all round-trip through this.
+ * Restore [IF:TAG]/[IFNOT:TAG] brackets from their wrapper elements.
  *
- * Locates each marker's close tag by counting depth rather than matching
- * `([\s\S]*?)</div>`: that non-greedy form stops at the FIRST close tag, so a marker
- * holding any nested element of the same name was truncated. A conditional came back as
- * `[IF:X]<div>inner[/IF:X]tail</div>`, and an [ITEMS_LOOP] whose row held a nested table
- * lost everything after that table's <tbody> — the parser supplies an implicit <tbody>
- * for every table, so any nested table was enough. Recurses so nested markers survive.
- *
- * `render(attrs, value, inner)` builds the replacement from the marker's own attribute
- * string, its attribute value, and its already-unwrapped contents.
+ * Locates each wrapper's close tag by counting depth rather than matching
+ * `([\s\S]*?)</div>`: that non-greedy form stops at the FIRST close tag, so a
+ * conditional holding any nested element of the same name was truncated —
+ * `<div data-j2c-condition="X"><div>inner</div>tail</div>` came back out as
+ * `[IF:X]<div>inner[/IF:X]tail</div>`. Handles both wrapper tags emitted by
+ * preprocessHtmlForImport() and recurses so nested conditionals survive.
  */
-function unwrapMarkers(html, tags, attr, render) {
-    const open = new RegExp('<(' + tags + ')\\b([^>]*\\b' + attr + '="([^"]*)"[^>]*)>', 'i');
+function unwrapConditionals(html) {
+    const open = /<(div|tbody)\b([^>]*\bdata-j2c-condition="([^"]*)"[^>]*)>/i;
     let out  = '';
     let rest = html;
 
     for (let m = rest.match(open); m; m = rest.match(open)) {
-        const [tagHtml, name, attrs, value] = m;
+        const [tagHtml, name, attrs, tag] = m;
         const start    = m.index + tagHtml.length;
         const close    = findMatchingClose(rest, name, start);
         const closeEnd = close < 0 ? -1 : rest.indexOf('>', close);
 
         // Unbalanced markup: step past the open tag and leave it as-is rather than
-        // swallow the rest of the body into a marker that never closes.
+        // swallow the rest of the body into a conditional that never closes.
         if (close < 0 || closeEnd < 0) {
             out += rest.slice(0, start);
             rest = rest.slice(start);
             continue;
         }
 
+        const prefix = /\bdata-j2c-negate="1"/i.test(attrs) ? 'IFNOT' : 'IF';
+
         out += rest.slice(0, m.index)
-            + render(attrs, value, unwrapMarkers(rest.slice(start, close), tags, attr, render));
+            + `[${prefix}:${tag}]`
+            + unwrapConditionals(rest.slice(start, close))
+            + `[/${prefix}:${tag}]`;
 
         rest = rest.slice(closeEnd + 1);
     }
@@ -955,11 +956,7 @@ window.postprocessHtmlForExport = function postprocessHtmlForExport(html) {
     html = unwrapMarkers(html, 'div', 'data-j2c-hook', (attrs, pos) => `[HOOK:${pos}]`);
 
     // Convert conditional elements back to [IF:TAG]...[/IF:TAG] or [IFNOT:TAG]...[/IFNOT:TAG]
-    html = unwrapMarkers(html, 'div|tbody', 'data-j2c-condition', (attrs, tag, inner) => {
-        const prefix = /\bdata-j2c-negate="1"/i.test(attrs) ? 'IFNOT' : 'IF';
-
-        return `[${prefix}:${tag}]${inner}[/${prefix}:${tag}]`;
-    });
+    html = unwrapConditionals(html);
 
     // Convert loop elements back to [ITEMS_LOOP]...[/ITEMS_LOOP] (tbody from block, div from legacy import)
     html = unwrapMarkers(html, 'div|tbody', 'data-j2c-loop', (attrs, name, inner) =>

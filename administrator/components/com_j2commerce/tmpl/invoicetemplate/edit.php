@@ -313,16 +313,16 @@ document.addEventListener("DOMContentLoaded", function() {
                     const row = el("div", {class: "row"});
 
                     json.presets.forEach(function(preset) {
-                        const body = el("div", {class: "card-body text-center p-3"});
+                        const body = el("span", {class: "card-body text-center p-3"});
                         body.append(
                             el("span", {class: "icon-print d-block mb-2", style: "font-size:2rem;color:var(--gjs-text-muted,#6c757d);", "aria-hidden": "true"}),
-                            el("h3", {class: "card-title mb-1 fs-6"}, preset.label),
+                            el("span", {class: "card-title d-block mb-1 fs-6 fw-medium"}, preset.label),
                             el("small", {class: "text-body-secondary"}, typeLabel)
                         );
 
-                        const card = el("div", {
+                        const card = el("button", {
+                            type: "button",
                             class: "card h-100 template-card",
-                            role: "button",
                             "data-template-type": preset.type,
                             "data-template-design": preset.design
                         });
@@ -387,10 +387,20 @@ $wa->addInlineStyle('
     border: 2px solid var(--gjs-border, #dee2e6);
     cursor: pointer;
     transition: border-color 0.15s;
+    width: 100%;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    text-align: inherit;
 }
-.template-card:hover {
+.template-card:hover,
+.template-card:focus-visible {
     border-color: var(--gjs-accent, #0d6efd);
     box-shadow: none;
+}
+.template-card:focus-visible {
+    outline: 2px solid var(--gjs-accent, #0d6efd);
+    outline-offset: 2px;
 }
 ');
 

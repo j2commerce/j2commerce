@@ -107,14 +107,22 @@ class ProductsController extends AdminController
         return $user && !$user->guest && $user->authorise($action, 'com_j2commerce');
     }
 
-    /**
-     * Deny a JSON task, matching the `echo json_encode(...); close()` shape its
-     * siblings use.
-     */
+    /** JSON exit for the AJAX tasks. close() is exit(), so the headers flush first. */
+    private function sendJson(mixed $data): void
+    {
+        $this->app->setHeader('Content-Type', 'application/json; charset=utf-8');
+        $this->app->setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+        $this->app->setHeader('X-Content-Type-Options', 'nosniff', true);
+        $this->app->sendHeaders();
+
+        echo json_encode($data);
+        $this->app->close();
+    }
+
+    /** Deny a JSON task, matching the JSON exit shape its siblings use. */
     private function denyJson(string $key = 'success'): void
     {
-        echo json_encode([$key => false, 'message' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
-        $this->app->close();
+        $this->sendJson([$key => false, 'message' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
     }
 
     /**
@@ -238,8 +246,7 @@ class ProductsController extends AdminController
 
         // Called only by the admin product edit form, so it takes the same capability its write twins do.
         if (!$this->canDo('core.edit')) {
-            echo json_encode([]);
-            $app->close();
+            $this->sendJson([]);
 
             return;
         }
@@ -278,8 +285,7 @@ class ProductsController extends AdminController
         $db->setQuery($query);
         $results = $db->loadObjectList();
 
-        echo json_encode($results ?: []);
-        $app->close();
+        $this->sendJson($results ?: []);
     }
 
     /**
@@ -294,15 +300,13 @@ class ProductsController extends AdminController
         $app = Factory::getApplication();
 
         if (!\Joomla\CMS\Session\Session::checkToken('request')) {
-            echo json_encode(['success' => false, 'msg' => Text::_('JINVALID_TOKEN')]);
-            $app->close();
+            $this->sendJson(['success' => false, 'msg' => Text::_('JINVALID_TOKEN')]);
 
             return;
         }
 
         if (!$this->canDo('core.delete')) {
-            echo json_encode(['success' => false, 'msg' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
-            $app->close();
+            $this->sendJson(['success' => false, 'msg' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
 
             return;
         }
@@ -339,12 +343,10 @@ class ProductsController extends AdminController
             }
         }
 
-        echo json_encode([
+        $this->sendJson([
             'success' => $success,
             'msg'     => $msg,
         ]);
-
-        $app->close();
     }
 
     /**
@@ -359,8 +361,7 @@ class ProductsController extends AdminController
         $app = Factory::getApplication();
 
         if (!$this->canDo('core.edit')) {
-            echo json_encode(['html' => '']);
-            $app->close();
+            $this->sendJson(['html' => '']);
 
             return;
         }
@@ -415,8 +416,7 @@ class ProductsController extends AdminController
             }
         }
 
-        echo json_encode(['html' => $html]);
-        $app->close();
+        $this->sendJson(['html' => $html]);
     }
 
     /**
@@ -436,8 +436,7 @@ class ProductsController extends AdminController
         // Returns the product catalogue with SKUs. Reached only from the admin product
         // edit form and the admin selector fields in the bundle/box-builder plugins.
         if (!$this->canDo('core.edit')) {
-            echo json_encode(['products' => []]);
-            $app->close();
+            $this->sendJson(['products' => []]);
 
             return;
         }
@@ -501,8 +500,7 @@ class ProductsController extends AdminController
             }
         }
 
-        echo json_encode(['products' => $products ?: []]);
-        $app->close();
+        $this->sendJson(['products' => $products ?: []]);
     }
 
     public function getBoxBuilderProducts(): void
@@ -510,8 +508,7 @@ class ProductsController extends AdminController
         $app = Factory::getApplication();
 
         if (!$this->canDo('core.edit')) {
-            echo json_encode(['products' => []]);
-            $app->close();
+            $this->sendJson(['products' => []]);
 
             return;
         }
@@ -562,8 +559,7 @@ class ProductsController extends AdminController
             }
         }
 
-        echo json_encode(['products' => $products]);
-        $app->close();
+        $this->sendJson(['products' => $products]);
     }
 
     /**
@@ -601,8 +597,7 @@ class ProductsController extends AdminController
         // Validate input
         if (empty($productId)) {
             $json['message'] = Text::_('COM_J2COMMERCE_ERROR_INVALID_PRODUCT_ID');
-            echo json_encode($json);
-            $app->close();
+            $this->sendJson($json);
         }
 
         // Get the current product
@@ -617,16 +612,14 @@ class ProductsController extends AdminController
 
         if (empty($product)) {
             $json['message'] = Text::_('COM_J2COMMERCE_ERROR_PRODUCT_NOT_FOUND');
-            echo json_encode($json);
-            $app->close();
+            $this->sendJson($json);
         }
 
         // Check if type is changing
         if ($product->product_type === $newType) {
             $json['success'] = true;
             $json['message'] = Text::_('COM_J2COMMERCE_PRODUCT_TYPE_UNCHANGED');
-            echo json_encode($json);
-            $app->close();
+            $this->sendJson($json);
         }
 
         // Allow plugins to handle the type change themselves (and thereby veto the
@@ -656,16 +649,14 @@ class ProductsController extends AdminController
             $table = $this->getModel()->getTable('Product');
             if (!$table->delete($productId)) {
                 $json['message'] = Text::_('COM_J2COMMERCE_ERROR_DELETE_PRODUCT');
-                echo json_encode($json);
-                $app->close();
+                $this->sendJson($json);
             }
 
             $json['success'] = true;
             $json['message'] = Text::_('COM_J2COMMERCE_PRODUCT_TYPE_CHANGED_SUCCESS');
         }
 
-        echo json_encode($json);
-        $app->close();
+        $this->sendJson($json);
     }
 
     /**
@@ -1623,8 +1614,7 @@ class ProductsController extends AdminController
             $success = true;
         }
 
-        echo json_encode(['success' => $success]);
-        $app->close();
+        $this->sendJson(['success' => $success]);
     }
 
     /**
@@ -1645,8 +1635,7 @@ class ProductsController extends AdminController
 
         if (!$this->canDo('core.edit')) {
             $response['message'] = Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN');
-            echo json_encode($response);
-            $app->close();
+            $this->sendJson($response);
 
             return;
         }
@@ -1658,8 +1647,7 @@ class ProductsController extends AdminController
 
         if (!$productId || !$productOptionId) {
             $response['message'] = Text::_('COM_J2COMMERCE_INVALID_PRODUCT_OR_OPTION');
-            echo json_encode($response);
-            $app->close();
+            $this->sendJson($response);
             return;
         }
 
@@ -1669,8 +1657,7 @@ class ProductsController extends AdminController
 
         if (!$product) {
             $response['message'] = Text::_('COM_J2COMMERCE_PRODUCT_NOT_FOUND');
-            echo json_encode($response);
-            $app->close();
+            $this->sendJson($response);
             return;
         }
 
@@ -1702,8 +1689,7 @@ class ProductsController extends AdminController
 
         if (!$productOption) {
             $response['message'] = Text::_('COM_J2COMMERCE_PRODUCT_OPTION_NOT_FOUND');
-            echo json_encode($response);
-            $app->close();
+            $this->sendJson($response);
             return;
         }
 
@@ -1772,8 +1758,7 @@ class ProductsController extends AdminController
         $response['html']       = $html;
         $response['optionName'] = $productOption->option_name ?? '';
 
-        echo json_encode($response);
-        $app->close();
+        $this->sendJson($response);
     }
 
     /**
@@ -1870,8 +1855,7 @@ class ProductsController extends AdminController
             $response['message'] = Text::_('COM_J2COMMERCE_ERR_GENERIC');
         }
 
-        echo json_encode($response);
-        $app->close();
+        $this->sendJson($response);
     }
 
     /**
@@ -1951,8 +1935,7 @@ class ProductsController extends AdminController
             $response['message'] = Text::_('COM_J2COMMERCE_ERR_GENERIC');
         }
 
-        echo json_encode($response);
-        $app->close();
+        $this->sendJson($response);
     }
 
     /**
@@ -1999,8 +1982,7 @@ class ProductsController extends AdminController
             $response['message'] = Text::_('COM_J2COMMERCE_NO_ITEM_SELECTED');
         }
 
-        echo json_encode($response);
-        $app->close();
+        $this->sendJson($response);
     }
 
     /** Clear (via the unsetDefault task) or pin one option value as the option's default. */
@@ -2032,8 +2014,7 @@ class ProductsController extends AdminController
         $productOption = ProductHelper::getCartProductOptions($productOptionId, $productId);
 
         if (!$povId || !$productOption) {
-            echo json_encode(['success' => false]);
-            $app->close();
+            $this->sendJson(['success' => false]);
 
             return;
         }
@@ -2064,8 +2045,7 @@ class ProductsController extends AdminController
         $db->setQuery($query);
         $db->execute();
 
-        echo json_encode(['success' => true, 'is_default' => $value, 'exclusive' => !$isMultiSelect]);
-        $app->close();
+        $this->sendJson(['success' => true, 'is_default' => $value, 'exclusive' => !$isMultiSelect]);
     }
 
     public function unsetDefault(): void
@@ -2105,8 +2085,7 @@ class ProductsController extends AdminController
         // CSRF token check - return JSON error instead of redirect
         if (!\Joomla\CMS\Session\Session::checkToken('request')) {
             $response['message'] = Text::_('JINVALID_TOKEN');
-            echo json_encode($response);
-            $app->close();
+            $this->sendJson($response);
             return;
         }
 
@@ -2130,8 +2109,7 @@ class ProductsController extends AdminController
 
         if (empty($variantCombin) || empty($productId)) {
             $response['message'] = Text::_('COM_J2COMMERCE_INVALID_DATA');
-            echo json_encode($response);
-            $app->close();
+            $this->sendJson($response);
             return;
         }
 
@@ -2268,8 +2246,7 @@ class ProductsController extends AdminController
             $response['message'] = Text::_('COM_J2COMMERCE_ERR_GENERIC');
         }
 
-        echo json_encode($response);
-        $app->close();
+        $this->sendJson($response);
     }
 
     /**
@@ -2292,8 +2269,7 @@ class ProductsController extends AdminController
         // CSRF token check - return JSON error instead of redirect
         if (!\Joomla\CMS\Session\Session::checkToken('request')) {
             $response['message'] = Text::_('JINVALID_TOKEN');
-            echo json_encode($response);
-            $app->close();
+            $this->sendJson($response);
             return;
         }
 
@@ -2327,8 +2303,7 @@ class ProductsController extends AdminController
             $response['message'] = Text::_('COM_J2COMMERCE_VARIANT_DELETE_ERROR');
         }
 
-        echo json_encode($response);
-        $app->close();
+        $this->sendJson($response);
     }
 
     /**
@@ -2351,8 +2326,7 @@ class ProductsController extends AdminController
         // CSRF token check - return JSON error instead of redirect
         if (!\Joomla\CMS\Session\Session::checkToken('request')) {
             $response['message'] = Text::_('JINVALID_TOKEN');
-            echo json_encode($response);
-            $app->close();
+            $this->sendJson($response);
             return;
         }
 
@@ -2391,8 +2365,7 @@ class ProductsController extends AdminController
             $response['message'] = Text::_('COM_J2COMMERCE_INVALID_PRODUCT');
         }
 
-        echo json_encode($response);
-        $app->close();
+        $this->sendJson($response);
     }
 
     /**
@@ -2416,8 +2389,7 @@ class ProductsController extends AdminController
         // CSRF token check - return JSON error instead of redirect
         if (!\Joomla\CMS\Session\Session::checkToken('request')) {
             $response['message'] = Text::_('JINVALID_TOKEN');
-            echo json_encode($response);
-            $app->close();
+            $this->sendJson($response);
             return;
         }
 
@@ -2462,8 +2434,7 @@ class ProductsController extends AdminController
             $response['message'] = Text::_('COM_J2COMMERCE_NO_ITEM_SELECTED');
         }
 
-        echo json_encode($response);
-        $app->close();
+        $this->sendJson($response);
     }
 
     public function generateVariantsAjax(): void
@@ -2477,15 +2448,13 @@ class ProductsController extends AdminController
 
         if (!\Joomla\CMS\Session\Session::checkToken('request')) {
             $response['message'] = Text::_('JINVALID_TOKEN');
-            echo json_encode($response);
-            $app->close();
+            $this->sendJson($response);
             return;
         }
 
         if (!$app->getIdentity()->authorise('core.edit', 'com_j2commerce')) {
             $response['message'] = Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN');
-            echo json_encode($response);
-            $app->close();
+            $this->sendJson($response);
             return;
         }
 
@@ -2493,8 +2462,7 @@ class ProductsController extends AdminController
 
         if (!$productId) {
             $response['message'] = Text::_('COM_J2COMMERCE_ERROR_NO_PRODUCT_SELECTED');
-            echo json_encode($response);
-            $app->close();
+            $this->sendJson($response);
             return;
         }
 
@@ -2502,8 +2470,7 @@ class ProductsController extends AdminController
 
         if (empty($traits)) {
             $response['message'] = Text::_('COM_J2COMMERCE_ERROR_NO_TRAITS_DEFINED');
-            echo json_encode($response);
-            $app->close();
+            $this->sendJson($response);
             return;
         }
 
@@ -2528,8 +2495,7 @@ class ProductsController extends AdminController
 
         if (empty($optionArrays)) {
             $response['message'] = Text::_('COM_J2COMMERCE_ERROR_NO_OPTION_VALUES');
-            echo json_encode($response);
-            $app->close();
+            $this->sendJson($response);
             return;
         }
 
@@ -2672,8 +2638,7 @@ class ProductsController extends AdminController
             $response['message'] .= ' ' . Text::sprintf('COM_J2COMMERCE_VARIANTS_SKIPPED', $skippedCount);
         }
 
-        echo json_encode($response);
-        $app->close();
+        $this->sendJson($response);
     }
 
     public function regenerateVariantsAjax(): void
@@ -2687,15 +2652,13 @@ class ProductsController extends AdminController
 
         if (!\Joomla\CMS\Session\Session::checkToken('request')) {
             $response['message'] = Text::_('JINVALID_TOKEN');
-            echo json_encode($response);
-            $app->close();
+            $this->sendJson($response);
             return;
         }
 
         if (!$app->getIdentity()->authorise('core.edit', 'com_j2commerce')) {
             $response['message'] = Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN');
-            echo json_encode($response);
-            $app->close();
+            $this->sendJson($response);
             return;
         }
 
@@ -2703,8 +2666,7 @@ class ProductsController extends AdminController
 
         if (!$productId) {
             $response['message'] = Text::_('COM_J2COMMERCE_ERROR_NO_PRODUCT_SELECTED');
-            echo json_encode($response);
-            $app->close();
+            $this->sendJson($response);
             return;
         }
 
@@ -2742,8 +2704,7 @@ class ProductsController extends AdminController
         if (empty($traits)) {
             $response['success'] = true;
             $response['message'] = Text::_('COM_J2COMMERCE_ERROR_NO_TRAITS_DEFINED');
-            echo json_encode($response);
-            $app->close();
+            $this->sendJson($response);
             return;
         }
 
@@ -2768,8 +2729,7 @@ class ProductsController extends AdminController
         if (empty($optionArrays)) {
             $response['success'] = true;
             $response['message'] = Text::_('COM_J2COMMERCE_ERROR_NO_OPTION_VALUES');
-            echo json_encode($response);
-            $app->close();
+            $this->sendJson($response);
             return;
         }
 
@@ -2870,8 +2830,7 @@ class ProductsController extends AdminController
         $response['total']   = $total;
         $response['message'] = Text::sprintf('COM_J2COMMERCE_VARIANTS_REGENERATED_COUNT', $createdCount);
 
-        echo json_encode($response);
-        $app->close();
+        $this->sendJson($response);
     }
 
     /**
@@ -2888,16 +2847,14 @@ class ProductsController extends AdminController
 
         // Both denials are shaped like an empty page so the caller's `if (data.html)` is a no-op.
         if (!\Joomla\CMS\Session\Session::checkToken('request')) {
-            echo json_encode(['html' => '', 'total' => 0, 'message' => Text::_('JINVALID_TOKEN')]);
-            $app->close();
+            $this->sendJson(['html' => '', 'total' => 0, 'message' => Text::_('JINVALID_TOKEN')]);
 
             return;
         }
 
         // Requires core.edit, like the three sibling variant tasks.
         if (!$this->canDo('core.edit')) {
-            echo json_encode(['html' => '', 'total' => 0, 'message' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
-            $app->close();
+            $this->sendJson(['html' => '', 'total' => 0, 'message' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
 
             return;
         }
@@ -3012,8 +2969,7 @@ class ProductsController extends AdminController
             }
         }
 
-        echo json_encode($response);
-        $app->close();
+        $this->sendJson($response);
     }
 
     /**
@@ -3160,8 +3116,7 @@ class ProductsController extends AdminController
         // CSRF token check - return JSON error instead of redirect
         if (!\Joomla\CMS\Session\Session::checkToken('request')) {
             $response['message'] = Text::_('JINVALID_TOKEN');
-            echo json_encode($response);
-            $app->close();
+            $this->sendJson($response);
             return;
         }
 
@@ -3177,8 +3132,7 @@ class ProductsController extends AdminController
 
         if ($variantId <= 0 || $productId <= 0) {
             $response['message'] = Text::_('COM_J2COMMERCE_INVALID_DATA');
-            echo json_encode($response);
-            $app->close();
+            $this->sendJson($response);
             return;
         }
 
@@ -3211,8 +3165,7 @@ class ProductsController extends AdminController
             $response['message'] = Text::_('COM_J2COMMERCE_ERR_GENERIC');
         }
 
-        echo json_encode($response);
-        $app->close();
+        $this->sendJson($response);
     }
 
     /**
@@ -3237,8 +3190,7 @@ class ProductsController extends AdminController
         // CSRF token check - return JSON error instead of redirect
         if (!\Joomla\CMS\Session\Session::checkToken('request')) {
             $response['message'] = Text::_('JINVALID_TOKEN');
-            echo json_encode($response);
-            $app->close();
+            $this->sendJson($response);
             return;
         }
 
@@ -3253,8 +3205,7 @@ class ProductsController extends AdminController
 
         if ($variantId <= 0) {
             $response['message'] = Text::_('COM_J2COMMERCE_INVALID_DATA');
-            echo json_encode($response);
-            $app->close();
+            $this->sendJson($response);
             return;
         }
 
@@ -3277,8 +3228,7 @@ class ProductsController extends AdminController
             $response['message'] = Text::_('COM_J2COMMERCE_ERR_GENERIC');
         }
 
-        echo json_encode($response);
-        $app->close();
+        $this->sendJson($response);
     }
 
     /**
@@ -3471,15 +3421,13 @@ class ProductsController extends AdminController
 
         if (!\Joomla\CMS\Session\Session::checkToken('request')) {
             $response['message'] = Text::_('JINVALID_TOKEN');
-            echo json_encode($response);
-            $app->close();
+            $this->sendJson($response);
             return;
         }
 
         if (!$app->getIdentity()->authorise('core.edit', 'com_j2commerce')) {
             $response['message'] = Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN');
-            echo json_encode($response);
-            $app->close();
+            $this->sendJson($response);
             return;
         }
 
@@ -3488,8 +3436,7 @@ class ProductsController extends AdminController
 
         if (!$productId || !$optionId) {
             $response['message'] = Text::_('COM_J2COMMERCE_INVALID_PRODUCT_OR_OPTION');
-            echo json_encode($response);
-            $app->close();
+            $this->sendJson($response);
             return;
         }
 
@@ -3505,8 +3452,7 @@ class ProductsController extends AdminController
 
         if ((int) $db->loadResult() > 0) {
             $response['message'] = Text::_('COM_J2COMMERCE_OPTION_ALREADY_ADDED');
-            echo json_encode($response);
-            $app->close();
+            $this->sendJson($response);
             return;
         }
 
@@ -3535,8 +3481,7 @@ class ProductsController extends AdminController
         } catch (\Throwable $e) {
             Log::add('products.addProductOptionAjax failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
             $response['message'] = Text::_('COM_J2COMMERCE_ERR_GENERIC');
-            echo json_encode($response);
-            $app->close();
+            $this->sendJson($response);
             return;
         }
 
@@ -3557,8 +3502,7 @@ class ProductsController extends AdminController
         $response['ordering']           = $nextOrdering;
         $response['product_id']         = $productId;
 
-        echo json_encode($response);
-        $app->close();
+        $this->sendJson($response);
     }
 
     public function removeProductOptionAjax(): void
@@ -3572,15 +3516,13 @@ class ProductsController extends AdminController
 
         if (!\Joomla\CMS\Session\Session::checkToken('request')) {
             $response['message'] = Text::_('JINVALID_TOKEN');
-            echo json_encode($response);
-            $app->close();
+            $this->sendJson($response);
             return;
         }
 
         if (!$app->getIdentity()->authorise('core.edit', 'com_j2commerce')) {
             $response['message'] = Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN');
-            echo json_encode($response);
-            $app->close();
+            $this->sendJson($response);
             return;
         }
 
@@ -3588,8 +3530,7 @@ class ProductsController extends AdminController
 
         if (!$productOptionId) {
             $response['message'] = Text::_('COM_J2COMMERCE_INVALID_PRODUCT_OR_OPTION');
-            echo json_encode($response);
-            $app->close();
+            $this->sendJson($response);
             return;
         }
 
@@ -3616,16 +3557,14 @@ class ProductsController extends AdminController
             $db->transactionRollback();
             Log::add('products.removeProductOptionAjax failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
             $response['message'] = Text::_('COM_J2COMMERCE_ERR_GENERIC');
-            echo json_encode($response);
-            $app->close();
+            $this->sendJson($response);
             return;
         }
 
         $response['success'] = true;
         $response['message'] = Text::_('COM_J2COMMERCE_OPTION_REMOVED');
 
-        echo json_encode($response);
-        $app->close();
+        $this->sendJson($response);
     }
 
     public function saveProductOptionsAjax(): void
@@ -3640,8 +3579,7 @@ class ProductsController extends AdminController
 
         if (!\Joomla\CMS\Session\Session::checkToken('request')) {
             $response['message'] = Text::_('JINVALID_TOKEN');
-            echo json_encode($response);
-            $app->close();
+            $this->sendJson($response);
             return;
         }
 
@@ -3658,15 +3596,13 @@ class ProductsController extends AdminController
 
         if ($productId <= 0) {
             $response['message'] = Text::_('COM_J2COMMERCE_SAVE_ARTICLE_FIRST');
-            echo json_encode($response);
-            $app->close();
+            $this->sendJson($response);
             return;
         }
 
         if (empty($options)) {
             $response['message'] = Text::_('COM_J2COMMERCE_INVALID_DATA');
-            echo json_encode($response);
-            $app->close();
+            $this->sendJson($response);
             return;
         }
 
@@ -3711,8 +3647,7 @@ class ProductsController extends AdminController
             $db->transactionRollback();
             Log::add('products.saveProductOptionsAjax failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
             $response['message'] = Text::_('COM_J2COMMERCE_ERR_GENERIC');
-            echo json_encode($response);
-            $app->close();
+            $this->sendJson($response);
             return;
         }
 
@@ -3783,7 +3718,6 @@ class ProductsController extends AdminController
         $response['variant_add_block_html'] = $html;
         $response['options_table_html']     = $optionsHtml;
 
-        echo json_encode($response);
-        $app->close();
+        $this->sendJson($response);
     }
 }
