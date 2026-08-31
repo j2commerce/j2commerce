@@ -2452,7 +2452,7 @@ class ProductsController extends AdminController
             return;
         }
 
-        if (!$app->getIdentity()->authorise('core.edit', 'com_j2commerce')) {
+        if (!$this->canDo('core.edit')) {
             $response['message'] = Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN');
             $this->sendJson($response);
             return;
@@ -2656,7 +2656,9 @@ class ProductsController extends AdminController
             return;
         }
 
-        if (!$app->getIdentity()->authorise('core.edit', 'com_j2commerce')) {
+        // Clears the product's existing variants before rebuilding, so it needs the
+        // delete capability as well as edit — matching changeProductType().
+        if (!$this->canDo('core.edit') || !$this->canDo('core.delete')) {
             $response['message'] = Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN');
             $this->sendJson($response);
             return;
@@ -3425,7 +3427,7 @@ class ProductsController extends AdminController
             return;
         }
 
-        if (!$app->getIdentity()->authorise('core.edit', 'com_j2commerce')) {
+        if (!$this->canDo('core.edit')) {
             $response['message'] = Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN');
             $this->sendJson($response);
             return;
@@ -3520,7 +3522,9 @@ class ProductsController extends AdminController
             return;
         }
 
-        if (!$app->getIdentity()->authorise('core.edit', 'com_j2commerce')) {
+        // Removes the option and every value attached to it, so it needs the delete
+        // capability as well as edit — matching changeProductType().
+        if (!$this->canDo('core.edit') || !$this->canDo('core.delete')) {
             $response['message'] = Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN');
             $this->sendJson($response);
             return;
