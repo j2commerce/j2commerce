@@ -533,6 +533,14 @@ function registerCustomComponentTypes(editor) {
                 const tag = this.model.getAttributes()['data-j2c-condition'] || 'TAG';
                 const negate = this.model.getAttributes()['data-j2c-negate'] === '1';
                 const prefix = negate ? 'IFNOT' : 'IF';
+                // A <tbody>-based conditional cannot host a <div> badge — the canvas
+                // parser foster-parents it straight back out of the table.
+                if (this.el.tagName === 'TBODY') {
+                    this.el.style.outline = '2px dashed #f59e0b';
+                    this.el.title = `[${prefix}:${tag}]`;
+                    return;
+                }
+
                 this.el.style.position = 'relative';
                 let label = this.el.querySelector('.j2c-condition-label');
                 if (!label) {
@@ -845,9 +853,23 @@ window.preprocessHtmlForImport = function preprocessHtmlForImport(html) {
     html = html.replace(/\[HOOK:(AFTER_HEADER|BEFORE_ITEMS|AFTER_ITEMS|BEFORE_SHIPPING|AFTER_PAYMENT|BEFORE_FOOTER)\]/g,
         '<tr data-j2c-hook="$1"><td style="border:2px dashed #8b5cf6;padding:8px;text-align:center;color:#8b5cf6;font-size:12px;font-family:monospace;background:#f5f3ff;" colspan="1">[HOOK:$1]</td></tr>');
 
-    // Wrap [IF:TAG]...[/IF:TAG] and [IFNOT:TAG]...[/IFNOT:TAG] as elements
+    // Wrap [IF:TAG]...[/IF:TAG] and [IFNOT:TAG]...[/IFNOT:TAG] as elements.
+    //
+    // The wrapper tag is chosen by what the block contains. A <div> is not permitted
+    // inside <table>, so the HTML parser foster-parents it out of the table and leaves
+    // it EMPTY while the rows it guarded reattach to the table unconditionally — the
+    // guard is silently lost on import and destroyed in the stored body on the next
+    // save. A conditional that wraps table rows therefore becomes a <tbody>, which is
+    // valid there and survives parsing (the same reason [ITEMS_LOOP] is a <tbody>
+    // below). Cell-level conditionals stay <div> and keep the dashed authoring badge.
     html = html.replace(/\[(IF|IFNOT):([A-Z0-9_]+)\]([\s\S]*?)\[\/\1:\2\]/g, (match, prefix, tag, inner) => {
-        return `<div data-j2c-condition="${tag}" data-j2c-negate="${prefix === 'IFNOT' ? '1' : '0'}" style="border:2px dashed #f59e0b;padding:10px;margin:5px 0;position:relative;min-height:40px;">${inner}</div>`;
+        const negate = prefix === 'IFNOT' ? '1' : '0';
+
+        if (/^\s*<tr[\s>]/i.test(inner)) {
+            return `<tbody data-j2c-condition="${tag}" data-j2c-negate="${negate}" style="outline:2px dashed #f59e0b;">${inner}</tbody>`;
+        }
+
+        return `<div data-j2c-condition="${tag}" data-j2c-negate="${negate}" style="border:2px dashed #f59e0b;padding:10px;margin:5px 0;position:relative;min-height:40px;">${inner}</div>`;
     });
 
     // Wrap [ITEMS_LOOP]...[/ITEMS_LOOP] as a <tbody> element (valid inside <table>, survives HTML parsing)
@@ -855,6 +877,64 @@ window.preprocessHtmlForImport = function preprocessHtmlForImport(html) {
         '<tbody data-j2c-loop="ITEMS">$1</tbody>');
 
     return html;
+}
+
+/** Index of the `<` opening the close tag that balances an element already open at `from`. */
+function findMatchingClose(html, name, from) {
+    const re = new RegExp('<(/?)' + name + '\\b', 'gi');
+    re.lastIndex = from;
+
+    for (let m = re.exec(html), depth = 1; m; m = re.exec(html)) {
+        depth += m[1] ? -1 : 1;
+
+        if (depth === 0) {
+            return m.index;
+        }
+    }
+
+    return -1;
+}
+
+/**
+ * Restore [IF:TAG]/[IFNOT:TAG] brackets from their wrapper elements.
+ *
+ * Locates each wrapper's close tag by counting depth rather than matching
+ * `([\s\S]*?)</div>`: that non-greedy form stops at the FIRST close tag, so a
+ * conditional holding any nested element of the same name was truncated —
+ * `<div data-j2c-condition="X"><div>inner</div>tail</div>` came back out as
+ * `[IF:X]<div>inner[/IF:X]tail</div>`. Handles both wrapper tags emitted by
+ * preprocessHtmlForImport() and recurses so nested conditionals survive.
+ */
+function unwrapConditionals(html) {
+    const open = /<(div|tbody)\b([^>]*\bdata-j2c-condition="([^"]*)"[^>]*)>/i;
+    let out  = '';
+    let rest = html;
+
+    for (let m = rest.match(open); m; m = rest.match(open)) {
+        const [tagHtml, name, attrs, tag] = m;
+        const start    = m.index + tagHtml.length;
+        const close    = findMatchingClose(rest, name, start);
+        const closeEnd = close < 0 ? -1 : rest.indexOf('>', close);
+
+        // Unbalanced markup: step past the open tag and leave it as-is rather than
+        // swallow the rest of the body into a conditional that never closes.
+        if (close < 0 || closeEnd < 0) {
+            out += rest.slice(0, start);
+            rest = rest.slice(start);
+            continue;
+        }
+
+        const prefix = /\bdata-j2c-negate="1"/i.test(attrs) ? 'IFNOT' : 'IF';
+
+        out += rest.slice(0, m.index)
+            + `[${prefix}:${tag}]`
+            + unwrapConditionals(rest.slice(start, close))
+            + `[/${prefix}:${tag}]`;
+
+        rest = rest.slice(closeEnd + 1);
+    }
+
+    return out + rest;
 }
 
 window.postprocessHtmlForExport = function postprocessHtmlForExport(html) {
@@ -875,9 +955,7 @@ window.postprocessHtmlForExport = function postprocessHtmlForExport(html) {
     html = html.replace(/<div[^>]*data-j2c-hook="([^"]*)"[^>]*>[\s\S]*?<\/div>/gi, '[HOOK:$1]');
 
     // Convert conditional elements back to [IF:TAG]...[/IF:TAG] or [IFNOT:TAG]...[/IFNOT:TAG]
-    html = html.replace(/<div[^>]*data-j2c-condition="([^"]*)"[^>]*data-j2c-negate="1"[^>]*>([\s\S]*?)<\/div>/g, '[IFNOT:$1]$2[/IFNOT:$1]');
-    html = html.replace(/<div[^>]*data-j2c-negate="1"[^>]*data-j2c-condition="([^"]*)"[^>]*>([\s\S]*?)<\/div>/g, '[IFNOT:$1]$2[/IFNOT:$1]');
-    html = html.replace(/<div[^>]*data-j2c-condition="([^"]*)"[^>]*>([\s\S]*?)<\/div>/g, '[IF:$1]$2[/IF:$1]');
+    html = unwrapConditionals(html);
 
     // Convert loop elements back to [ITEMS_LOOP]...[/ITEMS_LOOP] (tbody from block, div from legacy import)
     html = html.replace(/<tbody[^>]*data-j2c-loop="ITEMS"[^>]*>([\s\S]*?)<\/tbody>/g, '[ITEMS_LOOP]$1[/ITEMS_LOOP]');
