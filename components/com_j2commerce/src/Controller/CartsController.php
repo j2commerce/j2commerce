@@ -126,6 +126,11 @@ class CartsController extends BaseController
         ob_end_clean();
 
         $this->app->setHeader('Content-Type', 'application/json; charset=utf-8', true);
+        $this->app->setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+        $this->app->setHeader('X-Content-Type-Options', 'nosniff', true);
+        // close() is exit() — without this the queued headers never reach the client.
+        $this->app->sendHeaders();
+
         echo json_encode($data);
         $this->app->close();
     }

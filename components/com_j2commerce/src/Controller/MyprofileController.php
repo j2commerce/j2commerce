@@ -516,6 +516,7 @@ class MyprofileController extends BaseController
         $this->app->setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         $this->app->setHeader('Pragma', 'no-cache');
         $this->app->setHeader('Expires', '0');
+        $this->app->setHeader('X-Content-Type-Options', 'nosniff', true);
         $this->app->sendHeaders();
 
         @ob_end_clean();
@@ -914,6 +915,11 @@ class MyprofileController extends BaseController
     private function jsonResponse(array $data): void
     {
         $this->app->setHeader('Content-Type', 'application/json; charset=utf-8');
+        $this->app->setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+        $this->app->setHeader('X-Content-Type-Options', 'nosniff', true);
+        // close() is exit() — without this the queued headers never reach the client.
+        $this->app->sendHeaders();
+
         echo json_encode($data);
         $this->app->close();
     }
