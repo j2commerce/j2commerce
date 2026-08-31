@@ -1050,10 +1050,10 @@ class OrderModel extends AdminModel
     /**
      * Update order status.
      *
-     * @param   int    $orderId The j2commerce_order_id.
-     * @param   int    $newStatusId The new order_state_id.
-     * @param   bool   $notify Whether to notify the customer.
-     * @param   string $comment Optional comment for history.
+     * @param   int     $orderId      The j2commerce_order_id.
+     * @param   int     $newStatusId  The new order_state_id.
+     * @param   bool    $notify       Whether to notify the customer.
+     * @param   string  $comment      Optional comment for history.
      *
      * @return  bool  True on success.
      */
