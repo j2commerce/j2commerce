@@ -1313,7 +1313,7 @@
             type="list"
             label="COM_J2COMMERCE_CONFIG_ORDER_EMAIL_LINK_TARGET"
             description="COM_J2COMMERCE_CONFIG_ORDER_EMAIL_LINK_TARGET_DESC"
-            default="myprofile"
+            default="confirmation"
             class="form-select"
         >
             <option value="myprofile">COM_J2COMMERCE_CONFIG_ORDER_EMAIL_LINK_TARGET_MYPROFILE</option>
