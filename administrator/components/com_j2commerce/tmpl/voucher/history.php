@@ -14,6 +14,7 @@ defined('_JEXEC') or die;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -53,7 +54,7 @@ $listDirn   = $this->escape($this->ledgerState->get('list.direction'));
         <div class="card-body">
             <h2 class="fs-3 mb-1">
                 <?php echo Text::_('COM_J2COMMERCE_VOUCHER_HISTORY'); ?>:
-                <span class="badge bg-primary"><?php echo $this->escape($this->item->voucher_code); ?></span>
+                <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-primary'); ?>"><?php echo $this->escape($this->item->voucher_code); ?></span>
             </h2>
             <p class="text-body-secondary small mb-3"><?php echo Text::_('COM_J2COMMERCE_VOUCHER_HISTORY_DESC'); ?></p>
             <nav class="quick-icons bg-transparent" aria-label="<?php echo Text::_('COM_J2COMMERCE_VOUCHER_HISTORY'); ?>">
@@ -144,7 +145,7 @@ $listDirn   = $this->escape($this->ledgerState->get('list.direction'));
                                                 </time>
                                             </td>
                                             <td>
-                                                <span class="badge <?php echo $typeBadgeClass[$row->type] ?? 'text-bg-secondary'; ?>">
+                                                <span class="<?php echo J2htmlHelper::badgeClass('badge ' . ($typeBadgeClass[$row->type] ?? 'text-bg-secondary')); ?>">
                                                     <?php echo Text::_($typeLabelKey[$row->type] ?? $row->type); ?>
                                                 </span>
                                             </td>

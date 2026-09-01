@@ -12,6 +12,7 @@ declare(strict_types=1);
 defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
@@ -159,7 +160,7 @@ if ($saveOrder && !empty($this->items)) {
                                     <?php echo (int) $item->uses_count; ?>
                                 </td>
                                 <td class="d-none d-md-table-cell">
-                                    <span class="badge <?php echo $statusBadgeClass[$item->derived_status] ?? 'text-bg-secondary'; ?>">
+                                    <span class="<?php echo J2htmlHelper::badgeClass('badge ' . ($statusBadgeClass[$item->derived_status] ?? 'text-bg-secondary')); ?>">
                                         <?php echo Text::_($statusLabelKey[$item->derived_status] ?? 'COM_J2COMMERCE_DISABLED'); ?>
                                     </span>
                                 </td>

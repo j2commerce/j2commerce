@@ -46,7 +46,7 @@ $html = $displayData['html'] ?? '';
 
 $row_class = 'row';
 $col_class = 'col-md-';
-$product_type_class = 'badge bg-primary';
+$product_type_class = 'badge text-bg-primary';
 $alert_html = '<joomla-alert type="danger" close-text="Close" dismiss="true" role="alert" style="animation-name: joomla-alert-fade-in;"><div class="alert-heading"><span class="error"></span><span class="visually-hidden">Error</span></div><div class="alert-wrapper"><div class="alert-message" >'.htmlspecialchars(Text::_('COM_J2COMMERCE_INVALID_INPUT_FIELD')).'</div></div></joomla-alert>' ;
 
 // Use form_prefix from displayData if available (from plugin), otherwise use standalone component prefix
@@ -325,7 +325,7 @@ if ($app->isClient('administrator')) {
                             </div>
                             <div class="controls">
                                 <?php if(!empty($item->product_type)): ?>
-                                    <span class="<?php echo $product_type_class;?>"><?php echo htmlspecialchars(ProducttypeField::getProductTypes()[$item->product_type] ?? $item->product_type, ENT_QUOTES, 'UTF-8'); ?></span>
+                                    <span class="<?php echo J2htmlHelper::badgeClass($product_type_class);?>"><?php echo htmlspecialchars(ProducttypeField::getProductTypes()[$item->product_type] ?? $item->product_type, ENT_QUOTES, 'UTF-8'); ?></span>
                                     <input type="hidden" name="<?php echo $formPrefix.'[product_type]'?>" value="<?php echo htmlspecialchars($item->product_type ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
                                 <?php else: ?>
                                     <select name="<?php echo $formPrefix;?>[product_type]" id="j2commerce_product_type" class="form-select">

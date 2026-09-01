@@ -10,6 +10,7 @@
 defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
@@ -26,7 +27,7 @@ J2CommerceHelper::strapper()->addCSS();
             <div class="card-header">
                 <h2 class="card-title fs-3">
                     <?php echo Text::_('COM_J2COMMERCE_COUPON_HISTORY'); ?>:
-                    <span class="badge bg-primary"><?php echo htmlspecialchars($this->item->coupon_code, ENT_QUOTES, 'UTF-8'); ?></span>
+                    <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-primary'); ?>"><?php echo htmlspecialchars($this->item->coupon_code, ENT_QUOTES, 'UTF-8'); ?></span>
                 </h2>
             </div>
             <div class="card-body">
@@ -70,7 +71,7 @@ J2CommerceHelper::strapper()->addCSS();
                                         <?php echo htmlspecialchars($item->user_email, ENT_QUOTES, 'UTF-8'); ?>
                                     </td>
                                     <td>
-                                            <span class="badge bg-success">
+                                            <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-success'); ?>">
                                                 <?php echo htmlspecialchars($item->total, ENT_QUOTES, 'UTF-8'); ?>
                                             </span>
                                     </td>

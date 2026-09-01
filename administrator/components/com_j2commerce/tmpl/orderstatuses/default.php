@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
@@ -95,9 +96,9 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
                                 </td>
                                 <td class="d-none d-md-table-cell text-center">
                                     <?php if ($item->orderstatus_core) : ?>
-                                        <span class="badge bg-primary"><?php echo Text::_('JYES'); ?></span>
+                                        <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-primary'); ?>"><?php echo Text::_('JYES'); ?></span>
                                     <?php else : ?>
-                                        <span class="badge bg-secondary"><?php echo Text::_('JNO'); ?></span>
+                                        <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-secondary'); ?>"><?php echo Text::_('JNO'); ?></span>
                                     <?php endif; ?>
                                 </td>
                                 <td class="d-none d-md-table-cell">

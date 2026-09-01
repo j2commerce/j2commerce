@@ -11,6 +11,7 @@
 defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\UploadmigrationModel;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -119,7 +120,7 @@ $stateLabels = [
                                         <td>
                                             <?php echo $entry['target'] !== '' ? '<code>' . $this->escape($entry['target']) . '</code>' : '&mdash;'; ?>
                                         </td>
-                                        <td><span class="badge bg-<?php echo $variant; ?>"><?php echo Text::_($label); ?></span></td>
+                                        <td><span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-' . $variant); ?>"><?php echo Text::_($label); ?></span></td>
                                     </tr>
                                 <?php endforeach; ?>
                             </tbody>

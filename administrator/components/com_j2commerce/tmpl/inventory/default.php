@@ -155,7 +155,7 @@ Text::script('COM_J2COMMERCE_INVENTORY_BATCH_NO_FIELDS');
                                     <?php if ($isVariantProduct) : ?>
                                         <button type="button" class="btn btn-sm btn-outline-primary position-relative" data-bs-toggle="collapse" data-bs-target="#variants-<?php echo $item->j2commerce_product_id; ?>" aria-expanded="false">
                                             <?php echo Text::_('COM_J2COMMERCE_VARIANTS'); ?>
-                                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary"><?php echo count($item->variants ?? []); ?><span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_VARIANT_COUNT');?></span></span>
+                                            <span class="position-absolute top-0 start-100 translate-middle <?php echo J2htmlHelper::badgeClass('badge rounded-pill text-bg-secondary'); ?>"><?php echo count($item->variants ?? []); ?><span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_VARIANT_COUNT');?></span></span>
                                         </button>
                                     <?php else : ?>
                                         <span class="font-monospace"><?php echo $this->escape($item->sku ?? ''); ?></span>

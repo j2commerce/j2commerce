@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
@@ -94,7 +95,7 @@ $coreFields = [
                                 <li class="col-md-6 col-xl-4 j2commerce-address-card-wrap" data-address-id="<?php echo $cardId; ?>">
                                     <article class="card h-100 rounded-1 shadow-sm border" aria-labelledby="<?php echo $headingId; ?>">
                                         <header class="card-header d-flex justify-content-between align-items-center">
-                                            <span class="badge text-bg-info text-uppercase">
+                                            <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-info'); ?> text-uppercase">
                                                 <span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_FIELD_ADDRESS_TYPE'); ?>:</span>
                                                 <?php echo $this->escape($typeText); ?>
                                             </span>

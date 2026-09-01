@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use J2Commerce\Component\J2commerce\Administrator\Service\OverrideRegistry;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -88,7 +89,7 @@ $renderRoot = function (string $label, array $files) use (&$renderRoot): void {
                         <?php echo Text::_('COM_J2COMMERCE_OVERRIDE_OPEN_VISUAL_BUILDER'); ?>
                     </button>
                 <?php elseif ($isLayoutFile && $fileClassification === OverrideRegistry::FILE_TYPE_DISPATCHER) : ?>
-                    <span class="badge bg-secondary">
+                    <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-secondary'); ?>">
                         <span class="fa-solid fa-code-branch me-1" aria-hidden="true"></span>
                         <?php echo Text::_('COM_J2COMMERCE_OVERRIDE_DISPATCHER_FILE_HINT'); ?>
                     </span>

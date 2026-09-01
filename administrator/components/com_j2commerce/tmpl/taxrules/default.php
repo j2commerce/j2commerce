@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
@@ -82,9 +83,9 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
                                 <td class="d-none d-md-table-cell">
                                     <?php
                                     if ($item->address === 'billing') {
-                                        echo '<span class="badge bg-info">' . Text::_('COM_J2COMMERCE_ADDRESS_BILLING') . '</span>';
+                                        echo '<span class="' . J2htmlHelper::badgeClass('badge text-bg-info') . '">' . Text::_('COM_J2COMMERCE_ADDRESS_BILLING') . '</span>';
                                     } elseif ($item->address === 'shipping') {
-                                        echo '<span class="badge bg-success">' . Text::_('COM_J2COMMERCE_ADDRESS_SHIPPING') . '</span>';
+                                        echo '<span class="' . J2htmlHelper::badgeClass('badge text-bg-success') . '">' . Text::_('COM_J2COMMERCE_ADDRESS_SHIPPING') . '</span>';
                                     } else {
                                         echo $this->escape($item->address);
                                     }

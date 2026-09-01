@@ -13,6 +13,7 @@ defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Language\Text;
 
 $item           = $this->item;
@@ -166,7 +167,7 @@ $labelStyle = 'font-size:12px;letter-spacing:.5px;';
         <?php endif; ?>
         <?php if (!$hasTakePayment && \in_array((string) ($item->transaction_status ?? ''), ['Completed', 'Authorized'], true)) : ?>
             <div class="mt-3 j2c-payment-taken">
-                <span class="badge text-bg-success"><span class="fa-solid fa-circle-check me-1" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_ORDER_PAYMENT_TAKEN'); ?></span>
+                <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-success'); ?>"><span class="fa-solid fa-circle-check me-1" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_ORDER_PAYMENT_TAKEN'); ?></span>
             </div>
         <?php endif; ?>
     </div>

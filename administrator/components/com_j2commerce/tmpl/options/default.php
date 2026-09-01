@@ -10,6 +10,7 @@
 defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
@@ -152,7 +153,7 @@ if ($saveOrder && !empty($this->items)) {
                                     ];
                                     $typeLabel = isset($typeLabels[$item->type]) ? Text::_($typeLabels[$item->type]) : ucfirst($item->type);
                                     ?>
-                                    <span class="badge bg-secondary"><?php echo $this->escape($typeLabel); ?></span>
+                                    <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-secondary'); ?>"><?php echo $this->escape($typeLabel); ?></span>
                                 </td>
                                 <td class="d-none d-md-table-cell">
                                     <?php echo (int) $item->j2commerce_option_id; ?>
