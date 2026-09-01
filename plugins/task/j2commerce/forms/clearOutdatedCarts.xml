@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form>
+    <fields name="params">
+        <fieldset name="task_params">
+            <field
+                name="dry_run"
+                type="radio"
+                label="PLG_TASK_J2COMMERCE_CLEAR_OUTDATED_CARTS_FIELD_DRY_RUN"
+                description="PLG_TASK_J2COMMERCE_CLEAR_OUTDATED_CARTS_FIELD_DRY_RUN_DESC"
+                layout="joomla.form.field.radio.switcher"
+                filter="integer"
+                default="1"
+            >
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
+        </fieldset>
+    </fields>
+</form>

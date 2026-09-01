@@ -122,11 +122,13 @@ class SetupguideController extends BaseController
 
         try {
             match ($action) {
-                'enable_plugin'     => $this->handleEnablePlugin($params['folder'] ?? '', $params['element'] ?? ''),
-                'create_menu_item'  => $this->handleCreateMenuItem($params['link'] ?? '', $params['title'] ?? ''),
-                'publish_menu_item' => $this->handlePublishMenuItem((int) ($params['menuItemId'] ?? 0)),
-                'save_param'        => $this->handleSaveParam($params['param_name'] ?? '', $params['param_value'] ?? ''),
-                default             => throw new \InvalidArgumentException('Unknown action: ' . $action),
+                'enable_plugin'          => $this->handleEnablePlugin($params['folder'] ?? '', $params['element'] ?? ''),
+                'create_menu_item'       => $this->handleCreateMenuItem($params['link'] ?? '', $params['title'] ?? ''),
+                'publish_menu_item'      => $this->handlePublishMenuItem((int) ($params['menuItemId'] ?? 0)),
+                'save_param'             => $this->handleSaveParam($params['param_name'] ?? '', $params['param_value'] ?? ''),
+                'create_scheduled_task'  => $this->handleCreateScheduledTask(),
+                'enable_scheduled_task'  => $this->handleEnableScheduledTask((int) ($params['taskId'] ?? 0)),
+                default                  => throw new \InvalidArgumentException('Unknown action: ' . $action),
             };
 
             $this->jsonSuccess(null, Text::_('JLIB_APPLICATION_SAVE_SUCCESS'));
@@ -398,5 +400,84 @@ class SetupguideController extends BaseController
     {
         return '(' . $db->quoteName('link') . ' = :linkExact'
             . ' OR ' . $db->quoteName('link') . ' LIKE :linkPrefix ESCAPE ' . $db->quote('!') . ')';
+    }
+
+    /**
+     * Creates the "Clear Outdated Carts" scheduled task via com_scheduler's own TaskModel,
+     * not a raw insert — that model builds cron_rules/next_execution and the asset row
+     * correctly, which a hand-rolled INSERT would get wrong.
+     */
+    private function handleCreateScheduledTask(): void
+    {
+        // Repeated clicks must not stack duplicate rows: adopt whatever is already there.
+        $existingId = $this->findCartCleanupTaskId();
+
+        if ($existingId > 0) {
+            $this->handleEnableScheduledTask($existingId);
+
+            return;
+        }
+
+        $component = Factory::getApplication()->bootComponent('com_scheduler');
+        $model     = $component->getMVCFactory()->createModel('Task', 'Administrator', ['ignore_request' => true]);
+
+        $data = [
+            'id'              => 0,
+            'title'           => Text::_('COM_J2COMMERCE_SETUP_GUIDE_CART_CLEANUP_TASK_TITLE'),
+            'type'            => 'j2commerce.clearOutdatedCarts',
+            'state'           => 1,
+            'execution_rules' => [
+                'rule-type'     => 'interval-days',
+                'interval-days' => '1',
+                'exec-day'      => (string) min(28, (int) gmdate('j')),
+                'exec-time'     => '03:00',
+            ],
+            // The routine defaults dry_run on, matching its sibling routines. A task the guide
+            // creates to actually clear the backlog has to be live, or the check never goes green.
+            'params'        => ['dry_run' => 0],
+            'note'          => '',
+            'priority'      => 0,
+            'cli_exclusive' => 0,
+        ];
+
+        if (!$model->save($data)) {
+            throw new \RuntimeException(implode(' ', $model->getErrors()));
+        }
+    }
+
+    private function findCartCleanupTaskId(): int
+    {
+        $type = 'j2commerce.clearOutdatedCarts';
+        $db   = $this->getDb();
+
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('id'))
+            ->from($db->quoteName('#__scheduler_tasks'))
+            ->where($db->quoteName('type') . ' = :type')
+            ->where($db->quoteName('state') . ' <> -2')
+            ->order($db->quoteName('id') . ' ASC')
+            ->bind(':type', $type);
+
+        return (int) $db->setQuery($query, 0, 1)->loadResult();
+    }
+
+    private function handleEnableScheduledTask(int $taskId): void
+    {
+        if ($taskId <= 0) {
+            throw new \InvalidArgumentException('Invalid task ID');
+        }
+
+        $type = 'j2commerce.clearOutdatedCarts';
+        $db   = $this->getDb();
+
+        $query = $db->getQuery(true)
+            ->update($db->quoteName('#__scheduler_tasks'))
+            ->set($db->quoteName('state') . ' = 1')
+            ->where($db->quoteName('id') . ' = :id')
+            ->where($db->quoteName('type') . ' = :type')
+            ->bind(':id', $taskId, ParameterType::INTEGER)
+            ->bind(':type', $type);
+
+        $db->setQuery($query)->execute();
     }
 }

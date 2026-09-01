@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace J2Commerce\Component\J2commerce\Administrator\SetupGuide;
 
 use J2Commerce\Component\J2commerce\Administrator\SetupGuide\Checks\AdminEmailCheck;
+use J2Commerce\Component\J2commerce\Administrator\SetupGuide\Checks\CartCleanupTaskCheck;
 use J2Commerce\Component\J2commerce\Administrator\SetupGuide\Checks\CartPageCheck;
 use J2Commerce\Component\J2commerce\Administrator\SetupGuide\Checks\CategoryMenuCheck;
 use J2Commerce\Component\J2commerce\Administrator\SetupGuide\Checks\CheckoutPageCheck;
@@ -45,6 +46,7 @@ class SetupGuideHelper
         TimezoneCheck::class,
         SystemPluginCheck::class,
         ContentPluginCheck::class,
+        CartCleanupTaskCheck::class,
         UploadThrottleCheck::class,
         DownloadIdCheck::class,
         CheckoutPageCheck::class,

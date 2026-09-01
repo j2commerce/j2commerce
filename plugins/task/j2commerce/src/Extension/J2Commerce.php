@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace J2Commerce\Plugin\Task\J2Commerce\Extension;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\QueueHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Plugin\CMSPlugin;
@@ -33,6 +34,11 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
     use TaskPluginTrait;
 
     private const TASKS_MAP = [
+        'j2commerce.clearOutdatedCarts' => [
+            'langConstPrefix' => 'PLG_TASK_J2COMMERCE_CLEAR_OUTDATED_CARTS',
+            'method'          => 'clearOutdatedCarts',
+            'form'            => 'clearOutdatedCarts',
+        ],
         'j2commerce.removeNewOrders' => [
             'langConstPrefix' => 'PLG_TASK_J2COMMERCE_REMOVE_NEW_ORDERS',
             'method'          => 'removeNewOrders',
@@ -74,6 +80,49 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             'onExecuteTask'        => 'standardRoutineHandler',
             'onContentPrepareForm' => 'enhanceTaskItemForm',
         ];
+    }
+
+    /**
+     * Reuses AppDiagnostics::clearOutdatedCartData() via the same event contract the frontend
+     * cron controller uses — never re-implements the delete predicate. Dry-run only counts.
+     */
+    private function clearOutdatedCarts(ExecuteTaskEvent $event): int
+    {
+        $params = $event->getArgument('params');
+        $dryRun = (int) ($params->dry_run ?? 1);
+
+        $db       = $this->getDatabase();
+        $daysOld  = (int) J2CommerceHelper::config()->get('clear_outdated_cart_data_term', 90);
+        $cutoff   = Factory::getDate('now -' . ($daysOld * 1440) . ' minutes')->toSql();
+        $cartType = 'cart';
+
+        $query = $db->createQuery()
+            ->select('COUNT(*)')
+            ->from($db->quoteName('#__j2commerce_carts'))
+            ->where($db->quoteName('cart_type') . ' = :cartType')
+            ->where($db->quoteName('modified_on') . ' <= :cutoff')
+            ->bind(':cartType', $cartType)
+            ->bind(':cutoff', $cutoff);
+
+        $count = (int) $db->setQuery($query)->loadResult();
+
+        if ($count === 0) {
+            $this->logTask('No outdated carts found matching the configured retention term.');
+            return Status::OK;
+        }
+
+        if ($dryRun) {
+            $this->logTask(\sprintf('[DRY RUN] Would clear %d outdated cart(s) and their items.', $count));
+            return Status::OK;
+        }
+
+        PluginHelper::importPlugin('j2commerce');
+        $dispatcher = Factory::getApplication()->getDispatcher();
+        $dispatcher->dispatch('onJ2CommerceProcessCron', new GenericEvent('onJ2CommerceProcessCron', ['command' => 'clear_cart']));
+
+        $this->logTask(\sprintf('Cleared %d outdated cart(s) and their items.', $count));
+
+        return Status::OK;
     }
 
     private function removeNewOrders(ExecuteTaskEvent $event): int

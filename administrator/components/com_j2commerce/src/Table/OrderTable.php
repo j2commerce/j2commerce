@@ -51,8 +51,14 @@ class OrderTable extends Table
         // For new records, set temporary order_id and token to satisfy NOT NULL.
         // saveOrder() will overwrite them with the final values (using the PK)
         // after the first store() and do a second store().
+        // Stays numeric for the consumers that cast it, but must be unique AND must never be
+        // mistakable for a finalised id: store() re-points the creation history row by matching
+        // this value, so a placeholder shared with another order — or equal to some finalised
+        // order's id — would hand one order's history to the other. generateOrderId() returns
+        // time() . <PK>, and a PK never carries a leading zero, so the '0' separator below makes
+        // the two shapes structurally incapable of colliding rather than merely unlikely to.
         if (empty($this->order_id)) {
-            $this->order_id = (string) time();
+            $this->order_id = time() . '0' . str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
         }
 
         if (empty($this->token)) {
@@ -162,16 +168,19 @@ class OrderTable extends Table
         $oldStatusId   = null;
         $newStatusId   = (int) $this->order_state_id;
         $statusClaimed = true;
+        $oldOrderId    = '';
 
         if (!$isNew) {
             $db    = $this->getDatabase();
             $query = $db->getQuery(true)
-                ->select($db->quoteName('order_state_id'))
+                ->select($db->quoteName(['order_state_id', 'order_id']))
                 ->from($db->quoteName('#__j2commerce_orders'))
                 ->where($db->quoteName('j2commerce_order_id') . ' = :id')
                 ->bind(':id', $this->j2commerce_order_id, \Joomla\Database\ParameterType::INTEGER);
             $db->setQuery($query);
-            $oldStatusId = (int) $db->loadResult();
+            $row         = $db->loadObject();
+            $oldStatusId = (int) ($row->order_state_id ?? 0);
+            $oldOrderId  = (string) ($row->order_id ?? '');
 
             // Claim the transition against the status just read, so only one writer runs
             // the side effects below. Two writers on the same order otherwise both see the
@@ -212,6 +221,16 @@ class OrderTable extends Table
 
         if (!$result) {
             return false;
+        }
+
+        // check() stamps a placeholder order_id = time() on the first store() of a new row,
+        // before the auto-increment PK exists to build the real one; the history row for order
+        // creation is written against that placeholder further down. Callers finalise order_id
+        // with generateOrderId() and a second store() — order_state_id is unchanged by then, so
+        // the "skip if status didn't change" return below would otherwise leave that history
+        // row permanently orphaned. Re-point it here, ahead of that early return.
+        if (!$isNew && $oldOrderId !== '' && $oldOrderId !== (string) $this->order_id) {
+            $this->repointOrderHistories($oldOrderId, (string) $this->order_id);
         }
 
         // Skip if status didn't change (and not a new record), or if another writer owns
@@ -276,6 +295,27 @@ class OrderTable extends Table
         );
 
         return true;
+    }
+
+    /**
+     * Re-point history rows written against a placeholder order_id onto the finalised one.
+     *
+     * A direct UPDATE, deliberately outside the status-change dispatch above: it must run on
+     * every order_id change regardless of whether the status also changed, and it must never
+     * become part of the listener/transaction surface that block owns.
+     */
+    private function repointOrderHistories(string $oldOrderId, string $newOrderId): void
+    {
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true)
+            ->update($db->quoteName('#__j2commerce_orderhistories'))
+            ->set($db->quoteName('order_id') . ' = :newOrderId')
+            ->where($db->quoteName('order_id') . ' = :oldOrderId')
+            ->bind(':newOrderId', $newOrderId)
+            ->bind(':oldOrderId', $oldOrderId);
+
+        $db->setQuery($query);
+        $db->execute();
     }
 
     /** Compare-and-swap: true only for the writer whose read of the old status still held. */

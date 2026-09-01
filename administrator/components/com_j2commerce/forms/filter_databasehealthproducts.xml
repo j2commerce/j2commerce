@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+    <fields name="filter">
+        <field
+            name="search"
+            type="text"
+            label="COM_J2COMMERCE_FILTER_SEARCH_LABEL"
+            hint="JSEARCH_FILTER"
+            inputmode="search"
+        />
+    </fields>
+
+    <fields name="list">
+        <field
+            name="fullordering"
+            type="list"
+            label="JGLOBAL_SORT_BY"
+            default="a.j2commerce_product_id ASC"
+            onchange="this.form.submit();"
+        >
+            <option value="">JGLOBAL_SORT_BY</option>
+            <option value="a.j2commerce_product_id ASC">COM_J2COMMERCE_HEADING_PRODUCT_ID_ASC</option>
+            <option value="a.j2commerce_product_id DESC">COM_J2COMMERCE_HEADING_PRODUCT_ID_DESC</option>
+            <option value="product_name ASC">COM_J2COMMERCE_HEADING_PRODUCT_NAME_ASC</option>
+            <option value="product_name DESC">COM_J2COMMERCE_HEADING_PRODUCT_NAME_DESC</option>
+        </field>
+
+        <field
+            name="limit"
+            type="limitbox"
+            label="JGLOBAL_LIST_LIMIT"
+            default="25"
+            onchange="this.form.submit();"
+        />
+    </fields>
+</form>

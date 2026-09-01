@@ -328,6 +328,8 @@ $doc->getWebAssetManager()
         <?php echo $renderer->render('j2commerce-module-bottom', $options, null); ?>
     <?php endif; ?>
 
+    <?php echo $this->loadTemplate('databasehealth'); ?>
+
     <?php if (!J2Commerce\Component\J2commerce\Administrator\SetupGuide\SetupGuideHelper::isComplete()) : ?>
         <?php echo $this->loadTemplate('setup_guide'); ?>
     <?php endif; ?>
