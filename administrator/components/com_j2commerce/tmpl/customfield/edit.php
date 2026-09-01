@@ -85,6 +85,10 @@ foreach ($translationKeys as $key) {
                         <?php echo $this->form->renderField('upload_max_files'); ?>
                         <?php echo $this->form->renderField('upload_max_file_size'); ?>
                         <?php echo $this->form->renderField('upload_allowed_types'); ?>
+                        <?php // Text sanitising options — inline, controlled by showon in XML ?>
+                        <?php echo $this->form->renderField('field_strip_special_chars'); ?>
+                        <?php echo $this->form->renderField('field_strip_chars'); ?>
+                        <?php echo $this->form->renderField('field_max_length'); ?>
                     </div>
                 </fieldset>
             </div>

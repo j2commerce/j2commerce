@@ -209,6 +209,16 @@ class CustomfieldModel extends AdminModel
                     if (isset($options['upload_allowed_types'])) {
                         $data->upload_allowed_types = $options['upload_allowed_types'];
                     }
+                    // Text sanitising settings
+                    if (isset($options['strip_special_chars'])) {
+                        $data->field_strip_special_chars = (int) $options['strip_special_chars'];
+                    }
+                    if (isset($options['strip_chars'])) {
+                        $data->field_strip_chars = $options['strip_chars'];
+                    }
+                    if (isset($options['max_length'])) {
+                        $data->field_max_length = (int) $options['max_length'];
+                    }
                 }
             }
 
@@ -357,6 +367,23 @@ class CustomfieldModel extends AdminModel
             $fieldOptionsData['upload_allowed_types'] = trim($data['upload_allowed_types'] ?? '');
         }
 
+        // Text sanitising settings apply to the free-text types only; the
+        // character list is meaningless without the toggle that consumes it.
+        if (\in_array($data['field_type'], ['text', 'textarea'], true) && !empty($data['field_strip_special_chars'])) {
+            $fieldOptionsData['strip_special_chars'] = 1;
+            $fieldOptionsData['strip_chars']         = (string) ($data['field_strip_chars'] ?? '');
+        } else {
+            unset($fieldOptionsData['strip_special_chars'], $fieldOptionsData['strip_chars']);
+        }
+
+        $maxLength = (int) ($data['field_max_length'] ?? 0);
+
+        if ($maxLength > 0 && \in_array($data['field_type'], ['text', 'textarea', 'email'], true)) {
+            $fieldOptionsData['max_length'] = $maxLength;
+        } else {
+            unset($fieldOptionsData['max_length']);
+        }
+
         // Collapse-behind-Add-link toggle (any field type). A required field can
         // never be collapsed, so force it off when the field is required.
         $collapseToggle = (int) ($data['field_collapse_toggle'] ?? 0);
@@ -378,7 +405,8 @@ class CustomfieldModel extends AdminModel
         // Remove virtual fields before save
         unset($data['field_zonetype'], $data['phone_all_countries'], $data['phone_country_mode'], $data['phone_countries'],
             $data['upload_max_files'], $data['upload_max_file_size'], $data['upload_allowed_types'],
-            $data['field_collapse_toggle']);
+            $data['field_collapse_toggle'], $data['field_strip_special_chars'], $data['field_strip_chars'],
+            $data['field_max_length']);
 
         // Encode field_value subform data to JSON for dropdown/radio/checkbox options
         if (\in_array($data['field_type'], ['singledropdown', 'radio', 'checkbox'], true)) {

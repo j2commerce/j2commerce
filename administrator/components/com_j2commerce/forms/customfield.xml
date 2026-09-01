@@ -260,6 +260,42 @@
             hint="pdf,jpg,png,doc,docx"
             showon="field_type:multiuploader"
         />
+
+        <field
+            name="field_strip_special_chars"
+            type="radio"
+            layout="joomla.form.field.radio.switcher"
+            label="COM_J2COMMERCE_FIELD_STRIP_SPECIAL_CHARS"
+            description="COM_J2COMMERCE_FIELD_STRIP_SPECIAL_CHARS_DESC"
+            filter="integer"
+            default="0"
+            showon="field_type:text,textarea"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+        <field
+            name="field_strip_chars"
+            type="text"
+            label="COM_J2COMMERCE_FIELD_STRIP_CHARS"
+            description="COM_J2COMMERCE_FIELD_STRIP_CHARS_DESC"
+            hint="COM_J2COMMERCE_FIELD_STRIP_CHARS_HINT"
+            default=""
+            showon="field_type:text,textarea[AND]field_strip_special_chars:1"
+        />
+
+        <field
+            name="field_max_length"
+            type="number"
+            label="COM_J2COMMERCE_FIELD_MAX_LENGTH"
+            description="COM_J2COMMERCE_FIELD_MAX_LENGTH_DESC"
+            filter="integer"
+            default="0"
+            min="0"
+            max="65535"
+            showon="field_type:text,textarea,email"
+        />
     </fieldset>
 
     <fieldset

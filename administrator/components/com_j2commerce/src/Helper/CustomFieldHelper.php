@@ -201,6 +201,17 @@ class CustomFieldHelper
         'date', 'time', 'datetime', 'wysiwyg', 'customtext', 'multiuploader',
     ];
 
+    /** Address punctuation the built-in strip keeps alongside letters, digits and whitespace. */
+    private const DEFAULT_KEEP_PUNCTUATION = ".,'-/#&()";
+
+    /**
+     * Field types the strip and the character ceiling apply to. Adding 'telephone' or
+     * 'multiuploader' would corrupt an E.164 number and a JSON payload respectively —
+     * validateFields() hands the sanitised value to both of those branches.
+     */
+    private const SANITISABLE_FIELD_TYPES = ['text', 'textarea'];
+    private const MEASURABLE_FIELD_TYPES  = ['text', 'textarea', 'email'];
+
     /** Returns 'bootstrap5' or 'uikit'; cached per-request for auto-resolve. */
     private static function resolveFramework(?string $explicit): string
     {
@@ -426,12 +437,13 @@ class CustomFieldHelper
         // "Display behind Add link" toggle: a non-required field with no value is
         // collapsed behind a "+ Add <label>" trigger. A prefilled value (e.g.
         // editing a saved address) or a required field always renders expanded.
-        $collapseOpt = false;
+        $fieldOpts   = self::decodeFieldOptions($field);
+        $collapseOpt = !empty($fieldOpts['field_collapse_toggle']);
 
-        if (!empty($field->field_options)) {
-            $decodedOpts = json_decode($field->field_options, true);
-            $collapseOpt = \is_array($decodedOpts) && !empty($decodedOpts['field_collapse_toggle']);
-        }
+        // Character ceiling. The attribute only stops typing; validateFields() is what
+        // enforces the limit, so both sides must read it through the same type guard.
+        $maxLength     = self::getMaxLength($field);
+        $maxLengthAttr = $maxLength > 0 ? ' maxlength="' . $maxLength . '"' : '';
 
         // A multiuploader with nothing attached stores an empty JSON array, so
         // the emptiness test has to admit both representations.
@@ -487,13 +499,13 @@ class CustomFieldHelper
                 // UIkit has no form-floating; stacked-label fallback.
                 if ($isFloating && !$isUikit) {
                     $html .= '<div class="form-floating">'
-                        . '<input type="' . $inputType . '" name="' . $namekey . '" id="' . $id . '" class="form-control' . ($extraClass ? ' ' . $extraClass : '') . '" value="' . htmlspecialchars($fieldValue, ENT_QUOTES, 'UTF-8') . '"' . $requiredAttr . $placeholderAttr . $autocompleteAttr . '>'
+                        . '<input type="' . $inputType . '" name="' . $namekey . '" id="' . $id . '" class="form-control' . ($extraClass ? ' ' . $extraClass : '') . '" value="' . htmlspecialchars($fieldValue, ENT_QUOTES, 'UTF-8') . '"' . $requiredAttr . $placeholderAttr . $autocompleteAttr . $maxLengthAttr . '>'
                         . '<label for="' . $id . '">' . $labelHtml . '</label>'
                         . '</div>';
                 } else {
                     $html .= ($wrapperNormal !== '' ? '<div class="' . $wrapperNormal . '">' : '')
                         . '<label for="' . $id . '" class="' . $labelClass . '">' . $labelHtml . '</label>'
-                        . '<input type="' . $inputType . '" name="' . $namekey . '" id="' . $id . '" class="' . $inputClass . ($extraClass ? ' ' . $extraClass : '') . '" value="' . htmlspecialchars($fieldValue, ENT_QUOTES, 'UTF-8') . '"' . $requiredAttr . $placeholderAttr . $autocompleteAttr . '>'
+                        . '<input type="' . $inputType . '" name="' . $namekey . '" id="' . $id . '" class="' . $inputClass . ($extraClass ? ' ' . $extraClass : '') . '" value="' . htmlspecialchars($fieldValue, ENT_QUOTES, 'UTF-8') . '"' . $requiredAttr . $placeholderAttr . $autocompleteAttr . $maxLengthAttr . '>'
                         . ($wrapperNormal !== '' ? '</div>' : '');
                 }
                 break;
@@ -548,13 +560,13 @@ class CustomFieldHelper
                 // UIkit has no form-floating; stacked-label fallback.
                 if ($isFloating && !$isUikit) {
                     $html .= '<div class="form-floating">'
-                        . '<textarea name="' . $namekey . '" id="' . $id . '" class="form-control' . ($extraClass ? ' ' . $extraClass : '') . '" rows="3"' . $requiredAttr . $placeholderAttr . '>' . htmlspecialchars($fieldValue, ENT_QUOTES, 'UTF-8') . '</textarea>'
+                        . '<textarea name="' . $namekey . '" id="' . $id . '" class="form-control' . ($extraClass ? ' ' . $extraClass : '') . '" rows="3"' . $requiredAttr . $placeholderAttr . $maxLengthAttr . '>' . htmlspecialchars($fieldValue, ENT_QUOTES, 'UTF-8') . '</textarea>'
                         . '<label for="' . $id . '">' . $labelHtml . '</label>'
                         . '</div>';
                 } else {
                     $html .= ($wrapperNormal !== '' ? '<div class="' . $wrapperNormal . '">' : '')
                         . '<label for="' . $id . '" class="' . $labelClass . '">' . $labelHtml . '</label>'
-                        . '<textarea name="' . $namekey . '" id="' . $id . '" class="' . $textareaClass . ($extraClass ? ' ' . $extraClass : '') . '" rows="3"' . $requiredAttr . $placeholderAttr . '>' . htmlspecialchars($fieldValue, ENT_QUOTES, 'UTF-8') . '</textarea>'
+                        . '<textarea name="' . $namekey . '" id="' . $id . '" class="' . $textareaClass . ($extraClass ? ' ' . $extraClass : '') . '" rows="3"' . $requiredAttr . $placeholderAttr . $maxLengthAttr . '>' . htmlspecialchars($fieldValue, ENT_QUOTES, 'UTF-8') . '</textarea>'
                         . ($wrapperNormal !== '' ? '</div>' : '');
                 }
                 break;
@@ -797,6 +809,72 @@ class CustomFieldHelper
         return 'all';
     }
 
+    private static function decodeFieldOptions(object $field): array
+    {
+        if (empty($field->field_options)) {
+            return [];
+        }
+
+        $decoded = json_decode((string) $field->field_options, true);
+
+        return \is_array($decoded) ? $decoded : [];
+    }
+
+    public static function getMaxLength(object $field): int
+    {
+        if (!\in_array($field->field_type ?? '', self::MEASURABLE_FIELD_TYPES, true)) {
+            return 0;
+        }
+
+        return max(0, (int) (self::decodeFieldOptions($field)['max_length'] ?? 0));
+    }
+
+    /**
+     * Removes the characters the store owner designated for this field. The list is a
+     * deny-list, so a script's letters survive unless they were named explicitly.
+     */
+    public static function sanitiseValue(object $field, string $value): string
+    {
+        if ($value === '' || !\in_array($field->field_type ?? '', self::SANITISABLE_FIELD_TYPES, true)) {
+            return $value;
+        }
+
+        $options = self::decodeFieldOptions($field);
+
+        if (empty($options['strip_special_chars'])) {
+            return $value;
+        }
+
+        // Whitespace inside the list separates the characters, it is never itself
+        // stripped: "<>{}" and "< > { }" designate the same four characters.
+        $listed = preg_replace('/\s+/u', '', (string) ($options['strip_chars'] ?? '')) ?? '';
+
+        if ($listed !== '') {
+            $class = '';
+
+            foreach (preg_split('//u', $listed, -1, PREG_SPLIT_NO_EMPTY) ?: [] as $char) {
+                $class .= preg_quote($char, '/');
+            }
+
+            $stripped = preg_replace('/[' . $class . ']/u', '', $value);
+        } else {
+            $stripped = preg_replace(
+                '/[^\p{L}\p{N}\s' . preg_quote(self::DEFAULT_KEEP_PUNCTUATION, '/') . ']/u',
+                '',
+                $value
+            );
+        }
+
+        // A subject that is not valid UTF-8 makes preg_replace() return null.
+        if ($stripped === null) {
+            return $value;
+        }
+
+        // Collapse the gaps the strip left behind, but keep line breaks: a textarea
+        // holding a delivery note must not come out as one line.
+        return trim((string) preg_replace('/[^\S\r\n]+/u', ' ', $stripped));
+    }
+
     /**
      * Validate custom field data.
      */
@@ -810,9 +888,23 @@ class CustomFieldHelper
             $required = (int) $field->field_required;
             $label    = Text::_($field->field_name);
 
+            // Strip first: collectAddressData() stores the stripped value, so both the
+            // required check and the ceiling below have to judge that, not the raw input.
+            // A submission made entirely of stripped characters is an empty one.
+            if (\is_string($value)) {
+                $value = self::sanitiseValue($field, $value);
+            }
+
             // Core required check applies to all field types
             if ($required && trim((string) $value) === '') {
                 $errors[$namekey] = Text::sprintf('COM_J2COMMERCE_ERR_FIELD_REQUIRED', $label);
+                continue;
+            }
+
+            $maxLength = self::getMaxLength($field);
+
+            if ($maxLength > 0 && \is_string($value) && mb_strlen($value) > $maxLength) {
+                $errors[$namekey] = Text::sprintf('COM_J2COMMERCE_ERR_FIELD_MAX_LENGTH', $label, $maxLength);
                 continue;
             }
 
@@ -1052,7 +1144,9 @@ class CustomFieldHelper
                 continue;
             }
 
-            $data[$namekey] = $formData[$namekey] ?? '';
+            $raw = $formData[$namekey] ?? '';
+
+            $data[$namekey] = \is_string($raw) ? self::sanitiseValue($field, $raw) : $raw;
         }
 
         return $data;
