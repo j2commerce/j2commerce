@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -35,6 +36,9 @@ class OrdersModel extends ListModel
 
     /** Sentinel matching orders whose customer_language was never recorded. Mirrored in forms/filter_orders.xml. */
     private const LANGUAGE_NOT_RECORDED = '*none*';
+
+    /** Normalised onJ2CommerceOrderListColumns descriptors; cached per instance. */
+    private ?array $pluginColumns = null;
 
     public function __construct($config = [])
     {
@@ -61,7 +65,65 @@ class OrdersModel extends ListModel
             ];
         }
 
+        // Must happen before parent::__construct(): ListModel::populateState() validates a
+        // requested list.ordering/fullordering column against $this->filter_fields on its FIRST
+        // run (triggered by the first getState() call, well before getListQuery() executes), so
+        // a plugin sort column merged any later is silently discarded before getListQuery() ever
+        // sees it.
+        foreach ($this->getPluginColumns() as $column) {
+            if ($column['ordering'] !== '' && !\in_array($column['ordering'], $config['filter_fields'], true)) {
+                $config['filter_fields'][] = $column['ordering'];
+            }
+        }
+
         parent::__construct($config);
+    }
+
+    /**
+     * Collect and normalise third-party order-list column descriptors.
+     *
+     * Fires onJ2CommerceOrderListColumns once per model instance (cached): the constructor
+     * needs the result to extend filter_fields, and the view needs it again to render headers/
+     * cells — both read the same cached array so the event dispatches only once per request.
+     *
+     * @return  array<int, array{key: string, title: string, ordering: string, class: string}>
+     */
+    public function getPluginColumns(): array
+    {
+        if ($this->pluginColumns !== null) {
+            return $this->pluginColumns;
+        }
+
+        $normalized = [];
+
+        foreach (J2CommerceHelper::plugin()->eventWithArray('OrderListColumns') as $descriptor) {
+            if (!\is_array($descriptor) || empty($descriptor['key']) || empty($descriptor['title'])) {
+                continue;
+            }
+
+            $key = (string) $descriptor['key'];
+
+            if (isset($normalized[$key])) {
+                continue;
+            }
+
+            $ordering = (string) ($descriptor['ordering'] ?? '');
+
+            // Security boundary: a sort column is spliced into ORDER BY as a raw identifier
+            // (see getListQuery()), so only a bare or dotted column name is ever accepted.
+            if ($ordering !== '' && !preg_match('/^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)?\z/', $ordering)) {
+                $ordering = '';
+            }
+
+            $normalized[$key] = [
+                'key'      => $key,
+                'title'    => (string) $descriptor['title'],
+                'ordering' => $ordering,
+                'class'    => (string) ($descriptor['class'] ?? ''),
+            ];
+        }
+
+        return $this->pluginColumns = array_values($normalized);
     }
 
     protected function populateState($ordering = 'a.created_on', $direction = 'desc'): void
@@ -109,6 +171,12 @@ class OrdersModel extends ListModel
         $id .= ':' . $this->getState('filter.token');
         $id .= ':' . $this->getState('filter.user_email');
         $id .= ':' . $this->getState('filter.parent_id');
+
+        // Catch-all for third-party order-list columns: hashes the whole filter.* substate
+        // (so any filter field a plugin adds via onContentPrepareForm is covered automatically,
+        // without this model needing to know its name) plus the active plugin column set itself.
+        $id .= ':' . serialize($this->getState()->toArray()['filter'] ?? []);
+        $id .= ':' . implode(',', array_column($this->getPluginColumns(), 'key'));
 
         return parent::getStoreId($id);
     }
@@ -237,6 +305,11 @@ class OrdersModel extends ListModel
 
         // Build WHERE clause
         $this->buildWhereClause($query);
+
+        // Let plugins extend the query for their own order-list columns (select/join/where).
+        // $query is passed by object handle, so a listener's select()/join()/where() calls
+        // mutate it directly; no by-ref argument or return value is needed.
+        J2CommerceHelper::plugin()->event('BuildOrderListQuery', ['query' => $query, 'state' => $this->getState()]);
 
         // Ordering
         $orderCol = $this->state->get('list.ordering', 'a.created_on');
@@ -534,6 +607,7 @@ class OrdersModel extends ListModel
         );
 
         $this->buildWhereClause($query);
+        J2CommerceHelper::plugin()->event('BuildOrderListQuery', ['query' => $query, 'state' => $this->getState()]);
 
         $db->setQuery($query);
 
@@ -611,6 +685,7 @@ class OrdersModel extends ListModel
         );
 
         $this->buildWhereClause($query);
+        J2CommerceHelper::plugin()->event('BuildOrderListQuery', ['query' => $query, 'state' => $this->getState()]);
 
         $query->order($db->quoteName('a.j2commerce_order_id') . ' ASC');
 

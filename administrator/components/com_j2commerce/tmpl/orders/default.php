@@ -14,6 +14,7 @@ defined('_JEXEC') or die;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\HTML\HTMLHelper;
@@ -86,6 +87,16 @@ $orderCustomFieldAreas = array_filter(
                                     <?php echo Text::_('COM_J2COMMERCE_FIELDSET_ADDITIONAL_INFORMATION'); ?>
                                 </th>
                                 <?php endif; ?>
+                                <?php foreach ($this->pluginColumns as $pluginColumn) : ?>
+                                <th scope="col" class="<?php echo $this->escape($pluginColumn['class']); ?>">
+                                    <?php if ($pluginColumn['ordering'] !== '') : ?>
+                                        <?php // Core's sort layout echoes the title unescaped in three places -- the link text, the fallback heading and the data-caption attribute -- so it is resolved and escaped before it goes in. Do not remove this on the grounds that the sibling branch below looks the same. ?>
+                                        <?php echo HTMLHelper::_('searchtools.sort', $this->escape(Text::_($pluginColumn['title'])), $pluginColumn['ordering'], $listDirn, $listOrder); ?>
+                                    <?php else : ?>
+                                        <?php echo $this->escape(Text::_($pluginColumn['title'])); ?>
+                                    <?php endif; ?>
+                                </th>
+                                <?php endforeach; ?>
                                 <th scope="col" class="text-end">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_TOTAL', 'a.order_total', $listDirn, $listOrder); ?>
                                 </th>
@@ -201,6 +212,11 @@ $orderCustomFieldAreas = array_filter(
                                     <?php endforeach; ?>
                                 </td>
                                 <?php endif; ?>
+                                <?php foreach ($this->pluginColumns as $pluginColumn) : ?>
+                                <td class="<?php echo $this->escape($pluginColumn['class']); ?>">
+                                    <?php echo J2CommerceHelper::plugin()->eventWithHtml('RenderOrderListColumn', ['column' => $pluginColumn, 'item' => $item])->getArgument('html', ''); ?>
+                                </td>
+                                <?php endforeach; ?>
                                 <td class="text-end">
                                     <strong class="small"><?php echo CurrencyHelper::format((float) $item->order_total, $item->currency_code ?? '', (float) ($item->currency_value ?? 1)); ?></strong>
                                 </td>

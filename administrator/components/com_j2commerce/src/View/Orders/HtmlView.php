@@ -41,6 +41,9 @@ class HtmlView extends BaseHtmlView
     public string $navbar;
     public array $orderStatuses         = [];
 
+    /** Third-party columns registered via onJ2CommerceOrderListColumns. */
+    public array $pluginColumns         = [];
+
     /** Batch dialog controls; see forms/batch_orders.xml. */
     public ?Form $batchForm             = null;
     public ?Form $exportForm            = null;
@@ -68,6 +71,7 @@ class HtmlView extends BaseHtmlView
         $this->filterForm             = $model->getFilterForm();
         $this->activeFilters          = $model->getActiveFilters();
         $this->orderStatuses          = $this->loadOrderStatuses();
+        $this->pluginColumns          = $model->getPluginColumns();
         $this->exportForm             = $this->buildExportForm();
         $this->exportCount            = (int) $model->getOrdersTotal();
         $this->hasPackingSlipTemplate = $this->hasPackingSlipTemplate();
