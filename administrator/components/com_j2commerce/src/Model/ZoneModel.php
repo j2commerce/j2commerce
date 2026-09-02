@@ -14,11 +14,13 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Model\Trait\CascadingDeleteTrait;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\MVC\Model\AdminModel;
 use Joomla\CMS\Table\Table;
+use Joomla\Database\ParameterType;
 
 /**
  * Zone item model class.
@@ -27,6 +29,8 @@ use Joomla\CMS\Table\Table;
  */
 class ZoneModel extends AdminModel
 {
+    use CascadingDeleteTrait;
+
     /**
      * The type alias for this content type.
      *
@@ -150,5 +154,23 @@ class ZoneModel extends AdminModel
         if (!empty($table->zone_name)) {
             $table->zone_name = trim($table->zone_name);
         }
+    }
+
+    /** Children before the parent, so a mid-cascade failure leaves a re-deletable zone. */
+    public function delete(&$pks): bool
+    {
+        $db = $this->getDatabase();
+
+        foreach ($this->deletableKeys($pks) as $pk) {
+
+            $db->setQuery(
+                $db->getQuery(true)
+                    ->delete($db->quoteName('#__j2commerce_geozonerules'))
+                    ->where($db->quoteName('zone_id') . ' = :zoneId')
+                    ->bind(':zoneId', $pk, ParameterType::INTEGER)
+            )->execute();
+        }
+
+        return parent::delete($pks);
     }
 }

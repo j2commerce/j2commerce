@@ -200,32 +200,44 @@ class OptionTable extends Table
             $this->load($pk);
         }
 
-        $optionId = $this->j2commerce_option_id ?? 0;
+        $optionId = (int) ($this->j2commerce_option_id ?? 0);
 
-        // Delete the option record
-        $result = parent::delete($pk);
+        if ($optionId > 0) {
+            $db = $this->getDbo();
 
-        // If option deletion was successful, also delete related option values
-        if ($result && $optionId > 0) {
-            try {
-                $db    = $this->getDbo();
-                $query = $db->getQuery(true)
+            // Two-step: select the intermediate ids, then delete by them. A shortcut join here
+            // is the defect fixed in #2059.
+            $productoptionIds = array_map('intval', (array) $db->setQuery(
+                $db->getQuery(true)
+                    ->select($db->quoteName('j2commerce_productoption_id'))
+                    ->from($db->quoteName('#__j2commerce_product_options'))
+                    ->where($db->quoteName('option_id') . ' = :option_id')
+                    ->bind(':option_id', $optionId, ParameterType::INTEGER)
+            )->loadColumn());
+
+            if ($productoptionIds !== []) {
+                $db->setQuery(
+                    $db->getQuery(true)
+                        ->delete($db->quoteName('#__j2commerce_product_optionvalues'))
+                        ->whereIn($db->quoteName('productoption_id'), $productoptionIds)
+                )->execute();
+
+                $db->setQuery(
+                    $db->getQuery(true)
+                        ->delete($db->quoteName('#__j2commerce_product_options'))
+                        ->whereIn($db->quoteName('j2commerce_productoption_id'), $productoptionIds)
+                )->execute();
+            }
+
+            $db->setQuery(
+                $db->getQuery(true)
                     ->delete($db->quoteName('#__j2commerce_optionvalues'))
                     ->where($db->quoteName('option_id') . ' = :option_id')
-                    ->bind(':option_id', $optionId, ParameterType::INTEGER);
-
-                $db->setQuery($query);
-                $db->execute();
-            } catch (\Exception $e) {
-                // Log the error but don't fail the whole operation
-                Factory::getApplication()->enqueueMessage(
-                    'Warning: Failed to delete associated option values: ' . $e->getMessage(),
-                    'warning'
-                );
-            }
+                    ->bind(':option_id', $optionId, ParameterType::INTEGER)
+            )->execute();
         }
 
-        return $result;
+        return parent::delete($pk);
     }
 
     /**

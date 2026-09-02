@@ -230,6 +230,7 @@ class ProductTable extends Table
             '#__j2commerce_productfiles'       => 'product_id',
             '#__j2commerce_product_filters'    => 'product_id',
             '#__j2commerce_productprice_index' => 'product_id',
+            '#__j2commerce_cartitems'          => 'product_id',
         ];
 
         foreach ($childTables as $table => $column) {

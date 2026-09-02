@@ -692,17 +692,7 @@ class OptionModel extends AdminModel
                 $ordering++;
             }
 
-            // Delete only the rows that were removed from the subform
-            $deleteQuery = $db->getQuery(true)
-                ->delete($db->quoteName('#__j2commerce_optionvalues'))
-                ->where($db->quoteName('option_id') . ' = :option_id')
-                ->bind(':option_id', $optionId, ParameterType::INTEGER);
-
-            if (!empty($keepIds)) {
-                $deleteQuery->whereNotIn($db->quoteName('j2commerce_optionvalue_id'), $keepIds);
-            }
-
-            $db->setQuery($deleteQuery)->execute();
+            $this->purgeRemovedOptionValues((int) $optionId, $keepIds);
 
             $db->transactionCommit();
 
@@ -789,17 +779,7 @@ class OptionModel extends AdminModel
                 $ordering++;
             }
 
-            // Delete only rows removed from the subform
-            $deleteQuery = $db->getQuery(true)
-                ->delete($db->quoteName('#__j2commerce_optionvalues'))
-                ->where($db->quoteName('option_id') . ' = :option_id')
-                ->bind(':option_id', $optionId, ParameterType::INTEGER);
-
-            if (!empty($keepIds)) {
-                $deleteQuery->whereNotIn($db->quoteName('j2commerce_optionvalue_id'), $keepIds);
-            }
-
-            $db->setQuery($deleteQuery)->execute();
+            $this->purgeRemovedOptionValues((int) $optionId, $keepIds);
 
             $db->transactionCommit();
 
@@ -836,5 +816,43 @@ class OptionModel extends AdminModel
         }
 
         return [$title, $alias];
+    }
+
+    /**
+     * Remove the option values dropped from the subform, and the product option value mappings
+     * that pointed at them — without this the mapping rows outlive the value they name.
+     */
+    private function purgeRemovedOptionValues(int $optionId, array $keepIds): void
+    {
+        $db      = $this->getDatabase();
+        $keepIds = array_map('intval', $keepIds);
+
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('j2commerce_optionvalue_id'))
+            ->from($db->quoteName('#__j2commerce_optionvalues'))
+            ->where($db->quoteName('option_id') . ' = :option_id')
+            ->bind(':option_id', $optionId, ParameterType::INTEGER);
+
+        if ($keepIds !== []) {
+            $query->whereNotIn($db->quoteName('j2commerce_optionvalue_id'), $keepIds);
+        }
+
+        $removedIds = array_map('intval', (array) $db->setQuery($query)->loadColumn());
+
+        if ($removedIds === []) {
+            return;
+        }
+
+        $db->setQuery(
+            $db->getQuery(true)
+                ->delete($db->quoteName('#__j2commerce_product_optionvalues'))
+                ->whereIn($db->quoteName('optionvalue_id'), $removedIds)
+        )->execute();
+
+        $db->setQuery(
+            $db->getQuery(true)
+                ->delete($db->quoteName('#__j2commerce_optionvalues'))
+                ->whereIn($db->quoteName('j2commerce_optionvalue_id'), $removedIds)
+        )->execute();
     }
 }

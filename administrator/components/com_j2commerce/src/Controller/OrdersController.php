@@ -17,6 +17,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CsvHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
+use J2Commerce\Component\J2commerce\Administrator\Model\OrderModel;
 use Joomla\CMS\Application\CMSApplication;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
@@ -288,6 +289,54 @@ class OrdersController extends AdminController
         $this->sendJson(['success' => true, 'count' => (int) $model->getOrdersTotal()]);
     }
 
+    /**
+     * Payment transaction count for the selected orders, so the delete confirmation can name it.
+     * Read-only, and the model re-counts before it deletes — this number is for the prompt, never
+     * the thing that authorises the delete.
+     */
+    public function counttransactions(): void
+    {
+        if (!$this->validateAjaxToken()) {
+            $this->sendJson(['success' => false, 'message' => Text::_('JINVALID_TOKEN')]);
+            return;
+        }
+
+        // Same pair as delete() below, so the count cannot be probed by someone who could not
+        // perform the delete it precedes.
+        $identity = $this->app->getIdentity();
+
+        if (
+            !$identity
+            || $identity->guest
+            || !$identity->authorise('core.delete', 'com_j2commerce')
+            || !J2CommerceHelper::canAccess('j2commerce.editorders')
+        ) {
+            $this->sendJson(['success' => false, 'message' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
+            return;
+        }
+
+        $pks = array_filter((array) $this->input->post->get('cid', [], 'int'));
+
+        if ($pks === []) {
+            $this->sendJson(['success' => true, 'orders' => 0, 'transactions' => 0]);
+            return;
+        }
+
+        $db    = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('j2commerce_order_id'))
+            ->from($db->quoteName('#__j2commerce_orders'))
+            ->whereIn($db->quoteName('j2commerce_order_id'), $pks);
+
+        $orderPks = array_map('intval', (array) $db->setQuery($query)->loadColumn());
+
+        $this->sendJson([
+            'success'      => true,
+            'orders'       => \count($orderPks),
+            'transactions' => OrderModel::countTransactions($db, $orderPks),
+        ]);
+    }
+
     public function delete(): void
     {
         $this->checkToken();
@@ -316,7 +365,10 @@ class OrdersController extends AdminController
             }
 
             $model = $this->getModel();
-            $model->delete($pks);
+
+            if (!$model->delete($pks)) {
+                throw new \Exception($model->getError() ?: Text::_('JERROR_AN_ERROR_HAS_OCCURRED'));
+            }
 
             $this->setMessage(Text::plural('COM_J2COMMERCE_N_ITEMS_DELETED', \count($pks)));
         } catch (\Exception $e) {

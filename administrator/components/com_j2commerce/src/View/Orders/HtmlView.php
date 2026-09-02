@@ -123,6 +123,7 @@ class HtmlView extends BaseHtmlView
 
         // Read by the [data-j2c-confirm] handler in admin-order-list.js.
         Text::script('COM_J2COMMERCE_CONFIRM_DELETE_ORDERS');
+        Text::script('COM_J2COMMERCE_CONFIRM_DELETE_ORDERS_WITH_TRANSACTIONS');
 
         if (!$this->isModal && !$this->isEmptyState) {
             $wa->registerAndUseScript(

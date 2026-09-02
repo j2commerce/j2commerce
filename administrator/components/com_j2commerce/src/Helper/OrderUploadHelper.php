@@ -340,4 +340,104 @@ final class OrderUploadHelper
 
         return $real;
     }
+
+    /** Cart-bucket twin of resolveOrderFilePath() — uploads still in the tmp/{cart_id} bucket. */
+    public static function resolveCartFilePath(int $cartId, string $savedName): ?string
+    {
+        if ($cartId <= 0 || $savedName === '') {
+            return null;
+        }
+
+        $root = ConfigHelper::getAttachmentAbsolutePath();
+
+        if ($root === null) {
+            return null;
+        }
+
+        $real    = realpath($root . '/tmp/' . $cartId . '/' . $savedName);
+        $tmpRoot = realpath($root . '/tmp');
+
+        if ($real === false || $tmpRoot === false || !str_starts_with($real, $tmpRoot . \DIRECTORY_SEPARATOR)) {
+            return null;
+        }
+
+        return $real;
+    }
+
+    /** Remove an order's upload rows and their files. Returns the row count removed. */
+    public static function purgeForOrder(DatabaseInterface $db, string $orderVarchar): int
+    {
+        if ($orderVarchar === '') {
+            return 0;
+        }
+
+        $query = $db->getQuery(true)
+            ->select($db->quoteName(['j2commerce_upload_id', 'saved_name', 'cart_id']))
+            ->from($db->quoteName('#__j2commerce_uploads'))
+            ->where($db->quoteName('order_id') . ' = :orderId')
+            ->bind(':orderId', $orderVarchar);
+
+        $rows = $db->setQuery($query)->loadObjectList() ?: [];
+
+        foreach ($rows as $row) {
+            $path = self::resolveOrderFilePath($orderVarchar, (string) $row->saved_name)
+                ?? self::resolveCartFilePath((int) $row->cart_id, (string) $row->saved_name);
+
+            if ($path !== null) {
+                @unlink($path);
+            }
+        }
+
+        if ($rows === []) {
+            return 0;
+        }
+
+        $db->setQuery(
+            $db->getQuery(true)
+                ->delete($db->quoteName('#__j2commerce_uploads'))
+                ->where($db->quoteName('order_id') . ' = :orderId')
+                ->bind(':orderId', $orderVarchar)
+        )->execute();
+
+        return \count($rows);
+    }
+
+    /** Remove a cart's upload rows and their files. Returns the row count removed. */
+    public static function purgeForCart(DatabaseInterface $db, int $cartId): int
+    {
+        if ($cartId <= 0) {
+            return 0;
+        }
+
+        $query = $db->getQuery(true)
+            ->select($db->quoteName(['j2commerce_upload_id', 'saved_name', 'order_id']))
+            ->from($db->quoteName('#__j2commerce_uploads'))
+            ->where($db->quoteName('cart_id') . ' = :cartId')
+            ->where('COALESCE(' . $db->quoteName('order_id') . ", '') = ''")
+            ->bind(':cartId', $cartId, ParameterType::INTEGER);
+
+        $rows = $db->setQuery($query)->loadObjectList() ?: [];
+
+        foreach ($rows as $row) {
+            $path = self::resolveCartFilePath($cartId, (string) $row->saved_name);
+
+            if ($path !== null) {
+                @unlink($path);
+            }
+        }
+
+        if ($rows === []) {
+            return 0;
+        }
+
+        $db->setQuery(
+            $db->getQuery(true)
+                ->delete($db->quoteName('#__j2commerce_uploads'))
+                ->where($db->quoteName('cart_id') . ' = :cartId')
+                ->where('COALESCE(' . $db->quoteName('order_id') . ", '') = ''")
+                ->bind(':cartId', $cartId, ParameterType::INTEGER)
+        )->execute();
+
+        return \count($rows);
+    }
 }

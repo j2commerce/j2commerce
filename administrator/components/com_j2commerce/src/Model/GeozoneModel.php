@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Model\Trait\CascadingDeleteTrait;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
@@ -30,6 +31,8 @@ use Joomla\Database\ParameterType;
  */
 class GeozoneModel extends AdminModel
 {
+    use CascadingDeleteTrait;
+
     /**
      * The type alias for this content type.
      *
@@ -414,18 +417,36 @@ class GeozoneModel extends AdminModel
     {
         $db = $this->getDatabase();
 
-        // Delete child geozonerules first
-        foreach ($pks as $pk) {
-            $query = $db->getQuery(true);
-            $query->delete($db->quoteName('#__j2commerce_geozonerules'))
-                ->where($db->quoteName('geozone_id') . ' = :geozone_id')
-                ->bind(':geozone_id', $pk, ParameterType::INTEGER);
+        // Children before the parent, so a mid-cascade failure leaves a re-deletable geozone.
+        foreach ($this->deletableKeys($pks) as $pk) {
+            // Two-step: the tax rules hang off the tax rates, not off the geozone, so cascading
+            // the rates without them would manufacture a fresh generation of orphans one level down.
+            $taxrateIds = array_map('intval', (array) $db->setQuery(
+                $db->getQuery(true)
+                    ->select($db->quoteName('j2commerce_taxrate_id'))
+                    ->from($db->quoteName('#__j2commerce_taxrates'))
+                    ->where($db->quoteName('geozone_id') . ' = :geozone_id')
+                    ->bind(':geozone_id', $pk, ParameterType::INTEGER)
+            )->loadColumn());
 
-            $db->setQuery($query);
-            $db->execute();
+            if ($taxrateIds !== []) {
+                $db->setQuery(
+                    $db->getQuery(true)
+                        ->delete($db->quoteName('#__j2commerce_taxrules'))
+                        ->whereIn($db->quoteName('taxrate_id'), $taxrateIds)
+                )->execute();
+            }
+
+            foreach (['#__j2commerce_geozonerules', '#__j2commerce_shippingrates', '#__j2commerce_taxrates'] as $table) {
+                $db->setQuery(
+                    $db->getQuery(true)
+                        ->delete($db->quoteName($table))
+                        ->where($db->quoteName('geozone_id') . ' = :geozone_id')
+                        ->bind(':geozone_id', $pk, ParameterType::INTEGER)
+                )->execute();
+            }
         }
 
-        // Delete parent geozones
         return parent::delete($pks);
     }
 

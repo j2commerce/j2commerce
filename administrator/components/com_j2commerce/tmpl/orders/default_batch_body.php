@@ -77,7 +77,7 @@ $iconTile = 'd-flex align-items-center justify-content-center flex-shrink-0 roun
                     <small class="text-danger-emphasis opacity-75" style="line-height:1.4;display:block;"><?php echo Text::_('COM_J2COMMERCE_DELETE_ORDERS_WARNING'); ?></small>
                 </div>
                 <joomla-toolbar-button task="orders.delete">
-                    <button type="button" class="btn btn-danger btn-sm" data-j2c-confirm="COM_J2COMMERCE_CONFIRM_DELETE_ORDERS">
+                    <button type="button" class="btn btn-danger btn-sm" data-j2c-confirm="COM_J2COMMERCE_CONFIRM_DELETE_ORDERS" data-j2c-count-task="orders.counttransactions">
                         <?php echo Text::_('JTOOLBAR_DELETE'); ?>
                     </button>
                 </joomla-toolbar-button>

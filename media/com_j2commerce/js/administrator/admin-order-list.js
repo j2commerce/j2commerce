@@ -24,16 +24,83 @@ window.j2cPrintPackingSlips = function () {
     window.open('index.php?option=com_j2commerce&task=order.printPackingSlips&' + ids.join('&') + '&' + token + '=1', '_blank');
 };
 
+// Payment transaction count for the current selection, so the second prompt can name it.
+// Advisory only - the model re-counts and refuses without the flag, whatever this returns.
+const j2cCountTransactions = async (task) => {
+    const form = document.getElementById('adminForm');
+    if (!form) return 0;
+
+    const body = new FormData();
+    form.querySelectorAll('input[name="cid[]"]:checked').forEach(cb => body.append('cid[]', cb.value));
+    body.append(Joomla.getOptions('csrf.token', ''), '1');
+
+    const response = await fetch('index.php?option=com_j2commerce&task=' + task, { method: 'POST', body });
+
+    if (!response.ok) return 0;
+
+    const json = await response.json();
+
+    return json && json.success ? { orders: json.orders || 0, transactions: json.transactions || 0 } : 0;
+};
+
+const j2cReplayClick = (btn, withTransactions) => {
+    if (withTransactions) {
+        const form = document.getElementById('adminForm');
+        if (form && !form.querySelector('input[name="confirm_transactions"]')) {
+            const flag = document.createElement('input');
+            flag.type = 'hidden';
+            flag.name = 'confirm_transactions';
+            flag.value = '1';
+            form.appendChild(flag);
+        }
+    }
+
+    btn.dataset.j2cConfirmed = '1';
+    btn.click();
+};
+
 // Capture phase: joomla-toolbar-button wraps the button and submits on its own click listener,
 // so a bubble-phase handler would run after the form had already gone.
 document.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-j2c-confirm]');
     if (!btn) return;
 
-    if (!window.confirm(Joomla.Text._(btn.dataset.j2cConfirm))) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
+    // The replayed click from j2cReplayClick(): let it through to the toolbar button once.
+    if (btn.dataset.j2cConfirmed === '1') {
+        delete btn.dataset.j2cConfirmed;
+        return;
     }
+
+    e.preventDefault();
+    e.stopImmediatePropagation();
+
+    if (!window.confirm(Joomla.Text._(btn.dataset.j2cConfirm))) return;
+
+    const countTask = btn.dataset.j2cCountTask;
+
+    if (!countTask) {
+        j2cReplayClick(btn, false);
+        return;
+    }
+
+    j2cCountTransactions(countTask).then((counts) => {
+        if (!counts || counts.transactions === 0) {
+            j2cReplayClick(btn, false);
+            return;
+        }
+
+        const message = Joomla.Text._('COM_J2COMMERCE_CONFIRM_DELETE_ORDERS_WITH_TRANSACTIONS')
+            .replace('%1$s', counts.orders)
+            .replace('%2$s', counts.transactions);
+
+        if (window.confirm(message)) {
+            j2cReplayClick(btn, true);
+        }
+    }).catch(() => {
+        // The count is advisory; on failure fall through to the server, which refuses without
+        // the flag and says why.
+        j2cReplayClick(btn, false);
+    });
 }, true);
 
 document.addEventListener('click', (e) => {

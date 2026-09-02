@@ -118,97 +118,97 @@ final class DatabaseHealthHelper
     {
         return [
             [
-                'id'              => 'cart_gc_backlog',
-                'labelKey'        => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_CART_GC_BACKLOG_LABEL',
-                'descriptionKey'  => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_CART_GC_BACKLOG_DESC',
-                'repairable'      => true,
-                'destructive'     => false,
-                'setupGuideLink'  => true,
-                'count'           => [self::class, 'countCartGcBacklog'],
-                'fix'             => [self::class, 'fixCartGcBacklog'],
+                'id'             => 'cart_gc_backlog',
+                'labelKey'       => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_CART_GC_BACKLOG_LABEL',
+                'descriptionKey' => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_CART_GC_BACKLOG_DESC',
+                'repairable'     => true,
+                'destructive'    => false,
+                'setupGuideLink' => true,
+                'count'          => [self::class, 'countCartGcBacklog'],
+                'fix'            => [self::class, 'fixCartGcBacklog'],
             ],
             [
-                'id'              => 'orphan_cartitems',
-                'labelKey'        => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORPHAN_CARTITEMS_LABEL',
-                'descriptionKey'  => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORPHAN_CARTITEMS_DESC',
-                'repairable'      => true,
-                'destructive'     => true,
-                'count'           => [self::class, 'countOrphanCartitems'],
-                'fix'             => [self::class, 'fixOrphanCartitems'],
+                'id'             => 'orphan_cartitems',
+                'labelKey'       => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORPHAN_CARTITEMS_LABEL',
+                'descriptionKey' => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORPHAN_CARTITEMS_DESC',
+                'repairable'     => true,
+                'destructive'    => true,
+                'count'          => [self::class, 'countOrphanCartitems'],
+                'fix'            => [self::class, 'fixOrphanCartitems'],
             ],
             [
-                'id'              => 'orphan_productquantities',
-                'labelKey'        => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORPHAN_PRODUCTQUANTITIES_LABEL',
-                'descriptionKey'  => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORPHAN_PRODUCTQUANTITIES_DESC',
-                'repairable'      => true,
-                'destructive'     => false,
-                'count'           => [self::class, 'countOrphanProductquantities'],
-                'fix'             => [self::class, 'fixOrphanProductquantities'],
+                'id'             => 'orphan_productquantities',
+                'labelKey'       => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORPHAN_PRODUCTQUANTITIES_LABEL',
+                'descriptionKey' => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORPHAN_PRODUCTQUANTITIES_DESC',
+                'repairable'     => true,
+                'destructive'    => false,
+                'count'          => [self::class, 'countOrphanProductquantities'],
+                'fix'            => [self::class, 'fixOrphanProductquantities'],
             ],
             [
-                'id'              => 'missing_productquantity',
-                'labelKey'        => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_MISSING_PRODUCTQUANTITY_LABEL',
-                'descriptionKey'  => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_MISSING_PRODUCTQUANTITY_DESC',
-                'repairable'      => true,
-                'destructive'     => false,
-                'count'           => [self::class, 'countMissingProductquantity'],
-                'fix'             => [self::class, 'fixMissingProductquantity'],
+                'id'             => 'missing_productquantity',
+                'labelKey'       => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_MISSING_PRODUCTQUANTITY_LABEL',
+                'descriptionKey' => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_MISSING_PRODUCTQUANTITY_DESC',
+                'repairable'     => true,
+                'destructive'    => false,
+                'count'          => [self::class, 'countMissingProductquantity'],
+                'fix'            => [self::class, 'fixMissingProductquantity'],
             ],
             [
-                'id'              => 'stale_on_hold',
-                'labelKey'        => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_STALE_ON_HOLD_LABEL',
-                'descriptionKey'  => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_STALE_ON_HOLD_DESC',
-                'repairable'      => true,
-                'destructive'     => false,
-                'count'           => [self::class, 'countStaleOnHold'],
-                'fix'             => [self::class, 'fixStaleOnHold'],
+                'id'             => 'stale_on_hold',
+                'labelKey'       => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_STALE_ON_HOLD_LABEL',
+                'descriptionKey' => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_STALE_ON_HOLD_DESC',
+                'repairable'     => true,
+                'destructive'    => false,
+                'count'          => [self::class, 'countStaleOnHold'],
+                'fix'            => [self::class, 'fixStaleOnHold'],
             ],
             [
-                'id'              => 'orphan_productimages',
-                'labelKey'        => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORPHAN_PRODUCTIMAGES_LABEL',
-                'descriptionKey'  => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORPHAN_PRODUCTIMAGES_DESC',
-                'repairable'      => true,
-                'destructive'     => false,
-                'count'           => [self::class, 'countOrphanProductimages'],
-                'fix'             => [self::class, 'fixOrphanProductimages'],
+                'id'             => 'orphan_productimages',
+                'labelKey'       => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORPHAN_PRODUCTIMAGES_LABEL',
+                'descriptionKey' => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORPHAN_PRODUCTIMAGES_DESC',
+                'repairable'     => true,
+                'destructive'    => false,
+                'count'          => [self::class, 'countOrphanProductimages'],
+                'fix'            => [self::class, 'fixOrphanProductimages'],
             ],
             [
-                'id'              => 'zero_date_variants',
-                'labelKey'        => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ZERO_DATE_VARIANTS_LABEL',
-                'descriptionKey'  => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ZERO_DATE_VARIANTS_DESC',
-                'repairable'      => true,
-                'destructive'     => false,
-                'count'           => [self::class, 'countZeroDateVariants'],
-                'fix'             => [self::class, 'fixZeroDateVariants'],
+                'id'             => 'zero_date_variants',
+                'labelKey'       => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ZERO_DATE_VARIANTS_LABEL',
+                'descriptionKey' => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ZERO_DATE_VARIANTS_DESC',
+                'repairable'     => true,
+                'destructive'    => false,
+                'count'          => [self::class, 'countZeroDateVariants'],
+                'fix'            => [self::class, 'fixZeroDateVariants'],
             ],
             [
-                'id'              => 'price_index_stale',
-                'labelKey'        => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_PRICE_INDEX_STALE_LABEL',
-                'descriptionKey'  => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_PRICE_INDEX_STALE_DESC',
-                'repairable'      => true,
-                'destructive'     => false,
-                'count'           => [self::class, 'countPriceIndexStale'],
-                'fix'             => [self::class, 'fixPriceIndexStale'],
+                'id'             => 'price_index_stale',
+                'labelKey'       => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_PRICE_INDEX_STALE_LABEL',
+                'descriptionKey' => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_PRICE_INDEX_STALE_DESC',
+                'repairable'     => true,
+                'destructive'    => false,
+                'count'          => [self::class, 'countPriceIndexStale'],
+                'fix'            => [self::class, 'fixPriceIndexStale'],
             ],
             [
-                'id'                     => 'orders_without_items',
-                'labelKey'               => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORDERS_WITHOUT_ITEMS_LABEL',
-                'descriptionKey'         => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORDERS_WITHOUT_ITEMS_DESC',
-                'repairable'             => true,
-                'destructive'            => true,
-                'destructiveWarningKey'  => 'COM_J2COMMERCE_DATABASE_HEALTH_ORDERS_WITHOUT_ITEMS_DESTRUCTIVE_WARNING',
-                'count'                  => [self::class, 'countOrdersWithoutItems'],
-                'fix'                    => [self::class, 'fixOrdersWithoutItems'],
+                'id'                    => 'orders_without_items',
+                'labelKey'              => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORDERS_WITHOUT_ITEMS_LABEL',
+                'descriptionKey'        => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORDERS_WITHOUT_ITEMS_DESC',
+                'repairable'            => true,
+                'destructive'           => true,
+                'destructiveWarningKey' => 'COM_J2COMMERCE_DATABASE_HEALTH_ORDERS_WITHOUT_ITEMS_DESTRUCTIVE_WARNING',
+                'count'                 => [self::class, 'countOrdersWithoutItems'],
+                'fix'                   => [self::class, 'fixOrdersWithoutItems'],
             ],
             [
-                'id'                     => 'orphan_orderitems',
-                'labelKey'               => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORPHAN_ORDERITEMS_LABEL',
-                'descriptionKey'         => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORPHAN_ORDERITEMS_DESC',
-                'repairable'             => true,
-                'destructive'            => true,
-                'destructiveWarningKey'  => 'COM_J2COMMERCE_DATABASE_HEALTH_ORPHAN_ORDERITEMS_DESTRUCTIVE_WARNING',
-                'count'                  => [self::class, 'countOrphanOrderitems'],
-                'fix'                    => [self::class, 'fixOrphanOrderitems'],
+                'id'                    => 'orphan_orderitems',
+                'labelKey'              => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORPHAN_ORDERITEMS_LABEL',
+                'descriptionKey'        => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORPHAN_ORDERITEMS_DESC',
+                'repairable'            => true,
+                'destructive'           => true,
+                'destructiveWarningKey' => 'COM_J2COMMERCE_DATABASE_HEALTH_ORPHAN_ORDERITEMS_DESTRUCTIVE_WARNING',
+                'count'                 => [self::class, 'countOrphanOrderitems'],
+                'fix'                   => [self::class, 'fixOrphanOrderitems'],
             ],
             [
                 'id'                    => 'orphan_orderhistories',
@@ -221,23 +221,113 @@ final class DatabaseHealthHelper
                 'fix'                   => [self::class, 'fixOrphanOrderhistories'],
             ],
             [
-                'id'              => 'products_without_master_variant',
-                'labelKey'        => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_PRODUCTS_WITHOUT_MASTER_VARIANT_LABEL',
-                'descriptionKey'  => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_PRODUCTS_WITHOUT_MASTER_VARIANT_DESC',
-                'repairable'      => false,
-                'destructive'     => false,
-                'reviewUrl'       => 'index.php?option=com_j2commerce&view=databasehealthproducts&tmpl=component',
-                'count'           => [self::class, 'countProductsWithoutMasterVariant'],
-                'fix'             => null,
+                'id'             => 'orphan_zones',
+                'labelKey'       => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORPHAN_ZONES_LABEL',
+                'descriptionKey' => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORPHAN_ZONES_DESC',
+                'repairable'     => true,
+                'destructive'    => true,
+                'count'          => [self::class, 'countOrphanZones'],
+                'fix'            => [self::class, 'fixOrphanZones'],
             ],
             [
-                'id'              => 'migrator_residue',
-                'labelKey'        => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_MIGRATOR_RESIDUE_LABEL',
-                'descriptionKey'  => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_MIGRATOR_RESIDUE_DESC',
-                'repairable'      => false,
-                'destructive'     => false,
-                'count'           => [self::class, 'countMigratorResidue'],
-                'fix'             => null,
+                'id'             => 'orphan_geozonerules',
+                'labelKey'       => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORPHAN_GEOZONERULES_LABEL',
+                'descriptionKey' => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORPHAN_GEOZONERULES_DESC',
+                'repairable'     => true,
+                'destructive'    => true,
+                'count'          => [self::class, 'countOrphanGeozonerules'],
+                'fix'            => [self::class, 'fixOrphanGeozonerules'],
+            ],
+            [
+                'id'             => 'orphan_shippingrates',
+                'labelKey'       => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORPHAN_SHIPPINGRATES_LABEL',
+                'descriptionKey' => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORPHAN_SHIPPINGRATES_DESC',
+                'repairable'     => true,
+                'destructive'    => true,
+                'count'          => [self::class, 'countOrphanShippingrates'],
+                'fix'            => [self::class, 'fixOrphanShippingrates'],
+            ],
+            [
+                'id'             => 'orphan_taxrules',
+                'labelKey'       => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORPHAN_TAXRULES_LABEL',
+                'descriptionKey' => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORPHAN_TAXRULES_DESC',
+                'repairable'     => true,
+                'destructive'    => true,
+                'count'          => [self::class, 'countOrphanTaxrules'],
+                'fix'            => [self::class, 'fixOrphanTaxrules'],
+            ],
+            [
+                'id'             => 'orphan_product_options',
+                'labelKey'       => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORPHAN_PRODUCT_OPTIONS_LABEL',
+                'descriptionKey' => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORPHAN_PRODUCT_OPTIONS_DESC',
+                'repairable'     => true,
+                'destructive'    => true,
+                'count'          => [self::class, 'countOrphanProductOptions'],
+                'fix'            => [self::class, 'fixOrphanProductOptions'],
+            ],
+            [
+                'id'             => 'orphan_product_optionvalues',
+                'labelKey'       => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORPHAN_PRODUCT_OPTIONVALUES_LABEL',
+                'descriptionKey' => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORPHAN_PRODUCT_OPTIONVALUES_DESC',
+                'repairable'     => true,
+                'destructive'    => true,
+                'count'          => [self::class, 'countOrphanProductOptionvalues'],
+                'fix'            => [self::class, 'fixOrphanProductOptionvalues'],
+            ],
+            [
+                'id'             => 'orphan_orderitemattributes',
+                'labelKey'       => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORPHAN_ORDERITEMATTRIBUTES_LABEL',
+                'descriptionKey' => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORPHAN_ORDERITEMATTRIBUTES_DESC',
+                'repairable'     => true,
+                'destructive'    => true,
+                'count'          => [self::class, 'countOrphanOrderitemattributes'],
+                'fix'            => [self::class, 'fixOrphanOrderitemattributes'],
+            ],
+            [
+                'id'             => 'orphan_uploads',
+                'labelKey'       => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORPHAN_UPLOADS_LABEL',
+                'descriptionKey' => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORPHAN_UPLOADS_DESC',
+                'repairable'     => true,
+                'destructive'    => true,
+                'count'          => [self::class, 'countOrphanUploads'],
+                'fix'            => [self::class, 'fixOrphanUploads'],
+            ],
+            [
+                'id'             => 'orphan_ordertransactions',
+                'labelKey'       => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORPHAN_ORDERTRANSACTIONS_LABEL',
+                'descriptionKey' => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORPHAN_ORDERTRANSACTIONS_DESC',
+                'repairable'     => false,
+                'destructive'    => false,
+                'count'          => [self::class, 'countOrphanOrdertransactions'],
+                'fix'            => null,
+            ],
+            [
+                'id'             => 'orphan_voucheradjustments',
+                'labelKey'       => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORPHAN_VOUCHERADJUSTMENTS_LABEL',
+                'descriptionKey' => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORPHAN_VOUCHERADJUSTMENTS_DESC',
+                'repairable'     => false,
+                'destructive'    => false,
+                'count'          => [self::class, 'countOrphanVoucheradjustments'],
+                'fix'            => null,
+            ],
+            [
+                'id'             => 'products_without_master_variant',
+                'labelKey'       => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_PRODUCTS_WITHOUT_MASTER_VARIANT_LABEL',
+                'descriptionKey' => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_PRODUCTS_WITHOUT_MASTER_VARIANT_DESC',
+                'repairable'     => false,
+                'destructive'    => false,
+                'reviewUrl'      => 'index.php?option=com_j2commerce&view=databasehealthproducts&tmpl=component',
+                'count'          => [self::class, 'countProductsWithoutMasterVariant'],
+                'fix'            => null,
+            ],
+            [
+                'id'             => 'migrator_residue',
+                'labelKey'       => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_MIGRATOR_RESIDUE_LABEL',
+                'descriptionKey' => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_MIGRATOR_RESIDUE_DESC',
+                'repairable'     => false,
+                'destructive'    => false,
+                'count'          => [self::class, 'countMigratorResidue'],
+                'fix'            => null,
             ],
         ];
     }
@@ -632,7 +722,7 @@ final class DatabaseHealthHelper
 
     public static function fixPriceIndexStale(DatabaseInterface $db): int
     {
-        $productService = new ProductService();
+        $productService  = new ProductService();
         $processed       = 0;
 
         for ($batch = 0; $batch < self::MAX_BATCHES_PER_RUN; $batch++) {
@@ -694,7 +784,7 @@ final class DatabaseHealthHelper
             return 0;
         }
 
-        $processed = 0;
+        $before = self::countOrdersWithoutItems($db);
 
         for ($batch = 0; $batch < self::MAX_BATCHES_PER_RUN; $batch++) {
             $query = $db->getQuery(true)
@@ -710,11 +800,15 @@ final class DatabaseHealthHelper
                 break;
             }
 
-            $model->delete($ids);
-            $processed += \count($ids);
+            // A refusal (an order holding payment records needs an explicit confirmation) would
+            // otherwise re-select the same rows every batch and report them all as repaired.
+            if (!$model->delete($ids)) {
+                break;
+            }
         }
 
-        return $processed;
+        // Measured, not counted: the report has to be the rows that actually went.
+        return $before - self::countOrdersWithoutItems($db);
     }
 
     public static function countOrphanOrderitems(DatabaseInterface $db): int
@@ -843,5 +937,276 @@ final class DatabaseHealthHelper
             // The migrator component is not installed on this store.
             return 0;
         }
+    }
+
+    // =========================================================================
+    // Delete-cascade orphans (#2072). Every pair below shares one predicate factory, so the
+    // number the card shows is the number the fix removes. A parent column of 0 means "any" on
+    // several of these tables, so a 0 is never treated as a broken reference.
+    // =========================================================================
+
+    /** @param  callable(DatabaseInterface): QueryInterface  $factory  Predicate with FROM/JOIN/WHERE only. */
+    private static function countOrphans(DatabaseInterface $db, callable $factory, string $pkColumn): int
+    {
+        $query = $factory($db)->select('COUNT(DISTINCT ' . $db->quoteName($pkColumn) . ')');
+
+        return (int) $db->setQuery($query)->loadResult();
+    }
+
+    /**
+     * @param  callable(DatabaseInterface): QueryInterface  $factory  Same predicate as the count.
+     * @param  callable(array): void|null                   $onBatch  Runs before each batch is deleted.
+     */
+    private static function purgeOrphans(
+        DatabaseInterface $db,
+        callable $factory,
+        string $pkColumn,
+        string $table,
+        array $extraColumns = [],
+        ?callable $onBatch = null
+    ): int {
+        $pkName    = substr($pkColumn, (int) strrpos($pkColumn, '.') + 1);
+        $processed = 0;
+
+        for ($batch = 0; $batch < self::MAX_BATCHES_PER_RUN; $batch++) {
+            $query = $factory($db)
+                ->select($db->quoteName(array_merge([$pkColumn], $extraColumns)))
+                ->setLimit(self::BATCH_SIZE);
+
+            $rows = $db->setQuery($query)->loadObjectList() ?: [];
+
+            if ($rows === []) {
+                break;
+            }
+
+            if ($onBatch !== null) {
+                $onBatch($rows);
+            }
+
+            $ids = array_map(static fn (object $row): int => (int) $row->{$pkName}, $rows);
+
+            $db->setQuery(
+                $db->getQuery(true)
+                    ->delete($db->quoteName($table))
+                    ->whereIn($db->quoteName($pkName), $ids)
+            )->execute();
+
+            $processed += \count($rows);
+        }
+
+        return $processed;
+    }
+
+    private static function orphanZonesQuery(DatabaseInterface $db): QueryInterface
+    {
+        return $db->getQuery(true)
+            ->from($db->quoteName('#__j2commerce_zones', 'z'))
+            ->leftJoin($db->quoteName('#__j2commerce_countries', 'c') . ' ON ' . $db->quoteName('c.j2commerce_country_id') . ' = ' . $db->quoteName('z.country_id'))
+            ->where($db->quoteName('c.j2commerce_country_id') . ' IS NULL');
+    }
+
+    public static function countOrphanZones(DatabaseInterface $db): int
+    {
+        return self::countOrphans($db, [self::class, 'orphanZonesQuery'], 'z.j2commerce_zone_id');
+    }
+
+    public static function fixOrphanZones(DatabaseInterface $db): int
+    {
+        return self::purgeOrphans($db, [self::class, 'orphanZonesQuery'], 'z.j2commerce_zone_id', '#__j2commerce_zones');
+    }
+
+    private static function orphanGeozonerulesQuery(DatabaseInterface $db): QueryInterface
+    {
+        // country_id / zone_id carry 0 for "the whole geozone", and a 0 never matches the join.
+        return $db->getQuery(true)
+            ->from($db->quoteName('#__j2commerce_geozonerules', 'r'))
+            ->leftJoin($db->quoteName('#__j2commerce_geozones', 'g') . ' ON ' . $db->quoteName('g.j2commerce_geozone_id') . ' = ' . $db->quoteName('r.geozone_id'))
+            ->leftJoin($db->quoteName('#__j2commerce_countries', 'c') . ' ON ' . $db->quoteName('c.j2commerce_country_id') . ' = ' . $db->quoteName('r.country_id'))
+            ->leftJoin($db->quoteName('#__j2commerce_zones', 'z') . ' ON ' . $db->quoteName('z.j2commerce_zone_id') . ' = ' . $db->quoteName('r.zone_id'))
+            ->where(
+                '(' . $db->quoteName('g.j2commerce_geozone_id') . ' IS NULL'
+                . ' OR (' . $db->quoteName('r.country_id') . ' <> 0 AND ' . $db->quoteName('c.j2commerce_country_id') . ' IS NULL)'
+                . ' OR (' . $db->quoteName('r.zone_id') . ' <> 0 AND ' . $db->quoteName('z.j2commerce_zone_id') . ' IS NULL))'
+            );
+    }
+
+    public static function countOrphanGeozonerules(DatabaseInterface $db): int
+    {
+        return self::countOrphans($db, [self::class, 'orphanGeozonerulesQuery'], 'r.j2commerce_geozonerule_id');
+    }
+
+    public static function fixOrphanGeozonerules(DatabaseInterface $db): int
+    {
+        return self::purgeOrphans($db, [self::class, 'orphanGeozonerulesQuery'], 'r.j2commerce_geozonerule_id', '#__j2commerce_geozonerules');
+    }
+
+    private static function orphanShippingratesQuery(DatabaseInterface $db): QueryInterface
+    {
+        return $db->getQuery(true)
+            ->from($db->quoteName('#__j2commerce_shippingrates', 's'))
+            ->leftJoin($db->quoteName('#__j2commerce_geozones', 'g') . ' ON ' . $db->quoteName('g.j2commerce_geozone_id') . ' = ' . $db->quoteName('s.geozone_id'))
+            ->where($db->quoteName('s.geozone_id') . ' <> 0')
+            ->where($db->quoteName('g.j2commerce_geozone_id') . ' IS NULL');
+    }
+
+    public static function countOrphanShippingrates(DatabaseInterface $db): int
+    {
+        return self::countOrphans($db, [self::class, 'orphanShippingratesQuery'], 's.j2commerce_shippingrate_id');
+    }
+
+    public static function fixOrphanShippingrates(DatabaseInterface $db): int
+    {
+        return self::purgeOrphans($db, [self::class, 'orphanShippingratesQuery'], 's.j2commerce_shippingrate_id', '#__j2commerce_shippingrates');
+    }
+
+    private static function orphanTaxrulesQuery(DatabaseInterface $db): QueryInterface
+    {
+        return $db->getQuery(true)
+            ->from($db->quoteName('#__j2commerce_taxrules', 'tr'))
+            ->leftJoin($db->quoteName('#__j2commerce_taxprofiles', 'tp') . ' ON ' . $db->quoteName('tp.j2commerce_taxprofile_id') . ' = ' . $db->quoteName('tr.taxprofile_id'))
+            ->leftJoin($db->quoteName('#__j2commerce_taxrates', 'ta') . ' ON ' . $db->quoteName('ta.j2commerce_taxrate_id') . ' = ' . $db->quoteName('tr.taxrate_id'))
+            ->where(
+                '(' . $db->quoteName('tp.j2commerce_taxprofile_id') . ' IS NULL'
+                . ' OR ' . $db->quoteName('ta.j2commerce_taxrate_id') . ' IS NULL)'
+            );
+    }
+
+    public static function countOrphanTaxrules(DatabaseInterface $db): int
+    {
+        return self::countOrphans($db, [self::class, 'orphanTaxrulesQuery'], 'tr.j2commerce_taxrule_id');
+    }
+
+    public static function fixOrphanTaxrules(DatabaseInterface $db): int
+    {
+        return self::purgeOrphans($db, [self::class, 'orphanTaxrulesQuery'], 'tr.j2commerce_taxrule_id', '#__j2commerce_taxrules');
+    }
+
+    private static function orphanProductOptionsQuery(DatabaseInterface $db): QueryInterface
+    {
+        return $db->getQuery(true)
+            ->from($db->quoteName('#__j2commerce_product_options', 'po'))
+            ->leftJoin($db->quoteName('#__j2commerce_products', 'p') . ' ON ' . $db->quoteName('p.j2commerce_product_id') . ' = ' . $db->quoteName('po.product_id'))
+            ->leftJoin($db->quoteName('#__j2commerce_options', 'o') . ' ON ' . $db->quoteName('o.j2commerce_option_id') . ' = ' . $db->quoteName('po.option_id'))
+            ->where(
+                '(' . $db->quoteName('p.j2commerce_product_id') . ' IS NULL'
+                . ' OR ' . $db->quoteName('o.j2commerce_option_id') . ' IS NULL)'
+            );
+    }
+
+    public static function countOrphanProductOptions(DatabaseInterface $db): int
+    {
+        return self::countOrphans($db, [self::class, 'orphanProductOptionsQuery'], 'po.j2commerce_productoption_id');
+    }
+
+    public static function fixOrphanProductOptions(DatabaseInterface $db): int
+    {
+        return self::purgeOrphans($db, [self::class, 'orphanProductOptionsQuery'], 'po.j2commerce_productoption_id', '#__j2commerce_product_options');
+    }
+
+    private static function orphanProductOptionvaluesQuery(DatabaseInterface $db): QueryInterface
+    {
+        return $db->getQuery(true)
+            ->from($db->quoteName('#__j2commerce_product_optionvalues', 'pov'))
+            ->leftJoin($db->quoteName('#__j2commerce_product_options', 'po') . ' ON ' . $db->quoteName('po.j2commerce_productoption_id') . ' = ' . $db->quoteName('pov.productoption_id'))
+            ->leftJoin($db->quoteName('#__j2commerce_optionvalues', 'ov') . ' ON ' . $db->quoteName('ov.j2commerce_optionvalue_id') . ' = ' . $db->quoteName('pov.optionvalue_id'))
+            ->where(
+                '(' . $db->quoteName('po.j2commerce_productoption_id') . ' IS NULL'
+                . ' OR ' . $db->quoteName('ov.j2commerce_optionvalue_id') . ' IS NULL)'
+            );
+    }
+
+    public static function countOrphanProductOptionvalues(DatabaseInterface $db): int
+    {
+        return self::countOrphans($db, [self::class, 'orphanProductOptionvaluesQuery'], 'pov.j2commerce_product_optionvalue_id');
+    }
+
+    public static function fixOrphanProductOptionvalues(DatabaseInterface $db): int
+    {
+        return self::purgeOrphans($db, [self::class, 'orphanProductOptionvaluesQuery'], 'pov.j2commerce_product_optionvalue_id', '#__j2commerce_product_optionvalues');
+    }
+
+    private static function orphanOrderitemattributesQuery(DatabaseInterface $db): QueryInterface
+    {
+        return $db->getQuery(true)
+            ->from($db->quoteName('#__j2commerce_orderitemattributes', 'oia'))
+            ->leftJoin($db->quoteName('#__j2commerce_orderitems', 'oi') . ' ON ' . $db->quoteName('oi.j2commerce_orderitem_id') . ' = ' . $db->quoteName('oia.orderitem_id'))
+            ->where($db->quoteName('oi.j2commerce_orderitem_id') . ' IS NULL');
+    }
+
+    public static function countOrphanOrderitemattributes(DatabaseInterface $db): int
+    {
+        return self::countOrphans($db, [self::class, 'orphanOrderitemattributesQuery'], 'oia.j2commerce_orderitemattribute_id');
+    }
+
+    public static function fixOrphanOrderitemattributes(DatabaseInterface $db): int
+    {
+        return self::purgeOrphans($db, [self::class, 'orphanOrderitemattributesQuery'], 'oia.j2commerce_orderitemattribute_id', '#__j2commerce_orderitemattributes');
+    }
+
+    private static function orphanUploadsQuery(DatabaseInterface $db): QueryInterface
+    {
+        return $db->getQuery(true)
+            ->from($db->quoteName('#__j2commerce_uploads', 'u'))
+            ->leftJoin($db->quoteName('#__j2commerce_orders', 'o') . ' ON ' . $db->quoteName('o.order_id') . ' = ' . $db->quoteName('u.order_id'))
+            ->leftJoin($db->quoteName('#__j2commerce_carts', 'c') . ' ON ' . $db->quoteName('c.j2commerce_cart_id') . ' = ' . $db->quoteName('u.cart_id'))
+            ->where(
+                '((COALESCE(' . $db->quoteName('u.order_id') . ", '') <> '' AND " . $db->quoteName('o.order_id') . ' IS NULL)'
+                . ' OR (COALESCE(' . $db->quoteName('u.order_id') . ", '') = '' AND COALESCE(" . $db->quoteName('u.cart_id') . ', 0) <> 0 AND '
+                . $db->quoteName('c.j2commerce_cart_id') . ' IS NULL))'
+            );
+    }
+
+    public static function countOrphanUploads(DatabaseInterface $db): int
+    {
+        return self::countOrphans($db, [self::class, 'orphanUploadsQuery'], 'u.j2commerce_upload_id');
+    }
+
+    /** Removes the file as well as the row — a row-only sweep would strand the bytes on disk. */
+    public static function fixOrphanUploads(DatabaseInterface $db): int
+    {
+        return self::purgeOrphans(
+            $db,
+            [self::class, 'orphanUploadsQuery'],
+            'u.j2commerce_upload_id',
+            '#__j2commerce_uploads',
+            ['u.saved_name', 'u.order_id', 'u.cart_id'],
+            static function (array $rows): void {
+                foreach ($rows as $row) {
+                    $path = OrderUploadHelper::resolveOrderFilePath((string) ($row->order_id ?? ''), (string) $row->saved_name)
+                        ?? OrderUploadHelper::resolveCartFilePath((int) ($row->cart_id ?? 0), (string) $row->saved_name);
+
+                    if ($path !== null) {
+                        @unlink($path);
+                    }
+                }
+            }
+        );
+    }
+
+    /**
+     * Report-only, like orphan_orderhistories. These are financial records whose parent order is
+     * already gone, and a one-click sweep is the wrong tool for them.
+     */
+    public static function countOrphanOrdertransactions(DatabaseInterface $db): int
+    {
+        $query = $db->getQuery(true)
+            ->select('COUNT(*)')
+            ->from($db->quoteName('#__j2commerce_ordertransactions', 'ot'))
+            ->leftJoin($db->quoteName('#__j2commerce_orders', 'o') . ' ON ' . $db->quoteName('o.j2commerce_order_id') . ' = ' . $db->quoteName('ot.order_id'))
+            ->where($db->quoteName('o.j2commerce_order_id') . ' IS NULL');
+
+        return (int) $db->setQuery($query)->loadResult();
+    }
+
+    /** Report-only: the rows carry a balance_before/balance_after chain that cannot be rebuilt. */
+    public static function countOrphanVoucheradjustments(DatabaseInterface $db): int
+    {
+        $query = $db->getQuery(true)
+            ->select('COUNT(*)')
+            ->from($db->quoteName('#__j2commerce_voucheradjustments', 'va'))
+            ->leftJoin($db->quoteName('#__j2commerce_vouchers', 'v') . ' ON ' . $db->quoteName('v.j2commerce_voucher_id') . ' = ' . $db->quoteName('va.j2commerce_voucher_id'))
+            ->where($db->quoteName('v.j2commerce_voucher_id') . ' IS NULL');
+
+        return (int) $db->setQuery($query)->loadResult();
     }
 }

@@ -19,6 +19,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Table;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Table\Table;
 use Joomla\Database\DatabaseDriver;
+use Joomla\Database\ParameterType;
 
 class OrderitemTable extends Table
 {
@@ -43,5 +44,24 @@ class OrderitemTable extends Table
         }
 
         return true;
+    }
+
+    /** Children before the parent, so a mid-cascade failure leaves a re-deletable order item. */
+    public function delete($pk = null)
+    {
+        $orderitemId = (int) ($pk ?? $this->{$this->getKeyName()} ?? 0);
+
+        if ($orderitemId > 0) {
+            $db = $this->getDbo();
+
+            $db->setQuery(
+                $db->getQuery(true)
+                    ->delete($db->quoteName('#__j2commerce_orderitemattributes'))
+                    ->where($db->quoteName('orderitem_id') . ' = :orderitemId')
+                    ->bind(':orderitemId', $orderitemId, ParameterType::INTEGER)
+            )->execute();
+        }
+
+        return parent::delete($pk);
     }
 }

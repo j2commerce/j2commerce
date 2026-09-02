@@ -14,9 +14,11 @@ namespace J2Commerce\Component\J2commerce\Administrator\Table;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderUploadHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Table\Table;
 use Joomla\Database\DatabaseDriver;
+use Joomla\Database\ParameterType;
 
 /**
  * Cart table class.
@@ -119,5 +121,30 @@ class CartTable extends Table
     public function store($updateNulls = true): bool
     {
         return parent::store($updateNulls);
+    }
+
+    /**
+     * Children go before the parent: a mid-cascade failure then leaves a childless cart that can
+     * simply be deleted again. Cart items removed here can never be reached by
+     * AppDiagnostics::clearOutdatedCartData(), which selects them by cart_id.
+     */
+    public function delete($pk = null)
+    {
+        $cartId = (int) ($pk ?? $this->{$this->getKeyName()} ?? 0);
+
+        if ($cartId > 0) {
+            $db = $this->getDbo();
+
+            $db->setQuery(
+                $db->getQuery(true)
+                    ->delete($db->quoteName('#__j2commerce_cartitems'))
+                    ->where($db->quoteName('cart_id') . ' = :cartId')
+                    ->bind(':cartId', $cartId, ParameterType::INTEGER)
+            )->execute();
+
+            OrderUploadHelper::purgeForCart($db, $cartId);
+        }
+
+        return parent::delete($pk);
     }
 }

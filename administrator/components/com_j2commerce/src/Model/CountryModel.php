@@ -14,11 +14,13 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Model\Trait\CascadingDeleteTrait;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\MVC\Model\AdminModel;
 use Joomla\CMS\Table\Table;
+use Joomla\Database\ParameterType;
 
 /**
  * Country item model class.
@@ -27,6 +29,8 @@ use Joomla\CMS\Table\Table;
  */
 class CountryModel extends AdminModel
 {
+    use CascadingDeleteTrait;
+
     /**
      * The type alias for this content type.
      *
@@ -154,5 +158,43 @@ class CountryModel extends AdminModel
         if (!empty($table->country_name)) {
             $table->country_name = trim($table->country_name);
         }
+    }
+
+    /**
+     * Children before the parent. Geozone rules are cleared for the country itself and for every
+     * zone that belongs to it — a rule naming a zone outlives the country otherwise.
+     */
+    public function delete(&$pks): bool
+    {
+        $db = $this->getDatabase();
+
+        foreach ($this->deletableKeys($pks) as $pk) {
+            $zoneIds = array_map('intval', (array) $db->setQuery(
+                $db->getQuery(true)
+                    ->select($db->quoteName('j2commerce_zone_id'))
+                    ->from($db->quoteName('#__j2commerce_zones'))
+                    ->where($db->quoteName('country_id') . ' = :countryId')
+                    ->bind(':countryId', $pk, ParameterType::INTEGER)
+            )->loadColumn());
+
+            if ($zoneIds !== []) {
+                $db->setQuery(
+                    $db->getQuery(true)
+                        ->delete($db->quoteName('#__j2commerce_geozonerules'))
+                        ->whereIn($db->quoteName('zone_id'), $zoneIds)
+                )->execute();
+            }
+
+            foreach (['#__j2commerce_geozonerules', '#__j2commerce_zones'] as $table) {
+                $db->setQuery(
+                    $db->getQuery(true)
+                        ->delete($db->quoteName($table))
+                        ->where($db->quoteName('country_id') . ' = :countryId')
+                        ->bind(':countryId', $pk, ParameterType::INTEGER)
+                )->execute();
+            }
+        }
+
+        return parent::delete($pks);
     }
 }

@@ -259,6 +259,7 @@ class VariantTable extends Table
             '#__j2commerce_productquantities'            => 'variant_id',
             '#__j2commerce_product_prices'               => 'variant_id',
             '#__j2commerce_product_variant_optionvalues' => 'variant_id',
+            '#__j2commerce_cartitems'                    => 'variant_id',
         ];
 
         foreach ($childTables as $table => $column) {

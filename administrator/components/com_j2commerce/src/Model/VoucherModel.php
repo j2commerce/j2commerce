@@ -17,6 +17,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 use J2Commerce\Component\J2commerce\Administrator\Exception\VoucherRejection;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CartHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Model\Trait\CascadingDeleteTrait;
 use J2Commerce\Component\J2commerce\Administrator\Table\VoucheradjustmentTable;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
@@ -35,6 +36,8 @@ use Joomla\Database\ParameterType;
  */
 class VoucherModel extends AdminModel
 {
+    use CascadingDeleteTrait;
+
     /**
      * The type alias for this content type.
      *
@@ -1410,5 +1413,26 @@ class VoucherModel extends AdminModel
     public function has_voucher(): bool
     {
         return $this->hasVoucher();
+    }
+
+    /**
+     * The adjustments are this voucher's own balance ledger, so they go with it. They are never
+     * cleared by order id — that would punch a hole in a surviving voucher's running balance.
+     */
+    public function delete(&$pks): bool
+    {
+        $db = $this->getDatabase();
+
+        foreach ($this->deletableKeys($pks) as $pk) {
+
+            $db->setQuery(
+                $db->getQuery(true)
+                    ->delete($db->quoteName('#__j2commerce_voucheradjustments'))
+                    ->where($db->quoteName('j2commerce_voucher_id') . ' = :voucherId')
+                    ->bind(':voucherId', $pk, ParameterType::INTEGER)
+            )->execute();
+        }
+
+        return parent::delete($pks);
     }
 }

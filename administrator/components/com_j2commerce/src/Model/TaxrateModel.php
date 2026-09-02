@@ -14,11 +14,13 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Model\Trait\CascadingDeleteTrait;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\MVC\Model\AdminModel;
 use Joomla\CMS\Table\Table;
+use Joomla\Database\ParameterType;
 
 /**
  * Taxrate item model class.
@@ -27,6 +29,8 @@ use Joomla\CMS\Table\Table;
  */
 class TaxrateModel extends AdminModel
 {
+    use CascadingDeleteTrait;
+
     /**
      * The type alias for this content type.
      *
@@ -138,5 +142,23 @@ class TaxrateModel extends AdminModel
         if (!empty($table->taxrate_name)) {
             $table->taxrate_name = trim($table->taxrate_name);
         }
+    }
+
+    /** Children before the parent, so a mid-cascade failure leaves a re-deletable tax rate. */
+    public function delete(&$pks): bool
+    {
+        $db = $this->getDatabase();
+
+        foreach ($this->deletableKeys($pks) as $pk) {
+
+            $db->setQuery(
+                $db->getQuery(true)
+                    ->delete($db->quoteName('#__j2commerce_taxrules'))
+                    ->where($db->quoteName('taxrate_id') . ' = :taxrateId')
+                    ->bind(':taxrateId', $pk, ParameterType::INTEGER)
+            )->execute();
+        }
+
+        return parent::delete($pks);
     }
 }
