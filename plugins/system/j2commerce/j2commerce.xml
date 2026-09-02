@@ -57,6 +57,10 @@
         <language tag="fi-FI">fi-FI/plg_system_j2commerce.sys.ini</language>
         <language tag="tr-TR">tr-TR/plg_system_j2commerce.ini</language>
         <language tag="tr-TR">tr-TR/plg_system_j2commerce.sys.ini</language>
+        <language tag="fa-IR">fa-IR/plg_system_j2commerce.ini</language>
+        <language tag="fa-IR">fa-IR/plg_system_j2commerce.sys.ini</language>
+        <language tag="pt-BR">pt-BR/plg_system_j2commerce.ini</language>
+        <language tag="pt-BR">pt-BR/plg_system_j2commerce.sys.ini</language>
     </languages>
 
     <config>

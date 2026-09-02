@@ -57,5 +57,7 @@
 		<language tag="tr-TR">language/tr-TR/plg_webservices_j2commerce.sys.ini</language>
 		<language tag="zh-TW">language/zh-TW/plg_webservices_j2commerce.ini</language>
 		<language tag="zh-TW">language/zh-TW/plg_webservices_j2commerce.sys.ini</language>
+		<language tag="pt-BR">language/pt-BR/plg_webservices_j2commerce.ini</language>
+		<language tag="pt-BR">language/pt-BR/plg_webservices_j2commerce.sys.ini</language>
 	</languages>
 </extension>

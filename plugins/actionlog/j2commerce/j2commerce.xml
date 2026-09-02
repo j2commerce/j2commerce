@@ -55,6 +55,8 @@
         <language tag="tr-TR">tr-TR/plg_actionlog_j2commerce.sys.ini</language>
         <language tag="zh-TW">zh-TW/plg_actionlog_j2commerce.ini</language>
         <language tag="zh-TW">zh-TW/plg_actionlog_j2commerce.sys.ini</language>
+        <language tag="pt-BR">pt-BR/plg_actionlog_j2commerce.ini</language>
+        <language tag="pt-BR">pt-BR/plg_actionlog_j2commerce.sys.ini</language>
     </languages>
     <config>
         <fields name="params">

@@ -62,6 +62,8 @@
         <language tag="fi-FI">fi-FI/lib_j2commerce.sys.ini</language>
         <language tag="tr-TR">tr-TR/lib_j2commerce.ini</language>
         <language tag="tr-TR">tr-TR/lib_j2commerce.sys.ini</language>
+        <language tag="pt-BR">pt-BR/lib_j2commerce.ini</language>
+        <language tag="pt-BR">pt-BR/lib_j2commerce.sys.ini</language>
     </languages>
     <media folder="media" destination="lib_j2commerce">
         <folder>js</folder>

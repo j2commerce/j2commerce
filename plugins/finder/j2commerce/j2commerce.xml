@@ -57,6 +57,8 @@
         <language tag="fi-FI">language/fi-FI/plg_finder_j2commerce.sys.ini</language>
         <language tag="tr-TR">language/tr-TR/plg_finder_j2commerce.ini</language>
         <language tag="tr-TR">language/tr-TR/plg_finder_j2commerce.sys.ini</language>
+        <language tag="pt-BR">language/pt-BR/plg_finder_j2commerce.ini</language>
+        <language tag="pt-BR">language/pt-BR/plg_finder_j2commerce.sys.ini</language>
     </languages>
     <config>
         <fields name="params">

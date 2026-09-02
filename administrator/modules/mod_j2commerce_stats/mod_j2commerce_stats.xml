@@ -59,6 +59,8 @@
         <language tag="fi-FI">fi-FI/mod_j2commerce_stats.sys.ini</language>
         <language tag="tr-TR">tr-TR/mod_j2commerce_stats.ini</language>
         <language tag="tr-TR">tr-TR/mod_j2commerce_stats.sys.ini</language>
+        <language tag="pt-BR">pt-BR/mod_j2commerce_stats.ini</language>
+        <language tag="pt-BR">pt-BR/mod_j2commerce_stats.sys.ini</language>
     </languages>
 
     <config>

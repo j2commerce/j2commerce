@@ -61,6 +61,8 @@
         <language tag="tr-TR">language/tr-TR/plg_user_j2commerce.sys.ini</language>
         <language tag="zh-TW">language/zh-TW/plg_user_j2commerce.ini</language>
         <language tag="zh-TW">language/zh-TW/plg_user_j2commerce.sys.ini</language>
+        <language tag="pt-BR">language/pt-BR/plg_user_j2commerce.ini</language>
+        <language tag="pt-BR">language/pt-BR/plg_user_j2commerce.sys.ini</language>
     </languages>
 
     <config>

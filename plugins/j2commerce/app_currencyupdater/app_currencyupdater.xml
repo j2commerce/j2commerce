@@ -65,6 +65,8 @@
         <language tag="tr-TR">tr-TR/plg_j2commerce_app_currencyupdater.sys.ini</language>
         <language tag="zh-TW">zh-TW/plg_j2commerce_app_currencyupdater.ini</language>
         <language tag="zh-TW">zh-TW/plg_j2commerce_app_currencyupdater.sys.ini</language>
+        <language tag="pt-BR">pt-BR/plg_j2commerce_app_currencyupdater.ini</language>
+        <language tag="pt-BR">pt-BR/plg_j2commerce_app_currencyupdater.sys.ini</language>
     </languages>
 
     <config>

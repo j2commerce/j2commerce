@@ -58,6 +58,8 @@
         <language tag="tr-TR">tr-TR/mod_j2commerce_currency.sys.ini</language>
         <language tag="zh-TW">zh-TW/mod_j2commerce_currency.ini</language>
         <language tag="zh-TW">zh-TW/mod_j2commerce_currency.sys.ini</language>
+        <language tag="pt-BR">pt-BR/mod_j2commerce_currency.ini</language>
+        <language tag="pt-BR">pt-BR/mod_j2commerce_currency.sys.ini</language>
     </languages>
     <config>
         <fields name="params">

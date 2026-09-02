@@ -59,6 +59,8 @@
         <language tag="tr-TR">tr-TR/mod_j2commerce_orders.sys.ini</language>
         <language tag="zh-TW">zh-TW/mod_j2commerce_orders.ini</language>
         <language tag="zh-TW">zh-TW/mod_j2commerce_orders.sys.ini</language>
+        <language tag="pt-BR">pt-BR/mod_j2commerce_orders.ini</language>
+        <language tag="pt-BR">pt-BR/mod_j2commerce_orders.sys.ini</language>
     </languages>
 
     <config>

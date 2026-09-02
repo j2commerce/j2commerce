@@ -57,5 +57,7 @@
 		<language tag="fi-FI">language/fi-FI/plg_console_j2commerce.sys.ini</language>
 		<language tag="tr-TR">language/tr-TR/plg_console_j2commerce.ini</language>
 		<language tag="tr-TR">language/tr-TR/plg_console_j2commerce.sys.ini</language>
+		<language tag="pt-BR">language/pt-BR/plg_console_j2commerce.ini</language>
+		<language tag="pt-BR">language/pt-BR/plg_console_j2commerce.sys.ini</language>
 	</languages>
 </extension>

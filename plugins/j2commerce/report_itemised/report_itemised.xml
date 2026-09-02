@@ -61,6 +61,8 @@
         <language tag="tr-TR">tr-TR/plg_j2commerce_report_itemised.sys.ini</language>
         <language tag="zh-TW">zh-TW/plg_j2commerce_report_itemised.ini</language>
         <language tag="zh-TW">zh-TW/plg_j2commerce_report_itemised.sys.ini</language>
+        <language tag="pt-BR">pt-BR/plg_j2commerce_report_itemised.ini</language>
+        <language tag="pt-BR">pt-BR/plg_j2commerce_report_itemised.sys.ini</language>
     </languages>
 
     <media folder="media" destination="plg_j2commerce_report_itemised">
