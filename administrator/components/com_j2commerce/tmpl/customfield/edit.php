@@ -190,10 +190,37 @@ document.addEventListener('DOMContentLoaded', function() {
         return translations[key] ?? key;
     }
 
-    function esc(str) {
-        const div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    function createEl(tag, attrs, children) {
+        const node = document.createElement(tag);
+
+        Object.keys(attrs || {}).forEach(function(name) {
+            const value = attrs[name];
+            if (value === null || value === undefined || value === false) {
+                return;
+            }
+            node.setAttribute(name, value === true ? '' : value);
+        });
+
+        (children || []).forEach(function(child) {
+            node.appendChild(typeof child === 'string' ? document.createTextNode(child) : child);
+        });
+
+        return node;
+    }
+
+    function labelNode(text, isRequired) {
+        const node = createEl('label', { class: 'form-label' }, [text]);
+
+        if (isRequired) {
+            node.appendChild(document.createTextNode(' '));
+            node.appendChild(createEl('span', { class: 'text-danger' }, ['*']));
+        }
+
+        return node;
+    }
+
+    function noteNode(text) {
+        return createEl('p', { class: 'text-body-secondary small fst-italic mb-0' }, [text]);
     }
 
     function getSubformOptions() {
@@ -226,132 +253,136 @@ document.addEventListener('DOMContentLoaded', function() {
         const zoneDefaultText = (function() {
             const sel = zoneType === 'zone' ? zoneSelect : countrySelect;
             if (sel && sel.selectedIndex >= 0 && sel.value) {
-                return esc(sel.options[sel.selectedIndex].text);
+                return sel.options[sel.selectedIndex].text;
             }
             return '';
         })();
 
-        const label = esc(t(fieldName) || fieldName);
-        const placeholderText = esc(t(placeholder) || placeholder);
-        const requiredMark = isRequired ? ' <span class="text-danger">*</span>' : '';
-        const autocompleteAttr = autocomplete ? ' autocomplete="' + esc(autocomplete) + '"' : '';
-        const placeholderAttr = placeholderText ? ' placeholder="' + placeholderText + '"' : '';
-        const requiredAttr = isRequired ? ' required' : '';
-        const defaultValue = esc(fieldDefault);
+        const label = t(fieldName) || fieldName;
+        const placeholderText = t(placeholder) || placeholder;
 
-        let html = '';
+        // CustomFieldHelper::getMaxLength() applies the ceiling to these three types only.
+        const maxLength = ['text', 'textarea', 'email'].includes(fieldType)
+            ? Math.max(0, parseInt(form.querySelector('#jform_field_max_length')?.value || '0', 10) || 0)
+            : 0;
+
+        const inputAttrs = {
+            class: 'form-control',
+            disabled: true,
+            placeholder: placeholderText || null,
+            autocomplete: autocomplete || null,
+            maxlength: maxLength > 0 ? String(maxLength) : null
+        };
+
+        const nodes = [];
 
         switch (fieldType) {
             case 'text':
-                html = '<label class="form-label">' + label + requiredMark + '</label>'
-                     + '<input type="text" class="form-control" disabled value="' + defaultValue + '"'
-                     + placeholderAttr + autocompleteAttr + '>';
-                break;
-
             case 'email':
-                html = '<label class="form-label">' + label + requiredMark + '</label>'
-                     + '<input type="email" class="form-control" disabled value="' + defaultValue + '"'
-                     + placeholderAttr + autocompleteAttr + '>';
+                nodes.push(labelNode(label, isRequired));
+                nodes.push(createEl('input', Object.assign({}, inputAttrs, { type: fieldType, value: fieldDefault })));
                 break;
 
             case 'textarea':
-                html = '<label class="form-label">' + label + requiredMark + '</label>'
-                     + '<textarea class="form-control" rows="3" disabled'
-                     + placeholderAttr + autocompleteAttr + '>' + defaultValue + '</textarea>';
+                nodes.push(labelNode(label, isRequired));
+                nodes.push(createEl('textarea', Object.assign({}, inputAttrs, { rows: '3' }), [fieldDefault]));
                 break;
 
             case 'date':
-                html = '<label class="form-label">' + label + requiredMark + '</label>'
-                     + '<input type="date" class="form-control" disabled value="' + defaultValue + '"'
-                     + placeholderAttr + '>';
-                break;
-
             case 'time':
-                html = '<label class="form-label">' + label + requiredMark + '</label>'
-                     + '<input type="time" class="form-control" disabled value="' + defaultValue + '"'
-                     + placeholderAttr + '>';
+            case 'datetime': {
+                nodes.push(labelNode(label, isRequired));
+                nodes.push(createEl('input', {
+                    type: fieldType === 'datetime' ? 'datetime-local' : fieldType,
+                    class: 'form-control',
+                    disabled: true,
+                    value: fieldDefault,
+                    placeholder: placeholderText || null
+                }));
                 break;
-
-            case 'datetime':
-                html = '<label class="form-label">' + label + requiredMark + '</label>'
-                     + '<input type="datetime-local" class="form-control" disabled value="' + defaultValue + '"'
-                     + placeholderAttr + '>';
-                break;
+            }
 
             case 'singledropdown': {
-                const opts = getSubformOptions();
-                html = '<label class="form-label">' + label + requiredMark + '</label>'
-                     + '<select class="form-select" disabled>'
-                     + '<option value=""><?php echo $this->escape(Text::_('COM_J2COMMERCE_SELECT_OPTION')); ?></option>';
-                opts.forEach(function(o) {
-                    html += '<option value="' + esc(o.value) + '">' + esc(o.name) + '</option>';
+                const select = createEl('select', { class: 'form-select', disabled: true }, [
+                    createEl('option', { value: '' }, [<?php echo json_encode(Text::_('COM_J2COMMERCE_SELECT_OPTION'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE); ?>])
+                ]);
+                getSubformOptions().forEach(function(o) {
+                    select.appendChild(createEl('option', { value: o.value }, [o.name]));
                 });
-                html += '</select>';
+                nodes.push(labelNode(label, isRequired));
+                nodes.push(select);
                 break;
             }
 
-            case 'radio': {
-                const opts = getSubformOptions();
-                html = '<label class="form-label">' + label + requiredMark + '</label>';
-                opts.forEach(function(o, i) {
-                    html += '<div class="form-check">'
-                         + '<input class="form-check-input" type="radio" disabled name="preview_radio" id="preview_radio_' + i + '" value="' + esc(o.value) + '">'
-                         + '<label class="form-check-label" for="preview_radio_' + i + '">' + esc(o.name) + '</label>'
-                         + '</div>';
-                });
-                if (!opts.length) html += '<p class="text-body-secondary small fst-italic mb-0"><?php echo $this->escape(Text::_('COM_J2COMMERCE_FIELD_PREVIEW_ADD_OPTIONS')); ?></p>';
-                break;
-            }
-
+            case 'radio':
             case 'checkbox': {
                 const opts = getSubformOptions();
-                html = '<label class="form-label">' + label + requiredMark + '</label>';
+                nodes.push(labelNode(label, isRequired));
                 opts.forEach(function(o, i) {
-                    html += '<div class="form-check">'
-                         + '<input class="form-check-input" type="checkbox" disabled id="preview_check_' + i + '" value="' + esc(o.value) + '">'
-                         + '<label class="form-check-label" for="preview_check_' + i + '">' + esc(o.name) + '</label>'
-                         + '</div>';
+                    const id = 'preview_' + fieldType + '_' + i;
+                    nodes.push(createEl('div', { class: 'form-check' }, [
+                        createEl('input', {
+                            class: 'form-check-input',
+                            type: fieldType,
+                            disabled: true,
+                            name: fieldType === 'radio' ? 'preview_radio' : null,
+                            id: id,
+                            value: o.value
+                        }),
+                        createEl('label', { class: 'form-check-label', for: id }, [o.name])
+                    ]));
                 });
-                if (!opts.length) html += '<p class="text-body-secondary small fst-italic mb-0"><?php echo $this->escape(Text::_('COM_J2COMMERCE_FIELD_PREVIEW_ADD_OPTIONS')); ?></p>';
+                if (!opts.length) {
+                    nodes.push(noteNode(<?php echo json_encode(Text::_('COM_J2COMMERCE_FIELD_PREVIEW_ADD_OPTIONS'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE); ?>));
+                }
                 break;
             }
 
             case 'zone': {
                 const zonePlaceholder = zoneType === 'zone'
-                    ? '<?php echo $this->escape(Text::_('COM_J2COMMERCE_SELECT_ZONE')); ?>'
-                    : '<?php echo $this->escape(Text::_('COM_J2COMMERCE_SELECT_COUNTRY')); ?>';
-                html = '<label class="form-label">' + label + requiredMark + '</label>'
-                     + '<select class="form-select pe-none" tabindex="-1" aria-disabled="true">';
+                    ? <?php echo json_encode(Text::_('COM_J2COMMERCE_SELECT_ZONE'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE); ?>
+                    : <?php echo json_encode(Text::_('COM_J2COMMERCE_SELECT_COUNTRY'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE); ?>;
+                const select = createEl('select', { class: 'form-select pe-none', tabindex: '-1', 'aria-disabled': 'true' });
+
                 if (zoneDefaultText) {
-                    html += '<option value="" disabled>' + zonePlaceholder + '</option>'
-                         + '<option selected>' + zoneDefaultText + '</option>';
+                    select.appendChild(createEl('option', { value: '', disabled: true }, [zonePlaceholder]));
+                    select.appendChild(createEl('option', { selected: true }, [zoneDefaultText]));
                 } else {
-                    html += '<option selected>' + zonePlaceholder + '</option>';
+                    select.appendChild(createEl('option', { selected: true }, [zonePlaceholder]));
                 }
-                html += '</select>';
+
+                nodes.push(labelNode(label, isRequired));
+                nodes.push(select);
                 break;
             }
 
             case 'wysiwyg':
-                html = '<label class="form-label">' + label + requiredMark + '</label>'
-                     + '<textarea class="form-control" rows="4" disabled' + placeholderAttr + '>' + defaultValue + '</textarea>'
-                     + '<p class="text-body-secondary small fst-italic mb-0"><?php echo $this->escape(Text::_('COM_J2COMMERCE_FIELD_PREVIEW_WYSIWYG')); ?></p>';
+                nodes.push(labelNode(label, isRequired));
+                nodes.push(createEl('textarea', {
+                    class: 'form-control',
+                    rows: '4',
+                    disabled: true,
+                    placeholder: placeholderText || null
+                }, [fieldDefault]));
+                nodes.push(noteNode(<?php echo json_encode(Text::_('COM_J2COMMERCE_FIELD_PREVIEW_WYSIWYG'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE); ?>));
                 break;
 
             case 'customtext':
-                html = '<div class="form-text">' + label + '</div>';
+                nodes.push(createEl('div', { class: 'form-text' }, [label]));
                 break;
 
             default:
-                html = '<label class="form-label">' + label + requiredMark + '</label>'
-                     + '<input type="text" class="form-control" disabled value="' + defaultValue + '"'
-                     + placeholderAttr + autocompleteAttr + '>';
+                nodes.push(labelNode(label, isRequired));
+                nodes.push(createEl('input', Object.assign({}, inputAttrs, { type: 'text', value: fieldDefault })));
         }
 
         if (fieldWidth) {
-            html += '<div class="mt-2"><span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-secondary'); ?>">' + esc(fieldWidth) + '</span></div>';
+            nodes.push(createEl('div', { class: 'mt-2' }, [
+                createEl('span', { class: <?php echo json_encode(J2htmlHelper::badgeClass('badge text-bg-secondary'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE); ?> }, [fieldWidth])
+            ]));
         }
-        preview.innerHTML = html;
+
+        preview.replaceChildren(...nodes);
     }
 
     // Show/hide the Countries tab based on field_type
@@ -372,7 +403,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Listen to changes on all relevant form fields
     ['jform_field_name', 'jform_field_type', 'jform_field_placeholder',
      'jform_field_autocomplete', 'jform_field_default', 'jform_field_zonetype',
-     'jform_field_default_country', 'jform_field_default_zone', 'jform_field_width'].forEach(function(id) {
+     'jform_field_default_country', 'jform_field_default_zone', 'jform_field_width',
+     'jform_field_strip_special_chars', 'jform_field_strip_chars',
+     'jform_field_max_length'].forEach(function(id) {
         const el = document.getElementById(id);
         if (el) el.addEventListener('input', updatePreview);
         if (el) el.addEventListener('change', updatePreview);

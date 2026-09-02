@@ -351,9 +351,32 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
     private function saveAddress(array $data, int $userId): bool
     {
         try {
-            $db         = $this->getDatabase();
-            $addressId  = (int) ($data['j2commerce_address_id'] ?? 0);
-            $isUpdate   = false;
+            $app       = $this->getApplication();
+            $db        = $this->getDatabase();
+            $addressId = (int) ($data['j2commerce_address_id'] ?? 0);
+            $isUpdate  = false;
+
+            $fields = CustomFieldHelper::getFieldsByArea('register', 'address');
+            $errors = CustomFieldHelper::validateFields($fields, $data);
+
+            // Never require email here -- Joomla handles that on the registration form
+            unset($errors['email']);
+
+            if ((int) $this->params->get('disable_name', 0)) {
+                unset($errors['first_name'], $errors['last_name']);
+            }
+
+            if ($errors) {
+                foreach ($errors as $message) {
+                    $app->enqueueMessage($message, 'warning');
+                }
+
+                return false;
+            }
+
+            // Same pair the checkout and My Profile writers use, so a row created
+            // here carries the strip and length rules the field set declares.
+            $values = CustomFieldHelper::collectAddressData($fields, $data) + $data;
 
             // If editing an existing address, verify ownership
             if ($addressId > 0) {
@@ -381,18 +404,18 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             $address             = new \stdClass();
             $address->user_id    = $userId;
             $address->email      = $user->email;
-            $address->first_name = $data['first_name'] ?? '';
-            $address->last_name  = $data['last_name'] ?? '';
-            $address->address_1  = $data['address_1'] ?? '';
-            $address->address_2  = $data['address_2'] ?? '';
-            $address->city       = $data['city'] ?? '';
-            $address->zip        = $data['zip'] ?? '';
-            $address->zone_id    = $data['zone_id'] ?? '';
-            $address->country_id = $data['country_id'] ?? '';
-            $address->phone_1    = $data['phone_1'] ?? '';
-            $address->phone_2    = $data['phone_2'] ?? '';
-            $address->company    = $data['company'] ?? '';
-            $address->tax_number = $data['tax_number'] ?? '';
+            $address->first_name = $values['first_name'] ?? '';
+            $address->last_name  = $values['last_name'] ?? '';
+            $address->address_1  = $values['address_1'] ?? '';
+            $address->address_2  = $values['address_2'] ?? '';
+            $address->city       = $values['city'] ?? '';
+            $address->zip        = $values['zip'] ?? '';
+            $address->zone_id    = $values['zone_id'] ?? '';
+            $address->country_id = $values['country_id'] ?? '';
+            $address->phone_1    = $values['phone_1'] ?? '';
+            $address->phone_2    = $values['phone_2'] ?? '';
+            $address->company    = $values['company'] ?? '';
+            $address->tax_number = $values['tax_number'] ?? '';
             $address->type       = 'billing';
 
             if ($isUpdate) {
@@ -403,7 +426,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             }
 
             // Clear session data
-            $this->getApplication()->getSession()->clear('j2commerce.userregister');
+            $app->getSession()->clear('j2commerce.userregister');
 
             return true;
         } catch (\Throwable $e) {
