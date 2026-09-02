@@ -49,20 +49,33 @@ final class ProductVisibilityHelper
      *
      * Users who may edit content skip the state and publish-window conditions so
      * unpublished products stay previewable, but never the view-access levels.
+     *
+     * $allowUnpublishedPreview is that skip, made explicit. It defaults to true because
+     * previewing draft work is the whole point on a RENDER surface. A caller that is not
+     * rendering the catalogue — one that emails product details out, hands them to a third
+     * party, or otherwise acts on the product rather than showing it — should pass false:
+     * there, a single core.edit or core.edit.state grant would otherwise drop five predicates
+     * at once, and "may preview a draft" is not the same permission as "may have it sent".
      */
-    public static function isViewable(int $productId): bool
+    public static function isViewable(int $productId, bool $allowUnpublishedPreview = true): bool
     {
         if ($productId <= 0) {
             return false;
         }
 
-        if (isset(self::$cache[$productId])) {
-            return self::$cache[$productId];
-        }
-
         $user     = Factory::getApplication()->getIdentity();
         $groups   = $user ? $user->getAuthorisedViewLevels() : [1];
-        $isEditor = self::isEditor();
+        $isEditor = $allowUnpublishedPreview && self::isEditor();
+
+        // Keyed on identity, not just the product: the answer below embeds both the authorised
+        // view levels and the editor outcome, so a request that resolves more than one identity
+        // (console, scheduled task, webservices) would otherwise serve the first caller's answer
+        // to every later one. ProductsModel and ProducttagsModel already key their caches this way.
+        $cacheKey = $productId . '|' . (int) $isEditor . '|' . implode(',', $groups);
+
+        if (isset(self::$cache[$cacheKey])) {
+            return self::$cache[$cacheKey];
+        }
 
         $db    = Factory::getContainer()->get(DatabaseInterface::class);
         $query = $db->getQuery(true)
@@ -96,6 +109,6 @@ final class ProductVisibilityHelper
                 ->bind(':publishDown', $nowDate);
         }
 
-        return self::$cache[$productId] = (bool) $db->setQuery($query, 0, 1)->loadResult();
+        return self::$cache[$cacheKey] = (bool) $db->setQuery($query, 0, 1)->loadResult();
     }
 }
