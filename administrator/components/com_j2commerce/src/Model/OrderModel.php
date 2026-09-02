@@ -93,8 +93,8 @@ class OrderModel extends AdminModel
 
         $db = $this->getDatabase();
 
-        // parent::delete() is where canDelete() runs, so cascading over the raw keys would destroy
-        // the children of an order the caller is not allowed to delete — and that order survives.
+        // Narrowed to what the caller may actually delete, so the count the confirmation quotes
+        // matches the orders that would go.
         $orderIds = [];
 
         foreach ($this->deletableKeys($pks) as $pk) {
@@ -122,6 +122,30 @@ class OrderModel extends AdminModel
 
             return false;
         }
+
+        // The parent row goes first. AdminModel::delete() stops at the first key that fails to
+        // load or canDelete(), and the load-failure branch reports success as it stops, so a stale
+        // key ahead of a live one would otherwise leave a stripped order standing and say it went.
+        // Cascading only what is verifiably gone also means a failure here leaves parentless
+        // children rather than a stripped survivor, which is the recoverable direction: a survivor
+        // has had its upload files unlinked already. Health checks cover the orderitems,
+        // orderhistories, orderitemattributes and uploads residue; the remaining order children
+        // have no check yet.
+        $result = parent::delete($pks);
+
+        if ($orderIds !== []) {
+            $survivors = array_map('intval', (array) $db->setQuery(
+                $db->getQuery(true)
+                    ->select($db->quoteName('j2commerce_order_id'))
+                    ->from($db->quoteName('#__j2commerce_orders'))
+                    ->whereIn($db->quoteName('j2commerce_order_id'), array_keys($orderIds))
+            )->loadColumn());
+
+            $orderIds = array_diff_key($orderIds, array_flip($survivors));
+        }
+
+        // Re-counted against the orders that actually went, so the audit line below is exact.
+        $transactionCount = self::countTransactions($db, array_keys($orderIds));
 
         foreach ($orderIds as $orderPk => $orderId) {
             // Delete orderitemattributes - get orderitem IDs first to avoid subquery binding issue
@@ -193,8 +217,7 @@ class OrderModel extends AdminModel
             );
         }
 
-        // Delete the main order rows
-        return parent::delete($pks);
+        return $result;
     }
 
     /**
