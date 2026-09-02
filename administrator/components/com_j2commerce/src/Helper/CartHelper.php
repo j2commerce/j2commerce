@@ -1113,6 +1113,168 @@ class CartHelper
     }
 
     /**
+     * Read the raw cart-id cookie value for a cart type.
+     *
+     * @param   string  $cartType  Cart type.
+     *
+     * @return  string
+     *
+     * @since   6.6.2
+     */
+    private function getRawCartCookie(string $cartType = 'cart'): string
+    {
+        return (string) Factory::getApplication()->getInput()->cookie
+            ->getString($this->getCartCookieName($cartType), '');
+    }
+
+    /**
+     * Load a guest cart row by ID and type. Pure read — makes no write and sets no cookie.
+     *
+     * @param   int     $cartId    Cart ID.
+     * @param   string  $cartType  Cart type.
+     *
+     * @return  object|null  Cart object or null.
+     *
+     * @since   6.6.2
+     */
+    private function findGuestCartById(int $cartId, string $cartType = 'cart'): ?object
+    {
+        $db    = self::getDatabase();
+        $query = $db->getQuery(true)
+            ->select('*')
+            ->from($db->quoteName('#__j2commerce_carts'))
+            ->where($db->quoteName('j2commerce_cart_id') . ' = :cartId')
+            ->where($db->quoteName('cart_type') . ' = :cartType')
+            ->where($db->quoteName('user_id') . ' = 0')
+            ->bind(':cartId', $cartId, ParameterType::INTEGER)
+            ->bind(':cartType', $cartType);
+
+        $db->setQuery($query);
+
+        return $db->loadObject() ?: null;
+    }
+
+    /**
+     * Resolve the cart id belonging to the current request, without establishing one.
+     *
+     * Read-only counterpart to getCart(): it applies the same resolution order (user cart,
+     * then session cart, then the signed cookie) but writes no row, emits no cookie and
+     * creates no cart. Use it wherever the caller only needs to know which basket to look
+     * at; getCart() remains the call for paths that intend to establish a basket.
+     *
+     * @param   string  $cartType  Cart type.
+     *
+     * @return  int  Cart ID, or 0 when the request has no basket.
+     *
+     * @since   6.6.2
+     */
+    public function getCurrentCartId(string $cartType = 'cart'): int
+    {
+        $cartType = $cartType !== '' ? $cartType : 'cart';
+
+        try {
+            $app     = Factory::getApplication();
+            $user    = $app->getIdentity();
+            $session = $app->getSession();
+        } catch (\Throwable) {
+            // Admin, CLI and console contexts have no shopper basket
+            return 0;
+        }
+
+        $sessionId = $session ? (string) $session->getId() : '';
+
+        if ($user && $user->id > 0) {
+            $cart = $this->loadCartByUserId((int) $user->id, $cartType);
+
+            if (!$cart && $sessionId !== '') {
+                $cart = $this->loadCartBySession($sessionId, $cartType);
+            }
+
+            return (int) ($cart->j2commerce_cart_id ?? 0);
+        }
+
+        if ($sessionId !== '') {
+            $cart = $this->loadCartBySession($sessionId, $cartType, true);
+
+            if ($cart) {
+                return (int) $cart->j2commerce_cart_id;
+            }
+        }
+
+        $rawCookie    = $this->getRawCartCookie($cartType);
+        $cookieCartId = $rawCookie !== '' ? $this->verifySignedCartId($rawCookie) : 0;
+
+        return $cookieCartId > 0 && $this->findGuestCartById($cookieCartId, $cartType)
+            ? $cookieCartId
+            : 0;
+    }
+
+    /**
+     * Whether a cart id belongs to the current request.
+     *
+     * True when the cart is the logged-in user's, carries this request's session id, or is
+     * the guest cart named by this request's signed cookie. Read-only.
+     *
+     * @param   int     $cartId    Cart ID to test.
+     * @param   string  $cartType  Cart type.
+     *
+     * @return  bool
+     *
+     * @since   6.6.2
+     */
+    public function ownsCart(int $cartId, string $cartType = 'cart'): bool
+    {
+        if ($cartId < 1) {
+            return false;
+        }
+
+        $cartType = $cartType !== '' ? $cartType : 'cart';
+
+        try {
+            $app     = Factory::getApplication();
+            $user    = $app->getIdentity();
+            $session = $app->getSession();
+        } catch (\Throwable) {
+            return false;
+        }
+
+        $db    = self::getDatabase();
+        $query = $db->getQuery(true)
+            ->select($db->quoteName(['user_id', 'session_id']))
+            ->from($db->quoteName('#__j2commerce_carts'))
+            ->where($db->quoteName('j2commerce_cart_id') . ' = :cartId')
+            ->where($db->quoteName('cart_type') . ' = :cartType')
+            ->bind(':cartId', $cartId, ParameterType::INTEGER)
+            ->bind(':cartType', $cartType);
+
+        $db->setQuery($query);
+        $cart = $db->loadObject();
+
+        if (!$cart) {
+            return false;
+        }
+
+        $userId    = $user ? (int) $user->id : 0;
+        $sessionId = $session ? (string) $session->getId() : '';
+
+        if ($userId > 0 && (int) $cart->user_id === $userId) {
+            return true;
+        }
+
+        if ($sessionId !== '' && (string) $cart->session_id === $sessionId) {
+            return true;
+        }
+
+        if ((int) $cart->user_id !== 0) {
+            return false;
+        }
+
+        $rawCookie = $this->getRawCartCookie($cartType);
+
+        return $rawCookie !== '' && $this->verifySignedCartId($rawCookie) === $cartId;
+    }
+
+    /**
      * Load cart by cookie-stored cart ID.
      *
      * This is a fallback mechanism for guest users when their session changes.
@@ -1127,10 +1289,7 @@ class CartHelper
      */
     private function loadCartByCookie(string $cartType = 'cart', string $sessionId = ''): ?object
     {
-        $app = Factory::getApplication();
-
-        // Get cart ID from signed cookie (cart-type-scoped name)
-        $rawCookie    = (string) $app->getInput()->cookie->getString($this->getCartCookieName($cartType), '');
+        $rawCookie    = $this->getRawCartCookie($cartType);
         $cookieCartId = $rawCookie !== '' ? $this->verifySignedCartId($rawCookie) : 0;
 
         if ($cookieCartId <= 0) {
@@ -1142,20 +1301,8 @@ class CartHelper
             return null;
         }
 
-        $db = self::getDatabase();
-
-        // Load cart by ID and verify it's a guest cart of the correct type
-        $query = $db->getQuery(true)
-            ->select('*')
-            ->from($db->quoteName('#__j2commerce_carts'))
-            ->where($db->quoteName('j2commerce_cart_id') . ' = :cartId')
-            ->where($db->quoteName('cart_type') . ' = :cartType')
-            ->where($db->quoteName('user_id') . ' = 0')
-            ->bind(':cartId', $cookieCartId, ParameterType::INTEGER)
-            ->bind(':cartType', $cartType);
-
-        $db->setQuery($query);
-        $cart = $db->loadObject();
+        $db   = self::getDatabase();
+        $cart = $this->findGuestCartById($cookieCartId, $cartType);
 
         if (!$cart) {
             // Cookie points to invalid cart, clear it

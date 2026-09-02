@@ -2647,6 +2647,11 @@ class ProductHelper
      * build time by CartOrder::validate_order_stock(), so other baskets never need to hold
      * stock here.
      *
+     * This is a read: it resolves the basket through CartHelper::getCurrentCartId(), which
+     * writes no row and emits no cookie, so the method is safe in a loop, a list view or a
+     * reporting surface. CartHelper::getCart() stays the call for paths that intend to
+     * establish a basket.
+     *
      * @param   int  $variantId  The variant ID.
      * @param   int  $cartId     Optional cart ID. When 0, resolves the current shopper's own
      *                           basket on the site app; elsewhere (admin/CLI/webhook) there is
@@ -2667,13 +2672,11 @@ class ProductHelper
                 return 0;
             }
 
-            $cart = CartHelper::getInstance()->getCart(0, false);
+            $cartId = CartHelper::getInstance()->getCurrentCartId();
 
-            if (!$cart || empty($cart->j2commerce_cart_id)) {
+            if ($cartId < 1) {
                 return 0;
             }
-
-            $cartId = (int) $cart->j2commerce_cart_id;
         }
 
         return self::getShopperCartQuantity($variantId, $cartId);
@@ -2686,8 +2689,14 @@ class ProductHelper
      * getTotalCartQuantity() this counts a single cart and applies no expiry cutoff — an
      * own basket that has aged past the cart expiry term is still the shopper's own.
      *
+     * The cart id is confirmed against the current request before it is counted, so the
+     * "only ever your own basket" rule is held here rather than by each caller. A cart id
+     * that belongs to another shopper — or any id at all on admin, CLI and console, where
+     * there is no shopper basket — counts as nothing and returns 0.
+     *
      * @param   int  $variantId  The variant ID.
-     * @param   int  $cartId     The shopper's cart ID.
+     * @param   int  $cartId     The shopper's cart ID. Must resolve to the current request's
+     *                           own basket; any other id returns 0.
      *
      * @return  int  Quantity of the variant in that cart.
      *
@@ -2696,6 +2705,10 @@ class ProductHelper
     public static function getShopperCartQuantity(int $variantId, int $cartId): int
     {
         if ($variantId < 1 || $cartId < 1) {
+            return 0;
+        }
+
+        if (!CartHelper::getInstance()->ownsCart($cartId)) {
             return 0;
         }
 
