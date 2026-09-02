@@ -25,15 +25,16 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model\Trait;
 trait CascadingDeleteTrait
 {
     /**
-     * @param   array  $pks  Primary keys as submitted.
+     * @param   array|int|string  $pks  Primary keys as submitted. The API routes hand over a single
+     *                                  key rather than an array, the way AdminModel::delete() accepts.
      *
      * @return  int[]  Only the keys that load and pass the same canDelete() test AdminModel applies.
      */
-    protected function deletableKeys(array $pks): array
+    protected function deletableKeys(array|int|string $pks): array
     {
         $allowed = [];
 
-        foreach ($pks as $pk) {
+        foreach ((array) $pks as $pk) {
             $pk    = (int) $pk;
             $table = $this->getTable();
 

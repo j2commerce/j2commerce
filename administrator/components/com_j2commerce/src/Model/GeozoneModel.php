@@ -418,7 +418,9 @@ class GeozoneModel extends AdminModel
         $db = $this->getDatabase();
 
         // Children before the parent, so a mid-cascade failure leaves a re-deletable geozone.
-        foreach ($this->deletableKeys($pks) as $pk) {
+        $deletable = $this->deletableKeys($pks);
+
+        foreach ($deletable as $pk) {
             // Two-step: the tax rules hang off the tax rates, not off the geozone, so cascading
             // the rates without them would manufacture a fresh generation of orphans one level down.
             $taxrateIds = array_map('intval', (array) $db->setQuery(
@@ -445,6 +447,14 @@ class GeozoneModel extends AdminModel
                         ->bind(':geozone_id', $pk, ParameterType::INTEGER)
                 )->execute();
             }
+        }
+
+        // Hand the parent only the keys that were cascaded. AdminModel::delete() stops at the
+        // first key that fails to load, and reports success as it stops, so a stale key submitted
+        // ahead of a live one would leave that live record stripped of its children but present.
+        // When nothing is deletable the raw keys go through, so the parent still reports why.
+        if ($deletable !== []) {
+            $pks = $deletable;
         }
 
         return parent::delete($pks);

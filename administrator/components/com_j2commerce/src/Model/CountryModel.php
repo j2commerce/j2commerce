@@ -168,7 +168,9 @@ class CountryModel extends AdminModel
     {
         $db = $this->getDatabase();
 
-        foreach ($this->deletableKeys($pks) as $pk) {
+        $deletable = $this->deletableKeys($pks);
+
+        foreach ($deletable as $pk) {
             $zoneIds = array_map('intval', (array) $db->setQuery(
                 $db->getQuery(true)
                     ->select($db->quoteName('j2commerce_zone_id'))
@@ -193,6 +195,14 @@ class CountryModel extends AdminModel
                         ->bind(':countryId', $pk, ParameterType::INTEGER)
                 )->execute();
             }
+        }
+
+        // Hand the parent only the keys that were cascaded. AdminModel::delete() stops at the
+        // first key that fails to load, and reports success as it stops, so a stale key submitted
+        // ahead of a live one would leave that live record stripped of its children but present.
+        // When nothing is deletable the raw keys go through, so the parent still reports why.
+        if ($deletable !== []) {
+            $pks = $deletable;
         }
 
         return parent::delete($pks);
