@@ -61,6 +61,17 @@
     line-height: 1.6;
 }
 
+.j2c-address-customfield {
+    margin-top: 0.75rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--template-bg-dark-10, #dee2e6);
+}
+
+.j2c-address-customfield dt {
+    color: var(--bs-body-color-secondary, var(--bs-secondary-color));
+    font-weight: 500;
+}
+
 /* ============================
    ORDER DETAIL CARDS (payment, shipping)
    ============================ */

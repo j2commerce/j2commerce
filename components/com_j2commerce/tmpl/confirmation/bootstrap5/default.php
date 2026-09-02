@@ -12,6 +12,7 @@ declare(strict_types=1);
 defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHelper;
@@ -32,6 +33,20 @@ $taxes     = $this->orderTaxes;
 $fees      = $this->orderFees;
 $discounts = $this->orderDiscounts;
 $platform  = J2CommerceHelper::platform();
+
+$billingCustomRows = $info ? array_values(array_filter(
+    CustomFieldHelper::describeOrderFields($info->all_billing ?? null, ...CustomFieldHelper::ORDER_AREAS['billing']),
+    static fn (array $row): bool => !$row['core']
+)) : [];
+
+$shippingCustomRows = $info ? array_values(array_filter(
+    CustomFieldHelper::describeOrderFields($info->all_shipping ?? null, ...CustomFieldHelper::ORDER_AREAS['shipping']),
+    static fn (array $row): bool => !$row['core']
+)) : [];
+
+$paymentCustomRows = $info
+    ? CustomFieldHelper::describeOrderFields($info->all_payment ?? null, ...CustomFieldHelper::ORDER_AREAS['payment'])
+    : [];
 
 $currencyCode  = $order->currency_code ?? '';
 $currencyValue = (float) ($order->currency_value ?? 1);
@@ -289,6 +304,16 @@ if ($info) {
                                                     <br><?php echo $this->escape($info->shipping_country_name); ?>
                                                 <?php endif; ?>
                                             </address>
+                                            <?php echo LayoutHelper::render('order.customfieldrows', [
+                                                'rows'          => $shippingCustomRows,
+                                                'title'         => 'COM_J2COMMERCE_ORDER_CUSTOM_FIELDS',
+                                                'title_tag'     => 'h4',
+                                                'title_class'   => 'j2c-info-label text-uppercase text-body-dark fw-semibold mb-2 mt-3',
+                                                'wrapper_class' => 'mb-0 small',
+                                                'list_class'    => 'row mb-0 small',
+                                                'dt_class'      => 'col-sm-5 fw-semibold',
+                                                'dd_class'      => 'col-sm-7 mb-1',
+                                            ], JPATH_ROOT . '/components/com_j2commerce/layouts'); ?>
                                         </div>
                                     <?php endif; ?>
 
@@ -316,16 +341,37 @@ if ($info) {
                                                 <br><?php echo $this->escape($info->billing_country_name); ?>
                                             <?php endif; ?>
                                         </address>
+                                        <?php echo LayoutHelper::render('order.customfieldrows', [
+                                            'rows'          => $billingCustomRows,
+                                            'title'         => 'COM_J2COMMERCE_ORDER_CUSTOM_FIELDS',
+                                            'title_tag'     => 'h4',
+                                            'title_class'   => 'j2c-info-label text-uppercase text-body-dark fw-semibold mb-2 mt-3',
+                                            'wrapper_class' => 'mb-0 small',
+                                            'list_class'    => 'row mb-0 small',
+                                            'dt_class'      => 'col-sm-5 fw-semibold',
+                                            'dd_class'      => 'col-sm-7 mb-1',
+                                        ], JPATH_ROOT . '/components/com_j2commerce/layouts'); ?>
                                     </div>
+
+                                    <?php // Payment fields ?>
+                                    <?php if ($paymentCustomRows !== []) : ?>
+                                        <div class="col-sm-6">
+                                            <?php echo LayoutHelper::render('order.customfieldrows', [
+                                                'rows'          => $paymentCustomRows,
+                                                'title'         => 'COM_J2COMMERCE_ORDER_PAYMENT_FIELDS',
+                                                'title_tag'     => 'h4',
+                                                'title_class'   => 'j2c-info-label text-uppercase text-body-dark fw-semibold mb-2',
+                                                'wrapper_class' => 'mb-0 small',
+                                                'list_class'    => 'row mb-0 small',
+                                                'dt_class'      => 'col-sm-5 fw-semibold',
+                                                'dd_class'      => 'col-sm-7 mb-1',
+                                            ], JPATH_ROOT . '/components/com_j2commerce/layouts'); ?>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>
                     <?php endif; ?>
-
-                    <?php // Checkout custom fields captured on this order ?>
-                    <?php echo LayoutHelper::render('order.customfields', [
-                        'info' => $info,
-                    ], JPATH_ROOT . '/components/com_j2commerce/layouts'); ?>
 
                     <?php // Customer note card ?>
                     <?php if ((int) J2CommerceHelper::config()->get('show_customer_note', 1) === 1 && trim((string) ($order->customer_note ?? '')) !== '') : ?>

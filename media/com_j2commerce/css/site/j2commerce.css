@@ -897,6 +897,12 @@
     letter-spacing: 0.03em;
 }
 
+.j2c-address-customfield {
+    margin-top: 0.75rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
 .j2commerce-confirmation .j2c-item-placeholder {
     width: 64px;
     height: 64px;
