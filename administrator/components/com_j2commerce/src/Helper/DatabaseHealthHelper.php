@@ -98,7 +98,14 @@ final class DatabaseHealthHelper
         return Factory::getContainer()->get(DatabaseInterface::class);
     }
 
-    /** @return array[] Check definitions, merged with anything a plugin adds via onJ2CommerceGetHealthChecks. */
+    /**
+     * @return array[] Check definitions, merged with anything a plugin adds via onJ2CommerceGetHealthChecks.
+     *
+     * A listener receives the whole array and may return a different one, so it can replace or drop
+     * a core check as well as add its own — including swapping the callable behind a core check's
+     * fix. That is the same reach any plugin already has, but a listener should add rows and leave
+     * the core ones as it found them.
+     */
     private static function getCheckDefinitions(): array
     {
         $checks = self::checks();

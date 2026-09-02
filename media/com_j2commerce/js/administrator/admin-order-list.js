@@ -44,15 +44,20 @@ const j2cCountTransactions = async (task) => {
 };
 
 const j2cReplayClick = (btn, withTransactions) => {
-    if (withTransactions) {
-        const form = document.getElementById('adminForm');
-        if (form && !form.querySelector('input[name="confirm_transactions"]')) {
-            const flag = document.createElement('input');
-            flag.type = 'hidden';
-            flag.name = 'confirm_transactions';
-            flag.value = '1';
-            form.appendChild(flag);
-        }
+    const form = document.getElementById('adminForm');
+
+    // The flag belongs to the submit it was created for. If the submit does not happen - a
+    // validation stop, a listener cancelling it - it must not sit on the form pre-confirming
+    // whatever is deleted next, so it is removed either way before being added back.
+    form?.querySelector('input[name="confirm_transactions"]')?.remove();
+
+    if (withTransactions && form) {
+        const flag = document.createElement('input');
+        flag.type = 'hidden';
+        flag.name = 'confirm_transactions';
+        flag.value = '1';
+        form.appendChild(flag);
+        setTimeout(() => flag.remove(), 0);
     }
 
     btn.dataset.j2cConfirmed = '1';

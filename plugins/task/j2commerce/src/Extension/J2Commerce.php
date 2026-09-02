@@ -14,6 +14,7 @@ namespace J2Commerce\Plugin\Task\J2Commerce\Extension;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderCascadeHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\QueueHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Plugin\CMSPlugin;
@@ -156,15 +157,40 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             return Status::OK;
         }
 
-        $orderIds    = array_column($orders, 'j2commerce_order_id');
-        $orderVarIds = array_column($orders, 'order_id');
-        $count       = \count($orderIds);
+        $orderIds = [];
+
+        foreach ($orders as $order) {
+            $orderIds[(int) $order->j2commerce_order_id] = (string) $order->order_id;
+        }
+
+        // An order in this state may already carry a payment attempt. Removing the ledger is a
+        // decision that needs a human, and a scheduled task has nobody to ask — so these are left
+        // alone and named in the log rather than deleted without their transaction records.
+        $withLedger = OrderCascadeHelper::withTransactions($db, array_keys($orderIds));
+
+        if ($withLedger !== []) {
+            $skipped = array_intersect_key($orderIds, array_flip($withLedger));
+            $this->logTask(\sprintf(
+                'Skipping %d order(s) holding payment transaction records: %s',
+                \count($skipped),
+                implode(', ', $skipped)
+            ));
+
+            $orderIds = array_diff_key($orderIds, array_flip($withLedger));
+        }
+
+        if ($orderIds === []) {
+            $this->logTask('Nothing left to delete once orders with payment records were excluded.');
+            return Status::OK;
+        }
+
+        $count = \count($orderIds);
 
         $this->logTask(\sprintf(
             '%s %d abandoned order(s): %s',
             $dryRun ? '[DRY RUN] Would delete' : 'Deleting',
             $count,
-            implode(', ', $orderVarIds)
+            implode(', ', $orderIds)
         ));
 
         if ($dryRun) {
@@ -172,60 +198,28 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             return Status::OK;
         }
 
-        // Build quoted value lists for IN clauses (values from our own trusted query)
-        $quotedOrderVarIds = implode(',', array_map([$db, 'quote'], $orderVarIds));
-        $quotedOrderIds    = implode(',', array_map('intval', $orderIds));
-
-        // Fetch orderitem IDs before transaction so subquery bindings aren't lost
-        $query = $db->createQuery()
-            ->select($db->quoteName('j2commerce_orderitem_id'))
-            ->from($db->quoteName('#__j2commerce_orderitems'))
-            ->where($db->quoteName('order_id') . ' IN (' . $quotedOrderVarIds . ')');
-        $orderitemIds = $db->setQuery($query)->loadColumn();
-
-        $db->transactionStart();
-
         try {
-            // Delete orderitemattributes first (FK: orderitem_id -> orderitems)
-            if (!empty($orderitemIds)) {
-                $quotedItemIds = implode(',', array_map('intval', $orderitemIds));
-                $db->setQuery(
-                    $db->createQuery()
-                        ->delete($db->quoteName('#__j2commerce_orderitemattributes'))
-                        ->where($db->quoteName('orderitem_id') . ' IN (' . $quotedItemIds . ')')
-                )->execute();
-            }
-
-            // Delete from tables linked by order_id (varchar)
-            $orderIdTables = [
-                '#__j2commerce_orderitems',
-                '#__j2commerce_orderinfos',
-                '#__j2commerce_orderhistories',
-                '#__j2commerce_ordershippings',
-                '#__j2commerce_orderdiscounts',
-                '#__j2commerce_orderfees',
-                '#__j2commerce_orderdownloads',
-                '#__j2commerce_ordertaxes',
-            ];
-
-            foreach ($orderIdTables as $table) {
-                $db->setQuery(
-                    $db->createQuery()
-                        ->delete($db->quoteName($table))
-                        ->where($db->quoteName('order_id') . ' IN (' . $quotedOrderVarIds . ')')
-                )->execute();
-            }
-
-            // Delete the orders themselves
+            // Order rows first, then the children of the ones that actually went — the same
+            // ordering OrderModel::delete() uses, and for the same reason. Cascading first would
+            // let a failure part way through leave earlier orders stripped but still listed, with
+            // their uploaded files already unlinked and nothing to rebuild them from. This way a
+            // failure leaves parentless children instead, and every order child the cascade clears
+            // has an orphan check on the database health card that reports and clears them.
             $db->setQuery(
                 $db->createQuery()
                     ->delete($db->quoteName('#__j2commerce_orders'))
-                    ->where($db->quoteName('j2commerce_order_id') . ' IN (' . $quotedOrderIds . ')')
+                    ->whereIn($db->quoteName('j2commerce_order_id'), array_keys($orderIds))
             )->execute();
 
-            $db->transactionCommit();
+            $survivors = array_map('intval', (array) $db->setQuery(
+                $db->createQuery()
+                    ->select($db->quoteName('j2commerce_order_id'))
+                    ->from($db->quoteName('#__j2commerce_orders'))
+                    ->whereIn($db->quoteName('j2commerce_order_id'), array_keys($orderIds))
+            )->loadColumn());
+
+            OrderCascadeHelper::purgeChildren($db, array_diff_key($orderIds, array_flip($survivors)), false);
         } catch (\Throwable $e) {
-            $db->transactionRollback();
             $this->logTask(\sprintf('ERROR: %s', $e->getMessage()));
             return Status::KNOCKOUT;
         }

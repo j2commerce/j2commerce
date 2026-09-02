@@ -515,34 +515,20 @@ final class SampleDataHelper
 
             if (!empty($sampleUserIds)) {
                 $orderQuery = $db->getQuery(true)
-                    ->select('order_id')
+                    ->select($db->quoteName(['j2commerce_order_id', 'order_id']))
                     ->from($db->quoteName('#__j2commerce_orders'))
                     ->whereIn($db->quoteName('user_id'), $sampleUserIds);
                 $db->setQuery($orderQuery);
-                $orderNos = array_column($db->loadObjectList(), 'order_id');
 
-                if (!empty($orderNos)) {
-                    $db->setQuery(
-                        $db->getQuery(true)
-                            ->delete($db->quoteName('#__j2commerce_orderitems'))
-                            ->whereIn($db->quoteName('order_id'), $orderNos, ParameterType::STRING)
-                    );
-                    $db->execute();
+                $orderIds = [];
 
-                    $db->setQuery(
-                        $db->getQuery(true)
-                            ->delete($db->quoteName('#__j2commerce_orderinfos'))
-                            ->whereIn($db->quoteName('order_id'), $orderNos, ParameterType::STRING)
-                    );
-                    $db->execute();
+                foreach ($db->loadObjectList() ?: [] as $order) {
+                    $orderIds[(int) $order->j2commerce_order_id] = (string) $order->order_id;
+                }
 
-                    $db->setQuery(
-                        $db->getQuery(true)
-                            ->delete($db->quoteName('#__j2commerce_orderhistories'))
-                            ->whereIn($db->quoteName('order_id'), $orderNos, ParameterType::STRING)
-                    );
-                    $db->execute();
-
+                if ($orderIds !== []) {
+                    // Order rows first, then the children of the ones that went, the same way
+                    // OrderModel::delete() and the scheduled cleanup do it.
                     $db->setQuery(
                         $db->getQuery(true)
                             ->delete($db->quoteName('#__j2commerce_orders'))
@@ -550,6 +536,16 @@ final class SampleDataHelper
                     );
                     $db->execute();
                     $counts['orders'] = $db->getAffectedRows();
+
+                    $survivors = array_map('intval', (array) $db->setQuery(
+                        $db->getQuery(true)
+                            ->select($db->quoteName('j2commerce_order_id'))
+                            ->from($db->quoteName('#__j2commerce_orders'))
+                            ->whereIn($db->quoteName('j2commerce_order_id'), array_keys($orderIds))
+                    )->loadColumn());
+
+                    // Sample orders are synthetic, so the ledger goes with them.
+                    OrderCascadeHelper::purgeChildren($db, array_diff_key($orderIds, array_flip($survivors)), true);
                 }
 
                 $db->setQuery(

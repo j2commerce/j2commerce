@@ -22,6 +22,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\EmailHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\InventoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderCascadeHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderItemAttributeHelper;
@@ -128,9 +129,8 @@ class OrderModel extends AdminModel
         // key ahead of a live one would otherwise leave a stripped order standing and say it went.
         // Cascading only what is verifiably gone also means a failure here leaves parentless
         // children rather than a stripped survivor, which is the recoverable direction: a survivor
-        // has had its upload files unlinked already. Health checks cover the orderitems,
-        // orderhistories, orderitemattributes and uploads residue; the remaining order children
-        // have no check yet.
+        // has had its upload files unlinked already. Every order child the cascade clears has an
+        // orphan check on the database health card, so that residue is reportable and clearable.
         $result = parent::delete($pks);
 
         if ($orderIds !== []) {
@@ -147,60 +147,9 @@ class OrderModel extends AdminModel
         // Re-counted against the orders that actually went, so the audit line below is exact.
         $transactionCount = self::countTransactions($db, array_keys($orderIds));
 
-        foreach ($orderIds as $orderPk => $orderId) {
-            // Delete orderitemattributes - get orderitem IDs first to avoid subquery binding issue
-            $orderitemIdsQuery = $db->getQuery(true)
-                ->select($db->quoteName('j2commerce_orderitem_id'))
-                ->from($db->quoteName('#__j2commerce_orderitems'))
-                ->where($db->quoteName('order_id') . ' = :oid')
-                ->bind(':oid', $orderId);
-            $db->setQuery($orderitemIdsQuery);
-            $orderitemIds = $db->loadColumn();
-
-            if (!empty($orderitemIds)) {
-                $db->setQuery(
-                    $db->getQuery(true)
-                        ->delete($db->quoteName('#__j2commerce_orderitemattributes'))
-                        ->whereIn($db->quoteName('orderitem_id'), $orderitemIds, ParameterType::INTEGER)
-                );
-                $db->execute();
-            }
-
-            // The upload rows carry files on disk, so they go through the helper rather than a
-            // plain DELETE. #__j2commerce_voucheradjustments is deliberately NOT here: it is the
-            // voucher's own balance ledger and belongs to voucher delete.
-            OrderUploadHelper::purgeForOrder($db, $orderId);
-
-            // Delete from related tables that use order_id (varchar) FK
-            $relatedTables = [
-                '#__j2commerce_orderitems',
-                '#__j2commerce_orderinfos',
-                '#__j2commerce_orderhistories',
-                '#__j2commerce_ordershippings',
-                '#__j2commerce_orderdiscounts',
-                '#__j2commerce_orderfees',
-                '#__j2commerce_ordertaxes',
-                '#__j2commerce_orderdownloads',
-            ];
-
-            foreach ($relatedTables as $table) {
-                $delQuery = $db->getQuery(true)
-                    ->delete($db->quoteName($table))
-                    ->where($db->quoteName('order_id') . ' = :orderId')
-                    ->bind(':orderId', $orderId);
-                $db->setQuery($delQuery);
-                $db->execute();
-            }
-
-            // The payment ledger is the one order child keyed by the integer primary key rather
-            // than the varchar order number — the same key OrderTransactionHelper writes it with.
-            $db->setQuery(
-                $db->getQuery(true)
-                    ->delete($db->quoteName('#__j2commerce_ordertransactions'))
-                    ->where($db->quoteName('order_id') . ' = :orderPk')
-                    ->bind(':orderPk', $orderPk, ParameterType::INTEGER)
-            )->execute();
-        }
+        // #__j2commerce_voucheradjustments is deliberately not part of this: it is the voucher's
+        // own balance ledger and belongs to voucher delete.
+        OrderCascadeHelper::purgeChildren($db, $orderIds, true);
 
         if ($transactionCount > 0) {
             // WARNING rather than INFO: these are financial records and the delete cannot be
@@ -228,18 +177,7 @@ class OrderModel extends AdminModel
      */
     public static function countTransactions(DatabaseInterface $db, array $orderPks): int
     {
-        $orderPks = array_values(array_filter(array_map('intval', $orderPks), static fn (int $pk): bool => $pk > 0));
-
-        if ($orderPks === []) {
-            return 0;
-        }
-
-        $query = $db->getQuery(true)
-            ->select('COUNT(*)')
-            ->from($db->quoteName('#__j2commerce_ordertransactions'))
-            ->whereIn($db->quoteName('order_id'), $orderPks);
-
-        return (int) $db->setQuery($query)->loadResult();
+        return OrderCascadeHelper::countTransactions($db, $orderPks);
     }
 
     protected function populateState(): void
