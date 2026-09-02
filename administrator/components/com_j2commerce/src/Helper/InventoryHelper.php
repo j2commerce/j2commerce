@@ -562,42 +562,31 @@ class InventoryHelper
     // =========================================================================
 
     /**
-     * Get total quantity of a variant currently in a cart.
+     * Get the quantity of a variant already held in the relevant basket.
+     *
+     * ProductHelper::getTotalCartQuantity() owns this rule; this method only forwards to it
+     * so the two cannot answer the same question differently.
      *
      * @param   int  $variantId  The variant ID.
-     * @param   int  $cartId     Optional specific cart ID (0 = all carts).
+     * @param   int  $cartId     Optional cart ID. When 0, resolves the current shopper's own
+     *                           basket on the site app; elsewhere there is no shopper basket.
      *
-     * @return  int  Total quantity in cart(s).
+     * @return  int  Quantity of the variant in that basket.
      *
      * @since   6.0.0
+     *
+     * @deprecated  6.6.2  Use ProductHelper::getTotalCartQuantity() instead.
      */
     public static function getCartQuantity(int $variantId, int $cartId = 0): int
     {
-        if ($variantId < 1) {
-            return 0;
-        }
-
-        $db    = self::getDatabase();
-        $query = $db->getQuery(true)
-            ->select('SUM(' . $db->quoteName('product_qty') . ') AS total_qty')
-            ->from($db->quoteName('#__j2commerce_cartitems'))
-            ->where($db->quoteName('variant_id') . ' = :variantId')
-            ->bind(':variantId', $variantId, ParameterType::INTEGER);
-
-        if ($cartId > 0) {
-            $query->where($db->quoteName('cart_id') . ' = :cartId')
-                ->bind(':cartId', $cartId, ParameterType::INTEGER);
-        }
-
-        $db->setQuery($query);
-
-        return (int) ($db->loadResult() ?? 0);
+        return ProductHelper::getTotalCartQuantity($variantId, $cartId);
     }
 
     /**
      * Check if adding quantity would exceed stock.
      *
-     * Considers current cart quantity + new quantity against available stock.
+     * Weighs the caller's own basket, not every live basket — see
+     * ProductHelper::getTotalCartQuantity() for why other baskets hold no stock.
      *
      * @param   object  $variant   The variant object.
      * @param   int     $addQty    Quantity to add.
@@ -606,6 +595,8 @@ class InventoryHelper
      * @return  bool  True if addition is allowed.
      *
      * @since   6.0.0
+     *
+     * @deprecated  6.6.2  Gate on ProductHelper::getTotalCartQuantity() instead.
      */
     public static function canAddToCart(object $variant, int $addQty, int $cartId = 0): bool
     {
