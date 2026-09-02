@@ -329,7 +329,43 @@ final class DatabaseHealthHelper
                 'count'          => [self::class, 'countMigratorResidue'],
                 'fix'            => null,
             ],
+            ...self::orphanOrderChildChecks(),
         ];
+    }
+
+    /**
+     * Order children that key on the varchar order number and share one orphan predicate. The
+     * table and column names come from here and nowhere else — never from a request.
+     */
+    private const ORPHAN_ORDER_CHILD_TABLES = [
+        'orderinfos'     => 'j2commerce_orderinfo_id',
+        'ordershippings' => 'j2commerce_ordershipping_id',
+        'orderdiscounts' => 'j2commerce_orderdiscount_id',
+        'orderfees'      => 'j2commerce_orderfee_id',
+        'ordertaxes'     => 'j2commerce_ordertax_id',
+        'orderdownloads' => 'j2commerce_orderdownload_id',
+    ];
+
+    private static function orphanOrderChildChecks(): array
+    {
+        $checks = [];
+
+        foreach (self::ORPHAN_ORDER_CHILD_TABLES as $name => $pk) {
+            $suffix = 'ORPHAN_' . strtoupper($name);
+
+            $checks[] = [
+                'id'                    => 'orphan_' . $name,
+                'labelKey'              => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_' . $suffix . '_LABEL',
+                'descriptionKey'        => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_' . $suffix . '_DESC',
+                'repairable'            => true,
+                'destructive'           => true,
+                'destructiveWarningKey' => 'COM_J2COMMERCE_DATABASE_HEALTH_ORPHAN_ORDER_CHILD_DESTRUCTIVE_WARNING',
+                'count'                 => static fn (DatabaseInterface $db): int => self::countOrphanOrderChild($db, $name, $pk),
+                'fix'                   => static fn (DatabaseInterface $db): int => self::fixOrphanOrderChild($db, $name, $pk),
+            ];
+        }
+
+        return $checks;
     }
 
     // =========================================================================
@@ -1208,5 +1244,38 @@ final class DatabaseHealthHelper
             ->where($db->quoteName('v.j2commerce_voucher_id') . ' IS NULL');
 
         return (int) $db->setQuery($query)->loadResult();
+    }
+
+    // =========================================================================
+    // Order children keyed on the varchar order number. One predicate, one pair of runners,
+    // driven by ORPHAN_ORDER_CHILD_TABLES — orderitems, orderhistories and ordertransactions
+    // keep their own checks because their predicates differ.
+    // =========================================================================
+
+    private static function orphanOrderChildQuery(DatabaseInterface $db, string $table): QueryInterface
+    {
+        return $db->getQuery(true)
+            ->from($db->quoteName('#__j2commerce_' . $table, 'c'))
+            ->leftJoin($db->quoteName('#__j2commerce_orders', 'o') . ' ON ' . $db->quoteName('o.order_id') . ' = ' . $db->quoteName('c.order_id'))
+            ->where($db->quoteName('o.j2commerce_order_id') . ' IS NULL');
+    }
+
+    public static function countOrphanOrderChild(DatabaseInterface $db, string $table, string $pk): int
+    {
+        return self::countOrphans(
+            $db,
+            static fn (DatabaseInterface $d): QueryInterface => self::orphanOrderChildQuery($d, $table),
+            'c.' . $pk
+        );
+    }
+
+    public static function fixOrphanOrderChild(DatabaseInterface $db, string $table, string $pk): int
+    {
+        return self::purgeOrphans(
+            $db,
+            static fn (DatabaseInterface $d): QueryInterface => self::orphanOrderChildQuery($d, $table),
+            'c.' . $pk,
+            '#__j2commerce_' . $table
+        );
     }
 }
