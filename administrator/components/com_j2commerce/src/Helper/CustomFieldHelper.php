@@ -1037,6 +1037,7 @@ class CustomFieldHelper
                 $rows[$namekey] = [
                     'label' => Text::_((string) ($field->field_name ?: $namekey)),
                     'value' => $value,
+                    'core'  => (bool) ($field->field_core ?? false),
                 ];
             }
         }

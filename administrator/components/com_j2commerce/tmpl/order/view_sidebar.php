@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Language\Text;
@@ -25,6 +26,23 @@ $customerName = '';
 if ($orderInfo) {
     $customerName = trim(($orderInfo->billing_first_name ?? '') . ' ' . ($orderInfo->billing_last_name ?? ''));
 }
+
+$billingAll  = $orderInfo ? CustomFieldHelper::decodeOrderSnapshot($orderInfo->all_billing ?? null) : [];
+$shippingAll = $orderInfo ? CustomFieldHelper::decodeOrderSnapshot($orderInfo->all_shipping ?? null) : [];
+
+$billingCustomRows = $orderInfo ? array_values(array_filter(
+    CustomFieldHelper::describeOrderFields($orderInfo->all_billing ?? null, ...CustomFieldHelper::ORDER_AREAS['billing']),
+    static fn (array $row): bool => !$row['core']
+)) : [];
+
+$shippingCustomRows = $orderInfo ? array_values(array_filter(
+    CustomFieldHelper::describeOrderFields($orderInfo->all_shipping ?? null, ...CustomFieldHelper::ORDER_AREAS['shipping']),
+    static fn (array $row): bool => !$row['core']
+)) : [];
+
+$paymentRows = $orderInfo
+    ? CustomFieldHelper::describeOrderFields($orderInfo->all_payment ?? null, ...CustomFieldHelper::ORDER_AREAS['payment'])
+    : [];
 
 ?>
 <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeAdminOrderButtons', array($item))->getArgument('html', ''); ?>
@@ -128,11 +146,24 @@ if ($orderInfo) {
                 <?php endif; ?>
                 <?php echo $this->escape($orderInfo->billing_city ?? ''); ?>, <?php echo $this->escape($orderInfo->billing_zone_name ?? ''); ?> <?php echo $this->escape($orderInfo->billing_zip ?? ''); ?><br>
                 <?php echo $this->escape($orderInfo->billing_country_name ?? ''); ?>
+                <?php if (!empty($orderInfo->billing_tax_number)) : ?>
+                    <br><span class="text-body-secondary"><?php echo Text::_('J2COMMERCE_ADDRESS_TAX_NUMBER'); ?>:</span> <?php echo $this->escape($orderInfo->billing_tax_number); ?>
+                <?php endif; ?>
                 <?php if (!empty($orderInfo->billing_phone_1)) : ?>
-                    <br><span class="icon-phone me-1 fa-fw" aria-hidden="true" title="<?php echo Text::_('COM_J2COMMERCE_PHONE'); ?>"></span><?php echo $this->escape($orderInfo->billing_phone_1); ?>
+                    <br><span class="icon-phone me-1 fa-fw" aria-hidden="true"></span><span class="visually-hidden"><?php echo Text::_('J2COMMERCE_ADDRESS_PHONE'); ?>: </span><?php echo $this->escape($orderInfo->billing_phone_1); ?>
+                <?php endif; ?>
+                <?php if (!empty($orderInfo->billing_phone_2)) : ?>
+                    <br><span class="icon-phone me-1 fa-fw" aria-hidden="true"></span><span class="visually-hidden"><?php echo Text::_('J2COMMERCE_ADDRESS_MOBILE'); ?>: </span><?php echo $this->escape($orderInfo->billing_phone_2); ?>
+                <?php endif; ?>
+                <?php if (!empty($billingAll['email'])) : ?>
+                    <br><span class="icon-envelope me-1 fa-fw" aria-hidden="true"></span><span class="visually-hidden"><?php echo Text::_('J2COMMERCE_EMAIL'); ?>: </span><?php echo $this->escape((string) $billingAll['email']); ?>
                 <?php endif; ?>
                 <?php echo J2CommerceHelper::plugin()->eventWithHtml('AdminOrderBillingAddress', array($item))->getArgument('html', ''); ?>
             </address>
+            <?php echo LayoutHelper::render('order.customfieldrows', [
+                'rows'      => $billingCustomRows,
+                'title_tag' => 'h3',
+            ], JPATH_ROOT . '/components/com_j2commerce/layouts'); ?>
         </div>
         <?php else : ?>
             <div class="alert alert-info mb-0"><?php echo Text::_('COM_J2COMMERCE_NO_BILLING_ADDRESS'); ?></div>
@@ -175,11 +206,24 @@ if ($orderInfo) {
                         <?php echo $this->escape($shippingLocality); ?><br>
                     <?php endif; ?>
                     <?php echo $this->escape($orderInfo->shipping_country_name ?? ''); ?>
+                    <?php if (!empty($orderInfo->shipping_tax_number)) : ?>
+                        <br><span class="text-body-secondary"><?php echo Text::_('J2COMMERCE_ADDRESS_TAX_NUMBER'); ?>:</span> <?php echo $this->escape($orderInfo->shipping_tax_number); ?>
+                    <?php endif; ?>
                     <?php if (!empty($orderInfo->shipping_phone_1)) : ?>
-                        <br><span class="icon-phone me-1 fa-fw" aria-hidden="true" title="<?php echo Text::_('COM_J2COMMERCE_PHONE'); ?>"></span><?php echo $this->escape($orderInfo->shipping_phone_1); ?>
+                        <br><span class="icon-phone me-1 fa-fw" aria-hidden="true"></span><span class="visually-hidden"><?php echo Text::_('J2COMMERCE_ADDRESS_PHONE'); ?>: </span><?php echo $this->escape($orderInfo->shipping_phone_1); ?>
+                    <?php endif; ?>
+                    <?php if (!empty($orderInfo->shipping_phone_2)) : ?>
+                        <br><span class="icon-phone me-1 fa-fw" aria-hidden="true"></span><span class="visually-hidden"><?php echo Text::_('J2COMMERCE_ADDRESS_MOBILE'); ?>: </span><?php echo $this->escape($orderInfo->shipping_phone_2); ?>
+                    <?php endif; ?>
+                    <?php if (!empty($shippingAll['email'])) : ?>
+                        <br><span class="icon-envelope me-1 fa-fw" aria-hidden="true"></span><span class="visually-hidden"><?php echo Text::_('J2COMMERCE_EMAIL'); ?>: </span><?php echo $this->escape((string) $shippingAll['email']); ?>
                     <?php endif; ?>
                 </address>
                 <?php echo J2CommerceHelper::plugin()->eventWithHtml('AdminOrderShippingAddress', array($item))->getArgument('html', ''); ?>
+                <?php echo LayoutHelper::render('order.customfieldrows', [
+                    'rows'      => $shippingCustomRows,
+                    'title_tag' => 'h3',
+                ], JPATH_ROOT . '/components/com_j2commerce/layouts'); ?>
             </div>
             <?php else : ?>
                 <div class="alert alert-info mb-0"><?php echo Text::_('COM_J2COMMERCE_NO_SHIPPING_ADDRESS'); ?></div>
@@ -188,11 +232,31 @@ if ($orderInfo) {
     </div>
     <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterAdminOrderBillingAddress', array($item))->getArgument('html', ''); ?>
 <?php endif; ?>
-<?php // Checkout custom fields captured on this order ?>
-<?php echo LayoutHelper::render('order.customfields', [
-    'info'          => $orderInfo,
-    'card_class'    => 'card mb-3',
-    'heading_tag'   => 'h2',
-    'heading_class' => 'h6 mb-2',
-], JPATH_ROOT . '/components/com_j2commerce/layouts'); ?>
+<?php // === Payment Fields === ?>
+<?php if ($orderInfo && $paymentRows !== []) : ?>
+    <div class="payment-fields-card card mb-3">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="fa-solid fa-credit-card j2c-address-icon text-primary me-2" aria-hidden="true"></span>
+                    <div>
+                        <strong><?php echo Text::_('COM_J2COMMERCE_ORDER_PAYMENT_FIELDS'); ?></strong>
+                    </div>
+                </div>
+                <button class="btn btn-sm btn-primary" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#paymentFieldsCollapse"
+                        aria-expanded="false" aria-controls="paymentFieldsCollapse">
+                    <?php echo Text::_('COM_J2COMMERCE_VIEW_MORE'); ?>
+                </button>
+            </div>
+            <div class="collapse mt-2" id="paymentFieldsCollapse">
+                <?php echo LayoutHelper::render('order.customfieldrows', [
+                    'rows'      => $paymentRows,
+                    'title'     => '',
+                    'title_tag' => 'h3',
+                ], JPATH_ROOT . '/components/com_j2commerce/layouts'); ?>
+            </div>
+        </div>
+    </div>
+<?php endif; ?>
 <?php echo J2CommerceHelper::plugin()->eventWithHtml('AdminOrderAfterGeneralInformation', array($item))->getArgument('html', ''); ?>

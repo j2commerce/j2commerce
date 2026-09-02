@@ -12,6 +12,7 @@ declare(strict_types=1);
 defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHelper;
@@ -36,6 +37,20 @@ $taxes     = $this->orderTaxes;
 $fees      = $this->orderFees;
 $discounts = $this->orderDiscounts;
 $platform  = J2CommerceHelper::platform();
+
+$billingCustomRows = $info ? array_values(array_filter(
+    CustomFieldHelper::describeOrderFields($info->all_billing ?? null, ...CustomFieldHelper::ORDER_AREAS['billing']),
+    static fn (array $row): bool => !$row['core']
+)) : [];
+
+$shippingCustomRows = $info ? array_values(array_filter(
+    CustomFieldHelper::describeOrderFields($info->all_shipping ?? null, ...CustomFieldHelper::ORDER_AREAS['shipping']),
+    static fn (array $row): bool => !$row['core']
+)) : [];
+
+$paymentCustomRows = $info
+    ? CustomFieldHelper::describeOrderFields($info->all_payment ?? null, ...CustomFieldHelper::ORDER_AREAS['payment'])
+    : [];
 
 $currencyCode  = $order->currency_code ?? '';
 $currencyValue = (float) ($order->currency_value ?? 1);
@@ -293,6 +308,16 @@ if ($info) {
                                                     <br><?php echo $this->escape($info->shipping_country_name); ?>
                                                 <?php endif; ?>
                                             </address>
+                                            <?php echo LayoutHelper::render('order.customfieldrows', [
+                                                'rows'          => $shippingCustomRows,
+                                                'title'         => 'COM_J2COMMERCE_ORDER_CUSTOM_FIELDS',
+                                                'title_tag'     => 'h4',
+                                                'title_class'   => 'j2c-info-label uk-text-uppercase uk-text-bold uk-text-small uk-margin-small-bottom uk-margin-top',
+                                                'wrapper_class' => 'uk-margin-remove',
+                                                'list_class'    => 'uk-grid uk-grid-small uk-margin-remove uk-text-small',
+                                                'dt_class'      => 'uk-width-1-2 uk-text-bold',
+                                                'dd_class'      => 'uk-width-1-2 uk-margin-remove',
+                                            ], JPATH_ROOT . '/components/com_j2commerce/layouts'); ?>
                                         </div>
                                     <?php endif; ?>
 
@@ -320,19 +345,37 @@ if ($info) {
                                                 <br><?php echo $this->escape($info->billing_country_name); ?>
                                             <?php endif; ?>
                                         </address>
+                                        <?php echo LayoutHelper::render('order.customfieldrows', [
+                                            'rows'          => $billingCustomRows,
+                                            'title'         => 'COM_J2COMMERCE_ORDER_CUSTOM_FIELDS',
+                                            'title_tag'     => 'h4',
+                                            'title_class'   => 'j2c-info-label uk-text-uppercase uk-text-bold uk-text-small uk-margin-small-bottom uk-margin-top',
+                                            'wrapper_class' => 'uk-margin-remove',
+                                            'list_class'    => 'uk-grid uk-grid-small uk-margin-remove uk-text-small',
+                                            'dt_class'      => 'uk-width-1-2 uk-text-bold',
+                                            'dd_class'      => 'uk-width-1-2 uk-margin-remove',
+                                        ], JPATH_ROOT . '/components/com_j2commerce/layouts'); ?>
                                     </div>
+
+                                    <?php // Payment fields ?>
+                                    <?php if ($paymentCustomRows !== []) : ?>
+                                        <div class="uk-width-1-2@s">
+                                            <?php echo LayoutHelper::render('order.customfieldrows', [
+                                                'rows'          => $paymentCustomRows,
+                                                'title'         => 'COM_J2COMMERCE_ORDER_PAYMENT_FIELDS',
+                                                'title_tag'     => 'h4',
+                                                'title_class'   => 'j2c-info-label uk-text-uppercase uk-text-bold uk-text-small uk-margin-small-bottom',
+                                                'wrapper_class' => 'uk-margin-remove',
+                                                'list_class'    => 'uk-grid uk-grid-small uk-margin-remove uk-text-small',
+                                                'dt_class'      => 'uk-width-1-2 uk-text-bold',
+                                                'dd_class'      => 'uk-width-1-2 uk-margin-remove',
+                                            ], JPATH_ROOT . '/components/com_j2commerce/layouts'); ?>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>
                     <?php endif; ?>
-
-                    <?php // Checkout custom fields captured on this order ?>
-                    <?php echo LayoutHelper::render('order.customfields', [
-                        'info'          => $info,
-                        'card_class'    => 'uk-card uk-card-default uk-margin-bottom',
-                        'body_class'    => 'uk-card-body',
-                        'heading_class' => 'uk-card-title uk-text-bold',
-                    ], JPATH_ROOT . '/components/com_j2commerce/layouts'); ?>
 
                     <?php // Customer note card ?>
                     <?php if ((int) J2CommerceHelper::config()->get('show_customer_note', 1) === 1 && trim((string) ($order->customer_note ?? '')) !== '') : ?>
