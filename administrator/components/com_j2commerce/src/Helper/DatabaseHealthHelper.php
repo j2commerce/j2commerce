@@ -336,6 +336,15 @@ final class DatabaseHealthHelper
                 'count'          => [self::class, 'countMigratorResidue'],
                 'fix'            => null,
             ],
+            [
+                'id'             => 'entity_encoded_zone_names',
+                'labelKey'       => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ENTITY_ENCODED_ZONE_NAMES_LABEL',
+                'descriptionKey' => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ENTITY_ENCODED_ZONE_NAMES_DESC',
+                'repairable'     => true,
+                'destructive'    => false,
+                'count'          => [self::class, 'countEntityEncodedZoneNames'],
+                'fix'            => [self::class, 'fixEntityEncodedZoneNames'],
+            ],
             ...self::orphanOrderChildChecks(),
         ];
     }
@@ -1284,5 +1293,76 @@ final class DatabaseHealthHelper
             'c.' . $pk,
             '#__j2commerce_' . $table
         );
+    }
+
+    // =========================================================================
+    // Zone names stored as HTML character entities (#2093). The decode happens in PHP rather
+    // than through a REPLACE() chain: the set includes a numeric entity (&#039;) as well as the
+    // named accented ones, and html_entity_decode() leaves an ampersand that does not form an
+    // entity exactly as it found it, so a zone legitimately named with "&" is never touched.
+    // =========================================================================
+
+    /** Candidate rows, cheap enough to read whole: the table is a few thousand rows of seed data. */
+    private static function entityEncodedZoneNames(DatabaseInterface $db): array
+    {
+        $query = $db->getQuery(true)
+            ->select($db->quoteName(['j2commerce_zone_id', 'zone_name']))
+            ->from($db->quoteName('#__j2commerce_zones'))
+            ->where($db->quoteName('zone_name') . ' LIKE ' . $db->quote('%&%'));
+
+        $decoded = [];
+
+        foreach ($db->setQuery($query)->loadObjectList() ?: [] as $row) {
+            $name = (string) $row->zone_name;
+
+            // The same entity table the write path uses — InputFilter::cleanString() decodes with
+            // ENT_QUOTES, which is HTML 4.01. Decoding with a larger table here would turn the
+            // entities that filter deliberately lets through into live markup on the way back in.
+            $plain = html_entity_decode($name, \ENT_QUOTES, 'UTF-8');
+
+            // Rows can reach this table without passing that filter at all — a migrator writes
+            // them with a raw INSERT — so a decode that yields markup is refused outright. Leaving
+            // such a row visibly encoded is the safe outcome.
+            if ($plain !== strip_tags($plain)) {
+                continue;
+            }
+
+            // Only a row the decode actually changes is a row to repair, so the number reported
+            // and the number written are the same number.
+            if ($plain !== $name) {
+                $decoded[(int) $row->j2commerce_zone_id] = $plain;
+            }
+        }
+
+        return $decoded;
+    }
+
+    public static function countEntityEncodedZoneNames(DatabaseInterface $db): int
+    {
+        return \count(self::entityEncodedZoneNames($db));
+    }
+
+    public static function fixEntityEncodedZoneNames(DatabaseInterface $db): int
+    {
+        $processed = 0;
+
+        foreach (self::entityEncodedZoneNames($db) as $zoneId => $name) {
+            if ($processed >= self::BATCH_SIZE * self::MAX_BATCHES_PER_RUN) {
+                break;
+            }
+
+            $db->setQuery(
+                $db->getQuery(true)
+                    ->update($db->quoteName('#__j2commerce_zones'))
+                    ->set($db->quoteName('zone_name') . ' = :name')
+                    ->where($db->quoteName('j2commerce_zone_id') . ' = :zoneId')
+                    ->bind(':name', $name)
+                    ->bind(':zoneId', $zoneId, ParameterType::INTEGER)
+            )->execute();
+
+            $processed++;
+        }
+
+        return $processed;
     }
 }
