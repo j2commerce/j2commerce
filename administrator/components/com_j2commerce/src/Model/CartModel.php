@@ -25,6 +25,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Filter\InputFilter;
 use Joomla\CMS\Helper\MediaHelper;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 use Joomla\CMS\Object\CMSObject;
 use Joomla\CMS\Router\Route;
@@ -166,8 +167,12 @@ class CartModel extends BaseDatabaseModel
                 try {
                     $behavior->onBeforeAddCartItem($this, $product, $json);
                 } catch (\Exception $e) {
-                    $this->setError($e->getMessage());
-                    $errors['error'] = ['general' => $e->getMessage()];
+                    Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+
+                    $message = Text::_('COM_J2COMMERCE_ERROR_OCCURRED');
+                    $this->setError($message);
+                    $errors['error'] = ['general' => $message];
+
                     return $errors;
                 }
             }
@@ -374,7 +379,9 @@ class CartModel extends BaseDatabaseModel
         try {
             J2CommerceHelper::plugin()->event('AfterAddCartItem', [$this, $item]);
         } catch (\Exception $e) {
-            $this->setError($e->getMessage());
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+
+            $this->setError(Text::_('COM_J2COMMERCE_ERROR_OCCURRED'));
         }
     }
 
@@ -498,7 +505,9 @@ class CartModel extends BaseDatabaseModel
                         try {
                             $behavior->onGetCartItems($this, $item);
                         } catch (\Exception $e) {
-                            $this->setError($e->getMessage());
+                            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+
+                            $this->setError(Text::_('COM_J2COMMERCE_ERROR_OCCURRED'));
                         }
                     }
                 }
@@ -690,7 +699,10 @@ class CartModel extends BaseDatabaseModel
                 try {
                     return $behavior->onValidateCart($this, $cartitem, $quantity);
                 } catch (\Exception $e) {
-                    $this->setError($e->getMessage());
+                    Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+
+                    $this->setError(Text::_('COM_J2COMMERCE_ERROR_OCCURRED'));
+
                     return false;
                 }
             }
