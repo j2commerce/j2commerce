@@ -97,15 +97,13 @@ final class ShippingFree extends CMSPlugin implements SubscriberInterface
         }
 
         // Check geozone availability
-        if (!$this->checkGeozones($order, $isEstimate)) {
+        if (!$this->checkGeozones($isEstimate)) {
             return;
         }
 
         // Check free shipping coupon requirement
-        if ((int) $this->params->get('requires_coupon', 0) === 1) {
-            if (!method_exists($order, 'has_free_shipping') || !$order->has_free_shipping()) {
-                return;
-            }
+        if ((int) $this->params->get('requires_coupon', 0) === 1 && !$this->hasFreeShippingCoupon($order)) {
+            return;
         }
 
         // Determine subtotal for threshold checks
@@ -226,9 +224,9 @@ final class ShippingFree extends CMSPlugin implements SubscriberInterface
     }
 
     /**
-     * Check if shipping address matches any configured geozone.
+     * Check if the shipping destination matches any configured geozone.
      */
-    private function checkGeozones(object $order, bool $isEstimate = false): bool
+    private function checkGeozones(bool $isEstimate = false): bool
     {
         $geozones = $this->params->get('geozones', []);
 
@@ -253,29 +251,7 @@ final class ShippingFree extends CMSPlugin implements SubscriberInterface
             return true;
         }
 
-        // Get shipping address from order
-        $address = [];
-
-        if (method_exists($order, 'setAddress')) {
-            $order->setAddress();
-        }
-
-        if (method_exists($order, 'getShippingAddress')) {
-            $address = $order->getShippingAddress();
-        } elseif (method_exists($order, 'getShippingGeoZones')) {
-            // Legacy fallback: check order geozones directly
-            $orderGeoZones = $order->getShippingGeoZones();
-
-            foreach ($orderGeoZones as $orderGeoZone) {
-                $geozoneId = (int) ($orderGeoZone->geozone_id ?? ($orderGeoZone->j2commerce_geozone_id ?? 0));
-
-                if (\in_array($geozoneId, $geozones, true)) {
-                    return true;
-                }
-            }
-
-            return false;
-        }
+        $address = $this->resolveDestination();
 
         // No destination resolved. An estimate may still offer the method so the cart page can
         // show it before an address exists; an order may not, because geozones are configured
@@ -294,6 +270,110 @@ final class ShippingFree extends CMSPlugin implements SubscriberInterface
         }
 
         return false;
+    }
+
+    /**
+     * Resolve the shipping destination from the session, the way every other
+     * shipping plugin does. Mirrors ShippingStandard::getShippingGeozones().
+     *
+     * @return  array{country_id: int, zone_id: int}  Empty when no destination is known.
+     */
+    private function resolveDestination(): array
+    {
+        $app       = Factory::getApplication();
+        $session   = $app->getSession();
+        $addressId = (int) $session->get('shipping_address_id', 0, 'j2commerce');
+        $userId    = (int) ($app->getIdentity()?->id ?? 0);
+        $countryId = 0;
+        $zoneId    = 0;
+
+        // Guest address rows carry user_id = 0, so an owner match is only meaningful for a real account.
+        if ($addressId > 0 && $userId > 0) {
+            $db    = $this->getDatabase();
+            $query = $db->getQuery(true);
+
+            $query->select([$db->quoteName('country_id'), $db->quoteName('zone_id')])
+                ->from($db->quoteName('#__j2commerce_addresses'))
+                ->where($db->quoteName('j2commerce_address_id') . ' = :addrId')
+                ->where($db->quoteName('user_id') . ' = :userId')
+                ->bind(':addrId', $addressId, ParameterType::INTEGER)
+                ->bind(':userId', $userId, ParameterType::INTEGER);
+
+            $db->setQuery($query);
+            $stored = $db->loadObject();
+
+            if ($stored) {
+                $countryId = (int) ($stored->country_id ?? 0);
+                $zoneId    = (int) ($stored->zone_id ?? 0);
+            }
+        } else {
+            // Guest checkout — address data stored in session
+            $guestShipping = $session->get('guest_shipping', [], 'j2commerce');
+
+            if (!empty($guestShipping) && \is_array($guestShipping)) {
+                $countryId = (int) ($guestShipping['country_id'] ?? 0);
+                $zoneId    = (int) ($guestShipping['zone_id'] ?? 0);
+            }
+        }
+
+        // Estimate flow — address stored as flat session keys by estimateAjax()
+        if ($countryId === 0) {
+            $countryId = (int) $session->get('shipping_country_id', 0, 'j2commerce');
+            $zoneId    = (int) $session->get('shipping_zone_id', 0, 'j2commerce');
+        }
+
+        if ($countryId === 0) {
+            return [];
+        }
+
+        return ['country_id' => $countryId, 'zone_id' => $zoneId];
+    }
+
+    /**
+     * Whether a coupon applied to this order grants free shipping.
+     */
+    private function hasFreeShippingCoupon(object $order): bool
+    {
+        // The admin order view passes a lightweight adapter that only exposes the
+        // item and address accessors, so this is a real capability check.
+        if (!method_exists($order, 'getOrderCoupons')) {
+            return false;
+        }
+
+        $codes = [];
+
+        foreach ($order->getOrderCoupons() as $coupon) {
+            if (!empty($coupon->is_expired) || !empty($coupon->is_rejected)) {
+                continue;
+            }
+
+            $code = (string) ($coupon->coupon_code ?? '');
+
+            if ($code !== '') {
+                $codes[] = $code;
+            }
+        }
+
+        if (empty($codes)) {
+            return false;
+        }
+
+        $db      = $this->getDatabase();
+        $query   = $db->getQuery(true);
+        $enabled = 1;
+        $flag    = 1;
+
+        $query->select($db->quoteName('j2commerce_coupon_id'))
+            ->from($db->quoteName('#__j2commerce_coupons'))
+            ->whereIn($db->quoteName('coupon_code'), $codes, ParameterType::STRING)
+            ->where($db->quoteName('free_shipping') . ' = :flag')
+            ->where($db->quoteName('enabled') . ' = :enabled')
+            ->bind(':flag', $flag, ParameterType::INTEGER)
+            ->bind(':enabled', $enabled, ParameterType::INTEGER);
+
+        $db->setQuery($query, 0, 1);
+
+        return !empty($db->loadResult());
     }
 
     /**
@@ -371,9 +451,16 @@ final class ShippingFree extends CMSPlugin implements SubscriberInterface
             $isShipping = $cartitem->shipping ?? false;
 
             if ($isShipping) {
-                $price    = $cartitem->pricing->price ?? ($cartitem->price ?? 0);
-                $quantity = $cartitem->product_qty ?? ($cartitem->quantity ?? 1);
-                $subtotal += (float) $price * (int) $quantity;
+                // product_subtotal is the line total the cart itself computed — it already
+                // carries the option price, which price * qty silently drops.
+                if (isset($cartitem->product_subtotal)) {
+                    $subtotal += (float) $cartitem->product_subtotal;
+                } else {
+                    $price    = $cartitem->pricing->price ?? ($cartitem->price ?? 0);
+                    $quantity = $cartitem->product_qty ?? ($cartitem->quantity ?? 1);
+                    $subtotal += (float) $price * (int) $quantity;
+                }
+
                 $hasShippingProduct = true;
             }
         }
