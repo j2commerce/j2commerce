@@ -21,6 +21,7 @@ use J2Commerce\Component\J2commerce\Administrator\Model\VoucherModel;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\AdminController;
+use Joomla\CMS\Router\Route;
 use Joomla\Database\DatabaseInterface;
 
 /**
@@ -61,6 +62,15 @@ class CartsController extends AdminController
     public function getModel($name = 'Cart', $prefix = 'Administrator', $config = ['ignore_request' => true])
     {
         return parent::getModel($name, $prefix, $config);
+    }
+
+    /** CartModel has no delete(); decline instead of fataling on the inherited task. */
+    public function delete()
+    {
+        $this->checkToken();
+
+        $this->setMessage(Text::_('COM_J2COMMERCE_ERROR_TASK_NOT_SUPPORTED'), 'error');
+        $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=orders', false));
     }
 
     /**
