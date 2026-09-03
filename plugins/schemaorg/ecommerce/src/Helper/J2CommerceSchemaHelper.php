@@ -10,6 +10,7 @@
 
 namespace Joomla\Plugin\Schemaorg\Ecommerce\Helper;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\ProductVisibilityHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
@@ -558,18 +559,7 @@ class J2CommerceSchemaHelper
      */
     public function getImageUrl(string $imagePath): string
     {
-        if (empty($imagePath)) {
-            return '';
-        }
-
-        // If already a full URL, encode spaces and return
-        if (strpos($imagePath, 'http://') === 0 || strpos($imagePath, 'https://') === 0) {
-            return str_replace(' ', '%20', $imagePath);
-        }
-
-        $imagePath = ltrim($imagePath, '/');
-
-        return Uri::root() . str_replace(' ', '%20', $imagePath);
+        return str_replace(' ', '%20', ImageHelper::getImageUrl($imagePath));
     }
 
     /**

@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Site\View\Product;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use J2Commerce\Component\J2commerce\Site\View\CustomSubtemplateTrait;
@@ -21,7 +22,6 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Router\Route;
-use Joomla\CMS\Uri\Uri;
 
 /**
  * HTML Product View class
@@ -400,7 +400,7 @@ class HtmlView extends BaseHtmlView
 
         // Set OG image if product has a main image
         if (!empty($this->item->main_image)) {
-            $imageUrl = Uri::root() . ltrim($this->item->main_image, '/');
+            $imageUrl = ImageHelper::getImageUrl($this->item->main_image);
             $document->setMetaData('og:image', $imageUrl, 'property');
         }
 
@@ -415,7 +415,7 @@ class HtmlView extends BaseHtmlView
         }
 
         if (!empty($this->item->main_image)) {
-            $imageUrl = Uri::root() . ltrim($this->item->main_image, '/');
+            $imageUrl = ImageHelper::getImageUrl($this->item->main_image);
             $document->setMetaData('twitter:image', $imageUrl);
         }
     }

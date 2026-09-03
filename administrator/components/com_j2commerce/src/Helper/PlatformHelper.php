@@ -680,19 +680,7 @@ class PlatformHelper
      */
     public function getImagePath(string $path): string
     {
-        if (empty($path)) {
-            return '';
-        }
-
-        // If it's already a full URL, return as is
-        if (preg_match('#^https?://#i', $path)) {
-            return $path;
-        }
-
-        // Remove leading slash if present
-        $path = ltrim($path, '/');
-
-        return Uri::root() . $path;
+        return ImageHelper::getImageUrl($path);
     }
 
     /**

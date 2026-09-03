@@ -119,6 +119,12 @@ class ImageHelper
         $parsed    = self::parseJoomlaImageUrl($imagePath);
         $cleanPath = $parsed['path'];
 
+        // Absolute URL - return untouched. Checked before isLocalImage() because
+        // FILTER_VALIDATE_URL rejects otherwise-usable URLs containing a raw space.
+        if (preg_match('#^https?://#i', $cleanPath)) {
+            return $cleanPath;
+        }
+
         // Check if this is a local image
         if (self::isLocalImage($cleanPath)) {
             // Local image - ensure it has the site root
@@ -127,8 +133,8 @@ class ImageHelper
                 return $cleanPath;
             }
 
-            // Relative path - prepend site root and clean up leading slashes
-            return Uri::root() . ltrim($cleanPath, '/');
+            // Relative path - collapse redundant separators, then prepend site root
+            return Uri::root() . ltrim(self::normalizePath($cleanPath), '/');
         }
 
         // CDN image - return as-is
