@@ -20,6 +20,7 @@ use J2Commerce\Component\J2commerce\Administrator\Model\CouponModel;
 use J2Commerce\Component\J2commerce\Administrator\Model\VoucherModel;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Controller\AdminController;
 use Joomla\CMS\Router\Route;
 use Joomla\Database\DatabaseInterface;
@@ -200,10 +201,12 @@ class CartsController extends AdminController
                     $json['message'] = Text::_('COM_J2COMMERCE_ITEM_ADDED_SUCCESS');
                 }
             } else {
-                $json['error'] = 'Cart model not available';
+                $json['error'] = Text::_('COM_J2COMMERCE_ERROR_OCCURRED');
             }
         } catch (\Exception $e) {
-            $json['error'] = $e->getMessage();
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+
+            $json['error'] = Text::_('COM_J2COMMERCE_ERROR_OCCURRED');
         }
 
         $this->sendJson($json);
@@ -398,10 +401,12 @@ class CartsController extends AdminController
                     $json['success'] = Text::_('COM_J2COMMERCE_CART_UPDATED_SUCCESSFULLY');
                 }
             } else {
-                $json['error'] = 'Update method not available';
+                $json['error'] = Text::_('COM_J2COMMERCE_ERROR_OCCURRED');
             }
         } catch (\Exception $e) {
-            $json['error'] = $e->getMessage();
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+
+            $json['error'] = Text::_('COM_J2COMMERCE_ERROR_OCCURRED');
         }
 
         $id  = $this->input->getInt('oid', 0);
