@@ -8,5 +8,4 @@ $baseDir = dirname($vendorDir);
 return array(
     'phpseclib3\\' => array($vendorDir . '/phpseclib/phpseclib/phpseclib'),
     'ParagonIE\\ConstantTime\\' => array($vendorDir . '/paragonie/constant_time_encoding/src'),
-    'Amazon\\Pay\\API\\' => array($vendorDir . '/amzn/amazon-pay-api-sdk-php/Amazon/Pay/API'),
 );

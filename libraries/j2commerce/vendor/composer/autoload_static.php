@@ -19,10 +19,6 @@ class ComposerStaticInit7253bb780ff35132c93ae0074d1d0bcd
         array (
             'ParagonIE\\ConstantTime\\' => 23,
         ),
-        'A' => 
-        array (
-            'Amazon\\Pay\\API\\' => 15,
-        ),
     );
 
     public static $prefixDirsPsr4 = array (
@@ -33,10 +29,6 @@ class ComposerStaticInit7253bb780ff35132c93ae0074d1d0bcd
         'ParagonIE\\ConstantTime\\' => 
         array (
             0 => __DIR__ . '/..' . '/paragonie/constant_time_encoding/src',
-        ),
-        'Amazon\\Pay\\API\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/amzn/amazon-pay-api-sdk-php/Amazon/Pay/API',
         ),
     );
 
