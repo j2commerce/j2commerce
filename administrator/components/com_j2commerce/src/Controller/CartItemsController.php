@@ -209,6 +209,8 @@ class CartItemsController extends AdminController
      */
     public function getProductTypeOptions()
     {
+        $this->checkToken();
+
         $model   = $this->getModel('CartItems');
         $options = $model->getProductTypeOptions();
 
