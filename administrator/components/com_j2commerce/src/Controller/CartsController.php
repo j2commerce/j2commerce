@@ -64,13 +64,84 @@ class CartsController extends AdminController
         return parent::getModel($name, $prefix, $config);
     }
 
-    /** CartModel has no delete(); decline instead of fataling on the inherited task. */
+    /**
+     * The inherited AdminController list tasks all call a method on the resolved model.
+     * CartModel is a BaseDatabaseModel, so none of those methods exist and each task ends
+     * in an undefined-method error. The controller extends AdminController to host the
+     * admin order-editing AJAX endpoints, not to manage a carts list — there is no carts
+     * view for any of them to return to. Decline them instead of failing hard.
+     *
+     * Overriding the resolved method rather than the task string covers the aliases
+     * AdminController registers: unpublish, archive, trash and report all resolve to
+     * publish(), and orderup and orderdown to reorder().
+     */
+    private function declineTask(): void
+    {
+        $this->setMessage(Text::_('COM_J2COMMERCE_ERROR_TASK_NOT_SUPPORTED'), 'error');
+        $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=orders', false));
+    }
+
     public function delete()
     {
         $this->checkToken();
 
-        $this->setMessage(Text::_('COM_J2COMMERCE_ERROR_TASK_NOT_SUPPORTED'), 'error');
-        $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=orders', false));
+        $this->declineTask();
+    }
+
+    public function publish()
+    {
+        $this->checkToken();
+
+        $this->declineTask();
+    }
+
+    public function reorder()
+    {
+        $this->checkToken();
+
+        $this->declineTask();
+
+        return false;
+    }
+
+    public function saveorder()
+    {
+        $this->checkToken();
+
+        $this->declineTask();
+
+        return false;
+    }
+
+    public function checkin()
+    {
+        $this->checkToken();
+
+        $this->declineTask();
+
+        return false;
+    }
+
+    /** An AJAX task: answer the caller rather than setting a redirect nothing follows. */
+    public function saveOrderAjax()
+    {
+        $this->checkToken();
+
+        $this->sendJson(['error' => Text::_('COM_J2COMMERCE_ERROR_TASK_NOT_SUPPORTED')]);
+    }
+
+    /**
+     * Already survives the missing method — AdminController::runTransition() returns early
+     * unless the model is a WorkflowModelInterface, which CartModel is not — but it returns
+     * with no message and no redirect. Decline it here so the outcome is stated.
+     */
+    public function runTransition()
+    {
+        $this->checkToken();
+
+        $this->declineTask();
+
+        return false;
     }
 
     /**
