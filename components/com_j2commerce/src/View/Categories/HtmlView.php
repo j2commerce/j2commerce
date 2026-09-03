@@ -292,6 +292,21 @@ class HtmlView extends BaseHtmlView
         if ($this->params->get('robots')) {
             $this->getDocument()->setMetaData('robots', $this->params->get('robots'));
         }
+
+        // =====================
+        // CANONICAL URL
+        // =====================
+        // The view takes no state of its own from the request, but the same category
+        // listing is reachable by more than one path, so it names the one that is the page.
+        $this->getDocument()->addHeadLink(
+            Route::_(
+                RouteHelper::getCategoriesRoute($currentParentId > 1 ? $currentParentId : null),
+                true,
+                Route::TLS_IGNORE,
+                true
+            ),
+            'canonical'
+        );
     }
 
     /**

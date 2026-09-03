@@ -15,6 +15,8 @@ namespace J2Commerce\Component\J2commerce\Site\View\Producttags;
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Site\Helper\ProductFilterRequestHelper;
+use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use J2Commerce\Component\J2commerce\Site\View\CustomSubtemplateTrait;
 use Joomla\CMS\Categories\CategoryNode;
 use Joomla\CMS\Factory;
@@ -22,6 +24,7 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Pagination\Pagination;
+use Joomla\CMS\Router\Route;
 use Joomla\Registry\Registry;
 
 /**
@@ -271,11 +274,71 @@ class HtmlView extends BaseHtmlView
             $this->getDocument()->setMetaData('robots', $this->params->get('robots'));
         }
 
+        // =====================
+        // CANONICAL URL
+        // =====================
+        // Sort, search, pagination and the sidebar filters are all read from the request,
+        // so one tag listing is reachable under many URLs. A page of the listing points at
+        // itself; a narrowed or reordered one points back at the listing it is a view of.
+        // The tag is what the page is, so it stays in the canonical either way.
+        // A menu item that is already this tag listing carries the tag in its own link,
+        // so naming the tag again would build a second URL for the one page.
+        $menu      = $app->getMenu()->getActive();
+        $menuIsTag = $menu
+            && $menu->component === 'com_j2commerce'
+            && ($menu->query['view'] ?? '') === 'producttags';
+
+        $tagId = 0;
+
+        if (!$menuIsTag) {
+            $tagIds = $this->state->get('filter.tag_ids', []);
+            $tagId  = !empty($tagIds) ? (int) reset($tagIds) : 0;
+        }
+
+        $canonicalRoute = RouteHelper::getProductTagsRoute($tagId > 0 ? $tagId : null);
+
+        if (!$this->isListingVariant()) {
+            $limitstart = (int) $this->state->get('list.start', 0);
+
+            if ($limitstart > 0) {
+                $canonicalRoute .= '&limitstart=' . $limitstart;
+            }
+        }
+
+        $this->getDocument()->addHeadLink(
+            Route::_($canonicalRoute, true, Route::TLS_IGNORE, true),
+            'canonical'
+        );
+
         // Add custom CSS from menu item
         $customCss = $this->params->get('custom_css', '');
         if (!empty($customCss)) {
             $this->getDocument()->getWebAssetManager()->addInlineStyle($customCss);
         }
+    }
+
+    /** True when the request narrows or reorders the listing. The tag itself is the page, so tag_ids is not a narrowing here. */
+    private function isListingVariant(): bool
+    {
+        $input = Factory::getApplication()->getInput();
+
+        if (
+            $input->get('filter_order', '', 'cmd') !== ''
+            || $input->getString('sort', '') !== ''
+            || $input->getString('sortby', '') !== ''
+            || $input->getString('filter_search', '') !== ''
+            || $input->getString('search', '') !== ''
+        ) {
+            return true;
+        }
+
+        $filters = ProductFilterRequestHelper::resolveFromRequest($input);
+
+        return !empty($filters['manufacturer_ids'])
+            || !empty($filters['vendor_ids'])
+            || !empty($filters['productfilter_ids'])
+            || $filters['price_from'] > 0
+            || $filters['price_to'] > 0;
     }
 
     /**

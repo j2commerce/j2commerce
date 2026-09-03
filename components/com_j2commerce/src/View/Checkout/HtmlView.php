@@ -17,6 +17,7 @@ namespace J2Commerce\Component\J2commerce\Site\View\Checkout;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\CheckoutContextHelper;
+use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -258,5 +259,15 @@ class HtmlView extends BaseHtmlView
         if ($this->params->get('robots')) {
             $this->getDocument()->setMetaData('robots', $this->params->get('robots'));
         }
+
+        // =====================
+        // CANONICAL URL
+        // =====================
+        // The steps are driven through the one checkout URL rather than being pages
+        // of their own, so they all resolve to it.
+        $this->getDocument()->addHeadLink(
+            Route::_(RouteHelper::getCheckoutRoute(), true, Route::TLS_IGNORE, true),
+            'canonical'
+        );
     }
 }

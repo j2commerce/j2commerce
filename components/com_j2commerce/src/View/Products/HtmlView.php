@@ -15,6 +15,7 @@ namespace J2Commerce\Component\J2commerce\Site\View\Products;
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Site\Helper\ProductFilterRequestHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use J2Commerce\Component\J2commerce\Site\View\CustomSubtemplateTrait;
 use Joomla\CMS\Categories\CategoryNode;
@@ -322,11 +323,57 @@ class HtmlView extends BaseHtmlView
             $this->getDocument()->setMetaData('robots', $this->params->get('robots'));
         }
 
+        // =====================
+        // CANONICAL URL
+        // =====================
+        // Sort, search, pagination and the sidebar filters are all read from the request,
+        // so one listing is reachable under many URLs. A page of the listing points at
+        // itself; a narrowed or reordered one points back at the listing it is a view of.
+        $canonicalRoute = RouteHelper::getProductsRoute($catid > 0 ? $catid : null);
+
+        if (!$this->isListingVariant()) {
+            $limitstart = (int) $this->state->get('list.start', 0);
+
+            if ($limitstart > 0) {
+                $canonicalRoute .= '&limitstart=' . $limitstart;
+            }
+        }
+
+        $this->getDocument()->addHeadLink(
+            Route::_($canonicalRoute, true, Route::TLS_IGNORE, true),
+            'canonical'
+        );
+
         // Add custom CSS from menu item
         $customCss = $this->params->get('custom_css', '');
         if (!empty($customCss)) {
             $this->getDocument()->getWebAssetManager()->addInlineStyle($customCss);
         }
+    }
+
+    /** True when the request narrows or reorders the listing, making it a view of the base listing rather than a page of it. */
+    private function isListingVariant(): bool
+    {
+        $input = Factory::getApplication()->getInput();
+
+        if (
+            $input->get('filter_order', '', 'cmd') !== ''
+            || $input->getString('sort', '') !== ''
+            || $input->getString('sortby', '') !== ''
+            || $input->getString('filter_search', '') !== ''
+            || $input->getString('search', '') !== ''
+        ) {
+            return true;
+        }
+
+        $filters = ProductFilterRequestHelper::resolveFromRequest($input);
+
+        return !empty($filters['manufacturer_ids'])
+            || !empty($filters['vendor_ids'])
+            || !empty($filters['productfilter_ids'])
+            || !empty($filters['tag_ids'])
+            || $filters['price_from'] > 0
+            || $filters['price_to'] > 0;
     }
 
     /**

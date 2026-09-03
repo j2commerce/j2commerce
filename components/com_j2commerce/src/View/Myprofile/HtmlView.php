@@ -19,6 +19,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\DownloadHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\PaymentMethodsHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
+use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -370,6 +371,18 @@ class HtmlView extends BaseHtmlView
 
         if ($this->params->get('robots')) {
             $this->getDocument()->setMetaData('robots', $this->params->get('robots'));
+        }
+
+        // =====================
+        // CANONICAL URL
+        // =====================
+        // Only the profile landing page is a shared page. The order and packing-slip
+        // layouts address one customer's own order, so there is nothing to consolidate.
+        if (!\in_array($this->getLayout(), ['order', 'packingslip'], true)) {
+            $this->getDocument()->addHeadLink(
+                Route::_(RouteHelper::getMyProfileRoute(), true, Route::TLS_IGNORE, true),
+                'canonical'
+            );
         }
     }
 }

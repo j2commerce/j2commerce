@@ -16,12 +16,14 @@ namespace J2Commerce\Component\J2commerce\Site\View\Carts;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
+use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use J2Commerce\Component\J2commerce\Site\Model\CartsModel;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Plugin\PluginHelper;
+use Joomla\CMS\Router\Route;
 use Joomla\Registry\Registry;
 
 /**
@@ -343,9 +345,13 @@ class HtmlView extends BaseHtmlView
         $viewHtml = null;
         $app->triggerEvent('onJ2CommerceViewCartsHtml', [&$viewHtml, &$this, $model]);
 
-        // If a plugin provided HTML output, display it and return
+        // If a plugin provided HTML output, display it and return. The document is still
+        // prepared first so the title, meta and canonical do not depend on who renders
+        // the body -- this is what the product and listing views already do.
         if (!empty($viewHtml)) {
+            $this->_prepareDocument();
             echo $viewHtml;
+
             return;
         }
 
@@ -443,5 +449,15 @@ class HtmlView extends BaseHtmlView
         if ($this->params->get('robots')) {
             $this->getDocument()->setMetaData('robots', $this->params->get('robots'));
         }
+
+        // =====================
+        // CANONICAL URL
+        // =====================
+        // A task is an action against the cart, never a page of its own, so every
+        // cart URL resolves to the one cart page.
+        $this->getDocument()->addHeadLink(
+            Route::_(RouteHelper::getCartRoute(), true, Route::TLS_IGNORE, true),
+            'canonical'
+        );
     }
 }
