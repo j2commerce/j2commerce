@@ -95,13 +95,6 @@ class CartItemsController extends AdminController
         $this->declineTask('COM_J2COMMERCE_CARTITEMS_ERROR_PUBLISH_NOT_ALLOWED');
     }
 
-    public function unpublish()
-    {
-        $this->checkToken();
-
-        $this->declineTask('COM_J2COMMERCE_CARTITEMS_ERROR_PUBLISH_NOT_ALLOWED');
-    }
-
     public function delete()
     {
         $this->checkToken();
@@ -121,13 +114,6 @@ class CartItemsController extends AdminController
         $this->checkToken();
 
         $this->declineTask('COM_J2COMMERCE_CARTITEMS_ERROR_SAVE_NOT_ALLOWED');
-    }
-
-    public function trash()
-    {
-        $this->checkToken();
-
-        $this->declineTask('COM_J2COMMERCE_CARTITEMS_ERROR_DELETE_NOT_ALLOWED');
     }
 
     public function checkin()
