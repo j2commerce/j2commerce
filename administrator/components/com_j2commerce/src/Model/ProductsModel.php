@@ -50,6 +50,7 @@ class ProductsModel extends ListModel
                 'product_name', 'c.title',
                 'sku', 'v.sku',
                 'price', 'v.price',
+                'shipping_state',
                 'quantity', 'q.quantity',
                 'category_title', 'cat.title',
                 'catid', 'c.catid',
@@ -92,6 +93,9 @@ class ProductsModel extends ListModel
 
         $visibility = $this->getUserStateFromRequest($this->context . '.filter.visibility', 'filter_visibility', '', 'string');
         $this->setState('filter.visibility', $visibility);
+
+        $shippingState = $this->getUserStateFromRequest($this->context . '.filter.shipping_state', 'filter_shipping_state', '', 'string');
+        $this->setState('filter.shipping_state', $shippingState);
 
         $categoryId = $this->getUserStateFromRequest($this->context . '.filter.category_id', 'filter_category_id', '', 'int');
         $this->setState('filter.category_id', $categoryId);
@@ -174,6 +178,7 @@ class ProductsModel extends ListModel
         $id .= ':' . $this->getState('filter.vendor_id');
         $id .= ':' . $this->getState('filter.taxprofile_id');
         $id .= ':' . $this->getState('filter.visibility');
+        $id .= ':' . $this->getState('filter.shipping_state');
         $id .= ':' . $this->getState('filter.category_id');
         $id .= ':' . $this->getState('filter.date_from');
         $id .= ':' . $this->getState('filter.date_to');
@@ -297,6 +302,22 @@ class ProductsModel extends ListModel
             ->join('LEFT', $db->quoteName('#__j2commerce_variants', 'v') . ' ON ' .
                 $db->quoteName('v.j2commerce_variant_id') . ' = (' . $variantSubQuery . ')');
 
+        // Aggregate the shipping flag over the sellable variant rows, so the column answers for
+        // what a shopper can actually buy rather than for the master placeholder above
+        $shippingSubQuery = $db->getQuery(true)
+            ->select([
+                $db->quoteName('product_id'),
+                'MIN(' . $db->quoteName('shipping') . ') AS ' . $db->quoteName('shipping_min'),
+                'MAX(' . $db->quoteName('shipping') . ') AS ' . $db->quoteName('shipping_max'),
+            ])
+            ->from($db->quoteName('#__j2commerce_variants'))
+            ->where($db->quoteName('is_master') . ' = 0')
+            ->group($db->quoteName('product_id'));
+
+        $query->select('(' . $this->shippingStateExpression() . ') AS ' . $db->quoteName('shipping_state'))
+            ->join('LEFT', '(' . $shippingSubQuery . ') AS ' . $db->quoteName('vs') . ' ON ' .
+                $db->quoteName('vs.product_id') . ' = ' . $db->quoteName('a.j2commerce_product_id'));
+
         // Join to product quantities for stock level
         $query->select($db->quoteName('q.quantity'))
             ->join('LEFT', $db->quoteName('#__j2commerce_productquantities', 'q') . ' ON ' .
@@ -315,6 +336,22 @@ class ProductsModel extends ListModel
                 $db->quoteName('ven.j2commerce_vendor_id') . ' = ' . $db->quoteName('a.vendor_id'))
             ->join('LEFT', $db->quoteName('#__j2commerce_addresses', 'va') . ' ON ' .
                 $db->quoteName('va.j2commerce_address_id') . ' = ' . $db->quoteName('ven.address_id'));
+    }
+
+    /**
+     * 2 = every sellable variant ships, 1 = only some do, 0 = none do. Variant products hold the
+     * flag on their non-master rows; every other product type holds it on the master row and has
+     * no non-master rows at all, so the aggregate falls back to that row rather than reading NULL.
+     *
+     * @since   6.5.1
+     */
+    private function shippingStateExpression(): string
+    {
+        $db = $this->getDatabase();
+
+        return 'CASE WHEN COALESCE(' . $db->quoteName('vs.shipping_min') . ', ' . $db->quoteName('v.shipping') . ', 0) > 0 THEN 2'
+            . ' WHEN COALESCE(' . $db->quoteName('vs.shipping_max') . ', ' . $db->quoteName('v.shipping') . ', 0) > 0 THEN 1'
+            . ' ELSE 0 END';
     }
 
     /**
@@ -403,6 +440,15 @@ class ProductsModel extends ListModel
             $visibilityInt = (int) $visibility;
             $query->where($db->quoteName('a.visibility') . ' = :visibility')
                 ->bind(':visibility', $visibilityInt, ParameterType::INTEGER);
+        }
+
+        // Filter by the aggregated shipping state (repeats the expression rather than naming the
+        // select alias, which WHERE cannot see)
+        $shippingState = $this->getState('filter.shipping_state');
+        if ($shippingState !== '' && $shippingState !== null) {
+            $shippingStateInt = (int) $shippingState;
+            $query->where('(' . $this->shippingStateExpression() . ') = :shippingState')
+                ->bind(':shippingState', $shippingStateInt, ParameterType::INTEGER);
         }
 
         // Filter by date range

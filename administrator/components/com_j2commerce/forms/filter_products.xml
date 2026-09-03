@@ -10,7 +10,7 @@
             inputmode="search"
         />
 
-        <!-- Column-matched filters (in column order: Status, Product ID, Product Type, Price, Visibility) -->
+        <!-- Column-matched filters (in column order: Status, Product ID, Product Type, Price, Shipping, Visibility) -->
 
         <field
             name="state"
@@ -67,6 +67,19 @@
             inputmode="decimal"
             onchange="this.form.submit();"
         />
+
+        <field
+            name="shipping_state"
+            type="list"
+            label="COM_J2COMMERCE_FILTER_SHIPPING_STATUS"
+            description="COM_J2COMMERCE_FILTER_SHIPPING_STATUS_DESC"
+            onchange="this.form.submit();"
+        >
+            <option value="">COM_J2COMMERCE_FILTER_SELECT_SHIPPING</option>
+            <option value="2">COM_J2COMMERCE_ENABLED</option>
+            <option value="1">COM_J2COMMERCE_MIXED</option>
+            <option value="0">COM_J2COMMERCE_DISABLED</option>
+        </field>
 
         <field
             name="visibility"
@@ -177,6 +190,8 @@
             <option value="a.product_type DESC">COM_J2COMMERCE_HEADING_PRODUCT_TYPE_DESC</option>
             <option value="v.price ASC">COM_J2COMMERCE_HEADING_PRICE_ASC</option>
             <option value="v.price DESC">COM_J2COMMERCE_HEADING_PRICE_DESC</option>
+            <option value="shipping_state ASC">COM_J2COMMERCE_HEADING_SHIPPING_ASC</option>
+            <option value="shipping_state DESC">COM_J2COMMERCE_HEADING_SHIPPING_DESC</option>
             <option value="a.visibility ASC">COM_J2COMMERCE_HEADING_VISIBILITY_ASC</option>
             <option value="a.visibility DESC">COM_J2COMMERCE_HEADING_VISIBILITY_DESC</option>
         </field>

@@ -92,7 +92,7 @@ $canChangeState = $user->authorise('core.edit.state', 'com_content');
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_PRICE', 'v.price', $listDirn, $listOrder); ?>
                                 </th>
                                 <th scope="col" class="w-5 text-center d-none d-lg-table-cell">
-                                    <?php echo Text::_('COM_J2COMMERCE_HEADING_SHIPPING'); ?>
+                                    <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_SHIPPING', 'shipping_state', $listDirn, $listOrder); ?>
                                 </th>
                                 <th scope="col" class="w-5 text-center d-none d-lg-table-cell">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_VISIBILITY', 'a.visibility', $listDirn, $listOrder); ?>
@@ -114,6 +114,13 @@ $canChangeState = $user->authorise('core.edit.state', 'com_content');
                             $articleStateText = ($item->article_state == 1) ? Text::_('JPUBLISHED') : Text::_('JUNPUBLISHED');
                             $articleStateClass = ($item->article_state == 1) ? 'text-success' : 'text-danger';
                             $taxProfileText = !empty($item->taxprofile_name) ? $this->escape($item->taxprofile_name) : Text::_('COM_J2COMMERCE_NOT_TAXABLE');
+
+                            // Aggregated across the product's sellable variants: 2 all ship, 1 some, 0 none
+                            [$shippingBadge, $shippingLabel] = match ((int) ($item->shipping_state ?? 0)) {
+                                2       => ['badge text-bg-success', Text::_('COM_J2COMMERCE_ENABLED')],
+                                1       => ['badge text-bg-warning', Text::_('COM_J2COMMERCE_MIXED')],
+                                default => ['badge text-bg-danger', Text::_('COM_J2COMMERCE_DISABLED')],
+                            };
 
                             // Check if user can check in this article
                             $canCheckin = $user->authorise('core.manage', 'com_checkin')
@@ -176,11 +183,7 @@ $canChangeState = $user->authorise('core.edit.state', 'com_content');
                                     <?php echo CurrencyHelper::format((float) ($item->price ?? 0)); ?>
                                 </td>
                                 <td class="text-center d-none d-lg-table-cell">
-                                    <?php if ($item->shipping) : ?>
-                                        <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-success'); ?>"><?php echo Text::_('COM_J2COMMERCE_ENABLED'); ?></span>
-                                    <?php else : ?>
-                                        <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-danger'); ?>"><?php echo Text::_('COM_J2COMMERCE_DISABLED'); ?></span>
-                                    <?php endif; ?>
+                                    <span class="<?php echo J2htmlHelper::badgeClass($shippingBadge); ?>"><?php echo $shippingLabel; ?></span>
                                 </td>
                                 <td class="text-center d-none d-lg-table-cell">
                                     <?php if ($item->visibility) : ?>
