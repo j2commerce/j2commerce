@@ -169,9 +169,7 @@ class CartItemsController extends AdminController
     {
         $this->checkToken();
 
-        echo new JsonResponse(null, Text::_('COM_J2COMMERCE_ERROR_TASK_NOT_SUPPORTED'), true);
-
-        $this->app->close();
+        $this->sendJson(['error' => Text::_('COM_J2COMMERCE_ERROR_TASK_NOT_SUPPORTED')]);
     }
 
     /**
@@ -190,6 +188,18 @@ class CartItemsController extends AdminController
         return false;
     }
 
+    /** JSON exit for the AJAX tasks. close() is exit(), so the headers flush first. */
+    private function sendJson(mixed $data): void
+    {
+        $this->app->setHeader('Content-Type', 'application/json; charset=utf-8');
+        $this->app->setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+        $this->app->setHeader('X-Content-Type-Options', 'nosniff', true);
+        $this->app->sendHeaders();
+
+        echo json_encode($data);
+        $this->app->close();
+    }
+
     /**
      * Ajax method to get product type options for filter
      *
@@ -202,8 +212,6 @@ class CartItemsController extends AdminController
         $model   = $this->getModel('CartItems');
         $options = $model->getProductTypeOptions();
 
-        echo new JsonResponse($options);
-
-        $this->app->close();
+        $this->sendJson(new JsonResponse($options));
     }
 }
