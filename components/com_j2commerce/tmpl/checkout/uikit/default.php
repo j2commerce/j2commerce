@@ -212,7 +212,7 @@ Text::script('COM_J2COMMERCE_CHECKOUT_ERROR_AGREE_TERMS');
 document.addEventListener('DOMContentLoaded', function() {
     'use strict';
 
-    var baseUrl = '<?php echo Route::_('index.php'); ?>';
+    var baseUrl = '<?php echo Uri::root(true) . '/index.php'; ?>';
     var token = '<?php echo $token; ?>';
     var showShipping = <?php echo $this->showShipping ? 'true' : 'false'; ?>;
     var isLoggedIn = <?php echo $this->logged ? 'true' : 'false'; ?>;

@@ -15,7 +15,6 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\Router\Route;
 use Joomla\CMS\Uri\Uri;
 use Joomla\Database\DatabaseInterface;
 
@@ -26,7 +25,7 @@ if (!$this->params->get('show_tax_calculator', 1)) {
 }
 
 $postcodeRequired = $this->params->get('postalcode_required', 1);
-$baseUrl          = Route::_('index.php');
+$baseUrl          = Uri::root(true) . '/index.php';
 $loaderImage      = Uri::root(true) . '/media/com_j2commerce/images/loader.gif';
 
 // Build country select using native Joomla
