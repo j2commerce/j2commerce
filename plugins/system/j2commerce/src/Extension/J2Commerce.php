@@ -103,6 +103,15 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
     private const INVENTORY_TIMESTAMP_PARAM = 'plg_j2commerce_inventory_control_timestamp';
 
     /**
+     * Identity of the Product node this request emitted, so a second node for the
+     * same product rendered into the body can be given the same @id and merge.
+     *
+     * @var    array{id: string, name: string, url: string}
+     * @since  6.0.0
+     */
+    private array $emittedProductNode = ['id' => '', 'name' => '', 'url' => ''];
+
+    /**
      * Returns an array of events this subscriber will listen to.
      *
      * @return  array
@@ -486,6 +495,9 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             return;
         }
 
+        // Before the com_j2commerce gate below: a product also renders on an article.
+        $this->linkBodyProductSchema($app);
+
         $input = $app->getInput();
 
         if ($input->get('option', '') !== self::COMPONENT_NAME) {
@@ -515,6 +527,111 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
 
         $body = $this->addBodyClass($body, $classAddition);
         $app->setBody($body);
+    }
+
+    /**
+     * Give a Product node another extension rendered into the body the same @id as ours.
+     *
+     * Two unlinked Product nodes describing one product compete: ours carries the offer,
+     * theirs typically the ratings, and neither ends up complete. onBeforeCompileHead
+     * cannot see the body, so the pairing can only happen once the page is rendered.
+     */
+    private function linkBodyProductSchema($app): void
+    {
+        if ($this->emittedProductNode['id'] === '') {
+            return;
+        }
+
+        $body = $app->getBody();
+
+        if (stripos($body, 'application/ld+json') === false) {
+            return;
+        }
+
+        $updated = preg_replace_callback(
+            '#(<script[^>]*type\s*=\s*(["\'])application/ld\+json\2[^>]*>)(.*?)(</script\s*>)#is',
+            function (array $matches): string {
+                $data = json_decode($matches[3], true);
+
+                if (!\is_array($data)) {
+                    return $matches[0];
+                }
+
+                $stamped = $this->stampProductNodeId($data);
+
+                if ($stamped === $data) {
+                    return $matches[0];
+                }
+
+                $json = json_encode(
+                    $stamped,
+                    JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+                );
+
+                return $json === false ? $matches[0] : $matches[1] . $json . $matches[4];
+            },
+            $body
+        );
+
+        // preg_replace_callback returns null on backtrack limit — keep the page as it was.
+        if ($updated !== null && $updated !== $body) {
+            $app->setBody($updated);
+        }
+    }
+
+    /**
+     * Stamp our @id onto an unidentified Product node describing the same product.
+     *
+     * Identity is asserted on name or url, never on type alone: a related-products
+     * module renders Product nodes for OTHER products, and merging those would be worse
+     * than the split this repairs.
+     */
+    private function stampProductNodeId(array $data): array
+    {
+        if (isset($data['@graph']) && \is_array($data['@graph'])) {
+            foreach ($data['@graph'] as $key => $node) {
+                if (\is_array($node)) {
+                    $data['@graph'][$key] = $this->stampProductNodeId($node);
+                }
+            }
+
+            return $data;
+        }
+
+        if (array_is_list($data)) {
+            foreach ($data as $key => $node) {
+                if (\is_array($node)) {
+                    $data[$key] = $this->stampProductNodeId($node);
+                }
+            }
+
+            return $data;
+        }
+
+        if (isset($data['@id'])) {
+            return $data;
+        }
+
+        $types = (array) ($data['@type'] ?? '');
+
+        if (!\in_array('Product', $types, true) && !\in_array('ProductGroup', $types, true)) {
+            return $data;
+        }
+
+        $name = isset($data['name']) && \is_string($data['name']) ? trim($data['name']) : '';
+        $url  = isset($data['url']) && \is_string($data['url']) ? trim($data['url']) : '';
+
+        // A url is the stronger claim: once a node states one it has to be ours, whatever
+        // the name says, so two same-named products on one page cannot merge into each other.
+        $sameProduct = $url !== ''
+            ? $url === $this->emittedProductNode['url']
+            : ($name !== '' && $name === $this->emittedProductNode['name']);
+
+        if ($sameProduct) {
+            $data['@id'] = $this->emittedProductNode['id'];
+        }
+
+        return $data;
     }
 
     /**
@@ -2012,6 +2129,12 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         $script = '<script type="application/ld+json">' . json_encode($jsonLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) . '</script>';
         $document->addCustomTag($script);
 
+        $this->emittedProductNode = [
+            'id'   => (string) ($productSchema['@id'] ?? ''),
+            'name' => (string) ($productSchema['name'] ?? ''),
+            'url'  => (string) ($productSchema['url'] ?? ''),
+        ];
+
         $debugInfo[] = 'Schema INJECTED';
 
         if ($debugMode) {
@@ -2889,20 +3012,23 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
      */
     private function buildVariantOfferSchema(object $variant): array
     {
-        $offer = [
-            '@type' => 'Offer',
-        ];
-
-        // Price
-        $price = $variant->price ?? 0;
+        $price = (float) ($variant->price ?? 0);
 
         // Check for special price
         if (isset($variant->special_price) && (float) $variant->special_price > 0) {
-            $price = $variant->special_price;
+            $price = (float) $variant->special_price;
         }
 
-        $offer['price']         = number_format((float) $price, 2, '.', '');
-        $offer['priceCurrency'] = $this->getCurrencyCode();
+        // Same zero-price rule as the single-product offer above.
+        if ($price <= 0) {
+            return [];
+        }
+
+        $offer = [
+            '@type'         => 'Offer',
+            'price'         => number_format($price, 2, '.', ''),
+            'priceCurrency' => $this->getCurrencyCode(),
+        ];
 
         // Item Condition
         $offer['itemCondition'] = $this->getItemConditionUrl();
@@ -3489,21 +3615,27 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
      */
     private function buildOfferSchema(object $product): array
     {
-        $offer = [
-            '@type' => 'Offer',
-        ];
+        $price = 0.0;
 
-        // Price
         if (isset($product->variant)) {
-            $price = $product->variant->price ?? 0;
+            $price = (float) ($product->variant->price ?? 0);
 
             // Check for special price
             if (isset($product->variant->special_price) && (float) $product->variant->special_price > 0) {
-                $price = $product->variant->special_price;
+                $price = (float) $product->variant->special_price;
             }
-
-            $offer['price'] = number_format((float) $price, 2, '.', '');
         }
+
+        // Merchant listing experiences require a price greater than zero, so a
+        // resolved zero disqualifies the whole page. No offers is the better trade.
+        if ($price <= 0) {
+            return [];
+        }
+
+        $offer = [
+            '@type' => 'Offer',
+            'price' => number_format($price, 2, '.', ''),
+        ];
 
         // Currency
         $offer['priceCurrency'] = $this->getCurrencyCode();
