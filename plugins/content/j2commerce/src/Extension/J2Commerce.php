@@ -2009,7 +2009,9 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
 
             return true;
         } catch (\Exception $e) {
-            $this->getApplication()->enqueueMessage($e->getMessage(), 'error');
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+
+            $this->getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_ERROR_OCCURRED'), 'error');
             return false;
         }
     }
@@ -2034,7 +2036,9 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
 
             return true;
         } catch (\Exception $e) {
-            $this->getApplication()->enqueueMessage($e->getMessage(), 'error');
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+
+            $this->getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_ERROR_OCCURRED'), 'error');
             return false;
         }
     }
@@ -2086,7 +2090,9 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
 
             return true;
         } catch (\Exception $e) {
-            $this->getApplication()->enqueueMessage($e->getMessage(), 'error');
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+
+            $this->getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_ERROR_OCCURRED'), 'error');
             return false;
         }
     }
