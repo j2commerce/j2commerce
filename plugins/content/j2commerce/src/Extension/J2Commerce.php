@@ -152,9 +152,11 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             return;
         }
 
-        // Strip shortcodes when Smart Search indexer is running
-        if ($context === 'com_finder.indexer' && (bool) $this->params->get('shortcode_strip_in_finder', 1)) {
-            if (isset($article->text)) {
+        // The indexer runs under ConsoleApplication, which has no getDocument()/
+        // getWebAssetManager() — the render path below is unsafe here regardless
+        // of the strip setting, so always return before reaching it.
+        if ($context === 'com_finder.indexer') {
+            if ((bool) $this->params->get('shortcode_strip_in_finder', 1) && isset($article->text)) {
                 $article->text = preg_replace('/{j2commerce}.*?{\/j2commerce}/s', '', $article->text);
                 $article->text = preg_replace('/{j2commerce\s+[^}]*}/s', '', $article->text);
             }
