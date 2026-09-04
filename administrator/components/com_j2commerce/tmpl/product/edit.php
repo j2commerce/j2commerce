@@ -77,6 +77,18 @@ $wa->useScript('keepalive')
         </div>
         <?php echo HTMLHelper::_('uitab.endTab'); ?>
 
+        <?php // Rendered only once plg_system_schemaorg has injected its fieldset into the form. ?>
+        <?php if (isset($this->form->getFieldsets()['schema'])) : ?>
+            <?php echo HTMLHelper::_('uitab.addTab', 'myTab', 'schema', Text::_($this->form->getFieldsets()['schema']->label)); ?>
+            <fieldset id="fieldset-schema" class="options-form">
+                <legend><?php echo Text::_($this->form->getFieldsets()['schema']->label); ?></legend>
+                <div>
+                    <?php echo $this->form->renderFieldset('schema'); ?>
+                </div>
+            </fieldset>
+            <?php echo HTMLHelper::_('uitab.endTab'); ?>
+        <?php endif; ?>
+
         <?php echo HTMLHelper::_('uitab.addTab', 'myTab', 'publishing', Text::_('JGLOBAL_FIELDSET_PUBLISHING')); ?>
         <div class="row">
             <div class="col-lg-9">

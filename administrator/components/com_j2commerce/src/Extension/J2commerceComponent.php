@@ -24,6 +24,8 @@ use Joomla\CMS\Extension\MVCComponent;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLRegistryAwareTrait;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Schemaorg\SchemaorgServiceInterface;
+use Joomla\CMS\Schemaorg\SchemaorgServiceTrait;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -33,10 +35,26 @@ use Psr\Container\ContainerInterface;
  */
 class J2commerceComponent extends MVCComponent implements
     BootableExtensionInterface,
-    RouterServiceInterface
+    RouterServiceInterface,
+    SchemaorgServiceInterface
 {
     use HTMLRegistryAwareTrait;
     use RouterServiceTrait;
+    use SchemaorgServiceTrait;
+
+    /**
+     * Both plg_system_schemaorg and the schemaorg plugins gate every dispatch on the
+     * component implementing SchemaorgServiceInterface, so this list is what makes the
+     * Schema tab appear on the product form and the #__schemaorg overrides reach the page.
+     */
+    public function getSchemaorgContexts(): array
+    {
+        Factory::getLanguage()->load('com_j2commerce', JPATH_ADMINISTRATOR);
+
+        return [
+            'com_j2commerce.product' => Text::_('COM_J2COMMERCE'),
+        ];
+    }
 
     /**
      * Booting the extension. This is the function to set up the environment of the extension like

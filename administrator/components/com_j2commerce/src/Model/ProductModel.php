@@ -112,6 +112,10 @@ class ProductModel extends AdminModel
             return $item;
         }
 
+        // plg_system_schemaorg reads the item's `id` to reload a saved override into the
+        // form; this table's key is j2commerce_product_id, so mirror it.
+        $item->id = (int) $item->j2commerce_product_id;
+
         // Get fully hydrated product from ProductHelper
         $fullProduct = ProductHelper::getFullProduct((int) $item->j2commerce_product_id);
 

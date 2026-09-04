@@ -43,6 +43,7 @@ use Joomla\CMS\Table\Table;
 use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\User\UserFactoryInterface;
 use Joomla\CMS\User\UserHelper;
+use Joomla\CMS\WebAsset\Exception\UnknownAssetException;
 use Joomla\Component\Content\Site\Helper\RouteHelper as ContentRouteHelper;
 use Joomla\Database\DatabaseAwareTrait;
 use Joomla\Database\ParameterType;
@@ -2049,7 +2050,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             return;
         }
 
-        $schemaExists = $this->hasExistingProductSchema($document->getHeadData());
+        $schemaExists = $this->hasExistingProductSchema($document);
 
         // A schema already on the page ends this handler, unless the surface mode
         // below still has a canonical and a robots directive to contribute.
@@ -2416,16 +2417,22 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
     }
 
     /**
-     * Check if the product schema already exists in head data
+     * Check if a product schema already exists on the page.
      *
-     * @param   array  $headData  The document head data
+     * Two places can hold one: a custom tag another extension added, and the
+     * inline.schemaorg asset plg_system_schemaorg registers through the web asset
+     * manager. This handler runs at Priority::LOW, so both are already in place.
+     *
+     * @param   HtmlDocument  $document  The document being compiled
      *
      * @return  bool
      *
      * @since   6.0.0
      */
-    private function hasExistingProductSchema(array $headData): bool
+    private function hasExistingProductSchema(HtmlDocument $document): bool
     {
+        $headData = $document->getHeadData();
+
         // Check custom tags for existing JSON-LD with Product or ProductGroup
         if (!empty($headData['custom'])) {
             foreach ($headData['custom'] as $tag) {
@@ -2437,7 +2444,15 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             }
         }
 
-        return false;
+        try {
+            $schemaorgAsset = $document->getWebAssetManager()->getRegistry()->get('script', 'inline.schemaorg');
+        } catch (UnknownAssetException $e) {
+            return false;
+        }
+
+        $content = (string) $schemaorgAsset->getOption('content');
+
+        return preg_match('/"@type"\s*:\s*"(?:Product|ProductGroup)"/', $content) === 1;
     }
 
     /**

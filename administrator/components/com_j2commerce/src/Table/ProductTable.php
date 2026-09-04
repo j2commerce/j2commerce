@@ -51,6 +51,22 @@ class ProductTable extends Table
     }
 
     /**
+     * plg_system_schemaorg reads `id` off the stored and the deleted row. This table's key is
+     * j2commerce_product_id, so mirror it here and after store(); insertObject()/updateObject()
+     * skip properties with no matching column, so the extra property never reaches the query.
+     */
+    public function load($keys = null, $reset = true): bool
+    {
+        if (!parent::load($keys, $reset)) {
+            return false;
+        }
+
+        $this->id = (int) $this->j2commerce_product_id;
+
+        return true;
+    }
+
+    /**
      * Overloaded check method to ensure data integrity.
      *
      * @return  boolean  True on success.
@@ -130,7 +146,13 @@ class ProductTable extends Table
         $this->modified_on = $date;
         $this->modified_by = $user->id;
 
-        return parent::store($updateNulls);
+        if (!parent::store($updateNulls)) {
+            return false;
+        }
+
+        $this->id = (int) $this->j2commerce_product_id;
+
+        return true;
     }
 
     /**

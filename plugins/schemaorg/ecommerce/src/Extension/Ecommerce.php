@@ -175,24 +175,19 @@ final class Ecommerce extends CMSPlugin implements SubscriberInterface
             return;
         }
 
-        $schema        = new Registry($subject->schema);
-        $ecommerceData = $schema->get('Ecommerce');
+        // plg_system_schemaorg has already unwrapped the form data to the inner
+        // schemaType object before dispatching, so $subject->schema IS the Ecommerce
+        // payload - there is no 'Ecommerce' key left to descend into.
+        $ecommerceData = (new Registry($subject->schema))->toArray();
 
         if (empty($ecommerceData)) {
             return;
         }
 
-        if ($ecommerceData instanceof Registry) {
-            $ecommerceData = $ecommerceData->toArray();
-        } elseif (\is_object($ecommerceData)) {
-            $ecommerceData = (array) $ecommerceData;
-        }
-
         $ecommerceData = $this->validateSchemaData($ecommerceData);
         $ecommerceData = $this->cleanSchemaData($ecommerceData);
 
-        $schema->set('Ecommerce', $ecommerceData);
-        $subject->schema = $schema->toString();
+        $subject->schema = (new Registry($ecommerceData))->toString();
 
         $event->setArgument('subject', $subject);
     }
