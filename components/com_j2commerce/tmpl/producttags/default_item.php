@@ -35,7 +35,7 @@ $imageSrc = $product->thumb_image ?? $product->main_image ?? '';
     <?php if ($params->get('list_show_image', 1) && !empty($imageSrc)) : ?>
         <a href="<?php echo $productUrl; ?>">
             <img src="<?php echo $this->escape($imageSrc); ?>"
-                 alt="<?php echo $this->escape($product->main_image_alt ?? $product->product_name ?? ''); ?>"
+                 alt="<?php echo $this->escape(($product->main_image_alt ?? '') ?: ($product->product_name ?? '')); ?>"
                  class="card-img-top" loading="lazy" />
         </a>
     <?php endif; ?>

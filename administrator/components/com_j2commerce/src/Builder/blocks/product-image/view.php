@@ -29,7 +29,7 @@ if (!($showImage ?? true)) {
 $platform   = J2CommerceHelper::platform();
 $imageWidth = (int) $params->get('list_image_thumbnail_width', 350);
 $image      = $platform->getImagePath($product->thumb_image ?? '');
-$imageAlt   = htmlspecialchars($product->thumb_image_alt ?? $product->product_name ?? '', ENT_QUOTES, 'UTF-8');
+$imageAlt   = htmlspecialchars(($product->thumb_image_alt ?? '') ?: ($product->product_name ?? ''), ENT_QUOTES, 'UTF-8');
 $image      = HTMLHelper::_('cleanImageURL', $image)->url;
 
 if (empty($image)) {

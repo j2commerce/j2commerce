@@ -27,10 +27,10 @@ $imageAlt = '';
 
 if ($imageType === 'thumbimage' || $imageType === 'thumbnail') {
     $image = $platform->getImagePath($product->thumb_image ?? '');
-    $imageAlt = $product->thumb_image_alt ?? $product->product_name ?? '';
+    $imageAlt = ($product->thumb_image_alt ?? '') ?: ($product->product_name ?? '');
 } else {
     $image = $platform->getImagePath($product->main_image ?? '');
-    $imageAlt = $product->main_image_alt ?? $product->product_name ?? '';
+    $imageAlt = ($product->main_image_alt ?? '') ?: ($product->product_name ?? '');
 }
 
 if (empty($image)) {

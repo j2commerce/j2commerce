@@ -572,7 +572,7 @@ final class J2commerce extends Adapter implements SubscriberInterface
             if ($imagePath !== '' && ImageHelper::isValidImagePath($imagePath)) {
                 $item->imagePath = $imagePath;
                 $item->imageUrl  = $imagePath;
-                $item->imageAlt  = $item->main_image_alt ?? $item->title;
+                $item->imageAlt  = ($item->main_image_alt ?? '') ?: $item->title;
             }
         }
 
