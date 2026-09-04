@@ -148,30 +148,7 @@ class ProducttagsModel extends ListModel
         // Show only featured products
         $this->setState('filter.featured', (int) $params->get('show_feature_only', 0));
 
-        // Ordering from menu item params
-        $orderBy        = $params->get('orderby_sec', 'order');
-        $orderDirection = $params->get('list_order_direction', 'ASC');
-        $orderDate      = match ($params->get('order_date', 'created')) {
-            'published' => 'publish_up',
-            default     => $params->get('order_date', 'created'),
-        };
-
-        // Map ordering param to actual SQL ordering
-        $orderMapping = match ($orderBy) {
-            'date'      => 'a.' . $orderDate,
-            'title'     => 'a.title',
-            'author'    => 'a.created_by',
-            'hits'      => 'a.hits',
-            'price'     => 'v.price',
-            'popular'   => 'p.hits',
-            'order'     => 'a.ordering',
-            'cat_order' => 'c.lft',
-            'featured'  => 'a.featured',
-            default     => 'a.ordering',
-        };
-
-        // The 'date' branch interpolates the order_date menu param, so validate too.
-        $orderMapping = self::filterOrderColumn($orderMapping);
+        [$orderMapping, $orderDirection] = ProductsModel::resolveMenuOrdering($params);
 
         // Allow URL override of ordering
         // Support both standard Joomla params (filter_order) and SEF-friendly params (sort)

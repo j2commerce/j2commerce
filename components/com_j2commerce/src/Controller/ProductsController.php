@@ -17,8 +17,10 @@ namespace J2Commerce\Component\J2commerce\Site\Controller;
 use J2Commerce\Component\J2commerce\Administrator\Controller\ProductsController as AdminProductsController;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\ProductFilterRequestHelper;
+use J2Commerce\Component\J2commerce\Site\Model\ProductsModel;
 use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Language\Multilanguage;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Model\ListModel;
@@ -205,6 +207,21 @@ class ProductsController extends AdminProductsController
             // this normally, but this AJAX endpoint bypasses the view chain.
             // Without it, ProductsModel::getFilters() fatals on null $params.
             $model->setState('params', $params);
+
+            // getModel() here resolves to the admin controller's override, whose $config
+            // defaults to ignore_request => true. That marks the state as already set, so
+            // populateState() never runs on this route and nothing seeds the ordering: the
+            // list fell back to a.ordering while the rendered page used the menu item's
+            // column, and one LIMIT/OFFSET walk across two orderings repeats rows on the
+            // later page and puts the rows in the gap out of reach. The menu item's
+            // featured-only, subcategory depth and language scoping are dropped the same
+            // way. A shopper's own sort still wins — applySortOrder() runs after this.
+            [$menuOrderColumn, $menuOrderDirection] = ProductsModel::resolveMenuOrdering($params);
+            $model->setState('list.ordering', $menuOrderColumn);
+            $model->setState('list.direction', $menuOrderDirection);
+            $model->setState('filter.featured', (int) $params->get('show_feature_only', 0));
+            $model->setState('filter.subcategory_levels', (int) $params->get('show_subcategory_content', 3));
+            $model->setState('filter.language', Multilanguage::isEnabled());
 
             // Seed category filter directly. populateState() reads catid from
             // Input/active-menu, neither of which is reliably populated on this

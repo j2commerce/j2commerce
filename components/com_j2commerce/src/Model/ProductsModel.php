@@ -23,6 +23,7 @@ use Joomla\CMS\Language\Multilanguage;
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\Database\ParameterType;
 use Joomla\Database\QueryInterface;
+use Joomla\Registry\Registry;
 
 /**
  * Products list model for site frontend.
@@ -159,33 +160,7 @@ class ProductsModel extends ListModel
         $subcategoryLevels = $params->get('show_subcategory_content', 3);
         $this->setState('filter.subcategory_levels', (int) $subcategoryLevels);
 
-        // Ordering from menu item params
-        $orderBy        = $params->get('orderby_sec', 'order');
-        // 'cat_order' has its own direction field in the menu item; everything else uses list_order_direction.
-        $orderDirection = $orderBy === 'cat_order'
-            ? $params->get('category_order_direction', 'ASC')
-            : $params->get('list_order_direction', 'ASC');
-        $orderDate      = match ($params->get('order_date', 'created')) {
-            'published' => 'publish_up',
-            default     => $params->get('order_date', 'created'),
-        };
-
-        // Map ordering param to actual SQL ordering
-        $orderMapping = match ($orderBy) {
-            'date'      => 'a.' . $orderDate,
-            'title'     => 'a.title',
-            'author'    => 'a.created_by',
-            'hits'      => 'a.hits',
-            'price'     => 'v.price',
-            'popular'   => 'p.hits',
-            'order'     => 'a.ordering',
-            'cat_order' => 'c.lft',
-            'featured'  => 'a.featured',
-            default     => 'a.ordering',
-        };
-
-        // The 'date' branch interpolates the order_date menu param, so validate too.
-        $orderMapping = self::filterOrderColumn($orderMapping);
+        [$orderMapping, $orderDirection] = self::resolveMenuOrdering($params);
 
         // Allow URL override of ordering
         // Support both standard Joomla params (filter_order) and SEF-friendly params (sort)
@@ -293,6 +268,45 @@ class ProductsModel extends ListModel
 
         // Language filter
         $this->setState('filter.language', Multilanguage::isEnabled());
+    }
+
+    /**
+     * Menu-item ordering params to [column, direction]. Shared with ProducttagsModel and with
+     * ProductsController::filter(), where populateState() never runs and the ordering the
+     * rendered page used has to be re-derived from the menu item's params by hand.
+     */
+    public static function resolveMenuOrdering(Registry $params): array
+    {
+        $orderBy = $params->get('orderby_sec', 'order');
+
+        // 'cat_order' has its own direction field in the menu item; everything else uses list_order_direction.
+        $direction = $orderBy === 'cat_order'
+            ? $params->get('category_order_direction', 'ASC')
+            : $params->get('list_order_direction', 'ASC');
+
+        $orderDate = match ($params->get('order_date', 'created')) {
+            'published' => 'publish_up',
+            default     => $params->get('order_date', 'created'),
+        };
+
+        $column = match ($orderBy) {
+            'date'      => 'a.' . $orderDate,
+            'title'     => 'a.title',
+            'author'    => 'a.created_by',
+            'hits'      => 'a.hits',
+            'price'     => 'v.price',
+            'popular'   => 'p.hits',
+            'order'     => 'a.ordering',
+            'cat_order' => 'c.lft',
+            'featured'  => 'a.featured',
+            default     => 'a.ordering',
+        };
+
+        // The 'date' branch interpolates the order_date menu param, so validate it too.
+        return [
+            self::filterOrderColumn($column),
+            strtoupper((string) $direction) === 'DESC' ? 'DESC' : 'ASC',
+        ];
     }
 
     /**
