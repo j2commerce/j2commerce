@@ -637,6 +637,16 @@ final class J2commerce extends Adapter implements SubscriberInterface
      */
     protected function getContentPath(string $url): string
     {
+        $app = $this->getApplication();
+
+        // ConsoleApplication has no menu; SiteRouter::__construct() calls
+        // $this->app->getMenu(), which only CMSApplication/ApiApplication define,
+        // so CLI indexing (finder:index) cannot build a routed path.
+        // DELETE WHEN: core provides a CLI-safe menu accessor.
+        if (!method_exists($app, 'getMenu')) {
+            return $url;
+        }
+
         try {
             $router = SiteRouter::getInstance('site');
             $uri    = $router->build($url);
@@ -662,13 +672,15 @@ final class J2commerce extends Adapter implements SubscriberInterface
     {
         $app = $this->getApplication();
 
+        // ConsoleApplication has no menu; only CMSApplication/ApiApplication define
+        // getMenu(), so CLI indexing (finder:index) cannot resolve an Itemid.
+        // DELETE WHEN: core provides a CLI-safe menu accessor.
+        if (!method_exists($app, 'getMenu')) {
+            return null;
+        }
+
         try {
             $menu = $app->getMenu('site');
-
-            // Menu may be null in CLI context or during indexing
-            if ($menu === null) {
-                return null;
-            }
 
             foreach ($menu->getMenu() as $item) {
                 $query = $item->query ?? [];
