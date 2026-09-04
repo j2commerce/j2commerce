@@ -15,6 +15,7 @@ namespace J2Commerce\Component\J2commerce\Api\Controller;
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
 use Joomla\CMS\Access\Exception\NotAllowed;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
@@ -221,14 +222,19 @@ class OrderfulfilmentController extends J2CommerceApiController
                 'com_j2commerce'
             );
 
+            $this->noteOnOrder($order, 'COM_J2COMMERCE_API_LABEL_SLOT_HELD_NOTE');
+
             throw new Save(Text::_('COM_J2COMMERCE_API_LABEL_RESULT_INVALID'), 502);
         }
 
         $trackingId = (string) $result['tracking_id'];
 
-        // The label has been bought by this point. If the write does not land, report it in
-        // the payload rather than as an error: a failed response would hide a purchased label
-        // and invite the retry that buys another one. See #2128 for the response contract.
+        // The label has been bought by this point. The contract for any route whose first step
+        // spends money and whose second step records it (#2128): the partial outcome is reported
+        // in the payload of a 200, never in the status line. A failed response would hide a
+        // purchased label and invite the retry that buys another one, so `tracking_saved` is the
+        // field a client has to read. The durable record is the order-history note below rather
+        // than the log line, so the person who has to fix it can find the order.
         $saved = $model->saveTrackingNumber($pk, $trackingId);
 
         if (!$saved) {
@@ -237,6 +243,8 @@ class OrderfulfilmentController extends J2CommerceApiController
                 Log::ERROR,
                 'com_j2commerce'
             );
+
+            $this->noteOnOrder($order, 'COM_J2COMMERCE_API_LABEL_TRACKING_NOT_STORED_NOTE', $trackingId);
         }
 
         return $this->emit((object) [
@@ -247,6 +255,40 @@ class OrderfulfilmentController extends J2CommerceApiController
             'label_base64'   => (string) ($result['label_base64'] ?? ''),
             'tracking_saved' => $saved,
         ]);
+    }
+
+    /**
+     * Admin-only order-history line. Any params type keeps it out of the shopper's own order
+     * view (MyprofileModel::getOrderHistory()), so it reaches the person who has to act on it
+     * without telling the customer their label went wrong.
+     *
+     * Takes the key and its arguments rather than a formatted string: sprintf() raises
+     * \ValueError on a translation whose specifiers stop matching, and evaluating it in the
+     * caller would put that outside this method's own guard. Both callers reach here after a
+     * label has been bought, so a failure to write the note must not replace the response
+     * that carries the purchase.
+     */
+    private function noteOnOrder(object $order, string $key, string ...$args): void
+    {
+        $orderId = (string) ($order->order_id ?? '');
+
+        if ($orderId === '') {
+            return;
+        }
+
+        try {
+            OrderHistoryHelper::add(
+                orderId: $orderId,
+                comment: $args === [] ? Text::_($key) : Text::sprintf($key, ...$args),
+                params: OrderHistoryHelper::ADMIN_NOTE_PARAMS,
+            );
+        } catch (\Throwable $e) {
+            Log::add(
+                \sprintf('Could not write the order-history note for order %s: %s', $orderId, $e->getMessage()),
+                Log::ERROR,
+                'com_j2commerce'
+            );
+        }
     }
 
     /**
