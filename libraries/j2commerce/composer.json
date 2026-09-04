@@ -1,5 +1,14 @@
 {
-    "require": {
-        "phpseclib/phpseclib": "^3.0"
+    "name": "j2commerce/library",
+    "description": "J2Commerce shared library. Deliberately has no composer-managed dependencies — see extra.notes before adding one.",
+    "license": "GPL-2.0-or-later",
+    "require": {},
+    "extra": {
+        "notes": {
+            "no-vendor-autoload": "Nothing in this repository ever requires libraries/j2commerce/vendor/autoload.php. A package added to 'require' is therefore installed, shipped to every merchant, and never loaded. Confirm a loader exists before adding one.",
+            "phpseclib": "Removed 2026-09-04. It was never a dependency of this library's own code — it arrived as a transitive dependency of the Amazon Pay SDK and was left behind as a direct require when that SDK moved into plg_j2commerce_payment_amazonpay (633b5847b). Joomla core ships phpseclib in libraries/vendor and registers it eagerly at boot via a classmap, which is consulted before any PSR-4 prefix, so core's copy serves phpseclib3\\ for the whole request and a second copy here could never win. Use core's.",
+            "boxpacker": "dvdoug/boxpacker is vendored BY HAND under vendor/dvdoug/ and is intentionally absent from this file. It has its own autoload.php, loaded on demand by ShipperHelper::ensureBoxPackerAvailable(). Do not 'fix' it by adding it to require — that would install a second copy alongside the hand-vendored one.",
+            "before-adding-a-package": "Check libraries/vendor/composer/installed.json first. If Joomla core already ships the package, use core's copy: core registers a classmap at boot, a classmap is consulted before any PSR-4 prefix, and a duplicate here can never win the lookup."
+        }
     }
 }
