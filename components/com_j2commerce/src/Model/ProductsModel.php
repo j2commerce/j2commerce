@@ -44,10 +44,13 @@ class ProductsModel extends ListModel
      * before it is used. Aliases: a = #__content, p = #__j2commerce_products,
      * v = #__j2commerce_variants, c = #__categories.
      *
+     * Shared with ProducttagsModel and CategoriesModel, which order over the same
+     * aliases. One list, so a column added for one listing cannot go missing on another.
+     *
      * @var   string[]
      * @since 6.5.1
      */
-    private const ORDER_COLUMNS = [
+    public const ORDER_COLUMNS = [
         'a.ordering',
         'a.title',
         'a.created',

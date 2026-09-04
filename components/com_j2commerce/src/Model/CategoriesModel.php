@@ -34,33 +34,6 @@ use Joomla\Database\ParameterType;
 class CategoriesModel extends BaseDatabaseModel
 {
     /**
-     * Columns an ORDER BY is allowed to name.
-     *
-     * A column name is an SQL identifier, so it can never be bound and $db->escape()
-     * (a value escaper) is no guard at all. The ordering here comes from menu params
-     * rather than the request, but it is still interpolated, so it is matched against
-     * this list before it is used. Aliases: a = #__content,
-     * p = #__j2commerce_products, v = #__j2commerce_variants, c = #__categories.
-     *
-     * @var   string[]
-     * @since 6.5.1
-     */
-    private const ORDER_COLUMNS = [
-        'a.ordering',
-        'a.title',
-        'a.created',
-        'a.modified',
-        'a.publish_up',
-        'a.created_by',
-        'a.hits',
-        'a.featured',
-        'a.id',
-        'v.price',
-        'p.hits',
-        'c.lft',
-    ];
-
-    /**
      * Model context string.
      *
      * @var   string
@@ -549,36 +522,16 @@ class CategoriesModel extends BaseDatabaseModel
             );
         }
 
-        // Ordering from menu item params
-        $orderBy        = $params->get('orderby_sec', 'order');
-        $orderDirection = $params->get('list_order_direction', 'ASC');
-        $orderDate      = match ($params->get('order_date', 'created')) {
-            'published' => 'publish_up',
-            default     => $params->get('order_date', 'created'),
-        };
+        [$orderMapping, $orderDirection] = ProductsModel::resolveMenuOrdering($params);
 
-        // Map ordering param to actual SQL ordering
-        $orderMapping = match ($orderBy) {
-            'date'      => 'a.' . $orderDate,
-            'title'     => 'a.title',
-            'author'    => 'a.created_by',
-            'hits'      => 'a.hits',
-            'price'     => 'v.price',
-            'popular'   => 'p.hits',
-            'order'     => 'a.ordering',
-            'cat_order' => 'c.lft',
-            'featured'  => 'a.featured',
-            default     => 'a.ordering',
-        };
-
-        // The 'date' branch interpolates the order_date menu param, so validate too.
-        if (!\in_array($orderMapping, self::ORDER_COLUMNS, true)) {
+        // The resolver already filtered the column, but this model keeps no list.ordering
+        // state, so there is no second guard at a sink the way the list models have. Check
+        // it here too rather than leave the interpolation with a single stop.
+        if (!\in_array($orderMapping, ProductsModel::ORDER_COLUMNS, true)) {
             $orderMapping = 'a.ordering';
         }
 
-        $query->order(
-            $db->quoteName($orderMapping) . ' ' . (strtoupper((string) $orderDirection) === 'DESC' ? 'DESC' : 'ASC')
-        );
+        $query->order($db->quoteName($orderMapping) . ' ' . $orderDirection);
 
         $db->setQuery($query);
         $items = $db->loadObjectList();

@@ -34,33 +34,6 @@ use Joomla\Database\QueryInterface;
 class ProducttagsModel extends ListModel
 {
     /**
-     * Columns an ORDER BY is allowed to name.
-     *
-     * A column name is an SQL identifier, so it can never be bound and $db->escape()
-     * (a value escaper) is no guard at all. Request input reaches the ordering via
-     * filter_order / filter_order_Dir / sortby, so it is matched against this list
-     * before it is used. Aliases: a = #__content, p = #__j2commerce_products,
-     * v = #__j2commerce_variants, c = #__categories.
-     *
-     * @var   string[]
-     * @since 6.5.1
-     */
-    private const ORDER_COLUMNS = [
-        'a.ordering',
-        'a.title',
-        'a.created',
-        'a.modified',
-        'a.publish_up',
-        'a.created_by',
-        'a.hits',
-        'a.featured',
-        'a.id',
-        'v.price',
-        'p.hits',
-        'c.lft',
-    ];
-
-    /**
      * Model context string.
      *
      * @var   string
@@ -188,7 +161,7 @@ class ProducttagsModel extends ListModel
                         $listOrdering  = $candidate;
                         $listDirection = strtoupper($matches[2]);
                     }
-                } elseif (\in_array($sortby, self::ORDER_COLUMNS, true)) {
+                } elseif (\in_array($sortby, ProductsModel::ORDER_COLUMNS, true)) {
                     $listOrdering = $sortby;
                 }
             }
@@ -276,7 +249,7 @@ class ProducttagsModel extends ListModel
             $column = 'v.price';
         }
 
-        return \in_array($column, self::ORDER_COLUMNS, true) ? $column : $fallback;
+        return \in_array($column, ProductsModel::ORDER_COLUMNS, true) ? $column : $fallback;
     }
 
     /**
