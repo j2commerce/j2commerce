@@ -173,6 +173,12 @@ class HtmlView extends BaseHtmlView
         $catids             = $this->state->get('filter.catids', []);
         $this->filter_catid = !empty($catids) ? reset($catids) : '';
 
+        RouteHelper::applyListingPaginationRoute(
+            $this->pagination,
+            'products',
+            ['catid' => (int) $this->filter_catid > 0 ? (int) $this->filter_catid : null]
+        );
+
         // Check for errors
         if (\count($errors = $model->getErrors())) {
             throw new GenericDataException(implode("\n", $errors), 500);

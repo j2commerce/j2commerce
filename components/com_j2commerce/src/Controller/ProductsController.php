@@ -17,6 +17,7 @@ namespace J2Commerce\Component\J2commerce\Site\Controller;
 use J2Commerce\Component\J2commerce\Administrator\Controller\ProductsController as AdminProductsController;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\ProductFilterRequestHelper;
+use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use J2Commerce\Component\J2commerce\Site\Model\ProductsModel;
 use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 use Joomla\CMS\Factory;
@@ -265,7 +266,7 @@ class ProductsController extends AdminProductsController
             }
 
             $productsHtml   = $this->renderProducts($items, $params, $catid);
-            $paginationHtml = $this->renderPagination($pagination, $catid);
+            $paginationHtml = $this->renderPagination($pagination, $catid, $tagIds, $tagMatch);
 
             if (!empty($subtemplate)) {
                 ProductLayoutService::clearSubtemplateOverride();
@@ -435,8 +436,25 @@ class ProductsController extends AdminProductsController
         return ob_get_clean();
     }
 
-    protected function renderPagination(\Joomla\CMS\Pagination\Pagination $pagination, int $catid): string
-    {
+    protected function renderPagination(
+        \Joomla\CMS\Pagination\Pagination $pagination,
+        int $catid,
+        array $tagIds = [],
+        string $tagMatch = 'any'
+    ): string {
+        // Built inside the AJAX filter request, so without this the links carry this
+        // request's own task/format and address the JSON endpoint rather than a page.
+        if (!empty($tagIds)) {
+            RouteHelper::applyListingPaginationRoute($pagination, 'producttags', [
+                'tag_ids'   => $tagIds,
+                'tag_match' => $tagMatch === 'all' ? 'all' : 'any',
+            ]);
+        } else {
+            RouteHelper::applyListingPaginationRoute($pagination, 'products', [
+                'catid' => $catid > 0 ? $catid : null,
+            ]);
+        }
+
         ob_start();
 
         echo '<nav class="j2commerce-pagination mt-4" aria-label="' . Text::_('JLIB_HTML_PAGINATION') . '">';

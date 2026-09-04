@@ -190,6 +190,15 @@ class HtmlView extends BaseHtmlView
         $this->tag_ids       = $model->getState('filter.tag_ids', []);
         $this->tag_match     = $model->getState('filter.tag_match', 'any');
 
+        RouteHelper::applyListingPaginationRoute(
+            $this->pagination,
+            'producttags',
+            [
+                'tag_ids'   => $this->tag_ids ?: null,
+                'tag_match' => $this->tag_ids ? $this->tag_match : null,
+            ]
+        );
+
         // Check for errors
         if (\count($errors = $model->getErrors())) {
             throw new GenericDataException(implode("\n", $errors), 500);

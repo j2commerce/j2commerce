@@ -578,8 +578,12 @@ class J2CommerceFilters {
         const existingRows = contentArea.querySelectorAll('.j2commerce-products-row');
         existingRows.forEach(row => row.remove());
 
+        // Keep the replacement where the old nav lived. The first render puts it inside
+        // <form id="j2commerce-pagination">, which carries filter_catid and the token;
+        // appending to contentArea instead leaves that form holding only hidden inputs.
         const existingPagination = contentArea.querySelector('.j2commerce-pagination');
-        if (existingPagination) existingPagination.closest('form, nav')?.remove();
+        const paginationParent = existingPagination ? existingPagination.parentNode : null;
+        if (existingPagination) existingPagination.remove();
 
         // Remove "no products" alert — may be a bare .alert-info or wrapped in .row > .col-12
         const existingNoProducts = contentArea.querySelector('.alert-info');
@@ -609,7 +613,10 @@ class J2CommerceFilters {
         if (data.pagination) {
             const paginationDiv = document.createElement('div');
             paginationDiv.append(J2CommerceDom.parse(data.pagination));
-            contentArea.appendChild(paginationDiv.firstChild || paginationDiv);
+            const paginationTarget = paginationParent && paginationParent.isConnected
+                ? paginationParent
+                : contentArea;
+            paginationTarget.appendChild(paginationDiv.firstChild || paginationDiv);
         }
 
         this.productContainer.dispatchEvent(new CustomEvent('j2commerce:filters-applied', {

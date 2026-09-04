@@ -15,6 +15,7 @@ namespace J2Commerce\Component\J2commerce\Site\Helper;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Language\Multilanguage;
+use Joomla\CMS\Pagination\Pagination;
 
 /**
  * J2Commerce Component Route Helper.
@@ -256,6 +257,36 @@ abstract class RouteHelper
         }
 
         return $link;
+    }
+
+    /**
+     * Point a listing's pagination links at that listing's own route.
+     *
+     * Joomla seeds pagination links from the request's router vars through a fixed
+     * allow-list (Pagination::$paramsFromRequest). It carries `id`, `task` and `format`
+     * but neither `catid` nor `tag_ids` — the only params this component's router builds
+     * a listing URL from. So a category page's links collapse to the bare menu alias
+     * carrying a stale `id`, and links rendered inside the `products.filter` AJAX request
+     * inherit its task/format and address the JSON endpoint instead of a page.
+     *
+     * @param   array<string, mixed>  $routeParams  View-specific params, e.g. ['catid' => 5].
+     *                                              A null value drops the param.
+     */
+    public static function applyListingPaginationRoute(
+        Pagination $pagination,
+        string $view,
+        array $routeParams = []
+    ): void {
+        foreach (['id', 'task', 'format'] as $key) {
+            $pagination->setAdditionalUrlParam($key, null);
+        }
+
+        $pagination->setAdditionalUrlParam('option', 'com_j2commerce');
+        $pagination->setAdditionalUrlParam('view', $view);
+
+        foreach ($routeParams as $key => $value) {
+            $pagination->setAdditionalUrlParam($key, $value);
+        }
     }
 
     /**
