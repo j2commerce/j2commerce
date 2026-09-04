@@ -92,10 +92,11 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             // every gate. Status changes that write history go through orders/:id/status.
             new Route(['GET'], 'v1/j2commerce/orders/:id/history', 'orderhistories.displayList', ['id' => '(\d+)'], $private),
 
-            // Fulfilment (issue #1187) — ship-to detail + event-safe status + tracking write
+            // Fulfilment (issue #1187) — ship-to detail + event-safe status + tracking write + label
             new Route(['GET'], 'v1/j2commerce/orders/:id/fulfilment', 'orderfulfilment.displayItem', ['id' => '(\d+)'], $private),
             new Route(['POST'], 'v1/j2commerce/orders/:id/status', 'orderfulfilment.changeStatus', ['id' => '(\d+)'], $private),
             new Route(['POST'], 'v1/j2commerce/orders/:id/tracking', 'orderfulfilment.saveTracking', ['id' => '(\d+)'], $private),
+            new Route(['POST'], 'v1/j2commerce/orders/:id/label', 'orderfulfilment.createLabel', ['id' => '(\d+)'], $private),
 
             // Product variants
             new Route(['GET'], 'v1/j2commerce/products/:id/variants', 'variants.displayList', ['id' => '(\d+)'], $private),

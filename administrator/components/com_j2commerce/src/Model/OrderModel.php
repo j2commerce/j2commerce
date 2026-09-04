@@ -1500,6 +1500,82 @@ class OrderModel extends AdminModel
         return (int) $db->loadResult();
     }
 
+    /**
+     * Written into ordershipping_tracking_id while a label is being bought, so a second
+     * concurrent request finds the slot taken. Never a real carrier tracking number.
+     */
+    public const LABEL_SLOT_PENDING = '__j2c_label_pending__';
+
+    /**
+     * Take the tracking slot for this order, if it is free and there is a shipping row to
+     * take it on. The conditional UPDATE is the lock: buying a shipping label costs the
+     * merchant money and the stored tracking number is the only thing preventing a second
+     * purchase, so the slot has to be claimed before the carrier is called, not after.
+     */
+    public function claimLabelSlot(int $orderId): bool
+    {
+        $db         = $this->getDatabase();
+        $orderIdStr = $this->getOrderIdString($orderId);
+
+        if ($orderIdStr === '') {
+            return false;
+        }
+
+        $pending = self::LABEL_SLOT_PENDING;
+        $query   = $db->getQuery(true)
+            ->update($db->quoteName('#__j2commerce_ordershippings'))
+            ->set($db->quoteName('ordershipping_tracking_id') . ' = :pending')
+            ->where($db->quoteName('order_id') . ' = :orderIdStr')
+            ->where('(' . $db->quoteName('ordershipping_tracking_id') . ' IS NULL OR '
+                . $db->quoteName('ordershipping_tracking_id') . ' = ' . $db->quote('') . ')')
+            ->bind(':pending', $pending)
+            ->bind(':orderIdStr', $orderIdStr);
+
+        $db->setQuery($query);
+        $db->execute();
+
+        // The slot moves from empty to the sentinel, so the value always changes and the
+        // affected-row count is not subject to the unchanged-value zero MySQL reports.
+        return $db->getAffectedRows() > 0;
+    }
+
+    /** Hand back a slot claimed by claimLabelSlot() when no label was bought after all. */
+    public function releaseLabelSlot(int $orderId): void
+    {
+        $db         = $this->getDatabase();
+        $orderIdStr = $this->getOrderIdString($orderId);
+
+        if ($orderIdStr === '') {
+            return;
+        }
+
+        $pending = self::LABEL_SLOT_PENDING;
+        $query   = $db->getQuery(true)
+            ->update($db->quoteName('#__j2commerce_ordershippings'))
+            ->set($db->quoteName('ordershipping_tracking_id') . ' = ' . $db->quote(''))
+            ->where($db->quoteName('order_id') . ' = :orderIdStr')
+            ->where($db->quoteName('ordershipping_tracking_id') . ' = :pending')
+            ->bind(':orderIdStr', $orderIdStr)
+            ->bind(':pending', $pending);
+
+        $db->setQuery($query);
+        $db->execute();
+    }
+
+    private function getOrderIdString(int $orderId): string
+    {
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('order_id'))
+            ->from($db->quoteName('#__j2commerce_orders'))
+            ->where($db->quoteName('j2commerce_order_id') . ' = :orderId')
+            ->bind(':orderId', $orderId, ParameterType::INTEGER);
+
+        $db->setQuery($query);
+
+        return (string) $db->loadResult();
+    }
+
     public function saveTrackingNumber(int $orderId, string $trackingId): bool
     {
         $db    = $this->getDatabase();
@@ -1513,6 +1589,20 @@ class OrderModel extends AdminModel
         $orderIdStr = $db->loadResult();
 
         if (!$orderIdStr) {
+            return false;
+        }
+
+        // The UPDATE below reports success whether or not it matched a row, so an order with
+        // no shipping row would silently keep no tracking number and report that it saved.
+        $existsQuery = $db->getQuery(true)
+            ->select('COUNT(*)')
+            ->from($db->quoteName('#__j2commerce_ordershippings'))
+            ->where($db->quoteName('order_id') . ' = :orderIdStr')
+            ->bind(':orderIdStr', $orderIdStr);
+
+        $db->setQuery($existsQuery);
+
+        if ((int) $db->loadResult() === 0) {
             return false;
         }
 
