@@ -134,7 +134,11 @@ class HtmlView extends BaseHtmlView
             $this->taxes = ($order && method_exists($order, 'getOrderTaxrates')) ? $order->getOrderTaxrates() : [];
 
             if (\count($items) < 1) {
-                $app->redirect(Route::_('index.php?option=com_j2commerce&view=carts'));
+                // Resolve the destination the cart view would resolve, so an empty cart here
+                // lands in one hop instead of bouncing through the cart to the same place.
+                $app->redirect(
+                    $cartsModel?->getEmptyCartRedirectUrl() ?: Route::_('index.php?option=com_j2commerce&view=carts')
+                );
 
                 return;
             }

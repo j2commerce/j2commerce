@@ -1087,13 +1087,17 @@ class CartModel extends BaseDatabaseModel
      */
     public function getEmptyCartRedirectUrl(): ?string
     {
-        $params = J2CommerceHelper::config();
+        $app = Factory::getApplication();
+
+        // On the site the active menu item's params are merged over the component's, so a cart
+        // or checkout menu item can name its own destination. Registry::merge() skips empty
+        // values, which is what makes the fields' "Use Global" option fall back to config.xml.
+        $params = $app->isClient('site') ? $app->getParams('com_j2commerce') : J2CommerceHelper::config();
         $type   = $params->get('config_cart_empty_redirect', 'cart');
         $url    = '';
 
         switch ($type) {
             case 'homepage':
-                $app     = Factory::getApplication();
                 $menu    = $app->getMenu('site');
                 $default = $menu->getDefault($app->getLanguage()->getTag());
                 $url     = $default ? Route::_($default->link . '&Itemid=' . $default->id, false) : Route::_('index.php', false);
@@ -1103,7 +1107,6 @@ class CartModel extends BaseDatabaseModel
                 $menuItemid = $params->get('continue_cart_redirect_menu', '');
 
                 if (!empty($menuItemid)) {
-                    $app      = Factory::getApplication();
                     $menu     = $app->getMenu('site');
                     $menuItem = $menu->getItem($menuItemid);
 

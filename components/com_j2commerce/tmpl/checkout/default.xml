@@ -19,5 +19,37 @@
 				default="bootstrap5"
 			/>
 		</fieldset>
+		<fieldset name="cart" label="JGLOBAL_FIELDSET_OPTIONS">
+			<field
+				name="config_cart_empty_redirect"
+				type="list"
+				label="COM_J2COMMERCE_CONFIG_CART_EMPTY_REDIRECT"
+				description="COM_J2COMMERCE_CONFIG_CART_EMPTY_REDIRECT_DESC"
+				default=""
+				validate="options"
+			>
+				<option value="">JGLOBAL_USE_GLOBAL</option>
+				<option value="homepage">COM_J2COMMERCE_TO_HOMEPAGE</option>
+				<option value="cart">COM_J2COMMERCE_TO_CART</option>
+				<option value="menu">COM_J2COMMERCE_TO_MENU</option>
+				<option value="url">COM_J2COMMERCE_TO_URL</option>
+			</field>
+
+			<field
+				name="continue_cart_redirect_menu"
+				type="menuitem"
+				label="COM_J2COMMERCE_CONFIG_CART_REDIRECT_MENU"
+				description="COM_J2COMMERCE_CONFIG_CART_REDIRECT_MENU_DESC"
+				showon="config_cart_empty_redirect:menu"
+			/>
+
+			<field
+				name="config_cart_redirect_page_url"
+				type="url"
+				label="COM_J2COMMERCE_CONFIG_CART_REDIRECT_URL"
+				description="COM_J2COMMERCE_CONFIG_CART_REDIRECT_URL_DESC"
+				showon="config_cart_empty_redirect:url"
+			/>
+		</fieldset>
 	</fields>
 </metadata>

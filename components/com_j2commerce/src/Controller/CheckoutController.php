@@ -124,7 +124,7 @@ class CheckoutController extends BaseController
     }
 
     /**
-     * Log out the current user and redirect based on config_cart_empty_redirect setting.
+     * Log out the current user and redirect where an empty cart goes.
      */
     public function logout(): void
     {
@@ -132,31 +132,11 @@ class CheckoutController extends BaseController
 
         $this->app->logout();
 
-        $params   = J2CommerceHelper::config();
-        $redirect = $params->get('config_cart_empty_redirect', 'cart');
+        $model = $this->getMvcFactory()->createModel('Carts', 'Site', ['ignore_request' => true]);
 
-        switch ($redirect) {
-            case 'homepage':
-                $menu    = $this->app->getMenu('site');
-                $default = $menu->getDefault($this->app->getLanguage()->getTag());
-                $url     = $default ? Route::_($default->link . '&Itemid=' . $default->id) : Route::_('index.php');
-                break;
-
-            case 'menu':
-                $menuItemId = (int) $params->get('continue_cart_redirect_menu', 0);
-                $url        = $menuItemId ? Route::_('index.php?Itemid=' . $menuItemId) : Route::_('index.php');
-                break;
-
-            case 'url':
-                $url = $params->get('config_cart_redirect_page_url', '') ?: Route::_('index.php');
-                break;
-
-            default:
-                $url = Route::_('index.php?option=com_j2commerce&view=carts');
-                break;
-        }
-
-        $this->app->redirect($url);
+        $this->app->redirect(
+            $model?->getEmptyCartRedirectUrl() ?: Route::_('index.php?option=com_j2commerce&view=carts')
+        );
     }
 
     /**
