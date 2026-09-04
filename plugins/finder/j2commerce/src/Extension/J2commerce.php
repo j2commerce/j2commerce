@@ -540,14 +540,6 @@ final class J2commerce extends Adapter implements SubscriberInterface
                 $item->addInstruction(Indexer::META_CONTEXT, 'upcs');
                 $item->upcs = $variantData['upcs'];
             }
-
-            // Deep-link the product result to the first SKU's variant so a SKU
-            // search lands on that variant pre-selected on the product page.
-            if ($redirectTo !== 'article' && !empty($variantData['first_sku_variant_id'])) {
-                $variantQuery = '&variant_id=' . (int) $variantData['first_sku_variant_id'];
-                $item->url .= $variantQuery;
-                $item->route .= $variantQuery;
-            }
         }
 
         // Translate the state. Articles should only be published if the category is published.
@@ -598,7 +590,7 @@ final class J2commerce extends Adapter implements SubscriberInterface
      *
      * @param   int  $productId  The J2Commerce product ID.
      *
-     * @return  array{skus: array, upcs: array, first_sku_variant_id: int}  SKUs/UPCs plus the first SKU's variant id.
+     * @return  array{skus: array, upcs: array}
      *
      * @since   6.0.0
      */
@@ -616,19 +608,12 @@ final class J2commerce extends Adapter implements SubscriberInterface
         $db->setQuery($query);
         $variants = $db->loadObjectList();
 
-        $skus              = [];
-        $upcs              = [];
-        $firstSkuVariantId = 0;
+        $skus = [];
+        $upcs = [];
 
         foreach ($variants as $variant) {
             if (!empty($variant->sku)) {
                 $skus[] = $variant->sku;
-
-                // First variant (lowest id) that carries a SKU becomes the
-                // deep-link target for the single product search result.
-                if ($firstSkuVariantId === 0) {
-                    $firstSkuVariantId = (int) $variant->j2commerce_variant_id;
-                }
             }
             if (!empty($variant->upc)) {
                 $upcs[] = $variant->upc;
@@ -636,9 +621,8 @@ final class J2commerce extends Adapter implements SubscriberInterface
         }
 
         return [
-            'skus'                 => $skus,
-            'upcs'                 => $upcs,
-            'first_sku_variant_id' => $firstSkuVariantId,
+            'skus' => $skus,
+            'upcs' => $upcs,
         ];
     }
 
