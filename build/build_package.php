@@ -456,31 +456,15 @@ function buildComponentZip(string $joomlaRoot, string $tempDir, string $version,
         $count++;
     }
 
-    // 6. Admin language files (referenced by <administration><languages> in manifest)
-    //    Bundles com_j2commerce.{ini,sys.ini} into administrator/language/{tag}/ so
-    //    plugin/module forms and CLI/dispatchers calling
-    //    $lang->load('com_j2commerce', JPATH_ADMINISTRATOR) find the file (fixes #851).
-    //    Auto-discovers every locale folder under administrator/language/ — add a new
-    //    locale (e.g. pt-BR) by dropping the files into the tree; no edits needed here.
-    $adminLangRoot = $joomlaRoot . '/administrator/language';
-
-    if (is_dir($adminLangRoot)) {
-        foreach (new DirectoryIterator($adminLangRoot) as $entry) {
-            if ($entry->isDot() || !$entry->isDir() || !preg_match('/^[a-z]{2}-[A-Z]{2}$/', $entry->getFilename())) {
-                continue;
-            }
-
-            $tag = $entry->getFilename();
-
-            foreach (['com_j2commerce.ini', 'com_j2commerce.sys.ini'] as $file) {
-                $absPath = $adminLangRoot . '/' . $tag . '/' . $file;
-                if (file_exists($absPath)) {
-                    $zip->addFile($absPath, 'administrator/language/' . $tag . '/' . $file);
-                    $count++;
-                }
-            }
-        }
-    }
+    // Admin language files are NOT bundled here. Joomla's installer deploys them from
+    // the <administration><languages> block in the manifest, which sources them from
+    // administrator/components/com_j2commerce/language/{tag}/ (already added above).
+    // Files placed at administrator/language/** inside the zip are declared nowhere in
+    // the manifest, so Installer::parseLanguages() never reads them — they were extracted
+    // to the temp dir and discarded, costing ~1.8 MB compressed for no effect.
+    // Note that parseLanguages() only installs a locale whose folder already exists
+    // (the core language pack must be installed first); bundling files here never
+    // changed that, because the installer ignores undeclared paths either way.
 
     $zip->close();
     echo "  com_j2commerce.zip ({$count} files)\n";
