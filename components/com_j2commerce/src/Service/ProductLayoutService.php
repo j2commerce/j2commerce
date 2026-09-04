@@ -219,7 +219,11 @@ final class ProductLayoutService
 
     public static function setSubtemplateOverride(string $subtemplate): void
     {
-        self::$subtemplateOverride = self::mapSubtemplateToPluginFolder($subtemplate);
+        $folder = self::mapSubtemplateToPluginFolder($subtemplate);
+
+        // An unknown name leaves the override unset so resolvePluginFolder() falls back
+        // to the configured subtemplate instead of composing a folder we do not ship.
+        self::$subtemplateOverride = self::isInstalledSubtemplateFolder($folder) ? $folder : null;
     }
 
     public static function clearSubtemplateOverride(): void
@@ -247,7 +251,27 @@ final class ProductLayoutService
 
         $folder = self::mapSubtemplateToPluginFolder($subtemplate);
 
+        if (!self::isInstalledSubtemplateFolder($folder)) {
+            $folder = 'app_bootstrap5';
+        }
+
         return $folder;
+    }
+
+    /** Allow-list: the app_* plugin folders this installation actually ships layouts from. */
+    private static function isInstalledSubtemplateFolder(string $folder): bool
+    {
+        static $installed;
+
+        if ($installed === null) {
+            $installed = [];
+
+            foreach (glob(JPATH_PLUGINS . '/j2commerce/app_*/layouts', GLOB_ONLYDIR) ?: [] as $path) {
+                $installed[basename(\dirname($path))] = true;
+            }
+        }
+
+        return isset($installed[$folder]);
     }
 
     /**
