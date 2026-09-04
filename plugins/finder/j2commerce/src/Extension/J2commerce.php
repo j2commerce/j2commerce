@@ -561,14 +561,17 @@ final class J2commerce extends Adapter implements SubscriberInterface
             $item->addTaxonomy('J2Commerce Brand', $item->brand);
         }
 
-        // Set product image for search results. Index the raw relative path as well so a
-        // consumer can resolve the size it needs; imageUrl is kept for compatibility.
+        // Set product image for search results. Both fields hold the raw relative
+        // path — matching every other core finder adapter — so a consumer resolves
+        // the derivative it wants at render time via ImageHelper::getProductImage().
+        // Storing an absolute URL here breaks under CLI, where Uri::root() resolves
+        // to the ConsoleApplication placeholder host instead of the real site.
         if ($this->params->get('show_product_image', 1)) {
             $imagePath = ($item->main_image ?? '') ?: (($item->thumb_image ?? '') ?: ($item->tiny_image ?? ''));
 
             if ($imagePath !== '' && ImageHelper::isValidImagePath($imagePath)) {
                 $item->imagePath = $imagePath;
-                $item->imageUrl  = ImageHelper::getProductImage($imagePath, 80, 'raw');
+                $item->imageUrl  = $imagePath;
                 $item->imageAlt  = $item->main_image_alt ?? $item->title;
             }
         }
