@@ -12,6 +12,7 @@
     <namespace path="src">J2Commerce\Module\Currency</namespace>
     <files>
         <folder module="mod_j2commerce_currency">services</folder>
+        <folder>language</folder>
         <folder>src</folder>
         <folder>tmpl</folder>
     </files>

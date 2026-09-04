@@ -38,6 +38,7 @@
     </media>
 
     <files folder="components/com_j2commerce">
+        <folder>language</folder>
         <folder>layouts</folder>
         <folder>services</folder>
         <folder>src</folder>

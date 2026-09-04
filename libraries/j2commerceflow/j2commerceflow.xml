@@ -13,6 +13,7 @@
     <namespace path="src">J2Commerce\Library\Flow</namespace>
     <scriptfile>script.php</scriptfile>
     <files>
+        <folder>language</folder>
         <folder>src</folder>
     </files>
     <languages folder="language">

@@ -12,6 +12,7 @@
     <namespace path="src">J2Commerce\Plugin\Installer\J2Commerce</namespace>
     <files>
         <folder plugin="j2commerce">services</folder>
+        <folder>language</folder>
         <folder>src</folder>
     </files>
     <languages>

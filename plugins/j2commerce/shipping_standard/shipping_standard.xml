@@ -13,6 +13,7 @@
 
     <files>
         <folder plugin="shipping_standard">services</folder>
+        <folder>language</folder>
         <folder>src</folder>
         <folder>tmpl</folder>
         <folder>forms</folder>

@@ -16,12 +16,15 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\LanguageRepairHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\SampleDataHelper;
+use Joomla\CMS\Access\Exception\NotAllowed;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\CMS\Response\JsonResponse;
+use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
 
 class DashboardController extends BaseController
@@ -198,5 +201,30 @@ class DashboardController extends BaseController
         }
 
         $this->app->close();
+    }
+
+    public function repairLanguages(): void
+    {
+        $this->checkToken('get');
+
+        if (!$this->app->getIdentity()->authorise('core.admin', 'com_j2commerce')) {
+            throw new NotAllowed(Text::_('COM_J2COMMERCE_ERROR_ACCESS_DENIED'), 403);
+        }
+
+        try {
+            $copied = LanguageRepairHelper::repair();
+
+            $this->app->enqueueMessage(
+                $copied > 0
+                    ? Text::sprintf('COM_J2COMMERCE_DASHBOARD_LANGUAGE_REPAIRED', $copied)
+                    : Text::_('COM_J2COMMERCE_DASHBOARD_LANGUAGE_NOTHING_TO_REPAIR'),
+                $copied > 0 ? 'success' : 'info'
+            );
+        } catch (\Throwable $e) {
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $this->app->enqueueMessage(Text::_('COM_J2COMMERCE_ERROR_INTERNAL'), 'error');
+        }
+
+        $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=dashboard', false));
     }
 }

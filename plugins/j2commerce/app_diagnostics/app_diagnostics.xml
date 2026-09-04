@@ -12,6 +12,7 @@
 	<description>PLG_J2COMMERCE_APP_DIAGNOSTICS_DESCRIPTION</description>
 	<files>
 		<folder plugin="app_diagnostics">services</folder>
+		<folder>language</folder>
 		<folder>src</folder>
 	</files>
 

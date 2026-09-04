@@ -14,6 +14,7 @@
     <scriptfile>script.php</scriptfile>
     <files>
         <folder>csvexport</folder>
+        <folder>language</folder>
         <folder>layouts</folder>
         <folder>src</folder>
         <folder>vendor</folder>

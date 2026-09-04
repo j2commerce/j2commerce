@@ -13,6 +13,7 @@
 
     <files>
         <folder module="mod_j2commerce_quickicons">services</folder>
+        <folder>language</folder>
         <folder>src</folder>
         <folder>tmpl</folder>
     </files>

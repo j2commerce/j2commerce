@@ -17,6 +17,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\View\Dashboard;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\LanguageRepairHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\MenuHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OnboardingHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\SampleDataHelper;
@@ -30,6 +31,8 @@ use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
+use Joomla\CMS\Router\Route;
+use Joomla\CMS\Session\Session;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 
 class HtmlView extends BaseHtmlView
@@ -238,6 +241,31 @@ class HtmlView extends BaseHtmlView
             }
 
             $this->dashboardMessages[] = $msg;
+        }
+
+        // Joomla skips an extension's strings for any locale whose core pack was not yet installed,
+        // so a language pack added after J2Commerce leaves those locales in English until repaired.
+        $missingLocales = $this->getCurrentUser()->authorise('core.admin', 'com_j2commerce')
+            ? LanguageRepairHelper::getMissingLocales()
+            : [];
+
+        if ($missingLocales !== []) {
+            $this->dashboardMessages[] = [
+                // The id carries the gap itself, so dismissing it never hides a later language pack.
+                'id'   => 'com_j2commerce_language_gap_' . md5(implode(',', $missingLocales)),
+                'text' => Text::sprintf(
+                    'COM_J2COMMERCE_DASHBOARD_LANGUAGE_GAP',
+                    $this->escape(implode(', ', $missingLocales))
+                ),
+                'type'        => 'info',
+                'icon'        => 'fa-solid fa-language',
+                'dismissible' => 'forever',
+                'link'        => Route::_(
+                    'index.php?option=com_j2commerce&task=dashboard.repairLanguages&' . Session::getFormToken() . '=1'
+                ),
+                'linkText' => Text::_('COM_J2COMMERCE_DASHBOARD_LANGUAGE_REPAIR'),
+                'priority' => 50,
+            ];
         }
 
         usort($this->dashboardMessages, fn ($a, $b) => ($a['priority'] ?? 500) <=> ($b['priority'] ?? 500));

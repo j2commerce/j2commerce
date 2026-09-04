@@ -13,6 +13,7 @@
 
     <files>
         <folder plugin="j2commerce">services</folder>
+        <folder>language</folder>
         <folder>src</folder>
     </files>
 

@@ -12,6 +12,7 @@
 	<description>PLG_J2COMMERCE_APP_LOCALIZATION_DATA_DESCRIPTION</description>
 	<files>
 		<folder plugin="app_localization_data">services</folder>
+		<folder>language</folder>
 		<folder>src</folder>
 	</files>
 

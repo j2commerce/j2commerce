@@ -13,6 +13,7 @@
 
     <files>
         <folder plugin="app_uikit">services</folder>
+        <folder>language</folder>
         <folder>layouts</folder>
         <folder>src</folder>
         <folder>tmpl</folder>

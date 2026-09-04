@@ -13,6 +13,7 @@
 
     <files>
         <folder plugin="payment_banktransfer">services</folder>
+        <folder>language</folder>
         <folder>src</folder>
         <folder>tmpl</folder>
     </files>

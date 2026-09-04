@@ -13,6 +13,7 @@
 
     <files>
         <folder plugin="shipping_free">services</folder>
+        <folder>language</folder>
         <folder>src</folder>
     </files>
 
