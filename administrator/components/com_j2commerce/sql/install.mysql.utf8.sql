@@ -903,7 +903,8 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_ordershippings` (
   `ordershipping_code` varchar(255) NOT NULL DEFAULT '',
   `ordershipping_tax` decimal(15,5) DEFAULT 0.00000,
   `ordershipping_extra` decimal(15,5) DEFAULT 0.00000,
-  `ordershipping_tracking_id` mediumtext NOT NULL,
+  `ordershipping_tracking_id` mediumtext NOT NULL COMMENT 'Carrier tracking number shown to the customer. Only ever a real tracking number -- the label-purchase lock lives in ordershipping_label_claim.',
+  `ordershipping_label_claim` varchar(64) NOT NULL DEFAULT '' COMMENT 'Internal lock held while a shipping label is being bought. Never rendered as a tracking number.',
   PRIMARY KEY (`j2commerce_ordershipping_id`),
   KEY `idx_order_shipping_order_id` (`order_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

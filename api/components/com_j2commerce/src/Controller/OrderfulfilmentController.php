@@ -16,6 +16,7 @@ namespace J2Commerce\Component\J2commerce\Api\Controller;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
+use J2Commerce\Component\J2commerce\Administrator\Model\OrderModel;
 use Joomla\CMS\Access\Exception\NotAllowed;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
@@ -76,6 +77,10 @@ class OrderfulfilmentController extends J2CommerceApiController
             'ordershipping_code'        => $shipping->ordershipping_code ?? '',
             'ordershipping_type'        => $shipping->ordershipping_type ?? '',
             'ordershipping_tracking_id' => $shipping->ordershipping_tracking_id ?? '',
+            // A held claim means a label purchase got far enough to have possibly been billed
+            // without returning a storable tracking number, so an empty tracking number here
+            // is not the same thing as "nothing has been attempted".
+            'label_claim_held' => OrderModel::isLabelSlotHeld($shipping),
         ];
 
         return $this->emit($data);

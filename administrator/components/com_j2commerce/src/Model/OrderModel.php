@@ -1501,16 +1501,17 @@ class OrderModel extends AdminModel
     }
 
     /**
-     * Written into ordershipping_tracking_id while a label is being bought, so a second
-     * concurrent request finds the slot taken. Never a real carrier tracking number.
+     * Written into ordershipping_label_claim while a label is being bought, so a second
+     * concurrent request finds the slot taken. It lives in its own column and never in
+     * ordershipping_tracking_id, which only ever holds a real carrier tracking number.
      */
     public const LABEL_SLOT_PENDING = '__j2c_label_pending__';
 
     /**
-     * Take the tracking slot for this order, if it is free and there is a shipping row to
-     * take it on. The conditional UPDATE is the lock: buying a shipping label costs the
-     * merchant money and the stored tracking number is the only thing preventing a second
-     * purchase, so the slot has to be claimed before the carrier is called, not after.
+     * Take the label slot for this order, if it is free and there is a shipping row to take
+     * it on. The conditional UPDATE is the lock: buying a shipping label costs the merchant
+     * money, so the slot has to be claimed before the carrier is called, not after. A row
+     * that already carries a tracking number has had its label bought, so it is not free.
      */
     public function claimLabelSlot(int $orderId): bool
     {
@@ -1524,8 +1525,10 @@ class OrderModel extends AdminModel
         $pending = self::LABEL_SLOT_PENDING;
         $query   = $db->getQuery(true)
             ->update($db->quoteName('#__j2commerce_ordershippings'))
-            ->set($db->quoteName('ordershipping_tracking_id') . ' = :pending')
+            ->set($db->quoteName('ordershipping_label_claim') . ' = :pending')
             ->where($db->quoteName('order_id') . ' = :orderIdStr')
+            ->where('(' . $db->quoteName('ordershipping_label_claim') . ' IS NULL OR '
+                . $db->quoteName('ordershipping_label_claim') . ' = ' . $db->quote('') . ')')
             ->where('(' . $db->quoteName('ordershipping_tracking_id') . ' IS NULL OR '
                 . $db->quoteName('ordershipping_tracking_id') . ' = ' . $db->quote('') . ')')
             ->bind(':pending', $pending)
@@ -1534,7 +1537,7 @@ class OrderModel extends AdminModel
         $db->setQuery($query);
         $db->execute();
 
-        // The slot moves from empty to the sentinel, so the value always changes and the
+        // The claim moves from empty to the sentinel, so the value always changes and the
         // affected-row count is not subject to the unchanged-value zero MySQL reports.
         return $db->getAffectedRows() > 0;
     }
@@ -1552,14 +1555,26 @@ class OrderModel extends AdminModel
         $pending = self::LABEL_SLOT_PENDING;
         $query   = $db->getQuery(true)
             ->update($db->quoteName('#__j2commerce_ordershippings'))
-            ->set($db->quoteName('ordershipping_tracking_id') . ' = ' . $db->quote(''))
+            ->set($db->quoteName('ordershipping_label_claim') . ' = ' . $db->quote(''))
             ->where($db->quoteName('order_id') . ' = :orderIdStr')
-            ->where($db->quoteName('ordershipping_tracking_id') . ' = :pending')
+            ->where($db->quoteName('ordershipping_label_claim') . ' = :pending')
             ->bind(':orderIdStr', $orderIdStr)
             ->bind(':pending', $pending);
 
         $db->setQuery($query);
         $db->execute();
+    }
+
+    /**
+     * Whether a label purchase is still holding this shipping row's slot. The 502 path in the
+     * API deliberately leaves a claim held when a handler answered but gave nothing storable,
+     * so this is what tells an operator "a label may already have been bought" apart from "no
+     * tracking yet" now that the two no longer share a column. Takes the loaded row rather
+     * than an id: every caller already has one.
+     */
+    public static function isLabelSlotHeld(?object $shipping): bool
+    {
+        return (string) ($shipping->ordershipping_label_claim ?? '') === self::LABEL_SLOT_PENDING;
     }
 
     private function getOrderIdString(int $orderId): string
@@ -1606,9 +1621,13 @@ class OrderModel extends AdminModel
             return false;
         }
 
+        // Storing a tracking number is the outcome the claim was held for, so it releases the
+        // claim in the same statement. That also gives an operator looking at a slot held by
+        // the 502 path a way to resolve it: typing the tracking number in clears the claim.
         $updateQuery = $db->getQuery(true)
             ->update($db->quoteName('#__j2commerce_ordershippings'))
             ->set($db->quoteName('ordershipping_tracking_id') . ' = :trackingId')
+            ->set($db->quoteName('ordershipping_label_claim') . ' = ' . $db->quote(''))
             ->where($db->quoteName('order_id') . ' = :orderIdStr')
             ->bind(':trackingId', $trackingId)
             ->bind(':orderIdStr', $orderIdStr);
@@ -1718,6 +1737,9 @@ class OrderModel extends AdminModel
                 ->set($db->quoteName('ordershipping_price') . ' = :price')
                 ->set($db->quoteName('ordershipping_tax') . ' = :tax')
                 ->set($db->quoteName('ordershipping_tracking_id') . ' = :tracking')
+                // Saving this field is the same release saveTrackingNumber() performs, so the
+                // two paths that write a tracking number agree about the claim.
+                ->set($db->quoteName('ordershipping_label_claim') . ' = ' . $db->quote(''))
                 ->where($db->quoteName('j2commerce_ordershipping_id') . ' = :shippingId')
                 ->bind(':name', $name)
                 ->bind(':price', $price)

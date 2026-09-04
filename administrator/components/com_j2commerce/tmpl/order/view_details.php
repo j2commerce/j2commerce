@@ -15,6 +15,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderTransactionHelper;
+use J2Commerce\Component\J2commerce\Administrator\Model\OrderModel;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Plugin\PluginHelper;
@@ -195,6 +196,15 @@ if ($hasDetails) {
                             <?php echo Text::_('COM_J2COMMERCE_FIELD_TRACKING_NUMBER'); ?>:
                             <strong class="text-body" id="trackingValue"><?php echo $this->escape($orderShipping->ordershipping_tracking_id ?: '-'); ?></strong>
                         </div>
+                        <?php if (OrderModel::isLabelSlotHeld($orderShipping)): ?>
+                            <div class="mt-1">
+                                <span class="badge bg-warning text-dark">
+                                    <span class="icon-warning" aria-hidden="true"></span>
+                                    <?php echo Text::_('COM_J2COMMERCE_ORDER_LABEL_CLAIM_HELD'); ?>
+                                </span>
+                                <span class="d-block small text-body-secondary"><?php echo Text::_('COM_J2COMMERCE_ORDER_LABEL_CLAIM_HELD_DESC'); ?></span>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
                 <div class="j2c-detail-card-shipping-buttons d-flex align-items-center gap-2">
