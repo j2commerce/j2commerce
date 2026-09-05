@@ -26,6 +26,7 @@
             default=""
             validate="options"
             class="w-100"
+            addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field"
         />
 
         <!-- CSS Class field -->
