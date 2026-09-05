@@ -296,7 +296,7 @@ final class DownloadHelper
     }
 
     /**
-     * Whether an order in this state is inside the `limit_orderstatuses` window.
+     * Whether an order in this state is inside the `download_orderstatuses` window.
      * The download endpoint asks this before serving so it applies the same predicate
      * getOrderDownloads() filters the listing on.
      */
@@ -308,14 +308,14 @@ final class DownloadHelper
     }
 
     /**
-     * Order states downloads are released in, from `limit_orderstatuses`.
+     * Order states downloads are released in, from `download_orderstatuses`.
      * An empty list means the setting places no restriction.
      *
      * @return  list<int>
      */
     private static function allowedDownloadStatuses(): array
     {
-        $configured = ComponentHelper::getParams('com_j2commerce')->get('limit_orderstatuses', '');
+        $configured = ComponentHelper::getParams('com_j2commerce')->get('download_orderstatuses', '');
 
         if (empty($configured)) {
             return [];

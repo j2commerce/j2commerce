@@ -1360,7 +1360,17 @@
         </field>
 
         <field
-            name="limit_orderstatuses"
+            name="myprofile_orderstatuses"
+            type="Orderstatus"
+            label="COM_J2COMMERCE_CONFIG_MYPROFILE_STATUSES"
+            description="COM_J2COMMERCE_CONFIG_MYPROFILE_STATUSES_DESC"
+            multiple="true"
+            default=""
+            layout="joomla.form.field.list-fancy-select"
+        />
+
+        <field
+            name="download_orderstatuses"
             type="Orderstatus"
             label="COM_J2COMMERCE_CONFIG_DOWNLOAD_STATUSES"
             description="COM_J2COMMERCE_CONFIG_DOWNLOAD_STATUSES_DESC"

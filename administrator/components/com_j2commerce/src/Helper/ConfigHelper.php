@@ -15,7 +15,9 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Component\ComponentHelper;
+use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Language;
+use Joomla\Database\DatabaseInterface;
 use Joomla\Registry\Registry;
 
 class ConfigHelper
@@ -1113,7 +1115,7 @@ class ConfigHelper
     }
 
     /**
-     * Get the order statuses that allow downloads.
+     * Order statuses whose transition grants downloads (`download_orderstatuses`).
      *
      * Callers gate a grant with `in_array($status, ...)`, so an empty list here would
      * release downloads on no status at all. It falls back to Confirmed rather than the
@@ -1127,17 +1129,27 @@ class ConfigHelper
      */
     public static function getDownloadAllowedStatuses(): array
     {
-        $value = self::get('limit_orderstatuses', '1');
+        $value     = self::get('download_orderstatuses', '');
+        $statusIds = \is_array($value)
+            ? array_map('intval', $value)
+            : array_map('intval', explode(',', (string) $value));
+        $statusIds = array_values(array_filter($statusIds, static fn (int $id): bool => $id > 0));
 
-        if (\is_array($value)) {
-            return array_map('intval', $value);
-        }
+        return $statusIds !== [] ? $statusIds : self::confirmedStatusIds();
+    }
 
-        if (empty($value)) {
-            return [1];
-        }
+    /** Status ids are install-dependent, so the fallback resolves Confirmed by name. */
+    private static function confirmedStatusIds(): array
+    {
+        $db    = Factory::getContainer()->get(DatabaseInterface::class);
+        $name  = 'J2COMMERCE_CONFIRMED';
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('j2commerce_orderstatus_id'))
+            ->from($db->quoteName('#__j2commerce_orderstatuses'))
+            ->where($db->quoteName('orderstatus_name') . ' = :name')
+            ->bind(':name', $name);
 
-        return array_map('intval', explode(',', (string) $value));
+        return array_map('intval', $db->setQuery($query)->loadColumn());
     }
 
     /**

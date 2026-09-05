@@ -488,8 +488,66 @@ class Com_J2commerceInstallerScript extends InstallerScript
         $this->repairVariantAvailability();
         $this->repairUploadsClientIp();
         $this->removeLegacyDebugLog();
+        $this->splitLimitOrderstatuses();
 
         $this->debugLog("=== POSTFLIGHT END ===");
+    }
+
+    /**
+     * `limit_orderstatuses` fed both the My Profile order filter and the download grant; each
+     * now has its own key. Carry the stored value into whichever of the two is still unset,
+     * then drop the old key. Idempotent — a second run finds no old key and returns.
+     */
+    private function splitLimitOrderstatuses(): void
+    {
+        $db = Factory::getContainer()->get(DatabaseInterface::class);
+
+        $query = $db->getQuery(true)
+            ->select([$db->quoteName('extension_id'), $db->quoteName('params')])
+            ->from($db->quoteName('#__extensions'))
+            ->where($db->quoteName('element') . ' = ' . $db->quote('com_j2commerce'))
+            ->where($db->quoteName('type') . ' = ' . $db->quote('component'));
+        $extension = $db->setQuery($query)->loadObject();
+
+        if (!$extension) {
+            return;
+        }
+
+        $storedParams = (string) $extension->params;
+        $params       = new Registry($storedParams);
+
+        if (!$params->exists('limit_orderstatuses')) {
+            return;
+        }
+
+        $legacy = $params->get('limit_orderstatuses');
+
+        foreach (['myprofile_orderstatuses', 'download_orderstatuses'] as $key) {
+            if (!$params->exists($key)) {
+                $params->set($key, $legacy);
+            }
+        }
+
+        $params->remove('limit_orderstatuses');
+
+        $paramsJson  = $params->toString();
+        $extensionId = (int) $extension->extension_id;
+
+        // Compare and swap on the bytes this ran against, as seedDefaultAcl() does.
+        $update = $db->getQuery(true)
+            ->update($db->quoteName('#__extensions'))
+            ->set($db->quoteName('params') . ' = :params')
+            ->where($db->quoteName('extension_id') . ' = :id')
+            ->where('CAST(' . $db->quoteName('params') . ' AS BINARY) = :expected')
+            ->bind(':params', $paramsJson)
+            ->bind(':expected', $storedParams)
+            ->bind(':id', $extensionId, ParameterType::INTEGER);
+
+        $db->setQuery($update)->execute();
+
+        if ($db->getAffectedRows() === 0) {
+            $this->debugLog('ORDERSTATUSES: extension params changed while splitting limit_orderstatuses — left as saved');
+        }
     }
 
     /**

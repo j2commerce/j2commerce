@@ -95,9 +95,9 @@ class MyprofileModel extends BaseDatabaseModel
                 ->bind(':srch4', $like);
         }
 
-        // Filter by allowed order statuses (config: limit_orderstatuses)
+        // Filter by allowed order statuses (config: myprofile_orderstatuses)
         $params        = ComponentHelper::getParams('com_j2commerce');
-        $limitStatuses = $params->get('limit_orderstatuses', '');
+        $limitStatuses = $params->get('myprofile_orderstatuses', '');
 
         if (!empty($limitStatuses)) {
             $statusIds = \is_array($limitStatuses)
@@ -362,9 +362,9 @@ class MyprofileModel extends BaseDatabaseModel
                 ->bind(':srch2', $like);
         }
 
-        // Filter downloads by allowed order statuses (config: limit_orderstatuses)
+        // Filter downloads by allowed order statuses (config: download_orderstatuses)
         $params        = ComponentHelper::getParams('com_j2commerce');
-        $limitStatuses = $params->get('limit_orderstatuses', '');
+        $limitStatuses = $params->get('download_orderstatuses', '');
 
         if (!empty($limitStatuses)) {
             $statusIds = \is_array($limitStatuses)
