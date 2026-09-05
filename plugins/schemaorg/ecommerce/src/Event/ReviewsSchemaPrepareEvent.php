@@ -10,6 +10,8 @@
 
 namespace Joomla\Plugin\Schemaorg\Ecommerce\Event;
 
+use Joomla\CMS\Log\Log;
+
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
@@ -38,29 +40,34 @@ namespace Joomla\Plugin\Schemaorg\Ecommerce\Event;
  * - Never contribute reviews aggregated from another site. Google prohibits it, which matters
  *   most for providers backed by an external review service.
  *
- * Note on multiple providers: addReview() appends, but setAggregateRating() replaces. Two
- * enabled providers therefore yield one provider's aggregate over both providers' reviews,
- * which do not agree. Enabling more than one provider per product is not currently a
- * supported configuration.
+ * Contribute through contribute(), not through the setters below. It takes the aggregate and
+ * the reviews as one unit keyed by your plugin, so when two providers are enabled the first in
+ * plugin order supplies both halves and the second is ignored rather than half-merged. The
+ * setters remain for backwards compatibility and are NOT guarded: two providers both using
+ * them still produce one provider's aggregate over both providers' reviews, which is the
+ * situation contribute() exists to prevent.
  *
  * Example usage in a plugin:
  * ```php
  * public function onReviewsPrepare(ReviewsSchemaPrepareEvent $event): void
  * {
- *     $productId = $event->getProductId();
- *     $reviews = $this->getReviewsForProduct($productId);
+ *     $reviews = $this->getReviewsForProduct($event->getProductId());
  *
- *     if (!empty($reviews)) {
- *         $event->setAggregateRating([
- *             '@type' => 'AggregateRating',
- *             'ratingValue' => 4.5,
- *             'reviewCount' => count($reviews),
- *             'bestRating' => 5,
- *             'worstRating' => 1
- *         ]);
- *
- *         $event->setReviews($reviews);
+ *     if (empty($reviews)) {
+ *         return;
  *     }
+ *
+ *     $event->contribute(
+ *         'app_reviews',
+ *         [
+ *             '@type'       => 'AggregateRating',
+ *             'ratingValue' => 4.5,
+ *             'reviewCount' => \count($reviews),
+ *             'bestRating'  => 5,
+ *             'worstRating' => 1,
+ *         ],
+ *         $reviews
+ *     );
  * }
  * ```
  *
@@ -68,6 +75,69 @@ namespace Joomla\Plugin\Schemaorg\Ecommerce\Event;
  */
 class ReviewsSchemaPrepareEvent extends AbstractSchemaEvent
 {
+    /**
+     * The plugin whose contribution this event has accepted, or null while none has been made.
+     */
+    private ?string $contributor = null;
+
+    /**
+     * Contribute this provider's review data, as one indivisible unit.
+     *
+     * The first provider to call wins, and a later call from a different plugin is ignored in
+     * full -- both halves, not just the aggregate. That is the point: an aggregate from one
+     * provider sitting over another provider's reviews describes neither of them, and Google
+     * requires the rating in the markup to be the one the visitor can see on the page.
+     *
+     * Which provider is first is decided by plugin ordering, because PluginHelper::load()
+     * orders by `ordering` and the dispatcher appends listeners within a priority band. So an
+     * admin who wants the other provider to win reorders them in the Plugins manager; there is
+     * no separate setting for it.
+     *
+     * The same plugin may call again to refine its own contribution.
+     *
+     * @param   string  $pluginId          Identifies the contributing plugin, e.g. 'app_reviews'.
+     * @param   array   $aggregateRating   AggregateRating schema, or [] to contribute none.
+     * @param   array   $reviews           Review schema entries, or [] to contribute none.
+     *
+     * @return  bool  True when this contribution was accepted.
+     */
+    public function contribute(string $pluginId, array $aggregateRating = [], array $reviews = []): bool
+    {
+        if ($this->contributor !== null && $this->contributor !== $pluginId) {
+            // Silence here would leave an admin with two providers enabled, one of them
+            // missing from the page, and nothing anywhere saying why.
+            Log::add(
+                \sprintf(
+                    'Review schema from "%s" ignored: "%s" contributed first. Reorder the plugins to change which one is used.',
+                    $pluginId,
+                    $this->contributor
+                ),
+                Log::WARNING,
+                'schemaorg'
+            );
+
+            return false;
+        }
+
+        $this->contributor = $pluginId;
+
+        if ($aggregateRating !== []) {
+            $this->setSchemaProperty('aggregateRating', $aggregateRating);
+        }
+
+        if ($reviews !== []) {
+            $this->setSchemaProperty('review', $reviews);
+        }
+
+        return true;
+    }
+
+    /** The plugin whose contribution was accepted, or null if none has been made. */
+    public function getContributor(): ?string
+    {
+        return $this->contributor;
+    }
+
     /**
      * Constructor.
      *
