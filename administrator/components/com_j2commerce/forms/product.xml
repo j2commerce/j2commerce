@@ -119,6 +119,7 @@
             description="COM_J2COMMERCE_FIELD_PRODUCT_TAXPROFILE_DESC"
             class="form-select"
             default=""
+            addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field"
         />
 
         <!-- Manufacturer -->
