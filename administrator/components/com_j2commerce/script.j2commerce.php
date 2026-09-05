@@ -170,6 +170,8 @@ class Com_J2commerceInstallerScript extends InstallerScript
 
         $this->cleanupStaleCheckoutTemplates();
 
+        $this->removeRetiredSchemaorgClasses();
+
         $this->removeObsoleteSchemaUpdates($parent);
 
         $this->seedOrderLedgerOnce();
@@ -296,6 +298,32 @@ class Com_J2commerceInstallerScript extends InstallerScript
             $path = $dir . $file;
             if (is_file($path) && @unlink($path)) {
                 $this->debugLog("UPDATE: removed stale checkout template {$file}");
+            }
+        }
+    }
+
+    /**
+     * plg_schemaorg_ecommerce installs by <folder>src</folder> and Joomla never deletes a file a
+     * newer package no longer ships, so classes retired from that tree stay on upgraded sites and
+     * keep answering class_exists() probes. Runs before the plugin's own upgrade in the package
+     * order; the new zip does not carry these paths, so they cannot come back.
+     */
+    private function removeRetiredSchemaorgClasses(): void
+    {
+        $retired = [
+            'Schema/ProductSchemaBuilder.php',
+            'Schema/BreadcrumbSchemaBuilder.php',
+            'Schema/ItemListSchemaBuilder.php',
+            'Schema/OrganizationSchemaBuilder.php',
+            'Event/BreadcrumbSchemaPrepareEvent.php',
+            'Event/ItemListSchemaPrepareEvent.php',
+        ];
+        $dir = JPATH_SITE . '/plugins/schemaorg/ecommerce/src/';
+
+        foreach ($retired as $file) {
+            $path = $dir . $file;
+            if (is_file($path) && @unlink($path)) {
+                $this->debugLog("UPDATE: removed retired schemaorg class {$file}");
             }
         }
     }

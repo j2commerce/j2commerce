@@ -52,6 +52,7 @@ use Joomla\Event\Event;
 use Joomla\Event\Priority;
 use Joomla\Event\SubscriberInterface;
 use Joomla\Plugin\Schemaorg\Ecommerce\Event\ReviewsSchemaPrepareEvent;
+use Joomla\Plugin\Schemaorg\Ecommerce\Helper\J2CommerceSchemaHelper;
 use Joomla\Registry\Registry;
 
 /**
@@ -3243,7 +3244,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             ]);
             Factory::getContainer()->get(DispatcherInterface::class)->dispatch('onJ2CommerceSchemaReviewsPrepare', $event);
 
-            return $event->getSchema();
+            return J2CommerceSchemaHelper::getInstance()->normaliseReviewSchema($event->getSchema());
         } catch (\Throwable $e) {
             // A provider fault degrades the optional feature, not the page.
             return $schema;
