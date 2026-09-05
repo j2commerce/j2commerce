@@ -799,4 +799,38 @@ class J2CommerceSchemaHelper
 
         return $data;
     }
+
+    /**
+     * Keep only review markup that is eligible to be published.
+     *
+     * Google requires an AggregateRating to carry at least one of ratingCount or reviewCount,
+     * and requires the markup to reflect review content the visitor can actually see; an
+     * aggregate with no count, or an empty review list, is neither. One place decides
+     * eligibility for every provider and every dispatch site, rather than each of them
+     * being trusted to decide it correctly.
+     *
+     * A product with nothing to show therefore carries no aggregateRating and no review key
+     * at all -- absent, rather than present and empty or null.
+     */
+    public function normaliseReviewSchema(array $schema): array
+    {
+        if (\array_key_exists('review', $schema) && (!\is_array($schema['review']) || $schema['review'] === [])) {
+            unset($schema['review']);
+        }
+
+        if (!\array_key_exists('aggregateRating', $schema)) {
+            return $schema;
+        }
+
+        $rating = $schema['aggregateRating'];
+
+        $hasCount = \is_array($rating)
+            && (($rating['ratingCount'] ?? null) !== null || ($rating['reviewCount'] ?? null) !== null);
+
+        if (!$hasCount || ($rating['ratingValue'] ?? null) === null) {
+            unset($schema['aggregateRating']);
+        }
+
+        return $schema;
+    }
 }

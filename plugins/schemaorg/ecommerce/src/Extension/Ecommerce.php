@@ -452,7 +452,14 @@ final class Ecommerce extends CMSPlugin implements SubscriberInterface
             $schema['hasVariant'] = $variants;
         }
 
-        return $this->cleanSchemaData($schema);
+        $schema  = $this->cleanSchemaData($schema);
+        $context = $this->getCurrentProductContext();
+
+        return $this->dispatchReviewsEvent(
+            $schema,
+            (int) $product->j2commerce_product_id,
+            $context['type'] === 'article' ? $context['id'] : null,
+        );
     }
 
     private function buildImagesArray(array $entry, ?object $product): array
@@ -697,42 +704,7 @@ final class Ecommerce extends CMSPlugin implements SubscriberInterface
 
         $this->getApplication()->getDispatcher()->dispatch('onJ2CommerceSchemaReviewsPrepare', $event);
 
-        return $this->normaliseReviewSchema($event->getSchema());
-    }
-
-    /**
-     * Keep only review markup that is eligible to be published.
-     *
-     * cleanSchemaData() runs before this event, so whatever a provider contributes reaches
-     * the page unexamined. Google requires an AggregateRating to carry at least one of
-     * ratingCount or reviewCount, and requires the markup to reflect review content the
-     * visitor can actually see; an aggregate with no count, or an empty review list, is
-     * neither. Dropping those here means one place decides eligibility for every provider,
-     * rather than each of them being trusted to decide it correctly.
-     *
-     * A product with nothing to show therefore carries no aggregateRating and no review key
-     * at all -- absent, rather than present and empty.
-     */
-    private function normaliseReviewSchema(array $schema): array
-    {
-        if (isset($schema['review']) && (!\is_array($schema['review']) || $schema['review'] === [])) {
-            unset($schema['review']);
-        }
-
-        if (!isset($schema['aggregateRating'])) {
-            return $schema;
-        }
-
-        $rating = $schema['aggregateRating'];
-
-        $hasCount = \is_array($rating)
-            && (($rating['ratingCount'] ?? null) !== null || ($rating['reviewCount'] ?? null) !== null);
-
-        if (!$hasCount || ($rating['ratingValue'] ?? null) === null) {
-            unset($schema['aggregateRating']);
-        }
-
-        return $schema;
+        return $this->getHelper()->normaliseReviewSchema($event->getSchema());
     }
 
     protected function dispatchOffersEvent(array $offerSchema, object $variant, int $productId): array
