@@ -23,6 +23,7 @@ use J2Commerce\Plugin\J2Commerce\PaymentPaypal\Helper\PayPalCurrencyHelper;
 use J2Commerce\Plugin\J2Commerce\PaymentPaypal\Service\PayPalClient;
 use J2Commerce\Plugin\J2Commerce\PaymentPaypal\Service\PayPalNvpClient;
 use J2Commerce\Plugin\J2Commerce\PaymentPaypal\Service\PayPalOrders;
+use J2Commerce\Plugin\J2Commerce\PaymentPaypal\Service\PayPalOrderStates;
 use J2Commerce\Plugin\J2Commerce\PaymentPaypal\Service\PayPalRefunds;
 use J2Commerce\Plugin\J2Commerce\PaymentPaypal\Service\PayPalSubscriptions;
 use J2Commerce\Plugin\J2Commerce\PaymentPaypal\Service\PayPalWebhooks;
@@ -380,9 +381,12 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
 
             if ($result['status'] >= 200 && $result['status'] < 300) {
                 $refundId        = $result['body']['id'] ?? '';
-                $refundedStateId = (int) $this->params->get('refunded_state_id', 7);
+                $refundedStateId = PayPalOrderStates::resolve($this->params, $this->getDatabase(), PayPalOrderStates::REFUNDED);
 
-                $orderTable->order_state_id          = $refundedStateId;
+                if ($refundedStateId > 0) {
+                    $orderTable->order_state_id = $refundedStateId;
+                }
+
                 $transactionDetails                  = json_decode($orderTable->transaction_details ?? '{}', true);
                 $transactionDetails['refund_id']     = $refundId;
                 $transactionDetails['refunded_at']   = date('Y-m-d H:i:s');
@@ -1644,7 +1648,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 ];
             }
 
-            $confirmedStateId = (int) $this->params->get('order_state_id', 1);
+            $confirmedStateId = PayPalOrderStates::resolve($this->params, $this->getDatabase(), PayPalOrderStates::CONFIRMED);
 
             $orderTable->orderpayment_type   = $this->_name;
             $orderTable->order_state_id      = $confirmedStateId;

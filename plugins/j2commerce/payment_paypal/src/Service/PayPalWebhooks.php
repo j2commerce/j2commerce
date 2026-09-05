@@ -282,7 +282,7 @@ final class PayPalWebhooks
             return ['status' => 404, 'message' => 'Order not found'];
         }
 
-        $confirmedStateId = (int) $params->get('order_state_id', 5);
+        $confirmedStateId = PayPalOrderStates::resolve($params, $this->db, PayPalOrderStates::CONFIRMED);
 
         $this->updateOrderStatus(
             $order,
@@ -333,7 +333,7 @@ final class PayPalWebhooks
             return ['status' => 404, 'message' => 'Order not found'];
         }
 
-        $pendingStateId = (int) $params->get('pending_state_id', 3);
+        $pendingStateId = PayPalOrderStates::resolve($params, $this->db, PayPalOrderStates::PENDING);
 
         $this->updateOrderStatus(
             $order,
@@ -362,7 +362,7 @@ final class PayPalWebhooks
             return ['status' => 404, 'message' => 'Order not found'];
         }
 
-        $failedStateId = (int) $params->get('failed_state_id', 4);
+        $failedStateId = PayPalOrderStates::resolve($params, $this->db, PayPalOrderStates::FAILED);
 
         $this->updateOrderStatus(
             $order,
@@ -391,7 +391,7 @@ final class PayPalWebhooks
             return ['status' => 404, 'message' => 'Order not found'];
         }
 
-        $refundedStateId = (int) $params->get('refunded_state_id', 7);
+        $refundedStateId = PayPalOrderStates::resolve($params, $this->db, PayPalOrderStates::REFUNDED);
 
         $this->updateOrderStatus(
             $order,
@@ -420,7 +420,7 @@ final class PayPalWebhooks
             return ['status' => 404, 'message' => 'Order not found'];
         }
 
-        $failedStateId = (int) $params->get('failed_state_id', 4);
+        $failedStateId = PayPalOrderStates::resolve($params, $this->db, PayPalOrderStates::FAILED);
 
         $this->updateOrderStatus(
             $order,
@@ -485,6 +485,10 @@ final class PayPalWebhooks
 
     private function updateOrderStatus(\stdClass $order, int $newStateId, string $comment): void
     {
+        if ($newStateId <= 0) {
+            return;
+        }
+
         $orderTable = Factory::getApplication()
             ->bootComponent('com_j2commerce')
             ->getMVCFactory()
