@@ -17,11 +17,31 @@ namespace Joomla\Plugin\Schemaorg\Ecommerce\Event;
 /**
  * Event triggered when preparing Review/Rating schema data.
  *
- * This event allows third-party plugins (like app_reviews) to inject
- * review and rating data into the Product schema. Plugins can add
- * aggregateRating and review properties.
+ * This event is how a review provider -- app_reviews, app_trustpilot, or any future one --
+ * contributes review and rating data to the product's schema. It is the only supported way
+ * to do so: a provider that prints its own JSON-LD instead leaves the page with two Product
+ * nodes describing one product, and the rating attached to the node that carries no offer
+ * and no @id.
  *
  * Event name: onJ2CommerceSchemaReviewsPrepare
+ *
+ * What a provider must honour, and why:
+ *
+ * - Contribute only reviews the page is actually rendering. Google requires that "it must be
+ *   immediately obvious to users that the page has review content", and that an
+ *   AggregateRating shown in markup is visible on the page.
+ * - Always pass ratingCount or reviewCount with an aggregate. Google requires at least one of
+ *   the two; an aggregate without either is not eligible and the builder discards it.
+ * - Contribute nothing when the product has no visible reviews. Do not set an empty review
+ *   list or a zeroed aggregate -- absent is the correct output, and the builder strips those
+ *   shells if they are set anyway.
+ * - Never contribute reviews aggregated from another site. Google prohibits it, which matters
+ *   most for providers backed by an external review service.
+ *
+ * Note on multiple providers: addReview() appends, but setAggregateRating() replaces. Two
+ * enabled providers therefore yield one provider's aggregate over both providers' reviews,
+ * which do not agree. Enabling more than one provider per product is not currently a
+ * supported configuration.
  *
  * Example usage in a plugin:
  * ```php
