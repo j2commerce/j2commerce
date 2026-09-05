@@ -250,7 +250,7 @@ final class Ecommerce extends CMSPlugin implements SubscriberInterface
                 $entry['hasMerchantReturnPolicy'] = $returnPolicy;
             }
 
-            $graph[$index] = $this->dispatchOrganizationEvent($entry);
+            $graph[$index] = $this->cleanSchemaData($this->getHelper()->normaliseStrings($this->dispatchOrganizationEvent($entry)));
             break;
         }
 
