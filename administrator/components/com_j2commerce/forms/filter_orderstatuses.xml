@@ -34,6 +34,8 @@
             <option value="a.enabled DESC">COM_J2COMMERCE_HEADING_STATUS_DESC</option>
             <option value="a.orderstatus_name ASC">COM_J2COMMERCE_HEADING_ORDERSTATUS_NAME_ASC</option>
             <option value="a.orderstatus_name DESC">COM_J2COMMERCE_HEADING_ORDERSTATUS_NAME_DESC</option>
+            <option value="a.orderstatus_type ASC">COM_J2COMMERCE_HEADING_ORDERSTATUS_TYPE_ASC</option>
+            <option value="a.orderstatus_type DESC">COM_J2COMMERCE_HEADING_ORDERSTATUS_TYPE_DESC</option>
             <option value="a.j2commerce_orderstatus_id ASC">COM_J2COMMERCE_HEADING_ID_ASC</option>
             <option value="a.j2commerce_orderstatus_id DESC">COM_J2COMMERCE_HEADING_ID_DESC</option>
         </field>

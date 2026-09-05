@@ -12,6 +12,7 @@ declare(strict_types=1);
 defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderStatusHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
@@ -22,6 +23,8 @@ use Joomla\CMS\Router\Route;
 $wa = $this->getDocument()->getWebAssetManager();
 $wa->useScript('table.columns')
     ->useScript('multiselect');
+
+$typeOptions = OrderStatusHelper::getTypeOptions();
 
 $listOrder = $this->escape($this->state->get('list.ordering'));
 $listDirn  = $this->escape($this->state->get('list.direction'));
@@ -67,6 +70,9 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
                                 <th scope="col" class="w-10 d-none d-md-table-cell text-center">
                                     <?php echo Text::_('COM_J2COMMERCE_HEADING_ORDERSTATUS_CORE'); ?>
                                 </th>
+                                <th scope="col" class="w-15 d-none d-md-table-cell">
+                                    <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_ORDERSTATUS_TYPE', 'a.orderstatus_type', $listDirn, $listOrder); ?>
+                                </th>
                                 <th scope="col" class="w-5 d-none d-md-table-cell">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'JGRID_HEADING_ID', 'a.j2commerce_orderstatus_id', $listDirn, $listOrder); ?>
                                 </th>
@@ -100,6 +106,21 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
                                     <?php else : ?>
                                         <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-secondary'); ?>"><?php echo Text::_('JNO'); ?></span>
                                     <?php endif; ?>
+                                </td>
+                                <td class="d-none d-md-table-cell">
+                                    <?php echo HTMLHelper::_(
+                                        'select.genericlist',
+                                        $typeOptions,
+                                        'orderstatus_type[' . (int) $item->j2commerce_orderstatus_id . ']',
+                                        [
+                                            'list.attr' => 'class="form-select form-select-sm" aria-label="'
+                                                . $this->escape(Text::sprintf('COM_J2COMMERCE_ORDERSTATUS_TYPE_FOR', Text::_($item->orderstatus_name))) . '"',
+                                            'id'        => 'orderstatus_type_' . (int) $item->j2commerce_orderstatus_id,
+                                        ],
+                                        'value',
+                                        'text',
+                                        (string) ($item->orderstatus_type ?? '')
+                                    ); ?>
                                 </td>
                                 <td class="d-none d-md-table-cell">
                                     <?php echo (int) $item->j2commerce_orderstatus_id; ?>

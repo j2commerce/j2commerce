@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderStatusHelper;
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\Database\ParameterType;
 use Joomla\Database\QueryInterface;
@@ -40,6 +41,7 @@ class OrderstatusesModel extends ListModel
                 'orderstatus_name', 'a.orderstatus_name',
                 'orderstatus_cssclass', 'a.orderstatus_cssclass',
                 'orderstatus_core', 'a.orderstatus_core',
+                'orderstatus_type', 'a.orderstatus_type',
                 'enabled', 'a.enabled',
                 'ordering', 'a.ordering',
             ];
@@ -105,6 +107,7 @@ class OrderstatusesModel extends ListModel
                 'a.orderstatus_name',
                 'a.orderstatus_cssclass',
                 'a.orderstatus_core',
+                'a.orderstatus_type',
                 'a.enabled',
                 'a.ordering',
             ])
@@ -150,5 +153,59 @@ class OrderstatusesModel extends ListModel
         $query->order($ordering);
 
         return $query;
+    }
+
+    /**
+     * Write the lifecycle classification for many statuses in one statement per value.
+     *
+     * Grouped by value rather than a row-per-query loop: the mapping screen posts the whole
+     * table, so a nine-status store would otherwise issue nine round trips to change one row.
+     *
+     * @param   array<int, string>  $map  Status id => type, where '' clears the classification.
+     *
+     * @return  int  Number of statuses written.
+     */
+    public function saveTypes(array $map): int
+    {
+        $byType = [];
+
+        foreach ($map as $statusId => $type) {
+            $statusId = (int) $statusId;
+            $type     = trim((string) $type);
+
+            if ($statusId <= 0 || ($type !== '' && !OrderStatusHelper::isValidType($type))) {
+                continue;
+            }
+
+            $byType[$type][] = $statusId;
+        }
+
+        if (!$byType) {
+            return 0;
+        }
+
+        $db      = $this->getDatabase();
+        $written = 0;
+
+        foreach ($byType as $type => $ids) {
+            $query = $db->getQuery(true)
+                ->update($db->quoteName('#__j2commerce_orderstatuses'))
+                ->whereIn($db->quoteName('j2commerce_orderstatus_id'), $ids, ParameterType::INTEGER);
+
+            if ($type === '') {
+                $query->set($db->quoteName('orderstatus_type') . ' = NULL');
+            } else {
+                $query->set($db->quoteName('orderstatus_type') . ' = :type')
+                    ->bind(':type', $type);
+            }
+
+            $db->setQuery($query)->execute();
+
+            $written += \count($ids);
+        }
+
+        OrderStatusHelper::clearCache();
+
+        return $written;
     }
 }

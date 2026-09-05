@@ -151,6 +151,12 @@ class HtmlView extends BaseHtmlView
         }
 
         if (!$this->isEmptyState) {
+            if ($canDo->get('core.edit')) {
+                $toolbar->standardButton('savemapping', 'COM_J2COMMERCE_TOOLBAR_SAVE_MAPPING', 'orderstatuses.saveMapping')
+                    ->icon('fa-solid fa-diagram-project')
+                    ->listCheck(false);
+            }
+
             if ($canDo->get('core.edit.state')) {
                 // Dropdown button group for status changes
                 $dropdown = $toolbar->dropdownButton('status-group')

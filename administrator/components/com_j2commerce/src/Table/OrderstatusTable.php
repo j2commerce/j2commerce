@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Table;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderStatusHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Table\Table;
@@ -91,6 +92,20 @@ class OrderstatusTable extends Table
         // Ensure orderstatus_core is set (default to 0 for non-core)
         if (!isset($this->orderstatus_core)) {
             $this->orderstatus_core = 0;
+        }
+
+        // An unclassified status is a first-class state, so an empty submission normalises to
+        // null rather than being rejected. Anything else has to be in the fixed value set: a
+        // stray value would be read back as a lifecycle meaning that core does not define.
+        $type = trim((string) ($this->orderstatus_type ?? ''));
+
+        if ($type === '') {
+            $this->orderstatus_type = null;
+        } elseif (!OrderStatusHelper::isValidType($type)) {
+            $this->setError(Text::sprintf('COM_J2COMMERCE_ERR_FIELD_INVALID', Text::_('COM_J2COMMERCE_FIELD_ORDERSTATUS_TYPE')));
+            return false;
+        } else {
+            $this->orderstatus_type = $type;
         }
 
         return true;

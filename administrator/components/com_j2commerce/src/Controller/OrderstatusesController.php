@@ -15,8 +15,11 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Application\CMSApplication;
+use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Controller\AdminController;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
+use Joomla\CMS\Router\Route;
 use Joomla\Input\Input;
 
 /**
@@ -70,5 +73,40 @@ class OrderstatusesController extends AdminController
     public function getModel($name = 'Orderstatus', $prefix = 'Administrator', $config = ['ignore_request' => true])
     {
         return parent::getModel($name, $prefix, $config);
+    }
+
+    /**
+     * Save the lifecycle classification for every row the mapping form posted.
+     *
+     * WriteAccessTrait::execute() already requires j2commerce.editsetup for anything that is
+     * not display, so this only has to add the anti-forgery check and the core.edit test.
+     *
+     * @return  void
+     *
+     * @since   6.6.1
+     */
+    public function saveMapping(): void
+    {
+        $this->checkToken();
+
+        if (!$this->app->getIdentity()->authorise('core.edit', 'com_j2commerce')) {
+            $this->app->enqueueMessage(Text::_('JLIB_APPLICATION_ERROR_EDIT_NOT_PERMITTED'), 'error');
+            $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=orderstatuses', false));
+
+            return;
+        }
+
+        $map = (array) $this->input->post->get('orderstatus_type', [], 'array');
+
+        try {
+            $count = $this->getModel('Orderstatuses')->saveTypes($map);
+            $this->app->enqueueMessage(Text::sprintf('COM_J2COMMERCE_N_ITEMS_UPDATED', $count));
+        } catch (\Exception $e) {
+            // Log the detail server-side; never surface a raw exception message to the user.
+            Log::add('Failed to save order status mapping: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $this->app->enqueueMessage(Text::_('JERROR_AN_ERROR_HAS_OCCURRED'), 'error');
+        }
+
+        $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=orderstatuses', false));
     }
 }

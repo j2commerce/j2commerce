@@ -926,6 +926,7 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_orderstatuses` (
   `modified_by` int UNSIGNED NOT NULL DEFAULT '0',
   `checked_out` int UNSIGNED DEFAULT NULL,
   `checked_out_time` datetime DEFAULT NULL,
+  `orderstatus_type` varchar(16) DEFAULT NULL COMMENT 'Lifecycle classification. NULL means merchant-defined, with no core semantics.',
   PRIMARY KEY (`j2commerce_orderstatus_id`),
   KEY `idx_access` (`access`),
   KEY `idx_checkout` (`checked_out`),
@@ -933,15 +934,15 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_orderstatuses` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Default order statuses
-INSERT IGNORE INTO `#__j2commerce_orderstatuses` (`j2commerce_orderstatus_id`, `orderstatus_name`, `orderstatus_cssclass`, `orderstatus_core`, `enabled`, `ordering`) VALUES
-(1, 'J2COMMERCE_CONFIRMED', 'badge text-bg-success', 1, 1, 1),
-(2, 'J2COMMERCE_PROCESSED', 'badge text-bg-info', 1, 1, 2),
-(3, 'J2COMMERCE_FAILED', 'badge text-bg-danger', 1, 1, 3),
-(4, 'J2COMMERCE_PENDING', 'badge text-bg-warning', 1, 1, 4),
-(5, 'J2COMMERCE_NEW', 'badge text-bg-warning', 1, 1, 5),
-(6, 'J2COMMERCE_CANCELLED', 'badge text-bg-secondary', 1, 1, 6),
-(7, 'J2COMMERCE_SHIPPED', 'badge text-bg-success', 1, 1, 7),
-(8, 'J2COMMERCE_DELIVERED', 'badge text-bg-primary', 1, 1, 8);
+INSERT IGNORE INTO `#__j2commerce_orderstatuses` (`j2commerce_orderstatus_id`, `orderstatus_name`, `orderstatus_cssclass`, `orderstatus_core`, `enabled`, `ordering`, `orderstatus_type`) VALUES
+(1, 'J2COMMERCE_CONFIRMED', 'badge text-bg-success', 1, 1, 1, 'open'),
+(2, 'J2COMMERCE_PROCESSED', 'badge text-bg-info', 1, 1, 2, 'open'),
+(3, 'J2COMMERCE_FAILED', 'badge text-bg-danger', 1, 1, 3, 'failed'),
+(4, 'J2COMMERCE_PENDING', 'badge text-bg-warning', 1, 1, 4, 'open'),
+(5, 'J2COMMERCE_NEW', 'badge text-bg-warning', 1, 1, 5, 'new'),
+(6, 'J2COMMERCE_CANCELLED', 'badge text-bg-secondary', 1, 1, 6, 'cancelled'),
+(7, 'J2COMMERCE_SHIPPED', 'badge text-bg-success', 1, 1, 7, 'shipped'),
+(8, 'J2COMMERCE_DELIVERED', 'badge text-bg-primary', 1, 1, 8, 'delivered');
 
 -- --------------------------------------------------------
 -- Table structure for table `#__j2commerce_ordertaxes`
