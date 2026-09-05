@@ -17,16 +17,24 @@ namespace J2Commerce\Component\J2commerce\Administrator\Field;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderStatusHelper;
 use Joomla\CMS\Form\Field\ListField;
 
-/**
- * Lifecycle classification select. Options come from OrderStatusHelper so the edit form, the
- * list mapping screen and the Table validation all read one declaration of the value set.
- */
+/** Status Type select; multiple="true" switches to the fancy-select multi-pick. */
 class OrderstatustypeField extends ListField
 {
     protected $type = 'Orderstatustype';
 
+    public function setup(\SimpleXMLElement $element, $value, $group = null)
+    {
+        $result = parent::setup($element, $value, $group);
+
+        if ($result && $this->multiple && $this->layout === 'joomla.form.field.list') {
+            $this->layout = 'joomla.form.field.list-fancy-select';
+        }
+
+        return $result;
+    }
+
     public function getOptions(): array
     {
-        return array_merge(parent::getOptions(), OrderStatusHelper::getTypeOptions());
+        return array_merge(parent::getOptions(), OrderStatusHelper::getTypeOptions(!$this->multiple));
     }
 }

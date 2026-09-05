@@ -18,6 +18,16 @@
             class="w-100"
         />
 
+        <field
+            name="orderstatus_type"
+            type="orderstatustype"
+            label="COM_J2COMMERCE_FIELD_ORDERSTATUS_TYPE"
+            description="COM_J2COMMERCE_FIELD_ORDERSTATUS_TYPE_DESC"
+            default=""
+            validate="options"
+            class="w-100"
+        />
+
         <!-- CSS Class field -->
         <field
             name="orderstatus_cssclass"
@@ -42,16 +52,6 @@
             <option value="0">JNO</option>
             <option value="1">JYES</option>
         </field>
-
-        <field
-            name="orderstatus_type"
-            type="orderstatustype"
-            label="COM_J2COMMERCE_FIELD_ORDERSTATUS_TYPE"
-            description="COM_J2COMMERCE_FIELD_ORDERSTATUS_TYPE_DESC"
-            default=""
-            validate="options"
-            class="w-100"
-        />
 
         <!-- REQUIRED: Status field for joomla.edit.global sidebar layout -->
         <field

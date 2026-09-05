@@ -82,19 +82,19 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
                         <?php foreach ($this->items as $i => $item) : ?>
                             <tr class="row<?php echo $i % 2; ?>">
                                 <td class="text-center">
-                                    <?php echo HTMLHelper::_('grid.id', $i, $item->j2commerce_orderstatus_id, false, 'cid', 'cb', $item->orderstatus_name); ?>
+                                    <?php echo HTMLHelper::_('grid.id', $i, $item->j2commerce_orderstatus_id, false, 'cid', 'cb', Text::_($item->orderstatus_name)); ?>
                                 </td>
                                 <td class="text-center">
                                     <?php echo HTMLHelper::_('jgrid.published', $item->enabled, $i, 'orderstatuses.', true, 'cb'); ?>
                                 </td>
                                 <th scope="row">
                                     <a href="<?php echo Route::_('index.php?option=com_j2commerce&task=orderstatus.edit&id=' . $item->j2commerce_orderstatus_id); ?>">
-                                        <?php echo $this->escape($item->orderstatus_name); ?>
+                                        <?php echo $this->escape(Text::_($item->orderstatus_name)); ?>
                                     </a>
                                 </th>
                                 <td class="d-none d-md-table-cell">
                                     <span class="<?php echo $this->escape($item->orderstatus_cssclass); ?>">
-                                        <?php echo Text::_($this->escape($item->orderstatus_name)); ?>
+                                        <?php echo $this->escape(Text::_($item->orderstatus_name)); ?>
                                     </span>
                                 </td>
                                 <td class="d-none d-md-table-cell">
@@ -108,19 +108,33 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
                                     <?php endif; ?>
                                 </td>
                                 <td class="d-none d-md-table-cell">
-                                    <?php echo HTMLHelper::_(
-                                        'select.genericlist',
-                                        $typeOptions,
-                                        'orderstatus_type[' . (int) $item->j2commerce_orderstatus_id . ']',
-                                        [
-                                            'list.attr' => 'class="form-select form-select-sm" aria-label="'
-                                                . $this->escape(Text::sprintf('COM_J2COMMERCE_ORDERSTATUS_TYPE_FOR', Text::_($item->orderstatus_name))) . '"',
-                                            'id'        => 'orderstatus_type_' . (int) $item->j2commerce_orderstatus_id,
-                                        ],
-                                        'value',
-                                        'text',
-                                        (string) ($item->orderstatus_type ?? '')
-                                    ); ?>
+                                    <?php if ($this->canEditType) : ?>
+                                        <div class="d-flex align-items-center gap-1 flex-nowrap">
+                                            <?php echo HTMLHelper::_(
+                                                'select.genericlist',
+                                                $typeOptions,
+                                                'orderstatus_type_' . (int) $item->j2commerce_orderstatus_id,
+                                                [
+                                                    'list.attr' => 'class="form-select form-select-sm orderstatus-type-select" aria-label="'
+                                                        . $this->escape(Text::sprintf('COM_J2COMMERCE_ORDERSTATUS_TYPE_FOR', Text::_($item->orderstatus_name))) . '"',
+                                                    'id'        => 'orderstatus_type_' . (int) $item->j2commerce_orderstatus_id,
+                                                ],
+                                                'value',
+                                                'text',
+                                                (string) ($item->orderstatus_type ?? '')
+                                            ); ?>
+                                            <button
+                                                type="button"
+                                                class="btn btn-sm btn-primary orderstatus-type-save"
+                                                data-orderstatus-id="<?php echo (int) $item->j2commerce_orderstatus_id; ?>"
+                                                title="<?php echo $this->escape(Text::_('COM_J2COMMERCE_SAVE_STATUS_TYPE')); ?>"
+                                            >
+                                                <?php echo Text::_('JAPPLY'); ?>
+                                            </button>
+                                        </div>
+                                    <?php else : ?>
+                                        <?php echo $this->escape(OrderStatusHelper::getTypeLabel($item->orderstatus_type ?? null)); ?>
+                                    <?php endif; ?>
                                 </td>
                                 <td class="d-none d-md-table-cell">
                                     <?php echo (int) $item->j2commerce_orderstatus_id; ?>
@@ -136,6 +150,8 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
                 <input type="hidden" name="task" value="">
                 <input type="hidden" name="boxchecked" value="0">
                 <?php echo HTMLHelper::_('form.token'); ?>
+
+                <div id="orderstatus-type-status" class="visually-hidden" role="status" aria-live="polite"></div>
             </div>
         </div>
     </div>

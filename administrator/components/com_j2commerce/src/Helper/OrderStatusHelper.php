@@ -82,13 +82,16 @@ final class OrderStatusHelper
 
     /**
      * Options for a type select. The empty first option is the null state and is offered
-     * deliberately: leaving a status unclassified has to stay reachable from the UI.
+     * deliberately: leaving a status unclassified has to stay reachable from the UI. Skip it
+     * for a multiple-select, where there is no single "unclassified" value to pick.
      *
      * @return object[]
      */
-    public static function getTypeOptions(): array
+    public static function getTypeOptions(bool $includeNone = true): array
     {
-        $options = [HTMLHelper::_('select.option', '', Text::_('COM_J2COMMERCE_ORDERSTATUS_TYPE_NONE'))];
+        $options = $includeNone
+            ? [HTMLHelper::_('select.option', '', Text::_('COM_J2COMMERCE_ORDERSTATUS_TYPE_NONE'))]
+            : [];
 
         foreach (self::TYPES as $value => $langKey) {
             $options[] = HTMLHelper::_('select.option', $value, Text::_($langKey));

@@ -83,6 +83,9 @@ class HtmlView extends BaseHtmlView
      */
     private $isEmptyState = false;
 
+    /** Whether the current user may save a status type inline. */
+    public bool $canEditType = false;
+
     /**
      * Display the view.
      *
@@ -114,6 +117,21 @@ class HtmlView extends BaseHtmlView
 
         if (!\count($this->items) && $this->isEmptyState = $model->getIsEmptyState()) {
             $this->setLayout('emptystate');
+        }
+
+        $this->canEditType = (bool) ContentHelper::getActions('com_j2commerce')->get('core.edit')
+            && J2CommerceHelper::canAccess('j2commerce.editsetup');
+
+        if (!$this->isEmptyState) {
+            $wa = $this->getDocument()->getWebAssetManager();
+            $wa->registerAndUseScript(
+                'com_j2commerce.admin-orderstatus-list',
+                'media/com_j2commerce/js/administrator/admin-orderstatus-list.js',
+                ['core'],
+                ['defer' => true]
+            );
+
+            Text::script('JERROR_AN_ERROR_HAS_OCCURRED');
         }
 
         $this->addToolbar();
@@ -151,12 +169,6 @@ class HtmlView extends BaseHtmlView
         }
 
         if (!$this->isEmptyState) {
-            if ($canDo->get('core.edit')) {
-                $toolbar->standardButton('savemapping', 'COM_J2COMMERCE_TOOLBAR_SAVE_MAPPING', 'orderstatuses.saveMapping')
-                    ->icon('fa-solid fa-diagram-project')
-                    ->listCheck(false);
-            }
-
             if ($canDo->get('core.edit.state')) {
                 // Dropdown button group for status changes
                 $dropdown = $toolbar->dropdownButton('status-group')

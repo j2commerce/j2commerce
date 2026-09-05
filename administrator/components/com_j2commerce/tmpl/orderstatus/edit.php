@@ -40,6 +40,7 @@ $wa->useScript('keepalive')
                 <fieldset id="fieldset-basic" class="options-form">
                     <legend><?php echo Text::_('COM_J2COMMERCE_FIELDSET_BASIC'); ?></legend>
                     <div class="form-grid">
+                        <?php echo $this->form->renderField('orderstatus_type'); ?>
                         <?php echo $this->form->renderField('orderstatus_cssclass'); ?>
                         <?php echo $this->form->renderField('orderstatus_core'); ?>
                     </div>

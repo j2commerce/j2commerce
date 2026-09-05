@@ -156,10 +156,7 @@ class OrderstatusesModel extends ListModel
     }
 
     /**
-     * Write the lifecycle classification for many statuses in one statement per value.
-     *
-     * Grouped by value rather than a row-per-query loop: the mapping screen posts the whole
-     * table, so a nine-status store would otherwise issue nine round trips to change one row.
+     * Write the lifecycle classification for one or more statuses in one statement per value.
      *
      * @param   array<int, string>  $map  Status id => type, where '' clears the classification.
      *
