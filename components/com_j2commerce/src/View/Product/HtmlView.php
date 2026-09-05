@@ -18,6 +18,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use J2Commerce\Component\J2commerce\Site\View\CustomSubtemplateTrait;
+use Joomla\CMS\Categories\Categories;
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
@@ -103,6 +104,24 @@ class HtmlView extends BaseHtmlView
     protected $pageclass_sfx = '';
 
     /**
+     * Route back to the product's own category, when one resolves
+     *
+     * @var    string
+     *
+     * @since  6.0.0
+     */
+    public string $back_link = '';
+
+    /**
+     * Title of the category $back_link points at
+     *
+     * @var    string
+     *
+     * @since  6.0.0
+     */
+    public string $back_link_title = '';
+
+    /**
      * Execute and display a template script.
      *
      * @param   string  $tpl  The name of the template file to parse; automatically searches through the template paths.
@@ -132,6 +151,8 @@ class HtmlView extends BaseHtmlView
         $this->user      = $user;
         $this->sublayout = $app->getParams()->get('subtemplate', '');
         $this->context   = J2CommerceHelper::utilities()->getContext('.detail');
+
+        $this->setBackLink();
 
         // Prepare document metadata (title, description, etc.) FIRST
         // This must happen before plugin output or template rendering
@@ -167,6 +188,29 @@ class HtmlView extends BaseHtmlView
 
         // No plugin or custom override provided HTML, use default template rendering
         parent::display($tpl);
+    }
+
+    /**
+     * Resolve the "back to" target from the product's own category, so the link
+     * matches the breadcrumb rather than wherever the shopper happened to arrive from.
+     */
+    protected function setBackLink(): void
+    {
+        $catid = (int) ($this->item->source->catid ?? 0);
+
+        if (!$catid) {
+            return;
+        }
+
+        $category = Categories::getInstance('Content')?->get($catid);
+
+        if (!$category) {
+            return;
+        }
+
+        // Raw URL: the five templates that render this all escape it themselves.
+        $this->back_link       = Route::_(RouteHelper::getCategoryRouteInContext($catid), false);
+        $this->back_link_title = $category->title;
     }
 
     /**
