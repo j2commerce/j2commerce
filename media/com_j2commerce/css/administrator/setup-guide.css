@@ -19,10 +19,27 @@
     color: #fff;
 }
 
-/* sidebar-wrapper class provides Atum dark sidebar theming automatically */
+/*
+ * The panel always paints Atum's dark sidebar background (.sidebar-wrapper sets
+ * --sidebarwrapper-bg), whatever theme the admin itself is in, so it declares the
+ * dark token set UNCONDITIONALLY -- not behind html[data-bs-theme="dark"].
+ * Atum reads the UNPREFIXED custom-property names, not the --bs- ones.
+ */
 #j2commerce-setup-guide {
+    color-scheme: dark;
     --main-nav-mm-active-bg: rgba(255,255,255,0.05);
+    --body-bg: var(--sidebarwrapper-bg);
+    --body-color: #fff;
+    --emphasis-color: #fff;
     --heading-color: #fff;
+    --secondary-color: rgb(255 255 255 / .75);
+    --secondary-bg: rgb(255 255 255 / .08);
+    --tertiary-color: rgb(255 255 255 / .55);
+    --tertiary-bg: rgb(255 255 255 / .05);
+    --border-color: rgb(255 255 255 / .25);
+    --link-color: #9ec5fe;
+    --link-hover-color: #c5d9fb;
+    --focus-ring-color: rgb(255 255 255 / .5);
     width: 400px;
     max-inline-size: 400px;
     z-index: 1045;
@@ -45,9 +62,46 @@
     /*.setup-group-header .bg-warning {
         color: #fff !important;
     }*/
-    .btn-outline-info.button-start-guidedtour {
-        color:#fff !important;
-        border-color:#0d6efd !important;
+    /*
+     * j2commerce_admin.css forces .text-body-secondary to #495057 !important for
+     * the whole light-mode admin, which reaches into this always-dark panel and
+     * lands at 2.24:1. The ID here outranks that selector.
+     */
+    .text-body-secondary {
+        --text-body-secondary-color: var(--secondary-color);
+        color: var(--secondary-color) !important;
+    }
+
+    /*
+     * Atum compiles every .btn-outline-* variant with static hex values, so
+     * data-bs-theme="dark" cannot recolour them: .btn-outline-primary keeps
+     * #132f53, which measures 1.36:1 on this panel. Recolour them here once, so
+     * anything added to the panel later inherits a legible button.
+     */
+    :is(.btn-outline-primary,
+        .btn-outline-secondary,
+        .btn-outline-success,
+        .btn-outline-info,
+        .btn-outline-warning,
+        .btn-outline-danger,
+        .btn-outline-dark) {
+        /*
+         * Every colour here stays light. The dark-gated block in
+         * j2commerce_admin.css pipes --btn-active-color into --btn-color with
+         * !important, so an inverted (dark) active colour would land as the
+         * resting text colour and go invisible. Hover/active shift the
+         * background instead of swapping text and background.
+         */
+        --btn-color: #fff;
+        --btn-hover-color: #fff;
+        --btn-active-color: #fff;
+        --btn-disabled-color: rgb(255 255 255 / .5);
+        --btn-border-color: rgb(255 255 255 / .5);
+        --btn-hover-border-color: #fff;
+        --btn-active-border-color: #fff;
+        --btn-disabled-border-color: rgb(255 255 255 / .25);
+        --btn-hover-bg: rgb(255 255 255 / .15);
+        --btn-active-bg: rgb(255 255 255 / .25);
     }
 }
 
@@ -86,7 +140,7 @@
 }
 
 .setup-group-header:focus-visible {
-    outline: 2px solid var(--info, #0d6efd);
+    outline: 2px solid var(--focus-ring-color);
     outline-offset: -2px;
     background: var(--main-nav-mm-active-bg);
 }
@@ -147,7 +201,7 @@
 }
 
 .setup-check-item:focus-visible {
-    outline: 2px solid var(--info, #0d6efd);
+    outline: 2px solid var(--focus-ring-color);
     outline-offset: -2px;
     background: var(--main-nav-mm-active-bg);
 }
@@ -252,7 +306,7 @@
 
 .setup-all-complete-message {
     font-size: 0.875rem;
-    color: #6c757d;
+    color: var(--secondary-color);
 }
 
 /* =========================================================
