@@ -27,6 +27,11 @@ use Joomla\CMS\Log\Log;
  *
  * Event name: onJ2CommerceSchemaReviewsPrepare
  *
+ * Dispatched, always as this class, by plg_schemaorg_ecommerce (Ecommerce::dispatchReviewsEvent()
+ * and ProductSchemaBuilder::dispatchReviewsEvent()) and by plg_system_j2commerce
+ * (J2Commerce::triggerReviewsEvent(), its fallback for pages with no schemaorg output). A handler
+ * typed to this class is safe on every dispatch of the name.
+ *
  * What a provider must honour, and why:
  *
  * - Contribute only reviews the page is actually rendering. Google requires that "it must be
