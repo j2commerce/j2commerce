@@ -20,6 +20,7 @@ use Joomla\CMS\Router\Route;
 use Joomla\CMS\Uri\Uri;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
+use Joomla\Registry\Registry;
 
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
@@ -395,6 +396,35 @@ class J2CommerceSchemaHelper
         $this->db->setQuery($query);
 
         return $this->db->loadObject();
+    }
+
+    /**
+     * A J2Commerce product can be overridden from two schemaorg surfaces -- the linked
+     * article's own tab (com_content.article) and the native product form
+     * (com_j2commerce.product) -- but a page renders under only one of them, and the core
+     * matcher only finds a row whose context and itemId both match the render. Read the row
+     * for whichever context is being asked about, so the caller can also try the sibling.
+     */
+    public function getStoredSchemaOverride(string $context, int $itemId): array
+    {
+        if ($itemId <= 0) {
+            return [];
+        }
+
+        $query = $this->db->getQuery(true)
+            ->select($this->db->quoteName('schema'))
+            ->from($this->db->quoteName('#__schemaorg'))
+            ->where($this->db->quoteName('context') . ' = :context')
+            ->where($this->db->quoteName('itemId') . ' = :itemId')
+            ->where($this->db->quoteName('schemaType') . ' = ' . $this->db->quote('Ecommerce'))
+            ->bind(':context', $context)
+            ->bind(':itemId', $itemId, ParameterType::INTEGER);
+
+        $this->db->setQuery($query);
+
+        $stored = $this->db->loadResult();
+
+        return empty($stored) ? [] : (new Registry($stored))->toArray();
     }
 
     /**

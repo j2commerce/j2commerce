@@ -140,7 +140,34 @@ final class Ecommerce extends CMSPlugin implements SubscriberInterface
                 };
 
                 if ($product !== null) {
-                    $productSchema = $this->buildProductSchema([]);
+                    // The override may have been entered on the surface this request is NOT
+                    // rendering: a product is editable both through its linked article's tab
+                    // (com_content.article) and through the native product form
+                    // (com_j2commerce.product). The core matcher only finds a row whose
+                    // context and itemId both match the render, so a product page found no
+                    // row for an override entered on the article and fell through to a bare
+                    // schema -- which is how a stored price reached no page at all. Ask for
+                    // this render's own context first, then the sibling.
+                    $entry = $context['type'] === 'article'
+                        ? $helper->getStoredSchemaOverride('com_content.article', (int) $context['id'])
+                        : $helper->getStoredSchemaOverride('com_j2commerce.product', (int) $context['id']);
+
+                    if (empty($entry)) {
+                        $entry = $context['type'] === 'article'
+                            ? $helper->getStoredSchemaOverride(
+                                'com_j2commerce.product',
+                                (int) $product->j2commerce_product_id
+                            )
+                            : ((string) ($product->product_source ?? '') === 'com_content'
+                                && !empty($product->product_source_id)
+                                    ? $helper->getStoredSchemaOverride(
+                                        'com_content.article',
+                                        (int) $product->product_source_id
+                                    )
+                                    : []);
+                    }
+
+                    $productSchema = $this->buildProductSchema($entry);
 
                     if (!empty($productSchema['@type'])) {
                         $productSchema['@id'] = Uri::root() . '#/schema/Product/' . $product->j2commerce_product_id;
