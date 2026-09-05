@@ -489,6 +489,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
         $this->repairUploadsClientIp();
         $this->removeLegacyDebugLog();
         $this->splitLimitOrderstatuses();
+        $this->seedDownloadOrderstatuses();
 
         $this->debugLog("=== POSTFLIGHT END ===");
     }
@@ -547,6 +548,83 @@ class Com_J2commerceInstallerScript extends InstallerScript
 
         if ($db->getAffectedRows() === 0) {
             $this->debugLog('ORDERSTATUSES: extension params changed while splitting limit_orderstatuses — left as saved');
+        }
+    }
+
+    /**
+     * `download_orderstatuses` drives both the download grant and the serve-time filter, and the
+     * two resolve an empty value in opposite directions (issue #2170): the grant falls back to
+     * Confirmed, the filter to no restriction, so a granted file stayed servable after the order
+     * was cancelled. Seeding the post-purchase window makes the empty value unreachable and both
+     * readers see the same list. Only fills a missing or empty value — a merchant's own selection
+     * is never overwritten — so a second run returns early.
+     */
+    private function seedDownloadOrderstatuses(): void
+    {
+        $db = Factory::getContainer()->get(DatabaseInterface::class);
+
+        try {
+            $query = $db->getQuery(true)
+                ->select([$db->quoteName('extension_id'), $db->quoteName('params')])
+                ->from($db->quoteName('#__extensions'))
+                ->where($db->quoteName('element') . ' = ' . $db->quote('com_j2commerce'))
+                ->where($db->quoteName('type') . ' = ' . $db->quote('component'));
+            $extension = $db->setQuery($query)->loadObject();
+
+            if (!$extension) {
+                return;
+            }
+
+            $storedParams = (string) $extension->params;
+            $params       = new Registry($storedParams);
+
+            if (!empty($params->get('download_orderstatuses', ''))) {
+                return;
+            }
+
+            // Status ids are install-dependent, so the window is resolved by name.
+            $names = ['J2COMMERCE_CONFIRMED', 'J2COMMERCE_PROCESSED', 'J2COMMERCE_SHIPPED', 'J2COMMERCE_DELIVERED'];
+            $ids   = $db->setQuery(
+                $db->getQuery(true)
+                    ->select($db->quoteName('j2commerce_orderstatus_id'))
+                    ->from($db->quoteName('#__j2commerce_orderstatuses'))
+                    ->whereIn($db->quoteName('orderstatus_name'), $names, ParameterType::STRING)
+            )->loadColumn();
+
+            if (!$ids) {
+                $this->debugLog('DOWNLOAD STATUSES: no core statuses resolved - left unset');
+
+                return;
+            }
+
+            $params->set('download_orderstatuses', array_map('intval', $ids));
+
+            $paramsJson  = $params->toString();
+            $extensionId = (int) $extension->extension_id;
+
+            // Compare and swap on the bytes this ran against, as splitLimitOrderstatuses() does.
+            $update = $db->getQuery(true)
+                ->update($db->quoteName('#__extensions'))
+                ->set($db->quoteName('params') . ' = :params')
+                ->where($db->quoteName('extension_id') . ' = :id')
+                ->where('CAST(' . $db->quoteName('params') . ' AS BINARY) = :expected')
+                ->bind(':params', $paramsJson)
+                ->bind(':expected', $storedParams)
+                ->bind(':id', $extensionId, ParameterType::INTEGER);
+
+            $db->setQuery($update)->execute();
+
+            if ($db->getAffectedRows() === 0) {
+                $this->debugLog('DOWNLOAD STATUSES: extension params changed while seeding - left as saved');
+
+                return;
+            }
+
+            $this->debugLog('DOWNLOAD STATUSES: seeded');
+        } catch (\Throwable $e) {
+            // Seeding must never abort a package install; both readers keep their own fallback.
+            $this->debugLog('DOWNLOAD STATUSES: seed failed (see the j2commerce log)');
+            Log::add('Download order status seed failed: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
         }
     }
 
