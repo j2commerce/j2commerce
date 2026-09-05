@@ -1318,7 +1318,7 @@ class EmailHelper
 
         $db    = self::getDatabase();
         $query = $db->getQuery(true)
-            ->select('*')
+            ->select($db->quoteName(['orderitem_id', 'orderitemattribute_name', 'orderitemattribute_value', 'orderitemattribute_type']))
             ->from($db->quoteName('#__j2commerce_orderitemattributes'))
             ->whereIn($db->quoteName('orderitem_id'), $itemIds);
         $db->setQuery($query);
@@ -3053,6 +3053,7 @@ class EmailHelper
             return '';
         }
 
+        $attributeRows  = $this->loadOrderItemAttributeRows($items);
         $baseURL        = str_replace('/administrator', '', Uri::base());
         $currencyCode   = $order->currency_code ?? '';
         $currencyValue  = (float) ($order->currency_value ?? 1);
@@ -3085,6 +3086,12 @@ class EmailHelper
 
             if (!empty($item->orderitem_sku)) {
                 $html .= '<br><small>' . $language->_('COM_J2COMMERCE_EMAIL_SKU') . ': ' . self::encodeTagDelimiters(htmlspecialchars($item->orderitem_sku)) . '</small>';
+            }
+
+            $optionText = $this->decodeOrderItemAttributes($item, $attributeRows);
+
+            if ($optionText !== '') {
+                $html .= '<br><small>' . $optionText . '</small>';
             }
 
             $html .= '</td>';
