@@ -89,18 +89,14 @@ class ProductSchemaBuilder
      */
     public function build(?object $product, array $overrides = [], ?int $articleId = null): array
     {
-        if (!$product) {
-            return $this->buildFromOverridesOnly($overrides);
-        }
+        $schema = match (true) {
+            !$product => $this->buildFromOverridesOnly($overrides),
+            $this->helper->isVariableProduct($product) && \count($product->variants ?? []) > 1
+                      => $this->buildProductGroup($product, $overrides, $articleId),
+            default   => $this->buildSimpleProduct($product, $overrides, $articleId),
+        };
 
-        // Determine if this is a variable product
-        $isVariable = $this->helper->isVariableProduct($product);
-
-        if ($isVariable && \count($product->variants ?? []) > 1) {
-            return $this->buildProductGroup($product, $overrides, $articleId);
-        }
-
-        return $this->buildSimpleProduct($product, $overrides, $articleId);
+        return $this->cleanSchemaData($this->helper->normaliseStrings($schema));
     }
 
     /**

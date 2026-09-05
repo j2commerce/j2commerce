@@ -346,11 +346,11 @@ final class Ecommerce extends CMSPlugin implements SubscriberInterface
         $isVariable   = $product && $helper->isVariableProduct($product);
         $variantCount = \count($product->variants ?? []);
 
-        if ($isVariable && $variantCount > 1) {
-            return $this->buildProductGroupSchema($entry, $product);
-        }
+        $schema = $isVariable && $variantCount > 1
+            ? $this->buildProductGroupSchema($entry, $product)
+            : $this->buildSimpleProductSchema($entry, $product);
 
-        return $this->buildSimpleProductSchema($entry, $product);
+        return $this->cleanSchemaData($helper->normaliseStrings($schema));
     }
 
     private function buildSimpleProductSchema(array $entry, ?object $product): array

@@ -781,4 +781,22 @@ class J2CommerceSchemaHelper
     {
         $this->productCache = [];
     }
+
+    /**
+     * Plain text for every string in a graph node, whoever composed it. Entities are decoded
+     * BEFORE tags are stripped so an encoded tag cannot survive the strip; the result no longer
+     * depends on which JSON flags the platform serialiser chooses.
+     */
+    public function normaliseStrings(array $data): array
+    {
+        foreach ($data as $key => $value) {
+            $data[$key] = match (true) {
+                \is_array($value)  => $this->normaliseStrings($value),
+                \is_string($value) => trim(strip_tags(html_entity_decode($value, ENT_QUOTES | ENT_HTML5, 'UTF-8'))),
+                default            => $value,
+            };
+        }
+
+        return $data;
+    }
 }
