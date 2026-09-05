@@ -30,6 +30,7 @@ use Joomla\Database\DatabaseInterface;
  * The set describes LIFECYCLE ONLY and never payment state; payment state has its own column
  * and OrderPayGrantHelper::isPayable() reads it independently. That separation is why
  * 'delivered' is distinct from 'complete': a delivered cash-on-delivery order is still payable.
+ * 'approved' is an authorised but not yet settled payment, for gateways that capture later.
  *
  * A null type means merchant-defined with no core semantics and is a first-class state, so
  * every caller has to state its own fallback rather than assume one.
@@ -38,6 +39,7 @@ final class OrderStatusHelper
 {
     public const TYPE_NEW       = 'new';
     public const TYPE_OPEN      = 'open';
+    public const TYPE_APPROVED  = 'approved';
     public const TYPE_SHIPPED   = 'shipped';
     public const TYPE_DELIVERED = 'delivered';
     public const TYPE_COMPLETE  = 'complete';
@@ -49,6 +51,7 @@ final class OrderStatusHelper
     public const TYPES = [
         self::TYPE_NEW       => 'COM_J2COMMERCE_ORDERSTATUS_TYPE_NEW',
         self::TYPE_OPEN      => 'COM_J2COMMERCE_ORDERSTATUS_TYPE_OPEN',
+        self::TYPE_APPROVED  => 'COM_J2COMMERCE_ORDERSTATUS_TYPE_APPROVED',
         self::TYPE_SHIPPED   => 'COM_J2COMMERCE_ORDERSTATUS_TYPE_SHIPPED',
         self::TYPE_DELIVERED => 'COM_J2COMMERCE_ORDERSTATUS_TYPE_DELIVERED',
         self::TYPE_COMPLETE  => 'COM_J2COMMERCE_ORDERSTATUS_TYPE_COMPLETE',
