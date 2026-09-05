@@ -51,6 +51,7 @@ use Joomla\Event\DispatcherInterface;
 use Joomla\Event\Event;
 use Joomla\Event\Priority;
 use Joomla\Event\SubscriberInterface;
+use Joomla\Plugin\Schemaorg\Ecommerce\Event\ReviewsSchemaPrepareEvent;
 use Joomla\Registry\Registry;
 
 /**
@@ -3220,32 +3221,33 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
     }
 
     /**
-     * Trigger reviews event to allow review plugins to inject data
+     * Let review providers contribute to the product schema.
      *
-     * @param   array  $schema     The product schema
-     * @param   int    $productId  The product ID
-     *
-     * @return  array  The modified schema
-     *
-     * @since   6.0.0
+     * plg_schemaorg_ecommerce owns the onJ2CommerceSchemaReviewsPrepare contract, so this
+     * dispatches the same ReviewsSchemaPrepareEvent it does: one handler signature serves
+     * every dispatch of the name. Without that class there is no payload shape a provider
+     * can be written against, so nothing is contributed.
      */
     private function triggerReviewsEvent(array $schema, int $productId): array
     {
+        if (!class_exists(ReviewsSchemaPrepareEvent::class)) {
+            return $schema;
+        }
+
         try {
             PluginHelper::importPlugin('j2commerce');
 
-            $event = new Event('onJ2CommerceSchemaReviewsPrepare', [
-                'schema'    => $schema,
+            $event = new ReviewsSchemaPrepareEvent('onJ2CommerceSchemaReviewsPrepare', [
+                'subject'   => $schema,
                 'productId' => $productId,
             ]);
             Factory::getContainer()->get(DispatcherInterface::class)->dispatch('onJ2CommerceSchemaReviewsPrepare', $event);
-            $schema = $event->getArgument('schema');
 
-        } catch (\Exception $e) {
-            // Silently fail - reviews are optional
+            return $event->getSchema();
+        } catch (\Throwable $e) {
+            // A provider fault degrades the optional feature, not the page.
+            return $schema;
         }
-
-        return $schema;
     }
 
     /**
