@@ -2378,10 +2378,13 @@ class CartOrder
                 ? $finalPrice
                 : $finalPrice + $itemTax;
 
-            // Serialize item attributes for storage
+            // Resolved here rather than read off the item: getItems() sets orderitemattributes
+            // as a side effect, and a caller that reaches saveOrder() without it would otherwise
+            // persist the raw option-id map the emails cannot read.
+            $resolved   = $item->orderitemattributes ?? $this->getItemAttributes($item);
             $attributes = '';
-            if (!empty($item->orderitemattributes)) {
-                $attributes = json_encode($item->orderitemattributes);
+            if (!empty($resolved)) {
+                $attributes = json_encode($resolved);
             } elseif (!empty($item->product_options)) {
                 $attributes = $item->product_options;
             }
