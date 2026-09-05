@@ -17,6 +17,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\Database\DatabaseInterface;
 
 /**
@@ -47,7 +48,7 @@ final class OrderStatusHelper
     public const TYPE_FAILED    = 'failed';
     public const TYPE_REFUNDED  = 'refunded';
 
-    /** Type value => language key. The only place the value set is declared. */
+    /** Type value => language key. The core set; plugins extend it via getTypes(). */
     public const TYPES = [
         self::TYPE_NEW       => 'COM_J2COMMERCE_ORDERSTATUS_TYPE_NEW',
         self::TYPE_OPEN      => 'COM_J2COMMERCE_ORDERSTATUS_TYPE_OPEN',
@@ -63,9 +64,50 @@ final class OrderStatusHelper
     /** @var array<int, string|null>|null Status id => type, for the whole table. */
     private static ?array $map = null;
 
+    /** @var array<string, string>|null Type value => language key, core + plugin-contributed. */
+    private static ?array $types = null;
+
+    /**
+     * Fires onJ2CommerceGetOrderStatusTypes(['types' => self::TYPES]); handlers
+     * addResult(['scheduled' => 'PLG_..._TYPE_SCHEDULED']). Labels are passed through Text::_(), so
+     * handlers own their language load ($autoloadLanguage = true or loadLanguage()).
+     */
+    public static function getTypes(): array
+    {
+        if (self::$types !== null) {
+            return self::$types;
+        }
+
+        // Assigned before the dispatch so a handler that re-enters sees the core set, not a loop.
+        self::$types = $types = self::TYPES;
+
+        try {
+            $event   = J2CommerceHelper::plugin()->event('GetOrderStatusTypes', ['types' => self::TYPES]);
+            $results = $event->getEventResult();
+        } catch (\Throwable $e) {
+            Log::add('onJ2CommerceGetOrderStatusTypes failed: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
+            $results = null;
+        }
+
+        foreach (array_filter((array) $results, 'is_array') as $result) {
+            foreach ($result as $value => $label) {
+                if (
+                    \is_string($value)
+                    && \is_string($label) && $label !== ''
+                    && preg_match('/^[a-z][a-z0-9_]{0,15}$/', $value) === 1
+                    && !isset(self::TYPES[$value])
+                ) {
+                    $types[$value] = $label;
+                }
+            }
+        }
+
+        return self::$types = $types;
+    }
+
     public static function isValidType(string $type): bool
     {
-        return isset(self::TYPES[$type]);
+        return isset(self::getTypes()[$type]);
     }
 
     public static function getType(int $statusId): ?string
@@ -96,7 +138,7 @@ final class OrderStatusHelper
             ? [HTMLHelper::_('select.option', '', Text::_('COM_J2COMMERCE_ORDERSTATUS_TYPE_NONE'))]
             : [];
 
-        foreach (self::TYPES as $value => $langKey) {
+        foreach (self::getTypes() as $value => $langKey) {
             $options[] = HTMLHelper::_('select.option', $value, Text::_($langKey));
         }
 
@@ -105,13 +147,20 @@ final class OrderStatusHelper
 
     public static function getTypeLabel(?string $type): string
     {
-        return Text::_(self::TYPES[$type] ?? 'COM_J2COMMERCE_ORDERSTATUS_TYPE_NONE');
+        if ($type === null || $type === '') {
+            return Text::_('COM_J2COMMERCE_ORDERSTATUS_TYPE_NONE');
+        }
+
+        // An unregistered value (its plugin is disabled) is shown as-is rather than as
+        // unclassified: callers escape it, and the row still holds the value.
+        return isset(self::getTypes()[$type]) ? Text::_(self::getTypes()[$type]) : $type;
     }
 
     /** Drops the static cache. For callers that write the column in the same request. */
     public static function clearCache(): void
     {
-        self::$map = null;
+        self::$map   = null;
+        self::$types = null;
     }
 
     /** @return array<int, string|null> */
