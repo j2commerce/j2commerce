@@ -115,13 +115,13 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
                                                 $typeOptions,
                                                 'orderstatus_type_' . (int) $item->j2commerce_orderstatus_id,
                                                 [
-                                                    'list.attr' => 'class="form-select form-select-sm orderstatus-type-select" aria-label="'
-                                                        . $this->escape(Text::sprintf('COM_J2COMMERCE_ORDERSTATUS_TYPE_FOR', Text::_($item->orderstatus_name))) . '"',
-                                                    'id'        => 'orderstatus_type_' . (int) $item->j2commerce_orderstatus_id,
+                                                    'class'      => 'form-select form-select-sm orderstatus-type-select',
+                                                    'aria-label' => $this->escape(Text::sprintf('COM_J2COMMERCE_ORDERSTATUS_TYPE_FOR', Text::_($item->orderstatus_name))),
                                                 ],
                                                 'value',
                                                 'text',
-                                                (string) ($item->orderstatus_type ?? '')
+                                                (string) ($item->orderstatus_type ?? ''),
+                                                'orderstatus_type_' . (int) $item->j2commerce_orderstatus_id
                                             ); ?>
                                             <button
                                                 type="button"
