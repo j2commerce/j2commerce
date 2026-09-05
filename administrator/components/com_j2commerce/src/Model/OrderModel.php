@@ -1593,6 +1593,15 @@ class OrderModel extends AdminModel
 
     public function saveTrackingNumber(int $orderId, string $trackingId): bool
     {
+        // This method only ever sets a real tracking number, and it releases the label claim
+        // as a side effect. An empty value would therefore hand the billable slot back while
+        // storing nothing, so it is refused here rather than in each caller -- the API route
+        // already rejects it, the admin AJAX route did not, and plugins call this directly.
+        // Deliberately clearing a tracking number is the order edit form's job.
+        if (trim($trackingId) === '') {
+            return false;
+        }
+
         $db    = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select($db->quoteName('order_id'))

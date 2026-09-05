@@ -320,6 +320,13 @@ class OrderController extends FormController
                 throw new \Exception(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
             }
 
+            // The model refuses an empty value because saving one also releases the label
+            // claim. Say so here rather than letting it fall through to the generic save
+            // failure, which would not tell the operator where a tracking number is cleared.
+            if (trim($trackingId) === '') {
+                throw new \Exception(Text::_('COM_J2COMMERCE_ERR_TRACKING_NUMBER_REQUIRED'));
+            }
+
             $model = $this->getModel();
 
             if ($model->saveTrackingNumber($orderId, $trackingId)) {

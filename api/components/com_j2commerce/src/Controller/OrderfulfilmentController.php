@@ -204,7 +204,17 @@ class OrderfulfilmentController extends J2CommerceApiController
             $raw    = $event->getArgument('result');
             $result = $this->firstLabelResult($raw);
         } catch (\Throwable $e) {
-            $model->releaseLabelSlot($pk);
+            // A handler that threw may already have paid a carrier before it did -- the event
+            // contract carries no signal for how far it got. That is the same ambiguity the
+            // 502 branch below resolves by keeping the claim, so this exit resolves it the
+            // same way: releasing here would let a retry buy a second label.
+            Log::add(
+                \sprintf('Shipping label handler threw for order %d; label claim left held. %s', $pk, $e->getMessage()),
+                Log::ERROR,
+                'com_j2commerce'
+            );
+
+            $this->noteOnOrder($order, 'COM_J2COMMERCE_API_LABEL_SLOT_HELD_ERROR_NOTE');
 
             throw $e;
         }

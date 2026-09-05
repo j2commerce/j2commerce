@@ -14,6 +14,7 @@ defined('_JEXEC') or die;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
+use J2Commerce\Component\J2commerce\Administrator\Model\OrderModel;
 use Joomla\CMS\Language\Text;
 
 $item           = $this->item;
@@ -95,6 +96,16 @@ $labelStyle = 'font-size:12px;letter-spacing:.5px;';
                 <input type="text" class="form-control" name="jform[ordershipping_tracking_id]" id="ordershipping_tracking_id"
                        value="<?php echo $this->escape($orderShipping->ordershipping_tracking_id ?? ''); ?>">
             </div>
+            <?php if (OrderModel::isLabelSlotHeld($orderShipping)): ?>
+                <?php // Saving this form releases the claim, so the operator has to be told one is held before they save. ?>
+                <div class="mt-1">
+                    <span class="badge bg-warning text-dark">
+                        <span class="icon-warning" aria-hidden="true"></span>
+                        <?php echo Text::_('COM_J2COMMERCE_ORDER_LABEL_CLAIM_HELD'); ?>
+                    </span>
+                    <span class="d-block small text-body-secondary"><?php echo Text::_('COM_J2COMMERCE_ORDER_LABEL_CLAIM_HELD_EDIT_DESC'); ?></span>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 
