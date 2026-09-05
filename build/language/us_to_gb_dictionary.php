@@ -59,6 +59,7 @@ return [
         'Authorization'     => 'Authorisation',
         'authorization'     => 'authorisation',
         'Authorize'         => 'Authorise',
+        'apologize'         => 'apologise',
         'authorize'         => 'authorise',
         'Authorized'        => 'Authorised',
         'authorized'        => 'authorised',
