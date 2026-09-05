@@ -449,6 +449,11 @@ JS);
             Text::script('COM_J2COMMERCE_SETUP_GUIDE_CHECK_DOWNLOAD_ID_SAVE');
             Text::script('COM_J2COMMERCE_SETUP_GUIDE_CHECK_DOWNLOAD_ID_CLEAR');
             Text::script('COM_J2COMMERCE_SETUP_GUIDE_ACTION_WIZARD');
+            Text::script('COM_J2COMMERCE_SETUP_GUIDE_STATUS_PASS');
+            Text::script('COM_J2COMMERCE_SETUP_GUIDE_STATUS_FAIL');
+            Text::script('COM_J2COMMERCE_SETUP_GUIDE_STATUS_WARNING');
+            Text::script('COM_J2COMMERCE_SETUP_GUIDE_STATUS_DISMISSED');
+            Text::script('COM_J2COMMERCE_SETUP_GUIDE_N_OF_M_PASSED');
         }
 
         // Onboarding wizard — show on first visit or when re-run requested

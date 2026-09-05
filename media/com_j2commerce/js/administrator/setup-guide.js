@@ -543,6 +543,9 @@ class SetupGuide {
         const badge = document.createElement('span');
         badge.className = `badge ${allPassed ? 'bg-success' : 'bg-warning'}`;
         badge.textContent = `${group.passed}/${group.total}`;
+        badge.setAttribute('aria-label', Joomla.Text._('COM_J2COMMERCE_SETUP_GUIDE_N_OF_M_PASSED')
+            .replace('%d', group.passed)
+            .replace('%d', group.total));
 
         const header = document.createElement('div');
         header.className = 'setup-group-header' + (allPassed ? ' is-collapsed' : '');
@@ -572,6 +575,12 @@ class SetupGuide {
             warning: 'fa-regular fa-circle text-warning',
             dismissed: 'fa-regular fa-circle-minus text-body-secondary',
         };
+        const statusTextMap = {
+            pass: 'COM_J2COMMERCE_SETUP_GUIDE_STATUS_PASS',
+            fail: 'COM_J2COMMERCE_SETUP_GUIDE_STATUS_FAIL',
+            warning: 'COM_J2COMMERCE_SETUP_GUIDE_STATUS_WARNING',
+            dismissed: 'COM_J2COMMERCE_SETUP_GUIDE_STATUS_DISMISSED',
+        };
         const statusClass = check.dismissed ? 'dismissed' : check.status;
 
         const icon = document.createElement('span');
@@ -587,7 +596,9 @@ class SetupGuide {
         item.dataset.setupCheck = check.id;
         item.setAttribute('role', 'button');
         item.tabIndex = 0;
-        item.setAttribute('aria-label', check.label);
+        // The icon is the only visual carrier of the state, so the name carries it in text.
+        const statusText = Joomla.Text._(statusTextMap[statusClass] || statusTextMap.fail);
+        item.setAttribute('aria-label', `${check.label}, ${statusText}`);
         item.append(icon, label);
 
         const outstanding = check.status !== 'pass' && !check.dismissed;
