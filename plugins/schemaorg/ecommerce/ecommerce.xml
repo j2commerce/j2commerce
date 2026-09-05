@@ -135,6 +135,63 @@
 					<option value="1">JYES</option>
 				</field>
 			</fieldset>
+			<fieldset name="merchant_policies" label="PLG_SCHEMAORG_ECOMMERCE_FIELDSET_MERCHANT_POLICIES">
+				<field
+					name="policy_menu_item"
+					type="menuitem"
+					label="PLG_SCHEMAORG_ECOMMERCE_FIELD_POLICY_MENU_ITEM_LABEL"
+					description="PLG_SCHEMAORG_ECOMMERCE_FIELD_POLICY_MENU_ITEM_DESC"
+					filter="integer"
+				/>
+				<field
+					name="handling_days_max"
+					type="number"
+					label="PLG_SCHEMAORG_ECOMMERCE_FIELD_HANDLING_DAYS_MAX_LABEL"
+					description="PLG_SCHEMAORG_ECOMMERCE_FIELD_HANDLING_DAYS_MAX_DESC"
+					filter="integer"
+					min="0"
+					step="1"
+					showon="policy_menu_item!:"
+				/>
+				<field
+					name="handling_cutoff_time"
+					type="text"
+					label="PLG_SCHEMAORG_ECOMMERCE_FIELD_HANDLING_CUTOFF_TIME_LABEL"
+					description="PLG_SCHEMAORG_ECOMMERCE_FIELD_HANDLING_CUTOFF_TIME_DESC"
+					filter="string"
+					maxlength="5"
+					hint="14:30"
+					showon="policy_menu_item!:"
+				/>
+				<field
+					name="handling_business_days"
+					type="list"
+					multiple="true"
+					validate="options"
+					layout="joomla.form.field.list-fancy-select"
+					label="PLG_SCHEMAORG_ECOMMERCE_FIELD_HANDLING_BUSINESS_DAYS_LABEL"
+					description="PLG_SCHEMAORG_ECOMMERCE_FIELD_HANDLING_BUSINESS_DAYS_DESC"
+					showon="policy_menu_item!:"
+				>
+					<option value="Monday">MONDAY</option>
+					<option value="Tuesday">TUESDAY</option>
+					<option value="Wednesday">WEDNESDAY</option>
+					<option value="Thursday">THURSDAY</option>
+					<option value="Friday">FRIDAY</option>
+					<option value="Saturday">SATURDAY</option>
+					<option value="Sunday">SUNDAY</option>
+				</field>
+				<field
+					name="transit_days_max"
+					type="number"
+					label="PLG_SCHEMAORG_ECOMMERCE_FIELD_TRANSIT_DAYS_MAX_LABEL"
+					description="PLG_SCHEMAORG_ECOMMERCE_FIELD_TRANSIT_DAYS_MAX_DESC"
+					filter="integer"
+					min="0"
+					step="1"
+					showon="policy_menu_item!:"
+				/>
+			</fieldset>
 			<fieldset name="restrictions" label="PLG_SCHEMAORG_ECOMMERCE_FIELDSET_RESTRICTIONS">
 				<field
 					name="allowedlist"

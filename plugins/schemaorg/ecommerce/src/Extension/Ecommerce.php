@@ -12,9 +12,11 @@ declare(strict_types=1);
 
 namespace Joomla\Plugin\Schemaorg\Ecommerce\Extension;
 
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Event\Plugin\System\Schemaorg\BeforeCompileHeadEvent;
 use Joomla\CMS\Event\Plugin\System\Schemaorg\PrepareFormEvent;
 use Joomla\CMS\Event\Plugin\System\Schemaorg\PrepareSaveEvent;
+use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\Plugin\PluginHelper;
@@ -22,6 +24,7 @@ use Joomla\CMS\Schemaorg\SchemaorgPluginTrait;
 use Joomla\CMS\Schemaorg\SchemaorgPrepareDateTrait;
 use Joomla\CMS\Schemaorg\SchemaorgPrepareImageTrait;
 use Joomla\CMS\Uri\Uri;
+use Joomla\Database\DatabaseInterface;
 use Joomla\Event\Priority;
 use Joomla\Event\SubscriberInterface;
 use Joomla\Plugin\Schemaorg\Ecommerce\Event\BreadcrumbSchemaPrepareEvent;
@@ -33,6 +36,7 @@ use Joomla\Plugin\Schemaorg\Ecommerce\Event\ProductSchemaPrepareEvent;
 use Joomla\Plugin\Schemaorg\Ecommerce\Event\ReviewsSchemaPrepareEvent;
 use Joomla\Plugin\Schemaorg\Ecommerce\Event\VariantSchemaPrepareEvent;
 use Joomla\Plugin\Schemaorg\Ecommerce\Helper\J2CommerceSchemaHelper;
+use Joomla\Plugin\Schemaorg\Ecommerce\Schema\ShippingServiceSchemaBuilder;
 use Joomla\Registry\Registry;
 
 // phpcs:disable PSR1.Files.SideEffects
@@ -158,6 +162,8 @@ final class Ecommerce extends CMSPlugin implements SubscriberInterface
             }
         }
 
+        $graph = $this->addOrganizationPolicies($graph);
+
         $schema->set('@graph', $graph);
 
         if ($debugMode && !empty($debugInfo)) {
@@ -190,6 +196,82 @@ final class Ecommerce extends CMSPlugin implements SubscriberInterface
         $subject->schema = (new Registry($ecommerceData))->toString();
 
         $event->setArgument('subject', $subject);
+    }
+
+    /** Google wants ShippingService / MerchantReturnPolicy under Organization on one policy page, not on every product. */
+    private function addOrganizationPolicies(array $graph): array
+    {
+        $policyItem = (int) $this->params->get('policy_menu_item', 0);
+        $active     = $this->getApplication()->getMenu()->getActive();
+
+        if ($policyItem === 0 || $active === null || (int) $active->id !== $policyItem) {
+            return $graph;
+        }
+
+        foreach ($graph as $index => $entry) {
+            if (($entry['@type'] ?? null) !== 'Organization') {
+                continue;
+            }
+
+            $services = $this->buildShippingServices();
+
+            if ($services !== []) {
+                $entry['hasShippingService'] = \count($services) === 1 ? $services[0] : $services;
+            }
+
+            $returnPolicy = $this->buildReturnPolicy();
+
+            if ($returnPolicy !== null) {
+                $entry['hasMerchantReturnPolicy'] = $returnPolicy;
+            }
+
+            $graph[$index] = $this->dispatchOrganizationEvent($entry);
+            break;
+        }
+
+        return $graph;
+    }
+
+    private function buildShippingServices(): array
+    {
+        if (!$this->getHelper()->isJ2CommerceAvailable() || !PluginHelper::isEnabled('j2commerce', 'shipping_standard')) {
+            return [];
+        }
+
+        $builder = new ShippingServiceSchemaBuilder(
+            Factory::getContainer()->get(DatabaseInterface::class),
+            $this->params,
+            ComponentHelper::getParams('com_j2commerce'),
+            (string) $this->getApplication()->get('offset', 'UTC'),
+        );
+
+        return $builder->build();
+    }
+
+    /** Mirrors the offer-level policy plg_system_j2commerce emits, from the same params, so the two cannot drift. */
+    private function buildReturnPolicy(): ?array
+    {
+        $plugin = PluginHelper::getPlugin('system', 'j2commerce');
+
+        if (!$plugin) {
+            return null;
+        }
+
+        $params  = new Registry($plugin->params);
+        $country = strtoupper(trim((string) $params->get('return_country', '')));
+
+        if ((int) $params->get('return_policy_enabled', 0) !== 1 || $country === '') {
+            return null;
+        }
+
+        return [
+            '@type'                => 'MerchantReturnPolicy',
+            'applicableCountry'    => $country,
+            'returnPolicyCategory' => 'https://schema.org/MerchantReturnFiniteReturnWindow',
+            'merchantReturnDays'   => (int) $params->get('return_days', 30),
+            'returnMethod'         => 'https://schema.org/ReturnByMail',
+            'returnFees'           => 'https://schema.org/' . $params->get('return_fees', 'FreeReturn'),
+        ];
     }
 
     /** @return array{type: string|null, id: int|null} */
