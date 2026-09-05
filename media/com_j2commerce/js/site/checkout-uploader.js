@@ -183,9 +183,9 @@ const J2CheckoutUploader = (() => {
             fieldName: 'file',
             formData: true,
             headers: {},
-            getResponseData: (responseText) => {
+            getResponseData: (xhr) => {
                 try {
-                    const parsed = JSON.parse(responseText);
+                    const parsed = JSON.parse(xhr.responseText);
                     if (parsed.success && parsed.data) {
                         return parsed.data;
                     }
