@@ -1117,11 +1117,12 @@ class ConfigHelper
     /**
      * Order statuses whose transition grants downloads (`download_orderstatuses`).
      *
-     * Callers gate a grant with `in_array($status, ...)`, so an empty list here would
-     * release downloads on no status at all. It falls back to Confirmed rather than the
-     * field's own empty default for that reason. `DownloadHelper::allowedDownloadStatuses()`
-     * reads the same key for the serve-time query, where an empty list means the setting
-     * adds no `WHERE` and so places no restriction.
+     * The installer seeds the field with the post-purchase window, so an empty value should
+     * be unreachable. The fallback below stays as a backstop for a site whose postflight
+     * never ran: callers gate a grant with `in_array($status, ...)`, so an empty list here
+     * would release downloads on no status at all, and Confirmed is the safe reading.
+     * `DownloadHelper::allowedDownloadStatuses()` reads the same key for the serve-time
+     * query, where the predicate is inverted and an empty list adds no `WHERE` instead.
      *
      * @return  array<int>  Array of order status IDs
      *

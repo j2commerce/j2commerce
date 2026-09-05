@@ -1376,6 +1376,7 @@
             description="COM_J2COMMERCE_CONFIG_DOWNLOAD_STATUSES_DESC"
             multiple="true"
             default=""
+            required="true"
             layout="joomla.form.field.list-fancy-select"
         />
 
