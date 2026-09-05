@@ -909,6 +909,10 @@ class OrderModel extends AdminModel
             ->select('*')
             ->from($db->quoteName('#__j2commerce_ordershippings'))
             ->where($db->quoteName('order_id') . ' = :orderId')
+            // An order can carry more than one shipping row. Order both this read and the
+            // write in saveOrderShipping() the same way, so the edit form saves the row it
+            // displayed rather than whichever row the storage engine happened to return.
+            ->order($db->quoteName('j2commerce_ordershipping_id') . ' ASC')
             ->bind(':orderId', $orderId);
 
         $db->setQuery($query);
@@ -1527,10 +1531,18 @@ class OrderModel extends AdminModel
             ->update($db->quoteName('#__j2commerce_ordershippings'))
             ->set($db->quoteName('ordershipping_label_claim') . ' = :pending')
             ->where($db->quoteName('order_id') . ' = :orderIdStr')
-            ->where('(' . $db->quoteName('ordershipping_label_claim') . ' IS NULL OR '
-                . $db->quoteName('ordershipping_label_claim') . ' = ' . $db->quote('') . ')')
-            ->where('(' . $db->quoteName('ordershipping_tracking_id') . ' IS NULL OR '
-                . $db->quoteName('ordershipping_tracking_id') . ' = ' . $db->quote('') . ')')
+            // LENGTH() and not = '': both columns collate PAD SPACE, under which a value
+            // made only of zero-weight characters -- a plain space, but also NBSP, U+3000
+            // or a stray BOM, which is what a paste out of a carrier portal or a spreadsheet
+            // tends to leave behind -- compares equal to the empty string. Read as free, such
+            // a row would let a second billable label be bought on an order that already has
+            // one. LENGTH() counts bytes, so it answers the same question for every writer
+            // and every collation, and it fails closed: a row holding stray whitespace is
+            // treated as taken until someone clears the field.
+            ->where('(' . $db->quoteName('ordershipping_label_claim') . ' IS NULL OR LENGTH('
+                . $db->quoteName('ordershipping_label_claim') . ') = 0)')
+            ->where('(' . $db->quoteName('ordershipping_tracking_id') . ' IS NULL OR LENGTH('
+                . $db->quoteName('ordershipping_tracking_id') . ') = 0)')
             ->bind(':pending', $pending)
             ->bind(':orderIdStr', $orderIdStr);
 
@@ -1711,25 +1723,36 @@ class OrderModel extends AdminModel
         $db->setQuery($update);
         $db->execute();
 
-        if (\array_key_exists('ordershipping_name', $data)
-            || \array_key_exists('ordershipping_price', $data)
-            || \array_key_exists('ordershipping_tax', $data)
-            || \array_key_exists('ordershipping_tracking_id', $data)
-        ) {
+        if (array_intersect_key(array_flip(self::SHIPPING_SAVE_FIELDS), $data)) {
             $this->saveOrderShipping($orderId, $data);
         }
 
         return true;
     }
 
+    /** The shipping fields the order edit form can submit. Named once, so the caller's
+     *  "is there anything to do" test and the per-field writes below cannot drift apart. */
+    private const SHIPPING_SAVE_FIELDS = [
+        'ordershipping_name',
+        'ordershipping_price',
+        'ordershipping_tax',
+        'ordershipping_tracking_id',
+    ];
+
     /** Update or create the ordershippings row for an order. */
     protected function saveOrderShipping(string $orderId, array $data): void
     {
+        if (!array_intersect_key(array_flip(self::SHIPPING_SAVE_FIELDS), $data)) {
+            return;
+        }
+
         $db    = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select($db->quoteName('j2commerce_ordershipping_id'))
             ->from($db->quoteName('#__j2commerce_ordershippings'))
             ->where($db->quoteName('order_id') . ' = :orderId')
+            // Same ordering as getOrderShipping(), so this updates the row the form showed.
+            ->order($db->quoteName('j2commerce_ordershipping_id') . ' ASC')
             ->bind(':orderId', $orderId);
         $db->setQuery($query);
         $shippingId = (int) $db->loadResult();
@@ -1737,24 +1760,52 @@ class OrderModel extends AdminModel
         $name     = (string) ($data['ordershipping_name'] ?? '');
         $price    = number_format((float) ($data['ordershipping_price'] ?? 0), 5, '.', '');
         $tax      = number_format((float) ($data['ordershipping_tax'] ?? 0), 5, '.', '');
-        $tracking = (string) ($data['ordershipping_tracking_id'] ?? '');
+        // Trimmed at the source, so the guard below and the stored value agree with
+        // saveTrackingNumber(), which refuses on trim(). The column collates PAD SPACE,
+        // so an untrimmed ' ' would both satisfy the guard and still read as empty to
+        // claimLabelSlot()'s free-slot test -- releasing the claim and leaving the slot
+        // takeable in one save.
+        $tracking = trim((string) ($data['ordershipping_tracking_id'] ?? ''));
 
         if ($shippingId > 0) {
             $update = $db->getQuery(true)
                 ->update($db->quoteName('#__j2commerce_ordershippings'))
-                ->set($db->quoteName('ordershipping_name') . ' = :name')
-                ->set($db->quoteName('ordershipping_price') . ' = :price')
-                ->set($db->quoteName('ordershipping_tax') . ' = :tax')
-                ->set($db->quoteName('ordershipping_tracking_id') . ' = :tracking')
-                // Saving this field is the same release saveTrackingNumber() performs, so the
-                // two paths that write a tracking number agree about the claim.
-                ->set($db->quoteName('ordershipping_label_claim') . ' = ' . $db->quote(''))
                 ->where($db->quoteName('j2commerce_ordershipping_id') . ' = :shippingId')
-                ->bind(':name', $name)
-                ->bind(':price', $price)
-                ->bind(':tax', $tax)
-                ->bind(':tracking', $tracking)
                 ->bind(':shippingId', $shippingId, ParameterType::INTEGER);
+
+            // Only the fields the caller actually supplied, as the payment branch above
+            // already does. The trigger in save() fires on any one of these four, so
+            // writing all four unconditionally let a save made for one of them blank the
+            // other three back to the '' / 0 defaults read above.
+            if (\array_key_exists('ordershipping_name', $data)) {
+                $update->set($db->quoteName('ordershipping_name') . ' = :name')
+                    ->bind(':name', $name);
+            }
+
+            if (\array_key_exists('ordershipping_price', $data)) {
+                $update->set($db->quoteName('ordershipping_price') . ' = :price')
+                    ->bind(':price', $price);
+            }
+
+            if (\array_key_exists('ordershipping_tax', $data)) {
+                $update->set($db->quoteName('ordershipping_tax') . ' = :tax')
+                    ->bind(':tax', $tax);
+            }
+
+            if (\array_key_exists('ordershipping_tracking_id', $data)) {
+                $update->set($db->quoteName('ordershipping_tracking_id') . ' = :tracking')
+                    ->bind(':tracking', $tracking);
+
+                // Storing a number is what the claim was held for, so this is the same
+                // release saveTrackingNumber() performs -- including its precondition, which
+                // is why the two now agree. Emptying the field is not a release: the claim is
+                // what stops a second billable label, and the form surfaces it in its own
+                // badge for a person to act on deliberately.
+                if ($tracking !== '') {
+                    $update->set($db->quoteName('ordershipping_label_claim') . ' = ' . $db->quote(''));
+                }
+            }
+
             $db->setQuery($update);
             $db->execute();
 
@@ -2875,6 +2926,10 @@ class OrderModel extends AdminModel
             ])
             ->from($db->quoteName('#__j2commerce_ordershippings'))
             ->where($db->quoteName('order_id') . ' = :orderId')
+            // Third reader of a single shipping row, and it runs straight after every save.
+            // Same ordering as getOrderShipping() and saveOrderShipping(), so totals are
+            // recomputed from the row the form displayed and wrote.
+            ->order($db->quoteName('j2commerce_ordershipping_id') . ' ASC')
             ->bind(':orderId', $orderId);
         $db->setQuery($query);
         $shippingTotals = $db->loadObject();

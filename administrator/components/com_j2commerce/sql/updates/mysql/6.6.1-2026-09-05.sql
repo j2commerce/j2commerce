@@ -1,0 +1,14 @@
+-- The 6.6.1-2026-09-04 delta moved core's own label-purchase lock out of
+-- `ordershipping_tracking_id` and into `ordershipping_label_claim`. The DHL Express shipping
+-- plugin held the same kind of lock in the same column under a marker of its own, which
+-- predates that column and so was not covered by that delta.
+--
+-- The plugin migrates its own rows on update, but core and the plugin update independently:
+-- a store that takes this core release without also taking the plugin release keeps the old
+-- marker sitting in the column that supplies the customer's tracking number. Sweep it here so
+-- the column is clean either way, and so the two migrations are idempotent with each other.
+--
+-- The claim is preserved rather than cleared, for the same reason as the earlier delta: a held
+-- slot is what stops a second billable label being bought, and these are exactly the rows where
+-- a label may already have been paid for.
+UPDATE `#__j2commerce_ordershippings` SET `ordershipping_label_claim` = '__j2c_label_pending__', `ordershipping_tracking_id` = '' WHERE `ordershipping_type` = 'shipping_dhlexpress' AND `ordershipping_tracking_id` = '__PENDING__' AND `ordershipping_label_claim` = '';

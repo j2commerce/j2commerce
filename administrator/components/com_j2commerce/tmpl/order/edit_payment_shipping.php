@@ -97,7 +97,7 @@ $labelStyle = 'font-size:12px;letter-spacing:.5px;';
                        value="<?php echo $this->escape($orderShipping->ordershipping_tracking_id ?? ''); ?>">
             </div>
             <?php if (OrderModel::isLabelSlotHeld($orderShipping)): ?>
-                <?php // Saving this form releases the claim, so the operator has to be told one is held before they save. ?>
+                <?php // Only a saved tracking number releases the claim, so the operator has to be told one is held while they decide what to type here. ?>
                 <div class="mt-1">
                     <span class="badge bg-warning text-dark">
                         <span class="icon-warning" aria-hidden="true"></span>
