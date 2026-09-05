@@ -296,7 +296,7 @@ final class OrderItemAttributeHelper
                     }
                 }
                 $displayValue = implode(', ', $valueNames);
-            } elseif (\in_array($optionType, ['select', 'radio', 'checkbox'], true)) {
+            } elseif (\in_array($optionType, ['select', 'radio', 'checkbox', 'color'], true)) {
                 $displayValue = self::resolveOptionValueName($db, (int) $optionValue);
             } else {
                 $displayValue = (string) $optionValue;

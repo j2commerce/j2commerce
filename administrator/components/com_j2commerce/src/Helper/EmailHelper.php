@@ -1169,10 +1169,11 @@ class EmailHelper
                 $currencyValue  = (float) ($order->currency_value ?? 1);
                 $params         = ComponentHelper::getParams('com_j2commerce');
                 $showThumbnails = ConfigHelper::showEmailThumbnails();
+                $attributeRows  = $this->loadOrderItemAttributeRows($items);
                 $result         = '';
 
                 foreach ($items as $item) {
-                    $optionText = $this->decodeOrderItemAttributes($item->orderitem_attributes ?? '');
+                    $optionText = $this->decodeOrderItemAttributes($item, $attributeRows);
 
                     // Look up product image via ImageHelper for optimal size. An empty tag is the
                     // off-switch: [IF:ITEM_IMAGE] drops its block and [IFNOT:ITEM_IMAGE] keeps its
@@ -1303,10 +1304,45 @@ class EmailHelper
             . substr($text, $outerTrEnd);
     }
 
-    /** Decode orderitem_attributes into "Option: Value" HTML text for emails. */
-    private function decodeOrderItemAttributes(string $raw): string
+    /** Attribute rows keyed by orderitem_id — the store admin-added lines write their options to. */
+    private function loadOrderItemAttributeRows(array $items): array
     {
-        $attributes = OrderItemAttributeHelper::parseRawAttributes($raw);
+        $itemIds = array_values(array_filter(array_map(
+            static fn (object $item): int => (int) ($item->j2commerce_orderitem_id ?? 0),
+            $items
+        )));
+
+        if ($itemIds === []) {
+            return [];
+        }
+
+        $db    = self::getDatabase();
+        $query = $db->getQuery(true)
+            ->select('*')
+            ->from($db->quoteName('#__j2commerce_orderitemattributes'))
+            ->whereIn($db->quoteName('orderitem_id'), $itemIds);
+        $db->setQuery($query);
+
+        $rows = [];
+
+        foreach ($db->loadObjectList() ?: [] as $row) {
+            $rows[(int) $row->orderitem_id][] = $row;
+        }
+
+        return $rows;
+    }
+
+    /**
+     * "Option: Value" HTML text for one line, read the way the order views read it: the attribute
+     * rows when the line has them, else the column resolved against the line's product.
+     */
+    private function decodeOrderItemAttributes(object $item, array $attributeRows): string
+    {
+        $attributes = $attributeRows[(int) ($item->j2commerce_orderitem_id ?? 0)]
+            ?? OrderItemAttributeHelper::parseRawAttributes(
+                (string) ($item->orderitem_attributes ?? ''),
+                (int) ($item->product_id ?? 0)
+            );
 
         return empty($attributes) ? '' : OrderItemAttributeHelper::formatForEmail($attributes);
     }
@@ -2959,6 +2995,8 @@ class EmailHelper
             return '';
         }
 
+        $attributeRows = $this->loadOrderItemAttributeRows($items);
+
         $html  = '<table style="width:100%; border-collapse:collapse;">';
         $html .= '<thead>';
         $html .= '<tr style="background:#f5f5f5;">';
@@ -2975,7 +3013,7 @@ class EmailHelper
             $html .= '<td style="padding:8px; border:1px solid #ddd;">';
             $html .= self::encodeTagDelimiters(htmlspecialchars($item->orderitem_name ?? ''));
 
-            $optionText = $this->decodeOrderItemAttributes($item->orderitem_attributes ?? '');
+            $optionText = $this->decodeOrderItemAttributes($item, $attributeRows);
 
             if (!empty($optionText)) {
                 $html .= '<br><small style="color:#666;">' . $optionText . '</small>';
