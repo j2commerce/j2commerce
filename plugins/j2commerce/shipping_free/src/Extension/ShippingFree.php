@@ -116,18 +116,23 @@ final class ShippingFree extends CMSPlugin implements SubscriberInterface
         }
 
         // All checks passed — append free shipping rate
+        $displayName = $this->params->get('display_name', 'PLG_J2COMMERCE_SHIPPING_FREE');
+        $displayName = \is_scalar($displayName) ? (string) $displayName : 'PLG_J2COMMERCE_SHIPPING_FREE';
+        $image       = $this->params->get('display_image', '');
+        $desc        = $this->params->get('shipping_desc', '');
+
         $result   = $event->getArgument('result', []);
         $result[] = [
             'element'      => $this->_name,
-            'name'         => Text::_($this->params->get('display_name', 'PLG_J2COMMERCE_SHIPPING_FREE')),
+            'name'         => Text::_($displayName),
             'code'         => '',
             'price'        => 0,
             'tax'          => 0,
             'tax_class_id' => 0,
             'extra'        => 0,
             'total'        => 0,
-            'image'        => ImageHelper::getImageUrl((string) $this->params->get('display_image', '')),
-            'desc'         => (string) $this->params->get('shipping_desc', ''),
+            'image'        => ImageHelper::getImageUrl(\is_scalar($image) ? (string) $image : ''),
+            'desc'         => \is_scalar($desc) ? (string) $desc : '',
         ];
         $event->setArgument('result', $result);
     }

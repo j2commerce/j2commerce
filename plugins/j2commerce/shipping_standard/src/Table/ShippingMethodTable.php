@@ -17,6 +17,7 @@ namespace J2Commerce\Plugin\J2Commerce\ShippingStandard\Table;
 // phpcs:enable PSR1.Files.SideEffects
 
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\Table\Table;
 use Joomla\Database\DatabaseDriver;
 
@@ -55,7 +56,8 @@ class ShippingMethodTable extends Table
         try {
             parent::check();
         } catch (\Exception $e) {
-            $this->setError($e->getMessage());
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $this->setError(Text::_('COM_J2COMMERCE_ERR_GENERIC'));
 
             return false;
         }

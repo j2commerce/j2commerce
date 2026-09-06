@@ -53,7 +53,7 @@ $guestShippingData = $this->guestShippingData ?? [];
                 $selected = ($addressId == $shippingAddressId) ? 'selected' : '';
                 ?>
                 <option value="<?php echo (int) $addressId; ?>" <?php echo $selected; ?>>
-                    <?php echo htmlspecialchars($label); ?>
+                    <?php echo htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); ?>
                 </option>
             <?php endforeach; ?>
         </select>

@@ -174,7 +174,12 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
             }
 
             $selectText  = $params->get('shipping_select_text', '');
-            $displayName = !empty($selectText) ? $selectText : $method->shipping_method_name;
+            $selectText  = \is_scalar($selectText) ? (string) $selectText : '';
+            $displayName = $selectText !== '' ? $selectText : $method->shipping_method_name;
+
+            // Methods stored before params were coerced to scalars can still hold an array here.
+            $image = $params->get('shipping_image', '');
+            $desc  = $params->get('shipping_desc', '');
 
             $result[] = [
                 'element'      => $this->_name,
@@ -185,8 +190,8 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
                 'tax_class_id' => (int) $method->tax_class_id,
                 'extra'        => 0,
                 'total'        => $total,
-                'image'        => ImageHelper::getImageUrl((string) $params->get('shipping_image', '')),
-                'desc'         => (string) $params->get('shipping_desc', ''),
+                'image'        => ImageHelper::getImageUrl(\is_scalar($image) ? (string) $image : ''),
+                'desc'         => \is_scalar($desc) ? (string) $desc : '',
             ];
         }
 
@@ -1193,7 +1198,10 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
 
         $event->setArgument(
             'title',
-            Text::sprintf('COM_J2COMMERCE_SHIPPING_SET_RATE_FOR', $table->shipping_method_name)
+            Text::sprintf(
+                'COM_J2COMMERCE_SHIPPING_SET_RATE_FOR',
+                htmlspecialchars((string) $table->shipping_method_name, ENT_QUOTES, 'UTF-8')
+            )
         );
 
         // Toolbar: link to edit this method
@@ -1308,7 +1316,8 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
 
         foreach ($paramsFields as $field) {
             if (isset($data[$field])) {
-                $params[$field] = $data[$field];
+                // A bracketed form key posts an array; every consumer of these params expects a scalar.
+                $params[$field] = \is_scalar($data[$field]) ? (string) $data[$field] : '';
                 unset($data[$field]);
             }
         }
@@ -1351,7 +1360,8 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
         }
 
         if (!$table->store()) {
-            $event->setArgument('message', $table->getError());
+            Log::add($table->getError(), Log::ERROR, 'com_j2commerce');
+            $event->setArgument('message', Text::_('COM_J2COMMERCE_ERR_GENERIC'));
             $event->setArgument('messageType', 'error');
             $event->setArgument('redirect', Route::_(
                 'index.php?option=com_j2commerce&view=shippingplugin&plugin=shipping_standard&pluginview=method&id=' . $id,

@@ -42,6 +42,7 @@ trait PluginLayoutTrait
         }
 
         if ($subtemplate === ''
+            || preg_match('/^[A-Za-z0-9_-]+$/', $subtemplate) !== 1
             || (!is_dir($overrideRoot . '/' . $subtemplate) && !is_dir($pluginTmpl . '/' . $subtemplate))) {
             $subtemplate = $this->defaultSubtemplate($pluginTmpl);
         }

@@ -54,19 +54,22 @@ $baseUrl = Route::_('index.php');
                                id="<?php echo htmlspecialchars($methodId, ENT_QUOTES, 'UTF-8'); ?>"
                                name="shipping_method"
                                <?php echo $checked; ?>
-                               data-name="<?php echo htmlspecialchars($method['name'], ENT_QUOTES); ?>"
+                               data-name="<?php echo htmlspecialchars($method['name'], ENT_QUOTES, 'UTF-8'); ?>"
                                data-price="<?php echo (float) $method['price']; ?>"
                                data-tax="<?php echo (float) $method['tax']; ?>"
                                data-extra="<?php echo (float) $method['extra']; ?>"
-                               data-element="<?php echo htmlspecialchars($method['element'], ENT_QUOTES); ?>"
-                               data-code="<?php echo htmlspecialchars($method['code'], ENT_QUOTES); ?>"
+                               data-element="<?php echo htmlspecialchars($method['element'], ENT_QUOTES, 'UTF-8'); ?>"
+                               data-code="<?php echo htmlspecialchars($method['code'], ENT_QUOTES, 'UTF-8'); ?>"
                                data-tax-class-id="<?php echo (int) ($method['tax_class_id'] ?? 0); ?>" />
                         <?php if (!empty($method['image'])) : ?>
-                            <img src="<?php echo htmlspecialchars($method['image']); ?>" alt="" class="flex-shrink-0" style="height:20px;">
+                            <img src="<?php echo htmlspecialchars($method['image'], ENT_QUOTES, 'UTF-8'); ?>" alt="" class="flex-shrink-0" style="height:20px;">
                         <?php endif; ?>
                         <label class="form-check-label flex-grow-1" for="<?php echo htmlspecialchars($methodId, ENT_QUOTES, 'UTF-8'); ?>">
                             <?php echo htmlspecialchars(stripslashes(Text::_($method['name'])), ENT_QUOTES, 'UTF-8'); ?>
                             (<?php echo $this->currency->format($method['price']); ?>)
+                            <?php if (!empty($method['desc'])) : ?>
+                                <span class="shipping-method-desc d-block"><small class="text-body-secondary"><?php echo htmlspecialchars($method['desc'], ENT_QUOTES, 'UTF-8'); ?></small></span>
+                            <?php endif; ?>
                         </label>
                     </div>
                 <?php endforeach; ?>

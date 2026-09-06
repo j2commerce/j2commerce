@@ -20,6 +20,7 @@ use Joomla\CMS\Form\Field\ListField;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Plugin\PluginHelper;
+use Joomla\Database\DatabaseInterface;
 
 class PluginsubtemplateField extends ListField
 {
@@ -73,11 +74,12 @@ class PluginsubtemplateField extends ListField
             }
         }
 
-        // Scan active template override subdirectories.
-        $tpl          = Factory::getApplication()->getTemplate();
-        $overrideDir  = JPATH_ROOT . '/templates/' . $tpl . '/html/plg_' . $group . '_' . $element;
+        // Scan the SITE template's override subdirectories — PluginLayoutTrait resolves the
+        // site template at render time, so the admin template's folders are not candidates.
+        $tpl         = $this->getSiteTemplate();
+        $overrideDir = JPATH_ROOT . '/templates/' . $tpl . '/html/plg_' . $group . '_' . $element;
 
-        if (is_dir($overrideDir)) {
+        if ($tpl !== '' && is_dir($overrideDir)) {
             foreach (new \DirectoryIterator($overrideDir) as $entry) {
                 if ($entry->isDir() && !$entry->isDot()
                     && !\in_array($entry->getFilename(), self::EXCLUDED_DIRS, true)) {
@@ -93,5 +95,24 @@ class PluginsubtemplateField extends ListField
         }
 
         return $options;
+    }
+
+    private function getSiteTemplate(): string
+    {
+        $app = Factory::getApplication();
+
+        if (!$app->isClient('administrator')) {
+            return (string) $app->getTemplate();
+        }
+
+        $db    = Factory::getContainer()->get(DatabaseInterface::class);
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('template'))
+            ->from($db->quoteName('#__template_styles'))
+            ->where($db->quoteName('client_id') . ' = 0')
+            ->where($db->quoteName('home') . ' = ' . $db->quote('1'));
+        $db->setQuery($query);
+
+        return (string) $db->loadResult();
     }
 }
