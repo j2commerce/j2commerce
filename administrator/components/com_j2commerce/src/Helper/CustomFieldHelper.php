@@ -309,7 +309,7 @@ class CustomFieldHelper
         if (preg_match('/^col-(\d+)$/', $token, $m)) {
             $frac = $colMap[$m[1]] ?? null;
             if ($frac === null) {
-                \Joomla\CMS\Log\Log::add('CustomFieldHelper: unknown col-' . $m[1], \Joomla\CMS\Log\Log::WARNING, 'customfieldhelper');
+                \Joomla\CMS\Log\Log::add('CustomFieldHelper: unknown col-' . $m[1], \Joomla\CMS\Log\Log::WARNING, 'com_j2commerce');
                 return $token;
             }
             // LOSSY: 5/12 rounds to 5-12, 7/12 rounds to 7-12 (see plan §4 table)
@@ -321,7 +321,7 @@ class CustomFieldHelper
             $bpSuffix = $bpMap[$m[1]] ?? '';
             $frac     = $colMap[$m[2]] ?? null;
             if ($frac === null) {
-                \Joomla\CMS\Log\Log::add('CustomFieldHelper: unknown col-' . $m[1] . '-' . $m[2], \Joomla\CMS\Log\Log::WARNING, 'customfieldhelper');
+                \Joomla\CMS\Log\Log::add('CustomFieldHelper: unknown col-' . $m[1] . '-' . $m[2], \Joomla\CMS\Log\Log::WARNING, 'com_j2commerce');
                 return $token;
             }
             return 'uk-width-' . $frac . $bpSuffix;
@@ -358,7 +358,7 @@ class CustomFieldHelper
             $n     = $fracMap[$m[1]] ?? null;
             $bs5bp = $bpMap[$m[2]] ?? 'md';
             if ($n === null) {
-                \Joomla\CMS\Log\Log::add('CustomFieldHelper: unknown uk-width-' . $m[1], \Joomla\CMS\Log\Log::WARNING, 'customfieldhelper');
+                \Joomla\CMS\Log\Log::add('CustomFieldHelper: unknown uk-width-' . $m[1], \Joomla\CMS\Log\Log::WARNING, 'com_j2commerce');
                 return $token;
             }
             return 'col-' . $bs5bp . '-' . $n;
@@ -368,7 +368,7 @@ class CustomFieldHelper
         if (preg_match('/^uk-width-([\d-]+)$/', $token, $m)) {
             $n = $fracMap[$m[1]] ?? null;
             if ($n === null) {
-                \Joomla\CMS\Log\Log::add('CustomFieldHelper: unknown uk-width-' . $m[1], \Joomla\CMS\Log\Log::WARNING, 'customfieldhelper');
+                \Joomla\CMS\Log\Log::add('CustomFieldHelper: unknown uk-width-' . $m[1], \Joomla\CMS\Log\Log::WARNING, 'com_j2commerce');
                 return $token;
             }
             return 'col-' . $n;

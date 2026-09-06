@@ -131,9 +131,9 @@ class HtmlView extends BaseHtmlView
             ToolbarHelper::title(Text::_('COM_J2COMMERCE_TOOLBAR_NEW') . ' ' . Text::_('COM_J2COMMERCE_COUPON'), 'fa-solid fa-scissors');
         } else {
             if ($isEditLayout) {
-                ToolbarHelper::title(Text::_('COM_J2COMMERCE_TOOLBAR_EDIT').': '.$this->item->coupon_name, 'fa fa-solid fa-list-alt');
+                ToolbarHelper::title(Text::_('COM_J2COMMERCE_TOOLBAR_EDIT') . ': ' . $this->escape((string) $this->item->coupon_name), 'fa fa-solid fa-list-alt');
             } else {
-                ToolbarHelper::title(Text::_('COM_J2COMMERCE_COUPON_HISTORY').': '.$this->item->coupon_name, 'fa fa-solid fa-list-alt');
+                ToolbarHelper::title(Text::_('COM_J2COMMERCE_COUPON_HISTORY') . ': ' . $this->escape((string) $this->item->coupon_name), 'fa fa-solid fa-list-alt');
             }
         }
 

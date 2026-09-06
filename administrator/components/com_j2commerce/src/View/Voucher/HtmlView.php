@@ -173,7 +173,7 @@ class HtmlView extends BaseHtmlView
             if ($isEditLayout) {
                 ToolbarHelper::title(Text::sprintf('COM_J2COMMERCE_VOUCHER_EDIT', $this->item->j2commerce_voucher_id), 'fa-solid fa-money-check');
             } else {
-                ToolbarHelper::title(Text::_('COM_J2COMMERCE_VOUCHER_HISTORY') . ': ' . $this->item->voucher_code, 'fa-solid fa-money-check');
+                ToolbarHelper::title(Text::_('COM_J2COMMERCE_VOUCHER_HISTORY') . ': ' . $this->escape((string) $this->item->voucher_code), 'fa-solid fa-money-check');
             }
         }
 

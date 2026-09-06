@@ -353,7 +353,7 @@ class InvoicetemplatesController extends AdminController
 
             $this->setMessage(Text::sprintf('COM_J2COMMERCE_INVOICETEMPLATE_SYNC_CORE_RESULT', $updated, $skipped));
         } catch (\Throwable $e) {
-            Log::add('Core print template sync failed: ' . $e->getMessage(), Log::ERROR, 'j2commerce');
+            Log::add('Core print template sync failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
             $this->setMessage(Text::_('COM_J2COMMERCE_ERR_GENERIC'), 'error');
         }
 

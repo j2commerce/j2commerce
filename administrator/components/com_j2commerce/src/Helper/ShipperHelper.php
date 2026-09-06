@@ -60,7 +60,7 @@ class ShipperHelper
         }
 
         if (!self::ensureBoxPackerAvailable()) {
-            Log::add('BoxPacker library not available, falling back to per-item packaging', Log::WARNING, 'j2commerce.shipping');
+            Log::add('BoxPacker library not available, falling back to per-item packaging', Log::WARNING, 'com_j2commerce');
             return self::getPerItemPackages($shippable, $options);
         }
 

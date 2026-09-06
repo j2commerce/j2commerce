@@ -239,7 +239,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
             $this->debugLog('DASHBOARD ICONS: moved ' . $moved . ' payment plugin icon class(es) out of the label field');
         } catch (\Throwable $e) {
             $this->debugLog('DASHBOARD ICONS: migration failed (see the j2commerce log)');
-            Log::add('Payment dashboard icon migration failed: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
+            Log::add('Payment dashboard icon migration failed: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
         }
     }
 
@@ -420,7 +420,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
             // Seeding must never abort a package install. Options still generates the key on
             // first render, so the next Options view recovers.
             $this->debugLog('QUEUE KEY: seed failed (see the j2commerce log)');
-            Log::add('Queue key seed failed: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
+            Log::add('Queue key seed failed: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
         }
     }
 
@@ -467,7 +467,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
             ));
         } catch (\Throwable $e) {
             $this->debugLog('ORDER LEDGER SEED: aborted with error (see the j2commerce log)');
-            Log::add('Order ledger seed failed: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
+            Log::add('Order ledger seed failed: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
             return;
         }
 
@@ -652,7 +652,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
         } catch (\Throwable $e) {
             // Seeding must never abort a package install; both readers keep their own fallback.
             $this->debugLog('DOWNLOAD STATUSES: seed failed (see the j2commerce log)');
-            Log::add('Download order status seed failed: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
+            Log::add('Download order status seed failed: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
         }
     }
 
@@ -692,7 +692,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
             );
         } catch (\Throwable $e) {
             $this->debugLog('AVAILABILITY: repair failed (see the j2commerce log)');
-            Log::add('Variant availability repair failed: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
+            Log::add('Variant availability repair failed: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
         }
     }
 
@@ -739,7 +739,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
                 'Could not add #__j2commerce_uploads.client_ip; the upload rate limit stays off: '
                     . $e->getMessage(),
                 Log::WARNING,
-                'j2commerce'
+                'com_j2commerce'
             );
         }
     }
@@ -779,7 +779,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
             $db->execute();
         } catch (\Throwable $e) {
             $this->debugLog('setFinderPluginOrdering failed (see the j2commerce log)');
-            Log::add('setFinderPluginOrdering failed: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
+            Log::add('setFinderPluginOrdering failed: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
         }
     }
 
@@ -831,7 +831,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
         } catch (\Throwable $e) {
             // Log the failure: the flag stays unset, so canAccess() keeps its core.manage fallback.
             $this->debugLog('seedCustomAclActions failed (see the j2commerce log)');
-            Log::add('seedCustomAclActions failed: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
+            Log::add('seedCustomAclActions failed: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
 
             Factory::getApplication()->enqueueMessage(
                 Text::_('COM_J2COMMERCE_INSTALL_ACL_SEED_FAILED'),
@@ -924,7 +924,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
             // Seeding defaults must never abort a package update. The flag stays unset, so the
             // next update retries, and canAccess() keeps its core.manage fallback meanwhile.
             $this->debugLog('setDefaultAcl failed (see the j2commerce log)');
-            Log::add('setDefaultAcl failed: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
+            Log::add('setDefaultAcl failed: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
         }
     }
 
@@ -1079,7 +1079,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
             }
         } catch (\Exception $e) {
             $this->debugLog('LOCALISATION: countries error (see the j2commerce log)');
-            Log::add('Error installing countries: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
+            Log::add('Error installing countries: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
         }
 
         // Install zones if needed
@@ -1099,7 +1099,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
             }
         } catch (\Exception $e) {
             $this->debugLog('LOCALISATION: zones error (see the j2commerce log)');
-            Log::add('Error installing zones: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
+            Log::add('Error installing zones: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
         }
 
         // Install metrics (lengths and weights)
@@ -1108,7 +1108,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
             $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/weights.sql');
         } catch (\Exception $e) {
             $this->debugLog('LOCALISATION: metrics error (see the j2commerce log)');
-            Log::add('Error installing metrics: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
+            Log::add('Error installing metrics: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
         }
 
         // Install email templates if needed
@@ -1131,12 +1131,12 @@ class Com_J2commerceInstallerScript extends InstallerScript
                     (new CoreTemplateSyncHelper())->syncEmailTemplates();
                 } catch (\Throwable $e) {
                     $this->debugLog('LOCALISATION: email templates sync error (see the j2commerce log)');
-                    Log::add('Error syncing core email templates: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
+                    Log::add('Error syncing core email templates: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
                 }
             }
         } catch (\Exception $e) {
             $this->debugLog('LOCALISATION: email templates error (see the j2commerce log)');
-            Log::add('Error installing email templates: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
+            Log::add('Error installing email templates: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
         }
 
         // Install invoice templates if needed
@@ -1159,12 +1159,12 @@ class Com_J2commerceInstallerScript extends InstallerScript
                     (new CoreTemplateSyncHelper())->syncInvoiceTemplates();
                 } catch (\Throwable $e) {
                     $this->debugLog('LOCALISATION: invoice templates sync error (see the j2commerce log)');
-                    Log::add('Error syncing core invoice templates: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
+                    Log::add('Error syncing core invoice templates: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
                 }
             }
         } catch (\Exception $e) {
             $this->debugLog('LOCALISATION: invoice templates error (see the j2commerce log)');
-            Log::add('Error installing invoice templates: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
+            Log::add('Error installing invoice templates: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
         }
 
         // Install guided tours if guided tours exist
@@ -1176,7 +1176,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
             }
         } catch (\Exception $e) {
             $this->debugLog('LOCALISATION: guided tours error (see the j2commerce log)');
-            Log::add('Error installing guided tours: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
+            Log::add('Error installing guided tours: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
         }
     }
 
@@ -1203,7 +1203,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
                     $executed++;
                 } catch (\Exception $e) {
                     $this->debugLog("SQL ERROR in {$sqlPath} (see the j2commerce log)");
-                    Log::add('SQL Error: ' . $e->getMessage(), Log::WARNING, 'j2commerce');
+                    Log::add('SQL Error: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
                 }
             } else {
                 $skipped++;
@@ -1247,7 +1247,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
             // Enqueued as well as logged: category j2commerce matches no logger on a default
             // site, and an unprotected upload tree must not be announced only where nobody reads.
             $this->debugLog('ENSURE FILES FOLDER: configured path could not be created or does not resolve inside the site root — skipped');
-            Log::add($message, Log::WARNING, 'j2commerce');
+            Log::add($message, Log::WARNING, 'com_j2commerce');
             Factory::getApplication()->enqueueMessage($message, 'warning');
 
             return;
@@ -1472,7 +1472,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
             // Surfaced to the configured logger as well as the trace: a failed deny-file write
             // leaves the tree readable over HTTP, which the trace alone would never announce.
             $this->debugLog("ENSURE FILES FOLDER: failed to write {$path}");
-            Log::add('Failed to write ' . $path, Log::WARNING, 'j2commerce');
+            Log::add('Failed to write ' . $path, Log::WARNING, 'com_j2commerce');
         }
     }
 }

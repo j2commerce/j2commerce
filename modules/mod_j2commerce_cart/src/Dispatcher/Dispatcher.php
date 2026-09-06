@@ -123,7 +123,7 @@ class Dispatcher extends AbstractModuleDispatcher
             \Joomla\CMS\Log\Log::add(
                 'mod_j2commerce_cart: ' . $e->getMessage(),
                 \Joomla\CMS\Log\Log::ERROR,
-                'mod_j2commerce_cart'
+                'com_j2commerce'
             );
         }
 

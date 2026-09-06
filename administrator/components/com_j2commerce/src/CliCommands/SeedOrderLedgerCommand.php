@@ -116,7 +116,7 @@ class SeedOrderLedgerCommand extends AbstractCommand
                     Log::add(
                         \sprintf('j2commerce:seed:order-ledger failed for order %d: %s', $orderId, $e->getMessage()),
                         Log::WARNING,
-                        'j2commerce'
+                        'com_j2commerce'
                     );
                 }
             }
@@ -274,7 +274,7 @@ class SeedOrderLedgerCommand extends AbstractCommand
                     $refundDisplay
                 ),
                 Log::WARNING,
-                'j2commerce'
+                'com_j2commerce'
             );
 
             return 1;
@@ -313,7 +313,7 @@ class SeedOrderLedgerCommand extends AbstractCommand
                     $remaining
                 ),
                 Log::WARNING,
-                'j2commerce'
+                'com_j2commerce'
             );
         }
 

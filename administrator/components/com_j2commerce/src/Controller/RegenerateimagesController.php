@@ -62,7 +62,7 @@ class RegenerateimagesController extends BaseController
         try {
             $result = $this->getRegenerationHelper()->processBatch($scope, $offset, $limit);
         } catch (\Throwable $e) {
-            Log::add('J2Commerce image regeneration batch failed: ' . $e->getMessage(), Log::ERROR, 'j2commerce');
+            Log::add('J2Commerce image regeneration batch failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
             $this->sendJson(false, Text::_('COM_J2COMMERCE_ERR_GENERIC'));
 
             return;

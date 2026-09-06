@@ -159,7 +159,7 @@ class FlexivariableController extends BaseController
                 $json['variant_id'] = $variantId;
             }
         } catch (\Exception $e) {
-            Log::add($e->getMessage(), Log::ERROR, 'plg_j2commerce_app_flexivariable');
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
             $json['message'] = Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED');
         }
 
@@ -310,7 +310,7 @@ class FlexivariableController extends BaseController
 
             return true;
         } catch (\Exception $e) {
-            Log::add($e->getMessage(), Log::ERROR, 'plg_j2commerce_app_flexivariable');
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
             Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_ERROR_DELETE_FAILED'), 'error');
             return false;
         }

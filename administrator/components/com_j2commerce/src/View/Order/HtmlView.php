@@ -289,7 +289,9 @@ class HtmlView extends BaseHtmlView
         $checkedOut    = !empty($this->item->checked_out) && (int) $this->item->checked_out !== (int) $user->id;
         $toolbar       = $this->getDocument()->getToolbar();
 
-        $orderDisplay = $this->item->order_id ?? $this->item->invoice ?? Text::_('COM_J2COMMERCE_ORDER');
+        $orderDisplay = $this->escape(
+            (string) ($this->item->order_id ?? $this->item->invoice ?? Text::_('COM_J2COMMERCE_ORDER'))
+        );
 
         if ($layout === 'edit') {
             $title = $this->isNew

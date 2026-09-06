@@ -1408,7 +1408,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
                 Log::add(
                     \sprintf('Malformed {j2commerce} shortcode body "%s" — expected a numeric product ID separated by |.', $match['body']),
                     Log::WARNING,
-                    'j2commerce'
+                    'com_j2commerce'
                 );
                 $article->text = $this->replaceAtPosition($article->text, $match['raw'], '');
                 continue;

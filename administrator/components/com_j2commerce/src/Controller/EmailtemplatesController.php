@@ -532,7 +532,7 @@ class EmailtemplatesController extends AdminController
 
             $this->setMessage(Text::sprintf('COM_J2COMMERCE_EMAILTEMPLATE_SYNC_CORE_RESULT', $updated, $skipped));
         } catch (\Throwable $e) {
-            Log::add('Core email template sync failed: ' . $e->getMessage(), Log::ERROR, 'j2commerce');
+            Log::add('Core email template sync failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
             $this->setMessage(Text::_('COM_J2COMMERCE_ERR_GENERIC'), 'error');
         }
 

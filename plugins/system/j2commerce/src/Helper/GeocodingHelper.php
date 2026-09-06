@@ -151,7 +151,7 @@ class GeocodingHelper
                 Log::add(
                     'Nominatim API returned HTTP ' . $response->getStatusCode() . ' for: ' . $address,
                     Log::WARNING,
-                    'plg_system_j2commerce'
+                    'com_j2commerce'
                 );
 
                 return null;
@@ -163,7 +163,7 @@ class GeocodingHelper
                 Log::add(
                     'Nominatim returned no results for: ' . $address,
                     Log::INFO,
-                    'plg_system_j2commerce'
+                    'com_j2commerce'
                 );
 
                 return null;
@@ -177,7 +177,7 @@ class GeocodingHelper
             Log::add(
                 'Nominatim geocoding error: ' . $e->getMessage(),
                 Log::ERROR,
-                'plg_system_j2commerce'
+                'com_j2commerce'
             );
 
             return null;
@@ -203,7 +203,7 @@ class GeocodingHelper
             Log::add(
                 'Geocode cache insert skipped (likely duplicate): ' . $e->getMessage(),
                 Log::DEBUG,
-                'plg_system_j2commerce'
+                'com_j2commerce'
             );
         }
     }

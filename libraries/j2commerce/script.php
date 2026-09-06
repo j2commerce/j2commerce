@@ -148,7 +148,7 @@ return new class () implements InstallerScriptInterface {
 
                     if (!is_dir($destDir)) {
                         if (!Folder::create($destDir, 0755)) {
-                            Log::add('Failed to create directory: ' . $destDir, Log::WARNING, 'lib_j2commerce');
+                            Log::add('Failed to create directory: ' . $destDir, Log::WARNING, 'com_j2commerce');
                             $success = false;
                             continue;
                         }
@@ -156,14 +156,14 @@ return new class () implements InstallerScriptInterface {
 
                     // Copy the file
                     if (!File::copy($override['src'], $override['dest'])) {
-                        Log::add('Failed to copy template override: ' . $override['dest'], Log::WARNING, 'lib_j2commerce');
+                        Log::add('Failed to copy template override: ' . $override['dest'], Log::WARNING, 'com_j2commerce');
                         $success = false;
                     } else {
-                        Log::add('Installed template override: ' . $override['dest'], Log::INFO, 'lib_j2commerce');
+                        Log::add('Installed template override: ' . $override['dest'], Log::INFO, 'com_j2commerce');
                     }
                 }
             } catch (Exception $e) {
-                Log::add('Exception installing template override: ' . $e->getMessage(), Log::ERROR, 'lib_j2commerce');
+                Log::add('Exception installing template override: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
                 $success = false;
             }
         }
@@ -190,12 +190,12 @@ return new class () implements InstallerScriptInterface {
             if (is_file($userOverrideFile)) {
                 try {
                     if (File::delete($userOverrideFile)) {
-                        Log::add('Removed template override: ' . $userOverrideFile, Log::INFO, 'lib_j2commerce');
+                        Log::add('Removed template override: ' . $userOverrideFile, Log::INFO, 'com_j2commerce');
                     } else {
-                        Log::add('Failed to remove template override: ' . $userOverrideFile, Log::WARNING, 'lib_j2commerce');
+                        Log::add('Failed to remove template override: ' . $userOverrideFile, Log::WARNING, 'com_j2commerce');
                     }
                 } catch (Exception $e) {
-                    Log::add('Exception removing template override: ' . $e->getMessage(), Log::ERROR, 'lib_j2commerce');
+                    Log::add('Exception removing template override: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
                 }
             }
 
@@ -205,12 +205,12 @@ return new class () implements InstallerScriptInterface {
             if (is_file($contentOverrideFile)) {
                 try {
                     if (File::delete($contentOverrideFile)) {
-                        Log::add('Removed template override: ' . $contentOverrideFile, Log::INFO, 'lib_j2commerce');
+                        Log::add('Removed template override: ' . $contentOverrideFile, Log::INFO, 'com_j2commerce');
                     } else {
-                        Log::add('Failed to remove template override: ' . $contentOverrideFile, Log::WARNING, 'lib_j2commerce');
+                        Log::add('Failed to remove template override: ' . $contentOverrideFile, Log::WARNING, 'com_j2commerce');
                     }
                 } catch (Exception $e) {
-                    Log::add('Exception removing template override: ' . $e->getMessage(), Log::ERROR, 'lib_j2commerce');
+                    Log::add('Exception removing template override: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
                 }
             }
 
@@ -220,12 +220,12 @@ return new class () implements InstallerScriptInterface {
             if (is_file($contactOverrideFile)) {
                 try {
                     if (File::delete($contactOverrideFile)) {
-                        Log::add('Removed template override: ' . $contactOverrideFile, Log::INFO, 'lib_j2commerce');
+                        Log::add('Removed template override: ' . $contactOverrideFile, Log::INFO, 'com_j2commerce');
                     } else {
-                        Log::add('Failed to remove template override: ' . $contactOverrideFile, Log::WARNING, 'lib_j2commerce');
+                        Log::add('Failed to remove template override: ' . $contactOverrideFile, Log::WARNING, 'com_j2commerce');
                     }
                 } catch (Exception $e) {
-                    Log::add('Exception removing template override: ' . $e->getMessage(), Log::ERROR, 'lib_j2commerce');
+                    Log::add('Exception removing template override: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
                 }
             }
         }

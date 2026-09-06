@@ -162,7 +162,7 @@ class QuickIconsHelper
             Log::add(
                 'Quick icons from J2Commerce plugins could not be collected: ' . $e->getMessage(),
                 Log::WARNING,
-                'mod_j2commerce_quickicons'
+                'com_j2commerce'
             );
         }
 

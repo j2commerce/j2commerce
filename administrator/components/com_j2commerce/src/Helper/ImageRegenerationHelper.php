@@ -198,7 +198,7 @@ class ImageRegenerationHelper
         $targetPath   = $targetDir . $webpBasename;
 
         if (!$processor->createThumbnail($absolute, $targetPath, $width, $height) || !is_file($targetPath)) {
-            Log::add('J2Commerce image regeneration failed for ' . $clean, Log::WARNING, 'j2commerce');
+            Log::add('J2Commerce image regeneration failed for ' . $clean, Log::WARNING, 'com_j2commerce');
 
             return ['status' => 'failed', 'value' => null, 'error' => $clean . ': regeneration failed'];
         }
