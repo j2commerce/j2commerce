@@ -82,6 +82,17 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
 
     private static bool $loggerAdded = false;
 
+    private const LOG_CATEGORY = 'j2commerce.paypal';
+
+    /**
+     * Recorded even with the plugin's debug off. WARNING is in the set for the notice that a
+     * sandbox-configured site is transacting against the live account, and for the gateway
+     * degradation notices in PayPalClient -- signals a merchant needs whether or not they
+     * are debugging. Deliberately one priority wider than the component's own policy, which
+     * records ERROR and above -- a gateway a merchant cannot reach is worth a line either way.
+     */
+    private const ALWAYS_LOGGED = Log::WARNING | Log::ERROR | Log::CRITICAL | Log::ALERT | Log::EMERGENCY;
+
     public function __construct(
         DispatcherInterface $dispatcher,
         array $config,
@@ -97,24 +108,55 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
         $this->payment           = new Payment($dispatcher, $config);
         $this->payment->_element = $this->_name;
         $this->base              = new Base($dispatcher, $config);
+
+        $this->registerLogger();
+    }
+
+    /**
+     * Registered up front, not lazily from log(): the PSR-3 call sites in this plugin and in
+     * PayPalWebhooks emit straight to the category, so a registration that only happened as a
+     * side effect of an earlier log() call left them with nowhere to go.
+     */
+    private function registerLogger(): void
+    {
+        if (self::$loggerAdded) {
+            return;
+        }
+
+        self::$loggerAdded = true;
+
+        // The plugin keeps its own file rather than folding into com_j2commerce.log.php:
+        // Log::add() fans out to every logger whose category and priority match, so a
+        // Log::ALL registration on com_j2commerce would pull all component call sites into
+        // this file and override the priority policy the system plugin sets deliberately.
+        Log::addLogger(
+            ['text_file' => 'payment_paypal.php'],
+            $this->isDebug() ? Log::ALL : self::ALWAYS_LOGGED,
+            [self::LOG_CATEGORY]
+        );
+    }
+
+    private function isDebug(): bool
+    {
+        // CMSPlugin assigns params only when the config carries them, and this now runs from
+        // the constructor -- a null-safe read keeps a payment plugin from fataling site-wide.
+        return (int) ($this->params?->get('debug', 0) ?? 0) === 1;
     }
 
     private function log(string $message, int $priority = Log::DEBUG): void
     {
-        $debug = (int) $this->params->get('debug', 0);
-
-        if ($priority === Log::ERROR || $debug === 1) {
-            if (!self::$loggerAdded) {
-                Log::addLogger(
-                    ['text_file' => 'payment_paypal.php'],
-                    Log::ALL,
-                    ['payment_paypal', 'j2commerce.paypal']
-                );
-                self::$loggerAdded = true;
-            }
-
-            Log::add($message, $priority, 'payment_paypal');
+        // Gated on emission as well as on registration: Log::add() fans out to every logger
+        // whose category and priority match, and core registers a catch-all of its own when
+        // the site has "Log Almost Everything" on. The registered mask governs this plugin's
+        // file only, so without this guard a debug-off install would write these lines into
+        // that catch-all, which is not what the debug parameter promises.
+        if (!$this->isDebug() && !($priority & self::ALWAYS_LOGGED)) {
+            return;
         }
+
+        // A request value reaches some of these messages, and the text-file logger writes the
+        // message into a tab-delimited line verbatim -- a newline would forge a second entry.
+        Log::add(str_replace(["\r", "\n"], ' ', $message), $priority, self::LOG_CATEGORY);
     }
 
     public static function getSubscribedEvents(): array
@@ -2132,7 +2174,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 ? $this->params->get('sandbox_client_secret', '')
                 : $this->params->get('client_secret', '');
 
-            $this->paypalClient = new PayPalClient($clientId, $clientSecret, $sandbox);
+            $this->paypalClient = new PayPalClient($clientId, $clientSecret, $sandbox, $this->isDebug());
         }
 
         return $this->paypalClient;

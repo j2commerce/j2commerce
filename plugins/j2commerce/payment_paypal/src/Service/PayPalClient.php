@@ -20,10 +20,88 @@ final class PayPalClient
     private ?string $accessToken = null;
     private int $tokenExpiry     = 0;
 
+    private const LOG_CATEGORY = 'j2commerce.paypal';
+
+    /**
+     * Scalars are kept only when their key is named here; everything else becomes
+     * '[redacted]'. Arrays are always walked, so the payload keeps its shape.
+     *
+     * An allow-list rather than a deny-list because the fields that must not be logged
+     * cannot be enumerated from the key alone: `name` is the cardholder on
+     * payment_source.card and on every alternative payment method, but the product on
+     * purchase_units[].items[]. Naming what is safe keeps anything PayPal adds later --
+     * and anything a deny-list would have missed, such as last_digits, expiry,
+     * birth_date, tax_id or a vault id -- out of the log by default.
+     */
+    private const LOGGABLE_KEYS = [
+        'create_time',
+        'currency_code',
+        'custom_id',
+        'debug_id',
+        'description',
+        'disbursement_mode',
+        'error',
+        'error_description',
+        'expiration_time',
+        'expires_in',
+        'final_capture',
+        'id',
+        'information_link',
+        'intent',
+        'invoice_id',
+        'issue',
+        'message',
+        'method',
+        'reference_id',
+        'rel',
+        'status',
+        'update_time',
+        'value',
+    ];
+
+    /**
+     * Parents under which a scalar `value` is a money amount. PayPal's error schema reuses
+     * `value` as a verbatim echo of the field it rejected, and createSubscription() sends the
+     * subscriber's name and email address -- so `value` is safe by position, never by name.
+     */
+    private const MONEY_CONTAINERS = [
+        'amount',
+        'breakdown',
+        'discount',
+        'gross_amount',
+        'handling',
+        'insurance',
+        'item_total',
+        'net_amount',
+        'paypal_fee',
+        'shipping',
+        'shipping_discount',
+        'tax_total',
+        'unit_amount',
+    ];
+
+    /**
+     * Parents under which a scalar `id` is a handle to a stored credential rather than a
+     * gateway object reference.
+     */
+    private const CREDENTIAL_CONTAINERS = [
+        'customer',
+        'payer',
+        'payment_source',
+        'payment_tokens',
+        'subscriber',
+        'token',
+        'tokens',
+        'vault',
+    ];
+
+    private const MAX_LOGGED_PAYLOAD = 2000;
+
     public function __construct(
         private string $clientId,
         private string $clientSecret,
-        private bool $sandbox = true
+        private bool $sandbox = true,
+        private bool $debug = false
     ) {
         $this->loadCachedToken();
     }
@@ -66,7 +144,7 @@ final class PayPalClient
 
         $data = json_decode($response, true);
         if (!isset($data['access_token'])) {
-            $this->_log('OAuth response missing access_token: ' . $response, 'ERROR');
+            $this->_logPayload('OAuth response missing access_token: ', (string) $response, 'ERROR');
             throw new \RuntimeException('PayPal auth failed: Invalid response');
         }
 
@@ -106,7 +184,7 @@ final class PayPalClient
         if ($body !== null) {
             $jsonBody = json_encode($body);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonBody);
-            $this->_log("$method $endpoint: " . $jsonBody, 'DEBUG');
+            $this->_logPayload("$method $endpoint: ", (string) $jsonBody);
         } else {
             $this->_log("$method $endpoint", 'DEBUG');
         }
@@ -117,7 +195,7 @@ final class PayPalClient
         curl_close($ch);
 
         $responseBody = json_decode($response, true) ?? [];
-        $this->_log("Response HTTP $httpCode: " . substr($response, 0, 500), 'DEBUG');
+        $this->_logPayload("Response HTTP $httpCode: ", (string) $response);
 
         if ($httpCode === 401 && !$isRetry) {
             $this->_log('Received 401, refreshing token and retrying', 'INFO');
@@ -200,8 +278,32 @@ final class PayPalClient
         }
     }
 
+    private function shouldLog(string $type): bool
+    {
+        // Same set the plugin registers as ALWAYS_LOGGED: WARNING carries the gateway
+        // degradation notices, which a merchant needs without turning debug on.
+        return $this->debug || $type === 'ERROR' || $type === 'WARNING';
+    }
+
+    /**
+     * Redaction is built here rather than at the call site so a debug-off install does not
+     * decode, walk and re-encode every PayPal response only to discard the result.
+     */
+    private function _logPayload(string $prefix, string $payload, string $type = 'DEBUG'): void
+    {
+        if (!$this->shouldLog($type)) {
+            return;
+        }
+
+        $this->_log($prefix . $this->redact($payload), $type);
+    }
+
     private function _log(string $message, string $type = 'INFO'): void
     {
+        if (!$this->shouldLog($type)) {
+            return;
+        }
+
         $priorities = [
             'DEBUG'   => Log::DEBUG,
             'INFO'    => Log::INFO,
@@ -209,10 +311,74 @@ final class PayPalClient
             'ERROR'   => Log::ERROR,
         ];
 
+        // A request value reaches some of these messages, and the text-file logger writes the
+        // message into a tab-delimited line verbatim -- a newline would forge a second entry.
         Log::add(
-            $message,
+            str_replace(["\r", "\n"], ' ', $message),
             $priorities[$type] ?? Log::INFO,
-            'j2commerce.paypal'
+            self::LOG_CATEGORY
         );
+    }
+
+    /**
+     * Redacts the buyer's identifying fields out of a JSON payload before it is logged.
+     * Falls back to the payload's length when it does not decode, so a malformed body is
+     * never echoed verbatim.
+     */
+    private function redact(string $json): string
+    {
+        $decoded = json_decode($json, true);
+
+        // Covers invalid JSON, a bare scalar and anything past json_decode()'s depth limit.
+        // Only the length is reported, never the text.
+        if (!\is_array($decoded)) {
+            return '[unloggable payload, ' . \strlen($json) . ' bytes]';
+        }
+
+        $redacted = json_encode($this->redactValue($decoded));
+
+        if ($redacted === false) {
+            return '[unloggable payload, ' . \strlen($json) . ' bytes]';
+        }
+
+        return \strlen($redacted) > self::MAX_LOGGED_PAYLOAD
+            ? substr($redacted, 0, self::MAX_LOGGED_PAYLOAD) . '... [truncated]'
+            : $redacted;
+    }
+
+    private function redactValue(mixed $value, string $parentKey = ''): mixed
+    {
+        if (!\is_array($value)) {
+            return $value;
+        }
+
+        foreach ($value as $key => $item) {
+            if (\is_array($item)) {
+                // A list index carries no meaning, so the nearest NAMED ancestor is passed on
+                // instead: without this, `tokens[0].id` would be judged against the parent "0"
+                // and escape the credential rule below.
+                $value[$key] = $this->redactValue($item, is_numeric($key) ? $parentKey : (string) $key);
+                continue;
+            }
+
+            $value[$key] = $this->isLoggableScalar((string) $key, $parentKey) ? $item : '[redacted]';
+        }
+
+        return $value;
+    }
+
+    private function isLoggableScalar(string $key, string $parentKey): bool
+    {
+        if ($key === 'value') {
+            return \in_array($parentKey, self::MONEY_CONTAINERS, true);
+        }
+
+        // `id` names an order, capture or subscription everywhere except under a credential
+        // block, where it is a reusable handle for the buyer's stored payment method.
+        if ($key === 'id') {
+            return !\in_array($parentKey, self::CREDENTIAL_CONTAINERS, true);
+        }
+
+        return \in_array($key, self::LOGGABLE_KEYS, true);
     }
 }

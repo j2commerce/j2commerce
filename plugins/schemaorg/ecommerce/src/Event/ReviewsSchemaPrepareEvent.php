@@ -86,6 +86,15 @@ class ReviewsSchemaPrepareEvent extends AbstractSchemaEvent
     private ?string $contributor = null;
 
     /**
+     * Keyed by the pair that clashed. A listing page dispatches this event once per product,
+     * and the clash is a configuration state, not a per-product one -- without the guard the
+     * same sentence would be written for every product on the page.
+     *
+     * @var array<string, true>
+     */
+    private static array $reported = [];
+
+    /**
      * Contribute this provider's review data, as one indivisible unit.
      *
      * The first provider to call wins, and a later call from a different plugin is ignored in
@@ -110,16 +119,25 @@ class ReviewsSchemaPrepareEvent extends AbstractSchemaEvent
     {
         if ($this->contributor !== null && $this->contributor !== $pluginId) {
             // Silence here would leave an admin with two providers enabled, one of them
-            // missing from the page, and nothing anywhere saying why.
-            Log::add(
-                \sprintf(
-                    'Review schema from "%s" ignored: "%s" contributed first. Reorder the plugins to change which one is used.',
-                    $pluginId,
-                    $this->contributor
-                ),
-                Log::WARNING,
-                'schemaorg'
-            );
+            // missing from the page, and nothing anywhere saying why. It goes to the
+            // component's own category at ERROR because that is the one priority the system
+            // plugin records without Site Debug -- a WARNING here would be dropped on the
+            // installs that need to read it, and jerror would put it in front of a shopper.
+            $key = $this->contributor . '|' . $pluginId;
+
+            if (!isset(self::$reported[$key])) {
+                self::$reported[$key] = true;
+
+                Log::add(
+                    \sprintf(
+                        'Review schema from "%s" ignored: "%s" contributed first. Reorder the plugins to change which one is used.',
+                        $pluginId,
+                        $this->contributor
+                    ),
+                    Log::ERROR,
+                    'com_j2commerce'
+                );
+            }
 
             return false;
         }
