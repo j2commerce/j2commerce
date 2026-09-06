@@ -98,6 +98,21 @@
         />
 
         <field
+            name="shipping_image"
+            type="media"
+            label="PLG_J2COMMERCE_SHIPPING_STANDARD_FIELD_IMAGE"
+            description="PLG_J2COMMERCE_SHIPPING_STANDARD_FIELD_IMAGE_DESC"
+        />
+
+        <field
+            name="shipping_desc"
+            type="text"
+            label="PLG_J2COMMERCE_SHIPPING_STANDARD_FIELD_DESC"
+            description="PLG_J2COMMERCE_SHIPPING_STANDARD_FIELD_DESC_DESC"
+            maxlength="255"
+        />
+
+        <field
             name="shipping_price_based_on"
             type="list"
             label="COM_J2COMMERCE_FIELD_SHIPPING_PRICE_BASED_ON"

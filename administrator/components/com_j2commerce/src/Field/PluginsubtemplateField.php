@@ -14,9 +14,12 @@ namespace J2Commerce\Component\J2commerce\Administrator\Field;
 
 \defined('_JEXEC') or die;
 
+use Joomla\CMS\Event\GenericEvent;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Field\ListField;
 use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\CMS\Language\Text;
+use Joomla\CMS\Plugin\PluginHelper;
 
 class PluginsubtemplateField extends ListField
 {
@@ -38,7 +41,25 @@ class PluginsubtemplateField extends ListField
             return $options;
         }
 
+        // An empty value inherits the component's default subtemplate (see PluginLayoutTrait).
+        array_unshift($options, HTMLHelper::_('select.option', '', Text::_('JDEFAULT')));
+
         $folders = [];
+
+        // Enabled theme apps (bootstrap5, uikit, ...) are always selectable so a template
+        // override under templates/<tpl>/html/plg_<group>_<element>/<theme>/ can be targeted
+        // even when the plugin ships flat templates.
+        PluginHelper::importPlugin('j2commerce');
+        $event = new GenericEvent('onJ2CommerceTemplateFolderList', ['folders' => [], 'view_context' => '']);
+        Factory::getApplication()->getDispatcher()->dispatch('onJ2CommerceTemplateFolderList', $event);
+
+        foreach ($event->getArgument('folders', []) as $entry) {
+            $name = \is_string($entry) ? $entry : ($entry['name'] ?? '');
+
+            if ($name !== '' && !str_starts_with($name, 'tag_') && !str_starts_with($name, 'categories_')) {
+                $folders[$name] = true;
+            }
+        }
 
         // Scan plugin tmpl/ subdirectories — only include layout subtemplates.
         $pluginTmpl = JPATH_PLUGINS . '/' . $group . '/' . $element . '/tmpl';

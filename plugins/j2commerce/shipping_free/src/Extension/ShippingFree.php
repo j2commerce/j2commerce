@@ -16,6 +16,7 @@ namespace J2Commerce\Plugin\J2Commerce\ShippingFree\Extension;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\PluginLayoutTrait;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -125,6 +126,8 @@ final class ShippingFree extends CMSPlugin implements SubscriberInterface
             'tax_class_id' => 0,
             'extra'        => 0,
             'total'        => 0,
+            'image'        => ImageHelper::getImageUrl((string) $this->params->get('display_image', '')),
+            'desc'         => (string) $this->params->get('shipping_desc', ''),
         ];
         $event->setArgument('result', $result);
     }

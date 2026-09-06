@@ -16,6 +16,7 @@ namespace J2Commerce\Plugin\J2Commerce\ShippingStandard\Extension;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\PluginLayoutTrait;
 use J2Commerce\Plugin\J2Commerce\ShippingStandard\Table\ShippingMethodTable;
 use J2Commerce\Plugin\J2Commerce\ShippingStandard\Table\ShippingRateTable;
@@ -183,6 +184,8 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
                 'tax_class_id' => (int) $method->tax_class_id,
                 'extra'        => 0,
                 'total'        => $total,
+                'image'        => ImageHelper::getImageUrl((string) $params->get('shipping_image', '')),
+                'desc'         => (string) $params->get('shipping_desc', ''),
             ];
         }
 
@@ -1299,7 +1302,7 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
         $db   = $this->getDatabase();
 
         // Extract params fields from jform data and encode as JSON
-        $paramsFields = ['shipping_select_text', 'shipping_price_based_on'];
+        $paramsFields = ['shipping_select_text', 'shipping_image', 'shipping_desc', 'shipping_price_based_on'];
         $params       = [];
 
         foreach ($paramsFields as $field) {

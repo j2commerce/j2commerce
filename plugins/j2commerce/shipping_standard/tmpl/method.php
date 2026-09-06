@@ -98,6 +98,8 @@ $isNew      = ($methodId === 0);
                     <legend><?php echo Text::_('COM_J2COMMERCE_FIELDSET_PARAMS'); ?></legend>
                     <div class="form-grid">
                         <?php echo $form->renderField('shipping_select_text'); ?>
+                        <?php echo $form->renderField('shipping_image'); ?>
+                        <?php echo $form->renderField('shipping_desc'); ?>
                         <?php echo $form->renderField('shipping_price_based_on'); ?>
                     </div>
                 </fieldset>

@@ -87,6 +87,14 @@
                     description="COM_J2COMMERCE_PLUGIN_DISPLAY_IMAGE_DESC"
                 />
 
+                <field
+                    name="shipping_desc"
+                    type="text"
+                    label="PLG_J2COMMERCE_SHIPPING_FREE_SHIPPING_DESC"
+                    description="PLG_J2COMMERCE_SHIPPING_FREE_SHIPPING_DESC_DESC"
+                    maxlength="255"
+                />
+
                 <field type="spacer"/>
 
                 <field
