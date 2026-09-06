@@ -14,9 +14,11 @@ namespace J2Commerce\Component\J2commerce\Site\Controller;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageProcessorHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\UploadHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Helper\MediaHelper;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\CMS\Session\Session;
 use Joomla\CMS\Uri\Uri;
@@ -144,22 +146,24 @@ class MultiimageuploaderController extends BaseController
         $extension = strtolower(File::getExt($file['name']));
         $safeName  = File::makeSafe($file['name']);
         $baseName  = File::stripExt($safeName);
-        $fileName  = $baseName . '_' . uniqid() . '.' . $extension;
+        $fileName  = $baseName . '_' . UploadHelper::randomToken() . '.' . $extension;
         $filePath  = $uploadPath . '/' . $fileName;
 
-        // In file mode, pass allowUnsafe = true: File::upload() would otherwise scan
-        // archive contents for forbidden extensions (e.g. .php inside a zip), which is
-        // inappropriate for legitimate download products.  Our own validateUploadedFile()
-        // has already performed extension, blocklist, and MIME-type checks.
-        // Wrap in try-catch because File::upload() throws FilesystemException on failure
-        // instead of returning false.
+        // File-mode products legitimately carry .php archive entries and <?php samples,
+        // so the archive/tag content scans are dropped in that mode; the null-byte, phar-stub
+        // and forbidden-extension name checks stay on in both, alongside validateUploadedFile().
+        $safeFileOptions = $fileMode === 1
+            ? ['php_tag_in_content' => false, 'shorttag_in_content' => false, 'fobidden_ext_in_content' => false]
+            : [];
+
         try {
-            if (!File::upload($file['tmp_name'], $filePath, false, $fileMode === 1)) {
+            if (!File::upload($file['tmp_name'], $filePath, false, false, $safeFileOptions)) {
                 $this->sendJson(false, 'Failed to save file');
                 return;
             }
         } catch (\Joomla\Filesystem\Exception\FilesystemException $e) {
-            $this->sendJson(false, 'Failed to save file: ' . $e->getMessage());
+            Log::add('Multiimageuploader upload failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $this->sendJson(false, 'Failed to save file');
             return;
         }
 

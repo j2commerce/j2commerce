@@ -45,6 +45,8 @@ use Joomla\Registry\Registry;
  */
 class CartModel extends BaseDatabaseModel
 {
+    private ?int $resolvedCartId = null;
+
     /**
      * Default behaviors to load for cart item processing.
      *
@@ -684,7 +686,7 @@ class CartModel extends BaseDatabaseModel
      */
     public function validate(object $cartitem, float $quantity): bool
     {
-        $cart = $this->getCart($this->getCartId());
+        $cart = $this->getCart($this->getCartId(), false);
 
         if ($cart && $cart->cart_type !== 'cart') {
             return true;
@@ -903,19 +905,20 @@ class CartModel extends BaseDatabaseModel
                         $err = '';
                     }
 
-                    // Check for PHP tags
-                    $content = file_get_contents($file['tmp_name']);
-
-                    if (preg_match('/\<\?php/i', $content)) {
-                        $err = Text::_('COM_J2COMMERCE_UPLOAD_FILE_PHP_TAGS');
-                    }
-
                     if (!empty($err)) {
                         $this->setError(Text::_('COM_J2COMMERCE_UPLOAD_ERR_MEDIAHELPER_ERROR') . ' ' . $err);
                     } else {
                         $this->setError(Text::_('COM_J2COMMERCE_UPLOAD_ERR_GENERIC_ERROR'));
                     }
 
+                    return false;
+                }
+
+                // canUpload() only scans files it rejects; scan the ones it passed too.
+                $content = file_get_contents($file['tmp_name']);
+
+                if ($content !== false && preg_match('/\<\?php/i', $content)) {
+                    $this->setError(Text::_('COM_J2COMMERCE_UPLOAD_ERR_MEDIAHELPER_ERROR') . ' ' . Text::_('COM_J2COMMERCE_UPLOAD_FILE_PHP_TAGS'));
                     return false;
                 }
             }
@@ -1129,33 +1132,10 @@ class CartModel extends BaseDatabaseModel
         return $url ?: null;
     }
 
-    /**
-     * Set cart ID in session.
-     *
-     * @param   int  $cartId  Cart ID.
-     *
-     * @return  void
-     *
-     * @since   6.0.0
-     */
-    public function setCartId(int $cartId = 0): void
-    {
-        $session = Factory::getApplication()->getSession();
-        $session->set('cart_id.' . $this->getCartType(), $cartId, 'j2commerce');
-    }
-
-    /**
-     * Get cart ID from session.
-     *
-     * @return  int  Cart ID.
-     *
-     * @since   6.0.0
-     */
+    /** Resolved (and memoised) through CartHelper — never creates a cart, so an ownership probe has no side effect. */
     public function getCartId(): int
     {
-        $session = Factory::getApplication()->getSession();
-
-        return (int) $session->get('cart_id.' . $this->getCartType(), 0, 'j2commerce');
+        return $this->resolvedCartId ??= (int) ($this->getCart(0, false)->j2commerce_cart_id ?? 0);
     }
 
     /**

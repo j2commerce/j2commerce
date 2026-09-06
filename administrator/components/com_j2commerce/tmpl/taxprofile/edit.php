@@ -198,16 +198,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const select = document.getElementById('taxrate-' + index);
             if (!select || !taxData) return;
 
-            let options = '<option value=""><?php echo Text::_('COM_J2COMMERCE_SELECT_TAXRATE'); ?></option>';
+            const options = [new Option(<?php echo json_encode(Text::_('COM_J2COMMERCE_SELECT_TAXRATE'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>, '')];
 
             taxData.taxrates.forEach(function(rate) {
-                const selected = (rate.j2commerce_taxrate_id == selectedId) ? ' selected' : '';
                 const displayText = rate.taxrate_name + ' (' + rate.tax_percent + '%)';
-                options += '<option value="' + rate.j2commerce_taxrate_id + '"' + selected + '>' +
-                    J2CommerceTax.escapeHtml(displayText) + '</option>';
+                options.push(new Option(displayText, rate.j2commerce_taxrate_id, false, rate.j2commerce_taxrate_id == selectedId));
             });
 
-            select.innerHTML = options;
+            select.replaceChildren(...options);
         },
 
         /**
@@ -215,34 +213,57 @@ document.addEventListener('DOMContentLoaded', function() {
          */
         addRule: function() {
             const tbody = document.getElementById('tax-rules-body');
+            const currentRowIndex = rowIndex;
 
             // Create new row
             const newRow = document.createElement('tr');
-            newRow.id = 'rule-row-' + rowIndex;
-            newRow.innerHTML = `
-                <td>
-                    <select name="taxrules[${rowIndex}][taxrate_id]" id="taxrate-${rowIndex}" class="form-select" required>
-                        <option value=""><?php echo Text::_('COM_J2COMMERCE_SELECT_TAXRATE'); ?></option>
-                    </select>
-                    <input type="hidden" name="taxrules[${rowIndex}][j2commerce_taxrule_id]" value="0">
-                </td>
-                <td>
-                    <select name="taxrules[${rowIndex}][address]" id="address-${rowIndex}" class="form-select">
-                        <option value="shipping" selected><?php echo Text::_('COM_J2COMMERCE_ADDRESS_SHIPPING'); ?></option>
-                        <option value="billing"><?php echo Text::_('COM_J2COMMERCE_ADDRESS_BILLING'); ?></option>
-                    </select>
-                </td>
-                <td>
-                    <button type="button" class="btn btn-sm btn-danger" onclick="J2CommerceTax.removeRule(0, ${rowIndex})">
-                        <span class="icon-trash" aria-hidden="true"></span> <?php echo Text::_('JACTION_DELETE'); ?>
-                    </button>
-                </td>
-            `;
+            newRow.id = 'rule-row-' + currentRowIndex;
+
+            const taxrateCell = document.createElement('td');
+            const taxrateSelect = document.createElement('select');
+            taxrateSelect.name = `taxrules[${currentRowIndex}][taxrate_id]`;
+            taxrateSelect.id = 'taxrate-' + currentRowIndex;
+            taxrateSelect.className = 'form-select';
+            taxrateSelect.required = true;
+            taxrateSelect.appendChild(new Option(<?php echo json_encode(Text::_('COM_J2COMMERCE_SELECT_TAXRATE'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>, ''));
+            taxrateCell.appendChild(taxrateSelect);
+
+            const taxruleIdInput = document.createElement('input');
+            taxruleIdInput.type = 'hidden';
+            taxruleIdInput.name = `taxrules[${currentRowIndex}][j2commerce_taxrule_id]`;
+            taxruleIdInput.value = '0';
+            taxrateCell.appendChild(taxruleIdInput);
+            newRow.appendChild(taxrateCell);
+
+            const addressCell = document.createElement('td');
+            const addressSelect = document.createElement('select');
+            addressSelect.name = `taxrules[${currentRowIndex}][address]`;
+            addressSelect.id = 'address-' + currentRowIndex;
+            addressSelect.className = 'form-select';
+            addressSelect.appendChild(new Option(<?php echo json_encode(Text::_('COM_J2COMMERCE_ADDRESS_SHIPPING'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>, 'shipping', true, true));
+            addressSelect.appendChild(new Option(<?php echo json_encode(Text::_('COM_J2COMMERCE_ADDRESS_BILLING'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>, 'billing'));
+            addressCell.appendChild(addressSelect);
+            newRow.appendChild(addressCell);
+
+            const actionCell = document.createElement('td');
+            const deleteBtn = document.createElement('button');
+            deleteBtn.type = 'button';
+            deleteBtn.className = 'btn btn-sm btn-danger';
+            deleteBtn.addEventListener('click', function() {
+                J2CommerceTax.removeRule(0, currentRowIndex);
+            });
+            const deleteIcon = document.createElement('span');
+            deleteIcon.className = 'icon-trash';
+            deleteIcon.setAttribute('aria-hidden', 'true');
+            deleteBtn.appendChild(deleteIcon);
+            deleteBtn.appendChild(document.createTextNode(' ' + <?php echo json_encode(Text::_('JACTION_DELETE'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>));
+            actionCell.appendChild(deleteBtn);
+            newRow.appendChild(actionCell);
 
             tbody.appendChild(newRow);
 
             // Populate the new select
-            this.populateTaxRateSelect(rowIndex);
+            this.populateTaxRateSelect(currentRowIndex);
 
             rowIndex++;
         },
@@ -284,12 +305,19 @@ document.addEventListener('DOMContentLoaded', function() {
             const container = document.getElementById('j2commerce-alert-container');
             const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
 
-            container.innerHTML = `
-                <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
-                    ${this.escapeHtml(message)}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            `;
+            const alertEl = document.createElement('div');
+            alertEl.className = `alert ${alertClass} alert-dismissible fade show`;
+            alertEl.setAttribute('role', 'alert');
+            alertEl.appendChild(document.createTextNode(message));
+
+            const closeBtn = document.createElement('button');
+            closeBtn.type = 'button';
+            closeBtn.className = 'btn-close';
+            closeBtn.setAttribute('data-bs-dismiss', 'alert');
+            closeBtn.setAttribute('aria-label', <?php echo json_encode(Text::_('JCLOSE')); ?>);
+            alertEl.appendChild(closeBtn);
+
+            container.replaceChildren(alertEl);
 
             // Auto-dismiss after 3 seconds
             setTimeout(function() {
@@ -298,15 +326,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     alert.remove();
                 }
             }, 3000);
-        },
-
-        /**
-         * Escape HTML entities
-         */
-        escapeHtml: function(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
         }
     };
 

@@ -955,10 +955,10 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             }
 
             $wa      = $document->getWebAssetManager();
-            $baseUrl = Uri::root();
+            $baseUrl = json_encode(Uri::root(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 
             // Add J2Commerce URL variable for JavaScript AJAX calls
-            $script = "var j2commerceURL = '{$baseUrl}';";
+            $script = "var j2commerceURL = {$baseUrl};";
             $wa->addInlineScript($script);
         } catch (\Exception $e) {
             // Silently fail if the document is not available (e.g., CLI or JSON format)

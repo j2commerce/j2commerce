@@ -440,7 +440,7 @@ class UserHelper
         $app = Factory::getApplication();
 
         // Security: prevent open redirect
-        if (!empty($return) && str_contains($return, 'http') && !str_starts_with($return, Uri::base())) {
+        if (!empty($return) && !Uri::isInternal($return)) {
             $return = '';
         }
 
@@ -465,7 +465,7 @@ class UserHelper
         $success = $app->logout();
 
         // Security: prevent open redirect
-        if (!empty($return) && str_contains($return, 'http') && !str_starts_with($return, Uri::base())) {
+        if (!empty($return) && !Uri::isInternal($return)) {
             $return = '';
         }
 

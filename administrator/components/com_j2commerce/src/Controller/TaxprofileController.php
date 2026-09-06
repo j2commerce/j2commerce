@@ -306,8 +306,8 @@ class TaxprofileController extends FormController
             ]);
 
         } catch (\Exception $e) {
-            // On error: pass null data, error message, and error=true
-            echo new JsonResponse(null, $e->getMessage(), true);
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            echo new JsonResponse(null, Text::_('COM_J2COMMERCE_ERR_GENERIC'), true);
         }
 
         $app->close();
@@ -324,10 +324,22 @@ class TaxprofileController extends FormController
      */
     public function removeRule(): void
     {
-        $app = Factory::getApplication();
+        $app  = Factory::getApplication();
+        $user = $app->getIdentity();
 
-        // Check CSRF token
+        // Deleting a saved rule edits an existing record, so core.edit is the gate.
+        // A CSRF token proves the request came from our form, not that the caller may delete.
+        if ($user->guest || !$user->authorise('core.edit', 'com_j2commerce')) {
+            $app->setHeader('status', 403, true);
+            $app->sendHeaders();
+            echo new JsonResponse(null, Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), true);
+            $app->close();
+            return;
+        }
+
         if (!Session::checkToken('get') && !Session::checkToken('post')) {
+            $app->setHeader('status', 403, true);
+            $app->sendHeaders();
             echo new JsonResponse(null, Text::_('JINVALID_TOKEN'), true);
             $app->close();
             return;
@@ -352,7 +364,8 @@ class TaxprofileController extends FormController
                     ['success' => true, 'message' => Text::_('COM_J2COMMERCE_TAXRULE_DELETED')]
                 );
             } catch (\Exception $e) {
-                echo new JsonResponse(null, $e->getMessage(), true);
+                Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+                echo new JsonResponse(null, Text::_('COM_J2COMMERCE_ERR_GENERIC'), true);
             }
         } else {
             // Rule not yet saved to DB, just return success for UI removal

@@ -335,7 +335,8 @@ class OrderController extends FormController
                 throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_SAVING_TRACKING'));
             }
         } catch (\Exception $e) {
-            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERR_GENERIC')]);
         }
     }
 
@@ -589,7 +590,8 @@ class OrderController extends FormController
                 'total'      => $result['total'],
             ]);
         } catch (\Exception $e) {
-            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERR_GENERIC')]);
         }
     }
 
@@ -1711,7 +1713,8 @@ class OrderController extends FormController
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
             $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
         } catch (\Exception $e) {
-            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERR_GENERIC')]);
         }
     }
 

@@ -290,7 +290,14 @@ document.addEventListener('DOMContentLoaded', () => {
             data.append(Joomla.getOptions('csrf.token'), 1);
 
             addAllBtn.setAttribute('disabled', 'disabled');
-            addAllBtn.insertAdjacentHTML('afterend', '<span class="wait spinner-border spinner-border-sm ms-2" role="status"><span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_LOADING'); ?></span></span>');
+            const spinnerEl = document.createElement('span');
+            spinnerEl.className = 'wait spinner-border spinner-border-sm ms-2';
+            spinnerEl.setAttribute('role', 'status');
+            const spinnerSrEl = document.createElement('span');
+            spinnerSrEl.className = 'visually-hidden';
+            spinnerSrEl.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_LOADING'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+            spinnerEl.appendChild(spinnerSrEl);
+            addAllBtn.insertAdjacentElement('afterend', spinnerEl);
 
             fetch('index.php', {
                 method: 'POST',

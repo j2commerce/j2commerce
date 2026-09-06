@@ -238,32 +238,73 @@ document.addEventListener('DOMContentLoaded', () => {
             bodyEl.replaceChildren(emptyMessage);
         } else {
             const showError = filter === 'failed' || filter === 'skipped';
-            const esc = (v) => String(v ?? '').replace(/</g, '&lt;');
-            let html = '<table class="table table-sm">';
-            html += '<thead><tr>';
-            html += '<th><?php echo Text::_('COM_J2COMMERCE_HEADING_QUEUE_ID', true); ?></th>';
-            html += '<th><?php echo Text::_('COM_J2COMMERCE_HEADING_ITEM_TYPE', true); ?></th>';
-            html += '<th><?php echo Text::_('COM_J2COMMERCE_HEADING_RELATION_ID', true); ?></th>';
-            html += '<th><?php echo Text::_('JSTATUS', true); ?></th>';
+
+            const table = document.createElement('table');
+            table.className = 'table table-sm';
+
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            const headings = [
+                <?php echo json_encode(Text::_('COM_J2COMMERCE_HEADING_QUEUE_ID'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>,
+                <?php echo json_encode(Text::_('COM_J2COMMERCE_HEADING_ITEM_TYPE'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>,
+                <?php echo json_encode(Text::_('COM_J2COMMERCE_HEADING_RELATION_ID'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>,
+                <?php echo json_encode(Text::_('JSTATUS'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>
+            ];
             if (showError) {
-                html += '<th><?php echo Text::_('COM_J2COMMERCE_HEADING_ERROR_MESSAGE', true); ?></th>';
+                headings.push(<?php echo json_encode(Text::_('COM_J2COMMERCE_HEADING_ERROR_MESSAGE'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>);
             }
-            html += '</tr></thead><tbody>';
+            headings.forEach((label) => {
+                const th = document.createElement('th');
+                th.textContent = label;
+                headerRow.appendChild(th);
+            });
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+
+            const badgeClasses = {
+                completed: <?php echo json_encode(J2htmlHelper::badgeClass('text-bg-success'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>,
+                failed:    <?php echo json_encode(J2htmlHelper::badgeClass('text-bg-danger'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>,
+                other:     <?php echo json_encode(J2htmlHelper::badgeClass('text-bg-warning'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>
+            };
+
+            const tbody = document.createElement('tbody');
 
             for (const item of filtered) {
-                html += '<tr>';
-                html += '<td>' + esc(item.id) + '</td>';
-                html += '<td>' + esc(item.item_type) + '</td>';
-                html += '<td>' + esc(item.relation_id) + '</td>';
-                html += '<td><span class="badge ' + (item.status === 'completed' ? '<?php echo J2htmlHelper::badgeClass('text-bg-success'); ?>' : item.status === 'failed' ? '<?php echo J2htmlHelper::badgeClass('text-bg-danger'); ?>' : '<?php echo J2htmlHelper::badgeClass('text-bg-warning'); ?>') + '">' + esc(statusMap[item.status] || item.status) + '</span></td>';
+                const row = document.createElement('tr');
+
+                const idCell = document.createElement('td');
+                idCell.textContent = item.id ?? '';
+                row.appendChild(idCell);
+
+                const typeCell = document.createElement('td');
+                typeCell.textContent = item.item_type ?? '';
+                row.appendChild(typeCell);
+
+                const relationCell = document.createElement('td');
+                relationCell.textContent = item.relation_id ?? '';
+                row.appendChild(relationCell);
+
+                const statusCell = document.createElement('td');
+                const badge = document.createElement('span');
+                badge.className = 'badge ' + (badgeClasses[item.status] || badgeClasses.other);
+                badge.textContent = statusMap[item.status] || item.status;
+                statusCell.appendChild(badge);
+                row.appendChild(statusCell);
+
                 if (showError) {
-                    html += '<td><small class="text-danger">' + esc(item.error || item.note || '&mdash;') + '</small></td>';
+                    const errorCell = document.createElement('td');
+                    const small = document.createElement('small');
+                    small.className = 'text-danger';
+                    small.textContent = item.error || item.note || '—';
+                    errorCell.appendChild(small);
+                    row.appendChild(errorCell);
                 }
-                html += '</tr>';
+
+                tbody.appendChild(row);
             }
 
-            html += '</tbody></table>';
-            bodyEl.innerHTML = html;
+            table.appendChild(tbody);
+            bodyEl.replaceChildren(table);
         }
 
         modal.show();

@@ -77,8 +77,10 @@ class CartsController extends BaseController
     {
         $token = Session::getFormToken();
 
-        // Check X-CSRF-Token header first (for fetch/XHR)
-        if ($token === $this->input->server->get('HTTP_X_CSRF_TOKEN', '', 'alnum')) {
+        // Check X-CSRF-Token header first (for fetch/XHR); timing-safe comparison.
+        $headerToken = (string) $this->input->server->get('HTTP_X_CSRF_TOKEN', '', 'alnum');
+
+        if ($headerToken !== '' && hash_equals($token, $headerToken)) {
             return true;
         }
 

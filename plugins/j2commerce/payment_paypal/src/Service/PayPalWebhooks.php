@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Plugin\J2Commerce\PaymentPaypal\Service;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\TableSaveHelper;
 use Joomla\CMS\Factory;
@@ -282,16 +283,6 @@ final class PayPalWebhooks
             return ['status' => 404, 'message' => 'Order not found'];
         }
 
-        $confirmedStateId = PayPalOrderStates::resolve($params, $this->db, PayPalOrderStates::CONFIRMED);
-
-        $this->updateOrderStatus(
-            $order,
-            $confirmedStateId,
-            Text::sprintf('COM_J2COMMERCE_PAYPAL_PAYMENT_COMPLETED', $captureId)
-        );
-
-        // loadOrderByPayPalId() returns a plain row, which cannot write itself. The
-        // capture identifiers go through the Order table the state change used.
         $orderTable = Factory::getApplication()
             ->bootComponent('com_j2commerce')
             ->getMVCFactory()
@@ -299,6 +290,53 @@ final class PayPalWebhooks
 
         if (!$orderTable->load(['order_id' => $order->order_id])) {
             return ['status' => 404, 'message' => 'Order not found'];
+        }
+
+        // Bind: the captured PayPal order id must match the one stored on this local order.
+        $storedDetails = json_decode($orderTable->transaction_details ?? '{}', true);
+        $boundPayPalId = (string) ($storedDetails['paypal_order_id'] ?? '');
+        $eventOrderId  = (string) ($resource['supplementary_data']['related_ids']['order_id'] ?? '');
+
+        if ($boundPayPalId === '' || $eventOrderId === '' || !hash_equals($boundPayPalId, $eventOrderId)) {
+            return ['status' => 400, 'message' => 'PayPal order id not bound to local order'];
+        }
+
+        // Prior-state guard: only an order still awaiting payment — Failed(3), Pending(4)
+        // or New(5) — may be captured; a settled, cancelled or refunded one cannot be flipped.
+        // Matches capturePayPalOrder(); status ids are the same install-independent core rows.
+        if (!\in_array((int) $orderTable->order_state_id, [3, 4, 5], true) || (float) ($orderTable->order_refund ?? 0) > 0) {
+            return ['status' => 409, 'message' => 'Order not in a capturable state'];
+        }
+
+        // Compare the captured amount and currency against the local order before
+        // writing any paid state — a mismatched capture is logged for manual review.
+        $captureAmount   = (float) ($resource['amount']['value'] ?? 0);
+        $captureCurrency = (string) ($resource['amount']['currency_code'] ?? '');
+        $expectedAmount  = CurrencyHelper::gatewayAmount($orderTable);
+        $expectedCcy     = strtoupper(trim((string) (
+            $orderTable->currency_code ?? ($orderTable->order_currency_code ?? 'USD')
+        )));
+
+        if ($captureCurrency !== $expectedCcy || abs($captureAmount - $expectedAmount) > 0.01) {
+            Factory::getApplication()->getLogger()->error(
+                'PayPal webhook capture amount mismatch — manual review required',
+                [
+                    'category' => 'j2commerce.paypal',
+                    'order_id' => $order->order_id,
+                    'captured' => $captureAmount . ' ' . $captureCurrency,
+                    'expected' => $expectedAmount . ' ' . $expectedCcy,
+                ]
+            );
+
+            return ['status' => 409, 'message' => 'Amount/currency mismatch'];
+        }
+
+        $confirmedStateId = PayPalOrderStates::resolve($params, $this->db, PayPalOrderStates::CONFIRMED);
+
+        // State change and transaction fields are written on the same table instance in one
+        // store() so a second, independent load/store pair can't clobber either write.
+        if ($confirmedStateId > 0) {
+            $orderTable->order_state_id = $confirmedStateId;
         }
 
         $orderTable->transaction_id                 = $captureId;
@@ -311,6 +349,12 @@ final class PayPalWebhooks
         if (!TableSaveHelper::store($orderTable, 'paypal.webhook.capture_completed')) {
             return ['status' => 500, 'message' => 'Capture write failed'];
         }
+
+        OrderHistoryHelper::add(
+            orderId: (string) $orderTable->order_id,
+            comment: Text::sprintf('COM_J2COMMERCE_PAYPAL_PAYMENT_COMPLETED', $captureId),
+            orderStateId: (int) $orderTable->order_state_id,
+        );
 
         return ['status' => 200, 'message' => 'Capture completed'];
     }
@@ -467,7 +511,7 @@ final class PayPalWebhooks
 
     private function loadOrderByPayPalId(string $paypalOrderId): ?\stdClass
     {
-        $likePattern = '%"paypal_order_id":"' . $paypalOrderId . '"%';
+        $likePattern = '%"paypal_order_id":"' . addcslashes($paypalOrderId, '%_\\') . '"%';
 
         $query = $this->db->getQuery(true);
         $query->select('*')
@@ -477,7 +521,8 @@ final class PayPalWebhooks
                 . ' OR ' . $this->db->quoteName('order_id') . ' = :order_id_match'
             )
             ->bind(':paypal_id', $likePattern)
-            ->bind(':order_id_match', $paypalOrderId);
+            ->bind(':order_id_match', $paypalOrderId)
+            ->setLimit(1);
 
         $this->db->setQuery($query);
         return $this->db->loadObject();

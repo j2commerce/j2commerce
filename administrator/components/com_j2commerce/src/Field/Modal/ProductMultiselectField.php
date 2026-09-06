@@ -192,61 +192,91 @@ class ProductMultiselectField extends ModalMultiselectField
 
                     if (selectedItems && selectedItems.length > 0) {
                         // Create table structure
-                        const caption = handler.createElement('div', {
-                            className: 'my-2',
-                            innerHTML: '<strong>' + Joomla.Text._('COM_J2COMMERCE_SELECTED_PRODUCTS') + ' (' + selectedItems.length + '):</strong>'
-                        });
+                        const caption = document.createElement('div');
+                        caption.className = 'my-2';
+                        const captionStrong = document.createElement('strong');
+                        captionStrong.textContent = Joomla.Text._('COM_J2COMMERCE_SELECTED_PRODUCTS') + ' (' + selectedItems.length + '):';
+                        caption.appendChild(captionStrong);
 
-                        const table = handler.createElement('table', {
-                            className: 'table table-sm table-striped'
-                        });
+                        const table = document.createElement('table');
+                        table.className = 'table table-sm table-striped';
 
-                        const thead = handler.createElement('thead');
-                        const headerRow = handler.createElement('tr', {
-                            innerHTML: '<th class=\"w-10\">' + Joomla.Text._('COM_J2COMMERCE_PRODUCT_FIELD_ID') + '</th>' +
-                                      '<th>' + Joomla.Text._('COM_J2COMMERCE_PRODUCT_FIELD_NAME') + '</th>' +
-                                      '<th class=\"text-end w-6\">' +
-                                          '<button type=\"button\" class=\"btn btn-sm btn-outline-danger\" ' +
-                                                  'onclick=\"clearAllItems_{$this->id}()\" ' +
-                                                  'title=\"' + Joomla.Text._('COM_J2COMMERCE_PRODUCTS_CLEAR_ALL') + '\">' +
-                                              '<span class=\"icon-trash\" aria-hidden=\"true\"></span>' +
-                                          '</button>' +
-                                      '</th>' +
-                                      '<th class=\"w-1\"><span class=\"visually-hidden\">' + Joomla.Text._('COM_J2COMMERCE_REMOVE') + '</span></th>'
-                        });
+                        const thead = document.createElement('thead');
+                        const headerRow = document.createElement('tr');
+
+                        const thId = document.createElement('th');
+                        thId.className = 'w-10';
+                        thId.textContent = Joomla.Text._('COM_J2COMMERCE_PRODUCT_FIELD_ID');
+                        headerRow.appendChild(thId);
+
+                        const thName = document.createElement('th');
+                        thName.textContent = Joomla.Text._('COM_J2COMMERCE_PRODUCT_FIELD_NAME');
+                        headerRow.appendChild(thName);
+
+                        const thClear = document.createElement('th');
+                        thClear.className = 'text-end w-6';
+                        const clearBtn = document.createElement('button');
+                        clearBtn.type = 'button';
+                        clearBtn.className = 'btn btn-sm btn-outline-danger';
+                        clearBtn.title = Joomla.Text._('COM_J2COMMERCE_PRODUCTS_CLEAR_ALL');
+                        clearBtn.addEventListener('click', function() { clearAllItems_{$this->id}(); });
+                        const clearIcon = document.createElement('span');
+                        clearIcon.className = 'icon-trash';
+                        clearIcon.setAttribute('aria-hidden', 'true');
+                        clearBtn.appendChild(clearIcon);
+                        thClear.appendChild(clearBtn);
+                        headerRow.appendChild(thClear);
+
+                        const thRemove = document.createElement('th');
+                        thRemove.className = 'w-1';
+                        const removeSr = document.createElement('span');
+                        removeSr.className = 'visually-hidden';
+                        removeSr.textContent = Joomla.Text._('COM_J2COMMERCE_REMOVE');
+                        thRemove.appendChild(removeSr);
+                        headerRow.appendChild(thRemove);
 
                         thead.appendChild(headerRow);
                         table.appendChild(thead);
 
-                        const tbody = handler.createElement('tbody');
+                        const tbody = document.createElement('tbody');
 
                         selectedItems.forEach((item, index) => {
-                            const row = handler.createElement('tr');
+                            const row = document.createElement('tr');
+
+                            const idCell = document.createElement('td');
+                            idCell.className = 'fw-bold';
+                            idCell.textContent = item.id;
+                            row.appendChild(idCell);
+
+                            const nameCell = document.createElement('td');
+                            nameCell.textContent = item.title;
+                            row.appendChild(nameCell);
+
+                            const actionCell = document.createElement('td');
+                            actionCell.className = 'text-end';
+                            const removeBtn = document.createElement('button');
+                            removeBtn.type = 'button';
+                            removeBtn.className = 'btn btn-sm btn-danger';
+                            removeBtn.title = Joomla.Text._('COM_J2COMMERCE_PRODUCT_CLEAR');
+                            removeBtn.addEventListener('click', function() { removeItem_{$this->id}(item.id); });
+                            const removeIcon = document.createElement('span');
+                            removeIcon.className = 'icon-trash';
+                            removeIcon.setAttribute('aria-hidden', 'true');
+                            removeBtn.appendChild(removeIcon);
+                            actionCell.appendChild(removeBtn);
+                            row.appendChild(actionCell);
 
                             // Create hidden field
-                            const hiddenField = handler.createElement('input', {
-                                type: 'hidden',
-                                name: 'jform[request][product_ids][' + index + ']',
-                                value: item.id,
-                                id: '{$this->id}_hidden_' + index
-                            });
-
+                            const hiddenField = document.createElement('input');
+                            hiddenField.type = 'hidden';
+                            hiddenField.name = 'jform[request][product_ids][' + index + ']';
+                            hiddenField.value = item.id;
+                            hiddenField.id = '{$this->id}_hidden_' + index;
                             hiddenField.setAttribute('data-title', item.title);
                             hiddenField.setAttribute('class', 'w-1');
 
-                            // Create row cells
-                            row.innerHTML = '<td class=\"fw-bold\">' + item.id + '</td>' +
-                                          '<td>' + handler.escapeHtml(item.title) + '</td>' +
-                                          '<td class=\"text-end\">' +
-                                              '<button type=\"button\" class=\"btn btn-sm btn-danger\" ' +
-                                                      'onclick=\"removeItem_{$this->id}(' + item.id + ')\" ' +
-                                                      'title=\"' + Joomla.Text._('COM_J2COMMERCE_PRODUCT_CLEAR') + '\">' +
-                                                  '<span class=\"icon-trash\" aria-hidden=\"true\"></span>' +
-                                              '</button>' +
-                                          '</td>';
-
                             // Add hidden field as last cell
-                            const hiddenCell = handler.createElement('td');
+                            const hiddenCell = document.createElement('td');
                             hiddenCell.appendChild(hiddenField);
                             row.appendChild(hiddenCell);
 

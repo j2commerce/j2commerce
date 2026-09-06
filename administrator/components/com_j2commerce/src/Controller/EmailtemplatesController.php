@@ -108,7 +108,8 @@ class EmailtemplatesController extends AdminController
 
                 $this->setMessage(Text::plural($ntext, \count($cid)));
             } catch (\Exception $e) {
-                $this->setMessage($e->getMessage(), 'error');
+                Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+                $this->setMessage(Text::_('COM_J2COMMERCE_ERR_GENERIC'), 'error');
             }
         }
 
@@ -194,7 +195,8 @@ class EmailtemplatesController extends AdminController
                 $model->duplicate($pks);
                 $this->setMessage(Text::plural($this->text_prefix . '_N_ITEMS_DUPLICATED', \count($pks)));
             } catch (\Exception $e) {
-                $this->setMessage($e->getMessage(), 'error');
+                Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+                $this->setMessage(Text::_('COM_J2COMMERCE_ERR_GENERIC'), 'error');
             }
         }
 
@@ -357,7 +359,8 @@ class EmailtemplatesController extends AdminController
                         : 'COM_J2COMMERCE_EMAILTEMPLATE_DEFAULT_REMOVED'
                 ));
             } catch (\Exception $e) {
-                $this->setMessage($e->getMessage(), 'error');
+                Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+                $this->setMessage(Text::_('COM_J2COMMERCE_ERR_GENERIC'), 'error');
             }
         }
 

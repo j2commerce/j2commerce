@@ -454,7 +454,7 @@ class SetupGuide {
             if (spinner) {
                 spinner.remove();
             }
-            if (!btn.innerHTML.trim()) {
+            if (btn.childElementCount === 0 && !btn.textContent.trim()) {
                 btn.replaceWith(origBtn);
                 btn = origBtn;
             }

@@ -17,6 +17,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Controller\AdminController;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
@@ -97,7 +98,8 @@ class AdvancedpricingController extends AdminController
 
             $this->setMessage(Text::sprintf('COM_J2COMMERCE_N_ITEMS_UPDATED', \count($cids)));
         } catch (\Exception $e) {
-            $this->setMessage($e->getMessage(), 'error');
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $this->setMessage(Text::_('COM_J2COMMERCE_ERR_GENERIC'), 'error');
         }
 
         $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=advancedpricing', false));
@@ -131,7 +133,8 @@ class AdvancedpricingController extends AdminController
 
             $this->setMessage(Text::sprintf('COM_J2COMMERCE_N_ITEMS_UPDATED', $db->getAffectedRows()));
         } catch (\Exception $e) {
-            $this->setMessage($e->getMessage(), 'error');
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $this->setMessage(Text::_('COM_J2COMMERCE_ERR_GENERIC'), 'error');
         }
 
         $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=advancedpricing', false));
@@ -184,7 +187,8 @@ class AdvancedpricingController extends AdminController
 
             $this->sendJsonResponse(true, Text::_('COM_J2COMMERCE_MSG_PRICE_SAVED'), ['price' => $price]);
         } catch (\Exception $e) {
-            $this->sendJsonResponse(false, $e->getMessage());
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $this->sendJsonResponse(false, Text::_('COM_J2COMMERCE_ERR_GENERIC'));
         }
     }
 
@@ -193,7 +197,9 @@ class AdvancedpricingController extends AdminController
     {
         $token = Session::getFormToken();
 
-        if ($token === $this->input->server->get('HTTP_X_CSRF_TOKEN', '', 'alnum')) {
+        $headerToken = (string) $this->input->server->get('HTTP_X_CSRF_TOKEN', '', 'alnum');
+
+        if ($headerToken !== '' && hash_equals($token, $headerToken)) {
             return true;
         }
 

@@ -59,6 +59,14 @@ final class PaymentupdateContextHelper
             return null;
         }
 
+        // A logged-in caller may only resolve a context that is actually
+        // theirs — the plugin's ownerUserId is trusted for guest/token access
+        // (requestUserId === 0) but never allowed to override an authenticated
+        // caller's own identity.
+        if ($requestUserId !== 0 && (int) $context['ownerUserId'] !== $requestUserId) {
+            return null;
+        }
+
         $context['redirectUrl'] = self::sanitizeRedirect((string) ($context['redirectUrl'] ?? ''));
 
         return $context;

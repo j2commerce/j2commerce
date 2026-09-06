@@ -517,7 +517,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 formData.append(csrfToken, 1);
 
                 confirmBtn.disabled = true;
-                confirmBtn.insertAdjacentHTML('beforeend', ' <span class="spinner-border spinner-border-sm ms-2" role="status"><span class="visually-hidden">' + Joomla.Text._("COM_J2COMMERCE_LOADING") + '</span></span>');
+                const spinnerEl = document.createElement('span');
+                spinnerEl.className = 'spinner-border spinner-border-sm ms-2';
+                spinnerEl.setAttribute('role', 'status');
+                const spinnerSrEl = document.createElement('span');
+                spinnerSrEl.className = 'visually-hidden';
+                spinnerSrEl.textContent = Joomla.Text._('COM_J2COMMERCE_LOADING');
+                spinnerEl.appendChild(spinnerSrEl);
+                confirmBtn.appendChild(spinnerEl);
 
                 fetch('index.php?option=com_j2commerce&task=product.changeProductType', {
                     method: 'POST',

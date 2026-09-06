@@ -72,7 +72,7 @@ use Joomla\CMS\Language\Text;
         </div>
 
         <?php if(J2CommerceHelper::product()->canShowCart($this->params)): ?>
-            <form action="<?php echo $this->item->cart_form_action; ?>"
+            <form action="<?php echo htmlspecialchars($this->item->cart_form_action ?? '', ENT_QUOTES, 'UTF-8'); ?>"
                   method="post" class="j2commerce-addtocart-form w-100 d-block mt-3"
                   id="j2commerce-addtocart-form-<?php echo $this->item->j2commerce_product_id; ?>"
                   name="j2commerce-addtocart-form-<?php echo $this->item->j2commerce_product_id; ?>"

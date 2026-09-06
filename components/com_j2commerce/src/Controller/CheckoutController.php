@@ -28,18 +28,23 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\CheckoutContextHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\CheckoutStepsHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\CheckoutStepStateHelper;
+use Joomla\CMS\Application\ApplicationHelper;
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Event\Model\PrepareFormEvent;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Form\FormFactoryInterface;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
+use Joomla\CMS\Mail\MailTemplate;
 use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
 use Joomla\CMS\Uri\Uri;
+use Joomla\CMS\User\User;
 use Joomla\CMS\User\UserFactoryInterface;
+use Joomla\CMS\User\UserHelper;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\Exception\ConnectionFailureException;
 use Joomla\Database\Exception\ExecutionFailureException;
@@ -47,6 +52,7 @@ use Joomla\Database\Exception\PrepareStatementFailureException;
 use Joomla\Database\ParameterType;
 use Joomla\Event\DispatcherInterface;
 use Joomla\Registry\Registry;
+use Joomla\Utilities\ArrayHelper;
 
 class CheckoutController extends BaseController
 {
@@ -483,6 +489,15 @@ class CheckoutController extends BaseController
             return;
         }
 
+        $usersParams = ComponentHelper::getParams('com_users');
+
+        if (!(int) $usersParams->get('allowUserRegistration', 1)) {
+            $json['error']['warning'] = Text::_('COM_J2COMMERCE_CHECKOUT_REGISTRATION_DISABLED');
+            $this->jsonResponse($json);
+
+            return;
+        }
+
         // Create user
         $email     = trim($formData['email'] ?? '');
         $firstName = trim($formData['first_name'] ?? '');
@@ -503,10 +518,11 @@ class CheckoutController extends BaseController
         // Capture guest session ID before creating user and auto-login
         $guestSessionId = $session->getId();
 
+        $useractivation = (int) $usersParams->get('useractivation', 0);
+
         try {
             // Get default user group from Joomla global config
-            $params       = \Joomla\CMS\Component\ComponentHelper::getParams('com_users');
-            $defaultGroup = $params->get('new_usertype', 2);
+            $defaultGroup = $usersParams->get('new_usertype', 2);
 
             // Use bind() so the password is properly hashed before save.
             // Setting properties directly (e.g. password_clear) skips the
@@ -522,7 +538,14 @@ class CheckoutController extends BaseController
                 'block'     => 0,
             ];
 
-            $user = new \Joomla\CMS\User\User();
+            // Self/admin activation blocks the account until confirmed — mirrors
+            // Joomla's own RegistrationModel::register().
+            if ($useractivation === 1 || $useractivation === 2) {
+                $userData['block']      = 1;
+                $userData['activation'] = ApplicationHelper::getHash(UserHelper::genRandomPassword());
+            }
+
+            $user = new User();
 
             if (!$user->bind($userData)) {
                 // A new user reaches none of bind()'s setError() calls — they all sit in
@@ -567,6 +590,24 @@ class CheckoutController extends BaseController
                 $input->set('option', $savedOption);
                 $input->post->set('task', $savedTask);
                 $input->post->set('jform', $savedJform);
+            }
+
+            // Account is blocked pending activation — never auto-login it. The
+            // shopper resumes as a guest until they (or an admin) activate.
+            if ($useractivation === 1 || $useractivation === 2) {
+                $this->sendCheckoutActivationEmail($user, $useractivation);
+
+                $language = $this->app->getLanguage();
+                $language->load('com_users', JPATH_SITE);
+
+                // Rendered on the register form by showWarning(); the shopper continues as a guest.
+                $json['error']['warning'] = Text::_(
+                    $useractivation === 2 ? 'COM_USERS_REGISTRATION_COMPLETE_VERIFY' : 'COM_USERS_REGISTRATION_COMPLETE_ACTIVATE'
+                );
+
+                $this->jsonResponse($json);
+
+                return;
             }
 
             // Auto-login the new user
@@ -674,6 +715,49 @@ class CheckoutController extends BaseController
         }
 
         $this->jsonResponse($json);
+    }
+
+    /** Mirrors com_users RegistrationModel::register(); never throws — a mail failure must not discard the account. */
+    private function sendCheckoutActivationEmail(User $user, int $useractivation): void
+    {
+        try {
+            $app      = $this->app;
+            $language = $app->getLanguage();
+            $language->load('com_users', JPATH_SITE);
+            $language->load('com_users', JPATH_ADMINISTRATOR);
+
+            $sendPassword = (int) ComponentHelper::getParams('com_users')->get('sendpassword', 1);
+
+            $data             = ArrayHelper::fromObject($user, false);
+            $data['fromname'] = $app->get('fromname');
+            $data['mailfrom'] = $app->get('mailfrom');
+            $data['sitename'] = $app->get('sitename');
+            $data['siteurl']  = Uri::root();
+
+            $data['activate'] = Route::link(
+                'site',
+                'index.php?option=com_users&task=registration.activate&token=' . $data['activation'],
+                false,
+                ((int) $app->get('force_ssl', 0) === 2) ? Route::TLS_FORCE : Route::TLS_IGNORE,
+                true
+            );
+
+            $mailTemplateId = $useractivation === 2
+                ? 'com_users.registration.user.admin_activation'
+                : 'com_users.registration.user.self_activation';
+
+            if ($sendPassword) {
+                $mailTemplateId .= '_w_pw';
+            }
+
+            $mailer = new MailTemplate($mailTemplateId, $language->getTag());
+            $mailer->addTemplateData($data);
+            $mailer->addUnsafeTags(['username', 'password_clear', 'name']);
+            $mailer->addRecipient($data['email']);
+            $mailer->send();
+        } catch (\Throwable $e) {
+            Log::add('checkout.registerValidate activation email failed: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
+        }
     }
 
     // =========================================================================
@@ -2300,8 +2384,9 @@ class CheckoutController extends BaseController
         // ---------------------------------------------------------------
         // Process payment via plugin events
         // ---------------------------------------------------------------
-        $html       = '';
-        $emailsSent = false;
+        $html        = '';
+        $emailsSent  = false;
+        $stateBefore = (int) ($orderTable->order_state_id ?? 0);
 
         if (!empty($orderId) && (float) ($orderTable->order_total ?? 0) === 0.0 && !$showPayment) {
             // Confirm the free order directly — OrderTable::store() fires
@@ -2380,8 +2465,9 @@ class CheckoutController extends BaseController
         // stale order alongside the real success message. Inline gateways leave
         // the session untouched, so this is a no-op for them. (#1208)
         $finalizedOrderId = (string) $this->app->getUserState('j2commerce.order_id', '');
+        $rePrimed         = $finalizedOrderId !== '' && $finalizedOrderId !== (string) $orderId;
 
-        if ($finalizedOrderId !== '' && $finalizedOrderId !== (string) $orderId) {
+        if ($rePrimed) {
             $orderId = $finalizedOrderId;
             $orderTable->load(['order_id' => $orderId]);
         }
@@ -2391,7 +2477,19 @@ class CheckoutController extends BaseController
         // AfterPayment.  Only fire these for the initial payment path.
         $paction = $this->input->getString('paction', '');
 
-        if (isset($orderTable->order_id) && !empty($orderTable->order_id) && $paction !== 'display') {
+        // A tokenless gateway return that left the order exactly where the confirm step
+        // parked it finalised nothing: hold AfterPayment and the emails for a return that
+        // does. A re-primed session (#1208), a confirmed/terminal state or a settled
+        // transaction status all count as finalised — the plugin may have written those
+        // before the redirect.
+        $orderStateNow    = (int) ($orderTable->order_state_id ?? 0);
+        $gatewayFinalized = !$tokenlessGatewayReturn
+            || $rePrimed
+            || $orderStateNow !== $stateBefore
+            || \in_array($orderStateNow, [1, 2, 7, 8, 9], true)
+            || \in_array(strtolower((string) ($orderTable->transaction_status ?? '')), ['completed', 'authorized'], true);
+
+        if ($gatewayFinalized && !empty($orderTable->order_id) && $paction !== 'display') {
             $results = J2CommerceHelper::plugin()->eventWithArray('AfterPayment', [$orderTable]);
 
             foreach ($results as $result) {
@@ -2424,8 +2522,7 @@ class CheckoutController extends BaseController
             $clearStates = [1, 2, 4, 7, 8, 9];
         }
 
-        $orderStateNow = (int) ($orderTable->order_state_id ?? 0);
-        $orderPlaced   = \in_array($orderStateNow, $clearStates, true);
+        $orderPlaced = \in_array($orderStateNow, $clearStates, true);
 
         // Confirmed/terminal states an on-site gateway reaches inline (excludes Pending(4),
         // which at process-time means an off-site gateway is still awaiting its return trip).
@@ -2984,25 +3081,21 @@ class CheckoutController extends BaseController
 
         $primedOrderId = (string) $this->app->getUserState('j2commerce.order_id', '');
 
-        // No order in flight. A dead session is the normal outcome of lingering at the
+        if ($primedOrderId !== '') {
+            $primed = $this->loadOrderRow($primedOrderId);
+
+            if ($primed !== null && (string) ($primed->orderpayment_type ?? '') === $orderpaymentType) {
+                return true;
+            }
+        }
+
+        // No order in flight — a dead session is the normal outcome of lingering at the
         // gateway (15-minute default), of cookie_samesite=Strict and of a webview handing
-        // off to the default browser — rejecting it strands an approved payment that
-        // PostPayment has not captured yet. Nothing this gate protects is reachable
-        // without a primed order id, and return URLs carry &order_id= so plugins resolve
-        // the order from the request anyway.
-        if ($primedOrderId === '') {
-            return true;
-        }
-
-        $primed = $this->loadOrderRow($primedOrderId);
-
-        if ($primed !== null && (string) ($primed->orderpayment_type ?? '') === $orderpaymentType) {
-            return true;
-        }
-
-        // Session primed with a different order — a second tab re-confirmed while the
-        // first was still at the gateway (#1208). Fall back to the order the request
-        // names: accept it when it is on this gateway and has not already settled.
+        // off to the default browser — or the session was primed with a different order,
+        // e.g. a second tab re-confirmed while the first was still at the gateway (#1208).
+        // Neither case is blanket-accepted: fall back to the order the request names, and
+        // accept it only when it is actually on this gateway and has not already settled.
+        // Return URLs carry &order_id= so a genuine off-site gateway resolves here too.
         $requested = $this->loadOrderRow((string) $this->input->getString('order_id', ''));
 
         if ($requested === null || (string) ($requested->orderpayment_type ?? '') !== $orderpaymentType) {
@@ -3034,7 +3127,9 @@ class CheckoutController extends BaseController
     {
         $token = Session::getFormToken();
 
-        if ($token === $this->input->server->get('HTTP_X_CSRF_TOKEN', '', 'alnum')) {
+        $headerToken = (string) $this->input->server->get('HTTP_X_CSRF_TOKEN', '', 'alnum');
+
+        if ($headerToken !== '' && hash_equals($token, $headerToken)) {
             return true;
         }
 

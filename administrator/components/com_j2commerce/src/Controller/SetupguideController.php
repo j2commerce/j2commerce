@@ -18,6 +18,7 @@ use J2Commerce\Component\J2commerce\Administrator\SetupGuide\SetupGuideHelper;
 use Joomla\CMS\Application\ApplicationHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Session\Session;
@@ -74,7 +75,8 @@ class SetupguideController extends BaseController
             $data = SetupGuideHelper::getGroupedResults();
             $this->jsonSuccess($data);
         } catch (\Throwable $e) {
-            $this->jsonError($e->getMessage(), 500);
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $this->jsonError(Text::_('COM_J2COMMERCE_ERR_GENERIC'), 500);
         }
     }
 
@@ -101,7 +103,8 @@ class SetupguideController extends BaseController
 
             $this->jsonSuccess(['html' => $check->getDetailView()]);
         } catch (\Throwable $e) {
-            $this->jsonError($e->getMessage(), 500);
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $this->jsonError(Text::_('COM_J2COMMERCE_ERR_GENERIC'), 500);
         }
     }
 
@@ -133,7 +136,8 @@ class SetupguideController extends BaseController
 
             $this->jsonSuccess(null, Text::_('JLIB_APPLICATION_SAVE_SUCCESS'));
         } catch (\Throwable $e) {
-            $this->jsonError($e->getMessage(), 500);
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $this->jsonError(Text::_('COM_J2COMMERCE_ERR_GENERIC'), 500);
         }
     }
 
@@ -199,7 +203,8 @@ class SetupguideController extends BaseController
 
             $this->jsonSuccess(null, Text::_('JLIB_APPLICATION_SAVE_SUCCESS'));
         } catch (\Throwable $e) {
-            $this->jsonError($e->getMessage(), 500);
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $this->jsonError(Text::_('COM_J2COMMERCE_ERR_GENERIC'), 500);
         }
     }
 
