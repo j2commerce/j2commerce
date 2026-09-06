@@ -41,7 +41,6 @@ $voucherId = (int) ($this->item->j2commerce_voucher_id ?? 0);
                         <legend><?php echo Text::_('COM_J2COMMERCE_BASIC_SETTINGS'); ?></legend>
                         <?php echo $this->form->renderField('j2commerce_voucher_id'); ?>
                         <?php echo $this->form->renderField('order_id'); ?>
-                        <?php echo $this->form->renderField('from_order_id'); ?>
                         <?php echo $this->form->renderField('voucher_type'); ?>
                         <?php echo $this->form->renderField('voucher_code'); ?>
                         <?php echo $this->form->renderField('voucher_value'); ?>
@@ -51,29 +50,9 @@ $voucherId = (int) ($this->item->j2commerce_voucher_id ?? 0);
                     </fieldset>
                 </div>
                 <div class="col-lg-3">
-                    <?php echo $this->form->renderField('published'); ?>
+                    <?php echo $this->form->renderField('enabled'); ?>
                 </div>
             </div>
-        <?php echo HTMLHelper::_('uitab.endTab'); ?>
-
-        <?php echo HTMLHelper::_('uitab.addTab', 'myTab', 'message', Text::_('COM_J2COMMERCE_VOUCHER_MESSAGE')); ?>
-        <div class="row">
-            <div class="col-12">
-                <fieldset class="options-form">
-                    <legend><?php echo Text::_('COM_J2COMMERCE_VOUCHER_MESSAGE'); ?></legend>
-                    <div class="row">
-                        <div class="col-12">
-                            <?php echo $this->form->renderField('subject'); ?>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-12">
-                            <?php echo $this->form->renderField('email_body'); ?>
-                        </div>
-                    </div>
-                </fieldset>
-            </div>
-        </div>
         <?php echo HTMLHelper::_('uitab.endTab'); ?>
 
         <?php echo HTMLHelper::_('uitab.endTabSet'); ?>

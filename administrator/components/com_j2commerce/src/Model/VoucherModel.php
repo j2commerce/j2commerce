@@ -177,16 +177,6 @@ class VoucherModel extends AdminModel
             $table->email_to = trim($table->email_to);
         }
 
-        // Trim subject
-        if (!empty($table->subject)) {
-            $table->subject = trim($table->subject);
-        }
-
-        // Set default subject if empty
-        if (empty($table->subject)) {
-            $table->subject = 'Gift Voucher';
-        }
-
         // Set default voucher type if empty
         if (empty($table->voucher_type)) {
             $table->voucher_type = 'giftcard';

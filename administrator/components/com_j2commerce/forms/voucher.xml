@@ -32,13 +32,6 @@
         />
 
         <field
-            name="subject"
-            type="text"
-            label="COM_J2COMMERCE_FIELD_SUBJECT"
-            maxlength="255"
-        />
-
-        <field
             name="enabled"
             type="list"
             label="JSTATUS"
@@ -100,16 +93,6 @@
             filter="user_utc"
             showtime="true"
             translateformat="false"
-        />
-    </fieldset>
-
-    <fieldset name="content" label="COM_J2COMMERCE_FIELDSET_CONTENT">
-        <field
-            name="email_body"
-            type="editor"
-            label="COM_J2COMMERCE_FIELD_EMAIL_BODY"
-            filter="safehtml"
-            buttons="true"
         />
     </fieldset>
 
