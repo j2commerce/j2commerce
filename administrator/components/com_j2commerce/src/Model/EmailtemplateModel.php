@@ -278,8 +278,21 @@ class EmailtemplateModel extends AdminModel
             // Reset PK to insert a new row
             $table->j2commerce_emailtemplate_id = 0;
 
-            // Update the subject to indicate it's a copy
-            $table->subject = $table->subject . ' (Copy)';
+            // Mark the copy in the subject, trimmed so the 7-character marker fits the varchar(255) column.
+            $table->subject = mb_substr($table->subject, 0, 248) . ' (Copy)';
+
+            // A copy matches the same email_type/receiver_type/orderstatus_id/paymentmethod combination as
+            // its original, so it must never go out on its own. It is enabled deliberately after editing.
+            $table->enabled    = 0;
+            $table->is_default = 0;
+
+            // Unset so check() appends the copy to the end of the list instead of cloning the original's slot.
+            $table->ordering = null;
+
+            if (property_exists($table, 'checked_out')) {
+                $table->checked_out      = null;
+                $table->checked_out_time = null;
+            }
 
             if (!$table->check()) {
                 throw new \Exception($table->getError() ?: 'Validation failed while duplicating record: ' . (int) $pk);

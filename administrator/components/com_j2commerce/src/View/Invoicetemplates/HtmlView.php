@@ -154,7 +154,7 @@ class HtmlView extends BaseHtmlView
         }
 
         if (!$this->isEmptyState) {
-            if ($canDo->get('core.edit.state')) {
+            if ($canDo->get('core.edit.state') || $canDo->get('core.create')) {
                 $dropdown = $toolbar->dropdownButton('status-group')
                     ->text('JTOOLBAR_CHANGE_STATUS')
                     ->toggleSplit(false)
@@ -164,21 +164,24 @@ class HtmlView extends BaseHtmlView
 
                 $childBar = $dropdown->getChildToolbar();
 
-                $childBar->publish('invoicetemplates.publish')->listCheck(true);
-                $childBar->unpublish('invoicetemplates.unpublish')->listCheck(true);
+                if ($canDo->get('core.edit.state')) {
+                    $childBar->publish('invoicetemplates.publish')->listCheck(true);
+                    $childBar->unpublish('invoicetemplates.unpublish')->listCheck(true);
+                }
 
-                if ($this->state->get('filter.enabled') != -2) {
+                if ($canDo->get('core.create')) {
+                    $childBar->standardButton('duplicate')
+                        ->text('JTOOLBAR_DUPLICATE')
+                        ->task('invoicetemplates.duplicate')
+                        ->icon('icon-copy')
+                        ->listCheck(true);
+                }
+
+                // Trash stays last in the dropdown.
+                if ($canDo->get('core.edit.state') && $this->state->get('filter.enabled') != -2) {
                     $childBar->trash('invoicetemplates.trash')->listCheck(true);
                 }
             }
-            if ($canDo->get('core.create')) {
-                $toolbar->standardButton('duplicate')
-                    ->text('JTOOLBAR_DUPLICATE')
-                    ->task('invoicetemplates.duplicate')
-                    ->icon('icon-copy')
-                    ->listCheck(true);
-            }
-
 
             if ($this->state->get('filter.enabled') == -2 && $canDo->get('core.delete')) {
                 $toolbar->delete('invoicetemplates.delete')

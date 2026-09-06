@@ -254,6 +254,21 @@ class InvoicetemplateModel extends AdminModel
             // Reset PK to insert a new row
             $table->j2commerce_invoicetemplate_id = 0;
 
+            // Mark the copy in the title, trimmed so the 7-character marker fits the varchar(255) column.
+            $table->title = mb_substr($table->title, 0, 248) . ' (Copy)';
+
+            // A copy matches the same invoice_type/orderstatus_id/paymentmethod combination as its original,
+            // so it must never compete with it. It is enabled deliberately after editing.
+            $table->enabled = 0;
+
+            // Unset so check() appends the copy to the end of the list instead of cloning the original's slot.
+            $table->ordering = null;
+
+            if (property_exists($table, 'checked_out')) {
+                $table->checked_out      = null;
+                $table->checked_out_time = null;
+            }
+
             if (!$table->check()) {
                 throw new \Exception($table->getError() ?: 'Validation failed while duplicating record: ' . (int) $pk);
             }

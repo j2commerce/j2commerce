@@ -159,7 +159,7 @@ class HtmlView extends BaseHtmlView
         }
 
         if (!$this->isEmptyState) {
-            if ($canDo->get('core.edit.state')) {
+            if ($canDo->get('core.edit.state') || $canDo->get('core.create')) {
                 $dropdown = $toolbar->dropdownButton('status-group')
                     ->text('JTOOLBAR_CHANGE_STATUS')
                     ->toggleSplit(false)
@@ -169,9 +169,23 @@ class HtmlView extends BaseHtmlView
 
                 $childBar = $dropdown->getChildToolbar();
 
-                $childBar->publish('emailtemplates.publish')->listCheck(true);
-                $childBar->unpublish('emailtemplates.unpublish')->listCheck(true);
-                $childBar->trash('emailtemplates.trash')->listCheck(true);
+                if ($canDo->get('core.edit.state')) {
+                    $childBar->publish('emailtemplates.publish')->listCheck(true);
+                    $childBar->unpublish('emailtemplates.unpublish')->listCheck(true);
+                }
+
+                if ($canDo->get('core.create')) {
+                    $childBar->standardButton('duplicate')
+                        ->text('JTOOLBAR_DUPLICATE')
+                        ->task('emailtemplates.duplicate')
+                        ->icon('icon-copy')
+                        ->listCheck(true);
+                }
+
+                // Trash stays last in the dropdown.
+                if ($canDo->get('core.edit.state')) {
+                    $childBar->trash('emailtemplates.trash')->listCheck(true);
+                }
             }
 
             if ($canDo->get('core.delete') && $this->state->get('filter.enabled') == -2) {
