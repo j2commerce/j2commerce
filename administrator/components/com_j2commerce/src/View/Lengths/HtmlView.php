@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\View\Lengths;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\MenuHelper;
 use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
 use Joomla\CMS\Factory;
@@ -102,6 +103,11 @@ class HtmlView extends BaseHtmlView
      */
     public function display($tpl = null): void
     {
+        if (!J2CommerceHelper::canAccess('j2commerce.viewsetup')) {
+            J2CommerceHelper::denyAccess();
+            return;
+        }
+
         $this->loadAdminAssets();
 
         $this->navbar = $this->getNavbar();

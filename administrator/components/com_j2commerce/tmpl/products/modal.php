@@ -137,7 +137,7 @@ $getImagePath = function (?string $imagePath): string {
                                 <?php if ($hasImage) : ?>
                                     <div class="me-3 flex-shrink-0">
                                         <a class="select-link" href="javascript:void(0)" <?php echo $attribs; ?>>
-                                            <img src="<?php echo Uri::root() . $thumbImage; ?>"
+                                            <img src="<?php echo $this->escape(HTMLHelper::_('cleanImageURL', Uri::root() . $thumbImage)->url); ?>"
                                                  alt="<?php echo $this->escape($productName); ?>"
                                                  class="img-fluid"
                                                  style="width: 80px; height: 80px; object-fit: cover;">

@@ -61,7 +61,7 @@ $item = $this->item;
         <div class="col-12">
             <label class="form-label fw-semibold d-block j2c-field-label"><?php echo Text::_('COM_J2COMMERCE_FIELD_ORDER_STATUS'); ?></label>
             <span class="<?php echo $this->escape(J2htmlHelper::badgeClass($item->orderstatus_cssclass ?? 'badge text-bg-secondary')); ?>">
-                <?php echo Text::_($item->orderstatus_name ?? 'Unknown'); ?>
+                <?php echo $this->escape(Text::_($item->orderstatus_name ?? 'Unknown')); ?>
             </span>
             <div class="form-text"><?php echo Text::_('COM_J2COMMERCE_STATUS_CHANGE_NOTE'); ?></div>
         </div>

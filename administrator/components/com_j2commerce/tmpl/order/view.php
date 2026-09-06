@@ -55,7 +55,7 @@ if (empty($customerName)) {
                             #<?php echo $this->escape($item->order_id); ?>
                         </h2>
                         <div class="<?php echo $this->escape(J2htmlHelper::badgeClass($item->orderstatus_cssclass ?? 'badge text-bg-secondary')); ?> ms-2" id="orderStatusBadge">
-                            <?php echo Text::_($item->orderstatus_name ?? 'Unknown'); ?>
+                            <?php echo $this->escape(Text::_($item->orderstatus_name ?? 'Unknown')); ?>
                         </div>
                     </div>
                     <div class="j2-title-invoice mb-1">

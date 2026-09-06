@@ -15,6 +15,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\View\Overrides;
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Builder\Service\BlockPreviewService;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\MenuHelper;
 use J2Commerce\Component\J2commerce\Administrator\Service\OverrideRegistry;
 use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;

@@ -24,6 +24,7 @@ use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\Pagination\Pagination;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\Router\Route;
@@ -1571,13 +1572,15 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
             $table->bind($data);
 
             if (!$table->check()) {
-                $event->setArgument('jsonError', $table->getError());
+                Log::add($table->getError(), Log::ERROR, 'plg_j2commerce_shipping_standard');
+                $event->setArgument('jsonError', Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED'));
 
                 return;
             }
 
             if (!$table->store()) {
-                $event->setArgument('jsonError', $table->getError());
+                Log::add($table->getError(), Log::ERROR, 'plg_j2commerce_shipping_standard');
+                $event->setArgument('jsonError', Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED'));
 
                 return;
             }
@@ -1587,7 +1590,8 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
                 'message' => Text::_('COM_J2COMMERCE_SHIPPING_RATE_SAVED'),
             ]);
         } catch (\Exception $e) {
-            $event->setArgument('jsonError', $e->getMessage());
+            Log::add($e->getMessage(), Log::ERROR, 'plg_j2commerce_shipping_standard');
+            $event->setArgument('jsonError', Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED'));
         }
     }
 
@@ -1610,7 +1614,8 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
             $table = new ShippingRateTable($db);
 
             if (!$table->delete($rateId)) {
-                $event->setArgument('jsonError', $table->getError());
+                Log::add($table->getError(), Log::ERROR, 'plg_j2commerce_shipping_standard');
+                $event->setArgument('jsonError', Text::_('COM_J2COMMERCE_ERROR_DELETE_FAILED'));
 
                 return;
             }
@@ -1619,7 +1624,8 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
                 'message' => Text::_('COM_J2COMMERCE_SHIPPING_RATE_DELETED'),
             ]);
         } catch (\Exception $e) {
-            $event->setArgument('jsonError', $e->getMessage());
+            Log::add($e->getMessage(), Log::ERROR, 'plg_j2commerce_shipping_standard');
+            $event->setArgument('jsonError', Text::_('COM_J2COMMERCE_ERROR_DELETE_FAILED'));
         }
     }
 
@@ -1671,7 +1677,8 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
                 'message' => Text::sprintf('COM_J2COMMERCE_SHIPPING_RATES_SAVED_N', $saved),
             ]);
         } catch (\Exception $e) {
-            $event->setArgument('jsonError', $e->getMessage());
+            Log::add($e->getMessage(), Log::ERROR, 'plg_j2commerce_shipping_standard');
+            $event->setArgument('jsonError', Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED'));
         }
     }
 
@@ -1713,7 +1720,8 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
                 'message' => Text::sprintf('COM_J2COMMERCE_SHIPPING_RATES_DELETED_N', $deleted),
             ]);
         } catch (\Exception $e) {
-            $event->setArgument('jsonError', $e->getMessage());
+            Log::add($e->getMessage(), Log::ERROR, 'plg_j2commerce_shipping_standard');
+            $event->setArgument('jsonError', Text::_('COM_J2COMMERCE_ERROR_DELETE_FAILED'));
         }
     }
 

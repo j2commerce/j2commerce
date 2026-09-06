@@ -12,6 +12,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\View\Emailtemplate;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\EmailtemplateModel;
 use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
 use Joomla\CMS\Event\GenericEvent;
@@ -48,6 +49,11 @@ class HtmlView extends BaseHtmlView
      */
     public function display($tpl = null)
     {
+        if (!J2CommerceHelper::canAccess('j2commerce.viewsetup')) {
+            J2CommerceHelper::denyAccess();
+            return;
+        }
+
         $this->loadAdminAssets();
 
         /** @var EmailtemplateModel $model */

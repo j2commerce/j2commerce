@@ -3102,8 +3102,41 @@ class CheckoutController extends BaseController
             return false;
         }
 
-        return !\in_array((int) ($requested->order_state_id ?? 0), [1, 2, 6, 7, 8], true)
+        $settledIds = $this->settledStatusIds();
+
+        // The lookup did not resolve the full settled/closed set — fail closed and refuse,
+        // rather than let a short list silently accept a state it can no longer name.
+        if ($settledIds === []) {
+            return false;
+        }
+
+        return !\in_array((int) ($requested->order_state_id ?? 0), $settledIds, true)
             && !\in_array(strtolower((string) ($requested->transaction_status ?? '')), ['refunded', 'voided'], true);
+    }
+
+    /** Order-status ids are install-dependent (the migrator preserves source ids), so the settled/closed set is resolved by name. */
+    private function settledStatusIds(): array
+    {
+        static $ids = null;
+
+        if ($ids === null) {
+            $db    = Factory::getContainer()->get(DatabaseInterface::class);
+            $names = ['J2COMMERCE_CONFIRMED', 'J2COMMERCE_PROCESSED', 'J2COMMERCE_CANCELLED', 'J2COMMERCE_SHIPPED', 'J2COMMERCE_DELIVERED'];
+            $query = $db->getQuery(true)
+                ->select($db->quoteName(['j2commerce_orderstatus_id', 'orderstatus_name']))
+                ->from($db->quoteName('#__j2commerce_orderstatuses'))
+                ->whereIn($db->quoteName('orderstatus_name'), $names, ParameterType::STRING);
+            $db->setQuery($query);
+            $rows = $db->loadAssocList() ?: [];
+
+            // A partial resolution is the dangerous half: a name that drops out is then read
+            // as not-settled, widening what the caller admits. Only a complete set is usable.
+            $ids = \count(array_unique(array_column($rows, 'orderstatus_name'))) === \count($names)
+                ? array_map(static fn (array $row): int => (int) $row['j2commerce_orderstatus_id'], $rows)
+                : [];
+        }
+
+        return $ids;
     }
 
     private function loadOrderRow(string $orderId): ?object

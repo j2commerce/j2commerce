@@ -13,6 +13,7 @@ defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Uri\Uri;
@@ -44,7 +45,7 @@ $returnUrl = 'index.php?option=com_j2commerce&view=order&layout=view&id=' . (int
                             <td class="order-items-cell order-items-cell-image">
                                 <?php if (!empty($orderItemImage)) : ?>
                                     <div class="cart-product-image">
-                                        <img src="<?php echo Uri::root() . $orderItemImage; ?>" alt="<?php echo $this->escape($orderItem->orderitem_name); ?>" class="img-fluid">
+                                        <img src="<?php echo $this->escape(HTMLHelper::_('cleanImageURL', Uri::root() . $orderItemImage)->url); ?>" alt="<?php echo $this->escape($orderItem->orderitem_name); ?>" class="img-fluid">
                                     </div>
                                 <?php endif; ?>
                             </td>

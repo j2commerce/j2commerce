@@ -29,7 +29,7 @@ class CsvHelper
     {
         $value = (string) $value;
 
-        if ($value !== '' && \in_array($value[0], ['=', '+', '-', '@'], true)) {
+        if ($value !== '' && \in_array($value[0], ['=', '+', '-', '@', "\t", "\r", "\n", ' '], true)) {
             return "\t" . $value;
         }
 

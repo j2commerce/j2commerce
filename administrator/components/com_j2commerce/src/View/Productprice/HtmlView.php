@@ -20,6 +20,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Helper\ContentHelper;
 use Joomla\CMS\Helper\UserGroupsHelper;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use Joomla\Database\ParameterType;
@@ -165,7 +166,8 @@ class HtmlView extends BaseHtmlView
         try {
             return $db->loadObjectList() ?: [];
         } catch (\Exception $e) {
-            Factory::getApplication()->enqueueMessage($e->getMessage(), 'error');
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_ERR_GENERIC'), 'error');
             return [];
         }
     }

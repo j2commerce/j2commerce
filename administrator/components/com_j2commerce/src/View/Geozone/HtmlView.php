@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\View\Geozone;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
@@ -91,6 +92,11 @@ class HtmlView extends BaseHtmlView
      */
     public function display($tpl = null): void
     {
+        if (!J2CommerceHelper::canAccess('j2commerce.viewsetup')) {
+            J2CommerceHelper::denyAccess();
+            return;
+        }
+
         $this->loadAdminAssets();
 
         $model = $this->getModel();

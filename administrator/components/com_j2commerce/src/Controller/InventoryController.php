@@ -15,6 +15,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Controller\AdminController;
 use Joomla\CMS\Response\JsonResponse;
 
@@ -102,8 +103,9 @@ class InventoryController extends AdminController
             }
 
         } catch (\Exception $e) {
-            $app     = Factory::getApplication();
-            $message = Text::sprintf('COM_J2COMMERCE_INVENTORY_SAVE_FAILED', $e->getMessage());
+            $app = Factory::getApplication();
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $message = Text::_('COM_J2COMMERCE_INVENTORY_SAVE_ERROR');
             $app->enqueueMessage($message, 'error');
 
             echo new JsonResponse(['success' => false, 'message' => $message]);
@@ -163,7 +165,8 @@ class InventoryController extends AdminController
 
             echo new JsonResponse(['success' => true, 'message' => $message]);
         } catch (\Exception $e) {
-            echo new JsonResponse(['success' => false, 'message' => $e->getMessage()]);
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            echo new JsonResponse(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERR_GENERIC')]);
         }
 
         $app->close();

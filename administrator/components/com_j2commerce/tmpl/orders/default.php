@@ -236,7 +236,7 @@ $orderCustomFieldAreas = array_filter(
                                 </td>
                                 <td class="text-center">
                                     <span class="order-status-badge <?php echo $this->escape(J2htmlHelper::badgeClass($item->orderstatus_cssclass ?? 'badge text-bg-secondary')); ?>">
-                                        <?php echo Text::_($item->orderstatus_name ?? 'COM_J2COMMERCE_UNKNOWN'); ?>
+                                        <?php echo $this->escape(Text::_($item->orderstatus_name ?? 'COM_J2COMMERCE_UNKNOWN')); ?>
                                     </span>
                                 </td>
                                 <?php if ($canEditState) : ?>
@@ -249,7 +249,7 @@ $orderCustomFieldAreas = array_filter(
                                                 <?php foreach ($this->orderStatuses as $status) : ?>
                                                     <option value="<?php echo (int) $status->j2commerce_orderstatus_id; ?>"
                                                         <?php echo ((int) $item->order_state_id === (int) $status->j2commerce_orderstatus_id) ? 'selected' : ''; ?>>
-                                                        <?php echo Text::_($status->orderstatus_name); ?>
+                                                        <?php echo $this->escape(Text::_($status->orderstatus_name)); ?>
                                                     </option>
                                                 <?php endforeach; ?>
                                             </select>

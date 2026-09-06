@@ -16,6 +16,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Controller\FormController;
 use Joomla\CMS\Session\Session;
 use Joomla\Database\ParameterType;
@@ -213,7 +214,8 @@ class ProductpriceController extends FormController
 
             $this->sendJsonResponse(true, Text::_('COM_J2COMMERCE_PRICE_CREATED'), ['id' => $newId]);
         } catch (\Exception $e) {
-            $this->sendJsonResponse(false, $e->getMessage());
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $this->sendJsonResponse(false, Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED'));
         }
     }
 
@@ -282,7 +284,8 @@ class ProductpriceController extends FormController
                 $db->updateObject('#__j2commerce_product_prices', $updateData, 'j2commerce_productprice_id', true);
                 $saved++;
             } catch (\Exception $e) {
-                $errors[] = Text::sprintf('COM_J2COMMERCE_ERROR_SAVING_PRICE', $priceId) . ': ' . $e->getMessage();
+                Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+                $errors[] = Text::sprintf('COM_J2COMMERCE_ERROR_SAVING_PRICE', $priceId);
             }
         }
 
@@ -332,7 +335,8 @@ class ProductpriceController extends FormController
                 $this->sendJsonResponse(false, Text::_('COM_J2COMMERCE_ERROR_PRICE_NOT_FOUND'));
             }
         } catch (\Exception $e) {
-            $this->sendJsonResponse(false, $e->getMessage());
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $this->sendJsonResponse(false, Text::_('COM_J2COMMERCE_ERROR_DELETE_FAILED'));
         }
     }
 

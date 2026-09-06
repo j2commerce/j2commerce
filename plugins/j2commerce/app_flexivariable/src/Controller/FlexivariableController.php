@@ -17,6 +17,7 @@ namespace J2Commerce\Plugin\J2Commerce\AppFlexivariable\Controller;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\CMS\Session\Session;
 use Joomla\Database\DatabaseInterface;
@@ -158,7 +159,8 @@ class FlexivariableController extends BaseController
                 $json['variant_id'] = $variantId;
             }
         } catch (\Exception $e) {
-            $json['message'] = $e->getMessage();
+            Log::add($e->getMessage(), Log::ERROR, 'plg_j2commerce_app_flexivariable');
+            $json['message'] = Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED');
         }
 
         echo json_encode($json);
@@ -308,7 +310,8 @@ class FlexivariableController extends BaseController
 
             return true;
         } catch (\Exception $e) {
-            Factory::getApplication()->enqueueMessage($e->getMessage(), 'error');
+            Log::add($e->getMessage(), Log::ERROR, 'plg_j2commerce_app_flexivariable');
+            Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_ERROR_DELETE_FAILED'), 'error');
             return false;
         }
     }

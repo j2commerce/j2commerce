@@ -17,6 +17,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ShipperHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\CMS\Session\Session;
 
@@ -46,7 +47,8 @@ class ShippingController extends BaseController
             $result = ShipperHelper::previewPacking($customBoxes, $testItems, $options);
             $this->sendJson($result);
         } catch (\Throwable $e) {
-            $this->sendJson(['success' => false, 'error' => $e->getMessage()]);
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $this->sendJson(['success' => false, 'error' => Text::_('COM_J2COMMERCE_ERR_GENERIC')]);
         }
     }
 

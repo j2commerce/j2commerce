@@ -213,7 +213,7 @@ $canChangeState = $user->authorise('core.edit.state', 'com_content');
                             <div class="d-flex align-items-start">
                                 <?php if ($hasImage) : ?>
                                     <div class="me-3 flex-shrink-0">
-                                        <img src="<?php echo Uri::root() . $thumbImage; ?>"
+                                        <img src="<?php echo $this->escape(HTMLHelper::_('cleanImageURL', Uri::root() . $thumbImage)->url); ?>"
                                              alt="<?php echo $this->escape($item->product_name); ?>"
                                              class="img-fluid"
                                              style="width: 100px; height: 100px; object-fit: cover;">

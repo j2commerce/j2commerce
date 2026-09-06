@@ -35,6 +35,10 @@ use Joomla\Input\Input;
  */
 class CurrenciesController extends AdminController
 {
+    use WriteAccessTrait;
+
+    protected string $writeAction = 'j2commerce.editsetup';
+
     /**
      * The prefix to use with controller messages.
      *
@@ -95,7 +99,7 @@ class CurrenciesController extends AdminController
     {
         $this->checkToken();
 
-        if (!$this->app->getIdentity()->authorise('core.manage', 'com_j2commerce')) {
+        if (!$this->app->getIdentity()->authorise($this->writeAction, 'com_j2commerce')) {
             throw new \RuntimeException(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 403);
         }
 
@@ -142,7 +146,7 @@ class CurrenciesController extends AdminController
     {
         Session::checkToken('post') or die('Invalid Token');
 
-        if (!$this->app->getIdentity()->authorise('core.manage', 'com_j2commerce')) {
+        if (!$this->app->getIdentity()->authorise($this->writeAction, 'com_j2commerce')) {
             $this->app->setHeader('status', 403);
             echo new JsonResponse(null, Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), true);
             $this->app->close();

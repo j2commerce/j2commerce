@@ -70,13 +70,35 @@ class ProductimageTable extends Table
             return false;
         }
 
-        // Normalize image paths: strip any absolute URL prefix so only relative paths are stored.
-        // Prevents corruption from repeated Uri::root() prepending on each save cycle.
+        // Normalize image paths: strip any absolute URL prefix so only relative paths are stored,
+        // then strip characters that could break out of an <img src="…"> attribute. The four
+        // admin templates that render these columns escape the output on their end; this is a
+        // second, storage-side control so the stored value cannot carry a quote or a new tag.
         $imageFields = ['main_image', 'thumb_image', 'tiny_image'];
         foreach ($imageFields as $field) {
             if (!empty($this->$field)) {
-                $this->$field = $this->stripBaseUrl($this->$field);
+                $this->$field = $this->sanitizeImagePath($this->stripBaseUrl((string) $this->$field));
             }
+        }
+
+        // The gallery columns hold a JSON-encoded array of paths (see $_jsonEncode); apply the
+        // same character strip to each path so the two groups stay in parity.
+        $additionalImageFields = ['additional_images', 'additional_thumb_images', 'additional_tiny_images'];
+        foreach ($additionalImageFields as $field) {
+            if (empty($this->$field)) {
+                continue;
+            }
+
+            $decoded = json_decode((string) $this->$field, true);
+
+            if (!\is_array($decoded)) {
+                continue;
+            }
+
+            $this->$field = json_encode(array_map(
+                fn ($path) => \is_string($path) ? $this->sanitizeImagePath($path) : $path,
+                $decoded
+            ));
         }
 
         // Set default empty strings for varchar fields
@@ -119,6 +141,18 @@ class ProductimageTable extends Table
         }
 
         return $value . $fragment;
+    }
+
+    /**
+     * Remove the characters that could close the src attribute or open a tag, plus control
+     * characters. Everything else — including spaces, '#', '?', '&', '=' and UTF-8 filename
+     * bytes — is a legitimate media path byte and is left intact. No '/u' modifier: the class
+     * is pure ASCII byte values, none of which collide with a UTF-8 continuation byte, and
+     * '/u' would return null (blanking the path) on any input that is not valid UTF-8.
+     */
+    private function sanitizeImagePath(string $value): string
+    {
+        return preg_replace('/[\x00-\x1F\x7F"\'<>`]/', '', $value) ?? '';
     }
 
     /**

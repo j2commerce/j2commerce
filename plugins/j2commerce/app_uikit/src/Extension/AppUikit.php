@@ -13,7 +13,9 @@ namespace J2Commerce\Plugin\J2Commerce\AppUikit\Extension;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\FileLayout;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\Database\DatabaseAwareTrait;
 use Joomla\Event\Event;
@@ -135,13 +137,15 @@ final class AppUikit extends CMSPlugin implements SubscriberInterface
             $result = $view->loadTemplate();
 
             if ($result instanceof \Exception) {
-                Factory::getApplication()->enqueueMessage($result->getMessage(), 'error');
+                Log::add($result->getMessage(), Log::ERROR, 'com_j2commerce');
+                Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_ERR_GENERIC'), 'error');
                 return;
             }
 
             $event->addResult((string) $result);
         } catch (\Exception $e) {
-            Factory::getApplication()->enqueueMessage($e->getMessage(), 'error');
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_ERR_GENERIC'), 'error');
         } finally {
             ProductLayoutService::clearSubtemplateOverride();
         }
@@ -176,13 +180,15 @@ final class AppUikit extends CMSPlugin implements SubscriberInterface
             $result = $view->loadTemplate();
 
             if ($result instanceof \Exception) {
-                Factory::getApplication()->enqueueMessage($result->getMessage(), 'error');
+                Log::add($result->getMessage(), Log::ERROR, 'com_j2commerce');
+                Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_ERR_GENERIC'), 'error');
                 return;
             }
 
             $event->addResult((string) $result);
         } catch (\Exception $e) {
-            Factory::getApplication()->enqueueMessage($e->getMessage(), 'error');
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_ERR_GENERIC'), 'error');
         } finally {
             ProductLayoutService::clearSubtemplateOverride();
         }
@@ -208,13 +214,15 @@ final class AppUikit extends CMSPlugin implements SubscriberInterface
             $result = $view->loadTemplate();
 
             if ($result instanceof \Exception) {
-                Factory::getApplication()->enqueueMessage($result->getMessage(), 'error');
+                Log::add($result->getMessage(), Log::ERROR, 'com_j2commerce');
+                Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_ERR_GENERIC'), 'error');
                 return;
             }
 
             $event->addResult((string) $result);
         } catch (\Exception $e) {
-            Factory::getApplication()->enqueueMessage($e->getMessage(), 'error');
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_ERR_GENERIC'), 'error');
         } finally {
             ProductLayoutService::clearSubtemplateOverride();
         }
@@ -251,13 +259,15 @@ final class AppUikit extends CMSPlugin implements SubscriberInterface
             $result = $view->loadTemplate();
 
             if ($result instanceof \Exception) {
-                Factory::getApplication()->enqueueMessage($result->getMessage(), 'error');
+                Log::add($result->getMessage(), Log::ERROR, 'com_j2commerce');
+                Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_ERR_GENERIC'), 'error');
                 return;
             }
 
             $event->addResult((string) $result);
         } catch (\Exception $e) {
-            Factory::getApplication()->enqueueMessage($e->getMessage(), 'error');
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_ERR_GENERIC'), 'error');
         } finally {
             ProductLayoutService::clearSubtemplateOverride();
         }
@@ -294,13 +304,15 @@ final class AppUikit extends CMSPlugin implements SubscriberInterface
             $result = $view->loadTemplate();
 
             if ($result instanceof \Exception) {
-                Factory::getApplication()->enqueueMessage($result->getMessage(), 'error');
+                Log::add($result->getMessage(), Log::ERROR, 'com_j2commerce');
+                Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_ERR_GENERIC'), 'error');
                 return;
             }
 
             $event->addResult((string) $result);
         } catch (\Exception $e) {
-            Factory::getApplication()->enqueueMessage($e->getMessage(), 'error');
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_ERR_GENERIC'), 'error');
         } finally {
             ProductLayoutService::clearSubtemplateOverride();
         }
@@ -449,19 +461,5 @@ final class AppUikit extends CMSPlugin implements SubscriberInterface
         }
 
         return $view;
-    }
-
-    /**
-     * Escape HTML special characters
-     *
-     * @param   string  $var  String to escape
-     *
-     * @return  string
-     *
-     * @since   6.0.0
-     */
-    public function escape($var)
-    {
-        return htmlspecialchars_decode($var, ENT_COMPAT);
     }
 }

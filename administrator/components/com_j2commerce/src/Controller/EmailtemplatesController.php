@@ -473,6 +473,12 @@ class EmailtemplatesController extends AdminController
                 $row->$field = $template[$field] ?? '';
             }
 
+            // language is echoed unescaped in the admin list; constrain it to the two shapes
+            // a language tag can legitimately take rather than trust the imported file.
+            if ($row->language !== '*' && !preg_match('/^[a-z]{2,3}-[A-Z]{2}$/', (string) $row->language)) {
+                $row->language = '*';
+            }
+
             // Clear on the privilege, not on the pairing — body_source has more than one file-ish value
             if (!$canUseFileSource) {
                 $row->body_source_file = '';

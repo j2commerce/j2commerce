@@ -19,6 +19,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Helper\ContentHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 
@@ -109,7 +110,11 @@ class HtmlView extends BaseHtmlView
         $this->files = method_exists($model, 'getFiles') ? $model->getFiles() : [];
 
         if (\count($errors = $this->get('Errors'))) {
-            $app->enqueueMessage(implode("\n", $errors), 'error');
+            foreach ($errors as $error) {
+                Log::add($error instanceof \Throwable ? $error->getMessage() : (string) $error, Log::ERROR, 'com_j2commerce');
+            }
+
+            $app->enqueueMessage(Text::_('COM_J2COMMERCE_ERR_GENERIC'), 'error');
             return;
         }
 

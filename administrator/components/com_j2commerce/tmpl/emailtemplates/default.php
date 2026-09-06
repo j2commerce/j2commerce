@@ -211,7 +211,7 @@ $isMultilang = Multilanguage::isEnabled();
                                         <?php if ($item->language === '*') : ?>
                                             <?php echo Text::_('JALL'); ?>
                                         <?php else : ?>
-                                            <?php echo $item->language; ?>
+                                            <?php echo $this->escape($item->language); ?>
                                         <?php endif; ?>
                                     </td>
                                     <?php endif; ?>
@@ -226,7 +226,7 @@ $isMultilang = Multilanguage::isEnabled();
                                         <?php if ($item->group_id === '*') : ?>
                                             <?php echo Text::_('JALL'); ?>
                                         <?php else : ?>
-                                            <?php echo J2htmlHelper::getUserGroupName($item->group_id); ?>
+                                            <?php echo $this->escape(J2htmlHelper::getUserGroupName($item->group_id)); ?>
                                         <?php endif; ?>
                                     </td>
                                     <td class="d-none d-lg-table-cell">

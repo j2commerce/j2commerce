@@ -270,15 +270,42 @@ final class OverrideRegistry
 
     public static function getSourcePath(string $pluginElement, string $relativePath, string $type = 'layouts', string $tmplFolder = ''): string
     {
+        if (!self::isSafeRelativePath($pluginElement) || !self::isSafeRelativePath($relativePath)) {
+            return '';
+        }
+
         if ($type === 'tmpl') {
             if (empty($tmplFolder)) {
                 $tmplFolder = self::getPrimaryTmplFolder($pluginElement);
             }
 
-            return Path::clean(JPATH_PLUGINS . '/j2commerce/' . $pluginElement . '/tmpl/' . $tmplFolder . '/' . $relativePath);
+            $base = Path::clean(JPATH_PLUGINS . '/j2commerce/' . $pluginElement . '/tmpl/' . $tmplFolder);
+        } else {
+            $base = Path::clean(JPATH_ROOT . '/components/com_j2commerce/layouts/' . $pluginElement);
         }
 
-        return Path::clean(JPATH_ROOT . '/components/com_j2commerce/layouts/' . $pluginElement . '/' . $relativePath);
+        $path = Path::clean($base . '/' . $relativePath);
+
+        return self::isConfinedTo($path, $base) ? $path : '';
+    }
+
+    /** Rejects the two shapes a caller-supplied relative path segment can use to escape its base directory. */
+    private static function isSafeRelativePath(string $value): bool
+    {
+        return $value !== '' && !str_contains($value, '..') && !str_contains($value, "\0");
+    }
+
+    /** Confines a resolved path to its base directory; both must exist, since sources are read-only. */
+    private static function isConfinedTo(string $candidate, string $base): bool
+    {
+        $realBase      = realpath($base);
+        $realCandidate = realpath($candidate);
+
+        if ($realBase === false || $realCandidate === false) {
+            return false;
+        }
+
+        return $realCandidate === $realBase || str_starts_with($realCandidate, $realBase . \DIRECTORY_SEPARATOR);
     }
 
     public static function clearCache(): void

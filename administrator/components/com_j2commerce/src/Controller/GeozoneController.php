@@ -34,6 +34,10 @@ use Joomla\Database\DatabaseInterface;
  */
 class GeozoneController extends FormController
 {
+    use WriteAccessTrait;
+
+    protected string $writeAction = 'j2commerce.editsetup';
+
     /**
      * The URL option for the component.
      *

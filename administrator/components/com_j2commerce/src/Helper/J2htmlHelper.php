@@ -104,7 +104,7 @@ class J2htmlHelper
         $cssClass = self::badgeClass($cssClass);
 
         return '<span class="' . htmlspecialchars($cssClass, ENT_QUOTES, 'UTF-8') . '">'
-            . Text::_($item->orderstatus_name) . '</span>';
+            . htmlspecialchars(Text::_($item->orderstatus_name), ENT_QUOTES, 'UTF-8') . '</span>';
     }
 
     public static function getUserGroupName($id): string

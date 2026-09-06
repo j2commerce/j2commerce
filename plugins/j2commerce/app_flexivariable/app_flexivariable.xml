@@ -2,12 +2,12 @@
 <extension type="plugin" group="j2commerce" method="upgrade">
     <name>PLG_J2COMMERCE_APP_FLEXIVARIABLE</name>
     <author>J2Commerce, LLC</author>
-    <creationDate>2026-01</creationDate>
+    <creationDate>2026-09-05</creationDate>
     <copyright>(C)2024-2026 J2Commerce, LLC. All rights reserved.</copyright>
     <license>GNU General Public License version 2 or later; see LICENSE.txt</license>
     <authorEmail>support@j2commerce.com</authorEmail>
     <authorUrl>https://www.j2commerce.com</authorUrl>
-    <version>6.2.2</version>
+    <version>6.2.3</version>
     <description>PLG_J2COMMERCE_APP_FLEXIVARIABLE_XML_DESCRIPTION</description>
 
     <namespace path="src">J2Commerce\Plugin\J2Commerce\AppFlexivariable</namespace>

@@ -72,6 +72,15 @@ class ProductsHelper
         $count      = (int) $params->get('count', 8);
         $productIds = \array_slice($productIds, 0, $count);
 
+        if (empty($productIds)) {
+            return [];
+        }
+
+        // Re-verify the merchant's selection against the same access/enabled/state/publish
+        // window every other source is filtered by, instead of loading the raw PKs directly.
+        $allowedIds = $this->getProductIds($params, $productIds);
+        $productIds = array_values(array_intersect($productIds, $allowedIds));
+
         $products = [];
 
         foreach ($productIds as $productId) {
@@ -94,7 +103,7 @@ class ProductsHelper
         return Factory::getContainer()->get(DatabaseInterface::class);
     }
 
-    private function getProductIds(Registry $params): array
+    private function getProductIds(Registry $params, array $restrictToIds = []): array
     {
         $source = $params->get('product_source', 'latest');
         $count  = (int) $params->get('count', 8);
@@ -122,6 +131,10 @@ class ProductsHelper
             ->where($db->quoteName('a.visibility') . ' = 1')
             ->whereIn($db->quoteName('c.access'), $groups)
             ->whereIn($db->quoteName('cat.access'), $groups);
+
+        if (!empty($restrictToIds)) {
+            $query->whereIn($db->quoteName('a.j2commerce_product_id'), $restrictToIds, ParameterType::INTEGER);
+        }
 
         // Users who may edit products keep the unpublished ones in the list so an
         // upcoming release can be previewed, same as com_content does for articles.
@@ -172,7 +185,7 @@ class ProductsHelper
 
         $this->applyOrdering($query, $ordering, $db);
 
-        $query->setLimit($count);
+        $query->setLimit($restrictToIds ? \count($restrictToIds) : $count);
         $db->setQuery($query);
 
         return $db->loadColumn() ?: [];

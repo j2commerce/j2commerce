@@ -26,6 +26,10 @@ use Joomla\Event\Event as GenericEvent;
 
 class QueuesController extends AdminController
 {
+    use WriteAccessTrait;
+
+    protected string $writeAction = 'j2commerce.editsetup';
+
     protected $text_prefix = 'COM_J2COMMERCE';
 
     public function getModel($name = 'Queue', $prefix = 'Administrator', $config = ['ignore_request' => true])
