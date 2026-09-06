@@ -113,4 +113,10 @@ class ProductpriceTable extends Table
         return true;
     }
 
+    /** Nulls are written by default, so an emptied date range clears the stored one. */
+    public function store($updateNulls = true)
+    {
+        return parent::store($updateNulls);
+    }
+
 }

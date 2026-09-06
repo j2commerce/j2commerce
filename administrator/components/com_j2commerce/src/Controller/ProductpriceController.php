@@ -265,11 +265,12 @@ class ProductpriceController extends FormController
                 continue;
             }
 
-            // Prepare update data
+            // The grid renders no quantity_to input, so it is left out of the payload entirely:
+            // updateObject() below writes nulls, and an absent key is the only way to say
+            // "leave this column alone" rather than clear it.
             $updateData = (object) [
                 'j2commerce_productprice_id' => $priceId,
                 'quantity_from'              => isset($priceData['quantity_from']) ? (float) $priceData['quantity_from'] : null,
-                'quantity_to'                => isset($priceData['quantity_to']) ? (float) $priceData['quantity_to'] : null,
                 'date_from'                  => $this->convertDateToMysql($priceData['date_from'] ?? ''),
                 'date_to'                    => $this->convertDateToMysql($priceData['date_to'] ?? ''),
                 'customer_group_id'          => isset($priceData['customer_group_id']) ? (int) $priceData['customer_group_id'] : null,
@@ -277,7 +278,8 @@ class ProductpriceController extends FormController
             ];
 
             try {
-                $db->updateObject('#__j2commerce_product_prices', $updateData, 'j2commerce_productprice_id');
+                // Nulls are written, so an emptied date range clears the stored one.
+                $db->updateObject('#__j2commerce_product_prices', $updateData, 'j2commerce_productprice_id', true);
                 $saved++;
             } catch (\Exception $e) {
                 $errors[] = Text::sprintf('COM_J2COMMERCE_ERROR_SAVING_PRICE', $priceId) . ': ' . $e->getMessage();
