@@ -18,6 +18,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\TableSaveHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\Database\DatabaseInterface;
+use Joomla\Database\ParameterType;
 use Joomla\Event\Event;
 use Joomla\Registry\Registry;
 
@@ -89,8 +90,13 @@ final class PayPalWebhooks
             };
 
             return $result;
-        } catch (\Exception $e) {
-            return ['status' => 500, 'message' => 'Internal error: ' . $e->getMessage()];
+        } catch (\Throwable $e) {
+            Factory::getApplication()->getLogger()->error(
+                'PayPal webhook handler error: ' . $e->getMessage(),
+                ['category' => 'j2commerce.paypal']
+            );
+
+            return ['status' => 500, 'message' => 'Internal error'];
         }
     }
 
@@ -197,11 +203,49 @@ final class PayPalWebhooks
             return ['status' => 404, 'message' => 'Local subscription not found for ' . $paypalSubId];
         }
 
+        // Compare the sale against the subscription before advancing the cycle, the way
+        // handleCaptureCompleted() compares a capture against its order. Without this the
+        // cycle advances for the local renewal amount whatever the sale actually was.
+        $saleAmount   = (float) ($resource['amount']['total'] ?? 0);
+        $saleCurrency = strtoupper(trim((string) ($resource['amount']['currency'] ?? '')));
+        $parentOrder  = $this->loadSubscriptionParentOrder($subscription);
+
+        // The expectation is the plan's fixed_price, which createBillingPlan() derives from
+        // the parent order's total in the order's own currency -- not renewal_amount, which
+        // is a different quantity and would reject every renewal carrying tax, shipping, a
+        // discount, more than one unit, or a display currency other than the base one.
+        $expectedCurrency = $parentOrder === null ? '' : $this->orderCurrency($parentOrder);
+        $expectedAmount   = $parentOrder === null
+            ? null
+            : $this->roundToCurrency(
+                CurrencyHelper::convertForOrder((float) ($parentOrder->order_total ?? 0), $parentOrder),
+                $expectedCurrency
+            );
+
+        if (
+            $expectedAmount === null
+            || $expectedCurrency === ''
+            || $saleCurrency !== $expectedCurrency
+            || abs($this->roundToCurrency($saleAmount, $saleCurrency) - $expectedAmount) > 0.001
+        ) {
+            Factory::getApplication()->getLogger()->error(
+                'PayPal webhook renewal amount mismatch — manual review required',
+                [
+                    'category'     => 'j2commerce.paypal',
+                    'subscription' => $subscription->id ?? '',
+                    'received'     => $saleAmount . ' ' . $saleCurrency,
+                    'expected'     => ($expectedAmount ?? 'unresolved') . ' ' . $expectedCurrency,
+                ]
+            );
+
+            return ['status' => 409, 'message' => 'Amount/currency mismatch'];
+        }
+
         // Build a minimal order-like object the renewal helper can consume.
         $renewalOrder = (object) [
             'order_id'       => (string) ($subscription->order_id ?? ''),
-            'order_total'    => (float) ($subscription->renewal_amount ?? 0),
-            'currency_code'  => (string) ($resource['amount']['currency'] ?? 'USD'),
+            'order_total'    => (float) $expectedAmount,
+            'currency_code'  => $expectedCurrency,
             'transaction_id' => (string) ($resource['id'] ?? ''),
             'paypal_sale_id' => (string) ($resource['id'] ?? ''),
         ];
@@ -252,7 +296,7 @@ final class PayPalWebhooks
 
     public function isAlreadyProcessed(string $eventId): bool
     {
-        $likePattern = '%"webhook_event_id":"' . $eventId . '"%';
+        $likePattern = '%"webhook_event_id":"' . addcslashes($eventId, '%_\\') . '"%';
 
         $query = $this->db->getQuery(true);
         $query->select('COUNT(*)')
@@ -278,7 +322,7 @@ final class PayPalWebhooks
             return ['status' => 400, 'message' => 'Missing custom_id'];
         }
 
-        $order = $this->loadOrderByPayPalId($customId);
+        $order = $this->loadOrderByLocalId($customId);
         if (!$order) {
             return ['status' => 404, 'message' => 'Order not found'];
         }
@@ -313,9 +357,7 @@ final class PayPalWebhooks
         $captureAmount   = (float) ($resource['amount']['value'] ?? 0);
         $captureCurrency = (string) ($resource['amount']['currency_code'] ?? '');
         $expectedAmount  = CurrencyHelper::gatewayAmount($orderTable);
-        $expectedCcy     = strtoupper(trim((string) (
-            $orderTable->currency_code ?? ($orderTable->order_currency_code ?? 'USD')
-        )));
+        $expectedCcy     = strtoupper(trim((string) ($orderTable->currency_code ?? 'USD')));
 
         if ($captureCurrency !== $expectedCcy || abs($captureAmount - $expectedAmount) > 0.01) {
             Factory::getApplication()->getLogger()->error(
@@ -372,12 +414,31 @@ final class PayPalWebhooks
             return ['status' => 400, 'message' => 'Missing custom_id'];
         }
 
-        $order = $this->loadOrderByPayPalId($customId);
+        $order = $this->loadOrderByLocalId($customId);
         if (!$order) {
             return ['status' => 404, 'message' => 'Order not found'];
         }
 
+        // Same binding the completed handler applies. A capture resource always carries the
+        // related order id, so an absent one is treated as a mismatch here.
+        if ($this->matchesBinding($order, $resource) !== true) {
+            return ['status' => 400, 'message' => 'PayPal order id not bound to local order'];
+        }
+
+        // A late or out-of-order pre-settlement event must not demote an order that has
+        // already settled: store() fires the transition, which releases stock while the
+        // download grant it issued stays live. A reversal or refund may still demote.
+        if ($this->hasSettled($order, $params)) {
+            return ['status' => 409, 'message' => 'Order already settled'];
+        }
+
         $pendingStateId = PayPalOrderStates::resolve($params, $this->db, PayPalOrderStates::PENDING);
+
+        // A redelivered or out-of-order event must not rewrite a status the order already
+        // holds: OrderTable::store() moves stock and grants downloads on every transition.
+        if ($pendingStateId > 0 && (int) $order->order_state_id === $pendingStateId) {
+            return ['status' => 200, 'message' => 'Order already in the requested state'];
+        }
 
         $this->updateOrderStatus(
             $order,
@@ -401,12 +462,31 @@ final class PayPalWebhooks
             return ['status' => 400, 'message' => 'Missing custom_id'];
         }
 
-        $order = $this->loadOrderByPayPalId($customId);
+        $order = $this->loadOrderByLocalId($customId);
         if (!$order) {
             return ['status' => 404, 'message' => 'Order not found'];
         }
 
+        // Same binding the completed handler applies. A capture resource always carries the
+        // related order id, so an absent one is treated as a mismatch here.
+        if ($this->matchesBinding($order, $resource) !== true) {
+            return ['status' => 400, 'message' => 'PayPal order id not bound to local order'];
+        }
+
+        // A late or out-of-order pre-settlement event must not demote an order that has
+        // already settled: store() fires the transition, which releases stock while the
+        // download grant it issued stays live. A reversal or refund may still demote.
+        if ($this->hasSettled($order, $params)) {
+            return ['status' => 409, 'message' => 'Order already settled'];
+        }
+
         $failedStateId = PayPalOrderStates::resolve($params, $this->db, PayPalOrderStates::FAILED);
+
+        // A redelivered or out-of-order event must not rewrite a status the order already
+        // holds: OrderTable::store() moves stock and grants downloads on every transition.
+        if ($failedStateId > 0 && (int) $order->order_state_id === $failedStateId) {
+            return ['status' => 200, 'message' => 'Order already in the requested state'];
+        }
 
         $this->updateOrderStatus(
             $order,
@@ -430,12 +510,38 @@ final class PayPalWebhooks
             return ['status' => 400, 'message' => 'Missing custom_id'];
         }
 
-        $order = $this->loadOrderByPayPalId($customId);
+        $order = $this->loadOrderByLocalId($customId);
         if (!$order) {
             return ['status' => 404, 'message' => 'Order not found'];
         }
 
-        $refundedStateId = PayPalOrderStates::resolve($params, $this->db, PayPalOrderStates::REFUNDED);
+        // A refund or reversal revokes value already delivered, so it is discarded only on a
+        // positive mismatch. An event carrying neither identifier is still acted on -- the
+        // custom_id already resolved it, and dropping it would leave the order reading paid.
+        if ($this->matchesBinding($order, $resource) === false) {
+            return ['status' => 400, 'message' => 'PayPal order id not bound to local order'];
+        }
+
+        // A partial refund is not a refunded order: the status moves only when the whole
+        // charge has come back.
+        $refundAmount  = $this->roundToCurrency((float) ($resource['amount']['value'] ?? 0), $this->orderCurrency($order));
+        $chargedAmount = $this->roundToCurrency(CurrencyHelper::gatewayAmount($order), $this->orderCurrency($order));
+
+        if ($refundAmount <= 0) {
+            return ['status' => 400, 'message' => 'Refund amount missing'];
+        }
+
+        // order_refund is deliberately not written here: it is a base-currency column owned by
+        // OrderTransactionHelper, so a display-currency amount written straight into it would
+        // be wrong by currency_value and would bypass the reversal ledger.
+        $isFullyRefunded = $chargedAmount > 0 && $refundAmount + 0.001 >= $chargedAmount;
+        $refundedStateId = $isFullyRefunded
+            ? PayPalOrderStates::resolve($params, $this->db, PayPalOrderStates::REFUNDED)
+            : 0;
+
+        if ($refundedStateId > 0 && (int) $order->order_state_id === $refundedStateId) {
+            return ['status' => 200, 'message' => 'Order already in the requested state'];
+        }
 
         $this->updateOrderStatus(
             $order,
@@ -443,7 +549,7 @@ final class PayPalWebhooks
             Text::_('COM_J2COMMERCE_PAYPAL_PAYMENT_REFUNDED')
         );
 
-        return ['status' => 200, 'message' => 'Capture refunded'];
+        return ['status' => 200, 'message' => $isFullyRefunded ? 'Capture refunded' : 'Partial refund, order status unchanged'];
     }
 
     /**
@@ -459,12 +565,25 @@ final class PayPalWebhooks
             return ['status' => 400, 'message' => 'Missing custom_id'];
         }
 
-        $order = $this->loadOrderByPayPalId($customId);
+        $order = $this->loadOrderByLocalId($customId);
         if (!$order) {
             return ['status' => 404, 'message' => 'Order not found'];
         }
 
+        // A refund or reversal revokes value already delivered, so it is discarded only on a
+        // positive mismatch. An event carrying neither identifier is still acted on -- the
+        // custom_id already resolved it, and dropping it would leave the order reading paid.
+        if ($this->matchesBinding($order, $resource) === false) {
+            return ['status' => 400, 'message' => 'PayPal order id not bound to local order'];
+        }
+
         $failedStateId = PayPalOrderStates::resolve($params, $this->db, PayPalOrderStates::FAILED);
+
+        // A redelivered or out-of-order event must not rewrite a status the order already
+        // holds: OrderTable::store() moves stock and grants downloads on every transition.
+        if ($failedStateId > 0 && (int) $order->order_state_id === $failedStateId) {
+            return ['status' => 200, 'message' => 'Order already in the requested state'];
+        }
 
         $this->updateOrderStatus(
             $order,
@@ -509,23 +628,127 @@ final class PayPalWebhooks
         return ['status' => 200, 'message' => 'Dispute resolved logged'];
     }
 
-    private function loadOrderByPayPalId(string $paypalOrderId): ?\stdClass
+    /**
+     * Has this order already reached a settled outcome? Resolved by type, never by a literal
+     * id -- PayPalOrderStates is explicit that ids are install-dependent.
+     */
+    private function hasSettled(\stdClass $order, Registry $params): bool
     {
-        $likePattern = '%"paypal_order_id":"' . addcslashes($paypalOrderId, '%_\\') . '"%';
+        $current   = (int) $order->order_state_id;
+        $confirmed = PayPalOrderStates::resolve($params, $this->db, PayPalOrderStates::CONFIRMED);
+        $refunded  = PayPalOrderStates::resolve($params, $this->db, PayPalOrderStates::REFUNDED);
+
+        return ($confirmed > 0 && $current === $confirmed)
+            || ($refunded > 0 && $current === $refunded)
+            || (float) ($order->order_refund ?? 0) > 0;
+    }
+
+    /**
+     * PayPal is billed the plan's formatted price, so the expectation is rounded the same way
+     * before comparison. A zero-decimal currency rounds to whole units, and comparing an
+     * unrounded product against that differs by up to 0.5 -- fifty times the old tolerance.
+     */
+    private function roundToCurrency(float $amount, string $currency): float
+    {
+        $zeroDecimal = ['JPY', 'KRW', 'TWD', 'HUF', 'CLP', 'ISK'];
+
+        $decimals = \in_array(strtoupper($currency), $zeroDecimal, true) ? 0 : 2;
+
+        // number_format, not round: this is the exact call the plan price is built with, so
+        // the two cannot disagree on a tie.
+        return (float) number_format($amount, $decimals, '.', '');
+    }
+
+    /**
+     * Mirrors the fallback the plugin prices a plan with: currency_code is NOT NULL but may
+     * be empty on a migrated row, and the plan would have been priced in USD in that case.
+     */
+    private function orderCurrency(\stdClass $order): string
+    {
+        $currency = (string) ($order->currency_code ?? '');
+
+        return strtoupper(trim($currency)) ?: 'USD';
+    }
+
+    /**
+     * The subscription carries neither the billed amount nor a currency, so the parent order
+     * it was created from is authoritative for both.
+     */
+    private function loadSubscriptionParentOrder(\stdClass $subscription): ?\stdClass
+    {
+        $parentOrderId = (string) ($subscription->order_id ?? '');
+
+        if ($parentOrderId === '') {
+            return null;
+        }
 
         $query = $this->db->getQuery(true);
         $query->select('*')
             ->from($this->db->quoteName('#__j2commerce_orders'))
-            ->where(
-                $this->db->quoteName('transaction_details') . ' LIKE :paypal_id'
-                . ' OR ' . $this->db->quoteName('order_id') . ' = :order_id_match'
-            )
-            ->bind(':paypal_id', $likePattern)
-            ->bind(':order_id_match', $paypalOrderId)
+            ->where($this->db->quoteName('order_id') . ' = :parent_order_id')
+            ->bind(':parent_order_id', $parentOrderId)
+            ->setLimit(1);
+
+        $this->db->setQuery($query);
+
+        return $this->db->loadObject();
+    }
+
+    /**
+     * Resolves the order from the event's custom_id, which PayPalOrders sets to the local
+     * primary key. It is neither the PayPal order id held in transaction_details nor the
+     * generated order_id string, so it is matched against the key it actually holds.
+     */
+    private function loadOrderByLocalId(string $customId): ?\stdClass
+    {
+        if (!ctype_digit($customId)) {
+            return null;
+        }
+
+        $orderPk = (int) $customId;
+
+        $query = $this->db->getQuery(true);
+        $query->select('*')
+            ->from($this->db->quoteName('#__j2commerce_orders'))
+            ->where($this->db->quoteName('j2commerce_order_id') . ' = :order_pk')
+            ->bind(':order_pk', $orderPk, ParameterType::INTEGER)
             ->setLimit(1);
 
         $this->db->setQuery($query);
         return $this->db->loadObject();
+    }
+
+    /**
+     * Does the event name the gateway identifiers this local order was bound to?
+     *
+     * Returns null when the event carries neither identifier. A capture resource always
+     * carries the related order id, but a refund or reversal resource is a different shape,
+     * so the callers decide what an absent identifier means rather than this method
+     * assuming a mismatch and discarding an event that revokes delivered value.
+     *
+     * @param array<string, mixed> $resource
+     */
+    private function matchesBinding(\stdClass $order, array $resource): ?bool
+    {
+        $storedDetails = json_decode($order->transaction_details ?? '{}', true);
+        $storedDetails = \is_array($storedDetails) ? $storedDetails : [];
+        $relatedIds    = $resource['supplementary_data']['related_ids'] ?? [];
+
+        $eventOrderId   = (string) ($relatedIds['order_id'] ?? '');
+        $eventCaptureId = (string) ($relatedIds['capture_id'] ?? '');
+
+        $boundPayPalId = (string) ($storedDetails['paypal_order_id'] ?? '');
+        $boundCapture  = (string) ($order->transaction_id ?? '');
+
+        if ($eventOrderId !== '' && $boundPayPalId !== '') {
+            return hash_equals($boundPayPalId, $eventOrderId);
+        }
+
+        if ($eventCaptureId !== '' && $boundCapture !== '') {
+            return hash_equals($boundCapture, $eventCaptureId);
+        }
+
+        return null;
     }
 
     private function updateOrderStatus(\stdClass $order, int $newStateId, string $comment): void
@@ -539,7 +762,11 @@ final class PayPalWebhooks
             ->getMVCFactory()
             ->createTable('Order', 'Administrator');
 
-        $orderTable->load(['order_id' => $order->order_id]);
+        // An unloaded table is treated as new by store(), which would insert a placeholder
+        // order rather than update this one.
+        if (!$orderTable->load(['order_id' => $order->order_id])) {
+            return;
+        }
         $orderTable->order_state_id = $newStateId;
 
         if (!TableSaveHelper::store($orderTable, 'paypal.webhook.order_status')) {
