@@ -202,11 +202,19 @@ class VoucherModel extends AdminModel
         $app = Factory::getApplication();
 
         // Core signals Save as Copy by zeroing the primary key, so the request id must not restore it.
-        $isCopy    = $app->getInput()->get('task') === 'save2copy';
+        // The API create task reaches save() with the key already null for the same reason, and the
+        // request id is a query string there rather than a route var, so it gets the same treatment.
+        $task      = (string) $app->getInput()->get('task');
+        $isCopy    = $task === 'save2copy';
+        $isNew     = $isCopy || $task === 'add';
         $requestId = $app->getInput()->getInt('id', 0);
 
         // Resolve existing-record identity from id only.
-        $data['id'] = $isCopy ? 0 : (int) ($data['id'] ?? $requestId);
+        $data['id'] = $isNew ? 0 : (int) ($data['id'] ?? $requestId);
+
+        if ($isNew) {
+            $data['j2commerce_voucher_id'] = 0;
+        }
 
         // Map Joomla id to table PK for persistence.
         if (empty($data['j2commerce_voucher_id']) && $data['id'] > 0) {
@@ -250,8 +258,13 @@ class VoucherModel extends AdminModel
                 $origTable->load($requestId);
             }
 
-            if (!empty($origTable->voucher_code) && $data['voucher_code'] == $origTable->voucher_code) {
-                $data['voucher_code'] = $this->generateNewVoucherCode($data['voucher_code']);
+            // prepareTable() uppercases the code, but only after this test, so both sides are
+            // normalised here rather than compared in whatever case the form submitted.
+            $data['voucher_code'] = strtoupper(trim((string) ($data['voucher_code'] ?? '')));
+
+            if (!empty($origTable->voucher_code)
+                && $data['voucher_code'] === strtoupper(trim((string) $origTable->voucher_code))) {
+                $data['voucher_code'] = $this->generateVoucherCode();
             }
 
             $data['enabled'] = 0;
@@ -367,7 +380,7 @@ class VoucherModel extends AdminModel
                 // Reset the id to create a new record
                 $table->j2commerce_voucher_id = 0;
                 $table->enabled               = 0;
-                $table->voucher_code          = $this->generateNewVoucherCode($table->voucher_code);
+                $table->voucher_code          = $this->generateVoucherCode();
 
                 if (!$table->check() || !$table->store()) {
                     throw new \Exception($table->getError());
@@ -410,30 +423,6 @@ class VoucherModel extends AdminModel
         }
 
         return $randomString;
-    }
-
-    /**
-     * Generate a new voucher code for copy.
-     *
-     * @param   string  $voucherCode  The original voucher code.
-     *
-     * @return  string  The new voucher code.
-     *
-     * @since   6.0.6
-     */
-    protected function generateNewVoucherCode(string $voucherCode): string
-    {
-        $table   = $this->getTable();
-        $newCode = $voucherCode;
-
-        $i = 1;
-        while ($table->load(['voucher_code' => $newCode])) {
-            $newCode = $voucherCode . '_' . $i;
-            $i++;
-            $table->reset();
-        }
-
-        return $newCode;
     }
 
     /**

@@ -60,6 +60,15 @@ abstract class J2CommerceApiController extends ApiController
             $prefix = 'Administrator';
         }
 
+        // ApiController::save() is the one path that resolves the model without ignore_request;
+        // displayList(), displayItem() and delete() all pass it. A model whose populateState()
+        // seeds its own '.id' from the request `id` therefore hands AdminModel::save() an
+        // existing key on the create route, where the payload key is null by construction. Only
+        // the create task needs this — edit() carries the record key in the payload already.
+        if ($this->input->get('task') === 'add' && !\array_key_exists('ignore_request', $config)) {
+            $config['ignore_request'] = true;
+        }
+
         return parent::getModel($name, $prefix, $config);
     }
 
