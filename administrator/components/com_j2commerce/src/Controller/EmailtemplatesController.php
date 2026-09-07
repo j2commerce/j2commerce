@@ -528,9 +528,10 @@ class EmailtemplatesController extends AdminController
         try {
             $results = (new CoreTemplateSyncHelper())->syncEmailTemplates();
             $updated = \count(array_filter($results, static fn (array $result): bool => $result['status'] === 'updated'));
-            $skipped = \count($results) - $updated;
+            $created = \count(array_filter($results, static fn (array $result): bool => $result['status'] === 'created'));
+            $skipped = \count($results) - $updated - $created;
 
-            $this->setMessage(Text::sprintf('COM_J2COMMERCE_EMAILTEMPLATE_SYNC_CORE_RESULT', $updated, $skipped));
+            $this->setMessage(Text::sprintf('COM_J2COMMERCE_EMAILTEMPLATE_SYNC_CORE_RESULT', $updated, $created, $skipped));
         } catch (\Throwable $e) {
             Log::add('Core email template sync failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
             $this->setMessage(Text::_('COM_J2COMMERCE_ERR_GENERIC'), 'error');
