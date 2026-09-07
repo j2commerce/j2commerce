@@ -12,9 +12,11 @@ namespace J2Commerce\Component\J2commerce\Administrator\View\Invoicetemplate;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\EmailHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\PackingSlipHelper;
 use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
+use J2Commerce\Component\J2commerce\Administrator\View\LangOverrideTrait;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Helper\ContentHelper;
 use Joomla\CMS\HTML\HTMLHelper;
@@ -28,6 +30,7 @@ use Joomla\CMS\Toolbar\ToolbarHelper;
 class HtmlView extends BaseHtmlView
 {
     use AdminAssetsTrait;
+    use LangOverrideTrait;
 
     protected $item;
     protected $form;
@@ -86,6 +89,8 @@ class HtmlView extends BaseHtmlView
             'bodyJson'        => $this->item->body_json ?? '',
             'bodyHtml'        => $this->item->body ?? '',
             'shortcodes'      => $this->shortcodes ?? [],
+            'langStrings'     => EmailHelper::collectLangStrings((string) ($this->item->body ?? '')),
+            'canOverrideLang' => $this->getCurrentUser()->authorise('core.admin'),
             'invoiceType'     => $invoiceType,
             'strippedTags'    => $invoiceType === 'packingslip' ? PackingSlipHelper::STRIPPED_TAGS : [],
             'packingSlipTags' => PackingSlipHelper::STRIPPED_TAGS,
@@ -128,6 +133,9 @@ class HtmlView extends BaseHtmlView
         Text::script('COM_J2COMMERCE_INVOICETEMPLATE_LOAD_SUCCESS');
         Text::script('COM_J2COMMERCE_INVOICETEMPLATE_LOAD_FAILED');
         Text::script('COM_J2COMMERCE_INVOICETEMPLATE_NO_PRESETS');
+
+        // No subject on this screen: every key it can reword lives in the body.
+        $this->prepareLangOverride($wa, str_contains((string) ($this->item->body ?? ''), '[LANG:'));
 
         parent::display($tpl);
     }

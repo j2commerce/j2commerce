@@ -13,6 +13,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Router\Route;
 
 /** @var \J2Commerce\Component\J2commerce\Administrator\View\Invoicetemplate\HtmlView $this */
@@ -506,3 +507,17 @@ $tmpl   = $input->get('tmpl', '', 'cmd') === 'component' ? '&tmpl=component' : '
     <input type="hidden" name="j2commerce_invoicetemplate_id" value="<?php echo (int) $this->item->j2commerce_invoicetemplate_id; ?>">
     <?php echo HTMLHelper::_('form.token'); ?>
 </form>
+
+<?php // Outside the form on purpose: the dialog saves through its own request, and its fields must
+      // not ride along with a template save. A <template> is cloned rather than moved, so each
+      // opening of the dialog gets a fresh copy. ?>
+<?php if (!empty($this->overrideLanguages)) : ?>
+    <template id="joomla-dialog-subjectoverride"><?php echo LayoutHelper::render(
+        'langoverride.dialog',
+        [
+            'languages'  => $this->overrideLanguages,
+            'defaultTag' => $this->overrideDefaultTag,
+        ],
+        JPATH_ADMINISTRATOR . '/components/com_j2commerce/layouts'
+    ); ?></template>
+<?php endif; ?>

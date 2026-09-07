@@ -649,6 +649,30 @@ class EmailHelper
     }
 
     /**
+     * The wording every [LANG:KEY] token in a body resolves to, keyed by the bare key.
+     *
+     * Display only - what a save writes back is always the token, which is the thing every locale
+     * shares. Read by the template editors, whose canvas would otherwise show bracket text, and by
+     * the controllers that serve a freshly loaded design.
+     *
+     * @return array<string, string>
+     */
+    public static function collectLangStrings(string $body): array
+    {
+        if (!preg_match_all('/\[LANG:([A-Z][A-Z0-9_]*)\]/', $body, $matches)) {
+            return [];
+        }
+
+        $strings = [];
+
+        foreach (array_unique($matches[1]) as $key) {
+            $strings[$key] = self::resolveLangTokens('[LANG:' . $key . ']');
+        }
+
+        return $strings;
+    }
+
+    /**
      * Process template tags and replace with order data
      *
      * @param   string               $text          The template text

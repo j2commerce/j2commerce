@@ -15,8 +15,8 @@ namespace J2Commerce\Component\J2commerce\Administrator\View\Emailtemplate;
 use J2Commerce\Component\J2commerce\Administrator\Helper\EmailHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\EmailtemplateModel;
-use J2Commerce\Component\J2commerce\Administrator\Model\LangoverrideModel;
 use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
+use J2Commerce\Component\J2commerce\Administrator\View\LangOverrideTrait;
 use Joomla\CMS\Event\GenericEvent;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Helper\ContentHelper;
@@ -34,21 +34,13 @@ use Joomla\CMS\WebAsset\WebAssetManager;
 class HtmlView extends BaseHtmlView
 {
     use AdminAssetsTrait;
+    use LangOverrideTrait;
 
     protected $item;
     protected $form;
     protected $state;
     protected $shortcodes;
     protected $pluginTemplateCards = [];
-
-    /** Installed languages the subject override dialog offers, tag => title. */
-    protected array $overrideLanguages = [];
-
-    /** Language the dialog opens on: the one this admin is reading the resolved subject in. */
-    protected string $overrideDefaultTag = '';
-
-    /** Bare key of a [LANG:KEY] subject, empty when the subject is literal text. */
-    protected string $subjectKey = '';
 
     /**
      * Execute and display a template script.
@@ -190,7 +182,7 @@ class HtmlView extends BaseHtmlView
             'bodyJson'        => $this->item->body_json ?? '',
             'bodyHtml'        => $this->item->body ?? '',
             'shortcodes'      => $this->shortcodes ?? [],
-            'langStrings'     => $this->collectBodyLangStrings((string) ($this->item->body ?? '')),
+            'langStrings'     => EmailHelper::collectLangStrings((string) ($this->item->body ?? '')),
             'canOverrideLang' => $this->getCurrentUser()->authorise('core.admin'),
             'emailType'       => $this->item->email_type ?? 'transactional',
             'csrfToken'       => Session::getFormToken(),
@@ -232,83 +224,19 @@ class HtmlView extends BaseHtmlView
     }
 
     /**
-     * Wire up the subject override dialog, when the subject is a translatable token and the user
-     * holds the capability that writing a language override needs - Super User, the same gate the
-     * tasks themselves apply, and the same one the sibling core.admin checks in this component use.
+     * Point the shared override dialog at this screen's subject.
+     *
+     * The body carries tokens of its own, and the visual editor opens the same dialog against
+     * them, so a template whose subject a merchant typed as plain text still needs the wiring.
      */
     private function prepareSubjectOverride(WebAssetManager $wa): void
     {
-        $subject = (string) ($this->item->subject ?? '');
+        $this->subjectKey = EmailHelper::extractLangKey((string) ($this->item->subject ?? ''));
 
-        $this->subjectKey = EmailHelper::extractLangKey($subject);
-
-        // The body carries tokens of its own, and the visual editor opens the same dialog against
-        // them, so a template whose subject a merchant typed as plain text still needs the wiring.
-        $bodyHasTokens = str_contains((string) ($this->item->body ?? ''), '[LANG:');
-
-        if (($this->subjectKey === '' && !$bodyHasTokens) || !$this->getCurrentUser()->authorise('core.admin')) {
-            return;
-        }
-
-        // Not $this->getModel(): the controller only ever pushes the emailtemplate model onto
-        // this view, so the override model has to be built from the component's own factory.
-        /** @var LangoverrideModel $model */
-        $model = Factory::getApplication()->bootComponent('com_j2commerce')
-            ->getMVCFactory()
-            ->createModel('Langoverride', 'Administrator', ['ignore_request' => true]);
-
-        $this->overrideLanguages  = $model->getLanguages();
-        $this->overrideDefaultTag = Factory::getApplication()->getLanguage()->getTag();
-
-        if (!isset($this->overrideLanguages[$this->overrideDefaultTag])) {
-            $this->overrideDefaultTag = array_key_first($this->overrideLanguages);
-        }
-
-        $wa->registerAndUseScript(
-            'com_j2commerce.emailtemplate.subjectoverride',
-            'media/com_j2commerce/js/administrator/emailtemplate-subject-override.js',
-            [],
-            ['type' => 'module'],
-            ['joomla.dialog']
+        $this->prepareLangOverride(
+            $wa,
+            $this->subjectKey !== '' || str_contains((string) ($this->item->body ?? ''), '[LANG:')
         );
-
-        $this->getDocument()->addScriptOptions('com_j2commerce.subjectoverride', [
-            'baseUrl'  => 'index.php?option=com_j2commerce',
-            'token'    => Session::getFormToken(),
-            'adminTag' => $this->overrideDefaultTag,
-            // Core stores JSAVE as "Save &amp; Close" because it is normally echoed into HTML.
-            // The dialog sets its button labels with textContent, which would print the entity.
-            'saveLabel'  => html_entity_decode(Text::_('JSAVE'), \ENT_QUOTES, 'UTF-8'),
-            'closeLabel' => html_entity_decode(Text::_('JCLOSE'), \ENT_QUOTES, 'UTF-8'),
-        ]);
-
-        Text::script('COM_J2COMMERCE_EMAILTEMPLATE_SUBJECT_OVERRIDE_TITLE');
-        Text::script('COM_J2COMMERCE_EMAILTEMPLATE_SUBJECT_OVERRIDE_SAVED');
-        Text::script('COM_J2COMMERCE_EMAILTEMPLATE_SUBJECT_OVERRIDE_SAVE_FAILED');
-        Text::script('COM_J2COMMERCE_EMAILTEMPLATE_LANG_OVERRIDE_EDIT');
-    }
-
-    /**
-     * The wording each [LANG:KEY] token in the body resolves to, keyed by the bare key.
-     *
-     * Only what the canvas DISPLAYS. What a save writes is always the token, which is the thing
-     * every locale shares - one admin's reading of it is not.
-     *
-     * @return array<string, string>
-     */
-    private function collectBodyLangStrings(string $body): array
-    {
-        if (!preg_match_all('/\[LANG:([A-Z][A-Z0-9_]*)\]/', $body, $matches)) {
-            return [];
-        }
-
-        $strings = [];
-
-        foreach (array_unique($matches[1]) as $key) {
-            $strings[$key] = EmailHelper::resolveLangTokens('[LANG:' . $key . ']');
-        }
-
-        return $strings;
     }
 
     /**

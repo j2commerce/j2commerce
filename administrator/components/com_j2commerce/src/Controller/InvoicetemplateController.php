@@ -309,8 +309,9 @@ class InvoicetemplateController extends FormController
             return;
         }
 
-        $json['success'] = true;
-        $json['body']    = file_get_contents($filePath);
+        $json['success']     = true;
+        $json['body']        = file_get_contents($filePath);
+        $json['langStrings'] = EmailHelper::collectLangStrings($json['body']);
 
         $this->sendJson($json);
     }
