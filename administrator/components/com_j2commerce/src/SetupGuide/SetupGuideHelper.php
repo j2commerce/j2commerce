@@ -23,6 +23,7 @@ use J2Commerce\Component\J2commerce\Administrator\SetupGuide\Checks\CountriesChe
 use J2Commerce\Component\J2commerce\Administrator\SetupGuide\Checks\DownloadIdCheck;
 use J2Commerce\Component\J2commerce\Administrator\SetupGuide\Checks\FirstProductCheck;
 use J2Commerce\Component\J2commerce\Administrator\SetupGuide\Checks\MyProfilePageCheck;
+use J2Commerce\Component\J2commerce\Administrator\SetupGuide\Checks\OrderStatusTypeCheck;
 use J2Commerce\Component\J2commerce\Administrator\SetupGuide\Checks\PaymentMethodCheck;
 use J2Commerce\Component\J2commerce\Administrator\SetupGuide\Checks\ShippingMethodCheck;
 use J2Commerce\Component\J2commerce\Administrator\SetupGuide\Checks\StoreAddressCheck;
@@ -59,6 +60,7 @@ class SetupGuideHelper
         ShippingMethodCheck::class,
         TaxProfileCheck::class,
         CountriesCheck::class,
+        OrderStatusTypeCheck::class,
     ];
 
     /** @return SetupCheckInterface[] */
