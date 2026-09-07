@@ -172,18 +172,19 @@ class CoreTemplateSyncHelper
                 return [$exact, $wildcardFallback];
             },
             static fn (array $expected, string $content, string $bodyJson, ?string $subject, int $id): array => [
-                'email_type'     => $expected['email_type'],
-                'receiver_type'  => $expected['receiver_type'],
-                'orderstatus_id' => $expected['orderstatus_id'],
-                'group_id'       => $expected['group_id'],
-                'paymentmethod'  => $expected['paymentmethod'],
-                'subject'        => $subject ?? $expected['subject'],
-                'body'           => $content,
-                'body_json'      => $bodyJson,
-                'body_source'    => 'visual',
-                'language'       => '*',
-                'enabled'        => 1,
-                'ordering'       => $id,
+                'email_type'       => $expected['email_type'],
+                'receiver_type'    => $expected['receiver_type'],
+                'orderstatus_id'   => $expected['orderstatus_id'],
+                'group_id'         => $expected['group_id'],
+                'paymentmethod'    => $expected['paymentmethod'],
+                'subject'          => $subject ?? $expected['subject'],
+                'body'             => $content,
+                'body_json'        => $bodyJson,
+                'body_source'      => 'visual',
+                'body_source_file' => '',
+                'language'         => '*',
+                'enabled'          => 1,
+                'ordering'         => $id,
             ]
         );
 
@@ -238,17 +239,18 @@ class CoreTemplateSyncHelper
                 return [$exact];
             },
             static fn (array $expected, string $content, string $bodyJson, ?string $subject, int $id): array => [
-                'invoice_type'   => $expected['invoice_type'],
-                'title'          => $expected['title'],
-                'orderstatus_id' => $expected['orderstatus_id'],
-                'group_id'       => $expected['group_id'],
-                'paymentmethod'  => $expected['paymentmethod'],
-                'body'           => $content,
-                'body_json'      => $bodyJson,
-                'body_source'    => 'visual',
-                'language'       => '*',
-                'enabled'        => 1,
-                'ordering'       => $id,
+                'invoice_type'     => $expected['invoice_type'],
+                'title'            => $expected['title'],
+                'orderstatus_id'   => $expected['orderstatus_id'],
+                'group_id'         => $expected['group_id'],
+                'paymentmethod'    => $expected['paymentmethod'],
+                'body'             => $content,
+                'body_json'        => $bodyJson,
+                'body_source'      => 'visual',
+                'body_source_file' => '',
+                'language'         => '*',
+                'enabled'          => 1,
+                'ordering'         => $id,
             ]
         );
     }
