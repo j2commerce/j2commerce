@@ -141,6 +141,13 @@
                 <field type="spacer" />
 
                 <field
+                    name="webhook_url"
+                    type="webhookurl"
+                    addfieldprefix="J2Commerce\Plugin\J2Commerce\PaymentPaypal\Field"
+                    label="PLG_J2COMMERCE_PAYMENT_PAYPAL_WEBHOOK_URL"
+                    description="PLG_J2COMMERCE_PAYMENT_PAYPAL_WEBHOOK_URL_DESC"
+                />
+                <field
                     name="webhook_id"
                     type="text"
                     size="70"

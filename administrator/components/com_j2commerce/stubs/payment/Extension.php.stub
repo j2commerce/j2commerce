@@ -21,6 +21,9 @@ use Joomla\CMS\Layout\FileLayout;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\Router\Route;
+{{#if webhook}}
+use Joomla\CMS\Session\Session;
+{{/if}}
 use Joomla\Database\DatabaseAwareTrait;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Event\DispatcherInterface;
@@ -105,7 +108,7 @@ final class {{Type}}{{Name}} extends CMSPlugin implements SubscriberInterface
             'onJ2CommercePrePayment'        => 'onPrePayment',
             'onJ2CommercePostPayment'       => 'onPostPayment',
 {{#if webhook}}
-            'onJ2CommerceProcessWebhook'    => 'onProcessWebhook',
+            'onAjaxPayment_{{name}}'        => 'onAjaxHandler',
 {{/if}}
             'onJ2CommerceGetQuickIcons'     => 'onGetQuickIcons',
             'onJ2CommerceGetDashboardMessages' => 'onGetDashboardMessages',
@@ -206,26 +209,60 @@ final class {{Type}}{{Name}} extends CMSPlugin implements SubscriberInterface
     }
 
 {{#if webhook}}
-    public function onProcessWebhook(Event $event): void
+    /**
+     * AJAX entry point, routed by com_ajax as onAjax<ucfirst(plugin)>:
+     *   index.php?option=com_ajax&group=j2commerce&plugin={{element}}&format=raw&task=<task>
+     */
+    public function onAjaxHandler(Event $event): void
     {
-        $args = $event->getArguments();
-        $element = $args[0] ?? '';
+        $app = Factory::getApplication();
+        $task = $app->getInput()->getCmd('task', '');
 
-        if ($element !== $this->_name) {
+        // The webhook is a server-to-server POST: it carries no Joomla session and no form
+        // token, so it is answered before the session gates. Its authentication is the
+        // provider's own signature, verified inside the handler.
+        if ($task === 'webhook') {
+            $outcome = $this->handleWebhook();
+
+            $app->setHeader('status', (int) $outcome['status'], true);
+            $app->sendHeaders();
+
+            echo json_encode(['message' => $outcome['message']]);
+            $app->close();
+        }
+
+        $user = $app->getIdentity();
+
+        if (!$user || $user->guest) {
+            $event->setArgument('result', [['success' => false, 'error' => 'Not authenticated']]);
             return;
         }
 
+        if (!Session::checkToken('request')) {
+            $event->setArgument('result', [['success' => false, 'error' => Text::_('JINVALID_TOKEN')]]);
+            return;
+        }
+
+        // Authorize each task explicitly. A task name must never be the permission decision.
+        $event->setArgument('result', [['success' => false, 'error' => 'Unknown task']]);
+    }
+
+    /**
+     * @return array{status: int, message: string}
+     */
+    private function handleWebhook(): array
+    {
         $rawBody = file_get_contents('php://input');
 
-        if (!$rawBody) {
-            $event->setArgument('result', ['status' => 400, 'message' => 'No body']);
-            return;
+        if ($rawBody === false || $rawBody === '') {
+            return ['status' => 400, 'message' => 'No body'];
         }
 
-        // TODO: Implement webhook signature verification and event handling
-        // Reference: PayPal plugin's PayPalWebhooks service class
+        // TODO: Verify the provider signature over $rawBody with hash_equals() and refuse on
+        // mismatch, then hand the raw body to this plugin's webhook service.
+        // Reference: the PayPal plugin's PayPalWebhooks service class.
 
-        $event->setArgument('result', ['status' => 200, 'message' => 'Webhook received']);
+        return ['status' => 200, 'message' => 'Webhook received'];
     }
 {{/if}}
 

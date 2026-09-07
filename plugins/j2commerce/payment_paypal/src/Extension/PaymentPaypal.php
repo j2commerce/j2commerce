@@ -169,7 +169,6 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             'onJ2CommercePrePayment'                => 'onPrePayment',
             'onJ2CommercePostPayment'               => 'onPostPayment',
             'onJ2CommerceAfterPayment'              => ['onAfterPayment', -100],
-            'onJ2CommerceProcessWebhook'            => 'onProcessWebhook',
             'onJ2CommerceRefundPayment'             => 'onRefundPayment',
             'onJ2CommerceAfterSubscriptionCanceled' => 'onAfterSubscriptionCanceled',
             'onJ2CommerceProcessRenewalPayment'     => 'onProcessRenewalPayment',
@@ -338,49 +337,40 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
         $event->setArgument('result', $result);
     }
 
-    public function onProcessWebhook(Event $event): void
+    /**
+     * @return array{status: int, message: string}
+     */
+    private function handleWebhook(): array
     {
-        $args    = $event->getArguments();
-        $element = $args[0] ?? '';
-
-        if ($element !== $this->_name) {
-            return;
-        }
-
         $rawBody = file_get_contents('php://input');
 
-        if (!$rawBody) {
-            $event->setArgument('result', ['status' => 400, 'message' => 'No body']);
-            return;
+        if ($rawBody === false || $rawBody === '') {
+            return ['status' => 400, 'message' => 'No body'];
         }
 
-        $sandbox   = (bool) $this->params->get('sandbox', 0);
-        $webhookId = $sandbox
+        $webhookId = (bool) $this->params->get('sandbox', 0)
             ? $this->params->get('sandbox_webhook_id', '')
             : $this->params->get('webhook_id', '');
 
         if (empty($webhookId)) {
-            $event->setArgument('result', ['status' => 400, 'message' => 'Webhook ID not configured']);
-            return;
+            return ['status' => 400, 'message' => 'Webhook ID not configured'];
         }
 
         try {
             $webhooks = $this->getPayPalWebhooks();
 
             if (!$webhooks->verifySignature($rawBody)) {
-                $event->setArgument('result', ['status' => 401, 'message' => 'Invalid signature']);
-                return;
+                return ['status' => 401, 'message' => 'Invalid signature'];
             }
 
-            $result = $webhooks->handleEvent($rawBody, $this->params);
-            $event->setArgument('result', $result);
+            return $webhooks->handleEvent($rawBody, $this->params);
         } catch (\Exception $e) {
             Factory::getApplication()->getLogger()->error(
                 'PayPal webhook error: ' . $e->getMessage(),
                 ['category' => 'j2commerce.paypal']
             );
 
-            $event->setArgument('result', ['status' => 500, 'message' => 'Internal error']);
+            return ['status' => 500, 'message' => 'Internal error'];
         }
     }
 
@@ -2364,6 +2354,21 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
     {
         $app  = Factory::getApplication();
         $task = $app->getInput()->getCmd('task', '');
+
+        // The webhook is a server-to-server POST: it carries no Joomla session and no form
+        // token, so it is answered before the session gates. Its authentication is PayPal's
+        // own signature, verified inside the handler. The status is sent explicitly because
+        // com_ajax sets one only for a Throwable, and PayPal retries anything not 2xx.
+        if ($task === 'webhook') {
+            $outcome = $this->handleWebhook();
+
+            $app->setHeader('status', (int) $outcome['status'], true);
+            $app->sendHeaders();
+
+            echo json_encode(['message' => $outcome['message']]);
+            $app->close();
+        }
+
         $user = $app->getIdentity();
 
         if (!$user || $user->guest || !$user->authorise('core.admin')) {
