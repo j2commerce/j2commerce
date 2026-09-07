@@ -201,8 +201,12 @@ class VoucherModel extends AdminModel
     {
         $app = Factory::getApplication();
 
+        // Core signals Save as Copy by zeroing the primary key, so the request id must not restore it.
+        $isCopy    = $app->getInput()->get('task') === 'save2copy';
+        $requestId = $app->getInput()->getInt('id', 0);
+
         // Resolve existing-record identity from id only.
-        $data['id'] = (int) ($data['id'] ?? $app->getInput()->getInt('id', 0));
+        $data['id'] = $isCopy ? 0 : (int) ($data['id'] ?? $requestId);
 
         // Map Joomla id to table PK for persistence.
         if (empty($data['j2commerce_voucher_id']) && $data['id'] > 0) {
@@ -239,12 +243,11 @@ class VoucherModel extends AdminModel
         PluginHelper::importPlugin('content');
 
         // Alter the voucher code for save as copy
-        if ($app->getInput()->get('task') == 'save2copy') {
-            $origTable  = clone $this->getTable();
-            $originalId = (int) ($data['id'] ?? 0);
+        if ($isCopy) {
+            $origTable = clone $this->getTable();
 
-            if ($originalId > 0) {
-                $origTable->load($originalId);
+            if ($requestId > 0) {
+                $origTable->load($requestId);
             }
 
             if (!empty($origTable->voucher_code) && $data['voucher_code'] == $origTable->voucher_code) {
