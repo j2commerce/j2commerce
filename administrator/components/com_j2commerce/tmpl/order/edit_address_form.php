@@ -100,7 +100,9 @@ $zoneName = (string) ($orderInfo->{$type . '_zone_name'} ?? '');
             $skippedTypes = ['multiuploader', 'zone', 'customtext'];
 
             foreach (CustomFieldHelper::getOrderFields($type) as $namekey => $field) :
-                if (\in_array($field->field_type ?? '', $skippedTypes, true)) {
+                // Core definitions are already drawn as fixed inputs above, and both carry the
+                // same data-address-field, which admin-order-edit.js reads last-one-wins.
+                if ((int) ($field->field_core ?? 0) === 1 || \in_array($field->field_type ?? '', $skippedTypes, true)) {
                     continue;
                 }
 

@@ -1002,48 +1002,6 @@ class CustomFieldHelper
         return array_keys(self::getOrderFields($snapshot));
     }
 
-    /**
-     * Label/value pairs for the custom fields inside an order's all_billing,
-     * all_shipping or all_payment snapshot.
-     *
-     * Driven by the live field definitions rather than by "any key that is not a core
-     * column", so the address keys stored beside them (email, country_id, zone_id) never
-     * surface as pseudo custom fields.
-     */
-    public static function describeOrderFields(mixed $stored, string ...$areas): array
-    {
-        $values = self::decodeOrderSnapshot($stored);
-
-        if ($values === []) {
-            return [];
-        }
-
-        $rows = [];
-
-        foreach ($areas as $area) {
-            foreach (self::getFieldsByArea($area) as $field) {
-                $namekey = (string) $field->field_namekey;
-
-                if (isset($rows[$namekey]) || !\array_key_exists($namekey, $values)) {
-                    continue;
-                }
-
-                $value = self::formatStoredValue($field, $values[$namekey]);
-
-                if ($value === '') {
-                    continue;
-                }
-
-                $rows[$namekey] = [
-                    'label' => Text::_((string) ($field->field_name ?: $namekey)),
-                    'value' => $value,
-                ];
-            }
-        }
-
-        return array_values($rows);
-    }
-
     /** all_billing/all_shipping/all_payment reach callers as JSON, Registry or array. */
     public static function decodeOrderSnapshot(mixed $stored): array
     {
@@ -1069,51 +1027,6 @@ class CustomFieldHelper
         }
 
         return \is_array($decoded) ? $decoded : [];
-    }
-
-    /** One display string for a stored value, by field type. */
-    private static function formatStoredValue(object $field, mixed $value): string
-    {
-        $type = (string) ($field->field_type ?? '');
-
-        if ($type === 'checkbox') {
-            return Text::_(!empty($value) && $value !== '0' ? 'JYES' : 'JNO');
-        }
-
-        if (\is_array($value) || \is_object($value)) {
-            $value = self::joinScalars((array) $value);
-        }
-
-        $value = trim((string) $value);
-
-        if ($value === '' || $value === '[]') {
-            return '';
-        }
-
-        if ($type === 'multiuploader') {
-            $files = json_decode($value, true);
-
-            if (!\is_array($files)) {
-                return '';
-            }
-
-            return self::joinScalars(array_map(
-                static fn ($file): string => (string) (((array) $file)['name'] ?? ''),
-                $files
-            ));
-        }
-
-        // Several field types author their option values as language keys; Text::_()
-        // returns anything unmatched unchanged, so free text passes straight through.
-        return Text::_($value);
-    }
-
-    private static function joinScalars(array $values): string
-    {
-        return implode(', ', array_filter(
-            array_map(static fn ($v): string => \is_scalar($v) ? trim((string) $v) : '', $values),
-            'strlen'
-        ));
     }
 
     /**

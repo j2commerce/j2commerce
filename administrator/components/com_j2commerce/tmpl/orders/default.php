@@ -12,7 +12,6 @@ declare(strict_types=1);
 defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
-use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
@@ -36,13 +35,6 @@ $canEditState = $user->authorise('core.edit.state', 'com_j2commerce');
 $listOrder  = $this->escape($this->state->get('list.ordering'));
 $listDirn   = $this->escape($this->state->get('list.direction'));
 $dateFormat = ComponentHelper::getParams('com_j2commerce')->get('date_format', 'Y-m-d');
-
-// A store with no checkout fields defined gets no column at all, rather than one that
-// is blank on every row. Definitions are cached per request, so this costs one query.
-$orderCustomFieldAreas = array_filter(
-    array_keys(CustomFieldHelper::ORDER_AREAS),
-    static fn (string $snapshot): bool => CustomFieldHelper::getOrderFields($snapshot) !== []
-);
 ?>
 
 <?php echo $this->navbar; ?>
@@ -82,11 +74,6 @@ $orderCustomFieldAreas = array_filter(
                                 <th scope="col">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_CUSTOMER', 'oi.billing_last_name', $listDirn, $listOrder); ?>
                                 </th>
-                                <?php if ($orderCustomFieldAreas) : ?>
-                                <th scope="col" class="d-none d-xl-table-cell">
-                                    <?php echo Text::_('COM_J2COMMERCE_FIELDSET_ADDITIONAL_INFORMATION'); ?>
-                                </th>
-                                <?php endif; ?>
                                 <?php foreach ($this->pluginColumns as $pluginColumn) : ?>
                                 <th scope="col" class="<?php echo $this->escape($pluginColumn['class']); ?>">
                                     <?php if ($pluginColumn['ordering'] !== '') : ?>
@@ -200,18 +187,6 @@ $orderCustomFieldAreas = array_filter(
                                         </div>
                                     <?php endif; ?>
                                 </td>
-                                <?php if ($orderCustomFieldAreas) : ?>
-                                <td class="d-none d-xl-table-cell">
-                                    <?php foreach ($orderCustomFieldAreas as $snapshot) : ?>
-                                        <?php foreach (CustomFieldHelper::describeOrderFields($item->{'all_' . $snapshot} ?? null, ...CustomFieldHelper::ORDER_AREAS[$snapshot]) as $customField) : ?>
-                                            <div class="small text-break">
-                                                <span class="text-body-secondary"><?php echo $this->escape($customField['label']); ?>:</span>
-                                                <?php echo $this->escape($customField['value']); ?>
-                                            </div>
-                                        <?php endforeach; ?>
-                                    <?php endforeach; ?>
-                                </td>
-                                <?php endif; ?>
                                 <?php foreach ($this->pluginColumns as $pluginColumn) : ?>
                                 <td class="<?php echo $this->escape($pluginColumn['class']); ?>">
                                     <?php echo J2CommerceHelper::plugin()->eventWithHtml('RenderOrderListColumn', ['column' => $pluginColumn, 'item' => $item])->getArgument('html', ''); ?>
