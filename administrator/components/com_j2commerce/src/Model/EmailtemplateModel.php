@@ -474,33 +474,13 @@ class EmailtemplateModel extends AdminModel
      */
     public function getAvailableShortcodes()
     {
-        // Try to get shortcodes from MessageHelper if available, otherwise return basic set
-        if (class_exists('J2Commerce\Component\J2commerce\Administrator\Helper\MessageHelper')) {
-            try {
-                return MessageHelper::getMessageTags();
-            } catch (\Exception $e) {
-                // Fall back to basic shortcodes if MessageHelper fails
-            }
+        // The picker must only ever offer tags EmailHelper substitutes, so this is the one
+        // source: an empty list is correct when it cannot be read.
+        try {
+            return MessageHelper::getMessageTags();
+        } catch (\Exception $e) {
+            return [];
         }
-
-        // Basic shortcode set for email templates
-        return [
-            '{order_id}'         => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_ORDER_ID'),
-            '{order_date}'       => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_ORDER_DATE'),
-            '{customer_name}'    => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_CUSTOMER_NAME'),
-            '{customer_email}'   => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_CUSTOMER_EMAIL'),
-            '{order_total}'      => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_ORDER_TOTAL'),
-            '{order_items}'      => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_ORDER_ITEMS'),
-            '{billing_address}'  => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_BILLING_ADDRESS'),
-            '{shipping_address}' => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_SHIPPING_ADDRESS'),
-            '{payment_method}'   => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_PAYMENT_METHOD'),
-            '{shipping_method}'  => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_SHIPPING_METHOD'),
-            '{store_name}'       => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_STORE_NAME'),
-            '{store_url}'        => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_STORE_URL'),
-            '{site_name}'        => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_SITE_NAME'),
-            '{current_date}'     => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_CURRENT_DATE'),
-            '{current_time}'     => Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_CURRENT_TIME'),
-        ];
     }
 
 

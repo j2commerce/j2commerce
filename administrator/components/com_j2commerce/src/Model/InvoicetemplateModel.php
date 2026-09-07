@@ -429,21 +429,7 @@ class InvoicetemplateModel extends AdminModel
      */
     public function getAvailableShortcodes()
     {
-        $shortcodes = MessageHelper::getMessageTags();
-
-        return $shortcodes;
-        /*return [
-            'SITE_NAME', 'SITE_URL', 'CURRENT_DATE', 'CURRENT_TIME',
-            'CUSTOMER_NAME', 'CUSTOMER_EMAIL', 'CUSTOMER_PHONE',
-            'BILLING_ADDRESS', 'SHIPPING_ADDRESS',
-            'ORDER_ID', 'ORDER_DATE', 'ORDER_TOTAL', 'ORDER_SUBTOTAL',
-            'ORDER_TAX', 'ORDER_SHIPPING', 'ORDER_DISCOUNT',
-            'INVOICE_NUMBER', 'INVOICE_DATE', 'DUE_DATE',
-            'PAYMENT_METHOD', 'ORDER_STATUS',
-            'ORDER_ITEMS_TABLE', 'TAX_BREAKDOWN',
-            'COMPANY_NAME', 'COMPANY_ADDRESS', 'COMPANY_PHONE',
-            'COMPANY_EMAIL', 'COMPANY_VAT', 'COMPANY_LOGO'
-        ];*/
+        return MessageHelper::getMessageTags();
     }
 
 

@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Service;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\MessageHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\Database\DatabaseInterface;
@@ -69,6 +70,14 @@ class EmailTypeRegistry
     protected bool $pluginsLoaded = false;
 
     /**
+     * Request-level cache for the derived core tags.
+     *
+     * @var    array|null
+     * @since  6.1.0
+     */
+    protected static ?array $coreTagsCache = null;
+
+    /**
      * Constructor.
      *
      * @param   DatabaseInterface  $db  The database instance.
@@ -112,7 +121,7 @@ class EmailTypeRegistry
     }
 
     /**
-     * Get core transactional email tags.
+     * Core transactional tags, derived from the substitution map so the two cannot drift.
      *
      * @return  array
      *
@@ -120,93 +129,23 @@ class EmailTypeRegistry
      */
     protected function getCoreTags(): array
     {
-        return [
-            'ORDER_ID' => [
-                'label'       => 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_ORDERID',
-                'description' => 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_ORDERID_DESC',
-                'group'       => 'order',
-            ],
-            'ORDER_DATE' => [
-                'label'       => 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_ORDERDATE',
-                'description' => 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_ORDERDATE_DESC',
-                'group'       => 'order',
-            ],
-            'ORDER_STATUS' => [
-                'label'       => 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_ORDERSTATUS',
-                'description' => 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_ORDERSTATUS_DESC',
-                'group'       => 'order',
-            ],
-            'ORDER_TOTAL' => [
-                'label'       => 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_ORDERAMOUNT',
-                'description' => 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_ORDERAMOUNT_DESC',
-                'group'       => 'order',
-            ],
-            'ORDER_SUBTOTAL' => [
-                'label'       => 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_SUBTOTAL',
-                'description' => 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_SUBTOTAL_DESC',
-                'group'       => 'order',
-            ],
-            'ORDER_TAX' => [
-                'label'       => 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_TAX_AMOUNT',
-                'description' => 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_TAX_AMOUNT_DESC',
-                'group'       => 'order',
-            ],
-            'ORDER_SHIPPING' => [
-                'label'       => 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_SHIPPING_AMOUNT',
-                'description' => 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_SHIPPING_AMOUNT_DESC',
-                'group'       => 'order',
-            ],
-            'ORDER_DISCOUNT' => [
-                'label'       => 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_DISCOUNT_AMOUNT',
-                'description' => 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_DISCOUNT_AMOUNT_DESC',
-                'group'       => 'order',
-            ],
-            'ORDER_ITEMS' => [
-                'label'       => 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_ITEMS',
-                'description' => 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_ITEMS_DESC',
-                'group'       => 'order',
-            ],
-            'CUSTOMER_NAME' => [
-                'label'       => 'COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_CUSTOMER_NAME',
-                'description' => 'COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_CUSTOMER_NAME_DESC',
-                'group'       => 'customer',
-            ],
-            'CUSTOMER_EMAIL' => [
-                'label'       => 'COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_CUSTOMER_EMAIL',
-                'description' => 'COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_CUSTOMER_EMAIL_DESC',
-                'group'       => 'customer',
-            ],
-            'BILLING_ADDRESS' => [
-                'label'       => 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_BILLING_ADDRESS',
-                'description' => 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_BILLING_ADDRESS_DESC',
-                'group'       => 'customer',
-            ],
-            'SHIPPING_ADDRESS' => [
-                'label'       => 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_SHIPPING_ADDRESS',
-                'description' => 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_SHIPPING_ADDRESS_DESC',
-                'group'       => 'customer',
-            ],
-            'PAYMENT_METHOD' => [
-                'label'       => 'COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_PAYMENT_METHOD',
-                'description' => 'COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_PAYMENT_METHOD_DESC',
-                'group'       => 'payment',
-            ],
-            'SHIPPING_METHOD' => [
-                'label'       => 'COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_SHIPPING_METHOD',
-                'description' => 'COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_SHIPPING_METHOD_DESC',
-                'group'       => 'shipping',
-            ],
-            'SITE_NAME' => [
-                'label'       => 'COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_SITE_NAME',
-                'description' => 'COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_SITE_NAME_DESC',
-                'group'       => 'store',
-            ],
-            'SITE_URL' => [
-                'label'       => 'COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_STORE_URL',
-                'description' => 'COM_J2COMMERCE_EMAILTEMPLATE_SHORTCODE_STORE_URL_DESC',
-                'group'       => 'store',
-            ],
-        ];
+        if (self::$coreTagsCache !== null) {
+            return self::$coreTagsCache;
+        }
+
+        $tags = [];
+
+        foreach (MessageHelper::getMessageTags() as $group => $groupTags) {
+            foreach ($groupTags as $tag => $label) {
+                $tags[trim($tag, '[]')] = [
+                    'label'       => $label,
+                    'description' => $label,
+                    'group'       => $group,
+                ];
+            }
+        }
+
+        return self::$coreTagsCache = $tags;
     }
 
     /**
