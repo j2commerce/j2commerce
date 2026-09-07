@@ -364,7 +364,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             }
 
             return $webhooks->handleEvent($rawBody, $this->params);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Factory::getApplication()->getLogger()->error(
                 'PayPal webhook error: ' . $e->getMessage(),
                 ['category' => 'j2commerce.paypal']
@@ -854,9 +854,12 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_INVALID_REQUEST')];
             }
 
-            // Only an order still awaiting payment may be completed: New(5), Pending(4)
-            // or Failed(3, retry). A settled, cancelled or refunded order cannot be flipped.
-            if (!\in_array((int) $orderTable->order_state_id, [3, 4, 5], true) || (float) ($orderTable->order_refund ?? 0) > 0) {
+            // Only an order still awaiting payment may be completed. A settled, cancelled or
+            // refunded order cannot be flipped.
+            if (
+                !PayPalOrderStates::isAwaitingPayment((int) $orderTable->order_state_id, $this->params, $this->getDatabase())
+                || (float) ($orderTable->order_refund ?? 0) > 0
+            ) {
                 $this->log('completeNvpExpressCheckoutForOrder: order not in a completable state - order_id: ' . $orderIdString . ', state: ' . $orderTable->order_state_id, Log::ERROR);
                 return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_INVALID_REQUEST')];
             }
@@ -926,7 +929,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 ];
             }
 
-            $confirmedStateId = (int) $this->params->get('payment_status', 1);
+            $confirmedStateId = PayPalOrderStates::resolve($this->params, $this->getDatabase(), PayPalOrderStates::CONFIRMED);
 
             $details                          = json_decode((string) ($orderTable->transaction_details ?? '{}'), true) ?: [];
             $details['billing_agreement_id']  = $baid;
@@ -1099,7 +1102,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             $orderTable->transaction_id      = $transactionId;
             $orderTable->transaction_status  = 'Completed';
             $orderTable->orderpayment_type   = $this->_name;
-            $orderTable->order_state_id      = (int) $this->params->get('payment_status', 1);
+            $orderTable->order_state_id      = PayPalOrderStates::resolve($this->params, $this->getDatabase(), PayPalOrderStates::CONFIRMED);
             $orderTable->transaction_details = json_encode([
                 'transaction_id' => $transactionId,
                 'paymentinfo'    => $nvpResponse['PAYMENTINFO_0_TRANSACTIONID'] ?? null,
@@ -1647,9 +1650,12 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_INVALID_REQUEST')];
             }
 
-            // Only an order still awaiting payment may be finalized: New(5), Pending(4)
-            // or Failed(3, retry). A settled, cancelled or refunded order cannot be flipped.
-            if (!\in_array((int) $orderTable->order_state_id, [3, 4, 5], true) || (float) ($orderTable->order_refund ?? 0) > 0) {
+            // Only an order still awaiting payment may be finalized. A settled, cancelled or
+            // refunded order cannot be flipped.
+            if (
+                !PayPalOrderStates::isAwaitingPayment((int) $orderTable->order_state_id, $this->params, $this->getDatabase())
+                || (float) ($orderTable->order_refund ?? 0) > 0
+            ) {
                 $this->log('finalizePayPalSubscriptionApproval: order not in a finalizable state - order_id: ' . $orderIdString . ', state: ' . $orderTable->order_state_id, Log::ERROR);
                 return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_INVALID_REQUEST')];
             }
@@ -2041,9 +2047,12 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_INVALID_REQUEST')];
             }
 
-            // Only an order still awaiting payment may be captured: New(5), Pending(4)
-            // or Failed(3, retry). A settled, cancelled or refunded order cannot be flipped.
-            if (!\in_array((int) $orderTable->order_state_id, [3, 4, 5], true) || (float) ($orderTable->order_refund ?? 0) > 0) {
+            // Only an order still awaiting payment may be captured. A settled, cancelled or
+            // refunded order cannot be flipped.
+            if (
+                !PayPalOrderStates::isAwaitingPayment((int) $orderTable->order_state_id, $this->params, $this->getDatabase())
+                || (float) ($orderTable->order_refund ?? 0) > 0
+            ) {
                 $this->log('capturePayPalOrder: Order not in a capturable state - order_id: ' . $orderId . ', state: ' . $orderTable->order_state_id, Log::ERROR);
                 return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_INVALID_REQUEST')];
             }
@@ -2101,7 +2110,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
 
                 $this->log('capturePayPalOrder: Capture successful - capture_id: ' . $captureId . ', status: ' . $captureStatus);
 
-                $orderStateId                   = (int) $this->params->get('payment_status', 4);
+                $orderStateId                   = PayPalOrderStates::resolve($this->params, $this->getDatabase(), PayPalOrderStates::CONFIRMED);
                 $orderTable->order_state_id     = $orderStateId;
                 $orderTable->transaction_id     = $captureId;
                 $orderTable->transaction_status = $captureStatus;

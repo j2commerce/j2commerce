@@ -243,7 +243,19 @@ final class {{Type}}{{Name}} extends CMSPlugin implements SubscriberInterface
             return;
         }
 
-        // Authorize each task explicitly. A task name must never be the permission decision.
+        // Authorize each task explicitly against an allow-list. A task name must never be the
+        // permission decision, and a token proves only that the form was ours, never who sent
+        // it -- the three gates are independent. Add each task and the right it needs here.
+        $permissions = [
+            // 'refund' => 'core.edit',
+        ];
+
+        if (!isset($permissions[$task]) || !$user->authorise($permissions[$task], 'com_j2commerce')) {
+            $event->setArgument('result', [['success' => false, 'error' => Text::_('JERROR_ALERTNOAUTHOR')]]);
+            return;
+        }
+
+        // TODO: dispatch the authorized task here.
         $event->setArgument('result', [['success' => false, 'error' => 'Unknown task']]);
     }
 
@@ -258,11 +270,19 @@ final class {{Type}}{{Name}} extends CMSPlugin implements SubscriberInterface
             return ['status' => 400, 'message' => 'No body'];
         }
 
-        // TODO: Verify the provider signature over $rawBody with hash_equals() and refuse on
-        // mismatch, then hand the raw body to this plugin's webhook service.
+        // TODO: implement, in this order:
+        //  1. Verify the provider signature over $rawBody with hash_equals() and refuse on
+        //     mismatch. A signature is the only authentication this endpoint has.
+        //  2. Re-fetch the transaction from the provider by its id. The body says what a
+        //     caller claims happened; the provider says what did.
+        //  3. Bind the event to the local order -- match the stored gateway id, and compare
+        //     amount AND currency -- before writing any paid state.
         // Reference: the PayPal plugin's PayPalWebhooks service class.
-
-        return ['status' => 200, 'message' => 'Webhook received'];
+        //
+        // Until then this answers 501 rather than 200. A 200 tells the provider the delivery
+        // succeeded, so its dashboard reads healthy while nothing has been verified and every
+        // event is discarded; a 501 is visible on the first callback.
+        return ['status' => 501, 'message' => 'Not implemented'];
     }
 {{/if}}
 

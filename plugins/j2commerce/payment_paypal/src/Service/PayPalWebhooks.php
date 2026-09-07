@@ -24,6 +24,11 @@ use Joomla\Registry\Registry;
 
 final class PayPalWebhooks
 {
+    /** Ledger of handled webhook event ids, kept in the generic metafields store. */
+    private const EVENT_NAMESPACE = 'paypal';
+    private const EVENT_RESOURCE  = 'paypal_webhook_events';
+    private const EVENT_METAKEY   = 'webhook_event_id';
+
     public function __construct(
         private PayPalClient $client,
         private string $webhookId,
@@ -88,6 +93,12 @@ final class PayPalWebhooks
                 'BILLING.SUBSCRIPTION.PAYMENT.FAILED' => $this->handleSubscriptionRenewalFailed($event),
                 default                               => ['status' => 200, 'message' => 'Event type not handled: ' . $event['event_type']],
             };
+
+            if ($eventId !== '' && $result['status'] >= 200 && $result['status'] < 300) {
+                // Recorded only on a 2xx: PayPal retries anything else, and a claim taken
+                // before the handler ran would answer that retry "already processed".
+                $this->recordProcessedEvent($eventId);
+            }
 
             return $result;
         } catch (\Throwable $e) {
@@ -296,16 +307,107 @@ final class PayPalWebhooks
 
     public function isAlreadyProcessed(string $eventId): bool
     {
+        if ($eventId === '') {
+            return false;
+        }
+
+        $namespace = self::EVENT_NAMESPACE;
+        $resource  = self::EVENT_RESOURCE;
+        $metakey   = self::EVENT_METAKEY;
+
+        $query = $this->db->getQuery(true)
+            ->select('COUNT(*)')
+            ->from($this->db->quoteName('#__j2commerce_metafields'))
+            ->where($this->db->quoteName('namespace') . ' = :ns')
+            ->where($this->db->quoteName('owner_resource') . ' = :res')
+            ->where($this->db->quoteName('metakey') . ' = :metakey')
+            ->where($this->db->quoteName('metavalue') . ' = :event_id')
+            ->bind(':ns', $namespace)
+            ->bind(':res', $resource)
+            ->bind(':metakey', $metakey)
+            ->bind(':event_id', $eventId);
+
+        if ((int) $this->db->setQuery($query)->loadResult() > 0) {
+            return true;
+        }
+
+        // Capture-completed also stamps the id onto the order itself, and did so before this
+        // ledger existed, so an order still carrying it counts as handled.
         $likePattern = '%"webhook_event_id":"' . addcslashes($eventId, '%_\\') . '"%';
 
-        $query = $this->db->getQuery(true);
-        $query->select('COUNT(*)')
+        $query = $this->db->getQuery(true)
+            ->select('COUNT(*)')
             ->from($this->db->quoteName('#__j2commerce_orders'))
             ->where($this->db->quoteName('transaction_details') . ' LIKE :event_id')
             ->bind(':event_id', $likePattern);
 
-        $this->db->setQuery($query);
-        return (int) $this->db->loadResult() > 0;
+        return (int) $this->db->setQuery($query)->loadResult() > 0;
+    }
+
+    /**
+     * Ledger an event id so a redelivery is recognised whatever branch handled it. Only
+     * handleCaptureCompleted() used to write one, which left every subscription branch
+     * un-deduped: a redelivered renewal advanced the billing cycle a second time.
+     */
+    private function recordProcessedEvent(string $eventId): void
+    {
+        $namespace = self::EVENT_NAMESPACE;
+        $resource  = self::EVENT_RESOURCE;
+        $metakey   = self::EVENT_METAKEY;
+        $valuetype = 'string';
+        $scope     = '';
+        $desc      = '';
+        $now       = date('Y-m-d H:i:s');
+
+        $query = $this->db->getQuery(true)
+            ->insert($this->db->quoteName('#__j2commerce_metafields'))
+            ->columns($this->db->quoteName([
+                'metakey', 'namespace', 'scope', 'metavalue', 'valuetype',
+                'description', 'owner_id', 'owner_resource', 'created_at', 'updated_at',
+            ]))
+            ->values(':metakey, :ns, :scope, :event_id, :vtype, :desc, 0, :res, :created, :updated')
+            ->bind(':metakey', $metakey)
+            ->bind(':ns', $namespace)
+            ->bind(':scope', $scope)
+            ->bind(':event_id', $eventId)
+            ->bind(':vtype', $valuetype)
+            ->bind(':desc', $desc)
+            ->bind(':res', $resource)
+            ->bind(':created', $now)
+            ->bind(':updated', $now);
+
+        $this->db->setQuery($query)->execute();
+
+        $this->pruneProcessedEvents();
+    }
+
+    /**
+     * One row per delivery, so the ledger is trimmed to a window comfortably wider than
+     * PayPal's retry schedule. Anything older than that can no longer be redelivered.
+     *
+     * Run on a fraction of deliveries: created_at carries no index, so a sweep on every
+     * callback would put a scan of the whole metafields table on the webhook's own request.
+     */
+    private function pruneProcessedEvents(): void
+    {
+        if (random_int(1, 100) !== 1) {
+            return;
+        }
+
+        $namespace = self::EVENT_NAMESPACE;
+        $resource  = self::EVENT_RESOURCE;
+        $cutoff    = date('Y-m-d H:i:s', strtotime('-90 days'));
+
+        $query = $this->db->getQuery(true)
+            ->delete($this->db->quoteName('#__j2commerce_metafields'))
+            ->where($this->db->quoteName('namespace') . ' = :ns')
+            ->where($this->db->quoteName('owner_resource') . ' = :res')
+            ->where($this->db->quoteName('created_at') . ' < :cutoff')
+            ->bind(':ns', $namespace)
+            ->bind(':res', $resource)
+            ->bind(':cutoff', $cutoff);
+
+        $this->db->setQuery($query)->execute();
     }
 
     /**
@@ -345,10 +447,12 @@ final class PayPalWebhooks
             return ['status' => 400, 'message' => 'PayPal order id not bound to local order'];
         }
 
-        // Prior-state guard: only an order still awaiting payment — Failed(3), Pending(4)
-        // or New(5) — may be captured; a settled, cancelled or refunded one cannot be flipped.
-        // Matches capturePayPalOrder(); status ids are the same install-independent core rows.
-        if (!\in_array((int) $orderTable->order_state_id, [3, 4, 5], true) || (float) ($orderTable->order_refund ?? 0) > 0) {
+        // Prior-state guard: only an order still awaiting payment may be captured; a settled,
+        // cancelled or refunded one cannot be flipped. Matches capturePayPalOrder().
+        if (
+            !PayPalOrderStates::isAwaitingPayment((int) $orderTable->order_state_id, $params, $this->db)
+            || (float) ($orderTable->order_refund ?? 0) > 0
+        ) {
             return ['status' => 409, 'message' => 'Order not in a capturable state'];
         }
 
