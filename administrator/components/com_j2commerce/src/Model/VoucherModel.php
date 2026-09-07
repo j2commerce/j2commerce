@@ -201,6 +201,12 @@ class VoucherModel extends AdminModel
     {
         $app = Factory::getApplication();
 
+        // CONTRACT: this method reads the request task to decide insert vs update, so its two
+        // callers own that decision — FormController::save() ('save', 'apply', 'save2new',
+        // 'save2copy') and ApiController::save() ('add', 'edit'). A task name not listed here
+        // takes the update branch. A new controller registering an 'add' task would inherit the
+        // insert branch silently, so extend this block rather than adding a task beside it.
+        //
         // Core signals Save as Copy by zeroing the primary key, so the request id must not restore it.
         // The API create task reaches save() with the key already null for the same reason, and the
         // request id is a query string there rather than a route var, so it gets the same treatment.

@@ -18,6 +18,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Table\Table;
 use Joomla\Database\DatabaseDriver;
+use Joomla\Database\ParameterType;
 
 /**
  * Voucher table class.
@@ -46,6 +47,14 @@ class VoucherTable extends Table
         // Validate voucher code
         if (empty($this->voucher_code)) {
             $this->setError(Text::sprintf('COM_J2COMMERCE_ERR_FIELD_REQUIRED', Text::_('COM_J2COMMERCE_FIELD_VOUCHER_CODE')));
+            return false;
+        }
+
+        // The voucher_code UNIQUE index stays the terminal guard; this reports the collision the
+        // way OptionTable and FiltergroupTable already report theirs, instead of letting the
+        // driver's message reach the merchant through JLIB_APPLICATION_ERROR_SAVE_FAILED.
+        if (!$this->isVoucherCodeAvailable()) {
+            $this->setError(Text::_('COM_J2COMMERCE_ERR_VOUCHER_CODE_EXISTS'));
             return false;
         }
 
@@ -130,5 +139,32 @@ class VoucherTable extends Table
 
         // Force update nulls to true so NULL values are actually stored
         return parent::store(true);
+    }
+
+    /** False when another row already holds this code. Mirrors OptionTable::validateUniqueAlias(). */
+    protected function isVoucherCodeAvailable(): bool
+    {
+        $code = (string) $this->voucher_code;
+        $id   = (int) $this->j2commerce_voucher_id;
+
+        $db    = $this->getDbo();
+        $query = $db->getQuery(true)
+            ->select('COUNT(*)')
+            ->from($db->quoteName('#__j2commerce_vouchers'))
+            ->where($db->quoteName('voucher_code') . ' = :code')
+            ->bind(':code', $code, ParameterType::STRING);
+
+        if ($id > 0) {
+            $query->where($db->quoteName('j2commerce_voucher_id') . ' != :id')
+                ->bind(':id', $id, ParameterType::INTEGER);
+        }
+
+        $db->setQuery($query);
+
+        try {
+            return (int) $db->loadResult() === 0;
+        } catch (\RuntimeException $e) {
+            return false;
+        }
     }
 }
