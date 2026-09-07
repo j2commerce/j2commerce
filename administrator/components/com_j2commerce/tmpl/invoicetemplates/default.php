@@ -176,7 +176,7 @@ $isMultilang = Multilanguage::isEnabled();
                                         </div>
                                     </th>
                                     <td class="d-none d-md-table-cell">
-                                        <?php echo Text::_('COM_J2COMMERCE_INVOICETEMPLATE_TYPE_' . strtoupper($item->invoice_type)); ?>
+                                        <?php echo $this->escape(Text::_('COM_J2COMMERCE_INVOICETEMPLATE_TYPE_' . strtoupper($item->invoice_type))); ?>
                                     </td>
                                     <td class="d-none d-lg-table-cell">
                                         <?php if ($item->language === '*') : ?>
@@ -203,7 +203,7 @@ $isMultilang = Multilanguage::isEnabled();
                                         <?php if ($item->paymentmethod === '*') : ?>
                                             <?php echo Text::_('JALL'); ?>
                                         <?php else : ?>
-                                            <?php echo Text::_($item->paymentmethod); ?>
+                                            <?php echo $this->escape(Text::_($item->paymentmethod)); ?>
                                         <?php endif; ?>
                                     </td>
                                     <td class="d-none d-lg-table-cell">

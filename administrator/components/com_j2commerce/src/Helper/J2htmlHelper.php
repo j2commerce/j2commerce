@@ -49,7 +49,11 @@ class J2htmlHelper
 
     /**
      * Same markup as jgrid.checkedout, with the tooltip timestamp rendered
-     * in the component's configured date and time format.
+     * in the component's configured date and time format. The escape-then-
+     * html_entity_decode pair below is copied verbatim from core
+     * JGrid::checkedout() (libraries/src/HTML/Helpers/JGrid.php) and is kept
+     * deliberately, so this helper stays in step with core. Change it here
+     * only, never at a call site.
      */
     public static function checkedOut(int $i, ?string $editorName, ?string $time, string $prefix = '', bool $enabled = false): string
     {
