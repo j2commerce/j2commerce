@@ -2550,13 +2550,14 @@ class EmailHelper
     }
 
     /**
-     * Encodes the tag delimiters in an already-escaped value. htmlspecialchars() leaves [ and ]
-     * alone, and every pass that runs after a value is in $text reads them, so a value carrying
-     * either one would be taken for template syntax. Encoded, it still displays as typed.
+     * Encodes the tag delimiters in an already-escaped value. htmlspecialchars() leaves [ ] { }
+     * alone, and every pass that runs after a value is in $text reads them - processTags()
+     * normalises {TAG} into [TAG] before the substitution passes - so a value carrying either
+     * family would be taken for template syntax. Encoded, it still displays as typed.
      */
     private static function encodeTagDelimiters(string $value): string
     {
-        return str_replace(['[', ']'], ['&#91;', '&#93;'], $value);
+        return str_replace(['[', ']', '{', '}'], ['&#91;', '&#93;', '&#123;', '&#125;'], $value);
     }
 
     /**
