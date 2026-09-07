@@ -16,7 +16,6 @@
 -- at fixed word offsets 3 and 4, and splitSql() splits on `;` only, so a comma-chained clause list
 -- would collapse into a single change item of which only the first clause is ever checked.
 
-ALTER TABLE `#__j2commerce_emailtemplates` ADD COLUMN `access` int UNSIGNED NOT NULL DEFAULT '0' /** CAN FAIL **/;
 ALTER TABLE `#__j2commerce_emailtemplates` ADD COLUMN `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP /** CAN FAIL **/;
 ALTER TABLE `#__j2commerce_emailtemplates` ADD COLUMN `created_by` int UNSIGNED NOT NULL DEFAULT '0' /** CAN FAIL **/;
 ALTER TABLE `#__j2commerce_emailtemplates` ADD COLUMN `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP /** CAN FAIL **/;
@@ -24,11 +23,9 @@ ALTER TABLE `#__j2commerce_emailtemplates` ADD COLUMN `modified_by` int UNSIGNED
 ALTER TABLE `#__j2commerce_emailtemplates` ADD COLUMN `checked_out` int UNSIGNED DEFAULT NULL /** CAN FAIL **/;
 ALTER TABLE `#__j2commerce_emailtemplates` ADD COLUMN `checked_out_time` datetime DEFAULT NULL /** CAN FAIL **/;
 
-ALTER TABLE `#__j2commerce_emailtemplates` ADD KEY `idx_access` (`access`) /** CAN FAIL **/;
 ALTER TABLE `#__j2commerce_emailtemplates` ADD KEY `idx_checkout` (`checked_out`) /** CAN FAIL **/;
 ALTER TABLE `#__j2commerce_emailtemplates` ADD KEY `idx_createdby` (`created_by`) /** CAN FAIL **/;
 
-ALTER TABLE `#__j2commerce_invoicetemplates` ADD COLUMN `access` int UNSIGNED NOT NULL DEFAULT '0' /** CAN FAIL **/;
 ALTER TABLE `#__j2commerce_invoicetemplates` ADD COLUMN `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP /** CAN FAIL **/;
 ALTER TABLE `#__j2commerce_invoicetemplates` ADD COLUMN `created_by` int UNSIGNED NOT NULL DEFAULT '0' /** CAN FAIL **/;
 ALTER TABLE `#__j2commerce_invoicetemplates` ADD COLUMN `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP /** CAN FAIL **/;
@@ -36,6 +33,5 @@ ALTER TABLE `#__j2commerce_invoicetemplates` ADD COLUMN `modified_by` int UNSIGN
 ALTER TABLE `#__j2commerce_invoicetemplates` ADD COLUMN `checked_out` int UNSIGNED DEFAULT NULL /** CAN FAIL **/;
 ALTER TABLE `#__j2commerce_invoicetemplates` ADD COLUMN `checked_out_time` datetime DEFAULT NULL /** CAN FAIL **/;
 
-ALTER TABLE `#__j2commerce_invoicetemplates` ADD KEY `idx_access` (`access`) /** CAN FAIL **/;
 ALTER TABLE `#__j2commerce_invoicetemplates` ADD KEY `idx_checkout` (`checked_out`) /** CAN FAIL **/;
 ALTER TABLE `#__j2commerce_invoicetemplates` ADD KEY `idx_createdby` (`created_by`) /** CAN FAIL **/;

@@ -314,7 +314,6 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_emailtemplates` (
   `enabled` tinyint NOT NULL DEFAULT 0,
   `is_default` tinyint NOT NULL DEFAULT 0,
   `ordering` int NOT NULL DEFAULT 0,
-  `access` int UNSIGNED NOT NULL DEFAULT '0',
   `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `created_by` int UNSIGNED NOT NULL DEFAULT '0',
   `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -323,7 +322,6 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_emailtemplates` (
   `checked_out_time` datetime DEFAULT NULL,
   PRIMARY KEY (`j2commerce_emailtemplate_id`),
   KEY `idx_email_type` (`email_type`),
-  KEY `idx_access` (`access`),
   KEY `idx_checkout` (`checked_out`),
   KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -501,7 +499,6 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_invoicetemplates` (
   `language` varchar(10) NOT NULL DEFAULT '*',
   `enabled` tinyint NOT NULL DEFAULT 0,
   `ordering` int NOT NULL DEFAULT 0,
-  `access` int UNSIGNED NOT NULL DEFAULT '0',
   `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `created_by` int UNSIGNED NOT NULL DEFAULT '0',
   `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -509,7 +506,6 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_invoicetemplates` (
   `checked_out` int UNSIGNED DEFAULT NULL,
   `checked_out_time` datetime DEFAULT NULL,
   PRIMARY KEY (`j2commerce_invoicetemplate_id`),
-  KEY `idx_access` (`access`),
   KEY `idx_checkout` (`checked_out`),
   KEY `idx_createdby` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

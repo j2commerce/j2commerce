@@ -132,6 +132,11 @@ class InvoicetemplatesModel extends ListModel
         );
         $query->from($db->quoteName('#__j2commerce_invoicetemplates', 'a'));
 
+        // Join to users table to get editor name for checked out records
+        $query->select($db->quoteName('uc.name', 'editor'))
+            ->join('LEFT', $db->quoteName('#__users', 'uc') . ' ON ' .
+                $db->quoteName('uc.id') . ' = ' . $db->quoteName('a.checked_out'));
+
         // Filter by enabled state
         $enabled = (string) $this->getState('filter.enabled');
 

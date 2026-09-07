@@ -167,6 +167,7 @@ class HtmlView extends BaseHtmlView
                 if ($canDo->get('core.edit.state')) {
                     $childBar->publish('invoicetemplates.publish')->listCheck(true);
                     $childBar->unpublish('invoicetemplates.unpublish')->listCheck(true);
+                    $childBar->checkin('invoicetemplates.checkin')->listCheck(true);
                 }
 
                 if ($canDo->get('core.create')) {

@@ -109,7 +109,7 @@ $isMultilang = Multilanguage::isEnabled();
                         <tbody <?php if ($saveOrder) : ?> class="js-draggable" data-url="<?php echo $saveOrderingUrl; ?>" data-direction="<?php echo strtolower($listDirn); ?>" data-nested="true"<?php endif; ?>>
                             <?php foreach ($this->items as $i => $item) :
                                 $canEdit = $user->authorise('core.edit', 'com_j2commerce.emailtemplate.' . $item->j2commerce_emailtemplate_id);
-                                $canCheckin = $user->authorise('core.manage', 'com_checkin') || $item->locked_by == $userId || is_null($item->locked_by);
+                                $canCheckin = $user->authorise('core.manage', 'com_checkin') || $item->checked_out == $userId || is_null($item->checked_out);
                                 // TODO: Add created_by column to j2commerce_emailtemplates table
                                 // $canEditOwn = $user->authorise('core.edit.own', 'com_j2commerce.emailtemplate.' . $item->j2commerce_emailtemplate_id) && $item->created_by == $userId;
                                 $canEditOwn = false;
@@ -192,6 +192,9 @@ $isMultilang = Multilanguage::isEnabled();
                                     </td>
                                     <th scope="row" class="has-context">
                                         <div>
+                                            <?php if (!empty($item->checked_out)) : ?>
+                                                <?php echo J2htmlHelper::checkedOut($i, $item->editor, $item->checked_out_time, 'emailtemplates.', $canCheckin); ?>
+                                            <?php endif; ?>
                                             <?php if ($canEdit || $canEditOwn) : ?>
                                                 <a class="hasTooltip" href="<?php echo Route::_('index.php?option=com_j2commerce&task=emailtemplate.edit&j2commerce_emailtemplate_id=' . (int) $item->j2commerce_emailtemplate_id); ?>" title="<?php echo Text::_('JACTION_EDIT'); ?> <?php echo $this->escape($item->subject); ?>">
                                                     <?php echo $this->escape($item->subject); ?>
