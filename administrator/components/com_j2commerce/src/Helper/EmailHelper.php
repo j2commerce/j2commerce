@@ -609,6 +609,46 @@ class EmailHelper
     }
 
     /**
+     * Resolve [LANG:KEY] tokens against a locale.
+     *
+     * Shared by the send-time pipeline and by the admin screens, which show a template's subject
+     * as the wording it will actually send rather than as the token it is stored as. Both have to
+     * read the token the same way or the preview stops predicting the email.
+     */
+    public static function resolveLangTokens(string $text, ?Language $language = null): string
+    {
+        if (!str_contains($text, '[LANG:')) {
+            return $text;
+        }
+
+        $language ??= Factory::getApplication()->getLanguage();
+
+        return preg_replace_callback(
+            '/\[LANG:([A-Z][A-Z0-9_]*)\]/',
+            static fn (array $m): string => $language->_($m[1]),
+            $text
+        ) ?? $text;
+    }
+
+    /**
+     * True when the whole string is a single [LANG:KEY] token, which is how the shipped presets
+     * store a translatable subject. A subject the merchant typed as literal text is not one, and
+     * stays plainly editable.
+     */
+    public static function isLangToken(string $text): bool
+    {
+        return (bool) preg_match('/^\[LANG:([A-Z][A-Z0-9_]*)\]$/', trim($text));
+    }
+
+    /**
+     * The bare key inside a single [LANG:KEY] subject, or an empty string when it is not one.
+     */
+    public static function extractLangKey(string $text): string
+    {
+        return preg_match('/^\[LANG:([A-Z][A-Z0-9_]*)\]$/', trim($text), $m) ? $m[1] : '';
+    }
+
+    /**
      * Process template tags and replace with order data
      *
      * @param   string               $text          The template text
@@ -988,11 +1028,7 @@ class EmailHelper
         // Not HTML-encoded, for the same reason [FOOTER_TEXT] is not: the value is authored by
         // the merchant or the translator, in the same trust position as the template body it is
         // substituted into, and it carries deliberate markup and entities (&copy;, &bull;).
-        $text = preg_replace_callback(
-            '/\[LANG:([A-Z][A-Z0-9_]*)\]/',
-            static fn (array $m): string => $language->_($m[1]),
-            $text
-        );
+        $text = self::resolveLangTokens($text, $language);
 
         // Process conditional blocks BEFORE tag replacement
         $text = $this->processConditionalBlocks($text, $tags);

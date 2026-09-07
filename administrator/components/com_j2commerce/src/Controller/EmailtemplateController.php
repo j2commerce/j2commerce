@@ -14,6 +14,8 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\EmailHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\MessageHelper;
+use J2Commerce\Component\J2commerce\Administrator\Model\LangoverrideModel;
+use Joomla\CMS\Access\Exception\NotAllowed;
 use Joomla\CMS\Event\GenericEvent;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -23,6 +25,7 @@ use Joomla\CMS\Mail\MailerFactoryInterface;
 use Joomla\CMS\MVC\Controller\FormController;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 use Joomla\CMS\Plugin\PluginHelper;
+use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
 use Joomla\CMS\Versioning\VersionableControllerTrait;
@@ -50,6 +53,7 @@ class EmailtemplateController extends FormController
             'display',
             'loadTemplate',
             'getShortcodes',
+            'loadOverride',
         ];
     }
 
@@ -720,5 +724,139 @@ class EmailtemplateController extends FormController
         $this->postSaveHook($model, $validData);
 
         return true;
+    }
+
+    /**
+     * Read the shipped string and any existing override for one key in one language.
+     *
+     * Super User, not the component's own edit action and not component-scoped core.admin.
+     * An override outranks every extension's strings - Language::load() applies it last, and
+     * these tasks write it to both clients - so the capability has to be the CMS-wide one, the
+     * same form the sibling gates on OverridesController, BuilderController and
+     * EmailtemplatesController already use. Component core.admin is "Configure ACL & Options"
+     * for this store, which a merchant hands to a store manager precisely because it keeps them
+     * inside com_j2commerce.
+     */
+    public function loadOverride(): void
+    {
+        $this->assertOverrideAccess();
+        Session::checkToken('get') || Session::checkToken() || jexit(Text::_('JINVALID_TOKEN'));
+
+        /** @var LangoverrideModel $model */
+        $model = $this->getModel('Langoverride', 'Administrator');
+
+        try {
+            $key = $this->getOverrideKey();
+            $tag = $this->getOverrideTag($model);
+        } catch (\InvalidArgumentException $e) {
+            $this->sendOverrideJson(null, $e->getMessage(), true, 400);
+
+            return;
+        }
+
+        $this->sendOverrideJson([
+            'key'      => $key,
+            'tag'      => $tag,
+            'original' => $model->getOriginal($key, $tag),
+            'override' => $model->getOverride($key, $tag),
+        ]);
+    }
+
+    /**
+     * Write the override for one key in one language, to both clients.
+     */
+    public function saveOverride(): void
+    {
+        $this->assertOverrideAccess();
+        Session::checkToken() || jexit(Text::_('JINVALID_TOKEN'));
+
+        /** @var LangoverrideModel $model */
+        $model = $this->getModel('Langoverride', 'Administrator');
+
+        try {
+            $key = $this->getOverrideKey();
+            $tag = $this->getOverrideTag($model);
+        } catch (\InvalidArgumentException $e) {
+            $this->sendOverrideJson(null, $e->getMessage(), true, 400);
+
+            return;
+        }
+
+        $text  = trim((string) $this->input->post->getString('text', ''));
+        $state = $model->saveOverride($key, $tag, $text);
+
+        if ($state === null) {
+            Log::add('emailtemplate.saveOverride failed: ' . $model->getError(), Log::ERROR, 'com_j2commerce');
+            $this->sendOverrideJson(null, Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SUBJECT_OVERRIDE_SAVE_FAILED'), true, 500);
+
+            return;
+        }
+
+        $this->sendOverrideJson(
+            ['key' => $key, 'tag' => $tag] + $state,
+            Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SUBJECT_OVERRIDE_SAVED')
+        );
+    }
+
+    /**
+     * JSON exit for the override tasks.
+     *
+     * Not a bare `echo new JsonResponse(...)`: without sendHeaders() the status set here never
+     * reaches the client and a rejected request is answered 200, and without the content-type and
+     * nosniff headers the response is open to content sniffing. Mirrors sendJson() above.
+     */
+    private function sendOverrideJson(?array $data, string $message = '', bool $error = false, int $status = 200): void
+    {
+        if ($status !== 200) {
+            $this->app->setHeader('status', $status, true);
+        }
+
+        $this->app->setHeader('Content-Type', 'application/json; charset=utf-8');
+        $this->app->setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+        $this->app->setHeader('X-Content-Type-Options', 'nosniff', true);
+        $this->app->sendHeaders();
+
+        echo new JsonResponse($data, $message, $error);
+        $this->app->close();
+    }
+
+    private function assertOverrideAccess(): void
+    {
+        if (!$this->app->getIdentity()->authorise('core.admin')) {
+            throw new NotAllowed(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 403);
+        }
+    }
+
+    /**
+     * The override key, constrained to the shape a [LANG:KEY] token can carry.
+     *
+     * Length is bounded as well as the character class: the key drives one glob and several
+     * is_file() calls per underscore-bounded prefix, so an unbounded key is an unbounded number
+     * of directory walks.
+     */
+    private function getOverrideKey(): string
+    {
+        $key = strtoupper(trim((string) $this->input->getString('key', '')));
+
+        if (!preg_match('/^[A-Z][A-Z0-9_]{0,127}$/', $key)) {
+            throw new \InvalidArgumentException(Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SUBJECT_OVERRIDE_BAD_KEY'));
+        }
+
+        return $key;
+    }
+
+    /**
+     * The language tag, matched against the installed set. The tag becomes part of the override
+     * filename, so an unrecognised one is rejected rather than cleaned.
+     */
+    private function getOverrideTag(LangoverrideModel $model): string
+    {
+        $tag = trim((string) $this->input->getString('tag', ''));
+
+        if (!isset($model->getLanguages()[$tag])) {
+            throw new \InvalidArgumentException(Text::_('COM_J2COMMERCE_EMAILTEMPLATE_SUBJECT_OVERRIDE_BAD_LANGUAGE'));
+        }
+
+        return $tag;
     }
 }

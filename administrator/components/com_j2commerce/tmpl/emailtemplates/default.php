@@ -9,6 +9,7 @@
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\EmailHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Factory;
@@ -114,10 +115,13 @@ $isMultilang = Multilanguage::isEnabled();
                                 // $canEditOwn = $user->authorise('core.edit.own', 'com_j2commerce.emailtemplate.' . $item->j2commerce_emailtemplate_id) && $item->created_by == $userId;
                                 $canEditOwn = false;
                                 $canChange = $user->authorise('core.edit.state', 'com_j2commerce.emailtemplate.' . $item->j2commerce_emailtemplate_id) && $canCheckin;
+                                // Display only: the row still carries the stored [LANG:KEY] token, but a merchant
+                                // reading this column needs the wording the email will actually send.
+                                $subject = EmailHelper::resolveLangTokens((string) $item->subject);
                             ?>
                                 <tr class="row<?php echo $i % 2; ?>" data-draggable-group="0">
                                     <td class="text-center">
-                                        <?php echo HTMLHelper::_('grid.id', $i, $item->j2commerce_emailtemplate_id, false, 'cid', 'cb', $item->email_type . ' - ' . $item->subject); ?>
+                                        <?php echo HTMLHelper::_('grid.id', $i, $item->j2commerce_emailtemplate_id, false, 'cid', 'cb', $item->email_type . ' - ' . $subject); ?>
                                     </td>
                                     <td class="text-center d-none d-md-table-cell">
                                         <?php
@@ -196,12 +200,12 @@ $isMultilang = Multilanguage::isEnabled();
                                                 <?php echo J2htmlHelper::checkedOut($i, $item->editor, $item->checked_out_time, 'emailtemplates.', $canCheckin); ?>
                                             <?php endif; ?>
                                             <?php if ($canEdit || $canEditOwn) : ?>
-                                                <a class="hasTooltip" href="<?php echo Route::_('index.php?option=com_j2commerce&task=emailtemplate.edit&j2commerce_emailtemplate_id=' . (int) $item->j2commerce_emailtemplate_id); ?>" title="<?php echo Text::_('JACTION_EDIT'); ?> <?php echo $this->escape($item->subject); ?>">
-                                                    <?php echo $this->escape($item->subject); ?>
+                                                <a class="hasTooltip" href="<?php echo Route::_('index.php?option=com_j2commerce&task=emailtemplate.edit&j2commerce_emailtemplate_id=' . (int) $item->j2commerce_emailtemplate_id); ?>" title="<?php echo Text::_('JACTION_EDIT'); ?> <?php echo $this->escape($subject); ?>">
+                                                    <?php echo $this->escape($subject); ?>
                                                 </a>
                                             <?php else : ?>
-                                                <span title="<?php echo $this->escape($item->subject); ?>">
-                                                    <?php echo $this->escape($item->subject); ?>
+                                                <span title="<?php echo $this->escape($subject); ?>">
+                                                    <?php echo $this->escape($subject); ?>
                                                 </span>
                                             <?php endif; ?>
                                         </div>

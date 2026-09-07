@@ -619,3 +619,10 @@ $tmpl = $input->get('tmpl', '', 'cmd') === 'component' ? '&tmpl=component' : '';
     <input type="hidden" name="task" value="">
     <?php echo HTMLHelper::_('form.token'); ?>
 </form>
+
+<?php // Outside the form on purpose: the dialog saves through its own request, and its fields must
+      // not ride along with a template save. A <template> is cloned rather than moved, so each
+      // opening of the dialog gets a fresh copy. ?>
+<?php if (!empty($this->overrideLanguages)) : ?>
+    <template id="joomla-dialog-subjectoverride"><?php echo $this->loadTemplate('subjectoverride'); ?></template>
+<?php endif; ?>

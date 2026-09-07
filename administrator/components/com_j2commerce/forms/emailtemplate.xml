@@ -20,7 +20,8 @@
 
         <field
             name="subject"
-            type="text"
+            type="Emailsubject"
+            addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field"
             label="COM_J2COMMERCE_EMAILTEMPLATE_SUBJECT"
             description="COM_J2COMMERCE_EMAILTEMPLATE_SUBJECT_DESC"
             size="50"

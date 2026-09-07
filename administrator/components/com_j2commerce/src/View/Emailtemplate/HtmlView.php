@@ -12,8 +12,10 @@ namespace J2Commerce\Component\J2commerce\Administrator\View\Emailtemplate;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\EmailHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\EmailtemplateModel;
+use J2Commerce\Component\J2commerce\Administrator\Model\LangoverrideModel;
 use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
 use Joomla\CMS\Event\GenericEvent;
 use Joomla\CMS\Factory;
@@ -27,6 +29,7 @@ use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
 use Joomla\CMS\Toolbar\Toolbar;
 use Joomla\CMS\Toolbar\ToolbarHelper;
+use Joomla\CMS\WebAsset\WebAssetManager;
 
 class HtmlView extends BaseHtmlView
 {
@@ -37,6 +40,15 @@ class HtmlView extends BaseHtmlView
     protected $state;
     protected $shortcodes;
     protected $pluginTemplateCards = [];
+
+    /** Installed languages the subject override dialog offers, tag => title. */
+    protected array $overrideLanguages = [];
+
+    /** Language the dialog opens on: the one this admin is reading the resolved subject in. */
+    protected string $overrideDefaultTag = '';
+
+    /** Bare key of a [LANG:KEY] subject, empty when the subject is literal text. */
+    protected string $subjectKey = '';
 
     /**
      * Execute and display a template script.
@@ -211,7 +223,61 @@ class HtmlView extends BaseHtmlView
         Text::script('COM_J2COMMERCE_EMAILTEMPLATE_BLOCK_CONDITIONAL');
         Text::script('COM_J2COMMERCE_EMAILTEMPLATE_BLOCK_HOOK');
 
+        $this->prepareSubjectOverride($wa);
+
         parent::display($tpl);
+    }
+
+    /**
+     * Wire up the subject override dialog, when the subject is a translatable token and the user
+     * holds the capability that writing a language override needs - Super User, the same gate the
+     * tasks themselves apply, and the same one the sibling core.admin checks in this component use.
+     */
+    private function prepareSubjectOverride(WebAssetManager $wa): void
+    {
+        $subject = (string) ($this->item->subject ?? '');
+
+        $this->subjectKey = EmailHelper::extractLangKey($subject);
+
+        if ($this->subjectKey === '' || !$this->getCurrentUser()->authorise('core.admin')) {
+            return;
+        }
+
+        // Not $this->getModel(): the controller only ever pushes the emailtemplate model onto
+        // this view, so the override model has to be built from the component's own factory.
+        /** @var LangoverrideModel $model */
+        $model = Factory::getApplication()->bootComponent('com_j2commerce')
+            ->getMVCFactory()
+            ->createModel('Langoverride', 'Administrator', ['ignore_request' => true]);
+
+        $this->overrideLanguages  = $model->getLanguages();
+        $this->overrideDefaultTag = Factory::getApplication()->getLanguage()->getTag();
+
+        if (!isset($this->overrideLanguages[$this->overrideDefaultTag])) {
+            $this->overrideDefaultTag = array_key_first($this->overrideLanguages);
+        }
+
+        $wa->registerAndUseScript(
+            'com_j2commerce.emailtemplate.subjectoverride',
+            'media/com_j2commerce/js/administrator/emailtemplate-subject-override.js',
+            [],
+            ['type' => 'module'],
+            ['joomla.dialog']
+        );
+
+        $this->getDocument()->addScriptOptions('com_j2commerce.subjectoverride', [
+            'baseUrl'  => 'index.php?option=com_j2commerce',
+            'token'    => Session::getFormToken(),
+            'adminTag' => $this->overrideDefaultTag,
+            // Core stores JSAVE as "Save &amp; Close" because it is normally echoed into HTML.
+            // The dialog sets its button labels with textContent, which would print the entity.
+            'saveLabel'  => html_entity_decode(Text::_('JSAVE'), \ENT_QUOTES, 'UTF-8'),
+            'closeLabel' => html_entity_decode(Text::_('JCLOSE'), \ENT_QUOTES, 'UTF-8'),
+        ]);
+
+        Text::script('COM_J2COMMERCE_EMAILTEMPLATE_SUBJECT_OVERRIDE_TITLE');
+        Text::script('COM_J2COMMERCE_EMAILTEMPLATE_SUBJECT_OVERRIDE_SAVED');
+        Text::script('COM_J2COMMERCE_EMAILTEMPLATE_SUBJECT_OVERRIDE_SAVE_FAILED');
     }
 
     /**
