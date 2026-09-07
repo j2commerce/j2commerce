@@ -190,6 +190,8 @@ class HtmlView extends BaseHtmlView
             'bodyJson'        => $this->item->body_json ?? '',
             'bodyHtml'        => $this->item->body ?? '',
             'shortcodes'      => $this->shortcodes ?? [],
+            'langStrings'     => $this->collectBodyLangStrings((string) ($this->item->body ?? '')),
+            'canOverrideLang' => $this->getCurrentUser()->authorise('core.admin'),
             'emailType'       => $this->item->email_type ?? 'transactional',
             'csrfToken'       => Session::getFormToken(),
             'previewUrl'      => 'index.php?option=com_j2commerce&task=emailtemplate.preview&format=raw',
@@ -206,6 +208,7 @@ class HtmlView extends BaseHtmlView
         Text::script('COM_J2COMMERCE_EMAILTEMPLATE_LOAD_SUCCESS');
         Text::script('COM_J2COMMERCE_EMAILTEMPLATE_LOAD_FAILED');
         Text::script('COM_J2COMMERCE_EMAILTEMPLATE_REQUEST_FAILED');
+        Text::script('COM_J2COMMERCE_EMAILTEMPLATE_SYNC_FAILED');
         Text::script('COM_J2COMMERCE_EMAILTEMPLATE_CODE_MODE_WARNING');
         Text::script('COM_J2COMMERCE_EMAILTEMPLATE_VISUAL_MODE_IMPORT');
         Text::script('COM_J2COMMERCE_EMAILTEMPLATE_LOAD_TEMPLATE_CONFIRM');
@@ -239,7 +242,11 @@ class HtmlView extends BaseHtmlView
 
         $this->subjectKey = EmailHelper::extractLangKey($subject);
 
-        if ($this->subjectKey === '' || !$this->getCurrentUser()->authorise('core.admin')) {
+        // The body carries tokens of its own, and the visual editor opens the same dialog against
+        // them, so a template whose subject a merchant typed as plain text still needs the wiring.
+        $bodyHasTokens = str_contains((string) ($this->item->body ?? ''), '[LANG:');
+
+        if (($this->subjectKey === '' && !$bodyHasTokens) || !$this->getCurrentUser()->authorise('core.admin')) {
             return;
         }
 
@@ -278,6 +285,30 @@ class HtmlView extends BaseHtmlView
         Text::script('COM_J2COMMERCE_EMAILTEMPLATE_SUBJECT_OVERRIDE_TITLE');
         Text::script('COM_J2COMMERCE_EMAILTEMPLATE_SUBJECT_OVERRIDE_SAVED');
         Text::script('COM_J2COMMERCE_EMAILTEMPLATE_SUBJECT_OVERRIDE_SAVE_FAILED');
+        Text::script('COM_J2COMMERCE_EMAILTEMPLATE_LANG_OVERRIDE_EDIT');
+    }
+
+    /**
+     * The wording each [LANG:KEY] token in the body resolves to, keyed by the bare key.
+     *
+     * Only what the canvas DISPLAYS. What a save writes is always the token, which is the thing
+     * every locale shares - one admin's reading of it is not.
+     *
+     * @return array<string, string>
+     */
+    private function collectBodyLangStrings(string $body): array
+    {
+        if (!preg_match_all('/\[LANG:([A-Z][A-Z0-9_]*)\]/', $body, $matches)) {
+            return [];
+        }
+
+        $strings = [];
+
+        foreach (array_unique($matches[1]) as $key) {
+            $strings[$key] = EmailHelper::resolveLangTokens('[LANG:' . $key . ']');
+        }
+
+        return $strings;
     }
 
     /**

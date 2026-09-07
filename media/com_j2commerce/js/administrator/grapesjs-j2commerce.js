@@ -14,6 +14,12 @@ const J2C_IMG_PLACEHOLDER = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 // Shortcode options for the trait dropdown — populated before editor init
 let j2cShortcodeOptions = [];
 
+// key => wording that key resolves to in the admin's own backend language, and whether this user
+// may rewrite it. Both are server-supplied and only ever drive what the canvas DISPLAYS; the
+// exported value of a token is always the token.
+let j2cLangStrings = {};
+let j2cCanOverrideLang = false;
+
 /**
  * Drops the tags the target document type deletes at render, so no authoring route can offer a
  * tag that vanishes on print. Takes and returns the nested {category: {tag: desc}} shape.
@@ -55,6 +61,9 @@ function escapeHtml(value) {
 document.addEventListener('DOMContentLoaded', () => {
     const options = Joomla.getOptions('com_j2commerce.emaileditor');
     if (!options) return;
+
+    j2cLangStrings = options.langStrings || {};
+    j2cCanOverrideLang = !!options.canOverrideLang;
 
     if (options.bodySource === 'visual') {
         initGrapesJSEditor(options);
@@ -123,7 +132,16 @@ function initGrapesJSEditor(options) {
         }
     }
 
-    if (options.bodyJson) {
+    // Project data is restored by stored type and never consults isComponent(), so a body_json
+    // written before [LANG:KEY] tokens were typed holds them as plain text that would never gain
+    // the type exporting them as tokens. Re-import from the stored HTML in that one case — it is
+    // the authoritative copy, carries the same inlined styles, and the next save writes a
+    // body_json that no longer takes this branch.
+    const langTokensUntyped = options.bodyJson
+        && (options.bodyHtml || '').includes('[LANG:')
+        && !String(options.bodyJson).includes('data-j2c-lang');
+
+    if (options.bodyJson && !langTokensUntyped) {
         try {
             const projectData = JSON.parse(options.bodyJson);
             editorConfig.projectData = projectData;
@@ -443,6 +461,65 @@ function j2commercePlugin(editor) {
     });
 
     registerCustomComponentTypes(editor);
+    registerLangOverride(editor);
+}
+
+/**
+ * The override dialog, reached from a fifth icon on a [LANG:KEY] component's toolbar.
+ *
+ * The icon is appended to the toolbar GrapesJS has already built rather than declared in the
+ * type's defaults: initToolbar() only assembles the stock select-parent/move/copy/delete set when
+ * no toolbar is set, so declaring one replaces those four instead of joining them.
+ */
+function registerLangOverride(editor) {
+    if (!j2cCanOverrideLang) return;
+
+    editor.Commands.add('j2c:open-lang-override', {
+        run(ed) {
+            const component = ed.getSelected();
+            const key = component?.getAttributes()['data-j2c-lang'];
+
+            // The dialog lives in the subject-override module, which is an ES module and cannot
+            // be imported from this classic script.
+            const overrides = window.J2CommerceLangOverride;
+
+            if (!key || !overrides) return;
+
+            overrides.open({
+                key,
+                onSaved: (resolved, applied) => {
+                    // Only the language this admin reads in changes what the canvas says.
+                    if (!applied) return;
+
+                    j2cLangStrings[key] = resolved;
+
+                    if (component.view) {
+                        component.view.el.textContent = resolved;
+                    }
+
+                    Joomla.renderMessages({
+                        message: [Joomla.Text._('COM_J2COMMERCE_EMAILTEMPLATE_SUBJECT_OVERRIDE_SAVED')],
+                    });
+                },
+            });
+        },
+    });
+
+    editor.on('component:selected', (component) => {
+        if (component.get('type') !== 'j2c-lang-text') return;
+
+        const toolbar = component.get('toolbar') || [];
+
+        if (toolbar.some(item => item.command === 'j2c:open-lang-override')) return;
+
+        component.set('toolbar', [...toolbar, {
+            attributes: {
+                class: 'icon-language',
+                title: Joomla.Text._('COM_J2COMMERCE_EMAILTEMPLATE_LANG_OVERRIDE_EDIT'),
+            },
+            command: 'j2c:open-lang-override',
+        }]);
+    });
 }
 
 function registerCustomComponentTypes(editor) {
@@ -490,6 +567,37 @@ function registerCustomComponentTypes(editor) {
             onRender() {
                 const tag = this.model.getAttributes()['data-j2c-tag'] || '[TAG]';
                 this.el.textContent = tag;
+                this.el.contentEditable = 'false';
+            },
+        },
+    });
+
+    // A [LANG:KEY] token. The model exports the token and nothing else; the view shows the
+    // wording. Non-editable for the same reason j2c-shortcode is: a stray keystroke in the canvas
+    // would otherwise turn a token into plain text that resolveLangTokens() no longer recognises,
+    // flattening that template's every other locale on the next save.
+    dc.addType('j2c-lang-text', {
+        isComponent: (el) => {
+            if (el.nodeType === Node.ELEMENT_NODE && el.getAttribute('data-j2c-lang')) {
+                return { type: 'j2c-lang-text' };
+            }
+        },
+        model: {
+            defaults: {
+                tagName: 'span',
+                droppable: false,
+                editable: false,
+                attributes: { 'data-j2c-lang': '' },
+            },
+            toHTML() {
+                const key = this.getAttributes()['data-j2c-lang'] || '';
+                return key ? `[LANG:${key}]` : '';
+            },
+        },
+        view: {
+            onRender() {
+                const key = this.model.getAttributes()['data-j2c-lang'] || '';
+                this.el.textContent = j2cLangStrings[key] ?? `[LANG:${key}]`;
                 this.el.contentEditable = 'false';
             },
         },
@@ -680,14 +788,33 @@ function setupFormSyncHandlers(editor) {
     if (!form) return;
 
     const originalSubmitForm = Joomla.submitform;
-    Joomla.submitform = function(task, form, validate) {
-        const bodySourceField = document.querySelector('select[name="jform[body_source]"]');
-        if (bodySourceField && bodySourceField.value === 'visual' && window._j2cGrapesEditor) {
-            syncGrapesDataToForm(window._j2cGrapesEditor);
+    Joomla.submitform = function(task, submitForm, validate) {
+        // Cancel keeps nothing, so there is nothing to sync. Core resolves the cancel task the
+        // same way, from data-cancel-task or the <prefix>.cancel convention.
+        const cancelTask = form.getAttribute('data-cancel-task')
+            || `${String(task ?? '').split('.')[0]}.cancel`;
+
+        if (task !== cancelTask) {
+            try {
+                const bodySourceField = document.querySelector('select[name="jform[body_source]"]');
+                if (bodySourceField && bodySourceField.value === 'visual' && window._j2cGrapesEditor) {
+                    syncGrapesDataToForm(window._j2cGrapesEditor);
+                }
+                // Restore shortcode src attributes from data-j2c-src placeholders (editor/file mode)
+                restoreShortcodeSrcInBody();
+            } catch (err) {
+                // Submitting anyway would store a body the canvas never wrote. Refuse, and say so:
+                // every toolbar button routes through here, and a throw here is indistinguishable
+                // from a dead click.
+                Joomla.renderMessages({
+                    error: [`${Joomla.Text._('COM_J2COMMERCE_EMAILTEMPLATE_SYNC_FAILED')} ${err.message}`],
+                });
+
+                return false;
+            }
         }
-        // Restore shortcode src attributes from data-j2c-src placeholders (editor/file mode)
-        restoreShortcodeSrcInBody();
-        return originalSubmitForm.call(this, task, form, validate);
+
+        return originalSubmitForm.call(this, task, submitForm, validate);
     };
 }
 
@@ -785,6 +912,11 @@ function setupTemplateLoading(editor, options) {
                 if (json.success && json.body) {
                     const bodySourceField = document.querySelector('select[name="jform[body_source]"]');
 
+                    // The loaded template carries keys the page was never built around, and the
+                    // server resolved them alongside the body. Merged before the import so the
+                    // canvas shows wording rather than brackets on the very first render.
+                    Object.assign(j2cLangStrings, json.langStrings || {});
+
                     if (bodySourceField && bodySourceField.value === 'visual' && window._j2cGrapesEditor) {
                         window._j2cGrapesEditor.setComponents(preprocessHtmlForImport(json.body));
                         const bodyJsonField = document.getElementById('jform_body_json');
@@ -877,6 +1009,17 @@ window.preprocessHtmlForImport = function preprocessHtmlForImport(html) {
     html = html.replace(/\[ITEMS_LOOP\]([\s\S]*?)\[\/ITEMS_LOOP\]/g,
         '<tbody data-j2c-loop="ITEMS">$1</tbody>');
 
+    // Wrap each [LANG:KEY] so the canvas can show the wording it resolves to. Alternating the
+    // token against `<[^>]*>` matches whole tags FIRST, so a token that ever appears inside an
+    // attribute is left exactly as it is rather than having markup spliced into the attribute.
+    // The span only changes what is DISPLAYED — the j2c-lang-text type below always exports the
+    // token, which is the thing every locale shares.
+    html = html.replace(/<[^>]*>|\[LANG:([A-Z][A-Z0-9_]*)\]/g, (match, key) => {
+        if (!key) return match;
+
+        return `<span data-j2c-lang="${key}">${escapeHtml(j2cLangStrings[key] ?? match)}</span>`;
+    });
+
     return html;
 }
 
@@ -938,8 +1081,48 @@ function unwrapConditionals(html) {
     return out + rest;
 }
 
+/**
+ * Replace every `<tag ... attr="value" ...>inner</tag>` marker with what `replace()` returns.
+ *
+ * Close tags are located by counting depth for the same reason unwrapConditionals() does: a
+ * non-greedy `([\s\S]*?)</tag>` stops at the FIRST close tag, so a marker holding a nested
+ * element of the same name came back out truncated. `tagPattern` may be an alternation, and the
+ * tag that actually matched is the one whose depth is counted.
+ */
+function unwrapMarkers(html, tagPattern, attr, replace) {
+    const open = new RegExp(`<(${tagPattern})\\b([^>]*\\b${attr}="([^"]*)"[^>]*)>`, 'i');
+    let out  = '';
+    let rest = html;
+
+    for (let m = rest.match(open); m; m = rest.match(open)) {
+        const [tagHtml, name, attrs, value] = m;
+        const start    = m.index + tagHtml.length;
+        const close    = findMatchingClose(rest, name, start);
+        const closeEnd = close < 0 ? -1 : rest.indexOf('>', close);
+
+        // Unbalanced markup: step past the open tag and leave it as-is rather than swallow the
+        // rest of the body into a marker that never closes.
+        if (close < 0 || closeEnd < 0) {
+            out += rest.slice(0, start);
+            rest = rest.slice(start);
+            continue;
+        }
+
+        out += rest.slice(0, m.index) + replace(attrs, value, rest.slice(start, close));
+        rest = rest.slice(closeEnd + 1);
+    }
+
+    return out + rest;
+}
+
 window.postprocessHtmlForExport = function postprocessHtmlForExport(html) {
     if (!html) return html;
+
+    // Put every [LANG:KEY] token back before anything else looks at the markup. The type's
+    // toHTML() already does this for a component the canvas typed, but a body restored from
+    // body_json can come back with its spans as plain components, whose toHTML() would serialize
+    // the wording on screen — one admin's language, saved over every other locale.
+    html = unwrapMarkers(html, 'span', 'data-j2c-lang', (attrs, key) => `[LANG:${key}]`);
 
     // Restore shortcode src attributes from data-j2c-src placeholders
     // GrapesJS may reorder attributes, so data-j2c-src may not be adjacent to src

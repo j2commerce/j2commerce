@@ -37,11 +37,15 @@ import JoomlaDialog from 'joomla.dialog';
         return payload.data;
     };
 
-    const open = (button) => {
-        const key = button.dataset.j2cSubjectKey;
-        const display = document.getElementById(button.dataset.j2cSubjectTarget);
-        const pageStatus = document.getElementById(`${button.dataset.j2cSubjectTarget}-status`);
-
+    /**
+     * Open the override dialog for one language key.
+     *
+     * Takes a descriptor rather than the button that was clicked: the same dialog is opened from
+     * inside the GrapesJS canvas, where there is neither a button to read a dataset off nor a page
+     * element to write the result into. `onSaved(resolved, applied)` is told whether the language
+     * that was written is the one this admin reads in - only then does what is on screen change.
+     */
+    const open = ({ key, onSaved, returnFocus }) => {
         // Resolved lazily: the dialog renders its buttons before it renders its body, so nothing
         // here can hold an element reference taken at construction time.
         const field = (id) => dialog.getBody().querySelector(id);
@@ -72,16 +76,7 @@ import JoomlaDialog from 'joomla.dialog';
             try {
                 const data = await request('saveOverride', { key, tag, text: field('#j2c-so-text').value }, 'POST');
 
-                // Only the language this admin reads in changes what the form behind the dialog says.
-                if (tag === options.adminTag && display) {
-                    display.value = data.resolved;
-                }
-
-                // Announced on the page, not in the dialog: the dialog is about to close, and a
-                // live region removed in the same breath as it is written is never read out.
-                if (pageStatus) {
-                    pageStatus.textContent = Joomla.Text._('COM_J2COMMERCE_EMAILTEMPLATE_SUBJECT_OVERRIDE_SAVED');
-                }
+                onSaved(data.resolved, tag === options.adminTag);
 
                 dialog.close();
             } catch (error) {
@@ -102,18 +97,17 @@ import JoomlaDialog from 'joomla.dialog';
             ],
         });
 
-        if (pageStatus) {
-            pageStatus.textContent = '';
-        }
-
         dialog.addEventListener('joomla-dialog:load', () => {
+            // The body has many keys where the subject has one, so the dialog is told which key it
+            // is editing on every opening rather than being rendered around a single server value.
+            field('#j2c-so-key').value = key;
             field('#j2c-so-language').addEventListener('change', load);
             load().then(() => field('#j2c-so-text').focus());
         });
 
         dialog.addEventListener('joomla-dialog:close', () => {
             dialog.destroy();
-            button.focus();
+            returnFocus?.();
         });
 
         dialog.show();
@@ -122,9 +116,37 @@ import JoomlaDialog from 'joomla.dialog';
     document.addEventListener('click', (event) => {
         const button = event.target.closest('[data-j2c-subject-key]');
 
-        if (button) {
-            event.preventDefault();
-            open(button);
+        if (!button) {
+            return;
         }
+
+        event.preventDefault();
+
+        const display = document.getElementById(button.dataset.j2cSubjectTarget);
+        const pageStatus = document.getElementById(`${button.dataset.j2cSubjectTarget}-status`);
+
+        if (pageStatus) {
+            pageStatus.textContent = '';
+        }
+
+        open({
+            key: button.dataset.j2cSubjectKey,
+            onSaved: (resolved, applied) => {
+                if (applied && display) {
+                    display.value = resolved;
+                }
+
+                // Announced on the page, not in the dialog: the dialog is about to close, and a
+                // live region removed in the same breath as it is written is never read out.
+                if (pageStatus) {
+                    pageStatus.textContent = Joomla.Text._('COM_J2COMMERCE_EMAILTEMPLATE_SUBJECT_OVERRIDE_SAVED');
+                }
+            },
+            returnFocus: () => button.focus(),
+        });
     });
+
+    // The GrapesJS wrapper is a classic script and cannot import this module, so the one entry
+    // point it needs is published on the window.
+    window.J2CommerceLangOverride = { open };
 })(Joomla, document);

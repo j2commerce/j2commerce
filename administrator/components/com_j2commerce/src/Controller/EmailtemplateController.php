@@ -441,8 +441,9 @@ class EmailtemplateController extends FormController
         $this->app->getDispatcher()->dispatch('onJ2CommerceGetEmailTemplates', $event);
 
         if (!empty($templateResult['body'])) {
-            $json['success'] = true;
-            $json['body']    = $templateResult['body'];
+            $json['success']     = true;
+            $json['body']        = $templateResult['body'];
+            $json['langStrings'] = $this->langStringsFor($json['body']);
             $this->sendJson($json);
             return;
         }
@@ -455,10 +456,33 @@ class EmailtemplateController extends FormController
             return;
         }
 
-        $json['success'] = true;
-        $json['body']    = file_get_contents($filePath);
+        $json['success']     = true;
+        $json['body']        = file_get_contents($filePath);
+        $json['langStrings'] = $this->langStringsFor($json['body']);
 
         $this->sendJson($json);
+    }
+
+    /**
+     * The wording each [LANG:KEY] token in a freshly loaded template resolves to, keyed by the
+     * bare key, so the visual editor can show wording instead of brackets without a second round
+     * trip. Display only - what a save writes back is always the token.
+     *
+     * @return array<string, string>
+     */
+    private function langStringsFor(string $body): array
+    {
+        if (!preg_match_all('/\[LANG:([A-Z][A-Z0-9_]*)\]/', $body, $matches)) {
+            return [];
+        }
+
+        $strings = [];
+
+        foreach (array_unique($matches[1]) as $key) {
+            $strings[$key] = EmailHelper::resolveLangTokens('[LANG:' . $key . ']');
+        }
+
+        return $strings;
     }
 
     /** Return shortcode HTML and structured data for the given email type. */
