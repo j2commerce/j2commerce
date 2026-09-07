@@ -18,6 +18,7 @@ use Joomla\CMS\Language\Text;
 $type = $this->addressFormType ?? 'billing';
 $orderInfo = $this->item->orderinfo ?? null;
 $value = static fn (string $field): string => (string) ($orderInfo->{$type . '_' . $field} ?? '');
+$snapshot = CustomFieldHelper::decodeOrderSnapshot($orderInfo->{'all_' . $type} ?? null);
 $countryId = (int) ($orderInfo->{$type . '_country_id'} ?? 0);
 $zoneId = (int) ($orderInfo->{$type . '_zone_id'} ?? 0);
 $zoneName = (string) ($orderInfo->{$type . '_zone_name'} ?? '');
@@ -43,6 +44,15 @@ $zoneName = (string) ($orderInfo->{$type . '_zone_name'} ?? '');
                 <label class="form-label" for="<?php echo $type; ?>_tax_number"><?php echo Text::_('COM_J2COMMERCE_FIELD_ADDRESS_TAX_NUMBER'); ?></label>
                 <input type="text" class="form-control" id="<?php echo $type; ?>_tax_number" data-address-field="tax_number" value="<?php echo $this->escape($value('tax_number')); ?>">
             </div>
+            <?php // Billing only, and read from the snapshot rather than a column: email is the one
+                  // core definition with no fixed twin and no orderinfos column, and it is scoped to
+                  // the billing areas, so a shipping copy would be dropped by saveOrderAddress(). ?>
+            <?php if ($type === 'billing') : ?>
+            <div class="col-md-6">
+                <label class="form-label" for="<?php echo $type; ?>_email"><?php echo Text::_('COM_J2COMMERCE_EMAIL'); ?></label>
+                <input type="email" class="form-control" id="<?php echo $type; ?>_email" data-address-field="email" value="<?php echo $this->escape((string) ($snapshot['email'] ?? '')); ?>">
+            </div>
+            <?php endif; ?>
             <div class="col-12">
                 <label class="form-label" for="<?php echo $type; ?>_address_1"><?php echo Text::_('COM_J2COMMERCE_FIELD_ADDRESS_1'); ?></label>
                 <input type="text" class="form-control" id="<?php echo $type; ?>_address_1" data-address-field="address_1" value="<?php echo $this->escape($value('address_1')); ?>">
@@ -96,7 +106,6 @@ $zoneName = (string) ($orderInfo->{$type . '_zone_name'} ?? '');
             // Types whose value is not a plain answer are read-only here: multiuploader
             // files are served from their own upload rows, and a zone needs the
             // country-dependent lookup the fixed zone select already owns.
-            $snapshot     = CustomFieldHelper::decodeOrderSnapshot($orderInfo->{'all_' . $type} ?? null);
             $skippedTypes = ['multiuploader', 'zone', 'customtext'];
 
             foreach (CustomFieldHelper::getOrderFields($type) as $namekey => $field) :

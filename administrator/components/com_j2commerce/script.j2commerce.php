@@ -172,6 +172,8 @@ class Com_J2commerceInstallerScript extends InstallerScript
 
         $this->removeRetiredSchemaorgClasses();
 
+        $this->removeRetiredSiteLayouts();
+
         $this->removeObsoleteSchemaUpdates($parent);
 
         $this->seedOrderLedgerOnce();
@@ -324,6 +326,27 @@ class Com_J2commerceInstallerScript extends InstallerScript
             $path = $dir . $file;
             if (is_file($path) && @unlink($path)) {
                 $this->debugLog("UPDATE: removed retired schemaorg class {$file}");
+            }
+        }
+    }
+
+    /**
+     * Drop site layouts the installed package no longer ships. Joomla overwrites files on update
+     * but never deletes retired ones, so a layout dropped from the tree stays on every upgraded
+     * site - and this one calls a helper method that was removed with it, so anything that did
+     * reach it would fatal. Harmless if already absent, which is the fresh-install case.
+     */
+    private function removeRetiredSiteLayouts(): void
+    {
+        $retired = [
+            'order/customfields.php',
+        ];
+        $dir = JPATH_SITE . '/components/com_j2commerce/layouts/';
+
+        foreach ($retired as $file) {
+            $path = $dir . $file;
+            if (is_file($path) && @unlink($path)) {
+                $this->debugLog("UPDATE: removed retired site layout {$file}");
             }
         }
     }
