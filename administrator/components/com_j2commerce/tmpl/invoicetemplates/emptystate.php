@@ -27,6 +27,13 @@ if ($user->authorise('core.create', 'com_j2commerce')) {
     $displayData['createURL'] = 'index.php?option=com_j2commerce&task=invoicetemplate.add';
 }
 
+// Appended inside the layout's own form: for popupType=inline, joomla-dialog moves the dialog to
+// the template's parentElement, so a template outside the form leaves its fields outside it too.
+if ($user->authorise('core.edit', 'com_j2commerce')) {
+    $displayData['formAppend'] = '<template id="joomla-dialog-synccore">'
+        . $this->loadTemplate('synccore_body') . '</template>';
+}
+
 echo $this->navbar ?? '';
 
 echo LayoutHelper::render('joomla.content.emptystate', $displayData);
