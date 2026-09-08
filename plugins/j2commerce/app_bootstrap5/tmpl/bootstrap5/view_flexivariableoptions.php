@@ -47,6 +47,9 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
                         <?php $ovId = (int) $ov['product_optionvalue_id']; ?>
                         <option value="<?php echo $ovId; ?>"<?php echo ($defaultOptionValueId == $ov['product_optionvalue_id']) ? ' selected' : ''; ?>>
                             <?php echo $esc(Text::_($ov['optionvalue_name'])); ?>
+                            <?php if (($ov['price_from'] ?? null) !== null && $this->params->get('product_option_price', 1)) : ?>
+                                (<?php echo $esc(Text::_('COM_J2COMMERCE_FROM_PRICE')); ?> <?php echo J2CommerceHelper::product()->displayPrice($ov['price_from'], $this->product, $this->params, 'products.view.option'); ?>)
+                            <?php endif; ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
@@ -82,8 +85,11 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
                                     <span class="visually-hidden"><?php echo $esc(Text::_($ov['optionvalue_name'])); ?></span>
                                 </label>
                             <?php } else { ?>
-                                <label class="btn btn-sm btn-outline-secondary form-check-label border-2" for="option-value-<?php echo $ovId; ?>" data-label="<?php echo $esc(Text::_($ov['optionvalue_name'])); ?>">
-                                    <?php echo $esc(Text::_($ov['optionvalue_name'])); ?>
+                                <?php $ovPriceSuffix = (($ov['price_from'] ?? null) !== null && $this->params->get('product_option_price', 1))
+                                    ? ' (' . Text::_('COM_J2COMMERCE_FROM_PRICE') . ' ' . J2CommerceHelper::product()->displayPrice($ov['price_from'], $this->product, $this->params, 'products.view.option') . ')'
+                                    : ''; ?>
+                                <label class="btn btn-sm btn-outline-secondary form-check-label border-2" for="option-value-<?php echo $ovId; ?>" data-label="<?php echo $esc(Text::_($ov['optionvalue_name']) . $ovPriceSuffix); ?>">
+                                    <?php echo $esc(Text::_($ov['optionvalue_name']) . $ovPriceSuffix); ?>
                                 </label>
                             <?php } ?>
 
@@ -114,7 +120,10 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
                             onclick="doFlexiAjaxPrice(<?php echo $productId; ?>, '#option-<?php echo $optionId; ?>')"
                             <?php echo ($defaultOptionValueId == $ov['product_optionvalue_id']) ? 'checked' : ''; ?>
                         />
-                        <label for="option-value-<?php echo $ovId; ?>" class="btn btn-color fs-xl" data-label="<?php echo $esc(Text::_($ov['optionvalue_name'])); ?>" style="color:<?php echo $esc($ov['optionvalue_image']); ?>;">
+                        <?php $ovPriceSuffix = (($ov['price_from'] ?? null) !== null && $this->params->get('product_option_price', 1))
+                            ? ' (' . Text::_('COM_J2COMMERCE_FROM_PRICE') . ' ' . J2CommerceHelper::product()->displayPrice($ov['price_from'], $this->product, $this->params, 'products.view.option') . ')'
+                            : ''; ?>
+                        <label for="option-value-<?php echo $ovId; ?>" class="btn btn-color fs-xl" data-label="<?php echo $esc(Text::_($ov['optionvalue_name']) . $ovPriceSuffix); ?>" style="color:<?php echo $esc($ov['optionvalue_image']); ?>;">
                             <span class="visually-hidden"><?php echo $esc(Text::_($ov['optionvalue_name'])); ?></span>
                         </label>
                     <?php endforeach; ?>
