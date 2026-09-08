@@ -15,6 +15,7 @@ namespace J2Commerce\Component\J2commerce\Site\View\Checkout;
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\TrackingHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\CheckoutContextHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
@@ -43,6 +44,7 @@ class HtmlView extends BaseHtmlView
     public array $items           = [];
     public array $taxes           = [];
     public array $checkoutContext = [];
+    public string $trackingScript = '';
 
     public function display($tpl = null): void
     {
@@ -182,6 +184,8 @@ class HtmlView extends BaseHtmlView
             'onJ2CommerceCheckoutStart',
             new Event('onJ2CommerceCheckoutStart', [])
         );
+
+        $this->trackingScript = TrackingHelper::render($this->order, $this->items, $this->params, 'checkout');
 
         $this->_prepareDocument();
 

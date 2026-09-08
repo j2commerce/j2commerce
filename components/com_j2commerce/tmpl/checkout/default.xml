@@ -51,5 +51,29 @@
 				showon="config_cart_empty_redirect:url"
 			/>
 		</fieldset>
+		<fieldset name="tracking" label="COM_J2COMMERCE_TRACKING_FIELDSET_LABEL"
+			addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field">
+			<field
+				name="tracking_script"
+				type="Trackingscript"
+				label="COM_J2COMMERCE_TRACKING_SCRIPT_LABEL"
+				description="COM_J2COMMERCE_TRACKING_SCRIPT_DESC"
+				rows="12"
+				class="w-100"
+				filter="raw"
+			/>
+
+			<field
+				name="tracking_script_position"
+				type="list"
+				label="COM_J2COMMERCE_TRACKING_POSITION_LABEL"
+				description="COM_J2COMMERCE_TRACKING_POSITION_DESC"
+				default="inline"
+				validate="options"
+			>
+				<option value="inline">COM_J2COMMERCE_TRACKING_POSITION_INLINE</option>
+				<option value="head">COM_J2COMMERCE_TRACKING_POSITION_HEAD</option>
+			</field>
+		</fieldset>
 	</fields>
 </metadata>

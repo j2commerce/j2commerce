@@ -1618,3 +1618,5 @@ document.addEventListener('DOMContentLoaded', function() {
 
 });
 </script>
+
+<?php echo $this->trackingScript; ?>
