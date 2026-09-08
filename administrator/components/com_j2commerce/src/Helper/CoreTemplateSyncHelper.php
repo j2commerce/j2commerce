@@ -257,12 +257,18 @@ class CoreTemplateSyncHelper
 
     /**
      * @param  callable(DatabaseInterface, array): array<\Joomla\Database\QueryInterface>  $identityQueries Builds the ordered SELECT tiers (by identity fields, not PK) that find an existing row — most specific tier first, legacy-wildcard fallback last.
-     * @param  callable(array, string, string, ?string, int): array<string, int|string>     $buildInsertRow  Builds the column => value map used to recreate a missing row.
+     * @param  callable(array, string, string, ?string, int): array<string, int|string>     $buildInsertRow  Builds the column => value map used to recreate a missing row. Every key must be a literal column name -- see the INSERT loop.
      */
     private function syncTemplates(string $table, string $pkColumn, array $registry, callable $identityQueries, callable $buildInsertRow): array
     {
         $db      = Factory::getContainer()->get(DatabaseInterface::class);
         $results = [];
+
+        // Both branches must state the presentation columns. A row left on body_source='file'
+        // renders its file, never the DB body, so an update that writes only `body` reports
+        // success while changing nothing the merchant sees.
+        $bodySource     = 'visual';
+        $bodySourceFile = '';
 
         // A legacy row's identity fields (e.g. receiver_type='*') can be ambiguous between
         // two registry entries — both a customer and an admin entry for the same order
@@ -329,9 +335,13 @@ class CoreTemplateSyncHelper
                     ->update($db->quoteName($table))
                     ->set($db->quoteName('body') . ' = :body')
                     ->set($db->quoteName('body_json') . ' = :bodyJson')
+                    ->set($db->quoteName('body_source') . ' = :bodySource')
+                    ->set($db->quoteName('body_source_file') . ' = :bodySourceFile')
                     ->where($db->quoteName($pkColumn) . ' = :updateId')
                     ->bind(':body', $content)
                     ->bind(':bodyJson', $bodyJson)
+                    ->bind(':bodySource', $bodySource)
+                    ->bind(':bodySourceFile', $bodySourceFile)
                     ->bind(':updateId', $existingId, ParameterType::INTEGER);
 
                 if ($subject !== null) {
@@ -352,6 +362,8 @@ class CoreTemplateSyncHelper
             $params  = [];
             $index   = 0;
 
+            // Column names cannot be bound, so every key here must be a hard-coded literal:
+            // quoteName() only wraps in backticks, it does not escape one embedded in the name.
             foreach (array_keys($row) as $column) {
                 $columns[]  = $db->quoteName($column);
                 $paramName  = ':i' . $index++;
