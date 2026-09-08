@@ -12,6 +12,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\CoreTemplateSyncHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\MessageHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -285,6 +286,11 @@ class EmailtemplateModel extends AdminModel
             // its original, so it must never go out on its own. It is enabled deliberately after editing.
             $table->enabled    = 0;
             $table->is_default = 0;
+
+            // Those same identity fields are what Sync Core matches on, so a copy that inherited
+            // the original's core_key -- or the '' that invites adoption -- would be a candidate
+            // for being overwritten by the shipped preset. This value is neither.
+            $table->core_key = CoreTemplateSyncHelper::MERCHANT_KEY;
 
             // Unset so check() appends the copy to the end of the list instead of cloning the original's slot.
             $table->ordering = null;

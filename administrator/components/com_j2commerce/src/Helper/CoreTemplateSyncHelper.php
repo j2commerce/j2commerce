@@ -25,10 +25,20 @@ use Joomla\Filesystem\Path;
  * `.html` presets under layouts/templates/, or recreates the row from the
  * registry defaults when a merchant has deleted it. A row an admin
  * repurposed (identity fields no longer match) is skipped so it is never
- * clobbered.
+ * clobbered, and a duplicated or imported row -- which repeats every identity
+ * field of the row it came from -- is excluded by its own `core_key`.
  */
 class CoreTemplateSyncHelper
 {
+    /**
+     * What a row that is nobody's core template is stamped with.
+     *
+     * It has to be a non-empty string rather than NULL: DatabaseDriver::insertObject() skips
+     * null properties outright, so a NULL never reaches the INSERT and the column would fall
+     * back to its '' default -- the one value the identity tiers below treat as adoptable.
+     */
+    public const MERCHANT_KEY = 'custom';
+
     // orderstatus_id is install-dependent (J2Store shipped 6 core statuses, J2Commerce ships 8,
     // and the migrator preserves source ids), so the registry carries the status NAME and it is
     // resolved to this install's actual id at runtime — see resolveOrderStatusIds().
@@ -41,6 +51,7 @@ class CoreTemplateSyncHelper
             'paymentmethod'    => '*',
             'subject'          => '[LANG:COM_J2COMMERCE_EMAIL_THANKS_FOR_YOUR_ORDER]',
             'file'             => 'email/confirmed/modern.html',
+            'core_key'         => 'email.confirmed.customer',
         ],
         2 => [
             'email_type'       => 'transactional',
@@ -50,6 +61,7 @@ class CoreTemplateSyncHelper
             'paymentmethod'    => '*',
             'subject'          => '[LANG:COM_J2COMMERCE_EMAIL_GOOD_NEWS_YOUR_ORDER_ITS_WAY]',
             'file'             => 'email/shipped/modern.html',
+            'core_key'         => 'email.shipped.customer',
         ],
         3 => [
             'email_type'       => 'transactional',
@@ -59,6 +71,7 @@ class CoreTemplateSyncHelper
             'paymentmethod'    => '*',
             'subject'          => '[LANG:COM_J2COMMERCE_EMAIL_ORDER_CANCELLATION_CONFIRMED]',
             'file'             => 'email/cancelled/modern.html',
+            'core_key'         => 'email.cancelled.customer',
         ],
         4 => [
             'email_type'       => 'transactional',
@@ -68,6 +81,7 @@ class CoreTemplateSyncHelper
             'paymentmethod'    => '*',
             'subject'          => '[LANG:COM_J2COMMERCE_EMAIL_NEW_ORDER]',
             'file'             => 'email/confirmed/admin.html',
+            'core_key'         => 'email.confirmed.admin',
         ],
     ];
 
@@ -79,6 +93,7 @@ class CoreTemplateSyncHelper
             'group_id'       => '1',
             'paymentmethod'  => '*',
             'file'           => 'packingslip/modern.html',
+            'core_key'       => 'invoice.packingslip',
         ],
         2 => [
             'invoice_type'   => 'invoice',
@@ -87,6 +102,7 @@ class CoreTemplateSyncHelper
             'group_id'       => '1',
             'paymentmethod'  => '*',
             'file'           => 'invoice/modern.html',
+            'core_key'       => 'invoice.invoice',
         ],
         3 => [
             'invoice_type'   => 'receipt',
@@ -95,6 +111,7 @@ class CoreTemplateSyncHelper
             'group_id'       => '1',
             'paymentmethod'  => '*',
             'file'           => 'receipt/thermal.html',
+            'core_key'       => 'invoice.receipt.thermal',
         ],
         4 => [
             'invoice_type'   => 'receipt',
@@ -103,6 +120,7 @@ class CoreTemplateSyncHelper
             'group_id'       => '1',
             'paymentmethod'  => '*',
             'file'           => 'receipt/modern.html',
+            'core_key'       => 'invoice.receipt.full',
         ],
     ];
 
@@ -185,6 +203,7 @@ class CoreTemplateSyncHelper
                 'language'         => '*',
                 'enabled'          => 1,
                 'ordering'         => $id,
+                'core_key'         => $expected['core_key'],
             ]
         );
 
@@ -251,6 +270,7 @@ class CoreTemplateSyncHelper
                 'language'         => '*',
                 'enabled'          => 1,
                 'ordering'         => $id,
+                'core_key'         => $expected['core_key'],
             ]
         );
     }
@@ -295,12 +315,38 @@ class CoreTemplateSyncHelper
             }
 
             $existingId = null;
+            $coreKey    = (string) $expected['core_key'];
+            $unclaimed  = '';
+
+            // Tier 0 is the row this entry has already stamped, so an installed core template is
+            // found by its own name and nothing else can answer to it. The identity tiers below
+            // remain for the one legacy pass that adopts a row predating the column, and for a
+            // merchant who deleted the core row outright.
+            $byCoreKey = $db->getQuery(true)
+                ->select($db->quoteName($pkColumn))
+                ->from($db->quoteName($table))
+                ->where($db->quoteName('core_key') . ' = :coreKey')
+                ->order($db->quoteName($pkColumn) . ' ASC')
+                ->bind(':coreKey', $coreKey);
+
+            $tiers = $identityQueries($db, $expected);
+
+            // A duplicate is stamped MERCHANT_KEY, and it matches every identity field of the
+            // row it was copied from -- the whole reason a merchant's copy used to be a
+            // candidate here. Confining the identity tiers to rows still carrying the unclaimed
+            // '' takes copies out of the running for good.
+            foreach ($tiers as $tierQuery) {
+                $tierQuery->where($db->quoteName('core_key') . ' = :unclaimedKey')
+                    ->bind(':unclaimedKey', $unclaimed);
+            }
+
+            array_unshift($tiers, $byCoreKey);
 
             // Never rely on unordered loadResult()/loadObject() — each tier is ordered by
             // PK ascending, and within a tier the lowest-id row not already claimed by an
             // earlier registry entry wins. Only fall to the next (less specific) tier when
             // this tier has no unclaimed candidate at all.
-            foreach ($identityQueries($db, $expected) as $tierQuery) {
+            foreach ($tiers as $tierQuery) {
                 $db->setQuery($tierQuery);
                 $candidateIds = array_map('intval', $db->loadColumn() ?: []);
 
@@ -325,13 +371,18 @@ class CoreTemplateSyncHelper
             if ($existingId !== null) {
                 $claimed[$existingId] = true;
 
+                // Stamping the key on every write is what makes the legacy adoption a one-off:
+                // from here on this row answers to tier 0 and the identity tiers are never
+                // consulted for it again.
                 $update = $db->getQuery(true)
                     ->update($db->quoteName($table))
                     ->set($db->quoteName('body') . ' = :body')
                     ->set($db->quoteName('body_json') . ' = :bodyJson')
+                    ->set($db->quoteName('core_key') . ' = :coreKeyStamp')
                     ->where($db->quoteName($pkColumn) . ' = :updateId')
                     ->bind(':body', $content)
                     ->bind(':bodyJson', $bodyJson)
+                    ->bind(':coreKeyStamp', $coreKey)
                     ->bind(':updateId', $existingId, ParameterType::INTEGER);
 
                 if ($subject !== null) {

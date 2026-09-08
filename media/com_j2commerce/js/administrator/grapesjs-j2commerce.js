@@ -11,6 +11,11 @@
 // SVG placeholder for shortcode images — avoids 404s when GrapesJS renders block content in canvas
 const J2C_IMG_PLACEHOLDER = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect fill='%23e5e7eb' width='100' height='100'/%3E%3Ctext x='50' y='54' text-anchor='middle' font-family='sans-serif' font-size='11' fill='%236b7280'%3E%5BIMAGE%5D%3C/text%3E%3C/svg%3E";
 
+// A [LANG:KEY] key as resolveLangTokens() defines it, and a CSS property name. Both are
+// interpolated into markup the export writes, so both are held to their own shape.
+const J2C_LANG_KEY = /^[A-Z][A-Z0-9_]*$/;
+const J2C_CSS_PROP = /^-{0,2}[a-zA-Z][a-zA-Z0-9-]*$/;
+
 // Shortcode options for the trait dropdown — populated before editor init
 let j2cShortcodeOptions = [];
 
@@ -591,7 +596,21 @@ function registerCustomComponentTypes(editor) {
             },
             toHTML() {
                 const key = this.getAttributes()['data-j2c-lang'] || '';
-                return key ? `[LANG:${key}]` : '';
+                if (!key) return '';
+
+                // Exporting the bare token threw away any style set on it, so a colour or size
+                // the merchant chose for this run lived on in body_json -- and in the canvas --
+                // while the email kept the old look. Carry it out on a plain wrapper; the token
+                // inside is still the only thing resolveLangTokens() has to find.
+                if (!J2C_LANG_KEY.test(key)) return '';
+
+                const style = this.getStyle() || {};
+                const css = Object.entries(style)
+                    .filter(([prop, value]) => J2C_CSS_PROP.test(prop) && value !== '' && value != null)
+                    .map(([prop, value]) => `${prop}:${String(value).replace(/["<>]/g, '')}`)
+                    .join(';');
+
+                return css ? `<span style="${css}">[LANG:${key}]</span>` : `[LANG:${key}]`;
             },
         },
         view: {
@@ -1118,11 +1137,39 @@ function unwrapMarkers(html, tagPattern, attr, replace) {
 window.postprocessHtmlForExport = function postprocessHtmlForExport(html) {
     if (!html) return html;
 
+    // The inliner hands back a whole-document shape: the fragment wrapped in <body>, with the
+    // rules it cannot inline -- the responsive @media block -- appended AFTER the closing
+    // </body>. Stored that way the send path nests one <body> inside another and that trailing
+    // <style> ends up outside both, which is how those rules reached recipients as text at the
+    // foot of the message. Keep the rules, move them to the front, and hand back a fragment.
+    const lifted = [];
+    html = html.replace(/<style\b[^>]*>[\s\S]*?<\/style\s*>/gi, (block) => {
+        lifted.push(block);
+
+        return '';
+    });
+    html = html.replace(/^\s*<body\b[^>]*>/i, '').replace(/<\/body\s*>\s*$/i, '');
+    html = lifted.join('') + html;
+
     // Put every [LANG:KEY] token back before anything else looks at the markup. The type's
     // toHTML() already does this for a component the canvas typed, but a body restored from
     // body_json can come back with its spans as plain components, whose toHTML() would serialize
     // the wording on screen — one admin's language, saved over every other locale.
-    html = unwrapMarkers(html, 'span', 'data-j2c-lang', (attrs, key) => `[LANG:${key}]`);
+    // A style or class the editor put on the token's own span is a deliberate choice -- a
+    // colour, a size -- and dropping the span with the wording dropped it with them, so the
+    // change survived in body_json, showed in the canvas, and never reached the email. Keep a
+    // wrapper carrying only those presentation attributes; the token inside still resolves at
+    // send time, and the next import nests the re-typed span inside this one unchanged.
+    html = unwrapMarkers(html, 'span', 'data-j2c-lang', (attrs, key) => {
+        // The marker's own attribute value only has to exclude `"` to be well-formed, so hold it
+        // to the shape resolveLangTokens() actually resolves rather than re-emitting whatever
+        // the attribute happened to carry.
+        if (!J2C_LANG_KEY.test(key)) return '';
+
+        const keep = (attrs.match(/\s(?:style|class)="[^"]*"/gi) || []).join('');
+
+        return keep ? `<span${keep}>[LANG:${key}]</span>` : `[LANG:${key}]`;
+    });
 
     // Restore shortcode src attributes from data-j2c-src placeholders
     // GrapesJS may reorder attributes, so data-j2c-src may not be adjacent to src

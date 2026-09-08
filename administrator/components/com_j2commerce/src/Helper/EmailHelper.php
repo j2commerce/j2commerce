@@ -568,11 +568,13 @@ class EmailHelper
         $htmlExtra = $language->isRTL() ? ' dir="rtl"' : '';
 
         // Inject custom CSS into <head>. The '<' strip matches the preview and test-send
-        // paths, so what a test send renders is what the customer receives.
-        $headStyles = '';
-        $customCss  = trim(str_replace('<', '', $template->custom_css ?? ''));
+        // paths, so what a test send renders is what the customer receives. The template's
+        // own blocks go in ahead of it, so custom CSS still has the last word.
+        [$templateText, $headStyles] = self::splitStyleBlocks($templateText);
+
+        $customCss = trim(str_replace('<', '', $template->custom_css ?? ''));
         if ($customCss !== '') {
-            $headStyles = '<style type="text/css">' . $customCss . '</style>';
+            $headStyles .= '<style type="text/css">' . $customCss . '</style>';
         }
 
         $body = '<html' . $htmlExtra . '><head>'
@@ -606,6 +608,45 @@ class EmailHelper
         bool $appendDownloadLinks = false
     ): string {
         return $this->processTags($text, $order, $extras, $receiverType, true, $language, $appendDownloadLinks);
+    }
+
+    /**
+     * Reduce a stored template body to a fragment plus the <style> blocks to put in <head>.
+     *
+     * The visual editor's inliner returns a whole-document shape -- the fragment wrapped in
+     * <body>, with the rules it cannot inline appended after the closing </body> -- so a body
+     * saved before that was corrected carries both. Nested inside the message's own <body> the
+     * trailing block sits outside every container, which is how those rules reached recipients
+     * as text at the foot of the mail. The editor no longer writes that shape; this keeps the
+     * bodies already stored in it rendering correctly.
+     *
+     * @return array{0: string, 1: string} the body as a fragment, then the <style> blocks
+     */
+    public static function splitStyleBlocks(string $html): array
+    {
+        if (stripos($html, '<style') === false && stripos($html, '<body') === false) {
+            return [$html, ''];
+        }
+
+        $styles = '';
+        $body   = preg_replace_callback(
+            '#<style\b[^>]*>.*?</style\s*>#is',
+            static function (array $matches) use (&$styles): string {
+                $styles .= $matches[0];
+
+                return '';
+            },
+            $html
+        );
+
+        if ($body === null) {
+            return [$html, ''];
+        }
+
+        $body = preg_replace('#^\s*<body\b[^>]*>#i', '', $body) ?? $body;
+        $body = preg_replace('#</body\s*>\s*$#i', '', $body) ?? $body;
+
+        return [$body, $styles];
     }
 
     /**

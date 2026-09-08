@@ -294,13 +294,15 @@ class EmailtemplateController extends FormController
         $processedBody    = EmailHelper::processTypeTags($emailType, $context, $order, $body);
         $processedSubject = EmailHelper::processTypeTags($emailType, $context, $order, $subject);
 
-        // Build full HTML with custom CSS
+        // Build full HTML with custom CSS. The template's own <style> blocks are lifted into
+        // <head> the same way the send path does it, so the preview predicts the email.
         // Dropping '<' outright: a single pass at '</style' can be reassembled by a
         // nested sequence, so the character the element cannot survive goes instead.
-        $headStyles = '';
-        $customCss  = trim(str_replace('<', '', $customCss));
+        [$processedBody, $headStyles] = EmailHelper::splitStyleBlocks($processedBody);
+
+        $customCss = trim(str_replace('<', '', $customCss));
         if ($customCss !== '') {
-            $headStyles = '<style type="text/css">' . $customCss . '</style>';
+            $headStyles .= '<style type="text/css">' . $customCss . '</style>';
         }
 
         $html = '<!DOCTYPE html><html><head>'
@@ -366,11 +368,13 @@ class EmailtemplateController extends FormController
             $processedBody    = EmailHelper::processTypeTags($emailType, $context, $order, $body);
             $processedSubject = EmailHelper::processTypeTags($emailType, $context, $order, $subject);
 
-            // Build full HTML
-            $headStyles = '';
-            $customCss  = trim(str_replace('<', '', $customCss));
+            // Build full HTML, lifting the template's own <style> blocks into <head> as the
+            // send path does -- a test send has to arrive as the customer's copy will.
+            [$processedBody, $headStyles] = EmailHelper::splitStyleBlocks($processedBody);
+
+            $customCss = trim(str_replace('<', '', $customCss));
             if ($customCss !== '') {
-                $headStyles = '<style type="text/css">' . $customCss . '</style>';
+                $headStyles .= '<style type="text/css">' . $customCss . '</style>';
             }
 
             $htmlBody = '<html><head>'

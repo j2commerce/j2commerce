@@ -489,6 +489,10 @@ class EmailtemplatesController extends AdminController
             }
 
             $row->j2commerce_emailtemplate_id = 0;
+
+            // An imported row repeats the identity fields of whatever it was exported from, so
+            // it is stamped as the merchant's own: Sync Core owns the rows it named, never this.
+            $row->core_key                    = CoreTemplateSyncHelper::MERCHANT_KEY;
             $row->created_on                  = $now;
             $row->created_by                  = $userId;
             $row->modified_on                 = $now;
