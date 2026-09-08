@@ -1750,19 +1750,23 @@ class EmailHelper
             $rows .= $this->totalsRow((string) $extraRow['label'], (string) $extraRow['value']);
         }
 
+        // Emphasis is expressed relatively — bold, a rule, and an em-relative size — so it reads
+        // the same at any base size. Font family, absolute size and colour are left to cascade from
+        // the cell the tag sits in, letting the block adopt each template's own typography rather
+        // than stamping one fixed look over every design.
         $rows .= '<tr>'
-            . '<td style="padding:8px; border:1px solid #ddd; font-weight:bold;">' . htmlspecialchars($language->_('COM_J2COMMERCE_CART_GRANDTOTAL'), ENT_QUOTES, 'UTF-8') . '</td>'
-            . '<td style="padding:8px; border:1px solid #ddd; text-align:right; font-weight:bold;">' . htmlspecialchars($fmt($grandTotal), ENT_QUOTES, 'UTF-8') . '</td>'
+            . '<td style="padding:12px 0 4px 0; font-size:1.15em; font-weight:bold; border-top:1px solid #e5e7eb;">' . htmlspecialchars($language->_('COM_J2COMMERCE_CART_GRANDTOTAL'), ENT_QUOTES, 'UTF-8') . '</td>'
+            . '<td style="padding:12px 0 4px 0; font-size:1.15em; text-align:right; font-weight:bold; border-top:1px solid #e5e7eb;">' . htmlspecialchars($fmt($grandTotal), ENT_QUOTES, 'UTF-8') . '</td>'
             . '</tr>';
 
-        return '<table style="width:100%; border-collapse:collapse;"><tbody>' . $rows . '</tbody></table>';
+        return '<table width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%; border-collapse:collapse;"><tbody>' . $rows . '</tbody></table>';
     }
 
     private function totalsRow(string $label, string $value): string
     {
         return '<tr>'
-            . '<td style="padding:8px; border:1px solid #ddd;">' . self::encodeTagDelimiters(htmlspecialchars($label, ENT_QUOTES, 'UTF-8')) . '</td>'
-            . '<td style="padding:8px; border:1px solid #ddd; text-align:right;">' . self::encodeTagDelimiters(htmlspecialchars($value, ENT_QUOTES, 'UTF-8')) . '</td>'
+            . '<td style="padding:4px 0;">' . self::encodeTagDelimiters(htmlspecialchars($label, ENT_QUOTES, 'UTF-8')) . '</td>'
+            . '<td style="padding:4px 0; text-align:right;">' . self::encodeTagDelimiters(htmlspecialchars($value, ENT_QUOTES, 'UTF-8')) . '</td>'
             . '</tr>';
     }
 

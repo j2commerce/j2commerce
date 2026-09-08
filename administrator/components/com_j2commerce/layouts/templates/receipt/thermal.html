@@ -118,45 +118,7 @@
   [/ITEMS_LOOP]
 
   <!-- Totals -->
-  <table class="total-row">
-    <tr>
-      <td>[LANG:COM_J2COMMERCE_EMAIL_SUBTOTAL]</td>
-      <td class="right">[SUBTOTAL]</td>
-    </tr>
-    <!--[IF:SHIPPING_METHOD]-->
-    <tr>
-      <td>[LANG:COM_J2COMMERCE_EMAIL_SHIPPING_3]</td>
-      <td class="right">[SHIPPING_AMOUNT]</td>
-    </tr>
-    <!--[/IF:SHIPPING_METHOD]-->
-    <!--[IF:SURCHARGE_AMOUNT]-->
-    <tr>
-      <td>[LANG:COM_J2COMMERCE_CART_SURCHARGE]</td>
-      <td class="right">[SURCHARGE_AMOUNT]</td>
-    </tr>
-    <!--[/IF:SURCHARGE_AMOUNT]-->
-    <!--[IF:TAX_AMOUNT]-->
-    <tr>
-      <td>[LANG:COM_J2COMMERCE_EMAIL_TAX]</td>
-      <td class="right">[TAX_AMOUNT]</td>
-    </tr>
-    <!--[/IF:TAX_AMOUNT]-->
-    <!--[IF:DISCOUNT_AMOUNT]-->
-    <tr>
-      <td>[LANG:COM_J2COMMERCE_EMAIL_DISCOUNT]</td>
-      <td class="right">-[DISCOUNT_AMOUNT]</td>
-    </tr>
-    <!--[/IF:DISCOUNT_AMOUNT]-->
-  </table>
-
-  <hr class="double-dashed" />
-
-  <table class="grand-total">
-    <tr>
-      <td>[LANG:COM_J2COMMERCE_EMAIL_TOTAL_2]</td>
-      <td class="right">[ORDERAMOUNT]</td>
-    </tr>
-  </table>
+  [TOTALS]
 
   <hr class="double-dashed" />
 
