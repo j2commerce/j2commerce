@@ -86,7 +86,7 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
                                 </label>
                             <?php } else { ?>
                                 <?php $ovPriceSuffix = (($ov['price_from'] ?? null) !== null && $this->params->get('product_option_price', 1))
-                                    ? ' (' . Text::_('COM_J2COMMERCE_FROM_PRICE') . ' ' . J2CommerceHelper::product()->displayPrice($ov['price_from'], $this->product, $this->params, 'products.view.option') . ')'
+                                    ? ' (' . Text::_('COM_J2COMMERCE_FROM_PRICE') . ' ' . strip_tags(J2CommerceHelper::product()->displayPrice($ov['price_from'], $this->product, $this->params, 'products.view.option')) . ')'
                                     : ''; ?>
                                 <label class="btn btn-sm btn-outline-secondary form-check-label border-2" for="option-value-<?php echo $ovId; ?>" data-label="<?php echo $esc(Text::_($ov['optionvalue_name']) . $ovPriceSuffix); ?>">
                                     <?php echo $esc(Text::_($ov['optionvalue_name']) . $ovPriceSuffix); ?>
@@ -121,7 +121,7 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
                             <?php echo ($defaultOptionValueId == $ovId) ? 'checked' : ''; ?>
                         />
                         <?php $ovPriceSuffix = (($ov['price_from'] ?? null) !== null && $this->params->get('product_option_price', 1))
-                            ? ' (' . Text::_('COM_J2COMMERCE_FROM_PRICE') . ' ' . J2CommerceHelper::product()->displayPrice($ov['price_from'], $this->product, $this->params, 'products.view.option') . ')'
+                            ? ' (' . Text::_('COM_J2COMMERCE_FROM_PRICE') . ' ' . strip_tags(J2CommerceHelper::product()->displayPrice($ov['price_from'], $this->product, $this->params, 'products.view.option')) . ')'
                             : ''; ?>
                         <label for="option-value-<?php echo $ovId; ?>" class="btn btn-color fs-xl" data-label="<?php echo $esc(Text::_($ov['optionvalue_name']) . $ovPriceSuffix); ?>" style="color:<?php echo $esc($ov['optionvalue_image']); ?>;">
                             <span class="visually-hidden"><?php echo $esc(Text::_($ov['optionvalue_name'])); ?></span>
