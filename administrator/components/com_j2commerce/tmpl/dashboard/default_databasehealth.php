@@ -51,7 +51,7 @@ $badgeWarning = J2htmlHelper::badgeClass('badge text-bg-warning me-2');
 $badgeInfo    = J2htmlHelper::badgeClass('badge text-bg-info me-2');
 ?>
 <div
-    class="card mb-4 d-none"
+    class="card mb-4"
     id="j2commerce-database-health"
     data-badge-success="<?php echo $this->escape($badgeSuccess); ?>"
     data-badge-warning="<?php echo $this->escape($badgeWarning); ?>"

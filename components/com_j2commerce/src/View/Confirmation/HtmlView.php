@@ -17,6 +17,7 @@ namespace J2Commerce\Component\J2commerce\Site\View\Confirmation;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ArticleHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\DownloadHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\TrackingHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -41,6 +42,7 @@ class HtmlView extends BaseHtmlView
     public array $downloads          = [];
     public bool $showingRecent       = false;
     public string $articleHtml       = '';
+    public string $trackingScript    = '';
 
     public function display($tpl = null): void
     {
@@ -147,6 +149,8 @@ class HtmlView extends BaseHtmlView
             $pluginParams             = new Registry($paymentPlugin->params ?? '{}');
             $this->articleHtml        = ArticleHelper::display((int) $pluginParams->get('articleid', 0), true);
         }
+
+        $this->trackingScript = TrackingHelper::render($this->order, $this->orderItems, $this->params, 'confirmation');
 
         $this->_prepareDocument();
 

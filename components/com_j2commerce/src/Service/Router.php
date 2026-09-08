@@ -266,8 +266,14 @@ class Router extends RouterView
 
         $query = parent::preprocess($query);
 
-        // Restore our Itemid if parent changed it
-        if ($ourItemid !== null && isset($query['Itemid']) && $query['Itemid'] !== $ourItemid) {
+        // Restore our Itemid if parent changed it, unless the parent's choice sits closer to the
+        // request language than ours does.
+        if (
+            $ourItemid !== null
+            && isset($query['Itemid'])
+            && $query['Itemid'] !== $ourItemid
+            && $this->itemidLanguageRank((int) $ourItemid) <= $this->itemidLanguageRank((int) $query['Itemid'])
+        ) {
             $query['Itemid'] = $ourItemid;
         }
 
@@ -498,9 +504,7 @@ class Router extends RouterView
      */
     private function findSingleProductMenu(int $productId): ?object
     {
-        $menus = $this->menu->getItems('component', 'com_j2commerce');
-
-        foreach ($menus as $menu) {
+        return $this->pickMenuByLanguage(function (object $menu) use ($productId): bool {
             $menuProductId = null;
 
             // Check link first (most reliable source)
@@ -517,20 +521,17 @@ class Router extends RouterView
                 $menuProductId = $menu->query['id'] ?? null;
             }
 
-            // If we found a product ID, check if it matches
-            if ($menuProductId !== null) {
-                // Extract numeric ID if format is "id:alias"
-                if (strpos((string) $menuProductId, ':') !== false) {
-                    [$menuProductId] = explode(':', $menuProductId, 2);
-                }
-
-                if ((int) $menuProductId === $productId) {
-                    return $menu;
-                }
+            if ($menuProductId === null) {
+                return false;
             }
-        }
 
-        return null;
+            // Extract numeric ID if format is "id:alias"
+            if (strpos((string) $menuProductId, ':') !== false) {
+                [$menuProductId] = explode(':', $menuProductId, 2);
+            }
+
+            return (int) $menuProductId === $productId;
+        });
     }
 
     /**
@@ -547,11 +548,9 @@ class Router extends RouterView
      */
     private function findProductsMenuByCatid(int $catid): ?object
     {
-        $menus = $this->menu->getItems('component', 'com_j2commerce');
-
-        foreach ($menus as $menu) {
+        return $this->pickMenuByLanguage(function (object $menu) use ($catid): bool {
             if (!isset($menu->query['view']) || $menu->query['view'] !== 'products') {
-                continue;
+                return false;
             }
 
             // Check if this menu's catid matches - try query array first
@@ -569,12 +568,8 @@ class Router extends RouterView
                 }
             }
 
-            if ($menuCatid === $catid) {
-                return $menu;
-            }
-        }
-
-        return null;
+            return $menuCatid === $catid;
+        });
     }
 
     /**
@@ -589,11 +584,12 @@ class Router extends RouterView
      */
     private function findProductTagsMenu(array $tagIds, string $tagMatch): ?object
     {
-        $menus = $this->menu->getItems('component', 'com_j2commerce');
+        $sortedQuery = $tagIds;
+        sort($sortedQuery);
 
-        foreach ($menus as $menu) {
+        return $this->pickMenuByLanguage(function (object $menu) use ($sortedQuery, $tagMatch): bool {
             if (!isset($menu->query['view']) || $menu->query['view'] !== 'producttags') {
-                continue;
+                return false;
             }
 
             // Get stored tag_ids and tag_match from menu query or link
@@ -619,17 +615,11 @@ class Router extends RouterView
             }
 
             // Compare tag_ids (order-independent) and tag_match
-            $sortedQuery = $tagIds;
-            $sortedMenu  = $menuTagIds;
-            sort($sortedQuery);
+            $sortedMenu = $menuTagIds;
             sort($sortedMenu);
 
-            if ($sortedQuery === $sortedMenu && $tagMatch === $menuTagMatch) {
-                return $menu;
-            }
-        }
-
-        return null;
+            return $sortedQuery === $sortedMenu && $tagMatch === $menuTagMatch;
+        });
     }
 
     /**
@@ -654,9 +644,11 @@ class Router extends RouterView
             return null;
         }
 
-        $menus = $this->menu->getItems('component', 'com_j2commerce');
+        $ancestorIds = array_column($categoryPath, 'id');
+        $best        = null;
+        $bestRank    = \PHP_INT_MAX;
 
-        foreach ($menus as $menu) {
+        foreach ($this->menu->getItems('component', 'com_j2commerce') as $menu) {
             if (!isset($menu->query['view']) || $menu->query['view'] !== 'categories') {
                 continue;
             }
@@ -680,33 +672,46 @@ class Router extends RouterView
 
             // Check if the menu's parent is in our category's path (or is root)
             // categoryPath includes the target category itself
-            $ancestorIds  = array_column($categoryPath, 'id');
             $pathPosition = array_search($menuParentId, $ancestorIds);
 
             // Also check if menu is for root and category path starts at root
-            if ($pathPosition === false && $menuParentId === 1 && !empty($categoryPath)) {
+            if ($pathPosition === false && $menuParentId === 1) {
                 $pathPosition = -1; // Start from the beginning
             }
 
-            if ($pathPosition !== false) {
-                // Menu's parent is an ancestor - build path from menu to target category
-                $pathSegments = [];
-
-                // Skip ancestors up to and including the menu's parent
-                $startIndex = ($pathPosition === -1) ? 0 : $pathPosition + 1;
-
-                for ($i = $startIndex; $i < \count($categoryPath); $i++) {
-                    $pathSegments[] = $categoryPath[$i]['alias'];
-                }
-
-                return [
-                    'menu' => $menu,
-                    'path' => $pathSegments,
-                ];
+            if ($pathPosition === false) {
+                continue;
             }
+
+            $rank = $this->menuLanguageRank($menu);
+
+            if ($rank >= $bestRank) {
+                continue;
+            }
+
+            // Menu's parent is an ancestor - build path from menu to target category
+            $pathSegments = [];
+
+            // Skip ancestors up to and including the menu's parent
+            $startIndex = ($pathPosition === -1) ? 0 : $pathPosition + 1;
+
+            for ($i = $startIndex; $i < \count($categoryPath); $i++) {
+                $pathSegments[] = $categoryPath[$i]['alias'];
+            }
+
+            $best = [
+                'menu' => $menu,
+                'path' => $pathSegments,
+            ];
+
+            if ($rank === 0) {
+                return $best;
+            }
+
+            $bestRank = $rank;
         }
 
-        return null;
+        return $best;
     }
 
     /**
@@ -1526,37 +1531,31 @@ class Router extends RouterView
      */
     private function findCategoriesMenu(?int $parentId): ?object
     {
-        $menus = $this->menu->getItems('component', 'com_j2commerce');
-
-        foreach ($menus as $menu) {
+        return $this->pickMenuByLanguage(function (object $menu) use ($parentId): bool {
             if (!isset($menu->query['view']) || $menu->query['view'] !== 'categories') {
-                continue;
+                return false;
             }
 
-            if ($parentId !== null) {
-                $menuId = null;
-
-                if (isset($menu->query['id'])) {
-                    $menuId = (int) $menu->query['id'];
-                } elseif (!empty($menu->link)) {
-                    parse_str(parse_url($menu->link, PHP_URL_QUERY) ?: '', $linkQuery);
-                    if (isset($linkQuery['id'])) {
-                        $menuId = (int) $linkQuery['id'];
-                    }
-                }
-
-                $normalizedMenuId   = ($menuId === null || $menuId <= 1) ? 1 : $menuId;
-                $normalizedParentId = ($parentId <= 1) ? 1 : $parentId;
-
-                if ($normalizedMenuId === $normalizedParentId) {
-                    return $menu;
-                }
-            } else {
-                return $menu;
+            if ($parentId === null) {
+                return true;
             }
-        }
 
-        return null;
+            $menuId = null;
+
+            if (isset($menu->query['id'])) {
+                $menuId = (int) $menu->query['id'];
+            } elseif (!empty($menu->link)) {
+                parse_str(parse_url($menu->link, PHP_URL_QUERY) ?: '', $linkQuery);
+                if (isset($linkQuery['id'])) {
+                    $menuId = (int) $linkQuery['id'];
+                }
+            }
+
+            $normalizedMenuId   = ($menuId === null || $menuId <= 1) ? 1 : $menuId;
+            $normalizedParentId = ($parentId <= 1) ? 1 : $parentId;
+
+            return $normalizedMenuId === $normalizedParentId;
+        });
     }
 
     /**
@@ -1570,22 +1569,80 @@ class Router extends RouterView
      */
     private function findViewMenu(string $viewName): ?object
     {
-        $menus = $this->menu->getItems('component', 'com_j2commerce');
-
-        foreach ($menus as $menu) {
+        return $this->pickMenuByLanguage(function (object $menu) use ($viewName): bool {
             if (isset($menu->query['view']) && $menu->query['view'] === $viewName) {
-                return $menu;
+                return true;
             }
 
             if (!empty($menu->link)) {
                 parse_str(parse_url($menu->link, PHP_URL_QUERY) ?: '', $linkQuery);
 
                 if (isset($linkQuery['view']) && $linkQuery['view'] === $viewName) {
-                    return $menu;
+                    return true;
                 }
+            }
+
+            return false;
+        });
+    }
+
+    /**
+     * Ranks a menu item against the request language: 0 for an exact tag match, 1 for All/unset,
+     * 2 for another language. Menu items arrive ordered by lft across every menu type, so a lookup
+     * that takes the first match hands every visitor the same menu whatever language they browse
+     * in - on a site carrying one menu per language plus an All menu, always the All one.
+     * Monolingual sites rank everything 0, which preserves first-match behaviour.
+     */
+    private function menuLanguageRank(object $menu): int
+    {
+        if (!Multilanguage::isEnabled()) {
+            return 0;
+        }
+
+        $language = $menu->language ?? '*';
+
+        if ($language === $this->app->getLanguage()->getTag()) {
+            return 0;
+        }
+
+        return \in_array($language, ['*', ''], true) ? 1 : 2;
+    }
+
+    /**
+     * Returns the best-ranked J2Commerce menu item satisfying $matches. A worse-ranked match is
+     * still returned when nothing better exists, so a lookup never resolves to nothing where it
+     * previously resolved to something.
+     */
+    private function pickMenuByLanguage(callable $matches): ?object
+    {
+        $best     = null;
+        $bestRank = \PHP_INT_MAX;
+
+        foreach ($this->menu->getItems('component', 'com_j2commerce') as $menu) {
+            if (!$matches($menu)) {
+                continue;
+            }
+
+            $rank = $this->menuLanguageRank($menu);
+
+            if ($rank === 0) {
+                return $menu;
+            }
+
+            if ($rank < $bestRank) {
+                $best     = $menu;
+                $bestRank = $rank;
             }
         }
 
-        return null;
+        return $best;
+    }
+
+    /** Rank of the menu item an Itemid points at; a missing item ranks worst. */
+    private function itemidLanguageRank(int $itemId): int
+    {
+        $menu = $this->menu->getItem($itemId);
+
+        return $menu ? $this->menuLanguageRank($menu) : 2;
     }
 }

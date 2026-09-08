@@ -556,3 +556,5 @@ if ($info) {
         <?php echo $afterPostHtml; ?>
     </div>
 </div>
+
+<?php echo $this->trackingScript; ?>

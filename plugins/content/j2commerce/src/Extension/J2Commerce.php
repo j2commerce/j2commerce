@@ -1470,6 +1470,18 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
                 ProductLayoutService::setSubtemplateOverride($shortcodeSubtemplate);
             }
 
+            // 'cart' merges the option selectors into its own wrapped <form> (see
+            // below) so that a price-modifying or required option is submitted
+            // together with the product. When |options is also present in the same
+            // shortcode, skip its standalone render here — otherwise it would
+            // duplicate the selectors outside the form. 'cartonly' never shows
+            // options, so it doesn't trigger this.
+            $cartMergesOptions = \in_array(
+                'cart',
+                array_map(static fn($o) => strtolower(trim($o)), $options),
+                true
+            );
+
             foreach ($options as $option) {
                 $option = strtolower(trim($option));
 
@@ -1477,6 +1489,10 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
                 // active subtemplate plugin renders it with its own view_*.php files.
                 if ($option === 'detail') {
                     $html .= $this->renderProductDetail($productId);
+                    continue;
+                }
+
+                if ($option === 'options' && $cartMergesOptions) {
                     continue;
                 }
 
@@ -1517,6 +1533,14 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
                             [],
                             ['defer' => true]
                         );
+                    }
+
+                    // Prepend the option selectors so they land inside the same
+                    // <form> as the Add to Cart button. item_options.php self-gates
+                    // on showOptions / an empty option set, so this is a no-op when
+                    // neither applies. 'cartonly' keeps its no-options contract.
+                    if ($option === 'cart') {
+                        $rendered = ProductLayoutService::renderLayout('list.category.item_options', $displayData) . $rendered;
                     }
 
                     $rendered = $this->wrapCartForm($product, $rendered);
