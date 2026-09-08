@@ -691,13 +691,16 @@ class Flexivariable
                 // Filter available option values based on variants
                 // Use variant_name_ids (original CSV of product_optionvalue_ids) if available,
                 // fall back to variant_name for backward compatibility
-                $availableOptionValues = [];
-                $variantCsvs           = [];
-                $optionValueIds        = [];
+                $availableOptionValues   = [];
+                $variantCsvs             = [];
+                $variantPrices           = [];
+                $optionValueIds          = [];
+                $minPriceByOptionValueId = [];
 
                 foreach ($product->variants as $pVariant) {
-                    $variantCsv    = $pVariant->variant_name_ids ?? $pVariant->variant_name ?? '';
-                    $variantCsvs[] = $variantCsv;
+                    $variantCsv      = $pVariant->variant_name_ids ?? $pVariant->variant_name ?? '';
+                    $variantCsvs[]   = $variantCsv;
+                    $variantPrices[] = (float) $pVariant->price;
 
                     foreach (explode(',', $variantCsv) as $proOptionValue) {
                         $optionValueIds[] = (int) $proOptionValue;
@@ -707,7 +710,7 @@ class Flexivariable
                 // One query for the whole list, not a table load per value per variant.
                 $optionValueRows = $this->loadProductOptionvalues($optionValueIds);
 
-                foreach ($variantCsvs as $variantCsv) {
+                foreach ($variantCsvs as $csvIndex => $variantCsv) {
                     foreach (explode(',', $variantCsv) as $proOptionValue) {
                         $productOptionValue = $optionValueRows[(int) $proOptionValue]
                             ?? (object) ['productoption_id' => null, 'optionvalue_id' => null];
@@ -719,6 +722,14 @@ class Flexivariable
                             } else {
                                 $availableOptionValues[$productOptionValue->productoption_id][] = $productOptionValue->optionvalue_id;
                             }
+                        }
+
+                        if ($productOptionValue->optionvalue_id !== null && $productOptionValue->optionvalue_id != 0) {
+                            $ovId  = (int) $productOptionValue->optionvalue_id;
+                            $price = $variantPrices[$csvIndex];
+                            $minPriceByOptionValueId[$ovId] = isset($minPriceByOptionValueId[$ovId])
+                                ? min($minPriceByOptionValueId[$ovId], $price)
+                                : $price;
                         }
                     }
                 }
@@ -734,6 +745,7 @@ class Flexivariable
                             foreach ($pOption['optionvalue'] as $ov) {
                                 $ovId = $ov['optionvalue_id'];
                                 if (!isset($seenIds[$ovId])) {
+                                    $ov['price_from'] = $minPriceByOptionValueId[(int) $ovId] ?? null;
                                     $dedupValues[]  = $ov;
                                     $seenIds[$ovId] = true;
                                 }
@@ -750,6 +762,7 @@ class Flexivariable
                         foreach ($pOption['optionvalue'] as $optionValueData) {
                             $ovId = $optionValueData['optionvalue_id'];
                             if (\in_array($ovId, $availableOptionValues[$prodOptionId]) && !isset($seenOptionValueIds[$ovId])) {
+                                $optionValueData['price_from'] = $minPriceByOptionValueId[(int) $ovId] ?? null;
                                 $filteredOptionValues[]    = $optionValueData;
                                 $seenOptionValueIds[$ovId] = true;
                             }
