@@ -60,6 +60,9 @@ $collapsedOptions = (bool) $params->get('list_collapsed_options', $params->get('
                             <?php $ovId = (int) $ov['product_optionvalue_id']; ?>
                             <option value="<?php echo $ovId; ?>"<?php echo ($defaultOptionValueId == $ovId) ? ' selected' : ''; ?>>
                             <?php echo $esc(Text::_($ov['optionvalue_name'])); ?>
+                            <?php if (($ov['price_from'] ?? null) !== null && $params->get('product_option_price', 1)) : ?>
+                                (<?php echo $esc(Text::_('COM_J2COMMERCE_FROM_PRICE')); ?> <?php echo J2CommerceHelper::product()->displayPrice($ov['price_from'], $product, $params, 'products.view.option'); ?>)
+                            <?php endif; ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
@@ -96,8 +99,11 @@ $collapsedOptions = (bool) $params->get('list_collapsed_options', $params->get('
                                     <span class="uk-hidden"><?php echo $esc(Text::_($ov['optionvalue_name'])); ?></span>
                                 </label>
                             <?php } else { ?>
-                                <label class="uk-button uk-button-default uk-button-small" for="<?php echo $optionValueInputId; ?>" data-label="<?php echo $esc(Text::_($ov['optionvalue_name'])); ?>">
-                            <?php echo $esc(Text::_($ov['optionvalue_name'])); ?>
+                                <?php $ovPriceSuffix = (($ov['price_from'] ?? null) !== null && $params->get('product_option_price', 1))
+                                    ? ' (' . Text::_('COM_J2COMMERCE_FROM_PRICE') . ' ' . strip_tags(J2CommerceHelper::product()->displayPrice($ov['price_from'], $product, $params, 'products.view.option')) . ')'
+                                    : ''; ?>
+                                <label class="uk-button uk-button-default uk-button-small" for="<?php echo $optionValueInputId; ?>" data-label="<?php echo $esc(Text::_($ov['optionvalue_name']) . $ovPriceSuffix); ?>">
+                            <?php echo $esc(Text::_($ov['optionvalue_name']) . $ovPriceSuffix); ?>
                         </label>
                             <?php } ?>
 
@@ -130,7 +136,10 @@ $collapsedOptions = (bool) $params->get('list_collapsed_options', $params->get('
                                 data-option-id="<?php echo $optionId; ?>"
                                 <?php echo ($defaultOptionValueId == $ovId) ? 'checked' : ''; ?>
                             />
-                            <label for="<?php echo $optionValueInputId; ?>" class="btn-color" data-label="<?php echo $esc(Text::_($ov['optionvalue_name'])); ?>" style="color:<?php echo $esc($ov['optionvalue_image']);?>;">
+                            <?php $ovPriceSuffix = (($ov['price_from'] ?? null) !== null && $params->get('product_option_price', 1))
+                                ? ' (' . Text::_('COM_J2COMMERCE_FROM_PRICE') . ' ' . strip_tags(J2CommerceHelper::product()->displayPrice($ov['price_from'], $product, $params, 'products.view.option')) . ')'
+                                : ''; ?>
+                            <label for="<?php echo $optionValueInputId; ?>" class="btn-color" data-label="<?php echo $esc(Text::_($ov['optionvalue_name']) . $ovPriceSuffix); ?>" style="color:<?php echo $esc($ov['optionvalue_image']);?>;">
                                 <span class="uk-hidden"><?php echo $esc(Text::_($ov['optionvalue_name'])); ?></span>
                             </label>
                         <?php endforeach; ?>
