@@ -33,10 +33,15 @@ class TrackingscriptField extends TextareaField
 {
     protected $type = 'Trackingscript';
 
+    /** Params keys this field guards on a menu item; a save that omits one must not clear it. */
+    private const PROTECTED_KEYS = ['tracking_script'];
+
     /**
-     * The gate that counts. A readonly or disabled control is presentation only — Form::validate()
-     * consults the XML `disabled` attribute, never the object property — so an unauthorised POST is
-     * answered by discarding the submitted value and returning the one already stored.
+     * Half the gate. A readonly or disabled control is presentation only — Form::validate()
+     * consults the XML `disabled` attribute, never the object property — so an unauthorised POST
+     * that carries the key is answered by discarding the submitted value and returning the one
+     * already stored. Form::filter() never reaches a field whose key is absent from the submitted
+     * data, so an omitted key is the other half, and that one is preserveOmitted().
      */
     public function filter($value, $group = null, ?Registry $input = null)
     {
@@ -45,6 +50,39 @@ class TrackingscriptField extends TextareaField
         }
 
         return $this->getStoredValue($input);
+    }
+
+    /**
+     * The half of the gate that filter() cannot cover. Form::filter() skips a field whose key is
+     * absent from the submitted data, and Table\Menu::bind() then rebuilds params from that data
+     * alone, so an omitted key drops the stored snippet. Called from the menu save path, which
+     * runs whether or not the key was sent.
+     */
+    public static function preserveOmitted(object $table, array $data): void
+    {
+        $itemId  = (int) ($table->id ?? 0);
+        $missing = array_diff(self::PROTECTED_KEYS, array_keys((array) ($data['params'] ?? [])));
+
+        if ($itemId === 0 || $missing === [] || self::isAuthorised()) {
+            return;
+        }
+
+        $stored  = self::readStoredParams($itemId);
+        $params  = new Registry($table->params ?? '');
+        $changed = false;
+
+        foreach ($missing as $key) {
+            $value = (string) $stored->get($key, '');
+
+            if ($value !== '') {
+                $params->set($key, $value);
+                $changed = true;
+            }
+        }
+
+        if ($changed) {
+            $table->params = (string) $params;
+        }
     }
 
     /**
@@ -59,6 +97,11 @@ class TrackingscriptField extends TextareaField
             return '';
         }
 
+        return (string) self::readStoredParams($itemId)->get($this->fieldname, '');
+    }
+
+    private static function readStoredParams(int $itemId): Registry
+    {
         $db    = Factory::getContainer()->get(DatabaseInterface::class);
         $query = $db->getQuery(true)
             ->select($db->quoteName('params'))
@@ -66,9 +109,7 @@ class TrackingscriptField extends TextareaField
             ->where($db->quoteName('id') . ' = :id')
             ->bind(':id', $itemId, ParameterType::INTEGER);
 
-        $params = new Registry((string) ($db->setQuery($query)->loadResult() ?? '{}'));
-
-        return (string) $params->get($this->fieldname, '');
+        return new Registry((string) ($db->setQuery($query)->loadResult() ?? '{}'));
     }
 
     private static function isAuthorised(): bool

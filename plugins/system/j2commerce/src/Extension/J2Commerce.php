@@ -14,6 +14,7 @@ namespace J2Commerce\Plugin\System\J2Commerce\Extension;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Field\TrackingscriptField;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CartHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ComponentParamsHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
@@ -30,6 +31,7 @@ use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Component\Router\RouterViewConfiguration;
 use Joomla\CMS\Document\HtmlDocument;
 use Joomla\CMS\Event\Menu\AfterGetMenuTypeOptionsEvent;
+use Joomla\CMS\Event\Model\BeforeSaveEvent;
 use Joomla\CMS\Event\Result\ResultAwareInterface;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
@@ -128,6 +130,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             'onAfterRoute'                       => 'onAfterRoute',
             'onAfterRender'                      => 'onAfterRender',
             'onContentPrepare'                   => 'onContentPrepare',
+            'onContentBeforeSave'                => 'onContentBeforeSave',
             'onUserLogin'                        => 'onUserLogin',
             'onBeforeCompileHead'                => ['onBeforeCompileHead', Priority::LOW],
             'onJ2CommerceAfterUpdateCart'        => 'onJ2CommerceAfterUpdateCart',
@@ -705,6 +708,22 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         );
 
         $dispatcher->dispatch('onJ2CommerceContentPrepare', $j2Event);
+    }
+
+    /**
+     * A menu item's tracking snippet is writable only with `core.admin` on com_j2commerce, and
+     * TrackingscriptField::filter() enforces that. Form::filter() skips a field whose key is absent
+     * from the submitted data, though, and Table\Menu::bind() then rebuilds params from that data
+     * alone — so without this the stored snippet is dropped by a save that simply omits it. This is
+     * the one point on the menu save path that runs whether or not the key was sent.
+     */
+    public function onContentBeforeSave(BeforeSaveEvent $event): void
+    {
+        if ($event->getContext() !== 'com_menus.item' || $event->getIsNew()) {
+            return;
+        }
+
+        TrackingscriptField::preserveOmitted($event->getItem(), (array) $event->getData());
     }
 
     /**
