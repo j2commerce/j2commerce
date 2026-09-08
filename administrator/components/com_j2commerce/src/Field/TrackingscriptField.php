@@ -44,13 +44,16 @@ class TrackingscriptField extends TextareaField
             return parent::filter($value, $group, $input);
         }
 
-        return $this->getStoredValue();
+        return $this->getStoredValue($input);
     }
 
-    /** Read from the record, not from the bound form data, which can carry a failed save's input. */
-    private function getStoredValue(): string
+    /**
+     * Read from the record, not from the bound form data, which can carry a failed save's input.
+     * The API loads its form unbound, so the submitted data is the only place the id appears there.
+     */
+    private function getStoredValue(?Registry $input): string
     {
-        $itemId = (int) ($this->form->getValue('id') ?? 0);
+        $itemId = (int) ($this->form->getValue('id') ?: ($input?->get('id') ?? 0));
 
         if ($itemId === 0) {
             return '';
