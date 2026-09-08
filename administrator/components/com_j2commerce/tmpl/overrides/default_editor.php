@@ -98,7 +98,15 @@ $renderRoot = function (string $label, array $files) use (&$renderRoot): void {
             <form action="<?php echo Route::_('index.php?option=com_j2commerce&view=overrides&tab=editor&plugin=' . urlencode($plugin) . '&file=' . urlencode($file)); ?>"
                   method="post" name="adminForm" id="adminForm">
                 <div class="editor-border">
-                    <?php echo $this->editorForm->getInput('source'); ?>
+                    <?php if ($this->editorUnavailable) : ?>
+                        <div class="alert alert-warning" role="alert">
+                            <?php echo Text::_('COM_J2COMMERCE_OVERRIDE_EDITOR_UNAVAILABLE'); ?>
+                        </div>
+                        <label for="jform_source" class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_FIELD_SOURCE'); ?></label>
+                        <textarea name="jform[source]" id="jform_source" class="form-control" rows="35" cols="80" spellcheck="false"><?php echo $this->escape($this->source->source); ?></textarea>
+                    <?php else : ?>
+                        <?php echo $this->editorInput; ?>
+                    <?php endif; ?>
                 </div>
                 <input type="hidden" name="task" value="">
                 <input type="hidden" name="plugin" value="<?php echo $this->escape($plugin); ?>">

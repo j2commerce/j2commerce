@@ -24,6 +24,7 @@ use Joomla\CMS\Form\Form;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use Joomla\CMS\Uri\Uri;
@@ -42,6 +43,8 @@ class HtmlView extends BaseHtmlView
     protected string $navbar                = '';
     protected array $builderPreviewProducts = [];
     protected array $builderSubLayoutFiles  = [];
+    protected string $editorInput           = '';
+    protected bool $editorUnavailable       = false;
 
     public function display($tpl = null): void
     {
@@ -78,6 +81,7 @@ class HtmlView extends BaseHtmlView
         if ($this->source && $this->editorForm) {
             $this->editorForm->setValue('source', null, $this->source->source);
             $this->editorForm->setFieldAttribute('source', 'syntax', 'php');
+            $this->editorInput = $this->renderEditorInput();
         }
 
         $db                           = Factory::getContainer()->get('DatabaseDriver');
@@ -109,6 +113,19 @@ class HtmlView extends BaseHtmlView
         $this->addToolbar();
 
         parent::display($tpl);
+    }
+
+    /** Falls back to a plain textarea when the pinned editor plugin throws. */
+    private function renderEditorInput(): string
+    {
+        try {
+            return $this->editorForm->getInput('source');
+        } catch (\Throwable $e) {
+            Log::add('overrides editor render failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $this->editorUnavailable = true;
+
+            return '';
+        }
     }
 
     private function getBuilderSubLayoutFiles(): array
