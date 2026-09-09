@@ -25,6 +25,11 @@ if (!$this->params->get('show_tax_calculator', 1)) {
     return;
 }
 
+// Joomla.renderMessages() is defined in the core `messages` asset. Nothing on the
+// storefront requests it, so without this the estimate's success and failure
+// messages are dropped by the typeof guard and the shopper is told nothing.
+Factory::getApplication()->getDocument()->getWebAssetManager()->useScript('messages');
+
 $postcodeRequired = $this->params->get('postalcode_required', 1);
 $baseUrl          = UtilitiesHelper::getAjaxBaseUrl();
 $loaderImage      = Uri::root(true) . '/media/com_j2commerce/images/loader.gif';
@@ -118,8 +123,24 @@ document.addEventListener('DOMContentLoaded', function() {
     const zoneSelect = document.getElementById('estimate_zone_id');
     const buttonQuote = document.getElementById('button-quote');
     const baseUrl = <?php echo json_encode($baseUrl, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
-    const loaderImage = '<?php echo $loaderImage; ?>';
-    const currentZoneId = '<?php echo $this->zone_id; ?>';
+    const loaderImage = <?php echo json_encode($loaderImage, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+    const currentZoneId = <?php echo json_encode((string) $this->zone_id, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+    const loadingText = <?php echo json_encode(Text::_('COM_J2COMMERCE_LOADING'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+    const errorText = <?php echo json_encode(Text::_('COM_J2COMMERCE_ERROR_OCCURRED'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+
+    // renderMessages() throws when the active template omits the message container,
+    // and both call sites sit on paths whose remaining work still has to run.
+    function showMessages(payload) {
+        if (typeof Joomla === 'undefined' || !Joomla.renderMessages) {
+            return;
+        }
+
+        try {
+            Joomla.renderMessages(payload);
+        } catch (error) {
+            console.error(error);
+        }
+    }
 
     // baseUrl already carries a ?lang= on a multilingual site, so a second
     // query string has to be appended, not started.
@@ -151,7 +172,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const loader = document.createElement('span');
             loader.className = 'wait ms-2';
-            loader.innerHTML = '<img src="' + loaderImage + '" alt="Loading..." style="width: 16px; height: 16px;">';
+            loader.setAttribute('role', 'status');
+
+            const loaderIcon = document.createElement('img');
+            loaderIcon.src = loaderImage;
+            loaderIcon.alt = loadingText;
+            loaderIcon.width = 16;
+            loaderIcon.height = 16;
+            loader.replaceChildren(loaderIcon);
 
             this.parentNode.appendChild(loader);
 
@@ -226,12 +254,12 @@ document.addEventListener('DOMContentLoaded', function() {
             // Disable button and show loading
             buttonQuote.disabled = true;
             buttonQuote.classList.add('disabled');
-            const originalText = buttonQuote.innerHTML;
+            const originalContent = Array.from(buttonQuote.childNodes);
             const quoteSpinner = document.createElement('span');
             quoteSpinner.className = 'spinner-border spinner-border-sm me-1';
             quoteSpinner.setAttribute('aria-hidden', 'true');
             buttonQuote.replaceChildren(quoteSpinner);
-            buttonQuote.append(' ' + <?php echo json_encode(Text::_('COM_J2COMMERCE_LOADING'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>);
+            buttonQuote.append(' ' + loadingText);
 
             try {
                 // Use POST for the estimate task with AJAX flag
@@ -269,8 +297,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if (data.success) {
                     // Show success message if provided
-                    if (data.message && typeof Joomla !== 'undefined' && Joomla.renderMessages) {
-                        Joomla.renderMessages({ success: [data.message] });
+                    if (data.message) {
+                        showMessages({ success: [data.message] });
                     }
 
                     // Refresh the totals section via AJAX
@@ -278,13 +306,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } catch (error) {
                 console.error('Error calculating shipping:', error);
-                if (typeof Joomla !== 'undefined' && Joomla.renderMessages) {
-                    Joomla.renderMessages({ error: ['Error calculating shipping. Please try again.'] });
-                }
+                showMessages({ error: [errorText] });
             } finally {
                 buttonQuote.disabled = false;
                 buttonQuote.classList.remove('disabled');
-                buttonQuote.innerHTML = originalText;
+                buttonQuote.replaceChildren(...originalContent);
             }
         });
     }
