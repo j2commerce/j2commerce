@@ -15,6 +15,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Service\ProductService;
+use J2Commerce\Component\J2commerce\Administrator\SetupGuide\Checks\CartCleanupTaskCheck;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
@@ -58,13 +59,45 @@ final class DatabaseHealthHelper
                 'count'              => $count,
                 'repairable'         => $check['repairable'],
                 'destructive'        => $check['destructive'],
-                'setupGuideLink'     => $check['setupGuideLink'] ?? false,
+                'setupGuideLink'     => self::resolveSetupGuideLink($check),
                 'reviewUrl'          => $check['reviewUrl'] ?? null,
                 'destructiveWarning' => Text::_($check['destructiveWarningKey'] ?? 'COM_J2COMMERCE_DATABASE_HEALTH_DESTRUCTIVE_WARNING'),
             ];
         }
 
         return ['checks' => $results];
+    }
+
+    /**
+     * Resolves setupGuideLink, which may be a callable (per-store state) or a plain
+     * bool from a plugin listening on onJ2CommerceGetHealthChecks.
+     */
+    private static function resolveSetupGuideLink(array $check): bool
+    {
+        $value = $check['setupGuideLink'] ?? false;
+
+        if (!\is_callable($value)) {
+            return (bool) $value;
+        }
+
+        try {
+            return (bool) $value();
+        } catch (\Throwable $e) {
+            Log::add(
+                'Database health setup-guide state for "' . $check['id'] . '" failed: ' . $e->getMessage(),
+                Log::WARNING,
+                'com_j2commerce'
+            );
+
+            // Offer the guide when the state is unknowable, rather than hiding the remedy.
+            return true;
+        }
+    }
+
+    /** True while the cart cleanup task is missing, disabled or failing. */
+    public static function needsCartCleanupSetup(): bool
+    {
+        return (new CartCleanupTaskCheck())->check()->status !== 'pass';
     }
 
     /** @throws \InvalidArgumentException When $id is unknown or not repairable. */
@@ -130,7 +163,7 @@ final class DatabaseHealthHelper
                 'descriptionKey' => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_CART_GC_BACKLOG_DESC',
                 'repairable'     => true,
                 'destructive'    => false,
-                'setupGuideLink' => true,
+                'setupGuideLink' => [self::class, 'needsCartCleanupSetup'],
                 'count'          => [self::class, 'countCartGcBacklog'],
                 'fix'            => [self::class, 'fixCartGcBacklog'],
             ],
