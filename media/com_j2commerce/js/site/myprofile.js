@@ -206,12 +206,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     card.style.opacity = '0';
                     setTimeout(() => card.remove(), 300);
                 }
-                Joomla.renderMessages({ message: [json.message] });
+                J2CommerceDom.showMessages({ message: [json.message] });
             } else {
-                Joomla.renderMessages({ error: [json.message || 'Error'] });
+                J2CommerceDom.showMessages({ error: [json.message || Joomla.Text._('COM_J2COMMERCE_ERROR_OCCURRED')] });
             }
         } catch (err) {
-            Joomla.renderMessages({ error: ['An error occurred'] });
+            J2CommerceDom.showMessages({ error: [Joomla.Text._('COM_J2COMMERCE_ERROR_OCCURRED')] });
         }
     });
 
@@ -236,7 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (json.redirect) {
                         window.location.href = json.redirect;
                     } else {
-                        Joomla.renderMessages({ message: [json.message] });
+                        J2CommerceDom.showMessages({ message: [json.message] });
                         const idField = form.querySelector('[name="address_id"]');
                         if (idField && json.address_id) idField.value = json.address_id;
                     }
@@ -250,10 +250,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             input.closest('.col-md-6, .col-12')?.appendChild(err);
                         }
                     });
-                    if (json.message) Joomla.renderMessages({ error: [json.message] });
+                    if (json.message) J2CommerceDom.showMessages({ error: [json.message] });
                 }
             } catch (err) {
-                Joomla.renderMessages({ error: ['An error occurred'] });
+                J2CommerceDom.showMessages({ error: [Joomla.Text._('COM_J2COMMERCE_ERROR_OCCURRED')] });
             } finally {
                 if (submitBtn) submitBtn.disabled = false;
             }

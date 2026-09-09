@@ -226,9 +226,7 @@
 
                     // Show adjustment message if quantity was clamped to min/max
                     if (data.message) {
-                        if (typeof Joomla !== 'undefined' && Joomla.renderMessages) {
-                            Joomla.renderMessages({ warning: [data.message] });
-                        }
+                        J2CommerceDom.showMessages({ warning: [data.message] });
                     }
 
                     // Update line total for this item
@@ -248,11 +246,7 @@
                 } else {
                     // Show error message
                     if (data.message) {
-                        if (typeof Joomla !== 'undefined' && Joomla.renderMessages) {
-                            Joomla.renderMessages({ error: [data.message] });
-                        } else {
-                            alert(data.message);
-                        }
+                        J2CommerceDom.showMessages({ error: [data.message] });
                     }
 
                     // Revert to previous value if provided
@@ -265,9 +259,7 @@
                 }
             } catch (error) {
                 console.error('Error updating quantity:', error);
-                if (typeof Joomla !== 'undefined' && Joomla.renderMessages) {
-                    Joomla.renderMessages({ error: [strings.errorUpdating || 'Error updating cart'] });
-                }
+                J2CommerceDom.showMessages({ error: [strings.errorUpdating || 'Error updating cart'] });
             } finally {
                 setLoadingState(container, false);
             }
@@ -312,8 +304,8 @@
                     }, 300);
 
                     // Show success message
-                    if (data.message && typeof Joomla !== 'undefined' && Joomla.renderMessages) {
-                        Joomla.renderMessages({ success: [data.message] });
+                    if (data.message) {
+                        J2CommerceDom.showMessages({ success: [data.message] });
                     }
 
                     document.dispatchEvent(new CustomEvent('j2commerce:cart:updated'));
@@ -321,19 +313,13 @@
                     // Show error
                     button.disabled = false;
                     if (data.message) {
-                        if (typeof Joomla !== 'undefined' && Joomla.renderMessages) {
-                            Joomla.renderMessages({ error: [data.message] });
-                        } else {
-                            alert(data.message);
-                        }
+                        J2CommerceDom.showMessages({ error: [data.message] });
                     }
                 }
             } catch (error) {
                 console.error('Error removing item:', error);
                 button.disabled = false;
-                if (typeof Joomla !== 'undefined' && Joomla.renderMessages) {
-                    Joomla.renderMessages({ error: [strings.errorRemoving || 'Error removing item'] });
-                }
+                J2CommerceDom.showMessages({ error: [strings.errorRemoving || 'Error removing item'] });
             }
         }
 
@@ -477,8 +463,8 @@
                     showEmptyCartMessage();
 
                     // Show success message
-                    if (data.message && typeof Joomla !== 'undefined' && Joomla.renderMessages) {
-                        Joomla.renderMessages({ success: [data.message] });
+                    if (data.message) {
+                        J2CommerceDom.showMessages({ success: [data.message] });
                     }
 
                     document.dispatchEvent(new CustomEvent('j2commerce:cart:updated'));
@@ -486,11 +472,7 @@
                     clearBtn.disabled = false;
                     clearBtn.classList.remove('disabled');
                     if (data.message) {
-                        if (typeof Joomla !== 'undefined' && Joomla.renderMessages) {
-                            Joomla.renderMessages({ error: [data.message] });
-                        } else {
-                            alert(data.message);
-                        }
+                        J2CommerceDom.showMessages({ error: [data.message] });
                     }
                 }
             } catch (error) {

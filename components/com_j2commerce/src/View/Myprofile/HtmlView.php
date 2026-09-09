@@ -212,9 +212,17 @@ class HtmlView extends BaseHtmlView
             ['com_j2commerce.countryzone']
         );
 
+        Text::script('COM_J2COMMERCE_ERROR_OCCURRED');
+
         // Register payment methods JS if unified tab is active
         if ($this->useUnifiedPaymentTab) {
-            $wa->registerAndUseScript('com_j2commerce.payment-methods', 'media/com_j2commerce/js/site/payment-methods.js', [], ['defer' => true]);
+            $wa->registerAndUseScript(
+                'com_j2commerce.payment-methods',
+                'media/com_j2commerce/js/site/payment-methods.js',
+                [],
+                ['defer' => true],
+                ['com_j2commerce.dom']
+            );
 
             // Payment methods language strings for JS
             Text::script('COM_J2COMMERCE_PAYMENT_METHODS_CONFIRM_DELETE');

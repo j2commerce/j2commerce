@@ -112,7 +112,7 @@
                     }
                 }, 300);
 
-                Joomla.renderMessages({
+                J2CommerceDom.showMessages({
                     'success': [Joomla.Text._('COM_J2COMMERCE_PAYMENT_METHODS_DELETED')]
                 });
             } else {
@@ -173,7 +173,7 @@
                 // Remove set-default button from this card
                 button.remove();
 
-                Joomla.renderMessages({
+                J2CommerceDom.showMessages({
                     'success': [Joomla.Text._('COM_J2COMMERCE_PAYMENT_METHODS_DEFAULT_SET')]
                 });
             } else {
@@ -295,7 +295,7 @@
      * @param {string} message The error message
      */
     function showErrorMessage(message) {
-        Joomla.renderMessages({
+        J2CommerceDom.showMessages({
             'error': [message]
         });
     }

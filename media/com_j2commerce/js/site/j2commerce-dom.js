@@ -117,5 +117,29 @@
         }
     });
 
-    window.J2CommerceDom = { parse, adopt, el };
+    /**
+     * Render Joomla messages without letting the render decide whether the caller's
+     * remaining work runs.
+     *
+     * renderMessages() resolves #system-message-container and appends to it, so a
+     * template that omits the container throws. Every caller here sits on a path with
+     * work still to do after the message -- a button to re-enable, a total to refresh --
+     * so the throw is swallowed to console.error and the caller carries on.
+     *
+     * The `messages` asset is requested by StrapperHelper on every storefront request;
+     * the API check covers a template or module that renders without it.
+     */
+    function showMessages(payload) {
+        if (typeof Joomla === 'undefined' || !Joomla.renderMessages) {
+            return;
+        }
+
+        try {
+            Joomla.renderMessages(payload);
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    window.J2CommerceDom = { parse, adopt, el, showMessages };
 })(window, document);

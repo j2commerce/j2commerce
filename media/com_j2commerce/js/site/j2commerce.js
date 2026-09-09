@@ -114,10 +114,8 @@ const J2Commerce = {
                 const errorMsg = json.error.stock || json.error.general || json.error.product
                     || (typeof json.error === 'string' ? json.error : '');
                 if (errorMsg) {
-                    if (typeof Joomla !== 'undefined' && Joomla.renderMessages) {
-                        Joomla.renderMessages({ error: [errorMsg] });
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }
+                    J2CommerceDom.showMessages({ error: [errorMsg] });
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
                 }
                 button.classList.remove('loading');
                 return;

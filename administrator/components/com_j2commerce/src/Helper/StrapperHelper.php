@@ -581,6 +581,7 @@ class StrapperHelper
             $wa->registerAndUseScript('com_j2commerce.site', 'media/com_j2commerce/js/site/j2commerce.js', [], ['defer' => true], ['com_j2commerce.dom']);
             $wa->registerAndUseScript('com_j2commerce.a11y', 'media/com_j2commerce/js/site/j2commerce-a11y.js', [], ['defer' => true]);
             $wa->registerAndUseScript('plg_j2commerce_app_flexivariable.flexivariable', 'media/plg_j2commerce_app_flexivariable/js/flexivariable.js', [], ['defer' => true]);
+            $this->useMessagesAsset($wa);
 
             // Load context-specific scripts
             match ($context) {
@@ -594,6 +595,33 @@ class StrapperHelper
         } catch (\Exception $e) {
             $this->logError('Error loading frontend scripts: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Request Joomla's core `messages` asset and the strings its markup needs.
+     *
+     * Joomla.renderMessages() lives in this asset, and a site template is not required to
+     * request it, so without this the storefront's message calls resolve to nothing. It is
+     * a core asset, hence useScript() rather than the project's registerAndUseScript() rule.
+     *
+     * renderMessages() builds the alert's close button from JCLOSE and its visually-hidden
+     * heading from the message type, both through Joomla.Text, so the four types the
+     * storefront emits are pushed alongside it -- an unpushed key is read out verbatim.
+     *
+     * @param   \Joomla\CMS\WebAsset\WebAssetManager  $wa  Web Asset Manager instance
+     *
+     * @return  void
+     * @since   6.0.0
+     */
+    protected function useMessagesAsset($wa): void
+    {
+        $wa->useScript('messages');
+
+        \Joomla\CMS\Language\Text::script('JCLOSE');
+        \Joomla\CMS\Language\Text::script('ERROR');
+        \Joomla\CMS\Language\Text::script('WARNING');
+        \Joomla\CMS\Language\Text::script('SUCCESS');
+        \Joomla\CMS\Language\Text::script('MESSAGE');
     }
 
     /**
@@ -1008,6 +1036,7 @@ class StrapperHelper
             $wa->registerAndUseScript('com_j2commerce.dom', 'media/com_j2commerce/js/site/j2commerce-dom.js', [], ['defer' => true]);
             $wa->registerAndUseScript('com_j2commerce.site', 'media/com_j2commerce/js/site/j2commerce.js', [], ['defer' => true], ['com_j2commerce.dom']);
             $wa->registerAndUseScript('com_j2commerce.a11y', 'media/com_j2commerce/js/site/j2commerce-a11y.js', [], ['defer' => true]);
+            $this->useMessagesAsset($wa);
 
             // Load core CSS (handles template overrides)
             $this->loadCoreCSS($wa);

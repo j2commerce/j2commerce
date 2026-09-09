@@ -243,6 +243,16 @@ $showViewCartBtn         = $showViewCart && !empty($cartUrl);
 <?php endif; ?>
 
 <?php if (!$isAjax) : ?>
+<?php
+// Joomla.renderMessages() lives in the core `messages` asset, which a site template is not
+// required to request, and this module renders on pages that never load com_j2commerce's
+// own assets. Core asset, so useScript() rather than the project's registerAndUseScript()
+// rule. JCLOSE and ERROR name the alert's close button and its visually-hidden heading.
+$wa = \Joomla\CMS\Factory::getApplication()->getDocument()->getWebAssetManager();
+$wa->useScript('messages');
+Text::script('JCLOSE');
+Text::script('ERROR');
+?>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     var ajaxUrl = <?php echo json_encode($ajaxUrl); ?>;
