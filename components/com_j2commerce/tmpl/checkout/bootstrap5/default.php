@@ -13,6 +13,7 @@
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
@@ -217,7 +218,13 @@ Text::script('COM_J2COMMERCE_CHECKOUT_ERROR_AGREE_TERMS');
 document.addEventListener('DOMContentLoaded', function() {
     'use strict';
 
-    var baseUrl = '<?php echo Uri::root(true) . '/index.php'; ?>';
+    var baseUrl = <?php echo json_encode(UtilitiesHelper::getAjaxBaseUrl(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+    // baseUrl already carries a ?lang= on a multilingual site, so a second
+    // query string has to be appended, not started.
+    function ajaxUrl(query) {
+        return baseUrl + (baseUrl.indexOf('?') === -1 ? '?' : '&') + query;
+    }
+
     var token = '<?php echo $token; ?>';
     var showShipping = <?php echo $this->showShipping ? 'true' : 'false'; ?>;
     var isLoggedIn = <?php echo $this->logged ? 'true' : 'false'; ?>;
@@ -485,7 +492,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Fetch and populate countries, restoring saved selection
-        var countryUrl = baseUrl + '?option=com_j2commerce&task=ajax.getCountries';
+        var countryUrl = ajaxUrl('option=com_j2commerce&task=ajax.getCountries');
         if (savedCountryId) countryUrl += '&country_id=' + savedCountryId;
 
         fetch(countryUrl)
@@ -515,7 +522,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            var url = baseUrl + '?option=com_j2commerce&task=ajax.getZones&country_id=' + countryId;
+            var url = ajaxUrl('option=com_j2commerce&task=ajax.getZones&country_id=' + countryId);
             if (selectedZoneId) url += '&zone_id=' + selectedZoneId;
 
             fetch(url)

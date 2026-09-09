@@ -12,6 +12,7 @@
 // phpcs:enable PSR1.Files.SideEffects
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -25,7 +26,7 @@ if (!$this->params->get('show_tax_calculator', 1)) {
 }
 
 $postcodeRequired = $this->params->get('postalcode_required', 1);
-$baseUrl          = Uri::root(true) . '/index.php';
+$baseUrl          = UtilitiesHelper::getAjaxBaseUrl();
 $loaderImage      = Uri::root(true) . '/media/com_j2commerce/images/loader.gif';
 
 // Build country select using native Joomla
@@ -120,6 +121,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const loaderImage = '<?php echo $loaderImage; ?>';
     const currentZoneId = '<?php echo $this->zone_id; ?>';
 
+    // baseUrl already carries a ?lang= on a multilingual site, so a second
+    // query string has to be appended, not started.
+    function ajaxUrl(query) {
+        return baseUrl + (baseUrl.indexOf('?') === -1 ? '?' : '&') + query;
+    }
+
     // A hidden Joomla form-token input reproduces exactly the shape core's page cache
     // rewrites to the current visitor's token on every cached-page replay, unlike a
     // token baked directly into inline JS via PHP interpolation.
@@ -148,7 +155,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             this.parentNode.appendChild(loader);
 
-            fetch(baseUrl + '?option=com_j2commerce&task=carts.getCountry&country_id=' + countryId, {
+            fetch(ajaxUrl('option=com_j2commerce&task=carts.getCountry&country_id=' + countryId), {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/json'
@@ -231,7 +238,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 formData.append('ajax', '1');
                 formData.append(readFormToken(), '1');
 
-                const response = await fetch(baseUrl + '?option=com_j2commerce&task=carts.estimateAjax', {
+                const response = await fetch(ajaxUrl('option=com_j2commerce&task=carts.estimateAjax'), {
                     method: 'POST',
                     body: formData,
                     headers: {

@@ -14,6 +14,8 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Filter\OutputFilter;
+use Joomla\CMS\Language\LanguageHelper;
+use Joomla\CMS\Uri\Uri;
 use Joomla\Database\DatabaseInterface;
 
 // No direct access
@@ -524,6 +526,41 @@ class UtilitiesHelper
         } catch (\Exception $e) {
             return 0;
         }
+    }
+
+    /**
+     * Base URL for this component's own AJAX calls, carrying the current language.
+     *
+     * These requests go to a bare /index.php with no SEF language prefix, and the
+     * Language Filter plugin takes the site default language for any POST that
+     * arrives without a `lang` variable - so an AJAX-rendered fragment comes back
+     * in the wrong language on a multilingual site.
+     *
+     * The value is the language's SEF code, not its full tag: the filter's parse
+     * rule treats a `lang` it does not recognise as a routing error and redirects,
+     * which would break the fetch.
+     *
+     * @return  string  index.php, with a `lang` query variable where one applies.
+     *
+     * @since   6.6.0
+     */
+    public static function getAjaxBaseUrl(): string
+    {
+        $base = Uri::root(true) . '/index.php';
+
+        try {
+            $app = Factory::getApplication();
+
+            if (!$app->isClient('site') || !$app->getLanguageFilter()) {
+                return $base;
+            }
+
+            $sef = LanguageHelper::getLanguages('lang_code')[$app->getLanguage()->getTag()]->sef ?? '';
+        } catch (\Exception $e) {
+            return $base;
+        }
+
+        return $sef === '' ? $base : $base . '?lang=' . $sef;
     }
 
     // =========================================================================
