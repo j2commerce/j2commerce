@@ -106,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const countrySelect = document.getElementById('estimate_country_id');
     const zoneSelect = document.getElementById('estimate_zone_id');
     const buttonQuote = document.getElementById('button-quote');
-    const baseUrl = '<?php echo $baseUrl; ?>';
+    const baseUrl = <?php echo json_encode($baseUrl, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
     const loaderImage = '<?php echo $loaderImage; ?>';
     const currentZoneId = '<?php echo $this->zone_id; ?>';
 
