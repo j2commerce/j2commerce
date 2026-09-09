@@ -213,6 +213,14 @@ class EmailtemplateModel extends AdminModel
                 return false;
             }
 
+            // Save as Copy loads the original row and then binds a zeroed key over it, so the
+            // insert would otherwise carry the original's core_key and answer to Sync Core as
+            // the core template it was copied from. duplicate() stamps a copy for this reason;
+            // this is the same row arriving by the other route.
+            if (!$isNew && empty($table->$key)) {
+                $table->core_key = CoreTemplateSyncHelper::MERCHANT_KEY;
+            }
+
             // Store the data.
             if (!$table->store()) {
                 $this->setError($table->getError());
