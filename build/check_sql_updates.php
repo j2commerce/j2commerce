@@ -22,6 +22,20 @@
  *   2. Comma-chained clauses — splitSql() splits on `;` only, so `MODIFY a, MODIFY b` is one change
  *      item and only the first clause is ever checked. Give each column its own ALTER TABLE.
  *
+ * A third rule is about the filenames rather than their contents. Joomla decides "the newest
+ * delta" twice, with two sorts that do not agree:
+ *
+ *   - Installer::parseSchemaUpdates() sorts with usort($files, 'version_compare') and stamps
+ *     the last one into #__schemas.
+ *   - ChangeSet::getSchema(), which Extensions -> Manage -> Database reports against, takes
+ *     the last entry of Folder::files(..., $naturalSort = true).
+ *
+ * version_compare canonicalises `-` to `.`, so `X-3` ranks after `X`. Natural sort compares
+ * bytes, where `-` (0x2D) precedes `.` (0x2E), so `X-3.sql` ranks *before* `X.sql`. Ship a bare
+ * `X.sql` alongside an `X-2.sql` on the newest date and the two answers differ permanently:
+ * every site reports "Database version (X-3) does not match manifest version (X)". Give a
+ * fourth same-day delta the next date instead of another suffix.
+ *
  * Usage:
  *   php build/check_sql_updates.php              — lint, exit 1 on any violation
  *   php build/check_sql_updates.php --build-check — compact warning for build scripts (always exits 0)
@@ -73,6 +87,31 @@ foreach ($dirs as $dir) {
                 ];
             }
         }
+    }
+
+    $names = array_map('basename', glob($dir . '/*.sql') ?: []);
+
+    if (!$names) {
+        continue;
+    }
+
+    $natural = $names;
+    natsort($natural);
+    $natural = end($natural);
+
+    $semantic = $names;
+    usort($semantic, 'version_compare');
+    $semantic = end($semantic);
+
+    if ($natural !== $semantic) {
+        $violations[] = [
+            'file' => str_replace(DIRECTORY_SEPARATOR, '/', substr($dir, strlen(ROOT) + 1)),
+            'line' => null,
+            'rule' => 'newest-delta sort disagreement',
+            'hint' => 'the installer stamps ' . basename($semantic, '.sql') . ' but the Database view'
+                . ' reports ' . basename($natural, '.sql')
+                . ' — give the suffixed delta the next date instead',
+        ];
     }
 }
 
@@ -214,11 +253,13 @@ if (!$violations) {
 }
 
 foreach ($violations as $v) {
-    echo "{$col['red']}FAIL{$col['reset']}   {$v['file']}:{$v['line']}\n";
+    $where = $v['line'] === null ? $v['file'] : $v['file'] . ':' . $v['line'];
+    echo "{$col['red']}FAIL{$col['reset']}   {$where}\n";
     echo "       {$v['rule']} — {$v['hint']}\n";
 }
 
-echo "\n" . count($violations) . " violation(s). Joomla's schema checker cannot parse these;\n";
-echo "a shipped delta with either shape reports a false mismatch on every site, forever.\n";
+echo "\n" . count($violations) . " violation(s). Joomla either cannot parse these or\n";
+echo "cannot agree which is newest; a shipped delta reports a false mismatch on every site, forever.
+";
 
 exit(1);
