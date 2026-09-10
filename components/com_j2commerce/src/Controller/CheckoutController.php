@@ -2447,10 +2447,12 @@ class CheckoutController extends BaseController
                         // clearContext() also drops the primed order, which the plugin's
                         // paction=display follow-up needs in order to be admitted. Leave that
                         // one request a single-use claim instead; isGatewayReturnFor() spends it.
+                        // It lives only as long as the redirect it was issued for needs.
                         if (!$wasContextActivated && !empty($orderTable->order_id)) {
                             $this->app->setUserState('j2commerce.display_handoff', [
                                 'order_id' => (string) $orderTable->order_id,
                                 'type'     => $orderpaymentType,
+                                'expires'  => time() + 600,
                             ]);
                         }
                     }
@@ -3099,6 +3101,7 @@ class CheckoutController extends BaseController
         }
 
         if ($this->input->getString('paction', '') === 'display'
+            && (int) ($handoff['expires'] ?? 0) >= time()
             && ($handoff['type'] ?? '') === $orderpaymentType
             && ($claimed = $this->loadOrderRow((string) ($handoff['order_id'] ?? ''))) !== null
             && (string) ($claimed->orderpayment_type ?? '') === $orderpaymentType
