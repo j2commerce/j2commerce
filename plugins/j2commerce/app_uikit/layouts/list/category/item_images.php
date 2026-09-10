@@ -45,7 +45,6 @@ if (empty($image)) {
 }
 
 $productName = htmlspecialchars($product->product_name ?? '', ENT_QUOTES, 'UTF-8');
-$imageAlt = htmlspecialchars($imageAlt, ENT_QUOTES, 'UTF-8');
 
 $basePrice = $product->pricing->base_price ?? 0;
 $salePrice = $product->pricing->price ?? 0;

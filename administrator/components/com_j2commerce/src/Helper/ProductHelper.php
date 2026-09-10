@@ -4308,10 +4308,10 @@ class ProductHelper
         }
 
         // Generate default image HTML
-        $imageUrl = $product->main_image ?? '';
+        $imageUrl = $productData['image'] ?? $product->main_image ?? '';
 
         if (!empty($imageUrl)) {
-            $alt  = htmlspecialchars($product->product_name ?? '', ENT_QUOTES, 'UTF-8');
+            $alt  = htmlspecialchars(($productData['alt'] ?? '') ?: ($product->product_name ?? ''), ENT_QUOTES, 'UTF-8');
             $html = '<img src="' . htmlspecialchars($imageUrl, ENT_QUOTES, 'UTF-8')
                 . '" alt="' . $alt . '" class="j2commerce-product-image" />';
         }

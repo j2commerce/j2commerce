@@ -63,7 +63,7 @@ $category_columns = (int) $params->get('category_columns', 4);
                                 <?php if(!empty($category->image)):?>
                                     <div class="j2commerce-category-image-container">
                                         <a href="<?php echo $categoryUrl; ?>" class="j2commerce-category-link d-block" title="<?php echo $this->escape($category->title); ?>">
-                                            <?php echo ImageHelper::getProductImage($this->escape($category->image), 300, 'html', 300, 'img-fluid', $this->escape($category->image_alt ?: $category->title)); ?>
+                                            <?php echo ImageHelper::getProductImage($category->image, 300, 'html', 300, 'img-fluid', $category->image_alt ?: $category->title); ?>
                                         </a>
                                     </div>
                                 <?php endif;?>
@@ -129,7 +129,7 @@ $category_columns = (int) $params->get('category_columns', 4);
                                 <?php if(!empty($category->image)):?>
                                     <div class="j2commerce-category-image-container">
                                         <a href="<?php echo $categoryUrl; ?>" class="j2commerce-category-link d-block" title="<?php echo $this->escape($category->title); ?>">
-                                            <?php echo ImageHelper::getProductImage($this->escape($category->image), 300, 'html', 300, 'img-fluid', $this->escape($category->image_alt ?: $category->title)); ?>
+                                            <?php echo ImageHelper::getProductImage($category->image, 300, 'html', 300, 'img-fluid', $category->image_alt ?: $category->title); ?>
                                         </a>
                                     </div>
                                 <?php endif;?>
@@ -171,7 +171,7 @@ $category_columns = (int) $params->get('category_columns', 4);
                                 <?php if(!empty($category->image)):?>
                                     <div class="j2commerce-category-image-container">
                                         <a href="<?php echo $categoryUrl; ?>" class="j2commerce-category-link d-block" title="<?php echo $this->escape($category->title); ?>">
-                                            <?php echo ImageHelper::getProductImage($this->escape($category->image), 300, 'html', 300, 'img-fluid', $this->escape($category->image_alt ?: $category->title), true); ?>
+                                            <?php echo ImageHelper::getProductImage($category->image, 300, 'html', 300, 'img-fluid', $category->image_alt ?: $category->title, true); ?>
                                         </a>
                                     </div>
                                 <?php endif;?>

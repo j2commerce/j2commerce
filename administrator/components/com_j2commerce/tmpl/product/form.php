@@ -188,7 +188,7 @@ if ($app->isClient('administrator')) {
                         <div class="image-section">
                             <?php if ($imageCount > 0): ?>
                                 <div class="image-frame">
-                                    <?php echo ImageHelper::getInstance()->getProductImage($item->main_image,height: 160,width: 160,class: 'object-fit-cover img-fluid',alt: htmlspecialchars($item->product_name, ENT_QUOTES, 'UTF-8'));?>
+                                    <?php echo ImageHelper::getInstance()->getProductImage($item->main_image,height: 160,width: 160,class: 'object-fit-cover img-fluid',alt: $item->product_name ?? '');?>
                                 </div>
                             <?php endif; ?>
                         </div>

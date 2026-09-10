@@ -59,10 +59,11 @@ $additional_images = array_filter((array)$additional_images);
                         ?>
                         <?php foreach($additional_images as $key => $image):
                         $image_src = HTMLHelper::_('cleanImageURL', $image)->url;
+                        $image_alt = ($additional_images_alt[$key] ?? '') ?: $this->item->product_name . ' ' . $key;
                         ?>
                         <div class="swiper-slide">
-                            <a class="j2c-product-image-link d-block cursor-zoom-in text-center" href="<?php echo $this->escape($image_src);?>" data-fancybox="gallery" data-thumb="<?php echo $this->escape($image_src);?>" title="<?php echo $this->escape($this->item->product_name).' '.$key;?>">
-                                <img src="<?php echo $this->escape($image_src);?>" data-zoom="<?php echo $this->escape($image_src);?>" alt="<?php echo $this->escape($this->item->product_name).' '.$key;?>" class="j2commerce-item-additionalimage img-fluid rounded-1">
+                            <a class="j2c-product-image-link d-block cursor-zoom-in text-center" href="<?php echo $this->escape($image_src);?>" data-fancybox="gallery" data-thumb="<?php echo $this->escape($image_src);?>" title="<?php echo $this->escape($image_alt);?>">
+                                <img src="<?php echo $this->escape($image_src);?>" data-zoom="<?php echo $this->escape($image_src);?>" alt="<?php echo $this->escape($image_alt);?>" class="j2commerce-item-additionalimage img-fluid rounded-1">
                             </a>
                         </div>
                         <?php //endif;?>
@@ -95,7 +96,7 @@ $additional_images = array_filter((array)$additional_images);
                 <div class="swiper swiper-load swiper-thumbs d-none d-lg-block w-100 j2commerce-product-additional-images" id="thumbs" data-swiper='{"direction": "horizontal","spaceBetween": 12,"slidesPerView": 5,"watchSlidesProgress": true,"loop": true,"navigation": {"nextEl": ".swiper-button-next","prevEl": ".swiper-button-prev"}}'>
                     <div class="swiper-wrapper flex-row">
                         <?php if (!empty($this->item->main_image)):?>
-                            <?php echo J2CommerceHelper::product()->displayImage($this->item,array('type'=>'AdditionalMain','params' => $this->params,'alt'=> $this->escape($this->item->main_image_alt))); ?>
+                            <?php echo J2CommerceHelper::product()->displayImage($this->item,array('type'=>'AdditionalMain','params' => $this->params,'alt'=> $this->item->main_image_alt)); ?>
                         <?php endif;?>
 
                         <?php foreach($additional_images as $key => $image):
@@ -105,11 +106,11 @@ $additional_images = array_filter((array)$additional_images);
                                 ?>
                                 <div class="swiper-slide swiper-thumb border rounded-2">
                                     <div class="j2commerce-image-container ratio ratio-1x1">
-                                        <img src="<?php echo $this->escape($image_src);?>" alt="<?php echo $this->escape($this->item->product_name).' '.$key;?>" class="img-fluid rounded-1 j2commerce-item-additionalimage-preview swiper-thumb-img">
+                                        <img src="<?php echo $this->escape($image_src);?>" alt="<?php echo $this->escape(($additional_images_alt[$key] ?? '') ?: $this->item->product_name . ' ' . $key);?>" class="img-fluid rounded-1 j2commerce-item-additionalimage-preview swiper-thumb-img">
                                     </div>
                                 </div>
                             <?php elseif(!empty($image)):?>
-                                <?php echo J2CommerceHelper::product()->displayImage($this->item,array('type'=>'ViewAdditional','params' => $this->params,'key'=>$key,'image' => $image, 'alt' =>(isset($additional_images_alt[$key]) && !empty($additional_images_alt[$key])) ? $this->escape($additional_images_alt[$key]) : $this->escape($this->item->product_name))); ?>
+                                <?php echo J2CommerceHelper::product()->displayImage($this->item,array('type'=>'ViewAdditional','params' => $this->params,'key'=>$key,'image' => $image, 'alt' =>(isset($additional_images_alt[$key]) && !empty($additional_images_alt[$key])) ? $additional_images_alt[$key] : $this->item->product_name)); ?>
                             <?php endif;?>
                         <?php endforeach;?>
                     </div>
