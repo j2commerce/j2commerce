@@ -164,10 +164,17 @@ class CartConfigurable
                 }
 
                 if (empty($errors) && !ProductHelper::checkStockStatus($variant, (int) ($cartTotalQty + $quantity))) {
-                    $variantQty               = (int) ($variant->quantity ?? 0);
-                    $errors['error']['stock'] = $variantQty > 0
-                        ? Text::sprintf('COM_J2COMMERCE_LOW_STOCK_WITH_QUANTITY', $variantQty)
-                        : Text::_('COM_J2COMMERCE_STOCK_OUT_OF_STOCK');
+                    // The shopper's own held quantity is already spoken for, so what they can still add
+                    // is the remainder, not the raw stock figure — reporting stock alone reads as an
+                    // invitation to add that many more. The product is named so the message stays
+                    // unambiguous when several are reported together.
+                    $variantQty = (int) ($variant->quantity ?? 0);
+                    $remaining  = max(0, $variantQty - (int) $shopperQty);
+                    $itemName   = $product->product_name ?? '';
+
+                    $errors['error']['stock'] = $remaining > 0
+                        ? Text::sprintf('COM_J2COMMERCE_CART_ONLY_N_MORE_AVAILABLE', $remaining, $itemName)
+                        : Text::sprintf('COM_J2COMMERCE_CART_ALL_STOCK_IN_CART', $itemName);
                 }
             }
         }

@@ -221,6 +221,12 @@ const J2Commerce = {
                     span.textContent = json.error.product;
                     notifications.insertAdjacentElement('afterend', span);
                 }
+
+                // Mirrors the success branch's afterAddingToCart so a product-type plugin can
+                // render its own detail on a rejected add. Without it the failure path is
+                // silent to plugins and only the generic notification span is written.
+                this.dispatchEvent('addToCartFailed', { form, response: json });
+
                 return;
             }
 
