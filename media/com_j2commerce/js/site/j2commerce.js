@@ -942,6 +942,9 @@ const J2Commerce = {
             }
         });
 
+        // Anything mirroring the button (a sticky add-to-cart bar, say) re-reads it from here.
+        container.dispatchEvent(new CustomEvent('j2commerce:variantChanged', { bubbles: true, detail: { available } }));
+
         if (statusText) {
             this.announce(statusText);
         }

@@ -2821,8 +2821,16 @@ class ProductHelper
     /** The refusal for an add the variant's stock cannot cover, given what this shopper already holds. */
     public static function stockRefusalMessage(object $variant, int $shopperQty, string $itemName): string
     {
-        $remaining = max(0, (int) ($variant->quantity ?? 0) - $shopperQty);
+        return self::stockRefusalMessageForRemaining(
+            max(0, (int) ($variant->quantity ?? 0) - $shopperQty),
+            $shopperQty,
+            $itemName
+        );
+    }
 
+    /** The same refusal when the caller already knows what is left — e.g. a bundle limited by its parts. */
+    public static function stockRefusalMessageForRemaining(int $remaining, int $shopperQty, string $itemName): string
+    {
         if ($remaining > 0) {
             return Text::sprintf('COM_J2COMMERCE_CART_ONLY_N_MORE_AVAILABLE', $remaining, $itemName);
         }
