@@ -923,6 +923,46 @@ const J2Commerce = {
      * @param {Object} response - AJAX response data
      * @param {HTMLFormElement} form - The product form
      */
+    /**
+     * Sets every add-to-cart button in a product container to the selected variant's stock
+     * state. Shared by every variant switcher so no product type keeps its own copy.
+     */
+    setCartButtonAvailability(container, available, statusText = '') {
+        if (!container) return;
+
+        container.querySelectorAll('.j2commerce-cart-button').forEach((button) => {
+            const label = button.querySelector('.j2commerce-cart-button-label') || button;
+            const text = available ? button.dataset.cartActionDone : button.dataset.outOfStockLabel;
+
+            button.disabled = !available;
+            button.classList.toggle('j2commerce-out-of-stock', !available);
+
+            if (text) {
+                label.textContent = text;
+            }
+        });
+
+        if (statusText) {
+            this.announce(statusText);
+        }
+    },
+
+    /** Speaks a short status through one shared polite live region (WCAG 4.1.3). */
+    announce(message) {
+        let region = document.getElementById('j2commerce-live-status');
+
+        if (!region) {
+            region = document.createElement('div');
+            region.id = 'j2commerce-live-status';
+            region.setAttribute('role', 'status');
+            region.style.cssText = 'position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0';
+            document.body.appendChild(region);
+        }
+
+        region.textContent = '';
+        window.setTimeout(() => { region.textContent = message; }, 50);
+    },
+
     updateProductDisplay(productId, response, form) {
         // Resolve the container from the triggering form first so the correct
         // instance updates when the same product appears twice on a page (e.g.
@@ -1075,6 +1115,11 @@ const J2Commerce = {
                 span.textContent = response.stock_status;
                 defaultStock.replaceChildren(span);
             }
+        }
+
+        // Every add-to-cart button in this product follows the selected variant's stock.
+        if (typeof response.availability !== 'undefined') {
+            this.setCartButtonAvailability(product, Number(response.availability) === 1, String(response.stock_status ?? ''));
         }
 
         // Subscription duration text (for variablesubscriptionproduct variant switches)

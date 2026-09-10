@@ -636,6 +636,27 @@ class Flexivariable
             return;
         }
 
+        // Runtime stock state per variant and for the product as a whole — the same pass the
+        // Variable behaviour makes. validateVariableProduct() reads all_sold_out for every
+        // variable type, so without it a flexivariable product whose variants are all out of
+        // stock still offers Add to Cart.
+        foreach ($product->variants as $stockVariant) {
+            $minQty = ($stockVariant->quantity_restriction && $stockVariant->min_sale_qty > 0)
+                ? $stockVariant->min_sale_qty
+                : 1;
+
+            $stockVariant->availability = ProductHelper::checkStockStatus($stockVariant, (int) $minQty) ? 1 : 0;
+        }
+
+        $product->all_sold_out = true;
+
+        foreach ($product->variants as $stockVariant) {
+            if ($stockVariant->availability == 1) {
+                $product->all_sold_out = false;
+                break;
+            }
+        }
+
         // Calculate min/max price
         $minPrice = null;
         $maxPrice = null;

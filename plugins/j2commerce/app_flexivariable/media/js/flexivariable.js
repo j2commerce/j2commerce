@@ -286,6 +286,12 @@ const J2CommerceFlexivariable = {
             }
         }
 
+        // Every add-to-cart button in this product follows the selected variant's stock.
+        if (typeof response.availability !== 'undefined' && typeof J2Commerce !== 'undefined' && J2Commerce.setCartButtonAvailability) {
+            const statusEl = productContainer.querySelector('.product-stock-container, .j2commerce-product-stock-container, .j2commerce-product-stock');
+            J2Commerce.setCartButtonAvailability(productContainer, Number(response.availability) === 1, statusEl ? statusEl.textContent.trim() : '');
+        }
+
         // Dimensions
         if (response.dimensions) {
             const dimensionsEl = productContainer.querySelector('.product-dimensions');

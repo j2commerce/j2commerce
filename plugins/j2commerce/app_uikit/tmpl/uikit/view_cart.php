@@ -26,12 +26,12 @@ $cart_text = !empty($this->product->addtocart_text)
 // Merchant free text: encode once here so every emission below is attribute-safe.
 $cart_text = htmlspecialchars($cart_text, ENT_QUOTES, 'UTF-8');
 
-$show = J2CommerceHelper::product()->validateVariableProduct($this->product);
+$purchasable     = J2CommerceHelper::product()->isVariantPurchasable($this->product->variant ?? null);
+$outOfStockLabel = htmlspecialchars(Text::_('COM_J2COMMERCE_OUT_OF_STOCK'), ENT_QUOTES, 'UTF-8');
 $productId = $this->product->j2commerce_product_id;
 ?>
 <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeAddToCartButton', [$this->product, $this->context])->getArgument('html', ''); ?>
 
-<?php if ($show) : ?>
     <div class="cart-action-complete" style="display:none;">
         <p class="uk-text-success">
             <?php echo Text::_('COM_J2COMMERCE_ITEM_ADDED_TO_CART'); ?>
@@ -56,17 +56,15 @@ $productId = $this->product->j2commerce_product_id;
             <button
                 data-cart-action-always="<?php echo Text::_('COM_J2COMMERCE_ADDING_TO_CART'); ?>"
                 data-cart-action-done="<?php echo $cart_text; ?>"
+                data-out-of-stock-label="<?php echo $outOfStockLabel; ?>"
                 data-cart-action-timeout="1000"
                 type="submit"
-                class="j2commerce-cart-button uk-width-1-1 <?php echo htmlspecialchars($this->params->get('addtocart_button_class', 'uk-button uk-button-primary'), ENT_QUOTES, 'UTF-8'); ?>"
+                class="j2commerce-cart-button uk-width-1-1 <?php echo htmlspecialchars($this->params->get('addtocart_button_class', 'uk-button uk-button-primary'), ENT_QUOTES, 'UTF-8'); ?><?php echo $purchasable ? '' : ' j2commerce-out-of-stock'; ?>"<?php echo $purchasable ? '' : ' disabled'; ?>
             >
-                <?php echo $cart_text; ?>
+                <?php echo $purchasable ? $cart_text : $outOfStockLabel; ?>
             </button>
         </div>
     </div>
-<?php else : ?>
-    <button type="button" class="j2commerce_button_no_stock uk-button uk-button-default"><?php echo Text::_('COM_J2COMMERCE_OUT_OF_STOCK'); ?></button>
-<?php endif; ?>
 
 <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterAddToCartButton', [$this->product, $this->context])->getArgument('html', ''); ?>
 

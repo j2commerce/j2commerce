@@ -2793,6 +2793,46 @@ class ProductHelper
     }
 
     /**
+     * Whether the variant can go into the cart right now — the one test every add-to-cart button
+     * renders from. Uses the full stock check when the variant carries its quantity, and the stored
+     * flags when it does not (list rows load variants without it).
+     */
+    public static function isVariantPurchasable(?object $variant): bool
+    {
+        if ($variant === null) {
+            return false;
+        }
+
+        if (isset($variant->quantity)) {
+            $minQty = (!empty($variant->quantity_restriction) && (float) ($variant->min_sale_qty ?? 0) > 0)
+                ? (int) $variant->min_sale_qty
+                : 1;
+
+            return self::checkStockStatus($variant, $minQty);
+        }
+
+        if (InventoryHelper::isMarkedOutOfStock($variant)) {
+            return false;
+        }
+
+        return !self::managingStock($variant) || !empty($variant->availability) || self::backordersAllowed($variant);
+    }
+
+    /** The refusal for an add the variant's stock cannot cover, given what this shopper already holds. */
+    public static function stockRefusalMessage(object $variant, int $shopperQty, string $itemName): string
+    {
+        $remaining = max(0, (int) ($variant->quantity ?? 0) - $shopperQty);
+
+        if ($remaining > 0) {
+            return Text::sprintf('COM_J2COMMERCE_CART_ONLY_N_MORE_AVAILABLE', $remaining, $itemName);
+        }
+
+        return $shopperQty > 0
+            ? Text::sprintf('COM_J2COMMERCE_CART_ALL_STOCK_IN_CART', $itemName)
+            : Text::_('COM_J2COMMERCE_STOCK_OUT_OF_STOCK');
+    }
+
+    /**
      * Validate variable product for display.
      *
      * @param   object  $product  The product object.
