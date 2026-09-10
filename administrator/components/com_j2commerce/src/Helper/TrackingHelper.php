@@ -68,7 +68,10 @@ final class TrackingHelper
      */
     public static function render(?object $order, array $items, Registry $params, string $context): string
     {
-        $script = trim((string) $params->get('tracking_script', ''));
+        // trim() keeps a leading no-break space or BOM, which pasted snippets often carry and
+        // which would send stored markup down the wrap branch below.
+        $raw    = (string) $params->get('tracking_script', '');
+        $script = trim(preg_replace('/^[\s\x{00A0}\x{FEFF}]+/u', '', $raw) ?? $raw);
 
         if ($script === '' || $order === null) {
             return '';
@@ -82,6 +85,11 @@ final class TrackingHelper
         }
 
         $html = self::substitute($script, self::buildTokens($order, $items, $context));
+
+        // Bare JavaScript is wrapped here; a snippet that opens with markup is emitted as entered.
+        if (!str_starts_with($script, '<')) {
+            $html = "<script>\n" . $html . "\n</script>";
+        }
 
         // Preview: show the substituted snippet without running it, and without claiming the
         // order, so the merchant can read the resolved values and the real visit still fires.
