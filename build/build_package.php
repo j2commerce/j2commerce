@@ -198,10 +198,36 @@ function shouldExclude(string $path, array $patterns): bool
     return false;
 }
 
+/**
+ * Repo-relative paths git tracks. The package is built from these alone: anything else under a
+ * ship root (installer output from other extensions, ignored vendor drops, caches) stays out.
+ */
+function gitTrackedFiles(): array
+{
+    static $tracked = null;
+
+    if ($tracked !== null) {
+        return $tracked;
+    }
+
+    $root  = str_replace('\\', '/', \dirname(__DIR__));
+    $lines = [];
+    $code  = 0;
+    exec('git -c core.quotepath=off -C ' . escapeshellarg($root) . ' ls-files 2>&1', $lines, $code);
+
+    if ($code !== 0 || $lines === []) {
+        die("ERROR: git ls-files failed in {$root} — the package is built from git-tracked files only\n");
+    }
+
+    return $tracked = array_fill_keys($lines, true);
+}
+
 function collectFiles(string $baseDir, array $excludePatterns, bool $excludeZips = false): array
 {
-    $files = [];
-    $baseDir = rtrim(str_replace('\\', '/', $baseDir), '/');
+    $files    = [];
+    $baseDir  = rtrim(str_replace('\\', '/', $baseDir), '/');
+    $repoRoot = str_replace('\\', '/', \dirname(__DIR__)) . '/';
+    $tracked  = gitTrackedFiles();
 
     if (!is_dir($baseDir)) {
         echo "  WARNING: Directory not found: {$baseDir}\n";
@@ -218,6 +244,13 @@ function collectFiles(string $baseDir, array $excludePatterns, bool $excludeZips
         $relativePath = substr($filePath, strlen($baseDir) + 1);
 
         if (shouldExclude($relativePath, $excludePatterns)) {
+            continue;
+        }
+
+        $repoPath = str_starts_with($filePath, $repoRoot) ? substr($filePath, \strlen($repoRoot)) : $filePath;
+
+        if (!isset($tracked[$repoPath])) {
+            $GLOBALS['untrackedSkipped'][] = $repoPath;
             continue;
         }
 
@@ -872,6 +905,28 @@ printf("║    %-42s %10s     ║\n", "Plugin ZIPs", $pluginZipCount);
 printf("║    %-42s %10s     ║\n", "Admin module ZIPs", count($adminModules));
 printf("║    %-42s %10s     ║\n", "Site module ZIPs", count($siteModules));
 echo "╚══════════════════════════════════════════════════════════════╝\n";
+
+$untrackedSkipped = array_unique($GLOBALS['untrackedSkipped'] ?? []);
+if ($untrackedSkipped !== []) {
+    $byDir = [];
+    foreach ($untrackedSkipped as $path) {
+        $byDir[\dirname($path)] = ($byDir[\dirname($path)] ?? 0) + 1;
+    }
+    ksort($byDir);
+    echo "\nLeft out — not tracked by git (" . \count($untrackedSkipped) . " files):\n";
+    foreach ($byDir as $dir => $n) {
+        echo "  {$dir}/ ({$n})\n";
+    }
+}
+
+// Tracked files still ship their working-tree bytes, so say when those differ from HEAD.
+exec('git -c core.quotepath=off -C ' . escapeshellarg(str_replace('\\', '/', $joomlaRoot)) . ' diff --name-only HEAD', $modified);
+if ($modified !== []) {
+    echo "\nWARNING: " . \count($modified) . " tracked file(s) have uncommitted changes; any inside a ship root were packaged as they are on disk:\n";
+    foreach ($modified as $path) {
+        echo "  {$path}\n";
+    }
+}
 
 // Clean up temp directory
 removeDir($tempDir);

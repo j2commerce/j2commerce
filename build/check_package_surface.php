@@ -15,12 +15,12 @@
  * The existing pre-build gates answer "is the code right". This one answers a
  * question nothing else in the pipeline asks: *what is actually in the box*.
  *
- * `build_package.php` assembles every zip by walking the filesystem against a
- * curated `$excludePatterns` deny-list. A deny-list only removes names it
- * already knows, so any dev artifact committed — or merely left — inside an
- * extension's own directory under a name nobody anticipated ships silently to
- * every merchant. This gate closes that by diffing the predicted ship set
- * against `git ls-files`: git is the allow-list the build never had.
+ * `build_package.php` walks each ship root against a `$excludePatterns`
+ * deny-list and then keeps only what `git ls-files` tracks, so nothing that is
+ * merely left inside an extension directory can reach a package. This gate
+ * audits both halves: artifact signatures in what does ship, and what the build
+ * leaves out, because a file shipped code still refers to breaks every install
+ * when it was never committed.
  *
  * The dependency half answers the other question the build never asked: what
  * version of each vendored package is actually in the box, and does any
@@ -311,7 +311,8 @@ function shipExcluded(string $relative, array $patterns): bool
 }
 
 /**
- * Every file the build would place in a zip, repo-relative.
+ * Every file under the ship roots that survives `$excludePatterns`, repo-relative.
+ * The build then keeps only the git-tracked ones.
  *
  * @return list<string>
  */
@@ -435,6 +436,49 @@ function trackedFiles(string $root): array
     }
 
     return $out;
+}
+
+/**
+ * Left-out files that shipped code still names, keyed to the first file naming them.
+ *
+ * Matched on the last three path segments: enough to tell `csvexport/vendor/autoload.php` from
+ * the library's own `vendor/autoload.php`, and still found when a media path is referenced
+ * through its installed prefix (`media/lib_x/css/vendor/x6.css` for `media/css/vendor/x6.css`).
+ *
+ * @param  list<string> $shipSet
+ * @param  list<string> $leftOut
+ * @return array<string, string>
+ */
+function referencedByShipSet(string $root, array $shipSet, array $leftOut): array
+{
+    $needles = [];
+
+    foreach ($leftOut as $rel) {
+        $needles[$rel] = implode('/', \array_slice(explode('/', $rel), -3));
+    }
+
+    $found = [];
+
+    foreach ($shipSet as $file) {
+        if (!preg_match('/\.(php|js|xml|css|json|html|ini)$/i', $file)) {
+            continue;
+        }
+
+        $body = (string) @file_get_contents($root . '/' . $file);
+
+        foreach ($needles as $rel => $needle) {
+            if (str_contains($body, $needle)) {
+                $found[$rel] = $file;
+                unset($needles[$rel]);
+            }
+        }
+
+        if ($needles === []) {
+            break;
+        }
+    }
+
+    return $found;
 }
 
 // --- dependency inventory ---------------------------------------------------
@@ -809,30 +853,45 @@ $def       = shipDefinitions($root);
 $advSource = 'not run';
 
 if (!$onlyDeps) {
-    $shipSet = predictShipSet($root, $def);
+    $onDisk  = predictShipSet($root, $def);
     $tracked = trackedFiles($root);
 
-    $untracked = array_values(array_filter($shipSet, static fn($rel) => !isset($tracked[$rel])));
-    $ignored   = ignoredFiles($root, $untracked);
+    // build_package.php packages git-tracked files only: the tracked part of the ship roots is
+    // what ships, and the rest is left out of every package.
+    $shipSet = array_values(array_filter($onDisk, static fn ($rel) => isset($tracked[$rel])));
+    $leftOut = array_values(array_filter($onDisk, static fn ($rel) => !isset($tracked[$rel])));
+    $ignored = ignoredFiles($root, $leftOut);
+    $wanted  = referencedByShipSet($root, $shipSet, $leftOut);
 
-    // Ignored-but-shipping rolls up by directory. Reporting 158 separate lines
-    // for one gitignore rule buries every other finding in the report, and the
-    // decision an operator makes is per-rule anyway, never per-file.
+    // Ignored files roll up by directory. Reporting 158 separate lines for one gitignore rule
+    // buries every other finding, and the decision is per-rule anyway, never per-file.
     $ignoredDirs = [];
 
-    foreach ($untracked as $rel) {
+    foreach ($leftOut as $rel) {
+        if (isset($wanted[$rel])) {
+            finding(
+                $findings,
+                'HIGH',
+                'referenced file left out of the package',
+                $rel,
+                'shipped code names it (' . $wanted[$rel] . '), but git does not track it, so the build leaves it out and that reference breaks on every install',
+                'commit it (git add -f when a .gitignore rule covers it), or remove the reference'
+            );
+            continue;
+        }
+
         if (isset($ignored[$rel])) {
-            $ignoredDirs[dirname($rel)][] = $rel;
+            $ignoredDirs[\dirname($rel)][] = $rel;
             continue;
         }
 
         finding(
             $findings,
-            'HIGH',
-            'untracked file in the ship set',
+            'MEDIUM',
+            'untracked file under a ship root',
             $rel,
-            'the build would place this in a zip, but git neither tracks nor ignores it — nothing has ever reviewed it, and it is in no release the repository can reproduce',
-            'commit it if it belongs in the release, delete it if it does not, or add its name to $excludePatterns in build/build_package.php'
+            'git neither tracks nor ignores it, so the build leaves it out; if it belongs in this release it was never committed',
+            'commit it if it belongs in the release, otherwise remove it or cover it with a .gitignore rule'
         );
     }
 
@@ -841,11 +900,11 @@ if (!$onlyDeps) {
     foreach ($ignoredDirs as $dir => $members) {
         finding(
             $findings,
-            'MEDIUM',
-            'gitignored file inside the ship set',
-            $dir . '/  (' . count($members) . ' file' . (count($members) === 1 ? '' : 's') . ', e.g. ' . basename($members[0]) . ')',
-            'deliberately excluded from the repository, yet the build walks the filesystem and would bundle it — the package would carry content the repository has no record of',
-            'if this is generated or machine-local, add it to $excludePatterns in build/build_package.php; if it is a separately-licensed extension, confirm it belongs in THIS package before shipping'
+            'LOW',
+            'gitignored files left out of the package',
+            $dir . '/  (' . \count($members) . ' file' . (\count($members) === 1 ? '' : 's') . ', e.g. ' . basename($members[0]) . ')',
+            'a .gitignore rule keeps these out of the repository, so the build leaves them out as well',
+            'nothing to do unless one of them belongs in the release, in which case commit it'
         );
     }
 
