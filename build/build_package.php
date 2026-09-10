@@ -15,6 +15,12 @@ declare(strict_types=1);
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
+// CLI only: build/ never ships, but on a dev box whose docroot is the Joomla root it is web-served.
+if (PHP_SAPI !== 'cli') {
+    http_response_code(403);
+    exit(1);
+}
+
 // ── Configuration ──────────────────────────────────────────────────────────────
 
 $joomlaRoot = dirname(__DIR__);

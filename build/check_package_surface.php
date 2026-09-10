@@ -396,8 +396,8 @@ function ignoredFiles(string $root, array $paths): array
 
     file_put_contents($tmp, implode("\n", $paths) . "\n");
 
-    $cmd = 'git -C ' . escapeshellarg($root) . ' check-ignore --stdin < ' . escapeshellarg($tmp) . ' 2>&1';
-    $out = [];
+    $cmd  = 'git -c core.quotepath=off -C ' . escapeshellarg($root) . ' check-ignore --stdin < ' . escapeshellarg($tmp) . ' 2>&1';
+    $out  = [];
     $code = 0;
     exec($cmd, $out, $code);
 
@@ -419,8 +419,8 @@ function ignoredFiles(string $root, array $paths): array
 /** @return array<string, true> */
 function trackedFiles(string $root): array
 {
-    $out  = [];
-    $cmd  = 'git -C ' . escapeshellarg($root) . ' ls-files 2>&1';
+    $out   = [];
+    $cmd   = 'git -c core.quotepath=off -C ' . escapeshellarg($root) . ' ls-files 2>&1';
     $lines = [];
     $code  = 0;
     exec($cmd, $lines, $code);
