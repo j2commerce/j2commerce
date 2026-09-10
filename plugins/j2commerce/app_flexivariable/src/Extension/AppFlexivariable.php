@@ -67,6 +67,7 @@ final class AppFlexivariable extends CMSPlugin implements SubscriberInterface
         Text::script('PLG_J2COMMERCE_APP_FLEXIVARIABLE_DELETING');
         Text::script('PLG_J2COMMERCE_APP_FLEXIVARIABLE_LOADING');
         Text::script('PLG_J2COMMERCE_APP_FLEXIVARIABLE_ERROR');
+        Text::script('JACTION_DELETE');
     }
 
     public function onAfterProcessUpSellItem(Event $event): void

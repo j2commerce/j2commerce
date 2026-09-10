@@ -312,7 +312,7 @@ const J2CommerceFlexivariable = {
      * @param {number} variantId - The variant ID to delete
      */
     deleteVariant: async function(variantId) {
-        if (!confirm(Joomla.Text._('PLG_J2COMMERCE_APP_FLEXIVARIABLE_CONFIRM_DELETE') || 'Are you sure you want to delete this variant?')) {
+        if (!confirm(Joomla.Text._('PLG_J2COMMERCE_APP_FLEXIVARIABLE_CONFIRM_DELETE'))) {
             return;
         }
 
@@ -350,18 +350,18 @@ const J2CommerceFlexivariable = {
                     window.location.reload();
                 }
             } else {
-                Joomla.renderMessages({ error: [data.message || 'Failed to delete variant'] });
+                Joomla.renderMessages({ error: [data.message || Joomla.Text._('PLG_J2COMMERCE_APP_FLEXIVARIABLE_ERROR')] });
                 if (deleteButton) {
                     deleteButton.disabled = false;
-                    this.setIconLabel(deleteButton, 'icon-trash', Joomla.Text._('JACTION_DELETE') || 'Delete');
+                    this.setIconLabel(deleteButton, 'icon-trash', Joomla.Text._('JACTION_DELETE'));
                 }
             }
         } catch (error) {
             console.error('Delete variant error:', error);
-            Joomla.renderMessages({ error: ['An error occurred while deleting the variant'] });
+            Joomla.renderMessages({ error: [Joomla.Text._('PLG_J2COMMERCE_APP_FLEXIVARIABLE_ERROR')] });
             if (deleteButton) {
                 deleteButton.disabled = false;
-                this.setIconLabel(deleteButton, 'icon-trash', Joomla.Text._('JACTION_DELETE') || 'Delete');
+                this.setIconLabel(deleteButton, 'icon-trash', Joomla.Text._('JACTION_DELETE'));
             }
         }
     },
@@ -373,7 +373,7 @@ const J2CommerceFlexivariable = {
      * @param {number} extensionId - The extension ID
      */
     deleteAllVariants: async function(productId, extensionId) {
-        if (!confirm(Joomla.Text._('PLG_J2COMMERCE_APP_FLEXIVARIABLE_CONFIRM_DELETE_ALL') || 'Are you sure you want to delete all variants?')) {
+        if (!confirm(Joomla.Text._('PLG_J2COMMERCE_APP_FLEXIVARIABLE_CONFIRM_DELETE_ALL'))) {
             return;
         }
 
@@ -400,11 +400,11 @@ const J2CommerceFlexivariable = {
             if (data.success) {
                 window.location.reload();
             } else {
-                Joomla.renderMessages({ error: [data.message || 'Failed to delete variants'] });
+                Joomla.renderMessages({ error: [data.message || Joomla.Text._('PLG_J2COMMERCE_APP_FLEXIVARIABLE_ERROR')] });
             }
         } catch (error) {
             console.error('Delete all variants error:', error);
-            Joomla.renderMessages({ error: ['An error occurred while deleting variants'] });
+            Joomla.renderMessages({ error: [Joomla.Text._('PLG_J2COMMERCE_APP_FLEXIVARIABLE_ERROR')] });
         }
     },
 
@@ -438,11 +438,11 @@ const J2CommerceFlexivariable = {
             if (data.success) {
                 window.location.reload();
             } else {
-                Joomla.renderMessages({ error: [data.message || 'Failed to update default variant'] });
+                Joomla.renderMessages({ error: [data.message || Joomla.Text._('PLG_J2COMMERCE_APP_FLEXIVARIABLE_ERROR')] });
             }
         } catch (error) {
             console.error('Set default variant error:', error);
-            Joomla.renderMessages({ error: ['An error occurred while updating the default variant'] });
+            Joomla.renderMessages({ error: [Joomla.Text._('PLG_J2COMMERCE_APP_FLEXIVARIABLE_ERROR')] });
         }
     },
 
@@ -485,11 +485,11 @@ const J2CommerceFlexivariable = {
                 // Reload the variant list or the entire page
                 window.location.reload();
             } else {
-                Joomla.renderMessages({ error: [data.message || 'Failed to add variant'] });
+                Joomla.renderMessages({ error: [data.message || Joomla.Text._('PLG_J2COMMERCE_APP_FLEXIVARIABLE_ERROR')] });
             }
         } catch (error) {
             console.error('Add flexi variant error:', error);
-            Joomla.renderMessages({ error: ['An error occurred while adding the variant'] });
+            Joomla.renderMessages({ error: [Joomla.Text._('PLG_J2COMMERCE_APP_FLEXIVARIABLE_ERROR')] });
         }
     }
 };
