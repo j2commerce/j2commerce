@@ -44,10 +44,10 @@ if (empty($image)) {
     <?php
     $imgStyle = '';
 if ($maxHeight !== 'auto' && $maxHeight !== '') {
-    $imgStyle .= 'max-height:' . htmlspecialchars($maxHeight, ENT_QUOTES, 'UTF-8') . ';';
+    $imgStyle .= 'max-height:' . $maxHeight . ';';
 }
 if ($objectFit !== 'cover') {
-    $imgStyle .= 'object-fit:' . htmlspecialchars($objectFit, ENT_QUOTES, 'UTF-8') . ';';
+    $imgStyle .= 'object-fit:' . $objectFit . ';';
 }
 $imgClass = 'j2commerce-img-responsive img-fluid';
 if ($aspectRatio !== 'auto') {
@@ -57,7 +57,7 @@ if ($aspectRatio !== 'auto') {
         $imgClass .= ' ratio ratio-' . $ratioClass;
     }
 }
-echo ImageHelper::getProductImage($image, $imageWidth, 'html', $imageWidth, $imgClass, $imageAlt, $imgStyle ? ' style="' . $imgStyle . '"' : '');
+echo ImageHelper::getProductImage($image, $imageWidth, 'html', $imageWidth, $imgClass, $imageAlt, auto: true, style: $imgStyle);
 ?>
 
     <?php if ($linkEnabled && !empty($productLink)): ?>

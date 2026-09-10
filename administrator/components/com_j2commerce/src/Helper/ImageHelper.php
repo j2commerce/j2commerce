@@ -375,6 +375,7 @@ class ImageHelper
         string $class = '',
         string $alt = '',
         bool $auto = false,
+        string $style = '',
     ): string {
         if (empty($imagePath)) {
             return '';
@@ -445,6 +446,9 @@ class ImageHelper
         }
         if ($class !== '') {
             $attrs[] = 'class="' . htmlspecialchars($class, ENT_QUOTES, 'UTF-8') . '"';
+        }
+        if ($style !== '') {
+            $attrs[] = 'style="' . htmlspecialchars($style, ENT_QUOTES, 'UTF-8') . '"';
         }
 
         $attrs[] = 'loading="lazy"';

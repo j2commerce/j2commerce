@@ -229,7 +229,7 @@ class EcommerceproductpreviewField extends FormField
         $html[] = '            <div class="image-section">';
         $html[] = '                <div class="image-frame">';
         if (!empty($imageUrl)) {
-            $html[] = ImageHelper::getInstance()->getProductImage($imageUrl, height: 160, width: 160, class: 'object-fit-cover img-fluid', alt: htmlspecialchars($productName, ENT_QUOTES, 'UTF-8'));
+            $html[] = ImageHelper::getInstance()->getProductImage($imageUrl, height: 160, width: 160, class: 'object-fit-cover img-fluid', alt: $productName);
         } else {
             $html[] = '                    <div class="no-image"><span class="icon-image" aria-hidden="true"></span></div>';
         }
