@@ -243,6 +243,8 @@
                     if (data.redirect) {
                         refreshCartTotals();
                     }
+
+                    document.dispatchEvent(new CustomEvent('j2commerce:cart:updated', { bubbles: true }));
                 } else {
                     // Show error message
                     if (data.message) {
@@ -308,7 +310,7 @@
                         J2CommerceDom.showMessages({ success: [data.message] });
                     }
 
-                    document.dispatchEvent(new CustomEvent('j2commerce:cart:updated'));
+                    document.dispatchEvent(new CustomEvent('j2commerce:cart:updated', { bubbles: true }));
                 } else {
                     // Show error
                     button.disabled = false;
@@ -467,7 +469,7 @@
                         J2CommerceDom.showMessages({ success: [data.message] });
                     }
 
-                    document.dispatchEvent(new CustomEvent('j2commerce:cart:updated'));
+                    document.dispatchEvent(new CustomEvent('j2commerce:cart:updated', { bubbles: true }));
                 } else {
                     clearBtn.disabled = false;
                     clearBtn.classList.remove('disabled');
