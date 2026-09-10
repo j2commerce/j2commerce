@@ -2443,6 +2443,16 @@ class CheckoutController extends BaseController
                         // survives the outbound round-trip and tears down at the
                         // terminal confirmation redirect below.
                         CheckoutContextHelper::clearContext();
+
+                        // clearContext() also drops the primed order, which the plugin's
+                        // paction=display follow-up needs in order to be admitted. Leave that
+                        // one request a single-use claim instead; isGatewayReturnFor() spends it.
+                        if (!$wasContextActivated && !empty($orderTable->order_id)) {
+                            $this->app->setUserState('j2commerce.display_handoff', [
+                                'order_id' => (string) $orderTable->order_id,
+                                'type'     => $orderpaymentType,
+                            ]);
+                        }
                     }
 
                     echo json_encode($decoded);
@@ -3077,6 +3087,25 @@ class CheckoutController extends BaseController
     {
         if ($orderpaymentType === '') {
             return false;
+        }
+
+        // The single-use claim an on-site gateway's AJAX success leaves for its paction=display
+        // follow-up (see confirmPayment()). Spent on the first tokenless request either way; a
+        // match re-primes the order so that request finalizes it exactly as before.
+        $handoff = (array) $this->app->getUserState('j2commerce.display_handoff', []);
+
+        if ($handoff !== []) {
+            $this->app->setUserState('j2commerce.display_handoff', null);
+        }
+
+        if ($this->input->getString('paction', '') === 'display'
+            && ($handoff['type'] ?? '') === $orderpaymentType
+            && ($claimed = $this->loadOrderRow((string) ($handoff['order_id'] ?? ''))) !== null
+            && (string) ($claimed->orderpayment_type ?? '') === $orderpaymentType
+        ) {
+            $this->app->setUserState('j2commerce.order_id', (string) $claimed->order_id);
+
+            return true;
         }
 
         $primedOrderId = (string) $this->app->getUserState('j2commerce.order_id', '');
