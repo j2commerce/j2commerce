@@ -1130,31 +1130,17 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         // so we replicate what ProductsController does: load('com_j2commerce', JPATH_SITE).
         Factory::getApplication()->getLanguage()->load('com_j2commerce', JPATH_SITE);
 
-        // Load required JS assets — StrapperHelper::loadFrontendScripts() normally does
-        // this on J2Commerce component pages, but never runs on category blog pages.
-        $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
-        $wa->registerAndUseScript(
-            'com_j2commerce.dom',
-            'media/com_j2commerce/js/site/j2commerce-dom.js',
-            [],
-            ['defer' => true]
-        );
-        $wa->registerAndUseScript(
-            'com_j2commerce.site',
-            'media/com_j2commerce/js/site/j2commerce.js',
-            [],
-            ['defer' => true],
-            ['com_j2commerce.dom']
-        );
-
-        $wa->registerAndUseScript(
-            'com_j2commerce.a11y',
-            'media/com_j2commerce/js/site/j2commerce-a11y.js',
-            [],
-            ['defer' => true]
-        );
+        // Load the core assets through the same helper the component uses. A hand-rolled
+        // copy of the registration list is what let this surface drift out of step with
+        // StrapperHelper and miss the messages asset the storefront JS calls.
+        try {
+            J2CommerceHelper::strapper()->loadCoreAssets();
+        } catch (\Throwable) {
+            // Gracefully degrade if com_j2commerce is not fully bootstrapped
+        }
 
         if (($product->product_type ?? '') === 'flexivariable') {
+            $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
             $wa->registerAndUseScript(
                 'plg_j2commerce_app_flexivariable.flexivariable',
                 'media/plg_j2commerce_app_flexivariable/js/flexivariable.js',
@@ -1364,26 +1350,11 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         // assets are not guaranteed to be loaded — mirrors getProductBlock().
         Factory::getApplication()->getLanguage()->load('com_j2commerce', JPATH_SITE);
 
-        $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
-        $wa->registerAndUseScript(
-            'com_j2commerce.dom',
-            'media/com_j2commerce/js/site/j2commerce-dom.js',
-            [],
-            ['defer' => true]
-        );
-        $wa->registerAndUseScript(
-            'com_j2commerce.site',
-            'media/com_j2commerce/js/site/j2commerce.js',
-            [],
-            ['defer' => true],
-            ['com_j2commerce.dom']
-        );
-        $wa->registerAndUseScript(
-            'com_j2commerce.a11y',
-            'media/com_j2commerce/js/site/j2commerce-a11y.js',
-            [],
-            ['defer' => true]
-        );
+        try {
+            J2CommerceHelper::strapper()->loadCoreAssets();
+        } catch (\Throwable) {
+            // Gracefully degrade if com_j2commerce is not fully bootstrapped
+        }
 
         // WYSIWYG editors (TinyMCE, JCE) often wrap pasted shortcodes in <pre>
         // or <code> tags which would render the product HTML inside a monospace
@@ -1527,6 +1498,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
                 // handler (which looks for the nearest .j2commerce-addtocart-form) fires.
                 if (\in_array($option, ['cart', 'cartonly'], true)) {
                     if ($productType === 'flexivariable') {
+                        $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
                         $wa->registerAndUseScript(
                             'plg_j2commerce_app_flexivariable.flexivariable',
                             'media/plg_j2commerce_app_flexivariable/js/flexivariable.js',
