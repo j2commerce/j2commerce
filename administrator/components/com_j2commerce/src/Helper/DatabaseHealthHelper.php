@@ -623,21 +623,14 @@ final class DatabaseHealthHelper
     }
 
     // =========================================================================
-    // Stale on_hold — nothing in core writes on_hold above 0 anymore (superseded by
-    // orders.stock_committed), so it is recomputed from orders that currently hold stock.
+    // Stale on_hold — nothing in core writes on_hold any more (stock is debited from
+    // quantity when orders.stock_committed flips), yet getAvailableQuantity() still
+    // subtracts it, so any non-zero value is residue that understates available stock.
     // =========================================================================
 
     private static function staleOnHoldWhere(DatabaseInterface $db): string
     {
-        $holding = implode(',', InventoryHelper::NON_HOLDING_STATUSES);
-
-        return $db->quoteName('pq.on_hold') . ' <> COALESCE(('
-            . 'SELECT SUM(CAST(' . $db->quoteName('oi.orderitem_quantity') . ' AS DECIMAL(12,4)))'
-            . ' FROM ' . $db->quoteName('#__j2commerce_orderitems', 'oi')
-            . ' INNER JOIN ' . $db->quoteName('#__j2commerce_orders', 'o') . ' ON ' . $db->quoteName('o.order_id') . ' = ' . $db->quoteName('oi.order_id')
-            . ' WHERE ' . $db->quoteName('oi.variant_id') . ' = ' . $db->quoteName('pq.variant_id')
-            . ' AND ' . $db->quoteName('o.order_state_id') . ' NOT IN (' . $holding . ')'
-            . '), 0)';
+        return $db->quoteName('pq.on_hold') . ' <> 0';
     }
 
     public static function countStaleOnHold(DatabaseInterface $db): int
@@ -652,7 +645,6 @@ final class DatabaseHealthHelper
 
     public static function fixStaleOnHold(DatabaseInterface $db): int
     {
-        $holding   = implode(',', InventoryHelper::NON_HOLDING_STATUSES);
         $processed = 0;
 
         for ($batch = 0; $batch < self::MAX_BATCHES_PER_RUN; $batch++) {
@@ -669,15 +661,10 @@ final class DatabaseHealthHelper
             }
 
             $db->setQuery(
-                'UPDATE ' . $db->quoteName('#__j2commerce_productquantities')
-                . ' SET ' . $db->quoteName('on_hold') . ' = COALESCE(('
-                . 'SELECT SUM(CAST(' . $db->quoteName('oi.orderitem_quantity') . ' AS DECIMAL(12,4)))'
-                . ' FROM ' . $db->quoteName('#__j2commerce_orderitems', 'oi')
-                . ' INNER JOIN ' . $db->quoteName('#__j2commerce_orders', 'o') . ' ON ' . $db->quoteName('o.order_id') . ' = ' . $db->quoteName('oi.order_id')
-                . ' WHERE ' . $db->quoteName('oi.variant_id') . ' = ' . $db->quoteName('#__j2commerce_productquantities') . '.' . $db->quoteName('variant_id')
-                . ' AND ' . $db->quoteName('o.order_state_id') . ' NOT IN (' . $holding . ')'
-                . '), 0)'
-                . ' WHERE ' . $db->quoteName('j2commerce_productquantity_id') . ' IN (' . implode(',', $ids) . ')'
+                $db->getQuery(true)
+                    ->update($db->quoteName('#__j2commerce_productquantities'))
+                    ->set($db->quoteName('on_hold') . ' = 0')
+                    ->whereIn($db->quoteName('j2commerce_productquantity_id'), $ids)
             )->execute();
 
             $processed += \count($ids);
