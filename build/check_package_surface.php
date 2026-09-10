@@ -174,24 +174,6 @@ const UNMANAGED_VENDORED = [
         'version'   => null,
         'note'      => 'vendored by hand; carries its own autoload.php and is absent from installed.json',
     ],
-    'phpass' => [
-        'packagist' => null,
-        'path'      => 'libraries/phpass',
-        'version'   => null,
-        'note'      => 'single-file drop-in, no package metadata',
-    ],
-    'php-encryption' => [
-        'packagist' => 'defuse/php-encryption',
-        'path'      => 'libraries/php-encryption',
-        'version'   => null,
-        'note'      => 'single-file drop-in; not the composer package of the same name',
-    ],
-    'f0f' => [
-        'packagist' => null,
-        'path'      => 'libraries/f0f',
-        'version'   => null,
-        'note'      => 'FOF 2, retained for the migration; no package metadata',
-    ],
 ];
 
 // --- invocation -------------------------------------------------------------
@@ -733,23 +715,20 @@ function coreProvidedPackages(string $root): array
 }
 
 /**
- * Every package vendored anywhere under first-party code.
+ * Every package vendored under the core ship roots.
  *
- * Deliberately NOT limited to the core ship set: a duplicate in a non-core
- * plugin is the same defect and is the case that actually occurred. Detection is
- * by path shape — `**​/vendor/<vendor>/<package>/` — because the offending copies
- * are precisely the ones with no composer metadata to read.
+ * Limited to what this package ships: the dev site also holds every non-core
+ * extension on disk, and those are released from j2commerce6extensions, not
+ * gated here. Detection is by path shape — `**​/vendor/<vendor>/<package>/` —
+ * because the offending copies are precisely the ones with no composer metadata.
  *
  * @return array<string, string>  package name => repo-relative path
  */
-function vendoredPackages(string $root): array
+function vendoredPackages(string $root, array $shipRoots): array
 {
-    // Walked on DISK, not through `git ls-files`, for two reasons: a duplicate
-    // in a non-core plugin is not tracked by this repository at all (that is the
-    // case that actually occurred, in payment_amazonpay), and git keeps listing
-    // a tracked file after it has been deleted, which would keep reporting a
-    // duplicate that was correctly removed. This check answers "what is
-    // installed", and only the filesystem knows that.
+    // Walked on DISK, not through `git ls-files`: git keeps listing a tracked
+    // file after it has been deleted, which would keep reporting a duplicate
+    // that was correctly removed.
     // Fixed-depth globs rather than a recursive walk. Walking every extension
     // tree took ~19s because it descends into each vendored package's own
     // sources; these patterns stop at `vendor/<vendor>/<package>` and run in
@@ -781,7 +760,9 @@ function vendoredPackages(string $root): array
                 continue;
             }
 
-            if (!preg_match('#(?:^|/)vendor/([a-z0-9._-]+)/([a-z0-9._-]+)$#i', $rel, $m)) {
+            $shipped = array_filter($shipRoots, static fn ($r) => str_starts_with($rel, $r . '/'));
+
+            if ($shipped === [] || !preg_match('#(?:^|/)vendor/([a-z0-9._-]+)/([a-z0-9._-]+)$#i', $rel, $m)) {
                 continue;
             }
 
@@ -952,7 +933,7 @@ if ($coreProvided === []) {
     );
 }
 
-foreach (vendoredPackages($root) as $pkg => $where) {
+foreach (vendoredPackages($root, $def['roots']) as $pkg => $where) {
     if (!isset($coreProvided[$pkg])) {
         continue;
     }
