@@ -126,8 +126,9 @@ class DatabaseHealthCard {
         // The card is a to-do list, not an inventory: a check at zero is done, and a
         // report-only check with no Fix and no Review is something the admin cannot act on
         // here. Neither gets a row, and with no rows left the whole card stays hidden —
-        // the tmpl ships it with d-none so a healthy store never sees it appear at all.
-        const actionable = checks.filter((check) => check.count > 0 && (check.repairable || check.reviewUrl));
+        // the tmpl ships it with d-none so a healthy store never sees it appear at all. A check
+        // that could not run always gets a row, so it never passes for a clean one.
+        const actionable = checks.filter((check) => check.failed || (check.count > 0 && (check.repairable || check.reviewUrl)));
 
         this.list.replaceChildren(...actionable.map((check) => this.rowNode(check)));
         this.list.classList.toggle('d-none', actionable.length === 0);
@@ -136,15 +137,17 @@ class DatabaseHealthCard {
 
     rowNode(check) {
         const ok = check.count === 0;
-        // Three states, never conflated: clear, repairable-and-actionable (Fix button), or
+        // Four states, never conflated: failed (the check itself could not run — no Fix, its
+        // count means nothing), clear, repairable-and-actionable (Fix button), or
         // report-only-and-informational (never an alarm — migrator_residue in particular is
         // non-zero forever on a migrated store and that is correct, expected state).
-        const state = ok ? 'ok' : (check.repairable ? 'warning' : 'info');
+        const state = check.failed ? 'failed' : (ok ? 'ok' : (check.repairable ? 'warning' : 'info'));
 
         const iconClasses = {
             ok: 'fa-regular fa-circle-check text-success me-2',
             warning: 'fa-solid fa-triangle-exclamation text-warning me-2',
             info: 'fa-solid fa-circle-info text-body-secondary me-2',
+            failed: 'fa-solid fa-triangle-exclamation text-warning me-2',
         };
 
         const icon = document.createElement('span');
@@ -167,8 +170,8 @@ class DatabaseHealthCard {
         left.append(icon, textWrap);
 
         const count = document.createElement('span');
-        count.className = this.badgeClasses[state];
-        count.textContent = String(check.count);
+        count.className = this.badgeClasses[state === 'failed' ? 'warning' : state];
+        count.textContent = state === 'failed' ? check.failedText : String(check.count);
 
         const right = document.createElement('div');
         right.className = 'd-flex align-items-center flex-shrink-0';

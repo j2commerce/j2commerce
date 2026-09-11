@@ -44,11 +44,15 @@ final class DatabaseHealthHelper
         $results = [];
 
         foreach (self::getCheckDefinitions() as $check) {
-            $count = 0;
+            $count  = 0;
+            $failed = false;
 
+            // A check that throws is reported as failed, never as a clean 0 — otherwise a broken
+            // predicate reads exactly like a healthy store.
             try {
                 $count = (int) ($check['count'])($db);
             } catch (\Throwable $e) {
+                $failed = true;
                 Log::add('Database health check "' . $check['id'] . '" failed: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
             }
 
@@ -57,6 +61,8 @@ final class DatabaseHealthHelper
                 'label'              => Text::_($check['labelKey']),
                 'description'        => Text::_($check['descriptionKey']),
                 'count'              => $count,
+                'failed'             => $failed,
+                'failedText'         => $failed ? Text::_('COM_J2COMMERCE_DATABASE_HEALTH_CHECK_FAILED') : '',
                 'repairable'         => $check['repairable'],
                 'destructive'        => $check['destructive'],
                 'setupGuideLink'     => self::resolveSetupGuideLink($check),
@@ -229,16 +235,6 @@ final class DatabaseHealthHelper
                 'destructive'    => false,
                 'count'          => [self::class, 'countPriceIndexStale'],
                 'fix'            => [self::class, 'fixPriceIndexStale'],
-            ],
-            [
-                'id'                    => 'orders_without_items',
-                'labelKey'              => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORDERS_WITHOUT_ITEMS_LABEL',
-                'descriptionKey'        => 'COM_J2COMMERCE_DATABASE_HEALTH_CHECK_ORDERS_WITHOUT_ITEMS_DESC',
-                'repairable'            => true,
-                'destructive'           => true,
-                'destructiveWarningKey' => 'COM_J2COMMERCE_DATABASE_HEALTH_ORDERS_WITHOUT_ITEMS_DESTRUCTIVE_WARNING',
-                'count'                 => [self::class, 'countOrdersWithoutItems'],
-                'fix'                   => [self::class, 'fixOrdersWithoutItems'],
             ],
             [
                 'id'                    => 'orphan_orderitems',
@@ -721,36 +717,38 @@ final class DatabaseHealthHelper
     }
 
     // =========================================================================
-    // Zero-date variants — variants.modified_on is a varchar, so this is a string
-    // comparison, not a date one.
+    // Zero-date variants. MySQL's default strict mode (NO_ZERO_DATE) rejects a '0000-00-00'
+    // literal outright, so the predicate compares against the lowest valid datetime instead —
+    // a stored zero date still sorts below it.
     // =========================================================================
 
-    private const ZERO_DATE = '0000-00-00 00:00:00';
+    private const MIN_VALID_DATE = '1000-01-01 00:00:00';
 
     public static function countZeroDateVariants(DatabaseInterface $db): int
     {
-        $zeroDate = self::ZERO_DATE;
+        $minDate = self::MIN_VALID_DATE;
 
         $query = $db->getQuery(true)
             ->select('COUNT(*)')
             ->from($db->quoteName('#__j2commerce_variants'))
-            ->where($db->quoteName('modified_on') . ' = :zeroDate')
-            ->bind(':zeroDate', $zeroDate);
+            ->where($db->quoteName('modified_on') . ' < :minDate')
+            ->bind(':minDate', $minDate);
 
         return (int) $db->setQuery($query)->loadResult();
     }
 
     public static function fixZeroDateVariants(DatabaseInterface $db): int
     {
-        $zeroDate  = self::ZERO_DATE;
+        $minDate   = self::MIN_VALID_DATE;
+        $now       = Factory::getDate()->toSql();
         $processed = 0;
 
         for ($batch = 0; $batch < self::MAX_BATCHES_PER_RUN; $batch++) {
             $query = $db->getQuery(true)
                 ->select($db->quoteName('j2commerce_variant_id'))
                 ->from($db->quoteName('#__j2commerce_variants'))
-                ->where($db->quoteName('modified_on') . ' = :zeroDate')
-                ->bind(':zeroDate', $zeroDate)
+                ->where($db->quoteName('modified_on') . ' < :minDate')
+                ->bind(':minDate', $minDate)
                 ->setLimit(self::BATCH_SIZE);
 
             $ids = array_map('intval', (array) $db->setQuery($query)->loadColumn());
@@ -759,11 +757,17 @@ final class DatabaseHealthHelper
                 break;
             }
 
+            // A row whose created_on is zero too takes the current time, or it would match again.
             $db->setQuery(
                 $db->getQuery(true)
                     ->update($db->quoteName('#__j2commerce_variants'))
-                    ->set($db->quoteName('modified_on') . ' = ' . $db->quoteName('created_on'))
+                    ->set(
+                        $db->quoteName('modified_on') . ' = CASE WHEN ' . $db->quoteName('created_on') . ' >= :minDate'
+                        . ' THEN ' . $db->quoteName('created_on') . ' ELSE :now END'
+                    )
                     ->whereIn($db->quoteName('j2commerce_variant_id'), $ids)
+                    ->bind(':minDate', $minDate)
+                    ->bind(':now', $now)
             )->execute();
 
             $processed += \count($ids);
@@ -827,61 +831,8 @@ final class DatabaseHealthHelper
     }
 
     // =========================================================================
-    // Orders without items / orphan orderitems — repairable. orphan_orderhistories and
-    // products_without_master_variant stay report-only below (see PRD "Report-only" table).
+    // Orphan orderitems — repairable.
     // =========================================================================
-
-    public static function countOrdersWithoutItems(DatabaseInterface $db): int
-    {
-        $query = $db->getQuery(true)
-            ->select('COUNT(*)')
-            ->from($db->quoteName('#__j2commerce_orders', 'o'))
-            ->leftJoin($db->quoteName('#__j2commerce_orderitems', 'oi') . ' ON ' . $db->quoteName('oi.order_id') . ' = ' . $db->quoteName('o.order_id'))
-            ->where($db->quoteName('oi.j2commerce_orderitem_id') . ' IS NULL');
-
-        return (int) $db->setQuery($query)->loadResult();
-    }
-
-    /**
-     * Reuses OrderModel::delete() so the whole child cascade runs — see OrderModel.php. Never
-     * a raw DELETE against #__j2commerce_orders, and never OrderTable::store().
-     */
-    public static function fixOrdersWithoutItems(DatabaseInterface $db): int
-    {
-        $model = Factory::getApplication()->bootComponent('com_j2commerce')
-            ->getMVCFactory()
-            ->createModel('Order', 'Administrator', ['ignore_request' => true]);
-
-        if ($model === null) {
-            return 0;
-        }
-
-        $before = self::countOrdersWithoutItems($db);
-
-        for ($batch = 0; $batch < self::MAX_BATCHES_PER_RUN; $batch++) {
-            $query = $db->getQuery(true)
-                ->select($db->quoteName('o.j2commerce_order_id'))
-                ->from($db->quoteName('#__j2commerce_orders', 'o'))
-                ->leftJoin($db->quoteName('#__j2commerce_orderitems', 'oi') . ' ON ' . $db->quoteName('oi.order_id') . ' = ' . $db->quoteName('o.order_id'))
-                ->where($db->quoteName('oi.j2commerce_orderitem_id') . ' IS NULL')
-                ->setLimit(self::BATCH_SIZE);
-
-            $ids = array_map('intval', (array) $db->setQuery($query)->loadColumn());
-
-            if (empty($ids)) {
-                break;
-            }
-
-            // A refusal (an order holding payment records needs an explicit confirmation) would
-            // otherwise re-select the same rows every batch and report them all as repaired.
-            if (!$model->delete($ids)) {
-                break;
-            }
-        }
-
-        // Measured, not counted: the report has to be the rows that actually went.
-        return $before - self::countOrdersWithoutItems($db);
-    }
 
     public static function countOrphanOrderitems(DatabaseInterface $db): int
     {
@@ -932,9 +883,10 @@ final class DatabaseHealthHelper
     }
 
     // =========================================================================
-    // Report-only checks — never auto-fixed. orphan_orderhistories erases the last audit
-    // trace of a deleted order; products_without_master_variant needs individual review
-    // (see the "Review" modal — DatabasehealthproductsModel), never a bulk fix.
+    // orphan_orderhistories is repairable only behind its own destructive warning, because it
+    // erases the last audit trace of a deleted order. products_without_master_variant is
+    // report-only: it needs individual review (the "Review" modal — DatabasehealthproductsModel),
+    // never a bulk fix.
     // =========================================================================
 
     public static function countOrphanOrderhistories(DatabaseInterface $db): int
