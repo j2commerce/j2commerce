@@ -15,6 +15,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\View\Dashboard;
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\CoreTemplateSyncHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\LanguageRepairHelper;
@@ -266,6 +267,32 @@ class HtmlView extends BaseHtmlView
                 'linkText' => Text::_('COM_J2COMMERCE_DASHBOARD_LANGUAGE_REPAIR'),
                 'priority' => 50,
             ];
+        }
+
+        // A DB-stored template body is never rewritten by an update, so the shipped email and
+        // print presets can move ahead of what a store actually sends. Sync Core Templates is
+        // the action that closes that gap, and nothing else tells the merchant to run it.
+        if ($this->getCurrentUser()->authorise('core.edit', 'com_j2commerce')) {
+            $outdatedTemplates = (new CoreTemplateSyncHelper())->countTemplatesWithOutdatedLogo();
+
+            if (array_sum($outdatedTemplates) > 0) {
+                $text = Text::_('COM_J2COMMERCE_DASHBOARD_EMAIL_TEMPLATES_OUTDATED');
+
+                if ($outdatedTemplates['invoice'] > 0) {
+                    $text .= ' ' . Text::_('COM_J2COMMERCE_DASHBOARD_PRINT_TEMPLATES_OUTDATED');
+                }
+
+                $this->dashboardMessages[] = [
+                    'id'          => 'com_j2commerce_core_templates_logo',
+                    'text'        => $text,
+                    'type'        => 'warning',
+                    'icon'        => 'fa-solid fa-envelope-open-text',
+                    'dismissible' => 'session',
+                    'link'        => Route::_('index.php?option=com_j2commerce&view=emailtemplates'),
+                    'linkText'    => Text::_('COM_J2COMMERCE_DASHBOARD_EMAIL_TEMPLATES_REVIEW'),
+                    'priority'    => 40,
+                ];
+            }
         }
 
         usort($this->dashboardMessages, fn ($a, $b) => ($a['priority'] ?? 500) <=> ($b['priority'] ?? 500));

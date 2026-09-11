@@ -124,7 +124,44 @@ class CoreTemplateSyncHelper
         ],
     ];
 
-    public function syncEmailTemplates(): array
+    /**
+     * Marker the shipped presets now carry: the logo's HTML `height` attribute.
+     *
+     * The Word engine behind desktop Outlook honours neither `max-height` nor a CSS `height`
+     * on an `<img>`, so a stored body without this attribute mails a full-size logo.
+     */
+    private const LOGO_HEIGHT_MARKER = 'height="[LOGO_MAX_HEIGHT]"';
+
+    /**
+     * How many core template rows still hold a body that predates the logo fix.
+     *
+     * Nothing rewrites a DB-stored body on its own, so a store that installed or synced before
+     * the fix keeps mailing the old markup until someone runs Sync Core Templates. Row identity
+     * comes from the sync's own resolution, not a guess, so an extension-seeded row or a
+     * merchant's own template is never counted -- syncing would not touch those, and a notice
+     * with no action behind it is worse than no notice.
+     *
+     * @return array{email: int, invoice: int}
+     */
+    public function countTemplatesWithOutdatedLogo(): array
+    {
+        $outdated = static fn (array $results): int => \count(
+            array_filter($results, static fn (array $r): bool => $r['status'] === 'outdated')
+        );
+
+        try {
+            return [
+                'email'   => $outdated($this->syncEmailTemplates(true)),
+                'invoice' => $outdated($this->syncInvoiceTemplates(true)),
+            ];
+        } catch (\Throwable) {
+            // The resolution reads `core_key`, which arrives with the 6.6.1 schema delta. A site
+            // that has not run its database update yet must still get a dashboard, not a 500.
+            return ['email' => 0, 'invoice' => 0];
+        }
+    }
+
+    public function syncEmailTemplates(bool $probeOnly = false): array
     {
         $names     = array_values(array_unique(array_column(self::EMAIL_TEMPLATES, 'orderstatus_name')));
         $statusIds = $this->resolveOrderStatusIds($names);
@@ -149,6 +186,7 @@ class CoreTemplateSyncHelper
             '#__j2commerce_emailtemplates',
             'j2commerce_emailtemplate_id',
             $registry,
+            $probeOnly,
             function (DatabaseInterface $db, array $expected): array {
                 $emailType       = $expected['email_type'];
                 $emailTypeLegacy = '';
@@ -236,12 +274,13 @@ class CoreTemplateSyncHelper
         return $ids;
     }
 
-    public function syncInvoiceTemplates(): array
+    public function syncInvoiceTemplates(bool $probeOnly = false): array
     {
         return $this->syncTemplates(
             '#__j2commerce_invoicetemplates',
             'j2commerce_invoicetemplate_id',
             self::INVOICE_TEMPLATES,
+            $probeOnly,
             function (DatabaseInterface $db, array $expected): array {
                 $invoiceType = $expected['invoice_type'];
                 $title       = $expected['title'];
@@ -279,7 +318,7 @@ class CoreTemplateSyncHelper
      * @param  callable(DatabaseInterface, array): array<\Joomla\Database\QueryInterface>  $identityQueries Builds the ordered SELECT tiers (by identity fields, not PK) that find an existing row — most specific tier first, legacy-wildcard fallback last.
      * @param  callable(array, string, string, ?string, int): array<string, int|string>     $buildInsertRow  Builds the column => value map used to recreate a missing row. Every key must be a literal column name -- see the INSERT loop.
      */
-    private function syncTemplates(string $table, string $pkColumn, array $registry, callable $identityQueries, callable $buildInsertRow): array
+    private function syncTemplates(string $table, string $pkColumn, array $registry, bool $probeOnly, callable $identityQueries, callable $buildInsertRow): array
     {
         $db      = Factory::getContainer()->get(DatabaseInterface::class);
         $results = [];
@@ -377,6 +416,15 @@ class CoreTemplateSyncHelper
             if ($existingId !== null) {
                 $claimed[$existingId] = true;
 
+                if ($probeOnly) {
+                    $results[] = [
+                        'id'     => $id,
+                        'status' => $this->hasOutdatedLogo($db, $table, $pkColumn, $existingId) ? 'outdated' : 'current',
+                        'file'   => $expected['file'],
+                    ];
+                    continue;
+                }
+
                 // Stamping the key on every write is what makes the legacy adoption a one-off:
                 // from here on this row answers to tier 0 and the identity tiers are never
                 // consulted for it again.
@@ -407,6 +455,12 @@ class CoreTemplateSyncHelper
                 continue;
             }
 
+            if ($probeOnly) {
+                // A deleted core row is recreated by the sync, so it needs the same prompt.
+                $results[] = ['id' => $id, 'status' => 'outdated', 'file' => $expected['file']];
+                continue;
+            }
+
             $row     = $buildInsertRow($expected, $content, $bodyJson, $subject, $id);
             $insert  = $db->getQuery(true)->insert($db->quoteName($table));
             $columns = [];
@@ -430,5 +484,20 @@ class CoreTemplateSyncHelper
         }
 
         return $results;
+    }
+
+    /** Whether the stored body still carries a logo sized only by CSS. */
+    private function hasOutdatedLogo(DatabaseInterface $db, string $table, string $pkColumn, int $rowId): bool
+    {
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('body'))
+            ->from($db->quoteName($table))
+            ->where($db->quoteName($pkColumn) . ' = :rowId')
+            ->bind(':rowId', $rowId, ParameterType::INTEGER);
+
+        $db->setQuery($query);
+        $body = (string) $db->loadResult();
+
+        return str_contains($body, '[STORE_LOGO_URL]') && !str_contains($body, self::LOGO_HEIGHT_MARKER);
     }
 }

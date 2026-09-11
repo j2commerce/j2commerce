@@ -405,9 +405,9 @@ function j2commercePlugin(editor) {
         content: `
             <table width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
-                    <td align="center" style="padding: 20px;">
+                    <td align="center" style="padding: 20px; text-align: center;">
                         [IF:STORE_LOGO_URL]
-                        <img src="${J2C_IMG_PLACEHOLDER}" data-j2c-src="[STORE_LOGO_URL]" alt="[SITENAME]" style="max-width: 200px; max-height: [LOGO_MAX_HEIGHT]px;" />
+                        <img src="${J2C_IMG_PLACEHOLDER}" data-j2c-src="[STORE_LOGO_URL]" alt="[SITENAME]" height="[LOGO_MAX_HEIGHT]" style="display: block; margin: 0 auto; border: 0; height: [LOGO_MAX_HEIGHT]px; width: auto;" />
                         [/IF:STORE_LOGO_URL]
                         [IFNOT:STORE_LOGO_URL]
                         <span style="font-size: 24px; font-weight: bold; color: [ACCENT_COLOR];">[SITENAME]</span>

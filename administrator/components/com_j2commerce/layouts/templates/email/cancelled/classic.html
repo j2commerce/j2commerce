@@ -6,10 +6,10 @@
 
         <!-- Header -->
         <tr>
-          <td style="background-color: [HEADER_BG_COLOR]; padding: 24px 30px; border-bottom: 3px solid [ACCENT_COLOR]; text-align: center;">
+          <td align="center" style="background-color: [HEADER_BG_COLOR]; padding: 24px 30px; border-bottom: 3px solid [ACCENT_COLOR]; text-align: center;">
             [IF:STORE_LOGO_URL]
             <a href="[SITEURL]" target="_blank">
-              <img src="[STORE_LOGO_URL]" alt="[SITENAME]" style="max-width: 180px; max-height: [LOGO_MAX_HEIGHT]px; height: auto; display: inline-block; border: 0;" />
+              <img src="[STORE_LOGO_URL]" alt="[SITENAME]" height="[LOGO_MAX_HEIGHT]" style="display: block; margin: 0 auto; border: 0; height: [LOGO_MAX_HEIGHT]px; width: auto;" />
             </a>
             [/IF:STORE_LOGO_URL]
             [IFNOT:STORE_LOGO_URL]
