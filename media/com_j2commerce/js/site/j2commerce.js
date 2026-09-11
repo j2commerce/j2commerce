@@ -1081,9 +1081,11 @@ const J2Commerce = {
             });
         }
 
-        // Variant gallery swap (Swiper)
+        // Variant gallery swap (Swiper) — scope to this product's own container so a
+        // second instance of the same product on the page swaps its own gallery, not
+        // the first instance's (the ids collide and get a '-scN' suffix on the repeat).
         if (typeof this.swapGalleryImages === 'function') {
-            this.swapGalleryImages(productId, response.variant_gallery);
+            this.swapGalleryImages(productId, response.variant_gallery, product);
         }
 
         // Discount text
@@ -1184,8 +1186,13 @@ const J2Commerce = {
         return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     },
 
-    swapGalleryImages(productId, variantGallery) {
-        const galleryEl = document.getElementById('product-gallery-' + productId);
+    swapGalleryImages(productId, variantGallery, scope = document) {
+        // Suffix-tolerant: a second {j2commerce} block for the same product renames its
+        // colliding gallery id to '-scN', so an exact-id lookup would find the first
+        // instance's gallery. Fall back to a document-wide findById for programmatic
+        // callers with no scope.
+        const galleryEl = this.findById(scope, 'product-gallery-' + productId)
+            || this.findById(document, 'product-gallery-' + productId);
         if (!galleryEl) return;
 
         const mainEl = galleryEl.querySelector('.product-gallery-main');

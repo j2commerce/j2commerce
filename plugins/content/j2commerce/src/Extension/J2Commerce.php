@@ -163,8 +163,11 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         // of the strip setting, so always return before reaching it.
         if ($context === 'com_finder.indexer') {
             if ((bool) $this->params->get('shortcode_strip_in_finder', 1) && isset($article->text)) {
-                $article->text = preg_replace('/{j2commerce}.*?{\/j2commerce}/s', '', $article->text);
-                $article->text = preg_replace('/{j2commerce\s+[^}]*}/s', '', $article->text);
+                // preg_replace() returns null when PCRE gives up (backtrack limit on a very large
+                // block). Keep the un-rewritten markup in that case — the shortcode survives
+                // indexing, but $article->text does not go null under strict_types.
+                $article->text = preg_replace('/{j2commerce}.*?{\/j2commerce}/s', '', $article->text) ?? $article->text;
+                $article->text = preg_replace('/{j2commerce\s+[^}]*}/s', '', $article->text) ?? $article->text;
             }
 
             return;
