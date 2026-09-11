@@ -56,6 +56,12 @@ use Joomla\Utilities\ArrayHelper;
 
 class CheckoutController extends BaseController
 {
+    /**
+     * Bounded because the note is also held in the session, where it is re-serialized
+     * into #__session.data on every request for the life of that session.
+     */
+    private const CUSTOMER_NOTE_MAX_LENGTH = 2000;
+
     public function display($cachable = false, $urlparams = []): static
     {
         UtilitiesHelper::sendNoCacheHeaders();
@@ -2342,7 +2348,7 @@ class CheckoutController extends BaseController
         // tokenless GET it is ignored outright rather than written verbatim to the order.
         $customerNote = $tokenlessGatewayReturn
             ? ''
-            : strip_tags($this->input->getString('customer_note', ''));
+            : $this->sanitizeCustomerNote($this->input->getString('customer_note', ''));
 
         if ($orderTable && !empty($customerNote) && !empty($orderId)) {
             $orderTable->customer_note = $customerNote;
@@ -3045,7 +3051,7 @@ class CheckoutController extends BaseController
         }
 
         try {
-            $customerNote = strip_tags($this->input->getString('customer_note', ''));
+            $customerNote = $this->sanitizeCustomerNote($this->input->getString('customer_note', ''));
 
             // Read back by CartOrder when the order row is rebuilt, so the note survives a
             // re-confirm that replaces the row this request writes to.
@@ -3054,13 +3060,21 @@ class CheckoutController extends BaseController
             // Server-side state only: the order is never named by the request.
             $orderId    = (string) $this->app->getUserState('j2commerce.order_id', '');
             $orderTable = $orderId !== '' ? $this->getMvcFactory()->createTable('Order', 'Administrator') : null;
+            $stored     = true;
 
             if ($orderTable && $orderTable->load(['order_id' => $orderId])) {
                 $orderTable->customer_note = $customerNote;
-                TableSaveHelper::store($orderTable, 'checkout.saveCustomerNote');
+
+                // A driver failure comes back as false rather than as an exception, so the
+                // catch below never sees it and the caller would be told the note was kept.
+                $stored = TableSaveHelper::store($orderTable, 'checkout.saveCustomerNote');
             }
 
-            $json['success'] = true;
+            $json['success'] = $stored;
+
+            if (!$stored) {
+                $json['message'] = Text::_('COM_J2COMMERCE_ERR_GENERIC');
+            }
         } catch (\Exception $e) {
             Log::add('checkout.saveCustomerNote failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
 
@@ -3070,6 +3084,11 @@ class CheckoutController extends BaseController
 
         echo json_encode($json);
         $this->app->close();
+    }
+
+    private function sanitizeCustomerNote(string $note): string
+    {
+        return mb_substr(strip_tags($note), 0, self::CUSTOMER_NOTE_MAX_LENGTH);
     }
 
     // =========================================================================
