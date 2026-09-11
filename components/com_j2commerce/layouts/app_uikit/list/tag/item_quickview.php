@@ -9,11 +9,11 @@
 
 declare(strict_types=1);
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
-use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 
 extract($displayData);
 
@@ -28,5 +28,6 @@ $quickviewUrl = Route::_(
 <div class="j2commerce-product-quickview uk-position-absolute uk-position-bottom-right uk-margin-small">
     <a data-fancybox data-type="iframe" class="uk-button uk-button-secondary uk-button-small j2commerce-quickview-btn" data-src="<?php echo $quickviewUrl; ?>" href="javascript:" title="<?php echo Text::_('COM_J2COMMERCE_PRODUCT_QUICKVIEW'); ?>">
         <span class="fa-solid fa-eye" aria-hidden="true"></span>
+        <span class="uk-hidden-visually"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_QUICKVIEW'); ?></span>
     </a>
 </div>

@@ -118,7 +118,8 @@ const J2CommerceFlexivariable = {
                     detail: { productContainer, response: data }
                 }));
             } else if (data.error) {
-                const optionsContainer = document.getElementById('variable-options-' + productId);
+                // Tolerates the '-scN' suffix a repeated {j2commerce} shortcode adds to a colliding id.
+                const optionsContainer = document.querySelector(`[id="variable-options-${productId}"], [id^="variable-options-${productId}-sc"]`);
                 if (optionsContainer) {
                     const errorDiv = document.createElement('div');
                     errorDiv.className = 'j2error alert alert-danger';

@@ -94,6 +94,11 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         'quickview'      => 'list.category.item_quickview',
     ];
 
+    /** Ids already emitted by earlier {j2commerce} blocks on this page, so a repeat can rename its own. */
+    private static array $renderedShortcodeIds = [];
+
+    private static int $shortcodeIdSeq = 0;
+
     private bool $cacheCleared = false;
 
     private static array $articleCache = [];
@@ -1536,8 +1541,79 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
 
             $html .= '</div>';
 
+            $html = $this->uniquifyDuplicateIds($html);
+
             $article->text = $this->replaceAtPosition($article->text, $match['raw'], $html);
         }
+    }
+
+    /**
+     * A second {j2commerce} block for the same product re-emits the ids the first one used, so the
+     * repeat's labels, aria references and collapse targets all resolved to the first block. Only
+     * colliding ids are renamed, which leaves the first block — and anything a page-wide script
+     * looks up by its exact id — untouched.
+     */
+    private function uniquifyDuplicateIds(string $html): string
+    {
+        if (!preg_match_all('/\bid="([^"<>]+)"/', $html, $found)) {
+            return $html;
+        }
+
+        $ids        = array_values(array_unique($found[1]));
+        $collisions = array_values(array_intersect($ids, self::$renderedShortcodeIds));
+
+        self::$renderedShortcodeIds = array_merge(
+            self::$renderedShortcodeIds,
+            array_diff($ids, self::$renderedShortcodeIds)
+        );
+
+        if ($collisions === []) {
+            return $html;
+        }
+
+        $suffix = '-sc' . ++self::$shortcodeIdSeq;
+
+        // Longest first, so 'option-value-1' is not rewritten inside 'option-value-12'.
+        usort($collisions, static fn ($a, $b) => \strlen($b) <=> \strlen($a));
+
+        foreach ($collisions as $id) {
+            $quoted = preg_quote($id, '/');
+            $new    = $id . $suffix;
+
+            // An id carries whatever the layouts emitted, so it cannot go into a replacement
+            // string raw: a literal '$1' in there would expand as a backreference.
+            $literal = str_replace(['\\', '$'], ['\\\\', '\\$'], $new);
+
+            // preg_replace() returns null when PCRE gives up (backtrack limit on a very large
+            // block). Keep the un-rewritten markup in that case — the ids stay duplicated, but
+            // the article still renders.
+            // '(?<![\w-])' rather than '\b', so 'id' does not also match the tail of 'data-id',
+            // and '${1}' rather than '$1', so a group reference cannot run into an id that
+            // starts with a digit.
+            $html = preg_replace(
+                '/(?<![\w-])(id|for|form|list|headers|aria-labelledby|aria-describedby|aria-controls|aria-owns'
+                . '|aria-activedescendant|aria-details|aria-errormessage)="' . $quoted . '"/',
+                '${1}="' . $literal . '"',
+                $html
+            ) ?? $html;
+
+            $html = preg_replace(
+                '/(?<![\w-])(href|data-src|data-bs-target|data-target|data-bs-parent|data-parent)="#' . $quoted . '"/',
+                '${1}="#' . $literal . '"',
+                $html
+            ) ?? $html;
+
+            // Inline scripts hard-code the ids they initialise — the gallery Swiper does.
+            $html = preg_replace_callback(
+                '#<script\b[^>]*>.*?</script>#is',
+                static fn (array $m) => preg_replace('/([\'"#])' . $quoted . '(?![\w-])/', '${1}' . $literal, $m[0]) ?? $m[0],
+                $html
+            ) ?? $html;
+
+            self::$renderedShortcodeIds[] = $new;
+        }
+
+        return $html;
     }
 
     /**

@@ -190,7 +190,7 @@ const J2Commerce = {
 
                 if (json.error.option) {
                     Object.entries(json.error.option).forEach(([key, msg]) => {
-                        const optEl = form.querySelector(`#option-${key}`);
+                        const optEl = this.findById(form, `option-${key}`);
                         if (optEl) {
                             const span = document.createElement('span');
                             span.className = 'j2error';
@@ -415,6 +415,14 @@ const J2Commerce = {
         return document.getElementById(cleanId) || document.querySelector(`[id="${cleanId}"]`);
     },
 
+    // A repeated {j2commerce} shortcode renames its colliding ids with a '-scN' suffix
+    // (plg_content_j2commerce), so an exact id lookup would miss the second instance.
+    findById(scope, id) {
+        if (!scope) return null;
+        const esc = String(id).replace(/(["\\])/g, '\\$1');
+        return scope.querySelector(`[id="${esc}"], [id^="${esc}-sc"]`);
+    },
+
     /**
      * Handle AJAX filter for product options
      * @param {string} povId - Product option value ID
@@ -433,10 +441,10 @@ const J2Commerce = {
         // height reserved) while the new set loads — no eager wipe, so no layout collapse.
         // Scope to the triggering form first so the correct instance is updated when
         // the same product is rendered twice on a page (duplicate IDs).
-        const childContainer = form.querySelector(`[id="ChildOptions${poId}"]`)
-            || form.querySelector(`[id="child-ChildOptions${poId}"]`)
-            || document.getElementById(`ChildOptions${poId}`)
-            || document.getElementById(`child-ChildOptions${poId}`);
+        const childContainer = this.findById(form, `ChildOptions${poId}`)
+            || this.findById(form, `child-ChildOptions${poId}`)
+            || this.findById(document, `ChildOptions${poId}`)
+            || this.findById(document, `child-ChildOptions${poId}`);
         if (childContainer) {
             this.setChildLoading(childContainer, true);
         }
@@ -528,12 +536,12 @@ const J2Commerce = {
                 || element.closest('.options') || element.closest('.j2commerce-product-options');
             if (container && json.child_option_ids?.length) {
                 for (const childPoId of json.child_option_ids) {
-                    const standalone = container.querySelector(`#option-${childPoId}`);
+                    const standalone = this.findById(container, `option-${childPoId}`);
                     if (standalone && !standalone.closest('[id^="ChildOptions"]')) {
                         standalone.classList.add('d-none');
                         standalone.setAttribute('data-hidden-by-parent', poId);
                     }
-                    const childPlaceholder = container.querySelector(`#ChildOptions${childPoId}`);
+                    const childPlaceholder = this.findById(container, `ChildOptions${childPoId}`);
                     if (childPlaceholder && !childPlaceholder.closest('[id^="ChildOptions"]')) {
                         childPlaceholder.classList.add('d-none');
                         childPlaceholder.setAttribute('data-hidden-by-parent', poId);
@@ -726,7 +734,7 @@ const J2Commerce = {
             const povIds = String(combination).split(',').filter(Boolean);
 
             povIds.forEach(pov => {
-                const choice = form.querySelector('#option-value-' + CSS.escape(pov));
+                const choice = this.findById(form, 'option-value-' + pov);
                 if (choice && (choice.type === 'radio' || choice.type === 'checkbox')) {
                     choice.checked = true;
                     return;
