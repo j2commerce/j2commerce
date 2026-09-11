@@ -15,6 +15,7 @@ namespace J2Commerce\Component\J2commerce\Site\Service;
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\SubtemplateHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -281,17 +282,13 @@ final class ProductLayoutService
      */
     private static function mapSubtemplateToPluginFolder(string $subtemplate): string
     {
-        if (str_starts_with($subtemplate, 'app_')) {
-            $subtemplate = substr($subtemplate, 4);
-        }
-
         // Strip view-scope prefixes (tag_, categories_, categories_tag_). These are
         // menu-selectable aliases (e.g. tag_superstore, categories_tag_bootstrap5) that
         // all map to the SAME owning app plugin folder (app_superstore, app_bootstrap5).
         // Without this, e.g. 'tag_superstore' resolved to the non-existent
         // 'app_tag_superstore', leaving FileLayout with no include paths so product
         // items rendered empty in the AJAX filter response.
-        $subtemplate = preg_replace('/^(categories_tag_|categories_|tag_)/', '', $subtemplate) ?? $subtemplate;
+        $subtemplate = SubtemplateHelper::normalize($subtemplate);
 
         return match ($subtemplate) {
             'bootstrap5' => 'app_bootstrap5',
