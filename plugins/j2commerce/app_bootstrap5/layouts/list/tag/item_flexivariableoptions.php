@@ -50,6 +50,9 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
                         <?php $ovId = (int) $ov['product_optionvalue_id']; ?>
                         <option value="<?php echo $ovId; ?>"<?php echo ($defaultOptionValueId == $ovId) ? ' selected' : ''; ?>>
                             <?php echo $esc(Text::_($ov['optionvalue_name'])); ?>
+                            <?php if (($ov['price_from'] ?? null) !== null && $params->get('product_option_price', 1)) : ?>
+                                (<?php echo $esc(Text::_('COM_J2COMMERCE_FROM_PRICE')); ?> <?php echo J2CommerceHelper::product()->displayPrice($ov['price_from'], $product, $params, 'products.view.option'); ?>)
+                            <?php endif; ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
@@ -81,8 +84,13 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
                                 <img class="optionvalue-image me-1"
                                      src="<?php echo Uri::root(true) . '/' . $esc($ov['optionvalue_image']); ?>"
                                      alt="<?php echo $esc(Text::_($ov['optionvalue_name'])); ?>" />
+                                <?php echo $esc(Text::_($ov['optionvalue_name'])); ?>
+                            <?php else : ?>
+                                <?php $ovPriceSuffix = (($ov['price_from'] ?? null) !== null && $params->get('product_option_price', 1))
+                                    ? ' (' . Text::_('COM_J2COMMERCE_FROM_PRICE') . ' ' . strip_tags(J2CommerceHelper::product()->displayPrice($ov['price_from'], $product, $params, 'products.view.option')) . ')'
+                                    : ''; ?>
+                                <?php echo $esc(Text::_($ov['optionvalue_name']) . $ovPriceSuffix); ?>
                             <?php endif; ?>
-                            <?php echo $esc(Text::_($ov['optionvalue_name'])); ?>
                         </label>
                     </div>
                 <?php endforeach; ?>
