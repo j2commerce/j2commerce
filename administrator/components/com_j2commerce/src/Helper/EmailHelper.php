@@ -62,15 +62,23 @@ class EmailHelper
     private array $shippingCache = [];
 
     /**
-     * Tags whose values are markup by design and must reach the template unencoded:
-     * server-generated tables, merchant-authored config HTML, URLs, style values, and
-     * `[CUSTOMER_NOTE]`, which is escaped at assignment before `nl2br()`.
-     * Everything absent from this list is HTML-encoded — see `processTags()`.
+     * Tags the escaping loop in `processTags()` skips. Everything absent from this list is
+     * HTML-encoded there, so a tag added later is escaped by default.
+     *
+     * Members are of two kinds, and each kind earns its place differently:
+     *   1. Markup by design — server-generated tables and merchant-authored config HTML.
+     *      Encoding them would print their tags instead of rendering them.
+     *   2. Scalars substituted into a quoted HTML attribute — colours, a pixel height, URLs
+     *      used as `src`/`href`. These carry no markup; they are listed here only so the URL
+     *      tags are not double-encoded on their way into an attribute. What keeps them safe
+     *      is a constraint applied by their producer in `getTags()`, not this list. Anything
+     *      added under kind 2 must arrive already constrained.
      *
      * @var   string[]
      * @since 6.3.0
      */
     private const RAW_HTML_TAGS = [
+        // Kind 1 — markup by design.
         "\\n",
         '[ITEMS]',
         '[PACKING_ITEMS]',
@@ -79,19 +87,25 @@ class EmailHelper
         '[DISCOUNT_LINES]',
         '[ORDER_EXTRA_ROWS]',
         '[DOWNLOAD_LINKS]',
+        // Escaped at assignment, before nl2br() adds the only markup it carries.
         '[CUSTOMER_NOTE]',
         '[BANK_TRANSFER_INFORMATION]',
         '[PAYMENT_INSTRUCTIONS]',
         '[FOOTER_TEXT]',
+        // Kind 2 — attribute values, constrained by their producer in getTags().
+        // Built server-side from the site root and the router; never request- or config-derived.
         '[SITEURL]',
         '[INVOICE_URL]',
         '[MYPROFILE_URL]',
         '[GUEST_ORDER_URL]',
+        // Config-derived: escaped for an attribute position at the producer.
         '[STORE_LOGO_URL]',
         '[SOCIAL_FACEBOOK]',
         '[SOCIAL_INSTAGRAM]',
         '[SOCIAL_TWITTER]',
+        // Config-derived: cast to an integer at the producer.
         '[LOGO_MAX_HEIGHT]',
+        // Config-derived: validated as a hex colour at the producer, default on a mismatch.
         '[ACCENT_COLOR]',
         '[HEADER_BG_COLOR]',
         '[EMAIL_BG_COLOR]',
@@ -960,7 +974,17 @@ class EmailHelper
             $tags['[CUSTOMER_GROUPS]'] = trim(implode(',', $groupNames), ',');
         }
 
-        // Brand configuration shortcodes
+        // Brand configuration shortcodes. These are RAW_HTML_TAGS members of kind 2: the
+        // escaping loop skips them so the URL tags survive an href position unencoded, which
+        // means the constraint has to come from here. [LOGO_MAX_HEIGHT]'s int cast is the
+        // model — a producer-side guarantee holds whichever attribute a template uses.
+        $attr  = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+        $color = static function (string $key, string $default) use ($params): string {
+            $value = (string) $params->get($key, $default);
+
+            return preg_match('/^#[0-9A-Fa-f]{3,8}$/', $value) === 1 ? $value : $default;
+        };
+
         $logoRaw = $params->get('email_logo_url', '');
         $logoUrl = '';
         if (!empty($logoRaw)) {
@@ -969,16 +993,16 @@ class EmailHelper
                 $logoUrl = rtrim($baseURL, '/') . '/' . ltrim($logoUrl, '/');
             }
         }
-        $tags['[STORE_LOGO_URL]']   = $logoUrl;
+        $tags['[STORE_LOGO_URL]']   = $attr($logoUrl);
         $tags['[LOGO_MAX_HEIGHT]']  = (string) (int) $params->get('email_logo_max_height', 60);
-        $tags['[ACCENT_COLOR]']     = $params->get('email_accent_color', '#2563EB');
-        $tags['[HEADER_BG_COLOR]']  = $params->get('email_header_bg', '#FFFFFF');
-        $tags['[EMAIL_BG_COLOR]']   = $params->get('email_bg_color', '#F8FAFC');
-        $tags['[TEXT_COLOR]']       = $params->get('email_text_color', '#334155');
+        $tags['[ACCENT_COLOR]']     = $color('email_accent_color', '#2563EB');
+        $tags['[HEADER_BG_COLOR]']  = $color('email_header_bg', '#FFFFFF');
+        $tags['[EMAIL_BG_COLOR]']   = $color('email_bg_color', '#F8FAFC');
+        $tags['[TEXT_COLOR]']       = $color('email_text_color', '#334155');
         $tags['[FOOTER_TEXT]']      = $params->get('email_footer_text', '');
-        $tags['[SOCIAL_FACEBOOK]']  = $params->get('email_social_facebook', '');
-        $tags['[SOCIAL_INSTAGRAM]'] = $params->get('email_social_instagram', '');
-        $tags['[SOCIAL_TWITTER]']   = $params->get('email_social_twitter', '');
+        $tags['[SOCIAL_FACEBOOK]']  = $attr((string) $params->get('email_social_facebook', ''));
+        $tags['[SOCIAL_INSTAGRAM]'] = $attr((string) $params->get('email_social_instagram', ''));
+        $tags['[SOCIAL_TWITTER]']   = $attr((string) $params->get('email_social_twitter', ''));
 
         // Store info shortcodes
         $tags['[STORE_NAME]']      = $params->get('store_name', '');
