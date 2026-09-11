@@ -19,6 +19,7 @@ use Joomla\CMS\Form\FormField;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\FileLayout;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\Session\Session;
 use Joomla\Database\DatabaseInterface;
 
@@ -40,9 +41,11 @@ final class J2commerceField extends FormField
     /** @since 6.0.0 */
     protected function getInput(): string
     {
+        $app       = Factory::getApplication();
+        $articleId = $app->getInput()->getInt($app->isClient('administrator') ? 'id' : 'a_id', 0);
+
         try {
-            $app = Factory::getApplication();
-            $db  = $this->getDb();
+            $db = $this->getDb();
 
             $language = $app->getLanguage();
             $language->load('com_j2commerce', JPATH_ADMINISTRATOR . '/components/com_j2commerce');
@@ -57,12 +60,6 @@ final class J2commerceField extends FormField
                     . '</div>';
             }
 
-            if ($app->isClient('administrator')) {
-                $articleId = $app->getInput()->getInt('id', 0);
-            } else {
-                $articleId = $app->getInput()->getInt('a_id', 0);
-            }
-
             $product = null;
             if ($articleId > 0) {
                 $product = ProductHelper::getFullProductBySource('com_content', $articleId);
@@ -70,15 +67,25 @@ final class J2commerceField extends FormField
 
             return $this->buildProductForm($product, $articleId);
         } catch (\Throwable $e) {
-            // Log the full error for debugging
-            Factory::getApplication()->getLogger()->error('J2Commerce Field Error: ' . $e->getMessage(), [
-                'file'  => $e->getFile(),
-                'line'  => $e->getLine(),
-                'class' => \get_class($e),
-            ]);
+            $debug    = (bool) $app->get('debug');
+            $location = \sprintf('%s: %s in %s:%d', $e::class, $e->getMessage(), $e->getFile(), $e->getLine());
 
-            // Show generic error to user
-            Factory::getApplication()->enqueueMessage(Text::_('PLG_CONTENT_J2COMMERCE_ERROR_LOADING_FORM'), 'error');
+            // The com_j2commerce category is the one plg_system_j2commerce gives a log file.
+            Log::add(
+                \sprintf('Article %d product form failed to render. %s', $articleId, $location)
+                    . ($debug ? "\n" . $e->getTraceAsString() : ''),
+                Log::ERROR,
+                'com_j2commerce'
+            );
+
+            // The system message layout prints raw HTML, so the detail is escaped.
+            $message = Text::_('PLG_CONTENT_J2COMMERCE_ERROR_LOADING_FORM');
+
+            if ($debug) {
+                $message .= ' ' . htmlspecialchars($location, ENT_QUOTES, 'UTF-8');
+            }
+
+            $app->enqueueMessage($message, 'error');
 
             return '';
         }
