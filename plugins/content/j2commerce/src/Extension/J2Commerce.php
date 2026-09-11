@@ -16,6 +16,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\CategoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\SubtemplateHelper;
 use J2Commerce\Component\J2commerce\Administrator\Service\ProductService;
 use J2Commerce\Component\J2commerce\Site\Helper\ProductVisibilityHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
@@ -1414,7 +1415,11 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             // Options are everything after the product ID
             $options     = \array_slice($values, 1);
             $productType = $product->product_type ?? '';
-            $html        = '<div class="com_j2commerce j2commerce-single-product j2commerce-shortcode j2commerce-shortcode-article">';
+            // The quickview button is absolutely positioned (bottom/end), so the block has to be its
+            // containing box — otherwise it anchors to the page body and lands far from the product.
+            $hasQuickview = \in_array('quickview', array_map(static fn ($o) => strtolower(trim($o)), $options), true);
+            $html         = '<div class="com_j2commerce j2commerce-single-product j2commerce-shortcode j2commerce-shortcode-article"'
+                . ($hasQuickview ? ' style="position:relative;min-height:3.5rem"' : '') . '>';
 
             // Apply the shortcode-specific subtemplate override so that
             // ProductLayoutService::renderLayout() picks up the correct layout
@@ -1449,7 +1454,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             // options, so it doesn't trigger this.
             $cartMergesOptions = \in_array(
                 'cart',
-                array_map(static fn($o) => strtolower(trim($o)), $options),
+                array_map(static fn ($o) => strtolower(trim($o)), $options),
                 true
             );
 
@@ -1459,7 +1464,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
                 // Special case: |detail dispatches onJ2CommerceViewProductHtml so the
                 // active subtemplate plugin renders it with its own view_*.php files.
                 if ($option === 'detail') {
-                    $html .= $this->renderProductDetail($productId);
+                    $html .= $this->renderProductDetail($productId, $shortcodeSubtemplate);
                     continue;
                 }
 
@@ -1482,6 +1487,10 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
                     }
                 }
 
+                // Product-type plugins may swap in their own partial for this option,
+                // e.g. a grouped product's "starting from" price instead of its 0.00 parent.
+                J2CommerceHelper::plugin()->event('GetShortcodeLayout', [&$layoutId, $productType, $option, $product]);
+
                 $displayData = $this->buildDisplayData($product, $option, $options);
 
                 // Shortcode surfaces only — buildDisplayData() also serves the article
@@ -1496,7 +1505,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
                 // <form> of its own (unlike 'full'/'card', which route through the full
                 // item layout that supplies one) — wrap it so the add-to-cart JS submit
                 // handler (which looks for the nearest .j2commerce-addtocart-form) fires.
-                if (\in_array($option, ['cart', 'cartonly'], true)) {
+                if (\in_array($option, ['cart', 'cartonly'], true) && $layoutId === self::SHORTCODE_LAYOUT_MAP[$option]) {
                     if ($productType === 'flexivariable') {
                         $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
                         $wa->registerAndUseScript(
@@ -1612,13 +1621,9 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
      * `onJ2CommerceViewProductHtml` so the active subtemplate plugin (app_bootstrap5
      * / app_uikit) renders the detail view using its own subtemplate view_* files.
      *
-     * @param   int  $productId  Product ID to render.
-     *
-     * @return  string  Rendered HTML, or empty string on failure.
-     *
      * @since   6.0.0
      */
-    private function renderProductDetail(int $productId): string
+    private function renderProductDetail(int $productId, string $subtemplate): string
     {
         try {
             $app        = $this->getApplication();
@@ -1650,13 +1655,12 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
 
             // Seed the view with the same properties Site\View\Product\HtmlView::display()
             // sets before dispatching the event. The subtemplate plugin reads these.
-            $params      = $this->buildArticleParams();
-            $subtemplate = trim((string) $this->params->get('shortcode_subtemplate', ''));
+            $params = $this->buildArticleParams();
+
             if ($subtemplate !== '') {
-                // Strip the 'app_' prefix — subtemplate plugins expect short names
-                // like 'bootstrap5' in $view->params->get('subtemplate').
-                $short = str_starts_with($subtemplate, 'app_') ? substr($subtemplate, 4) : $subtemplate;
-                $params->set('subtemplate', $short);
+                // Subtemplate plugins expect short names like 'bootstrap5' in
+                // $view->params->get('subtemplate').
+                $params->set('subtemplate', SubtemplateHelper::normalize($subtemplate));
             }
 
             // `item`, `state`, and `user` are protected on ProductView. Bind a closure
@@ -1676,20 +1680,14 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             );
             $setter($item, $params, $state, $identity);
 
-            // Dispatch the event directly — subtemplate plugin renders via its
-            // view_*.php files and sets the 'html' argument. We don't use
-            // J2CommerceHelper::plugin()->eventWithHtml() because it overwrites
-            // the 'html' argument with the concat of 'result' entries after dispatch.
-            PluginHelper::importPlugin('j2commerce');
-            $dispatcher  = Factory::getContainer()->get(DispatcherInterface::class);
-            $pluginEvent = new \J2Commerce\Component\J2commerce\Administrator\Event\PluginEvent(
-                'onJ2CommerceViewProductHtml',
-                [null, &$view, $model]
-            );
-            $dispatcher->dispatch('onJ2CommerceViewProductHtml', $pluginEvent);
-
-            return (string) $pluginEvent->getArgument('html', '');
+            // Same helper the product view uses: subtemplate plugins addResult() their
+            // markup and eventWithHtml() joins it into the 'html' argument.
+            return (string) J2CommerceHelper::plugin()
+                ->eventWithHtml('ViewProductHtml', [null, &$view, $model])
+                ->getArgument('html', '');
         } catch (\Throwable $e) {
+            Log::add(\sprintf('Shortcode detail render failed for product %d: %s', $productId, $e->getMessage()), Log::ERROR, 'com_j2commerce');
+
             return '';
         }
     }
@@ -1718,17 +1716,19 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             'showUpc'         => $this->optionsContainAny($allOptions, ['upc', 'full', 'card', 'detail']),
             'showStock'       => $this->optionsContainAny($allOptions, ['stock', 'full', 'card', 'detail']),
             'showDescription' => $this->optionsContainAny($allOptions, ['description', 'desc', 'full', 'card', 'detail']),
-            'showQuickview'   => \in_array('quickview', $allOptions, true),
-            'linkTitle'       => true,
-            'linkImage'       => true,
-            'productLink'     => $product->product_link ?? null,
-            'cartText'        => Text::_('COM_J2COMMERCE_ADD_TO_CART'),
-            'layoutBasePath'  => '',
-            'shortcodeOption' => $option,
-            'priceMode'       => $this->resolvePriceMode($option),
-            'imageMode'       => $this->resolveImageMode($option),
-            'showOptions'     => true,
-            'sourceContext'   => 'article',
+            // Mirrors ProductLayoutService::renderProductItem(); item_description.php reads it unguarded.
+            'showLongDescription' => (bool) $params->get('list_show_long_desc', 0),
+            'showQuickview'       => \in_array('quickview', $allOptions, true),
+            'linkTitle'           => true,
+            'linkImage'           => true,
+            'productLink'         => $product->product_link ?? null,
+            'cartText'            => Text::_('COM_J2COMMERCE_ADD_TO_CART'),
+            'layoutBasePath'      => '',
+            'shortcodeOption'     => $option,
+            'priceMode'           => $this->resolvePriceMode($option),
+            'imageMode'           => $this->resolveImageMode($option),
+            'showOptions'         => true,
+            'sourceContext'       => 'article',
         ];
     }
 
