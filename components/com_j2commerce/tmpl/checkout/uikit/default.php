@@ -1470,6 +1470,23 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(function(e) { console.error('Payment selection error:', e); });
     });
 
+    // === CUSTOMER NOTE CHANGE: persist to the order before the shopper can leave ===
+    // An off-site gateway form posts to the provider, not back to us, so the note has to be
+    // on the order by the time it is clicked. Blur fires the change first, and keepalive
+    // keeps the request alive across the navigation that follows.
+    document.addEventListener('change', function(e) {
+        if (!e.target.matches || !e.target.matches('#customer_note')) return;
+
+        var formData = new FormData();
+        formData.append('option', 'com_j2commerce');
+        formData.append('task', 'checkout.saveCustomerNote');
+        formData.append(token, '1');
+        formData.append('customer_note', e.target.value);
+
+        fetch(baseUrl, { method: 'POST', body: formData, keepalive: true, headers: {'X-Requested-With': 'XMLHttpRequest'} })
+            .catch(function(e) { console.error('Customer note save error:', e); });
+    });
+
     // === SIDECART REFRESH ===
     function refreshSidecart() {
         var formData = new FormData();

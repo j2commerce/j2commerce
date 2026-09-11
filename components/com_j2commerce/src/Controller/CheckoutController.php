@@ -3020,6 +3020,59 @@ class CheckoutController extends BaseController
     }
 
     // =========================================================================
+    // AJAX: Save Customer Note
+    // =========================================================================
+
+    /**
+     * Persists the confirm-step note as it is typed. An off-site gateway form posts to the
+     * provider rather than back here, so confirmPayment() never sees the field on those
+     * payment methods and the note has to already be on the order before the shopper leaves.
+     */
+    public function saveCustomerNote(): void
+    {
+        UtilitiesHelper::sendNoCacheHeaders();
+        header('Content-Type: application/json; charset=utf-8');
+
+        $json = [];
+
+        if (!$this->validateAjaxToken()) {
+            $json['success'] = false;
+            $json['message'] = Text::_('JINVALID_TOKEN');
+            echo json_encode($json);
+            $this->app->close();
+
+            return;
+        }
+
+        try {
+            $customerNote = strip_tags($this->input->getString('customer_note', ''));
+
+            // Read back by CartOrder when the order row is rebuilt, so the note survives a
+            // re-confirm that replaces the row this request writes to.
+            $this->app->getSession()->set('customer_note', $customerNote, 'j2commerce');
+
+            // Server-side state only: the order is never named by the request.
+            $orderId    = (string) $this->app->getUserState('j2commerce.order_id', '');
+            $orderTable = $orderId !== '' ? $this->getMvcFactory()->createTable('Order', 'Administrator') : null;
+
+            if ($orderTable && $orderTable->load(['order_id' => $orderId])) {
+                $orderTable->customer_note = $customerNote;
+                TableSaveHelper::store($orderTable, 'checkout.saveCustomerNote');
+            }
+
+            $json['success'] = true;
+        } catch (\Exception $e) {
+            Log::add('checkout.saveCustomerNote failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+
+            $json['success'] = false;
+            $json['message'] = Text::_('COM_J2COMMERCE_ERR_GENERIC');
+        }
+
+        echo json_encode($json);
+        $this->app->close();
+    }
+
+    // =========================================================================
     // AJAX: Sidecart Refresh
     // =========================================================================
 
