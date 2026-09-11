@@ -16,6 +16,7 @@ namespace J2Commerce\Component\J2commerce\Site\Controller;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\CartHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\DownloadHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
@@ -35,6 +36,12 @@ use Joomla\Filesystem\Path;
 
 class MyprofileController extends BaseController
 {
+    /**
+     * cartitem_params keys every product type writes for display, so their presence says
+     * nothing about whether a line recorded the selections that define it.
+     */
+    private const REORDER_DISPLAY_ONLY_PARAMS = ['thumb_image', CartHelper::CART_ITEM_SIGNATURE_PARAM];
+
     public function display($cachable = false, $urlparams = []): static
     {
         $user    = $this->app->getIdentity();
@@ -846,8 +853,31 @@ class MyprofileController extends BaseController
                 continue;
             }
 
-            // product_options expects base64-serialized PHP array of option selections;
-            // orderitem_attributes is unrelated JSON (display attributes), so leave empty.
+            // addItem() is the writer, not the add-to-cart entry point, so
+            // onBeforeAddCartItem() does not run here and the product type never gets to
+            // record the line's per-line data. Everything the order line kept has to be
+            // handed over explicitly instead.
+            $recorded   = self::reorderRecordedParams($item->orderitem_params ?? '');
+            $attributes = self::reorderDecodedAttributes($item->orderitem_attributes ?? '');
+
+            // A flat option_id => optionvalue_id map IS a product_options payload: it reaches
+            // orderitem_attributes verbatim through the fallback in CartOrder::saveOrderItems(),
+            // still base64-serialized. A list of resolved display rows is not - that one is
+            // built for templates and cannot be turned back into the selections.
+            $isOptionMap = $attributes !== [] && $attributes === array_filter($attributes, 'is_scalar');
+
+            // Nothing to rebuild the line from: the selections existed only as display rows and
+            // the type recorded nothing structured. Every type writes the display keys, so they
+            // are not evidence of anything; what matters is whether a key it chose is left.
+            // Re-creating such a line would produce one that costs what the shopper paid
+            // without being what they bought, so say so instead.
+            $structured = array_diff_key($recorded, array_flip(self::REORDER_DISPLAY_ONLY_PARAMS));
+
+            if (!$isOptionMap && $attributes !== [] && $structured === []) {
+                $errors[] = Text::sprintf('COM_J2COMMERCE_REORDER_NEEDS_RECONFIGURING', $item->orderitem_name);
+                continue;
+            }
+
             $cartItem                  = new \stdClass();
             $cartItem->cart_id         = $cartId;
             $cartItem->product_id      = $productId;
@@ -855,7 +885,14 @@ class MyprofileController extends BaseController
             $cartItem->vendor_id       = (int) ($item->vendor_id ?? 0);
             $cartItem->product_type    = $itemProductType;
             $cartItem->product_qty     = $quantity;
-            $cartItem->product_options = '';
+            $cartItem->product_options = $isOptionMap ? base64_encode(serialize($attributes)) : '';
+
+            // addItem() reads this back, so handing it over restores both the type's own record
+            // (box builder's picks, for one) and the uniqueness signature that keeps two
+            // differently configured lines from merging into a single row.
+            if ($recorded !== []) {
+                $cartItem->cartitem_params = json_encode($recorded);
+            }
 
             // Add to cart
             $result = $cartModel->addItem($cartItem);
@@ -911,6 +948,56 @@ class MyprofileController extends BaseController
     // =========================================================================
     // Helpers
     // =========================================================================
+
+    /**
+     * The line's own record, minus the keys that describe the moment it was bought.
+     *
+     * `back_order_item` is a point-in-time reading of stock taken when the original line was
+     * added; carrying it into a new cart would show a stale badge that nothing recomputes,
+     * because the behaviour that set it does not run on the re-order path.
+     */
+    private static function reorderRecordedParams(string $orderitemParams): array
+    {
+        $decoded = json_decode($orderitemParams, true);
+
+        if (!\is_array($decoded)) {
+            return [];
+        }
+
+        unset($decoded['back_order_item']);
+
+        return $decoded;
+    }
+
+    /**
+     * The base64-serialized shape of an order line's attributes, and deliberately only that one.
+     *
+     * `saveOrderItems()` writes this column two ways: `json_encode($resolved)` when attribute
+     * resolution produced display rows, and the raw `product_options` blob when it did not.
+     * Only the second shape is read here, because only it says something a re-order can act on
+     * -- either the option map to replay, or a record of picks that no longer exist anywhere.
+     *
+     * The JSON shape is the resolved view of a VARIANT's option values (`Color: Black`), and
+     * `variant_id` already reproduces those, so reading it would refuse lines that re-order
+     * perfectly well today. Measured on a development store, treating it as unreproducible
+     * turned 222 sound lines into refusals, every subscription among them.
+     */
+    private static function reorderDecodedAttributes(string $orderitemAttributes): array
+    {
+        if ($orderitemAttributes === '') {
+            return [];
+        }
+
+        $decoded = base64_decode($orderitemAttributes, true);
+
+        if ($decoded === false) {
+            return [];
+        }
+
+        $attributes = @unserialize($decoded, ['allowed_classes' => false]);
+
+        return \is_array($attributes) ? $attributes : [];
+    }
 
     private function jsonResponse(array $data): void
     {
