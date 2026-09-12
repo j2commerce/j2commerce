@@ -59,7 +59,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                             <?php if ($option_value['product_optionvalue_price'] > 0 && $this->params->get('product_option_price', 1)) : ?>
                                 (
                                 <?php if ($this->params->get('product_option_price_prefix', 1)) : ?>
-                                    <?php echo $option_value['product_optionvalue_prefix']; ?>
+                                    <?php echo $esc($option_value['product_optionvalue_prefix']); ?>
                                 <?php endif; ?>
                                 <?php echo $product_helper->displayPrice($option_value['product_optionvalue_price'], $this->product, $this->params, 'products.view.option'); ?>
                                 )
@@ -94,7 +94,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                                 <?php echo stripslashes($this->escape(Text::_($option_value['optionvalue_name']))); ?>
                                 <?php if ($option_value['product_optionvalue_price'] > 0 && $this->params->get('product_option_price', 1)) : ?>
                                     <?php if ($this->params->get('product_option_price_prefix', 1)) : ?>
-                                        <?php echo $option_value['product_optionvalue_prefix']; ?>
+                                        <?php echo $esc($option_value['product_optionvalue_prefix']); ?>
                                     <?php endif; ?>
                                     <?php echo $product_helper->displayPrice($option_value['product_optionvalue_price'], $this->product, $this->params, 'products.view.option'); ?>
                                 <?php endif; ?>
@@ -147,7 +147,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                     <?php if ($option_value['product_optionvalue_price'] > 0 && $this->params->get('product_option_price', 1)) : ?>
                         (
                         <?php if ($this->params->get('product_option_price_prefix', 1)) : ?>
-                            <?php echo $option_value['product_optionvalue_prefix']; ?>
+                            <?php echo $esc($option_value['product_optionvalue_prefix']); ?>
                         <?php endif; ?>
                         <?php echo $product_helper->displayPrice($option_value['product_optionvalue_price'], $this->product, $this->params, 'products.view.option'); ?>
                         )
