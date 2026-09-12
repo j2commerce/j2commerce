@@ -90,6 +90,9 @@ class HtmlView extends BaseHtmlView
     /** Access-level batch field and Feature/Unfeature: needs core.edit.state on both. */
     protected bool $canBatchState = false;
 
+    /** Duplicate: creates a product and the article behind it, so needs core.create on both. */
+    protected bool $canDuplicate = false;
+
     /** Batch dialog controls; see forms/batch_products.xml. */
     public ?Form $batchForm = null;
 
@@ -179,6 +182,7 @@ class HtmlView extends BaseHtmlView
         $canEditProducts      = J2CommerceHelper::canAccess('j2commerce.editproducts');
         $this->canBatch       = $canEditProducts && $canDo->get('core.edit') && $user->authorise('core.edit', 'com_content');
         $this->canBatchState  = $canEditProducts && $canDo->get('core.edit.state') && $user->authorise('core.edit.state', 'com_content');
+        $this->canDuplicate   = $canEditProducts && $canDo->get('core.create') && $user->authorise('core.create', 'com_content');
 
         ToolbarHelper::title(Text::_('COM_J2COMMERCE_PRODUCTS'), 'fa-solid fa-tags');
 
@@ -192,7 +196,7 @@ class HtmlView extends BaseHtmlView
                 ->icon('icon-plus');
         }
 
-        if (!$this->isEmptyState && ($canDo->get('core.edit.state') || $this->canBatch)) {
+        if (!$this->isEmptyState && ($canDo->get('core.edit.state') || $this->canBatch || $this->canDuplicate)) {
             $dropdown = $toolbar->dropdownButton('status-group', 'COM_J2COMMERCE_ACTIONS')
                 ->toggleSplit(false)
                 ->icon('icon-ellipsis-h')
@@ -210,6 +214,12 @@ class HtmlView extends BaseHtmlView
             if ($this->canBatchState) {
                 $childBar->standardButton('featured', 'JFEATURE', 'products.featured')->listCheck(true);
                 $childBar->standardButton('unfeatured', 'JUNFEATURE', 'products.unfeatured')->listCheck(true);
+            }
+
+            if ($this->canDuplicate) {
+                $childBar->standardButton('duplicate', 'JTOOLBAR_DUPLICATE', 'products.duplicate')
+                    ->listCheck(true)
+                    ->icon('fas fa-copy');
             }
 
             if ($this->canBatch) {

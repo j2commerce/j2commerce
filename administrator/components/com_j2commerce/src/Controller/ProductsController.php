@@ -986,6 +986,147 @@ class ProductsController extends AdminController
     }
 
     /**
+     * Copy the selected products, article and all, into independent new products.
+     *
+     * @return  void
+     *
+     * @since   6.6.2
+     */
+    public function duplicate(): void
+    {
+        $this->checkToken();
+
+        $redirect = $this->listRedirect();
+
+        if (!$this->canDo('core.create')) {
+            $this->setRedirect($redirect, Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 'error');
+
+            return;
+        }
+
+        $cid = array_filter((array) $this->input->post->get('cid', [], 'int'));
+
+        if (empty($cid)) {
+            $this->setRedirect($redirect, Text::_('COM_J2COMMERCE_ERROR_NO_ITEMS_SELECTED'), 'warning');
+
+            return;
+        }
+
+        $articles = $this->resolveSourceArticles($cid);
+        $skipped  = \count($cid) - \count($articles);
+
+        if ($skipped > 0) {
+            $this->app->enqueueMessage(
+                Text::sprintf('COM_J2COMMERCE_BATCH_SKIPPED_NON_ARTICLE_PRODUCTS', $skipped),
+                CMSWebApplicationInterface::MSG_WARNING
+            );
+        }
+
+        $user   = $this->app->getIdentity();
+        $model  = $this->getModel();
+        $copied = 0;
+
+        foreach ($articles as $productId => $article) {
+            // Authority over com_j2commerce is not authority over com_content, and duplicating a
+            // product creates an article — so the destination category has to allow it too.
+            if (!$user->authorise('core.create', 'com_content.category.' . (int) $article['catid'])) {
+                $this->app->enqueueMessage(
+                    Text::_('JERROR_CORE_CREATE_NOT_PERMITTED'),
+                    CMSWebApplicationInterface::MSG_WARNING
+                );
+
+                continue;
+            }
+
+            // Copying an article means reading its body, so the source has to allow that as well.
+            // The sibling bulk tasks each assert a per-article action on the article's own asset;
+            // this is the one that reads the content rather than only flipping a flag.
+            if (!$this->canEditArticle((int) $article['article_id'], (int) $article['created_by'])) {
+                $this->app->enqueueMessage(
+                    Text::_('JLIB_APPLICATION_ERROR_EDIT_NOT_PERMITTED'),
+                    CMSWebApplicationInterface::MSG_WARNING
+                );
+
+                continue;
+            }
+
+            if ($model->duplicateProduct((int) $productId) === false) {
+                $this->app->enqueueMessage($model->getError(), CMSWebApplicationInterface::MSG_WARNING);
+
+                continue;
+            }
+
+            $copied++;
+        }
+
+        if ($copied === 0) {
+            $this->setRedirect($redirect);
+
+            return;
+        }
+
+        $this->setRedirect($redirect, Text::plural('COM_J2COMMERCE_N_ITEMS_DUPLICATED', $copied));
+    }
+
+    /**
+     * Map product IDs to the article behind them. Products sourced from anything other than
+     * com_content, and products whose article no longer exists, are absent from the result and so
+     * counted as skipped by the caller.
+     *
+     * @param   array  $productIds  Product IDs from the list checkboxes.
+     *
+     * @return  array  Product ID => ['article_id', 'catid', 'created_by'].
+     *
+     * @since   6.6.2
+     */
+    private function resolveSourceArticles(array $productIds): array
+    {
+        $source = 'com_content';
+        $db     = Factory::getContainer()->get('DatabaseDriver');
+
+        $query = $db->getQuery(true)
+            ->select(
+                [
+                    $db->quoteName('p.j2commerce_product_id'),
+                    $db->quoteName('c.id', 'article_id'),
+                    $db->quoteName('c.catid'),
+                    $db->quoteName('c.created_by'),
+                ]
+            )
+            ->from($db->quoteName('#__j2commerce_products', 'p'))
+            ->innerJoin(
+                $db->quoteName('#__content', 'c')
+                . ' ON ' . $db->quoteName('c.id') . ' = ' . $db->quoteName('p.product_source_id')
+            )
+            ->whereIn($db->quoteName('p.j2commerce_product_id'), $productIds, ParameterType::INTEGER)
+            ->where($db->quoteName('p.product_source') . ' = :source')
+            ->bind(':source', $source);
+
+        $db->setQuery($query);
+
+        return (array) $db->loadAssocList('j2commerce_product_id');
+    }
+
+    /**
+     * Whether the caller may read the article being copied, following com_content's own
+     * ArticleController::allowEdit(): core.edit on the article's asset, or core.edit.own when the
+     * caller is the author.
+     *
+     * @since   6.6.2
+     */
+    private function canEditArticle(int $articleId, int $createdBy): bool
+    {
+        $user  = $this->app->getIdentity();
+        $asset = 'com_content.article.' . $articleId;
+
+        if ($user->authorise('core.edit', $asset)) {
+            return true;
+        }
+
+        return $user->authorise('core.edit.own', $asset) && $createdBy === (int) $user->id;
+    }
+
+    /**
      * Map product IDs to the IDs of the articles behind them. Products sourced from anything
      * other than com_content have no article to act on and are counted in $skipped.
      *
