@@ -61,8 +61,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                         onchange="doAjaxPrice(<?php echo $productId; ?>, 'option-<?php echo (int) $option['productoption_id']; ?>')">
                     <option value="*"><?php echo $esc(Text::_('COM_J2COMMERCE_CHOOSE')); ?></option>
                     <?php foreach ($option['optionvalue'] as $optionValue) : ?>
-                        <option value="<?php echo (int) $optionValue['product_optionvalue_id']; ?>"<?php echo ($defaultOptionValueId == $optionValue['product_optionvalue_id']) ? ' selected' : ''; ?>
-                            <?php echo $esc($optionValue['product_optionvalue_attribs'] ?? ''); ?>>
+                        <option value="<?php echo (int) $optionValue['product_optionvalue_id']; ?>"<?php echo ($defaultOptionValueId == $optionValue['product_optionvalue_id']) ? ' selected' : ''; ?>>
                             <?php echo $esc(Text::_($optionValue['optionvalue_name'])); ?>
                             <?php if ($optionValue['product_optionvalue_price'] > 0 && $this->params->get('product_option_price', 1)) : ?>
                                 (
@@ -100,7 +99,6 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                             data-option-id="<?php echo (int) $option['productoption_id']; ?>"
                             <?php echo ($defaultOptionValueId == $optionValue['product_optionvalue_id']) ? 'checked' : ''; ?>
                             autocomplete="off"
-                            <?php echo $esc($optionValue['product_optionvalue_attribs'] ?? ''); ?>
                         />
 
                         <?php if ($showOptionImages && !empty($optionValue['optionvalue_image'])) : ?>
@@ -146,7 +144,6 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                             data-product-id="<?php echo $productId; ?>"
                             data-option-id="<?php echo (int) $option['productoption_id']; ?>"
                             <?php echo ($defaultOptionValueId == $optionValue['product_optionvalue_id']) ? 'checked' : ''; ?>
-                            <?php echo $esc($optionValue['product_optionvalue_attribs'] ?? ''); ?>
                         />
                         <label for="option-value-<?php echo (int) $optionValue['product_optionvalue_id']; ?>" class="btn btn-color fs-xl" title="<?php echo $esc(Text::_($optionValue['optionvalue_name'])); ?>" data-label="<?php echo $esc(Text::_($optionValue['optionvalue_name'])); ?>" style="color:<?php echo $esc($optionValue['optionvalue_image']); ?>;">
                             <span class="visually-hidden"><?php echo $esc(Text::_($optionValue['optionvalue_name'])); ?></span>
