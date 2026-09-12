@@ -13,6 +13,7 @@ defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Session\Session;
@@ -24,7 +25,7 @@ $app = Factory::getApplication();
 $session = $app->getSession();
 
 $currency = J2CommerceHelper::currency();
-$currencySymbol = CurrencyHelper::getSymbol();
+$currencySymbol = $this->escape(CurrencyHelper::getSymbol());
 $currencyPosition = CurrencyHelper::getSymbolPosition();
 $currencyValue = CurrencyHelper::getValue();
 $thousandSymbol = CurrencyHelper::getThousandsSeparator();
@@ -244,10 +245,7 @@ if ($hasFancySelect) {
                                             // the listing could not be undone from here.
                                             $filterUnavailable = $filterCount === 0 && !$checked;
                                             $filterId = 'j2commerce-pfilter-' . $filterScriptId . '-' . $filter->filter_id;
-                                            // Re-checked at render: only a hex literal ever reaches the style attribute.
-                                            $swatchColor = preg_match('/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', (string) ($filter->filter_color ?? ''))
-                                                ? $filter->filter_color
-                                                : '';
+                                            $swatchColor = ProductHelper::swatchColor($filter->filter_color ?? null);
                                             ?>
                                             <?php if ($pfInputType === 'color') : ?>
                                                 <div class="<?php echo $filterUnavailable ? 'j2commerce-filter-unavailable' : ''; ?> uk-flex uk-flex-middle uk-flex-between">
@@ -473,10 +471,7 @@ if ($hasFancySelect) {
                                         // the listing could not be undone from here.
                                         $filterUnavailable = $filterCount === 0 && !$checked;
                                         $filterId = 'j2commerce-pfilter-' . $filterScriptId . '-' . $filter->filter_id;
-                                        // Re-checked at render: only a hex literal ever reaches the style attribute.
-                                        $swatchColor = preg_match('/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', (string) ($filter->filter_color ?? ''))
-                                            ? $filter->filter_color
-                                            : '';
+                                        $swatchColor = ProductHelper::swatchColor($filter->filter_color ?? null);
                                         ?>
                                         <?php if ($pfInputType === 'color') : ?>
                                             <div class="<?php echo $filterUnavailable ? 'j2commerce-filter-unavailable' : ''; ?>">

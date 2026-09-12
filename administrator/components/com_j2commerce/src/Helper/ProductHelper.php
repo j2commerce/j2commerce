@@ -1671,6 +1671,21 @@ class ProductHelper
         return self::$optionValueNames[$productOptionValueId] ?? '';
     }
 
+    /**
+     * A colour swatch value held to an allow-list before it reaches a CSS declaration: a hex
+     * literal (3, 4, 6 or 8 digits) or a bare colour keyword. Anything else returns '' so the
+     * caller emits no declaration at all. An HTML escaper is the wrong tool here - it leaves
+     * ':', ';', '(' and ')' intact, so it does not constrain CSS syntax.
+     */
+    public static function swatchColor(mixed $value): string
+    {
+        $color = \is_scalar($value) ? trim((string) $value) : '';
+
+        return preg_match('/^(?:#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|[a-zA-Z]{3,20})$/', $color) === 1
+            ? $color
+            : '';
+    }
+
     // =========================================================================
     // PRODUCT OPTIONS METHODS
     // =========================================================================

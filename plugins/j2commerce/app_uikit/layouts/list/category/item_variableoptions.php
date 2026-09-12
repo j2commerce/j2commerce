@@ -12,8 +12,9 @@ declare(strict_types=1);
 defined('_JEXEC') or die;
 
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\Uri\Uri;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 
 extract($displayData);
 
@@ -93,7 +94,7 @@ $collapsedOptions = (bool) $params->get('list_collapsed_options', $params->get('
 
                             <?php if ($showOptionImages && !empty($ov['optionvalue_image'])) : ?>
                                 <label class="btn-image uk-padding-remove" for="<?php echo $optionValueInputId; ?>" data-label="<?php echo $esc(Text::_($ov['optionvalue_name'])); ?>">
-                                    <img class="optionvalue-image uk-margin-small-right" src="<?php echo Uri::root(true) . '/' . $esc($ov['optionvalue_image']); ?>" alt="<?php echo $esc(Text::_($ov['optionvalue_name'])); ?>" width="48" style="width:48px;" />
+                                    <img class="optionvalue-image uk-margin-small-right" src="<?php echo $esc(ImageHelper::getImageUrl($ov['optionvalue_image'])); ?>" alt="<?php echo $esc(Text::_($ov['optionvalue_name'])); ?>" width="48" style="width:48px;" />
                                     <span class="uk-hidden"><?php echo $esc(Text::_($ov['optionvalue_name'])); ?></span>
                                 </label>
                             <?php else : ?>
@@ -130,7 +131,8 @@ $collapsedOptions = (bool) $params->get('list_collapsed_options', $params->get('
                                 onclick="doAjaxPrice(<?php echo (int) $productId; ?>, 'option-<?php echo $optionId; ?>')"
                                 <?php echo ($defaultOptionValueId == $ovId) ? 'checked' : ''; ?>
                             />
-                            <label for="<?php echo $optionValueInputId; ?>" class="btn-color" data-label="<?php echo $esc(Text::_($ov['optionvalue_name'])); ?>" style="color:<?php echo $ov['optionvalue_image'];?>;">
+                            <?php $swatchColor = ProductHelper::swatchColor($ov['optionvalue_image']); ?>
+                            <label for="<?php echo $optionValueInputId; ?>" class="btn-color" data-label="<?php echo $esc(Text::_($ov['optionvalue_name'])); ?>"<?php if ($swatchColor !== '') : ?> style="color:<?php echo $esc($swatchColor); ?>;"<?php endif; ?>>
                                 <span class="uk-hidden"><?php echo $esc(Text::_($ov['optionvalue_name'])); ?></span>
                             </label>
                         <?php endforeach; ?>

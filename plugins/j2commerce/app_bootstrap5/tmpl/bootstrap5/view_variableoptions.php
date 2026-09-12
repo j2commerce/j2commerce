@@ -11,12 +11,13 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Router\Route;
-use Joomla\CMS\Uri\Uri;
 use Joomla\Registry\Registry;
 
 /** @var \J2Commerce\Component\J2commerce\Site\View\Product\HtmlView $this */
@@ -103,7 +104,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
 
                         <?php if ($showOptionImages && !empty($optionValue['optionvalue_image'])) : ?>
                             <label class="btn btn-image p-0 form-check-label border-2" for="option-value-<?php echo (int) $optionValue['product_optionvalue_id']; ?>" data-label="<?php echo $esc(Text::_($optionValue['optionvalue_name'])); ?>">
-                                <img class="optionvalue-image me-1" src="<?php echo Uri::root(true) . '/' . $esc($optionValue['optionvalue_image']); ?>" alt="<?php echo $esc(Text::_($optionValue['optionvalue_name'])); ?>" width="56" style="width:56px;" />
+                                <img class="optionvalue-image me-1" src="<?php echo $esc(ImageHelper::getImageUrl($optionValue['optionvalue_image'])); ?>" alt="<?php echo $esc(Text::_($optionValue['optionvalue_name'])); ?>" width="56" style="width:56px;" />
                                 <span class="visually-hidden"><?php echo $esc(Text::_($optionValue['optionvalue_name'])); ?></span>
                             </label>
                         <?php else : ?>
@@ -145,7 +146,8 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                             data-option-id="<?php echo (int) $option['productoption_id']; ?>"
                             <?php echo ($defaultOptionValueId == $optionValue['product_optionvalue_id']) ? 'checked' : ''; ?>
                         />
-                        <label for="option-value-<?php echo (int) $optionValue['product_optionvalue_id']; ?>" class="btn btn-color fs-xl" title="<?php echo $esc(Text::_($optionValue['optionvalue_name'])); ?>" data-label="<?php echo $esc(Text::_($optionValue['optionvalue_name'])); ?>" style="color:<?php echo $esc($optionValue['optionvalue_image']); ?>;">
+                        <?php $swatchColor = ProductHelper::swatchColor($optionValue['optionvalue_image']); ?>
+                        <label for="option-value-<?php echo (int) $optionValue['product_optionvalue_id']; ?>" class="btn btn-color fs-xl" title="<?php echo $esc(Text::_($optionValue['optionvalue_name'])); ?>" data-label="<?php echo $esc(Text::_($optionValue['optionvalue_name'])); ?>"<?php if ($swatchColor !== '') : ?> style="color:<?php echo $esc($swatchColor); ?>;"<?php endif; ?>>
                             <span class="visually-hidden"><?php echo $esc(Text::_($optionValue['optionvalue_name'])); ?></span>
                         </label>
                     <?php endforeach; ?>
@@ -174,7 +176,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                                    data-option-id="<?php echo (int) $option['productoption_id']; ?>" />
                             <?php if ($showOptionImages && !empty($optionValue['optionvalue_image'])) : ?>
                                 <img class="optionvalue-image me-1"
-                                     src="<?php echo Uri::root(true) . '/' . $esc($optionValue['optionvalue_image']); ?>"
+                                     src="<?php echo $esc(ImageHelper::getImageUrl($optionValue['optionvalue_image'])); ?>"
                                      alt="<?php echo $esc(Text::_($optionValue['optionvalue_name'])); ?>"
                                      width="32" />
                             <?php endif; ?>
@@ -209,7 +211,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                        class="form-control"
                        name="product_option[<?php echo (int) $option['productoption_id']; ?>]"
                        value="<?php echo $esc($option['optionvalue'] ?? ''); ?>"
-                       placeholder="<?php echo $esc($text_option_params->get('place_holder', '')); ?>" />
+                       placeholder="<?php echo $esc((string) $text_option_params->get('place_holder', '')); ?>" />
             </div>
         <?php endif; ?>
 

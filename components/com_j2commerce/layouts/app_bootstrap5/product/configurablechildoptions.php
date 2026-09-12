@@ -11,9 +11,10 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\Uri\Uri;
 
 // Layout for rendering child configurable options via AJAX.
 // Injected into #child-ChildOptions{poId} when a parent option is selected.
@@ -83,7 +84,7 @@ $esc            = static fn(string $value): string => htmlspecialchars($value, E
 
                         <?php if ($params->get('image_for_product_options', 0) && !empty($option_value['optionvalue_image'])) : ?>
                             <label class="btn btn-image p-0 form-check-label border-2" for="<?php echo $childOptionValueInputId; ?>" data-label="<?php echo $esc(Text::_($option_value['optionvalue_name'])); ?>">
-                                <img class="optionvalue-image me-1" src="<?php echo Uri::root(true) . '/' . $esc($option_value['optionvalue_image']); ?>" alt="<?php echo $esc(Text::_($option_value['optionvalue_name'])); ?>" width="56" style="width:56px;" />
+                                <img class="optionvalue-image me-1" src="<?php echo $esc(ImageHelper::getImageUrl($option_value['optionvalue_image'])); ?>" alt="<?php echo $esc(Text::_($option_value['optionvalue_name'])); ?>" width="56" style="width:56px;" />
                                 <span class="visually-hidden"><?php echo $esc(Text::_($option_value['optionvalue_name'])); ?></span>
                             </label>
                         <?php else : ?>
@@ -118,7 +119,8 @@ $esc            = static fn(string $value): string => htmlspecialchars($value, E
                         <?php $childOptionValueInputId = 'child-option-value-' . $product_id . '-' . $optionId . '-' . $colorValueId; ?>
                         <input <?php echo $checked; ?> type="radio" name="product_option[<?php echo $optionId; ?>]" value="<?php echo $colorValueId; ?>" id="<?php echo $childOptionValueInputId; ?>" class="btn-check"
                             onchange="doAjaxFilter(this.value, <?php echo $product_id; ?>, <?php echo $optionId; ?>, '#child-option-<?php echo $optionId; ?>');" />
-                        <label for="<?php echo $childOptionValueInputId; ?>" class="btn btn-color fs-xl" title="<?php echo $esc(Text::_($option_value['optionvalue_name'])); ?>" data-label="<?php echo $esc(Text::_($option_value['optionvalue_name'])); ?>" style="color:<?php echo $esc($option_value['optionvalue_image']); ?>;">
+                        <?php $swatchColor = ProductHelper::swatchColor($option_value['optionvalue_image']); ?>
+                        <label for="<?php echo $childOptionValueInputId; ?>" class="btn btn-color fs-xl" title="<?php echo $esc(Text::_($option_value['optionvalue_name'])); ?>" data-label="<?php echo $esc(Text::_($option_value['optionvalue_name'])); ?>"<?php if ($swatchColor !== '') : ?> style="color:<?php echo $esc($swatchColor); ?>;"<?php endif; ?>>
                             <span class="visually-hidden"><?php echo $esc(Text::_($option_value['optionvalue_name'])); ?></span>
                         </label>
                     <?php endforeach; ?>
@@ -141,7 +143,7 @@ $esc            = static fn(string $value): string => htmlspecialchars($value, E
                         id="<?php echo $childOptionValueInputId; ?>" />
                     <?php if ($params->get('image_for_product_options', 0) && !empty($option_value['optionvalue_image'])) : ?>
                         <img class="optionvalue-image-<?php echo $checkboxValueId; ?>"
-                             src="<?php echo Uri::root(true) . '/' . $esc($option_value['optionvalue_image']); ?>" />
+                             src="<?php echo $esc(ImageHelper::getImageUrl($option_value['optionvalue_image'])); ?>" />
                     <?php endif; ?>
                     <label for="<?php echo $childOptionValueInputId; ?>">
                         <?php echo $esc(Text::_($option_value['optionvalue_name'])); ?>
@@ -171,7 +173,7 @@ $esc            = static fn(string $value): string => htmlspecialchars($value, E
                 <input id="<?php echo $textInputId; ?>" type="text" class="form-control"
                     name="product_option[<?php echo $optionId; ?>]"
                     value="<?php echo $esc($option['optionvalue'] ?? ''); ?>"
-                    placeholder="<?php echo $esc($text_option_params->get('place_holder', '')); ?>" />
+                    placeholder="<?php echo $esc((string) $text_option_params->get('place_holder', '')); ?>" />
             </div>
         <?php endif; ?>
 

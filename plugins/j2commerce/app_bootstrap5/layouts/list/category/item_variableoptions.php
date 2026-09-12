@@ -13,8 +13,9 @@ defined('_JEXEC') or die;
 
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\Uri\Uri;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 
 extract($displayData);
 
@@ -105,7 +106,7 @@ if ($collapsedOptions) {
 
                             <?php if ($showOptionImages && !empty($ov['optionvalue_image'])) : ?>
                                 <label class="btn btn-image p-0 form-check-label" for="<?php echo $optionValueInputId; ?>" data-label="<?php echo $esc(Text::_($ov['optionvalue_name'])); ?>">
-                                    <img class="optionvalue-image me-1" src="<?php echo Uri::root(true) . '/' . $esc($ov['optionvalue_image']); ?>" alt="<?php echo $esc(Text::_($ov['optionvalue_name'])); ?>" width="48" style="width:48px;" />
+                                    <img class="optionvalue-image me-1" src="<?php echo $esc(ImageHelper::getImageUrl($ov['optionvalue_image'])); ?>" alt="<?php echo $esc(Text::_($ov['optionvalue_name'])); ?>" width="48" style="width:48px;" />
                                     <span class="visually-hidden"><?php echo $esc(Text::_($ov['optionvalue_name'])); ?></span>
                                 </label>
                             <?php else : ?>
@@ -144,7 +145,8 @@ if ($collapsedOptions) {
                                 data-option-id="<?php echo $optionId; ?>"
                                 <?php echo ($defaultOptionValueId == $ovId) ? 'checked' : ''; ?>
                             />
-                            <label for="<?php echo $optionValueInputId; ?>" class="btn btn-color fs-xl" data-label="<?php echo $esc(Text::_($ov['optionvalue_name'])); ?>" style="color:<?php echo $esc($ov['optionvalue_image']); ?>;">
+                            <?php $swatchColor = ProductHelper::swatchColor($ov['optionvalue_image']); ?>
+                            <label for="<?php echo $optionValueInputId; ?>" class="btn btn-color fs-xl" data-label="<?php echo $esc(Text::_($ov['optionvalue_name'])); ?>"<?php if ($swatchColor !== '') : ?> style="color:<?php echo $esc($swatchColor); ?>;"<?php endif; ?>>
                                 <span class="visually-hidden"><?php echo $esc(Text::_($ov['optionvalue_name'])); ?></span>
                             </label>
                         <?php endforeach; ?>

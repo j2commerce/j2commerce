@@ -12,8 +12,9 @@ declare(strict_types=1);
 defined('_JEXEC') or die;
 
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\Uri\Uri;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 
 extract($displayData);
 
@@ -127,7 +128,7 @@ if (!$hasRenderableOption) {
 
                             <?php if ($showOptionImages && !empty($option_value['optionvalue_image'])) : ?>
                                 <label class="btn-image uk-padding-remove" for="<?php echo $optionValueInputId; ?>" data-label="<?php echo $esc(Text::_($option_value['optionvalue_name'])); ?>">
-                                    <img class="optionvalue-image uk-margin-small-right" src="<?php echo Uri::root(true) . '/' . $esc($option_value['optionvalue_image']); ?>" alt="<?php echo $esc(Text::_($option_value['optionvalue_name'])); ?>" width="56" style="width:56px;" />
+                                    <img class="optionvalue-image uk-margin-small-right" src="<?php echo $esc(ImageHelper::getImageUrl($option_value['optionvalue_image'])); ?>" alt="<?php echo $esc(Text::_($option_value['optionvalue_name'])); ?>" width="56" style="width:56px;" />
                                     <span class="uk-hidden"><?php echo $esc(Text::_($option_value['optionvalue_name'])); ?></span>
                                 </label>
                             <?php else : ?>
@@ -167,7 +168,8 @@ if (!$hasRenderableOption) {
                                 data-product-id="<?php echo $productId; ?>"
                                 data-option-id="<?php echo $optionId; ?>"
                                 onchange="doAjaxFilter(this.value, <?php echo $productId; ?>, <?php echo $optionId; ?>, '#option-<?php echo $optionId; ?>')" />
-                            <label for="<?php echo $optionValueInputId; ?>" class="btn-color" title="<?php echo $esc(Text::_($option_value['optionvalue_name'])); ?>" data-label="<?php echo $esc(Text::_($option_value['optionvalue_name'])); ?>" style="color:<?php echo $esc($option_value['optionvalue_image']); ?>;">
+                            <?php $swatchColor = ProductHelper::swatchColor($option_value['optionvalue_image']); ?>
+                            <label for="<?php echo $optionValueInputId; ?>" class="btn-color" title="<?php echo $esc(Text::_($option_value['optionvalue_name'])); ?>" data-label="<?php echo $esc(Text::_($option_value['optionvalue_name'])); ?>"<?php if ($swatchColor !== '') : ?> style="color:<?php echo $esc($swatchColor); ?>;"<?php endif; ?>>
                                 <span class="uk-hidden"><?php echo $esc(Text::_($option_value['optionvalue_name'])); ?></span>
                             </label>
                         <?php endforeach; ?>
@@ -189,7 +191,7 @@ if (!$hasRenderableOption) {
                            id="<?php echo $optionValueInputId; ?>" />
                     <?php if ($showOptionImages && !empty($option_value['optionvalue_image'])) : ?>
                         <img class="optionvalue-image-<?php echo (int) $option_value['product_optionvalue_id']; ?>"
-                             src="<?php echo Uri::root(true) . '/' . $esc($option_value['optionvalue_image']); ?>"
+                             src="<?php echo $esc(ImageHelper::getImageUrl($option_value['optionvalue_image'])); ?>"
                              alt="<?php echo $esc(Text::_($option_value['optionvalue_name'])); ?>" />
                     <?php endif; ?>
                     <label for="<?php echo $optionValueInputId; ?>">
@@ -216,7 +218,7 @@ if (!$hasRenderableOption) {
                 <input id="<?php echo $textInputId; ?>" type="text" class="uk-input"
                        name="product_option[<?php echo $optionId; ?>]"
                        value="<?php echo $esc($option['optionvalue'] ?? ''); ?>"
-                       placeholder="<?php echo $esc($text_option_params->get('place_holder', '')); ?>" />
+                       placeholder="<?php echo $esc((string) $text_option_params->get('place_holder', '')); ?>" />
             </div>
         <?php endif; ?>
 

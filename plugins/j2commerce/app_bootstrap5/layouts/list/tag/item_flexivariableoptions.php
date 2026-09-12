@@ -12,7 +12,7 @@ declare(strict_types=1);
 defined('_JEXEC') or die;
 
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\Uri\Uri;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 extract($displayData);
@@ -79,7 +79,7 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
                         <label class="form-check-label" for="<?php echo $optionValueInputId; ?>">
                             <?php if ($showOptionImages && !empty($ov['optionvalue_image'])) : ?>
                                 <img class="optionvalue-image me-1"
-                                     src="<?php echo Uri::root(true) . '/' . $esc($ov['optionvalue_image']); ?>"
+                                     src="<?php echo $esc(ImageHelper::getImageUrl($ov['optionvalue_image'])); ?>"
                                      alt="<?php echo $esc(Text::_($ov['optionvalue_name'])); ?>" />
                             <?php endif; ?>
                             <?php echo $esc(Text::_($ov['optionvalue_name'])); ?>

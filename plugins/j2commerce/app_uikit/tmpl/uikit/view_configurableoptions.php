@@ -11,12 +11,13 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Router\Route;
-use Joomla\CMS\Uri\Uri;
 use Joomla\Registry\Registry;
 
 /** @var \J2Commerce\Component\J2commerce\Site\View\Product\HtmlView $this */
@@ -86,7 +87,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
 
                         <?php if ($this->params->get('image_for_product_options', 0) && isset($option_value['optionvalue_image']) && !empty($option_value['optionvalue_image'])) { ?>
                             <label class="btn-image" for="option-value-<?php echo (int) $option_value['product_optionvalue_id']; ?>" data-label="<?php echo stripslashes($this->escape(Text::_($option_value['optionvalue_name']))); ?>">
-                                <img class="optionvalue-image" src="<?php echo Uri::root(true) . '/' . $esc($option_value['optionvalue_image']); ?>" alt="<?php echo stripslashes($this->escape(Text::_($option_value['optionvalue_name']))); ?>" width="56" style="width:56px;" />
+                                <img class="optionvalue-image" src="<?php echo $esc(ImageHelper::getImageUrl($option_value['optionvalue_image'])); ?>" alt="<?php echo stripslashes($this->escape(Text::_($option_value['optionvalue_name']))); ?>" width="56" style="width:56px;" />
                                 <span class="uk-invisible"><?php echo stripslashes($this->escape(Text::_($option_value['optionvalue_name']))); ?></span>
                             </label>
                         <?php } else { ?>
@@ -118,7 +119,8 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                 <?php foreach ($option['optionvalue'] as $option_value) : ?>
                     <?php $checked = !empty($option_value['product_optionvalue_default']) ? 'checked="checked"' : ''; ?>
                     <input <?php echo $checked; ?> type="radio" name="product_option[<?php echo (int) $option['productoption_id']; ?>]" value="<?php echo (int) $option_value['product_optionvalue_id']; ?>" id="option-value-<?php echo (int) $option_value['product_optionvalue_id']; ?>" class="uk-radio uk-hidden" onchange="doAjaxFilter(this.value, <?php echo (int) $productId; ?>, <?php echo (int) $option['productoption_id']; ?>, '#option-<?php echo (int) $option['productoption_id']; ?>');" />
-                    <label for="option-value-<?php echo (int) $option_value['product_optionvalue_id']; ?>" class="btn-color" title="<?php echo $esc(Text::_($option_value['optionvalue_name'])); ?>" data-label="<?php echo $esc(Text::_($option_value['optionvalue_name'])); ?>" style="color:<?php echo $esc($option_value['optionvalue_image']); ?>;">
+                    <?php $swatchColor = ProductHelper::swatchColor($option_value['optionvalue_image']); ?>
+                    <label for="option-value-<?php echo (int) $option_value['product_optionvalue_id']; ?>" class="btn-color" title="<?php echo $esc(Text::_($option_value['optionvalue_name'])); ?>" data-label="<?php echo $esc(Text::_($option_value['optionvalue_name'])); ?>"<?php if ($swatchColor !== '') : ?> style="color:<?php echo $esc($swatchColor); ?>;"<?php endif; ?>>
                         <span class="uk-invisible"><?php echo $esc(Text::_($option_value['optionvalue_name'])); ?></span>
                     </label>
                 <?php endforeach; ?>
@@ -141,7 +143,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                         id="option-value-<?php echo (int) $option_value['product_optionvalue_id']; ?>" />
                     <?php if ($this->params->get('image_for_product_options', 0) && isset($option_value['optionvalue_image']) && !empty($option_value['optionvalue_image'])) : ?>
                         <img class="optionvalue-image-<?php echo (int) $option_value['product_optionvalue_id']; ?>"
-                             src="<?php echo Uri::root(true) . '/' . $esc($option_value['optionvalue_image']); ?>" />
+                             src="<?php echo $esc(ImageHelper::getImageUrl($option_value['optionvalue_image'])); ?>" />
                     <?php endif; ?>
                     <?php echo stripslashes($this->escape(Text::_($option_value['optionvalue_name']))); ?>
                     <?php if ($option_value['product_optionvalue_price'] > 0 && $this->params->get('product_option_price', 1)) : ?>
