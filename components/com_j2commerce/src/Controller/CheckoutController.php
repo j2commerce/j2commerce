@@ -801,6 +801,17 @@ class CheckoutController extends BaseController
     {
         $this->validateAjaxToken() or $this->jsonResponse(['error' => ['warning' => Text::_('JINVALID_TOKEN')]]);
 
+        $user = $this->app->getIdentity();
+
+        // A member's billing address is a row they own, validated against the `billing`
+        // area. Reaching the guest area with an identity means the caller took the wrong
+        // path, so return before any session write or step marker.
+        if ($user && $user->id) {
+            $this->jsonResponse(['redirect' => $this->getCheckoutUrl()]);
+
+            return;
+        }
+
         $session  = $this->app->getSession();
         $json     = [];
         $formData = $this->collectFormData();
