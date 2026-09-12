@@ -412,8 +412,11 @@ class CustomfieldModel extends AdminModel
         if (\in_array($data['field_type'], ['singledropdown', 'radio', 'checkbox'], true)) {
             if (isset($data['field_value']) && \is_array($data['field_value'])) {
                 // Filter out empty rows and encode to JSON
-                $filtered = array_filter($data['field_value'], function ($row) {
-                    return !empty($row['name']);
+                $filtered = array_filter($data['field_value'], static function ($row) {
+                    // Compare against '' — !empty() would discard a legitimate '0' label.
+                    $name = isset($row['name']) ? (string) $row['name'] : '';
+
+                    return $name !== '';
                 });
                 $data['field_value'] = json_encode(array_values($filtered), JSON_UNESCAPED_UNICODE);
             } else {
