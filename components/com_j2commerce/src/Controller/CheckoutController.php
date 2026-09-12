@@ -1020,10 +1020,13 @@ class CheckoutController extends BaseController
     {
         $this->validateAjaxToken() or $this->jsonResponse(['error' => ['warning' => Text::_('JINVALID_TOKEN')]]);
 
-        $user     = $this->app->getIdentity();
-        $session  = $this->app->getSession();
-        $uaccount = $session->get('uaccount', '', 'j2commerce');
-        $isGuest  = ($uaccount === 'guest');
+        $user    = $this->app->getIdentity();
+        $session = $this->app->getSession();
+
+        // The `uaccount` session flag is written when the guest step renders and is never
+        // reconciled afterwards, so a shopper who authenticates outside checkout keeps
+        // `guest`. Resolve the branch from the identity, as every sibling step does.
+        $isGuest = !$user || !$user->id;
 
         $addresses         = [];
         $shippingAddressId = '';
@@ -1160,6 +1163,16 @@ class CheckoutController extends BaseController
     public function guestShippingValidate(): void
     {
         $this->validateAjaxToken() or $this->jsonResponse(['error' => ['warning' => Text::_('JINVALID_TOKEN')]]);
+
+        $user = $this->app->getIdentity();
+
+        // A member's ship-to is a row they own, validated against the `shipping` area.
+        // Reaching the guest area with an identity means the caller took the wrong path.
+        if ($user && $user->id) {
+            $this->jsonResponse(['redirect' => $this->getCheckoutUrl()]);
+
+            return;
+        }
 
         $session  = $this->app->getSession();
         $json     = [];
