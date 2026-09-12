@@ -271,7 +271,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                 <input type="text"
                     class="uk-input j2commerce_time"
                     name="product_option[<?php echo $option['productoption_id']; ?>]"
-                    value="<?php echo $option['optionvalue']; ?>" />
+                    value="<?php echo $esc((string) ($option['optionvalue'] ?? '')); ?>" />
             </div>
         <?php endif; ?>
 

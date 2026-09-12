@@ -47,7 +47,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
             <?php if ($option['required']) : ?>
             <span class="required text-danger">*</span>
             <?php endif; ?>
-            <label class="form-label fw-bold"><?php echo Text::_($option['option_name']); ?>:</label>
+            <label class="form-label fw-bold"><?php echo $esc(Text::_($option['option_name'])); ?>:</label>
             <select
                 name="product_option[<?php echo (int) $option['productoption_id']; ?>]"
                 class="form-select j2commerce-option-select"
@@ -57,7 +57,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                 <?php foreach ($option['optionvalue'] as $option_value) : ?>
                     <?php $checked = $option_value['product_optionvalue_default'] ? 'selected="selected"' : ''; ?>
                     <option <?php echo $checked; ?> value="<?php echo (int) $option_value['product_optionvalue_id']; ?>">
-                        <?php echo stripslashes(Text::_($option_value['optionvalue_name'])); ?>
+                        <?php echo stripslashes($this->escape(Text::_($option_value['optionvalue_name']))); ?>
                         <?php if ($option_value['product_optionvalue_price'] > 0 && $this->params->get('product_option_price', 1)) : ?>
                         (
                         <?php if ($this->params->get('product_option_price_prefix', 1)) : ?>
@@ -78,7 +78,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
             <?php if ($option['required']) : ?>
             <span class="required text-danger">*</span>
             <?php endif; ?>
-            <label class="form-label fw-bold"><?php echo Text::_($option['option_name']); ?>:</label>
+            <label class="form-label fw-bold"><?php echo $esc(Text::_($option['option_name'])); ?>:</label>
             <?php foreach ($option['optionvalue'] as $option_value) : ?>
                 <div class="form-check">
                     <?php $checked = $option_value['product_optionvalue_default'] ? 'checked="checked"' : ''; ?>
@@ -117,7 +117,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
             <?php if ($option['required']) : ?>
             <span class="required text-danger">*</span>
             <?php endif; ?>
-            <label class="form-label fw-bold"><?php echo Text::_($option['option_name']); ?>:</label>
+            <label class="form-label fw-bold"><?php echo $esc(Text::_($option['option_name'])); ?>:</label>
             <?php foreach ($option['optionvalue'] as $option_value) : ?>
                 <div class="form-check">
                     <input<?php echo !empty($option_value['product_optionvalue_default']) ? ' checked="checked"' : ''; ?> type="checkbox"
@@ -154,7 +154,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                 <?php if ($option['required']) : ?>
                 <span class="required text-danger">*</span>
                 <?php endif; ?>
-                <label class="form-label fw-bold"><?php echo Text::_($option['option_name']); ?>:</label>
+                <label class="form-label fw-bold"><?php echo $esc(Text::_($option['option_name'])); ?>:</label>
                 <input type="text"
                     name="product_option[<?php echo (int) $option['productoption_id']; ?>]"
                     value="<?php echo $esc($option['optionvalue'] ?? ''); ?>"
@@ -210,7 +210,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                 <?php if ($option['required']) : ?>
                 <span class="required text-danger">*</span>
                 <?php endif; ?>
-                <label class="form-label fw-bold" for="<?php echo $element_date; ?>"><?php echo Text::_($option['option_name']); ?>:</label>
+                <label class="form-label fw-bold" for="<?php echo $element_date; ?>"><?php echo $esc(Text::_($option['option_name'])); ?>:</label>
                 <?php echo J2CommerceHelper::strapper()->addDatePicker(
                     'product_option[' . (int) $option['productoption_id'] . ']',
                     $element_date,
@@ -228,7 +228,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                 <?php if ($option['required']) : ?>
                 <span class="required text-danger">*</span>
                 <?php endif; ?>
-                <label class="form-label fw-bold" for="<?php echo $element_datetime; ?>"><?php echo Text::_($option['option_name']); ?>:</label>
+                <label class="form-label fw-bold" for="<?php echo $element_datetime; ?>"><?php echo $esc(Text::_($option['option_name'])); ?>:</label>
                 <?php echo J2CommerceHelper::strapper()->addDateTimePicker(
                     'product_option[' . (int) $option['productoption_id'] . ']',
                     $element_datetime,
@@ -245,7 +245,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                 <?php if ($option['required']) : ?>
                 <span class="required text-danger">*</span>
                 <?php endif; ?>
-                <label class="form-label fw-bold"><?php echo Text::_($option['option_name']); ?>:</label>
+                <label class="form-label fw-bold"><?php echo $esc(Text::_($option['option_name'])); ?>:</label>
                 <input type="text"
                     name="product_option[<?php echo (int) $option['productoption_id']; ?>]"
                     value="<?php echo $esc($option['optionvalue'] ?? ''); ?>"
