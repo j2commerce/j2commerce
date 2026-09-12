@@ -125,12 +125,13 @@ class CoreTemplateSyncHelper
     ];
 
     /**
-     * Marker the shipped presets now carry: the logo's HTML `height` attribute.
+     * Markers the shipped presets now carry: the logo's HTML `height` and `width` attributes.
      *
      * The Word engine behind desktop Outlook honours neither `max-height` nor a CSS `height`
-     * on an `<img>`, so a stored body without this attribute mails a full-size logo.
+     * on an `<img>`, and it takes the width from the attribute alone, so a stored body missing
+     * either one mails a logo at the wrong size.
      */
-    private const LOGO_HEIGHT_MARKER = 'height="[LOGO_MAX_HEIGHT]"';
+    private const LOGO_SIZE_MARKERS = ['height="[LOGO_MAX_HEIGHT]"', 'width="[LOGO_WIDTH]"'];
 
     /**
      * How many core template rows still hold a body that predates the logo fix.
@@ -486,7 +487,7 @@ class CoreTemplateSyncHelper
         return $results;
     }
 
-    /** Whether the stored body still carries a logo sized only by CSS. */
+    /** Whether the stored body still carries a logo that is not fully sized by attributes. */
     private function hasOutdatedLogo(DatabaseInterface $db, string $table, string $pkColumn, int $rowId): bool
     {
         $query = $db->getQuery(true)
@@ -498,6 +499,16 @@ class CoreTemplateSyncHelper
         $db->setQuery($query);
         $body = (string) $db->loadResult();
 
-        return str_contains($body, '[STORE_LOGO_URL]') && !str_contains($body, self::LOGO_HEIGHT_MARKER);
+        if (!str_contains($body, '[STORE_LOGO_URL]')) {
+            return false;
+        }
+
+        foreach (self::LOGO_SIZE_MARKERS as $marker) {
+            if (!str_contains($body, $marker)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

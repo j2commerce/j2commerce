@@ -552,9 +552,9 @@ class EmailHelper
         // The subject is a plain-text header — entity encoding would be shown literally.
         $subject      = $this->processTags($template->subject ?? '', $order, $extras, $receiverType, false, $language);
 
-        $baseURL  = str_replace('/administrator', '', Uri::base());
-        $baseURL  = ltrim($baseURL, '/');
-        $imageUrl = str_replace(Uri::base(true), '', Uri::base());
+        // An image that cannot be embedded is emitted as this root plus its relative path, so the
+        // subpath has to stay on: a host-only root drops the subdirectory of a site installed in one.
+        $imageUrl = self::emailSiteRoots()[0] . '/';
 
         $isHTML = true;
 
@@ -774,13 +774,10 @@ class EmailHelper
         $sitename  = $config->get('sitename');
         $language ??= $this->getLanguageForOrder($order);
 
-        // Site URL roots — derived from Joomla live_site / URI so they resolve to
-        // the frontend even when this helper is invoked from the admin app or CLI.
-        $siteRoot   = rtrim(Uri::root(), '/');
-        $siteRoot   = preg_replace('#/administrator$#', '', $siteRoot);
-        $subpathURL = rtrim(Uri::root(true), '/');
-        $subpathURL = preg_replace('#/administrator$#', '', $subpathURL);
-        $baseURL    = $siteRoot . '/';
+        // Site URL roots — resolve to the frontend even when this helper is invoked from the
+        // admin app, the scheduler or the console.
+        [$siteRoot, $subpathURL] = self::emailSiteRoots();
+        $baseURL                 = $siteRoot . '/';
 
         // Invoice URL — links to myprofile order view (no token; unauthenticated users get login redirect)
         $orderId       = $order->order_id ?? '';
@@ -1000,8 +997,17 @@ class EmailHelper
                 $logoUrl = rtrim($baseURL, '/') . '/' . ltrim($logoUrl, '/');
             }
         }
+        // The width that holds the logo's aspect ratio at the configured height. An email client
+        // is not required to honour CSS, so the intrinsic width has to reach the markup as an
+        // attribute or the header logo stretches. Read from the raw value: cleanImageURL() has
+        // already dropped the #joomlaImage:// fragment the dimensions live in. Empty when they
+        // cannot be read, which leaves the template's own sizing in charge.
+        $logoHeight = (int) $params->get('email_logo_max_height', 60);
+        $logoWidth  = !empty($logoRaw) ? ImageHelper::scaleToHeight((string) $logoRaw, $logoHeight)['width'] : 0;
+
         $tags['[STORE_LOGO_URL]']   = $attr($logoUrl);
-        $tags['[LOGO_MAX_HEIGHT]']  = (string) (int) $params->get('email_logo_max_height', 60);
+        $tags['[LOGO_MAX_HEIGHT]']  = (string) $logoHeight;
+        $tags['[LOGO_WIDTH]']       = $logoWidth > 0 ? (string) $logoWidth : '';
         $tags['[ACCENT_COLOR]']     = $color('email_accent_color', '#2563EB');
         $tags['[HEADER_BG_COLOR]']  = $color('email_header_bg', '#FFFFFF');
         $tags['[EMAIL_BG_COLOR]']   = $color('email_bg_color', '#F8FAFC');
@@ -1171,6 +1177,10 @@ class EmailHelper
         // Collapse consecutive <br> tags separated only by whitespace (leftover from removed conditionals)
         $text = preg_replace('/(<br\s*\/?>)(\s*<br\s*\/?>)+/', '$1', $text);
 
+        // [LOGO_WIDTH] resolves to nothing when no source dimensions can be read. A client
+        // ignores an empty width attribute rather than honouring it, so drop it entirely.
+        $text = str_replace(' width=""', '', $text);
+
         if ($appendDownloadLinks) {
             $text .= $downloadLinks;
         }
@@ -1277,7 +1287,7 @@ class EmailHelper
             return $text;
         }
 
-        $baseURL = str_replace('/administrator', '', Uri::base());
+        $baseURL = self::emailSiteRoots()[0] . '/';
 
         return preg_replace_callback(
             '/\[ITEMS_LOOP\](.*?)\[\/ITEMS_LOOP\]/s',
@@ -2082,8 +2092,7 @@ class EmailHelper
         $templateText = $this->processTags($templateText, $order, $extras, '*', true, null, true);
         $subject      = $this->processTags($subject, $order, $extras, '*', false);
 
-        $baseURL = str_replace('/administrator', '', Uri::base());
-        $baseURL = ltrim($baseURL, '/');
+        $baseURL = self::emailSiteRoots()[0] . '/';
 
         // Get the mailer
         $mailer = $this->getMailer($isHTML);
@@ -2389,8 +2398,7 @@ class EmailHelper
      */
     public function processInlineImages(string $templateText, Mail &$mailer): string
     {
-        $baseURL = str_replace('/administrator', '', Uri::base());
-        $baseURL = ltrim($baseURL, '/');
+        $baseURL = self::emailSiteRoots()[0] . '/';
 
         return $this->processInlineImagesInternal($templateText, $mailer, $baseURL);
     }
@@ -3191,7 +3199,7 @@ class EmailHelper
         }
 
         $attributeRows  = $this->loadOrderItemAttributeRows($items);
-        $baseURL        = str_replace('/administrator', '', Uri::base());
+        $baseURL        = self::emailSiteRoots()[0] . '/';
         $currencyCode   = $order->currency_code ?? '';
         $currencyValue  = (float) ($order->currency_value ?? 1);
         $showThumbnails = ConfigHelper::showEmailThumbnails();
@@ -3399,6 +3407,33 @@ class EmailHelper
     {
         $registry = Factory::getContainer()->get(\J2Commerce\Component\J2commerce\Administrator\Service\EmailTypeRegistry::class);
         return $registry->hasType($emailType);
+    }
+
+    /**
+     * Absolute and path-only site roots for a URL that leaves in an email, each without a
+     * trailing slash and without an /administrator suffix.
+     *
+     * Uri::root() is derived from the request, and these mails are also built by the scheduler,
+     * the console and queued sends, where there is no request: the root is then assembled from
+     * the running script's own path and names a host that resolves nowhere, so every link and
+     * every relative image in the message is dead. The configured Live Site URL is the one value
+     * that holds in that context, so it wins whenever the merchant has set one.
+     *
+     * @return  array{0: string, 1: string}
+     */
+    private static function emailSiteRoots(): array
+    {
+        $configured = trim((string) Factory::getApplication()->get('live_site', ''));
+        $uri        = $configured !== '' ? Uri::getInstance($configured) : null;
+        $root       = $uri !== null
+            ? rtrim($uri->toString(['scheme', 'host', 'port', 'path']), '/')
+            : rtrim(Uri::root(), '/');
+        $subpath    = $uri !== null ? rtrim($uri->getPath(), '/') : rtrim(Uri::root(true), '/');
+
+        return [
+            (string) preg_replace('#/administrator$#', '', $root),
+            (string) preg_replace('#/administrator$#', '', $subpath),
+        ];
     }
 
     /**

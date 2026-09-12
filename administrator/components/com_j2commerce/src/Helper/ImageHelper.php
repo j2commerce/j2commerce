@@ -282,6 +282,55 @@ class ImageHelper
         return filter_var($imageUrl, FILTER_VALIDATE_URL) !== false;
     }
 
+    /**
+     * Original pixel dimensions of an image: the #joomlaImage:// fragment a Joomla media field
+     * records, falling back to the file itself when the stored value carries none. Zeros when
+     * neither answers — no ratio can be derived from that.
+     */
+    public static function imageDimensions(string $imagePath): array
+    {
+        $parsed = self::parseJoomlaImageUrl($imagePath);
+
+        if ($parsed['width'] > 0 && $parsed['height'] > 0) {
+            return ['width' => $parsed['width'], 'height' => $parsed['height']];
+        }
+
+        // normalizePath() collapses separators but does not resolve '..', and the result is
+        // stat'ed verbatim — a traversal segment would report the dimensions of an arbitrary
+        // server file. Such a path cannot be a media-field image, so refuse it unread.
+        $relative = self::normalizePath($parsed['path']);
+
+        if ($relative === '' || str_contains($relative, '..') || filter_var($relative, FILTER_VALIDATE_URL)) {
+            return ['width' => 0, 'height' => 0];
+        }
+
+        $file = JPATH_SITE . '/' . ltrim($relative, '/');
+        $size = is_file($file) ? @getimagesize($file) : false;
+
+        return $size === false
+            ? ['width' => 0, 'height' => 0]
+            : ['width' => (int) $size[0], 'height' => (int) $size[1]];
+    }
+
+    /**
+     * Width that holds the declared aspect ratio at $height, for markup that cannot rely on CSS
+     * to size an image — an email client is the case this exists for. Width 0 when no source
+     * dimensions can be read: emit no width attribute at all rather than a guess.
+     */
+    public static function scaleToHeight(string $imagePath, int $height): array
+    {
+        $source = self::imageDimensions($imagePath);
+        $height = max(0, $height);
+
+        if ($height === 0 || $source['width'] <= 0 || $source['height'] <= 0) {
+            return ['width' => 0, 'height' => $height];
+        }
+
+        return [
+            'width'  => (int) round($height * ($source['width'] / $source['height'])),
+            'height' => $height,
+        ];
+    }
     /** Strips Joomla media field metadata, returns clean relative path + original dimensions. */
     private static function parseJoomlaImageUrl(string $imagePath): array
     {
