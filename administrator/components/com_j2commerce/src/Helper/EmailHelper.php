@@ -93,7 +93,9 @@ class EmailHelper
         '[PAYMENT_INSTRUCTIONS]',
         '[FOOTER_TEXT]',
         // Kind 2 — attribute values, constrained by their producer in getTags().
-        // Built server-side from the site root and the router; never request- or config-derived.
+        // Built server-side from the site root and the router. The root prefers the `live_site`
+        // configuration value, which is core.admin-writable and never request-derived; with no
+        // Live Site configured it falls back to Uri::root(), which IS derived from the request.
         '[SITEURL]',
         '[INVOICE_URL]',
         '[MYPROFILE_URL]',
@@ -1017,6 +1019,12 @@ class EmailHelper
         $tags['[SOCIAL_INSTAGRAM]'] = $attr((string) $params->get('email_social_instagram', ''));
         $tags['[SOCIAL_TWITTER]']   = $attr((string) $params->get('email_social_twitter', ''));
 
+        // With no width to emit, take the attribute out with its tag. Sweeping ' width=""' from
+        // the finished body would also take a merchant's own empty width attribute with it.
+        if ($tags['[LOGO_WIDTH]'] === '') {
+            $text = str_replace(' width="[LOGO_WIDTH]"', '', $text);
+        }
+
         // Store info shortcodes
         $tags['[STORE_NAME]']      = $params->get('store_name', '');
         $tags['[STORE_ADDRESS_1]'] = $params->get('store_address_1', '');
@@ -1176,10 +1184,6 @@ class EmailHelper
 
         // Collapse consecutive <br> tags separated only by whitespace (leftover from removed conditionals)
         $text = preg_replace('/(<br\s*\/?>)(\s*<br\s*\/?>)+/', '$1', $text);
-
-        // [LOGO_WIDTH] resolves to nothing when no source dimensions can be read. A client
-        // ignores an empty width attribute rather than honouring it, so drop it entirely.
-        $text = str_replace(' width=""', '', $text);
 
         if ($appendDownloadLinks) {
             $text .= $downloadLinks;
@@ -3424,6 +3428,15 @@ class EmailHelper
     private static function emailSiteRoots(): array
     {
         $configured = trim((string) Factory::getApplication()->get('live_site', ''));
+
+        // Uri::base() upgrades a configured http:// live site to https:// on an SSL request
+        // (libraries/src/Uri/Uri.php). Reading live_site directly skips that, which would mail
+        // cleartext links from an HTTPS store whose Live Site was saved as http://. There is no
+        // request in the scheduler/console case, so there is nothing to upgrade against.
+        if ($configured !== '' && !empty($_SERVER['HTTP_HOST']) && Uri::getInstance()->isSsl()) {
+            $configured = str_replace('http://', 'https://', $configured);
+        }
+
         $uri        = $configured !== '' ? Uri::getInstance($configured) : null;
         $root       = $uri !== null
             ? rtrim($uri->toString(['scheme', 'host', 'port', 'path']), '/')
