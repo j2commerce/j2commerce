@@ -196,6 +196,15 @@
             class="w-100"
         />
 
+        <!-- Renders nothing unless the field above names a directory this component does not
+             own and files are sitting in it. The exclude list on that field cannot be satisfied
+             by such a value, so the path is moved from here rather than retyped above. -->
+        <field
+            name="attachment_relocate"
+            type="attachmentrelocate"
+            label="COM_J2COMMERCE_CONFIG_ATTACHMENT_RELOCATE"
+        />
+
         <field
             name="spacer_misc_1"
             type="spacer"

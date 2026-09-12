@@ -37,11 +37,20 @@ class ComponentParamsHelper
 
     private const TYPE = 'component';
 
-    /** The bookkeeping members this helper owns. Anything else belongs to the Options form. */
+    /**
+     * The bookkeeping members this helper owns. Anything else belongs to the Options form.
+     *
+     * `attachmentfolderpath` is the one Options member here, and it is here because the form
+     * cannot write it: `config.xml` excludes `media`, and `FilePathRule` tests only a value's
+     * first segment, so a stored `media/...` value makes the whole Options form unsaveable and
+     * unable to replace itself. AttachmentrelocateModel moves the files and then repoints the
+     * param through here, which is the only writer that leaves the sibling members intact.
+     */
     private const ALLOWED = [
         'cron_last_trigger',
         'queue_key',
         'plg_j2commerce_inventory_control_timestamp',
+        'attachmentfolderpath',
     ];
 
     /** Bounded so a busy row cannot hold a cron run open. */
