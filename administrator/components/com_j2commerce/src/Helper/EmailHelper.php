@@ -978,7 +978,14 @@ class EmailHelper
         // escaping loop skips them so the URL tags survive an href position unencoded, which
         // means the constraint has to come from here. [LOGO_MAX_HEIGHT]'s int cast is the
         // model — a producer-side guarantee holds whichever attribute a template uses.
-        $attr  = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+        // $attr pairs htmlspecialchars() with encodeTagDelimiters() for the same reason the
+        // escaping loop does: htmlspecialchars() leaves [ ] { } alone, and the substitution
+        // loop, processCustomFields(), processPositionalHooks() and the unmatched-tag sweep
+        // all read those as template syntax. An HTML parser decodes the entities back, so the
+        // URL the browser resolves is unchanged.
+        $attr  = static fn (string $value): string => self::encodeTagDelimiters(
+            htmlspecialchars($value, ENT_QUOTES, 'UTF-8')
+        );
         $color = static function (string $key, string $default) use ($params): string {
             $value = (string) $params->get($key, $default);
 
