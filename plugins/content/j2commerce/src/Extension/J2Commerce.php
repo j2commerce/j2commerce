@@ -64,6 +64,9 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
      */
     protected $autoloadLanguage = true;
 
+    /** Article state as stored before the current edit-form save, keyed by article id. */
+    private array $previousArticleStates = [];
+
     /**
      * Shortcode option → FileLayout ID mapping for card-style (list) rendering.
      *
@@ -559,6 +562,23 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         $data = $event->getItem();
         $app  = $this->getApplication();
 
+        // Record the stored state so onContentAfterSave() can tell whether this save changed it.
+        $articleId = (int) ($data->id ?? 0);
+
+        if ($articleId && !$event->getIsNew()) {
+            $db    = $this->getDatabase();
+            $query = $db->getQuery(true)
+                ->select($db->quoteName('state'))
+                ->from($db->quoteName('#__content'))
+                ->where($db->quoteName('id') . ' = :articleId')
+                ->bind(':articleId', $articleId, ParameterType::INTEGER);
+            $storedState = $db->setQuery($query)->loadResult();
+
+            if ($storedState !== null) {
+                $this->previousArticleStates[$articleId] = (int) $storedState;
+            }
+        }
+
         // Store full attribs for later processing
         $app->getInput()->set('j2commerce_all_attribs', $data->attribs ?? '', 'RAW');
 
@@ -597,12 +617,20 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             return;
         }
 
-        $app       = $this->getApplication();
         $articleId = (int) ($data->id ?? 0);
 
         if (!$articleId) {
             return;
         }
+
+        $this->saveArticleProductTab($data, $articleId);
+        $this->mirrorArticleStateOnSave($articleId, (int) ($data->state ?? 0), $isNew);
+    }
+
+    /** Applies the J2Commerce tab posted with the article edit form. */
+    private function saveArticleProductTab(object $data, int $articleId): void
+    {
+        $app = $this->getApplication();
 
         // Save-path ACL guard: block crafted POST submissions from users without editproducts.
         // The tab is already hidden for these users, but this prevents bypassing the UI gate.
@@ -620,8 +648,8 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
 
         $j2data = $attribs->j2commerce;
 
-        // Check if product already exists for this article
-        $existingProduct = $this->getProductBySource('com_content', $articleId);
+        // Check if product already exists for this article, including a disabled one
+        $existingProduct = ProductHelper::getFullProductBySource('com_content', $articleId, enabledOnly: false);
 
         // If being disabled, update existing product record and stop
         if (empty($j2data->enabled)) {
@@ -635,6 +663,14 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
                     ->bind(':productId', $productId, ParameterType::INTEGER);
                 $db->setQuery($query)->execute();
             }
+
+            return;
+        }
+
+        // Re-enabling only flips the flag: the tab posts no product data for a disabled
+        // product, so saveProduct() would try to insert a second row for this article.
+        if ($existingProduct && empty($existingProduct->enabled)) {
+            $this->setArticleProductEnabled($articleId, 1);
 
             return;
         }
@@ -712,6 +748,36 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         }
 
         // Clear the static article cache to ensure fresh data on next load
+        $this->clearArticleCache($articleId);
+    }
+
+    /** Edit-form twin of onContentChangeState(): acts only when this save changed the article state. */
+    private function mirrorArticleStateOnSave(int $articleId, int $state, bool $isNew): void
+    {
+        $previousState = $this->previousArticleStates[$articleId] ?? null;
+        unset($this->previousArticleStates[$articleId]);
+
+        if ($isNew || $previousState === null || $previousState === $state || !$this->params->get('mirror_state', 1)) {
+            return;
+        }
+
+        $this->setArticleProductEnabled($articleId, $state === 1 ? 1 : 0);
+    }
+
+    private function setArticleProductEnabled(int $articleId, int $enabled): void
+    {
+        $source = 'com_content';
+        $db     = $this->getDatabase();
+        $query  = $db->getQuery(true)
+            ->update($db->quoteName('#__j2commerce_products'))
+            ->set($db->quoteName('enabled') . ' = :enabled')
+            ->where($db->quoteName('product_source') . ' = :source')
+            ->where($db->quoteName('product_source_id') . ' = :articleId')
+            ->bind(':enabled', $enabled, ParameterType::INTEGER)
+            ->bind(':source', $source)
+            ->bind(':articleId', $articleId, ParameterType::INTEGER);
+        $db->setQuery($query)->execute();
+
         $this->clearArticleCache($articleId);
     }
 

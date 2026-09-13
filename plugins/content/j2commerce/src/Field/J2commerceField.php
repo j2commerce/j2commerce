@@ -62,7 +62,8 @@ final class J2commerceField extends FormField
 
             $product = null;
             if ($articleId > 0) {
-                $product = ProductHelper::getFullProductBySource('com_content', $articleId);
+                // A disabled product still belongs to this article; the form renders it read-only.
+                $product = ProductHelper::getFullProductBySource('com_content', $articleId, enabledOnly: false);
             }
 
             return $this->buildProductForm($product, $articleId);

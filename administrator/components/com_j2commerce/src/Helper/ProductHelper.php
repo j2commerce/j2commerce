@@ -939,6 +939,7 @@ class ProductHelper
      * @param   int     $sourceId  Source ID (e.g., article ID)
      * @param   bool    $loadVariants   Whether to load variants (default: true)
      * @param   bool    $loadOptions    Whether to load options (default: true)
+     * @param   bool    $enabledOnly    Skip a disabled product (default: true)
      *
      * @return  object|null  Full product object or null
      *
@@ -948,7 +949,8 @@ class ProductHelper
         string $source,
         int $sourceId,
         bool $loadVariants = true,
-        bool $loadOptions = true
+        bool $loadOptions = true,
+        bool $enabledOnly = true
     ): ?object {
         $db    = self::getDatabase();
         $query = $db->getQuery(true);
@@ -957,9 +959,12 @@ class ProductHelper
             ->from($db->quoteName('#__j2commerce_products'))
             ->where($db->quoteName('product_source') . ' = :source')
             ->where($db->quoteName('product_source_id') . ' = :sourceId')
-            ->where($db->quoteName('enabled') . ' = 1')
             ->bind(':source', $source)
             ->bind(':sourceId', $sourceId, ParameterType::INTEGER);
+
+        if ($enabledOnly) {
+            $query->where($db->quoteName('enabled') . ' = 1');
+        }
 
         $db->setQuery($query);
         $productId = (int) $db->loadResult();
