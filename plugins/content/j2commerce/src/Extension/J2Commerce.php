@@ -761,6 +761,11 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             return;
         }
 
+        // Frontend editing has no list toggle, so the edit form holds the product flag to the tab's own permission there.
+        if ($this->getApplication()->isClient('site') && !J2CommerceHelper::canAccess('j2commerce.editproducts')) {
+            return;
+        }
+
         $this->setArticleProductEnabled($articleId, $state === 1 ? 1 : 0);
     }
 
