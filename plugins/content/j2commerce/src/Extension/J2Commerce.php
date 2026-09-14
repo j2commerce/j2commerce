@@ -1553,13 +1553,18 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
                 true
             );
 
+            // An article-sourced product's short and long descriptions are this article's
+            // introtext and fulltext, which com_content already prints under its own Read More
+            // and Hide Intro Text settings — same reasoning as getProductBlock().
+            $ownArticleProduct = $this->isOwnArticleProduct($product, $article);
+
             foreach ($options as $option) {
                 $option = strtolower(trim($option));
 
                 // Special case: |detail dispatches onJ2CommerceViewProductHtml so the
                 // active subtemplate plugin renders it with its own view_*.php files.
                 if ($option === 'detail') {
-                    $html .= $this->renderProductDetail($productId, $shortcodeSubtemplate);
+                    $html .= $this->renderProductDetail($productId, $shortcodeSubtemplate, $ownArticleProduct);
                     continue;
                 }
 
@@ -1587,6 +1592,12 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
                 J2CommerceHelper::plugin()->event('GetShortcodeLayout', [&$layoutId, $productType, $option, $product]);
 
                 $displayData = $this->buildDisplayData($product, $option, $options);
+
+                // |full and |card imply a description; an explicit |description or |desc still gets one.
+                if ($ownArticleProduct && !$this->optionsContainAny($options, ['description', 'desc'])) {
+                    $displayData['showDescription']     = false;
+                    $displayData['showLongDescription'] = false;
+                }
 
                 // Shortcode surfaces only — buildDisplayData() also serves the article
                 // product block, which follows the component's own settings. 'cartonly'
@@ -1789,7 +1800,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
      *
      * @since   6.0.0
      */
-    private function renderProductDetail(int $productId, string $subtemplate): string
+    private function renderProductDetail(int $productId, string $subtemplate, bool $omitDescriptions = false): string
     {
         try {
             $app        = $this->getApplication();
@@ -1829,6 +1840,11 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
                 $params->set('subtemplate', SubtemplateHelper::normalize($subtemplate));
             }
 
+            if ($omitDescriptions) {
+                $params->set('item_show_sdesc', 0);
+                $params->set('item_show_ldesc', 0);
+            }
+
             // `item`, `state`, and `user` are protected on ProductView. Bind a closure
             // to the view class so we can write them without reflection overhead.
             $state    = $model->getState();
@@ -1856,6 +1872,13 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
 
             return '';
         }
+    }
+
+    private function isOwnArticleProduct(object $product, object $article): bool
+    {
+        return ($product->product_source ?? '') === 'com_content'
+            && (int) ($article->id ?? 0) > 0
+            && (int) ($product->product_source_id ?? 0) === (int) $article->id;
     }
 
     private function buildDisplayData(object $product, string $option, array $allOptions): array
