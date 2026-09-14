@@ -23,6 +23,11 @@ trait CustomSubtemplateTrait
 
     protected function renderCustomSubtemplate(): ?string
     {
+        // A subtemplate is a single folder name, the shape TemplatelistField lists.
+        if ($this->sublayout !== '' && !preg_match('/^[A-Za-z0-9_-]+$/', $this->sublayout)) {
+            return null;
+        }
+
         $template     = Factory::getApplication()->getTemplate();
         $overridePath = JPATH_SITE . '/templates/' . $template . '/html/com_j2commerce/templates/' . $this->sublayout;
 

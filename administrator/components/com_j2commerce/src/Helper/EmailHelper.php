@@ -367,7 +367,7 @@ class EmailHelper
             }
 
             $tag              = (string) (new Registry($row->params))->get('admin_language', '');
-            $preference[$key] = ($tag !== '' && LanguageHelper::exists($tag)) ? $tag : null;
+            $preference[$key] = ($tag !== '' && isset(LanguageHelper::getInstalledLanguages(1)[$tag])) ? $tag : null;
         }
 
         $default = self::adminDefaultLanguage();
@@ -410,13 +410,14 @@ class EmailHelper
 
     private static function defaultLanguage(string $clientParam): string
     {
-        $tag = (string) ComponentHelper::getParams('com_languages')->get($clientParam, '');
+        $installed = LanguageHelper::getInstalledLanguages($clientParam === 'administrator' ? 1 : 0);
+        $tag       = (string) ComponentHelper::getParams('com_languages')->get($clientParam, '');
 
-        if ($tag === '' || !LanguageHelper::exists($tag)) {
+        if ($tag === '' || !isset($installed[$tag])) {
             $tag = (string) Factory::getApplication()->get('language', 'en-GB');
         }
 
-        return LanguageHelper::exists($tag) ? $tag : 'en-GB';
+        return isset($installed[$tag]) ? $tag : 'en-GB';
     }
 
     /**

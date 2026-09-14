@@ -266,7 +266,7 @@ class OrderModel extends AdminModel
         // The order records the language the CUSTOMER reads it back in. Taking the current
         // request's tag would stamp the backend operator's locale onto someone else's order,
         // and every notification about it would then go out in the wrong language.
-        if ($customerLanguage === '' || !LanguageHelper::exists($customerLanguage)) {
+        if ($customerLanguage === '' || !isset(LanguageHelper::getInstalledLanguages(0)[$customerLanguage])) {
             $customerLanguage = EmailHelper::siteDefaultLanguage();
         }
 
