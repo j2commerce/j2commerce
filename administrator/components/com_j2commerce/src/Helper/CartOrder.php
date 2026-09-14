@@ -700,9 +700,9 @@ class CartOrder
      * Each tax rate's amount is scaled by the ratio of the net taxable amount
      * to the original subtotal, and order_total is adjusted by the difference.
      *
-     * Per-item orderitem_tax is intentionally left unchanged because it reflects
-     * the product's tax rate applied to its unit price; the order-level discount
-     * is shown as a separate line in Cart Totals.
+     * Per-item orderitem_tax is scaled by the same ratio. quantizeTotals() rebuilds
+     * order_tax from the line taxes, so a line left at its undiscounted tax would
+     * put the full tax straight back on the order.
      *
      * @return  void
      *
@@ -744,6 +744,10 @@ class CartOrder
         foreach ($this->taxRates as $taxRate) {
             $taxRate->tax_amount = round($taxRate->tax_amount * $ratio, 4);
             $newTaxTotal += $taxRate->tax_amount;
+        }
+
+        foreach ($this->items as $item) {
+            $item->orderitem_tax = (float) ($item->orderitem_tax ?? 0) * $ratio;
         }
 
         // Adjust order tax and total by the difference
@@ -2461,10 +2465,11 @@ class CartOrder
     /**
      * Bring the per-line tax in step with the order-level tax before the rows are written.
      *
-     * recalculateTaxAfterDiscounts() scales order_tax down to the discounted base but leaves the
-     * per-line figures alone, and OrderModel::recalculateOrderTotals() prefers SUM(orderitem_tax)
-     * whenever it is positive — so without this, any later recompute of a discounted order rebuilds
-     * order_total with the undiscounted tax. The largest taxed line absorbs the rounding remainder,
+     * recalculateTaxAfterDiscounts() scales the line taxes with order_tax, so on a cart built here the
+     * two already agree and this returns early. It stays as a backstop for anything that changes
+     * order_tax without the lines: OrderModel::recalculateOrderTotals() prefers SUM(orderitem_tax)
+     * whenever it is positive, so a mismatch would rebuild order_total with the wrong tax on the
+     * first later recompute. The largest taxed line absorbs the rounding remainder,
      * so the sum matches the stored order_tax exactly and no line can be driven negative by it.
      *
      * @param  array<int, array{0: object, 1: object}>  $rows  Row/item pairs, mutated in place.
