@@ -1696,6 +1696,31 @@ class ProductHelper
     // =========================================================================
 
     /**
+     * The article editor for a product: products are edited only in their com_content article.
+     * A product with no linked article, or no product at all, gets the new-article screen.
+     */
+    public static function getArticleEditRoute(int $productId): string
+    {
+        $articleId = 0;
+
+        if ($productId > 0) {
+            $db    = self::getDatabase();
+            $query = $db->getQuery(true)
+                ->select($db->quoteName('product_source_id'))
+                ->from($db->quoteName('#__j2commerce_products'))
+                ->where($db->quoteName('j2commerce_product_id') . ' = :productId')
+                ->where($db->quoteName('product_source') . ' = ' . $db->quote('com_content'))
+                ->bind(':productId', $productId, ParameterType::INTEGER);
+
+            $articleId = (int) $db->setQuery($query)->loadResult();
+        }
+
+        return $articleId > 0
+            ? 'index.php?option=com_content&task=article.edit&id=' . $articleId
+            : 'index.php?option=com_content&task=article.add';
+    }
+
+    /**
      * Get product options (traits) for a configurable product.
      *
      * @param   int  $productId  The product ID.
@@ -3093,13 +3118,11 @@ class ProductHelper
                     : Text::_('COM_J2COMMERCE_PRODUCT_ID') . ' ' . $product->j2commerce_product_id;
             }
 
-            // Set product_edit_url with return parameter so user comes back after editing
-            $return = base64_encode(Uri::getInstance()->toString());
-            if ($product->product_source === 'com_content' && !empty($product->product_source_id)) {
-                $product->product_edit_url = 'index.php?option=com_content&task=article.edit&id=' . (int) $product->product_source_id . '&return=' . $return;
-            } else {
-                $product->product_edit_url = 'index.php?option=com_j2commerce&task=product.edit&id=' . (int) $product->j2commerce_product_id . '&return=' . $return;
-            }
+            // Products are edited in their article; the return parameter brings the user back here.
+            $product->product_edit_url = $product->product_source === 'com_content' && !empty($product->product_source_id)
+                ? 'index.php?option=com_content&task=article.edit&id=' . (int) $product->product_source_id
+                    . '&return=' . base64_encode(Uri::getInstance()->toString())
+                : '';
         }
 
         return $products;

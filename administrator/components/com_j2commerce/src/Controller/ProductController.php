@@ -71,289 +71,55 @@ class ProductController extends FormController
     protected $text_prefix = 'COM_J2COMMERCE_PRODUCT';
 
     /**
-     * Intercept display to redirect product view to article editor.
-     *
-     * J2Commerce products are Joomla articles — there is no standalone product edit form.
-     * This redirects view=product&layout=edit to the appropriate com_content article editor.
+     * Products are edited only in their com_content article, so every task that would open or
+     * post the standalone product form sends the user to the article editor instead. The form
+     * tasks FormController maps onto these (apply, save2new, save2copy) follow save().
      */
     public function display($cachable = false, $urlparams = []): static
     {
-        $app    = Factory::getApplication();
-        $input  = $app->getInput();
-        $layout = $input->get('layout', '');
-        $id     = $input->getInt('id', 0);
-
-        if ($layout === 'edit') {
-            if ($id > 0) {
-                // Existing product — find linked article and redirect to its editor
-                $db    = Factory::getContainer()->get(DatabaseInterface::class);
-                $query = $db->getQuery(true)
-                    ->select($db->quoteName('product_source_id'))
-                    ->from($db->quoteName('#__j2commerce_products'))
-                    ->where($db->quoteName('j2commerce_product_id') . ' = :pid')
-                    ->bind(':pid', $id, ParameterType::INTEGER);
-                $db->setQuery($query);
-                $articleId = (int) $db->loadResult();
-
-                if ($articleId > 0) {
-                    $this->setRedirect(Route::_('index.php?option=com_content&task=article.edit&id=' . $articleId, false));
-                    return $this;
-                }
-            }
-
-            // New product or no linked article — redirect to new article
-            $this->setRedirect(Route::_('index.php?option=com_content&task=article.add', false));
-            return $this;
-        }
-
-        return parent::display($cachable, $urlparams);
+        return $this->redirectToArticle();
     }
 
-    /**
-     * Method to edit an existing record.
-     *
-     * CRITICAL: We must explicitly set $urlVar to 'id' because Joomla's FormController
-     * defaults to using the Table's primary key name (j2commerce_product_id) as the URL
-     * parameter. Since our URLs use 'id' (standard Joomla convention), we override here.
-     *
-     * @param   string  $key     The name of the primary key of the URL variable.
-     * @param   string  $urlVar  The name of the URL variable for the id.
-     *
-     * @return  boolean  True if access level check passes, false otherwise.
-     *
-     * @since   6.0.3
-     */
+    public function add()
+    {
+        $this->redirectToArticle(0);
+
+        return true;
+    }
+
     public function edit($key = null, $urlVar = 'id')
     {
-        return parent::edit($key, $urlVar);
+        $this->redirectToArticle();
+
+        return true;
     }
 
-    /**
-     * Method to save a record.
-     *
-     * @param   string  $key     The name of the primary key of the URL variable.
-     * @param   string  $urlVar  The name of the URL variable for the id.
-     *
-     * @return  boolean  True if successful, false otherwise.
-     *
-     * @since   6.0.3
-     */
     public function save($key = null, $urlVar = 'id')
     {
-        return parent::save($key, $urlVar);
+        $this->redirectToArticle();
+
+        return false;
     }
 
-    /**
-     * Method to cancel an edit.
-     *
-     * @param   string  $key  The name of the primary key of the URL variable.
-     *
-     * @return  boolean  True if access level checks pass, false otherwise.
-     *
-     * @since   6.0.3
-     */
+    public function reload($key = null, $urlVar = 'id')
+    {
+        $this->redirectToArticle();
+    }
+
     public function cancel($key = 'id')
     {
-        return parent::cancel($key);
+        $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=' . $this->view_list, false));
+
+        return true;
     }
 
-    /**
-     * Generate variant records for a configurable product.
-     *
-     * Creates all possible variant combinations based on the product's traits (options).
-     * Uses Cartesian product algorithm to generate unique SKUs for each combination.
-     *
-     * @return  void
-     *
-     * @since   6.0.3
-     */
-    public function generateVariants(): void
+    private function redirectToArticle(?int $productId = null): static
     {
-        $this->checkToken();
+        $productId ??= $this->input->getInt('id', 0);
 
-        $app       = Factory::getApplication();
-        $productId = $app->getInput()->getInt('id', 0);
+        $this->setRedirect(Route::_(ProductHelper::getArticleEditRoute($productId), false));
 
-        // Takes the same core.edit as the AJAX twin in ProductsController.
-        $user = $app->getIdentity();
-
-        if (!$user || $user->guest || !$user->authorise('core.edit', 'com_j2commerce')) {
-            $app->enqueueMessage(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 'error');
-            $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=products', false));
-            return;
-        }
-
-        if (empty($productId)) {
-            $app->enqueueMessage(Text::_('COM_J2COMMERCE_ERROR_NO_PRODUCT_SELECTED'), 'error');
-            $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=products', false));
-            return;
-        }
-
-        // Get traits (variant options) for this product
-        $traits = ProductHelper::getTraits($productId);
-
-        if (empty($traits)) {
-            $app->enqueueMessage(Text::_('COM_J2COMMERCE_ERROR_NO_TRAITS_DEFINED'), 'warning');
-            $this->setRedirect(Route::_('index.php?option=com_j2commerce&task=product.edit&id=' . $productId, false));
-            return;
-        }
-
-        // Build arrays for combination generation
-        $optionArrays = [];
-        foreach ($traits as $trait) {
-            if (!empty($trait->values)) {
-                $values = [];
-                foreach ($trait->values as $value) {
-                    $values[] = [
-                        'option_id'              => $trait->option_id,
-                        'product_optionvalue_id' => $value->j2commerce_product_optionvalue_id,
-                        'optionvalue_name'       => $value->optionvalue_name ?? '',
-                        'sku_suffix'             => $value->product_optionvalue_sku ?? '',
-                        'price_prefix'           => $value->product_optionvalue_prefix ?? '+',
-                        'price'                  => $value->product_optionvalue_price ?? 0,
-                    ];
-                }
-                $optionArrays[] = $values;
-            }
-        }
-
-        if (empty($optionArrays)) {
-            $app->enqueueMessage(Text::_('COM_J2COMMERCE_ERROR_NO_OPTION_VALUES'), 'warning');
-            $this->setRedirect(Route::_('index.php?option=com_j2commerce&task=product.edit&id=' . $productId, false));
-            return;
-        }
-
-        // Generate all combinations (Cartesian product)
-        $combinations = ProductHelper::getCombinations($optionArrays);
-
-        // Get master variant for base SKU and price
-        $masterVariant = ProductHelper::getMasterVariant($productId);
-        $baseSku       = $masterVariant->sku ?? 'PROD-' . $productId;
-        $basePrice     = (float) ($masterVariant->price ?? 0);
-
-        // Create variant records
-        $db           = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-        $date         = Factory::getDate()->toSql();
-        $createdCount = 0;
-        $skippedCount = 0;
-
-        // Check if any existing variant is already set as default
-        $query = $db->getQuery(true)
-            ->select('COUNT(*)')
-            ->from($db->quoteName('#__j2commerce_variants'))
-            ->where($db->quoteName('product_id') . ' = :piddef')
-            ->where($db->quoteName('is_master') . ' = 0')
-            ->where($db->quoteName('isdefault_variant') . ' = 1')
-            ->bind(':piddef', $productId, ParameterType::INTEGER);
-        $db->setQuery($query);
-        $hasDefault = (int) $db->loadResult() > 0;
-
-        // Load existing mapping CSVs for duplicate detection
-        $query = $db->getQuery(true)
-            ->select($db->quoteName('product_optionvalue_ids'))
-            ->from($db->quoteName('#__j2commerce_product_variant_optionvalues', 'pvo'))
-            ->join('INNER', $db->quoteName('#__j2commerce_variants', 'v')
-                . ' ON ' . $db->quoteName('v.j2commerce_variant_id') . ' = ' . $db->quoteName('pvo.variant_id'))
-            ->where($db->quoteName('v.product_id') . ' = :pidex')
-            ->where($db->quoteName('v.is_master') . ' = 0')
-            ->bind(':pidex', $productId, ParameterType::INTEGER);
-        $db->setQuery($query);
-        $existingCsvs = $db->loadColumn() ?: [];
-
-        $existingNormalized = [];
-        foreach ($existingCsvs as $csv) {
-            $existingNormalized[] = ProductHelper::normaliseOptionvalueKey($csv);
-        }
-
-        foreach ($combinations as $combination) {
-            $skuParts        = [];
-            $priceAdjustment = 0.0;
-            $povIds          = [];
-
-            foreach ($combination as $optionValue) {
-                if (!empty($optionValue['sku_suffix'])) {
-                    $skuParts[] = $optionValue['sku_suffix'];
-                }
-
-                $price = (float) $optionValue['price'];
-                $priceAdjustment += ($optionValue['price_prefix'] === '-') ? -$price : $price;
-
-                $povIds[] = (int) $optionValue['product_optionvalue_id'];
-            }
-
-            // Skip combinations with missing/invalid option value IDs
-            $povIdsCsv = ProductHelper::normaliseOptionvalueKey($povIds);
-
-            if ($povIdsCsv === '') {
-                continue;
-            }
-
-            // Check for existing variant with same option combination
-            if (\in_array($povIdsCsv, $existingNormalized, true)) {
-                $skippedCount++;
-                continue;
-            }
-
-            $variantSku = $baseSku . (!empty($skuParts) ? '-' . implode('-', $skuParts) : '-V' . ($createdCount + 1));
-
-            $variantData = (object) [
-                'product_id'                    => $productId,
-                'sku'                           => $variantSku,
-                'upc'                           => '',
-                'price'                         => $basePrice + $priceAdjustment,
-                'pricing_calculator'            => 'standard',
-                'shipping'                      => 0,
-                'length'                        => 0,
-                'width'                         => 0,
-                'height'                        => 0,
-                'length_class_id'               => 0,
-                'weight'                        => 0,
-                'weight_class_id'               => 0,
-                'manage_stock'                  => 0,
-                'quantity_restriction'          => 0,
-                'min_out_qty'                   => 0,
-                'use_store_config_min_out_qty'  => 1,
-                'min_sale_qty'                  => 0,
-                'use_store_config_min_sale_qty' => 1,
-                'max_sale_qty'                  => 0,
-                'use_store_config_max_sale_qty' => 1,
-                'notify_qty'                    => 0,
-                'use_store_config_notify_qty'   => 1,
-                'availability'                  => 1,
-                'sold'                          => 0,
-                'allow_backorder'               => 0,
-                'isdefault_variant'             => (!$hasDefault && $createdCount === 0) ? 1 : 0,
-                'is_master'                     => 0,
-                'created_on'                    => $date,
-                'modified_on'                   => $date,
-            ];
-
-            try {
-                $db->insertObject('#__j2commerce_variants', $variantData, 'j2commerce_variant_id');
-                $variantId = (int) $variantData->j2commerce_variant_id;
-
-                $mapping = (object) [
-                    'variant_id'              => $variantId,
-                    'product_optionvalue_ids' => $povIdsCsv,
-                ];
-                $db->insertObject('#__j2commerce_product_variant_optionvalues', $mapping);
-
-                $existingNormalized[] = $povIdsCsv;
-                $createdCount++;
-            } catch (\Exception $e) {
-                $app->enqueueMessage(Text::sprintf('COM_J2COMMERCE_ERROR_CREATING_VARIANT', $variantSku, $e->getMessage()), 'error');
-            }
-        }
-
-        // Report results
-        if ($createdCount > 0) {
-            $app->enqueueMessage(Text::sprintf('COM_J2COMMERCE_VARIANTS_CREATED', $createdCount), 'success');
-        }
-        if ($skippedCount > 0) {
-            $app->enqueueMessage(Text::sprintf('COM_J2COMMERCE_VARIANTS_SKIPPED', $skippedCount), 'notice');
-        }
-
-        $this->setRedirect(Route::_('index.php?option=com_j2commerce&task=product.edit&id=' . $productId, false));
+        return $this;
     }
 
     /** JSON exit for the AJAX tasks. close() is exit(), so the headers flush first. */

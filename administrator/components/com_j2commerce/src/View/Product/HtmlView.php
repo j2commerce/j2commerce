@@ -14,119 +14,21 @@ namespace J2Commerce\Component\J2commerce\Administrator\View\Product;
 
 \defined('_JEXEC') or die;
 
-use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
-use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use Joomla\CMS\Factory;
-use Joomla\CMS\Helper\ContentHelper;
-use Joomla\CMS\Language\Text;
-use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
-use Joomla\CMS\Toolbar\ToolbarHelper;
+use Joomla\CMS\Router\Route;
 
 /**
- * Product edit view class.
- *
- * @since  6.0.3
+ * Products are edited only in their com_content article. A direct view=product request, which
+ * DisplayController renders without passing through ProductController, is sent there too.
  */
 class HtmlView extends BaseHtmlView
 {
-    use AdminAssetsTrait;
-    /**
-     * The Form object
-     *
-     * @var  \Joomla\CMS\Form\Form
-     * @since  6.0.3
-     */
-    protected $form;
-
-    /**
-     * The active item
-     *
-     * @var  object
-     * @since  6.0.3
-     */
-    protected $item;
-
-    /**
-     * The model state
-     *
-     * @var  \Joomla\Registry\Registry
-     * @since  6.0.3
-     */
-    protected $state;
-
-    /**
-     * Display the view
-     *
-     * @param   string  $tpl  The name of the template file to parse
-     *
-     * @return  void
-     *
-     * @since   6.0.3
-     */
     public function display($tpl = null): void
     {
-        if (!J2CommerceHelper::canAccess('j2commerce.viewproducts')) {
-            J2CommerceHelper::denyAccess();
-            return;
-        }
+        $app = Factory::getApplication();
 
-        $this->loadAdminAssets();
-
-        $model = $this->getModel();
-
-        $this->form  = $model->getForm();
-        $this->item  = $model->getItem();
-        $this->state = $model->getState();
-
-        // Check for errors
-        if (\count($errors = $this->get('Errors'))) {
-            throw new GenericDataException(implode("\n", $errors), 500);
-        }
-
-        $this->addToolbar();
-
-        parent::display($tpl);
-    }
-
-    /**
-     * Add the page title and toolbar.
-     *
-     * @return  void
-     *
-     * @since   6.0.3
-     */
-    protected function addToolbar(): void
-    {
-        Factory::getApplication()->getInput()->set('hidemainmenu', true);
-
-        $isNew      = empty($this->item->j2commerce_product_id);
-        $canDo      = ContentHelper::getActions('com_j2commerce');
-        $user       = Factory::getApplication()->getIdentity();
-        $checkedOut = !empty($this->item->checked_out) && (int) $this->item->checked_out !== (int) $user->id;
-        $toolbar    = $this->getDocument()->getToolbar();
-
-        ToolbarHelper::title(
-            $isNew ? Text::_('COM_J2COMMERCE_TOOLBAR_NEW') : Text::_('COM_J2COMMERCE_TOOLBAR_EDIT'),
-            'fa-solid fa-tags'
-        );
-
-        if (!$checkedOut && ($canDo->get('core.edit') || $canDo->get('core.create'))) {
-            $toolbar->apply('product.apply');
-            $toolbar->save('product.save');
-        }
-
-        if (!$checkedOut && $canDo->get('core.create')) {
-            $toolbar->save2new('product.save2new');
-        }
-
-        if (!$isNew && $canDo->get('core.create')) {
-            $toolbar->save2copy('product.save2copy');
-        }
-
-        $toolbar->cancel('product.cancel', $isNew ? 'JTOOLBAR_CANCEL' : 'JTOOLBAR_CLOSE');
-
-        $toolbar->inlinehelp();
-        $toolbar->help(Text::_('COM_J2COMMERCE_PRODUCT'), true, 'https://docs.j2commerce.com/v6/catalog/managing-products/');
+        $app->redirect(Route::_(ProductHelper::getArticleEditRoute($app->getInput()->getInt('id', 0)), false));
     }
 }

@@ -721,6 +721,13 @@ echo "Joomla Root: {$joomlaRoot}\n\n";
 
 passthru('php ' . __DIR__ . '/check_vendors.php --build-check');
 
+// Products are edited only in their article; a link to the standalone product form fails the build.
+passthru('php ' . __DIR__ . '/check_product_edit_links.php', $productEditLinks);
+
+if ($productEditLinks !== 0) {
+    exit(1);
+}
+
 @mkdir($outputDir, 0777, true);
 @mkdir($tempDir, 0777, true);
 

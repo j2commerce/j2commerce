@@ -212,7 +212,7 @@ class CategorywizardController extends BaseController
             $params     = ['subtemplate' => $subtemplate];
             $menuItemId = CategoryWizardHelper::createMenuItem('Shop', $link, $params, $db);
 
-            $editUrl     = 'index.php?option=com_j2commerce&task=products.editProduct&id=' . $productId;
+            $editUrl     = 'index.php?option=com_content&task=article.edit&id=' . $articleId;
             $frontendUrl = '/shop/' . \Joomla\CMS\Application\ApplicationHelper::stringURLSafe($productName);
 
             $responseData = [
