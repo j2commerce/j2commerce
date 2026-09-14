@@ -81,10 +81,16 @@ class DateHelper
      */
     public static function format(mixed $input = 'now', ?string $format = null, ?Language $language = null): string
     {
-        $date = Factory::getDate($input ?: 'now');
+        $date = self::createDate($input ?: 'now', $language);
         $date->setTimezone(self::timezone());
 
         $format = self::resolveFormat($format, $language);
+
+        // A language pack with its own calendar (Jalali, Hijri) overrides calendar() and supplies
+        // its own month and day names; the sentinels below would pair Gregorian names with its days.
+        if ((new \ReflectionMethod($date, 'calendar'))->getDeclaringClass()->getName() !== Date::class) {
+            return $date->calendar($format, true);
+        }
 
         // Same substitution core performs, held one step longer so the names can come from
         // $language: the sentinels go in before formatting and are swapped out after, with
@@ -115,6 +121,23 @@ class DateHelper
     public static function currentYear(?Language $language = null): string
     {
         return self::format('now', 'Y', $language);
+    }
+
+    /**
+     * Factory::getDate() picks the calendar class from the request language; an order email
+     * rendered in the order's own language needs that language's calendar instead.
+     */
+    private static function createDate(mixed $input, ?Language $language): Date
+    {
+        // Not getTag(): it warns and returns null for a pack whose metadata did not load.
+        $tag   = (string) $language?->get('tag', '');
+        $class = $tag !== '' ? str_replace('-', '_', $tag) . 'Date' : '';
+
+        if ($class !== '' && class_exists($class) && is_subclass_of($class, Date::class)) {
+            return new $class($input);
+        }
+
+        return Factory::getDate($input);
     }
 
     private static function translate(string $key, ?Language $language = null): string
