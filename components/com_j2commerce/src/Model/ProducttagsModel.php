@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Site\Model;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\EffectivePriceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\ProductFilterRequestHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\ProductVisibilityHelper;
@@ -501,18 +502,22 @@ class ProducttagsModel extends ListModel
             );
         }
 
-        // Filter by price range (considers advanced/special pricing)
+        // Filter by price range — the price the listing card shows
         $priceFrom = (float) $this->getState('filter.price_from', 0);
         $priceTo   = (float) $this->getState('filter.price_to', 0);
         if ($priceFrom > 0 || $priceTo > 0) {
-            $this->applyPriceRangeFilter($query, $db, $user, $priceFrom, $priceTo);
+            EffectivePriceHelper::filterRange($query, $db, $user, $priceFrom, $priceTo);
         }
 
         // Ordering
         $orderCol = self::filterOrderColumn((string) $this->state->get('list.ordering', 'a.ordering'));
         $orderDir = strtoupper((string) $this->state->get('list.direction', 'ASC')) === 'DESC' ? 'DESC' : 'ASC';
 
-        $query->order($db->quoteName($orderCol) . ' ' . $orderDir);
+        $orderExpr = $orderCol === 'v.price'
+            ? EffectivePriceHelper::expression($query, $db, $user)
+            : $db->quoteName($orderCol);
+
+        $query->order($orderExpr . ' ' . $orderDir);
 
         // Deterministic tie-breaker so rows that share an order value (e.g. products
         // whose article ordering is still 0) keep a stable, predictable sequence.
@@ -648,7 +653,7 @@ class ProducttagsModel extends ListModel
             $this->setState('filter.price_to', $savedPriceTo);
         }
 
-        $effectivePrice = $this->addEffectivePriceJoins($query, $db, $this->getCurrentUser());
+        $effectivePrice = EffectivePriceHelper::expression($query, $db, $this->getCurrentUser());
 
         $query->clear('select')->clear('order')->clear('group')
             ->select(['MIN(' . $effectivePrice . ') AS min_price', 'MAX(' . $effectivePrice . ') AS max_price']);
@@ -726,69 +731,4 @@ class ProducttagsModel extends ListModel
         return array_values(array_filter(array_map('intval', $db->loadColumn() ?: [])));
     }
 
-    /** Adds the child-variant and advanced-pricing joins, returns the effective-price SQL expression. */
-    protected function addEffectivePriceJoins(
-        QueryInterface $query,
-        \Joomla\Database\DatabaseInterface $db,
-        \Joomla\CMS\User\User $user
-    ): string {
-        $now        = Factory::getDate()->toSql();
-        $userGroups = $user->getAuthorisedGroups();
-        $groupList  = !empty($userGroups) ? implode(',', array_map('intval', $userGroups)) : '0';
-
-        // Subquery: min child variant price per product (variable, flexivariable, etc.)
-        $vcSub = $db->getQuery(true)
-            ->select([
-                $db->quoteName('vc.product_id'),
-                'MIN(' . $db->quoteName('vc.price') . ') AS ' . $db->quoteName('min_child_price'),
-            ])
-            ->from($db->quoteName('#__j2commerce_variants', 'vc'))
-            ->where($db->quoteName('vc.is_master') . ' = 0')
-            ->where($db->quoteName('vc.price') . ' > 0')
-            ->group($db->quoteName('vc.product_id'));
-
-        $query->join('LEFT', '(' . $vcSub . ') AS ' . $db->quoteName('vc') . ' ON ' . $db->quoteName('vc.product_id') . ' = ' . $db->quoteName('p.j2commerce_product_id'));
-
-        // Subquery: min advanced/special pricing for the master variant
-        $ppSub = $db->getQuery(true)
-            ->select([
-                $db->quoteName('pp.variant_id'),
-                'MIN(' . $db->quoteName('pp.price') . ') AS ' . $db->quoteName('min_price'),
-            ])
-            ->from($db->quoteName('#__j2commerce_product_prices', 'pp'))
-            ->where('(' . $db->quoteName('pp.quantity_from') . ' IS NULL OR ' . $db->quoteName('pp.quantity_from') . ' <= 1)')
-            ->where('(' . $db->quoteName('pp.quantity_to') . ' IS NULL OR ' . $db->quoteName('pp.quantity_to') . ' = 0 OR ' . $db->quoteName('pp.quantity_to') . ' >= 1)')
-            ->where('(' . $db->quoteName('pp.date_from') . ' IS NULL OR ' . $db->quoteName('pp.date_from') . ' = ' . $db->quote($db->getNullDate()) . ' OR ' . $db->quoteName('pp.date_from') . ' <= ' . $db->quote($now) . ')')
-            ->where('(' . $db->quoteName('pp.date_to') . ' IS NULL OR ' . $db->quoteName('pp.date_to') . ' = ' . $db->quote($db->getNullDate()) . ' OR ' . $db->quoteName('pp.date_to') . ' >= ' . $db->quote($now) . ')')
-            ->where('(' . $db->quoteName('pp.customer_group_id') . ' IS NULL OR ' . $db->quoteName('pp.customer_group_id') . ' IN (' . $groupList . '))')
-            ->group($db->quoteName('pp.variant_id'));
-
-        $query->join('LEFT', '(' . $ppSub . ') AS ' . $db->quoteName('pp') . ' ON ' . $db->quoteName('pp.variant_id') . ' = ' . $db->quoteName('v.j2commerce_variant_id'));
-
-        // Base price: use min child variant price when children exist, otherwise master price.
-        // This handles variable/flexivariable products where master_price=$0.
-        $basePrice = 'COALESCE(' . $db->quoteName('vc.min_child_price') . ', ' . $db->quoteName('v.price') . ')';
-
-        // Effective price: lowest of base price and any active advanced pricing
-        return 'LEAST(' . $basePrice . ', COALESCE(' . $db->quoteName('pp.min_price') . ', ' . $basePrice . '))';
-    }
-
-    protected function applyPriceRangeFilter(
-        QueryInterface $query,
-        \Joomla\Database\DatabaseInterface $db,
-        \Joomla\CMS\User\User $user,
-        float $priceFrom,
-        float $priceTo
-    ): void {
-        $effectivePrice = $this->addEffectivePriceJoins($query, $db, $user);
-
-        if ($priceFrom > 0) {
-            $query->where($effectivePrice . ' >= :price_from')
-                ->bind(':price_from', $priceFrom, ParameterType::STRING);
-        }
-        if ($priceTo > 0) {
-            $query->where($effectivePrice . ' <= :price_to')
-                ->bind(':price_to', $priceTo, ParameterType::STRING);
-        }
-    }
 }

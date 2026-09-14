@@ -4525,15 +4525,7 @@ class ProductHelper
         $db    = self::getDatabase();
         $query = $db->getQuery(true);
 
-        // Use min child variant price for variable/flexi products where master price is $0.
-        // COALESCE(vc.min_child_price, v.price) matches applyPriceRangeFilter logic.
-        $effectivePrice = 'COALESCE(' . $db->quoteName('vc.min_child_price') . ', ' . $db->quoteName('v.price') . ')';
-
-        $query->select([
-                'MIN(' . $effectivePrice . ') AS min_price',
-                'MAX(' . $effectivePrice . ') AS max_price',
-            ])
-            ->from($db->quoteName('#__j2commerce_variants', 'v'))
+        $query->from($db->quoteName('#__j2commerce_variants', 'v'))
             ->join(
                 'INNER',
                 $db->quoteName('#__j2commerce_products', 'p') . ' ON ' .
@@ -4543,18 +4535,16 @@ class ProductHelper
             ->where($db->quoteName('p.enabled') . ' = 1')
             ->where($db->quoteName('p.visibility') . ' = 1');
 
-        // Subquery: min child variant price per product
-        $vcSub = $db->getQuery(true)
-            ->select([
-                $db->quoteName('vc.product_id'),
-                'MIN(' . $db->quoteName('vc.price') . ') AS ' . $db->quoteName('min_child_price'),
-            ])
-            ->from($db->quoteName('#__j2commerce_variants', 'vc'))
-            ->where($db->quoteName('vc.is_master') . ' = 0')
-            ->where($db->quoteName('vc.price') . ' > 0')
-            ->group($db->quoteName('vc.product_id'));
+        $effectivePrice = EffectivePriceHelper::expression(
+            $query,
+            $db,
+            Factory::getApplication()->getIdentity() ?? new \Joomla\CMS\User\User()
+        );
 
-        $query->join('LEFT', '(' . $vcSub . ') AS ' . $db->quoteName('vc') . ' ON ' . $db->quoteName('vc.product_id') . ' = ' . $db->quoteName('p.j2commerce_product_id'));
+        $query->select([
+            'MIN(' . $effectivePrice . ') AS min_price',
+            'MAX(' . $effectivePrice . ') AS max_price',
+        ]);
 
         // Filter by category if provided
         if (!empty($catids)) {

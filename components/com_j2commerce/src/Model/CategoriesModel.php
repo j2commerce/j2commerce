@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Site\Model;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\EffectivePriceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\ProductVisibilityHelper;
 use Joomla\CMS\Categories\Categories;
@@ -531,7 +532,11 @@ class CategoriesModel extends BaseDatabaseModel
             $orderMapping = 'a.ordering';
         }
 
-        $query->order($db->quoteName($orderMapping) . ' ' . $orderDirection);
+        $orderExpr = $orderMapping === 'v.price'
+            ? EffectivePriceHelper::expression($query, $db, $user)
+            : $db->quoteName($orderMapping);
+
+        $query->order($orderExpr . ' ' . $orderDirection);
 
         $db->setQuery($query);
         $items = $db->loadObjectList();
