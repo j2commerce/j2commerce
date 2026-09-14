@@ -76,6 +76,7 @@ final class AppBootstrap5 extends CMSPlugin implements SubscriberInterface
             'onJ2CommerceViewProductHtml'           => 'onViewProductHtml',
             'onJ2CommerceViewProductTagHtml'        => 'onViewProductTagHtml',
             'onJ2CommerceViewCategoryListHtml'      => 'onViewCategoryListHtml',
+            'onJ2CommerceViewTagsListHtml'          => 'onViewTagsListHtml',
             'onJ2CommerceRenderAjaxProductListGrid' => 'onRenderAjaxProductListGrid',
             'onJ2CommerceAfterAddCSS'               => 'onAfterAddCSS',
             'onJ2CommerceAfterAddJS'                => 'onAfterAddJS',
@@ -171,6 +172,10 @@ final class AppBootstrap5 extends CMSPlugin implements SubscriberInterface
         $folders[] = [
             'name'     => 'categories_bootstrap5',
             'contexts' => ['categories'],
+        ];
+        $folders[] = [
+            'name'     => 'tags_bootstrap5',
+            'contexts' => ['tags'],
         ];
 
         $event->setArgument('folders', $folders);
@@ -310,6 +315,44 @@ final class AppBootstrap5 extends CMSPlugin implements SubscriberInterface
 
         try {
             $view   = $this->setTemplatePath($view, 'categories_bootstrap5');
+            $result = $view->loadTemplate();
+
+            if ($result instanceof \Exception) {
+                Log::add($result->getMessage(), Log::ERROR, 'com_j2commerce');
+                Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_ERR_GENERIC'), 'error');
+                return;
+            }
+
+            $event->addResult((string) $result);
+        } catch (\Exception $e) {
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_ERR_GENERIC'), 'error');
+        } finally {
+            ProductLayoutService::clearSubtemplateOverride();
+        }
+    }
+
+    public function onViewTagsListHtml($event)
+    {
+        if ($event instanceof EventInterface || $event instanceof Event) {
+            $args  = $event->getArguments();
+            $view  = $args[1] ?? null;
+            $model = $args[2] ?? null;
+        } else {
+            return;
+        }
+
+        if (!$this->shouldHandleTemplate($view, 'bootstrap5', 'tags_bootstrap5')
+            && !$this->shouldHandleTemplate($view, 'tag_bootstrap5')) {
+            return;
+        }
+
+        $this->loadSiteAssets();
+
+        ProductLayoutService::setSubtemplateOverride('bootstrap5');
+
+        try {
+            $view   = $this->setTemplatePath($view, 'tags_bootstrap5');
             $result = $view->loadTemplate();
 
             if ($result instanceof \Exception) {

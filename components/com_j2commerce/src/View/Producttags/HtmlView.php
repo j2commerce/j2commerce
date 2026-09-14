@@ -17,6 +17,7 @@ namespace J2Commerce\Component\J2commerce\Site\View\Producttags;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\ProductFilterRequestHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
+use J2Commerce\Component\J2commerce\Site\Helper\TagTreeHelper;
 use J2Commerce\Component\J2commerce\Site\View\CustomSubtemplateTrait;
 use Joomla\CMS\Categories\CategoryNode;
 use Joomla\CMS\Factory;
@@ -156,6 +157,9 @@ class HtmlView extends BaseHtmlView
      */
     public string $tag_match = 'any';
 
+    /** The tag being listed under a Product Tags View menu item; null for a Product Tag List View. */
+    public ?object $tag = null;
+
     /**
      * Display the view.
      *
@@ -172,6 +176,11 @@ class HtmlView extends BaseHtmlView
 
         // Get menu item parameters
         $this->params        = $app->getParams();
+        $this->tag           = $model->getTag();
+
+        if ($model->getState('filter.tag_context') === 0) {
+            throw new \Exception(Text::_('JERROR_PAGE_NOT_FOUND'), 404);
+        }
 
         // Load data from model
         $this->state         = $model->getState();
@@ -193,10 +202,12 @@ class HtmlView extends BaseHtmlView
         RouteHelper::applyListingPaginationRoute(
             $this->pagination,
             'producttags',
-            [
-                'tag_ids'   => $this->tag_ids ?: null,
-                'tag_match' => $this->tag_ids ? $this->tag_match : null,
-            ]
+            $this->tag
+                ? ['id' => $this->tag->id]
+                : [
+                    'tag_ids'   => $this->tag_ids ?: null,
+                    'tag_match' => $this->tag_ids ? $this->tag_match : null,
+                ]
         );
 
         // Check for errors
@@ -254,22 +265,33 @@ class HtmlView extends BaseHtmlView
         $app  = Factory::getApplication();
         $menu = $app->getMenu()->getActive();
 
-        // Set page heading from menu item or default
-        if ($menu) {
+        // Set page heading from the listed tag, the menu item or default
+        if ($this->tag) {
+            $this->params->set('page_heading', $this->tag->title);
+
+            foreach (TagTreeHelper::pathBelow((int) ($menu->query['id'] ?? 0) ?: TagTreeHelper::ROOT_ID, $this->tag->id) ?? [] as $pathTag) {
+                $app->getPathway()->addItem(
+                    $pathTag->title,
+                    $pathTag->id === $this->tag->id ? '' : Route::_(RouteHelper::getTagRouteInContext($pathTag->id, $menu))
+                );
+            }
+        } elseif ($menu) {
             $this->params->def('page_heading', $this->params->get('page_title', $menu->title));
         } else {
             $this->params->def('page_heading', Text::_('COM_J2COMMERCE_PRODUCTTAGS_VIEW_DEFAULT_TITLE'));
         }
 
         // Set document title
-        $title = $this->params->get('page_title', '');
+        $title = $this->tag ? $this->tag->title : $this->params->get('page_title', '');
         // setDocumentTitle() applies sitename_pagetitles itself, and falls back to
         // the site name on an empty title. Doing it here as well appended the brand
         // a second time.
         $this->setDocumentTitle($title);
 
         // Set meta description
-        if ($this->params->get('menu-meta_description')) {
+        if ($this->tag && $this->tag->metadesc !== '') {
+            $this->getDocument()->setDescription($this->tag->metadesc);
+        } elseif ($this->params->get('menu-meta_description')) {
             $this->getDocument()->setDescription($this->params->get('menu-meta_description'));
         }
 
@@ -304,7 +326,9 @@ class HtmlView extends BaseHtmlView
             $tagId  = !empty($tagIds) ? (int) reset($tagIds) : 0;
         }
 
-        $canonicalRoute = RouteHelper::getProductTagsRoute($tagId > 0 ? $tagId : null);
+        $canonicalRoute = $this->tag
+            ? RouteHelper::getTagRoute($this->tag->id)
+            : RouteHelper::getProductTagsRoute($tagId > 0 ? $tagId : null);
 
         if (!$this->isListingVariant()) {
             $limitstart = (int) $this->state->get('list.start', 0);

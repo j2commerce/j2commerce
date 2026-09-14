@@ -57,7 +57,7 @@ class PluginsubtemplateField extends ListField
         foreach ($event->getArgument('folders', []) as $entry) {
             $name = \is_string($entry) ? $entry : ($entry['name'] ?? '');
 
-            if ($name !== '' && !str_starts_with($name, 'tag_') && !str_starts_with($name, 'categories_')) {
+            if ($name !== '' && !str_starts_with($name, 'tag_') && !str_starts_with($name, 'tags_') && !str_starts_with($name, 'categories_')) {
                 $folders[$name] = true;
             }
         }

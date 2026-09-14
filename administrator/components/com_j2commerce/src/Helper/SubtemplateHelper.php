@@ -36,10 +36,10 @@ final class SubtemplateHelper
 
     /**
      * View-scope prefixes a subtemplate name may carry. A menu item selects one variant of a
-     * subtemplate per view (`tag_uikit`, `categories_bootstrap5`), and all of them belong to
+     * subtemplate per view (`tag_uikit`, `tags_uikit`, `categories_bootstrap5`), and all of them belong to
      * the same owning app plugin.
      */
-    private const SCOPE_PREFIXES = '/^(categories_tag_|categories_|tag_)/';
+    private const SCOPE_PREFIXES = '/^(categories_tag_|categories_|tags_|tag_)/';
 
     /**
      * The subtemplate this request renders in, sanitised but with its view scope intact.

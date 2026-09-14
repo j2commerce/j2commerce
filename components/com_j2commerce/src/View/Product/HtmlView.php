@@ -17,6 +17,7 @@ namespace J2Commerce\Component\J2commerce\Site\View\Product;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
+use J2Commerce\Component\J2commerce\Site\Helper\TagTreeHelper;
 use J2Commerce\Component\J2commerce\Site\View\CustomSubtemplateTrait;
 use Joomla\CMS\Categories\Categories;
 use Joomla\CMS\Factory;
@@ -196,6 +197,16 @@ class HtmlView extends BaseHtmlView
      */
     protected function setBackLink(): void
     {
+        $tagPath = $this->getTagContextPath();
+
+        if ($tagPath) {
+            $tag                   = end($tagPath);
+            $this->back_link       = Route::_(RouteHelper::getTagRouteInContext($tag->id), false);
+            $this->back_link_title = $tag->title;
+
+            return;
+        }
+
         $catid = (int) ($this->item->source->catid ?? 0);
 
         if (!$catid) {
@@ -211,6 +222,25 @@ class HtmlView extends BaseHtmlView
         // Raw URL: the five templates that render this all escape it themselves.
         $this->back_link       = Route::_(RouteHelper::getCategoryRouteInContext($catid), false);
         $this->back_link_title = $category->title;
+    }
+
+    /**
+     * The tags from the active Product Tags View's root down to the tag this product was reached
+     * under, or empty outside one.
+     *
+     * @return object[]
+     */
+    private function getTagContextPath(): array
+    {
+        $app   = Factory::getApplication();
+        $menu  = $app->getMenu()->getActive();
+        $tagId = $app->getInput()->getInt('tagid', 0);
+
+        if (!$menu || ($menu->query['view'] ?? '') !== 'tags' || !TagTreeHelper::isViewable($tagId, $this->getCurrentUser()->getAuthorisedViewLevels())) {
+            return [];
+        }
+
+        return TagTreeHelper::pathBelow(max((int) ($menu->query['id'] ?? 0), TagTreeHelper::ROOT_ID), $tagId) ?? [];
     }
 
     /**
@@ -267,9 +297,18 @@ class HtmlView extends BaseHtmlView
             $path = [];
 
             // Get category ID from article source
-            $catid = ($articleData && !empty($articleData->catid)) ? (int) $articleData->catid : null;
+            $catid   = ($articleData && !empty($articleData->catid)) ? (int) $articleData->catid : null;
+            $tagPath = $this->getTagContextPath();
 
-            if ($catid) {
+            if ($tagPath) {
+                // Reached through a Product Tags View: the tag path replaces the category path
+                foreach ($tagPath as $tag) {
+                    $path[] = [
+                        'title' => $tag->title,
+                        'link'  => Route::_(RouteHelper::getTagRouteInContext($tag->id, $menu)),
+                    ];
+                }
+            } elseif ($catid) {
                 // Build category path using Joomla's Categories API
                 $categories = \Joomla\CMS\Categories\Categories::getInstance('Content');
                 $category   = $categories->get($catid);

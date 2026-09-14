@@ -24,6 +24,15 @@ use Joomla\CMS\Language\Text;
             </div>
         <?php endif; ?>
 
+        <?php if ($this->tag && $this->params->get('show_tag_title', 1)) : ?>
+            <?php $tagHeading = $this->params->get('show_page_heading') ? 'h2' : 'h1'; ?>
+            <<?php echo $tagHeading; ?> class="j2commerce-tag-title"><?php echo $this->escape($this->tag->title); ?></<?php echo $tagHeading; ?>>
+        <?php endif; ?>
+
+        <?php if ($this->tag && $this->tag->description && $this->params->get('show_tag_listing_description', 0) && $this->params->get('tag_description_placement', 'above') === 'above') : ?>
+            <div class="j2commerce-tag-description"><?php echo $this->tag->description; ?></div>
+        <?php endif; ?>
+
         <?php echo J2CommerceHelper::modules()->loadposition('j2commerce-products-top'); ?>
 
         <?php if (isset($this->sublayout) && !empty($this->sublayout)) : ?>
@@ -53,6 +62,10 @@ use Joomla\CMS\Language\Text;
         <?php endif; ?>
 
         <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterProductListDisplay', [&$result, &$this, &$this->items])->getArgument('html'); ?>
+
+        <?php if ($this->tag && $this->tag->description && $this->params->get('show_tag_listing_description', 0) && $this->params->get('tag_description_placement', 'above') === 'below') : ?>
+            <div class="j2commerce-tag-description"><?php echo $this->tag->description; ?></div>
+        <?php endif; ?>
 
         <?php echo J2CommerceHelper::modules()->loadposition('j2commerce-products-bottom'); ?>
     </div>

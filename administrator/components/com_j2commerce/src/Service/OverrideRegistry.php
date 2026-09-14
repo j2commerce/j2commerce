@@ -26,6 +26,7 @@ final class OverrideRegistry
     public const GROUP_LIST_LAYOUTS         = 'list_layouts';
     public const GROUP_TAG_LAYOUTS          = 'tag_layouts';
     public const GROUP_CATEGORIES_TEMPLATES = 'categories_templates';
+    public const GROUP_TAGS_TEMPLATES       = 'tags_templates';
     public const GROUP_LIST_VIEW_TEMPLATES  = 'list_view_templates';
     public const GROUP_TAG_VIEW_TEMPLATES   = 'tag_view_templates';
     public const GROUP_PRODUCT_DETAIL       = 'product_detail';
@@ -36,6 +37,7 @@ final class OverrideRegistry
     public const CONTEXT_LIST       = 'list';
     public const CONTEXT_TAG        = 'tag';
     public const CONTEXT_CATEGORIES = 'categories';
+    public const CONTEXT_TAGS       = 'tags';
 
     private static array $subtemplateCache = [];
 
@@ -62,6 +64,10 @@ final class OverrideRegistry
             self::GROUP_CATEGORIES_TEMPLATES => [
                 'label'       => 'COM_J2COMMERCE_OVERRIDE_GROUP_CATEGORIES',
                 'description' => 'COM_J2COMMERCE_OVERRIDE_GROUP_CATEGORIES_DESC',
+            ],
+            self::GROUP_TAGS_TEMPLATES => [
+                'label'       => 'COM_J2COMMERCE_OVERRIDE_GROUP_TAGS',
+                'description' => 'COM_J2COMMERCE_OVERRIDE_GROUP_TAGS_DESC',
             ],
             self::GROUP_LIST_VIEW_TEMPLATES => [
                 'label'       => 'COM_J2COMMERCE_OVERRIDE_GROUP_LIST_VIEW',
@@ -324,9 +330,10 @@ final class OverrideRegistry
 
             foreach (self::getTmplFolders($sub['element']) as $folderName => $context) {
                 $viewContexts = match ($context) {
-                    self::CONTEXT_LIST       => ['products', 'product', 'producttags', 'categories'],
+                    self::CONTEXT_LIST       => ['products', 'product', 'producttags', 'categories', 'tags'],
                     self::CONTEXT_TAG        => ['producttags'],
                     self::CONTEXT_CATEGORIES => ['categories'],
+                    self::CONTEXT_TAGS       => ['tags'],
                     default                  => [],
                 };
 
@@ -352,16 +359,19 @@ final class OverrideRegistry
                 'bootstrap5'            => self::CONTEXT_LIST,
                 'tag_bootstrap5'        => self::CONTEXT_TAG,
                 'categories_bootstrap5' => self::CONTEXT_CATEGORIES,
+                'tags_bootstrap5'       => self::CONTEXT_TAGS,
             ],
             'app_uikit' => [
                 'uikit'            => self::CONTEXT_LIST,
                 'tag_uikit'        => self::CONTEXT_TAG,
                 'categories_uikit' => self::CONTEXT_CATEGORIES,
+                'tags_uikit'       => self::CONTEXT_TAGS,
             ],
             default => [
                 str_replace('app_', '', $pluginElement)                 => self::CONTEXT_LIST,
                 'tag_' . str_replace('app_', '', $pluginElement)        => self::CONTEXT_TAG,
                 'categories_' . str_replace('app_', '', $pluginElement) => self::CONTEXT_CATEGORIES,
+                'tags_' . str_replace('app_', '', $pluginElement)       => self::CONTEXT_TAGS,
             ],
         };
     }
@@ -396,6 +406,7 @@ final class OverrideRegistry
             self::GROUP_LIST_LAYOUTS         => [],
             self::GROUP_TAG_LAYOUTS          => [],
             self::GROUP_CATEGORIES_TEMPLATES => [],
+            self::GROUP_TAGS_TEMPLATES       => [],
             self::GROUP_LIST_VIEW_TEMPLATES  => [],
             self::GROUP_TAG_VIEW_TEMPLATES   => [],
             self::GROUP_PRODUCT_DETAIL       => [],
@@ -432,6 +443,8 @@ final class OverrideRegistry
                     $groups[self::GROUP_TAG_VIEW_TEMPLATES][] = $file;
                 } elseif ($context === self::CONTEXT_CATEGORIES) {
                     $groups[self::GROUP_CATEGORIES_TEMPLATES][] = $file;
+                } elseif ($context === self::CONTEXT_TAGS) {
+                    $groups[self::GROUP_TAGS_TEMPLATES][] = $file;
                 } else {
                     $groups[self::GROUP_LIST_VIEW_TEMPLATES][] = $file;
                 }

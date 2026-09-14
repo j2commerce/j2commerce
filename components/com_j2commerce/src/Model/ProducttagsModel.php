@@ -17,6 +17,7 @@ namespace J2Commerce\Component\J2commerce\Site\Model;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\ProductFilterRequestHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\ProductVisibilityHelper;
+use J2Commerce\Component\J2commerce\Site\Helper\TagTreeHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Multilanguage;
 use Joomla\CMS\MVC\Model\ListModel;
@@ -109,11 +110,23 @@ class ProducttagsModel extends ListModel
         }
 
         $tagIds = array_filter(array_unique($tagIds));
+
+        // Under a Product Tags View menu item the request names one tag of the menu's subtree.
+        // A tag outside it resolves to 0, and [0] matches nothing rather than every product.
+        $tagContextId = $this->resolveTagsMenuTag($menu, $input->getInt('id', 0));
+        $this->setState('filter.tag_context', $tagContextId);
+
+        if ($tagContextId !== null) {
+            $tagIds = $tagContextId > 0
+                ? [$tagContextId, ...TagTreeHelper::descendantIds($tagContextId, (int) $params->get('show_child_tag_content', 3))]
+                : [0];
+        }
+
         $this->setState('filter.tag_ids', $tagIds);
 
         // Tag match mode: 'any' or 'all' (from request field)
         $tagMatch = 'any';
-        if ($menu && isset($menu->query['tag_match'])) {
+        if ($tagContextId === null && $menu && isset($menu->query['tag_match'])) {
             $tagMatch = $menu->query['tag_match'] === 'all' ? 'all' : 'any';
         }
         $this->setState('filter.tag_match', $tagMatch);
@@ -230,6 +243,25 @@ class ProducttagsModel extends ListModel
 
         // Language filter
         $this->setState('filter.language', Multilanguage::isEnabled());
+    }
+
+    /**
+     * The tag a Product Tags View menu item is listing: null when the menu item is not one,
+     * 0 when the requested tag is not a viewable tag inside the menu item's subtree.
+     */
+    private function resolveTagsMenuTag(?object $menu, int $tagId): ?int
+    {
+        if (!$menu || $menu->component !== 'com_j2commerce' || ($menu->query['view'] ?? '') !== 'tags') {
+            return null;
+        }
+
+        $rootId = (int) ($menu->query['id'] ?? 0) ?: TagTreeHelper::ROOT_ID;
+
+        return $tagId > TagTreeHelper::ROOT_ID
+            && TagTreeHelper::isWithin($tagId, $rootId)
+            && TagTreeHelper::isViewable($tagId, $this->getCurrentUser()->getAuthorisedViewLevels())
+            ? $tagId
+            : 0;
     }
 
     /**
@@ -541,6 +573,12 @@ class ProducttagsModel extends ListModel
     public function getParent(): ?object
     {
         return null;
+    }
+
+    /** The tag being listed under a Product Tags View menu item, or null outside one. */
+    public function getTag(): ?object
+    {
+        return TagTreeHelper::get((int) $this->getState('filter.tag_context', 0));
     }
 
     /**

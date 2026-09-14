@@ -49,7 +49,7 @@ class ConfigsubtemplateField extends ListField
             }
 
             // Skip view-specific subtemplates — only show primary themes
-            if (str_starts_with($name, 'tag_') || str_starts_with($name, 'categories_')) {
+            if (str_starts_with($name, 'tag_') || str_starts_with($name, 'tags_') || str_starts_with($name, 'categories_')) {
                 continue;
             }
 

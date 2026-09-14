@@ -1689,7 +1689,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         $views = [
             'categories', 'category', 'products', 'product', 'producttags',
             'dashboard', 'carts', 'checkout', 'myprofile', 'confirmation',
-            'paymentupdate', 'categoryalias',
+            'paymentupdate', 'categoryalias', 'tags', 'tagalias',
         ];
 
         try {

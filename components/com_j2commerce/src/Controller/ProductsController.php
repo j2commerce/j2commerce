@@ -444,7 +444,13 @@ class ProductsController extends AdminProductsController
     ): string {
         // Built inside the AJAX filter request, so without this the links carry this
         // request's own task/format and address the JSON endpoint rather than a page.
-        if (!empty($tagIds)) {
+        $app      = Factory::getApplication();
+        $menuView = $app->getMenu()->getItem($app->getInput()->getInt('Itemid', 0))->query['view'] ?? '';
+
+        if (!empty($tagIds) && $menuView === 'tags') {
+            // A Product Tags View listing sends its own tag first, ahead of the child tags it includes.
+            RouteHelper::applyListingPaginationRoute($pagination, 'producttags', ['id' => (int) reset($tagIds)]);
+        } elseif (!empty($tagIds)) {
             RouteHelper::applyListingPaginationRoute($pagination, 'producttags', [
                 'tag_ids'   => $tagIds,
                 'tag_match' => $tagMatch === 'all' ? 'all' : 'any',

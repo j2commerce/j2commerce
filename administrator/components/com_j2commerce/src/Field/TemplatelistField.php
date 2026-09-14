@@ -104,6 +104,12 @@ class TemplatelistField extends ListField
                     $subtemplates,
                     static fn (array $entry): bool => str_starts_with($entry['name'], 'categories_')
                 );
+            } elseif ($viewContext === 'tags') {
+                // Only show tags_* templates
+                $subtemplates = array_filter(
+                    $subtemplates,
+                    static fn (array $entry): bool => str_starts_with($entry['name'], 'tags_')
+                );
             } elseif ($viewContext === 'producttags') {
                 // Only show tag_* templates
                 $subtemplates = array_filter(
@@ -111,10 +117,12 @@ class TemplatelistField extends ListField
                     static fn (array $entry): bool => str_starts_with($entry['name'], 'tag_')
                 );
             } elseif ($viewContext === 'products') {
-                // Filter out categories_* and tag_* folders (not product list subtemplates)
+                // Filter out categories_*, tags_* and tag_* folders (not product list subtemplates)
                 $subtemplates = array_filter(
                     $subtemplates,
-                    static fn (array $entry): bool => !str_starts_with($entry['name'], 'categories_') && !str_starts_with($entry['name'], 'tag_')
+                    static fn (array $entry): bool => !str_starts_with($entry['name'], 'categories_')
+                        && !str_starts_with($entry['name'], 'tags_')
+                        && !str_starts_with($entry['name'], 'tag_')
                 );
             }
         }
@@ -127,6 +135,8 @@ class TemplatelistField extends ListField
             if ($stripPrefix) {
                 if ($viewContext === 'categories' && str_starts_with($name, 'categories_')) {
                     $label = substr($name, \strlen('categories_'));
+                } elseif ($viewContext === 'tags' && str_starts_with($name, 'tags_')) {
+                    $label = substr($name, \strlen('tags_'));
                 } elseif ($viewContext === 'producttags' && str_starts_with($name, 'tag_')) {
                     $label = substr($name, \strlen('tag_'));
                 }
@@ -164,6 +174,7 @@ class TemplatelistField extends ListField
             $contexts[] = 'products';
             $contexts[] = 'producttags';
             $contexts[] = 'categories';
+            $contexts[] = 'tags';
         }
         if (is_file($dirPath . '/view.php')) {
             $contexts[] = 'product';

@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Site\Helper;
 
 \defined('_JEXEC') or die;
 
+use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Multilanguage;
 use Joomla\CMS\Pagination\Pagination;
 
@@ -252,6 +253,53 @@ abstract class RouteHelper
             $link .= '&id=' . $tagId;
         }
 
+        if (!empty($language) && $language !== '*' && Multilanguage::isEnabled()) {
+            $link .= '&lang=' . $language;
+        }
+
+        return $link;
+    }
+
+    /** The Product Tags View landing for a parent tag; null means the menu item's own parent. */
+    public static function getTagsRoute(?int $parentId = null, ?string $language = null): string
+    {
+        $link = 'index.php?option=com_j2commerce&view=tags';
+
+        if ($parentId) {
+            $link .= '&id=' . $parentId;
+        }
+
+        return self::appendLanguage($link, $language);
+    }
+
+    /**
+     * One tag's product listing. The router places it under the Product Tags View menu item
+     * that roots the tag, or under a Product Tag List View item for that tag when none does.
+     */
+    public static function getTagRoute(int $tagId, ?string $language = null): string
+    {
+        return self::appendLanguage('index.php?option=com_j2commerce&view=producttags&id=' . $tagId, $language);
+    }
+
+    /** Like getTagRoute(), but stays inside the active Product Tags View menu item when it roots the tag. */
+    public static function getTagRouteInContext(int $tagId, ?object $activeMenu = null, ?string $language = null): string
+    {
+        $activeMenu ??= Factory::getApplication()->getMenu()->getActive();
+        $link         = self::getTagRoute($tagId, $language);
+
+        if ($activeMenu && $activeMenu->component === 'com_j2commerce' && ($activeMenu->query['view'] ?? '') === 'tags') {
+            $rootId = (int) ($activeMenu->query['id'] ?? 0) ?: TagTreeHelper::ROOT_ID;
+
+            if (TagTreeHelper::isWithin($tagId, $rootId)) {
+                $link .= '&Itemid=' . (int) $activeMenu->id;
+            }
+        }
+
+        return $link;
+    }
+
+    private static function appendLanguage(string $link, ?string $language): string
+    {
         if (!empty($language) && $language !== '*' && Multilanguage::isEnabled()) {
             $link .= '&lang=' . $language;
         }

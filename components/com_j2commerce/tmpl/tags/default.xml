@@ -1,0 +1,1261 @@
+<?xml version="1.0" encoding="utf-8"?>
+<metadata>
+	<layout title="COM_J2COMMERCE_TAGS_VIEW_DEFAULT_TITLE"
+			option="COM_J2COMMERCE_TAGS_VIEW_DEFAULT_OPTION">
+		<message>
+			<![CDATA[COM_J2COMMERCE_TAGS_VIEW_DEFAULT_DESC]]>
+		</message>
+	</layout>
+
+	<!-- Request fields for the layout -->
+	<fields name="request">
+		<fieldset name="request"
+			addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field">
+			<field
+				name="id"
+				type="tag"
+				label="COM_J2COMMERCE_TAGS_PARENT_LABEL"
+				description="COM_J2COMMERCE_TAGS_PARENT_DESC"
+				mode="nested"
+				multiple="false"
+				custom="deny"
+				published="1"
+				default=""
+			>
+				<option value="">COM_J2COMMERCE_TAGS_PARENT_ROOT</option>
+			</field>
+		</fieldset>
+	</fields>
+
+	<!-- Parameter fields for the layout -->
+	<fields name="params">
+
+		<!-- Common Settings -->
+		<fieldset name="common" label="COM_J2COMMERCE_PRODUCT_LIST_COMMON" addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field">
+			<field
+				name="orderby_sec"
+				type="list"
+				label="COM_J2COMMERCE_PRODUCT_LIST_ORDERING"
+				description="COM_J2COMMERCE_PRODUCT_LIST_ORDERING_DESC"
+				useglobal="true"
+				validate="options"
+			>
+				<option value="featured">COM_J2COMMERCE_PRODUCT_LIST_ORDERING_FEATURED</option>
+				<option value="date">COM_J2COMMERCE_PRODUCT_LIST_ORDERING_DATE</option>
+				<option value="title">COM_J2COMMERCE_PRODUCT_LIST_ORDERING_TITLE</option>
+				<option value="author">COM_J2COMMERCE_PRODUCT_LIST_ORDERING_AUTHOR</option>
+				<option value="hits">COM_J2COMMERCE_PRODUCT_LIST_ORDERING_HITS</option>
+				<option value="price">COM_J2COMMERCE_PRODUCT_LIST_ORDERING_PRICE</option>
+				<option value="popular">COM_J2COMMERCE_PRODUCT_LIST_ORDERING_POPULAR</option>
+				<option value="order">COM_J2COMMERCE_PRODUCT_LIST_ORDERING_ORDER</option>
+				<option value="cat_order">COM_J2COMMERCE_PRODUCT_LIST_ORDERING_CATEGORY</option>
+			</field>
+
+			<field
+				name="list_order_direction"
+				type="list"
+				label="COM_J2COMMERCE_PRODUCT_LIST_DIRECTION"
+				description="COM_J2COMMERCE_PRODUCT_LIST_DIRECTION_DESC"
+				default="ASC"
+			>
+				<option value="ASC">JGLOBAL_ORDER_ASCENDING</option>
+				<option value="DESC">JGLOBAL_ORDER_DESCENDING</option>
+			</field>
+
+			<field
+				name="category_order_direction"
+				type="list"
+				label="COM_J2COMMERCE_PRODUCT_LIST_CATEGORY_DIRECTION"
+				description="COM_J2COMMERCE_PRODUCT_LIST_CATEGORY_DIRECTION_DESC"
+				default="ASC"
+				showon="orderby_sec:cat_order"
+			>
+				<option value="ASC">JGLOBAL_ORDER_ASCENDING</option>
+				<option value="DESC">JGLOBAL_ORDER_DESCENDING</option>
+			</field>
+
+			<field
+				name="order_date"
+				type="list"
+				label="JGLOBAL_ORDERING_DATE_LABEL"
+				description="JGLOBAL_ORDERING_DATE_DESC"
+				useglobal="true"
+				validate="options"
+				showon="orderby_sec:date"
+			>
+				<option value="created">JGLOBAL_CREATED</option>
+				<option value="modified">JGLOBAL_MODIFIED</option>
+				<option value="published">JPUBLISHED</option>
+			</field>
+
+			<field
+				name="addtocart_button_class"
+				type="text"
+				label="COM_J2COMMERCE_PRODUCT_LIST_ADDTOCART_CLASS"
+				description="COM_J2COMMERCE_PRODUCT_LIST_ADDTOCART_CLASS_DESC"
+			/>
+
+			<field
+				name="choosebtn_class"
+				type="text"
+				label="COM_J2COMMERCE_PRODUCT_LIST_CHOOSEBTN_CLASS"
+				description="COM_J2COMMERCE_PRODUCT_LIST_CHOOSEBTN_CLASS_DESC"
+			/>
+
+			<field
+				name="show_qty_field"
+				type="radio"
+				label="COM_J2COMMERCE_PRODUCT_LIST_SHOW_QTY_FIELD"
+				description="COM_J2COMMERCE_PRODUCT_LIST_SHOW_QTY_FIELD_DESC"
+				default="1"
+				layout="joomla.form.field.radio.switcher"
+				filter="integer"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+
+			<field
+				name="product_option_price"
+				type="radio"
+				label="COM_J2COMMERCE_PRODUCT_LIST_OPTION_PRICE"
+				description="COM_J2COMMERCE_PRODUCT_LIST_OPTION_PRICE_DESC"
+				default="1"
+				layout="joomla.form.field.radio.switcher"
+				filter="integer"
+			>
+				<option value="0">JHIDE</option>
+				<option value="1">JSHOW</option>
+			</field>
+
+			<field
+				name="product_option_price_prefix"
+				type="radio"
+				label="COM_J2COMMERCE_PRODUCT_LIST_OPTION_PRICE_PREFIX"
+				description="COM_J2COMMERCE_PRODUCT_LIST_OPTION_PRICE_PREFIX_DESC"
+				default="1"
+				layout="joomla.form.field.radio.switcher"
+				filter="integer"
+			>
+				<option value="0">JHIDE</option>
+				<option value="1">JSHOW</option>
+			</field>
+
+			<field
+				name="image_for_product_options"
+				type="radio"
+				label="COM_J2COMMERCE_PRODUCT_LIST_OPTION_IMAGE"
+				description="COM_J2COMMERCE_PRODUCT_LIST_OPTION_IMAGE_DESC"
+				default="0"
+				layout="joomla.form.field.radio.switcher"
+				filter="integer"
+			>
+				<option value="0">JHIDE</option>
+				<option value="1">JSHOW</option>
+			</field>
+
+
+			<field
+				name="custom_css"
+				type="textarea"
+				label="COM_J2COMMERCE_PRODUCT_LIST_CUSTOM_CSS"
+				description="COM_J2COMMERCE_PRODUCT_LIST_CUSTOM_CSS_DESC"
+				rows="10"
+				cols="10"
+				filter="safehtml"
+			/>
+		</fieldset>
+
+        <!-- Tags Display Settings -->
+        <fieldset name="tags" label="COM_J2COMMERCE_TAGS_DISPLAY" addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field">
+            <field
+                name="tagstemplate"
+                type="Templatelist"
+                label="COM_J2COMMERCE_TAGS_SUBTEMPLATE"
+                description="COM_J2COMMERCE_TAGS_SUBTEMPLATE_DESC"
+                view_context="tags"
+                strip_prefix="true"
+            />
+
+            <field
+                name="show_tag_root_title"
+                type="radio"
+                label="COM_J2COMMERCE_SHOW_TAG_TITLE"
+                description="COM_J2COMMERCE_SHOW_TAG_ROOT_TITLE_DESC"
+                default="1"
+                layout="joomla.form.field.radio.switcher"
+                filter="integer"
+            >
+                <option value="0">JHIDE</option>
+                <option value="1">JSHOW</option>
+            </field>
+
+            <field
+                name="show_child_tags"
+                type="radio"
+                label="COM_J2COMMERCE_SHOW_CHILD_TAGS"
+                description="COM_J2COMMERCE_SHOW_CHILD_TAGS_DESC"
+                default="1"
+                layout="joomla.form.field.radio.switcher"
+                filter="integer"
+            >
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
+
+            <field
+                name="child_tag_levels"
+                type="number"
+                label="COM_J2COMMERCE_CHILD_TAG_LEVELS"
+                description="COM_J2COMMERCE_CHILD_TAG_LEVELS_DESC"
+                default="1"
+                min="0"
+                max="10"
+                filter="integer"
+            />
+
+            <field
+                name="show_tag_description"
+                type="radio"
+                label="COM_J2COMMERCE_SHOW_CATEGORY_DESC"
+                description="COM_J2COMMERCE_SHOW_TAG_DESC_DESC"
+                default="1"
+                layout="joomla.form.field.radio.switcher"
+                filter="integer"
+            >
+                <option value="0">JHIDE</option>
+                <option value="1">JSHOW</option>
+            </field>
+
+            <field
+                name="show_tag_image"
+                type="radio"
+                label="COM_J2COMMERCE_SHOW_TAG_IMAGE"
+                description="COM_J2COMMERCE_SHOW_TAG_IMAGE_DESC"
+                default="1"
+                layout="joomla.form.field.radio.switcher"
+                filter="integer"
+            >
+                <option value="0">JHIDE</option>
+                <option value="1">JSHOW</option>
+            </field>
+
+            <field
+                name="show_product_count"
+                type="radio"
+                label="COM_J2COMMERCE_SHOW_PRODUCT_COUNT"
+                description="COM_J2COMMERCE_SHOW_TAG_PRODUCT_COUNT_DESC"
+                default="1"
+                layout="joomla.form.field.radio.switcher"
+                filter="integer"
+            >
+                <option value="0">JHIDE</option>
+                <option value="1">JSHOW</option>
+            </field>
+
+            <field
+                name="tag_columns"
+                type="list"
+                label="COM_J2COMMERCE_CATEGORY_COLUMNS"
+                description="COM_J2COMMERCE_TAG_COLUMNS_DESC"
+                default="3"
+            >
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="6">6</option>
+            </field>
+
+            <field
+                name="show_empty_tags"
+                type="radio"
+                label="COM_J2COMMERCE_SHOW_EMPTY_TAGS"
+                description="COM_J2COMMERCE_SHOW_EMPTY_TAGS_DESC"
+                default="0"
+                layout="joomla.form.field.radio.switcher"
+                filter="integer"
+            >
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
+
+            <field
+                name="child_tag_display_mode"
+                type="list"
+                label="COM_J2COMMERCE_CHILD_TAG_DISPLAY_MODE"
+                description="COM_J2COMMERCE_CHILD_TAG_DISPLAY_MODE_DESC"
+                default="products"
+            >
+                <option value="products">COM_J2COMMERCE_SUBCATEGORY_DISPLAY_PRODUCTS</option>
+                <option value="tags">COM_J2COMMERCE_CHILD_TAG_DISPLAY_TAGS</option>
+                <option value="tags_popular">COM_J2COMMERCE_CHILD_TAG_DISPLAY_TAGS_POPULAR</option>
+            </field>
+
+            <field
+                name="popular_product_count"
+                type="number"
+                label="COM_J2COMMERCE_POPULAR_PRODUCT_COUNT"
+                description="COM_J2COMMERCE_POPULAR_PRODUCT_COUNT_DESC"
+                default="12"
+                min="1"
+                max="100"
+                filter="integer"
+                showon="child_tag_display_mode:tags_popular"
+            />
+
+            <field
+                name="popular_display_type"
+                type="list"
+                label="COM_J2COMMERCE_POPULAR_DISPLAY_TYPE"
+                description="COM_J2COMMERCE_POPULAR_DISPLAY_TYPE_DESC"
+                default="grid"
+                showon="child_tag_display_mode:tags_popular"
+            >
+                <option value="grid">COM_J2COMMERCE_POPULAR_DISPLAY_GRID</option>
+                <option value="scroller">COM_J2COMMERCE_POPULAR_DISPLAY_SCROLLER</option>
+            </field>
+
+            <field
+                name="popular_grid_columns"
+                type="list"
+                label="COM_J2COMMERCE_POPULAR_GRID_COLUMNS"
+                description="COM_J2COMMERCE_POPULAR_GRID_COLUMNS_DESC"
+                default="4"
+                showon="child_tag_display_mode:tags_popular[AND]popular_display_type:grid"
+            >
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="6">6</option>
+            </field>
+
+            <field
+                name="popular_slides_per_view"
+                type="number"
+                label="COM_J2COMMERCE_POPULAR_SLIDES_PER_VIEW"
+                default="4"
+                min="1"
+                max="6"
+                filter="integer"
+                showon="child_tag_display_mode:tags_popular[AND]popular_display_type:scroller"
+            />
+
+            <field
+                name="popular_space_between"
+                type="number"
+                label="COM_J2COMMERCE_POPULAR_SPACE_BETWEEN"
+                default="20"
+                min="0"
+                max="60"
+                filter="integer"
+                showon="child_tag_display_mode:tags_popular[AND]popular_display_type:scroller"
+            />
+
+            <field
+                name="popular_autoplay"
+                type="radio"
+                layout="joomla.form.field.radio.switcher"
+                label="COM_J2COMMERCE_POPULAR_AUTOPLAY"
+                default="0"
+                filter="integer"
+                showon="child_tag_display_mode:tags_popular[AND]popular_display_type:scroller"
+            >
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
+
+            <field
+                name="popular_autoplay_delay"
+                type="number"
+                label="COM_J2COMMERCE_POPULAR_AUTOPLAY_DELAY"
+                default="4"
+                min="1"
+                max="30"
+                filter="integer"
+                showon="child_tag_display_mode:tags_popular[AND]popular_display_type:scroller[AND]popular_autoplay:1"
+            />
+
+            <field
+                name="popular_loop"
+                type="radio"
+                layout="joomla.form.field.radio.switcher"
+                label="COM_J2COMMERCE_POPULAR_LOOP"
+                default="0"
+                filter="integer"
+                showon="child_tag_display_mode:tags_popular[AND]popular_display_type:scroller"
+            >
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
+
+            <field
+                name="popular_navigation"
+                type="radio"
+                layout="joomla.form.field.radio.switcher"
+                label="COM_J2COMMERCE_POPULAR_NAVIGATION"
+                default="1"
+                filter="integer"
+                showon="child_tag_display_mode:tags_popular[AND]popular_display_type:scroller"
+            >
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
+
+            <field
+                name="popular_pagination"
+                type="radio"
+                layout="joomla.form.field.radio.switcher"
+                label="COM_J2COMMERCE_POPULAR_PAGINATION"
+                default="0"
+                filter="integer"
+                showon="child_tag_display_mode:tags_popular[AND]popular_display_type:scroller"
+            >
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
+        </fieldset>
+
+		<!-- List Display Settings -->
+		<fieldset name="list"
+			label="COM_J2COMMERCE_PRODUCT_LIST_TAG_DISPLAY">
+
+			<fieldset name="tagdisplay"
+				label="COM_J2COMMERCE_PRODUCT_LIST_TAG_DISPLAY"
+				addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field">
+
+				<field
+					name="subtemplate"
+					type="Templatelist"
+					label="COM_J2COMMERCE_PRODUCT_SUBTEMPLATE"
+					description="COM_J2COMMERCE_PRODUCT_SUBTEMPLATE_DESC"
+					view_context="producttags"
+					strip_prefix="true"
+				/>
+
+				<field
+					name="show_tag_title"
+					type="radio"
+					layout="joomla.form.field.radio.switcher"
+					label="COM_J2COMMERCE_SHOW_TAG_TITLE"
+					description="COM_J2COMMERCE_SHOW_TAG_TITLE_DESC"
+					filter="integer"
+					default="1"
+				>
+					<option value="0">JNO</option>
+					<option value="1">JYES</option>
+				</field>
+
+				<field
+					name="show_tag_listing_description"
+					type="radio"
+					layout="joomla.form.field.radio.switcher"
+					label="COM_J2COMMERCE_SHOW_TAG_DESCRIPTION"
+					description="COM_J2COMMERCE_SHOW_TAG_DESCRIPTION_DESC"
+					filter="integer"
+					default="0"
+				>
+					<option value="0">JNO</option>
+					<option value="1">JYES</option>
+				</field>
+
+				<field
+					name="tag_description_placement"
+					type="list"
+					label="COM_J2COMMERCE_CATEGORY_DESCRIPTION_PLACEMENT"
+					description="COM_J2COMMERCE_TAG_DESCRIPTION_PLACEMENT_DESC"
+					default="above"
+					showon="show_tag_listing_description:1"
+				>
+					<option value="above">COM_J2COMMERCE_CATEGORY_DESCRIPTION_ABOVE</option>
+					<option value="below">COM_J2COMMERCE_CATEGORY_DESCRIPTION_BELOW</option>
+				</field>
+
+				<field
+					name="page_limit"
+					type="text"
+					label="COM_J2COMMERCE_PRODUCT_LIST_PAGE_LIMIT"
+					description="COM_J2COMMERCE_PRODUCT_LIST_PAGE_LIMIT_DESC"
+					default="12"
+					filter="integer"
+				/>
+
+				<field
+					name="list_no_of_columns"
+					type="list"
+					label="COM_J2COMMERCE_PRODUCT_LIST_COLUMNS"
+					description="COM_J2COMMERCE_PRODUCT_LIST_COLUMNS_DESC"
+					default="3"
+				>
+					<option value="1">1</option>
+					<option value="2">2</option>
+					<option value="3">3</option>
+					<option value="4">4</option>
+					<option value="6">6</option>
+				</field>
+
+				<field
+					name="show_child_tag_content"
+					type="number"
+					label="COM_J2COMMERCE_PRODUCT_LIST_CHILD_TAG_LEVEL"
+					description="COM_J2COMMERCE_PRODUCT_LIST_CHILD_TAG_LEVEL_DESC"
+					default="3"
+					min="0"
+					max="10"
+					filter="integer"
+				/>
+
+				<field
+					name="show_feature_only"
+					type="radio"
+					label="COM_J2COMMERCE_PRODUCT_LIST_FEATURED_ONLY"
+					description="COM_J2COMMERCE_PRODUCT_LIST_FEATURED_ONLY_DESC"
+					default="0"
+					layout="joomla.form.field.radio.switcher"
+					filter="integer"
+				>
+					<option value="0">JNO</option>
+					<option value="1">JYES</option>
+				</field>
+
+				<field
+					name="list_show_title"
+					type="radio"
+					label="COM_J2COMMERCE_PRODUCT_SHOW_TITLE_LABEL"
+					default="1"
+					layout="joomla.form.field.radio.switcher"
+					filter="integer"
+				>
+					<option value="0">JHIDE</option>
+					<option value="1">JSHOW</option>
+				</field>
+
+				<field
+					name="list_link_title"
+					type="radio"
+					label="COM_J2COMMERCE_PRODUCT_LIST_LINK_TITLE"
+					default="1"
+					layout="joomla.form.field.radio.switcher"
+					filter="integer"
+					showon="list_show_title:1"
+				>
+					<option value="0">JNO</option>
+					<option value="1">JYES</option>
+				</field>
+
+				<field
+					name="list_show_short_desc"
+					type="radio"
+					label="COM_J2COMMERCE_PRODUCT_SHOW_SHORT_DESC_LABEL"
+					default="0"
+					layout="joomla.form.field.radio.switcher"
+					filter="integer"
+				>
+					<option value="0">JHIDE</option>
+					<option value="1">JSHOW</option>
+				</field>
+
+				<field
+					name="list_show_long_desc"
+					type="radio"
+					label="COM_J2COMMERCE_PRODUCT_SHOW_LONG_DESC_LABEL"
+					default="0"
+					layout="joomla.form.field.radio.switcher"
+					filter="integer"
+				>
+					<option value="0">JHIDE</option>
+					<option value="1">JSHOW</option>
+				</field>
+
+				<field
+					name="list_show_product_base_price"
+					type="radio"
+					label="COM_J2COMMERCE_PRODUCT_SHOW_PRODUCT_BASE_PRICE_LABEL"
+					default="1"
+					layout="joomla.form.field.radio.switcher"
+					filter="integer"
+				>
+					<option value="0">JHIDE</option>
+					<option value="1">JSHOW</option>
+				</field>
+
+				<field
+					name="list_show_product_special_price"
+					type="radio"
+					label="COM_J2COMMERCE_PRODUCT_SHOW_PRODUCT_SPECIAL_PRICE_LABEL"
+					default="1"
+					layout="joomla.form.field.radio.switcher"
+					filter="integer"
+				>
+					<option value="0">JHIDE</option>
+					<option value="1">JSHOW</option>
+				</field>
+
+				<field
+					name="list_show_discount_percentage"
+					type="radio"
+					label="COM_J2COMMERCE_PRODUCT_SHOW_DISCOUNT_PERCENTAGE_LABEL"
+					default="1"
+					layout="joomla.form.field.radio.switcher"
+					filter="integer"
+				>
+					<option value="0">JHIDE</option>
+					<option value="1">JSHOW</option>
+				</field>
+
+				<field
+					name="list_show_image"
+					type="radio"
+					label="COM_J2COMMERCE_PRODUCT_SHOW_MAIN_IMAGE_LABEL"
+					default="1"
+					layout="joomla.form.field.radio.switcher"
+					filter="integer"
+				>
+					<option value="0">JNO</option>
+					<option value="1">JYES</option>
+				</field>
+
+				<field
+					name="list_image_type"
+					type="list"
+					label="COM_J2COMMERCE_PRODUCT_LIST_IMAGE_TYPE"
+					default="thumbimage"
+					showon="list_show_image:1"
+				>
+					<option value="thumbimage">COM_J2COMMERCE_PRODUCT_LIST_IMAGE_THUMBNAIL</option>
+					<option value="mainimage">COM_J2COMMERCE_PRODUCT_LIST_IMAGE_MAIN</option>
+				</field>
+
+				<field
+					name="list_image_thumbnail_width"
+					type="text"
+					label="COM_J2COMMERCE_PRODUCT_LIST_IMAGE_WIDTH"
+					description="COM_J2COMMERCE_PRODUCT_IMAGE_WIDTH_DESC"
+					default="350"
+					filter="integer"
+					showon="list_show_image:1"
+				/>
+
+				<field
+					name="list_image_link_to_product"
+					type="radio"
+					label="COM_J2COMMERCE_PRODUCT_LIST_IMAGE_LINK"
+					default="1"
+					layout="joomla.form.field.radio.switcher"
+					filter="integer"
+					showon="list_show_image:1"
+				>
+					<option value="0">JNO</option>
+					<option value="1">JYES</option>
+				</field>
+
+				<field
+					name="list_show_product_sku"
+					type="radio"
+					label="COM_J2COMMERCE_PRODUCT_SHOW_PRODUCT_SKU_LABEL"
+					default="1"
+					layout="joomla.form.field.radio.switcher"
+					filter="integer"
+				>
+					<option value="0">JHIDE</option>
+					<option value="1">JSHOW</option>
+				</field>
+
+				<field
+					name="list_show_product_upc"
+					type="radio"
+					label="COM_J2COMMERCE_PRODUCT_LIST_SHOW_PRODUCT_UPC_LABEL"
+					default="0"
+					layout="joomla.form.field.radio.switcher"
+					filter="integer"
+				>
+					<option value="0">JHIDE</option>
+					<option value="1">JSHOW</option>
+				</field>
+
+				<field
+					name="list_show_product_stock"
+					type="radio"
+					label="COM_J2COMMERCE_PRODUCT_SHOW_STOCK_LABEL"
+					default="1"
+					layout="joomla.form.field.radio.switcher"
+					filter="integer"
+				>
+					<option value="0">JHIDE</option>
+					<option value="1">JSHOW</option>
+				</field>
+
+				<field
+					name="list_collapsed_options"
+					type="radio"
+					label="COM_J2COMMERCE_PRODUCT_LIST_COLLAPSED_OPTIONS_LABEL"
+					description="COM_J2COMMERCE_PRODUCT_LIST_COLLAPSED_OPTIONS_DESC"
+					default="1"
+					layout="joomla.form.field.radio.switcher"
+					filter="integer"
+				>
+					<option value="0">JNO</option>
+					<option value="1">JYES</option>
+				</field>
+
+				<field
+					name="list_show_cart"
+					type="list"
+					label="COM_J2COMMERCE_PRODUCT_LIST_SHOW_CART"
+					default="1"
+				>
+					<option value="1">COM_J2COMMERCE_PRODUCT_LIST_SHOW_CART_WITH_OPTIONS</option>
+					<option value="2">COM_J2COMMERCE_PRODUCT_LIST_SHOW_CART_NO_OPTIONS</option>
+					<option value="3">COM_J2COMMERCE_PRODUCT_LIST_SHOW_CART_DETAIL_PAGE</option>
+				</field>
+
+				<field
+					name="list_enable_quickview"
+					type="radio"
+					label="COM_J2COMMERCE_PRODUCT_LIST_QUICKVIEW"
+					default="0"
+					layout="joomla.form.field.radio.switcher"
+					filter="integer"
+				>
+					<option value="0">JNO</option>
+					<option value="1">JYES</option>
+				</field>
+			</fieldset>
+
+			<fieldset name="filterdisplay"
+				label="COM_J2COMMERCE_PRODUCT_LIST_FILTER_DISPLAY">
+
+				<field
+					name="list_show_top_filter"
+					type="radio"
+					label="COM_J2COMMERCE_PRODUCT_LIST_TOP_FILTER"
+					default="1"
+					layout="joomla.form.field.radio.switcher"
+					filter="integer"
+				>
+					<option value="0">JHIDE</option>
+					<option value="1">JSHOW</option>
+				</field>
+
+				<field
+					name="list_show_filter"
+					type="radio"
+					label="COM_J2COMMERCE_PRODUCT_LIST_SIDEBAR_FILTER"
+					default="1"
+					layout="joomla.form.field.radio.switcher"
+					filter="integer"
+				>
+					<option value="0">JHIDE</option>
+					<option value="1">JSHOW</option>
+				</field>
+
+				<field
+					name="list_filter_position"
+					type="list"
+					label="COM_J2COMMERCE_PRODUCT_LIST_FILTER_POSITION"
+					default="right"
+					showon="list_show_filter:1"
+				>
+					<option value="left">COM_J2COMMERCE_LEFT</option>
+					<option value="right">COM_J2COMMERCE_RIGHT</option>
+				</field>
+
+				<field
+					name="list_show_filter_sorting"
+					type="radio"
+					label="COM_J2COMMERCE_PRODUCT_LIST_FILTER_SORTING"
+					default="1"
+					layout="joomla.form.field.radio.switcher"
+					filter="integer"
+					showon="list_show_top_filter:1"
+				>
+					<option value="0">JHIDE</option>
+					<option value="1">JSHOW</option>
+				</field>
+
+				<field
+					name="list_show_filter_search"
+					type="radio"
+					label="COM_J2COMMERCE_PRODUCT_LIST_FILTER_SEARCH"
+					default="1"
+					layout="joomla.form.field.radio.switcher"
+					filter="integer"
+					showon="list_show_filter:1"
+				>
+					<option value="0">JHIDE</option>
+					<option value="1">JSHOW</option>
+				</field>
+
+				<field
+					name="list_show_filter_price"
+					type="radio"
+					label="COM_J2COMMERCE_PRODUCT_LIST_FILTER_PRICE"
+					default="1"
+					layout="joomla.form.field.radio.switcher"
+					filter="integer"
+					showon="list_show_filter:1"
+				>
+					<option value="0">JHIDE</option>
+					<option value="1">JSHOW</option>
+				</field>
+
+				<field
+					name="list_price_filter_upper_limit"
+					type="text"
+					label="COM_J2COMMERCE_PRODUCT_LIST_FILTER_PRICE_MAX"
+					default="1000"
+					showon="list_show_filter_price:1[AND]list_show_filter:1"
+				/>
+
+				<field
+					name="list_price_round_digit"
+					type="list"
+					label="COM_J2COMMERCE_PRODUCT_LIST_FILTER_PRICE_ROUND"
+					description="COM_J2COMMERCE_PRODUCT_LIST_FILTER_PRICE_ROUND_DESC"
+					default="100"
+					showon="list_show_filter_price:1[AND]list_show_filter:1"
+				>
+					<option value="10">10</option>
+					<option value="100">100</option>
+					<option value="1000">1000</option>
+				</field>
+
+				<field
+					name="list_show_product_filter"
+					type="radio"
+					label="COM_J2COMMERCE_PRODUCT_LIST_FILTER_PRODUCT"
+					description="COM_J2COMMERCE_PRODUCT_LIST_FILTER_PRODUCT_DESC"
+					default="1"
+					layout="joomla.form.field.radio.switcher"
+					filter="integer"
+					showon="list_show_filter:1"
+				>
+					<option value="0">JHIDE</option>
+					<option value="1">JSHOW</option>
+				</field>
+
+				<field
+					name="list_product_filter_list_type"
+					type="list"
+					label="COM_J2COMMERCE_PRODUCT_LIST_FILTER_PRODUCT_LIST_TYPE"
+					description="COM_J2COMMERCE_PRODUCT_LIST_FILTER_PRODUCT_LIST_TYPE_DESC"
+					default="selected"
+					showon="list_show_product_filter:1[AND]list_show_filter:1"
+				>
+					<option value="selected">COM_J2COMMERCE_FILTER_SELECTED_ONLY</option>
+					<option value="all">COM_J2COMMERCE_FILTER_SHOW_ALL</option>
+				</field>
+
+				<field
+					name="list_product_filter_search_logic_rel"
+					type="list"
+					label="COM_J2COMMERCE_PRODUCT_LIST_FILTER_SEARCH_LOGIC"
+					description="COM_J2COMMERCE_PRODUCT_LIST_FILTER_SEARCH_LOGIC_DESC"
+					default="AND"
+					showon="list_show_product_filter:1[AND]list_show_filter:1"
+				>
+					<option value="OR">COM_J2COMMERCE_FILTER_LOGIC_OR</option>
+					<option value="AND">COM_J2COMMERCE_FILTER_LOGIC_AND</option>
+				</field>
+
+				<field
+					name="list_filter_productfilter_toggle"
+					type="list"
+					label="COM_J2COMMERCE_PRODUCT_LIST_FILTER_PRODUCT_TOGGLE"
+					description="COM_J2COMMERCE_PRODUCT_LIST_FILTER_PRODUCT_TOGGLE_DESC"
+					default="1"
+					showon="list_show_product_filter:1[AND]list_show_filter:1"
+				>
+					<option value="0">COM_J2COMMERCE_TOGGLE_HIDE</option>
+					<option value="2">COM_J2COMMERCE_TOGGLE_ALWAYS_CLOSED</option>
+					<option value="1">COM_J2COMMERCE_TOGGLE_ALWAYS_OPENED</option>
+				</field>
+
+				<field
+					name="list_show_manufacturer_filter"
+					type="radio"
+					label="COM_J2COMMERCE_PRODUCT_LIST_FILTER_MANUFACTURER"
+					default="1"
+					layout="joomla.form.field.radio.switcher"
+					filter="integer"
+					showon="list_show_filter:1"
+				>
+					<option value="0">JHIDE</option>
+					<option value="1">JSHOW</option>
+				</field>
+
+				<field
+					name="list_manufacturer_filter_list_type"
+					type="list"
+					label="COM_J2COMMERCE_PRODUCT_LIST_FILTER_MANUFACTURER_LIST_TYPE"
+					description="COM_J2COMMERCE_PRODUCT_LIST_FILTER_MANUFACTURER_LIST_TYPE_DESC"
+					default="selected"
+					showon="list_show_manufacturer_filter:1[AND]list_show_filter:1"
+				>
+					<option value="selected">COM_J2COMMERCE_FILTER_SELECTED_ONLY</option>
+					<option value="all">COM_J2COMMERCE_FILTER_SHOW_ALL</option>
+				</field>
+
+				<field
+					name="list_show_vendor_filter"
+					type="radio"
+					label="COM_J2COMMERCE_PRODUCT_LIST_FILTER_VENDOR"
+					default="1"
+					layout="joomla.form.field.radio.switcher"
+					filter="integer"
+					showon="list_show_filter:1"
+				>
+					<option value="0">JHIDE</option>
+					<option value="1">JSHOW</option>
+				</field>
+
+				<field
+					name="list_vendor_filter_list_type"
+					type="list"
+					label="COM_J2COMMERCE_PRODUCT_LIST_FILTER_VENDOR_LIST_TYPE"
+					description="COM_J2COMMERCE_PRODUCT_LIST_FILTER_VENDOR_LIST_TYPE_DESC"
+					default="selected"
+					showon="list_show_vendor_filter:1[AND]list_show_filter:1"
+				>
+					<option value="selected">COM_J2COMMERCE_FILTER_SELECTED_ONLY</option>
+					<option value="all">COM_J2COMMERCE_FILTER_SHOW_ALL</option>
+				</field>
+			</fieldset>
+		</fieldset>
+
+				<!-- Item View Settings (for single product view) -->
+		<fieldset name="item_product" label="COM_J2COMMERCE_PRODUCT">
+
+			<field
+				name="item_show_page_heading"
+				type="radio"
+				label="COM_J2COMMERCE_PRODUCT_SHOW_PAGE_HEADING"
+				description="COM_J2COMMERCE_PRODUCT_SHOW_PAGE_HEADING_DESC"
+				default="0"
+				layout="joomla.form.field.radio.switcher"
+				filter="integer"
+			>
+				<option value="0">JHIDE</option>
+				<option value="1">JSHOW</option>
+			</field>
+
+			<field
+				name="item_show_title"
+				type="radio"
+				label="COM_J2COMMERCE_PRODUCT_SHOW_TITLE_LABEL"
+				default="1"
+				layout="joomla.form.field.radio.switcher"
+				filter="integer"
+			>
+				<option value="0">JHIDE</option>
+				<option value="1">JSHOW</option>
+			</field>
+
+			<field
+				name="item_title_headertag"
+				type="list"
+				label="COM_J2COMMERCE_PRODUCT_TITLE_TAG_LABEL"
+				default="1"
+				showon="item_show_title:1"
+			>
+				<option value="1">h1</option>
+				<option value="2">h2</option>
+				<option value="3">h3</option>
+				<option value="4">h4</option>
+				<option value="5">h5</option>
+			</field>
+
+			<field
+				name="item_show_sdesc"
+				type="radio"
+				label="COM_J2COMMERCE_PRODUCT_SHOW_SHORT_DESC_LABEL"
+				default="1"
+				layout="joomla.form.field.radio.switcher"
+				filter="integer"
+			>
+				<option value="0">JHIDE</option>
+				<option value="1">JSHOW</option>
+			</field>
+
+			<field
+				name="item_show_ldesc"
+				type="radio"
+				label="COM_J2COMMERCE_PRODUCT_SHOW_LONG_DESC_LABEL"
+				default="1"
+				layout="joomla.form.field.radio.switcher"
+				filter="integer"
+			>
+				<option value="0">JHIDE</option>
+				<option value="1">JSHOW</option>
+			</field>
+
+			<field
+				name="item_show_product_base_price"
+				type="radio"
+				label="COM_J2COMMERCE_PRODUCT_SHOW_PRODUCT_BASE_PRICE_LABEL"
+				default="1"
+				layout="joomla.form.field.radio.switcher"
+				filter="integer"
+			>
+				<option value="0">JHIDE</option>
+				<option value="1">JSHOW</option>
+			</field>
+
+			<field
+				name="item_show_product_special_price"
+				type="radio"
+				label="COM_J2COMMERCE_PRODUCT_SHOW_PRODUCT_SPECIAL_PRICE_LABEL"
+				default="1"
+				layout="joomla.form.field.radio.switcher"
+				filter="integer"
+			>
+				<option value="0">JHIDE</option>
+				<option value="1">JSHOW</option>
+			</field>
+
+			<field
+				name="item_show_discount_percentage"
+				type="radio"
+				label="COM_J2COMMERCE_PRODUCT_SHOW_DISCOUNT_PERCENTAGE_LABEL"
+				default="1"
+				layout="joomla.form.field.radio.switcher"
+				filter="integer"
+			>
+				<option value="0">JHIDE</option>
+				<option value="1">JSHOW</option>
+			</field>
+
+			<field
+				name="item_show_product_sku"
+				type="radio"
+				label="COM_J2COMMERCE_PRODUCT_SHOW_PRODUCT_SKU_LABEL"
+				default="1"
+				layout="joomla.form.field.radio.switcher"
+				filter="integer"
+			>
+				<option value="0">JHIDE</option>
+				<option value="1">JSHOW</option>
+			</field>
+
+			<field
+				name="item_show_product_upc"
+				type="radio"
+				label="COM_J2COMMERCE_PRODUCT_SHOW_PRODUCT_UPC_LABEL"
+				default="0"
+				layout="joomla.form.field.radio.switcher"
+				filter="integer"
+			>
+				<option value="0">JHIDE</option>
+				<option value="1">JSHOW</option>
+			</field>
+
+			<field
+				name="item_show_product_stock"
+				type="radio"
+				label="COM_J2COMMERCE_PRODUCT_SHOW_STOCK_LABEL"
+				default="1"
+				layout="joomla.form.field.radio.switcher"
+				filter="integer"
+			>
+				<option value="0">JHIDE</option>
+				<option value="1">JSHOW</option>
+			</field>
+
+			<field
+				name="item_show_product_main_image"
+				type="radio"
+				label="COM_J2COMMERCE_PRODUCT_SHOW_MAIN_IMAGE_LABEL"
+				default="1"
+				layout="joomla.form.field.radio.switcher"
+				filter="integer"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+
+			<field
+				name="item_show_product_additional_image"
+				type="radio"
+				label="COM_J2COMMERCE_PRODUCT_SHOW_ADDITIONAL_IMAGE_LABEL"
+				default="1"
+				layout="joomla.form.field.radio.switcher"
+				filter="integer"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+
+			<field
+				name="item_product_main_image_width"
+				type="text"
+				label="COM_J2COMMERCE_PRODUCT_MAIN_IMAGE_WIDTH_LABEL"
+				description="COM_J2COMMERCE_PRODUCT_IMAGE_WIDTH_DESC"
+				default="800"
+				filter="integer"
+				showon="item_show_product_main_image:1"
+			/>
+
+			<field
+				name="item_product_additional_image_width"
+				type="text"
+				label="COM_J2COMMERCE_PRODUCT_ADDITIONAL_IMAGE_WIDTH_LABEL"
+				description="COM_J2COMMERCE_PRODUCT_IMAGE_WIDTH_DESC"
+				default="100"
+				filter="integer"
+				showon="item_show_product_additional_image:1"
+			/>
+
+			<field
+				name="item_enable_image_zoom"
+				type="radio"
+				label="COM_J2COMMERCE_PRODUCT_ENABLE_IMAGE_ZOOM_EFFECTS_LABEL"
+				default="1"
+				layout="joomla.form.field.radio.switcher"
+				filter="integer"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+
+			<field
+				name="item_show_product_manufacturer_name"
+				type="radio"
+				label="COM_J2COMMERCE_PRODUCT_SHOW_MANUFACTURER_NAME_LABEL"
+				default="0"
+				layout="joomla.form.field.radio.switcher"
+				filter="integer"
+			>
+				<option value="0">JHIDE</option>
+				<option value="1">JSHOW</option>
+			</field>
+
+			<field
+				name="item_show_product_upsells"
+				type="radio"
+				label="COM_J2COMMERCE_PRODUCT_SHOW_UP_SELLS_LABEL"
+				default="0"
+				layout="joomla.form.field.radio.switcher"
+				filter="integer"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+
+			<field
+				name="item_product_upsell_image_width"
+				type="text"
+				label="COM_J2COMMERCE_PRODUCT_UPSELL_IMAGE_WIDTH_LABEL"
+				description="COM_J2COMMERCE_PRODUCT_IMAGE_WIDTH_DESC"
+				default="350"
+				filter="integer"
+				showon="item_show_product_upsells:1"
+			/>
+
+			<field
+				name="item_show_product_cross_sells"
+				type="radio"
+				label="COM_J2COMMERCE_PRODUCT_SHOW_CROSS_SELLS_LABEL"
+				default="0"
+				layout="joomla.form.field.radio.switcher"
+				filter="integer"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+
+			<field
+				name="item_product_cross_image_width"
+				type="text"
+				label="COM_J2COMMERCE_PRODUCT_CROSS_IMAGE_WIDTH_LABEL"
+				description="COM_J2COMMERCE_PRODUCT_IMAGE_WIDTH_DESC"
+				default="350"
+				filter="integer"
+				showon="item_show_product_cross_sells:1"
+			/>
+
+			<field
+				name="item_related_product_columns"
+				type="text"
+				label="COM_J2COMMERCE_PRODUCT_RELATED_COLUMNS_LABEL"
+				description="COM_J2COMMERCE_PRODUCT_RELATED_COLUMNS_DESC"
+				default="3"
+				filter="integer"
+				showon="item_show_product_upsells:1[OR]item_show_product_cross_sells:1"
+			/>
+
+			<field
+				name="item_show_product_specification"
+				type="radio"
+				label="COM_J2COMMERCE_PRODUCT_SHOW_SPECIFICATIONS_LABEL"
+				default="0"
+				layout="joomla.form.field.radio.switcher"
+				filter="integer"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+			<field
+				name="item_show_product_filters"
+				type="radio"
+				label="COM_J2COMMERCE_PRODUCT_SHOW_FILTERS_LABEL"
+				description="COM_J2COMMERCE_PRODUCT_SHOW_FILTERS_DESC"
+				default="1"
+				layout="joomla.form.field.radio.switcher"
+				filter="integer"
+                showon="item_show_product_specification:1"
+			>
+				<option value="0">JHIDE</option>
+				<option value="1">JSHOW</option>
+			</field>
+            <field
+				name="item_hide_empty_product_dimensions"
+				type="radio"
+				label="COM_J2COMMERCE_PRODUCT_HIDE_EMPTY_WEIGHT_LENGTH_VALUES_LABEL"
+				description="COM_J2COMMERCE_PRODUCT_HIDE_EMPTY_WEIGHT_LENGTH_VALUES_DESC"
+				default="0"
+				layout="joomla.form.field.radio.switcher"
+				filter="integer"
+                showon="item_show_product_specification:1"
+			>
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+
+			<field
+				name="item_use_tabs"
+				type="list"
+				label="COM_J2COMMERCE_PRODUCT_USE_TABS_LABEL"
+				default="1"
+			>
+				<option value="0">COM_J2COMMERCE_PRODUCT_USE_NO_TABS</option>
+				<option value="1">COM_J2COMMERCE_PRODUCT_USE_TABS</option>
+				<option value="2">COM_J2COMMERCE_PRODUCT_USE_ACCORDIONS</option>
+			</field>
+            <field
+                name="item_sticky_columns"
+                type="radio"
+                label="COM_J2COMMERCE_PRODUCT_STICKY_COLUMNS_LABEL"
+                description="COM_J2COMMERCE_PRODUCT_STICKY_COLUMNS_DESC"
+                default="0"
+                layout="joomla.form.field.radio.switcher"
+                filter="integer"
+            >
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
+
+			<field
+				name="item_show_back_to"
+				type="radio"
+				label="COM_J2COMMERCE_PRODUCT_SHOW_BACK_BUTTON"
+				default="0"
+				layout="joomla.form.field.radio.switcher"
+				filter="integer"
+			>
+				<option value="0">JHIDE</option>
+				<option value="1">JSHOW</option>
+			</field>
+		</fieldset>
+
+	</fields>
+</metadata>

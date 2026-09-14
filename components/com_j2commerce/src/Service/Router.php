@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Site\Service;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Site\Helper\TagTreeHelper;
 use Joomla\CMS\Application\SiteApplication;
 use Joomla\CMS\Categories\CategoryFactoryInterface;
 use Joomla\CMS\Categories\CategoryInterface;
@@ -125,6 +126,8 @@ class Router extends RouterView
         $this->registerView(new RouterViewConfiguration('confirmation'));
         $this->registerView(new RouterViewConfiguration('paymentupdate'));
         $this->registerView(new RouterViewConfiguration('categoryalias'));
+        $this->registerView(new RouterViewConfiguration('tags'));
+        $this->registerView(new RouterViewConfiguration('tagalias'));
 
         // Allow J2Commerce plugins to register additional frontend views
         // so app plugins can add SEF routes without modifying this core file.
@@ -172,7 +175,27 @@ class Router extends RouterView
             }
             $productId = (int) $productId;
 
-            $menuItem = $this->findSingleProductMenu($productId);
+            $menuItem  = $this->findSingleProductMenu($productId);
+            $placement = null;
+
+            [$contextTagId, $contextItemid] = !empty($query['tagid'])
+                ? [(int) $query['tagid'], (int) ($query['Itemid'] ?? 0)]
+                : $this->requestTagContext();
+
+            // A product linked while a Product Tags View lists a tag stays inside that menu item,
+            // under the tag the product carries there.
+            if (!$menuItem && $contextTagId > 0) {
+                $placement = $this->findProductTagPlacement($productId, $contextTagId, $contextItemid);
+
+                if ($placement) {
+                    $menuItem       = $placement['menu'];
+                    $query['tagid'] = $placement['tagId'];
+                }
+            }
+
+            if (!$placement) {
+                unset($query['tagid']);
+            }
 
             if (!$menuItem) {
                 $catid = isset($query['catid']) ? (int) $query['catid'] : null;
@@ -225,13 +248,14 @@ class Router extends RouterView
             }
         }
 
-        // Menu links arrive as index.php?Itemid=N with no view, so the categoryalias rewrite
+        // Menu links arrive as index.php?Itemid=N with no view, so the alias rewrites
         // below never saw them and emitted the alias URL, costing every visitor a 301.
         if (empty($query['view']) && !empty($query['Itemid'])) {
             $aliasItem = $this->menu->getItem((int) $query['Itemid']);
+            $aliasView = $aliasItem->query['view'] ?? '';
 
-            if ($aliasItem && ($aliasItem->query['view'] ?? '') === 'categoryalias' && !empty($aliasItem->query['id'])) {
-                $query['view'] = 'categoryalias';
+            if (\in_array($aliasView, ['categoryalias', 'tagalias'], true) && !empty($aliasItem->query['id'])) {
+                $query['view'] = $aliasView;
                 $query['id']   = (int) $aliasItem->query['id'];
             }
         }
@@ -245,6 +269,35 @@ class Router extends RouterView
             $query['view']  = 'products';
             $query['catid'] = $catid;
             unset($query['id']);
+
+            if ($menuItem) {
+                $query['Itemid'] = $menuItem->id;
+            }
+        }
+
+        // A tag alias is that tag's own listing, so it resolves exactly as the listing does.
+        if (($query['view'] ?? '') === 'tagalias' && !empty($query['id'])) {
+            $query['view'] = 'producttags';
+            unset($query['Itemid']);
+        }
+
+        // One tag's listing belongs to the Product Tags View that roots it, else to a Product
+        // Tag List View for that single tag.
+        if (($query['view'] ?? '') === 'producttags' && !empty($query['id']) && !isset($query['tag_ids'])) {
+            $tagId    = (int) $query['id'];
+            $menuItem = $this->findTagsMenuForTag($tagId, (int) ($query['Itemid'] ?? 0));
+
+            if ($menuItem) {
+                $query['Itemid'] = $menuItem->id;
+            } elseif ($menuItem = $this->findProductTagsMenu([$tagId], 'any')) {
+                $query['Itemid']  = $menuItem->id;
+                $query['tag_ids'] = [$tagId];
+                unset($query['id']);
+            }
+        }
+
+        if (($query['view'] ?? '') === 'tags') {
+            $menuItem = $this->findTagsMenu((int) ($query['id'] ?? 0));
 
             if ($menuItem) {
                 $query['Itemid'] = $menuItem->id;
@@ -315,6 +368,27 @@ class Router extends RouterView
             }
         }
 
+        $tagsMenu = !empty($query['Itemid']) ? $this->menu->getItem((int) $query['Itemid']) : null;
+        $tagsMenu = ($tagsMenu->query['view'] ?? '') === 'tags' ? $tagsMenu : null;
+
+        // CASE 0b: a tag listing inside a Product Tags View - the tag path below the menu's root tag
+        if ($tagsMenu && ($query['view'] ?? '') === 'producttags' && !empty($query['id']) && !isset($query['tag_ids'])) {
+            $path = TagTreeHelper::pathBelow($this->tagsMenuRootId($tagsMenu), (int) $query['id']);
+
+            if ($path !== null) {
+                unset($query['view'], $query['id']);
+
+                return array_column($path, 'alias');
+            }
+        }
+
+        // CASE 0c: the Product Tags View landing itself
+        if ($tagsMenu && ($query['view'] ?? '') === 'tags' && $this->tagsMenuRootId($tagsMenu) === max((int) ($query['id'] ?? 0), TagTreeHelper::ROOT_ID)) {
+            unset($query['view'], $query['id']);
+
+            return [];
+        }
+
         // CASE 1: Products view with catid
         if (isset($query['view']) && $query['view'] === 'products' && isset($query['catid'])) {
             $catid = (int) $query['catid'];
@@ -365,11 +439,25 @@ class Router extends RouterView
                 $query['Itemid'] = $menuItem->id;
 
                 // Remove all query params - menu item provides everything
-                unset($query['view'], $query['id'], $query['catid']);
+                unset($query['view'], $query['id'], $query['catid'], $query['tagid']);
 
                 // Return empty segments - just the menu alias will be the URL
                 return [];
             }
+
+            // PRIORITY 1b: inside a Product Tags View - tag path + product alias
+            if ($tagsMenu && !empty($query['tagid'])) {
+                $path  = TagTreeHelper::pathBelow($this->tagsMenuRootId($tagsMenu), (int) $query['tagid']);
+                $alias = $productAlias ?: $this->lookupProductAlias($productId);
+
+                if ($path !== null && $alias) {
+                    unset($query['view'], $query['id'], $query['catid'], $query['tagid']);
+
+                    return [...array_column($path, 'alias'), $alias];
+                }
+            }
+
+            unset($query['tagid']);
 
             // PRIORITY 2 & 3: No single product menu - look for category-based menus
             // Get product's category if not provided
@@ -620,6 +708,124 @@ class Router extends RouterView
 
             return $sortedQuery === $sortedMenu && $tagMatch === $menuTagMatch;
         });
+    }
+
+    /** The Product Tags View menu item for exactly this parent tag. */
+    private function findTagsMenu(int $parentId): ?object
+    {
+        $parentId = max($parentId, TagTreeHelper::ROOT_ID);
+
+        return $this->pickMenuByLanguage(
+            fn (object $menu): bool => ($menu->query['view'] ?? '') === 'tags' && $this->tagsMenuRootId($menu) === $parentId
+        );
+    }
+
+    /**
+     * The Product Tags View menu item whose root tag is the tag or one of its ancestors. The
+     * preferred Itemid wins when it qualifies; otherwise the request language ranks first and
+     * the deepest root second, which gives the shortest URL.
+     */
+    private function findTagsMenuForTag(int $tagId, int $preferredItemid = 0): ?object
+    {
+        $best    = null;
+        $bestKey = null;
+
+        foreach ($this->menu->getItems('component', 'com_j2commerce') as $menu) {
+            if (($menu->query['view'] ?? '') !== 'tags') {
+                continue;
+            }
+
+            $rootId = $this->tagsMenuRootId($menu);
+
+            if (!TagTreeHelper::isWithin($tagId, $rootId)) {
+                continue;
+            }
+
+            if ((int) $menu->id === $preferredItemid) {
+                return $menu;
+            }
+
+            $key = [$this->menuLanguageRank($menu), -TagTreeHelper::get($rootId)->level];
+
+            if ($bestKey === null || $key < $bestKey) {
+                $best    = $menu;
+                $bestKey = $key;
+            }
+        }
+
+        return $best;
+    }
+
+    /**
+     * Where a product sits inside the Product Tags View that roots $contextTagId: the context tag
+     * when the product carries it, else the deepest tag it carries below that tag.
+     *
+     * @return  array{menu: object, tagId: int}|null
+     */
+    private function findProductTagPlacement(int $productId, int $contextTagId, int $preferredItemid): ?array
+    {
+        $menu = $this->findTagsMenuForTag($contextTagId, $preferredItemid);
+
+        if (!$menu) {
+            return null;
+        }
+
+        $query = $this->db->getQuery(true)
+            ->select($this->db->quoteName('m.tag_id'))
+            ->from($this->db->quoteName('#__contentitem_tag_map', 'm'))
+            ->join(
+                'INNER',
+                $this->db->quoteName('#__j2commerce_products', 'p'),
+                $this->db->quoteName('p.product_source_id') . ' = ' . $this->db->quoteName('m.content_item_id')
+            )
+            ->where($this->db->quoteName('m.type_alias') . ' = ' . $this->db->quote('com_content.article'))
+            ->where($this->db->quoteName('p.product_source') . ' = ' . $this->db->quote('com_content'))
+            ->where($this->db->quoteName('p.j2commerce_product_id') . ' = :id')
+            ->bind(':id', $productId, ParameterType::INTEGER);
+
+        $best = null;
+
+        foreach (array_map('intval', $this->db->setQuery($query)->loadColumn()) as $tagId) {
+            if ($tagId === $contextTagId) {
+                return ['menu' => $menu, 'tagId' => $tagId];
+            }
+
+            if (TagTreeHelper::isWithin($tagId, $contextTagId) && ($best === null || TagTreeHelper::get($tagId)->level > TagTreeHelper::get($best)->level)) {
+                $best = $tagId;
+            }
+        }
+
+        return $best !== null ? ['menu' => $menu, 'tagId' => $best] : null;
+    }
+
+    /**
+     * The tag the current request lists inside a Product Tags View, with that menu item's id, or
+     * [0, 0]. Only the landing, a tag listing and their AJAX filter count: a product page keeps
+     * linking products by their canonical URL.
+     *
+     * @return  array{0: int, 1: int}
+     */
+    private function requestTagContext(): array
+    {
+        $input = $this->app->getInput();
+        // The AJAX filter posts its Itemid; the active item on that request is the home item.
+        $menu  = $this->menu->getItem($input->getInt('Itemid', 0)) ?? $this->menu->getActive();
+
+        if (!$menu || ($menu->query['view'] ?? '') !== 'tags') {
+            return [0, 0];
+        }
+
+        // A page names its tag in id; the AJAX filter sends it first in tag_ids.
+        $tagId = \in_array($input->getCmd('view'), ['tags', 'producttags'], true)
+            ? ($input->getInt('id', 0) ?: $this->tagsMenuRootId($menu))
+            : (int) ($input->get('tag_ids', [], 'array')[0] ?? 0);
+
+        return [$tagId, (int) $menu->id];
+    }
+
+    private function tagsMenuRootId(object $menu): int
+    {
+        return max((int) ($menu->query['id'] ?? 0), TagTreeHelper::ROOT_ID);
     }
 
     /**
@@ -1367,6 +1573,30 @@ class Router extends RouterView
             }
         }
 
+        // CASE 1b: Tags menu - segments are tag aliases below the menu's root tag, possibly ending
+        // in a product that carries the last tag
+        if ($menuView === 'tags') {
+            $tagId     = ($menuId && $menuId > 1) ? $menuId : TagTreeHelper::ROOT_ID;
+            $remaining = $segments;
+
+            while ($remaining && ($child = TagTreeHelper::childByAlias($tagId, $remaining[0]))) {
+                $tagId = $child->id;
+                array_shift($remaining);
+            }
+
+            if ($remaining === []) {
+                $segments = [];
+
+                return ['view' => 'producttags', 'id' => $tagId];
+            }
+
+            if (\count($remaining) === 1 && ($productId = $this->getProductIdByAliasInTag($remaining[0], $tagId))) {
+                $segments = [];
+
+                return ['view' => 'product', 'id' => $productId, 'tagid' => $tagId];
+            }
+        }
+
         // CASE 2: Products menu with catid
         if ($menuView === 'products' && $menuCatid) {
             // Single segment from a category-specific products menu = product alias
@@ -1516,6 +1746,37 @@ class Router extends RouterView
 
         $this->db->setQuery($dbquery);
         $result = $this->db->loadResult();
+
+        return $result ? (int) $result : null;
+    }
+
+    /** A product by article alias among the articles carrying a tag. */
+    private function getProductIdByAliasInTag(string $alias, int $tagId): ?int
+    {
+        $dbquery = $this->db->getQuery(true)
+            ->select($this->db->quoteName('p.j2commerce_product_id'))
+            ->from($this->db->quoteName('#__j2commerce_products', 'p'))
+            ->join(
+                'INNER',
+                $this->db->quoteName('#__content', 'c'),
+                $this->db->quoteName('p.product_source_id') . ' = ' . $this->db->quoteName('c.id')
+            )
+            ->join(
+                'INNER',
+                $this->db->quoteName('#__contentitem_tag_map', 'm'),
+                $this->db->quoteName('m.content_item_id') . ' = ' . $this->db->quoteName('c.id')
+                    . ' AND ' . $this->db->quoteName('m.type_alias') . ' = ' . $this->db->quote('com_content.article')
+            )
+            ->where($this->db->quoteName('p.product_source') . ' = ' . $this->db->quote('com_content'))
+            ->where($this->db->quoteName('c.alias') . ' = :alias')
+            ->where($this->db->quoteName('m.tag_id') . ' = :tagId')
+            ->bind(':alias', $alias)
+            ->bind(':tagId', $tagId, ParameterType::INTEGER);
+
+        // Article aliases are unique per catid only, and a tag spans categories.
+        $this->applyLanguageFilter($dbquery, 'c.language');
+
+        $result = $this->db->setQuery($dbquery)->loadResult();
 
         return $result ? (int) $result : null;
     }

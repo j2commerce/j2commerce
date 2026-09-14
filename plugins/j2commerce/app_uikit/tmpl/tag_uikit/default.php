@@ -61,6 +61,15 @@ if ($this->params->get('list_show_filter', 1) && $filterPosition === 'left'){
         </div>
     <?php endif; ?>
 
+    <?php if ($this->tag && $this->params->get('show_tag_title', 1)) : ?>
+        <?php $tagHeading = $this->params->get('show_page_heading') ? 'h2' : 'h1'; ?>
+        <<?php echo $tagHeading; ?> class="j2commerce-tag-title uk-margin-top"><?php echo $this->escape($this->tag->title); ?></<?php echo $tagHeading; ?>>
+    <?php endif; ?>
+
+    <?php if ($this->tag && $this->tag->description && $this->params->get('show_tag_listing_description', 0) && $this->params->get('tag_description_placement', 'above') === 'above') : ?>
+        <div class="j2commerce-tag-description uk-margin-top"><?php echo $this->tag->description; ?></div>
+    <?php endif; ?>
+
     <div class="uk-grid uk-margin-top product-list-row" uk-grid>
         <?php if ($this->params->get('list_show_filter', 1) && $filterPosition === 'left') : ?>
             <div class="j2commerce-sidebar-filters-container uk-width-1-4@m">
@@ -129,6 +138,10 @@ if ($this->params->get('list_show_filter', 1) && $filterPosition === 'left'){
             </div>
         <?php endif; ?>
     </div>
+
+    <?php if ($this->tag && $this->tag->description && $this->params->get('show_tag_listing_description', 0) && $this->params->get('tag_description_placement', 'above') === 'below') : ?>
+        <div class="j2commerce-tag-description uk-margin-top"><?php echo $this->tag->description; ?></div>
+    <?php endif; ?>
 
     <?php echo J2CommerceHelper::modules()->loadPosition('j2commerce-product-list-bottom'); ?>
 </div>

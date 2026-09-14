@@ -68,6 +68,7 @@ final class AppUikit extends CMSPlugin implements SubscriberInterface
             'onJ2CommerceViewProductHtml'           => 'onViewProductHtml',
             'onJ2CommerceViewProductTagHtml'        => 'onViewProductTagHtml',
             'onJ2CommerceViewCategoryListHtml'      => 'onViewCategoryListHtml',
+            'onJ2CommerceViewTagsListHtml'          => 'onViewTagsListHtml',
             'onJ2CommerceRenderAjaxProductListGrid' => 'onRenderAjaxProductListGrid',
         ];
     }
@@ -103,6 +104,10 @@ final class AppUikit extends CMSPlugin implements SubscriberInterface
         $folders[] = [
             'name'     => 'categories_uikit',
             'contexts' => ['categories'],
+        ];
+        $folders[] = [
+            'name'     => 'tags_uikit',
+            'contexts' => ['tags'],
         ];
 
         $event->setArgument('folders', $folders);
@@ -211,6 +216,41 @@ final class AppUikit extends CMSPlugin implements SubscriberInterface
 
         try {
             $view   = $this->setTemplatePath($view, 'categories_uikit');
+            $result = $view->loadTemplate();
+
+            if ($result instanceof \Exception) {
+                Log::add($result->getMessage(), Log::ERROR, 'com_j2commerce');
+                Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_ERR_GENERIC'), 'error');
+                return;
+            }
+
+            $event->addResult((string) $result);
+        } catch (\Exception $e) {
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_ERR_GENERIC'), 'error');
+        } finally {
+            ProductLayoutService::clearSubtemplateOverride();
+        }
+    }
+
+    public function onViewTagsListHtml($event)
+    {
+        if (!($event instanceof EventInterface) && !($event instanceof Event)) {
+            return;
+        }
+
+        $args = $event->getArguments();
+        $view = $args[1] ?? null;
+
+        if (!$this->shouldHandleTemplate($view, 'uikit', 'tags_uikit')
+            && !$this->shouldHandleTemplate($view, 'tag_uikit')) {
+            return;
+        }
+
+        ProductLayoutService::setSubtemplateOverride('uikit');
+
+        try {
+            $view   = $this->setTemplatePath($view, 'tags_uikit');
             $result = $view->loadTemplate();
 
             if ($result instanceof \Exception) {
