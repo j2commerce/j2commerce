@@ -8,7 +8,7 @@
 	<fields name="request">
 	</fields>
 	<fields name="params">
-		<fieldset name="frontend" label="COM_J2COMMERCE_LAYOUT_FRAMEWORK_FIELDSET_LABEL"
+		<fieldset name="cart" label="JGLOBAL_FIELDSET_OPTIONS"
 			addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field">
 			<field
 				name="framework"
@@ -20,8 +20,7 @@
 			>
 				<option value="">JGLOBAL_USE_GLOBAL</option>
 			</field>
-		</fieldset>
-		<fieldset name="cart" label="JGLOBAL_FIELDSET_OPTIONS">
+
 			<field
 				name="config_cart_empty_redirect"
 				type="list"
