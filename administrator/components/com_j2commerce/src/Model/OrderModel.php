@@ -49,6 +49,7 @@ use Joomla\CMS\User\UserFactoryInterface;
 use Joomla\CMS\User\UserHelper as JoomlaUserHelper;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
+use Joomla\Database\QueryInterface;
 use Joomla\Registry\Registry;
 
 /**
@@ -2239,16 +2240,21 @@ class OrderModel extends AdminModel
         }
 
         $db    = $this->getDatabase();
-        $query = $db->getQuery(true)
-            ->select('DISTINCT ' . $db->quoteName('po.product_id'))
+        $query = $db->getQuery(true);
+        $query->select('DISTINCT ' . $db->quoteName('po.product_id'))
             ->from($db->quoteName('#__j2commerce_product_options', 'po'))
             ->join(
                 'INNER',
                 $db->quoteName('#__j2commerce_options', 'o')
                 . ' ON ' . $db->quoteName('o.j2commerce_option_id') . ' = ' . $db->quoteName('po.option_id')
             )
+            ->join(
+                'INNER',
+                $db->quoteName('#__j2commerce_products', 'pp')
+                . ' ON ' . $db->quoteName('pp.j2commerce_product_id') . ' = ' . $db->quoteName('po.product_id')
+            )
             ->whereIn($db->quoteName('po.product_id'), $productIds, ParameterType::INTEGER)
-            ->where($db->quoteName('po.is_variant') . ' = 0')
+            ->where('NOT ' . $this->variantOptionCondition($query))
             ->whereIn($db->quoteName('o.type'), self::EDITABLE_OPTION_TYPES, ParameterType::STRING);
         $db->setQuery($query);
 
@@ -2615,22 +2621,27 @@ class OrderModel extends AdminModel
         }
 
         $db    = $this->getDatabase();
-        $query = $db->getQuery(true)
-            ->select([
-                $db->quoteName('po.j2commerce_productoption_id', 'id'),
-                $db->quoteName('po.parent_id'),
-                $db->quoteName('po.required'),
-                $db->quoteName('o.option_name'),
-                $db->quoteName('o.type'),
-            ])
+        $query = $db->getQuery(true);
+        $query->select([
+            $db->quoteName('po.j2commerce_productoption_id', 'id'),
+            $db->quoteName('po.parent_id'),
+            $db->quoteName('po.required'),
+            $db->quoteName('o.option_name'),
+            $db->quoteName('o.type'),
+        ])
             ->from($db->quoteName('#__j2commerce_product_options', 'po'))
             ->join(
                 'INNER',
                 $db->quoteName('#__j2commerce_options', 'o')
                 . ' ON ' . $db->quoteName('o.j2commerce_option_id') . ' = ' . $db->quoteName('po.option_id')
             )
+            ->join(
+                'INNER',
+                $db->quoteName('#__j2commerce_products', 'pp')
+                . ' ON ' . $db->quoteName('pp.j2commerce_product_id') . ' = ' . $db->quoteName('po.product_id')
+            )
             ->where($db->quoteName('po.product_id') . ' = :productId')
-            ->where($db->quoteName('po.is_variant') . ' = 0')
+            ->where('NOT ' . $this->variantOptionCondition($query))
             ->whereIn($db->quoteName('o.type'), self::EDITABLE_OPTION_TYPES, ParameterType::STRING)
             ->order([$db->quoteName('po.ordering') . ' ASC', $db->quoteName('po.j2commerce_productoption_id') . ' ASC'])
             ->bind(':productId', $productId, ParameterType::INTEGER);
@@ -2677,20 +2688,56 @@ class OrderModel extends AdminModel
     private function loadVariantOptionNames(int $productId): array
     {
         $db    = $this->getDatabase();
-        $query = $db->getQuery(true)
-            ->select($db->quoteName('o.option_name'))
+        $query = $db->getQuery(true);
+        $query->select($db->quoteName('o.option_name'))
             ->from($db->quoteName('#__j2commerce_product_options', 'po'))
             ->join(
                 'INNER',
                 $db->quoteName('#__j2commerce_options', 'o')
                 . ' ON ' . $db->quoteName('o.j2commerce_option_id') . ' = ' . $db->quoteName('po.option_id')
             )
+            ->join(
+                'INNER',
+                $db->quoteName('#__j2commerce_products', 'pp')
+                . ' ON ' . $db->quoteName('pp.j2commerce_product_id') . ' = ' . $db->quoteName('po.product_id')
+            )
             ->where($db->quoteName('po.product_id') . ' = :productId')
-            ->where($db->quoteName('po.is_variant') . ' = 1')
+            ->where($this->variantOptionCondition($query))
             ->bind(':productId', $productId, ParameterType::INTEGER);
         $db->setQuery($query);
 
         return $db->loadColumn() ?: [];
+    }
+
+    /**
+     * SQL condition, true when product option `po` (with its product joined as `pp`) defines
+     * variants: flagged is_variant, or on a variable product type referenced by one of the
+     * product's variants. Options stored before the flag was written carry is_variant = 0, so
+     * the flag alone would treat a variable product's Size or Color as a free-standing option.
+     */
+    private function variantOptionCondition(QueryInterface $query): string
+    {
+        $db    = $this->getDatabase();
+        $types = implode(',', $query->bindArray(ProductHelper::getVariableProductTypes(), ParameterType::STRING));
+
+        $referenced = $db->getQuery(true)
+            ->select('1')
+            ->from($db->quoteName('#__j2commerce_variants', 'vv'))
+            ->join(
+                'INNER',
+                $db->quoteName('#__j2commerce_product_variant_optionvalues', 'vpo')
+                . ' ON ' . $db->quoteName('vpo.variant_id') . ' = ' . $db->quoteName('vv.j2commerce_variant_id')
+            )
+            ->join(
+                'INNER',
+                $db->quoteName('#__j2commerce_product_optionvalues', 'vpov')
+                . ' ON ' . $db->quoteName('vpov.productoption_id') . ' = ' . $db->quoteName('po.j2commerce_productoption_id')
+                . ' AND FIND_IN_SET(' . $db->quoteName('vpov.j2commerce_product_optionvalue_id') . ', ' . $db->quoteName('vpo.product_optionvalue_ids') . ') > 0'
+            )
+            ->where($db->quoteName('vv.product_id') . ' = ' . $db->quoteName('po.product_id'));
+
+        return '(' . $db->quoteName('po.is_variant') . ' = 1 OR ('
+            . $db->quoteName('pp.product_type') . ' IN (' . $types . ') AND EXISTS (' . $referenced . ')))';
     }
 
     /** The line's recorded attributes: the column (what the order views read), else the attribute rows. */
