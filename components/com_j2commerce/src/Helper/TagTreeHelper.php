@@ -154,7 +154,7 @@ final class TagTreeHelper
         $query = $db->getQuery(true)
             ->select($db->quoteName([
                 'id', 'parent_id', 'lft', 'rgt', 'level', 'title', 'alias',
-                'description', 'images', 'access', 'language', 'metadesc', 'metakey',
+                'description', 'images', 'access', 'language', 'metadesc', 'metakey', 'params',
             ]))
             ->from($db->quoteName('#__tags'))
             ->where($db->quoteName('published') . ' = 1')

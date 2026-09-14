@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+    <fields name="params">
+        <fieldset name="j2commerce" label="PLG_CONTENT_J2COMMERCE_TAB_LABEL"
+            addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field">
+
+            <field name="tag_view_type" type="list" default=""
+                   label="COM_J2COMMERCE_TAG_VIEW_TYPE"
+                   description="COM_J2COMMERCE_TAG_VIEW_TYPE_DESC">
+                <option value="">COM_J2COMMERCE_USE_MENU_ITEM_SETTING</option>
+                <option value="tags">COM_J2COMMERCE_TAG_VIEW_TYPE_TAGS</option>
+                <option value="products">COM_J2COMMERCE_TAG_VIEW_TYPE_PRODUCTS</option>
+            </field>
+
+            <field name="subtemplate_tags" type="Templatelist" default=""
+                   label="COM_J2COMMERCE_PRODUCT_SUBTEMPLATE"
+                   description="COM_J2COMMERCE_PRODUCT_SUBTEMPLATE_DESC"
+                   view_context="tags"
+                   strip_prefix="true"
+                   empty_label="COM_J2COMMERCE_USE_MENU_ITEM_SETTING"
+                   showon="tag_view_type:tags" />
+
+            <field name="subtemplate_products" type="Templatelist" default=""
+                   label="COM_J2COMMERCE_PRODUCT_SUBTEMPLATE"
+                   description="COM_J2COMMERCE_PRODUCT_SUBTEMPLATE_DESC"
+                   view_context="products"
+                   strip_prefix="true"
+                   empty_label="COM_J2COMMERCE_USE_MENU_ITEM_SETTING"
+                   showon="tag_view_type:products" />
+
+            <field name="show_tag_root_title" type="list" default=""
+                   label="COM_J2COMMERCE_SHOW_TAG_TITLE"
+                   description="COM_J2COMMERCE_SHOW_TAG_ROOT_TITLE_DESC">
+                <option value="">COM_J2COMMERCE_USE_MENU_ITEM_SETTING</option>
+                <option value="0">JHIDE</option>
+                <option value="1">JSHOW</option>
+            </field>
+
+            <field name="show_child_tags" type="list" default=""
+                   label="COM_J2COMMERCE_SHOW_CHILD_TAGS"
+                   description="COM_J2COMMERCE_SHOW_CHILD_TAGS_DESC">
+                <option value="">COM_J2COMMERCE_USE_MENU_ITEM_SETTING</option>
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
+
+            <field name="child_tag_levels" type="number" default=""
+                   label="COM_J2COMMERCE_CHILD_TAG_LEVELS"
+                   description="COM_J2COMMERCE_CHILD_TAG_LEVELS_DESC"
+                   min="0" max="10" filter="integer"
+                   hint="COM_J2COMMERCE_USE_MENU_ITEM_SETTING" />
+
+            <field name="show_tag_description" type="list" default=""
+                   label="COM_J2COMMERCE_SHOW_CATEGORY_DESC"
+                   description="COM_J2COMMERCE_SHOW_TAG_DESC_DESC">
+                <option value="">COM_J2COMMERCE_USE_MENU_ITEM_SETTING</option>
+                <option value="0">JHIDE</option>
+                <option value="1">JSHOW</option>
+            </field>
+
+            <field name="show_tag_image" type="list" default=""
+                   label="COM_J2COMMERCE_SHOW_TAG_IMAGE"
+                   description="COM_J2COMMERCE_SHOW_TAG_IMAGE_DESC">
+                <option value="">COM_J2COMMERCE_USE_MENU_ITEM_SETTING</option>
+                <option value="0">JHIDE</option>
+                <option value="1">JSHOW</option>
+            </field>
+
+            <field name="show_product_count" type="list" default=""
+                   label="COM_J2COMMERCE_SHOW_PRODUCT_COUNT"
+                   description="COM_J2COMMERCE_SHOW_TAG_PRODUCT_COUNT_DESC">
+                <option value="">COM_J2COMMERCE_USE_MENU_ITEM_SETTING</option>
+                <option value="0">JHIDE</option>
+                <option value="1">JSHOW</option>
+            </field>
+
+            <field name="tag_columns" type="list" default=""
+                   label="COM_J2COMMERCE_CATEGORY_COLUMNS"
+                   description="COM_J2COMMERCE_TAG_COLUMNS_DESC">
+                <option value="">COM_J2COMMERCE_USE_MENU_ITEM_SETTING</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="6">6</option>
+            </field>
+
+            <field name="show_empty_tags" type="list" default=""
+                   label="COM_J2COMMERCE_SHOW_EMPTY_TAGS"
+                   description="COM_J2COMMERCE_SHOW_EMPTY_TAGS_DESC">
+                <option value="">COM_J2COMMERCE_USE_MENU_ITEM_SETTING</option>
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
+
+            <field name="child_tag_display_mode" type="list" default=""
+                   label="COM_J2COMMERCE_CHILD_TAG_DISPLAY_MODE"
+                   description="COM_J2COMMERCE_CHILD_TAG_DISPLAY_MODE_DESC">
+                <option value="">COM_J2COMMERCE_USE_MENU_ITEM_SETTING</option>
+                <option value="products">COM_J2COMMERCE_SUBCATEGORY_DISPLAY_PRODUCTS</option>
+                <option value="tags">COM_J2COMMERCE_CHILD_TAG_DISPLAY_TAGS</option>
+                <option value="tags_popular">COM_J2COMMERCE_CHILD_TAG_DISPLAY_TAGS_POPULAR</option>
+            </field>
+
+            <field name="popular_product_count" type="number" default=""
+                   label="COM_J2COMMERCE_POPULAR_PRODUCT_COUNT"
+                   description="COM_J2COMMERCE_POPULAR_PRODUCT_COUNT_DESC"
+                   min="1" max="100" filter="integer"
+                   hint="COM_J2COMMERCE_USE_MENU_ITEM_SETTING"
+                   showon="child_tag_display_mode:tags_popular" />
+
+            <field name="popular_display_type" type="list" default=""
+                   label="COM_J2COMMERCE_POPULAR_DISPLAY_TYPE"
+                   description="COM_J2COMMERCE_POPULAR_DISPLAY_TYPE_DESC"
+                   showon="child_tag_display_mode:tags_popular">
+                <option value="">COM_J2COMMERCE_USE_MENU_ITEM_SETTING</option>
+                <option value="grid">COM_J2COMMERCE_POPULAR_DISPLAY_GRID</option>
+                <option value="scroller">COM_J2COMMERCE_POPULAR_DISPLAY_SCROLLER</option>
+            </field>
+
+            <field name="popular_grid_columns" type="list" default=""
+                   label="COM_J2COMMERCE_POPULAR_GRID_COLUMNS"
+                   description="COM_J2COMMERCE_POPULAR_GRID_COLUMNS_DESC"
+                   showon="child_tag_display_mode:tags_popular[AND]popular_display_type:grid">
+                <option value="">COM_J2COMMERCE_USE_MENU_ITEM_SETTING</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="6">6</option>
+            </field>
+
+            <field name="popular_slides_per_view" type="number" default=""
+                   label="COM_J2COMMERCE_POPULAR_SLIDES_PER_VIEW"
+                   min="1" max="6" filter="integer"
+                   hint="COM_J2COMMERCE_USE_MENU_ITEM_SETTING"
+                   showon="child_tag_display_mode:tags_popular[AND]popular_display_type:scroller" />
+
+            <field name="popular_space_between" type="number" default=""
+                   label="COM_J2COMMERCE_POPULAR_SPACE_BETWEEN"
+                   min="0" max="60" filter="integer"
+                   hint="COM_J2COMMERCE_USE_MENU_ITEM_SETTING"
+                   showon="child_tag_display_mode:tags_popular[AND]popular_display_type:scroller" />
+
+            <field name="popular_autoplay" type="list" default=""
+                   label="COM_J2COMMERCE_POPULAR_AUTOPLAY"
+                   showon="child_tag_display_mode:tags_popular[AND]popular_display_type:scroller">
+                <option value="">COM_J2COMMERCE_USE_MENU_ITEM_SETTING</option>
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
+
+            <field name="popular_autoplay_delay" type="number" default=""
+                   label="COM_J2COMMERCE_POPULAR_AUTOPLAY_DELAY"
+                   min="1" max="30" filter="integer"
+                   hint="COM_J2COMMERCE_USE_MENU_ITEM_SETTING"
+                   showon="child_tag_display_mode:tags_popular[AND]popular_display_type:scroller[AND]popular_autoplay:1" />
+
+            <field name="popular_loop" type="list" default=""
+                   label="COM_J2COMMERCE_POPULAR_LOOP"
+                   showon="child_tag_display_mode:tags_popular[AND]popular_display_type:scroller">
+                <option value="">COM_J2COMMERCE_USE_MENU_ITEM_SETTING</option>
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
+
+            <field name="popular_navigation" type="list" default=""
+                   label="COM_J2COMMERCE_POPULAR_NAVIGATION"
+                   showon="child_tag_display_mode:tags_popular[AND]popular_display_type:scroller">
+                <option value="">COM_J2COMMERCE_USE_MENU_ITEM_SETTING</option>
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
+
+            <field name="popular_pagination" type="list" default=""
+                   label="COM_J2COMMERCE_POPULAR_PAGINATION"
+                   showon="child_tag_display_mode:tags_popular[AND]popular_display_type:scroller">
+                <option value="">COM_J2COMMERCE_USE_MENU_ITEM_SETTING</option>
+                <option value="0">JHIDE</option>
+                <option value="1">JSHOW</option>
+            </field>
+        </fieldset>
+    </fields>
+</form>

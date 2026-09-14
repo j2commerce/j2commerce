@@ -364,6 +364,12 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             // Also inject our own category form
             $this->injectCategoryForm($form, $data);
         }
+
+        // Tag form: our own overrides only. BeforeContentPrepareForm listeners are written for
+        // article and category forms, and not all of them check which form they were handed.
+        if ($formName === 'com_tags.tag') {
+            $this->injectTagForm($form);
+        }
     }
 
     /**
@@ -473,6 +479,16 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
 
         // Load category form fields from XML file (Joomla 6 best practice)
         $form->loadFile(JPATH_PLUGINS . '/content/j2commerce/forms/category.xml');
+    }
+
+    /** The tag counterpart of injectCategoryForm() — adds the Product Tags View overrides. */
+    protected function injectTagForm(Form $form): void
+    {
+        $language = Factory::getApplication()->getLanguage();
+        $language->load('plg_content_j2commerce', JPATH_ADMINISTRATOR);
+        $language->load('com_j2commerce', JPATH_ADMINISTRATOR);
+
+        $form->loadFile(JPATH_PLUGINS . '/content/j2commerce/forms/tag.xml');
     }
 
     /**

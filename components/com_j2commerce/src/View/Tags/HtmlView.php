@@ -60,10 +60,65 @@ class HtmlView extends BaseHtmlView
         $this->items    = $model->getItems();
         $this->products = $model->getProducts();
 
-        $landingTemplate = $this->params->get('tagstemplate', '');
+        // Override menu item params with tag-level params when set — the tag counterpart
+        // of the same merge in the Categories view. Only affects this landing view; Product
+        // Tag List View and single Product views never use this HtmlView.
+        $tagParams = $this->parent->params;
 
-        if ($landingTemplate !== '') {
-            $this->params->set('subtemplate', $landingTemplate);
+        $overrideKeys = [
+            'tag_view_type',
+            'subtemplate_tags',
+            'subtemplate_products',
+            'subtemplate',
+            'tagstemplate',
+            'show_tag_root_title',
+            'show_child_tags',
+            'child_tag_levels',
+            'show_tag_description',
+            'show_tag_image',
+            'show_product_count',
+            'tag_columns',
+            'show_empty_tags',
+            'child_tag_display_mode',
+            'popular_product_count',
+            'popular_display_type',
+            'popular_grid_columns',
+            'popular_slides_per_view',
+            'popular_space_between',
+            'popular_autoplay',
+            'popular_autoplay_delay',
+            'popular_loop',
+            'popular_navigation',
+            'popular_pagination',
+        ];
+
+        foreach ($overrideKeys as $key) {
+            $value = $tagParams->get($key, '');
+            if ($value !== '' && $value !== null) {
+                $this->params->set($key, $value);
+            }
+        }
+
+        // Resolve effective subtemplate based on tag_view_type and tagstemplate.
+        // Resolution order:
+        // - tags mode: subtemplate_tags (tag-level) -> tagstemplate (menu-level)
+        // - products mode: subtemplate_products (tag-level)
+        // - empty (use menu item setting): tagstemplate (menu-level, since the menu item IS a tags view)
+        $tagViewType = $this->params->get('tag_view_type', '');
+        if ($tagViewType === 'tags') {
+            $resolved = $this->params->get('subtemplate_tags', '')
+                ?: $this->params->get('tagstemplate', '');
+            $this->params->set('subtemplate', $resolved);
+        } elseif ($tagViewType === 'products') {
+            $resolved = $this->params->get('subtemplate_products', '');
+            if ($resolved !== '') {
+                $this->params->set('subtemplate', $resolved);
+            }
+        } else {
+            $resolved = $this->params->get('tagstemplate', '');
+            if ($resolved !== '') {
+                $this->params->set('subtemplate', $resolved);
+            }
         }
 
         $this->columns        = (int) $this->params->get('tag_columns', 3);

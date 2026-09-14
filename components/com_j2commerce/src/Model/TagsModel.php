@@ -54,7 +54,28 @@ class TagsModel extends BaseDatabaseModel
             $parentId = (int) ($app->getMenu()->getActive()?->query['id'] ?? 0);
         }
 
-        $this->setState('filter.parent_id', $parentId > 1 ? $parentId : TagTreeHelper::ROOT_ID);
+        $parentId = $parentId > 1 ? $parentId : TagTreeHelper::ROOT_ID;
+
+        $this->setState('filter.parent_id', $parentId);
+
+        // Merge tag-level param overrides for filter settings, the tag counterpart of the
+        // same merge in CategoriesModel. The HtmlView does this same merge for template
+        // params, but getItems() runs before the view can apply overrides.
+        if ($parentId > TagTreeHelper::ROOT_ID) {
+            $tag = TagTreeHelper::get($parentId);
+
+            if ($tag) {
+                $tagParams = new Registry($tag->params ?? '{}');
+
+                foreach (['tag_view_type', 'show_child_tags', 'child_tag_levels', 'show_empty_tags'] as $key) {
+                    $value = $tagParams->get($key, '');
+                    if ($value !== '' && $value !== null) {
+                        $params->set($key, $value);
+                    }
+                }
+            }
+        }
+
         $this->setState('filter.show_child_tags', (int) $params->get('show_child_tags', 1));
         $this->setState('filter.child_tag_levels', (int) $params->get('child_tag_levels', 1));
         $this->setState('filter.show_empty', (int) $params->get('show_empty_tags', 0));
@@ -144,6 +165,7 @@ class TagsModel extends BaseDatabaseModel
             'image_alt'     => (string) ($images->get('image_intro') ? $images->get('image_intro_alt', '') : $images->get('image_fulltext_alt', '')),
             'product_count' => 0,
             'children'      => [],
+            'params'        => new Registry($tag->params ?? '{}'),
         ];
     }
 

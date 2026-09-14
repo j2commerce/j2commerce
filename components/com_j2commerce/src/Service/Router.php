@@ -907,6 +907,21 @@ class Router extends RouterView
         return $json ? json_decode($json, true) : [];
     }
 
+    /** The tag counterpart of getCategoryParams(). */
+    private function getTagParams(int $tagId): array
+    {
+        $query = $this->db->getQuery(true)
+            ->select($this->db->quoteName('params'))
+            ->from($this->db->quoteName('#__tags'))
+            ->where($this->db->quoteName('id') . ' = :id')
+            ->bind(':id', $tagId, ParameterType::INTEGER);
+
+        $this->db->setQuery($query);
+        $json = $this->db->loadResult();
+
+        return $json ? json_decode($json, true) : [];
+    }
+
     /**
      * Get the category tree with caching
      *
@@ -1485,6 +1500,15 @@ class Router extends RouterView
 
             if ($remaining === []) {
                 $segments = [];
+
+                // A tag-level override can route this tag to the child-tag landing instead
+                // of the product list, mirroring the categories subcategory_display_mode check.
+                $tagParams      = $this->getTagParams($tagId);
+                $tagDisplayMode = $tagParams['child_tag_display_mode'] ?? '';
+
+                if ($tagDisplayMode !== '' && $tagDisplayMode !== 'products') {
+                    return ['view' => 'tags', 'id' => $tagId];
+                }
 
                 return ['view' => 'producttags', 'id' => $tagId];
             }
