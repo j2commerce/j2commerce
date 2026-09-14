@@ -22,6 +22,25 @@ $currency   = $item->currency_code ?? 'USD';
 $symbol     = CurrencyHelper::getSymbol($currency) ?: $currency;
 $unitCount  = array_sum(array_map(static fn ($line): int => (int) $line->orderitem_quantity, $orderItems));
 
+$optionProducts = $this->getModel()->getProductsWithEditableOptions(
+    array_map(static fn ($line): int => (int) $line->product_id, $orderItems)
+);
+
+foreach ([
+    'COM_J2COMMERCE_ORDERITEM_UPDATE_OPTIONS',
+    'COM_J2COMMERCE_ORDERITEM_FOR_PRODUCT',
+    'COM_J2COMMERCE_ORDERITEM_OPTIONS_TITLE',
+    'COM_J2COMMERCE_ORDERITEM_OPTION_PRICE_FOR',
+    'COM_J2COMMERCE_ORDERITEM_OPTIONS_KEPT',
+    'COM_J2COMMERCE_ORDERITEM_OPTIONS_KEPT_DESC',
+    'COM_J2COMMERCE_ORDERITEM_OPTIONS_PREVIEW',
+    'COM_J2COMMERCE_REQUIRED',
+    'COM_J2COMMERCE_LOADING',
+    'JNONE',
+] as $jsKey) {
+    Text::script($jsKey);
+}
+
 ?>
 <div class="row g-0 j2c-items-step">
     <?php // ── Left: catalog (card grid, populated via AJAX) ── ?>
@@ -106,6 +125,12 @@ $unitCount  = array_sum(array_map(static fn ($line): int => (int) $line->orderit
                                     ], JPATH_ROOT . '/components/com_j2commerce/layouts'); ?>
                                 </div>
                             <?php endif; ?>
+                            <?php if (\in_array((int) $orderItem->product_id, $optionProducts, true)) : ?>
+                                <button type="button" class="btn btn-sm btn-outline-secondary mt-1 j2c-line-options" data-item-id="<?php echo $oid; ?>">
+                                    <span class="fa-solid fa-sliders me-1" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_ORDERITEM_UPDATE_OPTIONS'); ?>
+                                    <span class="visually-hidden"><?php echo $this->escape(Text::sprintf('COM_J2COMMERCE_ORDERITEM_FOR_PRODUCT', $orderItem->orderitem_name)); ?></span>
+                                </button>
+                            <?php endif; ?>
                             <div class="j2c-line-admin d-flex align-items-center gap-2 mt-1 flex-wrap">
                                 <div class="input-group input-group-sm j2c-line-price d-none" style="max-width:150px;">
                                     <span class="input-group-text"><?php echo $this->escape($symbol); ?></span>
@@ -136,6 +161,30 @@ $unitCount  = array_sum(array_map(static fn ($line): int => (int) $line->orderit
                 <?php echo Text::_('COM_J2COMMERCE_NO_ORDER_ITEMS'); ?>
             </div>
         </div>
+        <div class="visually-hidden" role="status" aria-live="polite" id="j2c-items-status"></div>
 
+    </div>
+</div>
+
+<?php // Moved to <body> by admin-order-edit.js: the modal builds its own <form>, which cannot sit inside #adminForm. ?>
+<div class="modal fade" id="j2c-options-modal" tabindex="-1" aria-labelledby="j2c-options-modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="j2c-options-modal-title"><?php echo Text::_('COM_J2COMMERCE_ORDERITEM_UPDATE_OPTIONS'); ?></h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?php echo $this->escape(Text::_('JCLOSE')); ?>"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger d-none j2c-options-error" role="alert"></div>
+                <div class="j2c-options-body"></div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <div class="small fw-semibold j2c-options-preview"></div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?php echo Text::_('JCANCEL'); ?></button>
+                    <button type="button" class="btn btn-primary j2c-options-save" disabled><?php echo Text::_('JSAVE'); ?></button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>

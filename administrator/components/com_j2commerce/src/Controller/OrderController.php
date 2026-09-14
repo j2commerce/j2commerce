@@ -1019,6 +1019,7 @@ class OrderController extends FormController
                     'manages_stock'        => (bool) ($item->manages_stock ?? false),
                     'image_url'            => (string) ($item->image_url ?? ''),
                     'attributes'           => $model->getOrderItemAttributePairs((int) $item->j2commerce_orderitem_id),
+                    'has_options'          => $model->getProductsWithEditableOptions([(int) $item->product_id]) !== [],
                 ],
             ]);
         } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
@@ -1080,6 +1081,102 @@ class OrderController extends FormController
             $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
         } catch (\Exception $e) {
             $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    /** The editable options of one order line, for the Update Options modal. */
+    public function ajaxGetOrderItemOptions(): void
+    {
+        if (!$this->checkOrderEditAccess()) {
+            return;
+        }
+
+        $order = $this->loadOrderForAjax();
+
+        if ($order === null) {
+            return;
+        }
+
+        try {
+            $editor = $this->getModel()->getOrderItemOptionsEditor(
+                (string) $order->order_id,
+                $this->input->post->getInt('orderitem_id', 0)
+            );
+
+            $this->sendJson($editor === null
+                ? ['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST')]
+                : ['success' => true, 'data' => $editor]);
+        } catch (\Throwable $e) {
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST')]);
+        }
+    }
+
+    /** Save the option values and option prices of one order line, then recalculate totals. */
+    public function ajaxUpdateOrderItemOptions(): void
+    {
+        if (!$this->checkOrderEditAccess()) {
+            return;
+        }
+
+        $order = $this->loadOrderForAjax();
+
+        if ($order === null) {
+            return;
+        }
+
+        try {
+            $model  = $this->getModel();
+            $result = $model->updateOrderItemOptions(
+                $order,
+                $this->input->post->getInt('orderitem_id', 0),
+                $this->input->post->get('options', [], 'array'),
+                $this->input->post->get('option_price', [], 'array')
+            );
+
+            if ($result['changes'] === []) {
+                $this->sendJson([
+                    'success' => true,
+                    'changed' => false,
+                    'message' => Text::_('COM_J2COMMERCE_ORDERITEM_OPTIONS_NO_CHANGES'),
+                ]);
+
+                return;
+            }
+
+            $line     = $result['line'];
+            $currency = (string) $order->currency_code;
+            $totals   = $model->recalculateOrderTotals((string) $order->order_id);
+            $final    = CurrencyHelper::format((float) $line->orderitem_finalprice, $currency);
+
+            $model->addAdminNote(
+                (string) $order->order_id,
+                (int) $order->order_state_id,
+                Text::sprintf('COM_J2COMMERCE_ORDERITEM_OPTIONS_CHANGED_NOTE', $line->orderitem_name, implode('; ', $result['changes'])),
+                'system_note'
+            );
+
+            $this->sendJson([
+                'success'  => true,
+                'changed'  => true,
+                'message'  => Text::_('COM_J2COMMERCE_ORDERITEM_OPTIONS_UPDATED'),
+                'announce' => Text::sprintf('COM_J2COMMERCE_ORDERITEM_OPTIONS_UPDATED_FOR', $line->orderitem_name, $final),
+                'totals'   => $this->totalsPayload($totals, $currency),
+                'line'     => [
+                    'id'                   => (int) $line->j2commerce_orderitem_id,
+                    'finalprice_formatted' => $final,
+                    'attributes'           => $result['attributes'],
+                ],
+            ]);
+        } catch (\Joomla\Database\Exception\ExecutionFailureException | \JsonException $e) {
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
+        } catch (\RuntimeException $e) {
+            // The model only throws translated validation messages of its own here.
+            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
+        } catch (\Throwable $e) {
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
         }
     }
 

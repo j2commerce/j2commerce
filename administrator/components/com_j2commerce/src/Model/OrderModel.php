@@ -70,6 +70,12 @@ class OrderModel extends AdminModel
     /** Product types that must never appear on a guest order. */
     private const SUBSCRIPTION_PRODUCT_TYPES = ['subscriptionproduct', 'variablesubscriptionproduct'];
 
+    /** Option types the order editor can change on an existing line; any other type stays as recorded. */
+    private const EDITABLE_OPTION_TYPES = ['select', 'radio', 'color', 'checkbox', 'text', 'textarea', 'date', 'time', 'datetime', 'number', 'email', 'url'];
+
+    /** Option types whose values carry a price modifier (mirrors ProductHelper::getOptionPrice()). */
+    private const PRICED_OPTION_TYPES = ['select', 'radio', 'color', 'checkbox'];
+
     /**
      * @var array|null Cached order items
      */
@@ -2221,6 +2227,667 @@ class OrderModel extends AdminModel
             ];
             $db->insertObject('#__j2commerce_orderitemattributes', $attr, 'j2commerce_orderitemattribute_id');
         }
+    }
+
+    /** Product ids (from $productIds) carrying at least one non-variant option the order editor can change. */
+    public function getProductsWithEditableOptions(array $productIds): array
+    {
+        $productIds = array_values(array_unique(array_filter(array_map('intval', $productIds), static fn (int $id): bool => $id > 0)));
+
+        if ($productIds === []) {
+            return [];
+        }
+
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true)
+            ->select('DISTINCT ' . $db->quoteName('po.product_id'))
+            ->from($db->quoteName('#__j2commerce_product_options', 'po'))
+            ->join(
+                'INNER',
+                $db->quoteName('#__j2commerce_options', 'o')
+                . ' ON ' . $db->quoteName('o.j2commerce_option_id') . ' = ' . $db->quoteName('po.option_id')
+            )
+            ->whereIn($db->quoteName('po.product_id'), $productIds, ParameterType::INTEGER)
+            ->where($db->quoteName('po.is_variant') . ' = 0')
+            ->whereIn($db->quoteName('o.type'), self::EDITABLE_OPTION_TYPES, ParameterType::STRING);
+        $db->setQuery($query);
+
+        return array_map('intval', $db->loadColumn() ?: []);
+    }
+
+    /** The Update Options modal payload for one line of this order, or null when the line has nothing to edit. */
+    public function getOrderItemOptionsEditor(string $orderId, int $orderitemId): ?array
+    {
+        $line    = $this->loadOrderLine($orderId, $orderitemId);
+        $options = $line ? $this->loadEditableProductOptions((int) $line->product_id) : [];
+
+        if ($options === []) {
+            return null;
+        }
+
+        ['matched' => $matched, 'preserved' => $preserved] = $this->matchLineAttributes($this->readLineAttributes($line), $options);
+
+        $payload = [];
+
+        foreach ($options as $id => $option) {
+            $attrs = $matched[$id] ?? [];
+            $entry = [
+                'id'       => $id,
+                'label'    => Text::_((string) $option->option_name),
+                'type'     => (string) $option->type,
+                'required' => (int) $option->required === 1 && (int) $option->parent_id === 0,
+                'values'   => [],
+                'text'     => '',
+            ];
+
+            if (\in_array($option->type, self::PRICED_OPTION_TYPES, true)) {
+                $selected = [];
+
+                foreach ($attrs as $attr) {
+                    $selected[(int) $attr->productattributeoptionvalue_id] = (float) $attr->orderitemattribute_price;
+                }
+
+                foreach ($option->values as $valueId => $value) {
+                    $entry['values'][] = [
+                        'id'       => $valueId,
+                        'label'    => Text::_((string) ($value->optionvalue_name ?? '')),
+                        'prefix'   => (string) $value->product_optionvalue_prefix,
+                        'price'    => round((float) $value->product_optionvalue_price, 5),
+                        'selected' => isset($selected[$valueId]),
+                        'override' => $selected[$valueId] ?? null,
+                    ];
+                }
+            } else {
+                $entry['text'] = html_entity_decode((string) ($attrs[0]->orderitemattribute_value ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            }
+
+            $payload[] = $entry;
+        }
+
+        $variantNames = array_map([self::class, 'normalizeOptionName'], $this->loadVariantOptionNames((int) $line->product_id));
+        $kept         = [];
+
+        foreach ($preserved as $attr) {
+            $name = (string) ($attr->orderitemattribute_name ?? '');
+            $type = (string) ($attr->orderitemattribute_type ?? '');
+
+            // Variant values belong to the variant, and upload values are stored under a mangled file name.
+            if ($name === '' || \in_array($type, ['file', 'image'], true) || \in_array(self::normalizeOptionName($name), $variantNames, true)) {
+                continue;
+            }
+
+            $kept[] = [
+                'label' => Text::_($name),
+                'value' => html_entity_decode(\is_scalar($attr->orderitemattribute_value ?? null) ? (string) $attr->orderitemattribute_value : '', ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+            ];
+        }
+
+        return [
+            'line' => [
+                'id'       => (int) $line->j2commerce_orderitem_id,
+                'name'     => (string) $line->orderitem_name,
+                'price'    => (float) $line->orderitem_price,
+                'quantity' => max(1, (int) $line->orderitem_quantity),
+                'discount' => (float) $line->orderitem_discount,
+                // The option price share the editable options do not account for (variant or plugin-priced).
+                'fixed_option_price' => round(array_reduce(
+                    array_merge([], ...array_values($matched)),
+                    static fn (float $carry, object $attr): float => $carry - self::signedAmount((string) $attr->orderitemattribute_prefix, (float) $attr->orderitemattribute_price),
+                    (float) $line->orderitem_option_price
+                ), 5),
+            ],
+            'options' => $payload,
+            'kept'    => $kept,
+        ];
+    }
+
+    /**
+     * Replace the editable option values of one order line, re-derive its option price, final
+     * prices, tax and weight, and mirror the result into orderitem_attributes and the attribute rows.
+     *
+     * @return  array{changes: string[], attributes: array, line: object}
+     *
+     * @throws  \RuntimeException  With a translated message when the submission does not fit the line's product.
+     */
+    public function updateOrderItemOptions(object $order, int $orderitemId, array $submitted, array $priceOverrides): array
+    {
+        $orderId = (string) $order->order_id;
+        $line    = $this->loadOrderLine($orderId, $orderitemId);
+        $options = $line ? $this->loadEditableProductOptions((int) $line->product_id) : [];
+
+        if ($options === []) {
+            throw new \RuntimeException(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+        }
+
+        foreach (array_keys($submitted) as $key) {
+            if ((string) (int) $key !== (string) $key || !isset($options[(int) $key])) {
+                throw new \RuntimeException(Text::_('COM_J2COMMERCE_ORDERITEM_OPTIONS_INVALID'));
+            }
+        }
+
+        $entries = [];
+
+        foreach ($options as $id => $option) {
+            $label = Text::_((string) $option->option_name);
+            $raw   = $submitted[$id] ?? null;
+            $count = 0;
+
+            if (\in_array($option->type, self::PRICED_OPTION_TYPES, true)) {
+                if (\is_array($raw) && $option->type !== 'checkbox') {
+                    throw new \RuntimeException(Text::_('COM_J2COMMERCE_ORDERITEM_OPTIONS_INVALID'));
+                }
+
+                $valueIds = $raw === null || $raw === '' ? [] : array_unique((array) $raw);
+
+                foreach ($valueIds as $valueId) {
+                    if (!\is_scalar($valueId) || !ctype_digit((string) $valueId) || !isset($option->values[(int) $valueId])) {
+                        throw new \RuntimeException(Text::_('COM_J2COMMERCE_ORDERITEM_OPTIONS_INVALID'));
+                    }
+
+                    $valueId  = (int) $valueId;
+                    $value    = $option->values[$valueId];
+                    $override = $priceOverrides[$valueId] ?? null;
+
+                    if ($override !== null && (!\is_scalar($override) || !is_numeric($override))) {
+                        throw new \RuntimeException(Text::sprintf('COM_J2COMMERCE_ORDERITEM_OPTION_VALUE_INVALID', $label));
+                    }
+
+                    $entries[] = (object) [
+                        'orderitemattribute_name'        => (string) $option->option_name,
+                        'orderitemattribute_value'       => (string) ($value->optionvalue_name ?? ''),
+                        'orderitemattribute_type'        => (string) $option->type,
+                        'orderitemattribute_price'       => round(max(0.0, (float) ($override ?? $value->product_optionvalue_price)), 5),
+                        'orderitemattribute_prefix'      => substr((string) $value->product_optionvalue_prefix, 0, 1),
+                        'orderitemattribute_code'        => '',
+                        'productattributeoption_id'      => $id,
+                        'productattributeoptionvalue_id' => $valueId,
+                    ];
+                    $count++;
+                }
+            } else {
+                if (\is_array($raw)) {
+                    throw new \RuntimeException(Text::_('COM_J2COMMERCE_ORDERITEM_OPTIONS_INVALID'));
+                }
+
+                $control = $option->type === 'textarea' ? '/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u' : '/[\x00-\x1F\x7F]/u';
+                $text    = trim((string) preg_replace($control, '', (string) ($raw ?? '')));
+
+                if ($text !== '') {
+                    if (!self::isValidOptionText((string) $option->type, $text)) {
+                        throw new \RuntimeException(Text::sprintf('COM_J2COMMERCE_ORDERITEM_OPTION_VALUE_INVALID', $label));
+                    }
+
+                    $entries[] = (object) [
+                        'orderitemattribute_name'        => (string) $option->option_name,
+                        'orderitemattribute_value'       => $text,
+                        'orderitemattribute_type'        => (string) $option->type,
+                        'orderitemattribute_price'       => 0,
+                        'orderitemattribute_prefix'      => '',
+                        'orderitemattribute_code'        => '',
+                        'productattributeoption_id'      => $id,
+                        'productattributeoptionvalue_id' => 0,
+                    ];
+                    $count++;
+                }
+            }
+
+            // Child options only apply when their parent value is chosen, so only top-level options are enforced.
+            if ($count === 0 && (int) $option->required === 1 && (int) $option->parent_id === 0) {
+                throw new \RuntimeException(Text::sprintf('COM_J2COMMERCE_ERR_FIELD_REQUIRED', $label));
+            }
+        }
+
+        ['matched' => $matched, 'preserved' => $preserved] = $this->matchLineAttributes($this->readLineAttributes($line), $options);
+
+        J2CommerceHelper::plugin()->event('BeforeUpdateOrderItemOptions', [&$entries, $line, $order]);
+
+        $changes = [];
+
+        foreach ($options as $id => $option) {
+            $before = implode(', ', array_map([self::class, 'describeAttribute'], $matched[$id] ?? []));
+            $after  = implode(', ', array_map(
+                [self::class, 'describeAttribute'],
+                array_filter($entries, static fn (object $e): bool => (int) ($e->productattributeoption_id ?? 0) === $id)
+            ));
+
+            if ($before !== $after) {
+                $changes[] = Text::_((string) $option->option_name) . ': '
+                    . ($before === '' ? Text::_('JNONE') : $before) . ' → ' . ($after === '' ? Text::_('JNONE') : $after);
+            }
+        }
+
+        if ($changes === []) {
+            return ['changes' => [], 'attributes' => [], 'line' => $line];
+        }
+
+        // Only the editable options' share of the stored option price and weight is swapped, so any
+        // amount a plugin-priced or variant option contributed at checkout stays on the line.
+        $optionPrice = (float) $line->orderitem_option_price;
+        $unitWeight  = (float) $line->orderitem_weight;
+
+        foreach ($matched as $id => $attrs) {
+            foreach ($attrs as $attr) {
+                $optionPrice -= self::signedAmount((string) $attr->orderitemattribute_prefix, (float) $attr->orderitemattribute_price);
+                $unitWeight -= self::optionValueWeight($options[$id]->values[(int) $attr->productattributeoptionvalue_id] ?? null);
+            }
+        }
+
+        foreach ($entries as $entry) {
+            $optionId    = (int) ($entry->productattributeoption_id ?? 0);
+            $optionPrice += self::signedAmount((string) ($entry->orderitemattribute_prefix ?? ''), (float) ($entry->orderitemattribute_price ?? 0));
+            $unitWeight += self::optionValueWeight($options[$optionId]->values[(int) ($entry->productattributeoptionvalue_id ?? 0)] ?? null);
+        }
+
+        $qty        = max(1, (int) $line->orderitem_quantity);
+        $unitWeight = max(0.0, $unitWeight);
+        $finalPrice = max(0.0, ((float) $line->orderitem_price + $optionPrice) * $qty - (float) $line->orderitem_discount);
+        $oldFinal   = (float) $line->orderitem_finalprice;
+
+        // The line keeps the tax rate it was sold at; Recalculate re-derives tax from the profile when wanted.
+        $lineTax   = $oldFinal > 0.0 ? (float) $line->orderitem_tax * ($finalPrice / $oldFinal) : (float) $line->orderitem_tax;
+        $including = (int) ($order->is_including_tax ?? 0) === 1;
+
+        $attributes = array_merge($preserved, $entries);
+        $db         = $this->getDatabase();
+
+        $attributesJson = json_encode($attributes, JSON_THROW_ON_ERROR);
+        $optionPriceStr = number_format($optionPrice, 5, '.', '');
+        $finalStr       = number_format($finalPrice, 5, '.', '');
+        $withTaxStr     = number_format($including ? $finalPrice : $finalPrice + $lineTax, 5, '.', '');
+        $lineTaxStr     = number_format($lineTax, 5, '.', '');
+        $perItemTaxStr  = number_format($lineTax / $qty, 5, '.', '');
+        $weightStr      = (string) $unitWeight;
+        $weightTotalStr = (string) ($unitWeight * $qty);
+
+        $db->transactionStart(true);
+
+        try {
+            $update = $db->getQuery(true)
+                ->update($db->quoteName('#__j2commerce_orderitems'))
+                ->set($db->quoteName('orderitem_attributes') . ' = :attributes')
+                ->set($db->quoteName('orderitem_option_price') . ' = :optionPrice')
+                ->set($db->quoteName('orderitem_finalprice') . ' = :finalPrice')
+                ->set($db->quoteName('orderitem_finalprice_without_tax') . ' = :finalNoTax')
+                ->set($db->quoteName('orderitem_finalprice_with_tax') . ' = :finalWithTax')
+                ->set($db->quoteName('orderitem_tax') . ' = :lineTax')
+                ->set($db->quoteName('orderitem_per_item_tax') . ' = :perItemTax')
+                ->set($db->quoteName('orderitem_weight') . ' = :weight')
+                ->set($db->quoteName('orderitem_weight_total') . ' = :weightTotal')
+                ->where($db->quoteName('j2commerce_orderitem_id') . ' = :itemId')
+                ->bind(':attributes', $attributesJson)
+                ->bind(':optionPrice', $optionPriceStr)
+                ->bind(':finalPrice', $finalStr)
+                ->bind(':finalNoTax', $finalStr)
+                ->bind(':finalWithTax', $withTaxStr)
+                ->bind(':lineTax', $lineTaxStr)
+                ->bind(':perItemTax', $perItemTaxStr)
+                ->bind(':weight', $weightStr)
+                ->bind(':weightTotal', $weightTotalStr)
+                ->bind(':itemId', $orderitemId, ParameterType::INTEGER);
+            $db->setQuery($update)->execute();
+
+            $db->setQuery(
+                $db->getQuery(true)
+                    ->delete($db->quoteName('#__j2commerce_orderitemattributes'))
+                    ->where($db->quoteName('orderitem_id') . ' = :itemId')
+                    ->bind(':itemId', $orderitemId, ParameterType::INTEGER)
+            )->execute();
+
+            $str = static fn ($value): string => \is_scalar($value) ? (string) $value : '';
+
+            foreach ($attributes as $attr) {
+                $row = (object) [
+                    'orderitem_id'                   => $orderitemId,
+                    'productattributeoption_id'      => (int) ($attr->productattributeoption_id ?? 0),
+                    'productattributeoptionvalue_id' => (int) ($attr->productattributeoptionvalue_id ?? 0),
+                    'orderitemattribute_name'        => mb_substr($str($attr->orderitemattribute_name ?? ''), 0, 255),
+                    'orderitemattribute_value'       => mb_substr($str($attr->orderitemattribute_value ?? ''), 0, 255),
+                    'orderitemattribute_prefix'      => substr($str($attr->orderitemattribute_prefix ?? ''), 0, 1),
+                    'orderitemattribute_price'       => number_format((float) ($attr->orderitemattribute_price ?? 0), 5, '.', ''),
+                    'orderitemattribute_code'        => mb_substr($str($attr->orderitemattribute_code ?? ''), 0, 255),
+                    'orderitemattribute_type'        => mb_substr($str($attr->orderitemattribute_type ?? '') ?: 'select', 0, 255),
+                ];
+                $db->insertObject('#__j2commerce_orderitemattributes', $row, 'j2commerce_orderitemattribute_id');
+            }
+
+            $db->transactionCommit(true);
+        } catch (\Throwable $e) {
+            $db->transactionRollback(true);
+
+            throw $e;
+        }
+
+        $line = $this->loadOrderLine($orderId, $orderitemId);
+
+        J2CommerceHelper::plugin()->event('AfterUpdateOrderItemOptions', [$line, $attributes, $order]);
+
+        $pairs = [];
+
+        foreach (OrderItemAttributeHelper::groupAndDeduplicate($attributes) as $group) {
+            foreach ($group['items'] as $item) {
+                $qty     = (int) ($item['qty'] ?? 1);
+                $pairs[] = [
+                    'label' => ($qty > 1 ? '(' . $qty . ') ' : '') . Text::_((string) $item['name']),
+                    'value' => html_entity_decode(Text::_((string) $item['value']), ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+                ];
+            }
+        }
+
+        return ['changes' => $changes, 'attributes' => $pairs, 'line' => $line];
+    }
+
+    private function loadOrderLine(string $orderId, int $orderitemId): ?object
+    {
+        if ($orderId === '' || $orderitemId < 1) {
+            return null;
+        }
+
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true)
+            ->select($db->quoteName([
+                'j2commerce_orderitem_id',
+                'product_id',
+                'orderitem_name',
+                'orderitem_attributes',
+                'orderitem_quantity',
+                'orderitem_price',
+                'orderitem_option_price',
+                'orderitem_discount',
+                'orderitem_finalprice',
+                'orderitem_tax',
+                'orderitem_weight',
+            ]))
+            ->from($db->quoteName('#__j2commerce_orderitems'))
+            ->where($db->quoteName('j2commerce_orderitem_id') . ' = :itemId')
+            ->where($db->quoteName('order_id') . ' = :orderId')
+            ->bind(':itemId', $orderitemId, ParameterType::INTEGER)
+            ->bind(':orderId', $orderId);
+        $db->setQuery($query);
+
+        return $db->loadObject() ?: null;
+    }
+
+    /** Editable non-variant options of a product keyed by productoption id, each with ->values keyed by product optionvalue id. */
+    private function loadEditableProductOptions(int $productId): array
+    {
+        if ($productId < 1) {
+            return [];
+        }
+
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true)
+            ->select([
+                $db->quoteName('po.j2commerce_productoption_id', 'id'),
+                $db->quoteName('po.parent_id'),
+                $db->quoteName('po.required'),
+                $db->quoteName('o.option_name'),
+                $db->quoteName('o.type'),
+            ])
+            ->from($db->quoteName('#__j2commerce_product_options', 'po'))
+            ->join(
+                'INNER',
+                $db->quoteName('#__j2commerce_options', 'o')
+                . ' ON ' . $db->quoteName('o.j2commerce_option_id') . ' = ' . $db->quoteName('po.option_id')
+            )
+            ->where($db->quoteName('po.product_id') . ' = :productId')
+            ->where($db->quoteName('po.is_variant') . ' = 0')
+            ->whereIn($db->quoteName('o.type'), self::EDITABLE_OPTION_TYPES, ParameterType::STRING)
+            ->order([$db->quoteName('po.ordering') . ' ASC', $db->quoteName('po.j2commerce_productoption_id') . ' ASC'])
+            ->bind(':productId', $productId, ParameterType::INTEGER);
+        $db->setQuery($query);
+
+        $options = [];
+
+        foreach ($db->loadObjectList() ?: [] as $option) {
+            $option->values                 = [];
+            $options[(int) $option->id]     = $option;
+        }
+
+        if ($options === []) {
+            return [];
+        }
+
+        $query = $db->getQuery(true)
+            ->select([
+                $db->quoteName('pov.j2commerce_product_optionvalue_id', 'id'),
+                $db->quoteName('pov.productoption_id'),
+                $db->quoteName('pov.product_optionvalue_price'),
+                $db->quoteName('pov.product_optionvalue_prefix'),
+                $db->quoteName('pov.product_optionvalue_weight'),
+                $db->quoteName('pov.product_optionvalue_weight_prefix'),
+                $db->quoteName('ov.optionvalue_name'),
+            ])
+            ->from($db->quoteName('#__j2commerce_product_optionvalues', 'pov'))
+            ->join(
+                'LEFT',
+                $db->quoteName('#__j2commerce_optionvalues', 'ov')
+                . ' ON ' . $db->quoteName('ov.j2commerce_optionvalue_id') . ' = ' . $db->quoteName('pov.optionvalue_id')
+            )
+            ->whereIn($db->quoteName('pov.productoption_id'), array_keys($options), ParameterType::INTEGER)
+            ->order([$db->quoteName('pov.ordering') . ' ASC', $db->quoteName('pov.j2commerce_product_optionvalue_id') . ' ASC']);
+        $db->setQuery($query);
+
+        foreach ($db->loadObjectList() ?: [] as $value) {
+            $options[(int) $value->productoption_id]->values[(int) $value->id] = $value;
+        }
+
+        return $options;
+    }
+
+    private function loadVariantOptionNames(int $productId): array
+    {
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('o.option_name'))
+            ->from($db->quoteName('#__j2commerce_product_options', 'po'))
+            ->join(
+                'INNER',
+                $db->quoteName('#__j2commerce_options', 'o')
+                . ' ON ' . $db->quoteName('o.j2commerce_option_id') . ' = ' . $db->quoteName('po.option_id')
+            )
+            ->where($db->quoteName('po.product_id') . ' = :productId')
+            ->where($db->quoteName('po.is_variant') . ' = 1')
+            ->bind(':productId', $productId, ParameterType::INTEGER);
+        $db->setQuery($query);
+
+        return $db->loadColumn() ?: [];
+    }
+
+    /** The line's recorded attributes: the column (what the order views read), else the attribute rows. */
+    private function readLineAttributes(object $line): array
+    {
+        $attributes = OrderItemAttributeHelper::parseRawAttributes((string) ($line->orderitem_attributes ?? ''), (int) $line->product_id);
+
+        if ($attributes === []) {
+            $db    = $this->getDatabase();
+            $rowId = (int) $line->j2commerce_orderitem_id;
+            $query = $db->getQuery(true)
+                ->select($db->quoteName([
+                    'productattributeoption_id',
+                    'productattributeoptionvalue_id',
+                    'orderitemattribute_name',
+                    'orderitemattribute_value',
+                    'orderitemattribute_prefix',
+                    'orderitemattribute_price',
+                    'orderitemattribute_code',
+                    'orderitemattribute_type',
+                ]))
+                ->from($db->quoteName('#__j2commerce_orderitemattributes'))
+                ->where($db->quoteName('orderitem_id') . ' = :itemId')
+                ->order($db->quoteName('j2commerce_orderitemattribute_id') . ' ASC')
+                ->bind(':itemId', $rowId, ParameterType::INTEGER);
+            $db->setQuery($query);
+            $attributes = $db->loadObjectList() ?: [];
+        }
+
+        return array_values(array_map(static fn ($attr): object => (object) $attr, array_filter($attributes, static fn ($attr): bool => \is_object($attr) || \is_array($attr))));
+    }
+
+    /**
+     * Split recorded attributes into those belonging to an editable option (keyed by option id, each
+     * resolved to a product optionvalue id with its prefix and price filled in) and those left as they are.
+     * Checkout records carry names only, so ids are tried first and names second.
+     *
+     * @return  array{matched: array<int, object[]>, preserved: object[]}
+     */
+    private function matchLineAttributes(array $attributes, array $options): array
+    {
+        $byName = [];
+
+        foreach ($options as $id => $option) {
+            $byName[self::normalizeOptionName((string) $option->option_name)]          ??= $id;
+            $byName[self::normalizeOptionName(Text::_((string) $option->option_name))] ??= $id;
+        }
+
+        $matched   = [];
+        $preserved = [];
+
+        foreach ($attributes as $attr) {
+            $optionId = (int) ($attr->productattributeoption_id ?? 0);
+
+            if (!isset($options[$optionId])) {
+                $optionId = $byName[self::normalizeOptionName(\is_scalar($attr->orderitemattribute_name ?? null) ? (string) $attr->orderitemattribute_name : '')] ?? 0;
+            }
+
+            $option = $options[$optionId] ?? null;
+            $type   = (string) ($attr->orderitemattribute_type ?? '');
+
+            if ($option === null || ($type !== '' && $type !== $option->type) || !\is_scalar($attr->orderitemattribute_value ?? '')) {
+                $preserved[] = $attr;
+                continue;
+            }
+
+            if (!\in_array($option->type, self::PRICED_OPTION_TYPES, true)) {
+                $matched[$optionId][] = $attr;
+                continue;
+            }
+
+            $resolved = $this->resolveAttributeValues($option, $attr);
+
+            if ($resolved === []) {
+                $preserved[] = $attr;
+                continue;
+            }
+
+            foreach ($resolved as $valueId => $value) {
+                $copy = clone $attr;
+
+                $copy->productattributeoption_id      = $optionId;
+                $copy->productattributeoptionvalue_id = $valueId;
+                $copy->orderitemattribute_value       = (string) ($value->optionvalue_name ?? '');
+
+                // A single record naming several values carries no per-value price, so the product's applies.
+                if (\count($resolved) > 1 || !is_numeric($attr->orderitemattribute_price ?? null)) {
+                    $copy->orderitemattribute_price = (float) $value->product_optionvalue_price;
+                }
+
+                if (!\in_array($attr->orderitemattribute_prefix ?? null, ['+', '-'], true) || \count($resolved) > 1) {
+                    $copy->orderitemattribute_prefix = substr((string) $value->product_optionvalue_prefix, 0, 1);
+                }
+
+                $copy->orderitemattribute_price = (float) $copy->orderitemattribute_price;
+                $matched[$optionId][]           = $copy;
+            }
+        }
+
+        return ['matched' => $matched, 'preserved' => $preserved];
+    }
+
+    /** Product optionvalues an attribute record names: by id, then by value name, then by a "A, B" joined list. */
+    private function resolveAttributeValues(object $option, object $attr): array
+    {
+        $valueId = (int) ($attr->productattributeoptionvalue_id ?? 0);
+
+        if (isset($option->values[$valueId])) {
+            return [$valueId => $option->values[$valueId]];
+        }
+
+        $find = static function (string $name) use ($option): ?int {
+            $name = self::normalizeOptionName($name);
+
+            foreach ($option->values as $id => $value) {
+                $raw = (string) ($value->optionvalue_name ?? '');
+
+                if ($name === self::normalizeOptionName($raw) || $name === self::normalizeOptionName(Text::_($raw))) {
+                    return $id;
+                }
+            }
+
+            return null;
+        };
+
+        $recorded = (string) ($attr->orderitemattribute_value ?? '');
+        $whole    = $find($recorded);
+
+        if ($whole !== null) {
+            return [$whole => $option->values[$whole]];
+        }
+
+        $found = [];
+
+        foreach (explode(',', $recorded) as $part) {
+            $id = $find($part);
+
+            if ($id === null) {
+                return [];
+            }
+
+            $found[$id] = $option->values[$id];
+        }
+
+        return \count($found) > 1 ? $found : [];
+    }
+
+    private static function normalizeOptionName(string $name): string
+    {
+        return mb_strtolower(trim(html_entity_decode($name, ENT_QUOTES | ENT_HTML5, 'UTF-8')));
+    }
+
+    private static function isValidOptionText(string $type, string $text): bool
+    {
+        if (mb_strlen($text) > 255) {
+            return false;
+        }
+
+        return match ($type) {
+            'number' => is_numeric($text),
+            'email'  => filter_var($text, FILTER_VALIDATE_EMAIL) !== false,
+            'url'    => filter_var($text, FILTER_VALIDATE_URL) !== false && preg_match('#^https?://#i', $text) === 1,
+            default  => true,
+        };
+    }
+
+    /** "Value (+10.00)" for the order history note; a text value or a free value stays bare. */
+    private static function describeAttribute(object $attr): string
+    {
+        $value  = html_entity_decode(\is_scalar($attr->orderitemattribute_value ?? null) ? (string) $attr->orderitemattribute_value : '', ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $price  = (float) ($attr->orderitemattribute_price ?? 0);
+        $prefix = (string) ($attr->orderitemattribute_prefix ?? '');
+
+        if (\in_array($attr->orderitemattribute_type ?? '', self::PRICED_OPTION_TYPES, true)) {
+            $value = Text::_($value);
+        }
+
+        return $price > 0.0 && ($prefix === '+' || $prefix === '-')
+            ? $value . ' (' . $prefix . number_format($price, 2, '.', '') . ')'
+            : $value;
+    }
+
+    /** Same prefix rule as ProductHelper::getOptionPrice(): '+' adds, '-' subtracts, anything else is ignored. */
+    private static function signedAmount(string $prefix, float $amount): float
+    {
+        return match ($prefix) {
+            '+'     => $amount,
+            '-'     => -$amount,
+            default => 0.0,
+        };
+    }
+
+    private static function optionValueWeight(?object $value): float
+    {
+        return $value === null
+            ? 0.0
+            : self::signedAmount((string) $value->product_optionvalue_weight_prefix, (float) $value->product_optionvalue_weight);
     }
 
     /** Remove order items by primary key, returning the removed item names. */

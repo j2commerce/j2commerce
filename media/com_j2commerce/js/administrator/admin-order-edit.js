@@ -355,6 +355,10 @@ document.addEventListener('DOMContentLoaded', () => {
             info.appendChild(ul);
         }
 
+        if (line.has_options) {
+            info.appendChild(buildOptionsButton(line.id, line.name));
+        }
+
         // Hidden unit-price editor (revealed by the price toggle).
         const admin = el('div', 'j2c-line-admin d-flex align-items-center gap-2 mt-1 flex-wrap');
         const priceGrp = el('div', 'input-group input-group-sm j2c-line-price d-none');
@@ -606,6 +610,315 @@ document.addEventListener('DOMContentLoaded', () => {
     cartLines?.addEventListener('change', (e) => {
         if (e.target.closest('.j2c-price-input')) applyItemChanges();
     });
+
+    // === Update Options modal (per order line) ===
+    function buildOptionsButton(id, name) {
+        const btn = el('button', 'btn btn-sm btn-outline-secondary mt-1 j2c-line-options');
+        btn.type = 'button';
+        btn.dataset.itemId = String(id);
+        const icon = faIcon('fa-sliders');
+        icon.classList.add('me-1');
+        btn.appendChild(icon);
+        btn.appendChild(document.createTextNode(`${translate('COM_J2COMMERCE_ORDERITEM_UPDATE_OPTIONS', 'Update Options')} `));
+        btn.appendChild(el('span', 'visually-hidden', translate('COM_J2COMMERCE_ORDERITEM_FOR_PRODUCT', 'for %s').replace('%s', () => name)));
+        return btn;
+    }
+
+    const optionsModalEl = document.getElementById('j2c-options-modal');
+    const itemsStatus = document.getElementById('j2c-items-status');
+
+    if (optionsModalEl && cartLines && typeof bootstrap !== 'undefined') {
+        // The modal builds its own <form>, which must not be nested inside #adminForm.
+        document.body.appendChild(optionsModalEl);
+
+        const optionsModal = bootstrap.Modal.getOrCreateInstance(optionsModalEl);
+        const optionsTitle = optionsModalEl.querySelector('.modal-title');
+        const optionsBody = optionsModalEl.querySelector('.j2c-options-body');
+        const optionsError = optionsModalEl.querySelector('.j2c-options-error');
+        const optionsPreview = optionsModalEl.querySelector('.j2c-options-preview');
+        const optionsSave = optionsModalEl.querySelector('.j2c-options-save');
+        const pricedTypes = ['select', 'radio', 'color', 'checkbox'];
+        const moneyText = (value) => `${currencySymbol}${Number(value).toFixed(2)}`;
+        // Function replacements: a currency value such as "$12" must not be read as a replacement pattern.
+        const sprintf = (text, ...args) => args.reduce((out, arg, i) => out.replace(`%${i + 1}$s`, () => arg).replace('%s', () => arg), text);
+        let state = null;
+
+        const showOptionsError = (text) => {
+            optionsError.textContent = text || '';
+            optionsError.classList.toggle('d-none', !text);
+        };
+
+        const choiceLabel = (value) => {
+            const amount = Number(value.price) || 0;
+            return amount > 0 && (value.prefix === '+' || value.prefix === '-')
+                ? `${value.label} (${value.prefix}${moneyText(amount)})`
+                : value.label;
+        };
+
+        function buildPriceInput(option, value) {
+            const wrap = el('div', 'j2c-option-price d-none mt-1 mb-2 ms-4');
+            wrap.dataset.valueId = String(value.id);
+
+            const inputId = `j2c-opt-price-${value.id}`;
+            const label = el('label', 'visually-hidden', translate('COM_J2COMMERCE_ORDERITEM_OPTION_PRICE_FOR', 'Price for %s').replace('%s', () => `${option.label}: ${value.label}`));
+            label.htmlFor = inputId;
+
+            const group = el('div', 'input-group input-group-sm');
+            group.style.maxWidth = '180px';
+            const input = el('input', 'form-control j2c-option-price-input');
+            input.type = 'number';
+            input.min = '0';
+            input.step = '0.01';
+            input.id = inputId;
+            input.name = `option_price[${value.id}]`;
+            input.disabled = true;
+            input.value = Number(value.override ?? value.price).toFixed(2);
+            input.dataset.prefix = value.prefix;
+            group.append(el('span', 'input-group-text', `${value.prefix === '-' ? '-' : '+'}${currencySymbol}`), input);
+
+            wrap.append(label, group);
+            return wrap;
+        }
+
+        function buildOptionGroup(option) {
+            const fieldset = el('fieldset', 'mb-3 j2c-option-group');
+            const legend = el('legend', 'fs-6 fw-semibold mb-2', option.label);
+            if (option.required) {
+                legend.appendChild(el('span', 'badge text-bg-light border ms-2 fw-normal', translate('COM_J2COMMERCE_REQUIRED', 'Required')));
+            }
+            fieldset.appendChild(legend);
+
+            const baseId = `j2c-opt-${option.id}`;
+
+            if (!pricedTypes.includes(option.type)) {
+                const label = el('label', 'visually-hidden', option.label);
+                label.htmlFor = baseId;
+                const field = el(option.type === 'textarea' ? 'textarea' : 'input', 'form-control');
+                if (option.type === 'textarea') {
+                    field.rows = 3;
+                } else {
+                    field.type = { number: 'number', email: 'email', url: 'url' }[option.type] || 'text';
+                }
+                field.id = baseId;
+                field.name = `options[${option.id}]`;
+                field.maxLength = 255;
+                field.required = option.required;
+                field.value = option.text || '';
+                fieldset.append(label, field);
+                return fieldset;
+            }
+
+            if (option.type === 'select') {
+                const label = el('label', 'visually-hidden', option.label);
+                label.htmlFor = baseId;
+                const select = el('select', 'form-select j2c-option-choice');
+                select.id = baseId;
+                select.name = `options[${option.id}]`;
+                select.required = option.required;
+                select.appendChild(new Option(translate('JGLOBAL_SELECT_AN_OPTION', '- Select -'), ''));
+                option.values.forEach((value) => {
+                    const opt = new Option(choiceLabel(value), String(value.id));
+                    opt.selected = value.selected;
+                    select.appendChild(opt);
+                });
+                fieldset.append(label, select);
+                option.values.forEach((value) => fieldset.appendChild(buildPriceInput(option, value)));
+                return fieldset;
+            }
+
+            const multiple = option.type === 'checkbox';
+            const choices = multiple || option.required
+                ? option.values
+                : [{ id: '', label: translate('JNONE', 'None'), price: 0, prefix: '', selected: !option.values.some((v) => v.selected) }, ...option.values];
+
+            choices.forEach((value) => {
+                const check = el('div', 'form-check');
+                const input = el('input', 'form-check-input j2c-option-choice');
+                input.type = multiple ? 'checkbox' : 'radio';
+                input.name = multiple ? `options[${option.id}][]` : `options[${option.id}]`;
+                input.id = `${baseId}-${value.id === '' ? 'none' : value.id}`;
+                input.value = String(value.id);
+                input.checked = !!value.selected;
+                input.required = !multiple && option.required;
+                const label = el('label', 'form-check-label', choiceLabel(value));
+                label.htmlFor = input.id;
+                check.append(input, label);
+                fieldset.appendChild(check);
+                if (value.id !== '') fieldset.appendChild(buildPriceInput(option, value));
+            });
+
+            return fieldset;
+        }
+
+        function buildKeptList(kept) {
+            const box = el('div', 'border rounded p-2 bg-body-tertiary small');
+            box.appendChild(el('h3', 'fs-6 fw-semibold mb-1', translate('COM_J2COMMERCE_ORDERITEM_OPTIONS_KEPT', 'Recorded on this line')));
+            box.appendChild(el('p', 'text-body-secondary mb-1', translate('COM_J2COMMERCE_ORDERITEM_OPTIONS_KEPT_DESC', '')));
+            const list = el('ul', 'mb-0');
+            kept.forEach((k) => list.appendChild(el('li', null, k.value !== '' ? `${k.label}: ${k.value}` : k.label)));
+            box.appendChild(list);
+            return box;
+        }
+
+        function updateOptionsPreview(form) {
+            let optionPrice = 0;
+            form.querySelectorAll('.j2c-option-price-input:not(:disabled)').forEach((input) => {
+                const amount = Math.max(0, parseFloat(input.value) || 0);
+                if (input.dataset.prefix === '+') optionPrice += amount;
+                if (input.dataset.prefix === '-') optionPrice -= amount;
+            });
+            const { line } = state;
+            const unit = line.price + line.fixed_option_price + optionPrice;
+            const total = Math.max(0, unit * line.quantity - line.discount);
+            optionsPreview.textContent = sprintf(
+                translate('COM_J2COMMERCE_ORDERITEM_OPTIONS_PREVIEW', 'New unit price: %1$s · Line total: %2$s'),
+                moneyText(unit),
+                moneyText(total)
+            );
+        }
+
+        // Only the chosen values' price inputs are enabled, so FormData submits exactly those overrides.
+        function syncOptionPrices(form) {
+            const chosen = new Set();
+            form.querySelectorAll('.j2c-option-choice').forEach((choice) => {
+                if (choice.tagName === 'SELECT' ? choice.value : (choice.checked && choice.value)) chosen.add(choice.value);
+            });
+            form.querySelectorAll('.j2c-option-price').forEach((wrap) => {
+                const on = chosen.has(wrap.dataset.valueId);
+                wrap.classList.toggle('d-none', !on);
+                wrap.querySelector('input').disabled = !on;
+            });
+            updateOptionsPreview(form);
+        }
+
+        function replaceLineAttributes(row, attributes) {
+            const current = row.querySelector('.j2c-line-attributes');
+            if (!attributes.length) {
+                current?.remove();
+                return;
+            }
+            const list = el('ul', 'j2c-line-attributes list-unstyled small text-body-secondary');
+            attributes.forEach((a) => list.appendChild(el('li', null, a.value !== '' ? `${a.label}: ${a.value}` : a.label)));
+            if (current) {
+                current.replaceWith(list);
+            } else {
+                row.querySelector('.j2c-line-options')?.before(list);
+            }
+        }
+
+        async function saveOptions(form) {
+            if (!state?.line || !form.reportValidity()) return;
+
+            const formData = new FormData(form);
+            formData.append(token, '1');
+            formData.append('order_id', orderId.toString());
+            formData.append('orderitem_id', state.itemId);
+
+            optionsSave.disabled = true;
+            showOptionsError('');
+
+            try {
+                const response = await fetch('index.php?option=com_j2commerce&task=order.ajaxUpdateOrderItemOptions', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': token },
+                    body: formData,
+                });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const result = await response.json();
+                if (!result.success) {
+                    showOptionsError(result.message);
+                    return;
+                }
+
+                if (result.changed) {
+                    const row = cartLines.querySelector(`.j2c-line-row[data-item-id="${result.line.id}"]`);
+                    if (row) {
+                        replaceLineAttributes(row, result.line.attributes || []);
+                        const totalCell = row.querySelector('.j2c-line-total');
+                        if (totalCell) totalCell.textContent = result.line.finalprice_formatted;
+                    }
+                    updateSummary(result.totals);
+                }
+
+                optionsModal.hide();
+                showMessage('message', result.message);
+                if (itemsStatus) itemsStatus.textContent = result.announce || result.message;
+            } catch (err) {
+                showOptionsError(translate('COM_J2COMMERCE_ERROR_NETWORK', 'Network error. Please try again.'));
+            } finally {
+                optionsSave.disabled = false;
+            }
+        }
+
+        cartLines.addEventListener('click', async (e) => {
+            const opener = e.target.closest('.j2c-line-options');
+            if (!opener) return;
+
+            const { itemId } = opener.dataset;
+            state = { itemId, opener, line: null };
+
+            showOptionsError('');
+            optionsPreview.textContent = '';
+            optionsSave.disabled = true;
+            optionsTitle.textContent = translate('COM_J2COMMERCE_ORDERITEM_UPDATE_OPTIONS', 'Update Options');
+
+            const loading = el('div', 'text-center py-4');
+            const spinner = el('span', 'spinner-border');
+            spinner.setAttribute('aria-hidden', 'true');
+            loading.append(spinner, el('p', 'mt-2 mb-0', translate('COM_J2COMMERCE_LOADING', 'Loading...')));
+            optionsBody.replaceChildren(loading);
+            optionsModal.show();
+
+            try {
+                const result = await postAjax('ajaxGetOrderItemOptions', { orderitem_id: itemId });
+                if (state?.itemId !== itemId) return;
+
+                if (!result.success) {
+                    optionsBody.replaceChildren();
+                    showOptionsError(result.message);
+                    return;
+                }
+
+                const { data } = result;
+                state.line = data.line;
+                optionsTitle.textContent = sprintf(translate('COM_J2COMMERCE_ORDERITEM_OPTIONS_TITLE', 'Update Options: %s'), data.line.name);
+
+                const form = el('form', 'j2c-options-form');
+                data.options.forEach((option) => form.appendChild(buildOptionGroup(option)));
+                if (data.kept.length) form.appendChild(buildKeptList(data.kept));
+                form.addEventListener('change', () => syncOptionPrices(form));
+                form.addEventListener('input', (ev) => {
+                    if (ev.target.closest('.j2c-option-price-input')) updateOptionsPreview(form);
+                });
+                form.addEventListener('submit', (ev) => {
+                    ev.preventDefault();
+                    saveOptions(form);
+                });
+
+                optionsBody.replaceChildren(form);
+                syncOptionPrices(form);
+                optionsSave.disabled = false;
+            } catch (err) {
+                optionsBody.replaceChildren();
+                showOptionsError(translate('COM_J2COMMERCE_ERROR_NETWORK', 'Network error. Please try again.'));
+            }
+        });
+
+        optionsSave.addEventListener('click', () => {
+            const form = optionsBody.querySelector('.j2c-options-form');
+            if (form) saveOptions(form);
+        });
+
+        // Return focus to the line's Update Options button once the modal is gone.
+        optionsModalEl.addEventListener('hidden.bs.modal', () => {
+            const opener = state?.opener;
+            state = null;
+            optionsBody.replaceChildren();
+            optionsPreview.textContent = '';
+            if (opener?.isConnected) opener.focus();
+        });
+    }
 
     // === Recalculate totals ===
     const recalculateBtn = document.getElementById('recalculateBtn');
