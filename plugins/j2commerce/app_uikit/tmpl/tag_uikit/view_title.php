@@ -17,7 +17,8 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductTitle', [$this->product, J2CommerceHelper::utilities()->getContext('view_title')])->getArgument('html', ''); ?>
 
 <?php if($this->params->get('item_show_title', 1)): ?>
-	<h<?php echo $this->params->get('item_title_headertag', '2'); ?> class="product-title uk-margin-small">
+	<?php $headerTag = min(6, max(1, (int) $this->params->get('item_title_headertag', 2))); ?>
+	<h<?php echo $headerTag; ?> class="product-title uk-margin-small">
 		<?php echo $this->escape($this->product->product_name); ?>
-	</h<?php echo $this->params->get('item_title_headertag', '2'); ?>>
+	</h<?php echo $headerTag; ?>>
 <?php endif; ?>
