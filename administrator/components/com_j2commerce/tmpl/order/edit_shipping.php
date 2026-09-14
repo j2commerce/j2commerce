@@ -19,10 +19,7 @@ $orderInfo = $item->orderinfo ?? null;
 // Admin can always set a shipping address (or skip the step via the "same as
 // billing" checkbox on the Billing tab) — the shipping fields are shown whenever
 // the step is not skipped, never a "does not require shipping" message.
-$hasShipping = $orderInfo
-    && (!empty($orderInfo->shipping_address_1)
-        || !empty($orderInfo->shipping_first_name)
-        || !empty($orderInfo->shipping_last_name));
+$hasShipping = $this->hasShippingAddress;
 
 ?>
 <div class="row g-0">

@@ -107,7 +107,7 @@ $orderInfo = $item->orderinfo ?? null;
         <?php endif; ?>
 
         <div class="form-check mt-3">
-            <input type="checkbox" class="form-check-input" id="j2c-same-as-shipping">
+            <input type="checkbox" class="form-check-input" id="j2c-same-as-shipping"<?php echo $this->hasShippingAddress ? '' : ' checked'; ?>>
             <label class="form-check-label" for="j2c-same-as-shipping"><?php echo Text::_('COM_J2COMMERCE_SHIPPING_SAME_AS_BILLING'); ?></label>
         </div>
 

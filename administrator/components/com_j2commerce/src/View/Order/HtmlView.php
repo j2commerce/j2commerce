@@ -49,6 +49,7 @@ class HtmlView extends BaseHtmlView
     protected string $currencySymbol      = '';
     protected string $currencyCode        = '';
     protected bool $hasPackingSlip        = false;
+    protected bool $hasShippingAddress    = false;
     protected ?Registry $params           = null;
     protected array $countries            = [];
     protected array $shippingMethods      = [];
@@ -82,6 +83,13 @@ class HtmlView extends BaseHtmlView
         $this->isNew         = empty((int) $this->item->j2commerce_order_id);
         $this->orderStatuses = $this->getOrderStatuses();
         $this->params        = ComponentHelper::getParams('com_j2commerce');
+
+        // One answer for both the Billing tab's "same as billing" default and the Shipping tab.
+        $orderInfo                = $this->item->orderinfo ?? null;
+        $this->hasShippingAddress = $orderInfo
+            && (!empty($orderInfo->shipping_address_1)
+                || !empty($orderInfo->shipping_first_name)
+                || !empty($orderInfo->shipping_last_name));
 
         $this->dateFormat = $this->params->get('date_format', 'Y-m-d');
         $this->timeFormat = $this->params->get('time_format', 'H:i:s');
