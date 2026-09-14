@@ -391,7 +391,7 @@ class EmailHelper
     {
         $tag = (string) ($order->customer_language ?? '');
 
-        return ($tag !== '' && $tag !== '*' && LanguageHelper::exists($tag))
+        return ($tag !== '' && $tag !== '*' && isset(LanguageHelper::getInstalledLanguages(0)[$tag]))
             ? $tag
             : self::siteDefaultLanguage();
     }

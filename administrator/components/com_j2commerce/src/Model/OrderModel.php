@@ -1710,7 +1710,10 @@ class OrderModel extends AdminModel
                 ->bind(':userEmail', $email);
         }
 
-        if (\array_key_exists('customer_language', $data)) {
+        // Held to the languages the order form offers; any other value leaves the stored one as it is.
+        if (\array_key_exists('customer_language', $data)
+            && ($language === '' || isset(LanguageHelper::getContentLanguages([0, 1])[$language]))
+        ) {
             $update->set($db->quoteName('customer_language') . ' = :customerLanguage')
                 ->bind(':customerLanguage', $language);
         }
