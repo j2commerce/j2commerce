@@ -1455,11 +1455,15 @@ class Router extends RouterView
                     array_unshift($remainingSegments, $productSegment);
                 }
 
-                // Check if this category has a display mode override that needs the categories view
+                // The category's own View Type wins; only when it is left to the menu item does the
+                // subcategory display mode decide whether the categories view is needed
                 $catParams      = $this->getCategoryParams($lastCatId);
+                $catViewType    = $catParams['category_view_type'] ?? '';
                 $catDisplayMode = $catParams['subcategory_display_mode'] ?? '';
 
-                if ($catDisplayMode !== '' && $catDisplayMode !== 'products') {
+                if ($catViewType === 'categories'
+                    || ($catViewType === '' && $catDisplayMode !== '' && $catDisplayMode !== 'products')
+                ) {
                     // Route to categories view so display mode logic applies
                     $vars['view'] = 'categories';
                     $vars['id']   = $lastCatId;
