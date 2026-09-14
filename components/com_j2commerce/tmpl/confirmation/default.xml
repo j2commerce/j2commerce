@@ -16,8 +16,10 @@
 				view_context="confirmation"
 				label="COM_J2COMMERCE_LAYOUT_FRAMEWORK_LABEL"
 				description="COM_J2COMMERCE_LAYOUT_FRAMEWORK_DESC"
-				default="bootstrap5"
-			/>
+				default=""
+			>
+				<option value="">JGLOBAL_USE_GLOBAL</option>
+			</field>
 		</fieldset>
 		<fieldset name="tracking" label="COM_J2COMMERCE_TRACKING_FIELDSET_LABEL"
 			addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field">

@@ -16,8 +16,10 @@
 				view_context="myprofile"
 				label="COM_J2COMMERCE_LAYOUT_FRAMEWORK_LABEL"
 				description="COM_J2COMMERCE_LAYOUT_FRAMEWORK_DESC"
-				default="bootstrap5"
-			/>
+				default=""
+			>
+				<option value="">JGLOBAL_USE_GLOBAL</option>
+			</field>
 		</fieldset>
 	</fields>
 </metadata>

@@ -69,6 +69,27 @@ final class SubtemplateHelper
     }
 
     /**
+     * The tmpl subfolder a checkout-family view (checkout, carts, confirmation, myprofile,
+     * paymentupdate) renders from.
+     *
+     * The menu item's CSS Framework wins when it names one; left on Use Global, the store's
+     * Subtemplate setting decides. Reduced to folder-name characters for the same reason as
+     * subtemplate().
+     *
+     * @since   6.6.3
+     */
+    public static function framework(Registry $params): string
+    {
+        $framework = (string) $params->get('framework', '');
+
+        if ($framework === '') {
+            $framework = self::normalize((string) J2CommerceHelper::config()->get('subtemplate', self::FALLBACK));
+        }
+
+        return preg_replace('/[^a-zA-Z0-9_-]/', '', $framework) ?: self::FALLBACK;
+    }
+
+    /**
      * A subtemplate name with its `app_` and view-scope prefixes removed.
      *
      * Callers that need the owning plugin folder rather than a tmpl subfolder compose it from

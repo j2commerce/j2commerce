@@ -15,6 +15,7 @@ namespace J2Commerce\Component\J2commerce\Site\View\Paymentupdate;
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\SubtemplateHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\PaymentupdateContextHelper;
 use Joomla\CMS\Factory;
@@ -156,8 +157,7 @@ class HtmlView extends BaseHtmlView
     /** Resolve and register the per-menu-item framework folder (bootstrap5/uikit). */
     private function registerFrameworkTemplatePaths(\Joomla\CMS\Application\CMSApplicationInterface $app): void
     {
-        $framework = (string) $this->params->get('framework', 'bootstrap5');
-        $framework = preg_replace('/[^a-zA-Z0-9_-]/', '', $framework) ?? '';
+        $framework = SubtemplateHelper::framework($this->params);
 
         $viewName = $this->getName();
         $template = $app->getTemplate();

@@ -15,6 +15,7 @@ namespace J2Commerce\Component\J2commerce\Site\View\Checkout;
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\SubtemplateHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\TrackingHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\CheckoutContextHelper;
@@ -203,8 +204,7 @@ class HtmlView extends BaseHtmlView
         ?\Joomla\Registry\Registry $params = null
     ): void {
         $params ??= $this->params;
-        $framework = (string) ($params ? $params->get('framework', 'bootstrap5') : 'bootstrap5');
-        $framework = preg_replace('/[^a-zA-Z0-9_-]/', '', $framework) ?? '';
+        $framework = $params ? SubtemplateHelper::framework($params) : SubtemplateHelper::FALLBACK;
 
         $viewName = $this->getName();
         $template = $app->getTemplate();

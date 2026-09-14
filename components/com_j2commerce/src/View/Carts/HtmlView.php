@@ -15,6 +15,7 @@ namespace J2Commerce\Component\J2commerce\Site\View\Carts;
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\SubtemplateHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use J2Commerce\Component\J2commerce\Site\Model\CartsModel;
@@ -378,8 +379,7 @@ class HtmlView extends BaseHtmlView
      */
     public function registerFrameworkTemplatePaths(\Joomla\CMS\Application\CMSApplicationInterface $app): void
     {
-        $framework = (string) $this->params->get('framework', 'bootstrap5');
-        $framework = preg_replace('/[^a-zA-Z0-9_-]/', '', $framework) ?? '';
+        $framework = SubtemplateHelper::framework($this->params);
 
         $viewName = $this->getName();
         $template = $app->getTemplate();

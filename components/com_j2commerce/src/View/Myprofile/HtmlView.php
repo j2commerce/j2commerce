@@ -18,6 +18,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\DownloadHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\PaymentMethodsHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\SubtemplateHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use Joomla\CMS\Factory;
@@ -301,8 +302,7 @@ class HtmlView extends BaseHtmlView
      */
     private function registerFrameworkTemplatePaths(\Joomla\CMS\Application\CMSApplicationInterface $app): void
     {
-        $framework = (string) $this->params->get('framework', 'bootstrap5');
-        $framework = preg_replace('/[^a-zA-Z0-9_-]/', '', $framework) ?? '';
+        $framework = SubtemplateHelper::framework($this->params);
 
         $viewName = $this->getName();
         $template = $app->getTemplate();
