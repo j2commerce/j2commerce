@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+    <fields name="filter">
+        <field
+            name="search"
+            type="text"
+            label="COM_J2COMMERCE_FILTER_SEARCH_LABEL"
+            description="COM_J2COMMERCE_FILTER_SEARCH_ORDERVARIANTS_DESC"
+            hint="COM_J2COMMERCE_FILTER_SEARCH_ORDERVARIANTS_LABEL"
+            inputmode="search"
+        />
+
+        <field
+            name="stock"
+            type="list"
+            label="COM_J2COMMERCE_FILTER_STOCK_STATUS"
+            class="js-select-submit-on-change"
+        >
+            <option value="">COM_J2COMMERCE_FILTER_STOCK_SELECT</option>
+            <option value="in">COM_J2COMMERCE_IN_STOCK</option>
+            <option value="out">COM_J2COMMERCE_OUT_OF_STOCK</option>
+        </field>
+    </fields>
+
+    <fields name="list">
+        <field
+            name="fullordering"
+            type="list"
+            label="JGLOBAL_SORT_BY"
+            default="v.sku ASC"
+            class="js-select-submit-on-change"
+        >
+            <option value="">JGLOBAL_SORT_BY</option>
+            <option value="variant_options ASC">COM_J2COMMERCE_HEADING_VARIANT_OPTIONS_ASC</option>
+            <option value="variant_options DESC">COM_J2COMMERCE_HEADING_VARIANT_OPTIONS_DESC</option>
+            <option value="v.sku ASC">COM_J2COMMERCE_HEADING_SKU_ASC</option>
+            <option value="v.sku DESC">COM_J2COMMERCE_HEADING_SKU_DESC</option>
+            <option value="v.price ASC">COM_J2COMMERCE_HEADING_PRICE_ASC</option>
+            <option value="v.price DESC">COM_J2COMMERCE_HEADING_PRICE_DESC</option>
+            <option value="stock_quantity ASC">COM_J2COMMERCE_HEADING_STOCK_ASC</option>
+            <option value="stock_quantity DESC">COM_J2COMMERCE_HEADING_STOCK_DESC</option>
+        </field>
+
+        <field
+            name="limit"
+            type="limitbox"
+            label="JGLOBAL_LIST_LIMIT"
+            class="js-select-submit-on-change"
+        />
+    </fields>
+</form>

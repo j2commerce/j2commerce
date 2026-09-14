@@ -13,6 +13,7 @@ defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
 
@@ -25,8 +26,19 @@ $unitCount  = array_sum(array_map(static fn ($line): int => (int) $line->orderit
 $optionProducts = $this->getModel()->getProductsWithEditableOptions(
     array_map(static fn ($line): int => (int) $line->product_id, $orderItems)
 );
+$variableTypes = ProductHelper::getVariableProductTypes();
 
 foreach ([
+    'COM_J2COMMERCE_ORDERITEM_UPDATE_VARIANT',
+    'COM_J2COMMERCE_ORDERITEM_VARIANT_TITLE',
+    'COM_J2COMMERCE_ORDERITEM_VARIANT_FROM',
+    'COM_J2COMMERCE_ORDERITEM_VARIANT_TO',
+    'COM_J2COMMERCE_ORDERITEM_VARIANT_PRICE',
+    'COM_J2COMMERCE_ORDERITEM_VARIANT_BACK',
+    'COM_J2COMMERCE_ORDERITEM_ADD_OPTIONS_TITLE',
+    'COM_J2COMMERCE_VARIANT',
+    'COM_J2COMMERCE_HEADING_SKU',
+    'COM_J2COMMERCE_HEADING_VARIANT_OPTIONS',
     'COM_J2COMMERCE_ORDERITEM_UPDATE_OPTIONS',
     'COM_J2COMMERCE_ORDERITEM_FOR_PRODUCT',
     'COM_J2COMMERCE_ORDERITEM_OPTIONS_TITLE',
@@ -125,11 +137,26 @@ foreach ([
                                     ], JPATH_ROOT . '/components/com_j2commerce/layouts'); ?>
                                 </div>
                             <?php endif; ?>
-                            <?php if (\in_array((int) $orderItem->product_id, $optionProducts, true)) : ?>
-                                <button type="button" class="btn btn-sm btn-outline-secondary mt-1 j2c-line-options" data-item-id="<?php echo $oid; ?>">
-                                    <span class="fa-solid fa-sliders me-1" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_ORDERITEM_UPDATE_OPTIONS'); ?>
-                                    <span class="visually-hidden"><?php echo $this->escape(Text::sprintf('COM_J2COMMERCE_ORDERITEM_FOR_PRODUCT', $orderItem->orderitem_name)); ?></span>
-                                </button>
+                            <?php
+                            $hasOptions  = \in_array((int) $orderItem->product_id, $optionProducts, true);
+                            $hasVariants = \in_array((string) ($orderItem->product_type ?? ''), $variableTypes, true);
+                            $forProduct  = $this->escape(Text::sprintf('COM_J2COMMERCE_ORDERITEM_FOR_PRODUCT', $orderItem->orderitem_name));
+                            ?>
+                            <?php if ($hasOptions || $hasVariants) : ?>
+                                <div class="j2c-line-actions d-flex flex-wrap gap-2 mt-1">
+                                    <?php if ($hasVariants) : ?>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary j2c-line-variant" data-item-id="<?php echo $oid; ?>">
+                                            <span class="fa-solid fa-shuffle me-1" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_ORDERITEM_UPDATE_VARIANT'); ?>
+                                            <span class="visually-hidden"><?php echo $forProduct; ?></span>
+                                        </button>
+                                    <?php endif; ?>
+                                    <?php if ($hasOptions) : ?>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary j2c-line-options" data-item-id="<?php echo $oid; ?>">
+                                            <span class="fa-solid fa-sliders me-1" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_ORDERITEM_UPDATE_OPTIONS'); ?>
+                                            <span class="visually-hidden"><?php echo $forProduct; ?></span>
+                                        </button>
+                                    <?php endif; ?>
+                                </div>
                             <?php endif; ?>
                             <div class="j2c-line-admin d-flex align-items-center gap-2 mt-1 flex-wrap">
                                 <div class="input-group input-group-sm j2c-line-price d-none" style="max-width:150px;">
@@ -175,8 +202,8 @@ foreach ([
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?php echo $this->escape(Text::_('JCLOSE')); ?>"></button>
             </div>
             <div class="modal-body">
-                <div class="alert alert-danger d-none j2c-options-error" role="alert"></div>
-                <div class="j2c-options-body"></div>
+                <div class="alert alert-danger d-none m-3 mb-0 j2c-options-error" role="alert"></div>
+                <div class="p-3 j2c-options-body"></div>
             </div>
             <div class="modal-footer justify-content-between">
                 <div class="small fw-semibold j2c-options-preview"></div>
@@ -184,6 +211,28 @@ foreach ([
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?php echo Text::_('JCANCEL'); ?></button>
                     <button type="button" class="btn btn-primary j2c-options-save" disabled><?php echo Text::_('JSAVE'); ?></button>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<?php // Step 1 frames the ordervariants list; step 2 confirms the chosen variant. Moved to <body> by admin-order-edit.js. ?>
+<div class="modal fade" id="j2c-variant-modal" tabindex="-1" aria-labelledby="j2c-variant-modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="j2c-variant-modal-title"><?php echo Text::_('COM_J2COMMERCE_ORDERITEM_UPDATE_VARIANT'); ?></h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?php echo $this->escape(Text::_('JCLOSE')); ?>"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger d-none m-3 mb-0 j2c-variant-error" role="alert"></div>
+                <iframe class="w-100 border-0 j2c-variant-frame" style="height:65vh;" title="<?php echo $this->escape(Text::_('COM_J2COMMERCE_ORDERITEM_UPDATE_VARIANT')); ?>"></iframe>
+                <div class="p-3 d-none j2c-variant-confirm"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary me-auto d-none j2c-variant-back"><?php echo Text::_('COM_J2COMMERCE_ORDERITEM_VARIANT_BACK'); ?></button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?php echo Text::_('JCANCEL'); ?></button>
+                <button type="button" class="btn btn-primary d-none j2c-variant-save"><?php echo Text::_('JSAVE'); ?></button>
             </div>
         </div>
     </div>

@@ -21,6 +21,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderPayGrantHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderTransactionHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\PackingSlipHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\QueueHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -934,6 +935,7 @@ class OrderController extends FormController
             $total      = $model->countSearchProductVariants($term, $excludeSubscription);
             $results    = $model->searchProductVariants($term, $limit, $excludeSubscription, $offset);
             $totalPages = $total > 0 ? (int) ceil($total / $limit) : 1;
+            $editable   = $model->getProductsWithEditableOptions(array_map(static fn (object $row): int => (int) $row->product_id, $results));
 
             $this->sendJson([
                 'success'    => true,
@@ -947,6 +949,7 @@ class OrderController extends FormController
                     'price'           => number_format((float) $row->price, 2, '.', ''),
                     'price_formatted' => CurrencyHelper::format((float) $row->price, $currency),
                     'image'           => $model->resolveThumbImage((int) $row->product_id),
+                    'has_options'     => \in_array((int) $row->product_id, $editable, true),
                 ], $results),
             ]);
         } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
@@ -954,6 +957,25 @@ class OrderController extends FormController
             $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
         } catch (\Exception $e) {
             $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    /** The editable options of a catalog product about to be added, for the options modal. */
+    public function ajaxGetProductOptions(): void
+    {
+        if (!$this->checkOrderEditAccess()) {
+            return;
+        }
+
+        try {
+            $editor = $this->getModel()->getProductOptionsEditor($this->input->post->getInt('variant_id', 0));
+
+            $this->sendJson($editor === null
+                ? ['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST')]
+                : ['success' => true, 'data' => $editor]);
+        } catch (\Throwable $e) {
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST')]);
         }
     }
 
@@ -967,6 +989,8 @@ class OrderController extends FormController
         $orderId   = $this->input->post->getInt('order_id', 0);
         $variantId = $this->input->post->getInt('variant_id', 0);
         $qty       = $this->input->post->getInt('quantity', 1);
+        $options   = $this->input->post->get('options', [], 'array');
+        $prices    = $this->input->post->get('option_price', [], 'array');
 
         try {
             if ($orderId < 1 || $variantId < 1) {
@@ -980,16 +1004,39 @@ class OrderController extends FormController
                 throw new \Exception(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
             }
 
-            $item = $model->addOrderItemFromVariant(
-                $order->order_id,
-                $variantId,
-                $qty,
-                (int) $order->user_id < 1,
-                $model->isStockCommitted($order)
-            );
+            $productId = $model->getVariantProductId($variantId);
+            $editable  = $productId > 0 && $model->getProductsWithEditableOptions([$productId]) !== [];
 
-            if ($item === null) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+            // Checked before the line exists, so a product is never added with its required options missing.
+            if ($editable) {
+                $model->validateProductOptionSelection($productId, $options, $prices);
+            }
+
+            $db = $model->getDatabase();
+            $db->transactionStart(true);
+
+            try {
+                $item = $model->addOrderItemFromVariant(
+                    $order->order_id,
+                    $variantId,
+                    $qty,
+                    (int) $order->user_id < 1,
+                    $model->isStockCommitted($order)
+                );
+
+                if ($item === null) {
+                    throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+                }
+
+                if ($editable) {
+                    $item->orderitem_finalprice = $model->updateOrderItemOptions($order, (int) $item->j2commerce_orderitem_id, $options, $prices)['line']->orderitem_finalprice;
+                }
+
+                $db->transactionCommit(true);
+            } catch (\Throwable $e) {
+                $db->transactionRollback(true);
+
+                throw $e;
             }
 
             $totals = $model->recalculateOrderTotals($order->order_id);
@@ -1019,7 +1066,8 @@ class OrderController extends FormController
                     'manages_stock'        => (bool) ($item->manages_stock ?? false),
                     'image_url'            => (string) ($item->image_url ?? ''),
                     'attributes'           => $model->getOrderItemAttributePairs((int) $item->j2commerce_orderitem_id),
-                    'has_options'          => $model->getProductsWithEditableOptions([(int) $item->product_id]) !== [],
+                    'has_options'          => $editable,
+                    'has_variants'         => \in_array((string) ($item->product_type ?? ''), ProductHelper::getVariableProductTypes(), true),
                 ],
             ]);
         } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
@@ -1166,6 +1214,114 @@ class OrderController extends FormController
                     'id'                   => (int) $line->j2commerce_orderitem_id,
                     'finalprice_formatted' => $final,
                     'attributes'           => $result['attributes'],
+                ],
+            ]);
+        } catch (\Joomla\Database\Exception\ExecutionFailureException | \JsonException $e) {
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
+        } catch (\RuntimeException $e) {
+            // The model only throws translated validation messages of its own here.
+            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
+        } catch (\Throwable $e) {
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
+        }
+    }
+
+    /** Both sides of a variant swap on one order line, for the Update Variant confirm step. */
+    public function ajaxGetOrderItemVariantSwap(): void
+    {
+        if (!$this->checkOrderEditAccess()) {
+            return;
+        }
+
+        $order = $this->loadOrderForAjax();
+
+        if ($order === null) {
+            return;
+        }
+
+        try {
+            $swap = $this->getModel()->getOrderItemVariantSwap(
+                (string) $order->order_id,
+                $this->input->post->getInt('orderitem_id', 0),
+                $this->input->post->getInt('variant_id', 0)
+            );
+
+            $currency = (string) $order->currency_code;
+
+            $swap['current']['price_formatted'] = CurrencyHelper::format((float) $swap['current']['price'], $currency);
+            $swap['target']['price_formatted']  = CurrencyHelper::format((float) $swap['target']['price'], $currency);
+
+            $this->sendJson(['success' => true, 'data' => $swap]);
+        } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST')]);
+        } catch (\RuntimeException $e) {
+            // The model only throws translated validation messages of its own here.
+            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
+        } catch (\Throwable $e) {
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST')]);
+        }
+    }
+
+    /** Move one order line to another variant of its product, then recalculate totals. */
+    public function ajaxUpdateOrderItemVariant(): void
+    {
+        if (!$this->checkOrderEditAccess()) {
+            return;
+        }
+
+        $order = $this->loadOrderForAjax();
+
+        if ($order === null) {
+            return;
+        }
+
+        $rawPrice = trim($this->input->post->getString('price', ''));
+
+        if ($rawPrice !== '' && !is_numeric($rawPrice)) {
+            $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST')]);
+
+            return;
+        }
+
+        try {
+            $model  = $this->getModel();
+            $result = $model->updateOrderItemVariant(
+                $order,
+                $this->input->post->getInt('orderitem_id', 0),
+                $this->input->post->getInt('variant_id', 0),
+                $rawPrice === '' ? null : (float) $rawPrice
+            );
+
+            $line     = $result['line'];
+            $currency = (string) $order->currency_code;
+            $totals   = $model->recalculateOrderTotals((string) $order->order_id);
+            $final    = CurrencyHelper::format((float) $line->orderitem_finalprice, $currency);
+
+            $model->addAdminNote(
+                (string) $order->order_id,
+                (int) $order->order_state_id,
+                Text::sprintf('COM_J2COMMERCE_ORDERITEM_VARIANT_CHANGED_NOTE', $line->orderitem_name, implode('; ', $result['changes'])),
+                'system_note'
+            );
+
+            $this->sendJson([
+                'success'  => true,
+                'message'  => Text::_('COM_J2COMMERCE_ORDERITEM_VARIANT_UPDATED'),
+                'announce' => Text::sprintf('COM_J2COMMERCE_ORDERITEM_VARIANT_UPDATED_FOR', $line->orderitem_name, $final),
+                'totals'   => $this->totalsPayload($totals, $currency),
+                'line'     => [
+                    'id'                   => (int) $line->j2commerce_orderitem_id,
+                    'sku'                  => (string) $line->orderitem_sku,
+                    'price'                => number_format((float) $line->orderitem_price, 2, '.', ''),
+                    'price_formatted'      => CurrencyHelper::format((float) $line->orderitem_price, $currency),
+                    'finalprice_formatted' => $final,
+                    'attributes'           => $result['attributes'],
+                    'stock'                => (int) $result['stock'],
+                    'manages_stock'        => (bool) $result['manages_stock'],
                 ],
             ]);
         } catch (\Joomla\Database\Exception\ExecutionFailureException | \JsonException $e) {

@@ -2276,38 +2276,18 @@ class OrderModel extends AdminModel
         $payload = [];
 
         foreach ($options as $id => $option) {
-            $attrs = $matched[$id] ?? [];
-            $entry = [
-                'id'       => $id,
-                'label'    => Text::_((string) $option->option_name),
-                'type'     => (string) $option->type,
-                'required' => (int) $option->required === 1 && (int) $option->parent_id === 0,
-                'values'   => [],
-                'text'     => '',
-            ];
+            $attrs    = $matched[$id] ?? [];
+            $selected = [];
 
-            if (\in_array($option->type, self::PRICED_OPTION_TYPES, true)) {
-                $selected = [];
-
-                foreach ($attrs as $attr) {
-                    $selected[(int) $attr->productattributeoptionvalue_id] = (float) $attr->orderitemattribute_price;
-                }
-
-                foreach ($option->values as $valueId => $value) {
-                    $entry['values'][] = [
-                        'id'       => $valueId,
-                        'label'    => Text::_((string) ($value->optionvalue_name ?? '')),
-                        'prefix'   => (string) $value->product_optionvalue_prefix,
-                        'price'    => round((float) $value->product_optionvalue_price, 5),
-                        'selected' => isset($selected[$valueId]),
-                        'override' => $selected[$valueId] ?? null,
-                    ];
-                }
-            } else {
-                $entry['text'] = html_entity_decode((string) ($attrs[0]->orderitemattribute_value ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            foreach ($attrs as $attr) {
+                $selected[(int) ($attr->productattributeoptionvalue_id ?? 0)] = (float) ($attr->orderitemattribute_price ?? 0);
             }
 
-            $payload[] = $entry;
+            $payload[] = self::optionPayload(
+                $option,
+                $selected,
+                html_entity_decode((string) ($attrs[0]->orderitemattribute_value ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8')
+            );
         }
 
         $variantNames = array_map([self::class, 'normalizeOptionName'], $this->loadVariantOptionNames((int) $line->product_id));
@@ -2365,83 +2345,7 @@ class OrderModel extends AdminModel
             throw new \RuntimeException(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
         }
 
-        foreach (array_keys($submitted) as $key) {
-            if ((string) (int) $key !== (string) $key || !isset($options[(int) $key])) {
-                throw new \RuntimeException(Text::_('COM_J2COMMERCE_ORDERITEM_OPTIONS_INVALID'));
-            }
-        }
-
-        $entries = [];
-
-        foreach ($options as $id => $option) {
-            $label = Text::_((string) $option->option_name);
-            $raw   = $submitted[$id] ?? null;
-            $count = 0;
-
-            if (\in_array($option->type, self::PRICED_OPTION_TYPES, true)) {
-                if (\is_array($raw) && $option->type !== 'checkbox') {
-                    throw new \RuntimeException(Text::_('COM_J2COMMERCE_ORDERITEM_OPTIONS_INVALID'));
-                }
-
-                $valueIds = $raw === null || $raw === '' ? [] : array_unique((array) $raw);
-
-                foreach ($valueIds as $valueId) {
-                    if (!\is_scalar($valueId) || !ctype_digit((string) $valueId) || !isset($option->values[(int) $valueId])) {
-                        throw new \RuntimeException(Text::_('COM_J2COMMERCE_ORDERITEM_OPTIONS_INVALID'));
-                    }
-
-                    $valueId  = (int) $valueId;
-                    $value    = $option->values[$valueId];
-                    $override = $priceOverrides[$valueId] ?? null;
-
-                    if ($override !== null && (!\is_scalar($override) || !is_numeric($override))) {
-                        throw new \RuntimeException(Text::sprintf('COM_J2COMMERCE_ORDERITEM_OPTION_VALUE_INVALID', $label));
-                    }
-
-                    $entries[] = (object) [
-                        'orderitemattribute_name'        => (string) $option->option_name,
-                        'orderitemattribute_value'       => (string) ($value->optionvalue_name ?? ''),
-                        'orderitemattribute_type'        => (string) $option->type,
-                        'orderitemattribute_price'       => round(max(0.0, (float) ($override ?? $value->product_optionvalue_price)), 5),
-                        'orderitemattribute_prefix'      => substr((string) $value->product_optionvalue_prefix, 0, 1),
-                        'orderitemattribute_code'        => '',
-                        'productattributeoption_id'      => $id,
-                        'productattributeoptionvalue_id' => $valueId,
-                    ];
-                    $count++;
-                }
-            } else {
-                if (\is_array($raw)) {
-                    throw new \RuntimeException(Text::_('COM_J2COMMERCE_ORDERITEM_OPTIONS_INVALID'));
-                }
-
-                $control = $option->type === 'textarea' ? '/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u' : '/[\x00-\x1F\x7F]/u';
-                $text    = trim((string) preg_replace($control, '', (string) ($raw ?? '')));
-
-                if ($text !== '') {
-                    if (!self::isValidOptionText((string) $option->type, $text)) {
-                        throw new \RuntimeException(Text::sprintf('COM_J2COMMERCE_ORDERITEM_OPTION_VALUE_INVALID', $label));
-                    }
-
-                    $entries[] = (object) [
-                        'orderitemattribute_name'        => (string) $option->option_name,
-                        'orderitemattribute_value'       => $text,
-                        'orderitemattribute_type'        => (string) $option->type,
-                        'orderitemattribute_price'       => 0,
-                        'orderitemattribute_prefix'      => '',
-                        'orderitemattribute_code'        => '',
-                        'productattributeoption_id'      => $id,
-                        'productattributeoptionvalue_id' => 0,
-                    ];
-                    $count++;
-                }
-            }
-
-            // Child options only apply when their parent value is chosen, so only top-level options are enforced.
-            if ($count === 0 && (int) $option->required === 1 && (int) $option->parent_id === 0) {
-                throw new \RuntimeException(Text::sprintf('COM_J2COMMERCE_ERR_FIELD_REQUIRED', $label));
-            }
-        }
+        $entries = $this->buildOptionEntries($options, $submitted, $priceOverrides);
 
         ['matched' => $matched, 'preserved' => $preserved] = $this->matchLineAttributes($this->readLineAttributes($line), $options);
 
@@ -2532,29 +2436,7 @@ class OrderModel extends AdminModel
                 ->bind(':itemId', $orderitemId, ParameterType::INTEGER);
             $db->setQuery($update)->execute();
 
-            $db->setQuery(
-                $db->getQuery(true)
-                    ->delete($db->quoteName('#__j2commerce_orderitemattributes'))
-                    ->where($db->quoteName('orderitem_id') . ' = :itemId')
-                    ->bind(':itemId', $orderitemId, ParameterType::INTEGER)
-            )->execute();
-
-            $str = static fn ($value): string => \is_scalar($value) ? (string) $value : '';
-
-            foreach ($attributes as $attr) {
-                $row = (object) [
-                    'orderitem_id'                   => $orderitemId,
-                    'productattributeoption_id'      => (int) ($attr->productattributeoption_id ?? 0),
-                    'productattributeoptionvalue_id' => (int) ($attr->productattributeoptionvalue_id ?? 0),
-                    'orderitemattribute_name'        => mb_substr($str($attr->orderitemattribute_name ?? ''), 0, 255),
-                    'orderitemattribute_value'       => mb_substr($str($attr->orderitemattribute_value ?? ''), 0, 255),
-                    'orderitemattribute_prefix'      => substr($str($attr->orderitemattribute_prefix ?? ''), 0, 1),
-                    'orderitemattribute_price'       => number_format((float) ($attr->orderitemattribute_price ?? 0), 5, '.', ''),
-                    'orderitemattribute_code'        => mb_substr($str($attr->orderitemattribute_code ?? ''), 0, 255),
-                    'orderitemattribute_type'        => mb_substr($str($attr->orderitemattribute_type ?? '') ?: 'select', 0, 255),
-                ];
-                $db->insertObject('#__j2commerce_orderitemattributes', $row, 'j2commerce_orderitemattribute_id');
-            }
+            $this->replaceAttributeRows($orderitemId, $attributes);
 
             $db->transactionCommit(true);
         } catch (\Throwable $e) {
@@ -2567,19 +2449,204 @@ class OrderModel extends AdminModel
 
         J2CommerceHelper::plugin()->event('AfterUpdateOrderItemOptions', [$line, $attributes, $order]);
 
-        $pairs = [];
+        return ['changes' => $changes, 'attributes' => self::attributePairs($attributes), 'line' => $line];
+    }
 
-        foreach (OrderItemAttributeHelper::groupAndDeduplicate($attributes) as $group) {
-            foreach ($group['items'] as $item) {
-                $qty     = (int) ($item['qty'] ?? 1);
-                $pairs[] = [
-                    'label' => ($qty > 1 ? '(' . $qty . ') ' : '') . Text::_((string) $item['name']),
-                    'value' => html_entity_decode(Text::_((string) $item['value']), ENT_QUOTES | ENT_HTML5, 'UTF-8'),
-                ];
+    /**
+     * The Update Options modal payload for a catalog product about to be added, or null when the
+     * variant is not an enabled product's or the product has nothing to choose.
+     */
+    public function getProductOptionsEditor(int $variantId): ?array
+    {
+        if ($variantId < 1) {
+            return null;
+        }
+
+        $db     = $this->getDatabase();
+        $source = 'com_content';
+        $query  = $db->getQuery(true)
+            ->select([
+                $db->quoteName('v.product_id'),
+                $db->quoteName('v.price'),
+                $db->quoteName('v.sku'),
+                $db->quoteName('c.title', 'product_name'),
+            ])
+            ->from($db->quoteName('#__j2commerce_variants', 'v'))
+            ->join(
+                'INNER',
+                $db->quoteName('#__j2commerce_products', 'p')
+                . ' ON ' . $db->quoteName('p.j2commerce_product_id') . ' = ' . $db->quoteName('v.product_id')
+            )
+            ->join(
+                'LEFT',
+                $db->quoteName('#__content', 'c')
+                . ' ON ' . $db->quoteName('c.id') . ' = ' . $db->quoteName('p.product_source_id')
+                . ' AND ' . $db->quoteName('p.product_source') . ' = :source'
+            )
+            ->where($db->quoteName('v.j2commerce_variant_id') . ' = :variantId')
+            ->where($db->quoteName('p.enabled') . ' = 1')
+            ->bind(':source', $source)
+            ->bind(':variantId', $variantId, ParameterType::INTEGER);
+        $db->setQuery($query);
+        $variant = $db->loadObject();
+        $options = $variant ? $this->loadEditableProductOptions((int) $variant->product_id) : [];
+
+        if ($options === []) {
+            return null;
+        }
+
+        return [
+            'line' => [
+                'id'                 => 0,
+                'name'               => (string) ($variant->product_name ?? $variant->sku ?? ''),
+                'price'              => (float) $variant->price,
+                'quantity'           => 1,
+                'discount'           => 0.0,
+                'fixed_option_price' => 0.0,
+            ],
+            'options' => array_values(array_map(static fn (object $option): array => self::optionPayload($option), $options)),
+            'kept'    => [],
+        ];
+    }
+
+    /**
+     * Throws the translated message updateOrderItemOptions() would for this selection, without
+     * touching any order line, so a product can be checked before its line is created.
+     *
+     * @throws  \RuntimeException
+     */
+    public function validateProductOptionSelection(int $productId, array $submitted, array $priceOverrides): void
+    {
+        $this->buildOptionEntries($this->loadEditableProductOptions($productId), $submitted, $priceOverrides);
+    }
+
+    public function getVariantProductId(int $variantId): int
+    {
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('product_id'))
+            ->from($db->quoteName('#__j2commerce_variants'))
+            ->where($db->quoteName('j2commerce_variant_id') . ' = :variantId')
+            ->bind(':variantId', $variantId, ParameterType::INTEGER);
+        $db->setQuery($query);
+
+        return (int) $db->loadResult();
+    }
+
+    /**
+     * One option of the modal payload; $selected maps chosen product optionvalue ids to the price recorded for them.
+     */
+    private static function optionPayload(object $option, array $selected = [], string $text = ''): array
+    {
+        $priced = \in_array($option->type, self::PRICED_OPTION_TYPES, true);
+
+        return [
+            'id'       => (int) $option->id,
+            'label'    => Text::_((string) $option->option_name),
+            'type'     => (string) $option->type,
+            'required' => (int) $option->required === 1 && (int) $option->parent_id === 0,
+            'values'   => $priced ? array_values(array_map(
+                static fn (object $value): array => [
+                    'id'       => (int) $value->id,
+                    'label'    => Text::_((string) ($value->optionvalue_name ?? '')),
+                    'prefix'   => (string) $value->product_optionvalue_prefix,
+                    'price'    => round((float) $value->product_optionvalue_price, 5),
+                    'selected' => \array_key_exists((int) $value->id, $selected),
+                    'override' => $selected[(int) $value->id] ?? null,
+                ],
+                $option->values
+            )) : [],
+            'text' => $priced ? '' : $text,
+        ];
+    }
+
+    /**
+     * Check a submitted selection against a product's editable options and build the attribute
+     * records it stands for.
+     *
+     * @throws  \RuntimeException  With a translated message on an unknown option or value, a malformed value or a missing required option.
+     */
+    private function buildOptionEntries(array $options, array $submitted, array $priceOverrides): array
+    {
+        foreach (array_keys($submitted) as $key) {
+            if ((string) (int) $key !== (string) $key || !isset($options[(int) $key])) {
+                throw new \RuntimeException(Text::_('COM_J2COMMERCE_ORDERITEM_OPTIONS_INVALID'));
             }
         }
 
-        return ['changes' => $changes, 'attributes' => $pairs, 'line' => $line];
+        $entries = [];
+
+        foreach ($options as $id => $option) {
+            $label = Text::_((string) $option->option_name);
+            $raw   = $submitted[$id] ?? null;
+            $count = 0;
+
+            if (\in_array($option->type, self::PRICED_OPTION_TYPES, true)) {
+                if (\is_array($raw) && $option->type !== 'checkbox') {
+                    throw new \RuntimeException(Text::_('COM_J2COMMERCE_ORDERITEM_OPTIONS_INVALID'));
+                }
+
+                $valueIds = $raw === null || $raw === '' ? [] : array_unique((array) $raw);
+
+                foreach ($valueIds as $valueId) {
+                    if (!\is_scalar($valueId) || !ctype_digit((string) $valueId) || !isset($option->values[(int) $valueId])) {
+                        throw new \RuntimeException(Text::_('COM_J2COMMERCE_ORDERITEM_OPTIONS_INVALID'));
+                    }
+
+                    $valueId  = (int) $valueId;
+                    $value    = $option->values[$valueId];
+                    $override = $priceOverrides[$valueId] ?? null;
+
+                    if ($override !== null && (!\is_scalar($override) || !is_numeric($override))) {
+                        throw new \RuntimeException(Text::sprintf('COM_J2COMMERCE_ORDERITEM_OPTION_VALUE_INVALID', $label));
+                    }
+
+                    $entries[] = (object) [
+                        'orderitemattribute_name'        => (string) $option->option_name,
+                        'orderitemattribute_value'       => (string) ($value->optionvalue_name ?? ''),
+                        'orderitemattribute_type'        => (string) $option->type,
+                        'orderitemattribute_price'       => round(max(0.0, (float) ($override ?? $value->product_optionvalue_price)), 5),
+                        'orderitemattribute_prefix'      => substr((string) $value->product_optionvalue_prefix, 0, 1),
+                        'orderitemattribute_code'        => '',
+                        'productattributeoption_id'      => $id,
+                        'productattributeoptionvalue_id' => $valueId,
+                    ];
+                    $count++;
+                }
+            } else {
+                if (\is_array($raw)) {
+                    throw new \RuntimeException(Text::_('COM_J2COMMERCE_ORDERITEM_OPTIONS_INVALID'));
+                }
+
+                $control = $option->type === 'textarea' ? '/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u' : '/[\x00-\x1F\x7F]/u';
+                $text    = trim((string) preg_replace($control, '', (string) ($raw ?? '')));
+
+                if ($text !== '') {
+                    if (!self::isValidOptionText((string) $option->type, $text)) {
+                        throw new \RuntimeException(Text::sprintf('COM_J2COMMERCE_ORDERITEM_OPTION_VALUE_INVALID', $label));
+                    }
+
+                    $entries[] = (object) [
+                        'orderitemattribute_name'        => (string) $option->option_name,
+                        'orderitemattribute_value'       => $text,
+                        'orderitemattribute_type'        => (string) $option->type,
+                        'orderitemattribute_price'       => 0,
+                        'orderitemattribute_prefix'      => '',
+                        'orderitemattribute_code'        => '',
+                        'productattributeoption_id'      => $id,
+                        'productattributeoptionvalue_id' => 0,
+                    ];
+                    $count++;
+                }
+            }
+
+            // Child options only apply when their parent value is chosen, so only top-level options are enforced.
+            if ($count === 0 && (int) $option->required === 1 && (int) $option->parent_id === 0) {
+                throw new \RuntimeException(Text::sprintf('COM_J2COMMERCE_ERR_FIELD_REQUIRED', $label));
+            }
+        }
+
+        return $entries;
     }
 
     private function loadOrderLine(string $orderId, int $orderitemId): ?object
@@ -2593,6 +2660,9 @@ class OrderModel extends AdminModel
             ->select($db->quoteName([
                 'j2commerce_orderitem_id',
                 'product_id',
+                'product_type',
+                'variant_id',
+                'orderitem_sku',
                 'orderitem_name',
                 'orderitem_attributes',
                 'orderitem_quantity',
@@ -2611,6 +2681,356 @@ class OrderModel extends AdminModel
         $db->setQuery($query);
 
         return $db->loadObject() ?: null;
+    }
+
+    /**
+     * Both sides of a variant swap, for the Update Variant confirm step.
+     *
+     * @throws  \RuntimeException  With a translated message when the variant cannot replace the line's.
+     */
+    public function getOrderItemVariantSwap(string $orderId, int $orderitemId, int $variantId): array
+    {
+        [$line, , $target] = $this->resolveVariantSwap($orderId, $orderitemId, $variantId);
+
+        return [
+            'line' => [
+                'id'       => (int) $line->j2commerce_orderitem_id,
+                'name'     => (string) $line->orderitem_name,
+                'quantity' => max(1, (int) $line->orderitem_quantity),
+            ],
+            'current' => [
+                'sku'     => (string) $line->orderitem_sku,
+                'options' => $this->describeVariant((int) $line->variant_id),
+                'price'   => round((float) $line->orderitem_price, 5),
+            ],
+            'target' => [
+                'id'      => (int) $target->j2commerce_variant_id,
+                'sku'     => (string) ($target->sku ?? ''),
+                'options' => $this->describeVariant((int) $target->j2commerce_variant_id),
+                'price'   => round((float) $target->price, 5),
+            ],
+        ];
+    }
+
+    /**
+     * Move an order line to another variant of the same product: SKU, unit price, weight and the
+     * variant's attributes follow it, the line's other recorded attributes stay, and on an order
+     * that already holds stock the old variant's units are returned and the new variant's taken.
+     *
+     * @return  array{changes: string[], attributes: array, line: object, stock: int, manages_stock: bool}
+     *
+     * @throws  \RuntimeException  With a translated message when the variant cannot replace the line's.
+     */
+    public function updateOrderItemVariant(object $order, int $orderitemId, int $variantId, ?float $priceOverride): array
+    {
+        $orderId                   = (string) $order->order_id;
+        [$line, $current, $target] = $this->resolveVariantSwap($orderId, $orderitemId, $variantId);
+        $targetId                  = (int) $target->j2commerce_variant_id;
+
+        $variantNames = array_map([self::class, 'normalizeOptionName'], $this->loadVariantOptionNames((int) $line->product_id));
+        $kept         = array_values(array_filter(
+            $this->readLineAttributes($line),
+            static fn (object $attr): bool => !\in_array(
+                self::normalizeOptionName(\is_scalar($attr->orderitemattribute_name ?? null) ? (string) $attr->orderitemattribute_name : ''),
+                $variantNames,
+                true
+            )
+        ));
+
+        // A variable product's price lives on the variant, so its option values carry no price of their own (as at checkout).
+        $variantEntries = array_map(static fn (object $value): object => (object) [
+            'orderitemattribute_name'        => (string) $value->option_name,
+            'orderitemattribute_value'       => (string) ($value->optionvalue_name ?? ''),
+            'orderitemattribute_type'        => (string) ($value->type ?? 'select'),
+            'orderitemattribute_price'       => 0,
+            'orderitemattribute_prefix'      => '',
+            'orderitemattribute_code'        => '',
+            'productattributeoption_id'      => (int) $value->productoption_id,
+            'productattributeoptionvalue_id' => (int) $value->j2commerce_product_optionvalue_id,
+        ], $this->loadVariantOptionValues($targetId));
+
+        // The variant itself is fixed by the validation above; a handler may adjust what the line records for it.
+        $update = (object) [
+            'sku'        => (string) ($target->sku ?? ''),
+            'price'      => round(max(0.0, $priceOverride ?? (float) $target->price), 5),
+            'attributes' => array_merge($variantEntries, $kept),
+        ];
+
+        J2CommerceHelper::plugin()->event('BeforeUpdateOrderItemVariant', [&$update, $line, $target, $order]);
+
+        $qty        = max(1, (int) $line->orderitem_quantity);
+        $price      = max(0.0, (float) $update->price);
+        $attributes = array_values(array_filter((array) $update->attributes, 'is_object'));
+        $unitWeight = max(0.0, (float) $line->orderitem_weight - (float) ($current->weight ?? 0) + (float) ($target->weight ?? 0));
+        $finalPrice = max(0.0, ($price + (float) $line->orderitem_option_price) * $qty - (float) $line->orderitem_discount);
+        $oldFinal   = (float) $line->orderitem_finalprice;
+        $lineTax    = $oldFinal > 0.0 ? (float) $line->orderitem_tax * ($finalPrice / $oldFinal) : (float) $line->orderitem_tax;
+        $including  = (int) ($order->is_including_tax ?? 0) === 1;
+
+        $changes = [
+            Text::_('COM_J2COMMERCE_VARIANT') . ': '
+            . self::variantLabel((string) $line->orderitem_sku, $this->describeVariant((int) $line->variant_id))
+            . ' → ' . self::variantLabel((string) $update->sku, $this->describeVariant($targetId)),
+        ];
+
+        if (abs($price - (float) $line->orderitem_price) > 0.000001) {
+            $changes[] = Text::_('COM_J2COMMERCE_FIELD_UNIT_PRICE') . ': '
+                . number_format((float) $line->orderitem_price, 2, '.', '') . ' → ' . number_format($price, 2, '.', '');
+        }
+
+        $db             = $this->getDatabase();
+        $attributesJson = json_encode($attributes, JSON_THROW_ON_ERROR);
+        $skuStr         = mb_substr((string) $update->sku, 0, 255);
+        $priceStr       = number_format($price, 5, '.', '');
+        $finalStr       = number_format($finalPrice, 5, '.', '');
+        $withTaxStr     = number_format($including ? $finalPrice : $finalPrice + $lineTax, 5, '.', '');
+        $lineTaxStr     = number_format($lineTax, 5, '.', '');
+        $perItemTaxStr  = number_format($lineTax / $qty, 5, '.', '');
+        $weightStr      = (string) $unitWeight;
+        $weightTotalStr = (string) ($unitWeight * $qty);
+        $itemName       = (string) $line->orderitem_name;
+
+        $db->transactionStart(true);
+
+        try {
+            $query = $db->getQuery(true)
+                ->update($db->quoteName('#__j2commerce_orderitems'))
+                ->set($db->quoteName('variant_id') . ' = :variantId')
+                ->set($db->quoteName('orderitem_sku') . ' = :sku')
+                ->set($db->quoteName('orderitem_price') . ' = :price')
+                ->set($db->quoteName('orderitem_attributes') . ' = :attributes')
+                ->set($db->quoteName('orderitem_finalprice') . ' = :finalPrice')
+                ->set($db->quoteName('orderitem_finalprice_without_tax') . ' = :finalNoTax')
+                ->set($db->quoteName('orderitem_finalprice_with_tax') . ' = :finalWithTax')
+                ->set($db->quoteName('orderitem_tax') . ' = :lineTax')
+                ->set($db->quoteName('orderitem_per_item_tax') . ' = :perItemTax')
+                ->set($db->quoteName('orderitem_weight') . ' = :weight')
+                ->set($db->quoteName('orderitem_weight_total') . ' = :weightTotal')
+                ->where($db->quoteName('j2commerce_orderitem_id') . ' = :itemId')
+                ->bind(':variantId', $targetId, ParameterType::INTEGER)
+                ->bind(':sku', $skuStr)
+                ->bind(':price', $priceStr)
+                ->bind(':attributes', $attributesJson)
+                ->bind(':finalPrice', $finalStr)
+                ->bind(':finalNoTax', $finalStr)
+                ->bind(':finalWithTax', $withTaxStr)
+                ->bind(':lineTax', $lineTaxStr)
+                ->bind(':perItemTax', $perItemTaxStr)
+                ->bind(':weight', $weightStr)
+                ->bind(':weightTotal', $weightTotalStr)
+                ->bind(':itemId', $orderitemId, ParameterType::INTEGER);
+            $db->setQuery($query)->execute();
+
+            $this->replaceAttributeRows($orderitemId, $attributes);
+
+            // Drafts commit stock at confirmation, so only an order already holding stock moves it now.
+            if ($this->isStockCommitted($order)) {
+                if ($current !== null) {
+                    $this->commitStockAdjust($orderId, $current, $qty, $itemName);
+                }
+
+                $this->commitStockAdjust($orderId, $target, -$qty, $itemName);
+            }
+
+            $db->transactionCommit(true);
+        } catch (\Throwable $e) {
+            $db->transactionRollback(true);
+
+            throw $e;
+        }
+
+        $line = $this->loadOrderLine($orderId, $orderitemId);
+
+        J2CommerceHelper::plugin()->event('AfterUpdateOrderItemVariant', [$line, $target, $order]);
+
+        return [
+            'changes'       => $changes,
+            'attributes'    => self::attributePairs($attributes),
+            'line'          => $line,
+            'stock'         => InventoryHelper::getStockQuantity($targetId),
+            'manages_stock' => InventoryHelper::isManagingStock($target),
+        ];
+    }
+
+    /**
+     * @return  array{0: object, 1: ?object, 2: object}  The line, its current variant (null once deleted) and the target variant.
+     *
+     * @throws  \RuntimeException  With a translated message when the swap is not allowed.
+     */
+    private function resolveVariantSwap(string $orderId, int $orderitemId, int $variantId): array
+    {
+        $line = $this->loadOrderLine($orderId, $orderitemId);
+
+        if (!$line || !\in_array((string) $line->product_type, ProductHelper::getVariableProductTypes(), true)) {
+            throw new \RuntimeException(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+        }
+
+        // Looked up within the line's own product, so a variant of any other product is simply not found.
+        $target = $this->loadProductVariant((int) $line->product_id, $variantId);
+
+        if ($target === null) {
+            throw new \RuntimeException(Text::_('COM_J2COMMERCE_ORDERITEM_VARIANT_INVALID'));
+        }
+
+        if ((int) $target->j2commerce_variant_id === (int) $line->variant_id) {
+            throw new \RuntimeException(Text::_('COM_J2COMMERCE_ORDERITEM_VARIANT_UNCHANGED'));
+        }
+
+        if (InventoryHelper::isMarkedOutOfStock($target)
+            || (InventoryHelper::isManagingStock($target)
+                && !InventoryHelper::isBackorderAllowed($target)
+                && InventoryHelper::getAvailableQuantity((int) $target->j2commerce_variant_id) < max(1, (int) $line->orderitem_quantity))
+        ) {
+            throw new \RuntimeException(Text::_('COM_J2COMMERCE_NOT_ENOUGH_STOCK'));
+        }
+
+        return [$line, $this->loadProductVariant((int) $line->product_id, (int) $line->variant_id), $target];
+    }
+
+    /** A sellable (non-master) variant of the given product, or null. */
+    private function loadProductVariant(int $productId, int $variantId): ?object
+    {
+        if ($productId < 1 || $variantId < 1) {
+            return null;
+        }
+
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true)
+            ->select($db->quoteName([
+                'j2commerce_variant_id',
+                'product_id',
+                'sku',
+                'price',
+                'weight',
+                'manage_stock',
+                'allow_backorder',
+                'availability',
+            ]))
+            ->from($db->quoteName('#__j2commerce_variants'))
+            ->where($db->quoteName('j2commerce_variant_id') . ' = :variantId')
+            ->where($db->quoteName('product_id') . ' = :productId')
+            ->where('COALESCE(' . $db->quoteName('is_master') . ', 0) = 0')
+            ->bind(':variantId', $variantId, ParameterType::INTEGER)
+            ->bind(':productId', $productId, ParameterType::INTEGER);
+        $db->setQuery($query);
+
+        return $db->loadObject() ?: null;
+    }
+
+    /** The product optionvalues a variant is made of, in option order. */
+    private function loadVariantOptionValues(int $variantId): array
+    {
+        if ($variantId < 1) {
+            return [];
+        }
+
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('product_optionvalue_ids'))
+            ->from($db->quoteName('#__j2commerce_product_variant_optionvalues'))
+            ->where($db->quoteName('variant_id') . ' = :variantId')
+            ->bind(':variantId', $variantId, ParameterType::INTEGER);
+        $db->setQuery($query);
+        $ids = array_values(array_filter(array_map('intval', explode(',', (string) $db->loadResult()))));
+
+        if ($ids === []) {
+            return [];
+        }
+
+        $query = $db->getQuery(true)
+            ->select([
+                $db->quoteName('pov.j2commerce_product_optionvalue_id'),
+                $db->quoteName('pov.productoption_id'),
+                $db->quoteName('o.option_name'),
+                $db->quoteName('o.type'),
+                $db->quoteName('ov.optionvalue_name'),
+            ])
+            ->from($db->quoteName('#__j2commerce_product_optionvalues', 'pov'))
+            ->join(
+                'INNER',
+                $db->quoteName('#__j2commerce_product_options', 'po')
+                . ' ON ' . $db->quoteName('po.j2commerce_productoption_id') . ' = ' . $db->quoteName('pov.productoption_id')
+            )
+            ->join(
+                'INNER',
+                $db->quoteName('#__j2commerce_options', 'o')
+                . ' ON ' . $db->quoteName('o.j2commerce_option_id') . ' = ' . $db->quoteName('po.option_id')
+            )
+            ->join(
+                'LEFT',
+                $db->quoteName('#__j2commerce_optionvalues', 'ov')
+                . ' ON ' . $db->quoteName('ov.j2commerce_optionvalue_id') . ' = ' . $db->quoteName('pov.optionvalue_id')
+            )
+            ->whereIn($db->quoteName('pov.j2commerce_product_optionvalue_id'), $ids, ParameterType::INTEGER)
+            ->order([$db->quoteName('po.ordering') . ' ASC', $db->quoteName('po.j2commerce_productoption_id') . ' ASC']);
+        $db->setQuery($query);
+
+        return $db->loadObjectList() ?: [];
+    }
+
+    private function describeVariant(int $variantId): string
+    {
+        return implode(', ', array_filter(array_map(
+            static fn (object $value): string => Text::_((string) ($value->optionvalue_name ?? '')),
+            $this->loadVariantOptionValues($variantId)
+        )));
+    }
+
+    private static function variantLabel(string $sku, string $options): string
+    {
+        return match (true) {
+            $sku !== '' && $options !== '' => $sku . ' (' . $options . ')',
+            $sku !== ''                    => $sku,
+            default                        => $options,
+        };
+    }
+
+    /** Rewrite a line's #__j2commerce_orderitemattributes rows to mirror its orderitem_attributes. */
+    private function replaceAttributeRows(int $orderitemId, array $attributes): void
+    {
+        $db = $this->getDatabase();
+
+        $db->setQuery(
+            $db->getQuery(true)
+                ->delete($db->quoteName('#__j2commerce_orderitemattributes'))
+                ->where($db->quoteName('orderitem_id') . ' = :itemId')
+                ->bind(':itemId', $orderitemId, ParameterType::INTEGER)
+        )->execute();
+
+        $str = static fn ($value): string => \is_scalar($value) ? (string) $value : '';
+
+        foreach ($attributes as $attr) {
+            $row = (object) [
+                'orderitem_id'                   => $orderitemId,
+                'productattributeoption_id'      => (int) ($attr->productattributeoption_id ?? 0),
+                'productattributeoptionvalue_id' => (int) ($attr->productattributeoptionvalue_id ?? 0),
+                'orderitemattribute_name'        => mb_substr($str($attr->orderitemattribute_name ?? ''), 0, 255),
+                'orderitemattribute_value'       => mb_substr($str($attr->orderitemattribute_value ?? ''), 0, 255),
+                'orderitemattribute_prefix'      => substr($str($attr->orderitemattribute_prefix ?? ''), 0, 1),
+                'orderitemattribute_price'       => number_format((float) ($attr->orderitemattribute_price ?? 0), 5, '.', ''),
+                'orderitemattribute_code'        => mb_substr($str($attr->orderitemattribute_code ?? ''), 0, 255),
+                'orderitemattribute_type'        => mb_substr($str($attr->orderitemattribute_type ?? '') ?: 'select', 0, 255),
+            ];
+            $db->insertObject('#__j2commerce_orderitemattributes', $row, 'j2commerce_orderitemattribute_id');
+        }
+    }
+
+    /** Label/value pairs for the order editor's line, grouped and resolved the way the order views render them. */
+    private static function attributePairs(array $attributes): array
+    {
+        $pairs = [];
+
+        foreach (OrderItemAttributeHelper::groupAndDeduplicate($attributes) as $group) {
+            foreach ($group['items'] as $item) {
+                $qty     = (int) ($item['qty'] ?? 1);
+                $pairs[] = [
+                    'label' => ($qty > 1 ? '(' . $qty . ') ' : '') . Text::_((string) $item['name']),
+                    'value' => html_entity_decode(Text::_((string) $item['value']), ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+                ];
+            }
+        }
+
+        return $pairs;
     }
 
     /** Editable non-variant options of a product keyed by productoption id, each with ->values keyed by product optionvalue id. */

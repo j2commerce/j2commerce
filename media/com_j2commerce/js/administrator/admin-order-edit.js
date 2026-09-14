@@ -355,8 +355,15 @@ document.addEventListener('DOMContentLoaded', () => {
             info.appendChild(ul);
         }
 
-        if (line.has_options) {
-            info.appendChild(buildOptionsButton(line.id, line.name));
+        if (line.has_options || line.has_variants) {
+            const actions = el('div', 'j2c-line-actions d-flex flex-wrap gap-2 mt-1');
+            if (line.has_variants) {
+                actions.appendChild(buildLineActionButton('j2c-line-variant', 'fa-shuffle', 'COM_J2COMMERCE_ORDERITEM_UPDATE_VARIANT', 'Update Variant', line.id, line.name));
+            }
+            if (line.has_options) {
+                actions.appendChild(buildLineActionButton('j2c-line-options', 'fa-sliders', 'COM_J2COMMERCE_ORDERITEM_UPDATE_OPTIONS', 'Update Options', line.id, line.name));
+            }
+            info.appendChild(actions);
         }
 
         // Hidden unit-price editor (revealed by the price toggle).
@@ -442,6 +449,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const tile = el('button', 'card h-100 w-100 border p-2 text-start j2c-catalog-tile');
             tile.type = 'button';
             tile.dataset.variantId = String(product.variant_id);
+            tile.dataset.hasOptions = product.has_options ? '1' : '0';
 
 
             const thumb = el('div', 'j2c-tile-thumb d-flex align-items-center justify-content-center rounded-1 bg-white text-body-secondary mb-2');
@@ -512,10 +520,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if (next >= 1 && next <= searchState.totalPages) runProductSearch(next);
     });
 
+    // Set once the options modal is wired up below; a product with options is added through it.
+    let openAddOptions = null;
+
     // Add product: click a catalog tile → AJAX add, append the line, keep the search results.
     catalogGrid?.addEventListener('click', async (e) => {
         const tile = e.target.closest('.j2c-catalog-tile');
         if (!tile) return;
+
+        if (tile.dataset.hasOptions === '1' && openAddOptions) {
+            openAddOptions(tile);
+            return;
+        }
+
         tile.disabled = true;
 
         try {
@@ -611,17 +628,50 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target.closest('.j2c-price-input')) applyItemChanges();
     });
 
-    // === Update Options modal (per order line) ===
-    function buildOptionsButton(id, name) {
-        const btn = el('button', 'btn btn-sm btn-outline-secondary mt-1 j2c-line-options');
+    // === Line action modals (Update Options / Update Variant) ===
+    const moneyText = (value) => `${currencySymbol}${Number(value).toFixed(2)}`;
+    // Function replacements: a currency value such as "$12" must not be read as a replacement pattern.
+    const sprintf = (text, ...args) => args.reduce((out, arg, i) => out.replace(`%${i + 1}$s`, () => arg).replace('%s', () => arg), text);
+
+    function buildLineActionButton(className, icon, key, fallback, id, name) {
+        const btn = el('button', `btn btn-sm btn-outline-secondary ${className}`);
         btn.type = 'button';
         btn.dataset.itemId = String(id);
-        const icon = faIcon('fa-sliders');
-        icon.classList.add('me-1');
-        btn.appendChild(icon);
-        btn.appendChild(document.createTextNode(`${translate('COM_J2COMMERCE_ORDERITEM_UPDATE_OPTIONS', 'Update Options')} `));
+        const glyph = faIcon(icon);
+        glyph.classList.add('me-1');
+        btn.appendChild(glyph);
+        btn.appendChild(document.createTextNode(`${translate(key, fallback)} `));
         btn.appendChild(el('span', 'visually-hidden', translate('COM_J2COMMERCE_ORDERITEM_FOR_PRODUCT', 'for %s').replace('%s', () => name)));
         return btn;
+    }
+
+    function replaceLineAttributes(row, attributes) {
+        const current = row.querySelector('.j2c-line-attributes');
+        if (!attributes.length) {
+            current?.remove();
+            return;
+        }
+        const list = el('ul', 'j2c-line-attributes list-unstyled small text-body-secondary');
+        attributes.forEach((a) => list.appendChild(el('li', null, a.value !== '' ? `${a.label}: ${a.value}` : a.label)));
+        if (current) {
+            current.replaceWith(list);
+        } else {
+            row.querySelector('.j2c-line-actions')?.before(list);
+        }
+    }
+
+    // Rebuild the "price each · SKU" line after the unit price or SKU changed on the server.
+    function updateLineMeta(row, line) {
+        const meta = row.querySelector('.j2c-line-meta');
+        const priceLink = meta?.querySelector('.j2c-price-toggle');
+        if (meta && priceLink) {
+            priceLink.textContent = line.price_formatted;
+            meta.replaceChildren(priceLink, document.createTextNode(
+                ` ${translate('COM_J2COMMERCE_EACH', 'each')} · ${translate('COM_J2COMMERCE_EMAIL_SKU', 'SKU')} ${line.sku || ''}`
+            ));
+        }
+        const priceInput = row.querySelector('.j2c-price-input');
+        if (priceInput) priceInput.value = line.price;
     }
 
     const optionsModalEl = document.getElementById('j2c-options-modal');
@@ -638,9 +688,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const optionsPreview = optionsModalEl.querySelector('.j2c-options-preview');
         const optionsSave = optionsModalEl.querySelector('.j2c-options-save');
         const pricedTypes = ['select', 'radio', 'color', 'checkbox'];
-        const moneyText = (value) => `${currencySymbol}${Number(value).toFixed(2)}`;
-        // Function replacements: a currency value such as "$12" must not be read as a replacement pattern.
-        const sprintf = (text, ...args) => args.reduce((out, arg, i) => out.replace(`%${i + 1}$s`, () => arg).replace('%s', () => arg), text);
         let state = null;
 
         const showOptionsError = (text) => {
@@ -791,34 +838,27 @@ document.addEventListener('DOMContentLoaded', () => {
             updateOptionsPreview(form);
         }
 
-        function replaceLineAttributes(row, attributes) {
-            const current = row.querySelector('.j2c-line-attributes');
-            if (!attributes.length) {
-                current?.remove();
-                return;
-            }
-            const list = el('ul', 'j2c-line-attributes list-unstyled small text-body-secondary');
-            attributes.forEach((a) => list.appendChild(el('li', null, a.value !== '' ? `${a.label}: ${a.value}` : a.label)));
-            if (current) {
-                current.replaceWith(list);
-            } else {
-                row.querySelector('.j2c-line-options')?.before(list);
-            }
-        }
 
         async function saveOptions(form) {
             if (!state?.line || !form.reportValidity()) return;
 
+            const adding = state.mode === 'add';
             const formData = new FormData(form);
             formData.append(token, '1');
             formData.append('order_id', orderId.toString());
-            formData.append('orderitem_id', state.itemId);
+
+            if (adding) {
+                formData.append('variant_id', state.variantId);
+                formData.append('quantity', '1');
+            } else {
+                formData.append('orderitem_id', state.itemId);
+            }
 
             optionsSave.disabled = true;
             showOptionsError('');
 
             try {
-                const response = await fetch('index.php?option=com_j2commerce&task=order.ajaxUpdateOrderItemOptions', {
+                const response = await fetch(`index.php?option=com_j2commerce&task=order.${adding ? 'ajaxAddOrderItem' : 'ajaxUpdateOrderItemOptions'}`, {
                     method: 'POST',
                     headers: { 'X-CSRF-TOKEN': token },
                     body: formData,
@@ -831,7 +871,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
 
-                if (result.changed) {
+                if (adding) {
+                    if (result.line) {
+                        cartLines.appendChild(buildLineRow(result.line));
+                        toggleCartEmpty();
+                        refreshUnits();
+                    }
+                    updateSummary(result.totals);
+                } else if (result.changed) {
                     const row = cartLines.querySelector(`.j2c-line-row[data-item-id="${result.line.id}"]`);
                     if (row) {
                         replaceLineAttributes(row, result.line.attributes || []);
@@ -851,17 +898,21 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        cartLines.addEventListener('click', async (e) => {
-            const opener = e.target.closest('.j2c-line-options');
-            if (!opener) return;
+        const saveLabel = optionsSave.textContent;
 
-            const { itemId } = opener.dataset;
-            state = { itemId, opener, line: null };
+        // mode 'edit' loads an existing line's options; mode 'add' loads a catalog product's before its line exists.
+        async function openOptionsModal(opener, request) {
+            const adding = request.mode === 'add';
+            const ticket = {};
+            state = { ...request, opener, line: null, ticket };
 
             showOptionsError('');
             optionsPreview.textContent = '';
             optionsSave.disabled = true;
-            optionsTitle.textContent = translate('COM_J2COMMERCE_ORDERITEM_UPDATE_OPTIONS', 'Update Options');
+            optionsSave.textContent = adding ? translate('COM_J2COMMERCE_ADD_TO_ORDER', 'Add to Order') : saveLabel;
+            optionsTitle.textContent = adding
+                ? translate('COM_J2COMMERCE_ADD_TO_ORDER', 'Add to Order')
+                : translate('COM_J2COMMERCE_ORDERITEM_UPDATE_OPTIONS', 'Update Options');
 
             const loading = el('div', 'text-center py-4');
             const spinner = el('span', 'spinner-border');
@@ -871,8 +922,10 @@ document.addEventListener('DOMContentLoaded', () => {
             optionsModal.show();
 
             try {
-                const result = await postAjax('ajaxGetOrderItemOptions', { orderitem_id: itemId });
-                if (state?.itemId !== itemId) return;
+                const result = adding
+                    ? await postAjax('ajaxGetProductOptions', { variant_id: request.variantId })
+                    : await postAjax('ajaxGetOrderItemOptions', { orderitem_id: request.itemId });
+                if (state?.ticket !== ticket) return;
 
                 if (!result.success) {
                     optionsBody.replaceChildren();
@@ -882,7 +935,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const { data } = result;
                 state.line = data.line;
-                optionsTitle.textContent = sprintf(translate('COM_J2COMMERCE_ORDERITEM_OPTIONS_TITLE', 'Update Options: %s'), data.line.name);
+                optionsTitle.textContent = adding
+                    ? sprintf(translate('COM_J2COMMERCE_ORDERITEM_ADD_OPTIONS_TITLE', 'Add to Order: %s'), data.line.name)
+                    : sprintf(translate('COM_J2COMMERCE_ORDERITEM_OPTIONS_TITLE', 'Update Options: %s'), data.line.name);
 
                 const form = el('form', 'j2c-options-form');
                 data.options.forEach((option) => form.appendChild(buildOptionGroup(option)));
@@ -903,6 +958,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 optionsBody.replaceChildren();
                 showOptionsError(translate('COM_J2COMMERCE_ERROR_NETWORK', 'Network error. Please try again.'));
             }
+        }
+
+        openAddOptions = (tile) => openOptionsModal(tile, { mode: 'add', variantId: tile.dataset.variantId });
+
+        cartLines.addEventListener('click', (e) => {
+            const opener = e.target.closest('.j2c-line-options');
+            if (opener) openOptionsModal(opener, { mode: 'edit', itemId: opener.dataset.itemId });
         });
 
         optionsSave.addEventListener('click', () => {
@@ -916,6 +978,185 @@ document.addEventListener('DOMContentLoaded', () => {
             state = null;
             optionsBody.replaceChildren();
             optionsPreview.textContent = '';
+            if (opener?.isConnected) opener.focus();
+        });
+    }
+
+    // === Update Variant modal: step 1 frames the ordervariants list, step 2 confirms the swap ===
+    const variantModalEl = document.getElementById('j2c-variant-modal');
+
+    if (variantModalEl && cartLines && typeof bootstrap !== 'undefined') {
+        document.body.appendChild(variantModalEl);
+
+        const variantModal = bootstrap.Modal.getOrCreateInstance(variantModalEl);
+        const variantTitle = variantModalEl.querySelector('.modal-title');
+        const variantFrame = variantModalEl.querySelector('.j2c-variant-frame');
+        const variantConfirm = variantModalEl.querySelector('.j2c-variant-confirm');
+        const variantError = variantModalEl.querySelector('.j2c-variant-error');
+        const variantBack = variantModalEl.querySelector('.j2c-variant-back');
+        const variantSave = variantModalEl.querySelector('.j2c-variant-save');
+        let variantState = null;
+
+        const showVariantError = (text) => {
+            variantError.textContent = text || '';
+            variantError.classList.toggle('d-none', !text);
+        };
+
+        function showVariantPicker() {
+            if (variantState) variantState.targetId = null;
+            variantConfirm.replaceChildren();
+            variantConfirm.classList.add('d-none');
+            variantFrame.classList.remove('d-none');
+            variantBack.classList.add('d-none');
+            variantSave.classList.add('d-none');
+            showVariantError('');
+        }
+
+        function buildSwapTable(data) {
+            const table = el('table', 'table table-sm align-middle mb-3');
+            table.appendChild(el('caption', 'visually-hidden', sprintf(translate('COM_J2COMMERCE_ORDERITEM_VARIANT_TITLE', 'Update Variant: %s'), data.line.name)));
+
+            const headRow = el('tr');
+            [
+                [translate('COM_J2COMMERCE_VARIANT', 'Variant'), null],
+                [translate('COM_J2COMMERCE_HEADING_SKU', 'SKU'), null],
+                [translate('COM_J2COMMERCE_HEADING_VARIANT_OPTIONS', 'Options'), null],
+                [translate('COM_J2COMMERCE_ORDERITEM_VARIANT_PRICE', 'Unit price'), 'text-end'],
+            ].forEach(([text, className]) => {
+                const th = el('th', className, text);
+                th.scope = 'col';
+                headRow.appendChild(th);
+            });
+            const thead = el('thead');
+            thead.appendChild(headRow);
+
+            const tbody = el('tbody');
+            [
+                [translate('COM_J2COMMERCE_ORDERITEM_VARIANT_FROM', 'Current variant'), data.current],
+                [translate('COM_J2COMMERCE_ORDERITEM_VARIANT_TO', 'New variant'), data.target],
+            ].forEach(([label, side]) => {
+                const tr = el('tr');
+                const th = el('th', null, label);
+                th.scope = 'row';
+                tr.append(th, el('td', 'font-monospace', side.sku || '—'), el('td', null, side.options || '—'), el('td', 'text-end', side.price_formatted));
+                tbody.appendChild(tr);
+            });
+
+            table.append(thead, tbody);
+            return table;
+        }
+
+        function showVariantConfirm(data) {
+            variantState.targetId = data.target.id;
+
+            const priceId = 'j2c-variant-price';
+            const label = el('label', 'form-label', translate('COM_J2COMMERCE_ORDERITEM_VARIANT_PRICE', 'Unit price'));
+            label.htmlFor = priceId;
+            const group = el('div', 'input-group');
+            group.style.maxWidth = '220px';
+            const input = el('input', 'form-control');
+            input.type = 'number';
+            input.min = '0';
+            input.step = '0.01';
+            input.id = priceId;
+            input.value = Number(data.target.price).toFixed(2);
+            group.append(el('span', 'input-group-text', currencySymbol), input);
+
+            variantConfirm.replaceChildren(buildSwapTable(data), label, group);
+            variantFrame.classList.add('d-none');
+            variantConfirm.classList.remove('d-none');
+            variantBack.classList.remove('d-none');
+            variantSave.classList.remove('d-none');
+            input.focus();
+        }
+
+        // The framed list's Select buttons post joomla:content-select messages (core modal-content-select).
+        window.addEventListener('message', async (event) => {
+            if (event.origin !== window.location.origin || event.source !== variantFrame.contentWindow || !variantState) return;
+
+            const data = event.data || {};
+            if (data.messageType !== 'joomla:content-select' || data.contentType !== 'com_j2commerce.ordervariant') return;
+
+            showVariantError('');
+
+            try {
+                const result = await postAjax('ajaxGetOrderItemVariantSwap', { orderitem_id: variantState.itemId, variant_id: data.id });
+                if (!result.success) {
+                    showVariantError(result.message);
+                    return;
+                }
+                showVariantConfirm(result.data);
+            } catch (err) {
+                showVariantError(translate('COM_J2COMMERCE_ERROR_NETWORK', 'Network error. Please try again.'));
+            }
+        });
+
+        cartLines.addEventListener('click', (e) => {
+            const opener = e.target.closest('.j2c-line-variant');
+            if (!opener) return;
+
+            const { itemId } = opener.dataset;
+            const name = opener.closest('.j2c-line-row')?.querySelector('.j2c-line-name')?.textContent || '';
+
+            variantState = { itemId, opener, targetId: null };
+            variantTitle.textContent = sprintf(translate('COM_J2COMMERCE_ORDERITEM_VARIANT_TITLE', 'Update Variant: %s'), name);
+            variantFrame.src = `index.php?option=com_j2commerce&view=ordervariants&layout=modal&tmpl=component&orderitem_id=${encodeURIComponent(itemId)}`;
+            showVariantPicker();
+            variantModal.show();
+        });
+
+        variantBack.addEventListener('click', () => {
+            showVariantPicker();
+            variantFrame.focus();
+        });
+
+        variantSave.addEventListener('click', async () => {
+            if (!variantState?.targetId) return;
+
+            const priceInput = variantConfirm.querySelector('#j2c-variant-price');
+            if (priceInput && !priceInput.reportValidity()) return;
+
+            variantSave.disabled = true;
+            showVariantError('');
+
+            try {
+                const result = await postAjax('ajaxUpdateOrderItemVariant', {
+                    orderitem_id: variantState.itemId,
+                    variant_id: variantState.targetId,
+                    price: priceInput ? priceInput.value : '',
+                });
+                if (!result.success) {
+                    showVariantError(result.message);
+                    return;
+                }
+
+                const row = cartLines.querySelector(`.j2c-line-row[data-item-id="${result.line.id}"]`);
+                if (row) {
+                    replaceLineAttributes(row, result.line.attributes || []);
+                    updateLineMeta(row, result.line);
+                    const totalCell = row.querySelector('.j2c-line-total');
+                    if (totalCell) totalCell.textContent = result.line.finalprice_formatted;
+                    const badge = row.querySelector('.j2c-line-stock');
+                    if (badge) applyStockBadge(badge, result.line.stock, result.line.manages_stock);
+                }
+                updateSummary(result.totals);
+
+                variantModal.hide();
+                showMessage('message', result.message);
+                if (itemsStatus) itemsStatus.textContent = result.announce || result.message;
+            } catch (err) {
+                showVariantError(translate('COM_J2COMMERCE_ERROR_NETWORK', 'Network error. Please try again.'));
+            } finally {
+                variantSave.disabled = false;
+            }
+        });
+
+        // Return focus to the line's Update Variant button once the modal is gone.
+        variantModalEl.addEventListener('hidden.bs.modal', () => {
+            const opener = variantState?.opener;
+            variantState = null;
+            variantFrame.src = 'about:blank';
+            showVariantPicker();
             if (opener?.isConnected) opener.focus();
         });
     }
