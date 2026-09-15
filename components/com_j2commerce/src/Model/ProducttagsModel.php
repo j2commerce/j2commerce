@@ -24,6 +24,7 @@ use Joomla\CMS\Language\Multilanguage;
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\Database\ParameterType;
 use Joomla\Database\QueryInterface;
+use Joomla\Registry\Registry;
 
 /**
  * Tagged Products list model for site frontend.
@@ -154,7 +155,7 @@ class ProducttagsModel extends ListModel
                     'price-desc' => ['v.price', 'DESC'],
                     'newest'     => ['a.created', 'DESC'],
                     'popular'    => ['p.hits', 'DESC'],
-                    'default'    => ['a.ordering', 'ASC'],
+                    'default'    => [$orderMapping, $orderDirection],
                 ];
 
                 if (isset($sortMapping[$sortParam])) {
@@ -195,13 +196,8 @@ class ProducttagsModel extends ListModel
         $this->setState('list.ordering', $listOrdering);
         $this->setState('list.direction', $listDirection);
 
-        // Set sortby state for template dropdown selection (format: "column DIRECTION")
-        // This matches the dropdown option values in ProductHelper::getSortingOptions()
-        $sortbyForTemplate = $listOrdering;
-        if ($listOrdering !== 'a.ordering') {
-            $sortbyForTemplate = $listOrdering . ' ' . $listDirection;
-        }
-        $this->setState('sortby', $sortbyForTemplate);
+        // Selected dropdown value; matches the "column DIRECTION" keys of ProductsModel::getSortOptions().
+        $this->setState('sortby', $listOrdering . ' ' . $listDirection);
 
         // Search filter from frontend - support both 'filter_search' and 'search' params
         $search = $input->getString('filter_search', '');
@@ -613,6 +609,8 @@ class ProducttagsModel extends ListModel
             : null;
 
         $filters = ProductHelper::getFilters($items, [], $restrictManufacturerIds);
+
+        $filters['sorting'] = ProductsModel::getSortOptions($params ?? new Registry());
 
         // ProductHelper::getPriceFilters() applies only the enabled/visibility flags, so
         // its bounds span the whole catalogue. Override unconditionally with a range

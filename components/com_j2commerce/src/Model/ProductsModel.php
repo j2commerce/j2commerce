@@ -21,6 +21,7 @@ use J2Commerce\Component\J2commerce\Site\Helper\ProductVisibilityHelper;
 use Joomla\CMS\Categories\CategoryNode;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Multilanguage;
+use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\Database\ParameterType;
 use Joomla\Database\QueryInterface;
@@ -183,7 +184,7 @@ class ProductsModel extends ListModel
                     'price-desc' => ['v.price', 'DESC'],
                     'newest'     => ['a.created', 'DESC'],
                     'popular'    => ['p.hits', 'DESC'],
-                    'default'    => ['a.ordering', 'ASC'],
+                    'default'    => [$orderMapping, $orderDirection],
                 ];
 
                 if (isset($sortMapping[$sortParam])) {
@@ -223,13 +224,8 @@ class ProductsModel extends ListModel
         $this->setState('list.ordering', $listOrdering);
         $this->setState('list.direction', $listDirection);
 
-        // Set sortby state for template dropdown selection (format: "column DIRECTION")
-        // This matches the dropdown option values in ProductHelper::getSortingOptions()
-        $sortbyForTemplate = $listOrdering;
-        if ($listOrdering !== 'a.ordering') {
-            $sortbyForTemplate = $listOrdering . ' ' . $listDirection;
-        }
-        $this->setState('sortby', $sortbyForTemplate);
+        // Selected dropdown value; matches the "column DIRECTION" keys of getSortOptions().
+        $this->setState('sortby', $listOrdering . ' ' . $listDirection);
 
         // Search filter from frontend - support both 'filter_search' and 'search' params
         $search = $input->getString('filter_search', '');
@@ -311,6 +307,35 @@ class ProductsModel extends ListModel
             self::filterOrderColumn($column),
             strtoupper((string) $direction) === 'DESC' ? 'DESC' : 'ASC',
         ];
+    }
+
+    /**
+     * Sort dropdown options, led by the menu item's own ordering. The dropdown is sent with every
+     * filter request, so an ordering it could not represent was replaced by whichever option the
+     * browser fell back to.
+     */
+    public static function getSortOptions(Registry $params): array
+    {
+        [$column, $direction] = self::resolveMenuOrdering($params);
+        $menuKey              = $column . ' ' . $direction;
+
+        $options = ProductHelper::getSortingOptions();
+        unset($options['a.ordering']);
+
+        $label = $options[$menuKey] ?? Text::_(match ($column) {
+            'a.title'                                 => 'COM_J2COMMERCE_PRODUCT_LIST_ORDERING_TITLE',
+            'a.created', 'a.modified', 'a.publish_up' => 'COM_J2COMMERCE_PRODUCT_LIST_ORDERING_DATE',
+            'a.created_by'                            => 'COM_J2COMMERCE_PRODUCT_LIST_ORDERING_AUTHOR',
+            'a.hits'                                  => 'COM_J2COMMERCE_PRODUCT_LIST_ORDERING_HITS',
+            'v.price'                                 => 'COM_J2COMMERCE_PRODUCT_LIST_ORDERING_PRICE',
+            'p.hits'                                  => 'COM_J2COMMERCE_PRODUCT_LIST_ORDERING_POPULAR',
+            'c.lft'                                   => 'COM_J2COMMERCE_PRODUCT_LIST_ORDERING_CATEGORY',
+            'a.featured'                              => 'COM_J2COMMERCE_PRODUCT_LIST_ORDERING_FEATURED',
+            default                                   => 'COM_J2COMMERCE_SORT_DEFAULT',
+        });
+        unset($options[$menuKey]);
+
+        return [$menuKey => $label] + $options;
     }
 
     /**
@@ -694,6 +719,8 @@ class ProductsModel extends ListModel
             : null;
 
         $filters = ProductHelper::getFilters($items, $filterCategoryIds, $restrictManufacturerIds);
+
+        $filters['sorting'] = self::getSortOptions($params);
 
         // ProductHelper::getPriceFilters() applies only the enabled/visibility flags, so
         // its bounds span the whole catalogue. Override unconditionally with a range

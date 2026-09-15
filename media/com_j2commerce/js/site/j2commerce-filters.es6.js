@@ -679,9 +679,10 @@ class J2CommerceFilters {
             params.set('search', search);
         }
 
-        // Don't add sortby to URL if it's the default value (a.ordering)
+        // The first option is the menu item's own ordering, which needs no URL parameter.
         const sortby = formData.get('sortby');
-        if (sortby && sortby !== 'a.ordering') {
+        const menuSort = document.getElementById('j2commerce-sortby')?.options[0]?.value;
+        if (sortby && sortby !== menuSort) {
             // Use SEF-friendly sort names
             const sortMap = {
                 'a.title ASC': 'name-asc',

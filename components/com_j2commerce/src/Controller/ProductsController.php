@@ -473,33 +473,36 @@ class ProductsController extends AdminProductsController
     protected function applySortOrder(ListModel $model, string $sortby): void
     {
         $orderMapping = [
-            'name-asc'       => ['a.title', 'ASC'],
-            'name-desc'      => ['a.title', 'DESC'],
-            'price-asc'      => ['v.price', 'ASC'],
-            'price-desc'     => ['v.price', 'DESC'],
-            'newest'         => ['a.created', 'DESC'],
-            'popular'        => ['p.hits', 'DESC'],
-            'name_asc'       => ['a.title', 'ASC'],
-            'name_desc'      => ['a.title', 'DESC'],
-            'price_asc'      => ['v.price', 'ASC'],
-            'price_desc'     => ['v.price', 'DESC'],
-            'date_asc'       => ['a.created', 'ASC'],
-            'date_desc'      => ['a.created', 'DESC'],
-            'ordering'       => ['a.ordering', 'ASC'],
-            'a.ordering'     => ['a.ordering', 'ASC'],
-            'a.title ASC'    => ['a.title', 'ASC'],
-            'a.title DESC'   => ['a.title', 'DESC'],
-            'v.price ASC'    => ['v.price', 'ASC'],
-            'v.price DESC'   => ['v.price', 'DESC'],
-            'a.created DESC' => ['a.created', 'DESC'],
-            'p.hits DESC'    => ['p.hits', 'DESC'],
+            'name-asc'   => ['a.title', 'ASC'],
+            'name-desc'  => ['a.title', 'DESC'],
+            'price-asc'  => ['v.price', 'ASC'],
+            'price-desc' => ['v.price', 'DESC'],
+            'newest'     => ['a.created', 'DESC'],
+            'popular'    => ['p.hits', 'DESC'],
+            'name_asc'   => ['a.title', 'ASC'],
+            'name_desc'  => ['a.title', 'DESC'],
+            'price_asc'  => ['v.price', 'ASC'],
+            'price_desc' => ['v.price', 'DESC'],
+            'date_asc'   => ['a.created', 'ASC'],
+            'date_desc'  => ['a.created', 'DESC'],
+            'ordering'   => ['a.ordering', 'ASC'],
+            'a.ordering' => ['a.ordering', 'ASC'],
         ];
 
+        // The dropdown sends "column DIRECTION" for every ordering a menu item can configure.
         if (isset($orderMapping[$sortby])) {
             [$column, $direction] = $orderMapping[$sortby];
-            $model->setState('list.ordering', $column);
-            $model->setState('list.direction', $direction);
+        } elseif (
+            preg_match('/^([a-z_.]+)\s+(ASC|DESC)$/i', $sortby, $matches)
+            && \in_array($matches[1], ProductsModel::ORDER_COLUMNS, true)
+        ) {
+            [$column, $direction] = [$matches[1], strtoupper($matches[2])];
+        } else {
+            return;
         }
+
+        $model->setState('list.ordering', $column);
+        $model->setState('list.direction', $direction);
     }
 
     protected function sendJsonError(string $message, int $code): void
