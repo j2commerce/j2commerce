@@ -81,24 +81,28 @@ class ProductimageTable extends Table
             }
         }
 
-        // The gallery columns hold a JSON-encoded array of paths (see $_jsonEncode); apply the
-        // same character strip to each path so the two groups stay in parity.
+        // All six gallery columns go through one encoder so an image, its derivatives and their alt
+        // text share one shape and one key set. Image paths also get the character strip above.
         $additionalImageFields = ['additional_images', 'additional_thumb_images', 'additional_tiny_images'];
-        foreach ($additionalImageFields as $field) {
-            if (empty($this->$field)) {
+        foreach ($this->_jsonEncode as $field) {
+            if ($this->$field === null || $this->$field === '') {
                 continue;
             }
 
-            $decoded = json_decode((string) $this->$field, true);
+            $decoded = \is_array($this->$field) ? $this->$field : json_decode((string) $this->$field, true);
 
             if (!\is_array($decoded)) {
                 continue;
             }
 
-            $this->$field = json_encode(array_map(
-                fn ($path) => \is_string($path) ? $this->sanitizeImagePath($path) : $path,
-                $decoded
-            ));
+            if (\in_array($field, $additionalImageFields, true)) {
+                $decoded = array_map(
+                    fn ($path) => \is_string($path) ? $this->sanitizeImagePath($path) : $path,
+                    $decoded
+                );
+            }
+
+            $this->$field = self::encodeGalleryJson($decoded);
         }
 
         // Set default empty strings for varchar fields
@@ -115,6 +119,12 @@ class ProductimageTable extends Table
         }
 
         return true;
+    }
+
+    /** Gallery column JSON: always an object with the given keys in the given order, never a list. */
+    public static function encodeGalleryJson(array $data): string
+    {
+        return json_encode($data, JSON_FORCE_OBJECT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}';
     }
 
     /**
