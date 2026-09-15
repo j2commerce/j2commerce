@@ -1,0 +1,511 @@
+/**
+ * @package     J2Commerce
+ * @subpackage  com_j2commerce
+ *
+ * @copyright   (C)2024-2026 J2Commerce, LLC <https://www.j2commerce.com>
+ * @license     GNU General Public License version 2 or later; see LICENSE.txt
+ */
+
+/*
+ * Regenerate Images dialog. Every value is explicit and scoped to .modal.j2c-regen-modal: the Atum admin
+ * template ships its own Bootstrap build, whose card, button, colour and font rules would otherwise
+ * replace the stock Bootstrap 5.3 look this dialog is designed against.
+ */
+
+.modal.j2c-regen-modal {
+    --bs-modal-width: 500px;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+.modal.j2c-regen-modal .j2c-regen-dialog {
+    max-width: 500px;
+}
+
+/* Stages toggle elements with the hidden attribute; Bootstrap's !important display utilities must not undo it. */
+.modal.j2c-regen-modal [hidden],
+.j2c-regen-resume-notices[hidden] {
+    display: none !important;
+}
+
+.modal.j2c-regen-modal .j2c-regen-content {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: #212529;
+    background-color: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.176);
+    border-radius: 0.5rem;
+    box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+}
+
+/* Header */
+
+.modal.j2c-regen-modal .j2c-regen-header {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    background-color: transparent;
+    border-bottom: 1px solid #dee2e6;
+    border-top-left-radius: calc(0.5rem - 1px);
+    border-top-right-radius: calc(0.5rem - 1px);
+}
+
+.modal.j2c-regen-modal .j2c-regen-title {
+    margin: 0;
+    font-family: inherit;
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.5;
+    color: #212529;
+}
+
+.modal.j2c-regen-modal .j2c-regen-close {
+    box-sizing: content-box;
+    width: 1em;
+    height: 1em;
+    padding: 0.5em;
+    margin: -0.5em -0.5em -0.5em auto;
+    color: #000;
+    background: transparent url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23000'%3e%3cpath d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414z'/%3e%3c/svg%3e") center / 1em auto no-repeat;
+    border: 0;
+    border-radius: 0.375rem;
+    box-shadow: none;
+    opacity: 0.5;
+}
+
+.modal.j2c-regen-modal .j2c-regen-close:hover {
+    opacity: 0.75;
+}
+
+.modal.j2c-regen-modal .j2c-regen-close:focus-visible {
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    opacity: 1;
+}
+
+/* Body */
+
+.modal.j2c-regen-modal .j2c-regen-body {
+    padding: 1rem;
+    gap: 1rem;
+}
+
+.modal.j2c-regen-modal .j2c-regen-summary,
+.modal.j2c-regen-modal .j2c-regen-stat,
+.modal.j2c-regen-modal .j2c-regen-log-card {
+    margin: 0;
+    color: #212529;
+    background-color: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.176);
+    border-radius: 0.375rem;
+    box-shadow: none;
+}
+
+/* Summary card */
+
+.modal.j2c-regen-modal .j2c-regen-summary-body {
+    padding: 1rem;
+}
+
+.modal.j2c-regen-modal .j2c-regen-summary-row {
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.modal.j2c-regen-modal .j2c-regen-percent {
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.modal.j2c-regen-modal .j2c-regen-count {
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.5;
+    color: #212529;
+}
+
+.modal.j2c-regen-modal .j2c-regen-status-icon {
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.modal.j2c-regen-modal .j2c-regen-summary.is-running {
+    background-color: #f7fafd;
+    border-color: #9ec5fe;
+}
+
+.modal.j2c-regen-modal .j2c-regen-summary.is-running .j2c-regen-percent,
+.modal.j2c-regen-modal .j2c-regen-summary.is-running .j2c-regen-status-icon {
+    color: #0d6efd;
+}
+
+.modal.j2c-regen-modal .j2c-regen-summary.is-prompt {
+    background-color: #dbe4f0;
+    border-color: transparent;
+    border-radius: 0.2rem;
+}
+
+.modal.j2c-regen-modal .j2c-regen-summary.is-prompt .j2c-regen-count {
+    font-weight: 400;
+    color: #2e486b;
+}
+
+.modal.j2c-regen-modal .j2c-regen-summary.is-complete {
+    background-color: #f4fbf6;
+    border-color: #a3cfbb;
+}
+
+.modal.j2c-regen-modal .j2c-regen-summary.is-complete .j2c-regen-percent,
+.modal.j2c-regen-modal .j2c-regen-summary.is-complete .j2c-regen-status-icon {
+    color: #198754;
+}
+
+.modal.j2c-regen-modal .j2c-regen-summary.is-complete .j2c-regen-count {
+    color: #0a3622;
+}
+
+.modal.j2c-regen-modal .j2c-regen-summary.is-error {
+    background-color: #fdf4f4;
+    border-color: #f1aeb5;
+}
+
+.modal.j2c-regen-modal .j2c-regen-summary.is-error .j2c-regen-percent,
+.modal.j2c-regen-modal .j2c-regen-summary.is-error .j2c-regen-status-icon {
+    color: #dc3545;
+}
+
+.modal.j2c-regen-modal .j2c-regen-summary.is-error .j2c-regen-count {
+    color: #58151c;
+}
+
+.modal.j2c-regen-modal .j2c-regen-summary.is-cancelled {
+    background-color: #f8f9fa;
+    border-color: #c4c8cb;
+}
+
+.modal.j2c-regen-modal .j2c-regen-summary.is-cancelled .j2c-regen-percent,
+.modal.j2c-regen-modal .j2c-regen-summary.is-cancelled .j2c-regen-status-icon {
+    color: #6c757d;
+}
+
+.modal.j2c-regen-modal .j2c-regen-summary.is-cancelled .j2c-regen-count {
+    color: #2b2f32;
+}
+
+/* Progress bar */
+
+.modal.j2c-regen-modal .j2c-regen-progress {
+    display: flex;
+    height: 0.5rem;
+    overflow: hidden;
+    font-size: 0.75rem;
+    background-color: #e9ecef;
+    border: 0;
+    border-radius: 0.375rem;
+    box-shadow: none;
+}
+
+.modal.j2c-regen-modal .j2c-regen-progress-bar {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+    color: #fff;
+    text-align: center;
+    white-space: nowrap;
+    background-color: #0d6efd;
+    background-image: none;
+    transition: width 0.6s ease;
+}
+
+.modal.j2c-regen-modal .j2c-regen-progress-bar.is-animated {
+    background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
+    background-size: 1rem 1rem;
+    animation: 1s linear infinite j2c-regen-stripes;
+}
+
+.modal.j2c-regen-modal .is-complete .j2c-regen-progress-bar {
+    background-color: #198754;
+}
+
+.modal.j2c-regen-modal .is-error .j2c-regen-progress-bar {
+    background-color: #dc3545;
+}
+
+.modal.j2c-regen-modal .is-cancelled .j2c-regen-progress-bar {
+    background-color: #6c757d;
+}
+
+@keyframes j2c-regen-stripes {
+    0% {
+        background-position-x: 1rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .modal.j2c-regen-modal .j2c-regen-progress-bar,
+    .modal.j2c-regen-modal .j2c-regen-progress-bar.is-animated {
+        transition: none;
+        animation: none;
+    }
+}
+
+/* Download Report — a button styled as the design's link */
+
+.modal.j2c-regen-modal .j2c-regen-report {
+    display: inline-block;
+    margin-top: 0.5rem;
+    padding: 0;
+    font-family: inherit;
+    font-size: 0.875rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: #0d6efd;
+    text-decoration: none;
+    background: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.modal.j2c-regen-modal .j2c-regen-report:hover {
+    color: #0a58ca;
+}
+
+.modal.j2c-regen-modal .j2c-regen-report:focus-visible {
+    outline: 2px solid #0d6efd;
+    outline-offset: 2px;
+}
+
+.modal.j2c-regen-modal .j2c-regen-report-icon {
+    margin-right: 0.25rem;
+}
+
+/* Generated / Skipped / Failed */
+
+.modal.j2c-regen-modal .j2c-regen-stats {
+    gap: 0.5rem;
+}
+
+.modal.j2c-regen-modal .j2c-regen-stat-body {
+    padding: 0.5rem 1rem;
+    gap: 1rem;
+}
+
+.modal.j2c-regen-modal .j2c-regen-stat-tile {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.375rem;
+}
+
+.modal.j2c-regen-modal .j2c-regen-stat-icon {
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.modal.j2c-regen-modal .j2c-regen-stat-label {
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.5;
+    color: #212529;
+}
+
+.modal.j2c-regen-modal .j2c-regen-stat-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.5;
+    color: #212529;
+}
+
+.modal.j2c-regen-modal .j2c-regen-stat-generated {
+    background-color: #f4fbf6;
+    border-color: #a3cfbb;
+}
+
+.modal.j2c-regen-modal .j2c-regen-stat-generated .j2c-regen-stat-tile {
+    color: #198754;
+    background-color: #d1e7dd;
+}
+
+.modal.j2c-regen-modal .j2c-regen-stat-generated .j2c-regen-stat-value {
+    color: #0a3622;
+}
+
+.modal.j2c-regen-modal .j2c-regen-stat-skipped {
+    background-color: #fdfaf2;
+    border-color: #ffe69c;
+}
+
+.modal.j2c-regen-modal .j2c-regen-stat-skipped .j2c-regen-stat-tile {
+    color: #664d03;
+    background-color: #fff3cd;
+}
+
+.modal.j2c-regen-modal .j2c-regen-stat-skipped .j2c-regen-stat-value {
+    color: #664d03;
+}
+
+.modal.j2c-regen-modal .j2c-regen-stat-failed .j2c-regen-stat-tile {
+    color: #6c757d;
+    background-color: #e2e3e5;
+}
+
+.modal.j2c-regen-modal .j2c-regen-stat-failed.has-failures {
+    background-color: #fdf4f4;
+    border-color: #f1aeb5;
+}
+
+.modal.j2c-regen-modal .j2c-regen-stat-failed.has-failures .j2c-regen-stat-tile {
+    color: #dc3545;
+    background-color: #f8d7da;
+}
+
+.modal.j2c-regen-modal .j2c-regen-stat-failed.has-failures .j2c-regen-stat-label,
+.modal.j2c-regen-modal .j2c-regen-stat-failed.has-failures .j2c-regen-stat-value {
+    color: #58151c;
+}
+
+/* Log box */
+
+.modal.j2c-regen-modal .j2c-regen-log-card > .j2c-regen-log {
+    height: 140px;
+    margin: 0;
+    padding: 0;
+    overflow: auto;
+    font-size: 0.875rem;
+    list-style: none;
+    border-radius: calc(0.375rem - 1px);
+}
+
+/* Keep-open notice */
+
+.modal.j2c-regen-modal .j2c-regen-notice {
+    display: flex;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: #664d03;
+    background-color: #fff3cd;
+    border: 1px solid #ffe69c;
+    border-radius: 0.375rem;
+    box-shadow: none;
+}
+
+.modal.j2c-regen-modal .j2c-regen-notice-icon {
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    line-height: 1;
+}
+
+/* Footer */
+
+.modal.j2c-regen-modal .j2c-regen-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0.75rem;
+    background-color: transparent;
+    border-top: 1px solid #dee2e6;
+    border-bottom-right-radius: calc(0.5rem - 1px);
+    border-bottom-left-radius: calc(0.5rem - 1px);
+}
+
+.modal.j2c-regen-modal .j2c-regen-footer > .btn {
+    margin: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    font-family: inherit;
+    font-size: 0.875rem;
+    font-weight: 400;
+    line-height: 1.5;
+    border: 1px solid transparent;
+    border-radius: 0.25rem;
+    box-shadow: none;
+    min-height: 0;
+}
+
+.modal.j2c-regen-modal .j2c-regen-footer > .j2c-regen-btn-cancel,
+.modal.j2c-regen-modal .j2c-regen-footer > .j2c-regen-btn-cancel:focus,
+.modal.j2c-regen-modal .j2c-regen-footer > .j2c-regen-btn-cancel:disabled {
+    color: #dc3545 !important;
+    background-color: transparent !important;
+    border-color: #dc3545 !important;
+}
+
+.modal.j2c-regen-modal .j2c-regen-footer > .j2c-regen-btn-cancel:hover:not(:disabled),
+.modal.j2c-regen-modal .j2c-regen-footer > .j2c-regen-btn-cancel:active:not(:disabled) {
+    color: #fff !important;
+    background-color: #dc3545 !important;
+    border-color: #dc3545 !important;
+}
+
+.modal.j2c-regen-modal .j2c-regen-footer > .j2c-regen-btn-cancel {
+    margin-right: auto !important;
+}
+
+.modal.j2c-regen-modal .j2c-regen-footer > .j2c-regen-btn-cancel:disabled {
+    opacity: 0.65;
+}
+
+.modal.j2c-regen-modal .j2c-regen-footer > .j2c-regen-btn-start,
+.modal.j2c-regen-modal .j2c-regen-footer > .j2c-regen-btn-start:focus,
+.modal.j2c-regen-modal .j2c-regen-footer > .j2c-regen-btn-close,
+.modal.j2c-regen-modal .j2c-regen-footer > .j2c-regen-btn-close:focus {
+    color: #fff !important;
+    background-color: #0d6efd !important;
+    border-color: #0d6efd !important;
+}
+
+.modal.j2c-regen-modal .j2c-regen-footer > .j2c-regen-btn-start:hover,
+.modal.j2c-regen-modal .j2c-regen-footer > .j2c-regen-btn-start:active,
+.modal.j2c-regen-modal .j2c-regen-footer > .j2c-regen-btn-close:hover,
+.modal.j2c-regen-modal .j2c-regen-footer > .j2c-regen-btn-close:active {
+    color: #fff !important;
+    background-color: #0b5ed7 !important;
+    border-color: #0a58ca !important;
+}
+
+.modal.j2c-regen-modal .j2c-regen-footer > .j2c-regen-btn-start-over,
+.modal.j2c-regen-modal .j2c-regen-footer > .j2c-regen-btn-start-over:focus {
+    color: #0d6efd !important;
+    background-color: transparent !important;
+    border-color: #0d6efd !important;
+}
+
+.modal.j2c-regen-modal .j2c-regen-footer > .j2c-regen-btn-start-over:hover,
+.modal.j2c-regen-modal .j2c-regen-footer > .j2c-regen-btn-start-over:active {
+    color: #fff !important;
+    background-color: #0d6efd !important;
+    border-color: #0d6efd !important;
+}
+
+/* A mouse click keeps no ring; keyboard focus gets Bootstrap's ring in the button's own colour. */
+.modal.j2c-regen-modal .j2c-regen-footer > .btn:focus:not(:focus-visible) {
+    box-shadow: none !important;
+}
+
+.modal.j2c-regen-modal .j2c-regen-footer > .btn:focus-visible {
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.5) !important;
+}
+
+.modal.j2c-regen-modal .j2c-regen-footer > .j2c-regen-btn-cancel:focus-visible {
+    box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.5) !important;
+}
+
+/* Resume notices under the select */
+
+.j2c-regenerate-images .j2c-regen-resume-notices {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1.5rem !important;
+}
+
+.j2c-regenerate-images .j2c-regen-resume-notices > .alert {
+    margin: 0 !important;
+}

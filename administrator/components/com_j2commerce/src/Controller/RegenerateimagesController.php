@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageRegenerationHelper;
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
@@ -24,7 +25,7 @@ use Joomla\Database\DatabaseInterface;
 
 class RegenerateimagesController extends BaseController
 {
-    private const ALLOWED_SCOPES = ['thumbs', 'tiny'];
+    private const ALLOWED_SCOPES = ['thumbs', 'tiny', 'both'];
 
     public function scan(): void
     {
@@ -57,7 +58,9 @@ class RegenerateimagesController extends BaseController
 
         $input  = $this->app->getInput();
         $offset = max(0, $input->getInt('offset', 0));
-        $limit  = max(1, min(25, $input->getInt('limit', 10)));
+        // Each remote image is a download, so a batch must stay well inside max_execution_time.
+        $maxLimit = ComponentHelper::getParams('com_j2commerce')->get('image_generate_remote', 0) ? 3 : 25;
+        $limit    = max(1, min($maxLimit, $input->getInt('limit', 10)));
 
         try {
             $result = $this->getRegenerationHelper()->processBatch($scope, $offset, $limit);
