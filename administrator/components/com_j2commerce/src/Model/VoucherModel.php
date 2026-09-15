@@ -881,7 +881,7 @@ class VoucherModel extends AdminModel
 
         // Clear voucher from cart table
         $cartHelper = CartHelper::getInstance();
-        $cartTable  = $cartHelper->getCart();
+        $cartTable  = $cartHelper->getCart(0, false);
 
         if (isset($cartTable->j2commerce_cart_id) && !empty($cartTable->j2commerce_cart_id)) {
             $db    = $this->getDatabase();
@@ -1277,7 +1277,7 @@ class VoucherModel extends AdminModel
     {
         $session    = Factory::getApplication()->getSession();
         $cartHelper = CartHelper::getInstance();
-        $cartTable  = $cartHelper->getCart();
+        $cartTable  = $cartHelper->getCart(0, false);
 
         if (isset($cartTable->cart_voucher) && !empty($cartTable->cart_voucher)) {
             $session->set('voucher', $cartTable->cart_voucher, 'j2commerce');
@@ -1300,7 +1300,7 @@ class VoucherModel extends AdminModel
     {
         $session    = Factory::getApplication()->getSession();
         $cartHelper = CartHelper::getInstance();
-        $cartTable  = $cartHelper->getCart();
+        $cartTable  = $cartHelper->getCart(0, false);
 
         if (isset($cartTable->cart_voucher) && !empty($cartTable->cart_voucher)) {
             $session->set('voucher', $cartTable->cart_voucher, 'j2commerce');
