@@ -24,8 +24,9 @@ use Psr\Http\Message\ResponseInterface;
  *
  * Checking the host once is not enough: the transports Joomla ships follow redirects on their
  * own, so a host that passes here can hand back a 302 to somewhere that would not. Every request
- * therefore re-checks each hop itself with redirect-following turned off, and DNS is resolved
- * once per hop.
+ * therefore re-checks each hop itself with redirect-following turned off. Each hop resolves the
+ * host's A and AAAA records once, requires every address to be public, and connects to the
+ * address that was checked rather than letting the transport resolve the name a second time.
  *
  * Twin of com_j2commercemigrator's Service\RemoteUrlGuard, which is rewired to this class once
  * the minimum supported J2Commerce version ships it (6.6.3).
@@ -36,63 +37,27 @@ final class RemoteUrlGuard
 
     private const ALLOWED_SCHEMES = ['http', 'https'];
 
-    /** A well-formed http(s) URL whose host does not resolve into a loopback, private or reserved range. */
+    private const ALLOWED_PORTS = [80, 443, 8080, 8443];
+
+    /** A well-formed http(s) URL on a web port whose host resolves only to public addresses. */
     public static function isAllowed(string $url): bool
     {
-        if (!filter_var($url, FILTER_VALIDATE_URL)
-            || !\in_array(parse_url($url, PHP_URL_SCHEME), self::ALLOWED_SCHEMES, true)
-        ) {
-            return false;
-        }
-
-        $host = (string) (parse_url($url, PHP_URL_HOST) ?? '');
-
-        if ($host === '' || strcasecmp($host, 'localhost') === 0) {
-            return false;
-        }
-
-        if (filter_var($host, FILTER_VALIDATE_IP) !== false) {
-            return self::isPublicIp($host);
-        }
-
-        // Every A record, not just the first one gethostbyname() happens to hand back:
-        // a host that answers with one public and one private address is not public.
-        $ips = @gethostbynamel($host);
-
-        if ($ips === false || $ips === []) {
-            return false;
-        }
-
-        foreach ($ips as $ip) {
-            if (!self::isPublicIp($ip)) {
-                return false;
-            }
-        }
-
-        return true;
+        return self::target($url) !== null;
     }
 
     /** isAllowed() plus a WARNING log naming the URL that was refused. */
     public static function assertAllowed(string $url, string $context = ''): bool
     {
-        if (self::isAllowed($url)) {
-            return true;
-        }
-
-        Log::add(
-            'Refused to fetch "' . $url . '"' . ($context !== '' ? ' (' . $context . ')' : '')
-            . ': the address is not a public http(s) destination.',
-            Log::WARNING,
-            'com_j2commerce'
-        );
-
-        return false;
+        return self::checkedTarget($url, $context) !== null;
     }
 
-    /** GET $url. Returns the body on a 200, or null on refusal, transport error, or any non-200 status. */
-    public static function fetch(string $url, int $timeout = 30, string $context = ''): ?string
+    /**
+     * GET $url. Returns the body on a 200, or null on refusal, transport error, any non-200 status,
+     * or a body larger than $maxBytes (0 = no limit), which is enforced while the body is received.
+     */
+    public static function fetch(string $url, int $timeout = 30, string $context = '', int $maxBytes = 0): ?string
     {
-        $response = self::request('get', $url, $timeout, $context);
+        $response = self::request('get', $url, $timeout, $context, $maxBytes);
 
         return $response === null ? null : (string) $response->getBody();
     }
@@ -106,7 +71,7 @@ final class RemoteUrlGuard
      */
     public static function head(string $url, int $timeout = 30, string $context = ''): ?array
     {
-        $response = self::request('head', $url, $timeout, $context);
+        $response = self::request('head', $url, $timeout, $context, 0);
 
         if ($response === null) {
             return null;
@@ -121,19 +86,28 @@ final class RemoteUrlGuard
         return $headers;
     }
 
-    private static function request(string $method, string $url, int $timeout, string $context): ?ResponseInterface
+    private static function request(string $method, string $url, int $timeout, string $context, int $maxBytes): ?ResponseInterface
     {
-        // follow_location off is the whole point: CurlTransport and StreamTransport both
-        // chase redirects by default, which would walk past the per-hop check below.
-        $http = (new HttpFactory())->getHttp(['follow_location' => false], ['curl', 'stream']);
         $next = $url;
 
         for ($hop = 0; $hop <= self::MAX_REDIRECTS; $hop++) {
-            if (!self::assertAllowed($next, $context)) {
+            $target = self::checkedTarget($next, $context);
+
+            if ($target === null) {
                 return null;
             }
 
+            // CURLOPT_RESOLVE connects to the address checked above instead of a second lookup.
+            $curl = [CURLOPT_RESOLVE => [$target['host'] . ':' . $target['port'] . ':' . $target['address']]];
+
+            if ($maxBytes > 0) {
+                $curl[CURLOPT_MAXFILESIZE_LARGE] = $maxBytes;
+            }
+
             try {
+                // follow_location off: CurlTransport chases redirects by default, which would walk
+                // past the per-hop check. Curl only: the stream transport cannot take a fixed address.
+                $http     = (new HttpFactory())->getHttp(['follow_location' => false, 'transport.curl' => $curl], ['curl']);
                 $response = $method === 'head'
                     ? $http->head($next, [], $timeout)
                     : $http->get($next, [], $timeout);
@@ -165,9 +139,78 @@ final class RemoteUrlGuard
         return null;
     }
 
-    private static function isPublicIp(string $ip): bool
+    /** @return array{host: string, port: int, address: string}|null */
+    private static function checkedTarget(string $url, string $context): ?array
     {
-        return filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) !== false;
+        $target = self::target($url);
+
+        if ($target === null) {
+            Log::add(
+                'Refused to fetch "' . $url . '"' . ($context !== '' ? ' (' . $context . ')' : '')
+                . ': the address is not a public http(s) destination.',
+                Log::WARNING,
+                'com_j2commerce'
+            );
+        }
+
+        return $target;
+    }
+
+    /**
+     * The host, port and address to connect to, or null when the URL is not http(s), not on a web
+     * port, or any address its host resolves to is not globally routable.
+     *
+     * @return array{host: string, port: int, address: string}|null
+     */
+    private static function target(string $url): ?array
+    {
+        $scheme = parse_url($url, PHP_URL_SCHEME);
+
+        if (!filter_var($url, FILTER_VALIDATE_URL) || !\in_array($scheme, self::ALLOWED_SCHEMES, true)) {
+            return null;
+        }
+
+        $host = trim((string) (parse_url($url, PHP_URL_HOST) ?? ''), '[]');
+        $port = (int) (parse_url($url, PHP_URL_PORT) ?? ($scheme === 'https' ? 443 : 80));
+
+        if ($host === '' || strcasecmp($host, 'localhost') === 0 || !\in_array($port, self::ALLOWED_PORTS, true)) {
+            return null;
+        }
+
+        $addresses = filter_var($host, FILTER_VALIDATE_IP) !== false ? [$host] : self::addresses($host);
+
+        if ($addresses === []) {
+            return null;
+        }
+
+        foreach ($addresses as $address) {
+            if (filter_var($address, FILTER_VALIDATE_IP, FILTER_FLAG_GLOBAL_RANGE) === false) {
+                return null;
+            }
+        }
+
+        return [
+            'host'    => $host,
+            'port'    => $port,
+            'address' => str_contains($addresses[0], ':') ? '[' . $addresses[0] . ']' : $addresses[0],
+        ];
+    }
+
+    /** @return list<string>  Every A and AAAA address of $host. */
+    private static function addresses(string $host): array
+    {
+        $addresses = [];
+
+        foreach (@dns_get_record($host, DNS_A | DNS_AAAA) ?: [] as $record) {
+            $address = $record['ip'] ?? $record['ipv6'] ?? '';
+
+            if ($address !== '') {
+                $addresses[] = $address;
+            }
+        }
+
+        // dns_get_record() skips the hosts file, which the system resolver still honors.
+        return $addresses ?: (@gethostbynamel($host) ?: []);
     }
 
     private static function resolve(string $base, string $location): string

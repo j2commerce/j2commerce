@@ -23,6 +23,9 @@ final class RemoteImageDownloader
 {
     public const MAX_BYTES = 50 * 1024 * 1024;
 
+    /** Width times height; decoding is roughly 4-5 bytes per pixel, so this bounds resize memory. */
+    public const MAX_PIXELS = 40_000_000;
+
     private const RASTER_TYPES = [IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_GIF, IMAGETYPE_WEBP];
 
     public static function isRemote(string $path): bool
@@ -62,13 +65,13 @@ final class RemoteImageDownloader
 
     /**
      * Temp-file path holding the image, or null when the URL is refused, the download fails, or
-     * the body is not a JPEG, PNG, GIF or WebP image. The type is read from the bytes, never from
-     * the URL, so an SVG or any non-image payload is rejected whatever it is named. The caller
-     * owns the returned file and must unlink it.
+     * the body is not a JPEG, PNG, GIF or WebP image of at most MAX_BYTES and MAX_PIXELS. The type
+     * is read from the bytes, never from the URL, so an SVG or any non-image payload is rejected
+     * whatever it is named. The caller owns the returned file and must unlink it.
      */
     public static function toTempFile(string $url, int $timeout = 30, string $context = ''): ?string
     {
-        $data = RemoteUrlGuard::fetch(self::absolute($url), $timeout, $context);
+        $data = RemoteUrlGuard::fetch(self::absolute($url), $timeout, $context, self::MAX_BYTES);
 
         if ($data === null || \strlen($data) < 100 || \strlen($data) > self::MAX_BYTES) {
             return null;
@@ -76,7 +79,7 @@ final class RemoteImageDownloader
 
         $info = @getimagesizefromstring($data);
 
-        if ($info === false || !\in_array($info[2], self::RASTER_TYPES, true)) {
+        if ($info === false || !\in_array($info[2], self::RASTER_TYPES, true) || $info[0] * $info[1] > self::MAX_PIXELS) {
             return null;
         }
 

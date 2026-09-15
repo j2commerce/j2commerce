@@ -276,8 +276,10 @@ class ImageRegenerationHelper
             return $this->sameResult($targets, 'skipped', $url . ': already a derivative image');
         }
 
-        // The URL hash keeps two sources that share a file name on one host apart.
-        $prefix      = (File::makeSafe(File::stripExt(basename($urlPath))) ?: 'image') . '-' . substr(sha1($absoluteUrl), 0, 8);
+        // The URL hash keeps two sources that share a file name on one host apart. Dots and spaces
+        // become hyphens so the name is a single segment ahead of the hash and version.
+        $name        = trim((string) preg_replace('/[.\s]+/', '-', File::makeSafe(File::stripExt(basename($urlPath)))), '-');
+        $prefix      = ($name ?: 'image') . '-' . substr(sha1($absoluteUrl), 0, 16);
         $relativeDir = $remote['dir'] . '/' . $host;
         $validator   = RemoteImageDownloader::validator($absoluteUrl, 20, 'image regeneration');
         $results     = [];
@@ -385,11 +387,13 @@ class ImageRegenerationHelper
         ];
     }
 
-    /** Earlier versions of the same source; the name-plus-URL-hash prefix is unique to that URL. */
+    /** Earlier versions of the same source: exactly {prefix}-{8 hex version}.webp, nothing broader. */
     private function removeOtherVersions(string $targetDir, string $prefix, string $keep): void
     {
+        $pattern = '/^' . preg_quote($prefix, '/') . '-[0-9a-f]{8}\.webp$/';
+
         foreach (glob($targetDir . $prefix . '-*.webp') ?: [] as $file) {
-            if (basename($file) !== $keep) {
+            if (basename($file) !== $keep && preg_match($pattern, basename($file)) === 1) {
                 @unlink($file);
             }
         }
