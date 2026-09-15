@@ -177,14 +177,22 @@ final class RemoteUrlGuard
             return null;
         }
 
-        $addresses = filter_var($host, FILTER_VALIDATE_IP) !== false ? [$host] : self::addresses($host);
+        $isLiteral = filter_var($host, FILTER_VALIDATE_IP) !== false;
+
+        // curl reads shorthand IPv4 forms (2130706433, 0x7f.1, 127.1, 0177.0.0.1) as an address and
+        // connects without consulting CURLOPT_RESOLVE, so only the canonical literal is accepted.
+        if (!$isLiteral && preg_match('/^(?:0x[0-9a-f]*|\d+)(?:\.(?:0x[0-9a-f]*|\d+)){0,3}\.?$/i', $host)) {
+            return null;
+        }
+
+        $addresses = $isLiteral ? [$host] : self::addresses($host);
 
         if ($addresses === []) {
             return null;
         }
 
         foreach ($addresses as $address) {
-            if (filter_var($address, FILTER_VALIDATE_IP, FILTER_FLAG_GLOBAL_RANGE) === false) {
+            if (!self::isGlobal($address)) {
                 return null;
             }
         }
@@ -194,6 +202,27 @@ final class RemoteUrlGuard
             'port'    => $port,
             'address' => str_contains($addresses[0], ':') ? '[' . $addresses[0] . ']' : $addresses[0],
         ];
+    }
+
+    private static function isGlobal(string $address): bool
+    {
+        if (filter_var($address, FILTER_VALIDATE_IP, FILTER_FLAG_GLOBAL_RANGE) === false) {
+            return false;
+        }
+
+        $packed = (string) inet_pton($address);
+
+        // NAT64 prefixes carry an IPv4 destination: the local-use 64:ff9b:1::/48 is never global,
+        // and the well-known 64:ff9b::/96 is only as global as the IPv4 address it embeds.
+        if (str_starts_with($packed, "\x00\x64\xff\x9b\x00\x01")) {
+            return false;
+        }
+
+        if (str_starts_with($packed, "\x00\x64\xff\x9b" . str_repeat("\x00", 8))) {
+            return self::isGlobal((string) inet_ntop(substr($packed, 12)));
+        }
+
+        return true;
     }
 
     /** @return list<string>  Every A and AAAA address of $host. */
