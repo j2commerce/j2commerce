@@ -13,6 +13,7 @@ defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 
@@ -40,8 +41,9 @@ if ($this->params->get('item_show_product_main_image', 1) && !empty($this->produ
     $mainImagePath = $platform->getImagePath($this->product->main_image);
     if (!empty($mainImagePath)) {
         $slides[] = [
-            'src' => $mainImagePath,
-            'alt' => !empty($this->product->main_image_alt)
+            'src'   => $mainImagePath,
+            'thumb' => $platform->getImagePath(ProductHelper::getGalleryThumbSource($this->product)),
+            'alt'   => !empty($this->product->main_image_alt)
                 ? $this->product->main_image_alt
                 : $productName,
         ];
@@ -69,8 +71,9 @@ if ($this->params->get('item_show_product_additional_image', 1) && !empty($this-
         $imagePath = $platform->getImagePath($image);
         if (!empty($imagePath)) {
             $slides[] = [
-                'src' => $imagePath,
-                'alt' => !empty($additionalImagesAlt[$key])
+                'src'   => $imagePath,
+                'thumb' => $platform->getImagePath(ProductHelper::getGalleryThumbSource($this->product, $key)),
+                'alt'   => !empty($additionalImagesAlt[$key])
                     ? $additionalImagesAlt[$key]
                     : $productName,
             ];
@@ -127,7 +130,7 @@ $thumbsId  = 'product-gallery-thumbs-' . $productId;
             <?php if ($hasMultipleSlides) : ?>
                 <?php foreach ($slides as $slide) : ?>
                     <div class="swiper-slide">
-                        <?php echo ImageHelper::getProductImage($slide['src'], 100, 'html', 100, 'product-thumb', $slide['alt']); ?>
+                        <?php echo ImageHelper::getProductImage($slide['thumb'] ?: $slide['src'], 100, 'html', 100, 'product-thumb', $slide['alt']); ?>
                     </div>
                 <?php endforeach; ?>
             <?php endif; ?>

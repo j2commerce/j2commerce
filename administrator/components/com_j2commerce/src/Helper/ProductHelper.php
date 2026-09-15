@@ -714,8 +714,11 @@ class ProductHelper
         $product->main_image_alt             = $images->main_image_alt ?? '';
         $product->thumb_image                = $images->thumb_image ?? '';
         $product->thumb_image_alt            = $images->thumb_image_alt ?? '';
+        $product->tiny_image                 = $images->tiny_image ?? '';
         $product->additional_images          = $images->additional_images ?? '';
         $product->additional_images_alt      = $images->additional_images_alt ?? '';
+        $product->additional_thumb_images    = $images->additional_thumb_images ?? '';
+        $product->additional_tiny_images     = $images->additional_tiny_images ?? '';
         $product->brand_desc_id              = $images->brand_desc_id ?? 0;
 
         // Add manufacturer data (company name + first/last name from address)
@@ -1007,6 +1010,53 @@ class ProductHelper
         $cache[$productId] = $images ?: null;
 
         return $cache[$productId];
+    }
+
+    /**
+     * Resolve the smallest stored image for a gallery thumbnail.
+     *
+     * The generated tiny/thumb derivatives carry a content-hashed basename, so they cannot be
+     * derived from the source filename the way ImageHelper::getProductImage() guesses for local
+     * uploads — and for a remotely hosted source there is nothing to guess from at all. These
+     * columns are the only authoritative map, so read them and fall back to the full-size image
+     * when a derivative was never generated.
+     *
+     * @param   object            $product  Product carrying the image columns.
+     * @param   int|string|null   $key      Additional-image key, or null for the main image.
+     *
+     * @return  string  Stored image path, empty when the product has no image at all.
+     *
+     * @since   6.6.4
+     */
+    public static function getGalleryThumbSource(object $product, int|string|null $key = null): string
+    {
+        if ($key === null) {
+            return (string) (($product->tiny_image ?? '') ?: ($product->thumb_image ?? '') ?: ($product->main_image ?? ''));
+        }
+
+        foreach (['additional_tiny_images', 'additional_thumb_images', 'additional_images'] as $column) {
+            $images = self::decodeImageColumn($product->$column ?? '');
+
+            if (!empty($images[$key])) {
+                return (string) $images[$key];
+            }
+        }
+
+        return '';
+    }
+
+    /** Decode a keyed image JSON column, tolerating the legacy list shape and malformed JSON. */
+    private static function decodeImageColumn(string $json): array
+    {
+        if ($json === '') {
+            return [];
+        }
+
+        try {
+            return array_filter((array) json_decode($json, true, 512, JSON_THROW_ON_ERROR));
+        } catch (\JsonException) {
+            return [];
+        }
     }
 
     /**

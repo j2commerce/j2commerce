@@ -12,6 +12,7 @@
 // phpcs:enable PSR1.Files.SideEffects
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Plugin\PluginHelper;
@@ -95,14 +96,20 @@ $additional_images = array_filter((array)$additional_images);
             <div class="px-lg-4f mt-3 pt-3">
                 <div class="swiper swiper-load swiper-thumbs d-none d-lg-block w-100 j2commerce-product-additional-images" id="thumbs" data-swiper='{"direction": "horizontal","spaceBetween": 12,"slidesPerView": 5,"watchSlidesProgress": true,"loop": true,"navigation": {"nextEl": ".swiper-button-next","prevEl": ".swiper-button-prev"}}'>
                     <div class="swiper-wrapper flex-row">
-                        <?php if (!empty($this->item->main_image)):?>
-                            <?php echo J2CommerceHelper::product()->displayImage($this->item,array('type'=>'AdditionalMain','params' => $this->params,'alt'=> $this->item->main_image_alt)); ?>
+                        <?php if (!empty($this->item->main_image)):
+                            $main_thumb_src = ProductHelper::getGalleryThumbSource($this->item);
+                            ?>
+                            <div class="swiper-slide swiper-thumb border rounded-2">
+                                <div class="j2commerce-image-container ratio ratio-1x1">
+                                    <img src="<?php echo $this->escape(HTMLHelper::_('cleanImageURL', $main_thumb_src)->url);?>" alt="<?php echo (!empty($this->item->main_image_alt)) ? $this->escape($this->item->main_image_alt) : $this->escape($this->item->product_name); ?>" class="img-fluid rounded-1 j2commerce-item-additionalimage-preview swiper-thumb-img">
+                                </div>
+                            </div>
                         <?php endif;?>
 
                         <?php foreach($additional_images as $key => $image):
                             $image = HTMLHelper::_('cleanImageURL', $image)->url;
                             if(!empty($image)):
-                                $image_src = $image;
+                                $image_src = HTMLHelper::_('cleanImageURL', ProductHelper::getGalleryThumbSource($this->item, $key) ?: $image)->url;
                                 ?>
                                 <div class="swiper-slide swiper-thumb border rounded-2">
                                     <div class="j2commerce-image-container ratio ratio-1x1">
