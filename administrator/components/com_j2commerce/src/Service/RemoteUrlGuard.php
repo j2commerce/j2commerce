@@ -97,8 +97,11 @@ final class RemoteUrlGuard
                 return null;
             }
 
-            // CURLOPT_RESOLVE connects to the address checked above instead of a second lookup.
-            $curl = [CURLOPT_RESOLVE => [$target['host'] . ':' . $target['port'] . ':' . $target['address']]];
+            // CURLOPT_RESOLVE connects to the address checked above instead of a second lookup. An IP
+            // literal is never looked up, and curl cannot parse an IPv6 literal in that option anyway.
+            $curl = filter_var($target['host'], FILTER_VALIDATE_IP) === false
+                ? [CURLOPT_RESOLVE => [$target['host'] . ':' . $target['port'] . ':' . $target['address']]]
+                : [];
 
             if ($maxBytes > 0) {
                 $curl[CURLOPT_MAXFILESIZE_LARGE] = $maxBytes;
@@ -211,6 +214,18 @@ final class RemoteUrlGuard
         }
 
         $packed = (string) inet_pton($address);
+
+        // Multicast (224.0.0.0/4, ff00::/8), the deprecated IPv4-compatible ::/96 and the
+        // IPv4-translated ::ffff:0:0/96 pass the range flag but are never a web destination.
+        if ((\strlen($packed) === 4 && (\ord($packed[0]) & 0xF0) === 0xE0)
+            || (\strlen($packed) === 16 && (
+                $packed[0] === "\xff"
+                || str_starts_with($packed, str_repeat("\x00", 12))
+                || str_starts_with($packed, str_repeat("\x00", 8) . "\xff\xff\x00\x00")
+            ))
+        ) {
+            return false;
+        }
 
         // NAT64 prefixes carry an IPv4 destination: the local-use 64:ff9b:1::/48 is never global,
         // and the well-known 64:ff9b::/96 is only as global as the IPv4 address it embeds.

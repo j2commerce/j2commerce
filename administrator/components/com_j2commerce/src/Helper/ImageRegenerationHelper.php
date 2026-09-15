@@ -402,9 +402,10 @@ class ImageRegenerationHelper
     /** First configured product image directory plus /remote; never a path that climbs out of the site root. */
     private function remoteDirectory(): string
     {
-        $base = trim((string) (ConfigHelper::getImageDirectoryPaths(['images/products'])[0] ?? ''), '/');
+        // Backslashes are separators on Windows, and a colon would name a drive or stream wrapper.
+        $base = trim(str_replace('\\', '/', (string) (ConfigHelper::getImageDirectoryPaths(['images/products'])[0] ?? '')), '/');
 
-        if ($base === '' || preg_match('#(^|/)\.\.(/|$)#', $base) === 1) {
+        if ($base === '' || preg_match('#(^|/)\.\.(/|$)|:#', $base) === 1) {
             $base = 'images/products';
         }
 
