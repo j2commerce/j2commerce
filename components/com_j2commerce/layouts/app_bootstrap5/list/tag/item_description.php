@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use Joomla\CMS\HTML\HTMLHelper;
+
 extract($displayData);
 
 $maxLength = (int) $params->get('list_description_length', 150);
@@ -18,16 +20,16 @@ $maxLength = (int) $params->get('list_description_length', 150);
 $shortDesc = '';
 if ($showDescription) {
     $shortDesc = $product->product_short_desc ?? '';
-    if ($maxLength > 0 && strlen($shortDesc) > $maxLength) {
-        $shortDesc = substr($shortDesc, 0, $maxLength) . '...';
+    if ($maxLength > 0) {
+        $shortDesc = HTMLHelper::_('string.truncate', $shortDesc, $maxLength, true, true);
     }
 }
 
 $longDesc = '';
 if ($showLongDescription) {
     $longDesc = $product->product_long_desc ?? '';
-    if ($maxLength > 0 && strlen($longDesc) > $maxLength) {
-        $longDesc = substr($longDesc, 0, $maxLength) . '...';
+    if ($maxLength > 0) {
+        $longDesc = HTMLHelper::_('string.truncate', $longDesc, $maxLength, true, true);
     }
 }
 

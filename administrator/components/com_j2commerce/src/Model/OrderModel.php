@@ -4209,7 +4209,7 @@ class OrderModel extends AdminModel
         $db->setQuery($update);
         $db->execute();
 
-        return [
+        $totals = [
             'subtotal'     => $subtotal,
             'tax'          => $tax,
             'shipping'     => $shipping,
@@ -4219,6 +4219,26 @@ class OrderModel extends AdminModel
             'fees'         => round($feeRows > 0 ? $fees : 0.0, $scale),
             'total'        => max(0.0, $total),
         ];
+
+        // An extension that keeps its own basis for this order (e.g. a partial-payment parent whose
+        // lines hold the deposit, not the full price) reconciles the row here and returns full
+        // replacement totals via addResult(). Array references do not survive PluginEvent
+        // construction, so the result list is the only return channel; the last full array wins.
+        $event   = J2CommerceHelper::plugin()->event('AfterRecalculateOrderTotals', [
+            'orderId' => $orderId,
+            'totals'  => $totals,
+        ]);
+        $results = $event->getArgument('result');
+
+        foreach (\is_array($results) ? array_reverse($results) : [] as $candidate) {
+            if (\is_array($candidate) && isset($candidate['total'])) {
+                $totals = $candidate;
+
+                break;
+            }
+        }
+
+        return $totals;
     }
 
     /**

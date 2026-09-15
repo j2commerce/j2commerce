@@ -12,7 +12,9 @@
 
 declare(strict_types=1);
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
+
+use Joomla\CMS\HTML\HTMLHelper;
 
 extract($displayData);
 
@@ -21,8 +23,8 @@ $maxLength = (int) $params->get('list_description_length', 150);
 
 if (empty($shortDesc)) {
     $shortDesc = 'Product short description text will appear here.';
-} elseif ($maxLength > 0 && strlen($shortDesc) > $maxLength) {
-    $shortDesc = substr($shortDesc, 0, $maxLength) . '...';
+} elseif ($maxLength > 0) {
+    $shortDesc = HTMLHelper::_('string.truncate', $shortDesc, $maxLength, true, true);
 }
 ?>
 <j2c-conditional data-condition="$showDescription">

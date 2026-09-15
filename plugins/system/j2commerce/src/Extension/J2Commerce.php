@@ -56,6 +56,7 @@ use Joomla\Event\SubscriberInterface;
 use Joomla\Plugin\Schemaorg\Ecommerce\Event\ReviewsSchemaPrepareEvent;
 use Joomla\Plugin\Schemaorg\Ecommerce\Helper\J2CommerceSchemaHelper;
 use Joomla\Registry\Registry;
+use Joomla\String\StringHelper;
 
 /**
  * J2Commerce System Plugin
@@ -3302,8 +3303,8 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         $description = preg_replace('/\s+/', ' ', $description);
         $description = trim($description);
 
-        if (\strlen($description) > 5000) {
-            $description = substr($description, 0, 4997) . '...';
+        if (StringHelper::strlen($description) > 5000) {
+            $description = StringHelper::substr($description, 0, 4997) . '...';
         }
 
         return $description;

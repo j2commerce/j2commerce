@@ -21,6 +21,7 @@ use Joomla\CMS\Uri\Uri;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
 use Joomla\Registry\Registry;
+use Joomla\String\StringHelper;
 
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
@@ -694,8 +695,8 @@ class J2CommerceSchemaHelper
         $description = preg_replace('/\s+/', ' ', trim($description));
 
         // Truncate if needed
-        if ($maxLength > 0 && \strlen($description) > $maxLength) {
-            $description = substr($description, 0, $maxLength - 3) . '...';
+        if ($maxLength > 0 && StringHelper::strlen($description) > $maxLength) {
+            $description = StringHelper::substr($description, 0, max(0, $maxLength - 3)) . '...';
         }
 
         return $description;

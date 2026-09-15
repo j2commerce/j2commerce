@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use Joomla\CMS\HTML\HTMLHelper;
+
 extract($displayData);
 
 if (!$showDescription) {
@@ -23,8 +25,8 @@ if (empty($shortDesc)) {
 }
 
 $maxLength = (int) $params->get('list_description_length', 150);
-if ($maxLength > 0 && strlen($shortDesc) > $maxLength) {
-    $shortDesc = substr($shortDesc, 0, $maxLength) . '...';
+if ($maxLength > 0) {
+    $shortDesc = HTMLHelper::_('string.truncate', $shortDesc, $maxLength, true, true);
 }
 ?>
 <div class="j2commerce-product-description">
