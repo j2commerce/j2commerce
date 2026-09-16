@@ -1172,12 +1172,14 @@ class EmailHelper
         // Process positional hook shortcodes via plugin events
         $text = $this->processPositionalHooks($text, $order, $receiverType);
 
-        // Remove any unprocessed tags (except known exceptions like [if mso])
+        // Remove any unprocessed tags. Conditional-comment keywords are not tags: keep every
+        // token that opens a conditional ([if mso], [if !mso], [if gte mso 9], [if IE]) or
+        // closes one ([endif]), or the branch the author wrote is left as broken markup.
         preg_match_all("^\[(.*?)\]^", $text, $removeFields, PREG_PATTERN_ORDER);
 
         if (\count($removeFields[1]) > 0) {
             foreach ($removeFields[1] as $fieldName) {
-                if (!\in_array($fieldName, ['if mso', 'endif'])) {
+                if (!preg_match('/^(?:if\s|endif$)/i', $fieldName)) {
                     $text = str_replace('[' . $fieldName . ']', '', $text);
                 }
             }
