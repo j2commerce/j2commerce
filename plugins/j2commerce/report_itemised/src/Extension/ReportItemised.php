@@ -118,7 +118,7 @@ final class ReportItemised extends CMSPlugin implements SubscriberInterface
     {
         $plugin = $event->getArgument('plugin', '');
 
-        if ($plugin !== $this->_element) {
+        if ($plugin !== $this->_element || !$this->canViewReports()) {
             return;
         }
 
@@ -129,14 +129,16 @@ final class ReportItemised extends CMSPlugin implements SubscriberInterface
         $toolbar = $event->getArgument('toolbar');
 
         if ($toolbar) {
-            $exportUrl = Route::_(
-                'index.php?option=com_j2commerce&task=reportplugin.exportCsv&plugin=' . $this->_element
-                . '&' . Session::getFormToken() . '=1',
-                false
-            );
-            $toolbar->linkButton('export', 'PLG_J2COMMERCE_REPORT_ITEMISED_EXPORT_CSV')
-                ->url($exportUrl)
-                ->icon('icon-download');
+            if ($this->canExportReports()) {
+                $exportUrl = Route::_(
+                    'index.php?option=com_j2commerce&task=reportplugin.exportCsv&plugin=' . $this->_element
+                    . '&' . Session::getFormToken() . '=1',
+                    false
+                );
+                $toolbar->linkButton('export', 'PLG_J2COMMERCE_REPORT_ITEMISED_EXPORT_CSV')
+                    ->url($exportUrl)
+                    ->icon('icon-download');
+            }
 
             $toolbar->help('', false, 'https://docs.j2commerce.com/v6/reports/report-itemised');
         }
@@ -206,7 +208,7 @@ final class ReportItemised extends CMSPlugin implements SubscriberInterface
     {
         $plugin = $event->getArgument('plugin', '');
 
-        if ($plugin !== $this->_element) {
+        if ($plugin !== $this->_element || !$this->canViewReports()) {
             return;
         }
 
@@ -243,13 +245,29 @@ final class ReportItemised extends CMSPlugin implements SubscriberInterface
     {
         $plugin = $event->getArgument('plugin', '');
 
-        if ($plugin !== $this->_element) {
+        if ($plugin !== $this->_element || !$this->canExportReports()) {
             return;
         }
 
         $result   = $event->getArgument('result', []);
         $result[] = $this->buildExportData();
         $event->setArgument('result', $result);
+    }
+
+    /**
+     * The publisher gates too; this keeps the guard on the handler a future publisher reaches.
+     */
+    private function canViewReports(): bool
+    {
+        $user = Factory::getApplication()->getIdentity();
+
+        return $user && !$user->guest && J2CommerceHelper::canAccess('j2commerce.viewreports');
+    }
+
+    /** A report export is a bulk order extract, so it also carries j2commerce.exportorders. */
+    private function canExportReports(): bool
+    {
+        return $this->canViewReports() && J2CommerceHelper::canAccess('j2commerce.exportorders');
     }
 
     /**

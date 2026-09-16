@@ -119,7 +119,7 @@ class ReportpluginController extends BaseController
 
         $app = Factory::getApplication();
 
-        if (!$this->canViewReports()) {
+        if (!$this->canExportReports()) {
             $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=reports', false));
             $this->setMessage(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 'error');
             return;
@@ -217,6 +217,15 @@ class ReportpluginController extends BaseController
         $user = Factory::getApplication()->getIdentity();
 
         return $user && !$user->guest && J2CommerceHelper::canAccess('j2commerce.viewreports');
+    }
+
+    /**
+     * A report export is a bulk order extract, which every other extract surface in the
+     * component holds to j2commerce.exportorders on top of the read-level action.
+     */
+    private function canExportReports(): bool
+    {
+        return $this->canViewReports() && J2CommerceHelper::canAccess('j2commerce.exportorders');
     }
 
     /**
