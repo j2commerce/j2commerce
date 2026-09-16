@@ -1881,7 +1881,7 @@ class OrderModel extends AdminModel
             $optionPrice = (float) $row->orderitem_option_price;
             $perItemTax  = (float) $row->orderitem_per_item_tax;
             $discount    = (float) $row->orderitem_discount;
-            $finalPrice  = max(0.0, ($price + $optionPrice) * $qty - $discount);
+            $finalPrice  = $this->recomputeOrderItemFinalPrice($orderId, $row, $price, $optionPrice, $qty, $discount);
             $lineTax     = $perItemTax * $qty;
 
             $qtyStr         = (string) $qty;
@@ -1923,6 +1923,45 @@ class OrderModel extends AdminModel
         }
 
         return $updated;
+    }
+
+    /**
+     * Extend a line to its stored total, giving subscribers the chance to replace the result.
+     *
+     * Column ownership on an admin edit: the component RECOMPUTES orderitem_finalprice,
+     * orderitem_finalprice_with_tax, orderitem_finalprice_without_tax and orderitem_weight_total
+     * on every line edit, plus orderitem_option_price, orderitem_weight and orderitem_tax when the
+     * options or variant change. It does NOT recompute orderitem_price, orderitem_quantity or
+     * orderitem_discount — those stay as whoever wrote them last, extensions included.
+     *
+     * That split is why this hook exists. orderitem_price is extension-writable while
+     * orderitem_option_price is derived by the component, so without a hook an adjusted base price
+     * would be recombined with an option price computed on the original basis and stored as a
+     * figure belonging to neither. A subscriber replaces $payload->final_price to keep the line on
+     * its own basis; the line tax each caller derives afterwards follows the price returned here.
+     *
+     * $line carries only the columns its caller loaded and differs between them; the payload
+     * object is the stable part of the contract.
+     */
+    private function recomputeOrderItemFinalPrice(
+        string $orderId,
+        object $line,
+        float $price,
+        float $optionPrice,
+        int $qty,
+        float $discount
+    ): float {
+        $payload = (object) [
+            'final_price'  => max(0.0, ($price + $optionPrice) * $qty - $discount),
+            'price'        => $price,
+            'option_price' => $optionPrice,
+            'quantity'     => $qty,
+            'discount'     => $discount,
+        ];
+
+        J2CommerceHelper::plugin()->event('RecalculateOrderItemFinalPrice', [&$payload, $line, $orderId]);
+
+        return max(0.0, (float) $payload->final_price);
     }
 
     /** Search enabled product variants by name (title) or SKU for the admin order editor. */
@@ -2393,7 +2432,14 @@ class OrderModel extends AdminModel
 
         $qty        = max(1, (int) $line->orderitem_quantity);
         $unitWeight = max(0.0, $unitWeight);
-        $finalPrice = max(0.0, ((float) $line->orderitem_price + $optionPrice) * $qty - (float) $line->orderitem_discount);
+        $finalPrice = $this->recomputeOrderItemFinalPrice(
+            $orderId,
+            $line,
+            (float) $line->orderitem_price,
+            $optionPrice,
+            $qty,
+            (float) $line->orderitem_discount
+        );
         $oldFinal   = (float) $line->orderitem_finalprice;
 
         // The line keeps the tax rate it was sold at; Recalculate re-derives tax from the profile when wanted.
@@ -2765,7 +2811,14 @@ class OrderModel extends AdminModel
         $price      = max(0.0, (float) $update->price);
         $attributes = array_values(array_filter((array) $update->attributes, 'is_object'));
         $unitWeight = max(0.0, (float) $line->orderitem_weight - (float) ($current->weight ?? 0) + (float) ($target->weight ?? 0));
-        $finalPrice = max(0.0, ($price + (float) $line->orderitem_option_price) * $qty - (float) $line->orderitem_discount);
+        $finalPrice = $this->recomputeOrderItemFinalPrice(
+            $orderId,
+            $line,
+            $price,
+            (float) $line->orderitem_option_price,
+            $qty,
+            (float) $line->orderitem_discount
+        );
         $oldFinal   = (float) $line->orderitem_finalprice;
         $lineTax    = $oldFinal > 0.0 ? (float) $line->orderitem_tax * ($finalPrice / $oldFinal) : (float) $line->orderitem_tax;
         $including  = (int) ($order->is_including_tax ?? 0) === 1;
@@ -4037,6 +4090,10 @@ class OrderModel extends AdminModel
      * Recalculate and persist order totals from the current line items,
      * shipping, fees, surcharge and discounts. Returns the stored totals.
      *
+     * onJ2CommerceAfterRecalculateOrderTotals is dispatched once the figures are recalculated but
+     * BEFORE they are written, and a replacement array returned through it is what gets written —
+     * so a subscriber never needs a second UPDATE to correct the row afterwards.
+     *
      * @param  bool  $itemTaxIsAuthoritative  The caller has just written orderitem_tax for every
      *                                        line, so an all-zero sum is recorded data rather than
      *                                        an absent value. See the tax note below.
@@ -4164,13 +4221,56 @@ class OrderModel extends AdminModel
 
         $subtotalEx = ((int) $order->is_including_tax === 1) ? round($subtotal - $tax, $scale) : $subtotal;
 
-        $subtotalStr   = number_format($subtotal, 5, '.', '');
-        $subtotalExStr = number_format($subtotalEx, 5, '.', '');
-        $taxStr        = number_format($tax, 5, '.', '');
-        $shippingStr   = number_format($shipping, 5, '.', '');
-        $shipTaxStr    = number_format($shippingTax, 5, '.', '');
-        $feesStr       = number_format($feeRows > 0 ? $fees : 0.0, 5, '.', '');
-        $totalStr      = number_format(max(0.0, $total), 5, '.', '');
+        $totals = [
+            'subtotal'        => $subtotal,
+            'subtotal_ex_tax' => $subtotalEx,
+            'tax'             => $tax,
+            'shipping'        => $shipping,
+            'shipping_tax'    => $shippingTax,
+            'discount'        => round($discount, $scale),
+            'surcharge'       => $feeRows > 0 ? 0.0 : $surcharge,
+            'fees'            => round($feeRows > 0 ? $fees : 0.0, $scale),
+            'total'           => max(0.0, $total),
+        ];
+
+        // Dispatched BEFORE the row is written, and what it returns is what gets written. An
+        // extension that keeps its own basis for this order (e.g. a partial-payment parent whose
+        // lines hold the deposit, not the full price) therefore replaces these totals outright,
+        // rather than letting the component's figures land and correcting them with a second
+        // UPDATE — which wrote the row twice where a subscriber acted, and left the component's
+        // figures standing where none did. Array references do not survive PluginEvent
+        // construction, so the result list is the only return channel; the last full array wins.
+        $event   = J2CommerceHelper::plugin()->event('AfterRecalculateOrderTotals', [
+            'orderId' => $orderId,
+            'totals'  => $totals,
+        ]);
+        $results = $event->getArgument('result');
+
+        foreach (\is_array($results) ? array_reverse($results) : [] as $candidate) {
+            if (\is_array($candidate) && isset($candidate['total'])) {
+                $totals = $candidate;
+
+                break;
+            }
+        }
+
+        // Every key a subscriber omits keeps the component's own figure. subtotal_ex_tax is the
+        // one written column that the payload did not originally carry, so a subscriber built
+        // against that earlier shape returns none: derive it from the pair it did return, not
+        // from the values it replaced.
+        $storedSubtotal   = (float) ($totals['subtotal'] ?? $subtotal);
+        $storedTax        = (float) ($totals['tax'] ?? $tax);
+        $storedSubtotalEx = isset($totals['subtotal_ex_tax'])
+            ? (float) $totals['subtotal_ex_tax']
+            : (((int) $order->is_including_tax === 1) ? round($storedSubtotal - $storedTax, $scale) : $storedSubtotal);
+
+        $subtotalStr   = number_format($storedSubtotal, 5, '.', '');
+        $subtotalExStr = number_format($storedSubtotalEx, 5, '.', '');
+        $taxStr        = number_format($storedTax, 5, '.', '');
+        $shippingStr   = number_format((float) ($totals['shipping'] ?? $shipping), 5, '.', '');
+        $shipTaxStr    = number_format((float) ($totals['shipping_tax'] ?? $shippingTax), 5, '.', '');
+        $feesStr       = number_format((float) ($totals['fees'] ?? ($feeRows > 0 ? $fees : 0.0)), 5, '.', '');
+        $totalStr      = number_format(max(0.0, (float) ($totals['total'] ?? $total)), 5, '.', '');
         $now           = Factory::getDate()->toSql();
         $pk            = (int) $order->j2commerce_order_id;
 
@@ -4208,35 +4308,6 @@ class OrderModel extends AdminModel
 
         $db->setQuery($update);
         $db->execute();
-
-        $totals = [
-            'subtotal'     => $subtotal,
-            'tax'          => $tax,
-            'shipping'     => $shipping,
-            'shipping_tax' => $shippingTax,
-            'discount'     => round($discount, $scale),
-            'surcharge'    => $feeRows > 0 ? 0.0 : $surcharge,
-            'fees'         => round($feeRows > 0 ? $fees : 0.0, $scale),
-            'total'        => max(0.0, $total),
-        ];
-
-        // An extension that keeps its own basis for this order (e.g. a partial-payment parent whose
-        // lines hold the deposit, not the full price) reconciles the row here and returns full
-        // replacement totals via addResult(). Array references do not survive PluginEvent
-        // construction, so the result list is the only return channel; the last full array wins.
-        $event   = J2CommerceHelper::plugin()->event('AfterRecalculateOrderTotals', [
-            'orderId' => $orderId,
-            'totals'  => $totals,
-        ]);
-        $results = $event->getArgument('result');
-
-        foreach (\is_array($results) ? array_reverse($results) : [] as $candidate) {
-            if (\is_array($candidate) && isset($candidate['total'])) {
-                $totals = $candidate;
-
-                break;
-            }
-        }
 
         return $totals;
     }
