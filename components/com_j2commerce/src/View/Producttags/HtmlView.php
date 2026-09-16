@@ -313,7 +313,10 @@ class HtmlView extends BaseHtmlView
         // itself; a narrowed or reordered one points back at the listing it is a view of.
         // The tag is what the page is, so it stays in the canonical either way.
         // A menu item that is already this tag listing carries the tag in its own link,
-        // so naming the tag again would build a second URL for the one page.
+        // so naming the tag again would build a second URL for the one page. Naming the
+        // item is what identifies it: the route carries neither id nor tag_ids there, and
+        // preprocess() has no producttags branch for that shape, so without the Itemid
+        // every such listing resolves to whichever producttags item the router finds first.
         $menu      = $app->getMenu()->getActive();
         $menuIsTag = $menu
             && $menu->component === 'com_j2commerce'
@@ -326,9 +329,11 @@ class HtmlView extends BaseHtmlView
             $tagId  = !empty($tagIds) ? (int) reset($tagIds) : 0;
         }
 
-        $canonicalRoute = $this->tag
-            ? RouteHelper::getTagRoute($this->tag->id)
-            : RouteHelper::getProductTagsRoute($tagId > 0 ? $tagId : null);
+        $canonicalRoute = match (true) {
+            $menuIsTag        => RouteHelper::getProductTagsRoute() . '&Itemid=' . (int) $menu->id,
+            (bool) $this->tag => RouteHelper::getTagRoute($this->tag->id),
+            default           => RouteHelper::getProductTagsRoute($tagId > 0 ? $tagId : null),
+        };
 
         if (!$this->isListingVariant()) {
             $limitstart = (int) $this->state->get('list.start', 0);

@@ -298,13 +298,17 @@ class HtmlView extends BaseHtmlView
         // =====================
         // The view takes no state of its own from the request, but the same category
         // listing is reachable by more than one path, so it names the one that is the page.
+        // Below the menu item's own level there is no Categories menu item for the category,
+        // so getCategoriesRoute() resolves no Itemid and the route falls back to the unrouted
+        // /component/j2commerce/ form. getCategoryRouteInContext() keeps the canonical inside
+        // the active menu item, which is the path the request arrived on. The pathway above
+        // already routes its ancestors the same way.
+        $canonicalRoute = $currentParentId > 1 && $currentParentId !== $menuParentId
+            ? RouteHelper::getCategoryRouteInContext($currentParentId, $menu)
+            : RouteHelper::getCategoriesRoute($currentParentId > 1 ? $currentParentId : null);
+
         $this->getDocument()->addHeadLink(
-            Route::_(
-                RouteHelper::getCategoriesRoute($currentParentId > 1 ? $currentParentId : null),
-                true,
-                Route::TLS_IGNORE,
-                true
-            ),
+            Route::_($canonicalRoute, true, Route::TLS_IGNORE, true),
             'canonical'
         );
     }
