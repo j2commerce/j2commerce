@@ -857,10 +857,15 @@ class Router extends RouterView
             $this->db->setQuery($dbquery);
             $cat = $this->db->loadAssoc();
 
-            if ($cat) {
-                $ancestors[]   = $cat;
-                $currentParent = (int) $cat['id'];
+            // A miss leaves $currentParent on the previous level, so every remaining alias
+            // misses too and the walk returns a short path the caller cannot tell from a
+            // complete one. Fail closed so the caller falls back deliberately instead.
+            if (!$cat) {
+                return [];
             }
+
+            $ancestors[]   = $cat;
+            $currentParent = (int) $cat['id'];
         }
 
         return $ancestors;
