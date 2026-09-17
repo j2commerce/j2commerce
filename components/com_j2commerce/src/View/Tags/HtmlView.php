@@ -57,8 +57,7 @@ class HtmlView extends BaseHtmlView
             throw new \Exception(Text::_('JERROR_PAGE_NOT_FOUND'), 404);
         }
 
-        $this->items    = $model->getItems();
-        $this->products = $model->getProducts();
+        $this->items = $model->getItems();
 
         // Override menu item params with tag-level params when set — the tag counterpart
         // of the same merge in the Categories view. Only affects this landing view; Product
@@ -125,6 +124,11 @@ class HtmlView extends BaseHtmlView
         $this->productColumns = (int) $this->params->get('list_no_of_columns', 3);
         $this->sublayout      = $this->params->get('subtemplate', '');
         $this->displayMode    = $this->params->get('child_tag_display_mode', 'products');
+
+        // Only the products display mode renders the parent tag's own products, and each one is a full product load.
+        if ($this->displayMode === 'products') {
+            $this->products = $model->getProducts();
+        }
 
         if ($this->displayMode === 'tags_popular') {
             $this->trendingProducts = $model->getPopularProducts(

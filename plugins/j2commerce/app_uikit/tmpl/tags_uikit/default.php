@@ -52,7 +52,7 @@ $childWidth = match ($tag_columns) {
         </div>
     <?php endif; ?>
 
-    <?php if (empty($this->items) && empty($this->products)) : ?>
+    <?php if (empty($this->items) && empty($this->products) && empty($this->trendingProducts)) : ?>
         <div class="uk-alert uk-alert-primary" uk-alert>
             <?php echo Text::_('COM_J2COMMERCE_NO_TAGS_FOUND'); ?>
         </div>
