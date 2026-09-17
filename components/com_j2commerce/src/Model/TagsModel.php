@@ -247,7 +247,8 @@ class TagsModel extends BaseDatabaseModel
     {
         $db    = $this->getDatabase();
         $query = $this->getProductQuery([$tagId, ...TagTreeHelper::descendantIds($tagId, \PHP_INT_MAX)])
-            ->order($db->quoteName('a.hits') . ' DESC')
+            ->order($db->quoteName('p.hits') . ' DESC')
+            ->order($db->quoteName('a.ordering') . ' ASC')
             ->setLimit($limit);
 
         return $this->hydrate($db->setQuery($query)->loadObjectList());

@@ -607,7 +607,8 @@ class CategoriesModel extends BaseDatabaseModel
             ->whereIn($db->quoteName('a.access'), $groups)
             ->whereIn($db->quoteName('c.access'), $groups)
             ->whereIn($db->quoteName('a.catid'), $categoryIds)
-            ->order($db->quoteName('a.hits') . ' DESC')
+            ->order($db->quoteName('p.hits') . ' DESC')
+            ->order($db->quoteName('a.ordering') . ' ASC')
             ->setLimit($limit);
 
         // Users who may edit products keep the unpublished ones in the list so an
