@@ -400,6 +400,31 @@ const J2Commerce = {
         return undefined;
     },
 
+    /**
+     * Build the variant lookup key for a product form.
+     *
+     * Scoped to controls named product_option[...] so third-party selects and
+     * radios placed inside the same form are never swept into the key. The
+     * data-is-variant filter is applied only when the markup actually supplies
+     * the attribute, so layouts that predate it keep working.
+     *
+     * @param {HTMLFormElement} form
+     * @returns {string} Comma-separated option values, numerically sorted
+     */
+    collectVariantCsv(form) {
+        const controls = Array.from(form.querySelectorAll(
+            'select[name^="product_option["], input[type="radio"][name^="product_option["]:checked'
+        ));
+        const marked = controls.filter(el => el.dataset.isVariant !== undefined);
+        const source = marked.length ? marked : controls;
+
+        return source
+            .filter(el => el.value && el.dataset.isVariant !== '0')
+            .map(el => el.value)
+            .sort((a, b) => a - b)
+            .join(',');
+    },
+
     // Resolve the element that triggered an inline onchange/onclick handler.
     // Prefer the live event target so duplicate IDs — which occur when the same
     // product is rendered twice on a page (detail/list view + a products module)
@@ -471,15 +496,7 @@ const J2Commerce = {
 
         // Handle advanced variable products
         if (form.dataset.product_type === 'advancedvariable') {
-            const csv = [];
-            form.querySelectorAll('input[type="radio"]:checked, select').forEach(el => {
-                if (el.value && el.dataset.isVariant) {
-                    csv.push(el.value);
-                }
-            });
-
-            const sortedCsv = csv.sort((a, b) => a - b);
-            const selectedVariant = sortedCsv.join(',');
+            const selectedVariant = this.collectVariantCsv(form);
             const variants = form.dataset.product_variants ? JSON.parse(form.dataset.product_variants) : {};
             const variantId = this.getMatchingVariant(variants, selectedVariant);
 
@@ -867,22 +884,7 @@ const J2Commerce = {
         // Handle variable product types
         const productType = form.dataset.product_type;
         if (['variable', 'advancedvariable', 'variablesubscriptionproduct'].includes(productType)) {
-            const csv = [];
-
-            if (productType === 'advancedvariable') {
-                form.querySelectorAll('input[type="radio"]:checked, select').forEach(el => {
-                    if (el.value && el.dataset.isVariant) {
-                        csv.push(el.value);
-                    }
-                });
-            } else {
-                form.querySelectorAll('input[type="radio"]:checked, select').forEach(el => {
-                    if (el.value) csv.push(el.value);
-                });
-            }
-
-            const sortedCsv = csv.sort((a, b) => a - b);
-            const selectedVariant = sortedCsv.join(',');
+            const selectedVariant = this.collectVariantCsv(form);
             const variants = form.dataset.product_variants ? JSON.parse(form.dataset.product_variants) : {};
             const variantId = this.getMatchingVariant(variants, selectedVariant);
 

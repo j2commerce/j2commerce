@@ -56,6 +56,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                     <?php endif; ?>
                 </label>
                 <select name="product_option[<?php echo $option['productoption_id']; ?>]"
+                        data-is-variant="<?php echo !empty($option['is_variant']) ? '1' : '0'; ?>"
                         class="uk-select"
                         data-product-id="<?php echo $productId; ?>"
                         data-option-id="<?php echo $option['productoption_id']; ?>"
@@ -92,6 +93,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                         <input
                             type="radio"
                             name="product_option[<?php echo $option['productoption_id']; ?>]"
+                            data-is-variant="<?php echo !empty($option['is_variant']) ? '1' : '0'; ?>"
                             value="<?php echo $optionValue['product_optionvalue_id']; ?>"
                             id="option-value-<?php echo $optionValue['product_optionvalue_id']; ?>"
                             class="uk-radio uk-hidden"
@@ -137,6 +139,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                         <input
                             type="radio"
                             name="product_option[<?php echo (int) $option['productoption_id']; ?>]"
+                            data-is-variant="<?php echo !empty($option['is_variant']) ? '1' : '0'; ?>"
                             value="<?php echo (int) $optionValue['product_optionvalue_id']; ?>"
                             id="option-value-<?php echo (int) $optionValue['product_optionvalue_id']; ?>"
                             class="uk-radio uk-hidden"

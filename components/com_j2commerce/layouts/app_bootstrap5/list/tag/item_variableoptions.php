@@ -63,6 +63,7 @@ if ($collapsedOptions) {
                     </label>
                     <select id="<?php echo $selectInputId; ?>"
                         name="product_option[<?php echo $optionId; ?>]"
+                        data-is-variant="<?php echo !empty($option['is_variant']) ? '1' : '0'; ?>"
                         class="form-select"
                         onchange="doAjaxPrice(<?php echo $productId; ?>, 'option-<?php echo $optionId; ?>')"
                         data-product-id="<?php echo $productId; ?>"
@@ -94,6 +95,7 @@ if ($collapsedOptions) {
                             <input
                                 type="radio"
                                 name="product_option[<?php echo $optionId; ?>]"
+                                data-is-variant="<?php echo !empty($option['is_variant']) ? '1' : '0'; ?>"
                                 value="<?php echo $ovId; ?>"
                                 id="<?php echo $optionValueInputId; ?>"
                                 class="btn-check"
@@ -136,6 +138,7 @@ if ($collapsedOptions) {
                             <input
                                 type="radio"
                                 name="product_option[<?php echo $optionId; ?>]"
+                                data-is-variant="<?php echo !empty($option['is_variant']) ? '1' : '0'; ?>"
                                 value="<?php echo $ovId; ?>"
                                 id="<?php echo $optionValueInputId; ?>"
                                 class="btn-check"

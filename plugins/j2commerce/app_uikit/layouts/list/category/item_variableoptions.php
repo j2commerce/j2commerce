@@ -55,7 +55,7 @@ $collapsedOptions = (bool) $params->get('list_collapsed_options', $params->get('
                             <span class="uk-text-danger">*</span>
                         <?php endif; ?>
                     </label>
-                    <select id="<?php echo $selectInputId; ?>" name="product_option[<?php echo $optionId; ?>]" class="uk-select" onchange="doAjaxPrice(<?php echo (int) $productId; ?>, 'option-<?php echo $optionId; ?>')">
+                    <select id="<?php echo $selectInputId; ?>" name="product_option[<?php echo $optionId; ?>]" data-is-variant="<?php echo !empty($option['is_variant']) ? '1' : '0'; ?>" class="uk-select" onchange="doAjaxPrice(<?php echo (int) $productId; ?>, 'option-<?php echo $optionId; ?>')">
                         <option value="*"><?php echo $esc(Text::_('COM_J2COMMERCE_CHOOSE')); ?></option>
                         <?php foreach ($option['optionvalue'] as $ov) : ?>
                             <option value="<?php echo $ov['product_optionvalue_id']; ?>"<?php echo ($defaultOptionValueId == $ov['product_optionvalue_id']) ? ' selected' : ''; ?>>
@@ -82,6 +82,7 @@ $collapsedOptions = (bool) $params->get('list_collapsed_options', $params->get('
                             <input
                                 type="radio"
                                 name="product_option[<?php echo $optionId; ?>]"
+                                data-is-variant="<?php echo !empty($option['is_variant']) ? '1' : '0'; ?>"
                                 value="<?php echo $ovId; ?>"
                                 id="<?php echo $optionValueInputId; ?>"
                                 class="uk-hidden"
@@ -124,6 +125,7 @@ $collapsedOptions = (bool) $params->get('list_collapsed_options', $params->get('
                             <input
                                 type="radio"
                                 name="product_option[<?php echo $optionId; ?>]"
+                                data-is-variant="<?php echo !empty($option['is_variant']) ? '1' : '0'; ?>"
                                 value="<?php echo $ovId; ?>"
                                 id="<?php echo $optionValueInputId; ?>"
                                 class="uk-hidden"
