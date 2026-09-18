@@ -68,14 +68,14 @@ $configUrl           = Route::_('index.php?option=com_config&view=component&comp
                     </div>
                 </fieldset>
 
-                <?php if ($this->form->getFieldset('option_params')): ?>
+                <?php // getFieldset() only matches <fieldset name> / field[@fieldset]; these live in a <fields> group. ?>
+                <?php $optionParamFields = $this->form->getGroup('option_params'); ?>
+                <?php if ($optionParamFields): ?>
                     <fieldset class="options-form" id="optionparams-fieldset">
                         <legend><?php echo Text::_('COM_J2COMMERCE_OPTION_CONFIGURATION'); ?></legend>
-                        <?php echo $this->form->renderField('option_params'); ?>
-                        <div class="alert alert-info">
-                            <h2 class="fs-5"><?php echo Text::_('COM_J2COMMERCE_OPTION_PARAMS_EXAMPLES'); ?></h2>
-                            <code>{"placeholder": "Enter text here", "maxlength": 100, "required": true}</code>
-                        </div>
+                        <?php foreach ($optionParamFields as $optionParamField): ?>
+                            <?php echo $optionParamField->renderField(); ?>
+                        <?php endforeach; ?>
                     </fieldset>
                 <?php endif; ?>
 
@@ -166,24 +166,5 @@ document.addEventListener('DOMContentLoaded', function() {
         toggleGuestWarning();
     }
 
-    // Add syntax highlighting helper for JSON params field
-    const paramsField = document.getElementById('jform_option_params');
-    if (paramsField) {
-        paramsField.addEventListener('blur', function() {
-            // Basic JSON validation
-            if (this.value.trim()) {
-                try {
-                    JSON.parse(this.value);
-                    this.classList.remove('is-invalid');
-                    this.classList.add('is-valid');
-                } catch (e) {
-                    this.classList.remove('is-valid');
-                    this.classList.add('is-invalid');
-                }
-            } else {
-                this.classList.remove('is-valid', 'is-invalid');
-            }
-        });
-    }
 });
 </script>

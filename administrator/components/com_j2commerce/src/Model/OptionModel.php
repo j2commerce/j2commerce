@@ -178,7 +178,7 @@ class OptionModel extends AdminModel
             $item->option_unique_name   = '';
             $item->option_name          = '';
             $item->ordering             = 0;
-            $item->option_params        = '';
+            $item->option_params        = [];
             $item->optionvalues         = [];
             $item->optioncolorvalues    = [];
             return $item;
@@ -200,7 +200,12 @@ class OptionModel extends AdminModel
             $item->option_unique_name = $item->option_unique_name ?? '';
             $item->option_name        = $item->option_name ?? '';
             $item->ordering           = $item->ordering ?? 0;
-            $item->option_params      = $item->option_params ?? '';
+
+            // The form edits option_params as a field group, so it has to bind an array.
+            // OptionTable::bind() re-encodes the posted array back to JSON on save.
+            $item->option_params = J2CommerceHelper::platform()
+                ->getRegistry($item->option_params ?? '')
+                ->toArray();
 
             // Load option values based on the type
             if ($item->id > 0) {

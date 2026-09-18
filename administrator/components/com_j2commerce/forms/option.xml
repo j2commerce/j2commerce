@@ -39,16 +39,60 @@
             <option value="">COM_J2COMMERCE_OPTION_SELECT_TYPE</option>
         </field>
 
-        <field
-            name="option_params"
-            type="text"
-            label="COM_J2COMMERCE_OPTION_PARAMS"
-            description="COM_J2COMMERCE_OPTION_PARAMS_DESCRIPTION"
-            class="form-control"
-            showon="type:text,textarea,number,email,url,time,date,datetime"
-            hint="COM_J2COMMERCE_OPTION_PARAMS_HINT"
-            filter="raw"
-        />
+        <!--
+            Each showon references `type`, which lives outside this group. The leading dot is
+            what escapes the group: FormHelper::parseShowOnConditions() resolves a bare name
+            against the field's own group, so `type:text` would look for a non-existent
+            option_params[type]. See FormHelper::parseShowOnConditions(), $dotPos === 0 branch.
+        -->
+        <fields name="option_params">
+            <field
+                name="place_holder"
+                type="text"
+                label="COM_J2COMMERCE_OPTION_PARAM_PLACE_HOLDER"
+                description="COM_J2COMMERCE_OPTION_PARAM_PLACE_HOLDER_DESCRIPTION"
+                class="form-control"
+                showon=".type:text"
+            />
+
+            <field
+                name="date_format_strftime"
+                type="text"
+                label="COM_J2COMMERCE_OPTION_PARAM_DATE_FORMAT"
+                description="COM_J2COMMERCE_OPTION_PARAM_DATE_FORMAT_DESCRIPTION"
+                class="form-control"
+                hint="COM_J2COMMERCE_OPTION_PARAM_DATE_FORMAT_HINT"
+                showon=".type:date,datetime"
+            />
+
+            <field
+                name="hide_pastdates"
+                type="radio"
+                layout="joomla.form.field.radio.switcher"
+                label="COM_J2COMMERCE_OPTION_PARAM_HIDE_PASTDATES"
+                description="COM_J2COMMERCE_OPTION_PARAM_HIDE_PASTDATES_DESCRIPTION"
+                filter="integer"
+                default="0"
+                showon=".type:date,datetime"
+                >
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
+
+            <field
+                name="time_format"
+                type="list"
+                label="COM_J2COMMERCE_OPTION_PARAM_TIME_FORMAT"
+                description="COM_J2COMMERCE_OPTION_PARAM_TIME_FORMAT_DESCRIPTION"
+                class="form-select"
+                filter="integer"
+                default="24"
+                showon=".type:datetime"
+                >
+                <option value="24">COM_J2COMMERCE_OPTION_PARAM_TIME_FORMAT_24</option>
+                <option value="12">COM_J2COMMERCE_OPTION_PARAM_TIME_FORMAT_12</option>
+            </field>
+        </fields>
     </fieldset>
 
     <fieldset name="global">

@@ -463,14 +463,31 @@ class StrapperHelper
 
         $registry = $params instanceof Registry ? $params : new Registry($params);
 
-        $format = (string) $registry->get(
-            'date_format_strftime',
-            $showTime ? '%Y-%m-%d %H:%M' : '%Y-%m-%d'
+        $defaultFormat = $showTime ? '%Y-%m-%d %H:%M' : '%Y-%m-%d';
+
+        // Constrain to the strftime character set before the value leaves the helper. The core
+        // calendar layout composes its attributes with ArrayHelper::toString(), which does not
+        // escape, and the same string is parsed by the calendar JS — so an allow-list is the
+        // right shape here, not htmlspecialchars(). Matches how the sibling place_holder value
+        // is already handled at its own render sites.
+        $format = preg_replace(
+            '/[^A-Za-z0-9%\-\/:.,\s]/',
+            '',
+            (string) $registry->get('date_format_strftime', $defaultFormat)
         );
+
+        if ($format === '' || $format === null) {
+            $format = $defaultFormat;
+        }
 
         // Joomla calendar treats min/max year as OFFSETS from current year.
         $minYear = (int) $registry->get('hide_pastdates', 0) === 1 ? 0 : -1900;
         $maxYear = 200;
+
+        // 12- or 24-hour clock, per option. The layout only honours these two values,
+        // so anything else falls back to core's own default rather than reaching the DOM.
+        $timeFormat = (int) $registry->get('time_format', 24);
+        $timeFormat = $timeFormat === 12 ? 12 : 24;
 
         $lang      = $this->app->getLanguage();
         $calendar  = $lang->getCalendar();
@@ -520,7 +537,7 @@ class StrapperHelper
             'weeknumbers'    => 0,
             'showtime'       => $showTime ? 1 : 0,
             'filltable'      => 1,
-            'timeformat'     => 24,
+            'timeformat'     => $timeFormat,
             'singleheader'   => 0,
             'helperPath'     => $helperPath,
             'minYear'        => $minYear,
