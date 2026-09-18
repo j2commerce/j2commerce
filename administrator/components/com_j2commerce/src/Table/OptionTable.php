@@ -12,6 +12,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Table;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Table\Table;
@@ -64,15 +65,14 @@ class OptionTable extends Table
                     // Use Registry to handle complex data structure
                     $registry    = new Registry($src[$field]);
                     $src[$field] = $registry->toString();
-                } elseif (isset($src[$field]) && \is_string($src[$field])) {
-                    // Validate JSON string
-                    if (!empty($src[$field]) && !$this->isValidJson($src[$field])) {
-                        // If invalid JSON, try to fix common issues
-                        $decoded = json_decode($src[$field], true);
-                        if ($decoded === null && json_last_error() !== JSON_ERROR_NONE) {
-                            // Reset to empty object if can't decode
-                            $src[$field] = '{}';
-                        }
+                } elseif (isset($src[$field]) && \is_string($src[$field]) && $src[$field] !== '') {
+                    // A value encoded more than once parses cleanly but decodes to a string,
+                    // so peel those layers before validating - otherwise check() rejects a row
+                    // that only needs normalising, and the merchant cannot save it at all.
+                    $src[$field] = J2CommerceHelper::platform()->getRegistry($src[$field])->toString();
+
+                    if (!$this->isValidJson($src[$field])) {
+                        $src[$field] = '{}';
                     }
                 }
             }
@@ -314,18 +314,24 @@ class OptionTable extends Table
     }
 
     /**
-     * Check if a string is valid JSON
+     * Check that a string decodes to a JSON object or array.
+     *
+     * Parseability alone is not enough: a doubly-encoded value such as
+     * "{\"a\":1}" parses cleanly but decodes to a string, which then yields an
+     * empty Registry and silently loses every key. Requiring a structured
+     * result is what stops that shape being written back on re-save.
      *
      * @param   string  $string  The string to check
      *
-     * @return  boolean  True if valid JSON, false otherwise
+     * @return  boolean
      *
      * @since  6.0.0
      */
     protected function isValidJson($string)
     {
-        json_decode($string);
-        return json_last_error() === JSON_ERROR_NONE;
+        $decoded = json_decode($string, true);
+
+        return json_last_error() === JSON_ERROR_NONE && \is_array($decoded);
     }
 
     /**

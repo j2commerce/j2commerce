@@ -666,9 +666,40 @@ class PlatformHelper
      */
     public function getRegistry(string|Registry $json, bool $is_array = false)
     {
-        $registry = $json instanceof Registry ? $json : new Registry($json);
+        $registry = $json instanceof Registry ? $json : new Registry(self::unwrapJsonString($json));
 
         return $is_array ? $registry->toArray() : $registry;
+    }
+
+    /**
+     * Peel a JSON object that has been encoded more than once.
+     *
+     * A value such as "{\"a\":1}" is valid JSON, but it decodes to a *string*, and
+     * `new Registry()` on it yields no keys - so every read returns its default and
+     * nothing reports a problem. Some rows carry several layers, so this peels until
+     * the value stops being a JSON string rather than assuming exactly two.
+     *
+     * @since 6.6.4
+     */
+    private static function unwrapJsonString(string $json, int $maxDepth = 12): string
+    {
+        for ($i = 0; $i < $maxDepth; $i++) {
+            $trimmed = trim($json);
+
+            if ($trimmed === '' || $trimmed[0] !== '"') {
+                return $json;
+            }
+
+            $decoded = json_decode($trimmed);
+
+            if (!\is_string($decoded)) {
+                return $json;
+            }
+
+            $json = $decoded;
+        }
+
+        return $json;
     }
 
     /**
