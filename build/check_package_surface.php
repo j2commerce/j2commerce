@@ -171,8 +171,14 @@ const UNMANAGED_VENDORED = [
     'boxpacker' => [
         'packagist' => 'dvdoug/boxpacker',
         'path'      => 'libraries/j2commerce/vendor/dvdoug/boxpacker',
-        'version'   => null,
-        'note'      => 'vendored by hand; carries its own autoload.php and is absent from installed.json',
+        'version'   => '4.1.1',
+        'note'      => 'vendored by hand; carries its own autoload.php and is absent from installed.json. '
+            . 'Version established 2026-09-16 by fingerprint, since the copy is stripped to LICENSE, '
+            . 'autoload.php and src/ with no composer.json, CHANGELOG or version string: its src/ listing '
+            . 'matches 4.1.1 exactly (4.2.0 adds LinkedItem and LinkedItemGroupEnforcer, which are absent), '
+            . 'and all six files that differ between 4.1.0 and 4.1.1 match 4.1.1 byte for byte while none '
+            . 'match 4.1.0. Re-establish the same way if the copy is ever refreshed — a wrong version here '
+            . 'reports clean against the wrong advisory range, which is the one direction this must not fail in.',
     ],
 ];
 
