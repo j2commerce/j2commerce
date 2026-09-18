@@ -194,7 +194,7 @@ final class SubtemplateHelper
     }
 
     /** The active menu item's subtemplate, or an empty string when there is no usable one. */
-    private static function fromActiveMenu(): string
+    public static function fromActiveMenu(): string
     {
         try {
             $app = Factory::getApplication();

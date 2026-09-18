@@ -104,9 +104,5 @@ if ($hasCoupon && $showDiscount) {
 
 $displayData['discountLabel'] = $discountLabel;
 
-ProductLayoutService::setSubtemplateOverride($framework);
-try {
-    echo ProductLayoutService::renderLayout('form.coupon', $displayData);
-} finally {
-    ProductLayoutService::clearSubtemplateOverride();
-}
+// The framework folder is a fallback, not an override — see product/quantity.php.
+echo ProductLayoutService::renderLayout('form.coupon', $displayData, [$framework]);

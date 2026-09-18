@@ -60,9 +60,5 @@ $displayData['hiddenId']  = 'input-option' . $optionId;
 $displayData['hintText']  = $hintText;
 $displayData['formToken'] = Session::getFormToken();
 
-ProductLayoutService::setSubtemplateOverride($framework);
-try {
-    echo ProductLayoutService::renderLayout('productoption.upload_image', $displayData);
-} finally {
-    ProductLayoutService::clearSubtemplateOverride();
-}
+// The framework folder is a fallback, not an override — see product/quantity.php.
+echo ProductLayoutService::renderLayout('productoption.upload_image', $displayData, [$framework]);

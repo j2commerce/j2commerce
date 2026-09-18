@@ -16,9 +16,5 @@ use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 $rawFramework = $displayData['framework'] ?? '';
 $framework = ($rawFramework === 'uikit3' || $rawFramework === 'uikit') ? 'uikit' : 'bootstrap5';
 
-ProductLayoutService::setSubtemplateOverride($framework);
-try {
-    echo ProductLayoutService::renderLayout('fallback.missing_template', $displayData);
-} finally {
-    ProductLayoutService::clearSubtemplateOverride();
-}
+// The framework folder is a fallback, not an override — see product/quantity.php.
+echo ProductLayoutService::renderLayout('fallback.missing_template', $displayData, [$framework]);

@@ -65,12 +65,5 @@ $displayData['isAdminContext']  = $isAdminContext;
 $displayData['buildDownloadUrl'] = $buildDownloadUrl;
 $displayData['framework']       = $framework;
 
-// Normalize override key
-$override = ($framework === 'uikit') ? 'uikit' : 'bootstrap5';
-
-ProductLayoutService::setSubtemplateOverride($override);
-try {
-    echo ProductLayoutService::renderLayout('orderitem.attributes', $displayData);
-} finally {
-    ProductLayoutService::clearSubtemplateOverride();
-}
+// The framework folder is a fallback, not an override — see product/quantity.php.
+echo ProductLayoutService::renderLayout('orderitem.attributes', $displayData, [$framework]);

@@ -74,7 +74,7 @@ final class ProductLayoutService
             'cartText'      => !empty($product->addtocart_text)
                                  ? Text::_($product->addtocart_text)
                                  : Text::_('COM_J2COMMERCE_ADD_TO_CART'),
-            'layoutBasePath' => self::getActivePluginLayoutPath(),
+            'layoutBasePath' => self::getActivePluginLayoutPath($params),
         ];
 
         $displayData = array_merge($displayData, $overrides);
@@ -138,33 +138,43 @@ final class ProductLayoutService
         return self::contextMatches($context, $excludes);
     }
 
-    public static function renderLayout(string $layoutId, array $displayData): string
+    /**
+     * @param  string[]  $fallbackSubtemplates  Searched after the active subtemplate, for layout
+     *                                          ids that only exist in a specific shipped folder.
+     */
+    public static function renderLayout(string $layoutId, array $displayData, array $fallbackSubtemplates = []): string
     {
-        $pluginElement = self::getActivePluginElement();
+        $params        = ($displayData['params'] ?? null) instanceof Registry ? $displayData['params'] : null;
+        $pluginElement = self::getActivePluginElement($params);
         $layout        = new FileLayout($layoutId);
 
         $template = Factory::getApplication()->getTemplate();
         $paths    = [];
 
-        if ($pluginElement) {
+        foreach (self::buildFolderChain($pluginElement, $fallbackSubtemplates) as $index => $folder) {
             // Template override for this subtemplate (highest priority)
-            $tplPath = JPATH_ROOT . '/templates/' . $template . '/html/layouts/com_j2commerce/' . $pluginElement;
+            $tplPath = JPATH_ROOT . '/templates/' . $template . '/html/layouts/com_j2commerce/' . $folder;
             if (is_dir($tplPath)) {
                 $paths[] = $tplPath;
             }
 
             // Component source for this subtemplate
-            $compPath = JPATH_ROOT . '/components/com_j2commerce/layouts/' . $pluginElement;
+            $compPath = JPATH_ROOT . '/components/com_j2commerce/layouts/' . $folder;
             if (is_dir($compPath)) {
                 $paths[] = $compPath;
             }
 
-            // Plugin source (lowest priority fallback)
-            $pluginPath = $displayData['layoutBasePath'] ?? self::getActivePluginLayoutPath();
+            // Plugin source (lowest priority fallback). The active subtemplate keeps honouring an
+            // explicit layoutBasePath — an empty one means the caller wants no plugin rung at all.
+            $pluginPath = $index === 0
+                ? ($displayData['layoutBasePath'] ?? self::pluginLayoutPath($folder))
+                : self::pluginLayoutPath($folder);
             if ($pluginPath) {
                 $paths[] = $pluginPath;
             }
         }
+
+        $paths = array_values(array_unique($paths));
 
         // Allow third-party product-type plugins to register additional layout search paths.
         // Subscribers receive &$paths by reference plus the active $pluginElement and $layoutId,
@@ -204,14 +214,63 @@ final class ProductLayoutService
         return $output;
     }
 
-    private static function getActivePluginElement(): string
+    /**
+     * The folders to search, first hit winning: the active subtemplate, the caller's shipped
+     * fallbacks, then the configured subtemplate.
+     *
+     * Two orderings matter here. A custom subtemplate leads, so it can own a layout the caller
+     * has a shipped file for — that is the whole point of the fallback argument. But when the
+     * active subtemplate is itself one of the two framework folders, the caller's framework
+     * leads instead: the caller derived it from what it is actually rendering, and a page can
+     * mix the two (a uikit widget in a bootstrap5-configured store), so the store-wide setting
+     * is the weaker answer. The configured folder stays last either way, so a layout id the
+     * active subtemplate does not ship resolves where it resolved before the active subtemplate
+     * was consulted rather than rendering empty.
+     *
+     * @param   string[]  $fallbackSubtemplates
+     *
+     * @return  string[]
+     */
+    private static function buildFolderChain(string $pluginElement, array $fallbackSubtemplates): array
     {
-        return self::resolvePluginFolder();
+        $fallbacks = [];
+
+        foreach ($fallbackSubtemplates as $subtemplate) {
+            $folder = self::mapSubtemplateToPluginFolder((string) $subtemplate);
+
+            if (self::isInstalledSubtemplateFolder($folder)) {
+                $fallbacks[] = $folder;
+            }
+        }
+
+        $folders = self::isFrameworkFolder($pluginElement)
+            ? [...$fallbacks, $pluginElement]
+            : [$pluginElement, ...$fallbacks];
+
+        $folders[] = self::configuredPluginFolder();
+
+        return array_values(array_unique(array_filter($folders)));
     }
 
-    private static function getActivePluginLayoutPath(): string
+    /** True for the two folders that exist to carry a CSS framework rather than a site's design. */
+    private static function isFrameworkFolder(string $folder): bool
     {
-        $path = JPATH_PLUGINS . '/j2commerce/' . self::resolvePluginFolder() . '/layouts';
+        return $folder === 'app_bootstrap5' || $folder === 'app_uikit';
+    }
+
+    private static function getActivePluginElement(?Registry $params = null): string
+    {
+        return self::resolvePluginFolder($params);
+    }
+
+    private static function getActivePluginLayoutPath(?Registry $params = null): string
+    {
+        return self::pluginLayoutPath(self::resolvePluginFolder($params));
+    }
+
+    private static function pluginLayoutPath(string $folder): string
+    {
+        $path = JPATH_PLUGINS . '/j2commerce/' . $folder . '/layouts';
 
         return is_dir($path) ? $path : '';
     }
@@ -232,12 +291,40 @@ final class ProductLayoutService
         self::$subtemplateOverride = null;
     }
 
-    private static function resolvePluginFolder(): string
+    /**
+     * Resolution order: explicit override, the caller's params, the active menu item, the
+     * component config, bootstrap5. Only the config step is cached — it is the one value that
+     * cannot change within a request; caching any earlier step froze whichever page element
+     * rendered first and made every later element on the same page inherit its subtemplate.
+     */
+    private static function resolvePluginFolder(?Registry $params = null): string
     {
         if (self::$subtemplateOverride !== null) {
             return self::$subtemplateOverride;
         }
 
+        $candidates = [
+            $params !== null ? (string) $params->get('subtemplate', '') : '',
+            SubtemplateHelper::fromActiveMenu(),
+        ];
+
+        foreach ($candidates as $subtemplate) {
+            if ($subtemplate === '' || $subtemplate === 'auto') {
+                continue;
+            }
+
+            $folder = self::mapSubtemplateToPluginFolder($subtemplate);
+
+            if (self::isInstalledSubtemplateFolder($folder)) {
+                return $folder;
+            }
+        }
+
+        return self::configuredPluginFolder();
+    }
+
+    private static function configuredPluginFolder(): string
+    {
         static $folder;
 
         if ($folder !== null) {
@@ -250,7 +337,7 @@ final class ProductLayoutService
             $subtemplate = 'bootstrap5';
         }
 
-        $folder = self::mapSubtemplateToPluginFolder($subtemplate);
+        $folder = self::mapSubtemplateToPluginFolder((string) $subtemplate);
 
         if (!self::isInstalledSubtemplateFolder($folder)) {
             $folder = 'app_bootstrap5';

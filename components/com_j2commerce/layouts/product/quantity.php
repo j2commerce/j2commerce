@@ -73,10 +73,7 @@ $inputHtml .= ' />';
 
 $displayData['inputHtml'] = $inputHtml;
 
+// The framework folder is a fallback, not an override: the active subtemplate may ship its own
+// copy of this layout, and replacing the active subtemplate to reach the shipped file discarded it.
 $framework = ($iconSet === 'uikit') ? 'uikit' : 'bootstrap5';
-ProductLayoutService::setSubtemplateOverride($framework);
-try {
-    echo ProductLayoutService::renderLayout('product.quantity', $displayData);
-} finally {
-    ProductLayoutService::clearSubtemplateOverride();
-}
+echo ProductLayoutService::renderLayout('product.quantity', $displayData, [$framework]);

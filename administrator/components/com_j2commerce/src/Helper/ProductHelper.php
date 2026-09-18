@@ -4228,9 +4228,11 @@ class ProductHelper
             [$iconMinus, $iconPlus] = $this->iconClasses($iconSet);
         }
 
+        // 'params' is forwarded so the layout resolves the subtemplate this view renders in.
         $displayData = [
             'context'           => $context,
             'product'           => $product,
+            'params'            => $params instanceof Registry ? $params : null,
             'inputName'         => $inputName,
             'inputClass'        => $inputClass,
             'inputType'         => $inputType,
