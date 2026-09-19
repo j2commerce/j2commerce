@@ -306,25 +306,6 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
             <br>
         <?php endif; ?>
 
-        <?php if ($option['type'] == 'time') : ?>
-            <!-- time -->
-            <div id="option-<?php echo $optionId; ?>" class="option">
-                <?php if ($option['required']) : ?>
-                <span class="required">*</span>
-                <?php endif; ?>
-                <b><?php echo $esc(Text::_($option['option_name'])); ?>:</b>
-<?php echo ProductLayoutService::renderLayout('productoption.description', [
-    'description' => $option['option_description'] ?? '',
-    'id'          => 'option-desc-' . (int) $option['productoption_id'],
-]); ?><br>
-                <input<?php echo ProductLayoutService::optionDescribedBy($option); ?> type="text"
-                    name="product_option[<?php echo $optionId; ?>]"
-                    value="<?php echo $esc($option['optionvalue'] ?? ''); ?>"
-                    class="j2commerce_time" />
-            </div>
-            <br>
-        <?php endif; ?>
-
         <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterDisplaySingleProductOption', [$this->product, $option, $this->context])->getArgument('html', ''); ?>
 
         <div id="ChildOptions<?php echo $optionId; ?>"></div>

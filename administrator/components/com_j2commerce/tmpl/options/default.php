@@ -143,7 +143,6 @@ if ($saveOrder && !empty($this->items)) {
                                         'checkbox' => 'COM_J2COMMERCE_OPTION_TYPE_CHECKBOX',
                                         'date' => 'COM_J2COMMERCE_OPTION_TYPE_DATE',
                                         'datetime' => 'COM_J2COMMERCE_OPTION_TYPE_DATETIME',
-                                        'time' => 'COM_J2COMMERCE_OPTION_TYPE_TIME',
                                         'file' => 'COM_J2COMMERCE_OPTION_TYPE_FILE',
                                         'image' => 'COM_J2COMMERCE_OPTION_TYPE_IMAGE',
                                         'color' => 'COM_J2COMMERCE_OPTION_TYPE_COLOR',

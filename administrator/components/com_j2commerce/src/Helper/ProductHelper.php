@@ -2445,6 +2445,16 @@ class ProductHelper
                     }
                 }
             } elseif (\in_array($type, ['text', 'textarea', 'date', 'datetime', 'time', 'file'])) {
+                // 'time' was retired as an option type in 6.6.3 and the 6.6.3-2026-09-19-2
+                // delta converts existing rows to 'text'. It stays in the condition above
+                // because rows can still carry it: a schema update that was skipped or failed,
+                // a restored dataset, or a plugin re-registering the type through
+                // onJ2CommerceGetOptionTypes. Such a row has to land here, on the unpriced
+                // path. Dropping the entry for tidiness sends it to the else branch instead,
+                // where the option is priced from a plugin result and, with no handler
+                // registered, drops out of the recorded options altogether.
+                // DELETE WHEN: nothing can still write type='time'. The version number alone
+                // does not establish that - the type registry is plugin-extensible.
                 $optionData[] = [
                     'product_option_id'      => $productOptionId,
                     'product_optionvalue_id' => '',

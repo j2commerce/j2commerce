@@ -496,7 +496,6 @@ class OptionModel extends AdminModel
             'checkbox' => Text::_('COM_J2COMMERCE_OPTION_TYPE_CHECKBOX'),
             'date'     => Text::_('COM_J2COMMERCE_OPTION_TYPE_DATE'),
             'datetime' => Text::_('COM_J2COMMERCE_OPTION_TYPE_DATETIME'),
-            'time'     => Text::_('COM_J2COMMERCE_OPTION_TYPE_TIME'),
             'file'     => Text::_('COM_J2COMMERCE_OPTION_TYPE_FILE'),
             'image'    => Text::_('COM_J2COMMERCE_OPTION_TYPE_IMAGE'),
             'color'    => Text::_('COM_J2COMMERCE_OPTION_TYPE_COLOR'),
