@@ -53,7 +53,7 @@ $repoRoot = \dirname(__DIR__);
 /** @return string[] repo-relative paths, forward slashes */
 function trackedFiles(string $repoRoot, string $pathspec): array
 {
-    $cmd = 'git -C ' . escapeshellarg($repoRoot) . ' ls-files -- ' . escapeshellarg($pathspec);
+    $cmd = 'git -c core.quotepath=off -C ' . escapeshellarg($repoRoot) . ' ls-files -- ' . escapeshellarg($pathspec);
     exec($cmd, $out, $status);
 
     if ($status !== 0) {

@@ -117,7 +117,7 @@ uksort($reverse, static fn($a, $b) => strlen($b) <=> strlen($a));
 
 // --- scan -------------------------------------------------------------------
 
-$cmd  = 'git -C ' . escapeshellarg($root) . ' ls-files "*.ini" 2>&1';
+$cmd  = 'git -c core.quotepath=off -C ' . escapeshellarg($root) . ' ls-files "*.ini" 2>&1';
 $out  = [];
 $code = 0;
 exec($cmd, $out, $code);

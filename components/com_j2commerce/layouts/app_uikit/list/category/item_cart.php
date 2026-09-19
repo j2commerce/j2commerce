@@ -30,7 +30,7 @@ $hasOptions = !empty($product->options) ||
 $cartType = (int) $params->get('list_show_cart', 1);
 $btnClass = htmlspecialchars($params->get('addtocart_button_class', 'uk-button uk-button-primary'), ENT_QUOTES, 'UTF-8');
 $chooseBtnClass = htmlspecialchars($params->get('choosebtn_class', 'uk-button uk-button-primary'), ENT_QUOTES, 'UTF-8');
-$productId = $product->j2commerce_product_id;
+$productId = (int) $product->j2commerce_product_id;
 $productType = htmlspecialchars($product->product_type ?? '', ENT_QUOTES, 'UTF-8');
 
 $purchasable     = $productHelper->isVariantPurchasable($product->variant ?? null);
