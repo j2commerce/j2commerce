@@ -191,6 +191,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                                    value="<?php echo $optionValue['product_optionvalue_id']; ?>"
                                    id="option-value-<?php echo $optionValue['product_optionvalue_id']; ?>"
                                    class="form-check-input"
+                                   data-is-variant="<?php echo !empty($option['is_variant']) ? '1' : '0'; ?>"
                                    onchange="doAjaxPrice(<?php echo $productId; ?>, 'option-<?php echo $option['productoption_id']; ?>')"
                                    data-product-id="<?php echo $productId; ?>"
                                    data-option-id="<?php echo $option['productoption_id']; ?>" />

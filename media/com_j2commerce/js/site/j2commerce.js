@@ -400,6 +400,22 @@ const J2Commerce = {
         return undefined;
     },
 
+    // A checkbox option that takes part in a variant combination is single-choice:
+    // ProductHelper::getCombinations() puts exactly one member per option in a stored key, so a
+    // second checked box can never resolve. Clear the siblings before the key is read.
+    enforceSingleVariantSelection(element) {
+        if (!(element instanceof HTMLInputElement) || element.type !== 'checkbox') return;
+        if (element.dataset.isVariant !== '1' || !element.checked) return;
+
+        const scope = element.form || element.closest('.option');
+        if (!scope) return;
+
+        scope.querySelectorAll(`input[type="checkbox"][name="${CSS.escape(element.name)}"]:checked`)
+            .forEach((sibling) => {
+                if (sibling !== element) sibling.checked = false;
+            });
+    },
+
     /**
      * Build the variant lookup key for a product form.
      *
@@ -413,7 +429,9 @@ const J2Commerce = {
      */
     collectVariantCsv(form) {
         const controls = Array.from(form.querySelectorAll(
-            'select[name^="product_option["], input[type="radio"][name^="product_option["]:checked'
+            'select[name^="product_option["],'
+            + ' input[type="radio"][name^="product_option["]:checked,'
+            + ' input[type="checkbox"][name^="product_option["]:checked'
         ));
         const marked = controls.filter(el => el.dataset.isVariant !== undefined);
         const source = marked.length ? marked : controls;
@@ -867,6 +885,10 @@ const J2Commerce = {
 
         const form = element.closest('form');
         if (!form || (form.dataset.product_id ?? form.dataset.productId) != productId) return;
+
+        // Before the form is read, not after — the posted values and the variant key are both
+        // derived from it below.
+        this.enforceSingleVariantSelection(element);
 
         const submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
         if (submitBtn) submitBtn.disabled = true;

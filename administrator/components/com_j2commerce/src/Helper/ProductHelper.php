@@ -1469,20 +1469,64 @@ class ProductHelper
      * resolved from a shopper's option selection. Every reader and writer of that column, core or
      * third-party, must produce its key through here.
      *
+     * A checkbox option posts an array of ids under one option key, and the generator puts one of
+     * those ids in the combination, so an array member is unwrapped rather than folded. intval()
+     * on an array yields 1 for any non-empty array without raising anything, which keys the lookup
+     * on an id that does not exist; a shape that is neither scalar nor a list of scalars is
+     * rejected outright rather than turned into a valid-looking key.
+     *
      * @param   array|string  $optionvalueIds  Option value IDs, as an array or a stored CSV.
      *
-     * @return  array  Positive integer IDs in ascending order.
+     * @return  array  Positive integer IDs in ascending order, or an empty array on an
+     *                 unsupported value shape.
      *
      * @since   6.0.10
      */
     public static function normaliseOptionvalueIds(array|string $optionvalueIds): array
     {
-        $ids = \is_string($optionvalueIds) ? explode(',', $optionvalueIds) : $optionvalueIds;
-        $ids = array_values(array_filter(array_map('intval', $ids), static fn (int $id): bool => $id > 0));
+        $values = \is_string($optionvalueIds) ? explode(',', $optionvalueIds) : $optionvalueIds;
+
+        $ids = [];
+
+        foreach ($values as $value) {
+            foreach (\is_array($value) ? $value : [$value] as $member) {
+                if (!\is_scalar($member)) {
+                    return [];
+                }
+
+                $id = (int) $member;
+
+                if ($id > 0) {
+                    $ids[] = $id;
+                }
+            }
+        }
 
         sort($ids);
 
         return $ids;
+    }
+
+    /**
+     * How many option value members a selection carries, counting an array-valued option once per
+     * member. This is the number normaliseOptionvalueIds() must return for the key to describe the
+     * whole selection — counting posted entries instead lets a multi-member option through as one.
+     *
+     * @param   array  $productOptions  Associative array of productoption_id => optionvalue_id(s).
+     *
+     * @return  int
+     *
+     * @since   6.6.4
+     */
+    public static function countOptionvalueMembers(array $productOptions): int
+    {
+        $members = 0;
+
+        foreach ($productOptions as $value) {
+            $members += \is_array($value) ? \count($value) : 1;
+        }
+
+        return $members;
     }
 
     /**
@@ -1521,7 +1565,9 @@ class ProductHelper
 
         // A selection member that is not a positive id would shorten the key and resolve a
         // narrower combination than the shopper chose. Refuse rather than match on a subset.
-        if (\count($optionValues) !== \count($productOptions)) {
+        // The comparison is against the member count, not the posted-entry count: a checkbox
+        // option posts an array, so one entry can carry several members.
+        if (\count($optionValues) !== self::countOptionvalueMembers($productOptions)) {
             return null;
         }
 

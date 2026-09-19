@@ -170,6 +170,47 @@ if ($collapsedOptions) {
                 </div>
             <?php endif; ?>
 
+            <?php if ($option['type'] === 'checkbox' && !empty($option['optionvalue'])) : ?>
+                <div id="option-<?php echo $optionId; ?>" class="option mb-3">
+                    <div class="form-label fw-semibold pb-1 mb-1" id="checkboxOption<?php echo $optionId; ?>">
+                        <?php echo $esc(Text::_($option['option_name'])); ?>:
+                        <?php if ($option['required']) : ?>
+                            <span class="text-danger">*</span>
+                        <?php endif; ?>
+                    </div>
+                    <?php echo ProductLayoutService::renderLayout('productoption.description', [
+                        'description' => $option['option_description'] ?? '',
+                        'id'          => 'option-desc-' . $optionId,
+                    ]); ?>
+                    <div class="d-flex flex-wrap gap-2" role="group" aria-labelledby="checkboxOption<?php echo $optionId; ?>">
+                        <?php foreach ($option['optionvalue'] as $ov) : ?>
+                            <?php $ovId = (int) $ov['product_optionvalue_id']; ?>
+                            <?php $optionValueInputId = 'option-value-' . $productId . '-' . $optionId . '-' . $ovId; ?>
+                            <div class="form-check">
+                                <input
+                                    type="checkbox"
+                                    name="product_option[<?php echo $optionId; ?>][]"
+                                    data-is-variant="<?php echo !empty($option['is_variant']) ? '1' : '0'; ?>"
+                                    value="<?php echo $ovId; ?>"
+                                    id="<?php echo $optionValueInputId; ?>"
+                                    class="form-check-input"
+                                    onchange="doAjaxPrice(<?php echo $productId; ?>, 'option-<?php echo $optionId; ?>')"
+                                    <?php echo !empty($ov['product_optionvalue_default']) ? 'checked' : ''; ?>
+                                    data-product-id="<?php echo $productId; ?>"
+                                    data-option-id="<?php echo $optionId; ?>"
+                                />
+                                <label class="form-check-label fs-xs" for="<?php echo $optionValueInputId; ?>">
+                                    <?php if ($showOptionImages && !empty($ov['optionvalue_image'])) : ?>
+                                        <img class="optionvalue-image me-1" src="<?php echo $esc(ImageHelper::getImageUrl($ov['optionvalue_image'])); ?>" alt="" width="32" style="width:32px;" />
+                                    <?php endif; ?>
+                                    <?php echo $esc(Text::_($ov['optionvalue_name'])); ?>
+                                </label>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+
             <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterDisplaySingleProductOption', [$product, $option])->getArgument('html', ''); ?>
         <?php endforeach; ?>
     </div>
