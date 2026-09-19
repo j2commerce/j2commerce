@@ -430,29 +430,50 @@ class CartDefault
         $optionType = $productOption->type ?? '';
         $optionName = Text::_($productOption->option_name ?? '');
 
-        // Text/Textarea validation
-        if (\in_array($optionType, ['text', 'textarea'])) {
-            $value  = \is_string($optionValue) ? trim($optionValue) : '';
-            $length = \strlen($value);
+        // Free-text validation - the single-value input types share the length rules.
+        if (\in_array($optionType, ['text', 'textarea', 'number', 'email', 'url'], true)) {
+            $value = \is_string($optionValue) ? trim($optionValue) : '';
 
-            // Check minimum length
-            $minLength = (int) ($productOption->option_min_length ?? 0);
-            if ($minLength > 0 && $length < $minLength) {
-                $errors['error']['option'][$optionId] = Text::sprintf(
-                    'COM_J2COMMERCE_OPTION_MIN_LENGTH_ERROR',
-                    $optionName,
-                    $minLength
-                );
+            // option_min_length / option_max_length count characters, which does not describe
+            // a number value - and a number control normalises what it submits, dropping a
+            // leading zero, so a fixed-width rule would fail on the very values it was written
+            // for. A number is held to its format rule below instead.
+            if ($optionType !== 'number') {
+                $length = \strlen($value);
+
+                // Check minimum length
+                $minLength = (int) ($productOption->option_min_length ?? 0);
+                if ($minLength > 0 && $length < $minLength) {
+                    $errors['error']['option'][$optionId] = Text::sprintf(
+                        'COM_J2COMMERCE_ERR_FIELD_MIN_LENGTH',
+                        $optionName,
+                        $minLength
+                    );
+                }
+
+                // Check maximum length
+                $maxLength = (int) ($productOption->option_max_length ?? 0);
+                if ($maxLength > 0 && $length > $maxLength) {
+                    $errors['error']['option'][$optionId] = Text::sprintf(
+                        'COM_J2COMMERCE_ERR_FIELD_MAX_LENGTH',
+                        $optionName,
+                        $maxLength
+                    );
+                }
             }
 
-            // Check maximum length
-            $maxLength = (int) ($productOption->option_max_length ?? 0);
-            if ($maxLength > 0 && $length > $maxLength) {
-                $errors['error']['option'][$optionId] = Text::sprintf(
-                    'COM_J2COMMERCE_OPTION_MAX_LENGTH_ERROR',
-                    $optionName,
-                    $maxLength
-                );
+            // The type= attribute on the control is a client-side hint only, so the
+            // format each of these types names is re-established here.
+            $formatError = $value === '' ? null : match ($optionType) {
+                'email' => filter_var($value, FILTER_VALIDATE_EMAIL) ? null : 'COM_J2COMMERCE_ERR_FIELD_INVALID_EMAIL',
+                'url'   => filter_var($value, FILTER_VALIDATE_URL) && preg_match('~^https?://~i', $value)
+                    ? null : 'COM_J2COMMERCE_ERR_FIELD_INVALID_URL',
+                'number' => is_numeric($value) ? null : 'COM_J2COMMERCE_ERR_FIELD_INVALID_NUMBER',
+                default  => null,
+            };
+
+            if ($formatError !== null) {
+                $errors['error']['option'][$optionId] = Text::sprintf($formatError, $optionName);
             }
         }
 

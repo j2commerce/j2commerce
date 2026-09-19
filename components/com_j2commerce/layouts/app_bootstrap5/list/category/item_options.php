@@ -55,7 +55,7 @@ foreach ($options as $option) {
             $hasRenderableOption = true;
             break;
         }
-    } elseif ($type === 'text' || $type === 'textarea') {
+    } elseif (in_array($type, ['text', 'textarea', 'number', 'email', 'url'], true)) {
         $hasRenderableOption = true;
         break;
     }
@@ -230,7 +230,7 @@ if (!$hasRenderableOption) {
             </fieldset>
         <?php endif; ?>
 
-        <?php if ($option['type'] === 'text') : ?>
+        <?php if (in_array($option['type'], ['text', 'number', 'email', 'url'], true)) : ?>
             <?php $text_option_params = $platform->getRegistry($option['option_params'] ?? '{}'); ?>
             <?php $textInputId = 'product-option-text-' . $productId . '-' . $optionId; ?>
             <div id="option-<?php echo $optionId; ?>" class="option mb-3">
@@ -244,7 +244,7 @@ if (!$hasRenderableOption) {
                     'description' => $option['option_description'] ?? '',
                     'id'          => 'option-desc-' . (int) $option['productoption_id'],
                 ]); ?>
-                <input<?php echo ProductLayoutService::optionDescribedBy($option); ?> id="<?php echo $textInputId; ?>" type="text" class="form-control"
+                <input<?php echo ProductLayoutService::optionDescribedBy($option); ?> id="<?php echo $textInputId; ?>" type="<?php echo $esc($option['type']); ?>" class="form-control"
                        name="product_option[<?php echo $optionId; ?>]"
                        value="<?php echo $esc($option['optionvalue'] ?? ''); ?>"
                        placeholder="<?php echo $esc((string) $text_option_params->get('place_holder', '')); ?>" />

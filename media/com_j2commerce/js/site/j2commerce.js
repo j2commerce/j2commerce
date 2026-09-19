@@ -194,6 +194,8 @@ const J2Commerce = {
                         if (optEl) {
                             const span = document.createElement('span');
                             span.className = 'j2error';
+                            // Injected after the response, so it needs a role to be announced.
+                            span.setAttribute('role', 'alert');
                             span.textContent = msg;
                             optEl.insertAdjacentElement('afterend', span);
                         }

@@ -177,7 +177,7 @@ $esc            = static fn(string $value): string => htmlspecialchars($value, E
             </fieldset>
         <?php endif; ?>
 
-        <?php if ($option['type'] === 'text') : ?>
+        <?php if (in_array($option['type'], ['text', 'number', 'email', 'url'], true)) : ?>
             <?php $text_option_params = $platform->getRegistry($option['option_params'] ?? '{}'); ?>
             <?php $textInputId = 'child-product-option-text-' . $product_id . '-' . $optionId; ?>
             <div id="child-option-<?php echo $optionId; ?>" class="option uk-margin-small-bottom">
@@ -191,7 +191,7 @@ $esc            = static fn(string $value): string => htmlspecialchars($value, E
                     'description' => $option['option_description'] ?? '',
                     'id'          => 'option-desc-' . (int) $option['productoption_id'],
                 ]); ?>
-                <input<?php echo ProductLayoutService::optionDescribedBy($option); ?> id="<?php echo $textInputId; ?>" type="text" class="uk-input"
+                <input<?php echo ProductLayoutService::optionDescribedBy($option); ?> id="<?php echo $textInputId; ?>" type="<?php echo $esc($option['type']); ?>" class="uk-input"
                     name="product_option[<?php echo $optionId; ?>]"
                     value="<?php echo $esc($option['optionvalue'] ?? ''); ?>"
                     placeholder="<?php echo $esc((string) $text_option_params->get('place_holder', '')); ?>" />

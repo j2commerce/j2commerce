@@ -62,7 +62,7 @@
                 label="COM_J2COMMERCE_OPTION_PARAM_PLACE_HOLDER"
                 description="COM_J2COMMERCE_OPTION_PARAM_PLACE_HOLDER_DESCRIPTION"
                 class="form-control"
-                showon=".type:text"
+                showon=".type:text,number,email,url"
             />
 
             <field

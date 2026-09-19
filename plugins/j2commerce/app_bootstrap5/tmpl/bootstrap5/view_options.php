@@ -160,9 +160,9 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
         </fieldset>
         <?php endif; ?>
 
-        <?php if ($option['type'] == 'text') : ?>
+        <?php if (in_array($option['type'], ['text', 'number', 'email', 'url'], true)) : ?>
             <?php $text_option_params = $platform->getRegistry($option['option_params'] ?? '{}'); ?>
-            <!-- text -->
+            <!-- text / number / email / url -->
             <div id="option-<?php echo (int) $option['productoption_id']; ?>" class="option mb-3">
                 <?php if ($option['required']) : ?>
                 <span class="required text-danger">*</span>
@@ -172,7 +172,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
     'description' => $option['option_description'] ?? '',
     'id'          => 'option-desc-' . (int) $option['productoption_id'],
 ]); ?>
-                <input<?php echo ProductLayoutService::optionDescribedBy($option); ?> type="text"
+                <input<?php echo ProductLayoutService::optionDescribedBy($option); ?> type="<?php echo $esc($option['type']); ?>"
                     name="product_option[<?php echo (int) $option['productoption_id']; ?>]"
                     value="<?php echo $esc($option['optionvalue'] ?? ''); ?>"
                     class="form-control"

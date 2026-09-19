@@ -218,7 +218,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
             </fieldset>
         <?php endif; ?>
 
-        <?php if ($option['type'] === 'text') : ?>
+        <?php if (in_array($option['type'], ['text', 'number', 'email', 'url'], true)) : ?>
             <?php $text_option_params = $platform->getRegistry($option['option_params']); ?>
             <div id="option-<?php echo $option['productoption_id']; ?>" class="option mb-3">
                 <label class="form-label fw-semibold pb-1 mb-2" for="option-input-<?php echo $option['productoption_id']; ?>">
@@ -231,7 +231,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                     'description' => $option['option_description'] ?? '',
                     'id'          => 'option-desc-' . (int) $option['productoption_id'],
                 ]); ?>
-                <input<?php echo ProductLayoutService::optionDescribedBy($option); ?> type="text"
+                <input<?php echo ProductLayoutService::optionDescribedBy($option); ?> type="<?php echo $esc($option['type']); ?>"
                        id="option-input-<?php echo $option['productoption_id']; ?>"
                        class="form-control"
                        name="product_option[<?php echo $option['productoption_id']; ?>]"

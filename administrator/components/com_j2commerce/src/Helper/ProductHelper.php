@@ -2490,7 +2490,7 @@ class ProductHelper
                         ];
                     }
                 }
-            } elseif (\in_array($type, ['text', 'textarea', 'date', 'datetime', 'time', 'file'])) {
+            } elseif (\in_array($type, ['text', 'textarea', 'number', 'email', 'url', 'date', 'datetime', 'time', 'file'], true)) {
                 // 'time' was retired as an option type in 6.6.3 and the 6.6.3-2026-09-19-2
                 // delta converts existing rows to 'text'. It stays in the condition above
                 // because rows can still carry it: a schema update that was skipped or failed,
