@@ -529,14 +529,6 @@ class Variable
             return;
         }
 
-        // Resolve human-readable variant names from CSV of optionvalue IDs
-        foreach ($product->variants as &$variant) {
-            if (!empty($variant->variant_name)) {
-                $variant->variant_name = ProductHelper::getVariantNamesByCSV($variant->variant_name);
-            }
-        }
-        unset($variant);
-
         // Check stock availability per variant
         foreach ($product->variants as &$variant) {
             $quantity = ($variant->quantity_restriction && $variant->min_sale_qty > 0)

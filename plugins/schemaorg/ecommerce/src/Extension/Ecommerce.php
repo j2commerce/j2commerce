@@ -465,15 +465,24 @@ final class Ecommerce extends CMSPlugin implements SubscriberInterface
     private function buildImagesArray(array $entry, ?object $product): array
     {
         $images = [];
+        $helper = $this->getHelper();
+
+        // prepareImage() strips the #joomlaImage:// fragment but leaves a relative
+        // path; JSON-LD image URLs must be absolute, which is getImageUrl()'s job.
+        $absolute = function ($value) use ($helper): string {
+            $clean = (string) $this->prepareImage($value);
+
+            return $clean !== '' ? $helper->getImageUrl($clean) : '';
+        };
 
         if (!empty($entry['image'])) {
-            $images[] = $this->prepareImage($entry['image']);
+            $images[] = $absolute($entry['image']);
         }
 
         if (!empty($entry['additionalImages']) && \is_array($entry['additionalImages'])) {
             foreach ($entry['additionalImages'] as $img) {
                 if (!empty($img['image'])) {
-                    $images[] = $this->prepareImage($img['image']);
+                    $images[] = $absolute($img['image']);
                 }
             }
         }
@@ -578,22 +587,61 @@ final class Ecommerce extends CMSPlugin implements SubscriberInterface
         $variants  = [];
         $productId = (int) $product->j2commerce_product_id;
 
+        // Google Merchant requires image on every hasVariant Product; it does not
+        // inherit the parent ProductGroup's image. Keep the parent's first image as
+        // the last resort so no variant ships without one.
+        $parentImage    = $this->buildImagesArray($entry, $product)[0] ?? null;
+        $masterParams   = $this->resolveMasterParams($product);
+        $overridesBySku = [];
+
+        foreach ((array) ($entry['variantOverrides'] ?? []) as $overrideRow) {
+            $overrideRow = (array) $overrideRow;
+            $overrideSku = trim((string) ($overrideRow['variantSku'] ?? ''));
+
+            if ($overrideSku !== '') {
+                $overridesBySku[$overrideSku] = $overrideRow;
+            }
+        }
+
         foreach ($product->variants as $variant) {
             if ((int) $variant->is_master === 1) {
                 continue;
             }
 
+            $override = $overridesBySku[trim((string) ($variant->sku ?? ''))] ?? [];
+            $label    = $helper->getVariantLabel($variant);
+
             $variantSchema = [
                 '@type' => 'Product',
-                'name'  => $helper->getProductName($product) . (!empty($variant->variant_name) ? ' - ' . $variant->variant_name : ''),
+                'name'  => !empty($override['name'])
+                    ? (string) $override['name']
+                    : $helper->getProductName($product) . ($label !== '' ? ' - ' . $label : ''),
             ];
 
             if (!empty($variant->sku)) {
                 $variantSchema['sku'] = $variant->sku;
             }
 
-            if (!empty($variant->upc)) {
+            if (!empty($override['gtin'])) {
+                $variantSchema['gtin'] = (string) $override['gtin'];
+            } elseif (!empty($variant->upc)) {
                 $variantSchema['gtin'] = $variant->upc;
+            }
+
+            if (!empty($override['mpn'])) {
+                $variantSchema['mpn'] = (string) $override['mpn'];
+            }
+
+            foreach (['color', 'size', 'material', 'pattern'] as $property) {
+                if (!empty($override[$property])) {
+                    $variantSchema[$property] = (string) $override[$property];
+                }
+            }
+
+            $variantImage = $this->resolveVariantImage($variant, $override, $masterParams, $parentImage);
+
+            if ($variantImage !== null) {
+                $variantSchema['image'] = $variantImage;
             }
 
             $variantOffer = [
@@ -616,6 +664,64 @@ final class Ecommerce extends CMSPlugin implements SubscriberInterface
         }
 
         return $variants;
+    }
+
+    /** Mirrors the storefront fallback (own image, then the master variant's, then the parent's) so schema cannot show a different picture. */
+    private function resolveVariantImage(object $variant, array $override, ?Registry $masterParams, ?string $parentImage): ?string
+    {
+        $helper = $this->getHelper();
+
+        if (!empty($override['image'])) {
+            // prepareImage() only strips the #joomlaImage:// fragment; getImageUrl()
+            // is what prepends Uri::root(), and Google needs the absolute form.
+            $clean = (string) $this->prepareImage($override['image']);
+
+            if ($clean !== '') {
+                return $helper->getImageUrl($clean) ?: null;
+            }
+        }
+
+        $path = $this->firstVariantImagePath(new Registry($variant->params ?? ''));
+
+        // A child variant routinely leaves its own image params empty and shows the
+        // master's gallery instead; Variable::updateProductReturn() does the same.
+        if ($path === '' && $masterParams !== null) {
+            $path = $this->firstVariantImagePath($masterParams);
+        }
+
+        return $path !== '' ? ($helper->getImageUrl($path) ?: $parentImage) : $parentImage;
+    }
+
+    /** variant_images is stored as a JSON string, an array of arrays or an array of objects. */
+    private function firstVariantImagePath(Registry $params): string
+    {
+        $path = trim((string) $params->get('variant_main_image', ''));
+
+        if ($path !== '') {
+            return $path;
+        }
+
+        $gallery = $params->get('variant_images', []);
+        $gallery = \is_string($gallery)
+            ? (json_decode($gallery, true) ?? [])
+            : (array) json_decode(json_encode($gallery), true);
+        $first   = (array) (reset($gallery) ?: []);
+
+        return trim((string) ($first['path'] ?? ''));
+    }
+
+    /** VariantsModel excludes the master row, so it is not always in $product->variants. */
+    private function resolveMasterParams(object $product): ?Registry
+    {
+        foreach ($product->variants ?? [] as $variant) {
+            if ((int) ($variant->is_master ?? 0) === 1) {
+                return new Registry($variant->params ?? '');
+            }
+        }
+
+        $master = $this->getHelper()->getMasterVariant((int) $product->j2commerce_product_id);
+
+        return $master ? new Registry($master->params ?? '') : null;
     }
 
     private function validateSchemaData(array $data): array

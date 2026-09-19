@@ -672,6 +672,26 @@ class J2CommerceSchemaHelper
         return '';
     }
 
+    /** variant_name is a raw id CSV from getAllVariants(), or a label the component already resolved - only the id form needs resolving. */
+    public function getVariantLabel(object $variant): string
+    {
+        $raw = trim((string) ($variant->variant_name_ids ?? $variant->variant_name ?? ''));
+
+        if ($raw === '' || preg_match('/^\d+(?:\s*,\s*\d+)*$/', $raw) !== 1 || !class_exists(J2CommerceHelper::class)) {
+            return $raw;
+        }
+
+        // Resolve one id at a time. getVariantNamesByCSV() joins with a bare comma, which
+        // is indistinguishable from a comma inside an option value name such as "1,000 ct".
+        $helper = J2CommerceHelper::product();
+        $names  = array_filter(array_map(
+            static fn (int $id): string => trim($helper->getOptionValueName($id)),
+            array_filter(array_map('intval', explode(',', $raw)))
+        ));
+
+        return $names !== [] ? implode(', ', $names) : $raw;
+    }
+
     /**
      * Get product description
      *
