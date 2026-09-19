@@ -12,6 +12,7 @@ declare(strict_types=1);
 defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
+use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use Joomla\CMS\Language\Text;
@@ -43,6 +44,10 @@ $esc            = static fn(string $value): string => htmlspecialchars($value, E
                         <span class="text-danger">*</span>
                     <?php endif; ?>
                 </label>
+                <?php echo ProductLayoutService::renderLayout('productoption.description', [
+                    'description' => $option['option_description'] ?? '',
+                    'id'          => 'option-desc-' . (int) $option['productoption_id'],
+                ]); ?>
                 <select name="product_option[<?php echo $optionId; ?>]" class="j2commerce-option-filter" data-product-id="<?php echo $product_id; ?>" data-option-id="<?php echo $optionId; ?>"
                     onchange="doAjaxFilter(this.options[this.selectedIndex].value, <?php echo $product_id; ?>, <?php echo $optionId; ?>, '#child-option-<?php echo $optionId; ?>');">
                     <option value=""><?php echo Text::_('COM_J2COMMERCE_CHOOSE'); ?></option>
@@ -74,6 +79,10 @@ $esc            = static fn(string $value): string => htmlspecialchars($value, E
                     <?php endif; ?>
                     <span class="fw-normal fs-sm ms-1" id="child-radioOption<?php echo $optionId; ?>"></span>
                 </label>
+                <?php echo ProductLayoutService::renderLayout('productoption.description', [
+                    'description' => $option['option_description'] ?? '',
+                    'id'          => 'option-desc-' . (int) $option['productoption_id'],
+                ]); ?>
                 <div class="j2commerce-radio-options d-flex flex-wrap gap-2" data-binded-label="#child-radioOption<?php echo $optionId; ?>">
                     <?php foreach ($option['optionvalue'] as $option_value) : ?>
                         <?php $checked = !empty($option_value['product_optionvalue_default']) ? 'checked="checked"' : ''; ?>
@@ -112,6 +121,10 @@ $esc            = static fn(string $value): string => htmlspecialchars($value, E
                     <?php endif; ?>
                     <span class="fw-normal fs-sm ms-1" id="child-colorOption<?php echo $optionId; ?>"></span>
                 </label>
+                <?php echo ProductLayoutService::renderLayout('productoption.description', [
+                    'description' => $option['option_description'] ?? '',
+                    'id'          => 'option-desc-' . (int) $option['productoption_id'],
+                ]); ?>
                 <div class="j2commerce-color-options d-flex flex-wrap gap-2" data-binded-label="#child-colorOption<?php echo $optionId; ?>">
                     <?php foreach ($option['optionvalue'] as $option_value) : ?>
                         <?php $checked = !empty($option_value['product_optionvalue_default']) ? 'checked="checked"' : ''; ?>
@@ -133,7 +146,11 @@ $esc            = static fn(string $value): string => htmlspecialchars($value, E
                 <?php if ($option['required']) : ?>
                     <span class="required">*</span>
                 <?php endif; ?>
-                <b><?php echo $esc(Text::_($option['option_name'])); ?>:</b><br>
+                <b><?php echo $esc(Text::_($option['option_name'])); ?>:</b>
+<?php echo ProductLayoutService::renderLayout('productoption.description', [
+    'description' => $option['option_description'] ?? '',
+    'id'          => 'option-desc-' . (int) $option['productoption_id'],
+]); ?><br>
                 <?php foreach ($option['optionvalue'] as $option_value) : ?>
                     <?php $checkboxValueId = (int) $option_value['product_optionvalue_id']; ?>
                     <?php $childOptionValueInputId = 'child-option-value-' . $product_id . '-' . $optionId . '-' . $checkboxValueId; ?>
@@ -170,6 +187,10 @@ $esc            = static fn(string $value): string => htmlspecialchars($value, E
                         <span class="text-danger">*</span>
                     <?php endif; ?>
                 </label>
+                <?php echo ProductLayoutService::renderLayout('productoption.description', [
+                    'description' => $option['option_description'] ?? '',
+                    'id'          => 'option-desc-' . (int) $option['productoption_id'],
+                ]); ?>
                 <input id="<?php echo $textInputId; ?>" type="text" class="form-control"
                     name="product_option[<?php echo $optionId; ?>]"
                     value="<?php echo $esc($option['optionvalue'] ?? ''); ?>"
@@ -186,6 +207,10 @@ $esc            = static fn(string $value): string => htmlspecialchars($value, E
                         <span class="text-danger">*</span>
                     <?php endif; ?>
                 </label>
+                <?php echo ProductLayoutService::renderLayout('productoption.description', [
+                    'description' => $option['option_description'] ?? '',
+                    'id'          => 'option-desc-' . (int) $option['productoption_id'],
+                ]); ?>
                 <textarea id="<?php echo $textareaInputId; ?>" class="form-control"
                     name="product_option[<?php echo $optionId; ?>]"
                     cols="20" rows="5"><?php echo $esc($option['optionvalue'] ?? ''); ?></textarea>

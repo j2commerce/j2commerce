@@ -12,6 +12,7 @@ declare(strict_types=1);
 defined('_JEXEC') or die;
 
 use Joomla\CMS\Language\Text;
+use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
@@ -55,6 +56,10 @@ $collapsedOptions = (bool) $params->get('list_collapsed_options', $params->get('
                             <span class="uk-text-danger">*</span>
                         <?php endif; ?>
                     </label>
+                    <?php echo ProductLayoutService::renderLayout('productoption.description', [
+                        'description' => $option['option_description'] ?? '',
+                        'id'          => 'option-desc-' . (int) $option['productoption_id'],
+                    ]); ?>
                     <select id="<?php echo $selectInputId; ?>" name="product_option[<?php echo $optionId; ?>]" class="uk-select" onchange="doFlexiAjaxPrice(<?php echo (int) $productId; ?>, '#option-<?php echo $optionId; ?>')">
                         <option value="*"><?php echo $esc(Text::_('COM_J2COMMERCE_CHOOSE')); ?></option>
                         <?php foreach ($option['optionvalue'] as $ov) : ?>
@@ -75,6 +80,10 @@ $collapsedOptions = (bool) $params->get('list_collapsed_options', $params->get('
                         <?php endif; ?>
                         <span id="radioOption<?php echo $optionId; ?>"></span>
                     </div>
+                    <?php echo ProductLayoutService::renderLayout('productoption.description', [
+                        'description' => $option['option_description'] ?? '',
+                        'id'          => 'option-desc-' . (int) $option['productoption_id'],
+                    ]); ?>
                     <div class="j2commerce-radio-options uk-flex uk-flex-wrap" style="gap: .5rem;" data-binded-label="#radioOption<?php echo $optionId; ?>">
                         <?php foreach ($option['optionvalue'] as $ov) : ?>
                             <?php $ovId = (int) $ov['product_optionvalue_id']; ?>
@@ -115,6 +124,10 @@ $collapsedOptions = (bool) $params->get('list_collapsed_options', $params->get('
                         <?php endif; ?>
                         <span id="colorOption<?php echo $optionId; ?>"></span>
                     </div>
+                    <?php echo ProductLayoutService::renderLayout('productoption.description', [
+                        'description' => $option['option_description'] ?? '',
+                        'id'          => 'option-desc-' . (int) $option['productoption_id'],
+                    ]); ?>
                     <div class="j2commerce-color-options uk-flex uk-flex-wrap" style="gap: .5rem;" data-binded-label="#colorOption<?php echo $optionId; ?>">
                         <?php foreach ($option['optionvalue'] as $ov) : ?>
                             <?php $ovId = (int) $ov['product_optionvalue_id']; ?>

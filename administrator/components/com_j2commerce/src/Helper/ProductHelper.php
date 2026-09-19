@@ -1794,6 +1794,7 @@ class ProductHelper
             ]))
             ->select($db->quoteName([
                 'o.option_name',
+                'o.option_description',
                 'o.option_unique_name',
                 'o.type',
                 'o.option_params',
@@ -1927,6 +1928,7 @@ class ProductHelper
                     'option_id'          => $productOption->option_id,
                     'parent_id'          => (int) ($productOption->parent_id ?? 0),
                     'option_name'        => $productOption->option_name ?? '',
+                    'option_description' => $productOption->option_description ?? '',
                     'option_unique_name' => $productOption->option_unique_name ?? '',
                     'type'               => $type,
                     'optionvalue'        => $productOptionValueData,
@@ -1941,6 +1943,7 @@ class ProductHelper
                     'option_id'          => $productOption->option_id,
                     'parent_id'          => (int) ($productOption->parent_id ?? 0),
                     'option_name'        => $productOption->option_name ?? '',
+                    'option_description' => $productOption->option_description ?? '',
                     'option_unique_name' => $productOption->option_unique_name ?? '',
                     'type'               => $type,
                     'optionvalue'        => '',
@@ -3449,6 +3452,7 @@ class ProductHelper
             ]))
             ->select($db->quoteName([
                 'o.option_name',
+                'o.option_description',
                 'o.type',
                 'o.option_params',
             ]))
@@ -3494,13 +3498,14 @@ class ProductHelper
                 }
 
                 $productOptionData[] = [
-                    'productoption_id' => $productOption->j2commerce_productoption_id,
-                    'option_id'        => $productOption->option_id,
-                    'option_name'      => $productOption->option_name ?? '',
-                    'type'             => $type,
-                    'optionvalue'      => $productOptionValueData,
-                    'option_params'    => $productOption->option_params ?? '',
-                    'required'         => $productOption->required ?? 0,
+                    'productoption_id'   => $productOption->j2commerce_productoption_id,
+                    'option_id'          => $productOption->option_id,
+                    'option_name'        => $productOption->option_name ?? '',
+                    'option_description' => $productOption->option_description ?? '',
+                    'type'               => $type,
+                    'optionvalue'        => $productOptionValueData,
+                    'option_params'      => $productOption->option_params ?? '',
+                    'required'           => $productOption->required ?? 0,
                 ];
             } else {
                 $productOptionValues = self::getChildProductOptionValues(
@@ -3514,6 +3519,7 @@ class ProductHelper
                         'productoption_id' => $productOption->j2commerce_productoption_id,
                         'option_id'        => $productOption->option_id,
                         'option_name'      => $productOption->option_name ?? '',
+                    'option_description'   => $productOption->option_description ?? '',
                         'type'             => $type,
                         'optionvalue'      => '',
                         'option_params'    => $productOption->option_params ?? '',

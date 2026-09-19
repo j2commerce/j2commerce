@@ -12,6 +12,7 @@ declare(strict_types=1);
 defined('_JEXEC') or die;
 
 use Joomla\CMS\Language\Text;
+use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
@@ -42,6 +43,10 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
                         <span class="text-danger">*</span>
                     <?php endif; ?>
                 </label>
+                <?php echo ProductLayoutService::renderLayout('productoption.description', [
+                    'description' => $option['option_description'] ?? '',
+                    'id'          => 'option-desc-' . (int) $option['productoption_id'],
+                ]); ?>
                 <select id="<?php echo $selectInputId; ?>" name="product_option[<?php echo $optionId; ?>]"
                         class="form-select"
                         onchange="doFlexiAjaxPrice(<?php echo $productId; ?>, '#option-<?php echo $optionId; ?>')">
@@ -64,6 +69,10 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
                         <span class="text-danger">*</span>
                     <?php endif; ?>
                 </div>
+                <?php echo ProductLayoutService::renderLayout('productoption.description', [
+                    'description' => $option['option_description'] ?? '',
+                    'id'          => 'option-desc-' . (int) $option['productoption_id'],
+                ]); ?>
                 <?php foreach ($option['optionvalue'] as $ov) : ?>
                     <?php $ovId = (int) $ov['product_optionvalue_id']; ?>
                     <?php $optionValueInputId = 'option-value-' . $productId . '-' . $optionId . '-' . $ovId; ?>
