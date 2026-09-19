@@ -2,7 +2,7 @@
 <extension type="library" method="upgrade">
     <name>LIB_J2COMMERCEFLOW</name>
     <libraryname>j2commerceflow</libraryname>
-    <version>6.4.0</version>
+    <version>6.6.3</version>
     <creationDate>2026-07-05</creationDate>
     <author>J2Commerce, LLC</author>
     <authorEmail>support@j2commerce.com</authorEmail>

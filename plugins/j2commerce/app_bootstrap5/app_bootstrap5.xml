@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <extension type="plugin" group="j2commerce" method="upgrade">
     <name>PLG_J2COMMERCE_APP_BOOTSTRAP5</name>
-    <version>6.2.3</version>
+    <version>6.6.3</version>
     <creationDate>2026-09-05</creationDate>
     <author>J2Commerce, LLC</author>
     <copyright>Copyright (C) 2025 J2Commerce, LLC. All rights reserved.</copyright>

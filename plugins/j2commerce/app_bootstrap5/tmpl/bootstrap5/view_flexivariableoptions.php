@@ -12,6 +12,7 @@ declare(strict_types=1);
 defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
+use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use Joomla\CMS\Language\Text;
@@ -42,6 +43,10 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
                         <span class="text-danger">*</span>
                     <?php endif; ?>
                 </label>
+                <?php echo ProductLayoutService::renderLayout('productoption.description', [
+                    'description' => $option['option_description'] ?? '',
+                    'id'          => 'option-desc-' . (int) $option['productoption_id'],
+                ]); ?>
                 <select name="product_option[<?php echo $optionId; ?>]" class="form-select j2commerce-flexi-option-select" data-product-id="<?php echo $productId; ?>" data-option-id="<?php echo $optionId; ?>" onchange="doFlexiAjaxPrice(<?php echo $productId; ?>, '#option-<?php echo $optionId; ?>')">
                     <option value="*"><?php echo $esc(Text::_('COM_J2COMMERCE_CHOOSE')); ?></option>
                     <?php foreach ($option['optionvalue'] as $ov) : ?>
@@ -63,6 +68,10 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
                     <?php endif; ?>
                     <span class="fw-normal fs-sm ms-1" id="radioOption<?php echo $optionId; ?>"></span>
                 </label>
+                <?php echo ProductLayoutService::renderLayout('productoption.description', [
+                    'description' => $option['option_description'] ?? '',
+                    'id'          => 'option-desc-' . (int) $option['productoption_id'],
+                ]); ?>
                 <div class="j2commerce-radio-options d-flex flex-wrap gap-2" data-binded-label="#radioOption<?php echo $optionId; ?>">
                     <?php foreach ($option['optionvalue'] as $ov) : ?>
                         <?php $ovId = (int) $ov['product_optionvalue_id']; ?>
@@ -102,6 +111,10 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
                     <?php endif; ?>
                     <span class="fw-normal fs-sm ms-1" id="colorOption<?php echo $optionId; ?>"></span>
                 </label>
+                <?php echo ProductLayoutService::renderLayout('productoption.description', [
+                    'description' => $option['option_description'] ?? '',
+                    'id'          => 'option-desc-' . (int) $option['productoption_id'],
+                ]); ?>
                 <div class="j2commerce-color-options d-flex flex-wrap gap-2" data-binded-label="#colorOption<?php echo $optionId; ?>">
                     <?php foreach ($option['optionvalue'] as $ov) : ?>
                         <?php $ovId = (int) $ov['product_optionvalue_id']; ?>

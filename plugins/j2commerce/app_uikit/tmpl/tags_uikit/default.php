@@ -116,7 +116,7 @@ $childWidth = match ($tag_columns) {
                         $itemHtml = ProductLayoutService::renderProductItem(
                             $product,
                             $params,
-                            ProductLayoutService::CONTEXT_LIST,
+                            ProductLayoutService::CONTEXT_LIST . '.tag',
                             $itemId
                         );
 
@@ -258,7 +258,7 @@ $childWidth = match ($tag_columns) {
                                     $itemHtml = ProductLayoutService::renderProductItem(
                                         $product,
                                         $params,
-                                        ProductLayoutService::CONTEXT_LIST,
+                                        ProductLayoutService::CONTEXT_LIST . '.tag',
                                         $itemId
                                     );
 
@@ -327,7 +327,7 @@ $childWidth = match ($tag_columns) {
                             $itemHtml = ProductLayoutService::renderProductItem(
                                 $product,
                                 $params,
-                                ProductLayoutService::CONTEXT_LIST,
+                                ProductLayoutService::CONTEXT_LIST . '.tag',
                                 $itemId
                             );
 

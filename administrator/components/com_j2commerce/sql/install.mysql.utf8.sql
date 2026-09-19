@@ -571,6 +571,7 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_options` (
   `type` varchar(255) NOT NULL,
   `option_unique_name` varchar(255) NOT NULL,
   `option_name` varchar(255) NOT NULL,
+  `option_description` text,
   `ordering` int NOT NULL DEFAULT 0,
   `enabled` tinyint NOT NULL DEFAULT 0,
   `option_params` text,

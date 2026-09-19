@@ -40,6 +40,9 @@ use Joomla\Registry\Registry;
  */
 class CartVariable
 {
+    /** Option types a variable product's variant combination can be built from. */
+    private const VARIANT_OPTION_TYPES = ['select', 'radio', 'checkbox', 'color'];
+
     protected MVCFactoryInterface $mvcFactory;
 
     public function __construct(?MVCFactoryInterface $mvcFactory = null)
@@ -82,7 +85,13 @@ class CartVariable
             }
         }
 
-        // Resolve variant from submitted options
+        // Resolve variant from submitted options. The lookup keys on the variant combination
+        // alone, so it gets only the selections that can be part of one — the posted form also
+        // carries this product's non-variant options (an upload, a donation amount), and one of
+        // those in the key resolves nothing.
+        $variantOptionIds = $this->variantOptionIds($product);
+        $variantOptions   = $this->submittedVariantOptionValues($options, $variantOptionIds);
+
         $variant = null;
         if (empty($errors)) {
             // Try variant_id from JS first (faster), then verify/fallback to option-based lookup
@@ -99,21 +108,23 @@ class CartVariable
                     $variant                    = null;
                 }
 
-                // Double-check via options (JS selection can be stale). The replacement is held to
-                // the same product check the submitted variant_id just passed — otherwise this
-                // line silently discards that check.
-                if ($variant) {
-                    $verifyVariant = ProductHelper::getVariantByOptions($options, (int) $product->j2commerce_product_id);
-                    if (
-                        $verifyVariant
-                        && $verifyVariant->j2commerce_variant_id != $variantId
-                        && $verifyVariant->product_id == $product->j2commerce_product_id
-                    ) {
-                        $variant = $verifyVariant;
+                // Re-derive from the submitted selections (the JS value can be stale) and hold the
+                // result to the rule the branch below already applies: a selection that resolves to
+                // no variant of this product is an error, not a fall-through that leaves the
+                // client's variant_id standing. getVariantByOptions() binds product_id itself, so
+                // the product check the submitted variant_id just passed is carried, not discarded.
+                // The condition is whether this PRODUCT defines a combination, never whether the
+                // request happened to submit one — otherwise omitting the selections is the way
+                // past the check they exist to perform.
+                if ($variant && $variantOptionIds) {
+                    $variant = ProductHelper::getVariantByOptions($variantOptions, (int) $product->j2commerce_product_id);
+
+                    if ($variant === null) {
+                        $errors['error']['general'] = Text::_('COM_J2COMMERCE_VARIANT_NOT_FOUND');
                     }
                 }
             } else {
-                $variant = ProductHelper::getVariantByOptions($options, (int) $product->j2commerce_product_id);
+                $variant = ProductHelper::getVariantByOptions($variantOptions, (int) $product->j2commerce_product_id);
                 if ($variant === null) {
                     $errors['error']['general'] = Text::_('COM_J2COMMERCE_VARIANT_NOT_FOUND');
                 }
@@ -199,6 +210,42 @@ class CartVariable
         }
 
         $json->result = $errors;
+    }
+
+    /**
+     * This product's option ids whose type can take part in a variant combination. The types are
+     * the allow-list the option picker for a variable product is already restricted to
+     * (ProductHelper::getOptions()), and the ids come from the loaded product, never the request.
+     */
+    private function variantOptionIds(object $product): array
+    {
+        $variantOptionIds = [];
+
+        foreach ((array) ($product->product_options ?? []) as $productOption) {
+            if (\in_array($productOption->type ?? '', self::VARIANT_OPTION_TYPES, true)) {
+                $variantOptionIds[] = (int) ($productOption->j2commerce_productoption_id ?? 0);
+            }
+        }
+
+        return $variantOptionIds;
+    }
+
+    /**
+     * The submitted values for those options, flattened into the shape getVariantByOptions()
+     * counts and keys on. A checkbox posts an array of product_optionvalue_ids and the generator
+     * puts one of those ids in the combination, so the members are unwrapped rather than dropped.
+     */
+    private function submittedVariantOptionValues(array $options, array $variantOptionIds): array
+    {
+        $values = [];
+
+        foreach (array_intersect_key($options, array_flip($variantOptionIds)) as $value) {
+            foreach ((array) $value as $optionValueId) {
+                $values[] = $optionValueId;
+            }
+        }
+
+        return $values;
     }
 
     /**

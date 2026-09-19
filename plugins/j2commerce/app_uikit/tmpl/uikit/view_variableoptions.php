@@ -12,6 +12,7 @@ declare(strict_types=1);
 defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
+use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use Joomla\CMS\Component\ComponentHelper;
@@ -55,6 +56,10 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                         <span class="uk-text-danger">*</span>
                     <?php endif; ?>
                 </label>
+                <?php echo ProductLayoutService::renderLayout('productoption.description', [
+                    'description' => $option['option_description'] ?? '',
+                    'id'          => 'option-desc-' . (int) $option['productoption_id'],
+                ]); ?>
                 <select name="product_option[<?php echo $option['productoption_id']; ?>]"
                         data-is-variant="<?php echo !empty($option['is_variant']) ? '1' : '0'; ?>"
                         class="uk-select"
@@ -88,6 +93,10 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                     <?php endif; ?>
                     <span class="uk-text-normal uk-text-small uk-margin-small-left" id="radioOption<?php echo $option['productoption_id']; ?>"></span>
                 </label>
+                <?php echo ProductLayoutService::renderLayout('productoption.description', [
+                    'description' => $option['option_description'] ?? '',
+                    'id'          => 'option-desc-' . (int) $option['productoption_id'],
+                ]); ?>
                 <div class="j2commerce-radio-options uk-flex uk-flex-wrap" style="gap:.5rem;" data-binded-label="#radioOption<?php echo $option['productoption_id']; ?>">
                     <?php foreach ($option['optionvalue'] as $optionValue) : ?>
                         <input
@@ -134,6 +143,10 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                     <?php endif; ?>
                     <span class="uk-text-normal uk-text-small uk-margin-small-left" id="colorOption<?php echo (int) $option['productoption_id']; ?>"></span>
                 </label>
+                <?php echo ProductLayoutService::renderLayout('productoption.description', [
+                    'description' => $option['option_description'] ?? '',
+                    'id'          => 'option-desc-' . (int) $option['productoption_id'],
+                ]); ?>
                 <div class="j2commerce-color-options uk-flex uk-flex-wrap" style="gap:.5rem;" data-binded-label="#colorOption<?php echo (int) $option['productoption_id']; ?>">
                     <?php foreach ($option['optionvalue'] as $optionValue) : ?>
                         <input
@@ -164,6 +177,10 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                         <span class="uk-text-danger">*</span>
                     <?php endif; ?>
                 </label>
+                <?php echo ProductLayoutService::renderLayout('productoption.description', [
+                    'description' => $option['option_description'] ?? '',
+                    'id'          => 'option-desc-' . (int) $option['productoption_id'],
+                ]); ?>
                 <div class="uk-flex uk-flex-wrap" style="gap:.5rem;">
                     <?php foreach ($option['optionvalue'] as $optionValue) : ?>
                         <label class="uk-flex uk-flex-middle" style="gap:.25rem;">
@@ -205,6 +222,10 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                         <span class="uk-text-danger">*</span>
                     <?php endif; ?>
                 </label>
+                <?php echo ProductLayoutService::renderLayout('productoption.description', [
+                    'description' => $option['option_description'] ?? '',
+                    'id'          => 'option-desc-' . (int) $option['productoption_id'],
+                ]); ?>
                 <input type="text"
                        id="option-input-<?php echo $option['productoption_id']; ?>"
                        class="uk-input"
@@ -222,6 +243,10 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                         <span class="uk-text-danger">*</span>
                     <?php endif; ?>
                 </label>
+                <?php echo ProductLayoutService::renderLayout('productoption.description', [
+                    'description' => $option['option_description'] ?? '',
+                    'id'          => 'option-desc-' . (int) $option['productoption_id'],
+                ]); ?>
                 <textarea id="option-textarea-<?php echo $option['productoption_id']; ?>"
                           class="uk-textarea"
                           name="product_option[<?php echo $option['productoption_id']; ?>]"
@@ -264,6 +289,10 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                         <span class="uk-text-danger">*</span>
                     <?php endif; ?>
                 </label>
+                <?php echo ProductLayoutService::renderLayout('productoption.description', [
+                    'description' => $option['option_description'] ?? '',
+                    'id'          => 'option-desc-' . (int) $option['productoption_id'],
+                ]); ?>
                 <?php echo J2CommerceHelper::strapper()->addDatePicker(
                     'product_option[' . $option['productoption_id'] . ']',
                     $element_date,
@@ -283,6 +312,10 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                         <span class="uk-text-danger">*</span>
                     <?php endif; ?>
                 </label>
+                <?php echo ProductLayoutService::renderLayout('productoption.description', [
+                    'description' => $option['option_description'] ?? '',
+                    'id'          => 'option-desc-' . (int) $option['productoption_id'],
+                ]); ?>
                 <?php echo J2CommerceHelper::strapper()->addDateTimePicker(
                     'product_option[' . $option['productoption_id'] . ']',
                     $element_datetime,
@@ -301,6 +334,10 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                         <span class="uk-text-danger">*</span>
                     <?php endif; ?>
                 </label>
+                <?php echo ProductLayoutService::renderLayout('productoption.description', [
+                    'description' => $option['option_description'] ?? '',
+                    'id'          => 'option-desc-' . (int) $option['productoption_id'],
+                ]); ?>
                 <input type="text"
                        id="j2commerce_time_<?php echo $option['productoption_id']; ?>"
                        class="uk-input j2commerce_time"

@@ -12,6 +12,7 @@ declare(strict_types=1);
 defined('_JEXEC') or die;
 
 use Joomla\CMS\HTML\HTMLHelper;
+use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 use Joomla\CMS\Language\Text;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
@@ -88,6 +89,10 @@ if (!$hasRenderableOption) {
                             <span class="text-danger">*</span>
                         <?php endif; ?>
                     </label>
+                    <?php echo ProductLayoutService::renderLayout('productoption.description', [
+                        'description' => $option['option_description'] ?? '',
+                        'id'          => 'option-desc-' . (int) $option['productoption_id'],
+                    ]); ?>
 
                     <select id="<?php echo $selectInputId; ?>"
                         name="product_option[<?php echo $optionId; ?>]"
@@ -118,6 +123,10 @@ if (!$hasRenderableOption) {
                         <?php endif; ?>
                         <span class="fw-normal fs-sm ms-1" id="radioOption<?php echo $optionId; ?>"></span>
                     </div>
+                    <?php echo ProductLayoutService::renderLayout('productoption.description', [
+                        'description' => $option['option_description'] ?? '',
+                        'id'          => 'option-desc-' . (int) $option['productoption_id'],
+                    ]); ?>
                     <div class="j2commerce-radio-options d-flex flex-wrap gap-2" data-binded-label="#radioOption<?php echo $optionId; ?>">
                         <?php foreach ($option['optionvalue'] as $option_value) : ?>
                             <?php $optionValueInputId = 'option-value-' . $productId . '-' . $optionId . '-' . (int) $option_value['product_optionvalue_id']; ?>
@@ -162,6 +171,10 @@ if (!$hasRenderableOption) {
                         <?php endif; ?>
                         <span class="fw-normal fs-sm ms-1" id="colorOption<?php echo $optionId; ?>"></span>
                     </div>
+                    <?php echo ProductLayoutService::renderLayout('productoption.description', [
+                        'description' => $option['option_description'] ?? '',
+                        'id'          => 'option-desc-' . (int) $option['productoption_id'],
+                    ]); ?>
                     <div class="j2commerce-color-options d-flex flex-wrap gap-2" data-binded-label="#colorOption<?php echo $optionId; ?>">
                         <?php foreach ($option['optionvalue'] as $option_value) : ?>
                             <?php $optionValueInputId = 'option-value-' . $productId . '-' . $optionId . '-' . (int) $option_value['product_optionvalue_id']; ?>
@@ -188,7 +201,11 @@ if (!$hasRenderableOption) {
                 <?php if ($option['required']) : ?>
                     <span class="text-danger">*</span>
                 <?php endif; ?>
-                <b><?php echo $esc(Text::_($option['option_name'])); ?>:</b><br>
+                <b><?php echo $esc(Text::_($option['option_name'])); ?>:</b>
+<?php echo ProductLayoutService::renderLayout('productoption.description', [
+    'description' => $option['option_description'] ?? '',
+    'id'          => 'option-desc-' . (int) $option['productoption_id'],
+]); ?><br>
                 <?php foreach ($option['optionvalue'] as $option_value) : ?>
                     <?php $optionValueInputId = 'option-value-' . $productId . '-' . $optionId . '-' . (int) $option_value['product_optionvalue_id']; ?>
                     <input<?php echo !empty($option_value['product_optionvalue_default']) ? ' checked="checked"' : ''; ?> type="checkbox"
@@ -221,6 +238,10 @@ if (!$hasRenderableOption) {
                         <span class="text-danger">*</span>
                     <?php endif; ?>
                 </label>
+                <?php echo ProductLayoutService::renderLayout('productoption.description', [
+                    'description' => $option['option_description'] ?? '',
+                    'id'          => 'option-desc-' . (int) $option['productoption_id'],
+                ]); ?>
                 <input id="<?php echo $textInputId; ?>" type="text" class="form-control"
                        name="product_option[<?php echo $optionId; ?>]"
                        value="<?php echo $esc($option['optionvalue'] ?? ''); ?>"
@@ -237,6 +258,10 @@ if (!$hasRenderableOption) {
                         <span class="text-danger">*</span>
                     <?php endif; ?>
                 </label>
+                <?php echo ProductLayoutService::renderLayout('productoption.description', [
+                    'description' => $option['option_description'] ?? '',
+                    'id'          => 'option-desc-' . (int) $option['productoption_id'],
+                ]); ?>
                 <textarea id="<?php echo $textareaInputId; ?>" class="form-control"
                     name="product_option[<?php echo $optionId; ?>]"
                     cols="20" rows="5"><?php echo $esc($option['optionvalue'] ?? ''); ?></textarea>
