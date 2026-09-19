@@ -79,7 +79,12 @@ final class ProductLayoutService
 
         $displayData = array_merge($displayData, $overrides);
 
-        return self::renderLayout('list.category.item', $displayData);
+        // The tag chain ships its own dispatcher and item_* layouts. Same predicate the
+        // category dispatcher applies to contextSub, so a sub-context we do not ship
+        // falls to category rather than resolving to a layout id that does not exist.
+        $layoutContext = ($contextParts['sub'] ?? '') === 'tag' ? 'tag' : 'category';
+
+        return self::renderLayout("list.{$layoutContext}.item", $displayData);
     }
 
     public static function parseContext(string $context): array
