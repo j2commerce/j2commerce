@@ -58,7 +58,7 @@ $salePrice = $product->pricing->price ?? 0;
         <?php endif; ?>
     <?php endif; ?>
     <?php if ($linkImage): ?>
-        <a href="<?php echo htmlspecialchars($productLink, ENT_QUOTES, 'UTF-8'); ?>">
+        <a href="<?php echo htmlspecialchars($productLink ?? '', ENT_QUOTES, 'UTF-8'); ?>">
     <?php endif; ?>
     <?php echo ImageHelper::getProductImage($image, $image_width, 'html', $image_width, 'j2commerce-img-responsive uk-responsive-width uk-border', $imageAlt);?>
 

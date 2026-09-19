@@ -9,11 +9,11 @@
 
 declare(strict_types=1);
 
-defined('_JEXEC') or die;
+\defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
-use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 
 extract($displayData);
 
@@ -25,13 +25,9 @@ $quickviewUrl = Route::_(
     RouteHelper::getProductRoute((int) $product->j2commerce_product_id) . '&tmpl=component'
 );
 ?>
-<div class="j2commerce-product-quickview">
-    <a data-fancybox
-       data-type="iframe"
-       class="uk-button uk-button-default uk-button-small j2commerce-quickview-btn"
-       data-src="<?php echo $quickviewUrl; ?>"
-       href="javascript:;">
-        <span class="fa fa-eye" aria-hidden="true"></span>
-        <?php echo Text::_('COM_J2COMMERCE_PRODUCT_QUICKVIEW'); ?>
+<div class="j2commerce-product-quickview uk-position-absolute uk-position-bottom-right uk-margin-small">
+    <a data-fancybox data-type="iframe" class="uk-button uk-button-secondary uk-button-small j2commerce-quickview-btn" data-src="<?php echo $quickviewUrl; ?>" href="javascript:" title="<?php echo Text::_('COM_J2COMMERCE_PRODUCT_QUICKVIEW'); ?>">
+        <span class="fa-solid fa-eye" aria-hidden="true"></span>
+        <span class="uk-hidden-visually"><?php echo Text::_('COM_J2COMMERCE_PRODUCT_QUICKVIEW'); ?></span>
     </a>
 </div>

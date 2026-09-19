@@ -33,15 +33,21 @@ $chooseBtnClass = htmlspecialchars($params->get('choosebtn_class', 'uk-button uk
 $productId = $product->j2commerce_product_id;
 $productType = htmlspecialchars($product->product_type ?? '', ENT_QUOTES, 'UTF-8');
 
-$show = $productHelper->validateVariableProduct($product);
+$purchasable     = $productHelper->isVariantPurchasable($product->variant ?? null);
+$outOfStockLabel = htmlspecialchars(Text::_('COM_J2COMMERCE_OUT_OF_STOCK'), ENT_QUOTES, 'UTF-8');
 
-$beforeCart = J2CommerceHelper::plugin()->eventWithHtml('BeforeAddToCartButton',[$product, $context])->getArgument('html', '');
+$beforeCart = J2CommerceHelper::plugin()->eventWithHtml(
+    'BeforeAddToCartButton',
+    [$product, $context]
+)->getArgument('html', '');
 
-$afterCart = J2CommerceHelper::plugin()->eventWithHtml('AfterAddToCartButton',[$product, $context])->getArgument('html', '');
+$afterCart = J2CommerceHelper::plugin()->eventWithHtml(
+    'AfterAddToCartButton',
+    [$product, $context]
+)->getArgument('html', '');
 ?>
 <?php echo $beforeCart; ?>
 
-<?php if($show): ?>
     <div class="cart-action-complete" style="display:none;">
         <p class="uk-text-success">
             <?php echo Text::_('COM_J2COMMERCE_ITEM_ADDED_TO_CART'); ?>
@@ -57,18 +63,17 @@ $afterCart = J2CommerceHelper::plugin()->eventWithHtml('AfterAddToCartButton',[$
             <?php if ($displayData['showQtyField'] ?? $params->get('show_qty_field', J2CommerceHelper::config()->showQuantityField())): ?>
                 <?php echo $productHelper->displayQuantity('com_j2commerce.productlist.uikit', $product, $params, ['class' => 'uk-input qty-input','show_buttons' => false]); ?>
             <?php endif; ?>
-            <button type="submit" class="j2commerce-cart-button uk-width-expand <?php echo $btnClass; ?>" data-cart-action-always="<?php echo Text::_('COM_J2COMMERCE_ADDING_TO_CART'); ?>" data-cart-action-done="<?php echo htmlspecialchars($cartText ?? '', ENT_QUOTES, 'UTF-8'); ?>" data-cart-action-timeout="1000">
-                <?php echo htmlspecialchars($cartText ?? '', ENT_QUOTES, 'UTF-8'); ?>
+            <button type="submit"
+                    class="j2commerce-cart-button uk-width-expand <?php echo $btnClass; ?><?php echo $purchasable ? '' : ' j2commerce-out-of-stock'; ?>"
+                    data-cart-action-always="<?php echo Text::_('COM_J2COMMERCE_ADDING_TO_CART'); ?>"
+                    data-cart-action-done="<?php echo htmlspecialchars($cartText ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                    data-out-of-stock-label="<?php echo $outOfStockLabel; ?>"
+                    data-cart-action-timeout="1000"<?php echo $purchasable ? '' : ' disabled'; ?>>
+                <?php echo $purchasable ? htmlspecialchars($cartText ?? '', ENT_QUOTES, 'UTF-8') : $outOfStockLabel; ?>
             </button>
-
             <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterAddToCartButtonIcon',[$product, $context])->getArgument('html', ''); ?>
         </div>
     </div>
-<?php else: ?>
-    <button type="button" class="j2commerce_button_no_stock uk-button uk-button-default uk-width-1-1" disabled>
-        <?php echo Text::_('COM_J2COMMERCE_OUT_OF_STOCK'); ?>
-    </button>
-<?php endif; ?>
 
 <?php echo $afterCart; ?>
 
@@ -80,5 +85,3 @@ $afterCart = J2CommerceHelper::plugin()->eventWithHtml('AfterAddToCartButton',[$
 <input type="hidden" name="return" value="<?php echo base64_encode(Uri::getInstance()->toString()); ?>" />
 
 <div class="j2commerce-notifications"></div>
-
-
