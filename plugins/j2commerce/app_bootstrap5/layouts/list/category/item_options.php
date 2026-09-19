@@ -183,7 +183,8 @@ if (!$hasRenderableOption) {
                                 name="product_option[<?php echo (int) $option['productoption_id']; ?>]"
                                 value="<?php echo (int) $option_value['product_optionvalue_id']; ?>"
                                 id="<?php echo $optionValueInputId; ?>"
-                                class="btn-check" data-product-id="<?php echo $productId; ?>"
+                                class="btn-check"
+                                data-product-id="<?php echo $productId; ?>"
                                 data-option-id="<?php echo $optionId; ?>"
                                 onchange="doAjaxFilter(this.value, <?php echo $productId; ?>, <?php echo $optionId; ?>, '#option-<?php echo $optionId; ?>')" />
                             <?php $swatchColor = ProductHelper::swatchColor($option_value['optionvalue_image']); ?>

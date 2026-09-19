@@ -47,6 +47,6 @@ if (!$inStock) {
 }
 $show = $productHelper->validateVariableProduct($product);
 ?>
-<div class="j2commerce-product-stock <?php echo $stockClass; ?><?php echo !$show && ($showCart ?? false) ? ' invisible' : ''; ?>">
+<div class="j2commerce-product-stock small p-2 text-center <?php echo $stockClass; ?><?php echo !$show && ($showCart ?? false) ? ' invisible' : ''; ?>">
     <?php echo $stockText; ?>
 </div>

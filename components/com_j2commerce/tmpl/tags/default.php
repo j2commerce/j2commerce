@@ -27,7 +27,7 @@ $renderProducts = function (array $products, string $columnClass) use ($params, 
     echo '<div class="row g-3">';
 
     foreach ($products as $product) {
-        $itemHtml = ProductLayoutService::renderProductItem($product, $params, ProductLayoutService::CONTEXT_LIST, $itemId);
+        $itemHtml = ProductLayoutService::renderProductItem($product, $params, ProductLayoutService::CONTEXT_LIST . '.tag', $itemId);
 
         // A product type with no registered layout renders nothing — skip the wrapper too.
         if (trim($itemHtml) !== '') {

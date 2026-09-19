@@ -11,7 +11,6 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
-use Joomla\CMS\Language\Text;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 extract($displayData);

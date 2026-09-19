@@ -93,7 +93,7 @@ if (!$hasRenderableOption) {
                         class="form-select"
                         data-product-id="<?php echo $productId; ?>"
                         data-option-id="<?php echo $optionId; ?>"
-                        onchange="doAjaxFilter(this.options[this.selectedIndex].value, <?php echo $productId; ?>, <?php echo $optionId; ?>, '#option-<?php echo $optionId; ?>');">
+                        onchange="doAjaxFilter(this.options[this.selectedIndex].value, <?php echo $productId; ?>, <?php echo $optionId; ?>, '#option-<?php echo $optionId; ?>')">
                         <option value=""><?php echo Text::_('COM_J2COMMERCE_CHOOSE'); ?></option>
                         <?php foreach ($option['optionvalue'] as $option_value) : ?>
                             <?php $checked = $option_value['product_optionvalue_default'] ? 'selected="selected"' : ''; ?>
@@ -180,7 +180,7 @@ if (!$hasRenderableOption) {
                                 class="btn-check"
                                 data-product-id="<?php echo $productId; ?>"
                                 data-option-id="<?php echo $optionId; ?>"
-                                onchange="doAjaxFilter(this.value, <?php echo $productId; ?>, <?php echo $optionId; ?>, '#option-<?php echo $optionId; ?>');" />
+                                onchange="doAjaxFilter(this.value, <?php echo $productId; ?>, <?php echo $optionId; ?>, '#option-<?php echo $optionId; ?>')" />
                             <?php $swatchColor = ProductHelper::swatchColor($option_value['optionvalue_image']); ?>
                             <label for="<?php echo $optionValueInputId; ?>" class="btn btn-color fs-xl" title="<?php echo $esc(Text::_($option_value['optionvalue_name'])); ?>" data-label="<?php echo $esc(Text::_($option_value['optionvalue_name'])); ?>"<?php if ($swatchColor !== '') : ?> style="color:<?php echo $esc($swatchColor); ?>;"<?php endif; ?>>
                                 <span class="visually-hidden"><?php echo $esc(Text::_($option_value['optionvalue_name'])); ?></span>

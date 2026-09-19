@@ -57,6 +57,9 @@ $cartType = (int) $params->get('list_show_cart', 1);
         <?php if ($showSku): ?>
             <?php echo ProductLayoutService::renderLayout('list.category.item_sku', $displayData); ?>
         <?php endif; ?>
+        <?php if ($showUpc): ?>
+            <?php echo ProductLayoutService::renderLayout('list.category.item_upc', $displayData); ?>
+        <?php endif; ?>
     </div>
 
     <?php if ($showCart): ?>
@@ -86,10 +89,6 @@ $cartType = (int) $params->get('list_show_cart', 1);
 
     <?php if ($showStock): ?>
         <?php echo ProductLayoutService::renderLayout('list.category.item_stock', $displayData); ?>
-    <?php endif; ?>
-
-    <?php if ($showQuickview): ?>
-        <?php echo ProductLayoutService::renderLayout('list.category.item_quickview', $displayData); ?>
     <?php endif; ?>
 
     <?php if (isset($product->event->afterDisplayContent)): ?>

@@ -27,7 +27,7 @@ if (empty($sku)) {
     return;
 }
 ?>
-<div class="j2commerce-product-sku">
-    <span class="sku-label"><?php echo Text::_('COM_J2COMMERCE_SKU'); ?>:</span>
-    <span class="sku-value"><?php echo htmlspecialchars($sku, ENT_QUOTES, 'UTF-8'); ?></span>
+<div class="j2commerce-product-sku uk-text-small">
+    <span class="sku-label"><?php echo Text::_('COM_J2COMMERCE_SKU'); ?></span>
+    <span class="sku-value uk-text-bold"><?php echo htmlspecialchars($sku, ENT_QUOTES, 'UTF-8'); ?></span>
 </div>
