@@ -24,7 +24,7 @@ if (empty($options)) {
     return;
 }
 
-$productId = $product->j2commerce_product_id;
+$productId = (int) $product->j2commerce_product_id;
 $productHelper = J2CommerceHelper::product();
 $platform = J2CommerceHelper::platform();
 $showOptionImages = (int) ($params->get('image_for_product_options', 0) ?? 0);
@@ -43,11 +43,11 @@ $collapsedOptions = (bool) $params->get('list_collapsed_options', $params->get('
     <div class="<?php echo $collapsedOptions ? 'uk-hidden ' : ''; ?>uk-padding-small-top" id="collapseOptions<?php echo $productId; ?>">
         <?php foreach ($options as $option) : ?>
             <?php $optionId = (int) $option['productoption_id']; ?>
-            <?php $defaultOptionValueId = $product->default_option_selections[$option['productoption_id']] ?? ''; ?>
+            <?php $defaultOptionValueId = $product->default_option_selections[$optionId] ?? ''; ?>
             <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeDisplaySingleProductOption', [$product, &$option])->getArgument('html', ''); ?>
 
             <?php if ($option['type'] === 'select') : ?>
-                <?php $selectInputId = 'product-option-' . (int) $productId . '-' . $optionId; ?>
+                <?php $selectInputId = 'product-option-' . $productId . '-' . $optionId; ?>
                 <div id="option-<?php echo $optionId; ?>" class="option uk-margin-small-bottom">
                     <label class="uk-form-label" for="<?php echo $selectInputId; ?>">
                         <?php echo $esc(Text::_($option['option_name'])); ?>
@@ -55,10 +55,11 @@ $collapsedOptions = (bool) $params->get('list_collapsed_options', $params->get('
                             <span class="uk-text-danger">*</span>
                         <?php endif; ?>
                     </label>
-                    <select id="<?php echo $selectInputId; ?>" name="product_option[<?php echo $optionId; ?>]" class="uk-select" onchange="doFlexiAjaxPrice(<?php echo (int) $productId; ?>, '#option-<?php echo $optionId; ?>')">
+                    <select id="<?php echo $selectInputId; ?>" name="product_option[<?php echo $optionId; ?>]" class="uk-select" onchange="doFlexiAjaxPrice(<?php echo $productId; ?>, '#option-<?php echo $optionId; ?>')">
                         <option value="*"><?php echo $esc(Text::_('COM_J2COMMERCE_CHOOSE')); ?></option>
                         <?php foreach ($option['optionvalue'] as $ov) : ?>
-                            <option value="<?php echo $ov['product_optionvalue_id']; ?>"<?php echo ($defaultOptionValueId == $ov['product_optionvalue_id']) ? ' selected' : ''; ?>>
+                            <?php $ovId = (int) $ov['product_optionvalue_id']; ?>
+                            <option value="<?php echo $ovId; ?>"<?php echo ($defaultOptionValueId == $ovId) ? ' selected' : ''; ?>>
                                 <?php echo $esc(Text::_($ov['optionvalue_name'])); ?>
                             </option>
                         <?php endforeach; ?>
@@ -78,18 +79,17 @@ $collapsedOptions = (bool) $params->get('list_collapsed_options', $params->get('
                     <div class="j2commerce-radio-options uk-flex uk-flex-wrap" style="gap: .5rem;" data-binded-label="#radioOption<?php echo $optionId; ?>">
                         <?php foreach ($option['optionvalue'] as $ov) : ?>
                             <?php $ovId = (int) $ov['product_optionvalue_id']; ?>
-                            <?php $optionValueInputId = 'option-value-' . (int) $productId . '-' . $optionId . '-' . $ovId; ?>
+                            <?php $optionValueInputId = 'option-value-' . $productId . '-' . $optionId . '-' . $ovId; ?>
                             <input type="radio"
-                                   name="product_option[<?php echo $optionId; ?>]"
-                                   value="<?php echo $ovId; ?>"
-                                   id="<?php echo $optionValueInputId; ?>"
-                                   class="uk-hidden"
-                                   onclick="doFlexiAjaxPrice(<?php echo (int) $productId; ?>, '#option-<?php echo $optionId; ?>')"
+                                name="product_option[<?php echo $optionId; ?>]"
+                                value="<?php echo $ovId; ?>"
+                                id="<?php echo $optionValueInputId; ?>"
+                                class="uk-hidden"
+                                onclick="doFlexiAjaxPrice(<?php echo $productId; ?>, '#option-<?php echo $optionId; ?>')"
                                 <?php echo ($defaultOptionValueId == $ovId) ? 'checked' : ''; ?>
-                                   autocomplete="off"
-                                   data-product-id="<?php echo $productId; ?>"
-                                   data-option-id="<?php echo $optionId; ?>"
-                                <?php echo ($defaultOptionValueId == $ovId) ? ' checked' : ''; ?> />
+                                autocomplete="off"
+                                data-product-id="<?php echo $productId; ?>"
+                                data-option-id="<?php echo $optionId; ?>" />
 
                             <?php if ($showOptionImages && !empty($ov['optionvalue_image'])) { ?>
                                 <label class="btn-image uk-padding-remove" for="<?php echo $optionValueInputId; ?>" data-label="<?php echo $esc(Text::_($ov['optionvalue_name'])); ?>">
@@ -118,7 +118,7 @@ $collapsedOptions = (bool) $params->get('list_collapsed_options', $params->get('
                     <div class="j2commerce-color-options uk-flex uk-flex-wrap" style="gap: .5rem;" data-binded-label="#colorOption<?php echo $optionId; ?>">
                         <?php foreach ($option['optionvalue'] as $ov) : ?>
                             <?php $ovId = (int) $ov['product_optionvalue_id']; ?>
-                            <?php $optionValueInputId = 'option-value-' . (int) $productId . '-' . $optionId . '-' . $ovId; ?>
+                            <?php $optionValueInputId = 'option-value-' . $productId . '-' . $optionId . '-' . $ovId; ?>
                             <input
                                 type="radio"
                                 name="product_option[<?php echo $optionId; ?>]"
@@ -126,7 +126,9 @@ $collapsedOptions = (bool) $params->get('list_collapsed_options', $params->get('
                                 id="<?php echo $optionValueInputId; ?>"
                                 class="uk-hidden"
                                 autocomplete="off"
-                                onclick="doFlexiAjaxPrice(<?php echo (int) $productId; ?>, '#option-<?php echo $optionId; ?>')"
+                                onclick="doFlexiAjaxPrice(<?php echo $productId; ?>, '#option-<?php echo $optionId; ?>')"
+                                data-product-id="<?php echo $productId; ?>"
+                                data-option-id="<?php echo $optionId; ?>"
                                 <?php echo ($defaultOptionValueId == $ovId) ? 'checked' : ''; ?>
                             />
                             <?php $swatchColor = ProductHelper::swatchColor($ov['optionvalue_image']); ?>

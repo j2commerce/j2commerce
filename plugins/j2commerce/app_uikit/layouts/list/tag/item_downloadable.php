@@ -17,7 +17,7 @@ use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 
 extract($displayData);
 
-$productId = $product->j2commerce_product_id;
+$productId = (int) $product->j2commerce_product_id;
 $cartType = (int) $params->get('list_show_cart', 1);
 $cssClass = htmlspecialchars($product->params->get('product_css_class', '') ?? '', ENT_QUOTES, 'UTF-8');
 $productType = htmlspecialchars($product->product_type ?? '', ENT_QUOTES, 'UTF-8');
@@ -57,6 +57,9 @@ $afterHtml = J2CommerceHelper::plugin()->eventWithHtml('AfterProductListItemDisp
         <?php endif; ?>
         <?php if ($showSku): ?>
             <?php echo ProductLayoutService::renderLayout('list.tag.item_sku', $displayData); ?>
+        <?php endif; ?>
+        <?php if ($showUpc): ?>
+            <?php echo ProductLayoutService::renderLayout('list.tag.item_upc', $displayData); ?>
         <?php endif; ?>
     </div>
 

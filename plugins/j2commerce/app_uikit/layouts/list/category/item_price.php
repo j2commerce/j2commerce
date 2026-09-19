@@ -11,7 +11,6 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
-
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 extract($displayData);
@@ -31,7 +30,6 @@ $showBasePrice = (bool) $params->get('list_show_product_base_price', 1);
 $showSpecialPrice = (bool) $params->get('list_show_product_special_price', 1);
 $showTaxInfo = (bool) $params->get('display_price_with_tax_info', 0);
 
-
 if (!$showBasePrice && !$showSpecialPrice) {
     return;
 }
@@ -41,9 +39,9 @@ $afterHtml = J2CommerceHelper::plugin()->eventWithHtml('AfterRenderingProductPri
 $basePrice = $pricing->base_price ?? 0;
 $salePrice = $pricing->price ?? 0;
 ?>
-<?php echo $beforeHtml; ?>
-
 <div class="j2commerce-product-price-container uk-flex uk-flex-middle" style="gap: .25rem;">
+    <?php echo $beforeHtml; ?>
+
     <?php if ($showSpecialPrice && isset($pricing->price)): ?>
         <div class="sale-price uk-text-large uk-text-bold">
             <?php echo $productHelper->displayPrice((float) $salePrice, $product, $params); ?>
@@ -56,13 +54,11 @@ $salePrice = $pricing->price ?? 0;
         </del>
     <?php endif; ?>
 
+    <?php echo $afterHtml; ?>
+
     <?php if ($showTaxInfo): ?>
         <div class="tax-text">
             <small class="uk-text-muted"><?php echo $productHelper->get_tax_text(); ?></small>
         </div>
     <?php endif; ?>
 </div>
-
-<?php echo $afterHtml; ?>
-
-

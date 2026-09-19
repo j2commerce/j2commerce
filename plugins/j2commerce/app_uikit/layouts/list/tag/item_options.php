@@ -24,7 +24,7 @@ if (empty($options)) {
     return;
 }
 
-$productId = $product->j2commerce_product_id;
+$productId = (int) $product->j2commerce_product_id;
 $showOptionImages = (int) ($params->get('image_for_product_options', 0) ?? 0);
 $productHelper = J2CommerceHelper::product();
 $platform = J2CommerceHelper::platform();
@@ -70,7 +70,7 @@ if (!$hasRenderableOption) {
             <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeDisplaySingleProductOption', [$product, &$option])->getArgument('html', ''); ?>
 
             <?php if ($option['type'] == 'select' && isset($option['optionvalue']) && !empty($option['optionvalue'])) : ?>
-                <?php $selectInputId = 'product-option-' . (int) $productId . '-' . $optionId; ?>
+                <?php $selectInputId = 'product-option-' . $productId . '-' . $optionId; ?>
                 <div id="option-<?php echo $optionId; ?>" class="option uk-margin-small-bottom">
                     <label class="uk-form-label" for="<?php echo $selectInputId; ?>">
                         <?php echo $esc(Text::_($option['option_name'])); ?>
@@ -81,11 +81,13 @@ if (!$hasRenderableOption) {
 
                     <select id="<?php echo $selectInputId; ?>" name="product_option[<?php echo $optionId; ?>]"
                         class="uk-select"
-                        onchange="doAjaxFilter(this.options[this.selectedIndex].value, <?php echo (int) $productId; ?>, <?php echo $optionId; ?>, '#option-<?php echo $optionId; ?>');">
+                        data-product-id="<?php echo $productId; ?>"
+                        data-option-id="<?php echo $optionId; ?>"
+                        onchange="doAjaxFilter(this.options[this.selectedIndex].value, <?php echo $productId; ?>, <?php echo $optionId; ?>, '#option-<?php echo $optionId; ?>')">
                         <option value=""><?php echo Text::_('COM_J2COMMERCE_CHOOSE'); ?></option>
                         <?php foreach ($option['optionvalue'] as $option_value) : ?>
                             <?php $checked = $option_value['product_optionvalue_default'] ? 'selected="selected"' : ''; ?>
-                            <option <?php echo $checked; ?> value="<?php echo $option_value['product_optionvalue_id']; ?>">
+                            <option <?php echo $checked; ?> value="<?php echo (int) $option_value['product_optionvalue_id']; ?>">
                                 <?php echo $esc(Text::_($option_value['optionvalue_name'])); ?>
                                 <?php if ($option_value['product_optionvalue_price'] > 0 && $params->get('product_option_price', 1)) : ?>
                                     (<?php if ($params->get('product_option_price_prefix', 1)) : ?><?php echo $esc($option_value['product_optionvalue_prefix']); ?><?php endif; ?><?php echo $productHelper->displayPrice($option_value['product_optionvalue_price'], $product, $params, 'products.view.option'); ?>)
@@ -107,14 +109,17 @@ if (!$hasRenderableOption) {
                     </div>
                     <div class="j2commerce-radio-options uk-flex uk-flex-wrap" style="gap: .5rem;" data-binded-label="#radioOption<?php echo $optionId; ?>">
                         <?php foreach ($option['optionvalue'] as $option_value) : ?>
-                            <?php $optionValueInputId = 'option-value-' . (int) $productId . '-' . $optionId . '-' . (int) $option_value['product_optionvalue_id']; ?>
+                            <?php $optionValueInputId = 'option-value-' . $productId . '-' . $optionId . '-' . (int) $option_value['product_optionvalue_id']; ?>
                             <?php $checked = $option_value['product_optionvalue_default'] ? 'checked="checked"' : ''; ?>
                             <input <?php echo $checked; ?> type="radio"
-                                name="product_option[<?php echo $optionId; ?>]"
+                                name="product_option[<?php echo (int) $option['productoption_id']; ?>]"
                                 value="<?php echo (int) $option_value['product_optionvalue_id']; ?>"
                                 id="<?php echo $optionValueInputId; ?>"
                                 class="uk-hidden"
-                                onchange="doAjaxFilter(this.value, <?php echo (int) $productId; ?>, <?php echo $optionId; ?>, '#option-<?php echo $optionId; ?>');" autocomplete="off" />
+                                data-product-id="<?php echo $productId; ?>"
+                                data-option-id="<?php echo $optionId; ?>"
+                                autocomplete="off"
+                                onchange="doAjaxFilter(this.value, <?php echo $productId; ?>, <?php echo $optionId; ?>, '#option-<?php echo $optionId; ?>')" />
 
                             <?php if ($showOptionImages && !empty($option_value['optionvalue_image'])) : ?>
                                 <label class="btn-image uk-padding-remove" for="<?php echo $optionValueInputId; ?>" data-label="<?php echo $esc(Text::_($option_value['optionvalue_name'])); ?>">
@@ -151,11 +156,13 @@ if (!$hasRenderableOption) {
                             <?php $optionValueInputId = 'option-value-' . (int) $productId . '-' . $optionId . '-' . (int) $option_value['product_optionvalue_id']; ?>
                             <?php $checked = !empty($option_value['product_optionvalue_default']) ? 'checked="checked"' : ''; ?>
                             <input <?php echo $checked; ?> type="radio"
-                                name="product_option[<?php echo $optionId; ?>]"
+                                name="product_option[<?php echo (int) $option['productoption_id']; ?>]"
                                 value="<?php echo (int) $option_value['product_optionvalue_id']; ?>"
                                 id="<?php echo $optionValueInputId; ?>"
                                 class="uk-hidden"
-                                onchange="doAjaxFilter(this.value, <?php echo (int) $productId; ?>, <?php echo $optionId; ?>, '#option-<?php echo $optionId; ?>');" />
+                                data-product-id="<?php echo $productId; ?>"
+                                data-option-id="<?php echo $optionId; ?>"
+                                onchange="doAjaxFilter(this.value, <?php echo $productId; ?>, <?php echo $optionId; ?>, '#option-<?php echo $optionId; ?>')" />
                             <?php $swatchColor = ProductHelper::swatchColor($option_value['optionvalue_image']); ?>
                             <label for="<?php echo $optionValueInputId; ?>" class="btn-color" title="<?php echo $esc(Text::_($option_value['optionvalue_name'])); ?>" data-label="<?php echo $esc(Text::_($option_value['optionvalue_name'])); ?>"<?php if ($swatchColor !== '') : ?> style="color:<?php echo $esc($swatchColor); ?>;"<?php endif; ?>>
                                 <span class="uk-hidden"><?php echo $esc(Text::_($option_value['optionvalue_name'])); ?></span>
@@ -172,7 +179,7 @@ if (!$hasRenderableOption) {
                 <?php endif; ?>
                 <b><?php echo $esc(Text::_($option['option_name'])); ?>:</b><br>
                 <?php foreach ($option['optionvalue'] as $option_value) : ?>
-                    <?php $optionValueInputId = 'option-value-' . (int) $productId . '-' . $optionId . '-' . (int) $option_value['product_optionvalue_id']; ?>
+                    <?php $optionValueInputId = 'option-value-' . $productId . '-' . $optionId . '-' . (int) $option_value['product_optionvalue_id']; ?>
                     <input<?php echo !empty($option_value['product_optionvalue_default']) ? ' checked="checked"' : ''; ?> type="checkbox"
                            name="product_option[<?php echo $optionId; ?>][]"
                            value="<?php echo (int) $option_value['product_optionvalue_id']; ?>"
@@ -195,7 +202,7 @@ if (!$hasRenderableOption) {
 
         <?php if ($option['type'] === 'text') : ?>
             <?php $text_option_params = $platform->getRegistry($option['option_params'] ?? '{}'); ?>
-            <?php $textInputId = 'product-option-text-' . (int) $productId . '-' . $optionId; ?>
+            <?php $textInputId = 'product-option-text-' . $productId . '-' . $optionId; ?>
             <div id="option-<?php echo $optionId; ?>" class="option uk-margin-small-bottom">
                 <label class="uk-form-label" for="<?php echo $textInputId; ?>">
                     <?php echo $esc(Text::_($option['option_name'])); ?>
@@ -211,7 +218,7 @@ if (!$hasRenderableOption) {
         <?php endif; ?>
 
         <?php if ($option['type'] === 'textarea') : ?>
-            <?php $textareaInputId = 'product-option-textarea-' . (int) $productId . '-' . $optionId; ?>
+            <?php $textareaInputId = 'product-option-textarea-' . $productId . '-' . $optionId; ?>
             <div id="option-<?php echo $optionId; ?>" class="option uk-margin-small-bottom">
                 <label class="uk-form-label" for="<?php echo $textareaInputId; ?>">
                     <?php echo $esc(Text::_($option['option_name'])); ?>

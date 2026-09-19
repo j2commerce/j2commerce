@@ -11,7 +11,6 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
-use Joomla\CMS\Language\Text;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 
 extract($displayData);
@@ -40,7 +39,7 @@ $basePrice = $pricing->base_price ?? 0;
 $salePrice = $pricing->price ?? 0;
 ?>
 <?php if ($hasRange && $showRange): ?>
-    <div class="price-range text-muted small">
+    <div class="price-range text-body-secondary small">
         <?php echo $currency->format($minPrice); ?> - <?php echo $currency->format($maxPrice); ?>
     </div>
 <?php endif; ?>
