@@ -67,7 +67,7 @@ if ($collapsedOptions) {
                         'id'          => 'option-desc-' . (int) $option['productoption_id'],
                     ]); ?>
 
-                    <select id="<?php echo $selectInputId; ?>" name="product_option[<?php echo $optionId; ?>]"
+                    <select<?php echo ProductLayoutService::optionDescribedBy($option); ?> id="<?php echo $selectInputId; ?>" name="product_option[<?php echo $optionId; ?>]"
                         class="form-select"
                         data-product-id="<?php echo $productId; ?>"
                         data-option-id="<?php echo $optionId; ?>"
@@ -87,14 +87,14 @@ if ($collapsedOptions) {
             <?php endif; ?>
 
             <?php if ($option['type'] == 'radio' && isset($option['optionvalue']) && !empty($option['optionvalue'])) : ?>
-                <div id="option-<?php echo $optionId; ?>" class="option mb-3">
-                    <div class="form-label fw-semibold pb-1 mb-1">
+                <fieldset id="option-<?php echo $optionId; ?>" class="option mb-3 j2commerce-option-group"<?php echo ProductLayoutService::optionDescribedBy($option); ?>>
+                    <legend class="form-label fw-semibold pb-1 mb-1">
                         <?php echo $esc(Text::_($option['option_name'])); ?>:
                         <?php if ($option['required']) : ?>
                             <span class="text-danger">*</span>
                         <?php endif; ?>
                         <span class="fw-normal fs-sm ms-1" id="radioOption<?php echo $optionId; ?>"></span>
-                    </div>
+                    </legend>
                     <?php echo ProductLayoutService::renderLayout('productoption.description', [
                         'description' => $option['option_description'] ?? '',
                         'id'          => 'option-desc-' . (int) $option['productoption_id'],
@@ -130,18 +130,18 @@ if ($collapsedOptions) {
                             <?php endif; ?>
                         <?php endforeach; ?>
                     </div>
-                </div>
+                </fieldset>
             <?php endif; ?>
 
             <?php if ($option['type'] == 'color' && !empty($option['optionvalue'])) : ?>
-                <div id="option-<?php echo $optionId; ?>" class="option mb-3">
-                    <div class="form-label fw-semibold pb-1 mb-1">
+                <fieldset id="option-<?php echo $optionId; ?>" class="option mb-3 j2commerce-option-group"<?php echo ProductLayoutService::optionDescribedBy($option); ?>>
+                    <legend class="form-label fw-semibold pb-1 mb-1">
                         <?php echo $esc(Text::_($option['option_name'])); ?>:
                         <?php if ($option['required']) : ?>
                             <span class="text-danger">*</span>
                         <?php endif; ?>
                         <span class="fw-normal fs-sm ms-1" id="colorOption<?php echo $optionId; ?>"></span>
-                    </div>
+                    </legend>
                     <?php echo ProductLayoutService::renderLayout('productoption.description', [
                         'description' => $option['option_description'] ?? '',
                         'id'          => 'option-desc-' . (int) $option['productoption_id'],
@@ -164,15 +164,17 @@ if ($collapsedOptions) {
                             </label>
                         <?php endforeach; ?>
                     </div>
-                </div>
+                </fieldset>
             <?php endif; ?>
 
         <?php if ($option['type'] == 'checkbox' && isset($option['optionvalue']) && !empty($option['optionvalue'])) : ?>
-            <div id="option-<?php echo $optionId; ?>" class="option mb-3" data-config-checkbox="1" data-product-id="<?php echo (int) $productId; ?>" data-po-id="<?php echo $optionId; ?>">
+            <fieldset id="option-<?php echo $optionId; ?>" class="option mb-3 j2commerce-option-group" data-config-checkbox="1" data-product-id="<?php echo (int) $productId; ?>" data-po-id="<?php echo $optionId; ?>"<?php echo ProductLayoutService::optionDescribedBy($option); ?>>
+                <legend class="j2commerce-option-legend">
                 <?php if ($option['required']) : ?>
                     <span class="text-danger">*</span>
                 <?php endif; ?>
                 <b><?php echo $esc(Text::_($option['option_name'])); ?>:</b>
+                </legend>
 <?php echo ProductLayoutService::renderLayout('productoption.description', [
     'description' => $option['option_description'] ?? '',
     'id'          => 'option-desc-' . (int) $option['productoption_id'],
@@ -196,7 +198,7 @@ if ($collapsedOptions) {
                     </label>
                     <br>
                 <?php endforeach; ?>
-            </div>
+            </fieldset>
         <?php endif; ?>
 
         <?php if ($option['type'] === 'text') : ?>
@@ -213,7 +215,7 @@ if ($collapsedOptions) {
                     'description' => $option['option_description'] ?? '',
                     'id'          => 'option-desc-' . (int) $option['productoption_id'],
                 ]); ?>
-                <input id="<?php echo $textInputId; ?>" type="text" class="form-control"
+                <input<?php echo ProductLayoutService::optionDescribedBy($option); ?> id="<?php echo $textInputId; ?>" type="text" class="form-control"
                        name="product_option[<?php echo $optionId; ?>]"
                        value="<?php echo $esc($option['optionvalue'] ?? ''); ?>"
                        placeholder="<?php echo $esc((string) $text_option_params->get('place_holder', '')); ?>" />
@@ -233,7 +235,7 @@ if ($collapsedOptions) {
                     'description' => $option['option_description'] ?? '',
                     'id'          => 'option-desc-' . (int) $option['productoption_id'],
                 ]); ?>
-                <textarea id="<?php echo $textareaInputId; ?>" class="form-control"
+                <textarea<?php echo ProductLayoutService::optionDescribedBy($option); ?> id="<?php echo $textareaInputId; ?>" class="form-control"
                           name="product_option[<?php echo $optionId; ?>]"
                           cols="20" rows="5"><?php echo $esc($option['optionvalue'] ?? ''); ?></textarea>
             </div>

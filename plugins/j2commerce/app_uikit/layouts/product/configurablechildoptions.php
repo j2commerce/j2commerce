@@ -49,7 +49,7 @@ $esc            = static fn(string $value): string => htmlspecialchars($value, E
                     'description' => $option['option_description'] ?? '',
                     'id'          => 'option-desc-' . (int) $option['productoption_id'],
                 ]); ?>
-                <select class="uk-select" name="product_option[<?php echo $optionId; ?>]" onchange="doAjaxFilter(this.options[this.selectedIndex].value, <?php echo $product_id; ?>, <?php echo $optionId; ?>, '#child-option-<?php echo $optionId; ?>');">
+                <select<?php echo ProductLayoutService::optionDescribedBy($option); ?> class="uk-select" name="product_option[<?php echo $optionId; ?>]" onchange="doAjaxFilter(this.options[this.selectedIndex].value, <?php echo $product_id; ?>, <?php echo $optionId; ?>, '#child-option-<?php echo $optionId; ?>');">
                     <option value=""><?php echo Text::_('COM_J2COMMERCE_CHOOSE'); ?></option>
                     <?php foreach ($option['optionvalue'] as $option_value) : ?>
                         <?php $checked = !empty($option_value['product_optionvalue_default']) ? 'selected="selected"' : ''; ?>
@@ -70,14 +70,14 @@ $esc            = static fn(string $value): string => htmlspecialchars($value, E
         <?php endif; ?>
 
         <?php if ($option['type'] === 'radio' && !empty($option['optionvalue'])) : ?>
-            <div id="child-option-<?php echo $optionId; ?>" class="option uk-margin-small-bottom">
-                <label class="uk-form-label uk-text-bold uk-display-block">
+            <fieldset id="child-option-<?php echo $optionId; ?>" class="option uk-margin-small-bottom j2commerce-option-group"<?php echo ProductLayoutService::optionDescribedBy($option); ?>>
+                <legend class="uk-form-label uk-text-bold uk-display-block">
                     <?php echo $esc(Text::_($option['option_name'])); ?>:
                     <?php if ($option['required']) : ?>
                         <span class="uk-text-danger">*</span>
                     <?php endif; ?>
                     <span class="uk-text-normal" id="child-radioOption<?php echo $optionId; ?>"></span>
-                </label>
+                </legend>
                 <?php echo ProductLayoutService::renderLayout('productoption.description', [
                     'description' => $option['option_description'] ?? '',
                     'id'          => 'option-desc-' . (int) $option['productoption_id'],
@@ -107,18 +107,18 @@ $esc            = static fn(string $value): string => htmlspecialchars($value, E
                         <?php endif; ?>
                     <?php endforeach; ?>
                 </div>
-            </div>
+            </fieldset>
         <?php endif; ?>
 
         <?php if ($option['type'] === 'color' && !empty($option['optionvalue'])) : ?>
-            <div id="child-option-<?php echo $optionId; ?>" class="option uk-margin-small-bottom">
-                <label class="uk-form-label uk-text-bold uk-display-block">
+            <fieldset id="child-option-<?php echo $optionId; ?>" class="option uk-margin-small-bottom j2commerce-option-group"<?php echo ProductLayoutService::optionDescribedBy($option); ?>>
+                <legend class="uk-form-label uk-text-bold uk-display-block">
                     <?php echo $esc(Text::_($option['option_name'])); ?>:
                     <?php if ($option['required']) : ?>
                         <span class="uk-text-danger">*</span>
                     <?php endif; ?>
                     <span class="uk-text-normal" id="child-colorOption<?php echo $optionId; ?>"></span>
-                </label>
+                </legend>
                 <?php echo ProductLayoutService::renderLayout('productoption.description', [
                     'description' => $option['option_description'] ?? '',
                     'id'          => 'option-desc-' . (int) $option['productoption_id'],
@@ -135,15 +135,17 @@ $esc            = static fn(string $value): string => htmlspecialchars($value, E
                         </label>
                     <?php endforeach; ?>
                 </div>
-            </div>
+            </fieldset>
         <?php endif; ?>
 
         <?php if ($option['type'] === 'checkbox' && !empty($option['optionvalue'])) : ?>
-            <div id="child-option-<?php echo $optionId; ?>" class="option uk-margin-small-bottom" data-config-checkbox="1" data-product-id="<?php echo $product_id; ?>" data-po-id="<?php echo $optionId; ?>">
+            <fieldset id="child-option-<?php echo $optionId; ?>" class="option uk-margin-small-bottom j2commerce-option-group" data-config-checkbox="1" data-product-id="<?php echo $product_id; ?>" data-po-id="<?php echo $optionId; ?>"<?php echo ProductLayoutService::optionDescribedBy($option); ?>>
+                <legend class="j2commerce-option-legend">
                 <?php if ($option['required']) : ?>
                     <span class="uk-text-danger">*</span>
                 <?php endif; ?>
                 <b><?php echo $esc(Text::_($option['option_name'])); ?>:</b>
+                </legend>
 <?php echo ProductLayoutService::renderLayout('productoption.description', [
     'description' => $option['option_description'] ?? '',
     'id'          => 'option-desc-' . (int) $option['productoption_id'],
@@ -172,7 +174,7 @@ $esc            = static fn(string $value): string => htmlspecialchars($value, E
                         <?php endif; ?>
                     </label>
                 <?php endforeach; ?>
-            </div>
+            </fieldset>
         <?php endif; ?>
 
         <?php if ($option['type'] === 'text') : ?>
@@ -189,7 +191,7 @@ $esc            = static fn(string $value): string => htmlspecialchars($value, E
                     'description' => $option['option_description'] ?? '',
                     'id'          => 'option-desc-' . (int) $option['productoption_id'],
                 ]); ?>
-                <input id="<?php echo $textInputId; ?>" type="text" class="uk-input"
+                <input<?php echo ProductLayoutService::optionDescribedBy($option); ?> id="<?php echo $textInputId; ?>" type="text" class="uk-input"
                     name="product_option[<?php echo $optionId; ?>]"
                     value="<?php echo $esc($option['optionvalue'] ?? ''); ?>"
                     placeholder="<?php echo $esc((string) $text_option_params->get('place_holder', '')); ?>" />
@@ -209,7 +211,7 @@ $esc            = static fn(string $value): string => htmlspecialchars($value, E
                     'description' => $option['option_description'] ?? '',
                     'id'          => 'option-desc-' . (int) $option['productoption_id'],
                 ]); ?>
-                <textarea id="<?php echo $textareaInputId; ?>" class="uk-textarea"
+                <textarea<?php echo ProductLayoutService::optionDescribedBy($option); ?> id="<?php echo $textareaInputId; ?>" class="uk-textarea"
                     name="product_option[<?php echo $optionId; ?>]"
                     cols="20" rows="5"><?php echo $esc($option['optionvalue'] ?? ''); ?></textarea>
             </div>

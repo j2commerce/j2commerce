@@ -275,6 +275,20 @@ final class ProductLayoutService
         return is_dir($path) ? $path : '';
     }
 
+    /**
+     * Carries the SAME emptiness test as the productoption.description layout, so the attribute
+     * and the element it points at can never disagree — a dangling aria-describedby names an id
+     * that is not in the DOM, which assistive tech reports as no description at all.
+     */
+    public static function optionDescribedBy(array $option): string
+    {
+        if (trim((string) ($option['option_description'] ?? '')) === '') {
+            return '';
+        }
+
+        return ' aria-describedby="option-desc-' . (int) ($option['productoption_id'] ?? 0) . '"';
+    }
+
     private static ?string $subtemplateOverride = null;
 
     public static function setSubtemplateOverride(string $subtemplate): void

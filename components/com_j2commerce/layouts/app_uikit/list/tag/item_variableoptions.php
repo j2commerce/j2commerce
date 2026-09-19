@@ -60,7 +60,7 @@ $collapsedOptions = (bool) $params->get('list_collapsed_options', $params->get('
                         'description' => $option['option_description'] ?? '',
                         'id'          => 'option-desc-' . (int) $option['productoption_id'],
                     ]); ?>
-                    <select id="<?php echo $selectInputId; ?>"
+                    <select<?php echo ProductLayoutService::optionDescribedBy($option); ?> id="<?php echo $selectInputId; ?>"
                             name="product_option[<?php echo $optionId; ?>]"
                             data-is-variant="<?php echo !empty($option['is_variant']) ? '1' : '0'; ?>"
                             class="uk-select"
@@ -79,14 +79,14 @@ $collapsedOptions = (bool) $params->get('list_collapsed_options', $params->get('
             <?php endif; ?>
 
             <?php if ($option['type'] === 'radio') : ?>
-                <div id="option-<?php echo $optionId; ?>" class="option uk-margin-small-bottom">
-                    <div class="uk-form-label">
+                <fieldset id="option-<?php echo $optionId; ?>" class="option uk-margin-small-bottom j2commerce-option-group"<?php echo ProductLayoutService::optionDescribedBy($option); ?>>
+                    <legend class="uk-form-label">
                         <?php echo $esc(Text::_($option['option_name'])); ?>:
                         <?php if ($option['required']) : ?>
                             <span class="uk-text-danger">*</span>
                         <?php endif; ?>
                         <span id="radioOption<?php echo $optionId; ?>"></span>
-                    </div>
+                    </legend>
                     <?php echo ProductLayoutService::renderLayout('productoption.description', [
                         'description' => $option['option_description'] ?? '',
                         'id'          => 'option-desc-' . (int) $option['productoption_id'],
@@ -122,18 +122,18 @@ $collapsedOptions = (bool) $params->get('list_collapsed_options', $params->get('
 
                         <?php endforeach; ?>
                     </div>
-                </div>
+                </fieldset>
             <?php endif; ?>
 
             <?php if ($option['type'] === 'color') : ?>
-                <div id="option-<?php echo $optionId; ?>" class="option uk-margin-small-bottom">
-                    <div class="uk-form-label">
+                <fieldset id="option-<?php echo $optionId; ?>" class="option uk-margin-small-bottom j2commerce-option-group"<?php echo ProductLayoutService::optionDescribedBy($option); ?>>
+                    <legend class="uk-form-label">
                         <?php echo $esc(Text::_($option['option_name'])); ?>:
                         <?php if ($option['required']) : ?>
                             <span class="uk-text-danger">*</span>
                         <?php endif; ?>
                         <span id="colorOption<?php echo $optionId; ?>"></span>
-                    </div>
+                    </legend>
                     <?php echo ProductLayoutService::renderLayout('productoption.description', [
                         'description' => $option['option_description'] ?? '',
                         'id'          => 'option-desc-' . (int) $option['productoption_id'],
@@ -161,7 +161,7 @@ $collapsedOptions = (bool) $params->get('list_collapsed_options', $params->get('
                             </label>
                         <?php endforeach; ?>
                     </div>
-                </div>
+                </fieldset>
             <?php endif; ?>
 
             <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterDisplaySingleProductOption', [$product, $option])->getArgument('html', ''); ?>

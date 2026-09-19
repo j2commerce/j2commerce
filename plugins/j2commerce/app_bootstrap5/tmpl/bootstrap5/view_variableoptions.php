@@ -60,7 +60,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                     'description' => $option['option_description'] ?? '',
                     'id'          => 'option-desc-' . (int) $option['productoption_id'],
                 ]); ?>
-                <select name="product_option[<?php echo (int) $option['productoption_id']; ?>]"
+                <select<?php echo ProductLayoutService::optionDescribedBy($option); ?> name="product_option[<?php echo (int) $option['productoption_id']; ?>]"
                         data-is-variant="<?php echo !empty($option['is_variant']) ? '1' : '0'; ?>"
                         class="form-select"
                         data-product-id="<?php echo $productId; ?>"
@@ -85,14 +85,14 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
         <?php endif; ?>
 
         <?php if ($option['type'] === 'radio' && !empty($option['optionvalue'])) : ?>
-            <div id="option-<?php echo (int) $option['productoption_id']; ?>" class="option mb-3">
-                <label class="form-label fw-semibold pb-1 mb-2">
+            <fieldset id="option-<?php echo (int) $option['productoption_id']; ?>" class="option mb-3 j2commerce-option-group"<?php echo ProductLayoutService::optionDescribedBy($option); ?>>
+                <legend class="form-label fw-semibold pb-1 mb-2">
                     <?php echo $esc(Text::_($option['option_name'])); ?>:
                     <?php if ($option['required']) : ?>
                         <span class="text-danger">*</span>
                     <?php endif; ?>
                     <span class="fw-normal fs-sm ms-1" id="radioOption<?php echo (int) $option['productoption_id']; ?>"></span>
-                </label>
+                </legend>
                 <?php echo ProductLayoutService::renderLayout('productoption.description', [
                     'description' => $option['option_description'] ?? '',
                     'id'          => 'option-desc-' . (int) $option['productoption_id'],
@@ -131,18 +131,18 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                         <?php endif; ?>
                     <?php endforeach; ?>
                 </div>
-            </div>
+            </fieldset>
         <?php endif; ?>
 
         <?php if ($option['type'] === 'color' && !empty($option['optionvalue'])) : ?>
-            <div id="option-<?php echo (int) $option['productoption_id']; ?>" class="option mb-3">
-                <label class="form-label fw-semibold pb-1 mb-2">
+            <fieldset id="option-<?php echo (int) $option['productoption_id']; ?>" class="option mb-3 j2commerce-option-group"<?php echo ProductLayoutService::optionDescribedBy($option); ?>>
+                <legend class="form-label fw-semibold pb-1 mb-2">
                     <?php echo $esc(Text::_($option['option_name'])); ?>:
                     <?php if ($option['required']) : ?>
                         <span class="text-danger">*</span>
                     <?php endif; ?>
                     <span class="fw-normal fs-sm ms-1" id="colorOption<?php echo (int) $option['productoption_id']; ?>"></span>
-                </label>
+                </legend>
                 <?php echo ProductLayoutService::renderLayout('productoption.description', [
                     'description' => $option['option_description'] ?? '',
                     'id'          => 'option-desc-' . (int) $option['productoption_id'],
@@ -168,17 +168,17 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                         </label>
                     <?php endforeach; ?>
                 </div>
-            </div>
+            </fieldset>
         <?php endif; ?>
 
         <?php if ($option['type'] === 'checkbox' && !empty($option['optionvalue'])) : ?>
-            <div id="option-<?php echo (int) $option['productoption_id']; ?>" class="option mb-3">
-                <label class="form-label fw-semibold pb-1 mb-2">
+            <fieldset id="option-<?php echo (int) $option['productoption_id']; ?>" class="option mb-3 j2commerce-option-group"<?php echo ProductLayoutService::optionDescribedBy($option); ?>>
+                <legend class="form-label fw-semibold pb-1 mb-2">
                     <?php echo $esc(Text::_($option['option_name'])); ?>:
                     <?php if ($option['required']) : ?>
                         <span class="text-danger">*</span>
                     <?php endif; ?>
-                </label>
+                </legend>
                 <?php echo ProductLayoutService::renderLayout('productoption.description', [
                     'description' => $option['option_description'] ?? '',
                     'id'          => 'option-desc-' . (int) $option['productoption_id'],
@@ -214,7 +214,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                         </div>
                     <?php endforeach; ?>
                 </div>
-            </div>
+            </fieldset>
         <?php endif; ?>
 
         <?php if ($option['type'] === 'text') : ?>
@@ -230,7 +230,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                     'description' => $option['option_description'] ?? '',
                     'id'          => 'option-desc-' . (int) $option['productoption_id'],
                 ]); ?>
-                <input type="text"
+                <input<?php echo ProductLayoutService::optionDescribedBy($option); ?> type="text"
                        id="option-input-<?php echo (int) $option['productoption_id']; ?>"
                        class="form-control"
                        name="product_option[<?php echo (int) $option['productoption_id']; ?>]"
@@ -251,7 +251,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                     'description' => $option['option_description'] ?? '',
                     'id'          => 'option-desc-' . (int) $option['productoption_id'],
                 ]); ?>
-                <textarea id="option-textarea-<?php echo (int) $option['productoption_id']; ?>"
+                <textarea<?php echo ProductLayoutService::optionDescribedBy($option); ?> id="option-textarea-<?php echo (int) $option['productoption_id']; ?>"
                           class="form-control"
                           name="product_option[<?php echo (int) $option['productoption_id']; ?>]"
                           cols="20" rows="5"><?php echo $esc($option['optionvalue'] ?? ''); ?></textarea>
@@ -302,7 +302,10 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                     $element_date,
                     (string) ($option['optionvalue'] ?? ''),
                     $option['option_params'],
-                    (bool) $option['required']
+                    (bool) $option['required'],
+                    trim((string) ($option['option_description'] ?? '')) !== ''
+                        ? 'option-desc-' . (int) $option['productoption_id']
+                        : ''
                 ); ?>
             </div>
         <?php endif; ?>
@@ -325,7 +328,10 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                     $element_datetime,
                     (string) ($option['optionvalue'] ?? ''),
                     $option['option_params'],
-                    (bool) $option['required']
+                    (bool) $option['required'],
+                    trim((string) ($option['option_description'] ?? '')) !== ''
+                        ? 'option-desc-' . (int) $option['productoption_id']
+                        : ''
                 ); ?>
             </div>
         <?php endif; ?>
@@ -342,7 +348,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                     'description' => $option['option_description'] ?? '',
                     'id'          => 'option-desc-' . (int) $option['productoption_id'],
                 ]); ?>
-                <input type="text"
+                <input<?php echo ProductLayoutService::optionDescribedBy($option); ?> type="text"
                        id="j2commerce_time_<?php echo (int) $option['productoption_id']; ?>"
                        class="form-control j2commerce_time"
                        name="product_option[<?php echo (int) $option['productoption_id']; ?>]"

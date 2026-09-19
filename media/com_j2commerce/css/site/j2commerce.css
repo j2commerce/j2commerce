@@ -964,3 +964,26 @@ html[data-bs-theme="light"] .j2commerce {
 .j2c-collapsible-field > .uk-margin-bottom {
     margin-bottom: 0;
 }
+
+/* Product option groups.
+
+   The wrapper is a <fieldset> so the group carries a name (H71); these rules keep it looking
+   exactly like the <div> it replaced. Both are needed and for different reasons: a browser's
+   default fieldset has a groove border and padding, and Bootstrap's reboot — which zeroes that —
+   also sets legend to float:left at 1.5rem, which would enlarge every option name. The uikit
+   family ships no fieldset reset of its own here, so neither framework can be relied on. */
+.j2commerce-option-group {
+    min-width: 0;
+    margin-inline: 0;
+    padding: 0;
+    border: 0;
+}
+.j2commerce-option-group > legend {
+    float: none;
+    width: auto;
+    max-width: 100%;
+    margin-bottom: 0;
+    padding: 0;
+    font-size: inherit;
+    line-height: inherit;
+}

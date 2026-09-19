@@ -14,11 +14,11 @@ declare(strict_types=1);
 /**
  * Merchant-authored guidance for one product option, rendered under its label.
  *
- * The id is emitted so a control can later point aria-describedby at it, which is what makes the
- * text announced with the control rather than merely sitting near it (ARIA1, sufficient for 3.3.2
- * Labels or Instructions when paired with a label). No caller wires that association yet: the
- * choice types render their inputs as a bare group with no fieldset to describe, so it lands with
- * that restructure rather than here.
+ * The id is what callers point aria-describedby at, which is what makes the text announced with
+ * the control rather than merely sitting near it (ARIA1, sufficient for 3.3.2 Labels or
+ * Instructions when paired with a label). Callers never spell that attribute out: they call
+ * ProductLayoutService::optionDescribedBy(), which repeats the emptiness test below, so the
+ * attribute cannot outlive the element it names.
  *
  * @var array  $displayData
  * @var string $displayData['description']  raw merchant text; empty renders nothing

@@ -47,7 +47,7 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
                     'description' => $option['option_description'] ?? '',
                     'id'          => 'option-desc-' . (int) $option['productoption_id'],
                 ]); ?>
-                <select id="<?php echo $selectInputId; ?>" name="product_option[<?php echo $optionId; ?>]"
+                <select<?php echo ProductLayoutService::optionDescribedBy($option); ?> id="<?php echo $selectInputId; ?>" name="product_option[<?php echo $optionId; ?>]"
                         class="form-select"
                         onchange="doFlexiAjaxPrice(<?php echo $productId; ?>, '#option-<?php echo $optionId; ?>')">
                     <option value="*"><?php echo $esc(Text::_('COM_J2COMMERCE_CHOOSE')); ?></option>
@@ -62,13 +62,13 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
         <?php endif; ?>
 
         <?php if ($option['type'] === 'radio') : ?>
-            <div id="option-<?php echo $optionId; ?>" class="option mb-3">
-                <div class="form-label fw-bold mb-1">
+            <fieldset id="option-<?php echo $optionId; ?>" class="option mb-3 j2commerce-option-group"<?php echo ProductLayoutService::optionDescribedBy($option); ?>>
+                <legend class="form-label fw-bold mb-1">
                     <?php echo $esc(Text::_($option['option_name'])); ?>
                     <?php if ($option['required']) : ?>
                         <span class="text-danger">*</span>
                     <?php endif; ?>
-                </div>
+                </legend>
                 <?php echo ProductLayoutService::renderLayout('productoption.description', [
                     'description' => $option['option_description'] ?? '',
                     'id'          => 'option-desc-' . (int) $option['productoption_id'],
@@ -95,7 +95,7 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
                         </label>
                     </div>
                 <?php endforeach; ?>
-            </div>
+            </fieldset>
         <?php endif; ?>
 
         <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterDisplaySingleProductOption', [$product, $option])->getArgument('html', ''); ?>

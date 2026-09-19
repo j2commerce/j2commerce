@@ -419,9 +419,10 @@ class StrapperHelper
         string $id,
         string $value = '',
         $params = null,
-        bool $required = false
+        bool $required = false,
+        string $describedBy = ''
     ): string {
-        return $this->renderCalendarField($name, $id, $value, false, $params, $required);
+        return $this->renderCalendarField($name, $id, $value, false, $params, $required, $describedBy);
     }
 
     /**
@@ -439,9 +440,10 @@ class StrapperHelper
         string $id,
         string $value = '',
         $params = null,
-        bool $required = false
+        bool $required = false,
+        string $describedBy = ''
     ): string {
-        return $this->renderCalendarField($name, $id, $value, true, $params, $required);
+        return $this->renderCalendarField($name, $id, $value, true, $params, $required, $describedBy);
     }
 
     /**
@@ -455,7 +457,8 @@ class StrapperHelper
         string $value,
         bool $showTime,
         $params,
-        bool $required
+        bool $required,
+        string $describedBy = ''
     ): string {
         if ($this->app === null) {
             return '';
@@ -527,7 +530,12 @@ class StrapperHelper
             'checkedOptions' => [],
             'hasValue'       => $value !== '',
             'options'        => [],
-            'dataAttribute'  => '',
+            // The core calendar layout echoes this slot raw, immediately after its own
+            // attributes, and its built-in aria-describedby is hardwired to "<id>-desc".
+            // Escaped here because the value reaches the DOM without further filtering.
+            'dataAttribute' => $describedBy === ''
+                ? ''
+                : ' aria-describedby="' . htmlspecialchars($describedBy, ENT_QUOTES, 'UTF-8') . '"',
             'dataAttributes' => [],
             'maxlength'      => 0,
             'maxLength'      => 45,
