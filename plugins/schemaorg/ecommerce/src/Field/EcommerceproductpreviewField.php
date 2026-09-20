@@ -174,7 +174,7 @@ class EcommerceproductpreviewField extends FormField
         $displayVariant = $defaultVariant ?? ($product->variant ?? null);
 
         // Price and currency (from default or master variant)
-        $price          = $displayVariant ? $helper->getProductPrice($displayVariant) : 0;
+        $price          = $displayVariant ? $helper->getProductPrice($displayVariant, $product) : 0;
         $currency       = $helper->getCurrencyCode();
         $formattedPrice = CurrencyHelper::format((float) $price, $currency);
 
@@ -248,7 +248,7 @@ class EcommerceproductpreviewField extends FormField
         // Price block
         $html[] = '                <div class="price-block">';
         $html[] = '                    <div class="price-label-v3">' . Text::_('PLG_SCHEMAORG_ECOMMERCE_PREVIEW_PRICE') . '</div>';
-        $html[] = '                    <div class="price-amount">' . $formattedPrice . '<span class="price-currency">' . $currency . '</span></div>';
+        $html[] = '                    <div class="price-amount">' . $formattedPrice . '<span class="price-currency">' . htmlspecialchars((string) $currency, ENT_QUOTES, 'UTF-8') . '</span></div>';
         $html[] = '                </div>';
 
         // Data list
@@ -257,7 +257,7 @@ class EcommerceproductpreviewField extends FormField
         // SKU
         $html[] = '                    <div class="data-item">';
         $html[] = '                        <span class="data-key">' . Text::_('PLG_SCHEMAORG_ECOMMERCE_PREVIEW_SKU') . '</span>';
-        $html[] = '                        <span class="data-val' . (empty($sku) ? ' empty' : '') . '">' . ($sku ?: Text::_('PLG_SCHEMAORG_ECOMMERCE_PREVIEW_NOT_SET')) . '</span>';
+        $html[] = '                        <span class="data-val' . (empty($sku) ? ' empty' : '') . '">' . ($sku ? htmlspecialchars((string) $sku, ENT_QUOTES, 'UTF-8') : Text::_('PLG_SCHEMAORG_ECOMMERCE_PREVIEW_NOT_SET')) . '</span>';
         $html[] = '                    </div>';
 
         // Schema Type
@@ -269,7 +269,7 @@ class EcommerceproductpreviewField extends FormField
         // Product Type
         $html[] = '                    <div class="data-item">';
         $html[] = '                        <span class="data-key">' . Text::_('PLG_SCHEMAORG_ECOMMERCE_PREVIEW_TYPE') . '</span>';
-        $html[] = '                        <span class="data-val">' . $displayType . '</span>';
+        $html[] = '                        <span class="data-val">' . htmlspecialchars((string) $displayType, ENT_QUOTES, 'UTF-8') . '</span>';
         $html[] = '                    </div>';
 
         // Variant Count (for variable products)
@@ -282,21 +282,21 @@ class EcommerceproductpreviewField extends FormField
             // GTIN/UPC for simple products
             $html[] = '                    <div class="data-item">';
             $html[] = '                        <span class="data-key">' . Text::_('PLG_SCHEMAORG_ECOMMERCE_PREVIEW_GTIN') . '</span>';
-            $html[] = '                        <span class="data-val' . (empty($gtin) ? ' empty' : '') . '">' . ($gtin ?: Text::_('PLG_SCHEMAORG_ECOMMERCE_PREVIEW_NOT_SET')) . '</span>';
+            $html[] = '                        <span class="data-val' . (empty($gtin) ? ' empty' : '') . '">' . ($gtin ? htmlspecialchars((string) $gtin, ENT_QUOTES, 'UTF-8') : Text::_('PLG_SCHEMAORG_ECOMMERCE_PREVIEW_NOT_SET')) . '</span>';
             $html[] = '                    </div>';
         }
 
         // Brand (spans both columns for simple, or fits in grid for variable)
         $html[] = '                    <div class="data-item">';
         $html[] = '                        <span class="data-key">' . Text::_('PLG_SCHEMAORG_ECOMMERCE_PREVIEW_BRAND') . '</span>';
-        $html[] = '                        <span class="data-val' . (empty($brand) ? ' empty' : '') . '">' . ($brand ?: Text::_('PLG_SCHEMAORG_ECOMMERCE_PREVIEW_NOT_SET')) . '</span>';
+        $html[] = '                        <span class="data-val' . (empty($brand) ? ' empty' : '') . '">' . ($brand ? htmlspecialchars((string) $brand, ENT_QUOTES, 'UTF-8') : Text::_('PLG_SCHEMAORG_ECOMMERCE_PREVIEW_NOT_SET')) . '</span>';
         $html[] = '                    </div>';
 
         // GTIN for variable products (show master variant GTIN)
         if ($isVariable && $variantCount > 0) {
             $html[] = '                    <div class="data-item">';
             $html[] = '                        <span class="data-key">' . Text::_('PLG_SCHEMAORG_ECOMMERCE_PREVIEW_GTIN') . ' (' . Text::_('PLG_SCHEMAORG_ECOMMERCE_PREVIEW_MASTER') . ')</span>';
-            $html[] = '                        <span class="data-val' . (empty($gtin) ? ' empty' : '') . '">' . ($gtin ?: Text::_('PLG_SCHEMAORG_ECOMMERCE_PREVIEW_NOT_SET')) . '</span>';
+            $html[] = '                        <span class="data-val' . (empty($gtin) ? ' empty' : '') . '">' . ($gtin ? htmlspecialchars((string) $gtin, ENT_QUOTES, 'UTF-8') : Text::_('PLG_SCHEMAORG_ECOMMERCE_PREVIEW_NOT_SET')) . '</span>';
             $html[] = '                    </div>';
         }
 
@@ -305,7 +305,7 @@ class EcommerceproductpreviewField extends FormField
 
         // Variants table for variable products
         if ($isVariable && $variantCount > 0 && isset($product->variants)) {
-            $html[] = $this->renderVariantsTable($product->variants, $helper);
+            $html[] = $this->renderVariantsTable($product->variants, $product, $helper);
         }
 
         // Description area
@@ -339,7 +339,7 @@ class EcommerceproductpreviewField extends FormField
      *
      * @since   6.0.0
      */
-    private function renderVariantsTable(array $variants, J2CommerceSchemaHelper $helper): string
+    private function renderVariantsTable(array $variants, object $product, J2CommerceSchemaHelper $helper): string
     {
         $currency = $helper->getCurrencyCode();
         $html     = [];
@@ -379,7 +379,7 @@ class EcommerceproductpreviewField extends FormField
             // Format variant name using J2Commerce helper for readable option names
             $variantName         = $this->formatVariantName($variant);
             $variantSku          = $variant->sku ?? '';
-            $variantPrice        = CurrencyHelper::format((float) ($variant->price ?? 0), $currency);
+            $variantPrice        = CurrencyHelper::format($helper->getProductPrice($variant, $product), $currency);
             $variantGtin         = $variant->upc ?? '';
             $variantAvailability = $helper->mapAvailability($variant);
             $variantStatus       = $this->getAvailabilityLabel($variantAvailability);
@@ -388,8 +388,8 @@ class EcommerceproductpreviewField extends FormField
             $html[] = '                        <tr>';
             $html[] = '                            <td>' . $variantName . '</td>';
             $html[] = '                            <td>' . htmlspecialchars($variantSku, ENT_QUOTES, 'UTF-8') . '</td>';
-            $html[] = '                            <td>' . $variantPrice . ' ' . $currency . '</td>';
-            $html[] = '                            <td class="' . (empty($variantGtin) ? 'empty' : '') . '">' . ($variantGtin ?: '-') . '</td>';
+            $html[] = '                            <td>' . $variantPrice . ' ' . htmlspecialchars((string) $currency, ENT_QUOTES, 'UTF-8') . '</td>';
+            $html[] = '                            <td class="' . (empty($variantGtin) ? 'empty' : '') . '">' . ($variantGtin ? htmlspecialchars((string) $variantGtin, ENT_QUOTES, 'UTF-8') : '-') . '</td>';
             $html[] = '                            <td><span class="variant-status ' . $variantStatusClass . '">' . $variantStatus . '</span></td>';
             $html[] = '                        </tr>';
         }

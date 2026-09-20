@@ -519,10 +519,12 @@ final class Ecommerce extends CMSPlugin implements SubscriberInterface
 
         $offer = ['@type' => 'Offer'];
 
-        if (!empty($entry['offers']['price'])) {
-            $offer['price'] = (string) number_format((float) $entry['offers']['price'], 2, '.', '');
+        $offerPrice = $this->overridePrice($entry['offers']['price'] ?? null);
+
+        if ($offerPrice !== null) {
+            $offer['price'] = (string) number_format($offerPrice, 2, '.', '');
         } elseif ($product?->variant) {
-            $offer['price'] = (string) number_format($helper->getProductPrice($product->variant), 2, '.', '');
+            $offer['price'] = (string) number_format($helper->getProductPrice($product->variant, $product), 2, '.', '');
         }
 
         $offer['priceCurrency'] = !empty($entry['offers']['priceCurrency'])
@@ -644,11 +646,18 @@ final class Ecommerce extends CMSPlugin implements SubscriberInterface
                 $variantSchema['image'] = $variantImage;
             }
 
+            // Override first, then the same figures the product page shows - matching the
+            // precedence buildOffersSchema() already applies to offers.price/availability.
+            $variantPrice = $this->overridePrice($override['price'] ?? null)
+                ?? $helper->getProductPrice($variant, $product);
+
             $variantOffer = [
                 '@type'         => 'Offer',
-                'price'         => (string) number_format((float) $variant->price, 2, '.', ''),
+                'price'         => (string) number_format($variantPrice, 2, '.', ''),
                 'priceCurrency' => $helper->getCurrencyCode(),
-                'availability'  => $helper->mapAvailability($variant),
+                'availability'  => !empty($override['availability'])
+                    ? (string) $override['availability']
+                    : $helper->mapAvailability($variant),
             ];
 
             $seller = $this->buildSellerSchema($entry);
@@ -724,10 +733,17 @@ final class Ecommerce extends CMSPlugin implements SubscriberInterface
         return $master ? new Registry($master->params ?? '') : null;
     }
 
+    /** A merchant-entered price only overrides the resolved one when it is a real, non-negative number. */
+    private function overridePrice(mixed $value): ?float
+    {
+        return is_numeric($value) && (float) $value >= 0 ? (float) $value : null;
+    }
+
     private function validateSchemaData(array $data): array
     {
         if (isset($data['offers']['price'])) {
-            $data['offers']['price'] = (string) number_format((float) $data['offers']['price'], 2, '.', '');
+            $price                   = $this->overridePrice($data['offers']['price']);
+            $data['offers']['price'] = $price === null ? '' : (string) number_format($price, 2, '.', '');
         }
 
         if (isset($data['offers']['priceCurrency'])) {
@@ -751,6 +767,26 @@ final class Ecommerce extends CMSPlugin implements SubscriberInterface
 
         if (isset($data['offers']['availability']) && !\in_array($data['offers']['availability'], $validAvailability, true)) {
             $data['offers']['availability'] = 'https://schema.org/InStock';
+        }
+
+        // The variant rows carry the same two fields and were held to neither standard.
+        // Confine them on the way in as well as on the way out, so a later consumer reading
+        // the stored value directly cannot inherit one the offer path would have rejected.
+        foreach ((array) ($data['variantOverrides'] ?? []) as $index => $row) {
+            if (!\is_array($row)) {
+                continue;
+            }
+
+            if (isset($row['price'])) {
+                $price                                     = $this->overridePrice($row['price']);
+                $data['variantOverrides'][$index]['price'] = $price === null
+                    ? ''
+                    : (string) number_format($price, 2, '.', '');
+            }
+
+            if (!empty($row['availability']) && !\in_array($row['availability'], $validAvailability, true)) {
+                $data['variantOverrides'][$index]['availability'] = '';
+            }
         }
 
         return $data;

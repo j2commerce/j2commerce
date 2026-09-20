@@ -180,6 +180,9 @@
 									<option value="https://schema.org/PreOrder">PLG_SCHEMAORG_ECOMMERCE_PREORDER</option>
 									<option value="https://schema.org/BackOrder">PLG_SCHEMAORG_ECOMMERCE_BACKORDER</option>
 									<option value="https://schema.org/Discontinued">PLG_SCHEMAORG_ECOMMERCE_DISCONTINUED</option>
+									<option value="https://schema.org/LimitedAvailability">PLG_SCHEMAORG_ECOMMERCE_LIMITEDAVAILABILITY</option>
+									<option value="https://schema.org/OnlineOnly">PLG_SCHEMAORG_ECOMMERCE_ONLINEONLY</option>
+									<option value="https://schema.org/SoldOut">PLG_SCHEMAORG_ECOMMERCE_SOLDOUT</option>
 								</field>
 
 								<field
@@ -406,6 +409,9 @@
 									<option value="https://schema.org/PreOrder">PLG_SCHEMAORG_ECOMMERCE_PREORDER</option>
 									<option value="https://schema.org/BackOrder">PLG_SCHEMAORG_ECOMMERCE_BACKORDER</option>
 									<option value="https://schema.org/Discontinued">PLG_SCHEMAORG_ECOMMERCE_DISCONTINUED</option>
+									<option value="https://schema.org/LimitedAvailability">PLG_SCHEMAORG_ECOMMERCE_LIMITEDAVAILABILITY</option>
+									<option value="https://schema.org/OnlineOnly">PLG_SCHEMAORG_ECOMMERCE_ONLINEONLY</option>
+									<option value="https://schema.org/SoldOut">PLG_SCHEMAORG_ECOMMERCE_SOLDOUT</option>
 								</field>
 							</form>
 						</field>

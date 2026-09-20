@@ -4208,42 +4208,61 @@ class ProductHelper
      */
     public function displayPrice(float|string $price, ?object $product = null, ?Registry $params = null, string $context = ''): string
     {
+        return '<span class="j2commerce-product-price">'
+            . J2CommerceHelper::currency()->format($this->getDisplayPrice($price, $product))
+            . '</span>';
+    }
+
+    /**
+     * The number displayPrice() renders, before currency formatting - for callers that need a
+     * float rather than markup, such as a schema.org Offer price. Sets _tax_text as a side
+     * effect exactly as displayPrice() does, so get_tax_text() still answers after either call.
+     *
+     * @param   float|string  $price    The price to adjust (string from DB decimal columns is accepted).
+     * @param   object|null   $product  The product, read for its taxprofile_id.
+     *
+     * @return  float  The price after the configured tax display adjustment.
+     *
+     * @since   6.6.4
+     */
+    public function getDisplayPrice(float|string $price, ?object $product = null): float
+    {
         $price = (float) $price;
         $this->reset_tax_text();
 
         $taxProfileId = (int) ($product->taxprofile_id ?? 0);
 
-        if ($taxProfileId > 0) {
-            $isIncludingTax     = (int) J2CommerceHelper::config()->get('config_including_tax', 0);
-            $priceDisplayOption = ConfigHelper::getPriceDisplayOption();
-            $taxRate            = $this->getTaxRateForProfile($taxProfileId);
-
-            if ($priceDisplayOption === 2) {
-                // Display price inclusive of tax
-                if (!$isIncludingTax && $taxRate > 0) {
-                    $price += $price * ($taxRate / 100);
-                }
-
-                if ($taxRate > 0) {
-                    $this->_tax_info = Text::sprintf('COM_J2COMMERCE_PRICE_INCLUDING_TAX', round($taxRate, 2) . '%');
-                }
-            } else {
-                // Display price exclusive of tax (default)
-                if ($isIncludingTax && $taxRate > 0) {
-                    $price /= (1 + ($taxRate / 100));
-                }
-
-                if ($taxRate > 0) {
-                    $this->_tax_info = Text::sprintf('COM_J2COMMERCE_PRICE_EXCLUDING_TAX_WITH_PERCENTAGE', round($taxRate, 2) . '%');
-                } else {
-                    $this->_tax_info = Text::_('COM_J2COMMERCE_PRICE_EXCLUDING_TAX');
-                }
-            }
+        if ($taxProfileId <= 0) {
+            return $price;
         }
 
-        $formattedPrice = J2CommerceHelper::currency()->format($price);
+        $isIncludingTax     = (int) J2CommerceHelper::config()->get('config_including_tax', 0);
+        $priceDisplayOption = ConfigHelper::getPriceDisplayOption();
+        $taxRate            = $this->getTaxRateForProfile($taxProfileId);
 
-        return '<span class="j2commerce-product-price">' . $formattedPrice . '</span>';
+        if ($priceDisplayOption === 2) {
+            // Display price inclusive of tax
+            if (!$isIncludingTax && $taxRate > 0) {
+                $price += $price * ($taxRate / 100);
+            }
+
+            if ($taxRate > 0) {
+                $this->_tax_info = Text::sprintf('COM_J2COMMERCE_PRICE_INCLUDING_TAX', round($taxRate, 2) . '%');
+            }
+
+            return $price;
+        }
+
+        // Display price exclusive of tax (default)
+        if ($isIncludingTax && $taxRate > 0) {
+            $price /= (1 + ($taxRate / 100));
+        }
+
+        $this->_tax_info = $taxRate > 0
+            ? Text::sprintf('COM_J2COMMERCE_PRICE_EXCLUDING_TAX_WITH_PERCENTAGE', round($taxRate, 2) . '%')
+            : Text::_('COM_J2COMMERCE_PRICE_EXCLUDING_TAX');
+
+        return $price;
     }
 
     /**

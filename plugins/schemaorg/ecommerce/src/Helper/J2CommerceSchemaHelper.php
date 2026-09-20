@@ -11,7 +11,9 @@
 namespace Joomla\Plugin\Schemaorg\Ecommerce\Helper;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\InventoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\ProductVisibilityHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use Joomla\CMS\Component\ComponentHelper;
@@ -506,34 +508,41 @@ class J2CommerceSchemaHelper
      *
      * @since   6.0.0
      */
+    /**
+     * The schema.org availability the product page's own stock decision implies.
+     *
+     * ProductHelper::checkStockStatus() is what components/com_j2commerce/tmpl/product/
+     * default_stock.php ultimately renders, so it is the only correct source here. A second
+     * reading of the raw columns drifts from it - this method used to return InStock whenever
+     * manage_stock was off, which contradicted the owner's own Stock Status switch.
+     *
+     * @param   object  $variant  The variant object
+     *
+     * @return  string  A schema.org availability URL
+     *
+     * @since   6.0.0
+     */
     public function mapAvailability(object $variant): string
     {
-        $manageStock    = (int) ($variant->manage_stock ?? 0);
-        $availability   = (int) ($variant->availability ?? 0);
-        $quantity       = (int) ($variant->quantity ?? 0);
-        $allowBackorder = (int) ($variant->allow_backorder ?? 0);
-
-        // If not managing stock, always in stock
-        if ($manageStock === 0) {
-            return 'https://schema.org/InStock';
-        }
-
-        // Check availability flag
-        if ($availability === 0) {
+        // The owner's manual switch outranks everything, exactly as checkStockStatus() has it.
+        if (InventoryHelper::isMarkedOutOfStock($variant)) {
             return 'https://schema.org/OutOfStock';
         }
 
-        // Check quantity
-        if ($quantity > 0) {
+        $quantity = ((int) ($variant->quantity_restriction ?? 0) === 1 && (float) ($variant->min_sale_qty ?? 0) > 0)
+            ? (int) $variant->min_sale_qty
+            : 1;
+
+        if (!ProductHelper::managingStock($variant) || ProductHelper::validateStock($variant, $quantity)) {
             return 'https://schema.org/InStock';
         }
 
-        // Out of stock but backorders allowed
-        if ($allowBackorder >= 1) {
-            return 'https://schema.org/BackOrder';
-        }
-
-        return 'https://schema.org/OutOfStock';
+        // checkStockStatus() stops one step earlier and calls this purchasable, because a store
+        // that accepts backorders can still take the order. Schema has to say whether the goods
+        // are on hand, so the two answers separate here rather than collapsing into InStock.
+        return ProductHelper::backordersAllowed($variant)
+            ? 'https://schema.org/BackOrder'
+            : 'https://schema.org/OutOfStock';
     }
 
     /**
@@ -545,9 +554,20 @@ class J2CommerceSchemaHelper
      *
      * @since   6.0.0
      */
-    public function getProductPrice(object $variant): float
+    public function getProductPrice(object $variant, ?object $product = null): float
     {
-        return (float) ($variant->price ?? 0.00);
+        $productHelper = J2CommerceHelper::product();
+
+        // price is the raw base column; the page renders getPrice()->price (tiered, sale and
+        // customer-group pricing) run through the configured tax display adjustment.
+        $quantity = ((int) ($variant->quantity_restriction ?? 0) === 1 && (float) ($variant->min_sale_qty ?? 0) > 0)
+            ? (int) $variant->min_sale_qty
+            : 1;
+
+        $pricing = $productHelper->getPrice($variant, $quantity);
+        $price   = $pricing === false ? (float) ($variant->price ?? 0.00) : (float) $pricing->price;
+
+        return $productHelper->getDisplayPrice($price, $product);
     }
 
     /**
