@@ -28,6 +28,15 @@
 
 declare(strict_types=1);
 
+// CLI only. build/ is excluded from every package so these never reach an
+// install, but on a dev or CI box whose docroot is the Joomla root they are
+// served like any other file. Without this the only thing stopping a web hit is
+// register_argc_argv being off — an accident, not a control.
+if (PHP_SAPI !== "cli") {
+    http_response_code(403);
+    exit(1);
+}
+
 $root = \dirname(__DIR__);
 
 $paths = [];

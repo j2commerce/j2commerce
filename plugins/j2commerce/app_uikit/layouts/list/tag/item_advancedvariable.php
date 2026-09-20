@@ -16,7 +16,7 @@ use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 
 extract($displayData);
 
-$productId = $product->j2commerce_product_id;
+$productId = (int) $product->j2commerce_product_id;
 $cssClass = htmlspecialchars($product->params->get('product_css_class', '') ?? '', ENT_QUOTES, 'UTF-8');
 $productType = htmlspecialchars($product->product_type ?? '', ENT_QUOTES, 'UTF-8');
 
