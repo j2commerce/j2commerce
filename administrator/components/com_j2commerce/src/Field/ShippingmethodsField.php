@@ -44,6 +44,12 @@ class ShippingmethodsField extends ListField
             $pluginFolder = 'j2commerce';
             $elementLike  = 'shipping_%';
 
+            // Consumers name the methods their own form must not offer, e.g. exclude="shipping_free"
+            $exclude = array_filter(
+                array_map('trim', explode(',', (string) $this->element['exclude'])),
+                static fn (string $value): bool => $value !== ''
+            );
+
             $query = $db->getQuery(true)
                 ->select([
                     $db->quoteName('element', 'value'),
@@ -98,8 +104,7 @@ class ShippingmethodsField extends ListField
                 }
 
                 foreach ($plugins as $plugin) {
-                    // Exclude free shipping itself from the exclusion list
-                    if ($plugin->value === 'shipping_free') {
+                    if (\in_array($plugin->value, $exclude, true)) {
                         continue;
                     }
 
@@ -109,6 +114,10 @@ class ShippingmethodsField extends ListField
                     if (\in_array($plugin->value, $pluginsWithSubMethods, true)) {
                         // Add sub-methods (loaded once above)
                         foreach ($subMethods as $methodName) {
+                            if (\in_array($methodName, $exclude, true)) {
+                                continue;
+                            }
+
                             $options[] = HTMLHelper::_('select.option', $methodName, Text::_($methodName));
                         }
                     } else {

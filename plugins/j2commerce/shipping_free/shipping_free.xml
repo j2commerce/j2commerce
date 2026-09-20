@@ -159,6 +159,7 @@
                     name="shipping_method"
                     type="Shippingmethods"
                     multiple="true"
+                    exclude="shipping_free"
                     label="PLG_J2COMMERCE_SHIPPING_FREE_EXCLUDE_SHIPPING"
                     description="PLG_J2COMMERCE_SHIPPING_FREE_EXCLUDE_SHIPPING_DESC"
                     addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field"
