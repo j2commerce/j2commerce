@@ -1,22 +1,40 @@
 <?php
 
-declare(strict_types=1);
-
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
-use Joomla\CMS\Installer\InstallerScript;
+use Joomla\CMS\Installer\InstallerAdapter;
+use Joomla\CMS\Installer\InstallerScriptInterface;
+use Joomla\CMS\Installer\InstallerScriptTrait;
 use Joomla\CMS\Log\Log;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
 use Joomla\Filesystem\File;
 use Joomla\Registry\Registry;
 
-class Pkg_J2commerceInstallerScript extends InstallerScript
+// InstallerScriptTrait is @since 6.0, so on an older Joomla the class below cannot be declared
+// at all and the version floor inside it never gets to run. Without this the refusal reads as
+// "trait not found" instead of naming the requirement. PHP binds a class that depends on an
+// autoloaded trait at the point of declaration, so this statement is reached first.
+// DELETE WHEN: a J2Commerce 6 package can no longer be handed to a Joomla 5 installer.
+if (!trait_exists(InstallerScriptTrait::class)) {
+    throw new \RuntimeException('J2Commerce requires Joomla 6.0 or later. This site is running Joomla ' . JVERSION . '.');
+}
+
+class Pkg_J2commerceInstallerScript implements InstallerScriptInterface
 {
-    protected $minimumJoomlaVersion = '6.0';
-    protected $minimumPhpVersion    = '8.1';
-    protected $deleteFiles          = [
+    // The interface obliges this class to declare preflight(), and a class method silently wins
+    // over the trait's of the same name — which would leave the trait's own implementation, and
+    // so the version floors, unreachable. The alias is what keeps it callable from the override.
+    use InstallerScriptTrait {
+        preflight as private traitPreflight;
+    }
+
+    /**
+     * Classes this package has renamed. Held as a constant rather than in the trait's
+     * $deleteFiles because removeFiles() below builds a different path from it — see there.
+     */
+    private const DELETE_FILES = [
         'administrator/components/com_j2commerce/src/Field/BoxPackerField.php',
         'administrator/components/com_j2commerce/src/Field/CategoryDuallistboxField.php',
         'administrator/components/com_j2commerce/src/Field/ConfigSubtemplateField.php',
@@ -60,6 +78,19 @@ class Pkg_J2commerceInstallerScript extends InstallerScript
     ];
     private string $debugLogFile         = '';
     private array $preUpdatePluginExists = [];
+
+    // InstallerScriptTrait declares these as typed properties of its own. Redeclaring one here
+    // with a different default is an incompatible trait composition and fatals at class load,
+    // so the values are assigned rather than declared.
+    public function __construct()
+    {
+        $this->minimumPhp    = '8.3';
+        $this->minimumJoomla = '6.0';
+
+        // Rolling a site back to an earlier release is supported, so the trait's downgrade
+        // guard stays off. script.j2commerce.php makes the same choice for the same reason.
+        $this->allowDowngrades = true;
+    }
 
     /**
      * Plugin enable/disable configuration.
@@ -169,14 +200,15 @@ class Pkg_J2commerceInstallerScript extends InstallerScript
     }
 
     /**
-     * Overrides InstallerScript::removeFiles(): the parent builds JPATH_ROOT . $file with no
-     * separator, and every entry differs from its live replacement only by case, so the parent's
+     * Overrides InstallerScriptTrait::removeFiles(): the trait builds JPATH_ROOT . $file with no
+     * separator, and every entry differs from its live replacement only by case, so the trait's
      * is_file() would match and delete the live class. Overriding rather than adding a second
-     * method keeps the unsafe inherited path from being reachable at all.
+     * method keeps the unsafe inherited path from being reachable at all — which is also why the
+     * entries live in self::DELETE_FILES and the trait's own $deleteFiles is left empty.
      */
-    public function removeFiles()
+    public function removeFiles(): void
     {
-        foreach ($this->deleteFiles as $file) {
+        foreach (self::DELETE_FILES as $file) {
             $path = JPATH_ROOT . '/' . $file;
 
             if (!is_file($path) || !$this->existsWithExactCase($path)) {
@@ -199,12 +231,14 @@ class Pkg_J2commerceInstallerScript extends InstallerScript
         return \in_array(basename($path), @scandir(\dirname($path)) ?: [], true);
     }
 
-    public function preflight($route, $parent)
+    public function preflight(string $route, InstallerAdapter $adapter): bool
     {
         $this->debugLog("=== PKG PREFLIGHT START (route={$route}) ===");
 
-        if (version_compare(JVERSION, '6.0.0', '<')) {
-            Log::add('J2Commerce requires Joomla 6.0.0 or later. Your version: ' . JVERSION, Log::WARNING, 'jerror');
+        // Applies $minimumPhp and $minimumJoomla. Both were previously declared under names the
+        // base class does not read, and nothing called the inherited check, so neither floor fired.
+        if (!$this->traitPreflight($route, $adapter)) {
+            $this->debugLog('PKG PREFLIGHT: failed the PHP/Joomla version check');
             return false;
         }
 
@@ -220,7 +254,7 @@ class Pkg_J2commerceInstallerScript extends InstallerScript
 
         // Only past every gate above: aborting after this point cannot restore a deleted file.
         if ($route === 'update') {
-            $this->debugLog('PKG PREFLIGHT: removing legacy renamed files (' . \count($this->deleteFiles) . ' configured)');
+            $this->debugLog('PKG PREFLIGHT: removing legacy renamed files (' . \count(self::DELETE_FILES) . ' configured)');
             $this->removeFiles();
             $this->debugLog('PKG PREFLIGHT: legacy file cleanup completed');
 
@@ -232,7 +266,7 @@ class Pkg_J2commerceInstallerScript extends InstallerScript
         return true;
     }
 
-    public function postflight($route, $parent)
+    public function postflight(string $route, InstallerAdapter $adapter): bool
     {
         $this->debugLog("=== PKG POSTFLIGHT START (route={$route}) ===");
 
@@ -256,6 +290,8 @@ class Pkg_J2commerceInstallerScript extends InstallerScript
         }
 
         $this->debugLog("=== PKG POSTFLIGHT END ===");
+
+        return true;
     }
 
     /**
@@ -273,8 +309,8 @@ class Pkg_J2commerceInstallerScript extends InstallerScript
     }
 
     /**
-     * Enable only plugins that are freshly discovered (enabled = -1).
-     * Does not override user's manual disable.
+     * Enable only the plugins that were absent before this update, per the preflight snapshot.
+     * A plugin already present keeps whatever enabled state it had, including a manual disable.
      */
     private function enableNewPlugins(DatabaseInterface $db): void
     {
@@ -303,8 +339,9 @@ class Pkg_J2commerceInstallerScript extends InstallerScript
     }
 
     /**
-     * Enable a plugin only if it is in the newly-discovered state (enabled = -1).
-     * Plugins the user has explicitly disabled (enabled = 0) are left alone.
+     * Enable a plugin only when the preflight snapshot did not see it, i.e. this update is what
+     * introduced it. The gate is $existedBeforeUpdate alone; the UPDATE itself is unconditional,
+     * so a plugin that did exist is never touched whatever its enabled state.
      */
     private function enablePluginIfNew(DatabaseInterface $db, string $group, string $element, bool $existedBeforeUpdate): void
     {
@@ -627,3 +664,8 @@ class Pkg_J2commerceInstallerScript extends InstallerScript
         $this->debugLog("MIGRATE UPPYMEDIA: max_file_size migrated to component config");
     }
 }
+
+// InstallerAdapter::setupScriptfile() takes the value this file returns. Returning the instance
+// is what selects the InstallerScriptInterface path; without it Joomla falls back to loading the
+// class by name and wrapping it in LegacyInstallerScript, which emits a deprecation notice.
+return new Pkg_J2commerceInstallerScript();

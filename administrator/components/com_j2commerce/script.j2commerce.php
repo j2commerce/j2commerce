@@ -8,8 +8,6 @@
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-declare(strict_types=1);
-
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\CliCommands\SeedOrderLedgerCommand;
@@ -21,7 +19,9 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\InventoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\StockCommittedSeedHelper;
 use Joomla\CMS\Access\Access;
 use Joomla\CMS\Factory;
-use Joomla\CMS\Installer\InstallerScript;
+use Joomla\CMS\Installer\InstallerAdapter;
+use Joomla\CMS\Installer\InstallerScriptInterface;
+use Joomla\CMS\Installer\InstallerScriptTrait;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
 use Joomla\Database\DatabaseDriver;
@@ -30,15 +30,44 @@ use Joomla\Database\ParameterType;
 use Joomla\Filesystem\File;
 use Joomla\Registry\Registry;
 
-class Com_J2commerceInstallerScript extends InstallerScript
+// InstallerScriptTrait is @since 6.0, so on an older Joomla the class below cannot be declared
+// at all and the version floor inside it never gets to run. Without this the refusal reads as
+// "trait not found" instead of naming the requirement. PHP binds a class that depends on an
+// autoloaded trait at the point of declaration, so this statement is reached first.
+// DELETE WHEN: a J2Commerce 6 package can no longer be handed to a Joomla 5 installer.
+if (!trait_exists(InstallerScriptTrait::class)) {
+    throw new \RuntimeException('J2Commerce requires Joomla 6.0 or later. This site is running Joomla ' . JVERSION . '.');
+}
+
+class Com_J2commerceInstallerScript implements InstallerScriptInterface
 {
+    // The interface obliges this class to declare preflight(), and a class method silently wins
+    // over the trait's of the same name — which would leave the trait's own implementation, and
+    // so the version floors, unreachable. The alias is what keeps it callable from the override.
+    use InstallerScriptTrait {
+        preflight as private traitPreflight;
+    }
+
     /** Params flag: the asset rules have been settled once, so no later update re-seeds them. */
     private const DEFAULT_ACL_FLAG = 'default_acl_seeded';
 
-    protected $minimumJoomlaVersion = '6.0';
-    protected $maximumJoomlaVersion = '6.99.99';
-    protected $minimumPhpVersion    = '8.1';
-    private string $debugLogFile    = '';
+    private string $debugLogFile = '';
+
+    // InstallerScriptTrait declares these as typed properties of its own. Redeclaring one here
+    // with a different default is an incompatible trait composition and fatals at class load,
+    // so the values are assigned rather than declared. There is no ceiling counterpart: neither
+    // the trait nor the base class reads a maximum version, so the $maximumJoomlaVersion this
+    // class used to carry never gated anything.
+    public function __construct()
+    {
+        $this->minimumPhp    = '8.3';
+        $this->minimumJoomla = '6.0';
+
+        // Rolling a site back to an earlier release is supported, so the trait's downgrade
+        // guard stays off. This is the same choice the class made before by not calling the
+        // inherited preflight at all; it is now stated rather than implied.
+        $this->allowDowngrades = true;
+    }
 
     /**
      * Always-on install trace. Written as .php behind Joomla's own die guard, because
@@ -59,16 +88,16 @@ class Com_J2commerceInstallerScript extends InstallerScript
         file_put_contents($this->debugLogFile, date('[Y-m-d H:i:s] ') . $message . "\n", FILE_APPEND);
     }
 
-    public function preflight($route, $parent)
+    public function preflight(string $route, InstallerAdapter $adapter): bool
     {
         $this->debugLog("=== PREFLIGHT START (route={$route}) ===");
 
-        // Skip parent::preflight() — it blocks version downgrades, which we allow
-        // so users can roll back if a newer release introduces issues.
-        // We enforce Joomla minimum version ourselves below.
-
-        if (version_compare(JVERSION, '6.0.0', '<')) {
-            Log::add('J2Commerce requires Joomla 6.0.0 or later. Your version: ' . JVERSION, Log::WARNING, 'jerror');
+        // Applies $minimumPhp and $minimumJoomla. Both were previously declared under names the
+        // base class does not read, and nothing called the inherited check, so neither floor
+        // fired; the Joomla one was re-stated inline here instead and the PHP one went unchecked.
+        // Downgrades still pass, via $allowDowngrades in the constructor.
+        if (!$this->traitPreflight($route, $adapter)) {
+            $this->debugLog('PREFLIGHT: failed the PHP/Joomla version check');
             return false;
         }
 
@@ -86,14 +115,14 @@ class Com_J2commerceInstallerScript extends InstallerScript
         // but core database tables are missing. Run install SQL to create them
         // before Joomla attempts schema updates on non-existent tables.
         if ($route === 'update') {
-            $this->repairMissingTables($parent);
+            $this->repairMissingTables($adapter);
         }
 
         $this->debugLog("PREFLIGHT: passed all checks");
         return true;
     }
 
-    private function repairMissingTables($parent): void
+    private function repairMissingTables(InstallerAdapter $adapter): void
     {
         $db        = Factory::getContainer()->get(DatabaseInterface::class);
         $allTables = $db->getTableList();
@@ -120,7 +149,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
 
         $this->debugLog("REPAIR: {$missing} core tables missing — running install SQL");
 
-        $installer = $parent->getParent();
+        $installer = $adapter->getParent();
         $sqlFile   = $installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install.mysql.utf8.sql';
 
         if (!file_exists($sqlFile)) {
@@ -132,10 +161,10 @@ class Com_J2commerceInstallerScript extends InstallerScript
         $this->debugLog("REPAIR: install SQL executed — tables created");
     }
 
-    public function install($parent)
+    public function install(InstallerAdapter $adapter): bool
     {
         $this->debugLog("=== INSTALL START ===");
-        $this->installLocalisation($parent);
+        $this->installLocalisation($adapter);
         $this->debugLog("INSTALL: localisation complete");
 
         $this->setDefaultParams();
@@ -154,11 +183,11 @@ class Com_J2commerceInstallerScript extends InstallerScript
         return true;
     }
 
-    public function update($parent)
+    public function update(InstallerAdapter $adapter): bool
     {
         $this->debugLog("=== UPDATE START ===");
 
-        $this->installLocalisation($parent);
+        $this->installLocalisation($adapter);
         $this->debugLog("UPDATE: localisation seeded (idempotent)");
 
         $this->setDefaultAcl();
@@ -174,7 +203,7 @@ class Com_J2commerceInstallerScript extends InstallerScript
 
         $this->removeRetiredSiteLayouts();
 
-        $this->removeObsoleteSchemaUpdates($parent);
+        $this->removeObsoleteSchemaUpdates($adapter);
 
         $this->seedOrderLedgerOnce();
 
@@ -364,10 +393,10 @@ class Com_J2commerceInstallerScript extends InstallerScript
      * The shipped set is read from the extracted package rather than hardcoded, so re-adding a
      * retired filename can never delete a live file.
      */
-    private function removeObsoleteSchemaUpdates($parent): void
+    private function removeObsoleteSchemaUpdates(InstallerAdapter $adapter): void
     {
         $installed = JPATH_ADMINISTRATOR . '/components/com_j2commerce/sql/updates/mysql';
-        $shipped   = $parent->getParent()->getPath('source')
+        $shipped   = $adapter->getParent()->getPath('source')
             . '/administrator/components/com_j2commerce/sql/updates/mysql';
 
         if (!is_dir($installed) || !is_dir($shipped)) {
@@ -509,18 +538,18 @@ class Com_J2commerceInstallerScript extends InstallerScript
         $db->execute();
     }
 
-    public function uninstall($parent)
+    public function uninstall(InstallerAdapter $adapter): bool
     {
         // Sub-extension uninstallation is handled by the package.
         return true;
     }
 
-    public function postflight($route, $parent)
+    public function postflight(string $route, InstallerAdapter $adapter): bool
     {
         $this->debugLog("=== POSTFLIGHT START (route={$route}) ===");
 
         if ($route === 'uninstall') {
-            return;
+            return true;
         }
 
         // Clear autoload cache so new namespaces are discovered
@@ -543,6 +572,8 @@ class Com_J2commerceInstallerScript extends InstallerScript
         $this->seedDownloadOrderstatuses();
 
         $this->debugLog("=== POSTFLIGHT END ===");
+
+        return true;
     }
 
     /**
@@ -1077,10 +1108,10 @@ class Com_J2commerceInstallerScript extends InstallerScript
 
     // ── Localisation data install ────────────────────────────────────────────────
 
-    private function installLocalisation($parent): void
+    private function installLocalisation(InstallerAdapter $adapter): void
     {
         $this->debugLog("LOCALISATION: start");
-        $installer = $parent->getParent();
+        $installer = $adapter->getParent();
         $db        = Factory::getContainer()->get(DatabaseInterface::class);
         $alltables = $db->getTableList();
         $prefix    = $db->getPrefix();
@@ -1499,3 +1530,8 @@ class Com_J2commerceInstallerScript extends InstallerScript
         }
     }
 }
+
+// InstallerAdapter::setupScriptfile() takes the value this file returns. Returning the instance
+// is what selects the InstallerScriptInterface path; without it Joomla falls back to loading the
+// class by name and wrapping it in LegacyInstallerScript, which emits a deprecation notice.
+return new Com_J2commerceInstallerScript();
