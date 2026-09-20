@@ -15,8 +15,11 @@ use Joomla\CMS\Language\Text;
 <?php if ($this->params->get('item_show_product_manufacturer_name', 1) && !empty($this->item->manufacturer)) : ?>
 	<span class="manufacturer-brand fs-sm">
 		<?php echo Text::_('COM_J2COMMERCE_PRODUCT_MANUFACTURER_NAME'); ?>:
-		<?php if (isset($this->item->brand_desc_id) && !empty($this->item->brand_desc_id)) : ?>
-			<a href="<?php echo J2CommerceHelper::article()->getArticleLink($this->item->brand_desc_id); ?>" target="_blank">
+		<?php $url = !empty($this->item->brand_desc_id)
+			? J2CommerceHelper::article()->getArticleLink($this->item->brand_desc_id)
+			: ''; ?>
+		<?php if ($url !== '') : ?>
+			<a href="<?php echo $url; ?>" target="_blank">
                 <?php echo $this->escape($this->item->manufacturer); ?>
             </a>
 		<?php else:?>

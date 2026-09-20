@@ -442,6 +442,22 @@ class ArticleHelper
             return '';
         }
 
+        // Same predicates display() applies to the same row — a link is only
+        // offered for an article the visitor could actually open. getArticle()
+        // caches the raw row, so these evaluate per request against the live
+        // identity; the routed URL itself is never cached.
+        if ((int) $article->state !== 1) {
+            return '';
+        }
+
+        $user = Factory::getApplication()->getIdentity();
+        // No identity resolved (CLI) → Public only, rather than skipping the check.
+        $viewLevels = $user ? $user->getAuthorisedViewLevels() : [1];
+
+        if (!\in_array((int) $article->access, $viewLevels, true)) {
+            return '';
+        }
+
         // Route::_() returns null on router error today and will throw from Joomla 7.
         try {
             return (string) (Route::_(

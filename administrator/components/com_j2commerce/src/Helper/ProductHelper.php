@@ -20,6 +20,7 @@ use Joomla\CMS\Event\Content\ContentPrepareEvent;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Uri\Uri;
 use Joomla\Database\DatabaseInterface;
@@ -927,9 +928,20 @@ class ProductHelper
                 $behavior->onAfterGetProduct($event);
             }
         } catch (\Exception $e) {
-            // Log error but don't fail - base product data is still valid
+            // Log error but don't fail - base product data is still valid.
+            // The detail goes to the log only: an exception reaching here is
+            // typically from the database layer, and its message carries the
+            // failing statement and the driver's error text. This hydration
+            // path is shared by the site product page and the admin edit and
+            // AJAX flows, so nothing here may assume an admin-only audience.
+            Log::add(
+                'Behavior enhancement failed for product type "' . $productType . '": ' . $e->getMessage(),
+                Log::ERROR,
+                'com_j2commerce'
+            );
+
             Factory::getApplication()->enqueueMessage(
-                'Behavior enhancement failed: ' . $e->getMessage(),
+                Text::_('COM_J2COMMERCE_PRODUCT_BEHAVIOR_ENHANCEMENT_FAILED'),
                 'warning'
             );
         }
