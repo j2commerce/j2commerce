@@ -33,8 +33,12 @@
  * version_compare canonicalises `-` to `.`, so `X-3` ranks after `X`. Natural sort compares
  * bytes, where `-` (0x2D) precedes `.` (0x2E), so `X-3.sql` ranks *before* `X.sql`. Ship a bare
  * `X.sql` alongside an `X-2.sql` on the newest date and the two answers differ permanently:
- * every site reports "Database version (X-3) does not match manifest version (X)". Give a
- * fourth same-day delta the next date instead of another suffix.
+ * every site reports "Database version (X-3) does not match manifest version (X)".
+ *
+ * The divergence needs a bare name beside a suffixed one, so every delta carries a `-N` sequence
+ * suffix — `6.6.3-2026-09-19-1.sql`, then `-2`, `-3` — and no delta is ever written bare. Uniform
+ * suffixes agree under both sorts. The legacy unsuffixed files stay as they are: the hazard only
+ * bites on the newest date, so they are inert, and renaming a retired delta is its own trap.
  *
  * Usage:
  *   php build/check_sql_updates.php              — lint, exit 1 on any violation
@@ -119,7 +123,7 @@ foreach ($dirs as $dir) {
             'rule' => 'newest-delta sort disagreement',
             'hint' => 'the installer stamps ' . basename($semantic, '.sql') . ' but the Database view'
                 . ' reports ' . basename($natural, '.sql')
-                . ' — give the suffixed delta the next date instead',
+                . ' — give every delta on this date a -N sequence suffix; never leave one bare',
         ];
     }
 }
